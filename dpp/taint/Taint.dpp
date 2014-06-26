@@ -1,0 +1,14 @@
+Lattice Taint = Public | Private;
+
+Order Taint(t1, t2) = (t1, t2) match {
+    case (Private, Private) => true;
+    case (Private, Public) => true;
+    case (Public, Public) => true;
+    case _ => false;
+}
+
+Join Taint(t1, t2) = (t1, t2) match {
+    case (Private, Private) => Private;
+    case _ => Public;
+}
+

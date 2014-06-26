@@ -1,0 +1,47 @@
+// input types.
+Type Variable, Object, Field, Statement.
+
+// input facts.
+Relation New(stm: Statement, lhs: Variable, obj: Object).
+Relation Assign(stm: Statement, lhs: Variable, rhs: Variable).
+Relation Load(stm: Statement, lhs: Variable, base: Variable, field: Field).
+Relation Store(stm: Statement, base: Variable, field: Field, rhs: Variable).
+
+// the succesor relation.
+Relation Successor(s1: Statement, s2: Statement).
+
+// variable & heap abstraction.
+Relation VarPointsTo(stm: Statement, variable: Variable, Object).
+Relation HeapPointsTo(stm: Statement, base: Object, field: Field, Object).
+
+// variables are strongly updated
+Constraint VarPointsTo(s2, var, obj) :-
+    New(s1, var, obj),
+    Successor(s1, s2).
+
+// variables are strongly updated
+Constraint VarPointsTo(s2, var1, value) :-
+    Assign(s1, var1, var2),
+    VarPointsTo(s1, var2, value),
+    Successor(s1, s2).
+
+// variables are strongly updated
+Constraint VarPointsTo(s2, var1, value) :-
+    Load(s1, var1, var2, field),
+    VarPointsTo(s1, var2, base),
+    HeapPointsTo(s1, base, field, value),
+    Successor(s1, s2).
+
+// heap store
+Constraint HeapPointsTo(s2, base, field, value) :-
+    Store(s1, var1, f, var2),
+    VarPointsTo(s1, var1, base),
+    VarPointsTo(s1, var2, value),
+    Successor(s1, s2).
+
+// heap store (weak update)
+Constraint HeapPointsTo(s2, base, field, value) :-
+    Store(s1, var1, f, var2),
+    VarPointsTo(s1, var1, base),
+    HeapPointsTo(s1, base, field, value),
+    Successor(s1, s2).

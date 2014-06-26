@@ -1,0 +1,61 @@
+// input types.
+Type Variable, Object, Field.
+
+// input facts.
+Relation New(lhs: Variable, obj: Object).
+Relation Assign(lhs: Variable, rhs: Variable).
+Relation Load(lhs: Variable, base: Variable, field: Field).
+Relation Store(base: Variable, field: Field, rhs: Variable).
+
+// new relations
+Relation Number(lhs: Variable, n: Int).
+Relation Add(lhs: Variable, left: Variable, right: Variable).
+
+// variable & heap abstraction.
+Relation VarPointsTo(variable: Variable, obj: Object).
+Relation HeapPointsTo(base: Object, field: Field, obj: Object).
+
+// Pointers
+Constraint VarPointsTo(var, obj) :-
+    New(var, obj).
+
+Constraint VarPointsTo(var1, value) :-
+    Assign(var1, var2),
+    VarPointsTo(var2, value).
+
+Constraint VarPointsTo(var1, value) :-
+    Load(var1, var2, field),
+    VarPointsTo(var2, base),
+    HeapPointsTo(base, field, value).
+
+Constraint HeapPointsTo(base, field, value) :-
+    Store(var1, f, var2),
+    VarPointsTo(var1, base),
+    VarPointsTo(var2, value).
+
+// TODO: This is actually a great example of a Relation which should not be data.
+@Inline
+Relation VarFlow(to: Variable, from: Variable).
+
+Constraint VarFlow(to, from) :-
+    Store(base1, field, from),
+    VarPointsTo(base1, obj),
+    Load(to, base2, field),
+    VarPointsTo(base2, obj).
+
+// Primitives
+Map VarSign(variable: Variable, sign: Sign).
+
+Constraint VarSign(var, sign) :-
+    Number(var, n),
+    sign <- lift(n).
+
+Constraint VarSign(var, result) :-
+    Add(var, left, right),
+    VarSign(left, sign1),
+    VarSign(right, sign2),
+    result <- sign1 `plus` sign2.
+
+Constraint VarSign(to, sign) :-
+    VarFlow(to, from),
+    VarSign(from, sign).

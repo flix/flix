@@ -1,0 +1,57 @@
+// input types.
+Type Variable, Object, Field.
+
+// input facts.
+Relation New(lhs: Variable, obj: Object).
+Relation Assign(lhs: Variable, rhs: Variable).
+Relation Load(lhs: Variable, base: Variable, field: Field).
+Relation Store(base: Variable, field: Field, rhs: Variable).
+
+// new relations
+Relation Number(lhs: Variable, n: Int).
+Relation Add(lhs: Variable, left: Variable, right: Variable).
+
+// new value lattice
+Lattice Value = Value(objects: Power(Object), sign: Sign).
+
+// variable & heap abstraction.
+Map VarPointsTo(variable: Variable, value: Value).
+Map HeapPointsTo(base: Object, field: Field, value: Value).
+
+Constraint VarPointsTo(var, v) :-
+    New(var, obj),
+    v <- Value(lift(obj), _).
+
+Constraint VarPointsTo(var1, value) :-
+    Assign(var1, var2),
+    VarPointsTo(var2, value).
+
+Constraint VarPointsTo(var1, value) :-
+    Load(var1, var2, field),
+    VarPointsTo(var2, Value(base, _)), // TODO: How to deal with base?
+    HeapPointsTo(base, field, value).
+
+Constraint HeapPointsTo(base, field, value) :-
+    Store(var1, f, var2),
+    VarPointsTo(var1, Value(base, _)),
+    VarPointsTo(var2, value).
+
+// new ccnstraints
+Constraint VarPointsTo(var, v) :-
+    Number(var, n),
+    v <- Value(_, lift(n)).
+
+Constraint VarPointsTo(var, v) :-
+    Add(result, var1, var2),
+    VarPointsTo(var1, Value(_, v1)),
+    VarPointsTo(var2, Value(_, v2)),
+    v <- v1 `sum` v2.
+
+// alternatively
+Constraint VarPointsTo(var, Value(_, lift(n))) :-
+    Number(var, n).
+
+Constraint VarPointsTo(var, sum(v1, v2)) :-
+    Add(result, var1, var2),
+    VarPointsTo(var1, Value(_, v1)),
+    VarPointsTo(var2, Value(_, v2)).
