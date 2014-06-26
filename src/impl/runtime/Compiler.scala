@@ -4,7 +4,7 @@ import impl.{Term, Program}
 
 import scala.util.Try
 
-object Verifier {
+object Compiler {
 
   def verify(p: Program): Try[Any] = Try({
     // 1. Each fact must be ground.

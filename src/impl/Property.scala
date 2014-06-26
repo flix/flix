@@ -3,7 +3,6 @@ package impl
 object Property {
 
   // TODO: Prove by veryfing that the negation of the properties is unsatisfiable.
-
   // TODO: Extract Leq symbol from the clause.
   // TODO: Need more than horn clauses???
   // TODO: Flatten?
@@ -12,6 +11,11 @@ object Property {
   def fresh(t: Type): Term.Variable = ???
 
   def leq(e1: Term.Variable, t1: Type, e2: Term.Variable, t2: Type): Set[HornClause] = ???
+
+  /**
+   * Function: ∀x, y. x = y => f(x) = f(y).
+   */
+  def function(): Formula = ???
 
   /**
    * Reflexivity: ∀x. x ⊑ x
@@ -76,6 +80,8 @@ object Property {
    * ∀z:x⊑z∧y⊑z⇒x⨆y=z
    */
   trait JoinIsJoin
+
+  // TODO: Function properties
 
   // If e_1⊑e_2 and e_3⊑e_4 then e_1+e_3⊑e_2+e_4
   trait Monotone

@@ -5,6 +5,9 @@ import impl._
 import scala.collection.mutable
 import scala.util.Try
 
+/**
+ * A semi-naive solver.
+ */
 class Solver(p: Program) {
 
   /**
@@ -26,10 +29,15 @@ class Solver(p: Program) {
   val map5 = mutable.Map.empty[Symbol, Map[Value, Map[Value, Map[Value, Map[Value, Map[Value, Value]]]]]]
 
   /**
+   * Dependencies.
+   */
+
+
+  /**
    * Depedency computation.
    */
   def deps(): Unit = {
-
+    // map from (non-functional) predicate symbol to horn clauses.
   }
 
   /**
@@ -88,8 +96,9 @@ class Solver(p: Program) {
   }
 
 
-
   // TODO:Carefull about free variables.
   def lookupValue(index: Int, p: Predicate, env: Map[Symbol, Value]): Value = ???
+
+  // TODO: Binding variables to values... for solving
 
 }
