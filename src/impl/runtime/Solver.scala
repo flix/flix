@@ -6,7 +6,7 @@ import impl.util.collection.mutable
 /**
  * A semi-naive solver.
  */
-class Solver(p: Program) {
+class Solver(program: Program) {
 
   /**
    * Relations.
@@ -40,7 +40,7 @@ class Solver(p: Program) {
    * Depedency computation.
    */
   def deps(): Unit = {
-    for (h <- p.clauses; p <- h.body) {
+    for (h <- program.clauses; p <- h.body) {
       dependencies.put(p.name, h)
     }
   }
@@ -50,8 +50,8 @@ class Solver(p: Program) {
    */
   def solve(): Unit = {
     // Satisfy all facts.
-    for (h <- p.facts) {
-      satisfy(h.head, p.interpretation, Map.empty[Symbol, Value])
+    for (h <- program.facts) {
+      satisfy(h.head, program.interpretation, Map.empty[Symbol, Value])
     }
 
     // Fixpoint computation.
@@ -79,16 +79,26 @@ class Solver(p: Program) {
 
 
   /**
-   *
-   *
+   * Returns a satisfiable model of the given horn clause `h` with interpretations `inv` under the given environment `env`.
    */
   def evaluate(h: HornClause, inv: Map[Symbol, Interpretation], env: Map[Symbol, Value]): Model = {
     val relationals = h.body filter (p => isRelational(interpretationOf(p, inv)))
     val functionals = h.body -- relationals
 
+    val init = Model.Sat(env)
+    val predicates = relationals.toList ::: functionals.toList
 
+    (init /: predicates) {
+      case (m, p) => evaluate(p, interpretationOf(p, inv), m)
+    }
+  }
 
-    ???
+  /**
+   *
+   */
+  def evaluate(p: Predicate, i: Interpretation, m: Model): Model = m match {
+    case Model.Unsat => Model.Unsat
+    case Model.Sat(envs) => ???
   }
 
 
@@ -204,7 +214,7 @@ class Solver(p: Program) {
     case object Unsat extends Model
 
     object Sat {
-      def apply(env: Map[Symbol, Value]): Sat = Sat(Set(env))
+      def apply(env: Map[Symbol, Value]): Model = Sat(Set(env))
     }
 
     case class Sat(envs: Set[Map[Symbol, Value]]) extends Model
