@@ -246,9 +246,13 @@ class Solver(program: Program) {
     case _: Interpretation.Relation.In1 => true
     case _: Interpretation.Relation.In2 => true
     case _: Interpretation.Relation.In3 => true
-
+    case _: Interpretation.Relation.In4 => true
+    case _: Interpretation.Relation.In5 => true
     case _: Interpretation.Map.Leq1 => true
-
-    case _ => ???
+    case _: Interpretation.Map.Leq2 => true
+    case _: Interpretation.Map.Leq3 => true
+    case _: Interpretation.Map.Leq4 => true
+    case _: Interpretation.Map.Leq5 => true
+    case _ => false
   }
 }
