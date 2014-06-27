@@ -136,14 +136,14 @@ class Solver(program: Program) {
       val v = lookupValue(p, 0, env)
       val newFact = relation1.put(p.name, v)
       if (newFact)
-        propagate(p, Map(0 -> v))
+        propagate(p, IndexedSeq(v))
 
     case Interpretation.Relation.In2(t1, t2) =>
       val k1 = lookupValue(p, 0, env)
       val v = lookupValue(p, 1, env)
       val newFact = relation2.put(p.name, k1, v)
       if (newFact)
-        propagate(p, Map(0 -> k1, 1 -> v))
+        propagate(p, IndexedSeq(k1, v))
 
     case Interpretation.Relation.In3(t1, t2, t3) =>
       val k1 = lookupValue(p, 0, env)
@@ -151,7 +151,7 @@ class Solver(program: Program) {
       val v = lookupValue(p, 2, env)
       val newFact = relation3.put(p.name, k1, k2, v)
       if (newFact)
-        propagate(p, Map(0 -> k1, 1 -> k2, 2 -> v))
+        propagate(p, IndexedSeq(k1, k2, v))
 
     case Interpretation.Relation.In4(t1, t2, t3, t4) =>
       val k1 = lookupValue(p, 0, env)
@@ -160,7 +160,7 @@ class Solver(program: Program) {
       val v = lookupValue(p, 3, env)
       val newFact = relation4.put(p.name, k1, k2, k3, v)
       if (newFact)
-        propagate(p, Map(0 -> k1, 1 -> k2, 2 -> k3, 3 -> v))
+        propagate(p, IndexedSeq(k1, k2, k3, v))
 
     case Interpretation.Relation.In5(t1, t2, t3, t4, t5) =>
       val k1 = lookupValue(p, 0, env)
@@ -170,7 +170,7 @@ class Solver(program: Program) {
       val v = lookupValue(p, 4, env)
       val newFact = relation5.put(p.name, k1, k2, k3, k4, v)
       if (newFact)
-        propagate(p, Map(0 -> k1, 1 -> k2, 2 -> k3, 3 -> k4, 4 -> v))
+        propagate(p, IndexedSeq(k1, k2, k3, k4, v))
 
     case Interpretation.Map.Leq1(t1) => ???
     case Interpretation.Map.Leq2(t1, t2) => ???
@@ -185,12 +185,32 @@ class Solver(program: Program) {
   /**
    * Enqueues all depedencies of the given predicate with the given environment.
    */
-  def propagate(p: Predicate, env: Map[Int, Value]): Unit = {
-    // TODO: Need binding ...
+  def propagate(p: Predicate, env: IndexedSeq[Value]): Unit = {
     for (h <- dependencies.get(p.name)) {
-      queue.enqueue((h, ???))
+      queue.enqueue((h, bind(h, p, env)))
     }
   }
+
+  /**
+   * Returns a new environment where all free variables, for the given predicate `p`,
+   * have been mapped to the value in the given environment `env`.
+   *
+   * That is, if the horn clause is A(x, y, z) :- B(x, y), C(z), the predicate is B
+   * and the environment is [0 -> a, 1 -> b] then the return environment is [x -> a, y -> b].
+   */
+  def bind(h: HornClause, p: Predicate, env: IndexedSeq[Value]): Map[Symbol, Value] = {
+    val m = scala.collection.mutable.Map.empty[Symbol, Value]
+    for (p2 <- h.body; if p.name == p2.name) {
+      for ((t, i) <- p2.terms.zipWithIndex) {
+        t match {
+          case Term.Variable(s) => m += (s -> env(i))
+          case _ => // nop
+        }
+      }
+    }
+    m.toMap
+  }
+
 
   /////////////////////////////////////////////////////////////////////////////
   // Models                                                                  //
@@ -236,7 +256,6 @@ class Solver(program: Program) {
     case Some(t) => throw new Error.NonValueTerm(t)
   }
 
-  def bind(p: Predicate, env: Map[Int, Value]): Map[Symbol, Value] = ???
 
   /**
    * Returns the interpretation of the given predicate `p`.
