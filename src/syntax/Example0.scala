@@ -1,3 +1,5 @@
+package syntax
+
 object Example0 {
 
   def main(args: Array[String]) {
