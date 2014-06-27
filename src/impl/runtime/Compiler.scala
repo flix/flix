@@ -4,9 +4,9 @@ import impl.{Term, Program}
 
 import scala.util.Try
 
-object Compiler {
+class Compiler(p: Program) {
 
-  def verify(p: Program): Try[Any] = Try({
+  def verify(): Try[Any] = Try({
     // 1. Each fact must be ground.
     p.facts.find(!_.isGround).exists(f => throw new RuntimeException(s"The fact $f is not ground!"))
 
