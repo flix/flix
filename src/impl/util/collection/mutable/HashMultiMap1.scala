@@ -1,22 +1,19 @@
 package impl.util.collection.mutable
 
-import scala.collection.mutable
-
 /**
  * A mutable multi map with one key backed by a [[java.util.HashMap]].
  */
-// TODO: Should use HashMap1
-final class HashMultiMap1[K1, V](m: mutable.Map[K1, Set[V]] = mutable.Map.empty[K1, Set[V]]) extends MultiMap1[K1, V] {
+final class HashMultiMap1[K1, V](m: Map1[K1, Set[V]] = Map1.empty[K1, Set[V]]) extends MultiMap1[K1, V] {
   def keys: Traversable[K1] = m.keys;
 
   def has(k1: K1, v: V): Boolean = m.get(k1).exists(_ contains v);
 
   def hasNot(k1: K1, v: V): Boolean = !has(k1, v);
 
-  def get(k: K1): Set[V] = m.getOrElse(k, Set.empty);
+  def get(k: K1): Set[V] = m.getOrElse(k)(Set.empty);
 
   def put(k: K1, v: V): Unit = {
-    m += (k -> (get(k) + v));
+    m.put(k, get(k) + v)
   }
 
   def remove(k1: K1, v: V): Unit = m.get(k1) match {

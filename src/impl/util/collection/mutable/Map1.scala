@@ -4,7 +4,7 @@ package impl.util.collection.mutable
  * Companion object for classes implementing [[Map1]].
  */
 object Map1 {
-  def empty[K1, K2, V]: HashMap1[K1, V] = new HashMap1();
+  def empty[K1, V]: HashMap1[K1, V] = new HashMap1();
 }
 
 /**
