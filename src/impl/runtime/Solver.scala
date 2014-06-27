@@ -32,6 +32,11 @@ class Solver(p: Program) {
   val dependencies = mutable.MultiMap1.empty[Symbol, HornClause]
 
   /**
+   * Worklist Queue
+   */
+  val queue = scala.collection.mutable.Queue.empty[(HornClause, Map[Symbol, Value])]
+
+  /**
    * Depedency computation.
    */
   def deps(): Unit = {
@@ -44,14 +49,14 @@ class Solver(p: Program) {
    * Fixpoint computation.
    */
   def solve(): Unit = {
-    val Q = scala.collection.mutable.Queue.empty[HornClause]
 
     for (f <- p.facts) {
       val name = f.head.name
       val terms = f.head.terms
     }
 
-    while (Q.nonEmpty) {
+
+    while (queue.nonEmpty) {
 
     }
 
@@ -96,14 +101,14 @@ class Solver(p: Program) {
       val v = lookupValue(p, 0, env)
       val newFact = relation1.put(p.name, v)
       if (newFact)
-        propagate()
+        propagate(p, Map(0 -> v))
 
     case Interpretation.Relation.In2(t1, t2) =>
       val k1 = lookupValue(p, 0, env)
       val v = lookupValue(p, 1, env)
       val newFact = relation2.put(p.name, k1, v)
       if (newFact)
-        propagate()
+        propagate(p, Map(0 -> k1, 1 -> v))
 
     case Interpretation.Relation.In3(t1, t2, t3) =>
       val k1 = lookupValue(p, 0, env)
@@ -111,7 +116,7 @@ class Solver(p: Program) {
       val v = lookupValue(p, 2, env)
       val newFact = relation3.put(p.name, k1, k2, v)
       if (newFact)
-        propagate()
+        propagate(p, Map(0 -> k1, 1 -> k2, 2 -> v))
 
     case Interpretation.Relation.In4(t1, t2, t3, t4) =>
       val k1 = lookupValue(p, 0, env)
@@ -120,7 +125,7 @@ class Solver(p: Program) {
       val v = lookupValue(p, 3, env)
       val newFact = relation4.put(p.name, k1, k2, k3, v)
       if (newFact)
-        propagate()
+        propagate(p, Map(0 -> k1, 1 -> k2, 2 -> k3, 3 -> v))
 
     case Interpretation.Relation.In5(t1, t2, t3, t4, t5) =>
       val k1 = lookupValue(p, 0, env)
@@ -130,7 +135,7 @@ class Solver(p: Program) {
       val v = lookupValue(p, 4, env)
       val newFact = relation5.put(p.name, k1, k2, k3, k4, v)
       if (newFact)
-        propagate()
+        propagate(p, Map(0 -> k1, 1 -> k2, 2 -> k3, 3 -> k4, 4 -> v))
 
     case Interpretation.Map.Leq1(t1) => ???
     case Interpretation.Map.Leq2(t1, t2) => ???
@@ -155,10 +160,14 @@ class Solver(p: Program) {
   }
 
 
-
-
-  def propagate(): Unit = {
-    //iterate through deps.
+  /**
+   * Enqueues all depedencies of the given predicate with the given environment.
+   */
+  def propagate(p: Predicate, env: Map[Int, Value]): Unit = {
+    // TODO: Need binding ...
+    for (h <- dependencies.get(p.name)) {
+      queue.enqueue((h, ???))
+    }
   }
 
 }
