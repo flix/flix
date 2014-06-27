@@ -79,23 +79,17 @@ class Solver(p: Program) {
 
 
   /**
-   * Evaluates the given horn clause `h` under the given interpretations `inv` and environment `env`.
    *
-   * Returns `true` iff the body is satisfied.
+   *
    */
-  def evaluate(h: HornClause, inv: Map[Symbol, Interpretation], env: Map[Symbol, Value]): Boolean = inv.get(h.head.name) match {
-    case None => throw new Error.UnknownInterpretation(h.head.name)
-    case Some(i) => evaluate(h, i, env)
-  }
+  def evaluate(h: HornClause, inv: Map[Symbol, Interpretation], env: Map[Symbol, Value]): Model = {
+    val relationals = h.body filter (p => isRelational(interpretationOf(p, inv)))
+    val functionals = h.body -- relationals
 
 
-  /**
-   * Evaluates the given horn clause `h` under the given interpretation `i` and environment `env`.
-   *
-   * Returns `true` iff the body is satisfied.
-   */
-  def evaluate(h: HornClause, i: Interpretation, env: Map[Symbol, Value]): Boolean =
+
     ???
+  }
 
 
   /**
@@ -126,13 +120,12 @@ class Solver(p: Program) {
   // Satisfy                                                                 //
   /////////////////////////////////////////////////////////////////////////////
 
+
   /**
    * Satisfies the given predicate `p` under the given interpretations `inv` and environment `env`.
    */
-  def satisfy(p: Predicate, inv: Map[Symbol, Interpretation], env: Map[Symbol, Value]): Unit = inv.get(p.name) match {
-    case None => throw new Error.UnknownInterpretation(p.name)
-    case Some(i) => satisfy(p, i, env)
-  }
+  def satisfy(p: Predicate, inv: Map[Symbol, Interpretation], env: Map[Symbol, Value]): Unit =
+    satisfy(p, interpretationOf(p, inv), env)
 
   /**
    * Satisfies the given predicate `p` under the given interpretation `i` and environment `env`.
@@ -220,4 +213,25 @@ class Solver(p: Program) {
 
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Utilities                                                               //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Returns the interpretation of the given predicate `p`.
+   */
+  def interpretationOf(p: Predicate, inv: Map[Symbol, Interpretation]): Interpretation = inv.get(p.name) match {
+    case None => throw new Error.UnknownInterpretation(p.name)
+    case Some(i) => i
+  }
+
+  private def isRelational(i: Interpretation): Boolean = i match {
+    case _: Interpretation.Relation.In1 => true
+    case _: Interpretation.Relation.In2 => true
+    case _: Interpretation.Relation.In3 => true
+
+    case _: Interpretation.Map.Leq1 => true
+
+    case _ => ???
+  }
 }
