@@ -58,16 +58,10 @@ class Solver(program: Program) {
     }
   }
 
-  /**
-   * Enqueues all depedencies of the given predicate with the given environment.
-   */
-  def propagate(p: Predicate, env: Map[Int, Value]): Unit = {
-    // TODO: Need binding ...
-    for (h <- dependencies.get(p.name)) {
-      queue.enqueue((h, ???))
-    }
-  }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Resolution                                                              //
+  /////////////////////////////////////////////////////////////////////////////
 
   /**
    * Try to satisfy
@@ -79,6 +73,10 @@ class Solver(program: Program) {
         satisfy(h.head, inv, env)
       }
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Evaluation                                                              //
+  /////////////////////////////////////////////////////////////////////////////
 
   /**
    * Returns a satisfiable model of the given horn clause `h` with interpretations `inv` under the given environment `env`.
@@ -123,7 +121,6 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
   // Satisfy                                                                 //
   /////////////////////////////////////////////////////////////////////////////
-
 
   /**
    * Satisfies the given predicate `p` under the given interpretations `inv` and environment `env`.
@@ -185,8 +182,18 @@ class Solver(program: Program) {
   }
 
 
+  /**
+   * Enqueues all depedencies of the given predicate with the given environment.
+   */
+  def propagate(p: Predicate, env: Map[Int, Value]): Unit = {
+    // TODO: Need binding ...
+    for (h <- dependencies.get(p.name)) {
+      queue.enqueue((h, ???))
+    }
+  }
+
   /////////////////////////////////////////////////////////////////////////////
-  // Satisfy                                                                 //
+  // Models                                                                  //
   /////////////////////////////////////////////////////////////////////////////
 
   sealed trait Model
