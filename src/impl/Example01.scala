@@ -1,8 +1,10 @@
 package impl
 
+import impl.runtime.Solver
+
 object Example01 {
 
-  import Term._
+  import impl.Term._
 
   def main(args: Array[String]): Unit = {
 
@@ -111,6 +113,10 @@ object Example01 {
       ))
     )
 
+    val facts = Set(
+      HornClause(Predicate('New, List(Term.Constant(Value.Int(0)), Term.Constant(Value.Int(1)))), Set.empty)
+    )
+
     val VariableType = Type.Nominal('VariableT)
     val FieldType = Type.Nominal('FieldType)
     val ObjectType = Type.Nominal('ObjectType)
@@ -143,10 +149,13 @@ object Example01 {
       'Sum -> Interpretation.Functional.Functional2(SignType, SignType, Sum)
     )
 
-    val p = Program(clauses, interpretation)
+    val p = Program(clauses ++ facts, interpretation)
 
     println(p)
 
+
+    val s = new Solver(p)
+    s.solve()
   }
 
 }
