@@ -40,24 +40,24 @@ class Solver(program: Program) {
    * Fixpoint computation.
    */
   def solve(): Unit = {
-    // Naive dependencies.
+    // Find dependencies between predicates and horn clauses.
+    // A horn clause `h` depends on predicate `p` iff `p` occurs in the body of `h`.
     for (h <- program.clauses; p <- h.body) {
       dependencies.put(p.name, h)
     }
 
-    // Satisfy all facts.
+    // Satisfy all facts. Satisfying a fact adds violated horn clauses to the work list.
     for (h <- program.facts) {
       satisfy(h.head, program.interpretation, Map.empty[Symbol, Value])
     }
 
-    // Fixpoint computation.
+    // Iteratively try to resolve horn clauses.
+    // Resolving a horn clause may add new facts and thus new items to the work list.
     while (queue.nonEmpty) {
       val (h, env) = queue.dequeue()
-
       resolve(h, program.interpretation, env)
     }
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Resolution                                                              //
