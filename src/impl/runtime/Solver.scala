@@ -32,23 +32,19 @@ class Solver(program: Program) {
   val dependencies = mutable.MultiMap1.empty[Symbol, HornClause]
 
   /**
-   * Worklist Queue
+   * Worklist.
    */
   val queue = scala.collection.mutable.Queue.empty[(HornClause, Map[Symbol, Value])]
-
-  /**
-   * Depedency computation.
-   */
-  def deps(): Unit = {
-    for (h <- program.clauses; p <- h.body) {
-      dependencies.put(p.name, h)
-    }
-  }
 
   /**
    * Fixpoint computation.
    */
   def solve(): Unit = {
+    // Naive dependencies.
+    for (h <- program.clauses; p <- h.body) {
+      dependencies.put(p.name, h)
+    }
+
     // Satisfy all facts.
     for (h <- program.facts) {
       satisfy(h.head, program.interpretation, Map.empty[Symbol, Value])
@@ -56,14 +52,11 @@ class Solver(program: Program) {
 
     // Fixpoint computation.
     while (queue.nonEmpty) {
+      val (h, env) = queue.dequeue()
 
+      resolve(h, program.interpretation, env)
     }
-
-    ???
   }
-
-  // TODO: Binding variables to values... for solving
-  // Arhitecture: GetModels, Evaluate, Satisfy
 
   /**
    * Enqueues all depedencies of the given predicate with the given environment.
@@ -75,8 +68,17 @@ class Solver(program: Program) {
     }
   }
 
-  def bind(p: Predicate, env: Map[Int, Value]): Map[Symbol, Value] = ???
 
+  /**
+   * Try to satisfy
+   */
+  def resolve(h: HornClause, inv: Map[Symbol, Interpretation], env: Map[Symbol, Value]): Unit = evaluate(h, inv, env) match {
+    case Model.Unsat => // nop
+    case Model.Sat(envs) =>
+      for (env <- envs) {
+        satisfy(h.head, inv, env)
+      }
+  }
 
   /**
    * Returns a satisfiable model of the given horn clause `h` with interpretations `inv` under the given environment `env`.
@@ -115,14 +117,6 @@ class Solver(program: Program) {
         case _ => ???
       }
     case _ => ???
-  }
-
-  /**
-   * Returns the value of the variable with the given `index` in the given predicate `p`.
-   */
-  def lookupTerm(p: Predicate, index: Int): Term = p.terms.lift(index) match {
-    case None => throw new Error.ArityMismatch(p, index)
-    case Some(t) => t
   }
 
 
@@ -187,21 +181,9 @@ class Solver(program: Program) {
     case Interpretation.Map.Leq4(t1, t2, t3, t4) => ???
     case Interpretation.Map.Leq5(t1, t2, t3, t4, t5) => ???
 
-    case _ => throw new Error.UnableToSatisfyPredicate(p)
+    case _ => throw new Error.NonRelationalPredicate(p)
   }
 
-  /**
-   * Returns the value of the variable with the given `index` in the given predicate `p`.
-   */
-  def lookupValue(p: Predicate, index: Int, env: Map[Symbol, Value]): Value = p.terms.lift(index) match {
-    case None => throw new Error.ArityMismatch(p, index)
-    case Some(Term.Constant(v)) => v
-    case Some(Term.Variable(s)) => env.get(s) match {
-      case None => throw new Error.UnboundVariable(s)
-      case Some(v) => v
-    }
-    case _ => ??? // TODO: What about destructors?
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Satisfy                                                                 //
@@ -226,6 +208,28 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
   // Utilities                                                               //
   /////////////////////////////////////////////////////////////////////////////
+  /**
+   * Returns the term of the variable with the given `index` in the given predicate `p`.
+   */
+  def lookupTerm(p: Predicate, index: Int): Term = p.terms.lift(index) match {
+    case None => throw new Error.ArityMismatch(p, index)
+    case Some(t) => t
+  }
+
+  /**
+   * Returns the value of the variable with the given `index` in the given predicate `p`.
+   */
+  def lookupValue(p: Predicate, index: Int, env: Map[Symbol, Value]): Value = p.terms.lift(index) match {
+    case None => throw new Error.ArityMismatch(p, index)
+    case Some(Term.Constant(v)) => v
+    case Some(Term.Variable(s)) => env.get(s) match {
+      case None => throw new Error.UnboundVariable(s)
+      case Some(v) => v
+    }
+    case Some(t) => throw new Error.NonValueTerm(t)
+  }
+
+  def bind(p: Predicate, env: Map[Int, Value]): Map[Symbol, Value] = ???
 
   /**
    * Returns the interpretation of the given predicate `p`.
@@ -235,6 +239,9 @@ class Solver(program: Program) {
     case Some(i) => i
   }
 
+  /**
+   * Returns `true` iff the given interpretation `i` is relational.
+   */
   private def isRelational(i: Interpretation): Boolean = i match {
     case _: Interpretation.Relation.In1 => true
     case _: Interpretation.Relation.In2 => true
