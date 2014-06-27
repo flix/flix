@@ -49,7 +49,6 @@ class Solver(p: Program) {
    * Fixpoint computation.
    */
   def solve(): Unit = {
-
     // Satisfy all facts.
     for (h <- p.facts) {
       satisfy(h.head, p.interpretation, Map.empty[Symbol, Value])
@@ -64,6 +63,19 @@ class Solver(p: Program) {
   }
 
   // TODO: Binding variables to values... for solving
+  // Arhitecture: GetModels, Evaluate, Satisfy
+
+  /**
+   * Enqueues all depedencies of the given predicate with the given environment.
+   */
+  def propagate(p: Predicate, env: Map[Int, Value]): Unit = {
+    // TODO: Need binding ...
+    for (h <- dependencies.get(p.name)) {
+      queue.enqueue((h, ???))
+    }
+  }
+
+  def bind(p: Predicate, env: Map[Int, Value]): Map[Symbol, Value] = ???
 
 
   /**
@@ -86,12 +98,33 @@ class Solver(p: Program) {
     ???
 
 
-  def evaluate(p: Predicate, i: Interpretation, env: Map[Symbol, Value]): Boolean = i match {
-    case Interpretation.Proposition(Value.Bool(true)) => true;
-    case Interpretation.Proposition(Value.Bool(false)) => false;
-    case Interpretation.Relation.In1(t1) => ???
+  /**
+   * Returns a model for the given predicate `p` with interpretation `i` under the given environment `env`.
+   */
+  def evaluate(p: Predicate, i: Interpretation, env: Map[Symbol, Value]): Model = i match {
+    case Interpretation.Proposition(Value.Bool(true)) => Model.Sat(env)
+    case Interpretation.Proposition(Value.Bool(false)) => Model.Unsat
+    case Interpretation.Relation.In1(t1) =>
+      lookupTerm(p, 0) match {
+        case Term.Constant(v) => if (relation1.has(p.name, v)) Model.Sat(env) else Model.Unsat
+        case Term.Variable(s) => Model.Sat(relation1.get(p.name) map (v => env + (s -> v)))
+        case _ => ???
+      }
     case _ => ???
   }
+
+  /**
+   * Returns the value of the variable with the given `index` in the given predicate `p`.
+   */
+  def lookupTerm(p: Predicate, index: Int): Term = p.terms.lift(index) match {
+    case None => throw new Error.ArityMismatch(p, index)
+    case Some(t) => t
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Satisfy                                                                 //
+  /////////////////////////////////////////////////////////////////////////////
 
   /**
    * Satisfies the given predicate `p` under the given interpretations `inv` and environment `env`.
@@ -167,18 +200,24 @@ class Solver(p: Program) {
     case _ => ??? // TODO: What about destructors?
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Satisfy                                                                 //
+  /////////////////////////////////////////////////////////////////////////////
 
-  /**
-   * Enqueues all depedencies of the given predicate with the given environment.
-   */
-  def propagate(p: Predicate, env: Map[Int, Value]): Unit = {
-    // TODO: Need binding ...
-    for (h <- dependencies.get(p.name)) {
-      queue.enqueue((h, ???))
+  sealed trait Model
+
+  object Model {
+
+    case object Unsat extends Model
+
+    object Sat {
+      def apply(env: Map[Symbol, Value]): Sat = Sat(Set(env))
     }
+
+    case class Sat(envs: Set[Map[Symbol, Value]]) extends Model
+
+    // TODO: Sooo..what about the empty set of envs?
+
   }
-
-
-  def bind(p: Predicate, env: Map[Int, Value]): Map[Symbol, Value] = ???
 
 }
