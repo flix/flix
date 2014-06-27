@@ -15,7 +15,7 @@ trait MultiMap4[K1, K2, K3, K4, V] extends Traversable[(K1, K2, K3, K4, Set[V])]
   def get(k1: K1, k2: K2, k3: K3, k4: K4): Set[V];
   def has(k1: K1, k2: K2, k3: K3, k4: K4, v: V): Boolean;
   def hasNot(k1: K1, k2: K2, k3: K3, k4: K4, v: V): Boolean;
-  def put(k1: K1, k2: K2, k3: K3, k4: K4, v: V): Unit;
+  def put(k1: K1, k2: K2, k3: K3, k4: K4, v: V): Boolean;
   def remove(k1: K1, k2: K2, k3: K3, k4: K4, v: V): Unit;
   def tuples: Traversable[(K1, K2, K3, K4, V)];
 }

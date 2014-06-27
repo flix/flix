@@ -13,7 +13,6 @@ sealed trait Term {
     case Term.Destructor3(name, t1, t2, t3) => t1.isConst && t2.isConst && t3.isConst
     case Term.Destructor4(name, t1, t2, t3, t4) => t1.isConst && t2.isConst && t3.isConst && t4.isConst
     case Term.Destructor5(name, t1, t2, t3, t4, t5) => t1.isConst && t2.isConst && t3.isConst && t4.isConst && t5.isConst
-      // TODO: Should these not rather be called constructors?
   }
 }
 

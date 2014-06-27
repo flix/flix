@@ -15,7 +15,7 @@ trait MultiMap1[K1, V] extends Traversable[(K1, Set[V])] {
   def has(k1: K1, v: V): Boolean;
   def hasNot(k1: K1, v: V): Boolean;
   def get(k1: K1): Set[V];
-  def put(k1: K1, v: V): Unit;
+  def put(k1: K1, v: V): Boolean;
   def remove(k1: K1, v: V): Unit;
   def tuples: Traversable[(K1, V)];
 }

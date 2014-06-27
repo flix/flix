@@ -12,8 +12,13 @@ final class HashMultiMap5[K1, K2, K3, K4, K5, V](m: Map5[K1, K2, K3, K4, K5, Set
 
   def hasNot(k1: K1, k2: K2, k3: K3, k4: K4, k5: K5, v: V): Boolean = !has(k1, k2, k3, k4, k5, v);
 
-  def put(k1: K1, k2: K2, k3: K3, k4: K4, k5: K5, v: V) {
-    m.put(k1, k2, k3, k4, k5, get(k1, k2, k3, k4, k5) + v);
+  def put(k1: K1, k2: K2, k3: K3, k4: K4, k5: K5, v: V): Boolean = {
+    val vs = get(k1, k2, k3, k4, k5)
+    if (!(vs contains v)) {
+      m.put(k1, k2, k3, k4, k5, vs + v)
+      return true
+    }
+    false
   }
 
   def remove(k1: K1, k2: K2, k3: K3, k4: K4, k5: K5, v: V): Unit = {

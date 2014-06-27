@@ -12,8 +12,13 @@ final class HashMultiMap1[K1, V](m: Map1[K1, Set[V]] = Map1.empty[K1, Set[V]]) e
 
   def get(k: K1): Set[V] = m.getOrElse(k)(Set.empty);
 
-  def put(k: K1, v: V): Unit = {
-    m.put(k, get(k) + v)
+  def put(k: K1, v: V): Boolean = {
+    val vs = get(k)
+    if (!(vs contains v)) {
+      m.put(k, vs + v)
+      return true
+    }
+    false
   }
 
   def remove(k1: K1, v: V): Unit = m.get(k1) match {

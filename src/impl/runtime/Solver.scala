@@ -58,6 +58,8 @@ class Solver(p: Program) {
     ???
   }
 
+  // TODO: Binding variables to values... for solving
+
 
   /**
    * Evaluates the given horn clause `h` under the given interpretations `inv` and environment `env`.
@@ -83,6 +85,7 @@ class Solver(p: Program) {
     case Interpretation.Proposition(Value.Bool(true)) => true;
     case Interpretation.Proposition(Value.Bool(false)) => false;
     case Interpretation.Relation.In1(t1) => ???
+    case _ => ???
   }
 
   /**
@@ -90,17 +93,44 @@ class Solver(p: Program) {
    */
   def satisfy(p: Predicate, i: Interpretation, env: Map[Symbol, Value]): Unit = i match {
     case Interpretation.Relation.In1(t1) =>
-      val v = lookupValue(0, p, env)
-      val vs = relation1.get(p.name)
-      if (!(vs contains v)) {
-        relation1.put(p.name, v)
-        propagate(p.name, v)
-      }
+      val v = lookupValue(p, 0, env)
+      val newFact = relation1.put(p.name, v)
+      if (newFact)
+        propagate()
 
-    case Interpretation.Relation.In2(t1, t2) => ???
-    case Interpretation.Relation.In3(t1, t2, t3) => ???
-    case Interpretation.Relation.In4(t1, t2, t3, t4) => ???
-    case Interpretation.Relation.In5(t1, t2, t3, t4, t5) => ???
+    case Interpretation.Relation.In2(t1, t2) =>
+      val k1 = lookupValue(p, 0, env)
+      val v = lookupValue(p, 1, env)
+      val newFact = relation2.put(p.name, k1, v)
+      if (newFact)
+        propagate()
+
+    case Interpretation.Relation.In3(t1, t2, t3) =>
+      val k1 = lookupValue(p, 0, env)
+      val k2 = lookupValue(p, 1, env)
+      val v = lookupValue(p, 2, env)
+      val newFact = relation3.put(p.name, k1, k2, v)
+      if (newFact)
+        propagate()
+
+    case Interpretation.Relation.In4(t1, t2, t3, t4) =>
+      val k1 = lookupValue(p, 0, env)
+      val k2 = lookupValue(p, 1, env)
+      val k3 = lookupValue(p, 2, env)
+      val v = lookupValue(p, 3, env)
+      val newFact = relation4.put(p.name, k1, k2, k3, v)
+      if (newFact)
+        propagate()
+
+    case Interpretation.Relation.In5(t1, t2, t3, t4, t5) =>
+      val k1 = lookupValue(p, 0, env)
+      val k2 = lookupValue(p, 1, env)
+      val k3 = lookupValue(p, 2, env)
+      val k4 = lookupValue(p, 3, env)
+      val v = lookupValue(p, 4, env)
+      val newFact = relation5.put(p.name, k1, k2, k3, k4, v)
+      if (newFact)
+        propagate()
 
     case Interpretation.Map.Leq1(t1) => ???
     case Interpretation.Map.Leq2(t1, t2) => ???
@@ -111,17 +141,24 @@ class Solver(p: Program) {
     case _ => throw new Error.UnableToSatisfyPredicate(p)
   }
 
+  /**
+   * Returns the value of the variable with the given `index` in the given predicate `p`.
+   */
+  def lookupValue(p: Predicate, index: Int, env: Map[Symbol, Value]): Value = p.terms.lift(index) match {
+    case None => throw new Error.ArityMismatch(p, index)
+    case Some(Term.Constant(v)) => v
+    case Some(Term.Variable(s)) => env.get(s) match {
+      case None => throw new Error.UnboundVariable(s)
+      case Some(v) => v
+    }
+    case _ => ??? // TODO: What about destructors?
+  }
 
-  // TODO:Carefull about free variables.
-  def lookupValue(index: Int, p: Predicate, env: Map[Symbol, Value]): Value = ???
 
 
-  // TODO: Binding variables to values... for solving
 
-  // TODO: Type binding for verification.
-
-  def propagate(name: Symbol, v: Value): Unit = {
-
+  def propagate(): Unit = {
+    //iterate through deps.
   }
 
 }

@@ -6,6 +6,7 @@ object Property {
   // TODO: Extract Leq symbol from the clause.
   // TODO: Need more than horn clauses???
   // TODO: Flatten?
+  // TODO: Type binding for verification.
 
 
   def fresh(t: Type): Term.Variable = ???
@@ -15,7 +16,7 @@ object Property {
   /**
    * Function: ∀x, y. x = y => f(x) = f(y).
    */
-  def function(): Formula = ???
+  def function(env: Map[Symbol, Type]): Formula = ???
 
   /**
    * Reflexivity: ∀x. x ⊑ x
