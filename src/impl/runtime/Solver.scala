@@ -50,12 +50,12 @@ class Solver(p: Program) {
    */
   def solve(): Unit = {
 
-    for (f <- p.facts) {
-      val name = f.head.name
-      val terms = f.head.terms
+    // Satisfy all facts.
+    for (h <- p.facts) {
+      satisfy(h.head, p.interpretation, Map.empty[Symbol, Value])
     }
 
-
+    // Fixpoint computation.
     while (queue.nonEmpty) {
 
     }
@@ -91,6 +91,14 @@ class Solver(p: Program) {
     case Interpretation.Proposition(Value.Bool(false)) => false;
     case Interpretation.Relation.In1(t1) => ???
     case _ => ???
+  }
+
+  /**
+   * Satisfies the given predicate `p` under the given interpretations `inv` and environment `env`.
+   */
+  def satisfy(p: Predicate, inv: Map[Symbol, Interpretation], env: Map[Symbol, Value]): Unit = inv.get(p.name) match {
+    case None => throw new Error.UnknownInterpretation(p.name)
+    case Some(i) => satisfy(p, i, env)
   }
 
   /**
@@ -169,5 +177,8 @@ class Solver(p: Program) {
       queue.enqueue((h, ???))
     }
   }
+
+
+  def bind(p: Predicate, env: Map[Int, Value]): Map[Symbol, Value] = ???
 
 }
