@@ -1,4 +1,4 @@
-package mutable
+package util.collection.mutable
 
 /**
  * Companion object for classes implementing [[Map2]].
@@ -8,7 +8,7 @@ object Map2 {
 }
 
 /**
- * Interface for mutable maps with two keys.
+ * Interface for util.collection.mutable maps with two keys.
  */
 trait Map2[K1, K2, V] extends Traversable[(K1, K2, V)] {
   def keys: Set[K1];

@@ -1,1 +1,0 @@
-case class Lattice(equal: (SymTerm.Var, SymTerm.Var) => SmtTerm, order: (SymTerm.Var, SymTerm.Var) => SmtTerm);

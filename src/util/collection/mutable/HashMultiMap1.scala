@@ -1,7 +1,7 @@
-package mutable
+package util.collection.mutable
 
 /**
- * A mutable multi map with one key backed by a [[java.util.HashMap]].
+ * A util.collection.mutable multi map with one key backed by a [[java.util.HashMap]].
  */
 final class HashMultiMap1[K1, V](m: Map1[K1, Set[V]] = Map1.empty[K1, Set[V]]) extends MultiMap1[K1, V] {
   def keys: Traversable[K1] = m.keys;

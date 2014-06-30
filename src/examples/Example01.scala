@@ -1,6 +1,6 @@
-package impl
+package examples
 
-import impl.runtime.Solver
+import impl._
 
 object Example01 {
 

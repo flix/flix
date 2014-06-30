@@ -1,4 +1,4 @@
-package mutable
+package util.collection.mutable
 
 /**
  * Companion object for classes implementing [[Map5]].
@@ -8,7 +8,7 @@ object Map5 {
 }
 
 /**
- * Interface for immutable and mutable maps with five keys.
+ * Interface for immutable and util.collection.mutable maps with five keys.
  */
 trait Map5[K1, K2, K3, K4, K5, V] extends Traversable[(K1, K2, K3, K4, K5, V)] {
   def keys: Set[K1];

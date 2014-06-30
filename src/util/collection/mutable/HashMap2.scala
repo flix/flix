@@ -1,9 +1,9 @@
-package mutable
+package util.collection.mutable
 
 import scala.collection.{immutable, mutable}
 
 /**
- * A mutable map with two keys backed by a [[scala.collection.mutable.Map]].
+ * A util.collection.mutable map with two keys backed by a [[scala.collection.mutable.Map]].
  */
 final class HashMap2[K1, K2, V](m: mutable.Map[K1, mutable.Map[K2, V]] = mutable.Map.empty[K1, mutable.Map[K2, V]]) extends Map2[K1, K2, V] {
   def keys: Set[K1] = m.keySet.toSet;

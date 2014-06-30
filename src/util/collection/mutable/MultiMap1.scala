@@ -1,4 +1,4 @@
-package mutable
+package util.collection.mutable
 
 /**
  * Companion object for classes implementing [[MultiMap1]].
@@ -8,7 +8,7 @@ object MultiMap1 {
 }
 
 /**
- * Interface for mutable multi map with one key.
+ * Interface for util.collection.mutable multi map with one key.
  */
 trait MultiMap1[K1, V] extends Traversable[(K1, Set[V])] {
   def keys: Traversable[K1];

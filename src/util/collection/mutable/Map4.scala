@@ -1,4 +1,4 @@
-package mutable
+package util.collection.mutable
 
 
 /**
@@ -9,7 +9,7 @@ object Map4 {
 }
 
 /**
- * Interface for mutable maps with four keys.
+ * Interface for util.collection.mutable maps with four keys.
  */
 trait Map4[K1, K2, K3, K4, V] extends Traversable[(K1, K2, K3, K4, V)] {
   def keys: Set[K1];

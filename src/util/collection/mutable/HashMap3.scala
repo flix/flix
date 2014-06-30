@@ -1,10 +1,10 @@
-package mutable
+package util.collection.mutable
 
 
 import scala.collection.{immutable, mutable}
 
 /**
- * A mutable map with three keys backed by [[scala.collection.mutable.Map]] and [[Map2]].
+ * A util.collection.mutable map with three keys backed by [[scala.collection.mutable.Map]] and [[Map2]].
  */
 final class HashMap3[K1, K2, K3, V](m: mutable.Map[K1, Map2[K2, K3, V]] = mutable.Map.empty[K1, Map2[K2, K3, V]]) extends Map3[K1, K2, K3, V] {
   def keys: Set[K1] = m.keySet.toSet;

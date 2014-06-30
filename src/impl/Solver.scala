@@ -1,6 +1,6 @@
-package impl.runtime
+package impl
 
-import impl._
+import util.collection.mutable
 
 /**
  * A semi-naive solver.

@@ -1,6 +1,4 @@
-package impl.runtime
-
-import impl.{Term, Program}
+package impl
 
 import scala.util.Try
 

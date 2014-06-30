@@ -1,7 +1,7 @@
-package mutable
+package util.collection.mutable
 
 /**
- * A mutable multi map with two keys backed by a [[Map2]].
+ * A util.collection.mutable multi map with two keys backed by a [[Map2]].
  */
 final class HashMultiMap2[K1, K2, V](m: Map2[K1, K2, Set[V]] = Map2.empty[K1, K2, Set[V]]) extends MultiMap2[K1, K2, V] {
   def keys: Traversable[K1] = m.keys;
