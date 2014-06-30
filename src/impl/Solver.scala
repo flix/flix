@@ -241,38 +241,30 @@ class Solver(program: Program) {
    * Returns the value of the variable with the given `index` in the given predicate `p`.
    */
   def lookupValue(p: Predicate, index: Int, env: Map[Symbol, Value]): Value = p.terms.lift(index) match {
-    // TODO: Use getValue
-    case None => throw new Error.ArityMismatch(p, index)
-    case Some(Term.Constant(v)) => v
-    case Some(Term.Variable(s)) => env.get(s) match {
-      case None => throw new Error.UnboundVariable(s)
-      case Some(v) => v
-    }
-    case Some(Term.Constructor1(s, t1)) => ???
-    case Some(t) => throw new Error.NonValueTerm(t)
+    case None => throw new Error.PredicateArityMismatch(p, index)
+    case Some(t) => substitute(t, env)
   }
 
   /**
    * Returns the term of the variable with the given `index` in the given predicate `p`.
    */
   def lookupTerm(p: Predicate, index: Int): Term = p.terms.lift(index) match {
-    case None => throw new Error.ArityMismatch(p, index)
+    case None => throw new Error.PredicateArityMismatch(p, index)
     case Some(t) => t
   }
-
 
   /**
    * Returns the value of the given term `t` obtained by replacing all free variables in `t` with their corresponding values from the given environment `env`.
    */
-  def getValue(t: Term, env: Map[Symbol, Value]): Value = t match {
+  def substitute(t: Term, env: Map[Symbol, Value]): Value = t match {
     case Term.Constant(v) => v
     case Term.Variable(s) => env.getOrElse(s, throw new Error.UnboundVariable(s))
     case Term.Constructor0(s) => Value.Constructor0(s)
-    case Term.Constructor1(s, t1) => Value.Constructor1(s, getValue(t1, env))
-    case Term.Constructor2(s, t1, t2) => Value.Constructor2(s, getValue(t1, env), getValue(t2, env))
-    case Term.Constructor3(s, t1, t2, t3) => Value.Constructor3(s, getValue(t1, env), getValue(t2, env), getValue(t3, env))
-    case Term.Constructor4(s, t1, t2, t3, t4) => Value.Constructor4(s, getValue(t1, env), getValue(t2, env), getValue(t3, env), getValue(t4, env))
-    case Term.Constructor5(s, t1, t2, t3, t4, t5) => Value.Constructor5(s, getValue(t1, env), getValue(t2, env), getValue(t3, env), getValue(t4, env), getValue(t5, env))
+    case Term.Constructor1(s, t1) => Value.Constructor1(s, substitute(t1, env))
+    case Term.Constructor2(s, t1, t2) => Value.Constructor2(s, substitute(t1, env), substitute(t2, env))
+    case Term.Constructor3(s, t1, t2, t3) => Value.Constructor3(s, substitute(t1, env), substitute(t2, env), substitute(t3, env))
+    case Term.Constructor4(s, t1, t2, t3, t4) => Value.Constructor4(s, substitute(t1, env), substitute(t2, env), substitute(t3, env), substitute(t4, env))
+    case Term.Constructor5(s, t1, t2, t3, t4, t5) => Value.Constructor5(s, substitute(t1, env), substitute(t2, env), substitute(t3, env), substitute(t4, env), substitute(t5, env))
   }
 
 

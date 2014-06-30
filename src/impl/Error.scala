@@ -8,7 +8,7 @@ object Error {
 
   case class NonRelationalPredicate(p: Predicate) extends RuntimeException
 
-  case class ArityMismatch(p: Predicate, i: Int) extends RuntimeException
+  case class PredicateArityMismatch(p: Predicate, index: Int) extends RuntimeException
 
   case class UnboundVariable(v: Symbol) extends RuntimeException
 
