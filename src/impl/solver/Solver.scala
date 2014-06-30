@@ -287,8 +287,14 @@ class Solver(program: Program) {
 
 
   // TODO: Need substitute for terms.
-// TODO: Try substitute Eiter[Value, Term]
+  // TODO: Try substitute Eiter[Value, Term]
 
+  def sub(t: Term, env: Map[VSym, Value]): Either[Term, Value] = t match {
+    case Term.Constructor2(s, t1, t2) =>
+      val k1 = sub(t1, env)
+
+      ???
+  }
 
 
   /**
