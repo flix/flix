@@ -7,7 +7,7 @@ case class Predicate(name: Symbol, terms: List[Term]) {
   /**
    * Returns `true` iff the predicate is a ground truth, i.e. all terms are constant.
    */
-  def isGround: Boolean = terms forall (_.isConst)
+  def isGround: Boolean = terms forall (_.isConstant)
 
   /**
    * Returns `true` iff the predicate is nullary, i.e. a proposition without any terms.

@@ -6,6 +6,7 @@ object Type {
 
   // TODO: Bounded vs. Unbounded types?
   // TODO: Allow nested relations/maps???
+  // TODO: Replace nominal by Constructor0
 
   /**
    * The type of named atoms.

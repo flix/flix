@@ -3,16 +3,21 @@ package impl
 /**
  * A term is either a constant value, a variable or a constructor.
  */
+// TODO: Variables and Predicates should have different symbols.
+
 sealed trait Term {
-  def isConst: Boolean = this match {
+  /**
+   * Returns `true` iff the term has no free variables.
+   */
+  def isConstant: Boolean = this match {
     case Term.Constant(c) => true
     case Term.Variable(v) => false
     case Term.Constructor0(name) => true
-    case Term.Constructor1(name, t1) => t1.isConst
-    case Term.Constructor2(name, t1, t2) => t1.isConst && t2.isConst
-    case Term.Constructor3(name, t1, t2, t3) => t1.isConst && t2.isConst && t3.isConst
-    case Term.Constructor4(name, t1, t2, t3, t4) => t1.isConst && t2.isConst && t3.isConst && t4.isConst
-    case Term.Constructor5(name, t1, t2, t3, t4, t5) => t1.isConst && t2.isConst && t3.isConst && t4.isConst && t5.isConst
+    case Term.Constructor1(name, t1) => t1.isConstant
+    case Term.Constructor2(name, t1, t2) => t1.isConstant && t2.isConstant
+    case Term.Constructor3(name, t1, t2, t3) => t1.isConstant && t2.isConstant && t3.isConstant
+    case Term.Constructor4(name, t1, t2, t3, t4) => t1.isConstant && t2.isConstant && t3.isConstant && t4.isConstant
+    case Term.Constructor5(name, t1, t2, t3, t4, t5) => t1.isConstant && t2.isConstant && t3.isConstant && t4.isConstant && t5.isConstant
   }
 }
 
@@ -28,8 +33,6 @@ case object Term {
    */
   case class Variable(name: Symbol) extends Term
 
-  // TODO: Variables and Predicates should have different symbols.
-  
   /**
    * A null-ary constructor.
    */
