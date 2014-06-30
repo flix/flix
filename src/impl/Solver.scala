@@ -99,7 +99,17 @@ class Solver(program: Program) {
    */
   def evaluate(p: Predicate, i: Interpretation, m: Model): Model = m match {
     case Model.Unsat => Model.Unsat
-    case Model.Sat(envs) => ???
+    case Model.Sat(envs) => {
+
+      val models = envs map (env => evaluate(p,i, env))
+
+     val xs = models.map({
+        case Model.Unsat => Set.empty[Map[Symbol, Value]]
+        case Model.Sat(env) => env
+      }).flatten
+
+      Model.Sat(xs)
+    }
   }
 
 
@@ -115,7 +125,7 @@ class Solver(program: Program) {
         case Term.Variable(s) => Model.Sat(relation1.get(p.name) map (v => env + (s -> v)))
         case _ => ???
       }
-    case _ => ???
+    case _ => throw new RuntimeException(i.toString)
   }
 
 
