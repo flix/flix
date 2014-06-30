@@ -62,7 +62,7 @@ object Property {
     case Type.Integer =>
       // Int(x). Int(y). Int(z). Leq(x, y) ^ Leq(y, z) => Leq(x, z).
       ???
-    case Type.Constructor2(t1, t2) =>
+    case Type.Constructor2(s, t1, t2) =>
       // e.g. intervals.
 
       ???
