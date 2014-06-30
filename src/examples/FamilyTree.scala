@@ -45,6 +45,7 @@ object FamilyTree {
     val interpretations = Map(
       "Parent".asP -> Interpretation.Relation.In2(Type.String, Type.String),
       "Male".asP -> Interpretation.Relation.In1(Type.String),
+      "Female".asP -> Interpretation.Relation.In1(Type.String),
       "MaleGrandParent".asP -> Interpretation.Relation.In2(Type.String, Type.String)
     )
 

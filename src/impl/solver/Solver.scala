@@ -284,7 +284,7 @@ class Solver(program: Program) {
    * Returns the interpretation of the given predicate `p`.
    */
   def interpretationOf(p: Predicate, inv: Map[PSym, Interpretation]): Interpretation = inv.get(p.name) match {
-    case None => throw new Error.UnknownInterpretation(p.name)
+    case None => throw new Error.InterpretationNotFound(p.name)
     case Some(i) => i
   }
 

@@ -6,7 +6,10 @@ trait Error
 
 object Error {
 
-  case class UnknownInterpretation(s: Symbol.PredicateSymbol) extends RuntimeException(s"$s has no interpretation.")
+  /**
+   * An error which represents that the interpretation for predicate symbol `s` is missing.
+   */
+  case class InterpretationNotFound(s: Symbol.PredicateSymbol) extends RuntimeException(s"The interpretation for $s was not found.")
 
   case class NonRelationalPredicate(p: Predicate) extends RuntimeException
 
