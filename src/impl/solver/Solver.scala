@@ -118,6 +118,7 @@ class Solver(program: Program) {
   /**
    * Returns a model for the given predicate `p` with interpretation `i` under the given environment `env`.
    */
+
   def evaluate(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Model = i match {
     case Interpretation.Proposition(Value.Bool(true)) => Model.Sat(env)
     case Interpretation.Proposition(Value.Bool(false)) => Model.Unsat
@@ -126,6 +127,18 @@ class Solver(program: Program) {
         case Term.Constant(v) => if (relation1.has(p.name, v)) Model.Sat(env) else Model.Unsat
         case Term.Variable(s) => Model.Sat(relation1.get(p.name) map (v => env + (s -> v)))
         case _ => ???
+      }
+    case Interpretation.Relation.In2(t1, t2) =>
+      (lookupTerm(p, 0), lookupTerm(p, 1)) match {
+        case (Term.Constant(v1), Term.Constant(v2)) => ???
+        case (Term.Variable(var1), Term.Variable(var2)) =>
+          // TODO: Must take bindings into account.. use substitute...
+          val r = scala.collection.mutable.Set.empty[Map[VSym, Value]]
+          for ((v1, v2) <- relation2.get(p.name).tuples) {
+
+          }
+          ???
+        case _ => throw new RuntimeException(i.toString)
       }
     case _ => throw new RuntimeException(i.toString)
   }
@@ -264,6 +277,8 @@ class Solver(program: Program) {
     case None => throw new Error.PredicateArityMismatch(p, index)
     case Some(t) => t
   }
+
+  // TODO: Need substitute for terms.
 
   /**
    * Returns the value of the given term `t` obtained by replacing all free variables in `t` with their corresponding values from the given environment `env`.
