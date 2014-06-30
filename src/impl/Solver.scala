@@ -262,16 +262,17 @@ class Solver(program: Program) {
 
 
   /**
-   * Returns the value of the given term `t` obtained by replacing all variables in `t`
-   * with their values from the given environment `env`.
+   * Returns the value of the given term `t` obtained by replacing all free variables in `t` with their corresponding values from the given environment `env`.
    */
   def getValue(t: Term, env: Map[Symbol, Value]): Value = t match {
     case Term.Constant(v) => v
     case Term.Variable(s) => env.getOrElse(s, throw new Error.UnboundVariable(s))
+    case Term.Constructor0(s) => Value.Constructor0(s)
     case Term.Constructor1(s, t1) => Value.Constructor1(s, getValue(t1, env))
     case Term.Constructor2(s, t1, t2) => Value.Constructor2(s, getValue(t1, env), getValue(t2, env))
     case Term.Constructor3(s, t1, t2, t3) => Value.Constructor3(s, getValue(t1, env), getValue(t2, env), getValue(t3, env))
-    case _ => ??? // TODO
+    case Term.Constructor4(s, t1, t2, t3, t4) => Value.Constructor4(s, getValue(t1, env), getValue(t2, env), getValue(t3, env), getValue(t4, env))
+    case Term.Constructor5(s, t1, t2, t3, t4, t5) => Value.Constructor5(s, getValue(t1, env), getValue(t2, env), getValue(t3, env), getValue(t4, env), getValue(t5, env))
   }
 
 
