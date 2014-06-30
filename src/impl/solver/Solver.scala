@@ -115,6 +115,10 @@ class Solver(program: Program) {
   }
 
 
+  def unify(term: Term, value: Value): Map[VSym, Value] = ???
+
+  def extend(env1: Map[VSym, Value], env2: Map[VSym, Value]): Map[VSym, Value] = ???
+
   /**
    * Returns a model for the given predicate `p` with interpretation `i` under the given environment `env`.
    */
@@ -125,7 +129,11 @@ class Solver(program: Program) {
       lookupTerm(p, 0) match {
         case Term.Constant(v) => if (relation1.has(p.name, v)) Model.Sat(env) else Model.Unsat
         case Term.Variable(s) => Model.Sat(relation1.get(p.name) map (v => env + (s -> v)))
-        case _ => ???
+        case t =>
+          for (v <- relation1.get(p.name)) {
+            val env2 = unify(t, v)
+          }
+          ???
       }
     case Interpretation.Relation.In2(t1, t2) =>
       (lookupTerm(p, 0), lookupTerm(p, 1)) match {
@@ -262,14 +270,6 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Returns the value of the variable with the given `index` in the given predicate `p`.
-   */
-  def lookupValue(p: Predicate, index: Int, env: Map[VSym, Value]): Value = p.terms.lift(index) match {
-    case None => throw new Error.PredicateArityMismatch(p, index)
-    case Some(t) => substitute(t, env)
-  }
-
-  /**
    * Returns the term of the variable with the given `index` in the given predicate `p`.
    */
   def lookupTerm(p: Predicate, index: Int): Term = p.terms.lift(index) match {
@@ -277,10 +277,24 @@ class Solver(program: Program) {
     case Some(t) => t
   }
 
+  /**
+   * Returns the value of the variable with the given `index` in the given predicate `p`.
+   */
+  def lookupValue(p: Predicate, index: Int, env: Map[VSym, Value]): Value = p.terms.lift(index) match {
+    case None => throw new Error.PredicateArityMismatch(p, index)
+    case Some(t) => substitute(t, env)
+  }
+
+
   // TODO: Need substitute for terms.
+// TODO: Try substitute Eiter[Value, Term]
+
+
 
   /**
    * Returns the value of the given term `t` obtained by replacing all free variables in `t` with their corresponding values from the given environment `env`.
+   *
+   * Throws an exception if a variable is unbound.
    */
   def substitute(t: Term, env: Map[VSym, Value]): Value = t match {
     case Term.Constant(v) => v
