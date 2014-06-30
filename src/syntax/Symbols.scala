@@ -2,6 +2,8 @@ package syntax
 
 import impl.logic.{PredicateSymbol, VariableSymbol}
 
+import scala.language.implicitConversions
+
 /**
  * Embedded DSL syntax for symbols.
  */
@@ -21,12 +23,12 @@ object Symbols {
     /**
      * Explicitely converts a string to a predicate symbol.
      */
-    def p: PredicateSymbol = PredicateSymbol(s)
+    def asP: PredicateSymbol = PredicateSymbol(s)
 
     /**
      * Explicitely converts a string to a variable symbol.
      */
-    def v: VariableSymbol = VariableSymbol(s)
+    def asVar: VariableSymbol = VariableSymbol(s)
   }
 
 }
