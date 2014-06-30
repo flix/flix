@@ -1,6 +1,6 @@
 package impl
 
-import impl.logic.{Term, Value, Formula}
+import impl.logic.{Type, Term, Value, Formula}
 
 import syntax.Symbols._
 
@@ -59,17 +59,7 @@ object Property {
   /**
    * Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
    */
-  def transitivity(lattice: Type.Lattice): Set[HornClause] = lattice.elms match {
-    case Type.Nominal(symbol) => ???
-    case Type.Integer =>
-      // Int(x). Int(y). Int(z). Leq(x, y) ^ Leq(y, z) => Leq(x, z).
-      ???
-    case Type.Constructor2(s, t1, t2) =>
-      // e.g. intervals.
-
-      ???
-    case _ => ???
-  }
+  def transitivity(lattice: Type.Lattice): Set[HornClause] = ???
 
   /**
    * ∀x. ⊥ ⊑ x.

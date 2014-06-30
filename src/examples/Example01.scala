@@ -1,7 +1,7 @@
 package examples
 
 import impl._
-import impl.logic.{Term, Value}
+import impl.logic.{Term, Type, Value}
 import syntax.Symbols._
 
 object Example01 {
@@ -119,16 +119,16 @@ object Example01 {
       HornClause(Predicate("New".asP, List(Term.Constant(Value.Int(0)), Term.Constant(Value.Int(1)))), Set.empty)
     )
 
-    val VariableType = Type.Nominal('VariableT)
-    val FieldType = Type.Nominal('FieldType)
-    val ObjectType = Type.Nominal('ObjectType)
+    val VariableType = Type.Constructor0("VariableT")
+    val FieldType = Type.Constructor0("FieldType")
+    val ObjectType = Type.Constructor0("ObjectType")
 
-    val SignType = Type.Variant(Map(
-      'BotTag -> Type.Nominal('Bot),
-      'TopTag -> Type.Nominal('Top),
-      'NegTag -> Type.Nominal('Neg),
-      'ZeroTag -> Type.Nominal('Zero),
-      'PosTag -> Type.Nominal('Pos)
+    val SignType = Type.Variant(IndexedSeq(
+      Type.Constructor0("Bot"),
+      Type.Constructor0("Top"),
+      Type.Constructor0("Neg"),
+      Type.Constructor0("Zero"),
+      Type.Constructor0("Pos")
     ))
 
     // Lattice
