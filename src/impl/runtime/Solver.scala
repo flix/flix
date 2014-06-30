@@ -1,7 +1,6 @@
 package impl.runtime
 
 import impl._
-import impl.util.collection.mutable
 
 /**
  * A semi-naive solver.
@@ -65,6 +64,8 @@ class Solver(program: Program) {
 
   /**
    * Try to satisfy
+   *
+   * Adds all facts which satisfies the given horn clause `h`.
    */
   def resolve(h: HornClause, inv: Map[Symbol, Interpretation], env: Map[Symbol, Value]): Unit = evaluate(h, inv, env) match {
     case Model.Unsat => // nop
@@ -235,6 +236,22 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
   // Utilities                                                               //
   /////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Returns the value of the variable with the given `index` in the given predicate `p`.
+   */
+  def lookupValue(p: Predicate, index: Int, env: Map[Symbol, Value]): Value = p.terms.lift(index) match {
+    // TODO: Use getValue
+    case None => throw new Error.ArityMismatch(p, index)
+    case Some(Term.Constant(v)) => v
+    case Some(Term.Variable(s)) => env.get(s) match {
+      case None => throw new Error.UnboundVariable(s)
+      case Some(v) => v
+    }
+    case Some(Term.Constructor1(s, t1)) => ???
+    case Some(t) => throw new Error.NonValueTerm(t)
+  }
+
   /**
    * Returns the term of the variable with the given `index` in the given predicate `p`.
    */
@@ -243,17 +260,18 @@ class Solver(program: Program) {
     case Some(t) => t
   }
 
+
   /**
-   * Returns the value of the variable with the given `index` in the given predicate `p`.
+   * Returns the value of the given term `t` obtained by replacing all variables in `t`
+   * with their values from the given environment `env`.
    */
-  def lookupValue(p: Predicate, index: Int, env: Map[Symbol, Value]): Value = p.terms.lift(index) match {
-    case None => throw new Error.ArityMismatch(p, index)
-    case Some(Term.Constant(v)) => v
-    case Some(Term.Variable(s)) => env.get(s) match {
-      case None => throw new Error.UnboundVariable(s)
-      case Some(v) => v
-    }
-    case Some(t) => throw new Error.NonValueTerm(t)
+  def getValue(t: Term, env: Map[Symbol, Value]): Value = t match {
+    case Term.Constant(v) => v
+    case Term.Variable(s) => env.getOrElse(s, throw new Error.UnboundVariable(s))
+    case Term.Constructor1(s, t1) => Value.Constructor1(s, getValue(t1, env))
+    case Term.Constructor2(s, t1, t2) => Value.Constructor2(s, getValue(t1, env), getValue(t2, env))
+    case Term.Constructor3(s, t1, t2, t3) => Value.Constructor3(s, getValue(t1, env), getValue(t2, env), getValue(t3, env))
+    case _ => ??? // TODO
   }
 
 
@@ -268,6 +286,7 @@ class Solver(program: Program) {
   /**
    * Returns `true` iff the given interpretation `i` is relational.
    */
+  //TODO: Move
   private def isRelational(i: Interpretation): Boolean = i match {
     case _: Interpretation.Relation.In1 => true
     case _: Interpretation.Relation.In2 => true

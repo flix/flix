@@ -1,4 +1,4 @@
-package impl.util.collection.mutable
+package mutable
 
 /**
  * Companion object for classes implementing [[Map1]].

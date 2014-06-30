@@ -73,8 +73,8 @@ object Example01 {
     // Sign.Sum(_, Top, Top).
 
     val Sum = Set(
-      HornClause(Predicate('Sum, List(Term.Destructor0('Bot), Term.Variable('_), Term.Destructor0('Bot))), Set.empty),
-      HornClause(Predicate('Sum, List(Term.Variable('_), Term.Destructor0('Bot), Term.Destructor0('Bot))), Set.empty)
+      HornClause(Predicate('Sum, List(Term.Constructor0('Bot), Term.Variable('_), Term.Constructor0('Bot))), Set.empty),
+      HornClause(Predicate('Sum, List(Term.Variable('_), Term.Constructor0('Bot), Term.Constructor0('Bot))), Set.empty)
     )
 
     val clauses = Set(

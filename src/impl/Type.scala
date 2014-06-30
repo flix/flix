@@ -37,6 +37,8 @@ object Type {
    */
   case class Lattice(elms: Type, bot: Value, order: Set[HornClause], join: Set[HornClause]) extends Type
 
+  // TODO: Constructors needs to be named.
+
   /**
    * The type of null-ary constructors.
    */

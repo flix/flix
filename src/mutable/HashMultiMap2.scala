@@ -1,4 +1,4 @@
-package impl.util.collection.mutable
+package mutable
 
 /**
  * A mutable multi map with two keys backed by a [[Map2]].

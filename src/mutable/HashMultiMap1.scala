@@ -1,4 +1,4 @@
-package impl.util.collection.mutable
+package mutable
 
 /**
  * A mutable multi map with one key backed by a [[java.util.HashMap]].
