@@ -295,6 +295,15 @@ class Solver(program: Program) {
 
       ???
   }
+
+  def asVal(t: Term): Option[Value] = t match {
+    case Term.Constructor3(s, t1, t2, t3) =>
+      for (v1 <- asVal(t1);
+           v2 <- asVal(t2);
+           v3 <- asVal(t3))
+      yield Value.Constructor3(s, v1, v2, v3)
+  }
+
   // TODO: Use multiple visitors? One of type t -> Option[Value] and one of t -> Term
 
 
