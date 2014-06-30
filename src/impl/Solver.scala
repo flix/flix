@@ -83,7 +83,7 @@ class Solver(program: Program) {
    * Returns a satisfiable model of the given horn clause `h` with interpretations `inv` under the given environment `env`.
    */
   def evaluate(h: HornClause, inv: Map[Symbol, Interpretation], env: Map[Symbol, Value]): Model = {
-    val relationals = h.body filter (p => isRelational(interpretationOf(p, inv)))
+    val relationals = h.body filter (p => isRelational(p, inv))
     val functionals = h.body -- relationals
 
     val init = Model.Sat(env)
@@ -101,9 +101,9 @@ class Solver(program: Program) {
     case Model.Unsat => Model.Unsat
     case Model.Sat(envs) => {
 
-      val models = envs map (env => evaluate(p,i, env))
+      val models = envs map (env => evaluate(p, i, env))
 
-     val xs = models.map({
+      val xs = models.map({
         case Model.Unsat => Set.empty[Map[Symbol, Value]]
         case Model.Sat(env) => env
       }).flatten
@@ -287,10 +287,9 @@ class Solver(program: Program) {
   }
 
   /**
-   * Returns `true` iff the given interpretation `i` is relational.
+   * Returns `true` iff the given predicate `p` is relational under the given interpretations `inv`.
    */
-  //TODO: Move
-  private def isRelational(i: Interpretation): Boolean = i match {
+  private def isRelational(p: Predicate, inv: Map[Symbol, Interpretation]): Boolean = interpretationOf(p, inv) match {
     case _: Interpretation.Relation.In1 => true
     case _: Interpretation.Relation.In2 => true
     case _: Interpretation.Relation.In3 => true
