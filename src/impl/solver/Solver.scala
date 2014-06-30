@@ -107,7 +107,7 @@ class Solver(program: Program) {
 
       val xs = models.map({
         case Model.Unsat => Set.empty[Map[VSym, Value]]
-        case Model.Sat(env) => env
+        case Model.Sat(env) => env // TODO: Call evaluate
       }).flatten
 
       Model.Sat(xs)
@@ -118,7 +118,6 @@ class Solver(program: Program) {
   /**
    * Returns a model for the given predicate `p` with interpretation `i` under the given environment `env`.
    */
-
   def evaluate(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Model = i match {
     case Interpretation.Proposition(Value.Bool(true)) => Model.Sat(env)
     case Interpretation.Proposition(Value.Bool(false)) => Model.Unsat
