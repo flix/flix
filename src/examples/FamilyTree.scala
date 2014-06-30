@@ -3,6 +3,7 @@ package examples
 import impl.logic._
 import impl.solver.Solver
 import syntax.Symbols._
+import util.output.StringFormat
 
 object FamilyTree {
   def main(args: Array[String]): Unit = {
@@ -51,9 +52,9 @@ object FamilyTree {
 
     val program = Program(facts ++ clauses, interpretations)
 
+    println(StringFormat.format(program))
+
     val solver = new Solver(program)
     solver.solve()
-
-
   }
 }

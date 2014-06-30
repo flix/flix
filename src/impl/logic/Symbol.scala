@@ -1,6 +1,6 @@
 package impl.logic
 
-trait Symbol
+sealed trait Symbol
 
 object Symbol {
 
