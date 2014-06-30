@@ -1,6 +1,6 @@
 package impl
 
-import impl.logic.Symbol
+import impl.logic.{Term, Symbol}
 
 /**
  * A predicate consists of a predicate symbol and a list of terms.

@@ -1,5 +1,7 @@
 package impl
 
+import impl.logic.Term
+
 trait Error
 
 object Error {

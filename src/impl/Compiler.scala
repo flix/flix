@@ -1,5 +1,7 @@
 package impl
 
+import impl.logic.Term
+
 import scala.util.Try
 
 class Compiler(p: Program) {

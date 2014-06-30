@@ -1,6 +1,7 @@
 package impl
 
 import impl.logic.Symbol.{PredicateSymbol => PSym}
+import impl.logic.{Term, Value}
 import util.collection.mutable
 
 /**

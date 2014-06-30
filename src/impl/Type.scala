@@ -1,5 +1,7 @@
 package impl
 
+import impl.logic.Value
+
 sealed trait Type
 
 object Type {

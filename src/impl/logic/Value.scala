@@ -1,4 +1,4 @@
-package impl
+package impl.logic
 
 trait Value
 
@@ -22,31 +22,31 @@ object Value {
   /**
    * A null-ary constructor value.
    */
-  case class Constructor0(name: Symbol) extends Value
+  case class Constructor0(name: scala.Symbol) extends Value
 
   /**
    * A 1-ary constructor value.
    */
-  case class Constructor1(name: Symbol, a1: Value) extends Value
+  case class Constructor1(name: scala.Symbol, a1: Value) extends Value
 
   /**
    * A 2-ary constructor value.
    */
-  case class Constructor2(name: Symbol, a1: Value, a2: Value) extends Value
+  case class Constructor2(name: scala.Symbol, a1: Value, a2: Value) extends Value
 
   /**
    * A 3-ary constructor value.
    */
-  case class Constructor3(name: Symbol, a1: Value, a2: Value, a3: Value) extends Value
+  case class Constructor3(name: scala.Symbol, a1: Value, a2: Value, a3: Value) extends Value
 
   /**
    * A 4-ary constructor value.
    */
-  case class Constructor4(name: Symbol, a1: Value, a2: Value, a3: Value, a4: Value) extends Value
+  case class Constructor4(name: scala.Symbol, a1: Value, a2: Value, a3: Value, a4: Value) extends Value
 
   /**
    * A 5-ary constructor value.
    */
-  case class Constructor5(name: Symbol, a1: Value, a2: Value, a3: Value, a4: Value, a5: Value) extends Value
+  case class Constructor5(name: scala.Symbol, a1: Value, a2: Value, a3: Value, a4: Value, a5: Value) extends Value
 
 }

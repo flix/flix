@@ -1,11 +1,12 @@
 package examples
 
 import impl._
+import impl.logic.{Term, Value}
 import syntax.Symbols._
 
 object Example01 {
 
-  import impl.Term._
+  import Term._
 
   def main(args: Array[String]): Unit = {
 
