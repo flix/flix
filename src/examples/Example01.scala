@@ -6,7 +6,7 @@ import syntax.Symbols._
 
 object Example01 {
 
-  import Term._
+  import impl.logic.Term._
 
   def main(args: Array[String]): Unit = {
 
@@ -75,43 +75,43 @@ object Example01 {
     // Sign.Sum(_, Top, Top).
 
     val Sum = Set(
-      HornClause(Predicate("Sum".asP, List(Term.Constructor0('Bot), Term.Variable('_), Term.Constructor0('Bot))), Set.empty),
-      HornClause(Predicate("Sum".asP, List(Term.Variable('_), Term.Constructor0('Bot), Term.Constructor0('Bot))), Set.empty)
+      HornClause(Predicate("Sum".asP, List(Term.Constructor0("Bot"), Term.Variable("_"), Term.Constructor0("Bot"))), Set.empty),
+      HornClause(Predicate("Sum".asP, List(Term.Variable("_"), Term.Constructor0("Bot"), Term.Constructor0("Bot"))), Set.empty)
     )
 
     val clauses = Set(
       // Constraint VarPointsTo(var, obj) :-
       //   New(var, obj).
-      HornClause(Predicate("VarPointsTo".asP, List(Variable('var), Variable('obj))), Set(
-        Predicate("New".asP, List(Variable('var), Variable('obj)))
+      HornClause(Predicate("VarPointsTo".asP, List(Variable("var"), Variable("obj"))), Set(
+        Predicate("New".asP, List(Variable("var"), Variable("obj")))
       )),
 
       // Constraint VarPointsTo(var1, value) :-
       //   Assign(var1, var2),
       //   VarPointsTo(var2, value).
-      HornClause(Predicate("VarPointsTo".asP, List(Variable('var1), Variable('value))), Set(
-        Predicate("Assign".asP, List(Variable('var1), Variable('var2))),
-        Predicate("VarPointsTo".asP, List(Variable('var2), Variable('value)))
+      HornClause(Predicate("VarPointsTo".asP, List(Variable("var1"), Variable("value"))), Set(
+        Predicate("Assign".asP, List(Variable("var1"), Variable("var2"))),
+        Predicate("VarPointsTo".asP, List(Variable("var2"), Variable("value")))
       )),
 
       // Constraint VarPointsTo(var1, value) :-
       //   Load(var1, var2, field),
       //   VarPointsTo(var2, base),
       //   HeapPointsTo(base, field, value).
-      HornClause(Predicate("VarPointsTo".asP, List(Variable('var1), Variable('value))), Set(
-        Predicate("Load".asP, List(Variable('var1), Variable('var2), Variable('field))),
-        Predicate("VarPointsTo".asP, List(Variable('var2), Variable('base))),
-        Predicate("HeapPointsTo".asP, List(Variable('base), Variable('field), Variable('value)))
+      HornClause(Predicate("VarPointsTo".asP, List(Variable("var1"), Variable("value"))), Set(
+        Predicate("Load".asP, List(Variable("var1"), Variable("var2"), Variable("field"))),
+        Predicate("VarPointsTo".asP, List(Variable("var2"), Variable("base"))),
+        Predicate("HeapPointsTo".asP, List(Variable("base"), Variable("field"), Variable("value")))
       )),
 
       // Constraint HeapPointsTo(base, field, value) :-
       //   Store(var1, field, var2),
       //   VarPointsTo(var1, base),
       //   VarPointsTo(var2, value).
-      HornClause(Predicate("HeapPointsTo".asP, List(Variable('base), Variable('field), Variable('value))), Set(
-        Predicate("Store".asP, List(Variable('var1), Variable('field), Variable('var2))),
-        Predicate("VarPointsTo".asP, List(Variable('var1), Variable('base))),
-        Predicate("VarPointsTo".asP, List(Variable('var2), Variable('value)))
+      HornClause(Predicate("HeapPointsTo".asP, List(Variable("base"), Variable("field"), Variable("value"))), Set(
+        Predicate("Store".asP, List(Variable("var1"), Variable("field"), Variable("var2"))),
+        Predicate("VarPointsTo".asP, List(Variable("var1"), Variable("base"))),
+        Predicate("VarPointsTo".asP, List(Variable("var2"), Variable("value")))
       ))
     )
 
@@ -134,7 +134,7 @@ object Example01 {
     // Lattice
     val LatticeType = Type.Lattice(
       elms = SignType,
-      bot = Value.Constructor0('Bot),
+      bot = Value.Constructor0("Bot"),
       order = Set.empty,
       join = Set.empty
     )

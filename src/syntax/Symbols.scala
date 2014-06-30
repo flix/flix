@@ -15,6 +15,11 @@ object Symbols {
   implicit def string2predicate(s: String): PredicateSymbol = PredicateSymbol(s)
 
   /**
+   * Implicitely converts a string to a named symbol.
+   */
+  implicit def string2named(s: String): NamedSymbol = NamedSymbol(s)
+
+  /**
    * Implicitely converts a string to a variable symbol.
    */
   implicit def string2variable(s: String): VariableSymbol = VariableSymbol(s)
@@ -24,6 +29,11 @@ object Symbols {
      * Explicitely converts a string to a predicate symbol.
      */
     def asP: PredicateSymbol = PredicateSymbol(s)
+
+    /**
+     * Explicitely converts a string to a named symbol.
+     */
+    def asN: NamedSymbol = NamedSymbol(s)
 
     /**
      * Explicitely converts a string to a variable symbol.

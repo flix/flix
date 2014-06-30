@@ -25,28 +25,30 @@ object Property {
   /**
    * Reflexivity: ∀x. x ⊑ x
    */
-  def reflexivity(lattice: Type.Lattice): Set[HornClause] = lattice.elms match {
-    case Type.Nominal(symbol) =>
-      // Leq(symbol, symbol).
-      Set(
-        HornClause(Predicate("Leq".asP, List(Term.Constant(Value.Constructor0(symbol)), Term.Constant(Value.Constructor0(symbol)))), Set.empty)
-      )
-    case Type.Boolean =>
-      // Leq(true, true).
-      // Leq(false, false).
-      Set(
-        HornClause(Predicate("Leq".asP, List(Term.Constant(Value.Bool(b = true)), Term.Constant(Value.Bool(b = true)))), Set.empty),
-        HornClause(Predicate("Leq".asP, List(Term.Constant(Value.Bool(b = false)), Term.Constant(Value.Bool(b = false)))), Set.empty)
-      )
-    case Type.Integer =>
-      // Leq(x, x).
-      // Int(x).
-      Set(
-        HornClause(Predicate("Int".asP, List(Term.Variable('x))), Set.empty),
-        HornClause(Predicate("Leq".asP, List(Term.Variable('x))), Set.empty)
-      )
-    case _ => ???
-  }
+  def reflexivity(lattice: Type.Lattice): Set[HornClause] = ???
+
+//    lattice.elms match {
+//    case Type.Nominal(symbol) =>
+//      // Leq(symbol, symbol).
+//      Set(
+//        HornClause(Predicate("Leq".asP, List(Term.Constant(Value.Constructor0(symbol)), Term.Constant(Value.Constructor0(symbol)))), Set.empty)
+//      )
+//    case Type.Boolean =>
+//      // Leq(true, true).
+//      // Leq(false, false).
+//      Set(
+//        HornClause(Predicate("Leq".asP, List(Term.Constant(Value.Bool(b = true)), Term.Constant(Value.Bool(b = true)))), Set.empty),
+//        HornClause(Predicate("Leq".asP, List(Term.Constant(Value.Bool(b = false)), Term.Constant(Value.Bool(b = false)))), Set.empty)
+//      )
+//    case Type.Integer =>
+//      // Leq(x, x).
+//      // Int(x).
+//      Set(
+//        HornClause(Predicate("Int".asP, List(Term.Variable('x))), Set.empty),
+//        HornClause(Predicate("Leq".asP, List(Term.Variable('x))), Set.empty)
+//      )
+//    case _ => ???
+//  }
 
   /**
    * Anti-Symmetry: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y.

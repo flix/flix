@@ -7,11 +7,16 @@ object Symbol {
   /**
    * A predicate symbol.
    */
-  case class PredicateSymbol(s: String)
+  case class PredicateSymbol(s: String) extends Symbol
 
   /**
-   * A variable symbol
+   * A named symbol.
    */
-  case class VariableSymbol(s: String)
+  case class NamedSymbol(s: String) extends Symbol
+
+  /**
+   * A variable symbol.
+   */
+  case class VariableSymbol(s: String) extends Symbol
 
 }

@@ -1,6 +1,6 @@
 package impl
 
-import impl.logic.Symbol.{PredicateSymbol => PSym}
+import impl.logic.Symbol.{NamedSymbol => NSym, PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic.{Term, Value}
 import util.collection.mutable
 
@@ -35,7 +35,7 @@ class Solver(program: Program) {
   /**
    * Worklist.
    */
-  val queue = scala.collection.mutable.Queue.empty[(HornClause, Map[Symbol, Value])]
+  val queue = scala.collection.mutable.Queue.empty[(HornClause, Map[VSym, Value])]
 
   /**
    * Fixpoint computation.
@@ -49,7 +49,7 @@ class Solver(program: Program) {
 
     // Satisfy all facts. Satisfying a fact adds violated horn clauses to the work list.
     for (h <- program.facts) {
-      satisfy(h.head, program.interpretation, Map.empty[Symbol, Value])
+      satisfy(h.head, program.interpretation, Map.empty[VSym, Value])
     }
 
     // Iteratively try to resolve horn clauses.
@@ -69,7 +69,7 @@ class Solver(program: Program) {
    *
    * Adds all facts which satisfies the given horn clause `h`.
    */
-  def resolve(h: HornClause, inv: Map[PSym, Interpretation], env: Map[Symbol, Value]): Unit = evaluate(h, inv, env) match {
+  def resolve(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): Unit = evaluate(h, inv, env) match {
     case Model.Unsat => // nop
     case Model.Sat(envs) =>
       for (env <- envs) {
@@ -84,7 +84,7 @@ class Solver(program: Program) {
   /**
    * Returns a satisfiable model of the given horn clause `h` with interpretations `inv` under the given environment `env`.
    */
-  def evaluate(h: HornClause, inv: Map[PSym, Interpretation], env: Map[Symbol, Value]): Model = {
+  def evaluate(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): Model = {
     val relationals = h.body filter (p => isRelational(p, inv))
     val functionals = h.body -- relationals
 
@@ -106,7 +106,7 @@ class Solver(program: Program) {
       val models = envs map (env => evaluate(p, i, env))
 
       val xs = models.map({
-        case Model.Unsat => Set.empty[Map[Symbol, Value]]
+        case Model.Unsat => Set.empty[Map[VSym, Value]]
         case Model.Sat(env) => env
       }).flatten
 
@@ -118,7 +118,7 @@ class Solver(program: Program) {
   /**
    * Returns a model for the given predicate `p` with interpretation `i` under the given environment `env`.
    */
-  def evaluate(p: Predicate, i: Interpretation, env: Map[Symbol, Value]): Model = i match {
+  def evaluate(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Model = i match {
     case Interpretation.Proposition(Value.Bool(true)) => Model.Sat(env)
     case Interpretation.Proposition(Value.Bool(false)) => Model.Unsat
     case Interpretation.Relation.In1(t1) =>
@@ -138,13 +138,13 @@ class Solver(program: Program) {
   /**
    * Satisfies the given predicate `p` under the given interpretations `inv` and environment `env`.
    */
-  def satisfy(p: Predicate, inv: Map[PSym, Interpretation], env: Map[Symbol, Value]): Unit =
+  def satisfy(p: Predicate, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): Unit =
     satisfy(p, interpretationOf(p, inv), env)
 
   /**
    * Satisfies the given predicate `p` under the given interpretation `i` and environment `env`.
    */
-  def satisfy(p: Predicate, i: Interpretation, env: Map[Symbol, Value]): Unit = i match {
+  def satisfy(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Unit = i match {
     case Interpretation.Relation.In1(t1) =>
       val v = lookupValue(p, 0, env)
       val newFact = relation1.put(p.name, v)
@@ -211,8 +211,8 @@ class Solver(program: Program) {
    * That is, if the horn clause is A(x, y, z) :- B(x, y), C(z), the predicate is B
    * and the environment is [0 -> a, 1 -> b] then the return environment is [x -> a, y -> b].
    */
-  def bind(h: HornClause, p: Predicate, env: IndexedSeq[Value]): Map[Symbol, Value] = {
-    val m = scala.collection.mutable.Map.empty[Symbol, Value]
+  def bind(h: HornClause, p: Predicate, env: IndexedSeq[Value]): Map[VSym, Value] = {
+    val m = scala.collection.mutable.Map.empty[VSym, Value]
     for (p2 <- h.body; if p.name == p2.name) {
       for ((t, i) <- p2.terms.zipWithIndex) {
         t match {
@@ -236,10 +236,10 @@ class Solver(program: Program) {
     case object Unsat extends Model
 
     object Sat {
-      def apply(env: Map[Symbol, Value]): Model = Sat(Set(env))
+      def apply(env: Map[VSym, Value]): Model = Sat(Set(env))
     }
 
-    case class Sat(envs: Set[Map[Symbol, Value]]) extends Model
+    case class Sat(envs: Set[Map[VSym, Value]]) extends Model
 
     // TODO: Sooo..what about the empty set of envs?
 
@@ -252,7 +252,7 @@ class Solver(program: Program) {
   /**
    * Returns the value of the variable with the given `index` in the given predicate `p`.
    */
-  def lookupValue(p: Predicate, index: Int, env: Map[Symbol, Value]): Value = p.terms.lift(index) match {
+  def lookupValue(p: Predicate, index: Int, env: Map[VSym, Value]): Value = p.terms.lift(index) match {
     case None => throw new Error.PredicateArityMismatch(p, index)
     case Some(t) => substitute(t, env)
   }
@@ -268,7 +268,7 @@ class Solver(program: Program) {
   /**
    * Returns the value of the given term `t` obtained by replacing all free variables in `t` with their corresponding values from the given environment `env`.
    */
-  def substitute(t: Term, env: Map[Symbol, Value]): Value = t match {
+  def substitute(t: Term, env: Map[VSym, Value]): Value = t match {
     case Term.Constant(v) => v
     case Term.Variable(s) => env.getOrElse(s, throw new Error.UnboundVariable(s))
     case Term.Constructor0(s) => Value.Constructor0(s)
