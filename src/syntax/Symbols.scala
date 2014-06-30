@@ -1,6 +1,6 @@
 package syntax
 
-import impl.logic.{PredicateSymbol, VariableSymbol}
+import impl.logic.Symbol._
 
 import scala.language.implicitConversions
 

@@ -1,11 +1,11 @@
 package impl
 
-import impl.logic.PredicateSymbol
+import impl.logic.Symbol
 
 /**
  * A program consists of a set of horn clauses.
  */
-case class Program(clauses: Set[HornClause], interpretation: Map[PredicateSymbol, Interpretation]) {
+case class Program(clauses: Set[HornClause], interpretation: Map[Symbol.PredicateSymbol, Interpretation]) {
   /**
    * Returns the set of facts, i.e. horn clauses with an empty body.
    */
