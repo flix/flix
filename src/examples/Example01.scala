@@ -1,6 +1,7 @@
 package examples
 
 import impl._
+import syntax.Symbols._
 
 object Example01 {
 
@@ -73,48 +74,48 @@ object Example01 {
     // Sign.Sum(_, Top, Top).
 
     val Sum = Set(
-      HornClause(Predicate('Sum, List(Term.Constructor0('Bot), Term.Variable('_), Term.Constructor0('Bot))), Set.empty),
-      HornClause(Predicate('Sum, List(Term.Variable('_), Term.Constructor0('Bot), Term.Constructor0('Bot))), Set.empty)
+      HornClause(Predicate("Sum".p, List(Term.Constructor0('Bot), Term.Variable('_), Term.Constructor0('Bot))), Set.empty),
+      HornClause(Predicate("Sum".p, List(Term.Variable('_), Term.Constructor0('Bot), Term.Constructor0('Bot))), Set.empty)
     )
 
     val clauses = Set(
       // Constraint VarPointsTo(var, obj) :-
       //   New(var, obj).
-      HornClause(Predicate('VarPointsTo, List(Variable('var), Variable('obj))), Set(
-        Predicate('New, List(Variable('var), Variable('obj)))
+      HornClause(Predicate("VarPointsTo".p, List(Variable('var), Variable('obj))), Set(
+        Predicate("New".p, List(Variable('var), Variable('obj)))
       )),
 
       // Constraint VarPointsTo(var1, value) :-
       //   Assign(var1, var2),
       //   VarPointsTo(var2, value).
-      HornClause(Predicate('VarPointsTo, List(Variable('var1), Variable('value))), Set(
-        Predicate('Assign, List(Variable('var1), Variable('var2))),
-        Predicate('VarPointsTo, List(Variable('var2), Variable('value)))
+      HornClause(Predicate("VarPointsTo".p, List(Variable('var1), Variable('value))), Set(
+        Predicate("Assign".p, List(Variable('var1), Variable('var2))),
+        Predicate("VarPointsTo".p, List(Variable('var2), Variable('value)))
       )),
 
       // Constraint VarPointsTo(var1, value) :-
       //   Load(var1, var2, field),
       //   VarPointsTo(var2, base),
       //   HeapPointsTo(base, field, value).
-      HornClause(Predicate('VarPointsTo, List(Variable('var1), Variable('value))), Set(
-        Predicate('Load, List(Variable('var1), Variable('var2), Variable('field))),
-        Predicate('VarPointsTo, List(Variable('var2), Variable('base))),
-        Predicate('HeapPointsTo, List(Variable('base), Variable('field), Variable('value)))
+      HornClause(Predicate("VarPointsTo".p, List(Variable('var1), Variable('value))), Set(
+        Predicate("Load".p, List(Variable('var1), Variable('var2), Variable('field))),
+        Predicate("VarPointsTo".p, List(Variable('var2), Variable('base))),
+        Predicate("HeapPointsTo".p, List(Variable('base), Variable('field), Variable('value)))
       )),
 
       // Constraint HeapPointsTo(base, field, value) :-
       //   Store(var1, field, var2),
       //   VarPointsTo(var1, base),
       //   VarPointsTo(var2, value).
-      HornClause(Predicate('HeapPointsTo, List(Variable('base), Variable('field), Variable('value))), Set(
-        Predicate('Store, List(Variable('var1), Variable('field), Variable('var2))),
-        Predicate('VarPointsTo, List(Variable('var1), Variable('base))),
-        Predicate('VarPointsTo, List(Variable('var2), Variable('value)))
+      HornClause(Predicate("HeapPointsTo".p, List(Variable('base), Variable('field), Variable('value))), Set(
+        Predicate("Store".p, List(Variable('var1), Variable('field), Variable('var2))),
+        Predicate("VarPointsTo".p, List(Variable('var1), Variable('base))),
+        Predicate("VarPointsTo".p, List(Variable('var2), Variable('value)))
       ))
     )
 
     val facts = Set(
-      HornClause(Predicate('New, List(Term.Constant(Value.Int(0)), Term.Constant(Value.Int(1)))), Set.empty)
+      HornClause(Predicate("New".p, List(Term.Constant(Value.Int(0)), Term.Constant(Value.Int(1)))), Set.empty)
     )
 
     val VariableType = Type.Nominal('VariableT)
@@ -138,15 +139,15 @@ object Example01 {
     )
 
     val interpretation = Map(
-      'New -> Interpretation.Relation.In2(VariableType, ObjectType),
-      'Assign -> Interpretation.Relation.In2(VariableType, VariableType),
-      'Load -> Interpretation.Relation.In3(VariableType, VariableType, FieldType),
-      'Store -> Interpretation.Relation.In3(VariableType, FieldType, VariableType),
+      "New".p -> Interpretation.Relation.In2(VariableType, ObjectType),
+      "Assign".p -> Interpretation.Relation.In2(VariableType, VariableType),
+      "Load".p -> Interpretation.Relation.In3(VariableType, VariableType, FieldType),
+      "Store".p -> Interpretation.Relation.In3(VariableType, FieldType, VariableType),
 
-      'VarPointsTo -> Interpretation.Relation.In2(VariableType, LatticeType),
-      'HeapPointsTo -> Interpretation.Relation.In3(ObjectType, FieldType, LatticeType),
+      "VarPointsTo".p -> Interpretation.Relation.In2(VariableType, LatticeType),
+      "HeapPointsTo".p -> Interpretation.Relation.In3(ObjectType, FieldType, LatticeType),
 
-      'Sum -> Interpretation.Functional.Functional2(SignType, SignType, Sum)
+      "Sum".p -> Interpretation.Functional.Functional2(SignType, SignType, Sum)
     )
 
     val p = Program(clauses ++ facts, interpretation)

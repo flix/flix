@@ -2,6 +2,8 @@ package impl
 
 import impl.logic.Formula
 
+import syntax.Symbols._
+
 object Property {
 
   // TODO: Prove by veryfing that the negation of the properties is unsatisfiable.
@@ -27,21 +29,21 @@ object Property {
     case Type.Nominal(symbol) =>
       // Leq(symbol, symbol).
       Set(
-        HornClause(Predicate('Leq, List(Term.Constant(Value.Constructor0(symbol)), Term.Constant(Value.Constructor0(symbol)))), Set.empty)
+        HornClause(Predicate("Leq".p, List(Term.Constant(Value.Constructor0(symbol)), Term.Constant(Value.Constructor0(symbol)))), Set.empty)
       )
     case Type.Boolean =>
       // Leq(true, true).
       // Leq(false, false).
       Set(
-        HornClause(Predicate('Leq, List(Term.Constant(Value.Bool(b = true)), Term.Constant(Value.Bool(b = true)))), Set.empty),
-        HornClause(Predicate('Leq, List(Term.Constant(Value.Bool(b = false)), Term.Constant(Value.Bool(b = false)))), Set.empty)
+        HornClause(Predicate("Leq".p, List(Term.Constant(Value.Bool(b = true)), Term.Constant(Value.Bool(b = true)))), Set.empty),
+        HornClause(Predicate("Leq".p, List(Term.Constant(Value.Bool(b = false)), Term.Constant(Value.Bool(b = false)))), Set.empty)
       )
     case Type.Integer =>
       // Leq(x, x).
       // Int(x).
       Set(
-        HornClause(Predicate('Int, List(Term.Variable('x))), Set.empty),
-        HornClause(Predicate('Leq, List(Term.Variable('x))), Set.empty)
+        HornClause(Predicate("Int".p, List(Term.Variable('x))), Set.empty),
+        HornClause(Predicate("Leq".p, List(Term.Variable('x))), Set.empty)
       )
     case _ => ???
   }

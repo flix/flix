@@ -1,9 +1,11 @@
 package impl
 
+import impl.logic.PredicateSymbol
+
 /**
  * A predicate consists of a predicate symbol and a list of terms.
  */
-case class Predicate(name: Symbol, terms: List[Term]) {
+case class Predicate(name: PredicateSymbol, terms: List[Term]) {
   /**
    * Returns `true` iff the predicate is a ground truth, i.e. all terms are constant.
    */

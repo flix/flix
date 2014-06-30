@@ -2,12 +2,31 @@ package syntax
 
 import impl.logic.{PredicateSymbol, VariableSymbol}
 
-class Symbols {
+/**
+ * Embedded DSL syntax for symbols.
+ */
+object Symbols {
 
-  implicit class SymbolOps(s: String) {
-    def p: PredicateSymbol = ???
+  /**
+   * Implicitely converts a string to a predicate symbol.
+   */
+  implicit def string2predicate(s: String): PredicateSymbol = PredicateSymbol(s)
 
-    def v: VariableSymbol = ???
+  /**
+   * Implicitely converts a string to a variable symbol.
+   */
+  implicit def string2variable(s: String): VariableSymbol = VariableSymbol(s)
+
+  implicit class String2Symbol(s: String) {
+    /**
+     * Explicitely converts a string to a predicate symbol.
+     */
+    def p: PredicateSymbol = PredicateSymbol(s)
+
+    /**
+     * Explicitely converts a string to a variable symbol.
+     */
+    def v: VariableSymbol = VariableSymbol(s)
   }
 
 }

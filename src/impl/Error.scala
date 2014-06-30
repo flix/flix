@@ -1,10 +1,12 @@
 package impl
 
+import impl.logic.PredicateSymbol
+
 trait Error
 
 object Error {
 
-  case class UnknownInterpretation(s: Symbol) extends RuntimeException(s"$s has no interpretation.")
+  case class UnknownInterpretation(s: PredicateSymbol) extends RuntimeException(s"$s has no interpretation.")
 
   case class NonRelationalPredicate(p: Predicate) extends RuntimeException
 

@@ -1,5 +1,6 @@
 package impl
 
+import impl.logic.PredicateSymbol
 import util.collection.mutable
 
 /**
@@ -10,25 +11,25 @@ class Solver(program: Program) {
   /**
    * Relations.
    */
-  val relation1 = mutable.MultiMap1.empty[Symbol, Value]
-  val relation2 = mutable.MultiMap2.empty[Symbol, Value, Value]
-  val relation3 = mutable.MultiMap3.empty[Symbol, Value, Value, Value]
-  val relation4 = mutable.MultiMap4.empty[Symbol, Value, Value, Value, Value]
-  val relation5 = mutable.MultiMap5.empty[Symbol, Value, Value, Value, Value, Value]
+  val relation1 = mutable.MultiMap1.empty[PredicateSymbol, Value]
+  val relation2 = mutable.MultiMap2.empty[PredicateSymbol, Value, Value]
+  val relation3 = mutable.MultiMap3.empty[PredicateSymbol, Value, Value, Value]
+  val relation4 = mutable.MultiMap4.empty[PredicateSymbol, Value, Value, Value, Value]
+  val relation5 = mutable.MultiMap5.empty[PredicateSymbol, Value, Value, Value, Value, Value]
 
   /**
    * Lattice Maps.
    */
-  val map1 = mutable.Map1.empty[Symbol, Value]
-  val map2 = mutable.Map2.empty[Symbol, Value, Value]
-  val map3 = mutable.Map3.empty[Symbol, Value, Value, Value]
-  val map4 = mutable.Map4.empty[Symbol, Value, Value, Value, Value]
-  val map5 = mutable.Map5.empty[Symbol, Value, Value, Value, Value, Value]
+  val map1 = mutable.Map1.empty[PredicateSymbol, Value]
+  val map2 = mutable.Map2.empty[PredicateSymbol, Value, Value]
+  val map3 = mutable.Map3.empty[PredicateSymbol, Value, Value, Value]
+  val map4 = mutable.Map4.empty[PredicateSymbol, Value, Value, Value, Value]
+  val map5 = mutable.Map5.empty[PredicateSymbol, Value, Value, Value, Value, Value]
 
   /**
    * Dependencies.
    */
-  val dependencies = mutable.MultiMap1.empty[Symbol, HornClause]
+  val dependencies = mutable.MultiMap1.empty[PredicateSymbol, HornClause]
 
   /**
    * Worklist.
@@ -67,7 +68,7 @@ class Solver(program: Program) {
    *
    * Adds all facts which satisfies the given horn clause `h`.
    */
-  def resolve(h: HornClause, inv: Map[Symbol, Interpretation], env: Map[Symbol, Value]): Unit = evaluate(h, inv, env) match {
+  def resolve(h: HornClause, inv: Map[PredicateSymbol, Interpretation], env: Map[Symbol, Value]): Unit = evaluate(h, inv, env) match {
     case Model.Unsat => // nop
     case Model.Sat(envs) =>
       for (env <- envs) {
@@ -82,7 +83,7 @@ class Solver(program: Program) {
   /**
    * Returns a satisfiable model of the given horn clause `h` with interpretations `inv` under the given environment `env`.
    */
-  def evaluate(h: HornClause, inv: Map[Symbol, Interpretation], env: Map[Symbol, Value]): Model = {
+  def evaluate(h: HornClause, inv: Map[PredicateSymbol, Interpretation], env: Map[Symbol, Value]): Model = {
     val relationals = h.body filter (p => isRelational(p, inv))
     val functionals = h.body -- relationals
 
@@ -136,7 +137,7 @@ class Solver(program: Program) {
   /**
    * Satisfies the given predicate `p` under the given interpretations `inv` and environment `env`.
    */
-  def satisfy(p: Predicate, inv: Map[Symbol, Interpretation], env: Map[Symbol, Value]): Unit =
+  def satisfy(p: Predicate, inv: Map[PredicateSymbol, Interpretation], env: Map[Symbol, Value]): Unit =
     satisfy(p, interpretationOf(p, inv), env)
 
   /**
@@ -281,7 +282,7 @@ class Solver(program: Program) {
   /**
    * Returns the interpretation of the given predicate `p`.
    */
-  def interpretationOf(p: Predicate, inv: Map[Symbol, Interpretation]): Interpretation = inv.get(p.name) match {
+  def interpretationOf(p: Predicate, inv: Map[PredicateSymbol, Interpretation]): Interpretation = inv.get(p.name) match {
     case None => throw new Error.UnknownInterpretation(p.name)
     case Some(i) => i
   }
@@ -289,7 +290,7 @@ class Solver(program: Program) {
   /**
    * Returns `true` iff the given predicate `p` is relational under the given interpretations `inv`.
    */
-  private def isRelational(p: Predicate, inv: Map[Symbol, Interpretation]): Boolean = interpretationOf(p, inv) match {
+  private def isRelational(p: Predicate, inv: Map[PredicateSymbol, Interpretation]): Boolean = interpretationOf(p, inv) match {
     case _: Interpretation.Relation.In1 => true
     case _: Interpretation.Relation.In2 => true
     case _: Interpretation.Relation.In3 => true
