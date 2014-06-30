@@ -295,6 +295,7 @@ class Solver(program: Program) {
 
       ???
   }
+  // TODO: Use multiple visitors? One of type t -> Option[Value] and one of t -> Term
 
 
   /**
