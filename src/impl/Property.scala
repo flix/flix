@@ -1,5 +1,7 @@
 package impl
 
+import impl.logic.Formula
+
 object Property {
 
   // TODO: Prove by veryfing that the negation of the properties is unsatisfiable.

@@ -1,4 +1,6 @@
-package impl
+package impl.logic
+
+import impl.HornClause
 
 sealed trait Formula {
   /**
