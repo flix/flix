@@ -1,7 +1,8 @@
 package examples
 
 import impl._
-import impl.logic.{Term, Type, Value}
+import impl.logic._
+import impl.solver.Solver
 import syntax.Symbols._
 
 object Example01 {

@@ -1,7 +1,7 @@
-package impl
+package impl.solver
 
 import impl.logic.Symbol.{NamedSymbol => NSym, PredicateSymbol => PSym, VariableSymbol => VSym}
-import impl.logic.{Term, Value}
+import impl.logic._
 import util.collection.mutable
 
 /**

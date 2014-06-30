@@ -1,6 +1,6 @@
 package impl
 
-import impl.logic.{Type, Term, Value, Formula}
+import impl.logic._
 
 import syntax.Symbols._
 

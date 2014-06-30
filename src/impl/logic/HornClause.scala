@@ -1,4 +1,4 @@
-package impl
+package impl.logic
 
 /**
  * A horn clause consists of a single predicate called the `head` and a set of predicates called the `body`.

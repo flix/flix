@@ -1,6 +1,6 @@
 package examples
 
-import impl.Program
+import impl.logic.Program
 
 object TransitiveClosure {
   def main(args: Array[String]): Unit = {

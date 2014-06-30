@@ -1,7 +1,6 @@
-package impl
+package impl.solver
 
-import impl.logic.Term
-import impl.logic.Symbol
+import impl.logic.{Predicate, Symbol, Term}
 
 trait Error
 

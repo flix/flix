@@ -1,6 +1,4 @@
-package impl
-
-import impl.logic.Symbol
+package impl.logic
 
 /**
  * A program consists of a set of horn clauses.

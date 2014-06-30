@@ -1,7 +1,5 @@
 package impl.logic
 
-import impl.HornClause
-
 sealed trait Type
 
 object Type {

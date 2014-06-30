@@ -1,6 +1,4 @@
-package impl
-
-import impl.logic.{Type, Value}
+package impl.logic
 
 sealed trait Interpretation
 

@@ -1,6 +1,6 @@
 package impl
 
-import impl.logic.Term
+import impl.logic.{Program, Term}
 
 import scala.util.Try
 
