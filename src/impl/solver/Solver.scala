@@ -219,12 +219,6 @@ class Solver(program: Program) {
       if (newFact)
         propagate(p, IndexedSeq(k1, k2, k3, k4, v))
 
-    case Interpretation.Map.Leq1(t1) => ???
-    case Interpretation.Map.Leq2(t1, t2) => ???
-    case Interpretation.Map.Leq3(t1, t2, t3) => ???
-    case Interpretation.Map.Leq4(t1, t2, t3, t4) => ???
-    case Interpretation.Map.Leq5(t1, t2, t3, t4, t5) => ???
-
     case _ => throw new Error.NonRelationalPredicate(p)
   }
 
@@ -339,7 +333,43 @@ class Solver(program: Program) {
   }
 
   // TODO: Careful about existing bindings/free variables occuring in multiple places.
-  def unify(t: Term, v: Value): Option[Map[VSym, Value]] = ???
+  def unify(t: Term, v: Value): Option[Map[VSym, Value]] = {
+    def visit(t: Term, v: Value, env0: Map[VSym, Value]): Option[Map[VSym, Value]] = (t, v) match {
+      case (Term.Constant(v1), v2) if v1 == v2 => Some(env0)
+      case (Term.Variable(s), v2) => env0.get(s) match {
+        case None => Some(env0 + (s -> v2))
+        case Some(v3) if v2 != v3 => None
+        case Some(v3) if v2 == v3 => Some(env0)
+      }
+      case (Term.Constructor0(s1), Value.Constructor0(s2)) if s1 == s2 => Some(env0)
+      case (Term.Constructor1(s1, t1), Value.Constructor1(s2, v1)) if s1 == s2 => visit(t1, v1, env0)
+      case (Term.Constructor2(s1, t1, t2), Value.Constructor2(s2, v1, v2)) if s1 == s2 =>
+        for (env1 <- visit(t1, v1, env0);
+             env2 <- visit(t2, v2, env1))
+        yield env2
+      case (Term.Constructor3(s1, t1, t2, t3), Value.Constructor3(s2, v1, v2, v3)) if s1 == s2 =>
+        for (env1 <- visit(t1, v1, env0);
+             env2 <- visit(t2, v2, env1);
+             env3 <- visit(t3, v3, env2))
+        yield env3
+      case (Term.Constructor4(s1, t1, t2, t3, t4), Value.Constructor4(s2, v1, v2, v3, v4)) if s1 == s2 =>
+        for (env1 <- visit(t1, v1, env0);
+             env2 <- visit(t2, v2, env1);
+             env3 <- visit(t3, v3, env2);
+             env4 <- visit(t4, v4, env3))
+        yield env4
+      case (Term.Constructor5(s1, t1, t2, t3, t4, t5), Value.Constructor5(s2, v1, v2, v3, v4, v5)) if s1 == s2 =>
+        for (env1 <- visit(t1, v1, env0);
+             env2 <- visit(t2, v2, env1);
+             env3 <- visit(t3, v3, env2);
+             env4 <- visit(t4, v4, env3);
+             env5 <- visit(t5, v5, env4))
+        yield env5
+      case _ => None
+    }
+
+    visit(t, v, Map.empty)
+  }
 
 
   /**
