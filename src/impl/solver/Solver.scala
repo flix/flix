@@ -69,12 +69,11 @@ class Solver(program: Program) {
    *
    * Adds all facts which satisfies the given horn clause `h`.
    */
-  def resolve(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): Unit = evaluate(h, inv, env) match {
-    case Model.Unsat => // nop
-    case Model.Sat(envs) =>
-      for (env <- envs) {
-        satisfy(h.head, inv, env)
-      }
+  def resolve(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): Unit = {
+    val models = evaluate(h, inv, env)
+    for (model <- models) {
+      satisfy(h.head, inv, model)
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -82,13 +81,13 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Returns a satisfiable model of the given horn clause `h` with interpretations `inv` under the given environment `env`.
+   * Returns a model of the given horn clause `h` with interpretations `inv` under the given environment `env`.
    */
-  def evaluate(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): Model = {
+  def evaluate(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): List[Map[VSym, Value]] = {
     val relationals = h.body filter (p => isRelational(p, inv))
     val functionals = h.body -- relationals
 
-    val init = Model.Sat(env)
+    val init = List.empty[Map[VSym, Value]]
     val predicates = relationals.toList ::: functionals.toList
 
     (init /: predicates) {
@@ -99,32 +98,24 @@ class Solver(program: Program) {
   /**
    *
    */
-  def evaluate(p: Predicate, i: Interpretation, m: Model): Model = m match {
-    case Model.Unsat => Model.Unsat
-    case Model.Sat(envs) => {
-
-      val models = envs map (env => evaluate(p, i, env))
-
-      val xs = models.map({
-        case Model.Unsat => Set.empty[Map[VSym, Value]]
-        case Model.Sat(env) => env // TODO: Call evaluate
-      }).flatten
-
-      Model.Sat(xs)
-    }
-  }
-
+  // TODO
+  def evaluate(p: Predicate, i: Interpretation, m: List[Map[VSym, Value]]): List[Map[VSym, Value]] = ???
 
   /**
    * Returns a model for the given predicate `p` with interpretation `i` under the given environment `env`.
    */
-  def evaluate(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Model = i match {
-    case Interpretation.Proposition(Value.Bool(true)) => Model.Sat(env)
-    case Interpretation.Proposition(Value.Bool(false)) => Model.Unsat
+  def evaluate(p: Predicate, i: Interpretation, env: Map[VSym, Value]): List[Map[VSym, Value]] = i match {
+    case Interpretation.Proposition(Value.Bool(false)) => List.empty
+    case Interpretation.Proposition(Value.Bool(true)) => List(env)
     case Interpretation.Relation.In1(t1) =>
+
       lookupTerm(p, 0) match {
-        case Term.Constant(v) => if (relation1.has(p.name, v)) Model.Sat(env) else Model.Unsat
-        case Term.Variable(s) => Model.Sat(relation1.get(p.name) map (v => env + (s -> v)))
+        case Term.Constant(v) =>
+          if (!relation1.has(p.name, v))
+            List.empty
+          else
+            List(env)
+        case Term.Variable(s) => ???
         case t =>
           for (v <- relation1.get(p.name)) {
             val env2 = unify(t, v)
@@ -146,6 +137,7 @@ class Solver(program: Program) {
     case _ => throw new RuntimeException(i.toString)
   }
 
+  //def filter(tuples: Product)
 
   /////////////////////////////////////////////////////////////////////////////
   // Satisfy                                                                 //
@@ -238,27 +230,6 @@ class Solver(program: Program) {
       }
     }
     m.toMap
-  }
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Models                                                                  //
-  /////////////////////////////////////////////////////////////////////////////
-
-  sealed trait Model
-
-  object Model {
-
-    case object Unsat extends Model
-
-    object Sat {
-      def apply(env: Map[VSym, Value]): Model = Sat(Set(env))
-    }
-
-    case class Sat(envs: Set[Map[VSym, Value]]) extends Model
-
-    // TODO: Sooo..what about the empty set of envs?
-
   }
 
   /////////////////////////////////////////////////////////////////////////////
