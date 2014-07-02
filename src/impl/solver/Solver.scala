@@ -228,7 +228,11 @@ class Solver(program: Program) {
    */
   def propagate(p: Predicate, env: IndexedSeq[Value]): Unit = {
     for (h <- dependencies.get(p.name)) {
-      queue.enqueue((h, bind(h, p, env)))
+      val model = bind(h, p, env)
+      if (model.isEmpty) {
+        throw new Error.UnexpectedEmptyModel()
+      }
+      queue.enqueue((h, model))
     }
   }
 
@@ -304,7 +308,10 @@ class Solver(program: Program) {
    */
   def substituteValue(t: Term, env: Map[VSym, Value]): Value = t match {
     case Term.Constant(v) => v
-    case Term.Variable(s) => env.getOrElse(s, throw new Error.UnboundVariable(s))
+    case Term.Variable(s) => env.get(s) match {
+      case None => throw new Error.UnboundVariableSymbol(s, t)
+      case Some(v) => v
+    }
     case Term.Constructor0(s) => Value.Constructor0(s)
     case Term.Constructor1(s, t1) => Value.Constructor1(s, substituteValue(t1, env))
     case Term.Constructor2(s, t1, t2) => Value.Constructor2(s, substituteValue(t1, env), substituteValue(t2, env))
@@ -333,6 +340,7 @@ class Solver(program: Program) {
   }
 
   // TODO: Careful about existing bindings/free variables occuring in multiple places.
+  // TODO: DOC
   def unify(t: Term, v: Value): Option[Map[VSym, Value]] = {
     def visit(t: Term, v: Value, env0: Map[VSym, Value]): Option[Map[VSym, Value]] = (t, v) match {
       case (Term.Constant(v1), v2) if v1 == v2 => Some(env0)

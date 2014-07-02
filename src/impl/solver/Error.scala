@@ -15,10 +15,12 @@ object Error {
 
   case class PredicateArityMismatch(p: Predicate, index: Int) extends RuntimeException
 
-  case class UnboundVariable(v: Symbol.VariableSymbol) extends RuntimeException
+  case class UnboundVariableSymbol(v: Symbol.VariableSymbol, t: Term) extends RuntimeException(s"The variable symbol '$v' is unbound in the term $t")
 
   case class NonValueTerm(t: Term) extends RuntimeException
 
   case class UnificationError(t: Term, v: Value) extends RuntimeException
+
+  case class UnexpectedEmptyModel() extends RuntimeException
 
 }
