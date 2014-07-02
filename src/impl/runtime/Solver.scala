@@ -42,7 +42,7 @@ class Solver(program: Program) {
 
     // Satisfy all facts. Satisfying a fact adds violated horn clauses (and environments) to the work list.
     for (h <- program.facts) {
-      satisfy(h.head, program.interpretation, Map.empty[VSym, Value])
+      satisfy(h.head, interpretationOf(h.head, program.interpretation), Map.empty[VSym, Value])
     }
 
     // Iteratively try to satisfy pending horn clauses.
@@ -143,7 +143,7 @@ class Solver(program: Program) {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Satisfication                                                           //
+  // Satisfaction                                                            //
   /////////////////////////////////////////////////////////////////////////////
 
   /**
@@ -154,15 +154,9 @@ class Solver(program: Program) {
   def satisfy(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): Unit = {
     val models = evaluate(h, inv, env)
     for (model <- models) {
-      satisfy(h.head, inv, model)
+      satisfy(h.head, interpretationOf(h.head, inv), model)
     }
   }
-
-  /**
-   * Satisfies the given predicate `p` under the given interpretations `inv` and environment `env`.
-   */
-  def satisfy(p: Predicate, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): Unit =
-    satisfy(p, interpretationOf(p, inv), env)
 
   /**
    * Satisfies the given predicate `p` under the given interpretation `i` and environment `env`.
@@ -202,6 +196,7 @@ class Solver(program: Program) {
       val newFact = relation5.put(p.name, (v1, v2, v3, v4, v5))
       if (newFact)
         propagate(p, IndexedSeq(v1, v2, v3, v4, v5))
+
     case _ => throw new Error.NonRelationalPredicate(p)
   }
 
