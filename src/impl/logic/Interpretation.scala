@@ -6,6 +6,8 @@ object Interpretation {
 
   case class Proposition(v: Value.Bool) extends Interpretation
 
+  // TODO: Probably move types...
+
   object Relation {
     case class In1(t1: Type) extends Interpretation
     case class In2(t1: Type, t2: Type) extends Interpretation

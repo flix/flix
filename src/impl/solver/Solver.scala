@@ -16,7 +16,7 @@ class Solver(program: Program) {
   val relation2 = mutable.MultiMap2.empty[PSym, Value, Value]
   val relation3 = mutable.MultiMap3.empty[PSym, Value, Value, Value]
   val relation4 = mutable.MultiMap4.empty[PSym, Value, Value, Value, Value]
-  val relation5 = mutable.MultiMap5.empty[PSym, Value, Value, Value, Value, Value]
+  val relation5 = mutable.MultiMap1.empty[PSym, (Value, Value, Value, Value, Value)]
 
   /**
    * Lattice Maps.
@@ -117,7 +117,7 @@ class Solver(program: Program) {
         case Term.Variable(s) => ???
         case t =>
           for (v <- relation1.get(p.name)) {
-            val env2 = unify(t, v)
+            val env2 = unify23(t, v)
           }
           ???
       }
@@ -133,6 +133,25 @@ class Solver(program: Program) {
           ???
         case _ => throw new RuntimeException(i.toString)
       }
+
+
+    case Interpretation.Relation.In5(_, _, _, _, _) =>
+      val List(t1, t2, t3, t4, t5) = p.terms
+
+      // relation5.get(p.name).toList :: List[(Value, Value, Value, Value)]
+      // def substitute(t: Term, env: Env): Term
+      // def unify(t: Term, v: Value): Option[Env]
+      relation5.get(p.name).toList.flatMap {
+        case (v1, v2, v3, v4, v5) =>
+          for (
+            env1 <- unify(substitute(t1, env), v1);
+            env2 <- unify(substitute(t2, env1), v2);
+            env3 <- unify(substitute(t3, env2), v3);
+            env4 <- unify(substitute(t4, env3), v4);
+            env5 <- unify(substitute(t5, env4), v5)
+          ) yield env5
+      }
+
     case _ => throw new RuntimeException(i.toString)
   }
 
@@ -188,7 +207,7 @@ class Solver(program: Program) {
       val k3 = lookupValue(p, 2, env)
       val k4 = lookupValue(p, 3, env)
       val v = lookupValue(p, 4, env)
-      val newFact = relation5.put(p.name, k1, k2, k3, k4, v)
+      val newFact = relation5.put(p.name, (k1, k2, k3, k4, v))
       if (newFact)
         propagate(p, IndexedSeq(k1, k2, k3, k4, v))
 
@@ -254,26 +273,26 @@ class Solver(program: Program) {
   /**
    * Either returns a fully evaluated value or a term with variables replaced by their corresponding values from the given environment `env`.
    */
-  def substitute(t: Term, env: Map[VSym, Value]): Either[Term, Value] = t.asValue(env) match {
-    case None => Left(substituteTerm(t, env))
+  def substitute2(t: Term, env: Map[VSym, Value]): Either[Term, Value] = t.asValue(env) match {
+    case None => Left(substitute(t, env))
     case Some(v) => Right(v)
   }
 
   /**
    * Returns the term obtained from `t` by replacing all free variables in `t` with their corresponding values from the given environment `env`.
    */
-  def substituteTerm(t: Term, env: Map[VSym, Value]): Term = t match {
+  def substitute(t: Term, env: Map[VSym, Value]): Term = t match {
     case Term.Constant(v) => Term.Constant(v)
     case Term.Variable(s) => env.get(s) match {
       case None => Term.Variable(s)
       case Some(v) => Term.Constant(v)
     }
     case Term.Constructor0(s) => Term.Constructor0(s)
-    case Term.Constructor1(s, t1) => Term.Constructor1(s, substituteTerm(t1, env))
-    case Term.Constructor2(s, t1, t2) => Term.Constructor2(s, substituteTerm(t1, env), substituteTerm(t2, env))
-    case Term.Constructor3(s, t1, t2, t3) => Term.Constructor3(s, substituteTerm(t1, env), substituteTerm(t2, env), substituteTerm(t3, env))
-    case Term.Constructor4(s, t1, t2, t3, t4) => Term.Constructor4(s, substituteTerm(t1, env), substituteTerm(t2, env), substituteTerm(t3, env), substituteTerm(t4, env))
-    case Term.Constructor5(s, t1, t2, t3, t4, t5) => Term.Constructor5(s, substituteTerm(t1, env), substituteTerm(t2, env), substituteTerm(t3, env), substituteTerm(t4, env), substituteTerm(t5, env))
+    case Term.Constructor1(s, t1) => Term.Constructor1(s, substitute(t1, env))
+    case Term.Constructor2(s, t1, t2) => Term.Constructor2(s, substitute(t1, env), substitute(t2, env))
+    case Term.Constructor3(s, t1, t2, t3) => Term.Constructor3(s, substitute(t1, env), substitute(t2, env), substitute(t3, env))
+    case Term.Constructor4(s, t1, t2, t3, t4) => Term.Constructor4(s, substitute(t1, env), substitute(t2, env), substitute(t3, env), substitute(t4, env))
+    case Term.Constructor5(s, t1, t2, t3, t4, t5) => Term.Constructor5(s, substitute(t1, env), substitute(t2, env), substitute(t3, env), substitute(t4, env), substitute(t5, env))
   }
 
   /**
@@ -299,25 +318,21 @@ class Solver(program: Program) {
    *
    * TODO: Careful about existing bindings/free variables occuring in multiple places.
    */
-  def unify(t: Term, v: Value): Map[VSym, Value] = (t, v) match {
+  def unify23(t: Term, v: Value): Map[VSym, Value] = (t, v) match {
     case (Term.Constant(v1), v2) if v1 == v2 => Map.empty
     case (Term.Variable(s), v2) => Map(s -> v2)
     case (Term.Constructor0(s1), Value.Constructor0(s2)) if s1 == s2 => Map.empty
-    case (Term.Constructor1(s1, t1), Value.Constructor1(s2, v1)) if s1 == s2 => unify(t1, v1)
-    case (Term.Constructor2(s1, t1, t2), Value.Constructor2(s2, v1, v2)) if s1 == s2 => unify(t1, v1) ++ unify(t2, v2)
-    case (Term.Constructor3(s1, t1, t2, t3), Value.Constructor3(s2, v1, v2, v3)) if s1 == s2 => unify(t1, v1) ++ unify(t2, v2) ++ unify(t3, v3)
-    case (Term.Constructor4(s1, t1, t2, t3, t4), Value.Constructor4(s2, v1, v2, v3, v4)) if s1 == s2 => unify(t1, v1) ++ unify(t2, v2) ++ unify(t3, v3) ++ unify(t4, v4)
-    case (Term.Constructor5(s1, t1, t2, t3, t4, t5), Value.Constructor5(s2, v1, v2, v3, v4, v5)) if s1 == s2 => unify(t1, v1) ++ unify(t2, v2) ++ unify(t3, v3) ++ unify(t4, v4) ++ unify(t5, v5)
+    case (Term.Constructor1(s1, t1), Value.Constructor1(s2, v1)) if s1 == s2 => unify23(t1, v1)
+    case (Term.Constructor2(s1, t1, t2), Value.Constructor2(s2, v1, v2)) if s1 == s2 => unify23(t1, v1) ++ unify23(t2, v2)
+    case (Term.Constructor3(s1, t1, t2, t3), Value.Constructor3(s2, v1, v2, v3)) if s1 == s2 => unify23(t1, v1) ++ unify23(t2, v2) ++ unify23(t3, v3)
+    case (Term.Constructor4(s1, t1, t2, t3, t4), Value.Constructor4(s2, v1, v2, v3, v4)) if s1 == s2 => unify23(t1, v1) ++ unify23(t2, v2) ++ unify23(t3, v3) ++ unify23(t4, v4)
+    case (Term.Constructor5(s1, t1, t2, t3, t4, t5), Value.Constructor5(s2, v1, v2, v3, v4, v5)) if s1 == s2 => unify23(t1, v1) ++ unify23(t2, v2) ++ unify23(t3, v3) ++ unify23(t4, v4) ++ unify23(t5, v5)
     case _ => throw new Error.UnificationError(t, v)
   }
 
-  /**
-   * Returns a new environment obtained by extending the environment `env1` with `env2`.
-   * If a key is present in both `env1` and `env2` the value from `env2` is used.
-   */
-  def extend(env1: Map[VSym, Value], env2: Map[VSym, Value]): Map[VSym, Value] = (env1 /: env2) {
-    case (acc, (s, v)) => acc + (s -> v)
-  }
+  // TODO: Careful about existing bindings/free variables occuring in multiple places.
+  def unify(t: Term, v: Value): Option[Map[VSym, Value]] = ???
+
 
   /**
    * Returns the interpretation of the given predicate `p`.
