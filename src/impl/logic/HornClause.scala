@@ -13,4 +13,9 @@ case class HornClause(head: Predicate, body: Set[Predicate]) {
    * Returns `true` if the clause is a ground truth, i.e. all predicates (head and body) are ground truths.
    */
   def isGround: Boolean = head.isGround && (body forall (_.isGround))
+
+  /**
+   * Returns all predicate symbols in the head and body.
+   */
+  def predicates: Set[Symbol.PredicateSymbol] = Set(head.name) ++ (body map (_.name))
 }

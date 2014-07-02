@@ -43,16 +43,9 @@ class Verifier(program: Program) {
     /**
      * Every predicate must have en interpretation.
      */
-    for (h <- program.clauses) {
-      // head term
-      program.interpretation.getOrElse(h.head.name, throw Error.InterpretationNotFound(h.head.name))
-
-      // body terms
-      for (p <- h.body) {
-        program.interpretation.getOrElse(p.name, throw Error.InterpretationNotFound(h.head.name))
-      }
+    for (p <- program.predicates) {
+      program.interpretation.getOrElse(p, throw Error.InterpretationNotFound(p))
     }
-
 
     /**
      * Every head predicate must be relational.

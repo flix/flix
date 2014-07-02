@@ -13,4 +13,10 @@ case class Program(clauses: Set[HornClause], interpretation: Map[Symbol.Predicat
    * Returns the set of rules, i.e. horn clauses with a non-empty body.
    */
   def rules: Set[HornClause] = clauses filterNot (c => c.isFact)
+
+  /**
+   * Returns all predicate symbols in all horn clauses.
+   */
+  def predicates: Set[Symbol.PredicateSymbol] = clauses flatMap (_.predicates)
+
 }
