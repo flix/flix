@@ -1,6 +1,6 @@
 package impl.solver
 
-import impl.logic.{Predicate, Symbol, Term}
+import impl.logic.{Predicate, Symbol, Term, Value}
 
 trait Error
 
@@ -18,5 +18,7 @@ object Error {
   case class UnboundVariable(v: Symbol.VariableSymbol) extends RuntimeException
 
   case class NonValueTerm(t: Term) extends RuntimeException
+
+  case class UnificationError(t: Term, v: Value) extends RuntimeException
 
 }

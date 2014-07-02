@@ -322,14 +322,32 @@ class Solver(program: Program) {
     case Term.Constructor5(s, t1, t2, t3, t4, t5) => Value.Constructor5(s, substituteValue(t1, env), substituteValue(t2, env), substituteValue(t3, env), substituteValue(t4, env), substituteValue(t5, env))
   }
 
-  // TODO
-  def unify(term: Term, value: Value): Map[VSym, Value] = ???
+  /**
+   * Returns an environment obtained by unifying the given term `t` with the value `v`.
+   *
+   * The resulting environment contains an entry `x` -> `y` iff `t` contains a free variable `x` where `v` contains a value `y`.
+   *
+   * TODO: Careful about existing bindings/free variables occuring in multiple places.
+   */
+  def unify(t: Term, v: Value): Map[VSym, Value] = (t, v) match {
+    case (Term.Constant(v1), v2) if v1 == v2 => Map.empty
+    case (Term.Variable(s), v2) => Map(s -> v2)
+    case (Term.Constructor0(s1), Value.Constructor0(s2)) if s1 == s2 => Map.empty
+    case (Term.Constructor1(s1, t1), Value.Constructor1(s2, v1)) if s1 == s2 => unify(t1, v1)
+    case (Term.Constructor2(s1, t1, t2), Value.Constructor2(s2, v1, v2)) if s1 == s2 => unify(t1, v1) ++ unify(t2, v2)
+    case (Term.Constructor3(s1, t1, t2, t3), Value.Constructor3(s2, v1, v2, v3)) if s1 == s2 => unify(t1, v1) ++ unify(t2, v2) ++ unify(t3, v3)
+    case (Term.Constructor4(s1, t1, t2, t3, t4), Value.Constructor4(s2, v1, v2, v3, v4)) if s1 == s2 => unify(t1, v1) ++ unify(t2, v2) ++ unify(t3, v3) ++ unify(t4, v4)
+    case (Term.Constructor5(s1, t1, t2, t3, t4, t5), Value.Constructor5(s2, v1, v2, v3, v4, v5)) if s1 == s2 => unify(t1, v1) ++ unify(t2, v2) ++ unify(t3, v3) ++ unify(t4, v4) ++ unify(t5, v5)
+    case _ => throw new Error.UnificationError(t, v)
+  }
 
   /**
    * Returns a new environment obtained by extending the environment `env1` with `env2`.
    * If a key is present in both `env1` and `env2` the value from `env2` is used.
    */
-  def extend(env1: Map[VSym, Value], env2: Map[VSym, Value]): Map[VSym, Value] = ??? // TODO
+  def extend(env1: Map[VSym, Value], env2: Map[VSym, Value]): Map[VSym, Value] = (env1 /: env2) {
+    case (acc, (s, v)) => acc + (s -> v)
+  }
 
   /**
    * Returns the interpretation of the given predicate `p`.
