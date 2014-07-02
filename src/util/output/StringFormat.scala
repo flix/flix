@@ -1,7 +1,7 @@
 package util.output
 
 import impl.logic._
-import impl.solver.Solver
+import impl.runtime.Solver
 
 object StringFormat {
   def format(p: Program): String = p.facts.map(format).mkString("\n") + "\n\n" + p.rules.map(format).mkString("\n")

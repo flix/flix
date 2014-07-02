@@ -1,4 +1,4 @@
-package impl.solver
+package impl.runtime
 
 import impl.logic.{Predicate, Symbol, Term, Value}
 

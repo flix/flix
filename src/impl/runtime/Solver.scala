@@ -1,4 +1,4 @@
-package impl.solver
+package impl.runtime
 
 import impl.logic.Symbol.{NamedSymbol => NSym, PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._

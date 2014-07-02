@@ -1,7 +1,7 @@
 package examples
 
 import impl.logic._
-import impl.solver.Solver
+import impl.runtime.Compiler
 import syntax.Symbols._
 import util.output.StringFormat
 
@@ -52,11 +52,13 @@ object FamilyTree {
 
     val program = Program(facts ++ clauses, interpretations)
 
-    println(StringFormat.format(program))
+    val compiler = new Compiler(program)
+    compiler.verify()
 
-    val solver = new Solver(program)
+    val solver = compiler.getSolver
     solver.solve()
 
+    println(StringFormat.format(program))
     StringFormat.printSolution(solver)
   }
 }

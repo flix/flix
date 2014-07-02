@@ -2,7 +2,7 @@ package examples
 
 import impl._
 import impl.logic._
-import impl.solver.Solver
+import impl.runtime.Solver
 import syntax.Symbols._
 
 object Example01 {
