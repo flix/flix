@@ -8,6 +8,7 @@ import util.collection.mutable
  * A semi-naive solver.
  */
 class Solver(program: Program) {
+// TODO: Remove unused code.
 
   /**
    * Relations.
@@ -103,6 +104,7 @@ class Solver(program: Program) {
   /**
    * Returns a model for the given predicate `p` with interpretation `i` under the given environment `env`.
    */
+  // TODO: Remove substitute??
   def evaluate(p: Predicate, i: Interpretation, env0: Map[VSym, Value]): List[Map[VSym, Value]] = i match {
     case Interpretation.Proposition(Value.Bool(false)) => List.empty
 
@@ -111,7 +113,7 @@ class Solver(program: Program) {
     case Interpretation.Relation.In1(_) =>
       val List(t1) = p.terms
       relation1.get(p.name).toList.flatMap {
-        case v1 => unify(substitute(t1, env0), v1)
+        case v1 => unify(substitute(t1, env0), v1, env0)
       }
 
     case Interpretation.Relation.In2(_, _) =>
@@ -119,8 +121,8 @@ class Solver(program: Program) {
       relation2.get(p.name).toList.flatMap {
         case (v1, v2) =>
           for (
-            env1 <- unify(substitute(t1, env0), v1);
-            env2 <- unify(substitute(t2, env1), v2)
+            env1 <- unify(substitute(t1, env0), v1, env0);
+            env2 <- unify(substitute(t2, env1), v2, env1)
           ) yield env2
       }
 
@@ -129,9 +131,9 @@ class Solver(program: Program) {
       relation3.get(p.name).toList.flatMap {
         case (v1, v2, v3) =>
           for (
-            env1 <- unify(substitute(t1, env0), v1);
-            env2 <- unify(substitute(t2, env1), v2);
-            env3 <- unify(substitute(t3, env2), v3)
+            env1 <- unify(substitute(t1, env0), v1, env0);
+            env2 <- unify(substitute(t2, env1), v2, env1);
+            env3 <- unify(substitute(t3, env2), v3, env2)
           ) yield env3
       }
 
@@ -140,10 +142,10 @@ class Solver(program: Program) {
       relation4.get(p.name).toList.flatMap {
         case (v1, v2, v3, v4) =>
           for (
-            env1 <- unify(substitute(t1, env0), v1);
-            env2 <- unify(substitute(t2, env1), v2);
-            env3 <- unify(substitute(t3, env2), v3);
-            env4 <- unify(substitute(t4, env3), v4)
+            env1 <- unify(substitute(t1, env0), v1, env0);
+            env2 <- unify(substitute(t2, env1), v2, env1);
+            env3 <- unify(substitute(t3, env2), v3, env2);
+            env4 <- unify(substitute(t4, env3), v4, env3)
           ) yield env4
       }
 
@@ -152,11 +154,11 @@ class Solver(program: Program) {
       relation5.get(p.name).toList.flatMap {
         case (v1, v2, v3, v4, v5) =>
           for (
-            env1 <- unify(substitute(t1, env0), v1);
-            env2 <- unify(substitute(t2, env1), v2);
-            env3 <- unify(substitute(t3, env2), v3);
-            env4 <- unify(substitute(t4, env3), v4);
-            env5 <- unify(substitute(t5, env4), v5)
+            env1 <- unify(substitute(t1, env0), v1, env0);
+            env2 <- unify(substitute(t2, env1), v2, env1);
+            env3 <- unify(substitute(t3, env2), v3, env2);
+            env4 <- unify(substitute(t4, env3), v4, env3);
+            env5 <- unify(substitute(t5, env4), v5, env4)
           ) yield env5
       }
 
@@ -341,42 +343,38 @@ class Solver(program: Program) {
 
   // TODO: Careful about existing bindings/free variables occuring in multiple places.
   // TODO: DOC
-  def unify(t: Term, v: Value): Option[Map[VSym, Value]] = {
-    def visit(t: Term, v: Value, env0: Map[VSym, Value]): Option[Map[VSym, Value]] = (t, v) match {
-      case (Term.Constant(v1), v2) if v1 == v2 => Some(env0)
-      case (Term.Variable(s), v2) => env0.get(s) match {
-        case None => Some(env0 + (s -> v2))
-        case Some(v3) if v2 != v3 => None
-        case Some(v3) if v2 == v3 => Some(env0)
-      }
-      case (Term.Constructor0(s1), Value.Constructor0(s2)) if s1 == s2 => Some(env0)
-      case (Term.Constructor1(s1, t1), Value.Constructor1(s2, v1)) if s1 == s2 => visit(t1, v1, env0)
-      case (Term.Constructor2(s1, t1, t2), Value.Constructor2(s2, v1, v2)) if s1 == s2 =>
-        for (env1 <- visit(t1, v1, env0);
-             env2 <- visit(t2, v2, env1))
-        yield env2
-      case (Term.Constructor3(s1, t1, t2, t3), Value.Constructor3(s2, v1, v2, v3)) if s1 == s2 =>
-        for (env1 <- visit(t1, v1, env0);
-             env2 <- visit(t2, v2, env1);
-             env3 <- visit(t3, v3, env2))
-        yield env3
-      case (Term.Constructor4(s1, t1, t2, t3, t4), Value.Constructor4(s2, v1, v2, v3, v4)) if s1 == s2 =>
-        for (env1 <- visit(t1, v1, env0);
-             env2 <- visit(t2, v2, env1);
-             env3 <- visit(t3, v3, env2);
-             env4 <- visit(t4, v4, env3))
-        yield env4
-      case (Term.Constructor5(s1, t1, t2, t3, t4, t5), Value.Constructor5(s2, v1, v2, v3, v4, v5)) if s1 == s2 =>
-        for (env1 <- visit(t1, v1, env0);
-             env2 <- visit(t2, v2, env1);
-             env3 <- visit(t3, v3, env2);
-             env4 <- visit(t4, v4, env3);
-             env5 <- visit(t5, v5, env4))
-        yield env5
-      case _ => None
+  def unify(t: Term, v: Value, env0: Map[VSym, Value]): Option[Map[VSym, Value]] = (t, v) match {
+    case (Term.Constant(v1), v2) if v1 == v2 => Some(env0)
+    case (Term.Variable(s), v2) => env0.get(s) match {
+      case None => Some(env0 + (s -> v2))
+      case Some(v3) if v2 != v3 => None
+      case Some(v3) if v2 == v3 => Some(env0)
     }
-
-    visit(t, v, Map.empty)
+    case (Term.Constructor0(s1), Value.Constructor0(s2)) if s1 == s2 => Some(env0)
+    case (Term.Constructor1(s1, t1), Value.Constructor1(s2, v1)) if s1 == s2 => unify(t1, v1, env0)
+    case (Term.Constructor2(s1, t1, t2), Value.Constructor2(s2, v1, v2)) if s1 == s2 =>
+      for (env1 <- unify(t1, v1, env0);
+           env2 <- unify(t2, v2, env1))
+      yield env2
+    case (Term.Constructor3(s1, t1, t2, t3), Value.Constructor3(s2, v1, v2, v3)) if s1 == s2 =>
+      for (env1 <- unify(t1, v1, env0);
+           env2 <- unify(t2, v2, env1);
+           env3 <- unify(t3, v3, env2))
+      yield env3
+    case (Term.Constructor4(s1, t1, t2, t3, t4), Value.Constructor4(s2, v1, v2, v3, v4)) if s1 == s2 =>
+      for (env1 <- unify(t1, v1, env0);
+           env2 <- unify(t2, v2, env1);
+           env3 <- unify(t3, v3, env2);
+           env4 <- unify(t4, v4, env3))
+      yield env4
+    case (Term.Constructor5(s1, t1, t2, t3, t4, t5), Value.Constructor5(s2, v1, v2, v3, v4, v5)) if s1 == s2 =>
+      for (env1 <- unify(t1, v1, env0);
+           env2 <- unify(t2, v2, env1);
+           env3 <- unify(t3, v3, env2);
+           env4 <- unify(t4, v4, env3);
+           env5 <- unify(t5, v5, env4))
+      yield env5
+    case _ => None
   }
 
 
