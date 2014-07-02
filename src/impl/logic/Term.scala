@@ -4,21 +4,19 @@ import impl.logic.Symbol.VariableSymbol
 
 sealed trait Term {
   /**
-   * Returns `true` iff the term has no free variables.
+   * Returns `true` iff the term is a value, i.e. has no free variables.
    */
-  def isConstant: Boolean = this match {
-    case Term.Constant(c) => true
-    case Term.Variable(v) => false
-    case Term.Constructor0(name) => true
-    case Term.Constructor1(name, t1) => t1.isConstant
-    case Term.Constructor2(name, t1, t2) => t1.isConstant && t2.isConstant
-    case Term.Constructor3(name, t1, t2, t3) => t1.isConstant && t2.isConstant && t3.isConstant
-    case Term.Constructor4(name, t1, t2, t3, t4) => t1.isConstant && t2.isConstant && t3.isConstant && t4.isConstant
-    case Term.Constructor5(name, t1, t2, t3, t4, t5) => t1.isConstant && t2.isConstant && t3.isConstant && t4.isConstant && t5.isConstant
-  }
+  def isValue: Boolean = asValue.nonEmpty
 
   /**
-   * Optionally returns `this` term as a value.
+   * Optionally returns the term as a value (under the empty environment.)
+   */
+  def asValue: Option[Value] = asValue(Map.empty)
+
+  /**
+   * Optionally returns the term as a value under the given environment `env`.
+   *
+   * Returns `None` if the term has free variables under the given environment.
    */
   def asValue(env: Map[VariableSymbol, Value]): Option[Value] = this match {
     case Term.Constant(v) => Some(v)

@@ -1,13 +1,6 @@
 package impl.logic
 
-sealed trait Formula {
-  /**
-   * Optionally returns the formula as a horn clause.
-   *
-   * Returns `None` if the formula is not a horn clause.
-   */
-  def asHornClause: Option[HornClause] = ???
-}
+sealed trait Formula
 
 object Formula {
 
@@ -20,4 +13,5 @@ object Formula {
   case class Disjunction(formulae: Set[Formula]) extends Formula
 
   case class Implication(left: Formula, right: Formula) extends Formula
+
 }
