@@ -1,6 +1,7 @@
 package util.output
 
 import impl.logic._
+import impl.solver.Solver
 
 object StringFormat {
   def format(p: Program): String = p.facts.map(format).mkString("\n") + "\n\n" + p.rules.map(format).mkString("\n")
@@ -28,5 +29,15 @@ object StringFormat {
     case Symbol.PredicateSymbol(x) => x
     case Symbol.NamedSymbol(x) => x
     case Symbol.VariableSymbol(x) => x
+  }
+
+  def printSolution(s: Solver): Unit = {
+    println("*** Solution ***")
+    for ((p, vs) <- s.relation1; v1 <- vs) {
+      println(format(p) + "(" + format(v1) + ").")
+    }
+    for ((p, vs) <- s.relation2; (v1, v2) <- vs) {
+      println(format(p) + "(" + format(v1) + "," + format(v2) + ").")
+    }
   }
 }

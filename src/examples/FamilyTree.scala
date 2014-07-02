@@ -56,6 +56,7 @@ object FamilyTree {
 
     val solver = new Solver(program)
     solver.solve()
-    solver.printSolution()
+
+    StringFormat.printSolution(solver)
   }
 }
