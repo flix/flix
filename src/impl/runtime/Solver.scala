@@ -58,29 +58,30 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Returns a set of models for the given horn clause `h` with interpretations `inv` under the given environment `env`.
+   * Returns a list of models for the given horn clause `h` with interpretations `inv` under the given environment `env`.
    */
   def evaluate(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): List[Map[VSym, Value]] = {
+    // Evaluate relational predicates before functional predicates.
     val relationals = h.body filter (p => isRelational(p, inv))
     val functionals = h.body -- relationals
-
-    val init = List(env)
     val predicates = relationals.toList ::: functionals.toList
 
+    // Fold each predicate over the intial environment.
+    val init = List(env)
     (init /: predicates) {
-      case (m, p) => evaluate(p, interpretationOf(p, inv), m)
+      case (envs, p) => evaluate(p, interpretationOf(p, inv), envs)
     }
   }
 
   /**
-   *
+   * Returns a list of environments for the given predicate `p` with interpretation `i` under *each* of the given environments `envs`.
    */
-  def evaluate(p: Predicate, i: Interpretation, m: List[Map[VSym, Value]]): List[Map[VSym, Value]] = {
-    m flatMap (evaluate(p, i, _))
+  def evaluate(p: Predicate, i: Interpretation, envs: List[Map[VSym, Value]]): List[Map[VSym, Value]] = {
+    envs flatMap (evaluate(p, i, _))
   }
 
   /**
-   * Returns a model for the given predicate `p` with interpretation `i` under the given environment `env`.
+   * Returns a list of environments for the given predicate `p` with interpretation `i` under the given environment `env0`.
    */
   def evaluate(p: Predicate, i: Interpretation, env0: Map[VSym, Value]): List[Map[VSym, Value]] = i match {
     case Interpretation.Proposition(Value.Bool(false)) => List.empty
@@ -214,13 +215,13 @@ class Solver(program: Program) {
   }
 
   /**
-   * Returns a new environment where all free variables, for the given predicate `p`,
+   * Optionally returns a new environment where all free variables, for the given predicate `p`,
    * have been mapped to the value in the given environment `env`.
    *
    * That is, if the horn clause is A(x, y, z) :- B(x, y), C(z), the predicate is B
    * and the environment is [0 -> a, 1 -> b] then the return environment is [x -> a, y -> b].
    *
-   * TODO: Update doc
+   * Returns `None` if no satisfying assignment exists.
    */
   def bind(h: HornClause, p: Predicate, env: IndexedSeq[Value]): Option[Map[VSym, Value]] = {
     var m = Map.empty[VSym, Value]
@@ -239,8 +240,14 @@ class Solver(program: Program) {
   // Unification                                                             //
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Careful about existing bindings/free variables occuring in multiple places.
-  // TODO: DOC
+  /**
+   * Optionally returns an environment such that the given term `t` is equal to the value `v`
+   * under the returned environment `env` assuming an initial environment `env0`.
+   *
+   * That is, t.asValue(unify(t, v)) == v.
+   *
+   * Returns `None` if unification is impossible.
+   */
   def unify(t: Term, v: Value, env0: Map[VSym, Value]): Option[Map[VSym, Value]] = (t, v) match {
     case (Term.Constant(v1), v2) if v1 == v2 => Some(env0)
     case (Term.Variable(s), v2) => env0.get(s) match {
