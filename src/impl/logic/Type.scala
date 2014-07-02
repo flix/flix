@@ -7,12 +7,12 @@ object Type {
   /**
    * The type of booleans.
    */
-  case object Boolean extends Type
+  case object Bool extends Type
 
   /**
    * The type of integers.
    */
-  case object Integer extends Type
+  case object Int extends Type
 
   /**
    * The type of strings.

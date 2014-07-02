@@ -70,19 +70,20 @@ class Verifier(program: Program) {
   /**
    * Reflexivity: ∀x. x ⊑ x
    */
-  def reflexivity(env: Map[VSym, Type]): Set[HornClause] = ???
+  def reflexivity(env: Map[VSym, Type]): Formula = Formula.Atom(Term.Variable(Symbol.VariableSymbol("x")))
 
+  def satisfy(f: Formula, tenv: Map[VSym, Type]): Map[VSym, Value] = ???
 
   /**
    * Anti-Symmetry: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y.
    */
-  def antiSymmetry(lattice: Type.Lattice): Set[HornClause] = ???
+  def antiSymmetry(lattice: Type.Lattice): Formula = ???
 
 
   /**
    * Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
    */
-  def transitivity(lattice: Type.Lattice): Set[HornClause] = ???
+  def transitivity(lattice: Type.Lattice): Formula = ???
 
   /**
    * ∀x. ⊥ ⊑ x.
@@ -114,6 +115,8 @@ class Verifier(program: Program) {
 
   // TODO???
   trait NoAscendingChains
+
+
 
 
 }
