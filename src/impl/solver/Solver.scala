@@ -13,9 +13,9 @@ class Solver(program: Program) {
    * Relations.
    */
   val relation1 = mutable.MultiMap1.empty[PSym, Value]
-  val relation2 = mutable.MultiMap2.empty[PSym, Value, Value]
-  val relation3 = mutable.MultiMap3.empty[PSym, Value, Value, Value]
-  val relation4 = mutable.MultiMap4.empty[PSym, Value, Value, Value, Value]
+  val relation2 = mutable.MultiMap1.empty[PSym, (Value, Value)]
+  val relation3 = mutable.MultiMap1.empty[PSym, (Value, Value, Value)]
+  val relation4 = mutable.MultiMap1.empty[PSym, (Value, Value, Value, Value)]
   val relation5 = mutable.MultiMap1.empty[PSym, (Value, Value, Value, Value, Value)]
 
   /**
@@ -105,23 +105,50 @@ class Solver(program: Program) {
    */
   def evaluate(p: Predicate, i: Interpretation, env0: Map[VSym, Value]): List[Map[VSym, Value]] = i match {
     case Interpretation.Proposition(Value.Bool(false)) => List.empty
+
     case Interpretation.Proposition(Value.Bool(true)) => List(env0)
+
     case Interpretation.Relation.In1(_) =>
       val List(t1) = p.terms
-      ???
+      relation1.get(p.name).toList.flatMap {
+        case v1 => unify(substitute(t1, env0), v1)
+      }
 
     case Interpretation.Relation.In2(_, _) =>
-      ???
+      val List(t1, t2) = p.terms
+      relation2.get(p.name).toList.flatMap {
+        case (v1, v2) =>
+          for (
+            env1 <- unify(substitute(t1, env0), v1);
+            env2 <- unify(substitute(t2, env1), v2)
+          ) yield env2
+      }
 
     case Interpretation.Relation.In3(_, _, _) =>
-      ???
+      val List(t1, t2, t3) = p.terms
+      relation3.get(p.name).toList.flatMap {
+        case (v1, v2, v3) =>
+          for (
+            env1 <- unify(substitute(t1, env0), v1);
+            env2 <- unify(substitute(t2, env1), v2);
+            env3 <- unify(substitute(t3, env2), v3)
+          ) yield env3
+      }
 
     case Interpretation.Relation.In4(_, _, _, _) =>
-      ???
+      val List(t1, t2, t3, t4) = p.terms
+      relation4.get(p.name).toList.flatMap {
+        case (v1, v2, v3, v4) =>
+          for (
+            env1 <- unify(substitute(t1, env0), v1);
+            env2 <- unify(substitute(t2, env1), v2);
+            env3 <- unify(substitute(t3, env2), v3);
+            env4 <- unify(substitute(t4, env3), v4)
+          ) yield env4
+      }
 
     case Interpretation.Relation.In5(_, _, _, _, _) =>
       val List(t1, t2, t3, t4, t5) = p.terms
-
       relation5.get(p.name).toList.flatMap {
         case (v1, v2, v3, v4, v5) =>
           for (
@@ -133,7 +160,7 @@ class Solver(program: Program) {
           ) yield env5
       }
 
-    case _ => throw new RuntimeException(i.toString)
+    case _ => throw new Error.NonRelationalPredicate(p)
   }
 
   //def filter(tuples: Product)
@@ -161,7 +188,7 @@ class Solver(program: Program) {
     case Interpretation.Relation.In2(t1, t2) =>
       val k1 = lookupValue(p, 0, env)
       val v = lookupValue(p, 1, env)
-      val newFact = relation2.put(p.name, k1, v)
+      val newFact = relation2.put(p.name, (k1, v))
       if (newFact)
         propagate(p, IndexedSeq(k1, v))
 
@@ -169,7 +196,7 @@ class Solver(program: Program) {
       val k1 = lookupValue(p, 0, env)
       val k2 = lookupValue(p, 1, env)
       val v = lookupValue(p, 2, env)
-      val newFact = relation3.put(p.name, k1, k2, v)
+      val newFact = relation3.put(p.name, (k1, k2, v))
       if (newFact)
         propagate(p, IndexedSeq(k1, k2, v))
 
@@ -178,7 +205,7 @@ class Solver(program: Program) {
       val k2 = lookupValue(p, 1, env)
       val k3 = lookupValue(p, 2, env)
       val v = lookupValue(p, 3, env)
-      val newFact = relation4.put(p.name, k1, k2, k3, v)
+      val newFact = relation4.put(p.name, (k1, k2, k3, v))
       if (newFact)
         propagate(p, IndexedSeq(k1, k2, k3, v))
 
