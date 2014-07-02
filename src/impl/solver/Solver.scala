@@ -103,48 +103,29 @@ class Solver(program: Program) {
   /**
    * Returns a model for the given predicate `p` with interpretation `i` under the given environment `env`.
    */
-  def evaluate(p: Predicate, i: Interpretation, env: Map[VSym, Value]): List[Map[VSym, Value]] = i match {
+  def evaluate(p: Predicate, i: Interpretation, env0: Map[VSym, Value]): List[Map[VSym, Value]] = i match {
     case Interpretation.Proposition(Value.Bool(false)) => List.empty
-    case Interpretation.Proposition(Value.Bool(true)) => List(env)
-    case Interpretation.Relation.In1(t1) =>
+    case Interpretation.Proposition(Value.Bool(true)) => List(env0)
+    case Interpretation.Relation.In1(_) =>
+      val List(t1) = p.terms
+      ???
 
-      lookupTerm(p, 0) match {
-        case Term.Constant(v) =>
-          if (!relation1.has(p.name, v))
-            List.empty
-          else
-            List(env)
-        case Term.Variable(s) => ???
-        case t =>
-          for (v <- relation1.get(p.name)) {
-            val env2 = unify23(t, v)
-          }
-          ???
-      }
-    case Interpretation.Relation.In2(t1, t2) =>
-      (lookupTerm(p, 0), lookupTerm(p, 1)) match {
-        case (Term.Constant(v1), Term.Constant(v2)) => ???
-        case (Term.Variable(var1), Term.Variable(var2)) =>
-          // TODO: Must take bindings into account.. use substitute...
-          val r = scala.collection.mutable.Set.empty[Map[VSym, Value]]
-          for ((v1, v2) <- relation2.get(p.name).tuples) {
+    case Interpretation.Relation.In2(_, _) =>
+      ???
 
-          }
-          ???
-        case _ => throw new RuntimeException(i.toString)
-      }
+    case Interpretation.Relation.In3(_, _, _) =>
+      ???
 
+    case Interpretation.Relation.In4(_, _, _, _) =>
+      ???
 
     case Interpretation.Relation.In5(_, _, _, _, _) =>
       val List(t1, t2, t3, t4, t5) = p.terms
 
-      // relation5.get(p.name).toList :: List[(Value, Value, Value, Value)]
-      // def substitute(t: Term, env: Env): Term
-      // def unify(t: Term, v: Value): Option[Env]
       relation5.get(p.name).toList.flatMap {
         case (v1, v2, v3, v4, v5) =>
           for (
-            env1 <- unify(substitute(t1, env), v1);
+            env1 <- unify(substitute(t1, env0), v1);
             env2 <- unify(substitute(t2, env1), v2);
             env3 <- unify(substitute(t3, env2), v3);
             env4 <- unify(substitute(t4, env3), v4);
