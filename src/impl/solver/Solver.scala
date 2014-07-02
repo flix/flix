@@ -8,7 +8,7 @@ import util.collection.mutable
  * A semi-naive solver.
  */
 class Solver(program: Program) {
-// TODO: Remove unused code.
+  // TODO: Remove unused code.
 
   /**
    * Relations.
@@ -58,6 +58,19 @@ class Solver(program: Program) {
     while (queue.nonEmpty) {
       val (h, env) = queue.dequeue()
       resolve(h, program.interpretation, env)
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Solution                                                                //
+  /////////////////////////////////////////////////////////////////////////////
+
+  def printSolution(): Unit = {
+    for ((p, v1) <- relation1) {
+      println(p + "(" + v1 + ")")
+    }
+    for ((p, vs) <- relation2; (v1, v2) <- vs) {
+      println(p + "(" + v1 + "," + v2 + ")")
     }
   }
 
