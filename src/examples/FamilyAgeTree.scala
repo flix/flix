@@ -38,7 +38,7 @@ object FamilyAgeTree {
       HornClause(Predicate("MaleGrandParent", List(Term.Variable("x"), Term.Variable("z"))), Set(
         Predicate("Parent", List(Term.Variable("x"), Term.Variable("y"))),
         Predicate("Parent", List(Term.Variable("y"), Term.Variable("z"))),
-        Predicate("AS", List(Term.Constructor2("AgeAndSex", Term.Constructor0("Male"), Term.Variable("_"))))
+        Predicate("AS", List(Term.Variable("z"), Term.Constructor2("AgeAndSex", Term.Constructor0("Male"), Term.Variable("_"))))
       ))
     )
 
