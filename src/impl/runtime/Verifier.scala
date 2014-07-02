@@ -20,15 +20,35 @@ class Verifier(program: Program) {
     /**
      * Every fact must be ground (i.e. every horn clause without a body must have only values in the head predicate.)
      */
-    for (fact <- program.facts) {
-      if (!fact.isGround) {
-        throw new Error.NonGroundFact(fact.head)
+    for (f <- program.facts) {
+      if (!f.isGround) {
+        throw new Error.UnsafeGroundFact(f.head)
       }
     }
 
     /**
      * Every variable which occurs in the head of a rule must also occur in its body.
      */
+    for (h <- program.clauses) {
+      for (t <- h.head.terms) {
+        for (v <- t.variables) {
+          val found = h.body.exists(_.terms.exists(_.variables.contains(v)))
+          if (!found) {
+            throw new Error.UnsafeVariableSymbol(h, v)
+          }
+        }
+      }
+    }
+
+    /**
+     * Every predicate must have en interpretation.
+     */
+
+
+    /**
+     * Every head predicate must be relational.
+     */
+
 
   }
 

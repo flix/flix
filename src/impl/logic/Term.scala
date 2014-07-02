@@ -64,6 +64,20 @@ sealed trait Term {
     case None => throw new Error.NonValueTerm(this)
     case Some(v) => v
   }
+
+  /**
+   * Returns the set of (free) variables in the term.
+   */
+  def variables: Set[Symbol.VariableSymbol] = this match {
+    case Term.Constant(v) => Set.empty
+    case Term.Variable(s) => Set(s)
+    case Term.Constructor0(s) => Set.empty
+    case Term.Constructor1(s, t1) => t1.variables
+    case Term.Constructor2(s, t1, t2) => t1.variables ++ t2.variables
+    case Term.Constructor3(s, t1, t2, t3) => t1.variables ++ t2.variables ++ t3.variables
+    case Term.Constructor4(s, t1, t2, t3, t4) => t1.variables ++ t2.variables ++ t3.variables ++ t4.variables
+    case Term.Constructor5(s, t1, t2, t3, t4, t5) => t1.variables ++ t2.variables ++ t3.variables ++ t4.variables ++ t5.variables
+  }
 }
 
 object Term {

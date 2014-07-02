@@ -1,12 +1,13 @@
 package impl.runtime
 
-import impl.logic.{Predicate, Symbol, Term, Value}
+import impl.logic._
 
 trait Error
 
 object Error {
 
   // TODO: Cleanup in errors.
+  // TODO: Remove "new" since these are case classes.
 
   /**
    * An error which represents that the interpretation for predicate symbol `s` is missing.
@@ -23,5 +24,7 @@ object Error {
 
   case class UnificationError(t: Term, v: Value) extends RuntimeException
 
-  case class NonGroundFact(p: Predicate) extends RuntimeException
+  case class UnsafeGroundFact(p: Predicate) extends RuntimeException
+  
+  case class UnsafeVariableSymbol(h: HornClause, v: Symbol.VariableSymbol) extends RuntimeException
 }
