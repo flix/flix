@@ -57,16 +57,10 @@ class Verifier(program: Program) {
         throw new Error.NonRelationalPredicate(h.head.name)
       }
     }
-
-
   }
 
 
   // TODO: Prove by veryfing that the negation of the properties is unsatisfiable.
-  // TODO: Extract Leq symbol from the clause.
-  // TODO: Need more than horn clauses???
-  // TODO: Flatten?
-  // TODO: Type binding for verification.
 
   /**
    * Function: ∀x, y. x = y => f(x) = f(y).
