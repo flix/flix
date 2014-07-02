@@ -12,9 +12,10 @@ object Parity01 {
       Type.Constructor0("Bot")
     ))
 
-  //  val Join = Formula.Disjunction(Set(
-   // Formula.Atom(Predicate("Leq"))
-  //  ) )
+    val Join = Formula.Disjunction(Set(
+      Formula.Atom(Predicate("Leq", List()))
+
+    ))
 
   }
 }

@@ -70,7 +70,7 @@ class Verifier(program: Program) {
   /**
    * Reflexivity: ∀x. x ⊑ x
    */
-  def reflexivity(env: Map[VSym, Type]): Formula = Formula.Atom(Term.Variable(Symbol.VariableSymbol("x")))
+  def reflexivity(env: Map[VSym, Type]): Formula = ??? //Formula.Atom(Term.Variable(Symbol.VariableSymbol("x")))
 
   def satisfy(f: Formula, tenv: Map[VSym, Type]): Map[VSym, Value] = ???
 

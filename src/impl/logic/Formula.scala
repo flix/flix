@@ -4,7 +4,7 @@ sealed trait Formula
 
 object Formula {
 
-  case class Atom(t: Term) extends Formula
+  case class Atom(p: Predicate) extends Formula
 
   case class Negation(formula: Formula) extends Formula
 
