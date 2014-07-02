@@ -2,17 +2,30 @@ package impl.runtime
 
 import impl.logic._
 
-class Compiler(program: Program) {
+/**
+ * A verifier / type checker.
+ */
+class Verifier(program: Program) {
 
+  /**
+   * Verifies that the program is safe.
+   */
   def verify(): Unit = {
     // 1. Each fact must be ground.
     program.facts.find(!_.isGround).exists(f => throw new RuntimeException(s"The fact $f is not ground!"))
 
     // 2. Each variable which occurs in the head of a rule of must also occur in its body.
   }
-  
+
+  /**
+   * Returns a solver for the program.
+   */
   def getSolver: Solver = new Solver(program)
 
+  
+  
+  
+  
   // TODO: Prove by veryfing that the negation of the properties is unsatisfiable.
   // TODO: Extract Leq symbol from the clause.
   // TODO: Need more than horn clauses???

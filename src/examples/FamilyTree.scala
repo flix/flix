@@ -1,7 +1,7 @@
 package examples
 
 import impl.logic._
-import impl.runtime.Compiler
+import impl.runtime.Verifier
 import syntax.Symbols._
 import util.output.StringFormat
 
@@ -52,7 +52,7 @@ object FamilyTree {
 
     val program = Program(facts ++ clauses, interpretations)
 
-    val compiler = new Compiler(program)
+    val compiler = new Verifier(program)
     compiler.verify()
 
     val solver = compiler.getSolver
