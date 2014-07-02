@@ -84,17 +84,13 @@ class Solver(program: Program) {
    * Returns a list of environments for the given predicate `p` with interpretation `i` under the given environment `env0`.
    */
   def evaluate(p: Predicate, i: Interpretation, env0: Map[VSym, Value]): List[Map[VSym, Value]] = i match {
-    case Interpretation.Proposition(Value.Bool(false)) => List.empty
-
-    case Interpretation.Proposition(Value.Bool(true)) => List(env0)
-
-    case Interpretation.Relation.In1(_) =>
+    case Interpretation.Relation.In1 =>
       val List(t1) = p.terms
       relation1.get(p.name).toList.flatMap {
         case v1 => unify(t1, v1, env0)
       }
 
-    case Interpretation.Relation.In2(_, _) =>
+    case Interpretation.Relation.In2 =>
       val List(t1, t2) = p.terms
       relation2.get(p.name).toList.flatMap {
         case (v1, v2) =>
@@ -104,7 +100,7 @@ class Solver(program: Program) {
           ) yield env2
       }
 
-    case Interpretation.Relation.In3(_, _, _) =>
+    case Interpretation.Relation.In3 =>
       val List(t1, t2, t3) = p.terms
       relation3.get(p.name).toList.flatMap {
         case (v1, v2, v3) =>
@@ -115,7 +111,7 @@ class Solver(program: Program) {
           ) yield env3
       }
 
-    case Interpretation.Relation.In4(_, _, _, _) =>
+    case Interpretation.Relation.In4 =>
       val List(t1, t2, t3, t4) = p.terms
       relation4.get(p.name).toList.flatMap {
         case (v1, v2, v3, v4) =>
@@ -127,7 +123,7 @@ class Solver(program: Program) {
           ) yield env4
       }
 
-    case Interpretation.Relation.In5(_, _, _, _, _) =>
+    case Interpretation.Relation.In5 =>
       val List(t1, t2, t3, t4, t5) = p.terms
       relation5.get(p.name).toList.flatMap {
         case (v1, v2, v3, v4, v5) =>
@@ -163,35 +159,35 @@ class Solver(program: Program) {
    * Satisfies the given predicate `p` under the given interpretation `i` and environment `env`.
    */
   def satisfy(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Unit = i match {
-    case Interpretation.Relation.In1(t1) =>
+    case Interpretation.Relation.In1 =>
       val List(t1) = p.terms
       val v1 = t1.toValue(env)
       val newFact = relation1.put(p.name, v1)
       if (newFact)
         propagate(p, IndexedSeq(v1))
 
-    case Interpretation.Relation.In2(_, _) =>
+    case Interpretation.Relation.In2 =>
       val List(t1, t2) = p.terms
       val (v1, v2) = (t1.toValue(env), t2.toValue(env))
       val newFact = relation2.put(p.name, (v1, v2))
       if (newFact)
         propagate(p, IndexedSeq(v1, v2))
 
-    case Interpretation.Relation.In3(t1, t2, t3) =>
+    case Interpretation.Relation.In3 =>
       val List(t1, t2, t3) = p.terms
       val (v1, v2, v3) = (t1.toValue(env), t2.toValue(env), t3.toValue(env))
       val newFact = relation3.put(p.name, (v1, v2, v3))
       if (newFact)
         propagate(p, IndexedSeq(v1, v2, v3))
 
-    case Interpretation.Relation.In4(t1, t2, t3, t4) =>
+    case Interpretation.Relation.In4 =>
       val List(t1, t2, t3, t4) = p.terms
       val (v1, v2, v3, v4) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env))
       val newFact = relation4.put(p.name, (v1, v2, v3, v4))
       if (newFact)
         propagate(p, IndexedSeq(v1, v2, v3, v4))
 
-    case Interpretation.Relation.In5(t1, t2, t3, t4, t5) =>
+    case Interpretation.Relation.In5 =>
       val List(t1, t2, t3, t4, t5) = p.terms
       val (v1, v2, v3, v4, v5) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env), t5.toValue(env))
       val newFact = relation5.put(p.name, (v1, v2, v3, v4, v5))
@@ -299,16 +295,16 @@ class Solver(program: Program) {
    * Returns `true` iff the given predicate `p` is relational under the given interpretations `inv`.
    */
   private def isRelational(p: Predicate, inv: Map[PSym, Interpretation]): Boolean = interpretationOf(p, inv) match {
-    case _: Interpretation.Relation.In1 => true
-    case _: Interpretation.Relation.In2 => true
-    case _: Interpretation.Relation.In3 => true
-    case _: Interpretation.Relation.In4 => true
-    case _: Interpretation.Relation.In5 => true
-    case _: Interpretation.Map.Leq1 => true
-    case _: Interpretation.Map.Leq2 => true
-    case _: Interpretation.Map.Leq3 => true
-    case _: Interpretation.Map.Leq4 => true
-    case _: Interpretation.Map.Leq5 => true
+    case Interpretation.Relation.In1 => true
+    case Interpretation.Relation.In2 => true
+    case Interpretation.Relation.In3 => true
+    case Interpretation.Relation.In4 => true
+    case Interpretation.Relation.In5 => true
+    case Interpretation.Map.Leq1 => true
+    case Interpretation.Map.Leq2 => true
+    case Interpretation.Map.Leq3 => true
+    case Interpretation.Map.Leq4 => true
+    case Interpretation.Map.Leq5 => true
     case _ => false
   }
 }

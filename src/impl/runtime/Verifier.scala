@@ -1,5 +1,6 @@
 package impl.runtime
 
+import impl.logic.Symbol.{PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
 
 /**
@@ -11,7 +12,12 @@ class Verifier(program: Program) {
    * Verifies that the program is safe.
    */
   def verify(): Unit = {
-    // 1. Each fact must be ground.
+    /**
+     * Every fact must be ground.
+     */
+    for (fact <- program.facts){
+
+    }
     program.facts.find(!_.isGround).exists(f => throw new RuntimeException(s"The fact $f is not ground!"))
 
     // 2. Each variable which occurs in the head of a rule of must also occur in its body.
@@ -35,12 +41,12 @@ class Verifier(program: Program) {
   /**
    * Function: ∀x, y. x = y => f(x) = f(y).
    */
-  def function(env: Map[Symbol, Type]): Formula = ???
+  def function(env: Map[VSym, Type]): Formula = ???
 
   /**
    * Reflexivity: ∀x. x ⊑ x
    */
-  def reflexivity(lattice: Type.Lattice): Set[HornClause] = ???
+  def reflexivity(env: Map[VSym, Type]): Set[HornClause] = ???
 
   //    lattice.elms match {
   //    case Type.Nominal(symbol) =>

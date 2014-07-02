@@ -43,9 +43,9 @@ object FamilyTree02 {
     )
 
     val interpretations = Map(
-      "Parent".asP -> Interpretation.Relation.In2(Type.String, Type.String),
-      "AS".asP -> Interpretation.Relation.In2(Type.String, Type.Constructor2("AgeAndSex", Type.String, Type.Integer)),
-      "MaleGrandParent".asP -> Interpretation.Relation.In2(Type.String, Type.String)
+      "Parent".asP -> Interpretation.Relation.In2,
+      "AS".asP -> Interpretation.Relation.In2,
+      "MaleGrandParent".asP -> Interpretation.Relation.In2
     )
 
     val program = Program(facts ++ clauses, interpretations)

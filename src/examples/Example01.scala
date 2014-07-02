@@ -141,15 +141,15 @@ object Example01 {
     )
 
     val interpretation = Map(
-      "New".asP -> Interpretation.Relation.In2(VariableType, ObjectType),
-      "Assign".asP -> Interpretation.Relation.In2(VariableType, VariableType),
-      "Load".asP -> Interpretation.Relation.In3(VariableType, VariableType, FieldType),
-      "Store".asP -> Interpretation.Relation.In3(VariableType, FieldType, VariableType),
+      "New".asP -> Interpretation.Relation.In2,
+      "Assign".asP -> Interpretation.Relation.In2,
+      "Load".asP -> Interpretation.Relation.In3,
+      "Store".asP -> Interpretation.Relation.In3,
 
-      "VarPointsTo".asP -> Interpretation.Relation.In2(VariableType, LatticeType),
-      "HeapPointsTo".asP -> Interpretation.Relation.In3(ObjectType, FieldType, LatticeType),
+      "VarPointsTo".asP -> Interpretation.Relation.In2,
+      "HeapPointsTo".asP -> Interpretation.Relation.In3,
 
-      "Sum".asP -> Interpretation.Functional.Functional2(SignType, SignType, Sum)
+      "Sum".asP -> Interpretation.Functional.Functional2
     )
 
     val p = Program(clauses ++ facts, interpretation)
