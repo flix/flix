@@ -281,22 +281,29 @@ class Solver(program: Program) {
     case Some(t) => substituteValue(t, env)
   }
 
-
-  // TODO: Try substitute Eiter[Value, Term]
-
-  def sub(t: Term, env: Map[VSym, Value]): Either[Term, Value] = t.asValue(env) match {
+  /**
+   * Either returns a fully evaluated value or a term with variables replaced by their corresponding values from the given environment `env`.
+   */
+  def substitute(t: Term, env: Map[VSym, Value]): Either[Term, Value] = t.asValue(env) match {
     case None => Left(substituteTerm(t, env))
     case Some(v) => Right(v)
   }
 
-
-  // TODO: Need substitute for terms.
   /**
    * Returns the term obtained from `t` by replacing all free variables in `t` with their corresponding values from the given environment `env`.
    */
   def substituteTerm(t: Term, env: Map[VSym, Value]): Term = t match {
     case Term.Constant(v) => Term.Constant(v)
-
+    case Term.Variable(s) => env.get(s) match {
+      case None => Term.Variable(s)
+      case Some(v) => Term.Constant(v)
+    }
+    case Term.Constructor0(s) => Term.Constructor0(s)
+    case Term.Constructor1(s, t1) => Term.Constructor1(s, substituteTerm(t1, env))
+    case Term.Constructor2(s, t1, t2) => Term.Constructor2(s, substituteTerm(t1, env), substituteTerm(t2, env))
+    case Term.Constructor3(s, t1, t2, t3) => Term.Constructor3(s, substituteTerm(t1, env), substituteTerm(t2, env), substituteTerm(t3, env))
+    case Term.Constructor4(s, t1, t2, t3, t4) => Term.Constructor4(s, substituteTerm(t1, env), substituteTerm(t2, env), substituteTerm(t3, env), substituteTerm(t4, env))
+    case Term.Constructor5(s, t1, t2, t3, t4, t5) => Term.Constructor5(s, substituteTerm(t1, env), substituteTerm(t2, env), substituteTerm(t3, env), substituteTerm(t4, env), substituteTerm(t5, env))
   }
 
   /**
