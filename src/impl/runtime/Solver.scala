@@ -8,10 +8,9 @@ import util.collection.mutable
  * A semi-naive solver.
  */
 class Solver(program: Program) {
-  // TODO: Remove unused code.
 
   /**
-   * Relations.
+   * The tables for n-ary relations.
    */
   val relation1 = mutable.MultiMap1.empty[PSym, Value]
   val relation2 = mutable.MultiMap1.empty[PSym, (Value, Value)]
@@ -20,17 +19,19 @@ class Solver(program: Program) {
   val relation5 = mutable.MultiMap1.empty[PSym, (Value, Value, Value, Value, Value)]
 
   /**
-   * Dependencies.
+   * A map of dependencies between predicate symbols and horn clauses.
+   *
+   * If a horn clause `h` contains a predicate `p` then the map contains the element `p -> h`.
    */
   val dependencies = mutable.MultiMap1.empty[PSym, HornClause]
 
   /**
-   * Worklist.
+   * A work list of pending horn clauses (and their associated environments).
    */
   val queue = scala.collection.mutable.Queue.empty[(HornClause, Map[VSym, Value])]
 
   /**
-   * Fixpoint computation.
+   * The fixpoint computation.
    */
   def solve(): Unit = {
     // Find dependencies between predicates and horn clauses.
@@ -39,30 +40,16 @@ class Solver(program: Program) {
       dependencies.put(p.name, h)
     }
 
-    // Satisfy all facts. Satisfying a fact adds violated horn clauses to the work list.
+    // Satisfy all facts. Satisfying a fact adds violated horn clauses (and environments) to the work list.
     for (h <- program.facts) {
       satisfy(h.head, program.interpretation, Map.empty[VSym, Value])
     }
 
-    // Iteratively try to resolve horn clauses.
-    // Resolving a horn clause may add new facts and thus new items to the work list.
+    // Iteratively try to satisfy pending horn clauses.
+    // Satisfying a horn clause may cause additional items to be added to the work list.
     while (queue.nonEmpty) {
       val (h, env) = queue.dequeue()
-      resolve(h, program.interpretation, env)
-    }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Resolution                                                              //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-   * Adds all facts which satisfies the given horn clause `h`.
-   */
-  def resolve(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): Unit = {
-    val models = evaluate(h, inv, env)
-    for (model <- models) {
-      satisfy(h.head, inv, model)
+      satisfy(h, program.interpretation, env)
     }
   }
 
@@ -156,8 +143,20 @@ class Solver(program: Program) {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Satisfy                                                                 //
+  // Satisfication                                                           //
   /////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Satisfies the given horn clause `h` by finding all valid models of the given environment `env`.
+   *
+   * Adds all facts which satisfies the given horn clause `h`.
+   */
+  def satisfy(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): Unit = {
+    val models = evaluate(h, inv, env)
+    for (model <- models) {
+      satisfy(h.head, inv, model)
+    }
+  }
 
   /**
    * Satisfies the given predicate `p` under the given interpretations `inv` and environment `env`.
