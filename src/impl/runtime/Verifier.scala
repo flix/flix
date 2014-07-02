@@ -9,29 +9,30 @@ import impl.logic._
 class Verifier(program: Program) {
 
   /**
-   * Verifies that the program is safe.
-   */
-  def verify(): Unit = {
-    /**
-     * Every fact must be ground.
-     */
-    for (fact <- program.facts){
-
-    }
-    program.facts.find(!_.isGround).exists(f => throw new RuntimeException(s"The fact $f is not ground!"))
-
-    // 2. Each variable which occurs in the head of a rule of must also occur in its body.
-  }
-
-  /**
    * Returns a solver for the program.
    */
   def getSolver: Solver = new Solver(program)
 
-  
-  
-  
-  
+  /**
+   * Verifies that the program is safe.
+   */
+  def verify(): Unit = {
+    /**
+     * Every fact must be ground (i.e. every horn clause without a body must have only values in the head predicate.)
+     */
+    for (fact <- program.facts) {
+      if (!fact.isGround) {
+        throw new Error.NonGroundFact(fact.head)
+      }
+    }
+
+    /**
+     * Every variable which occurs in the head of a rule must also occur in its body.
+     */
+
+  }
+
+
   // TODO: Prove by veryfing that the negation of the properties is unsatisfiable.
   // TODO: Extract Leq symbol from the clause.
   // TODO: Need more than horn clauses???
@@ -48,28 +49,6 @@ class Verifier(program: Program) {
    */
   def reflexivity(env: Map[VSym, Type]): Set[HornClause] = ???
 
-  //    lattice.elms match {
-  //    case Type.Nominal(symbol) =>
-  //      // Leq(symbol, symbol).
-  //      Set(
-  //        HornClause(Predicate("Leq".asP, List(Term.Constant(Value.Constructor0(symbol)), Term.Constant(Value.Constructor0(symbol)))), Set.empty)
-  //      )
-  //    case Type.Boolean =>
-  //      // Leq(true, true).
-  //      // Leq(false, false).
-  //      Set(
-  //        HornClause(Predicate("Leq".asP, List(Term.Constant(Value.Bool(b = true)), Term.Constant(Value.Bool(b = true)))), Set.empty),
-  //        HornClause(Predicate("Leq".asP, List(Term.Constant(Value.Bool(b = false)), Term.Constant(Value.Bool(b = false)))), Set.empty)
-  //      )
-  //    case Type.Integer =>
-  //      // Leq(x, x).
-  //      // Int(x).
-  //      Set(
-  //        HornClause(Predicate("Int".asP, List(Term.Variable('x))), Set.empty),
-  //        HornClause(Predicate("Leq".asP, List(Term.Variable('x))), Set.empty)
-  //      )
-  //    case _ => ???
-  //  }
 
   /**
    * Anti-Symmetry: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y.
@@ -113,9 +92,6 @@ class Verifier(program: Program) {
   // TODO???
   trait NoAscendingChains
 
-  def fresh(t: Type): Term.Variable = ???
-
-  def leq(e1: Term.Variable, t1: Type, e2: Term.Variable, t2: Type): Set[HornClause] = ???
 
 }
 

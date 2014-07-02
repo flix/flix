@@ -6,6 +6,8 @@ trait Error
 
 object Error {
 
+  // TODO: Cleanup in errors.
+
   /**
    * An error which represents that the interpretation for predicate symbol `s` is missing.
    */
@@ -20,4 +22,6 @@ object Error {
   case class NonValueTerm(t: Term) extends RuntimeException
 
   case class UnificationError(t: Term, v: Value) extends RuntimeException
+
+  case class NonGroundFact(p: Predicate) extends RuntimeException
 }
