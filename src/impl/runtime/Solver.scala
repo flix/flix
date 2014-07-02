@@ -95,7 +95,6 @@ class Solver(program: Program) {
   /**
    * Returns a model for the given predicate `p` with interpretation `i` under the given environment `env`.
    */
-  // TODO: Remove substitute??
   def evaluate(p: Predicate, i: Interpretation, env0: Map[VSym, Value]): List[Map[VSym, Value]] = i match {
     case Interpretation.Proposition(Value.Bool(false)) => List.empty
 
@@ -156,8 +155,6 @@ class Solver(program: Program) {
     case _ => throw new Error.NonRelationalPredicate(p)
   }
 
-  //def filter(tuples: Product)
-
   /////////////////////////////////////////////////////////////////////////////
   // Satisfy                                                                 //
   /////////////////////////////////////////////////////////////////////////////
@@ -173,10 +170,11 @@ class Solver(program: Program) {
    */
   def satisfy(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Unit = i match {
     case Interpretation.Relation.In1(t1) =>
-      val v = lookupValue(p, 0, env)
-      val newFact = relation1.put(p.name, v)
+      val List(t1) = p.terms
+      val v1 = t1.toValue(env)
+      val newFact = relation1.put(p.name, v1)
       if (newFact)
-        propagate(p, IndexedSeq(v))
+        propagate(p, IndexedSeq(v1))
 
     case Interpretation.Relation.In2(_, _) =>
       val List(t1, t2) = p.terms
@@ -186,32 +184,25 @@ class Solver(program: Program) {
         propagate(p, IndexedSeq(v1, v2))
 
     case Interpretation.Relation.In3(t1, t2, t3) =>
-      val k1 = lookupValue(p, 0, env)
-      val k2 = lookupValue(p, 1, env)
-      val v = lookupValue(p, 2, env)
-      val newFact = relation3.put(p.name, (k1, k2, v))
+      val List(t1, t2, t3) = p.terms
+      val (v1, v2, v3) = (t1.toValue(env), t2.toValue(env), t3.toValue(env))
+      val newFact = relation3.put(p.name, (v1, v2, v3))
       if (newFact)
-        propagate(p, IndexedSeq(k1, k2, v))
+        propagate(p, IndexedSeq(v1, v2, v3))
 
     case Interpretation.Relation.In4(t1, t2, t3, t4) =>
-      val k1 = lookupValue(p, 0, env)
-      val k2 = lookupValue(p, 1, env)
-      val k3 = lookupValue(p, 2, env)
-      val v = lookupValue(p, 3, env)
-      val newFact = relation4.put(p.name, (k1, k2, k3, v))
+      val List(t1, t2, t3, t4) = p.terms
+      val (v1, v2, v3, v4) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env))
+      val newFact = relation4.put(p.name, (v1, v2, v3, v4))
       if (newFact)
-        propagate(p, IndexedSeq(k1, k2, k3, v))
+        propagate(p, IndexedSeq(v1, v2, v3, v4))
 
     case Interpretation.Relation.In5(t1, t2, t3, t4, t5) =>
-      val k1 = lookupValue(p, 0, env)
-      val k2 = lookupValue(p, 1, env)
-      val k3 = lookupValue(p, 2, env)
-      val k4 = lookupValue(p, 3, env)
-      val v = lookupValue(p, 4, env)
-      val newFact = relation5.put(p.name, (k1, k2, k3, k4, v))
+      val List(t1, t2, t3, t4, t5) = p.terms
+      val (v1, v2, v3, v4, v5) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env), t5.toValue(env))
+      val newFact = relation5.put(p.name, (v1, v2, v3, v4, v5))
       if (newFact)
-        propagate(p, IndexedSeq(k1, k2, k3, k4, v))
-
+        propagate(p, IndexedSeq(v1, v2, v3, v4, v5))
     case _ => throw new Error.NonRelationalPredicate(p)
   }
 
@@ -251,36 +242,8 @@ class Solver(program: Program) {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Utilities                                                               //
+  // Unification                                                             //
   /////////////////////////////////////////////////////////////////////////////
-
-  /**
-   * Returns the value of the variable with the given `index` in the given predicate `p`.
-   */
-  def lookupValue(p: Predicate, index: Int, env: Map[VSym, Value]): Value = p.terms.lift(index) match {
-    case None => throw new Error.PredicateArityMismatch(p, index)
-    case Some(t) => substituteValue(t, env)
-  }
-
-
-  /**
-   * Returns the value obtained from `t` by replacing all free variables in `t` with their corresponding values from the given environment `env`.
-   *
-   * Throws an exception if a variable is unbound.
-   */
-  def substituteValue(t: Term, env: Map[VSym, Value]): Value = t match {
-    case Term.Constant(v) => v
-    case Term.Variable(s) => env.get(s) match {
-      case None => throw new Error.UnboundVariableSymbol(s, t)
-      case Some(v) => v
-    }
-    case Term.Constructor0(s) => Value.Constructor0(s)
-    case Term.Constructor1(s, t1) => Value.Constructor1(s, substituteValue(t1, env))
-    case Term.Constructor2(s, t1, t2) => Value.Constructor2(s, substituteValue(t1, env), substituteValue(t2, env))
-    case Term.Constructor3(s, t1, t2, t3) => Value.Constructor3(s, substituteValue(t1, env), substituteValue(t2, env), substituteValue(t3, env))
-    case Term.Constructor4(s, t1, t2, t3, t4) => Value.Constructor4(s, substituteValue(t1, env), substituteValue(t2, env), substituteValue(t3, env), substituteValue(t4, env))
-    case Term.Constructor5(s, t1, t2, t3, t4, t5) => Value.Constructor5(s, substituteValue(t1, env), substituteValue(t2, env), substituteValue(t3, env), substituteValue(t4, env), substituteValue(t5, env))
-  }
 
   // TODO: Careful about existing bindings/free variables occuring in multiple places.
   // TODO: DOC
@@ -318,6 +281,10 @@ class Solver(program: Program) {
     case _ => None
   }
 
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Utilities                                                               //
+  /////////////////////////////////////////////////////////////////////////////
 
   /**
    * Returns the interpretation of the given predicate `p`.
