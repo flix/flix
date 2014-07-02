@@ -65,8 +65,6 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Try to satisfy
-   *
    * Adds all facts which satisfies the given horn clause `h`.
    */
   def resolve(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): Unit = {
@@ -81,13 +79,13 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Returns a model of the given horn clause `h` with interpretations `inv` under the given environment `env`.
+   * Returns a set of models for the given horn clause `h` with interpretations `inv` under the given environment `env`.
    */
   def evaluate(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): List[Map[VSym, Value]] = {
     val relationals = h.body filter (p => isRelational(p, inv))
     val functionals = h.body -- relationals
 
-    val init = List.empty[Map[VSym, Value]]
+    val init = List(env)
     val predicates = relationals.toList ::: functionals.toList
 
     (init /: predicates) {
@@ -98,8 +96,9 @@ class Solver(program: Program) {
   /**
    *
    */
-  // TODO
-  def evaluate(p: Predicate, i: Interpretation, m: List[Map[VSym, Value]]): List[Map[VSym, Value]] = ???
+  def evaluate(p: Predicate, i: Interpretation, m: List[Map[VSym, Value]]): List[Map[VSym, Value]] = {
+    m flatMap (evaluate(p, i, _))
+  }
 
   /**
    * Returns a model for the given predicate `p` with interpretation `i` under the given environment `env`.
