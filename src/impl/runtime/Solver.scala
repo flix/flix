@@ -104,7 +104,7 @@ class Solver(program: Program) {
     case Interpretation.Relation.In1(_) =>
       val List(t1) = p.terms
       relation1.get(p.name).toList.flatMap {
-        case v1 => unify(substitute(t1, env0), v1, env0)
+        case v1 => unify(t1, v1, env0)
       }
 
     case Interpretation.Relation.In2(_, _) =>
@@ -112,8 +112,8 @@ class Solver(program: Program) {
       relation2.get(p.name).toList.flatMap {
         case (v1, v2) =>
           for (
-            env1 <- unify(substitute(t1, env0), v1, env0);
-            env2 <- unify(substitute(t2, env1), v2, env1)
+            env1 <- unify(t1, v1, env0);
+            env2 <- unify(t2, v2, env1)
           ) yield env2
       }
 
@@ -122,9 +122,9 @@ class Solver(program: Program) {
       relation3.get(p.name).toList.flatMap {
         case (v1, v2, v3) =>
           for (
-            env1 <- unify(substitute(t1, env0), v1, env0);
-            env2 <- unify(substitute(t2, env1), v2, env1);
-            env3 <- unify(substitute(t3, env2), v3, env2)
+            env1 <- unify(t1, v1, env0);
+            env2 <- unify(t2, v2, env1);
+            env3 <- unify(t3, v3, env2)
           ) yield env3
       }
 
@@ -133,10 +133,10 @@ class Solver(program: Program) {
       relation4.get(p.name).toList.flatMap {
         case (v1, v2, v3, v4) =>
           for (
-            env1 <- unify(substitute(t1, env0), v1, env0);
-            env2 <- unify(substitute(t2, env1), v2, env1);
-            env3 <- unify(substitute(t3, env2), v3, env2);
-            env4 <- unify(substitute(t4, env3), v4, env3)
+            env1 <- unify(t1, v1, env0);
+            env2 <- unify(t2, v2, env1);
+            env3 <- unify(t3, v3, env2);
+            env4 <- unify(t4, v4, env3)
           ) yield env4
       }
 
@@ -145,11 +145,11 @@ class Solver(program: Program) {
       relation5.get(p.name).toList.flatMap {
         case (v1, v2, v3, v4, v5) =>
           for (
-            env1 <- unify(substitute(t1, env0), v1, env0);
-            env2 <- unify(substitute(t2, env1), v2, env1);
-            env3 <- unify(substitute(t3, env2), v3, env2);
-            env4 <- unify(substitute(t4, env3), v4, env3);
-            env5 <- unify(substitute(t5, env4), v5, env4)
+            env1 <- unify(t1, v1, env0);
+            env2 <- unify(t2, v2, env1);
+            env3 <- unify(t3, v3, env2);
+            env4 <- unify(t4, v4, env3);
+            env5 <- unify(t5, v5, env4)
           ) yield env5
       }
 
@@ -261,23 +261,6 @@ class Solver(program: Program) {
     case Some(t) => substituteValue(t, env)
   }
 
-
-  /**
-   * Returns the term obtained from `t` by replacing all free variables in `t` with their corresponding values from the given environment `env`.
-   */
-  def substitute(t: Term, env: Map[VSym, Value]): Term = t match {
-    case Term.Constant(v) => Term.Constant(v)
-    case Term.Variable(s) => env.get(s) match {
-      case None => Term.Variable(s)
-      case Some(v) => Term.Constant(v)
-    }
-    case Term.Constructor0(s) => Term.Constructor0(s)
-    case Term.Constructor1(s, t1) => Term.Constructor1(s, substitute(t1, env))
-    case Term.Constructor2(s, t1, t2) => Term.Constructor2(s, substitute(t1, env), substitute(t2, env))
-    case Term.Constructor3(s, t1, t2, t3) => Term.Constructor3(s, substitute(t1, env), substitute(t2, env), substitute(t3, env))
-    case Term.Constructor4(s, t1, t2, t3, t4) => Term.Constructor4(s, substitute(t1, env), substitute(t2, env), substitute(t3, env), substitute(t4, env))
-    case Term.Constructor5(s, t1, t2, t3, t4, t5) => Term.Constructor5(s, substitute(t1, env), substitute(t2, env), substitute(t3, env), substitute(t4, env), substitute(t5, env))
-  }
 
   /**
    * Returns the value obtained from `t` by replacing all free variables in `t` with their corresponding values from the given environment `env`.

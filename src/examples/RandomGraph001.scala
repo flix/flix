@@ -2,7 +2,7 @@ package examples
 
 import impl.logic.Program
 
-object TransitiveClosure {
+object RandomGraph001 {
   def main(args: Array[String]): Unit = {
 
     val facts = Set.empty
