@@ -114,14 +114,6 @@ class Solver(program: Program) {
     }
   }
 
-  // TODO
-  def unify(term: Term, value: Value): Map[VSym, Value] = ???
-
-  /**
-   * Returns a new environment obtained by extending the environment `env1` with `env2`.
-   * If a key is present in both `env1` and `env2` the value from `env2` is used.
-   */
-  def extend(env1: Map[VSym, Value], env2: Map[VSym, Value]): Map[VSym, Value] = ???
 
   /**
    * Returns a model for the given predicate `p` with interpretation `i` under the given environment `env`.
@@ -286,40 +278,51 @@ class Solver(program: Program) {
    */
   def lookupValue(p: Predicate, index: Int, env: Map[VSym, Value]): Value = p.terms.lift(index) match {
     case None => throw new Error.PredicateArityMismatch(p, index)
-    case Some(t) => substitute(t, env)
+    case Some(t) => substituteValue(t, env)
+  }
+
+
+  // TODO: Try substitute Eiter[Value, Term]
+
+  def sub(t: Term, env: Map[VSym, Value]): Either[Term, Value] = t.asValue(env) match {
+    case None => Left(substituteTerm(t, env))
+    case Some(v) => Right(v)
   }
 
 
   // TODO: Need substitute for terms.
-  // TODO: Try substitute Eiter[Value, Term]
+  /**
+   * Returns the term obtained from `t` by replacing all free variables in `t` with their corresponding values from the given environment `env`.
+   */
+  def substituteTerm(t: Term, env: Map[VSym, Value]): Term = t match {
+    case Term.Constant(v) => Term.Constant(v)
 
-  def sub(t: Term, env: Map[VSym, Value]): Either[Term, Value] = t match {
-    case Term.Constructor2(s, t1, t2) =>
-      val k1 = sub(t1, env)
-
-      ???
   }
 
-
-
-
-
   /**
-   * Returns the value of the given term `t` obtained by replacing all free variables in `t` with their corresponding values from the given environment `env`.
+   * Returns the value obtained from `t` by replacing all free variables in `t` with their corresponding values from the given environment `env`.
    *
    * Throws an exception if a variable is unbound.
    */
-  def substitute(t: Term, env: Map[VSym, Value]): Value = t match {
+  def substituteValue(t: Term, env: Map[VSym, Value]): Value = t match {
     case Term.Constant(v) => v
     case Term.Variable(s) => env.getOrElse(s, throw new Error.UnboundVariable(s))
     case Term.Constructor0(s) => Value.Constructor0(s)
-    case Term.Constructor1(s, t1) => Value.Constructor1(s, substitute(t1, env))
-    case Term.Constructor2(s, t1, t2) => Value.Constructor2(s, substitute(t1, env), substitute(t2, env))
-    case Term.Constructor3(s, t1, t2, t3) => Value.Constructor3(s, substitute(t1, env), substitute(t2, env), substitute(t3, env))
-    case Term.Constructor4(s, t1, t2, t3, t4) => Value.Constructor4(s, substitute(t1, env), substitute(t2, env), substitute(t3, env), substitute(t4, env))
-    case Term.Constructor5(s, t1, t2, t3, t4, t5) => Value.Constructor5(s, substitute(t1, env), substitute(t2, env), substitute(t3, env), substitute(t4, env), substitute(t5, env))
+    case Term.Constructor1(s, t1) => Value.Constructor1(s, substituteValue(t1, env))
+    case Term.Constructor2(s, t1, t2) => Value.Constructor2(s, substituteValue(t1, env), substituteValue(t2, env))
+    case Term.Constructor3(s, t1, t2, t3) => Value.Constructor3(s, substituteValue(t1, env), substituteValue(t2, env), substituteValue(t3, env))
+    case Term.Constructor4(s, t1, t2, t3, t4) => Value.Constructor4(s, substituteValue(t1, env), substituteValue(t2, env), substituteValue(t3, env), substituteValue(t4, env))
+    case Term.Constructor5(s, t1, t2, t3, t4, t5) => Value.Constructor5(s, substituteValue(t1, env), substituteValue(t2, env), substituteValue(t3, env), substituteValue(t4, env), substituteValue(t5, env))
   }
 
+  // TODO
+  def unify(term: Term, value: Value): Map[VSym, Value] = ???
+
+  /**
+   * Returns a new environment obtained by extending the environment `env1` with `env2`.
+   * If a key is present in both `env1` and `env2` the value from `env2` is used.
+   */
+  def extend(env1: Map[VSym, Value], env2: Map[VSym, Value]): Map[VSym, Value] = ??? // TODO
 
   /**
    * Returns the interpretation of the given predicate `p`.
