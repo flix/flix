@@ -42,12 +42,21 @@ class Verifier(program: Program) {
      * Every predicate must have en interpretation.
      */
     for (p <- program.predicates) {
-      program.interpretation.getOrElse(p, throw Error.InterpretationNotFound(p))
+      program.interpretation.get(p) match {
+        case None => throw Error.InterpretationNotFound(p)
+        case Some(i) => // nop - interpretation exists.
+      }
     }
 
     /**
      * Every head predicate must be relational.
      */
+    for (h <- program.clauses) {
+      val i = program.interpretation(h.head.name)
+      if (!i.isRelational) {
+        throw new Error.NonRelationalPredicate(h.head.name)
+      }
+    }
 
 
   }

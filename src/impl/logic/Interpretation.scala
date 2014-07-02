@@ -1,6 +1,23 @@
 package impl.logic
 
-sealed trait Interpretation
+sealed trait Interpretation {
+  /**
+   * Returns `true` iff the interpretation is relational.
+   */
+  def isRelational: Boolean = this match {
+    case Interpretation.Relation.In1 => true
+    case Interpretation.Relation.In2 => true
+    case Interpretation.Relation.In3 => true
+    case Interpretation.Relation.In4 => true
+    case Interpretation.Relation.In5 => true
+    case Interpretation.Map.Leq1 => true
+    case Interpretation.Map.Leq2 => true
+    case Interpretation.Map.Leq3 => true
+    case Interpretation.Map.Leq4 => true
+    case Interpretation.Map.Leq5 => true
+    case _ => false
+  }
+}
 
 object Interpretation {
 

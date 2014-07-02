@@ -14,7 +14,7 @@ object Error {
    */
   case class InterpretationNotFound(s: Symbol.PredicateSymbol) extends RuntimeException(s"The interpretation for $s was not found.")
 
-  case class NonRelationalPredicate(p: Predicate) extends RuntimeException
+  case class NonRelationalPredicate(p: Symbol.PredicateSymbol) extends RuntimeException
 
   case class PredicateArityMismatch(p: Predicate, index: Int) extends RuntimeException
 
