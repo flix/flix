@@ -18,4 +18,9 @@ case class HornClause(head: Predicate, body: Set[Predicate]) {
    * Returns all predicate symbols in the head and body.
    */
   def predicates: Set[Symbol.PredicateSymbol] = Set(head.name) ++ (body map (_.name))
+
+  /**
+   * Returns all variable symbols in the head and body.
+   */
+  def variables = head.variables ++ (body flatMap (_.variables))
 }

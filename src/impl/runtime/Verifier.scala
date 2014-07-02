@@ -30,12 +30,10 @@ class Verifier(program: Program) {
      * Every variable which occurs in the head of a rule must also occur in its body.
      */
     for (h <- program.clauses) {
-      for (t <- h.head.terms) {
-        for (v <- t.variables) {
-          val found = h.body.exists(_.terms.exists(_.variables.contains(v)))
-          if (!found) {
-            throw new Error.UnsafeVariableSymbol(h, v)
-          }
+      for (v <- h.variables) {
+        val found = h.body.exists(c => c.variables.contains(v))
+        if (!found) {
+          throw new Error.UnsafeVariableSymbol(h, v)
         }
       }
     }
