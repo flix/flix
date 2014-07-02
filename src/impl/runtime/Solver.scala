@@ -221,11 +221,10 @@ class Solver(program: Program) {
    */
   def propagate(p: Predicate, env: IndexedSeq[Value]): Unit = {
     for (h <- dependencies.get(p.name)) {
-      val model = bind(h, p, env)
-      if (model.isEmpty) {
-        throw new Error.UnexpectedEmptyModel()
+      bind(h, p, env) match {
+        case None => // nop
+        case Some(m) => queue.enqueue((h, m))
       }
-      queue.enqueue((h, model))
     }
   }
 
@@ -235,18 +234,20 @@ class Solver(program: Program) {
    *
    * That is, if the horn clause is A(x, y, z) :- B(x, y), C(z), the predicate is B
    * and the environment is [0 -> a, 1 -> b] then the return environment is [x -> a, y -> b].
+   *
+   * TODO: Update doc
    */
-  def bind(h: HornClause, p: Predicate, env: IndexedSeq[Value]): Map[VSym, Value] = {
-    val m = scala.collection.mutable.Map.empty[VSym, Value]
+  def bind(h: HornClause, p: Predicate, env: IndexedSeq[Value]): Option[Map[VSym, Value]] = {
+    var m = Map.empty[VSym, Value]
     for (p2 <- h.body; if p.name == p2.name) {
       for ((t, i) <- p2.terms.zipWithIndex) {
-        t match {
-          case Term.Variable(s) => m += (s -> env(i))
-          case _ => // nop
+        unify(t, env(i), m) match {
+          case None => return None
+          case Some(m2) => m = m2
         }
       }
     }
-    m.toMap
+    Some(m)
   }
 
   /////////////////////////////////////////////////////////////////////////////

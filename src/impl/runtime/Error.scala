@@ -20,7 +20,4 @@ object Error {
   case class NonValueTerm(t: Term) extends RuntimeException
 
   case class UnificationError(t: Term, v: Value) extends RuntimeException
-
-  case class UnexpectedEmptyModel() extends RuntimeException
-
 }

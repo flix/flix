@@ -18,7 +18,6 @@ object FamilyAgeTree {
       HornClause(Predicate("Parent", List(Term.Constant(Value.String("Magnus")), Term.Constant(Value.String("Inger M")))), Set.empty),
       HornClause(Predicate("Parent", List(Term.Constant(Value.String("Magnus")), Term.Constant(Value.String("Frits")))), Set.empty),
 
-
       HornClause(Predicate("Parent", List(Term.Constant(Value.String("Frits")), Term.Constant(Value.String("Inger T")))), Set.empty),
       HornClause(Predicate("Parent", List(Term.Constant(Value.String("Frits")), Term.Constant(Value.String("Orla")))), Set.empty),
 
@@ -45,12 +44,13 @@ object FamilyAgeTree {
 
     val interpretations = Map(
       "Parent".asP -> Interpretation.Relation.In2(Type.String, Type.String),
-      "Male".asP -> Interpretation.Relation.In1(Type.String),
-      "Female".asP -> Interpretation.Relation.In1(Type.String),
+      "AS".asP -> Interpretation.Relation.In2(Type.String, Type.Constructor2("AgeAndSex", Type.String, Type.Integer)),
       "MaleGrandParent".asP -> Interpretation.Relation.In2(Type.String, Type.String)
     )
 
     val program = Program(facts ++ clauses, interpretations)
+    println(StringFormat.format(program))
+
 
     val compiler = new Compiler(program)
     compiler.verify()
@@ -58,7 +58,6 @@ object FamilyAgeTree {
     val solver = compiler.getSolver
     solver.solve()
 
-    println(StringFormat.format(program))
     StringFormat.printSolution(solver)
   }
 }
