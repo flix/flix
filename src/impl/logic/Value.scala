@@ -1,20 +1,10 @@
 package impl.logic
 
 sealed trait Value {
-
   /**
    * Returns `this` value as a term with no free variables.
    */
-  def asTerm: Term = {
-    def visit(v: Value): Term = v match {
-      case Value.Bool(b) => Term.Constant(Value.Bool(b))
-      case Value.Int(i) => Term.Constant(Value.Int(i))
-      case Value.String(s) => Term.Constant(Value.String(s))
-      case Value.Constructor0(s) => Term.Constructor0(s)
-      case Value.Constructor1(s, v1) => Term.Constructor1(s, visit(v1))
-    }
-    visit(this)
-  }
+  def asTerm: Term = Term.Constant(this)
 }
 
 object Value {

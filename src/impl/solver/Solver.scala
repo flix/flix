@@ -114,9 +114,13 @@ class Solver(program: Program) {
     }
   }
 
-
+  // TODO
   def unify(term: Term, value: Value): Map[VSym, Value] = ???
 
+  /**
+   * Returns a new environment obtained by extending the environment `env1` with `env2`.
+   * If a key is present in both `env1` and `env2` the value from `env2` is used.
+   */
   def extend(env1: Map[VSym, Value], env2: Map[VSym, Value]): Map[VSym, Value] = ???
 
   /**
@@ -296,15 +300,8 @@ class Solver(program: Program) {
       ???
   }
 
-  def asVal(t: Term): Option[Value] = t match {
-    case Term.Constructor3(s, t1, t2, t3) =>
-      for (v1 <- asVal(t1);
-           v2 <- asVal(t2);
-           v3 <- asVal(t3))
-      yield Value.Constructor3(s, v1, v2, v3)
-  }
 
-  // TODO: Use multiple visitors? One of type t -> Option[Value] and one of t -> Term
+
 
 
   /**
