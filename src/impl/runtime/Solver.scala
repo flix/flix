@@ -1,6 +1,6 @@
 package impl.runtime
 
-import impl.logic.Symbol.{NamedSymbol => NSym, PredicateSymbol => PSym, VariableSymbol => VSym}
+import impl.logic.Symbol.{PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
 import util.collection.mutable
 
@@ -18,15 +18,6 @@ class Solver(program: Program) {
   val relation3 = mutable.MultiMap1.empty[PSym, (Value, Value, Value)]
   val relation4 = mutable.MultiMap1.empty[PSym, (Value, Value, Value, Value)]
   val relation5 = mutable.MultiMap1.empty[PSym, (Value, Value, Value, Value, Value)]
-
-  /**
-   * Lattice Maps.
-   */
-  val map1 = mutable.Map1.empty[PSym, Value]
-  val map2 = mutable.Map2.empty[PSym, Value, Value]
-  val map3 = mutable.Map3.empty[PSym, Value, Value, Value]
-  val map4 = mutable.Map4.empty[PSym, Value, Value, Value, Value]
-  val map5 = mutable.Map5.empty[PSym, Value, Value, Value, Value, Value]
 
   /**
    * Dependencies.
@@ -263,14 +254,6 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Returns the term of the variable with the given `index` in the given predicate `p`.
-   */
-  def lookupTerm(p: Predicate, index: Int): Term = p.terms.lift(index) match {
-    case None => throw new Error.PredicateArityMismatch(p, index)
-    case Some(t) => t
-  }
-
-  /**
    * Returns the value of the variable with the given `index` in the given predicate `p`.
    */
   def lookupValue(p: Predicate, index: Int, env: Map[VSym, Value]): Value = p.terms.lift(index) match {
@@ -278,13 +261,6 @@ class Solver(program: Program) {
     case Some(t) => substituteValue(t, env)
   }
 
-  /**
-   * Either returns a fully evaluated value or a term with variables replaced by their corresponding values from the given environment `env`.
-   */
-  def substitute2(t: Term, env: Map[VSym, Value]): Either[Term, Value] = t.asValue(env) match {
-    case None => Left(substitute(t, env))
-    case Some(v) => Right(v)
-  }
 
   /**
    * Returns the term obtained from `t` by replacing all free variables in `t` with their corresponding values from the given environment `env`.
@@ -320,25 +296,6 @@ class Solver(program: Program) {
     case Term.Constructor3(s, t1, t2, t3) => Value.Constructor3(s, substituteValue(t1, env), substituteValue(t2, env), substituteValue(t3, env))
     case Term.Constructor4(s, t1, t2, t3, t4) => Value.Constructor4(s, substituteValue(t1, env), substituteValue(t2, env), substituteValue(t3, env), substituteValue(t4, env))
     case Term.Constructor5(s, t1, t2, t3, t4, t5) => Value.Constructor5(s, substituteValue(t1, env), substituteValue(t2, env), substituteValue(t3, env), substituteValue(t4, env), substituteValue(t5, env))
-  }
-
-  /**
-   * Returns an environment obtained by unifying the given term `t` with the value `v`.
-   *
-   * The resulting environment contains an entry `x` -> `y` iff `t` contains a free variable `x` where `v` contains a value `y`.
-   *
-   * TODO: Careful about existing bindings/free variables occuring in multiple places.
-   */
-  def unify23(t: Term, v: Value): Map[VSym, Value] = (t, v) match {
-    case (Term.Constant(v1), v2) if v1 == v2 => Map.empty
-    case (Term.Variable(s), v2) => Map(s -> v2)
-    case (Term.Constructor0(s1), Value.Constructor0(s2)) if s1 == s2 => Map.empty
-    case (Term.Constructor1(s1, t1), Value.Constructor1(s2, v1)) if s1 == s2 => unify23(t1, v1)
-    case (Term.Constructor2(s1, t1, t2), Value.Constructor2(s2, v1, v2)) if s1 == s2 => unify23(t1, v1) ++ unify23(t2, v2)
-    case (Term.Constructor3(s1, t1, t2, t3), Value.Constructor3(s2, v1, v2, v3)) if s1 == s2 => unify23(t1, v1) ++ unify23(t2, v2) ++ unify23(t3, v3)
-    case (Term.Constructor4(s1, t1, t2, t3, t4), Value.Constructor4(s2, v1, v2, v3, v4)) if s1 == s2 => unify23(t1, v1) ++ unify23(t2, v2) ++ unify23(t3, v3) ++ unify23(t4, v4)
-    case (Term.Constructor5(s1, t1, t2, t3, t4, t5), Value.Constructor5(s2, v1, v2, v3, v4, v5)) if s1 == s2 => unify23(t1, v1) ++ unify23(t2, v2) ++ unify23(t3, v3) ++ unify23(t4, v4) ++ unify23(t5, v5)
-    case _ => throw new Error.UnificationError(t, v)
   }
 
   // TODO: Careful about existing bindings/free variables occuring in multiple places.

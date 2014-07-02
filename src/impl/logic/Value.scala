@@ -1,11 +1,6 @@
 package impl.logic
 
-sealed trait Value {
-  /**
-   * Returns `this` value as a term with no free variables.
-   */
-  def asTerm: Term = Term.Constant(this)
-}
+sealed trait Value
 
 object Value {
 
