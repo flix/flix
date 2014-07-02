@@ -178,12 +178,12 @@ class Solver(program: Program) {
       if (newFact)
         propagate(p, IndexedSeq(v))
 
-    case Interpretation.Relation.In2(t1, t2) =>
-      val k1 = lookupValue(p, 0, env)
-      val v = lookupValue(p, 1, env)
-      val newFact = relation2.put(p.name, (k1, v))
+    case Interpretation.Relation.In2(_, _) =>
+      val List(t1, t2) = p.terms
+      val (v1, v2) = (t1.toValue(env), t2.toValue(env))
+      val newFact = relation2.put(p.name, (v1, v2))
       if (newFact)
-        propagate(p, IndexedSeq(k1, v))
+        propagate(p, IndexedSeq(v1, v2))
 
     case Interpretation.Relation.In3(t1, t2, t3) =>
       val k1 = lookupValue(p, 0, env)

@@ -1,6 +1,7 @@
 package impl.logic
 
 import impl.logic.Symbol.VariableSymbol
+import impl.runtime.Error
 
 sealed trait Term {
   /**
@@ -52,6 +53,16 @@ sealed trait Term {
            v5 <- t5.asValue(env)
       )
       yield Value.Constructor5(s, v1, v2, v3, v4, v5)
+  }
+
+  /**
+   * Returns the term as a value under the given environment `env`.
+   *
+   * Throws an exception if the term is not a value.
+   */
+  def toValue(env: Map[VariableSymbol, Value]): Value = asValue(env) match {
+    case None => throw new Error.NonValueTerm(this)
+    case Some(v) => v
   }
 }
 
