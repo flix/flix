@@ -15,8 +15,8 @@ object Interpretation {
     case class In4(t1: Type, t2: Type, t3: Type, t4: Type) extends Interpretation
     case class In5(t1: Type, t2: Type, t3: Type, t4: Type, t5: Type) extends Interpretation
 
-    case class Size1(t1: Type) extends Interpretation
-    case class Size2(t1: Type, t2: Type) extends Interpretation
+    case class Atleast1(size: Int, t1: Type) extends Interpretation
+    case class NonSingleton2(t1: Type, t2: Type) extends Interpretation
     // ...
   }
 
