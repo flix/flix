@@ -26,6 +26,15 @@ object Parity {
       HornClause(Predicate("Parity.Leq", List(Term.Variable("_"), Top)), Set.empty)
     )
 
+    val Join = Set(
+      HornClause(Predicate("Parity.Join", List(Bot, Term.Variable("x"), Term.Variable("x"))), Set.empty),
+      HornClause(Predicate("Parity.Join", List(Term.Variable("x"), Bot, Term.Variable("x"))), Set.empty),
+      HornClause(Predicate("Parity.Join", List(Odd, Odd, Odd)), Set.empty),
+      HornClause(Predicate("Parity.Join", List(Zero, Zero, Zero)), Set.empty),
+      HornClause(Predicate("Parity.Join", List(Even, Even, Even)), Set.empty),
+      HornClause(Predicate("Parity.Join", List(Top, Term.Variable("_"), Top)), Set.empty),
+      HornClause(Predicate("Parity.Join", List(Term.Variable("_"), Top, Top)), Set.empty)
+    )
 
 
   }
