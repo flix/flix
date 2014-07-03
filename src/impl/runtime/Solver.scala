@@ -288,6 +288,8 @@ class Solver(program: Program) {
   // Top-down satisfiability                                                 //
   /////////////////////////////////////////////////////////////////////////////
   // TODO: This part is in development --------------------
+
+  // TODO: Naming
   /**
    * Returns `true` iff the given predicate `p` is satisfiable.
    *
@@ -301,21 +303,27 @@ class Solver(program: Program) {
     val values = (p.terms map (_.toValue(env))).toIndexedSeq
 
     // The predicate is satisfiable iff atleast one of its horn clauses is satisfiable.
-    clauses exists (h => satisfiable(h, values))
+    //clauses exists (h => satisfiable(h, values))
+
+    ???
   }
 
+  //  bind(h, h.head, vs) match {
+  //    case None => false // The predicate is unsatisfiable.
+  //    case Some(env) =>
+  //      // The predicate is satisfiable iff
+  //      // (1) it has no body (i.e. it is a fact), or
+  //      // (2) it body is satisfiable
+  //      h.isFact || (h.body forall (p => satisfiable(p, env)))
+
   /**
-   * Returns `true` iff the given horn clause `h` is satisfiable with the given values `vs`.
+   * TODO: DOC
    */
-  def satisfiable(h: HornClause, vs: IndexedSeq[Value]): Boolean =
-    bind(h, h.head, vs) match {
-      case None => false // The predicate is unsatisfiable.
-      case Some(env) =>
-        // The predicate is satisfiable iff
-        // (1) it has no body (i.e. it is a fact), or
-        // (2) it body is satisfiable
-        h.isFact || (h.body forall (p => satisfiable(p, env)))
-    }
+  def satisfiable(h: HornClause, env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
+   ???
+    // TODO: Needs to be the dual...
+
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Utilities                                                               //
