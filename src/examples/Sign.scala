@@ -6,16 +6,25 @@ import syntax.Symbols._
 object Sign {
   def main(args: Array[String]): Unit = {
 
+    val Lattice = Type.Variant(IndexedSeq(
+      Type.Constructor0("Top"),
+      Type.Constructor0("Neg"), Type.Constructor0("Zero"), Type.Constructor0("Pos"),
+      Type.Constructor0("Bot")
+    ))
 
-
-    // Sign.Leq(Bot, _).
-    // Sign.Leq(Neg, Neg).
-    // Sign.Leq(Zero, Zero).
-    // Sign.Leq(Pos, Pos).
-    // Sign.Leq(_, Top).
+    val Top = Term.Constant(Value.Constructor0("Top"))
+    val Neg = Term.Constant(Value.Constructor0("Neg"))
+    val Zero = Term.Constant(Value.Constructor0("Zero"))
+    val Pos = Term.Constant(Value.Constructor0("Pos"))
+    val Bot = Term.Constant(Value.Constructor0("Bot"))
 
     val Leq = Set(
-      HornClause(Predicate("Sign.Leq", List(???, Term.Variable("_"))), Set.empty)
+      HornClause(Predicate("Sign.Leq", List(Bot, Term.Variable("_"))), Set.empty),
+      HornClause(Predicate("Sign.Leq", List(Neg, Neg)), Set.empty),
+      HornClause(Predicate("Sign.Leq", List(Zero, Zero)), Set.empty),
+      HornClause(Predicate("Sign.Leq", List(Pos, Pos)), Set.empty),
+      HornClause(Predicate("Sign.Leq", List(Term.Variable("_"), Top)), Set.empty)
+
     )
 
 

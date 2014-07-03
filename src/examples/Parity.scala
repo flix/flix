@@ -6,17 +6,17 @@ import syntax.Symbols._
 object Parity {
   def main(args: Array[String]): Unit = {
 
-    val LatticeType = Type.Variant(IndexedSeq(
+    val Lattice = Type.Variant(IndexedSeq(
       Type.Constructor0("Top"),
       Type.Constructor0("Odd"), Type.Constructor0("Zero"), Type.Constructor0("Even"),
       Type.Constructor0("Bot")
     ))
 
-    val Top = Term.Constant(Value.Constructor0("Sign.Top"))
-    val Odd = Term.Constant(Value.Constructor0("Sign.Odd"))
-    val Zero = Term.Constant(Value.Constructor0("Sign.Zero"))
-    val Even = Term.Constant(Value.Constructor0("Sign.Even"))
-    val Bot = Term.Constant(Value.Constructor0("Sign.Bot"))
+    val Top = Term.Constant(Value.Constructor0("Parity.Top"))
+    val Odd = Term.Constant(Value.Constructor0("Parity.Odd"))
+    val Zero = Term.Constant(Value.Constructor0("Parity.Zero"))
+    val Even = Term.Constant(Value.Constructor0("Parity.Even"))
+    val Bot = Term.Constant(Value.Constructor0("Parity.Bot"))
 
     val Leq = Set(
       HornClause(Predicate("Parity.Leq", List(Bot, Term.Variable("_"))), Set.empty),
@@ -51,6 +51,8 @@ object Parity {
       HornClause(Predicate("Parity.Sum", List(Top, Term.Variable("_"), Top)), Set.empty),
       HornClause(Predicate("Parity.Sum", List(Term.Variable("_"), Top, Top)), Set.empty)
     )
+
+    // TODO: Program
 
   }
 }
