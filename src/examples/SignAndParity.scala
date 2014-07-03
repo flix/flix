@@ -1,6 +1,7 @@
 package examples
 
 import impl.logic.{HornClause, Predicate, Term, Type}
+import impl.runtime.Solver
 import syntax.Symbols._
 
 object SignAndParity {
@@ -45,8 +46,7 @@ object SignAndParity {
     )
   )
 
-  // TO Prove: Sp.Leq(SP(Sign.Pos, Polarity.Even), SP(Sign.Pos, Polarity.Top)).
-
-
+  val solver = new Solver(???)
+  val p = Predicate("SP.Leq", List(Term.Constructor2("SP", Sign.Pos, Polarity.Even), Term.Constructor2("SP", Sign.Pos, Polarity.Top)))
 
 }

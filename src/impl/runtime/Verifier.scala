@@ -77,13 +77,13 @@ class Verifier(program: Program) {
   /**
    * Anti-Symmetry: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y.
    */
-  def antiSymmetry(lattice: Type.Lattice): Formula = ???
+  def antiSymmetry(): Formula = ???
 
 
   /**
    * Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
    */
-  def transitivity(lattice: Type.Lattice): Formula = ???
+  def transitivity(): Formula = ???
 
   /**
    * ∀x. ⊥ ⊑ x.

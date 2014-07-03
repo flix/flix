@@ -63,12 +63,7 @@ object PointsTo {
     ))
 
     // Lattice
-    val LatticeType = Type.Lattice(
-      elms = SignType,
-      bot = Value.Constructor0("Bot"),
-      order = Set.empty,
-      join = Set.empty
-    )
+    val LatticeType = ???
 
     val interpretation = Map(
       "New".asP -> Interpretation.Relation.In2,

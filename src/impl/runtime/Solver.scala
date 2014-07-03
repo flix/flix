@@ -201,9 +201,9 @@ class Solver(program: Program) {
   /**
    * Enqueues all depedencies of the given predicate with the given environment.
    */
-  def propagate(p: Predicate, env: IndexedSeq[Value]): Unit = {
+  def propagate(p: Predicate, values: IndexedSeq[Value]): Unit = {
     for (h <- dependencies.get(p.name)) {
-      bind(h, p, env) match {
+      bind(h, p, values) match {
         case None => // nop
         case Some(m) => queue.enqueue((h, m))
       }
@@ -278,6 +278,38 @@ class Solver(program: Program) {
     case _ => None
   }
 
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Top-down satisfiability                                                 //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+   * Returns `true` iff the given predicate `p` is satisfiable.
+   *
+   * All terms in `p` must be values under the given environment `env`.
+   */
+  def satisfiable(p: Predicate, env: Map[VSym, Value]): Boolean = {
+    // Find all horn clauses which define the predicate.
+    val clauses: Set[HornClause] = ???
+
+    // Compute the arguments of the predicate.
+    val values = (p.terms map (_.toValue(env))).toIndexedSeq
+
+    // The predicate is satisfiable iff atleast one of its horn clauses is satisfiable.
+    clauses exists (h => satisfiable(h, values))
+  }
+
+  /**
+   * Returns `true` iff the given horn clause `h` is satisfiable with the given values `vs`.
+   */
+  def satisfiable(h: HornClause, vs: IndexedSeq[Value]): Boolean =
+    bind(h, h.head, vs) match {
+      case None => false // The predicate is unsatisfiable.
+      case Some(env) =>
+        // The predicate is satisfiable iff
+        // (1) it has no body (i.e. it is a fact), or
+        // (2) it body is satisfiable
+        h.isFact || (h.body forall (p => satisfiable(p, env)))
+    }
 
   /////////////////////////////////////////////////////////////////////////////
   // Utilities                                                               //

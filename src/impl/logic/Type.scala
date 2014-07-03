@@ -27,11 +27,6 @@ object Type {
   case class Variant(t: IndexedSeq[Type]) extends Type
 
   /**
-   * The type of lattices.
-   */
-  case class Lattice(elms: Type, bot: Value, order: Set[HornClause], join: Set[HornClause]) extends Type
-
-  /**
    * The type of null-ary constructors.
    */
   case class Constructor0(name: Symbol.NamedSymbol) extends Type
