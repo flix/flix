@@ -36,6 +36,21 @@ object Parity {
       HornClause(Predicate("Parity.Join", List(Term.Variable("_"), Top, Top)), Set.empty)
     )
 
+    val Sum = Set(
+      HornClause(Predicate("Parity.Sum", List(Bot, Term.Variable("_"), Bot)), Set.empty),
+      HornClause(Predicate("Parity.Sum", List(Term.Variable("_"), Bot, Bot)), Set.empty),
+      HornClause(Predicate("Parity.Sum", List(Odd, Odd, Even)), Set.empty),
+      HornClause(Predicate("Parity.Sum", List(Odd, Zero, Odd)), Set.empty),
+      HornClause(Predicate("Parity.Sum", List(Odd, Even, Odd)), Set.empty),
+      HornClause(Predicate("Parity.Sum", List(Zero, Odd, Odd)), Set.empty),
+      HornClause(Predicate("Parity.Sum", List(Zero, Zero, Zero)), Set.empty),
+      HornClause(Predicate("Parity.Sum", List(Zero, Even, Even)), Set.empty),
+      HornClause(Predicate("Parity.Sum", List(Even, Odd, Odd)), Set.empty),
+      HornClause(Predicate("Parity.Sum", List(Even, Zero, Even)), Set.empty),
+      HornClause(Predicate("Parity.Sum", List(Even, Even, Even)), Set.empty),
+      HornClause(Predicate("Parity.Sum", List(Top, Term.Variable("_"), Top)), Set.empty),
+      HornClause(Predicate("Parity.Sum", List(Term.Variable("_"), Top, Top)), Set.empty)
+    )
 
   }
 }
