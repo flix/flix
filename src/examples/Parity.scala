@@ -18,11 +18,15 @@ object Parity {
     val Even = Term.Constant(Value.Constructor0("Sign.Even"))
     val Bot = Term.Constant(Value.Constructor0("Sign.Bot"))
 
-
-
     val Leq = Set(
-      HornClause(Predicate("Parity.Leq", List(Bot, Term.Variable("_"))), Set.empty)
+      HornClause(Predicate("Parity.Leq", List(Bot, Term.Variable("_"))), Set.empty),
+      HornClause(Predicate("Parity.Leq", List(Odd, Odd)), Set.empty),
+      HornClause(Predicate("Parity.Leq", List(Zero, Zero)), Set.empty),
+      HornClause(Predicate("Parity.Leq", List(Even, Even)), Set.empty),
+      HornClause(Predicate("Parity.Leq", List(Term.Variable("_"), Top)), Set.empty)
     )
+
+
 
   }
 }

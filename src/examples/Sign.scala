@@ -15,7 +15,7 @@ object Sign {
     // Sign.Leq(_, Top).
 
     val Leq = Set(
-      HornClause(Predicate("Sign.Leq", List(Bot, Term.Variable("_"))), Set.empty)
+      HornClause(Predicate("Sign.Leq", List(???, Term.Variable("_"))), Set.empty)
     )
 
 
