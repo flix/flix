@@ -1,7 +1,6 @@
 package domains
 
 import impl.logic.{HornClause, Predicate, Term, Type}
-import impl.runtime.Solver
 import syntax.Symbols._
 
 object SignAndParity {
@@ -45,8 +44,5 @@ object SignAndParity {
       )
     )
   )
-
-  val solver = new Solver(???)
-  val p = Predicate("SP.Leq", List(Term.Constructor2("SP", Sign.Pos, Parity.Even), Term.Constructor2("SP", Sign.Pos, Parity.Top)))
 
 }

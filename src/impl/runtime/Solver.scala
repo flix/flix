@@ -19,6 +19,11 @@ class Solver(program: Program) {
   val relation5 = mutable.MultiMap1.empty[PSym, (Value, Value, Value, Value, Value)]
 
   /**
+   * Maps for n-ary lattices.
+   */
+  // TODO
+
+  /**
    * A map of dependencies between predicate symbols and horn clauses.
    *
    * If a horn clause `h` contains a predicate `p` then the map contains the element `p -> h`.
@@ -282,6 +287,7 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
   // Top-down satisfiability                                                 //
   /////////////////////////////////////////////////////////////////////////////
+  // TODO: This part is in development --------------------
   /**
    * Returns `true` iff the given predicate `p` is satisfiable.
    *
