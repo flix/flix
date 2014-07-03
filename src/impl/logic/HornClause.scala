@@ -14,6 +14,8 @@ case class HornClause(head: Predicate, body: Set[Predicate]) {
    */
   def isGround: Boolean = head.isGround && (body forall (_.isGround))
 
+  // TODO: asFormula
+
   /**
    * Returns all predicate symbols in the head and body.
    */

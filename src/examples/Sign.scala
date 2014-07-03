@@ -1,28 +1,23 @@
 package examples
 
-import impl.logic.{Predicate, Term, Formula, Type}
+import impl.logic._
 import syntax.Symbols._
 
-object Parity01 {
+object Sign {
   def main(args: Array[String]): Unit = {
 
-    val LatticeType = Type.Variant(IndexedSeq(
-      Type.Constructor0("Top"),
-      Type.Constructor0("Odd"), Type.Constructor0("Zero"), Type.Constructor0("Even"),
-      Type.Constructor0("Bot")
-    ))
 
-
-    /**
-     * Sign
-     */
-    // Lattice Sign = Bot | Top | Neg | Zero | Pos.
 
     // Sign.Leq(Bot, _).
     // Sign.Leq(Neg, Neg).
     // Sign.Leq(Zero, Zero).
     // Sign.Leq(Pos, Pos).
     // Sign.Leq(_, Top).
+
+    val Leq = Set(
+      HornClause(Predicate("Sign.Leq", List(Bot, Term.Variable("_"))), Set.empty)
+    )
+
 
     // Sign.Join(Bot, x, x).
     // Sign.Join(x, Bot, x).
@@ -32,10 +27,13 @@ object Parity01 {
     // Sign.Join(x, y, Top) :- x != y.
     // Sign.Join(Top, _, Top).
     // Sign.Join(_, Top, Top).
+    val Join = Formula.Disjunction(Set(
+      Formula.Atom(Predicate("Leq", List()))
 
-    // Sign.Lift(i, Neg) :- i < 0.
-    // Sign.Lift(i, Zero) :- i == 0.
-    // Sign.Lift(i, Pos) :- i > 0.
+    ))
+
+
+
 
     // Notice: Strictness
     // Sign.Sum(Bot, _, Bot).
@@ -51,13 +49,6 @@ object Parity01 {
     // Sign.Sum(Pos, Pos, Pos).
     // Sign.Sum(Top, _, Top).
     // Sign.Sum(_, Top, Top).
-
-    val Leq = ???
-
-    val Join = Formula.Disjunction(Set(
-      Formula.Atom(Predicate("Leq", List()))
-
-    ))
 
     val Sum = ???
 

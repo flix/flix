@@ -1,6 +1,6 @@
 package examples
 
-object Intervals01 {
+object Interval {
   def main(args: Array[String]): Unit = {
     /**
      * Intervals
