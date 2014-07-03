@@ -6,7 +6,7 @@ import syntax.Symbols._
 
 object SignAndParity {
 
-  val Lattice = Type.Constructor2("SP", Sign.Lattice, Polarity.Lattice)
+  val Lattice = Type.Constructor2("SP", Sign.Lattice, Parity.Lattice)
 
   val Leq = Set(
     HornClause(
@@ -16,7 +16,7 @@ object SignAndParity {
       )),
       body = Set(
         Predicate("Sign.Leq", List(Term.Variable("s1"), Term.Variable("s2"))),
-        Predicate("Polarity.Leq", List(Term.Variable("p1"), Term.Variable("p2")))
+        Predicate("Parity.Leq", List(Term.Variable("p1"), Term.Variable("p2")))
       ))
   )
 
@@ -29,7 +29,7 @@ object SignAndParity {
       )),
       body = Set(
         Predicate("Sign.Join", List(Term.Variable("s1"), Term.Variable("s2"), Term.Variable("s3"))),
-        Predicate("Polarity.Join", List(Term.Variable("p1"), Term.Variable("p2"), Term.Variable("p3")))
+        Predicate("Parity.Join", List(Term.Variable("p1"), Term.Variable("p2"), Term.Variable("p3")))
       )))
 
   val Sum = Set(
@@ -41,12 +41,12 @@ object SignAndParity {
       )),
       body = Set(
         Predicate("Sign.Sum", List(Term.Variable("s1"), Term.Variable("s2"), Term.Variable("s3"))),
-        Predicate("Polarity.Sum", List(Term.Variable("p1"), Term.Variable("p2"), Term.Variable("p3")))
+        Predicate("Parity.Sum", List(Term.Variable("p1"), Term.Variable("p2"), Term.Variable("p3")))
       )
     )
   )
 
   val solver = new Solver(???)
-  val p = Predicate("SP.Leq", List(Term.Constructor2("SP", Sign.Pos, Polarity.Even), Term.Constructor2("SP", Sign.Pos, Polarity.Top)))
+  val p = Predicate("SP.Leq", List(Term.Constructor2("SP", Sign.Pos, Parity.Even), Term.Constructor2("SP", Sign.Pos, Parity.Top)))
 
 }
