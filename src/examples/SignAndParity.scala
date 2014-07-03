@@ -32,7 +32,21 @@ object SignAndParity {
       )))
 
   val Sum = Set(
-
+    HornClause(
+      head = Predicate("SP.Sum", List(
+        Term.Constructor2("SP", Term.Variable("s1"), Term.Variable("p1")),
+        Term.Constructor2("SP", Term.Variable("s2"), Term.Variable("p2")),
+        Term.Constructor2("SP", Term.Variable("s3"), Term.Variable("p3"))
+      )),
+      body = Set(
+        Predicate("Sign.Sum", List(Term.Variable("s1"), Term.Variable("s2"), Term.Variable("s3"))),
+        Predicate("Polarity.Sum", List(Term.Variable("p1"), Term.Variable("p2"), Term.Variable("p3")))
+      )
+    )
   )
+
+  // TO Prove: Sp.Leq(SP(Sign.Pos, Polarity.Even), SP(Sign.Pos, Polarity.Top)).
+
+
 
 }
