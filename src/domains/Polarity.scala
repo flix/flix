@@ -1,4 +1,4 @@
-package examples
+package domains
 
 import impl.logic._
 import syntax.Symbols._

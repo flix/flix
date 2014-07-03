@@ -1,10 +1,10 @@
-package examples
+package domains
 
 object Interval {
   def main(args: Array[String]): Unit = {
-    /**
-     * Intervals
-     */
+
+    // TODO: Intervals
+
     // Lattice Interval = Bot | Top | Range(Int, Int).
 
     // Interval.Leq(Bot, _).
@@ -18,9 +18,6 @@ object Interval {
     // Interval.Join(Top, _, Top).
     // Interval.Join(_, Top, Top).
 
-    // Interval.Lift(i, Range(i)).
-
-    // Notice: Strictness
     // Interval.Sum(Bot, _, Bot).
     // Interval.Sum(_, Bot, Bot).
     // Interval.Sum(Range(b1, e1), Range(b2, e2), Range(b1 + b2, e1 + e2)).

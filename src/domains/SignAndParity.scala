@@ -1,4 +1,4 @@
-package examples
+package domains
 
 import impl.logic.{HornClause, Predicate, Term, Type}
 import impl.runtime.Solver
