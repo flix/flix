@@ -24,27 +24,28 @@ object Sign {
       HornClause(Predicate("Sign.Leq", List(Zero, Zero)), Set.empty),
       HornClause(Predicate("Sign.Leq", List(Pos, Pos)), Set.empty),
       HornClause(Predicate("Sign.Leq", List(Term.Variable("_"), Top)), Set.empty)
-
     )
 
+    val Join = Set(
+      HornClause(Predicate("Sign.Leq", List(Bot, Term.Variable("x"), Term.Variable("x"))), Set.empty),
+      HornClause(Predicate("Sign.Leq", List(Term.Variable("x"), Bot, Term.Variable("x"))), Set.empty),
 
-    // Sign.Join(Bot, x, x).
-    // Sign.Join(x, Bot, x).
-    // Sign.Join(Neg, Neg, Neg).
-    // Sign.Join(Zero, Zero, Zero).
-    // Sign.Join(Pos, Pos, Pos).
-    // Sign.Join(x, y, Top) :- x != y.
-    // Sign.Join(Top, _, Top).
-    // Sign.Join(_, Top, Top).
-    val Join = Formula.Disjunction(Set(
-      Formula.Atom(Predicate("Leq", List()))
+      HornClause(Predicate("Sign.Leq", List(Neg, Neg, Neg)), Set.empty),
+      HornClause(Predicate("Sign.Leq", List(Neg, Zero, Top)), Set.empty),
+      HornClause(Predicate("Sign.Leq", List(Neg, Pos, Top)), Set.empty),
 
-    ))
+      HornClause(Predicate("Sign.Leq", List(Zero, Neg, Top)), Set.empty),
+      HornClause(Predicate("Sign.Leq", List(Zero, Zero, Zero)), Set.empty),
+      HornClause(Predicate("Sign.Leq", List(Zero, Pos, Top)), Set.empty),
 
+      HornClause(Predicate("Sign.Leq", List(Pos, Neg, Top)), Set.empty),
+      HornClause(Predicate("Sign.Leq", List(Pos, Zero, Top)), Set.empty),
+      HornClause(Predicate("Sign.Leq", List(Pos, Pos, Pos)), Set.empty),
 
+      HornClause(Predicate("Sign.Leq", List(Term.Variable("_"), Top, Top)), Set.empty),
+      HornClause(Predicate("Sign.Leq", List(Top, Term.Variable("_"), Top)), Set.empty)
+    )
 
-
-    // Notice: Strictness
     // Sign.Sum(Bot, _, Bot).
     // Sign.Sum(_, Bot, Bot).
     // Sign.Sum(Neg, Neg, Neg).
@@ -59,8 +60,8 @@ object Sign {
     // Sign.Sum(Top, _, Top).
     // Sign.Sum(_, Top, Top).
 
-    val Sum = ???
+    val Sum = Set(
 
-
+    )
   }
 }
