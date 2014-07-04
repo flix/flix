@@ -239,6 +239,21 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
   // Top-down satisfiability                                                 //
   /////////////////////////////////////////////////////////////////////////////
+
+  // Notice that if the body is empty then env0 is returned!
+  def getModel(h: HornClause, inv: Map[PSym, Interpretation], env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
+    val init = List(env0)
+
+    (init /: h.body.toList) {
+      case (envs, p) => envs flatMap {
+        case env => {
+          val values = p.terms.toIndexedSeq.map(_.asValue(env0))
+          getModel(p, values, inv, env)
+        }
+      }
+    }
+  }
+
   def getModel(p: Predicate, vs: IndexedSeq[Option[Value]], inv: Map[PSym, Interpretation], env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
     val clauses = program.clauses.filter(_.head.name == p.name)
 
@@ -249,19 +264,8 @@ class Solver(program: Program) {
           val IndexedSeq(v1, v2, v3) = vs
           unify(t1, t2, t3, v1, v2, v3, env0) match {
             case None => List.empty
-            case Some(envZ) => getModel(h, envZ)
+            case Some(env) => getModel(h, inv, env)
           }
-      }
-    }
-  }
-
-  // Notice that if the body is empty then env0 is returned!
-  def getModel(h: HornClause, env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
-    val init = List(env0)
-
-    (init /: h.body.toList) {
-      case (envs, p) => envs flatMap {
-        case env => getModel(p, ???, ???, env)
       }
     }
   }
@@ -278,7 +282,7 @@ class Solver(program: Program) {
     clauses exists {
       h => bind(h, h.head, vs) match {
         case None => false
-        case Some(env0) => getModel(h, env0).nonEmpty
+        case Some(env0) => getModel(h, ???, env0).nonEmpty
       }
     }
   }
@@ -292,7 +296,7 @@ class Solver(program: Program) {
     val models = clauses.toList.flatMap {
       h => bind(h, h.head, vs) match {
         case None => List.empty
-        case Some(env0) => getModel(h, env0)
+        case Some(env0) => getModel(h, ???, env0)
       }
     }
 
