@@ -10,7 +10,7 @@ sealed trait Interpretation {
     case Interpretation.Relation.In3 => true
     case Interpretation.Relation.In4 => true
     case Interpretation.Relation.In5 => true
-    case Interpretation.Map.Leq1 => true
+    case Interpretation.Map.Leq1(_) => true
     case Interpretation.Map.Leq2 => true
     case Interpretation.Map.Leq3 => true
     case Interpretation.Map.Leq4 => true
@@ -30,7 +30,7 @@ object Interpretation {
   }
 
   object Map {
-    case object Leq1 extends Interpretation
+    case class Leq1(lattice: Lattice) extends Interpretation
     case object Leq2 extends Interpretation
     case object Leq3 extends Interpretation
     case object Leq4 extends Interpretation

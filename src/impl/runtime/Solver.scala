@@ -146,6 +146,9 @@ class Solver(program: Program) {
           ) yield env5
       }
 
+    case Interpretation.Map.Leq1(lattice) =>
+      throw new RuntimeException("Disallow LeqX in bodies? Not monotone....????")
+
     case _ => throw new Error.NonRelationalPredicate(p.name)
   }
 
@@ -204,15 +207,15 @@ class Solver(program: Program) {
       if (newFact)
         propagate(p, IndexedSeq(v1, v2, v3, v4, v5))
 
-    case Interpretation.Map.Leq1 =>
+    case Interpretation.Map.Leq1(lattice) =>
       val List(t1) = p.terms
-      val nv = t1.toValue(env)
-      val ov = map1.get(p.name).getOrElse(???)
-      val jv = ??? // TODO: Join nv and ov
-      val newFact: Boolean = ??? // TODO: leq(ov, jv)
+      val newValue = t1.toValue(env)
+      val oldValue = map1.get(p.name).getOrElse(lattice.bot)
+      val joinValue = join(newValue, oldValue, lattice.join)
+      val newFact: Boolean = !leq(joinValue, oldValue, lattice.leq)
       if (newFact) {
-        relation1.put(p.name, jv)
-        propagate(p, IndexedSeq(nv))
+        relation1.put(p.name, joinValue)
+        propagate(p, IndexedSeq(joinValue))
       }
 
 
@@ -333,12 +336,24 @@ class Solver(program: Program) {
   //      // (2) it body is satisfiable
   //      h.isFact || (h.body forall (p => satisfiable(p, env)))
 
+
+
   /**
    * TODO: DOC
    */
-  def topdown(h: HornClause, inv: Map[PSym, Interpretation], tenv: Map[Interpretation, Type],  env: Map[VSym, Value]): List[Map[VSym, Value]] = {
+  def topdown(h: HornClause, inv: Map[PSym, Interpretation], tenv: Map[Interpretation, Type], env: Map[VSym, Value]): List[Map[VSym, Value]] = {
     ???
   }
+
+  /**
+   * Returns `true` iff `v1` is less or equal to `v2`.
+   */
+  def leq(v1: Value, v2: Value, leq: Set[HornClause]): Boolean = ???
+
+  /**
+   * Returns the join of `v1` and `v2`.
+   */
+  def join(v1: Value, v2: Value, join: Set[HornClause]): Value = ???
 
   /////////////////////////////////////////////////////////////////////////////
   // Utilities                                                               //
