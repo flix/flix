@@ -241,9 +241,38 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
   // TODO: This part is in development --------------------
 
-  def getModel(h: HornClause, env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
+  // TODO: Probly need interpretations...
+  def getModel(px: Predicate, vs: IndexedSeq[Option[Value]], inv: Map[PSym, Interpretation], env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
+    // Find all the defining horn clauses.
+    val clauses = program.clauses.filter(_.head.name == px.name)
+
+    clauses map {
+      h =>
+        val p = h.head
+        interpretationOf(p, inv) match {
+          case Interpretation.Relation.In3 =>
+            val List(t1, t2, t3)  = p.terms
+            // The key issue is that values can be missing in vs.
+
+        }
+    }
+
     ???
   }
+
+  // Notice that if the body is empty then env0 is returned!
+  def getModel(h: HornClause, env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
+    val init = List(env0)
+
+    (init /: h.body.toList) {
+      case (envs, p) => envs flatMap {
+        case env => getModel(p, ???, ???, env)
+      }
+    }
+  }
+
+
+  // -----------------------
 
   /**
    * TODO: DOC

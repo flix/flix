@@ -21,6 +21,8 @@ sealed trait Interpretation {
 
 object Interpretation {
 
+  // TODO: Need to split along two dimensions: Representation and Function/Relation.
+
   object Relation {
     case object In1 extends Interpretation
     case object In2 extends Interpretation
