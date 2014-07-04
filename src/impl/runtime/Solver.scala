@@ -266,6 +266,12 @@ class Solver(program: Program) {
 
   /**
    * Optionally returns an environment satisfying the given predicate `p` under the interpretation `i` with valuations `vs` under environment `env0`.
+   *
+   * That is, if the list of terms in the predicate can be unified with the given values.
+   *
+   * As an example:
+   *
+   * The predicate P(x, y, 42) unified with the values (Some(5), None, Some(42)) yields [x -> 5] and y is free.
    */
   def satisfiable(p: Predicate, i: Interpretation, vs: IndexedSeq[Option[Value]], env0: Map[VSym, Value]): Option[Map[VSym, Value]] = i match {
     case Interpretation.Relation.In1 =>
@@ -293,33 +299,26 @@ class Solver(program: Program) {
       val IndexedSeq(v1, v2, v3, v4, v5) = vs
       unify(t1, t2, t3, t4, t5, v1, v2, v3, v4, v5, env0)
 
-    case _ => ??? //throw some kind of error
+    case _ => throw Error.UnsupportedInterpretation(p.name, i)
   }
 
 
-  // -----------------------
-
   /**
-   * TODO: DOC
+   * Returns `true` iff the given predicate symbol `s` is satisfiable with the given valuation `vs`.
    */
-  def evaluateRelation(s: PSym, vs: IndexedSeq[Value], inv: Map[PSym, Interpretation]): Boolean = {
-    val clauses = program.clauses.filter(_.head.name == s)
-
-    // TODO: CXonsider just creating a predicate and asking for the answer????
-
-    //val goal = Predicate(s, vs.toList)
-
-    clauses exists {
-      h =>
-        val values: IndexedSeq[Option[Value]] = vs.map(v => Some(v))
-        getModel(h.head, values, inv, Map.empty).nonEmpty
-    }
+  def isPredicateSatisfiable(s: PSym, vs: IndexedSeq[Value], inv: Map[PSym, Interpretation]): Boolean = {
+    // The goal is the predicate `s` where all the terms are bound to the values `vs`.
+    val goal = Predicate(s, vs.map(_.asTerm).toList)
+    // The models are all satisfiable ways to derive the goal under the empty environment.
+    val models = getModel(goal, vs.map(v => Some(v)), inv, Map.empty)
+    // The predicate is satisfiable iff there is atleast one satisfiable model.
+    models.nonEmpty
   }
 
   /**
    * TODO: DOC
    */
-  def evaluateFunction(s: PSym, vs: IndexedSeq[Value]): Value = {
+  def evaluateFunction(s: PSym, vs: IndexedSeq[Value], inv: Map[PSym, Interpretation]): Value = {
     val clauses = program.clauses.filter(_.head.name == s)
 
     // val goal = Predicate(s, vs.toList ::: x :: Nil)
@@ -335,12 +334,12 @@ class Solver(program: Program) {
   /**
    * Returns `true` iff `v1` is less or equal to `v2`.
    */
-  def leq(s: PSym, v1: Value, v2: Value): Boolean = evaluateRelation(s, IndexedSeq(v1, v2), program.interpretation)
+  def leq(s: PSym, v1: Value, v2: Value): Boolean = isPredicateSatisfiable(s, IndexedSeq(v1, v2), program.interpretation)
 
   /**
    * Returns the join of `v1` and `v2`.
    */
-  def join(s: PSym, v1: Value, v2: Value): Value = evaluateFunction(s, IndexedSeq(v1, v2))
+  def join(s: PSym, v1: Value, v2: Value): Value = evaluateFunction(s, IndexedSeq(v1, v2), program.interpretation)
 
   // TODO
   def freeVariables(p: Predicate, env: Map[VSym, Value]): Set[VSym] = ???

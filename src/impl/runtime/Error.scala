@@ -29,4 +29,6 @@ object Error {
   case class UnsafeVariableSymbol(h: HornClause, v: Symbol.VariableSymbol) extends RuntimeException
 
   case class NonFunctionModel(s: Symbol.PredicateSymbol) extends RuntimeException
+
+  case class UnsupportedInterpretation(s: Symbol.PredicateSymbol, i: Interpretation) extends RuntimeException
 }
