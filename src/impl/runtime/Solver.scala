@@ -1,5 +1,6 @@
 package impl.runtime
 
+import Unification._
 import impl.logic.Symbol.{PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
 import util.collection.mutable
@@ -103,47 +104,25 @@ class Solver(program: Program) {
     case Interpretation.Relation.In2 =>
       val List(t1, t2) = p.terms
       relation2.get(p.name).toList.flatMap {
-        case (v1, v2) =>
-          for (
-            env1 <- unify(t1, v1, env0);
-            env2 <- unify(t2, v2, env1)
-          ) yield env2
+        case (v1, v2) => unify(t1, t2, v1, v2, env0)
       }
 
     case Interpretation.Relation.In3 =>
       val List(t1, t2, t3) = p.terms
       relation3.get(p.name).toList.flatMap {
-        case (v1, v2, v3) =>
-          for (
-            env1 <- unify(t1, v1, env0);
-            env2 <- unify(t2, v2, env1);
-            env3 <- unify(t3, v3, env2)
-          ) yield env3
+        case (v1, v2, v3) => unify(t1, t2, t3, v1, v2, v3, env0)
       }
 
     case Interpretation.Relation.In4 =>
       val List(t1, t2, t3, t4) = p.terms
       relation4.get(p.name).toList.flatMap {
-        case (v1, v2, v3, v4) =>
-          for (
-            env1 <- unify(t1, v1, env0);
-            env2 <- unify(t2, v2, env1);
-            env3 <- unify(t3, v3, env2);
-            env4 <- unify(t4, v4, env3)
-          ) yield env4
+        case (v1, v2, v3, v4) => unify(t1, t2, t3, t4, v1, v2, v3, v4, env0)
       }
 
     case Interpretation.Relation.In5 =>
       val List(t1, t2, t3, t4, t5) = p.terms
       relation5.get(p.name).toList.flatMap {
-        case (v1, v2, v3, v4, v5) =>
-          for (
-            env1 <- unify(t1, v1, env0);
-            env2 <- unify(t2, v2, env1);
-            env3 <- unify(t3, v3, env2);
-            env4 <- unify(t4, v4, env3);
-            env5 <- unify(t5, v5, env4)
-          ) yield env5
+        case (v1, v2, v3, v4, v5) => unify(t1, t2, t3, t4, t5, v1, v2, v3, v4, v5, env0)
       }
 
     case Interpretation.Map.Leq1(lattice) =>
@@ -258,53 +237,6 @@ class Solver(program: Program) {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Unification                                                             //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-   * Optionally returns an environment such that the given term `t` is equal to the value `v`
-   * under the returned environment `env` assuming an initial environment `env0`.
-   *
-   * That is, t.asValue(unify(t, v)) == v.
-   *
-   * Returns `None` if unification is impossible.
-   */
-  def unify(t: Term, v: Value, env0: Map[VSym, Value]): Option[Map[VSym, Value]] = (t, v) match {
-    case (Term.Constant(v1), v2) if v1 == v2 => Some(env0)
-    case (Term.Variable(s), v2) => env0.get(s) match {
-      case None => Some(env0 + (s -> v2))
-      case Some(v3) if v2 != v3 => None
-      case Some(v3) if v2 == v3 => Some(env0)
-    }
-    case (Term.Constructor0(s1), Value.Constructor0(s2)) if s1 == s2 => Some(env0)
-    case (Term.Constructor1(s1, t1), Value.Constructor1(s2, v1)) if s1 == s2 => unify(t1, v1, env0)
-    case (Term.Constructor2(s1, t1, t2), Value.Constructor2(s2, v1, v2)) if s1 == s2 =>
-      for (env1 <- unify(t1, v1, env0);
-           env2 <- unify(t2, v2, env1))
-      yield env2
-    case (Term.Constructor3(s1, t1, t2, t3), Value.Constructor3(s2, v1, v2, v3)) if s1 == s2 =>
-      for (env1 <- unify(t1, v1, env0);
-           env2 <- unify(t2, v2, env1);
-           env3 <- unify(t3, v3, env2))
-      yield env3
-    case (Term.Constructor4(s1, t1, t2, t3, t4), Value.Constructor4(s2, v1, v2, v3, v4)) if s1 == s2 =>
-      for (env1 <- unify(t1, v1, env0);
-           env2 <- unify(t2, v2, env1);
-           env3 <- unify(t3, v3, env2);
-           env4 <- unify(t4, v4, env3))
-      yield env4
-    case (Term.Constructor5(s1, t1, t2, t3, t4, t5), Value.Constructor5(s2, v1, v2, v3, v4, v5)) if s1 == s2 =>
-      for (env1 <- unify(t1, v1, env0);
-           env2 <- unify(t2, v2, env1);
-           env3 <- unify(t3, v3, env2);
-           env4 <- unify(t4, v4, env3);
-           env5 <- unify(t5, v5, env4))
-      yield env5
-    case _ => None
-  }
-
-
-  /////////////////////////////////////////////////////////////////////////////
   // Top-down satisfiability                                                 //
   /////////////////////////////////////////////////////////////////////////////
   // TODO: This part is in development --------------------
@@ -337,23 +269,40 @@ class Solver(program: Program) {
   //      h.isFact || (h.body forall (p => satisfiable(p, env)))
 
 
-
   /**
    * TODO: DOC
    */
-  def topdown(h: HornClause, inv: Map[PSym, Interpretation], tenv: Map[Interpretation, Type], env: Map[VSym, Value]): List[Map[VSym, Value]] = {
+  def topdown(h: HornClause, env: Map[VSym, Value]): List[Map[VSym, Value]] = {
     ???
   }
+
 
   /**
    * Returns `true` iff `v1` is less or equal to `v2`.
    */
-  def leq(v1: Value, v2: Value, leq: Set[HornClause]): Boolean = ???
+  // TODO: Generalize
+  def leq(v1: Value, v2: Value, leq: Set[HornClause]): Boolean = {
+    val env0 = Map.empty[VSym, Value]
+
+    val envs = leq.toList.flatMap {
+      case h =>
+        val List(t1, t2) = h.head.terms
+        val env = unify(t1, t2, v1, v2, env0)
+        // TODO: Proceed into body...
+        ???
+    }
+
+    envs.nonEmpty
+  }
 
   /**
    * Returns the join of `v1` and `v2`.
    */
-  def join(v1: Value, v2: Value, join: Set[HornClause]): Value = ???
+  // TODO: Generalize
+  def join(v1: Value, v2: Value, join: Set[HornClause]): Value = {
+
+    ???
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Utilities                                                               //
