@@ -21,7 +21,12 @@ class Solver(program: Program) {
   /**
    * Maps for n-ary lattices.
    */
-  // TODO
+  // TODO: Store as tuples?
+  val map1 = mutable.Map1.empty[PSym, Value]
+  val map2 = mutable.Map1.empty[PSym, (Value, Value)]
+  val map3 = mutable.Map1.empty[PSym, (Value, Value, Value)]
+  val map4 = mutable.Map1.empty[PSym, (Value, Value, Value, Value)]
+  val map5 = mutable.Map1.empty[PSym, (Value, Value, Value, Value, Value)]
 
   /**
    * A map of dependencies between predicate symbols and horn clauses.
@@ -199,6 +204,18 @@ class Solver(program: Program) {
       if (newFact)
         propagate(p, IndexedSeq(v1, v2, v3, v4, v5))
 
+    case Interpretation.Map.Leq1 =>
+      val List(t1) = p.terms
+      val nv = t1.toValue(env)
+      val ov = map1.get(p.name).getOrElse(???)
+      val jv = ??? // TODO: Join nv and ov
+      val newFact: Boolean = ??? // TODO: leq(ov, jv)
+      if (newFact) {
+        relation1.put(p.name, jv)
+        propagate(p, IndexedSeq(nv))
+      }
+
+
     case _ => throw new Error.NonRelationalPredicate(p.name)
   }
 
@@ -319,10 +336,8 @@ class Solver(program: Program) {
   /**
    * TODO: DOC
    */
-  def satisfiable(h: HornClause, env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
-   ???
-    // TODO: Needs to be the dual...
-
+  def topdown(h: HornClause, inv: Map[PSym, Interpretation], tenv: Map[Interpretation, Type],  env: Map[VSym, Value]): List[Map[VSym, Value]] = {
+    ???
   }
 
   /////////////////////////////////////////////////////////////////////////////

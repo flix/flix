@@ -5,7 +5,7 @@ import syntax.Symbols._
 
 object SignAndParity {
 
-  val Lattice = Type.Constructor2("SP", Sign.Lattice, Parity.Lattice)
+  val Lattice = Type.Constructor2("SP", Sign.lattice, Parity.Lattice)
 
   val Leq = Set(
     HornClause(
