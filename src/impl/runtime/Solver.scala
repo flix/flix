@@ -246,10 +246,9 @@ class Solver(program: Program) {
 
     (init /: h.body.toList) {
       case (envs, p) => envs flatMap {
-        case env => {
+        case env =>
           val values = p.terms.toIndexedSeq.map(_.asValue(env0))
           getModel(p, values, inv, env)
-        }
       }
     }
   }
@@ -259,6 +258,7 @@ class Solver(program: Program) {
 
     clauses.toList.flatMap {
       h => interpretationOf(h.head, inv) match {
+
         case Interpretation.Relation.In3 =>
           val List(t1, t2, t3) = h.head.terms
           val IndexedSeq(v1, v2, v3) = vs
@@ -266,6 +266,8 @@ class Solver(program: Program) {
             case None => List.empty
             case Some(env) => getModel(h, inv, env)
           }
+
+
       }
     }
   }
@@ -276,14 +278,13 @@ class Solver(program: Program) {
   /**
    * TODO: DOC
    */
-  def evaluateRelation(s: PSym, vs: IndexedSeq[Value]): Boolean = {
+  def evaluateRelation(s: PSym, vs: IndexedSeq[Value], inv: Map[PSym, Interpretation]): Boolean = {
     val clauses = program.clauses.filter(_.head.name == s)
 
     clauses exists {
-      h => bind(h, h.head, vs) match {
-        case None => false
-        case Some(env0) => getModel(h, ???, env0).nonEmpty
-      }
+      h =>
+        val values: IndexedSeq[Option[Value]] = vs.map(v => Some(v))
+        getModel(h.head, values, inv, Map.empty).nonEmpty
     }
   }
 
@@ -293,23 +294,19 @@ class Solver(program: Program) {
   def evaluateFunction(s: PSym, vs: IndexedSeq[Value]): Value = {
     val clauses = program.clauses.filter(_.head.name == s)
 
-    val models = clauses.toList.flatMap {
-      h => bind(h, h.head, vs) match {
-        case None => List.empty
-        case Some(env0) => getModel(h, ???, env0)
-      }
-    }
+    // TODO: Like above
 
-    models match {
-      case m :: Nil => ??? // TODO: Need to know the index or var sym of the value we are interested in inside the env.
-      case _ => throw new Error.NonFunctionModel(s)
-    }
+    //    models match {
+    //      case m :: Nil => ??? // TODO: Need to know the index or var sym of the value we are interested in inside the env.
+    //      case _ => throw new Error.NonFunctionModel(s)
+    //    }
+    ???
   }
 
   /**
    * Returns `true` iff `v1` is less or equal to `v2`.
    */
-  def leq(s: PSym, v1: Value, v2: Value): Boolean = evaluateRelation(s, IndexedSeq(v1, v2))
+  def leq(s: PSym, v1: Value, v2: Value): Boolean = evaluateRelation(s, IndexedSeq(v1, v2), program.interpretation)
 
   /**
    * Returns the join of `v1` and `v2`.
