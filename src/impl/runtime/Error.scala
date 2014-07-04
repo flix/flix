@@ -27,4 +27,6 @@ object Error {
   case class UnsafeGroundFact(p: Predicate) extends RuntimeException
   
   case class UnsafeVariableSymbol(h: HornClause, v: Symbol.VariableSymbol) extends RuntimeException
+
+  case class NonFunctionModel(s: Symbol.PredicateSymbol) extends RuntimeException
 }

@@ -190,8 +190,8 @@ class Solver(program: Program) {
       val List(t1) = p.terms
       val newValue = t1.toValue(env)
       val oldValue = map1.get(p.name).getOrElse(lattice.bot)
-      val joinValue = join(newValue, oldValue, lattice.join)
-      val newFact: Boolean = !leq(joinValue, oldValue, lattice.leq)
+      val joinValue = join(p.name, newValue, oldValue)
+      val newFact: Boolean = !leq(p.name, joinValue, oldValue)
       if (newFact) {
         relation1.put(p.name, joinValue)
         propagate(p, IndexedSeq(joinValue))
@@ -241,68 +241,52 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
   // TODO: This part is in development --------------------
 
-  // TODO: Naming
-  /**
-   * Returns `true` iff the given predicate `p` is satisfiable.
-   *
-   * All terms in `p` must be values under the given environment `env`.
-   */
-  def satisfiable(p: Predicate, env: Map[VSym, Value]): Boolean = {
-    // Find all horn clauses which define the predicate.
-    val clauses: Set[HornClause] = ???
-
-    // Compute the arguments of the predicate.
-    val values = (p.terms map (_.toValue(env))).toIndexedSeq
-
-    // The predicate is satisfiable iff atleast one of its horn clauses is satisfiable.
-    //clauses exists (h => satisfiable(h, values))
-
+  def getModel(h: HornClause, env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
     ???
   }
-
-  //  bind(h, h.head, vs) match {
-  //    case None => false // The predicate is unsatisfiable.
-  //    case Some(env) =>
-  //      // The predicate is satisfiable iff
-  //      // (1) it has no body (i.e. it is a fact), or
-  //      // (2) it body is satisfiable
-  //      h.isFact || (h.body forall (p => satisfiable(p, env)))
-
 
   /**
    * TODO: DOC
    */
-  def topdown(h: HornClause, env: Map[VSym, Value]): List[Map[VSym, Value]] = {
-    ???
+  def evaluateRelation(s: PSym, vs: IndexedSeq[Value]): Boolean = {
+    val clauses = program.clauses.filter(_.head.name == s)
+
+    clauses exists {
+      h => bind(h, h.head, vs) match {
+        case None => false
+        case Some(env0) => getModel(h, env0).nonEmpty
+      }
+    }
   }
 
+  /**
+   * TODO: DOC
+   */
+  def evaluateFunction(s: PSym, vs: IndexedSeq[Value]): Value = {
+    val clauses = program.clauses.filter(_.head.name == s)
+
+    val models = clauses.toList.flatMap {
+      h => bind(h, h.head, vs) match {
+        case None => List.empty
+        case Some(env0) => getModel(h, env0)
+      }
+    }
+
+    models match {
+      case m :: Nil => ??? // TODO: Need to know the index or var sym of the value we are interested in inside the env.
+      case _ => throw new Error.NonFunctionModel(s)
+    }
+  }
 
   /**
    * Returns `true` iff `v1` is less or equal to `v2`.
    */
-  // TODO: Generalize
-  def leq(v1: Value, v2: Value, leq: Set[HornClause]): Boolean = {
-    val env0 = Map.empty[VSym, Value]
-
-    val envs = leq.toList.flatMap {
-      case h =>
-        val List(t1, t2) = h.head.terms
-        val env = unify(t1, t2, v1, v2, env0)
-        // TODO: Proceed into body...
-        ???
-    }
-
-    envs.nonEmpty
-  }
+  def leq(s: PSym, v1: Value, v2: Value): Boolean = evaluateRelation(s, IndexedSeq(v1, v2))
 
   /**
    * Returns the join of `v1` and `v2`.
    */
-  // TODO: Generalize
-  def join(v1: Value, v2: Value, join: Set[HornClause]): Value = {
-
-    ???
-  }
+  def join(s: PSym, v1: Value, v2: Value): Value = evaluateFunction(s, IndexedSeq(v1, v2))
 
   /////////////////////////////////////////////////////////////////////////////
   // Utilities                                                               //
