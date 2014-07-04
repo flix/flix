@@ -103,11 +103,40 @@ object Unification {
   }
 
   /**
-   * Optionally returns an environment where the given terms `t1`, `t2`, `t3` have been unified with the values `v1`, `v2`, `v3`.
+   * Optionally returns an environment where the given terms `t1`, `t2` have been unified with the optional values `v1`, `v2`
+   */
+  def unify(t1: Term, t2: Term, v1: Option[Value], v2: Option[Value], env0: Map[VSym, Value]): Option[Map[VSym, Value]] =
+    for (env1 <- unify(t1, v1, env0);
+         env2 <- unify(t2, v2, env1))
+    yield env2
+
+  /**
+   * Optionally returns an environment where the given terms `t1`, `t2`, `t3` have been unified with the optional values `v1`, `v2`, `v3`.
    */
   def unify(t1: Term, t2: Term, t3: Term, v1: Option[Value], v2: Option[Value], v3: Option[Value], env0: Map[VSym, Value]): Option[Map[VSym, Value]] =
     for (env1 <- unify(t1, v1, env0);
          env2 <- unify(t2, v2, env1);
          env3 <- unify(t3, v3, env2))
     yield env3
+
+  /**
+   * Optionally returns an environment where the given terms `t1`, `t2`, `t3`, `t4` have been unified with the optional values `v1`, `v2`, `v3`, `v4`.
+   */
+  def unify(t1: Term, t2: Term, t3: Term, t4: Term, v1: Option[Value], v2: Option[Value], v3: Option[Value], v4: Option[Value], env0: Map[VSym, Value]): Option[Map[VSym, Value]] =
+    for (env1 <- unify(t1, v1, env0);
+         env2 <- unify(t2, v2, env1);
+         env3 <- unify(t3, v3, env2);
+         env4 <- unify(t4, v4, env3))
+    yield env4
+
+  /**
+   * Optionally returns an environment where the given terms `t1`, `t2`, `t3`, `t4`, `t5` have been unified with the optional values `v1`, `v2`, `v3`, `v4`, `v5`.
+   */
+  def unify(t1: Term, t2: Term, t3: Term, t4: Term, t5: Term, v1: Option[Value], v2: Option[Value], v3: Option[Value], v4: Option[Value], v5: Option[Value], env0: Map[VSym, Value]): Option[Map[VSym, Value]] =
+    for (env1 <- unify(t1, v1, env0);
+         env2 <- unify(t2, v2, env1);
+         env3 <- unify(t3, v3, env2);
+         env4 <- unify(t4, v4, env3);
+         env5 <- unify(t5, v5, env4))
+    yield env4
 }

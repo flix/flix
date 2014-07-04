@@ -264,11 +264,36 @@ class Solver(program: Program) {
     }
   }
 
+  /**
+   * Optionally returns an environment satisfying the given predicate `p` under the interpretation `i` with valuations `vs` under environment `env0`.
+   */
   def satisfiable(p: Predicate, i: Interpretation, vs: IndexedSeq[Option[Value]], env0: Map[VSym, Value]): Option[Map[VSym, Value]] = i match {
+    case Interpretation.Relation.In1 =>
+      val List(t1) = p.terms
+      val IndexedSeq(v1) = vs
+      unify(t1, v1, env0)
+
+    case Interpretation.Relation.In2 =>
+      val List(t1, t2) = p.terms
+      val IndexedSeq(v1, v2) = vs
+      unify(t1, t2, v1, v2, env0)
+
     case Interpretation.Relation.In3 =>
       val List(t1, t2, t3) = p.terms
       val IndexedSeq(v1, v2, v3) = vs
       unify(t1, t2, t3, v1, v2, v3, env0)
+
+    case Interpretation.Relation.In4 =>
+      val List(t1, t2, t3, t4) = p.terms
+      val IndexedSeq(v1, v2, v3, v4) = vs
+      unify(t1, t2, t3, t4, v1, v2, v3, v4, env0)
+
+    case Interpretation.Relation.In5 =>
+      val List(t1, t2, t3, t4, t5) = p.terms
+      val IndexedSeq(v1, v2, v3, v4, v5) = vs
+      unify(t1, t2, t3, t4, t5, v1, v2, v3, v4, v5, env0)
+
+    case _ => ??? //throw some kind of error
   }
 
 
@@ -279,6 +304,10 @@ class Solver(program: Program) {
    */
   def evaluateRelation(s: PSym, vs: IndexedSeq[Value], inv: Map[PSym, Interpretation]): Boolean = {
     val clauses = program.clauses.filter(_.head.name == s)
+
+    // TODO: CXonsider just creating a predicate and asking for the answer????
+
+    //val goal = Predicate(s, vs.toList)
 
     clauses exists {
       h =>
@@ -293,6 +322,7 @@ class Solver(program: Program) {
   def evaluateFunction(s: PSym, vs: IndexedSeq[Value]): Value = {
     val clauses = program.clauses.filter(_.head.name == s)
 
+    // val goal = Predicate(s, vs.toList ::: x :: Nil)
     // TODO: Like above
 
     //    models match {
@@ -311,6 +341,12 @@ class Solver(program: Program) {
    * Returns the join of `v1` and `v2`.
    */
   def join(s: PSym, v1: Value, v2: Value): Value = evaluateFunction(s, IndexedSeq(v1, v2))
+
+  // TODO
+  def freeVariables(p: Predicate, env: Map[VSym, Value]): Set[VSym] = ???
+
+  // TODO
+  def boundVariables(p: Predicate, env: Map[VSym, Value]): Set[VSym] = ???
 
   /////////////////////////////////////////////////////////////////////////////
   // Utilities                                                               //
