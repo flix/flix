@@ -125,8 +125,13 @@ class Solver(program: Program) {
         case (v1, v2, v3, v4, v5) => unify(t1, t2, t3, t4, t5, v1, v2, v3, v4, v5, env0)
       }
 
+    // TODO: Careful about Leq1 in bodies.
+
     case Interpretation.Map.Leq1(lattice) =>
-      throw new RuntimeException("Disallow LeqX in bodies? Not monotone....????")
+      val List(t1) = p.terms
+      val v1 = map1.get(p.name).getOrElse(lattice.bot)
+      //leq(p.name, t1, v1)
+      ???
 
     case _ => throw new Error.NonRelationalPredicate(p.name)
   }
@@ -319,15 +324,18 @@ class Solver(program: Program) {
    * TODO: DOC
    */
   def evaluateFunction(s: PSym, vs: IndexedSeq[Value], inv: Map[PSym, Interpretation]): Value = {
-    val clauses = program.clauses.filter(_.head.name == s)
+    val goal = Predicate(s, vs.map(_.asTerm).toList ::: Term.Variable(Symbol.VariableSymbol("x")) :: Nil)
+    val values: IndexedSeq[Option[Value]] = (vs.toList.map(v => Some(v)) ::: None :: Nil).toIndexedSeq
+    val models = getModel(goal, values, inv, Map.empty)
 
-    // val goal = Predicate(s, vs.toList ::: x :: Nil)
-    // TODO: Like above
+    if (models.size == 1) {
 
-    //    models match {
-    //      case m :: Nil => ??? // TODO: Need to know the index or var sym of the value we are interested in inside the env.
-    //      case _ => throw new Error.NonFunctionModel(s)
-    //    }
+    } else if (models.size == 0) {
+
+    } else {
+
+    }
+
     ???
   }
 
@@ -350,6 +358,15 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
   // Utilities                                                               //
   /////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * TODO: DOC
+   */
+  def isSatisfiable = ???
+
+  /**
+   * TODO: Doc: Is unique?
+   */
 
   /**
    * Returns the interpretation of the given predicate `p`.
