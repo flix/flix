@@ -239,25 +239,20 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
   // Top-down satisfiability                                                 //
   /////////////////////////////////////////////////////////////////////////////
-  // TODO: This part is in development --------------------
+  def getModel(p: Predicate, vs: IndexedSeq[Option[Value]], inv: Map[PSym, Interpretation], env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
+    val clauses = program.clauses.filter(_.head.name == p.name)
 
-  // TODO: Probly need interpretations...
-  def getModel(px: Predicate, vs: IndexedSeq[Option[Value]], inv: Map[PSym, Interpretation], env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
-    // Find all the defining horn clauses.
-    val clauses = program.clauses.filter(_.head.name == px.name)
-
-    clauses map {
-      h =>
-        val p = h.head
-        interpretationOf(p, inv) match {
-          case Interpretation.Relation.In3 =>
-            val List(t1, t2, t3)  = p.terms
-            // The key issue is that values can be missing in vs.
-
-        }
+    clauses.toList.flatMap {
+      h => interpretationOf(h.head, inv) match {
+        case Interpretation.Relation.In3 =>
+          val List(t1, t2, t3) = h.head.terms
+          val IndexedSeq(v1, v2, v3) = vs
+          unify(t1, t2, t3, v1, v2, v3, env0) match {
+            case None => List.empty
+            case Some(envZ) => getModel(h, envZ)
+          }
+      }
     }
-
-    ???
   }
 
   // Notice that if the body is empty then env0 is returned!
