@@ -22,7 +22,6 @@ class Solver(program: Program) {
   /**
    * Maps for n-ary lattices.
    */
-  // TODO: Store as tuples?
   val map1 = mutable.Map1.empty[PSym, Value]
   val map2 = mutable.Map1.empty[PSym, (Value, Value)]
   val map3 = mutable.Map1.empty[PSym, (Value, Value, Value)]
@@ -245,10 +244,10 @@ class Solver(program: Program) {
   // Top-down satisfiability                                                 //
   /////////////////////////////////////////////////////////////////////////////
 
-  // Notice that if the body is empty then env0 is returned!
   def getModel(h: HornClause, inv: Map[PSym, Interpretation], env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
     val init = List(env0)
 
+    // Notice that if the body is empty then env0 is returned!
     (init /: h.body.toList) {
       case (envs, p) => envs flatMap {
         case env =>
@@ -278,6 +277,7 @@ class Solver(program: Program) {
    *
    * The predicate P(x, y, 42) unified with the values (Some(5), None, Some(42)) yields [x -> 5] and y is free.
    */
+  // TODO: Why do we need preicate and interpretation here?
   def satisfiable(p: Predicate, i: Interpretation, vs: IndexedSeq[Option[Value]], env0: Map[VSym, Value]): Option[Map[VSym, Value]] = i match {
     case Interpretation.Relation.In1 =>
       val List(t1) = p.terms
@@ -317,7 +317,7 @@ class Solver(program: Program) {
     // The models are all satisfiable ways to derive the goal under the empty environment.
     val models = getModel(goal, vs.map(v => Some(v)), inv, Map.empty)
     // The predicate is satisfiable iff there is atleast one satisfiable model.
-    models.nonEmpty
+    isSatisfiable(models)
   }
 
   /**
@@ -328,15 +328,10 @@ class Solver(program: Program) {
     val values: IndexedSeq[Option[Value]] = (vs.toList.map(v => Some(v)) ::: None :: Nil).toIndexedSeq
     val models = getModel(goal, values, inv, Map.empty)
 
-    if (models.size == 1) {
-
-    } else if (models.size == 0) {
-
-    } else {
-
+    isUnique(Symbol.VariableSymbol("x"), models) match {
+      case None => ???
+      case Some(v) => v
     }
-
-    ???
   }
 
   /**
@@ -360,13 +355,17 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-   * TODO: DOC
+   * Returns `true` iff the given solution `xs` contains at least one satisfiable model.
    */
-  def isSatisfiable = ???
+  def isSatisfiable(xs: List[Map[VSym, Value]]) = xs.nonEmpty
 
   /**
    * TODO: Doc: Is unique?
+  // TODO: FOld
+   TODO: Careful about free??
    */
+  def isUnique(x: VSym, xs: List[Map[VSym, Value]]): Option[Value] = ???
+
 
   /**
    * Returns the interpretation of the given predicate `p`.
