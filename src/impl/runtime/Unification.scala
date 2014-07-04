@@ -4,6 +4,10 @@ import impl.logic.Symbol.{VariableSymbol => VSym}
 import impl.logic.{Value, Term}
 
 object Unification {
+  /////////////////////////////////////////////////////////////////////////////
+  // Unification                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+
   /**
    * Optionally returns an environment such that the given term `t` is equal to the value `v`
    * under the returned environment `env` assuming an initial environment `env0`.
@@ -84,10 +88,19 @@ object Unification {
          env5 <- unify(t5, v5, env4))
     yield env5
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Optional Unification                                                    //
+  /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: -----
-
-  def unify(t: Term, v: Option[Value], env0: Map[VSym, Value]): Option[Map[VSym, Value]] = ???
+  /**
+   * Optionally returns the unification of the given term `t` with the optional value `v`.
+   *
+   * If `v` is `None` then the given environment `env0` is returned unmodified.
+   */
+  def unify(t: Term, v: Option[Value], env0: Map[VSym, Value]): Option[Map[VSym, Value]] = v match {
+    case None => Some(env0)
+    case Some(v2) => unify(t, v2, env0)
+  }
 
   /**
    * Optionally returns an environment where the given terms `t1`, `t2`, `t3` have been unified with the values `v1`, `v2`, `v3`.

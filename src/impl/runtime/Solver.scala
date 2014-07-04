@@ -257,19 +257,18 @@ class Solver(program: Program) {
     val clauses = program.clauses.filter(_.head.name == p.name)
 
     clauses.toList.flatMap {
-      h => interpretationOf(h.head, inv) match {
-
-        case Interpretation.Relation.In3 =>
-          val List(t1, t2, t3) = h.head.terms
-          val IndexedSeq(v1, v2, v3) = vs
-          unify(t1, t2, t3, v1, v2, v3, env0) match {
-            case None => List.empty
-            case Some(env) => getModel(h, inv, env)
-          }
-
-
+      h => satisfiable(h.head, interpretationOf(h.head, inv), vs, env0) match {
+        case None => List.empty
+        case Some(env) => getModel(h, inv, env)
       }
     }
+  }
+
+  def satisfiable(p: Predicate, i: Interpretation, vs: IndexedSeq[Option[Value]], env0: Map[VSym, Value]): Option[Map[VSym, Value]] = i match {
+    case Interpretation.Relation.In3 =>
+      val List(t1, t2, t3) = p.terms
+      val IndexedSeq(v1, v2, v3) = vs
+      unify(t1, t2, t3, v1, v2, v3, env0)
   }
 
 
