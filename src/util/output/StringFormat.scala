@@ -26,6 +26,7 @@ object StringFormat {
   }
 
   def format(s: Symbol): String = s match {
+    case Symbol.FunctionSymbol(x) => x
     case Symbol.PredicateSymbol(x) => x
     case Symbol.NamedSymbol(x) => x
     case Symbol.VariableSymbol(x) => x

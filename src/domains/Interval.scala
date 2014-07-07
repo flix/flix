@@ -48,7 +48,7 @@ object Interval {
           Term.Apply("Int.max", List(Term.Variable("e1"), Term.Variable("e2"))))
       )),
       body = Set(
-        Predicate("Int.Leq", List(
+        Predicate("Int.LessEq", List(
           Term.Apply("Int.minus", List(
             Term.Apply("Int.max", List(Term.Variable("e1"), Term.Variable("e2"))),
             Term.Apply("Int.min", List(Term.Variable("b1"), Term.Variable("b2")))
@@ -58,7 +58,21 @@ object Interval {
       )),
 
     // Interval.Join(Range(b1, e1), Range(b2, e2), Top) :- (max(e1, e2) - min(b1, b2)) > 10.
-
+    HornClause(
+      head = Predicate(JoinSymbol, List(
+        Term.Constructor2("Range", Term.Variable("b1"), Term.Variable("e1")),
+        Term.Constructor2("Range", Term.Variable("b2"), Term.Variable("e2")),
+        Top
+      )),
+      body = Set(
+        Predicate("Int.Greater", List(
+          Term.Apply("Int.-", List(
+            Term.Apply("Int.max", List(Term.Variable("e1"), Term.Variable("e2"))),
+            Term.Apply("Int.min", List(Term.Variable("b1"), Term.Variable("b2")))
+          )),
+          Term.Constant(Value.Int(10))
+        ))
+      )),
 
     HornClause(Predicate(JoinSymbol, List(Top, Term.Variable("_"), Top)), Set.empty),
     HornClause(Predicate(JoinSymbol, List(Term.Variable("_"), Top, Top)), Set.empty)

@@ -31,4 +31,8 @@ object Error {
   case class NonFunctionModel(s: Symbol.PredicateSymbol) extends RuntimeException
 
   case class UnsupportedInterpretation(s: Symbol.PredicateSymbol, i: Interpretation) extends RuntimeException
+
+  case class UnknownFunctionSymbol(s: Symbol.FunctionSymbol) extends RuntimeException
+
+  case class TypeError(expected: Type, actual: Value) extends RuntimeException
 }

@@ -1,7 +1,6 @@
 package impl.logic
 
-import impl.logic.Symbol.VariableSymbol
-import impl.runtime.Error
+import impl.runtime.{Functions, Error}
 
 sealed trait Term {
   /**
@@ -19,9 +18,10 @@ sealed trait Term {
    *
    * Returns `None` if the term has free variables under the given environment.
    */
-  def asValue(env: Map[VariableSymbol, Value]): Option[Value] = this match {
+  def asValue(env: Map[Symbol.VariableSymbol, Value]): Option[Value] = this match {
     case Term.Constant(v) => Some(v)
     case Term.Variable(s) => env.get(s)
+    case Term.Apply(s, args) => asValue(args, env) map (xs => Functions.evaluate(s, xs))
     case Term.Constructor0(s) => Some(Value.Constructor0(s))
     case Term.Constructor1(s, t1) =>
       for (v1 <- t1.asValue(env))
@@ -56,11 +56,19 @@ sealed trait Term {
   }
 
   /**
+   * Optionally returns the given list of terms `ts` as a list of values under the given environment `env`.
+   */
+  def asValue(ts: List[Term], env: Map[Symbol.VariableSymbol, Value]): Option[List[Value]] = (ts :\ Option(List.empty[Value])) {
+    case (t, None) => None
+    case (t, Some(xs)) => t.asValue(env) map (v => v :: xs)
+  }
+
+  /**
    * Returns the term as a value under the given environment `env`.
    *
    * Throws an exception if the term is not a value.
    */
-  def toValue(env: Map[VariableSymbol, Value]): Value = asValue(env) match {
+  def toValue(env: Map[Symbol.VariableSymbol, Value]): Value = asValue(env) match {
     case None => throw new Error.NonValueTerm(this)
     case Some(v) => v
   }
@@ -71,6 +79,7 @@ sealed trait Term {
   def variables: Set[Symbol.VariableSymbol] = this match {
     case Term.Constant(v) => Set.empty
     case Term.Variable(s) => Set(s)
+    case Term.Apply(s, ts) => ts.flatMap(t => t.variables).toSet
     case Term.Constructor0(s) => Set.empty
     case Term.Constructor1(s, t1) => t1.variables
     case Term.Constructor2(s, t1, t2) => t1.variables ++ t2.variables
