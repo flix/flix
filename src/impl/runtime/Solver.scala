@@ -344,12 +344,6 @@ class Solver(program: Program) {
    */
   def join(s: PSym, v1: Value, v2: Value): Value = evaluateFunction(s, IndexedSeq(v1, v2), program.interpretation)
 
-  // TODO
-  def freeVariables(p: Predicate, env: Map[VSym, Value]): Set[VSym] = ???
-
-  // TODO
-  def boundVariables(p: Predicate, env: Map[VSym, Value]): Set[VSym] = ???
-
   /////////////////////////////////////////////////////////////////////////////
   // Utilities                                                               //
   /////////////////////////////////////////////////////////////////////////////
