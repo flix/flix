@@ -5,6 +5,11 @@ sealed trait Symbol
 object Symbol {
 
   /**
+   * A function symbol.
+   */
+  case class FunctionSymbol(s: String) extends Symbol
+
+  /**
    * A predicate symbol.
    */
   case class PredicateSymbol(s: String) extends Symbol

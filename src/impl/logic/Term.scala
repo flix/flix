@@ -93,6 +93,11 @@ object Term {
   case class Variable(name: Symbol.VariableSymbol) extends Term
 
   /**
+   * A function application term.
+   */
+  case class Apply(name: Symbol.FunctionSymbol, terms: List[Term]) extends Term
+
+  /**
    * A null-ary constructor.
    */
   case class Constructor0(name: Symbol.NamedSymbol) extends Term

@@ -183,5 +183,8 @@ class Verifier(program: Program) {
   }
 
 
+  def unify(t: Term, tt: Type, env: Map[Term, Type]) = ???
+
+
 
 }

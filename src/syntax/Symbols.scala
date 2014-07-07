@@ -10,6 +10,11 @@ import scala.language.implicitConversions
 object Symbols {
 
   /**
+   * Implicitely converts a string to a function symbol.
+   */
+  implicit def string2function(s: String): FunctionSymbol = FunctionSymbol(s)
+
+  /**
    * Implicitely converts a string to a predicate symbol.
    */
   implicit def string2predicate(s: String): PredicateSymbol = PredicateSymbol(s)

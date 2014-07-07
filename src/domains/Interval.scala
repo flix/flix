@@ -34,19 +34,42 @@ object Interval {
     HornClause(Predicate(LeqSymbol, List(Term.Variable("_"), Top)), Set.empty)
   )
 
+  val Join = Set(
+    HornClause(Predicate(JoinSymbol, List(Bot, Term.Variable("x"), Term.Variable("x"))), Set.empty),
+    HornClause(Predicate(JoinSymbol, List(Term.Variable("x"), Bot, Term.Variable("x"))), Set.empty),
 
+    // Interval.Join(Range(b1, e1), Range(b2, e2), Range(b3, e3)) :- (max(e1, e2) - min(b1, b2)) <= 10.
+    // Interval.Join(Range(b1, e1), Range(b2, e2), Top) :- (max(e1, e2) - min(b1, b2)) > 10.
+    HornClause(
+      head = Predicate(JoinSymbol, List(
+        Term.Constructor2("Range", Term.Variable("b1"), Term.Variable("e1")),
+        Term.Constructor2("Range", Term.Variable("b2"), Term.Variable("e2")),
+        Term.Constructor2("Range", Term.Variable("b3"), Term.Variable("e3"))
+      )),
+      body = Set(
+        Predicate("Int.Leq", List()) // TODO ....
+      )),
 
-  // Interval.Join(Bot, x, x).
-  // Interval.Join(x, Bot, x).
-  // Interval.Join(Range(b1, e1), Range(b2, e2), Range(b3, e3)) :- (max(e1, e2) - min(b1, b2)) <= 10.
-  // Interval.Join(Range(b1, e1), Range(b2, e2), Top) :- (max(e1, e2) - min(b1, b2)) > 10.
-  // Interval.Join(Top, _, Top).
-  // Interval.Join(_, Top, Top).
+    // TODO: Top clause...
 
-  // Interval.Sum(Bot, _, Bot).
-  // Interval.Sum(_, Bot, Bot).
-  // Interval.Sum(Range(b1, e1), Range(b2, e2), Range(b1 + b2, e1 + e2)).
-  // Interval.Sum(Top, _, Top).
-  // Interval.Sum(_, Top, Top).
+    HornClause(Predicate(JoinSymbol, List(Top, Term.Variable("_"), Top)), Set.empty),
+    HornClause(Predicate(JoinSymbol, List(Term.Variable("_"), Top, Top)), Set.empty)
+  )
+
+  val Sum = Set(
+    HornClause(Predicate(SumSymbol, List(Bot, Term.Variable("_"), Bot)), Set.empty),
+    HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Bot, Bot)), Set.empty),
+
+    HornClause(Predicate(SumSymbol, List(
+      Term.Constructor2("Range", Term.Variable("b1"), Term.Variable("e1")),
+      Term.Constructor2("Range", Term.Variable("b2"), Term.Variable("e2")),
+      Term.Constructor2("Range",
+        Term.Apply("+", List(Term.Variable("b1"), Term.Variable("b2"))),
+        Term.Apply("+", List(Term.Variable("e1"), Term.Variable("e2"))))
+    )), Set.empty),
+
+    HornClause(Predicate(SumSymbol, List(Top, Term.Variable("_"), Top)), Set.empty),
+    HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Top, Top)), Set.empty)
+  )
 
 }
