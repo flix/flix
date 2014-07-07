@@ -14,4 +14,8 @@ object Formula {
 
   case class Implication(left: Formula, right: Formula) extends Formula
 
+  case class Exists(s: Symbol.VariableSymbol, f: Formula) extends Formula
+
+  case class Forall(s: Symbol.VariableSymbol, f: Formula) extends Formula
+
 }
