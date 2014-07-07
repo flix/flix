@@ -68,7 +68,7 @@ class Verifier(program: Program) {
    * Reflexivity: ∀x. x ⊑ x
    */
   def reflexivity(leq: PSym, tenv: Map[Symbol, Type]): Formula = typer(
-    Formula.Atom(Predicate(leq, List(Term.Variable(Symbol.VariableSymbol("x")), Term.Variable(Symbol.VariableSymbol("x")))))
+    Formula.Atom(Predicate(leq, List(Term.Variable("x"), Term.Variable("x"))))
   )
 
   /**
@@ -147,7 +147,7 @@ class Verifier(program: Program) {
   // TODO: What about n-ary predicates?
   def monotonicity(f: PSym, leq: PSym): Formula = typer(
     Formula.Implication(
-      Formula.Atom(Predicate(leq, List(Term.Variable("x"), Term.Variable("y"))))      ,
+      Formula.Atom(Predicate(leq, List(Term.Variable("x"), Term.Variable("y")))),
       ??? // TODO: Again we need equality
     )
   )
@@ -158,8 +158,11 @@ class Verifier(program: Program) {
   // TODO
   trait Strictness
 
+  /**
+   * Distributivity: ∀x, y, f(x ⨆ y) = f(x) ⨆ f(y).
+   */
   // TODO
-  trait Distributive
+  trait Distributivity
 
 
   /////////////////////////////////////////////////////////////////////////////

@@ -5,7 +5,7 @@ import syntax.Symbols._
 
 object Sign {
 
-  val lattice = Type.Variant(IndexedSeq(
+  val Lattice = Type.Variant(IndexedSeq(
     Type.Constructor0("Top"),
     Type.Constructor0("Neg"), Type.Constructor0("Zero"), Type.Constructor0("Pos"),
     Type.Constructor0("Bot")
@@ -17,7 +17,7 @@ object Sign {
   val Pos = Term.Constant(Value.Constructor0("Pos"))
   val Bot = Term.Constant(Value.Constructor0("Bot"))
 
-  val leq = Set(
+  val Leq = Set(
     HornClause(Predicate("Sign.Leq", List(Bot, Term.Variable("_"))), Set.empty),
     HornClause(Predicate("Sign.Leq", List(Neg, Neg)), Set.empty),
     HornClause(Predicate("Sign.Leq", List(Zero, Zero)), Set.empty),
@@ -25,7 +25,7 @@ object Sign {
     HornClause(Predicate("Sign.Leq", List(Term.Variable("_"), Top)), Set.empty)
   )
 
-  val join = Set(
+  val Join = Set(
     HornClause(Predicate("Sign.Leq", List(Bot, Term.Variable("x"), Term.Variable("x"))), Set.empty),
     HornClause(Predicate("Sign.Leq", List(Term.Variable("x"), Bot, Term.Variable("x"))), Set.empty),
 
@@ -45,7 +45,7 @@ object Sign {
     HornClause(Predicate("Sign.Leq", List(Top, Term.Variable("_"), Top)), Set.empty)
   )
 
-  val sum = Set(
+  val Sum = Set(
     HornClause(Predicate("Sign.Sum", List(Bot, Term.Variable("_"), Bot)), Set.empty),
     HornClause(Predicate("Sign.Sum", List(Term.Variable("_"), Bot, Bot)), Set.empty),
 
