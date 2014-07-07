@@ -67,7 +67,7 @@ class Verifier(program: Program) {
   /**
    * Reflexivity: ∀x. x ⊑ x
    */
-  def reflexivity(leq: PSym, tenv: Map[Symbol, Type]): Formula = typer(
+  def reflexivity(leq: PSym): Formula = typer(
     Formula.Atom(Predicate(leq, List(Term.Variable("x"), Term.Variable("x"))))
   )
 
@@ -81,8 +81,8 @@ class Verifier(program: Program) {
         Formula.Atom(Predicate(leq, List(Term.Variable(Symbol.VariableSymbol("y")), Term.Variable(Symbol.VariableSymbol("x")))))
       )),
       Formula.Atom(Predicate(Symbol.PredicateSymbol("Eq"), List(Term.Variable(Symbol.VariableSymbol("y")), Term.Variable(Symbol.VariableSymbol("x")))))
-    ))
-
+    )
+  )
 
   /**
    * Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
@@ -108,7 +108,7 @@ class Verifier(program: Program) {
   // TODO: ~~~~~~~~~~~~~Function properties~~~~~~~~~~~~
 
   /**
-   * Function: ∀x, y. x = y => f(x) = f(y).
+   * Function: ∀x, y. x = y ⇒ f(x) = f(y).
    */
   def function(f: PSym): Formula = typer(
     Formula.Implication(
@@ -136,13 +136,13 @@ class Verifier(program: Program) {
    * Join is Join
    * 1. x ⊑ x ⨆ y ∧ y ⊑ x ⨆ y
    *
-   * 2. ∀z, x ⊑ z ∧ y ⊑ z => x ⨆ y = z
+   * 2. ∀z, x ⊑ z ∧ y ⊑ z ⇒ x ⨆ y = z
    */
   trait JoinIsJoin
 
 
   /**
-   * Monotonicity: ∀x, x ⊑ y => f(x) ⊑ f(y).
+   * Monotonicity: ∀x, x ⊑ y ⇒ f(x) ⊑ f(y).
    */
   // TODO: What about n-ary predicates?
   def monotonicity(f: PSym, leq: PSym): Formula = typer(
