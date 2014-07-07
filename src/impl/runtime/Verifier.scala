@@ -1,6 +1,6 @@
 package impl.runtime
 
-import impl.logic.Symbol.{PredicateSymbol => PSym, VariableSymbol => VSym}
+import impl.logic.Symbol.{PredicateSymbol => PSym, VariableSymbol => VSym, VariableSymbol}
 import impl.logic._
 
 /**
@@ -60,24 +60,47 @@ class Verifier(program: Program) {
   }
 
 
-  // TODO: Prove by veryfing that the negation of the properties is unsatisfiable.
-
   /**
    * Function: ∀x, y. x = y => f(x) = f(y).
    */
-  def function(env: Map[VSym, Type]): Formula = ???
+  def function(f: PSym): Formula = typer(
+    Formula.Implication(
+      Formula.Atom(Predicate(Symbol.PredicateSymbol("Eq"), List(
+        Term.Variable(Symbol.VariableSymbol("x")),
+        Term.Variable(Symbol.VariableSymbol("y"))
+      ))),
+
+    // TODO: Need some notion of equality??
+      Formula.Conjunction(Set(
+        Formula.Atom(Predicate(Symbol.PredicateSymbol("Eq"), List(
+          Term.Variable(Symbol.VariableSymbol("fx")),
+          Term.Variable(Symbol.VariableSymbol("fy"))
+        )))
+      ))
+    )
+  )
 
   /**
    * Reflexivity: ∀x. x ⊑ x
    */
-  def reflexivity(env: Map[VSym, Type]): Formula = ??? //Formula.Atom(Term.Variable(Symbol.VariableSymbol("x")))
+  def reflexivity(lattice: Lattice, tenv: Map[Symbol, Type]): Formula = typer(
+    Formula.Atom(Predicate(lattice.leqSymbol, List(Term.Variable(Symbol.VariableSymbol("x")), Term.Variable(Symbol.VariableSymbol("x")))))
+  )
 
-  def satisfy(f: Formula, tenv: Map[VSym, Type]): Map[VSym, Value] = ???
 
   /**
    * Anti-Symmetry: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y.
    */
-  def antiSymmetry(): Formula = ???
+  def antiSymmetry(lattice: Lattice): Formula = typer(
+    Formula.Implication(
+      Formula.Conjunction(Set(
+        Formula.Atom(Predicate(lattice.leqSymbol, List(Term.Variable(Symbol.VariableSymbol("x")), Term.Variable(Symbol.VariableSymbol("y"))))),
+        Formula.Atom(Predicate(lattice.leqSymbol, List(Term.Variable(Symbol.VariableSymbol("y")), Term.Variable(Symbol.VariableSymbol("x")))))
+      )
+      ),
+      Formula.Atom(Predicate(Symbol.PredicateSymbol("Eq"), List(Term.Variable(Symbol.VariableSymbol("y")), Term.Variable(Symbol.VariableSymbol("x"))))
+      )
+    ))
 
 
   /**
@@ -116,8 +139,10 @@ class Verifier(program: Program) {
   // TODO???
   trait NoAscendingChains
 
-
-
+  /////////////////////////////////////////////////////////////////////////////
+  // Typer                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+  def typer(f: Formula): Formula = ???
 
 }
 

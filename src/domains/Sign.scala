@@ -65,6 +65,4 @@ object Sign {
     HornClause(Predicate("Sign.Sum", List(Term.Variable("_"), Top, Top)), Set.empty)
   )
 
-  val l = Lattice(lattice, Bot.v, leq, join)
-
 }
