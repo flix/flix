@@ -5,7 +5,7 @@ import syntax.Symbols._
 
 object Parity {
 
-  val Lattice = Type.Variant(IndexedSeq(
+  val Elements = Type.Variant(IndexedSeq(
     Type.Constructor0("Top"),
     Type.Constructor0("Odd"), Type.Constructor0("Zero"), Type.Constructor0("Even"),
     Type.Constructor0("Bot")
@@ -54,5 +54,7 @@ object Parity {
     HornClause(Predicate(SumSymbol, List(Top, Term.Variable("_"), Top)), Set.empty),
     HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Top, Top)), Set.empty)
   )
+
+  val lattice = Lattice(Elements, Bot.v, LeqSymbol, JoinSymbol)
 
 }

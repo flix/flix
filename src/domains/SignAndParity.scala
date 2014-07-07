@@ -1,15 +1,21 @@
 package domains
 
-import impl.logic.{HornClause, Predicate, Term, Type}
+import impl.logic._
 import syntax.Symbols._
 
 object SignAndParity {
 
-  val Lattice = Type.Constructor2("SP", Sign.Lattice, Parity.Lattice)
+  val Elements = Type.Constructor2("SP", Sign.Elements, Parity.Elements)
+
+  val LeqSymbol = Symbol.PredicateSymbol("SP.Leq")
+  val JoinSymbol = Symbol.PredicateSymbol("SP.Join")
+  val SumSymbol = Symbol.PredicateSymbol("SP.Sum")
+
+  val Bot = Term.Constant(Value.Constructor2("SP", Sign.Bot.v, Parity.Bot.v))
 
   val Leq = Set(
     HornClause(
-      head = Predicate("SP.Leq", List(
+      head = Predicate(LeqSymbol, List(
         Term.Constructor2("SP", Term.Variable("s1"), Term.Variable("p1")),
         Term.Constructor2("SP", Term.Variable("s2"), Term.Variable("p2"))
       )),
@@ -21,7 +27,7 @@ object SignAndParity {
 
   val Join = Set(
     HornClause(
-      head = Predicate("SP.Join", List(
+      head = Predicate(JoinSymbol, List(
         Term.Constructor2("SP", Term.Variable("s1"), Term.Variable("p1")),
         Term.Constructor2("SP", Term.Variable("s2"), Term.Variable("p2")),
         Term.Constructor2("SP", Term.Variable("s3"), Term.Variable("p3"))
@@ -33,7 +39,7 @@ object SignAndParity {
 
   val Sum = Set(
     HornClause(
-      head = Predicate("SP.Sum", List(
+      head = Predicate(SumSymbol, List(
         Term.Constructor2("SP", Term.Variable("s1"), Term.Variable("p1")),
         Term.Constructor2("SP", Term.Variable("s2"), Term.Variable("p2")),
         Term.Constructor2("SP", Term.Variable("s3"), Term.Variable("p3"))
@@ -44,5 +50,7 @@ object SignAndParity {
       )
     )
   )
+
+  val lattice = Lattice(Elements, Bot.v, LeqSymbol, JoinSymbol)
 
 }

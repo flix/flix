@@ -98,7 +98,7 @@ class Verifier(program: Program) {
   )
 
   /**
-   * ∀x. ⊥ ⊑ x.
+   * Least Element: ∀x. ⊥ ⊑ x.
    */
   def leastElement(leq: PSym, bot: Value): Formula = typer(
     Formula.Atom(Predicate(leq, List(Term.Constant(bot), Term.Variable("x"))))
@@ -172,5 +172,3 @@ class Verifier(program: Program) {
   def typer(f: Formula): Formula = ???
 
 }
-
-
