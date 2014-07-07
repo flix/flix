@@ -34,9 +34,7 @@ object Interval {
     HornClause(Predicate(LeqSymbol, List(Term.Variable("_"), Top)), Set.empty)
   )
 
-  // Interval.Leq(Bot, _).
-  // Interval.Leq(Range(b1, e1), Range(b2, e2)) :- b2 <= b1, e2 >= e1.
-  // Interval.Leq(_, Top).
+
 
   // Interval.Join(Bot, x, x).
   // Interval.Join(x, Bot, x).

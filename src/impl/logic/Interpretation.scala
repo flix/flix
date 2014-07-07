@@ -52,20 +52,20 @@ object Interpretation {
 //    case object NotEqual extends Interpretation
 //  }
 //
-//  object Integer {
-//    case object Plus extends Interpretation
+  object Integer {
+    case object Plus extends Interpretation
 //    case object Minus extends Interpretation
 //    case object Times extends Interpretation
 //    case object Divide extends Interpretation
 //    case object Modulo extends Interpretation
 //
 //    case object Less extends Interpretation
-//    case object LessEqual extends Interpretation
+    case object LessEqual extends Interpretation
 //    case object Greater extends Interpretation
 //    case object GreaterEqual extends Interpretation
 //    case object Equal extends Interpretation
 //    case object NotEqual extends Interpretation
-//  }
+  }
 //
 //  object String {
 //    case object Equal extends Interpretation

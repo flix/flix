@@ -68,7 +68,7 @@ class Verifier(program: Program) {
    * Reflexivity: ∀x. x ⊑ x
    */
   def reflexivity(leq: PSym): Formula = typer(
-    Formula.Atom(Predicate(leq, List(Term.Variable("x"), Term.Variable("x"))))
+    Formula.Forall("x", Formula.Atom(Predicate(leq, List(Term.Variable("x"), Term.Variable("x")))))
   )
 
   /**
@@ -169,6 +169,19 @@ class Verifier(program: Program) {
   // Typer                                                                   //
   /////////////////////////////////////////////////////////////////////////////
 
-  def typer(f: Formula): Formula = ???
+  def typer(f: Formula): Formula = {
+    val t: Type = ???
+    val tenv: Map[VSym, Type] = ???
+
+    f match {
+      case Formula.Forall(s, x) => t match {
+        case Type.Constructor0(ns) => typer(x)
+        case _ => ???
+      }
+      case _ => ???
+    }
+  }
+
+
 
 }
