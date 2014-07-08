@@ -94,14 +94,17 @@ object Unification {
   // Term-Term Unification                                                   //
   /////////////////////////////////////////////////////////////////////////////
 
-  def unify(t1: Term, t2: Term, env0: Map[VSym, Value]): Option[Map[VSym, Value]] = (t1, t2) match {
+  /**
+   * Unifies the term `t1` with the term `t2`.
+   */
+  def unify(t1: Term, t2: Term, env0: Map[VSym, Term]): Option[Map[VSym, Term]] = (t1, t2) match {
     case _ => ???
   }
 
   /**
    * Unifies all terms in `tx` with all terms in `ty` under the initial environment `env0`.
    */
-  def unify(tx: List[Term], ty: List[Term], env0: Map[VSym, Value]): Option[Map[VSym, Value]] =
+  def unify(tx: List[Term], ty: List[Term], env0: Map[VSym, Term]): Option[Map[VSym, Term]] =
     (tx zip ty).foldLeft(Option(env0)) {
       case (env, (t1, t2)) => env.flatMap(e => unify(t1, t2, e))
     }
