@@ -69,8 +69,6 @@ class Verifier(val program: Program) {
   )
 
 
-  // TODO: ~~~~~~~~~~~~~Function properties~~~~~~~~~~~~
-
   /**
    * Function: ∀x, y. x = y ⇒ f(x) = f(y).
    */
@@ -104,11 +102,9 @@ class Verifier(val program: Program) {
    */
   trait JoinIsJoin
 
-
   /**
    * Monotonicity: ∀x, x ⊑ y ⇒ f(x) ⊑ f(y).
    */
-  // TODO: What about n-ary predicates?
   def monotonicity(f: PSym, leq: PSym): Formula = typer(
     Formula.Implication(
       Formula.Atom(Predicate(leq, List(Term.Variable("x"), Term.Variable("y")))),
@@ -133,22 +129,8 @@ class Verifier(val program: Program) {
   // Typer                                                                   //
   /////////////////////////////////////////////////////////////////////////////
 
-  def typer(f: Formula): Formula = {
-    val t: Type = ???
-    val tenv: Map[VSym, Type] = ???
-
-    f match {
-      case Formula.Forall(s, x) => t match {
-        case Type.Constructor0(ns) => typer(x)
-        case _ => ???
-      }
-      case _ => ???
-    }
-  }
-
+  def typer(f: Formula): Formula = ???
 
   def unify(t: Term, tt: Type, env: Map[Term, Type]) = ???
-
-
 
 }
