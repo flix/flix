@@ -255,8 +255,6 @@ class Solver(program: Program) {
       }
     }
 
-    println(satisfied)
-
     satisfied.map(_._2)
   }
 

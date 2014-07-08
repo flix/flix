@@ -1,8 +1,7 @@
-package examples
+package impl.runtime
 
 import impl.logic.Program
-import impl.runtime.{Solver, Verifier}
-import util.output.StringFormat
+import util.output.Solution
 
 object Runner {
   def run(p: Program): Unit = {
@@ -12,8 +11,6 @@ object Runner {
     val solver = new Solver(p)
     solver.solve()
 
-    println(StringFormat.format(p))
-
-    StringFormat.printSolution(solver)
+    Solution.print(solver)
   }
 }

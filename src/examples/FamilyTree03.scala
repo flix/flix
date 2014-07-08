@@ -1,6 +1,7 @@
 package examples
 
 import impl.logic._
+import impl.runtime.Runner
 import syntax.Symbols._
 
 object FamilyTree03 {
