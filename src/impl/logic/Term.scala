@@ -74,6 +74,22 @@ sealed trait Term {
   }
 
   /**
+   * Returns the term where all occurences of the variable symbol `s` has been replaced by the term `t`.
+   */
+  def substitute(x: Symbol.VariableSymbol, t: Term): Term = this match {
+    case Term.Constant(v) => Term.Constant(v)
+    case Term.Variable(y) if x == y => t
+    case Term.Variable(y) => Term.Variable(y)
+    case Term.Apply(s, ts) => Term.Apply(s, ts)
+    case Term.Constructor0(s) => Term.Constructor0(s)
+    case Term.Constructor1(s, t1) => Term.Constructor1(s, t1.substitute(x, t))
+    case Term.Constructor2(s, t1, t2) => Term.Constructor2(s, t1.substitute(x, t), t2.substitute(x, t))
+    case Term.Constructor3(s, t1, t2, t3) => Term.Constructor3(s, t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
+    case Term.Constructor4(s, t1, t2, t3, t4) => Term.Constructor4(s, t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t))
+    case Term.Constructor5(s, t1, t2, t3, t4, t5) => Term.Constructor5(s, t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t), t5.substitute(x, t))
+  }
+
+  /**
    * Returns the set of (free) variables in the term.
    */
   def variables: Set[Symbol.VariableSymbol] = this match {
