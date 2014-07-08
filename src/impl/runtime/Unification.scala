@@ -53,50 +53,6 @@ object Unification {
       case (env, (t1, t2)) => env.flatMap(e => unify(t1, t2, e))
     }
 
-  // TODO: Consider replacing these with a generalized implementation:
-
-  /**
-   * Optionally returns an environment where the given terms `t1`, `t2` have been unified with the values `v1`, `v2`.
-   */
-  @deprecated("", "")
-  def unify(t1: Term, t2: Term, v1: Value, v2: Value, env0: Map[VSym, Value]): Option[Map[VSym, Value]] =
-    for (env1 <- unify(t1, v1, env0);
-         env2 <- unify(t2, v2, env1))
-    yield env2
-
-  /**
-   * Optionally returns an environment where the given terms `t1`, `t2`, `t3` have been unified with the values `v1`, `v2`, `v3`.
-   */
-  @deprecated("", "")
-  def unify(t1: Term, t2: Term, t3: Term, v1: Value, v2: Value, v3: Value, env0: Map[VSym, Value]): Option[Map[VSym, Value]] =
-    for (env1 <- unify(t1, v1, env0);
-         env2 <- unify(t2, v2, env1);
-         env3 <- unify(t3, v3, env2))
-    yield env3
-
-  /**
-   * Optionally returns an environment where the given terms `t1`, `t2`, `t3`, `t4` have been unified with the values `v1`, `v2`, `v3`, `v4`.
-   */
-  @deprecated("", "")
-  def unify(t1: Term, t2: Term, t3: Term, t4: Term, v1: Value, v2: Value, v3: Value, v4: Value, env0: Map[VSym, Value]): Option[Map[VSym, Value]] =
-    for (env1 <- unify(t1, v1, env0);
-         env2 <- unify(t2, v2, env1);
-         env3 <- unify(t3, v3, env2);
-         env4 <- unify(t4, v4, env3))
-    yield env4
-
-  /**
-   * Optionally returns an environment where the given terms `t1`, `t2`, `t3`, `t4`, `t5` have been unified with the values `v1`, `v2`, `v3`, `v4`, `v5`.
-   */
-  @deprecated("", "")
-  def unify(t1: Term, t2: Term, t3: Term, t4: Term, t5: Term, v1: Value, v2: Value, v3: Value, v4: Value, v5: Value, env0: Map[VSym, Value]): Option[Map[VSym, Value]] =
-    for (env1 <- unify(t1, v1, env0);
-         env2 <- unify(t2, v2, env1);
-         env3 <- unify(t3, v3, env2);
-         env4 <- unify(t4, v4, env3);
-         env5 <- unify(t5, v5, env4))
-    yield env5
-
   /////////////////////////////////////////////////////////////////////////////
   // Term-Term Unification                                                   //
   /////////////////////////////////////////////////////////////////////////////
@@ -162,57 +118,4 @@ object Unification {
   private def substitute(x: VSym, y: Term, env: Map[VSym, Term]): Map[VSym, Term] =
     env mapValues (_.substitute(x, y))
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Optional Unification                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-  // TODO: All this is deprecated and should be removed: ....
-
-  /**
-   * Optionally returns the unification of the given term `t` with the optional value `v`.
-   *
-   * If `v` is `None` then the given environment `env0` is returned unmodified.
-   */
-  def unify(t: Term, v: Option[Value], env0: Map[VSym, Value]): Option[Map[VSym, Value]] = v match {
-    case None => Some(env0)
-    case Some(v2) => unify(t, v2, env0)
-  }
-
-  /**
-   * Optionally returns an environment where the given terms `t1`, `t2` have been unified with the optional values `v1`, `v2`
-   */
-  def unify(t1: Term, t2: Term, v1: Option[Value], v2: Option[Value], env0: Map[VSym, Value]): Option[Map[VSym, Value]] =
-    for (env1 <- unify(t1, v1, env0);
-         env2 <- unify(t2, v2, env1))
-    yield env2
-
-  /**
-   * Optionally returns an environment where the given terms `t1`, `t2`, `t3` have been unified with the optional values `v1`, `v2`, `v3`.
-   */
-  def unify(t1: Term, t2: Term, t3: Term, v1: Option[Value], v2: Option[Value], v3: Option[Value], env0: Map[VSym, Value]): Option[Map[VSym, Value]] =
-    for (env1 <- unify(t1, v1, env0);
-         env2 <- unify(t2, v2, env1);
-         env3 <- unify(t3, v3, env2))
-    yield env3
-
-  /**
-   * Optionally returns an environment where the given terms `t1`, `t2`, `t3`, `t4` have been unified with the optional values `v1`, `v2`, `v3`, `v4`.
-   */
-  def unify(t1: Term, t2: Term, t3: Term, t4: Term, v1: Option[Value], v2: Option[Value], v3: Option[Value], v4: Option[Value], env0: Map[VSym, Value]): Option[Map[VSym, Value]] =
-    for (env1 <- unify(t1, v1, env0);
-         env2 <- unify(t2, v2, env1);
-         env3 <- unify(t3, v3, env2);
-         env4 <- unify(t4, v4, env3))
-    yield env4
-
-  /**
-   * Optionally returns an environment where the given terms `t1`, `t2`, `t3`, `t4`, `t5` have been unified with the optional values `v1`, `v2`, `v3`, `v4`, `v5`.
-   */
-  def unify(t1: Term, t2: Term, t3: Term, t4: Term, t5: Term, v1: Option[Value], v2: Option[Value], v3: Option[Value], v4: Option[Value], v5: Option[Value], env0: Map[VSym, Value]): Option[Map[VSym, Value]] =
-    for (env1 <- unify(t1, v1, env0);
-         env2 <- unify(t2, v2, env1);
-         env3 <- unify(t3, v3, env2);
-         env4 <- unify(t4, v4, env3);
-         env5 <- unify(t5, v5, env4))
-    yield env4
 }

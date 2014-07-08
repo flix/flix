@@ -102,33 +102,26 @@ class Solver(program: Program) {
   /**
    * Returns a list of environments for the given predicate `p` with interpretation `i` under the given environment `env0`.
    */
-  def evaluate(p: Predicate, i: Interpretation, env0: Map[VSym, Value]): List[Map[VSym, Value]] = (i, p.terms) match {
-    case (Interpretation.Relation(Representation.Data), List(t1)) =>
-      relation1.get(p.name).toList.flatMap {
-        case v1 => Unification.unify(t1, v1, env0)
+  def evaluate(p: Predicate, i: Interpretation, env0: Map[VSym, Value]): List[Map[VSym, Value]] = i match {
+    case Interpretation.Relation(Representation.Data) =>
+      p.terms match {
+        case ts@List(t1) => relation1.get(p.name).toList.flatMap {
+          case v1 => Unification.unifyValues(ts, List(v1), env0)
+        }
+        case ts@List(t1, t2) => relation2.get(p.name).toList.flatMap {
+          case (v1, v2) => Unification.unifyValues(ts, List(v1, v2), env0)
+        }
+        case ts@List(t1, t2, t3) => relation3.get(p.name).toList.flatMap {
+          case (v1, v2, v3) => Unification.unifyValues(ts, List(v1, v2, v3), env0)
+        }
+        case ts@List(t1, t2, t3, t4) => relation4.get(p.name).toList.flatMap {
+          case (v1, v2, v3, v4) => Unification.unifyValues(ts, List(v1, v2, v3, v4), env0)
+        }
+        case ts@List(t1, t2, t3, t4, t5) => relation5.get(p.name).toList.flatMap {
+          case (v1, v2, v3, v4, v5) => Unification.unifyValues(ts, List(v1, v2, v3, v4, v5), env0)
+        }
       }
-
-    case (Interpretation.Relation(Representation.Data), List(t1, t2)) =>
-      relation2.get(p.name).toList.flatMap {
-        case (v1, v2) => Unification.unify(t1, t2, v1, v2, env0)
-      }
-
-    case (Interpretation.Relation(Representation.Data), List(t1, t2, t3)) =>
-      relation3.get(p.name).toList.flatMap {
-        case (v1, v2, v3) => Unification.unify(t1, t2, t3, v1, v2, v3, env0)
-      }
-
-    case (Interpretation.Relation(Representation.Data), List(t1, t2, t3, t4)) =>
-      relation4.get(p.name).toList.flatMap {
-        case (v1, v2, v3, v4) => Unification.unify(t1, t2, t3, t4, v1, v2, v3, v4, env0)
-      }
-
-    case (Interpretation.Relation(Representation.Data), List(t1, t2, t3, t4, t5)) =>
-      relation5.get(p.name).toList.flatMap {
-        case (v1, v2, v3, v4, v5) => Unification.unify(t1, t2, t3, t4, t5, v1, v2, v3, v4, v5, env0)
-      }
-
-    case _ => throw new RuntimeException() // TODO
+    case _ => throw Error.UnsupportedInterpretation(p.name, i)
   }
 
   /////////////////////////////////////////////////////////////////////////////
