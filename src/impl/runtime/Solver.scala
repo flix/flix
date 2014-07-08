@@ -124,14 +124,6 @@ class Solver(program: Program) {
         case (v1, v2, v3, v4, v5) => unify(t1, t2, t3, t4, t5, v1, v2, v3, v4, v5, env0)
       }
 
-    // TODO: Careful about Leq1 in bodies.
-
-    case Interpretation.Map.Leq1(lattice) =>
-      val List(t1) = p.terms
-      val v1 = map1.get(p.name).getOrElse(lattice.bot)
-      //leq(p.name, t1, v1)
-      ???
-
     case _ => throw new Error.NonRelationalPredicate(p.name)
   }
 
@@ -194,10 +186,10 @@ class Solver(program: Program) {
       val List(t1) = p.terms
       val newValue = t1.toValue(env)
       val oldValue = map1.get(p.name).getOrElse(lattice.bot)
-      val joinValue = join(p.name, newValue, oldValue)
-      val newFact: Boolean = !leq(p.name, joinValue, oldValue)
+      val joinValue = join(lattice.join, newValue, oldValue)
+      val newFact: Boolean = !leq(lattice.leq, joinValue, oldValue)
       if (newFact) {
-        relation1.put(p.name, joinValue)
+        map1.put(p.name, joinValue)
         propagate(p, IndexedSeq(joinValue))
       }
 
@@ -260,6 +252,8 @@ class Solver(program: Program) {
   def getModel(p: Predicate, vs: IndexedSeq[Option[Value]], inv: Map[PSym, Interpretation], env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
     val clauses = program.clauses.filter(_.head.name == p.name)
 
+    if (clauses.isEmpty) throw new RuntimeException() // TODO: better exception
+
     clauses.toList.flatMap {
       h => satisfiable(h.head, interpretationOf(h.head, inv), vs, env0) match {
         case None => List.empty
@@ -278,6 +272,7 @@ class Solver(program: Program) {
    * The predicate P(x, y, 42) unified with the values (Some(5), None, Some(42)) yields [x -> 5] and y is free.
    */
   // TODO: Why do we need preicate and interpretation here?
+  // TODO: Bad idea with IndexedSeq[Option[Value]]. Instead we need unification of terms... so that we can bind the result, instead of just having "None".
   def satisfiable(p: Predicate, i: Interpretation, vs: IndexedSeq[Option[Value]], env0: Map[VSym, Value]): Option[Map[VSym, Value]] = i match {
     case Interpretation.Relation.In1 =>
       val List(t1) = p.terms
@@ -358,7 +353,17 @@ class Solver(program: Program) {
   // TODO: FOld
    TODO: Careful about free??
    */
-  def isUnique(x: VSym, xs: List[Map[VSym, Value]]): Option[Value] = ???
+  def isUnique(x: VSym, xs: List[Map[VSym, Value]]): Option[Value] = {
+    if (xs.isEmpty)
+      return None
+
+    if (xs.size == 1) {
+      return xs.head.get(x)
+    }
+
+    println(xs)
+    ???
+  }
 
 
   /**

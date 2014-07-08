@@ -4,6 +4,8 @@ sealed trait Interpretation {
   /**
    * Returns `true` iff the interpretation is relational.
    */
+  // TODO
+  @deprecated
   def isRelational: Boolean = this match {
     case Interpretation.Relation.In1 => true
     case Interpretation.Relation.In2 => true
@@ -47,6 +49,10 @@ object Interpretation {
     case object Functional5 extends Interpretation
   }
 
+  object Logical {
+    case object In1 extends Interpretation // TODO
+  }
+
 //  object Boolean {
 //    case object Equal extends Interpretation
 //    case object NotEqual extends Interpretation
@@ -72,4 +78,27 @@ object Interpretation {
 //    case object NotEqual extends Interpretation
 //  }
 
+}
+
+
+sealed trait Interpretation2
+
+object Interpretation2 {
+  case class Relation(repr: Representation) extends Interpretation2
+  case class Function(repr: Representation) extends Interpretation2
+  case class Lattice(repr: Representation) extends Interpretation2
+
+  case object Leq extends Interpretation2
+
+  case object Join extends Interpretation2
+
+  case class Atleast(repr: Representation) extends Interpretation2
+  case class Cardinality(repr: Representation) extends Interpretation2
+}
+
+sealed trait Representation
+
+object Representation {
+  case object Code extends Representation
+  case object Data extends Representation
 }

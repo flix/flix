@@ -24,7 +24,7 @@ object Error {
 
   case class UnificationError(t: Term, v: Value) extends RuntimeException
 
-  case class UnsafeGroundFact(p: Predicate) extends RuntimeException
+  case class UnsafeGroundFact(p: Predicate) extends RuntimeException(s"The ground fact $p is unsafe.")
   
   case class UnsafeVariableSymbol(h: HornClause, v: Symbol.VariableSymbol) extends RuntimeException
 

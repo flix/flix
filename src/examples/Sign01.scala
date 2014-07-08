@@ -23,9 +23,9 @@ object Sign01 {
       "X".asP -> Interpretation.Relation.In1,
       "Y".asP -> Interpretation.Relation.In1,
       "R1".asP -> Interpretation.Map.Leq1(Sign.lattice)
-    )
+    ) ++ Sign.lattice.interpretation
 
-    val program = Program(facts ++ clauses, interpretations)
+    val program = Program(facts ++ clauses ++ Sign.lattice.clauses, interpretations)
 
     val compiler = new Verifier(program)
     compiler.verify()
