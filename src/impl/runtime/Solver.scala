@@ -54,7 +54,10 @@ class Solver(program: Program) {
     for (h <- program.facts) {
       val interpretation = interpretationOf(h.head, program.interpretation)
 
-      satisfy(h.head, interpretation, Map.empty[VSym, Value])
+      interpretation match {
+        case Interpretation.Relation(Representation.Data) => satisfy(h.head, interpretation, Map.empty[VSym, Value])
+        case _ => // nop
+      }
     }
 
     // Iteratively try to satisfy pending horn clauses.
@@ -195,7 +198,7 @@ class Solver(program: Program) {
         propagate(p, IndexedSeq(joinValue))
       }
 
-    case _ => throw new RuntimeException() // TODO
+    case _ => throw Error.NonRelationalPredicateSymbol(p.name)
   }
 
 
@@ -297,6 +300,14 @@ class Solver(program: Program) {
       val IndexedSeq(v1, v2, v3, v4, v5) = vs
       unify(t1, t2, t3, t4, t5, v1, v2, v3, v4, v5, env0)
 
+    case (Interpretation.Leq, List(t1, t2)) =>
+      val IndexedSeq(v1, v2) = vs
+      unify(t1, t2, v1, v2, env0)
+
+    case (Interpretation.Join, List(t1, t2, t3)) =>
+      val IndexedSeq(v1, v2, v3) = vs
+      unify(t1, t2, t3, v1, v2, v3, env0)
+
     case _ => throw Error.UnsupportedInterpretation(p.name, i)
   }
 
@@ -322,7 +333,7 @@ class Solver(program: Program) {
     val models = getModel(goal, values, inv, Map.empty)
 
     isUnique(Symbol.VariableSymbol("x"), models) match {
-      case None => ???
+      case None => println(models); ???
       case Some(v) => v
     }
   }

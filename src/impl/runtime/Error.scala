@@ -8,9 +8,11 @@ object Error {
 
   case class NonValueTerm(t: Term) extends RuntimeException
 
-  case class UnsupportedInterpretation(s: Symbol.PredicateSymbol, i: Interpretation) extends RuntimeException
+  case class UnsupportedInterpretation(s: Symbol.PredicateSymbol, i: Interpretation) extends RuntimeException(s"$s: $i")
 
   case class InterpretationNotFound(s: Symbol.PredicateSymbol) extends RuntimeException(s"The interpretation for $s was not found.")
+
+  case class NonRelationalPredicateSymbol(p: Symbol.PredicateSymbol) extends RuntimeException
 
   /*
    * An error to indicate that the meaning of the function symbol is unknown.
