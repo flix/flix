@@ -240,7 +240,7 @@ class Solver(program: Program) {
   def getSat(p: Predicate, env0: Map[VSym, Term] = Map.empty): List[Map[VSym, Term]] = {
     // Find horn clauses where the head predicate is satisfiable.
     var satisfiable = List.empty[(HornClause, Map[VSym, Term])]
-    for (h <- program.clauses; env <- unifyP(p, h.head, env0)) {
+    for (h <- program.clauses; env <- Unification.unify(p, h.head, env0)) {
       satisfiable ::=(h, env)
     }
 
@@ -259,15 +259,6 @@ class Solver(program: Program) {
 
     satisfied.map(_._2)
   }
-
-  /**
-   * TODO: DOC
-   */
-  def unifyP(p1: Predicate, p2: Predicate, env0: Map[VSym, Term]): Option[Map[VSym, Term]] =
-    if (p1.name != p2.name)
-      None
-    else
-      Unification.unifyTerms(p1.terms, p2.terms, env0)
 
   /**
    * Optionally returns the unique term of the variable `x` in all the given models `xs`.

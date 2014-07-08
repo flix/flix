@@ -1,13 +1,26 @@
 package impl.runtime
 
 import impl.logic.Symbol.{VariableSymbol => VSym}
-import impl.logic.{Value, Term}
+import impl.logic.{Predicate, Value, Term}
 
 object Unification {
   /////////////////////////////////////////////////////////////////////////////
-  // Term-Value Unification                                                  //
+  // Predicate Unification                                                   //
   /////////////////////////////////////////////////////////////////////////////
 
+  /**
+   * Unifies all terms in the given predicate `p1` with the predicate `p2` iff they share the same symbol.
+   */
+  def unify(p1: Predicate, p2: Predicate, env0: Map[VSym, Term]): Option[Map[VSym, Term]] =
+    if (p1.name != p2.name)
+      None
+    else
+      Unification.unifyTerms(p1.terms, p2.terms, env0)
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Term-Value Unification                                                  //
+  /////////////////////////////////////////////////////////////////////////////
   /**
    * Unifies the term `t` with the value `v` under the given environment `env0`.
    */
