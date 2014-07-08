@@ -12,9 +12,9 @@ object Functions {
       case (acc, Value.Int(i)) => acc + i
       case (acc, v) => throw Error.TypeError(Type.Int, v)
     })
-    case "Int.-" => ???
-    case "Int.LessEq" => ???
-    case "Int.Greater" => ???
+    case "Int.-" => throw new UnsupportedOperationException()
+    case "Int.LessEq" => throw new UnsupportedOperationException()
+    case "Int.Greater" => throw new UnsupportedOperationException()
     case _ => throw Error.UnknownFunctionSymbol(s)
   }
 

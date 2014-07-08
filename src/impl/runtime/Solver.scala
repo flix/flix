@@ -258,6 +258,9 @@ class Solver(program: Program) {
     satisfied.map(_._2)
   }
 
+  /**
+   * TODO: DOC
+   */
   def unifyP(p1: Predicate, p2: Predicate, env0: Map[VSym, Term]): Option[Map[VSym, Term]] =
     if (p1.name != p2.name)
       None

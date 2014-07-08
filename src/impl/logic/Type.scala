@@ -4,8 +4,6 @@ sealed trait Type
 
 object Type {
 
-  // TODO: Allow formulas in types? e.g. for intervals
-
   /**
    * The type of booleans.
    */
