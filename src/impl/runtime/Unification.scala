@@ -103,7 +103,8 @@ object Unification {
    */
   def unify(t1: Term, t2: Term, env0: Map[VSym, Term]): Option[Map[VSym, Term]] = (t1, t2) match {
     case (Term.Constant(v1), Term.Constant(v2)) if v1 == v2 => Some(env0)
-    case (Term.Variable(x), Term.Variable(y)) => ??? // TODO: What???
+  //  case (Term.Variable(x), Term.Variable(y)) =>
+  //    ??? // TODO: What???
     case (Term.Variable(x), t) => env0.get(x) match {
       case None => Some(env0 + (x -> t))
       case Some(tt) => if (t == tt) Some(env0) else None

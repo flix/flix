@@ -342,15 +342,48 @@ class Solver(program: Program) {
   /**
    * Returns the join of `v1` and `v2`.
    */
-  def join(s: PSym, v1: Value, v2: Value): Value = evaluateFunction(s, IndexedSeq(v1, v2), program.interpretation)
+  def join(s: PSym, v1: Value, v2: Value): Value = {
+    val x = Symbol.VariableSymbol("x")
+    val p = Predicate(s, List(Term.Constant(v1), Term.Constant(v2), Term.Variable(x)))
+    val models = getSat(p)
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Utilities                                                               //
-  /////////////////////////////////////////////////////////////////////////////
+    println(models)
+
+    uniqueValue(x, models) match {
+      case None => ???
+      case Some(v) => ???
+    }
+  }
+
+
+  def getSat(p: Predicate, env0: Map[VSym, Term] = Map.empty): List[Map[VSym, Term]] = {
+    val clauses = program.clauses.filter(_.head.name == p.name)
+    assert(clauses.nonEmpty)
+
+    val matched = clauses.toList.flatMap(h => unifyP(h.head, p, env0).map(e => (h, e)))
+
+    matched.foldLeft(List(env0)) {
+      case (m, (h, env)) => h.body.toList.flatMap(px => getSat(px, env))
+    }
+  }
+
+  def unifyP(p1: Predicate, p2: Predicate, env0: Map[VSym, Term]): Option[Map[VSym, Term]] = {
+    assert(p1.name == p2.name)
+
+    Unification.unify(p1.terms, p2.terms, env0)
+  }
+
+
+  def uniqueValue(x: VSym, xs: List[Map[VSym, Term]]): Option[Value] =
+    if (xs.isEmpty)
+      None
+    else
+      ???
 
   /**
    * Returns `true` iff the given solution `xs` contains at least one satisfiable model.
    */
+  @deprecated
   def isSatisfiable(xs: List[Map[VSym, Value]]) = xs.nonEmpty
 
   /**
@@ -358,6 +391,7 @@ class Solver(program: Program) {
   // TODO: FOld
    TODO: Careful about free??
    */
+  @deprecated
   def isUnique(x: VSym, xs: List[Map[VSym, Value]]): Option[Value] = {
     if (xs.isEmpty)
       return None
