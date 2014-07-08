@@ -7,7 +7,7 @@ import syntax.Symbols._
 /**
  * A verifier / type checker.
  */
-class Verifier(program: Program) {
+class Verifier(val program: Program) {
 
   /**
    * Verifies that the program is safe.

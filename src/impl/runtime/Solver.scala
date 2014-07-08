@@ -7,7 +7,7 @@ import util.collection.mutable
 /**
  * A semi-naive solver.
  */
-class Solver(program: Program) {
+class Solver(val program: Program) {
 
   /**
    * The tables for n-ary relations.

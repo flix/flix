@@ -1,6 +1,7 @@
 package util.output
 
 import impl.runtime.Solver
+import syntax.Programs._
 import syntax.Symbols._
 import syntax.Values._
 
@@ -8,7 +9,7 @@ object Solution {
 
   def print(s: Solver): Unit = {
     println("*** Program ***")
-
+    println(s.program.fmt)
     println()
     println()
 
