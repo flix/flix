@@ -75,6 +75,11 @@ class Solver(val program: Program) {
    * Returns a list of models for the given horn clause `h` with interpretations `inv` under the given environment `env`.
    */
   def evaluate(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): List[Map[VSym, Value]] = {
+    def isData(p: Predicate, inv: Map[PSym, Interpretation]): Boolean = inv(p.name) match {
+      case Interpretation.Relation(Representation.Data) => true
+      case _ => false
+    }
+
     // Evaluate relational predicates before functional predicates.
     val relationals = h.body filter (p => isData(p, inv))
     val functionals = h.body filterNot (p => isData(p, inv))
@@ -85,11 +90,6 @@ class Solver(val program: Program) {
     (init /: predicates) {
       case (envs, p) => evaluate(p, inv(p.name), envs)
     }
-  }
-
-  private def isData(p: Predicate, inv: Map[PSym, Interpretation]): Boolean = inv(p.name) match {
-    case Interpretation.Relation(Representation.Data) => true
-    case _ => false
   }
 
   /**
@@ -229,7 +229,6 @@ class Solver(val program: Program) {
   /////////////////////////////////////////////////////////////////////////////
   // Top-down satisfiability                                                 //
   /////////////////////////////////////////////////////////////////////////////
-
 
   /**
    * TODO: DOC
