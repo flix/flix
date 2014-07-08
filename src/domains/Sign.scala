@@ -21,7 +21,7 @@ object Sign {
   val JoinSymbol = Symbol.PredicateSymbol("Sign.Join")
   val SumSymbol = Symbol.PredicateSymbol("Sign.Sum")
 
-  val Leq = Set(
+  val Leq = List(
     HornClause(Predicate(LeqSymbol, List(Bot, Term.Variable("_")))),
     HornClause(Predicate(LeqSymbol, List(Neg, Neg))),
     HornClause(Predicate(LeqSymbol, List(Zero, Zero))),
@@ -29,7 +29,7 @@ object Sign {
     HornClause(Predicate(LeqSymbol, List(Term.Variable("_"), Top)))
   )
 
-  val Join = Set(
+  val Join = List(
     HornClause(Predicate(JoinSymbol, List(Bot, Term.Variable("x"), Term.Variable("x")))),
     HornClause(Predicate(JoinSymbol, List(Term.Variable("x"), Bot, Term.Variable("x")))),
 
@@ -49,7 +49,7 @@ object Sign {
     HornClause(Predicate(JoinSymbol, List(Top, Term.Variable("_"), Top)))
   )
 
-  val Sum = Set(
+  val Sum = List(
     HornClause(Predicate(SumSymbol, List(Bot, Term.Variable("_"), Bot))),
     HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Bot, Bot))),
 
@@ -75,6 +75,6 @@ object Sign {
     SumSymbol -> Interpretation.Function(Representation.Code)
   )
 
-  val lattice = Lattice(Elements, Bot.v, LeqSymbol, JoinSymbol, Leq ++ Join ++ Sum, Interpretations)
+  val lattice = Lattice(Elements, Bot.v, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum, Interpretations)
 
 }

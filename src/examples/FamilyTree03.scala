@@ -11,7 +11,7 @@ object FamilyTree03 {
     val AgeSymbol = Symbol.PredicateSymbol("Age")
     val ParentChildSymbol = Symbol.PredicateSymbol("P")
 
-    val facts = Set(
+    val facts = List(
       HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Caroline")), Term.Constant(Value.String("Inger"))))),
       HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Caroline")), Term.Constant(Value.String("Frits"))))),
 
@@ -26,7 +26,7 @@ object FamilyTree03 {
       HornClause(Predicate(AgeSymbol, List(Term.Constant(Value.String("Magnus")), Term.Constant(Value.String("28")))))
     )
 
-    val clauses = Set(
+    val clauses = List(
       HornClause(Predicate(ParentChildSymbol, List(Term.Variable("parent"), Term.Constructor2("NameAndAge", Term.Variable("child"), Term.Variable("age")))), List(
         Predicate(ParentSymbol, List(Term.Variable("child"), Term.Variable("parent"))),
         Predicate(AgeSymbol, List(Term.Variable("child"), Term.Variable("age")))
@@ -39,7 +39,7 @@ object FamilyTree03 {
       ParentChildSymbol -> Interpretation.Relation(Representation.Data)
     )
 
-    val program = Program(facts ++ clauses, interpretations)
+    val program = Program(facts ::: clauses, interpretations)
 
     Runner.run(program)
   }

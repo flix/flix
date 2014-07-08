@@ -13,12 +13,12 @@ object Sign01 {
     val Y = Symbol.PredicateSymbol("Y")
     val R = Symbol.PredicateSymbol("R")
 
-    val facts = Set(
+    val facts = List(
       HornClause(Predicate(X, List(Term.Constant(Value.Constructor0("Pos"))))),
       HornClause(Predicate(Y, List(Term.Constant(Value.Constructor0("Neg")))))
     )
 
-    val clauses = Set(
+    val clauses = List(
       HornClause(head = Predicate(R, List(Term.Variable("x"))), body = List(Predicate(X, List(Term.Variable("x"))))),
       HornClause(head = Predicate(R, List(Term.Variable("x"))), body = List(Predicate(Y, List(Term.Variable("x")))))
     )
@@ -29,7 +29,7 @@ object Sign01 {
       R -> Interpretation.LatticeMap(Sign.lattice)
     ) ++ Sign.lattice.interpretation
 
-    val program = Program(facts ++ clauses ++ Sign.lattice.clauses, interpretations)
+    val program = Program(facts ::: clauses ::: Sign.lattice.clauses, interpretations)
 
     Runner.run(program)
   }
