@@ -236,174 +236,75 @@ class Solver(program: Program) {
   // Top-down satisfiability                                                 //
   /////////////////////////////////////////////////////////////////////////////
 
-  def getModel(h: HornClause, inv: Map[PSym, Interpretation], env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
-    val init = List(env0)
-
-    // Notice that if the body is empty then env0 is returned!
-    (init /: h.body.toList) {
-      case (envs, p) => envs flatMap {
-        case env =>
-          val values = p.terms.toIndexedSeq.map(_.asValue(env0))
-          getModel(p, values, inv, env)
-      }
-    }
-  }
-
-  def getModel(p: Predicate, vs: IndexedSeq[Option[Value]], inv: Map[PSym, Interpretation], env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
-    val clauses = program.clauses.filter(_.head.name == p.name)
-
-    if (clauses.isEmpty) throw new RuntimeException() // TODO: better exception
-
-    clauses.toList.flatMap {
-      h => satisfiable(h.head, interpretationOf(h.head, inv), vs, env0) match {
-        case None => List.empty
-        case Some(env) => getModel(h, inv, env)
-      }
-    }
-  }
-
-  /**
-   * Optionally returns an environment satisfying the given predicate `p` under the interpretation `i` with valuations `vs` under environment `env0`.
-   *
-   * That is, if the list of terms in the predicate can be unified with the given values.
-   *
-   * As an example:
-   *
-   * The predicate P(x, y, 42) unified with the values (Some(5), None, Some(42)) yields [x -> 5] and y is free.
-   */
-  // TODO: Why do we need preicate and interpretation here?
-  // TODO: Bad idea with IndexedSeq[Option[Value]]. Instead we need unification of terms... so that we can bind the result, instead of just having "None".
-  def satisfiable(p: Predicate, i: Interpretation, vs: IndexedSeq[Option[Value]], env0: Map[VSym, Value]): Option[Map[VSym, Value]] = (i, p.terms) match {
-    case (Interpretation.Relation(Representation.Code), List(t1)) =>
-      val IndexedSeq(v1) = vs
-      unify(t1, v1, env0)
-
-    case (Interpretation.Relation(Representation.Code), List(t1, t2)) =>
-      val IndexedSeq(v1, v2) = vs
-      unify(t1, t2, v1, v2, env0)
-
-    case (Interpretation.Relation(Representation.Code), List(t1, t2, t3)) =>
-      val IndexedSeq(v1, v2, v3) = vs
-      unify(t1, t2, t3, v1, v2, v3, env0)
-
-    case (Interpretation.Relation(Representation.Code), List(t1, t2, t3, t4)) =>
-      val List(t1, t2, t3, t4) = p.terms
-      val IndexedSeq(v1, v2, v3, v4) = vs
-      unify(t1, t2, t3, t4, v1, v2, v3, v4, env0)
-
-    case (Interpretation.Relation(Representation.Code), List(t1, t2, t3, t4, t5)) =>
-      val List(t1, t2, t3, t4, t5) = p.terms
-      val IndexedSeq(v1, v2, v3, v4, v5) = vs
-      unify(t1, t2, t3, t4, t5, v1, v2, v3, v4, v5, env0)
-
-    case (Interpretation.Leq, List(t1, t2)) =>
-      val IndexedSeq(v1, v2) = vs
-      unify(t1, t2, v1, v2, env0)
-
-    case (Interpretation.Join, List(t1, t2, t3)) =>
-      val IndexedSeq(v1, v2, v3) = vs
-      unify(t1, t2, t3, v1, v2, v3, env0)
-
-    case _ => throw Error.UnsupportedInterpretation(p.name, i)
-  }
-
-
-  /**
-   * Returns `true` iff the given predicate symbol `s` is satisfiable with the given valuation `vs`.
-   */
-  def isPredicateSatisfiable(s: PSym, vs: IndexedSeq[Value], inv: Map[PSym, Interpretation]): Boolean = {
-    // The goal is the predicate `s` where all the terms are bound to the values `vs`.
-    val goal = Predicate(s, vs.map(_.asTerm).toList)
-    // The models are all satisfiable ways to derive the goal under the empty environment.
-    val models = getModel(goal, vs.map(v => Some(v)), inv, Map.empty)
-    // The predicate is satisfiable iff there is atleast one satisfiable model.
-    isSatisfiable(models)
-  }
 
   /**
    * TODO: DOC
+   * @param p
+   * @param env0
+   * @return
    */
-  def evaluateFunction(s: PSym, vs: IndexedSeq[Value], inv: Map[PSym, Interpretation]): Value = {
-    val goal = Predicate(s, vs.map(_.asTerm).toList ::: Term.Variable(Symbol.VariableSymbol("x")) :: Nil)
-    val values: IndexedSeq[Option[Value]] = (vs.toList.map(v => Some(v)) ::: None :: Nil).toIndexedSeq
-    val models = getModel(goal, values, inv, Map.empty)
-
-    isUnique(Symbol.VariableSymbol("x"), models) match {
-      case None => println(models); ???
-      case Some(v) => v
+  def getSat(p: Predicate, env0: Map[VSym, Term] = Map.empty): List[Map[VSym, Term]] = {
+    // Find horn clauses where the head predicate is satisfiable.
+    var satisfiable = List.empty[(HornClause, Map[VSym, Term])]
+    for (h <- program.clauses; env <- unifyP(p, h.head, env0)) {
+      satisfiable ::=(h, env)
     }
+
+    // Filter the horn clauses where the body is satisfiable.
+    var satisfied = List.empty[(HornClause, Map[VSym, Term])]
+    for ((h, env0) <- satisfiable) {
+      if (h.body.isEmpty) {
+        satisfied ::=(h, env0)
+      } else {
+        // TODO: Check satisfiabilty of body.
+        ???
+      }
+    }
+
+    println(satisfied)
+
+    satisfied.map(_._2)
   }
+
+  def unifyP(p1: Predicate, p2: Predicate, env0: Map[VSym, Term]): Option[Map[VSym, Term]] =
+    if (p1.name != p2.name)
+      None
+    else
+      Unification.unify(p1.terms, p2.terms, env0)
+
+  /**
+   * Optionally returns the unique term of the variable `x` in all the given models `xs`.
+   */
+  def uniqueTerm(x: VSym, xs: List[Map[VSym, Term]]): Option[Term] =
+    if (xs.isEmpty)
+      None
+    else
+      ??? // TODO
+
+  /**
+   * Optionally returns the unique value of the variable `x` in all the given models `xs`.
+   */
+  def uniqueValue(x: VSym, xs: List[Map[VSym, Term]]): Option[Value] =
+    uniqueTerm(x, xs).flatMap(t => t.asValue)
 
   /**
    * Returns `true` iff `v1` is less or equal to `v2`.
    */
-  def leq(s: PSym, v1: Value, v2: Value): Boolean = isPredicateSatisfiable(s, IndexedSeq(v1, v2), program.interpretation)
+  def leq(s: PSym, v1: Value, v2: Value): Boolean = {
+    val p = Predicate(s, List(Term.Constant(v1), Term.Constant(v2)))
+    val models = getSat(p)
+    models.nonEmpty
+  }
 
   /**
    * Returns the join of `v1` and `v2`.
    */
   def join(s: PSym, v1: Value, v2: Value): Value = {
-    val x = Symbol.VariableSymbol("x")
-    val p = Predicate(s, List(Term.Constant(v1), Term.Constant(v2), Term.Variable(x)))
+    val p = Predicate(s, List(Term.Constant(v1), Term.Constant(v2), Term.Variable(Symbol.VariableSymbol("x"))))
     val models = getSat(p)
 
-    println(models)
-
-    uniqueValue(x, models) match {
-      case None => ???
-      case Some(v) => ???
-    }
+    uniqueValue(Symbol.VariableSymbol("x"), models).getOrElse(throw Error.NonUniqueModel(s))
   }
-
-
-  def getSat(p: Predicate, env0: Map[VSym, Term] = Map.empty): List[Map[VSym, Term]] = {
-    val clauses = program.clauses.filter(_.head.name == p.name)
-    assert(clauses.nonEmpty)
-
-    val matched = clauses.toList.flatMap(h => unifyP(h.head, p, env0).map(e => (h, e)))
-
-    matched.foldLeft(List(env0)) {
-      case (m, (h, env)) => h.body.toList.flatMap(px => getSat(px, env))
-    }
-  }
-
-  def unifyP(p1: Predicate, p2: Predicate, env0: Map[VSym, Term]): Option[Map[VSym, Term]] = {
-    assert(p1.name == p2.name)
-
-    Unification.unify(p1.terms, p2.terms, env0)
-  }
-
-
-  def uniqueValue(x: VSym, xs: List[Map[VSym, Term]]): Option[Value] =
-    if (xs.isEmpty)
-      None
-    else
-      ???
-
-  /**
-   * Returns `true` iff the given solution `xs` contains at least one satisfiable model.
-   */
-  @deprecated
-  def isSatisfiable(xs: List[Map[VSym, Value]]) = xs.nonEmpty
-
-  /**
-   * TODO: Doc: Is unique?
-  // TODO: FOld
-   TODO: Careful about free??
-   */
-  @deprecated
-  def isUnique(x: VSym, xs: List[Map[VSym, Value]]): Option[Value] = {
-    if (xs.isEmpty)
-      return None
-
-    if (xs.size == 1) {
-      return xs.head.get(x)
-    }
-
-    println(xs)
-    ???
-  }
-
 
   /**
    * Returns the interpretation of the given predicate `p`.
