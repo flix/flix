@@ -9,12 +9,7 @@ object Unification {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Optionally returns an environment such that the given term `t` is equal to the value `v`
-   * under the returned environment `env` assuming an initial environment `env0`.
-   *
-   * That is, t.asValue(unify(t, v)) == v.
-   *
-   * Returns `None` if unification is impossible.
+   * Unifies the term `t` with the value `v` under the given environment `env0`.
    */
   def unify(t: Term, v: Value, env0: Map[VSym, Value]): Option[Map[VSym, Value]] = (t, v) match {
     case (Term.Constant(v1), v2) if v1 == v2 => Some(env0)
@@ -49,6 +44,14 @@ object Unification {
       yield env5
     case _ => None
   }
+
+  /**
+   * Unifies all terms in `tx` with all terms in `ty` under the initial environment `env0`.
+   */
+  def unifyValues(tx: List[Term], ty: List[Value], env0: Map[VSym, Value]): Option[Map[VSym, Value]] =
+    (tx zip ty).foldLeft(Option(env0)) {
+      case (env, (t1, t2)) => env.flatMap(e => unify(t1, t2, e))
+    }
 
   // TODO: Consider replacing these with a generalized implementation:
 
@@ -99,7 +102,7 @@ object Unification {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Unifies the term `t1` with the term `t2`.
+   * Unifies the term `t1` with the term `t2` under the given environment `env0`.
    */
   def unify(t1: Term, t2: Term, env0: Map[VSym, Term]): Option[Map[VSym, Term]] = (t1, t2) match {
     case (Term.Constant(v1), Term.Constant(v2)) if v1 == v2 => Some(env0)
@@ -148,7 +151,7 @@ object Unification {
   /**
    * Unifies all terms in `tx` with all terms in `ty` under the initial environment `env0`.
    */
-  def unify(tx: List[Term], ty: List[Term], env0: Map[VSym, Term]): Option[Map[VSym, Term]] =
+  def unifyTerms(tx: List[Term], ty: List[Term], env0: Map[VSym, Term]): Option[Map[VSym, Term]] =
     (tx zip ty).foldLeft(Option(env0)) {
       case (env, (t1, t2)) => env.flatMap(e => unify(t1, t2, e))
     }
@@ -156,7 +159,7 @@ object Unification {
   /**
    * Returns a new environment where every occurence of `x` in the terms of `env` have been replaced by `y`.
    */
-  def substitute(x: VSym, y: Term, env: Map[VSym, Term]): Map[VSym, Term] =
+  private def substitute(x: VSym, y: Term, env: Map[VSym, Term]): Map[VSym, Term] =
     env mapValues (_.substitute(x, y))
 
 
