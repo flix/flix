@@ -21,7 +21,16 @@ object StringFormat {
   }
 
   def format(v: Value): String = v match {
+    case Value.Bool(b) => b.toString
+    case Value.Int(i) => i.toString
     case Value.String(s) => s
+    case Value.Constructor0(s) => format(s)
+    case Value.Constructor1(s, v1) => format(s) + "(" + format(v1) + ")"
+    case Value.Constructor2(s, v1, v2) => format(s)
+    case Value.Constructor3(s, v1, v2, v3) => format(s)
+    case Value.Constructor4(s, v1, v2, v3, v4) => format(s)
+    case Value.Constructor5(s, v1, v2, v3, v4, v5) => format(s)
+
     case vv => vv.toString
   }
 
