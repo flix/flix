@@ -143,53 +143,52 @@ class Solver(val program: Program) {
   /**
    * Satisfies the given predicate `p` under the given interpretation `i` and environment `env`.
    */
-  // TODO: Cleanup...
-  def satisfy(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Unit = (i, p.terms) match {
-    case (Interpretation.Relation(Representation.Data), List(t1)) =>
-      val v1 = t1.toValue(env)
-      val newFact = relation1.put(p.name, v1)
-      if (newFact)
-        propagate(p, IndexedSeq(v1))
+  def satisfy(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Unit = i match {
+    case Interpretation.Relation(Representation.Data) => p.terms match {
+      case List(t1) =>
+        val v1 = t1.toValue(env)
+        val newFact = relation1.put(p.name, v1)
+        if (newFact)
+          propagate(p, IndexedSeq(v1))
 
-    case (Interpretation.Relation(Representation.Data), List(t1, t2)) =>
-      val (v1, v2) = (t1.toValue(env), t2.toValue(env))
-      val newFact = relation2.put(p.name, (v1, v2))
-      if (newFact)
-        propagate(p, IndexedSeq(v1, v2))
+      case List(t1, t2) =>
+        val (v1, v2) = (t1.toValue(env), t2.toValue(env))
+        val newFact = relation2.put(p.name, (v1, v2))
+        if (newFact)
+          propagate(p, IndexedSeq(v1, v2))
 
-    case (Interpretation.Relation(Representation.Data), List(t1, t2, t3)) =>
-      val List(t1, t2, t3) = p.terms
-      val (v1, v2, v3) = (t1.toValue(env), t2.toValue(env), t3.toValue(env))
-      val newFact = relation3.put(p.name, (v1, v2, v3))
-      if (newFact)
-        propagate(p, IndexedSeq(v1, v2, v3))
+      case List(t1, t2, t3) =>
+        val (v1, v2, v3) = (t1.toValue(env), t2.toValue(env), t3.toValue(env))
+        val newFact = relation3.put(p.name, (v1, v2, v3))
+        if (newFact)
+          propagate(p, IndexedSeq(v1, v2, v3))
 
-    case (Interpretation.Relation(Representation.Data), List(t1, t2, t3, t4)) =>
-      val (v1, v2, v3, v4) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env))
-      val newFact = relation4.put(p.name, (v1, v2, v3, v4))
-      if (newFact)
-        propagate(p, IndexedSeq(v1, v2, v3, v4))
+      case List(t1, t2, t3, t4) =>
+        val (v1, v2, v3, v4) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env))
+        val newFact = relation4.put(p.name, (v1, v2, v3, v4))
+        if (newFact)
+          propagate(p, IndexedSeq(v1, v2, v3, v4))
 
-    case (Interpretation.Relation(Representation.Data), List(t1, t2, t3, t4, t5)) =>
-      val List(t1, t2, t3, t4, t5) = p.terms
-      val (v1, v2, v3, v4, v5) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env), t5.toValue(env))
-      val newFact = relation5.put(p.name, (v1, v2, v3, v4, v5))
-      if (newFact)
-        propagate(p, IndexedSeq(v1, v2, v3, v4, v5))
+      case List(t1, t2, t3, t4, t5) =>
+        val List(t1, t2, t3, t4, t5) = p.terms
+        val (v1, v2, v3, v4, v5) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env), t5.toValue(env))
+        val newFact = relation5.put(p.name, (v1, v2, v3, v4, v5))
+        if (newFact)
+          propagate(p, IndexedSeq(v1, v2, v3, v4, v5))
+    }
 
-    case (Interpretation.LatticeMap(lattice), List(t1)) =>
-      val newValue = t1.toValue(env)
-      val oldValue = map1.get(p.name).getOrElse(lattice.bot)
-      val joinValue = join(lattice.join, newValue, oldValue)
-      val newFact: Boolean = !leq(lattice.leq, joinValue, oldValue)
-      if (newFact) {
-        map1.put(p.name, joinValue)
-        propagate(p, IndexedSeq(joinValue))
-      }
-
-    case _ => throw Error.NonRelationalPredicateSymbol(p.name)
+    case Interpretation.LatticeMap(lattice) => p.terms match {
+      case List(t1) =>
+        val newValue = t1.toValue(env)
+        val oldValue = map1.get(p.name).getOrElse(lattice.bot)
+        val joinValue = join(lattice.join, newValue, oldValue)
+        val newFact: Boolean = !leq(lattice.leq, joinValue, oldValue)
+        if (newFact) {
+          map1.put(p.name, joinValue)
+          propagate(p, IndexedSeq(joinValue))
+        }
+    }
   }
-
 
   /**
    * Enqueues all depedencies of the given predicate with the given environment.
@@ -302,6 +301,8 @@ class Solver(val program: Program) {
   /**
    * Returns the interpretation of the given predicate `p`.
    */
+  // TODO
+  @deprecated
   def interpretationOf(p: Predicate, inv: Map[PSym, Interpretation]): Interpretation = inv.get(p.name) match {
     case None => throw Error.InterpretationNotFound(p.name)
     case Some(i) => i

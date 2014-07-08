@@ -5,7 +5,7 @@ import syntax.Symbols._
 
 object PointsTo {
 
-  val clauses = Set(
+  val clauses = List(
     HornClause(Predicate("VarPointsTo", List(Term.Variable("var"), Term.Variable("obj"))), List(
       Predicate("New", List(Term.Variable("var"), Term.Variable("obj")))
     )),
