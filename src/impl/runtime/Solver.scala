@@ -51,7 +51,7 @@ class Solver(val program: Program) {
 
     // Satisfy all facts. Satisfying a fact adds violated horn clauses (and environments) to the work list.
     for (h <- program.facts) {
-      val interpretation = interpretationOf(h.head, program.interpretation)
+      val interpretation = program.interpretation(h.head.name)
 
       interpretation match {
         case Interpretation.Relation(Representation.Data) => satisfy(h.head, interpretation, Map.empty[VSym, Value])
@@ -83,11 +83,11 @@ class Solver(val program: Program) {
     // Fold each predicate over the intial environment.
     val init = List(env)
     (init /: predicates) {
-      case (envs, p) => evaluate(p, interpretationOf(p, inv), envs)
+      case (envs, p) => evaluate(p, inv(p.name), envs)
     }
   }
 
-  private def isData(p: Predicate, inv: Map[PSym, Interpretation]): Boolean = interpretationOf(p, inv) match {
+  private def isData(p: Predicate, inv: Map[PSym, Interpretation]): Boolean = inv(p.name) match {
     case Interpretation.Relation(Representation.Data) => true
     case _ => false
   }
@@ -136,7 +136,7 @@ class Solver(val program: Program) {
   def satisfy(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): Unit = {
     val models = evaluate(h, inv, env)
     for (model <- models) {
-      satisfy(h.head, interpretationOf(h.head, inv), model)
+      satisfy(h.head, inv(h.head.name), model)
     }
   }
 
@@ -188,6 +188,7 @@ class Solver(val program: Program) {
           propagate(p, IndexedSeq(joinValue))
         }
     }
+
   }
 
   /**
@@ -296,15 +297,5 @@ class Solver(val program: Program) {
       case None => throw Error.NonUniqueModel(s)
       case Some(v) => v
     }
-  }
-
-  /**
-   * Returns the interpretation of the given predicate `p`.
-   */
-  // TODO
-  @deprecated
-  def interpretationOf(p: Predicate, inv: Map[PSym, Interpretation]): Interpretation = inv.get(p.name) match {
-    case None => throw Error.InterpretationNotFound(p.name)
-    case Some(i) => i
   }
 }
