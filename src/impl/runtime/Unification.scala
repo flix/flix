@@ -141,18 +141,18 @@ object Unification {
   }
 
   /**
-   * Returns a new environment where every occurence of `x` in the terms of `env` have been replaced by `y`.
-   */
-  def substitute(x: VSym, y: Term, env: Map[VSym, Term]): Map[VSym, Term] =
-    env mapValues (_.substitute(x, y))
-
-  /**
    * Unifies all terms in `tx` with all terms in `ty` under the initial environment `env0`.
    */
   def unify(tx: List[Term], ty: List[Term], env0: Map[VSym, Term]): Option[Map[VSym, Term]] =
     (tx zip ty).foldLeft(Option(env0)) {
       case (env, (t1, t2)) => env.flatMap(e => unify(t1, t2, e))
     }
+
+  /**
+   * Returns a new environment where every occurence of `x` in the terms of `env` have been replaced by `y`.
+   */
+  def substitute(x: VSym, y: Term, env: Map[VSym, Term]): Map[VSym, Term] =
+    env mapValues (_.substitute(x, y))
 
 
   /////////////////////////////////////////////////////////////////////////////
