@@ -103,14 +103,18 @@ object Unification {
    */
   def unify(t1: Term, t2: Term, env0: Map[VSym, Term]): Option[Map[VSym, Term]] = (t1, t2) match {
     case (Term.Constant(v1), Term.Constant(v2)) if v1 == v2 => Some(env0)
-  //  case (Term.Variable(x), Term.Variable(y)) =>
-  //    ??? // TODO: What???
+    case (Term.Variable(x), Term.Variable(y)) => (env0.get(x), env0.get(y)) match {
+      case (None, None) => Some(substitute(y, Term.Variable(x), env0))
+      case (Some(tt1), None) => Some(substitute(y, tt1, env0))
+      case (None, Some(tt2)) => Some(substitute(x, tt2, env0))
+      case (Some(tt1), Some(tt2)) => if (tt1 == tt2) Some(env0) else None
+    }
     case (Term.Variable(x), t) => env0.get(x) match {
-      case None => Some(env0 + (x -> t))
+      case None => Some(substitute(x, t, env0) + (x -> t))
       case Some(tt) => if (t == tt) Some(env0) else None
     }
     case (t, Term.Variable(y)) => env0.get(y) match {
-      case None => Some(env0 + (y -> t))
+      case None => Some(substitute(y, t, env0) + (y -> t))
       case Some(tt) => if (t == tt) Some(env0) else None
     }
     case (Term.Constructor0(s1), Term.Constructor0(s2)) if s1 == s2 => Some(env0)
