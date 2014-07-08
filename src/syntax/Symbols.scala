@@ -1,5 +1,6 @@
 package syntax
 
+import impl.logic.Symbol
 import impl.logic.Symbol._
 
 import scala.language.implicitConversions
@@ -8,6 +9,18 @@ import scala.language.implicitConversions
  * Embedded DSL syntax for symbols.
  */
 object Symbols {
+
+  /**
+   * Rich Symbols.
+   */
+  implicit class RichSymbol(s: Symbol) {
+    def fmt: String = s match {
+      case Symbol.FunctionSymbol(x) => x
+      case Symbol.PredicateSymbol(x) => x
+      case Symbol.NamedSymbol(x) => x
+      case Symbol.VariableSymbol(x) => x
+    }
+  }
 
   /**
    * Implicitely converts a string to a function symbol.
