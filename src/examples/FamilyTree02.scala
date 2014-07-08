@@ -1,9 +1,7 @@
 package examples
 
 import impl.logic._
-import impl.runtime.Verifier
 import syntax.Symbols._
-import util.output.StringFormat
 
 object FamilyTree02 {
   def main(args: Array[String]): Unit = {
@@ -53,14 +51,7 @@ object FamilyTree02 {
     )
 
     val program = Program(facts ++ clauses, interpretations)
-    println(StringFormat.format(program))
 
-    val compiler = new Verifier(program)
-    compiler.verify()
-
-    val solver = compiler.getSolver
-    solver.solve()
-
-    StringFormat.printSolution(solver)
+    Runner.run(program)
   }
 }

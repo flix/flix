@@ -10,11 +10,6 @@ import syntax.Symbols._
 class Verifier(program: Program) {
 
   /**
-   * Returns a solver for the program.
-   */
-  def getSolver: Solver = new Solver(program)
-
-  /**
    * Verifies that the program is safe.
    */
   def verify(): Unit = {

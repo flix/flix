@@ -2,8 +2,6 @@ package examples
 
 import domains.Sign
 import impl.logic._
-import impl.runtime.Verifier
-import util.output.StringFormat
 import syntax.Symbols._
 
 object Sign01 {
@@ -32,14 +30,7 @@ object Sign01 {
 
     val program = Program(facts ++ clauses ++ Sign.lattice.clauses, interpretations)
 
-    val compiler = new Verifier(program)
-    compiler.verify()
-
-    val solver = compiler.getSolver
-    solver.solve()
-
-    println(StringFormat.format(program))
-    StringFormat.printSolution(solver)
+    Runner.run(program)
   }
 
 }
