@@ -5,7 +5,7 @@ import impl.logic.{Value, Term}
 
 object Unification {
   /////////////////////////////////////////////////////////////////////////////
-  // Unification                                                             //
+  // Term-Value Unification                                                  //
   /////////////////////////////////////////////////////////////////////////////
 
   /**
@@ -50,6 +50,8 @@ object Unification {
     case _ => None
   }
 
+  // TODO: Consider replacing these with a generalized implementation:
+
   /**
    * Optionally returns an environment where the given terms `t1`, `t2` have been unified with the values `v1`, `v2`.
    */
@@ -89,8 +91,26 @@ object Unification {
     yield env5
 
   /////////////////////////////////////////////////////////////////////////////
+  // Term-Term Unification                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+
+  def unify(t1: Term, t2: Term, env0: Map[VSym, Value]): Option[Map[VSym, Value]] = (t1, t2) match {
+    case _ => ???
+  }
+
+  /**
+   * Unifies all terms in `tx` with all terms in `ty` under the initial environment `env0`.
+   */
+  def unify(tx: List[Term], ty: List[Term], env0: Map[VSym, Value]): Option[Map[VSym, Value]] =
+    (tx zip ty).foldLeft(Option(env0)) {
+      case (env, (t1, t2)) => env.flatMap(e => unify(t1, t2, e))
+    }
+
+
+  /////////////////////////////////////////////////////////////////////////////
   // Optional Unification                                                    //
   /////////////////////////////////////////////////////////////////////////////
+  // TODO: All this is deprecated and should be removed: ....
 
   /**
    * Optionally returns the unification of the given term `t` with the optional value `v`.

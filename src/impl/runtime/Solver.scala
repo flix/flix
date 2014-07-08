@@ -110,25 +110,21 @@ class Solver(program: Program) {
       }
 
     case (Interpretation.Relation(Representation.Data), List(t1, t2)) =>
-      val List(t1, t2) = p.terms
       relation2.get(p.name).toList.flatMap {
         case (v1, v2) => unify(t1, t2, v1, v2, env0)
       }
 
     case (Interpretation.Relation(Representation.Data), List(t1, t2, t3)) =>
-      val List(t1, t2, t3) = p.terms
       relation3.get(p.name).toList.flatMap {
         case (v1, v2, v3) => unify(t1, t2, t3, v1, v2, v3, env0)
       }
 
     case (Interpretation.Relation(Representation.Data), List(t1, t2, t3, t4)) =>
-      val List(t1, t2, t3, t4) = p.terms
       relation4.get(p.name).toList.flatMap {
         case (v1, v2, v3, v4) => unify(t1, t2, t3, t4, v1, v2, v3, v4, env0)
       }
 
     case (Interpretation.Relation(Representation.Data), List(t1, t2, t3, t4, t5)) =>
-      val List(t1, t2, t3, t4, t5) = p.terms
       relation5.get(p.name).toList.flatMap {
         case (v1, v2, v3, v4, v5) => unify(t1, t2, t3, t4, t5, v1, v2, v3, v4, v5, env0)
       }
