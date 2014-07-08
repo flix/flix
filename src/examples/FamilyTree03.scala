@@ -13,22 +13,22 @@ object FamilyTree03 {
     val ParentChildSymbol = Symbol.PredicateSymbol("P")
 
     val facts = Set(
-      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Caroline")), Term.Constant(Value.String("Inger")))), Set.empty),
-      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Caroline")), Term.Constant(Value.String("Frits")))), Set.empty),
+      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Caroline")), Term.Constant(Value.String("Inger"))))),
+      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Caroline")), Term.Constant(Value.String("Frits"))))),
 
-      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Bjarke")), Term.Constant(Value.String("Inger")))), Set.empty),
-      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Bjarke")), Term.Constant(Value.String("Frits")))), Set.empty),
+      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Bjarke")), Term.Constant(Value.String("Inger"))))),
+      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Bjarke")), Term.Constant(Value.String("Frits"))))),
 
-      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Magnus")), Term.Constant(Value.String("Inger")))), Set.empty),
-      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Magnus")), Term.Constant(Value.String("Frits")))), Set.empty),
+      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Magnus")), Term.Constant(Value.String("Inger"))))),
+      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Magnus")), Term.Constant(Value.String("Frits"))))),
 
-      HornClause(Predicate(AgeSymbol, List(Term.Constant(Value.String("Caroline")), Term.Constant(Value.String("17")))), Set.empty),
-      HornClause(Predicate(AgeSymbol, List(Term.Constant(Value.String("Bjarke")), Term.Constant(Value.String("23")))), Set.empty),
-      HornClause(Predicate(AgeSymbol, List(Term.Constant(Value.String("Magnus")), Term.Constant(Value.String("28")))), Set.empty)
+      HornClause(Predicate(AgeSymbol, List(Term.Constant(Value.String("Caroline")), Term.Constant(Value.String("17"))))),
+      HornClause(Predicate(AgeSymbol, List(Term.Constant(Value.String("Bjarke")), Term.Constant(Value.String("23"))))),
+      HornClause(Predicate(AgeSymbol, List(Term.Constant(Value.String("Magnus")), Term.Constant(Value.String("28")))))
     )
 
     val clauses = Set(
-      HornClause(Predicate(ParentChildSymbol, List(Term.Variable("parent"), Term.Constructor2("NameAndAge", Term.Variable("child"), Term.Variable("age")))), Set(
+      HornClause(Predicate(ParentChildSymbol, List(Term.Variable("parent"), Term.Constructor2("NameAndAge", Term.Variable("child"), Term.Variable("age")))), List(
         Predicate(ParentSymbol, List(Term.Variable("child"), Term.Variable("parent"))),
         Predicate(AgeSymbol, List(Term.Variable("child"), Term.Variable("age")))
       ))

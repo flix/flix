@@ -22,51 +22,51 @@ object Sign {
   val SumSymbol = Symbol.PredicateSymbol("Sign.Sum")
 
   val Leq = Set(
-    HornClause(Predicate(LeqSymbol, List(Bot, Term.Variable("_"))), Set.empty),
-    HornClause(Predicate(LeqSymbol, List(Neg, Neg)), Set.empty),
-    HornClause(Predicate(LeqSymbol, List(Zero, Zero)), Set.empty),
-    HornClause(Predicate(LeqSymbol, List(Pos, Pos)), Set.empty),
-    HornClause(Predicate(LeqSymbol, List(Term.Variable("_"), Top)), Set.empty)
+    HornClause(Predicate(LeqSymbol, List(Bot, Term.Variable("_")))),
+    HornClause(Predicate(LeqSymbol, List(Neg, Neg))),
+    HornClause(Predicate(LeqSymbol, List(Zero, Zero))),
+    HornClause(Predicate(LeqSymbol, List(Pos, Pos))),
+    HornClause(Predicate(LeqSymbol, List(Term.Variable("_"), Top)))
   )
 
   val Join = Set(
-    HornClause(Predicate(JoinSymbol, List(Bot, Term.Variable("x"), Term.Variable("x"))), Set.empty),
-    HornClause(Predicate(JoinSymbol, List(Term.Variable("x"), Bot, Term.Variable("x"))), Set.empty),
+    HornClause(Predicate(JoinSymbol, List(Bot, Term.Variable("x"), Term.Variable("x")))),
+    HornClause(Predicate(JoinSymbol, List(Term.Variable("x"), Bot, Term.Variable("x")))),
 
-    HornClause(Predicate(JoinSymbol, List(Neg, Neg, Neg)), Set.empty),
-    HornClause(Predicate(JoinSymbol, List(Neg, Zero, Top)), Set.empty),
-    HornClause(Predicate(JoinSymbol, List(Neg, Pos, Top)), Set.empty),
+    HornClause(Predicate(JoinSymbol, List(Neg, Neg, Neg))),
+    HornClause(Predicate(JoinSymbol, List(Neg, Zero, Top))),
+    HornClause(Predicate(JoinSymbol, List(Neg, Pos, Top))),
 
-    HornClause(Predicate(JoinSymbol, List(Zero, Neg, Top)), Set.empty),
-    HornClause(Predicate(JoinSymbol, List(Zero, Zero, Zero)), Set.empty),
-    HornClause(Predicate(JoinSymbol, List(Zero, Pos, Top)), Set.empty),
+    HornClause(Predicate(JoinSymbol, List(Zero, Neg, Top))),
+    HornClause(Predicate(JoinSymbol, List(Zero, Zero, Zero))),
+    HornClause(Predicate(JoinSymbol, List(Zero, Pos, Top))),
 
-    HornClause(Predicate(JoinSymbol, List(Pos, Neg, Top)), Set.empty),
-    HornClause(Predicate(JoinSymbol, List(Pos, Zero, Top)), Set.empty),
-    HornClause(Predicate(JoinSymbol, List(Pos, Pos, Pos)), Set.empty),
+    HornClause(Predicate(JoinSymbol, List(Pos, Neg, Top))),
+    HornClause(Predicate(JoinSymbol, List(Pos, Zero, Top))),
+    HornClause(Predicate(JoinSymbol, List(Pos, Pos, Pos))),
 
-    HornClause(Predicate(JoinSymbol, List(Term.Variable("_"), Top, Top)), Set.empty),
-    HornClause(Predicate(JoinSymbol, List(Top, Term.Variable("_"), Top)), Set.empty)
+    HornClause(Predicate(JoinSymbol, List(Term.Variable("_"), Top, Top))),
+    HornClause(Predicate(JoinSymbol, List(Top, Term.Variable("_"), Top)))
   )
 
   val Sum = Set(
-    HornClause(Predicate(SumSymbol, List(Bot, Term.Variable("_"), Bot)), Set.empty),
-    HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Bot, Bot)), Set.empty),
+    HornClause(Predicate(SumSymbol, List(Bot, Term.Variable("_"), Bot))),
+    HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Bot, Bot))),
 
-    HornClause(Predicate(SumSymbol, List(Neg, Neg, Neg)), Set.empty),
-    HornClause(Predicate(SumSymbol, List(Neg, Zero, Neg)), Set.empty),
-    HornClause(Predicate(SumSymbol, List(Neg, Pos, Top)), Set.empty),
+    HornClause(Predicate(SumSymbol, List(Neg, Neg, Neg))),
+    HornClause(Predicate(SumSymbol, List(Neg, Zero, Neg))),
+    HornClause(Predicate(SumSymbol, List(Neg, Pos, Top))),
 
-    HornClause(Predicate(SumSymbol, List(Zero, Neg, Neg)), Set.empty),
-    HornClause(Predicate(SumSymbol, List(Zero, Zero, Zero)), Set.empty),
-    HornClause(Predicate(SumSymbol, List(Zero, Pos, Pos)), Set.empty),
+    HornClause(Predicate(SumSymbol, List(Zero, Neg, Neg))),
+    HornClause(Predicate(SumSymbol, List(Zero, Zero, Zero))),
+    HornClause(Predicate(SumSymbol, List(Zero, Pos, Pos))),
 
-    HornClause(Predicate(SumSymbol, List(Pos, Neg, Top)), Set.empty),
-    HornClause(Predicate(SumSymbol, List(Pos, Zero, Pos)), Set.empty),
-    HornClause(Predicate(SumSymbol, List(Pos, Pos, Pos)), Set.empty),
+    HornClause(Predicate(SumSymbol, List(Pos, Neg, Top))),
+    HornClause(Predicate(SumSymbol, List(Pos, Zero, Pos))),
+    HornClause(Predicate(SumSymbol, List(Pos, Pos, Pos))),
 
-    HornClause(Predicate(SumSymbol, List(Top, Term.Variable("_"), Top)), Set.empty),
-    HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Top, Top)), Set.empty)
+    HornClause(Predicate(SumSymbol, List(Top, Term.Variable("_"), Top))),
+    HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Top, Top)))
   )
 
   val Interpretations = Map(

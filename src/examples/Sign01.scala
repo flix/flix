@@ -15,13 +15,13 @@ object Sign01 {
     val R = Symbol.PredicateSymbol("R")
 
     val facts = Set(
-      HornClause(Predicate(X, List(Term.Constant(Value.Constructor0("Pos")))), Set.empty),
-      HornClause(Predicate(Y, List(Term.Constant(Value.Constructor0("Neg")))), Set.empty)
+      HornClause(Predicate(X, List(Term.Constant(Value.Constructor0("Pos"))))),
+      HornClause(Predicate(Y, List(Term.Constant(Value.Constructor0("Neg")))))
     )
 
     val clauses = Set(
-      HornClause(Predicate(R, List(Term.Variable("x"))), Set(Predicate(X, List(Term.Variable("x"))))),
-      HornClause(Predicate(R, List(Term.Variable("x"))), Set(Predicate(Y, List(Term.Variable("x")))))
+      HornClause(Predicate(R, List(Term.Variable("x"))), List(Predicate(X, List(Term.Variable("x"))))),
+      HornClause(Predicate(R, List(Term.Variable("x"))), List(Predicate(Y, List(Term.Variable("x")))))
     )
 
     val interpretations = Map(

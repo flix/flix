@@ -19,24 +19,24 @@ object Interval {
   val SumSymbol = Symbol.PredicateSymbol("Interval.Sum")
 
   val Leq = Set(
-    HornClause(Predicate(LeqSymbol, List(Bot, Term.Variable("_"))), Set.empty),
+    HornClause(Predicate(LeqSymbol, List(Bot, Term.Variable("_")))),
 
     HornClause(
       head = Predicate(LeqSymbol, List(
         Term.Constructor2(Symbol.NamedSymbol("Range"), Term.Variable("b1"), Term.Variable("e1")),
         Term.Constructor2(Symbol.NamedSymbol("Range"), Term.Variable("b2"), Term.Variable("e2"))
       )),
-      body = Set(
+      body = List(
         Predicate("Int.Leq", List(Term.Variable("b2"), Term.Variable("b1"))),
         Predicate("Int.Leq", List(Term.Variable("e1"), Term.Variable("e2")))
       )),
 
-    HornClause(Predicate(LeqSymbol, List(Term.Variable("_"), Top)), Set.empty)
+    HornClause(Predicate(LeqSymbol, List(Term.Variable("_"), Top)))
   )
 
   val Join = Set(
-    HornClause(Predicate(JoinSymbol, List(Bot, Term.Variable("x"), Term.Variable("x"))), Set.empty),
-    HornClause(Predicate(JoinSymbol, List(Term.Variable("x"), Bot, Term.Variable("x"))), Set.empty),
+    HornClause(Predicate(JoinSymbol, List(Bot, Term.Variable("x"), Term.Variable("x")))),
+    HornClause(Predicate(JoinSymbol, List(Term.Variable("x"), Bot, Term.Variable("x")))),
 
     // Interval.Join(Range(b1, e1), Range(b2, e2), Range(min(b1, b2), max(e1, e2))) :- (max(e1, e2) - min(b1, b2)) <= 10.
     HornClause(
@@ -47,7 +47,7 @@ object Interval {
           Term.Apply("Int.min", List(Term.Variable("b1"), Term.Variable("b2"))),
           Term.Apply("Int.max", List(Term.Variable("e1"), Term.Variable("e2"))))
       )),
-      body = Set(
+      body = List(
         Predicate("Int.LessEq", List(
           Term.Apply("Int.minus", List(
             Term.Apply("Int.max", List(Term.Variable("e1"), Term.Variable("e2"))),
@@ -64,7 +64,7 @@ object Interval {
         Term.Constructor2("Range", Term.Variable("b2"), Term.Variable("e2")),
         Top
       )),
-      body = Set(
+      body = List(
         Predicate("Int.Greater", List(
           Term.Apply("Int.-", List(
             Term.Apply("Int.max", List(Term.Variable("e1"), Term.Variable("e2"))),
@@ -74,13 +74,13 @@ object Interval {
         ))
       )),
 
-    HornClause(Predicate(JoinSymbol, List(Top, Term.Variable("_"), Top)), Set.empty),
-    HornClause(Predicate(JoinSymbol, List(Term.Variable("_"), Top, Top)), Set.empty)
+    HornClause(Predicate(JoinSymbol, List(Top, Term.Variable("_"), Top))),
+    HornClause(Predicate(JoinSymbol, List(Term.Variable("_"), Top, Top)))
   )
 
   val Sum = Set(
-    HornClause(Predicate(SumSymbol, List(Bot, Term.Variable("_"), Bot)), Set.empty),
-    HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Bot, Bot)), Set.empty),
+    HornClause(Predicate(SumSymbol, List(Bot, Term.Variable("_"), Bot))),
+    HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Bot, Bot))),
 
     HornClause(Predicate(SumSymbol, List(
       Term.Constructor2("Range", Term.Variable("b1"), Term.Variable("e1")),
@@ -88,10 +88,10 @@ object Interval {
       Term.Constructor2("Range",
         Term.Apply("Int.+", List(Term.Variable("b1"), Term.Variable("b2"))),
         Term.Apply("Int.+", List(Term.Variable("e1"), Term.Variable("e2"))))
-    )), Set.empty),
+    ))),
 
-    HornClause(Predicate(SumSymbol, List(Top, Term.Variable("_"), Top)), Set.empty),
-    HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Top, Top)), Set.empty)
+    HornClause(Predicate(SumSymbol, List(Top, Term.Variable("_"), Top))),
+    HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Top, Top)))
   )
 
   val Interpretations = Map(

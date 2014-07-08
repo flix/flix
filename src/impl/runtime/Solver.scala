@@ -77,8 +77,8 @@ class Solver(program: Program) {
   def evaluate(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): List[Map[VSym, Value]] = {
     // Evaluate relational predicates before functional predicates.
     val relationals = h.body filter (p => isData(p, inv))
-    val functionals = h.body -- relationals
-    val predicates = relationals.toList ::: functionals.toList
+    val functionals = h.body filterNot (p => isData(p, inv))
+    val predicates = relationals ::: functionals
 
     // Fold each predicate over the intial environment.
     val init = List(env)
@@ -143,6 +143,7 @@ class Solver(program: Program) {
   /**
    * Satisfies the given predicate `p` under the given interpretation `i` and environment `env`.
    */
+  // TODO: Cleanup...
   def satisfy(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Unit = (i, p.terms) match {
     case (Interpretation.Relation(Representation.Data), List(t1)) =>
       val v1 = t1.toValue(env)

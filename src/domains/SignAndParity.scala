@@ -19,7 +19,7 @@ object SignAndParity {
         Term.Constructor2("SP", Term.Variable("s1"), Term.Variable("p1")),
         Term.Constructor2("SP", Term.Variable("s2"), Term.Variable("p2"))
       )),
-      body = Set(
+      body = List(
         Predicate("Sign.Leq", List(Term.Variable("s1"), Term.Variable("s2"))),
         Predicate("Parity.Leq", List(Term.Variable("p1"), Term.Variable("p2")))
       ))
@@ -32,7 +32,7 @@ object SignAndParity {
         Term.Constructor2("SP", Term.Variable("s2"), Term.Variable("p2")),
         Term.Constructor2("SP", Term.Variable("s3"), Term.Variable("p3"))
       )),
-      body = Set(
+      body = List(
         Predicate("Sign.Join", List(Term.Variable("s1"), Term.Variable("s2"), Term.Variable("s3"))),
         Predicate("Parity.Join", List(Term.Variable("p1"), Term.Variable("p2"), Term.Variable("p3")))
       )))
@@ -44,7 +44,7 @@ object SignAndParity {
         Term.Constructor2("SP", Term.Variable("s2"), Term.Variable("p2")),
         Term.Constructor2("SP", Term.Variable("s3"), Term.Variable("p3"))
       )),
-      body = Set(
+      body = List(
         Predicate("Sign.Sum", List(Term.Variable("s1"), Term.Variable("s2"), Term.Variable("s3"))),
         Predicate("Parity.Sum", List(Term.Variable("p1"), Term.Variable("p2"), Term.Variable("p3")))
       )
