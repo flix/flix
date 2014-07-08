@@ -23,7 +23,7 @@ class Verifier(program: Program) {
      */
     for (f <- program.facts) {
       if (!f.isGround) {
-        throw new Error.UnsafeGroundFact(f.head)
+        throw Error.UnsafeGroundFact(f.head)
       }
     }
 
@@ -34,7 +34,7 @@ class Verifier(program: Program) {
       for (v <- h.variables) {
         val found = h.body.exists(c => c.variables.contains(v))
         if (!found) {
-          throw new Error.UnsafeVariableSymbol(h, v)
+          throw Error.UnsafeVariableSymbol(h, v)
         }
       }
     }
@@ -55,7 +55,7 @@ class Verifier(program: Program) {
     for (h <- program.clauses) {
       val i = program.interpretation(h.head.name)
       if (!i.isRelational) {
-        throw new Error.NonRelationalPredicate(h.head.name)
+        throw Error.NonRelationalPredicate(h.head.name)
       }
     }
   }

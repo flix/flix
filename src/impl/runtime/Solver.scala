@@ -124,7 +124,7 @@ class Solver(program: Program) {
         case (v1, v2, v3, v4, v5) => unify(t1, t2, t3, t4, t5, v1, v2, v3, v4, v5, env0)
       }
 
-    case _ => throw new Error.NonRelationalPredicate(p.name)
+    case _ => throw Error.NonRelationalPredicate(p.name)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -194,7 +194,7 @@ class Solver(program: Program) {
       }
 
 
-    case _ => throw new Error.NonRelationalPredicate(p.name)
+    case _ => throw Error.NonRelationalPredicate(p.name)
   }
 
 
@@ -370,7 +370,7 @@ class Solver(program: Program) {
    * Returns the interpretation of the given predicate `p`.
    */
   def interpretationOf(p: Predicate, inv: Map[PSym, Interpretation]): Interpretation = inv.get(p.name) match {
-    case None => throw new Error.InterpretationNotFound(p.name)
+    case None => throw Error.InterpretationNotFound(p.name)
     case Some(i) => i
   }
 

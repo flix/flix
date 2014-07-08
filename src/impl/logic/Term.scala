@@ -69,7 +69,7 @@ sealed trait Term {
    * Throws an exception if the term is not a value.
    */
   def toValue(env: Map[Symbol.VariableSymbol, Value]): Value = asValue(env) match {
-    case None => throw new Error.NonValueTerm(this)
+    case None => throw Error.NonValueTerm(this)
     case Some(v) => v
   }
 
