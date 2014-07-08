@@ -29,21 +29,4 @@ object Symbols {
    */
   implicit def string2variable(s: String): VariableSymbol = VariableSymbol(s)
 
-  implicit class String2Symbol(s: String) {
-    /**
-     * Explicitely converts a string to a predicate symbol.
-     */
-    def asP: PredicateSymbol = PredicateSymbol(s)
-
-    /**
-     * Explicitely converts a string to a named symbol.
-     */
-    def asN: NamedSymbol = NamedSymbol(s)
-
-    /**
-     * Explicitely converts a string to a variable symbol.
-     */
-    def asVar: VariableSymbol = VariableSymbol(s)
-  }
-
 }

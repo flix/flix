@@ -19,43 +19,12 @@ class Verifier(program: Program) {
    */
   def verify(): Unit = {
     /**
-     * Every fact must be ground (i.e. every horn clause without a body must have only values in the head predicate.)
-     */
-    for (f <- program.facts) {
-      if (!f.isGround) {
-        throw Error.UnsafeGroundFact(f.head)
-      }
-    }
-
-    /**
-     * Every variable which occurs in the head of a rule must also occur in its body.
-     */
-    for (h <- program.clauses) {
-      for (v <- h.variables) {
-        val found = h.body.exists(c => c.variables.contains(v))
-        if (!found) {
-          throw Error.UnsafeVariableSymbol(h, v)
-        }
-      }
-    }
-
-    /**
      * Every predicate must have en interpretation.
      */
     for (p <- program.predicates) {
       program.interpretation.get(p) match {
         case None => throw Error.InterpretationNotFound(p)
         case Some(i) => // nop - interpretation exists.
-      }
-    }
-
-    /**
-     * Every head predicate must be relational.
-     */
-    for (h <- program.clauses) {
-      val i = program.interpretation(h.head.name)
-      if (!i.isRelational) {
-        throw Error.NonRelationalPredicate(h.head.name)
       }
     }
   }

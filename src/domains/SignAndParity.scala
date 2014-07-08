@@ -52,9 +52,9 @@ object SignAndParity {
   )
 
   val Interpretations = Map(
-    LeqSymbol -> Interpretation.Relation.In2,
-    JoinSymbol -> Interpretation.Relation.In3,
-    SumSymbol -> Interpretation.Relation.In3
+    LeqSymbol -> Interpretation.Leq,
+    JoinSymbol -> Interpretation.Join,
+    SumSymbol -> Interpretation.Function(Representation.Code)
   )
 
   val lattice = Lattice(Elements, Bot.v, LeqSymbol, JoinSymbol, Leq ++ Join ++ Sum, Interpretations)

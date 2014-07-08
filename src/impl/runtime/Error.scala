@@ -6,13 +6,7 @@ trait Error
 
 object Error {
 
-  case class NonRelationalPredicate(p: Symbol.PredicateSymbol) extends RuntimeException
-
   case class NonValueTerm(t: Term) extends RuntimeException
-
-  case class UnsafeGroundFact(p: Predicate) extends RuntimeException(s"The ground fact $p is unsafe.")
-
-  case class UnsafeVariableSymbol(h: HornClause, v: Symbol.VariableSymbol) extends RuntimeException
 
   case class UnsupportedInterpretation(s: Symbol.PredicateSymbol, i: Interpretation) extends RuntimeException
 

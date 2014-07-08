@@ -5,10 +5,6 @@ import syntax.Symbols._
 
 object PointsTo {
 
-  val facts = Set(
-
-  )
-
   val clauses = Set(
     HornClause(Predicate("VarPointsTo", List(Term.Variable("var"), Term.Variable("obj"))), Set(
       Predicate("New", List(Term.Variable("var"), Term.Variable("obj")))
@@ -30,13 +26,6 @@ object PointsTo {
       Predicate("VarPointsTo", List(Term.Variable("var1"), Term.Variable("base"))),
       Predicate("VarPointsTo", List(Term.Variable("var2"), Term.Variable("value")))
     ))
-  )
-
-  val interpretation = Map(
-    "New" -> Interpretation.Relation.In2,
-    "Assign" -> Interpretation.Relation.In2,
-    "Load" -> Interpretation.Relation.In3,
-    "Store" -> Interpretation.Relation.In3
   )
 
 }

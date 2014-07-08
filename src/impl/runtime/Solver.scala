@@ -52,7 +52,9 @@ class Solver(program: Program) {
 
     // Satisfy all facts. Satisfying a fact adds violated horn clauses (and environments) to the work list.
     for (h <- program.facts) {
-      satisfy(h.head, interpretationOf(h.head, program.interpretation), Map.empty[VSym, Value])
+      val interpretation = interpretationOf(h.head, program.interpretation)
+
+      satisfy(h.head, interpretation, Map.empty[VSym, Value])
     }
 
     // Iteratively try to satisfy pending horn clauses.
@@ -72,7 +74,7 @@ class Solver(program: Program) {
    */
   def evaluate(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): List[Map[VSym, Value]] = {
     // Evaluate relational predicates before functional predicates.
-    val relationals = h.body filter (p => isRelational(p, inv))
+    val relationals = h.body filter (p => isData(p, inv))
     val functionals = h.body -- relationals
     val predicates = relationals.toList ::: functionals.toList
 
@@ -81,6 +83,11 @@ class Solver(program: Program) {
     (init /: predicates) {
       case (envs, p) => evaluate(p, interpretationOf(p, inv), envs)
     }
+  }
+
+  private def isData(p: Predicate, inv: Map[PSym, Interpretation]): Boolean = interpretationOf(p, inv) match {
+    case Interpretation.Relation(Representation.Data) => true
+    case _ => false
   }
 
   /**
@@ -93,38 +100,37 @@ class Solver(program: Program) {
   /**
    * Returns a list of environments for the given predicate `p` with interpretation `i` under the given environment `env0`.
    */
-  def evaluate(p: Predicate, i: Interpretation, env0: Map[VSym, Value]): List[Map[VSym, Value]] = i match {
-    case Interpretation.Relation.In1 =>
-      val List(t1) = p.terms
+  def evaluate(p: Predicate, i: Interpretation, env0: Map[VSym, Value]): List[Map[VSym, Value]] = (i, p.terms) match {
+    case (Interpretation.Relation(Representation.Data), List(t1)) =>
       relation1.get(p.name).toList.flatMap {
         case v1 => unify(t1, v1, env0)
       }
 
-    case Interpretation.Relation.In2 =>
+    case (Interpretation.Relation(Representation.Data), List(t1, t2)) =>
       val List(t1, t2) = p.terms
       relation2.get(p.name).toList.flatMap {
         case (v1, v2) => unify(t1, t2, v1, v2, env0)
       }
 
-    case Interpretation.Relation.In3 =>
+    case (Interpretation.Relation(Representation.Data), List(t1, t2, t3)) =>
       val List(t1, t2, t3) = p.terms
       relation3.get(p.name).toList.flatMap {
         case (v1, v2, v3) => unify(t1, t2, t3, v1, v2, v3, env0)
       }
 
-    case Interpretation.Relation.In4 =>
+    case (Interpretation.Relation(Representation.Data), List(t1, t2, t3, t4)) =>
       val List(t1, t2, t3, t4) = p.terms
       relation4.get(p.name).toList.flatMap {
         case (v1, v2, v3, v4) => unify(t1, t2, t3, t4, v1, v2, v3, v4, env0)
       }
 
-    case Interpretation.Relation.In5 =>
+    case (Interpretation.Relation(Representation.Data), List(t1, t2, t3, t4, t5)) =>
       val List(t1, t2, t3, t4, t5) = p.terms
       relation5.get(p.name).toList.flatMap {
         case (v1, v2, v3, v4, v5) => unify(t1, t2, t3, t4, t5, v1, v2, v3, v4, v5, env0)
       }
 
-    case _ => throw Error.NonRelationalPredicate(p.name)
+    case _ => throw new RuntimeException() // TODO
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -146,44 +152,40 @@ class Solver(program: Program) {
   /**
    * Satisfies the given predicate `p` under the given interpretation `i` and environment `env`.
    */
-  def satisfy(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Unit = i match {
-    case Interpretation.Relation.In1 =>
-      val List(t1) = p.terms
+  def satisfy(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Unit = (i, p.terms) match {
+    case (Interpretation.Relation(Representation.Data), List(t1)) =>
       val v1 = t1.toValue(env)
       val newFact = relation1.put(p.name, v1)
       if (newFact)
         propagate(p, IndexedSeq(v1))
 
-    case Interpretation.Relation.In2 =>
-      val List(t1, t2) = p.terms
+    case (Interpretation.Relation(Representation.Data), List(t1, t2)) =>
       val (v1, v2) = (t1.toValue(env), t2.toValue(env))
       val newFact = relation2.put(p.name, (v1, v2))
       if (newFact)
         propagate(p, IndexedSeq(v1, v2))
 
-    case Interpretation.Relation.In3 =>
+    case (Interpretation.Relation(Representation.Data), List(t1, t2, t3)) =>
       val List(t1, t2, t3) = p.terms
       val (v1, v2, v3) = (t1.toValue(env), t2.toValue(env), t3.toValue(env))
       val newFact = relation3.put(p.name, (v1, v2, v3))
       if (newFact)
         propagate(p, IndexedSeq(v1, v2, v3))
 
-    case Interpretation.Relation.In4 =>
-      val List(t1, t2, t3, t4) = p.terms
+    case (Interpretation.Relation(Representation.Data), List(t1, t2, t3, t4)) =>
       val (v1, v2, v3, v4) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env))
       val newFact = relation4.put(p.name, (v1, v2, v3, v4))
       if (newFact)
         propagate(p, IndexedSeq(v1, v2, v3, v4))
 
-    case Interpretation.Relation.In5 =>
+    case (Interpretation.Relation(Representation.Data), List(t1, t2, t3, t4, t5)) =>
       val List(t1, t2, t3, t4, t5) = p.terms
       val (v1, v2, v3, v4, v5) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env), t5.toValue(env))
       val newFact = relation5.put(p.name, (v1, v2, v3, v4, v5))
       if (newFact)
         propagate(p, IndexedSeq(v1, v2, v3, v4, v5))
 
-    case Interpretation.Map.Leq1(lattice) =>
-      val List(t1) = p.terms
+    case (Interpretation.LatticeMap(lattice), List(t1)) =>
       val newValue = t1.toValue(env)
       val oldValue = map1.get(p.name).getOrElse(lattice.bot)
       val joinValue = join(lattice.join, newValue, oldValue)
@@ -193,8 +195,7 @@ class Solver(program: Program) {
         propagate(p, IndexedSeq(joinValue))
       }
 
-
-    case _ => throw Error.NonRelationalPredicate(p.name)
+    case _ => throw new RuntimeException() // TODO
   }
 
 
@@ -273,28 +274,25 @@ class Solver(program: Program) {
    */
   // TODO: Why do we need preicate and interpretation here?
   // TODO: Bad idea with IndexedSeq[Option[Value]]. Instead we need unification of terms... so that we can bind the result, instead of just having "None".
-  def satisfiable(p: Predicate, i: Interpretation, vs: IndexedSeq[Option[Value]], env0: Map[VSym, Value]): Option[Map[VSym, Value]] = i match {
-    case Interpretation.Relation.In1 =>
-      val List(t1) = p.terms
+  def satisfiable(p: Predicate, i: Interpretation, vs: IndexedSeq[Option[Value]], env0: Map[VSym, Value]): Option[Map[VSym, Value]] = (i, p.terms) match {
+    case (Interpretation.Relation(Representation.Code), List(t1)) =>
       val IndexedSeq(v1) = vs
       unify(t1, v1, env0)
 
-    case Interpretation.Relation.In2 =>
-      val List(t1, t2) = p.terms
+    case (Interpretation.Relation(Representation.Code), List(t1, t2)) =>
       val IndexedSeq(v1, v2) = vs
       unify(t1, t2, v1, v2, env0)
 
-    case Interpretation.Relation.In3 =>
-      val List(t1, t2, t3) = p.terms
+    case (Interpretation.Relation(Representation.Code), List(t1, t2, t3)) =>
       val IndexedSeq(v1, v2, v3) = vs
       unify(t1, t2, t3, v1, v2, v3, env0)
 
-    case Interpretation.Relation.In4 =>
+    case (Interpretation.Relation(Representation.Code), List(t1, t2, t3, t4)) =>
       val List(t1, t2, t3, t4) = p.terms
       val IndexedSeq(v1, v2, v3, v4) = vs
       unify(t1, t2, t3, t4, v1, v2, v3, v4, env0)
 
-    case Interpretation.Relation.In5 =>
+    case (Interpretation.Relation(Representation.Code), List(t1, t2, t3, t4, t5)) =>
       val List(t1, t2, t3, t4, t5) = p.terms
       val IndexedSeq(v1, v2, v3, v4, v5) = vs
       unify(t1, t2, t3, t4, t5, v1, v2, v3, v4, v5, env0)
@@ -373,9 +371,4 @@ class Solver(program: Program) {
     case None => throw Error.InterpretationNotFound(p.name)
     case Some(i) => i
   }
-
-  /**
-   * Returns `true` iff the given predicate `p` is relational under the given interpretations `inv`.
-   */
-  private def isRelational(p: Predicate, inv: Map[PSym, Interpretation]): Boolean = interpretationOf(p, inv).isRelational
 }
