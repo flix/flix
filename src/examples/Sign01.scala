@@ -20,8 +20,8 @@ object Sign01 {
     )
 
     val clauses = Set(
-      HornClause(Predicate(R, List(Term.Variable("x"))), List(Predicate(X, List(Term.Variable("x"))))),
-      HornClause(Predicate(R, List(Term.Variable("x"))), List(Predicate(Y, List(Term.Variable("x")))))
+      HornClause(head = Predicate(R, List(Term.Variable("x"))), body = List(Predicate(X, List(Term.Variable("x"))))),
+      HornClause(head = Predicate(R, List(Term.Variable("x"))), body = List(Predicate(Y, List(Term.Variable("x")))))
     )
 
     val interpretations = Map(

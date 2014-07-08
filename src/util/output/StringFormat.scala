@@ -40,5 +40,12 @@ object StringFormat {
     for ((p, vs) <- s.relation2; (v1, v2) <- vs) {
       println(format(p) + "(" + format(v1) + "," + format(v2) + ").")
     }
+
+    for ((p, v1) <- s.map1) {
+      println(format(p) + "(" + format(v1) + ").")
+    }
+    for ((p, (v1, v2)) <- s.map2) {
+      println(format(p) + "(" + format(v1) + "," + format(v2) + ").")
+    }
   }
 }

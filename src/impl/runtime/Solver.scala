@@ -212,6 +212,7 @@ class Solver(program: Program) {
    *
    * Returns `None` if no satisfying assignment exists.
    */
+  // TODO: Inspect this...
   def bind(h: HornClause, p: Predicate, env: IndexedSeq[Value]): Option[Map[VSym, Value]] = {
     var m = Map.empty[VSym, Value]
     for (p2 <- h.body; if p.name == p2.name) {
@@ -275,7 +276,10 @@ class Solver(program: Program) {
     if (xs.isEmpty)
       None
     else
-      ??? // TODO
+      xs.map(m => m.get(x)).reduce[Option[Term]] {
+        case (Some(t1), Some(t2)) if t1 == t2 => Some(t1)
+        case _ => None
+      }
 
   /**
    * Optionally returns the unique value of the variable `x` in all the given models `xs`.
@@ -298,8 +302,12 @@ class Solver(program: Program) {
   def join(s: PSym, v1: Value, v2: Value): Value = {
     val p = Predicate(s, List(Term.Constant(v1), Term.Constant(v2), Term.Variable(Symbol.VariableSymbol("x"))))
     val models = getSat(p)
+    val value = uniqueValue(Symbol.VariableSymbol("x"), models)
 
-    uniqueValue(Symbol.VariableSymbol("x"), models).getOrElse(throw Error.NonUniqueModel(s))
+    value match {
+      case None => throw Error.NonUniqueModel(s)
+      case Some(v) => v
+    }
   }
 
   /**
