@@ -1,6 +1,6 @@
 package examples
 
-import domains.Sign
+import domains.SignAndParity
 import impl.logic._
 import impl.runtime.Runner
 import syntax.Symbols._
@@ -14,8 +14,8 @@ object SignAndParity01 {
     val R = Symbol.PredicateSymbol("R")
 
     val facts = List(
-      HornClause(Predicate(X, List(Term.Constructor2("SP", Term.Constant(Value.Constructor0("Pos")), Term.Constant(Value.Constructor0("Odd")))))),
-      HornClause(Predicate(Y, List(Term.Constructor2("SP", Term.Constant(Value.Constructor0("Bot")), Term.Constant(Value.Constructor0("Even"))))))
+      HornClause(Predicate(X, List(Term.Constructor2("SP", Term.Constant(Value.Constructor0("Sign.Pos")), Term.Constant(Value.Constructor0("Parity.Odd")))))),
+      HornClause(Predicate(Y, List(Term.Constructor2("SP", Term.Constant(Value.Constructor0("Sign.Bot")), Term.Constant(Value.Constructor0("Parity.Even"))))))
     )
 
     val clauses = List(
@@ -26,10 +26,10 @@ object SignAndParity01 {
     val interpretations = Map(
       X -> Interpretation.Relation(Representation.Data),
       Y -> Interpretation.Relation(Representation.Data),
-      R -> Interpretation.LatticeMap(Sign.lattice)
-    ) ++ Sign.lattice.interpretation
+      R -> Interpretation.LatticeMap(SignAndParity.lattice)
+    ) ++ SignAndParity.lattice.interpretation
 
-    val program = Program(facts ::: clauses ::: Sign.lattice.clauses, interpretations)
+    val program = Program(facts ::: clauses ::: SignAndParity.lattice.clauses, interpretations)
 
     Runner.run(program)
   }

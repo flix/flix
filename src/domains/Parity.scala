@@ -6,9 +6,9 @@ import syntax.Symbols._
 object Parity {
 
   val Elements = Type.Variant(IndexedSeq(
-    Type.Constructor0("Top"),
-    Type.Constructor0("Odd"), Type.Constructor0("Zero"), Type.Constructor0("Even"),
-    Type.Constructor0("Bot")
+    Type.Constructor0("Parity.Top"),
+    Type.Constructor0("Parity.Odd"), Type.Constructor0("Parity.Zero"), Type.Constructor0("Parity.Even"),
+    Type.Constructor0("Parity.Bot")
   ))
 
   val Top = Term.Constant(Value.Constructor0("Parity.Top"))

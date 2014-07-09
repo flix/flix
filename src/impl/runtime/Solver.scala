@@ -214,8 +214,11 @@ class Solver(val program: Program) {
   def getSat(p: Predicate, env0: Map[VSym, Term] = Map.empty): List[Map[VSym, Term]] = {
     // Find horn clauses where the head predicate is satisfiable.
     var satisfiable = List.empty[(HornClause, Map[VSym, Term])]
-    for (h <- program.clauses; env <- Unification.unify(p, h.head, env0)) {
-      satisfiable ::=(h, env)
+    for (h <- program.clauses) {
+      Unification.unify(p, h.head, env0) match {
+        case None => // nop
+        case Some(env) => satisfiable ::=(h, env)
+      }
     }
 
     // Filter the horn clauses where the body is satisfiable.
@@ -254,7 +257,7 @@ class Solver(val program: Program) {
    * Returns `true` iff `v1` is less or equal to `v2`.
    */
   def leq(s: PSym, v1: Value, v2: Value): Boolean = {
-    val p = Predicate(s, List(Term.Constant(v1), Term.Constant(v2)))
+    val p = Predicate(s, List(v1.asTerm, v2.asTerm))
     val models = getSat(p)
     models.nonEmpty
   }
@@ -263,7 +266,7 @@ class Solver(val program: Program) {
    * Returns the join of `v1` and `v2`.
    */
   def join(s: PSym, v1: Value, v2: Value): Value = {
-    val p = Predicate(s, List(Term.Constant(v1), Term.Constant(v2), Term.Variable(Symbol.VariableSymbol("x"))))
+    val p = Predicate(s, List(v1.asTerm, v2.asTerm, Term.Variable(Symbol.VariableSymbol("x"))))
     val models = getSat(p)
     val value = uniqueValue(Symbol.VariableSymbol("x"), models)
 

@@ -6,16 +6,16 @@ import syntax.Symbols._
 object Sign {
 
   val Elements = Type.Variant(IndexedSeq(
-    Type.Constructor0("Top"),
-    Type.Constructor0("Neg"), Type.Constructor0("Zero"), Type.Constructor0("Pos"),
-    Type.Constructor0("Bot")
+    Type.Constructor0("Sign.Top"),
+    Type.Constructor0("Sign.Neg"), Type.Constructor0("Sign.Zero"), Type.Constructor0("Sign.Pos"),
+    Type.Constructor0("Sign.Bot")
   ))
 
-  val Top = Term.Constant(Value.Constructor0("Top"))
-  val Neg = Term.Constant(Value.Constructor0("Neg"))
-  val Zero = Term.Constant(Value.Constructor0("Zero"))
-  val Pos = Term.Constant(Value.Constructor0("Pos"))
-  val Bot = Term.Constant(Value.Constructor0("Bot"))
+  val Top = Term.Constant(Value.Constructor0("Sign.Top"))
+  val Neg = Term.Constant(Value.Constructor0("Sign.Neg"))
+  val Zero = Term.Constant(Value.Constructor0("Sign.Zero"))
+  val Pos = Term.Constant(Value.Constructor0("Sign.Pos"))
+  val Bot = Term.Constant(Value.Constructor0("Sign.Bot"))
 
   val LeqSymbol = Symbol.PredicateSymbol("Sign.Leq")
   val JoinSymbol = Symbol.PredicateSymbol("Sign.Join")

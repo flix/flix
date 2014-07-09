@@ -4,7 +4,17 @@ sealed trait Value {
   /**
    * Returns the value as a term (with no free variables).
    */
-  def asTerm: Term = Term.Constant(this)
+  def asTerm: Term = this match {
+    case Value.Bool(b) => Term.Constant(Value.Bool(b))
+    case Value.Int(i) => Term.Constant(Value.Int(i))
+    case Value.String(s) => Term.Constant(Value.String(s))
+    case Value.Constructor0(s) => Term.Constructor0(s)
+    case Value.Constructor1(s, v1) => Term.Constructor1(s, v1.asTerm)
+    case Value.Constructor2(s, v1, v2) => Term.Constructor2(s, v1.asTerm, v2.asTerm)
+    case Value.Constructor3(s, v1, v2, v3) => Term.Constructor3(s, v1.asTerm, v2.asTerm, v3.asTerm)
+    case Value.Constructor4(s, v1, v2, v3, v4) => Term.Constructor4(s, v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm)
+    case Value.Constructor5(s, v1, v2, v3, v4, v5) => Term.Constructor5(s, v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm, v5.asTerm)
+  }
 }
 
 object Value {
