@@ -211,28 +211,20 @@ class Solver(val program: Program) {
   /**
    * Returns all satisfiable models for the given predicate `p` under the given environment `env0`.
    */
+  // TODO: Must take cycles into account.
   def getSat(p: Predicate, env0: Map[VSym, Term] = Map.empty): List[Map[VSym, Term]] = {
-    // Find horn clauses where the head predicate is satisfiable.
-    var satisfiable = List.empty[(HornClause, Map[VSym, Term])]
-    for (h <- program.clauses) {
-      Unification.unify(p, h.head, env0) match {
-        case None => // nop
-        case Some(env) => satisfiable ::=(h, env)
+    program.clauses.flatMap {
+      h => Unification.unify(p, h.head, env0) match {
+        case None =>
+          // Head predicate is not satisfied. No need to look at body.
+          List.empty
+        case Some(env) =>
+          // Head predicate is satisfied. Check whether the body can be made satisfiable.
+          h.body.foldLeft(List(env)) {
+            case (envs, p2) => envs.flatMap(e => getSat(p2, e))
+          }
       }
     }
-
-    // Filter the horn clauses where the body is satisfiable.
-    var satisfied = List.empty[(HornClause, Map[VSym, Term])]
-    for ((h, env0) <- satisfiable) {
-      if (h.body.isEmpty) {
-        satisfied ::=(h, env0)
-      } else {
-        // TODO: Check satisfiabilty of body.
-        ???
-      }
-    }
-
-    satisfied.map(_._2)
   }
 
   /**

@@ -117,6 +117,7 @@ object Term {
   /**
    * A constant term.
    */
+  @deprecated("replace by string, int, etc.", "1.0")
   case class Constant(v: Value) extends Term
 
   /**
