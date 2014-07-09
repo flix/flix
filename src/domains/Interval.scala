@@ -11,8 +11,8 @@ object Interval {
     Type.Constructor0("Interval.Bot")
   ))
 
-  val Top = Term.Constant(Value.Constructor0("Interval.Top"))
-  val Bot = Term.Constant(Value.Constructor0("Interval.Bot"))
+  val Top = Term.Constructor0("Interval.Top")
+  val Bot = Term.Constructor0("Interval.Bot")
 
   val LeqSymbol = Symbol.PredicateSymbol("Interval.Leq")
   val JoinSymbol = Symbol.PredicateSymbol("Interval.Join")
@@ -100,6 +100,6 @@ object Interval {
     SumSymbol -> Interpretation.Function(Representation.Code)
   )
 
-  val lattice = Lattice(Elements, Bot.v, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum, Interpretations)
+  val lattice = Lattice(Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum, Interpretations)
 
 }

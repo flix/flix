@@ -24,6 +24,7 @@ object Unification {
   /**
    * Unifies the term `t` with the value `v` under the given environment `env0`.
    */
+  // TODO: Unused?
   def unify(t: Term, v: Value, env0: Map[VSym, Value]): Option[Map[VSym, Value]] = (t, v) match {
     case (Term.Constant(v1), v2) if v1 == v2 => Some(env0)
     case (Term.Variable(s), v2) => env0.get(s) match {

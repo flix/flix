@@ -64,6 +64,13 @@ sealed trait Term {
   }
 
   /**
+   * Returns the term as a value under the empty environment.
+   *
+   * Throws an exception if the term is not a value.
+   */
+  def toValue: Value = toValue(Map.empty)
+
+  /**
    * Returns the term as a value under the given environment `env`.
    *
    * Throws an exception if the term is not a value.

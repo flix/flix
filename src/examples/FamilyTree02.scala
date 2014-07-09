@@ -56,4 +56,5 @@ object FamilyTree02 {
 
     Runner.run(program)
   }
+
 }

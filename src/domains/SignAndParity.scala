@@ -11,7 +11,7 @@ object SignAndParity {
   val JoinSymbol = Symbol.PredicateSymbol("SP.Join")
   val SumSymbol = Symbol.PredicateSymbol("SP.Sum")
 
-  val Bot = Term.Constant(Value.Constructor2("SP", Sign.Bot.v, Parity.Bot.v))
+  val Bot = Term.Constructor2("SP", Sign.Bot, Parity.Bot)
 
   val Leq = List(
     HornClause(
@@ -57,6 +57,6 @@ object SignAndParity {
     SumSymbol -> Interpretation.Function(Representation.Code)
   ) ++ Sign.Interpretations ++ Parity.Interpretations
 
-  val lattice = Lattice(Elements, Bot.v, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum ::: Sign.lattice.clauses ::: Parity.lattice.clauses, Interpretations)
+  val lattice = Lattice(Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum ::: Sign.lattice.clauses ::: Parity.lattice.clauses, Interpretations)
 
 }

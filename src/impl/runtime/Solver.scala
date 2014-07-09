@@ -198,7 +198,7 @@ class Solver(val program: Program) {
       for (p2 <- h.body) {
         Unification.unify(p, p2, Map.empty[VSym, Term]) match {
           case None => // nop
-          case Some(env0) => queue.enqueue((h, env0.mapValues(_.toValue(Map.empty))))
+          case Some(env0) => queue.enqueue((h, env0.mapValues(_.toValue)))
         }
       }
     }

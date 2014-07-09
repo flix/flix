@@ -5,6 +5,7 @@ import impl.runtime.Runner
 import syntax.Symbols._
 
 object FamilyTree01 {
+
   def main(args: Array[String]): Unit = {
 
     val ParentSymbol = Symbol.PredicateSymbol("Parent")
@@ -58,4 +59,5 @@ object FamilyTree01 {
 
     Runner.run(program)
   }
+
 }

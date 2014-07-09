@@ -11,11 +11,11 @@ object Sign {
     Type.Constructor0("Sign.Bot")
   ))
 
-  val Top = Term.Constant(Value.Constructor0("Sign.Top"))
-  val Neg = Term.Constant(Value.Constructor0("Sign.Neg"))
-  val Zero = Term.Constant(Value.Constructor0("Sign.Zero"))
-  val Pos = Term.Constant(Value.Constructor0("Sign.Pos"))
-  val Bot = Term.Constant(Value.Constructor0("Sign.Bot"))
+  val Top = Term.Constructor0("Sign.Top")
+  val Neg = Term.Constructor0("Sign.Neg")
+  val Zero = Term.Constructor0("Sign.Zero")
+  val Pos = Term.Constructor0("Sign.Pos")
+  val Bot = Term.Constructor0("Sign.Bot")
 
   val LeqSymbol = Symbol.PredicateSymbol("Sign.Leq")
   val JoinSymbol = Symbol.PredicateSymbol("Sign.Join")
@@ -75,6 +75,6 @@ object Sign {
     SumSymbol -> Interpretation.Function(Representation.Code)
   )
 
-  val lattice = Lattice(Elements, Bot.v, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum, Interpretations)
+  val lattice = Lattice(Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum, Interpretations)
 
 }

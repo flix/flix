@@ -11,11 +11,11 @@ object Parity {
     Type.Constructor0("Parity.Bot")
   ))
 
-  val Top = Term.Constant(Value.Constructor0("Parity.Top"))
-  val Odd = Term.Constant(Value.Constructor0("Parity.Odd"))
-  val Zero = Term.Constant(Value.Constructor0("Parity.Zero"))
-  val Even = Term.Constant(Value.Constructor0("Parity.Even"))
-  val Bot = Term.Constant(Value.Constructor0("Parity.Bot"))
+  val Top = Term.Constructor0("Parity.Top")
+  val Odd = Term.Constructor0("Parity.Odd")
+  val Zero = Term.Constructor0("Parity.Zero")
+  val Even = Term.Constructor0("Parity.Even")
+  val Bot = Term.Constructor0("Parity.Bot")
 
   val LeqSymbol = Symbol.PredicateSymbol("Parity.Leq")
   val JoinSymbol = Symbol.PredicateSymbol("Parity.Join")
@@ -61,6 +61,6 @@ object Parity {
     SumSymbol -> Interpretation.Function(Representation.Code)
   )
 
-  val lattice = Lattice(Elements, Bot.v, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum, Interpretations)
+  val lattice = Lattice(Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum, Interpretations)
 
 }

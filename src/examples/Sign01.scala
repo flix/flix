@@ -2,7 +2,7 @@ package examples
 
 import domains.Sign
 import impl.logic._
-import impl.runtime.Runner
+import impl.runtime.{Unification, Runner}
 import syntax.Symbols._
 
 object Sign01 {
@@ -14,8 +14,8 @@ object Sign01 {
     val R = Symbol.PredicateSymbol("R")
 
     val facts = List(
-      HornClause(Predicate(X, List(Term.Constant(Value.Constructor0("Pos"))))),
-      HornClause(Predicate(Y, List(Term.Constant(Value.Constructor0("Neg")))))
+      HornClause(Predicate(X, List(Term.Constant(Value.Constructor0("Sign.Pos"))))),
+      HornClause(Predicate(Y, List(Term.Constant(Value.Constructor0("Sign.Neg")))))
     )
 
     val clauses = List(
