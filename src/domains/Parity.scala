@@ -28,8 +28,8 @@ object Parity {
   )
 
   val Join = List(
-    HornClause(Predicate(JoinSymbol, List(Bot, Term.Variable("x"), Term.Variable("x")))),
-    HornClause(Predicate(JoinSymbol, List(Term.Variable("x"), Bot, Term.Variable("x")))),
+    HornClause(Predicate(JoinSymbol, List(Bot, Term.Variable("y"), Term.Variable("y")))),
+    HornClause(Predicate(JoinSymbol, List(Term.Variable("y"), Bot, Term.Variable("y")))),
 
     HornClause(Predicate(JoinSymbol, List(Odd, Odd, Odd))),
     HornClause(Predicate(JoinSymbol, List(Odd, Even, Top))),

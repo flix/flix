@@ -70,12 +70,19 @@ object Unification {
   /////////////////////////////////////////////////////////////////////////////
   // Term-Term Unification                                                   //
   /////////////////////////////////////////////////////////////////////////////
+  // TODO: Consider substitions.
 
   /**
    * Unifies the term `t1` with the term `t2` under the given environment `env0`.
    */
   def unify(t1: Term, t2: Term, env0: Map[VSym, Term]): Option[Map[VSym, Term]] = (t1, t2) match {
     case (Term.Constant(v1), Term.Constant(v2)) if v1 == v2 => Some(env0)
+    case (Term.Variable(x), Term.Variable(y)) => (env0.get(x), env0.get(y)) match {
+      case (None, None) => Some(substitute(x, Term.Variable(y), env0) + (y -> Term.Variable(x)))
+      case (None, Some(tt2)) => Some(substitute(x, tt2, env0) + (x -> tt2))
+      case (Some(tt1), None) =>Some(substitute(x, tt1, env0) + (y -> tt1))
+      case (Some(tt1), Some(tt2)) => unify(tt1, tt2, env0)
+    }
     case (Term.Variable(x), t) => env0.get(x) match {
       case None =>
         if (t.variables contains x)
