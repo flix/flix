@@ -149,32 +149,32 @@ class Solver(val program: Program) {
         val v1 = t1.toValue(env)
         val newFact = relation1.put(p.name, v1)
         if (newFact)
-          propagate(p, IndexedSeq(v1))
+          propagate(Predicate(p.name, List(v1.asTerm)))
 
       case List(t1, t2) =>
         val (v1, v2) = (t1.toValue(env), t2.toValue(env))
         val newFact = relation2.put(p.name, (v1, v2))
         if (newFact)
-          propagate(p, IndexedSeq(v1, v2))
+          propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm)))
 
       case List(t1, t2, t3) =>
         val (v1, v2, v3) = (t1.toValue(env), t2.toValue(env), t3.toValue(env))
         val newFact = relation3.put(p.name, (v1, v2, v3))
         if (newFact)
-          propagate(p, IndexedSeq(v1, v2, v3))
+          propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm)))
 
       case List(t1, t2, t3, t4) =>
         val (v1, v2, v3, v4) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env))
         val newFact = relation4.put(p.name, (v1, v2, v3, v4))
         if (newFact)
-          propagate(p, IndexedSeq(v1, v2, v3, v4))
+          propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm)))
 
       case List(t1, t2, t3, t4, t5) =>
         val List(t1, t2, t3, t4, t5) = p.terms
         val (v1, v2, v3, v4, v5) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env), t5.toValue(env))
         val newFact = relation5.put(p.name, (v1, v2, v3, v4, v5))
         if (newFact)
-          propagate(p, IndexedSeq(v1, v2, v3, v4, v5))
+          propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm, v5.asTerm)))
     }
 
     case Interpretation.LatticeMap(lattice) => p.terms match {
@@ -185,45 +185,23 @@ class Solver(val program: Program) {
         val newFact: Boolean = !leq(lattice.leq, joinValue, oldValue)
         if (newFact) {
           map1.put(p.name, joinValue)
-          propagate(p, IndexedSeq(joinValue))
+          propagate(Predicate(p.name, List(joinValue.asTerm)))
         }
     }
-
   }
 
   /**
-   * Enqueues all depedencies of the given predicate with the given environment.
+   * Enqueues all horn clauses which depend on the given predicate.
    */
-  def propagate(p: Predicate, values: IndexedSeq[Value]): Unit = {
+  def propagate(p: Predicate): Unit = {
     for (h <- dependencies.get(p.name)) {
-      bind(h, p, values) match {
-        case None => // nop
-        case Some(m) => queue.enqueue((h, m))
-      }
-    }
-  }
-
-  /**
-   * Optionally returns a new environment where all free variables, for the given predicate `p`,
-   * have been mapped to the value in the given environment `env`.
-   *
-   * That is, if the horn clause is A(x, y, z) :- B(x, y), C(z), the predicate is B
-   * and the environment is [0 -> a, 1 -> b] then the return environment is [x -> a, y -> b].
-   *
-   * Returns `None` if no satisfying assignment exists.
-   */
-  // TODO: Inspect this...
-  def bind(h: HornClause, p: Predicate, env: IndexedSeq[Value]): Option[Map[VSym, Value]] = {
-    var m = Map.empty[VSym, Value]
-    for (p2 <- h.body; if p.name == p2.name) {
-      for ((t, i) <- p2.terms.zipWithIndex) {
-        Unification.unify(t, env(i), m) match {
-          case None => return None
-          case Some(m2) => m = m2
+      for (p2 <- h.body) {
+        Unification.unify(p, p2, Map.empty[VSym, Term]) match {
+          case None => // nop
+          case Some(env0) => queue.enqueue((h, env0.mapValues(_.toValue(Map.empty))))
         }
       }
     }
-    Some(m)
   }
 
   /////////////////////////////////////////////////////////////////////////////

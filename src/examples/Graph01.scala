@@ -4,28 +4,20 @@ import impl.logic._
 import impl.runtime.Runner
 import syntax.Symbols._
 
-import scala.util.Random
-
-object RandomGraph01 {
-
-  // TODO: Make constant graph
-
-  val NumberOfVertices = 5
-  val NumberOfEdges = 10
-
-  val Random = new Random()
-
-  val Vertices = (0 to NumberOfVertices) map (_ => Random.nextInt(NumberOfVertices))
-  val Edges = (0 to NumberOfEdges) map (_ => (Random.nextInt(NumberOfVertices), Random.nextInt(NumberOfVertices)))
+object Graph01 {
 
   def main(args: Array[String]): Unit = {
 
     val EdgeSymbol = Symbol.PredicateSymbol("Edge")
     val CycleSymbol = Symbol.PredicateSymbol("Cycle")
 
-    val facts = Edges.toList map {
-      case (x, y) => HornClause(Predicate(EdgeSymbol, List(Term.Constant(Value.Int(x)), Term.Constant(Value.Int(y)))))
-    }
+    val facts = List(
+      HornClause(Predicate(EdgeSymbol, List(Term.Constant(Value.String("a")), Term.Constant(Value.String("b"))))),
+      HornClause(Predicate(EdgeSymbol, List(Term.Constant(Value.String("a")), Term.Constant(Value.String("a"))))),
+      HornClause(Predicate(EdgeSymbol, List(Term.Constant(Value.String("b")), Term.Constant(Value.String("c"))))),
+      HornClause(Predicate(EdgeSymbol, List(Term.Constant(Value.String("c")), Term.Constant(Value.String("d"))))),
+      HornClause(Predicate(EdgeSymbol, List(Term.Constant(Value.String("d")), Term.Constant(Value.String("a")))))
+    )
 
     val clauses = List(
       // E(x, z) :- E(x, y), E(y, z).
@@ -53,5 +45,6 @@ object RandomGraph01 {
 
     Runner.run(program)
   }
+
 
 }
