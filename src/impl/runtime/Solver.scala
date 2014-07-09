@@ -230,14 +230,13 @@ class Solver(val program: Program) {
   /**
    * Optionally returns the unique term of the variable `x` in all the given models `xs`.
    */
-  def uniqueTerm(x: VSym, xs: List[Map[VSym, Term]]): Option[Term] =
-    if (xs.isEmpty)
-      None
+  def uniqueTerm(x: VSym, xs: List[Map[VSym, Term]]): Option[Term] = {
+    val vs = xs.flatMap(_.get(x)).toSet
+    if (vs.size == 1)
+      Some(vs.head)
     else
-      xs.map(m => m.get(x)).reduce[Option[Term]] {
-        case (Some(t1), Some(t2)) if t1 == t2 => Some(t1)
-        case _ => None
-      }
+      None
+  }
 
   /**
    * Optionally returns the unique value of the variable `x` in all the given models `xs`.
