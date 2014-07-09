@@ -8,10 +8,8 @@ import scala.util.Random
 
 object RandomGraph01 {
 
-  // TODO: Make constant graph
-
-  val NumberOfVertices = 5
-  val NumberOfEdges = 10
+  val NumberOfVertices = 25
+  val NumberOfEdges = 250
 
   val Random = new Random()
 
