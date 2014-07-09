@@ -257,9 +257,9 @@ class Solver(val program: Program) {
    * Returns the join of `v1` and `v2`.
    */
   def join(s: PSym, v1: Value, v2: Value): Value = {
-    val p = Predicate(s, List(v1.asTerm, v2.asTerm, Term.Variable(Symbol.VariableSymbol("x"))))
+    val p = Predicate(s, List(v1.asTerm, v2.asTerm, Term.Variable(Symbol.VariableSymbol("!x"))))
     val models = getSat(p)
-    val value = uniqueValue(Symbol.VariableSymbol("x"), models)
+    val value = uniqueValue(Symbol.VariableSymbol("!x"), models)
 
     value match {
       case None => throw Error.NonUniqueModel(s)
