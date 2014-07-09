@@ -103,6 +103,7 @@ class Solver(val program: Program) {
    * Returns a list of environments for the given predicate `p` with interpretation `i` under the given environment `env0`.
    */
   def evaluate(p: Predicate, i: Interpretation, env0: Map[VSym, Value]): List[Map[VSym, Value]] = i match {
+      // TODO: Use regular unification and then check if it as value?
     case Interpretation.Relation(Representation.Data) =>
       p.terms match {
         case ts@List(t1) => relation1.get(p.name).toList.flatMap {
