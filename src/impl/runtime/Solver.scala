@@ -209,10 +209,7 @@ class Solver(val program: Program) {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-   * TODO: DOC
-   * @param p
-   * @param env0
-   * @return
+   * Returns all satisfiable models for the given predicate `p` under the given environment `env0`.
    */
   def getSat(p: Predicate, env0: Map[VSym, Term] = Map.empty): List[Map[VSym, Term]] = {
     // Find horn clauses where the head predicate is satisfiable.
