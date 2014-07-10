@@ -14,8 +14,8 @@ object Sign01 {
     val R = Symbol.PredicateSymbol("R")
 
     val facts = List(
-      HornClause(Predicate(X, List(Term.Constant(Value.Constructor0("Sign.Pos"))))),
-      HornClause(Predicate(Y, List(Term.Constant(Value.Constructor0("Sign.Neg")))))
+      HornClause(Predicate(X, List(Term.Constructor0("Sign.Pos")))),
+      HornClause(Predicate(Y, List(Term.Constructor0("Sign.Neg"))))
     )
 
     val clauses = List(

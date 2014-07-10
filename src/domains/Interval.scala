@@ -53,7 +53,7 @@ object Interval {
             Term.Apply("Int.max", List(Term.Variable("e1"), Term.Variable("e2"))),
             Term.Apply("Int.min", List(Term.Variable("b1"), Term.Variable("b2")))
           )),
-          Term.Constant(Value.Int(10))
+          Term.Int(10)
         ))
       )),
 
@@ -70,7 +70,7 @@ object Interval {
             Term.Apply("Int.max", List(Term.Variable("e1"), Term.Variable("e2"))),
             Term.Apply("Int.min", List(Term.Variable("b1"), Term.Variable("b2")))
           )),
-          Term.Constant(Value.Int(10))
+          Term.Int(10)
         ))
       )),
 

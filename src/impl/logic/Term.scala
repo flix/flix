@@ -19,7 +19,9 @@ sealed trait Term {
    * Returns `None` if the term has free variables under the given environment.
    */
   def asValue(env: Map[Symbol.VariableSymbol, Value]): Option[Value] = this match {
-    case Term.Constant(v) => Some(v)
+    case Term.Bool(b) => Some(Value.Bool(b))
+    case Term.Int(i) => Some(Value.Int(i))
+    case Term.String(s) => Some(Value.String(s))
     case Term.Variable(s) => env.get(s)
     case Term.Apply(s, args) => asValue(args, env) map (xs => Functions.evaluate(s, xs))
     case Term.Constructor0(s) => Some(Value.Constructor0(s))
@@ -84,7 +86,9 @@ sealed trait Term {
    * Returns the term where all occurences of the variable symbol `s` has been replaced by the term `t`.
    */
   def substitute(x: Symbol.VariableSymbol, t: Term): Term = this match {
-    case Term.Constant(v) => Term.Constant(v)
+    case Term.Bool(b) => Term.Bool(b)
+    case Term.Int(i) => Term.Int(i)
+    case Term.String(s) => Term.String(s)
     case Term.Variable(y) if x == y => t
     case Term.Variable(y) => Term.Variable(y)
     case Term.Apply(s, ts) => Term.Apply(s, ts)
@@ -100,7 +104,9 @@ sealed trait Term {
    * Returns the set of (free) variables in the term.
    */
   def variables: Set[Symbol.VariableSymbol] = this match {
-    case Term.Constant(v) => Set.empty
+    case Term.Bool(b) => Set.empty
+    case Term.Int(i) => Set.empty
+    case Term.String(s) => Set.empty
     case Term.Variable(s) => Set(s)
     case Term.Apply(s, ts) => ts.flatMap(t => t.variables).toSet
     case Term.Constructor0(s) => Set.empty
@@ -115,10 +121,19 @@ sealed trait Term {
 object Term {
 
   /**
-   * A constant term.
+   * A boolean constant term.
    */
-  @deprecated("replace by string, int, etc.", "1.0")
-  case class Constant(v: Value) extends Term
+  case class Bool(b: scala.Boolean) extends Term
+
+  /**
+   * An integer constant term.
+   */
+  case class Int(i: scala.Int) extends Term
+
+  /**
+   * A string constant term.
+   */
+  case class String(s: java.lang.String) extends Term
 
   /**
    * A variable term.

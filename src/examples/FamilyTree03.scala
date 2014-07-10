@@ -5,6 +5,7 @@ import impl.runtime.Runner
 import syntax.Symbols._
 
 object FamilyTree03 {
+
   def main(args: Array[String]): Unit = {
 
     val ParentSymbol = Symbol.PredicateSymbol("Parent")
@@ -12,18 +13,18 @@ object FamilyTree03 {
     val ParentChildSymbol = Symbol.PredicateSymbol("P")
 
     val facts = List(
-      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Caroline")), Term.Constant(Value.String("Inger"))))),
-      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Caroline")), Term.Constant(Value.String("Frits"))))),
+      HornClause(Predicate(ParentSymbol, List(Term.String("Caroline"), Term.String("Inger")))),
+      HornClause(Predicate(ParentSymbol, List(Term.String("Caroline"), Term.String("Frits")))),
 
-      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Bjarke")), Term.Constant(Value.String("Inger"))))),
-      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Bjarke")), Term.Constant(Value.String("Frits"))))),
+      HornClause(Predicate(ParentSymbol, List(Term.String("Bjarke"), Term.String("Inger")))),
+      HornClause(Predicate(ParentSymbol, List(Term.String("Bjarke"), Term.String("Frits")))),
 
-      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Magnus")), Term.Constant(Value.String("Inger"))))),
-      HornClause(Predicate(ParentSymbol, List(Term.Constant(Value.String("Magnus")), Term.Constant(Value.String("Frits"))))),
+      HornClause(Predicate(ParentSymbol, List(Term.String("Magnus"), Term.String("Inger")))),
+      HornClause(Predicate(ParentSymbol, List(Term.String("Magnus"), Term.String("Frits")))),
 
-      HornClause(Predicate(AgeSymbol, List(Term.Constant(Value.String("Caroline")), Term.Constant(Value.String("17"))))),
-      HornClause(Predicate(AgeSymbol, List(Term.Constant(Value.String("Bjarke")), Term.Constant(Value.String("23"))))),
-      HornClause(Predicate(AgeSymbol, List(Term.Constant(Value.String("Magnus")), Term.Constant(Value.String("28")))))
+      HornClause(Predicate(AgeSymbol, List(Term.String("Caroline"), Term.String("17")))),
+      HornClause(Predicate(AgeSymbol, List(Term.String("Bjarke"), Term.String("23")))),
+      HornClause(Predicate(AgeSymbol, List(Term.String("Magnus"), Term.String("28"))))
     )
 
     val clauses = List(

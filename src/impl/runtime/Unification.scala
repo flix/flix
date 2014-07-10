@@ -25,7 +25,9 @@ object Unification {
    * Unifies the term `t` with the value `v` under the given environment `env0`.
    */
   def unify(t: Term, v: Value, env0: Map[VSym, Value]): Option[Map[VSym, Value]] = (t, v) match {
-    case (Term.Constant(v1), v2) if v1 == v2 => Some(env0)
+    case (Term.Bool(b1), Term.Bool(b2)) if b1 == b2 => Some(env0)
+    case (Term.Int(i1), Term.Int(i2)) if i1 == i2 => Some(env0)
+    case (Term.String(s1), Term.String(s2)) if s1 == s2 => Some(env0)
     case (Term.Variable(s), v2) => env0.get(s) match {
       case None => Some(env0 + (s -> v2))
       case Some(v3) if v2 != v3 => None
@@ -75,7 +77,9 @@ object Unification {
    * Unifies the term `t1` with the term `t2` under the given environment `env0`.
    */
   def unify(t1: Term, t2: Term, env0: Map[VSym, Term]): Option[Map[VSym, Term]] = (t1, t2) match {
-    case (Term.Constant(v1), Term.Constant(v2)) if v1 == v2 => Some(env0)
+    case (Term.Bool(b1), Term.Bool(b2)) if b1 == b2 => Some(env0)
+    case (Term.Int(i1), Term.Int(i2)) if i1 == i2 => Some(env0)
+    case (Term.String(s1), Term.String(s2)) if s1 == s2 => Some(env0)
     case (Term.Variable(x), Term.Variable(y)) => (env0.get(x), env0.get(y)) match {
       case (None, None) => Some(substitute(x, Term.Variable(y), env0) + (y -> Term.Variable(x)))
       case (None, Some(tt2)) => Some(substitute(x, tt2, env0) + (x -> tt2))

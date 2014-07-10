@@ -14,8 +14,8 @@ object SignAndParity01 {
     val R = Symbol.PredicateSymbol("R")
 
     val facts = List(
-      HornClause(Predicate(X, List(Term.Constructor2("SP", Term.Constant(Value.Constructor0("Sign.Pos")), Term.Constant(Value.Constructor0("Parity.Odd")))))),
-      HornClause(Predicate(Y, List(Term.Constructor2("SP", Term.Constant(Value.Constructor0("Sign.Neg")), Term.Constant(Value.Constructor0("Parity.Even"))))))
+      HornClause(Predicate(X, List(Term.Constructor2("SP", Term.Constructor0("Sign.Pos"), Term.Constructor0("Parity.Odd"))))),
+      HornClause(Predicate(Y, List(Term.Constructor2("SP", Term.Constructor0("Sign.Neg"), Term.Constructor0("Parity.Even")))))
     )
 
     val clauses = List(

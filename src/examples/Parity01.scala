@@ -14,8 +14,8 @@ object Parity01 {
     val R = Symbol.PredicateSymbol("R")
 
     val facts = List(
-      HornClause(Predicate(X, List(Term.Constant(Value.Constructor0("Parity.Odd"))))),
-      HornClause(Predicate(Y, List(Term.Constant(Value.Constructor0("Parity.Even")))))
+      HornClause(Predicate(X, List(Term.Constructor0("Parity.Odd")))),
+      HornClause(Predicate(Y, List(Term.Constructor0("Parity.Even"))))
     )
 
     val clauses = List(

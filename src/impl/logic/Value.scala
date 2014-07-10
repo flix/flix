@@ -5,9 +5,9 @@ sealed trait Value {
    * Returns the value as a term (with no free variables).
    */
   def asTerm: Term = this match {
-    case Value.Bool(b) => Term.Constant(Value.Bool(b))
-    case Value.Int(i) => Term.Constant(Value.Int(i))
-    case Value.String(s) => Term.Constant(Value.String(s))
+    case Value.Bool(b) => Term.Bool(b)
+    case Value.Int(i) => Term.Int(i)
+    case Value.String(s) => Term.String(s)
     case Value.Constructor0(s) => Term.Constructor0(s)
     case Value.Constructor1(s, v1) => Term.Constructor1(s, v1.asTerm)
     case Value.Constructor2(s, v1, v2) => Term.Constructor2(s, v1.asTerm, v2.asTerm)

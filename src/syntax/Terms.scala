@@ -2,7 +2,6 @@ package syntax
 
 import impl.logic.Term
 import syntax.Symbols._
-import syntax.Values._
 
 /**
  * Embedded DSL syntax for terms.
@@ -14,7 +13,9 @@ object Terms {
    */
   implicit class RichTerm(t: Term) {
     def fmt: String = t match {
-      case Term.Constant(v) => v.fmt
+      case Term.Bool(b) => b.toString
+      case Term.Int(i) => i.toString
+      case Term.String(s) => s
       case Term.Variable(s) => s.fmt
       case Term.Apply(s, ts) => s.fmt + "(" + ts.map(t => t.fmt).mkString(",") + ")"
       case Term.Constructor0(s) => s.fmt

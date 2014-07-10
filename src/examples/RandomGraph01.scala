@@ -22,7 +22,7 @@ object RandomGraph01 {
     val CycleSymbol = Symbol.PredicateSymbol("Cycle")
 
     val facts = Edges.toList map {
-      case (x, y) => HornClause(Predicate(EdgeSymbol, List(Term.Constant(Value.Int(x)), Term.Constant(Value.Int(y)))))
+      case (x, y) => HornClause(Predicate(EdgeSymbol, List(Term.Int(x), Term.Int(y))))
     }
 
     val clauses = List(
