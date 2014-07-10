@@ -83,7 +83,7 @@ object Unification {
     case (Term.Variable(x), Term.Variable(y)) => (env0.get(x), env0.get(y)) match {
       case (None, None) => Some(substitute(x, Term.Variable(y), env0) + (y -> Term.Variable(x)))
       case (None, Some(tt2)) => Some(substitute(x, tt2, env0) + (x -> tt2))
-      case (Some(tt1), None) =>Some(substitute(x, tt1, env0) + (y -> tt1))
+      case (Some(tt1), None) => Some(substitute(x, tt1, env0) + (y -> tt1))
       case (Some(tt1), Some(tt2)) => unify(tt1, tt2, env0)
     }
     case (Term.Variable(x), t) => env0.get(x) match {
@@ -133,7 +133,14 @@ object Unification {
   /**
    * Unification with substitution.
    */
-  def unify2(t1: Term, t2: Term, env0: Map[VSym, Term]): Option[Map[VSym, Term]] = ???
+  // TODO
+//  def unify2(t1: Term, t2: Term, env0: Map[VSym, Term]): Option[Map[VSym, Term]] = (t1, t2) match {
+//    case (Term.Constructor2(s1, x1, x2), Term.Constructor2(s2, y1, y2)) =>
+//      for (
+//        s1 <- unify2(x1, y1, env0);
+//        s2 <- unify2(/*apply s1 here*/ ???, /*apply s1 here*/ ???, env0)
+//      ) yield /* compose s1 and s2 */ ???
+//  }
 
   /**
    * Unifies all terms in `tx` with all terms in `ty` under the initial environment `env0`.

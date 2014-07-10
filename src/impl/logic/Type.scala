@@ -5,6 +5,11 @@ sealed trait Type
 object Type {
 
   /**
+   * The type of variants.
+   */
+  case class Variant(t: IndexedSeq[Type]) extends Type
+
+  /**
    * The type of booleans.
    */
   case object Bool extends Type
@@ -18,11 +23,6 @@ object Type {
    * The type of strings.
    */
   case object String extends Type
-
-  /**
-   * The type of variants.
-   */
-  case class Variant(t: IndexedSeq[Type]) extends Type
 
   /**
    * The type of null-ary constructors.

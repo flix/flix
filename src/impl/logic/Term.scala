@@ -121,6 +121,16 @@ sealed trait Term {
 object Term {
 
   /**
+   * A variable term.
+   */
+  case class Variable(name: Symbol.VariableSymbol) extends Term
+
+  /**
+   * A function application term.
+   */
+  case class Apply(name: Symbol.FunctionSymbol, terms: List[Term]) extends Term
+
+  /**
    * A boolean constant term.
    */
   case class Bool(b: scala.Boolean) extends Term
@@ -134,16 +144,6 @@ object Term {
    * A string constant term.
    */
   case class String(s: java.lang.String) extends Term
-
-  /**
-   * A variable term.
-   */
-  case class Variable(name: Symbol.VariableSymbol) extends Term
-
-  /**
-   * A function application term.
-   */
-  case class Apply(name: Symbol.FunctionSymbol, terms: List[Term]) extends Term
 
   /**
    * A null-ary constructor.

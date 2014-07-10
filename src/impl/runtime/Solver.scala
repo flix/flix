@@ -141,6 +141,8 @@ class Solver(val program: Program) {
     }
   }
 
+  // TODO: Idea: When a prediate P(x) is proven then we make a decision whether to store it and what clauses to investigate.
+
   /**
    * Satisfies the given predicate `p` under the given interpretation `i` and environment `env`.
    */

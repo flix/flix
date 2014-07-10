@@ -9,6 +9,8 @@ object Interpretation {
 
   case object Leq extends Interpretation
   case object Join extends Interpretation
+
+  // TODO: Atleast and Atmost
 }
 
 sealed trait Representation
