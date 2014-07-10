@@ -171,7 +171,6 @@ class Solver(val program: Program) {
           propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm)))
 
       case List(t1, t2, t3, t4, t5) =>
-        val List(t1, t2, t3, t4, t5) = p.terms
         val (v1, v2, v3, v4, v5) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env), t5.toValue(env))
         val newFact = relation5.put(p.name, (v1, v2, v3, v4, v5))
         if (newFact)

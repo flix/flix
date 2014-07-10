@@ -131,6 +131,11 @@ object Unification {
   }
 
   /**
+   * Unification with substitution.
+   */
+  def unify2(t1: Term, t2: Term, env0: Map[VSym, Term]): Option[Map[VSym, Term]] = ???
+
+  /**
    * Unifies all terms in `tx` with all terms in `ty` under the initial environment `env0`.
    */
   def unifyTerms(tx: List[Term], ty: List[Term], env0: Map[VSym, Term]): Option[Map[VSym, Term]] =
