@@ -58,6 +58,9 @@
         (Sign.leq Sign.Bot x)))
 
 
+;; Join-Total
+
+
 ;; TODO: Need help with join-1
 ;; Join-1
 (define-fun join-1 () Bool
@@ -76,6 +79,8 @@
 
 
 ;; Sum-Strict
+
+;; Sum-Strict
 (define-fun sum-strict () Bool
     (forall ((x Sign))
         (and
@@ -83,11 +88,12 @@
             (Sign.sum x Sign.Bot Sign.Bot))))
 
 ;; Sum-Montone
+;; TODO: Currently broken.
 (define-fun sum-monotone () Bool
     (forall ((x1 Sign) (y1 Sign) (r1 Sign) (x2 Sign) (y2 Sign) (r2 Sign))
         (=> (and
-                (Sign.leq x1 y1)
-                (Sign.leq x2 y2)
+                (Sign.leq x1 x2)
+                (Sign.leq y1 y2)
                 (Sign.sum x1 y1 r1)
                 (Sign.sum x2 y2 r2))
             (Sign.leq r1 r2))))
@@ -101,5 +107,10 @@
 
 (assert sum-strict)
 
+(push)
+(assert (not sum-monotone))
 (check-sat)
+(get-model)
+(pop)
+
 
