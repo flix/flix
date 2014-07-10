@@ -61,26 +61,36 @@
         (Sign.leq Sign.Bot x)))
 
 
+;; Join-1
+(define-fun join-1 () Bool
+    (forall ((x Sign) (y Sign) (z Sign))
+        (and
+            (=> (Sign.join x y z) (Sign.leq x z))
+            (=> (Sign.join x y z) (Sign.leq y z)))))
 
-;; 1. Join is total
-;; 2. x join y <= x and ...
-;; 	⨆ is total
-;;   	x⨆y⊑x  and x⨆y⊑y
-;;   	∀z:x⊑z∧y⊑z⇒x⨆y=z
+;; Join-2
+(define-fun join-2 () Bool
+    (forall ((x Sign) (y Sign) (z Sign))
+        (=>
+            (and (Sign.leq x z) (Sign.leq y z))
+            (Sign.join x y z))))
+
+(push)
+    (assert (not join-2))
+    (get-model)
+(pop)
 
 ;; termination.
-
-
-
 ;; Monotonicity
-
-
 ;; Distributive
 ;; Strict
-
 
 (assert reflexivity)
 (assert anti-symmetri)
 (assert transitivity)
 (assert least-element)
+(assert join-1)
+(assert join-2)
+
 (check-sat)
+
