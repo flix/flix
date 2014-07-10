@@ -25,9 +25,9 @@ object Unification {
    * Unifies the term `t` with the value `v` under the given environment `env0`.
    */
   def unify(t: Term, v: Value, env0: Map[VSym, Value]): Option[Map[VSym, Value]] = (t, v) match {
-    case (Term.Bool(b1), Term.Bool(b2)) if b1 == b2 => Some(env0)
-    case (Term.Int(i1), Term.Int(i2)) if i1 == i2 => Some(env0)
-    case (Term.String(s1), Term.String(s2)) if s1 == s2 => Some(env0)
+    case (Term.Bool(b1), Value.Bool(b2)) if b1 == b2 => Some(env0)
+    case (Term.Int(i1), Value.Int(i2)) if i1 == i2 => Some(env0)
+    case (Term.String(s1), Value.String(s2)) if s1 == s2 => Some(env0)
     case (Term.Variable(s), v2) => env0.get(s) match {
       case None => Some(env0 + (s -> v2))
       case Some(v3) if v2 != v3 => None
