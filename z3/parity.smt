@@ -10,7 +10,13 @@
 )
 
 ;; Definition of Join
-
+(define-fun Sign.join ((x Sign) (y Sign) (z Sign)) Bool
+    (or (and (= x Sign.Bot) (= y z))
+        (and (= y Sign.Bot) (= x z))
+        (and (= x y z))
+        (and (= x Sign.Top) (= z Sign.Top))
+        (and (= y Sign.Top) (= z Sign.Top))
+    ))
 
 ;; Definition of Sum
 
