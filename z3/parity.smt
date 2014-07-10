@@ -15,10 +15,29 @@
         (and (= y Sign.Bot) (= x z))
         (and (= x y z))
         (and (= x Sign.Top) (= z Sign.Top))
-        (and (= y Sign.Top) (= z Sign.Top))
-    ))
+        (and (= y Sign.Top) (= z Sign.Top)))
+)
 
 ;; Definition of Sum
+(define-fun Sign.sum ((x Sign) (y Sign) (z Sign)) Bool
+    (or (and (= x Sign.Bot) (= z Sign.Bot))
+        (and (= y Sign.Bot) (= z Sign.Bot))
+
+        (and (= x Sign.Neg) (= y Sign.Neg) (= z Sign.Neg))
+        (and (= x Sign.Neg) (= y Sign.Zer) (= z Sign.Neg))
+        (and (= x Sign.Neg) (= y Sign.Pos) (= z Sign.Top))
+
+        (and (= x Sign.Zer) (= y Sign.Neg) (= z Sign.Neg))
+        (and (= x Sign.Zer) (= y Sign.Zer) (= z Sign.Zer))
+        (and (= x Sign.Zer) (= y Sign.Pos) (= z Sign.Pos))
+
+        (and (= x Sign.Pos) (= y Sign.Neg) (= z Sign.Top))
+        (and (= x Sign.Pos) (= y Sign.Zer) (= z Sign.Pos))
+        (and (= x Sign.Pos) (= y Sign.Pos) (= z Sign.Pos))
+
+        (and (= x Sign.Top) (= z Sign.Top))
+        (and (= y Sign.Top) (= z Sign.Top)))
+)
 
 
 ;; Leq-Reflexivity
