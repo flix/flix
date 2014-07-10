@@ -6,8 +6,7 @@
         (and (= x Sign.Neg) (= y Sign.Neg))
         (and (= x Sign.Zer) (= y Sign.Zer))
         (and (= x Sign.Pos) (= y Sign.Pos))
-        (= y Sign.Top))
-)
+        (= y Sign.Top)))
 
 ;; Definition of Join
 (define-fun Sign.join ((x Sign) (y Sign) (z Sign)) Bool
@@ -15,8 +14,7 @@
         (and (= y Sign.Bot) (= x z))
         (and (= x y z))
         (and (= x Sign.Top) (= z Sign.Top))
-        (and (= y Sign.Top) (= z Sign.Top)))
-)
+        (and (= y Sign.Top) (= z Sign.Top))))
 
 ;; Definition of Sum
 (define-fun Sign.sum ((x Sign) (y Sign) (z Sign)) Bool
@@ -36,8 +34,7 @@
         (and (= x Sign.Pos) (= y Sign.Pos) (= z Sign.Pos))
 
         (and (= x Sign.Top) (= z Sign.Top))
-        (and (= y Sign.Top) (= z Sign.Top)))
-)
+        (and (= y Sign.Top) (= z Sign.Top))))
 
 
 ;; Leq-Reflexivity
@@ -80,13 +77,18 @@
 
 ;; Sum-Strict
 (define-fun sum-strict () Bool
-    (forall ((x Sign) (y Sign))
-        (Sign.sum x y Sign.Bot)))
+    (forall ((x Sign))
+        (and
+            (Sign.sum Sign.Bot x Sign.Bot)
+            (Sign.sum x Sign.Bot Sign.Bot))))
+
+;; Sum-Montone
+
 
 ;; Monotonicity
+
+
 ;; termination.
-;; Distributive
-;; Strict
 
 (assert reflexivity)
 (assert anti-symmetri)
