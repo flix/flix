@@ -83,12 +83,16 @@
             (Sign.sum x Sign.Bot Sign.Bot))))
 
 ;; Sum-Montone
+(define-fun sum-monotone () Bool
+    (forall ((x1 Sign) (y1 Sign) (r1 Sign) (x2 Sign) (y2 Sign) (r2 Sign))
+        (=> (and
+                (Sign.leq x1 y1)
+                (Sign.leq x2 y2)
+                (Sign.sum x1 y1 r1)
+                (Sign.sum x2 y2 r2))
+            (Sign.leq r1 r2))))
 
-
-;; Monotonicity
-
-
-;; termination.
+;; TODO: Now, what about the lattice height?
 
 (assert reflexivity)
 (assert anti-symmetri)
