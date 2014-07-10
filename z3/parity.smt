@@ -61,6 +61,7 @@
         (Sign.leq Sign.Bot x)))
 
 
+;; TODO: Need help with join-1
 ;; Join-1
 (define-fun join-1 () Bool
     (forall ((x Sign) (y Sign) (z Sign))
@@ -68,20 +69,22 @@
             (=> (Sign.join x y z) (Sign.leq x z))
             (=> (Sign.join x y z) (Sign.leq y z)))))
 
+;; TODO: Need help with join-2
 ;; Join-2
 (define-fun join-2 () Bool
-    (forall ((x Sign) (y Sign) (z Sign))
+    (forall ((x Sign) (y Sign) (z Sign) (w Sign))
         (=>
             (and (Sign.leq x z) (Sign.leq y z))
-            (Sign.join x y z))))
+            (and (Sign.join x y w) (Sign.leq z w)))))
 
-(push)
-    (assert (not join-2))
-    (get-model)
-(pop)
 
-;; termination.
+;; Sum-Strict
+(define-fun sum-strict () Bool
+    (forall ((x Sign) (y Sign))
+        (Sign.sum x y Sign.Bot)))
+
 ;; Monotonicity
+;; termination.
 ;; Distributive
 ;; Strict
 
@@ -89,8 +92,8 @@
 (assert anti-symmetri)
 (assert transitivity)
 (assert least-element)
-(assert join-1)
-(assert join-2)
+
+(assert sum-strict)
 
 (check-sat)
 
