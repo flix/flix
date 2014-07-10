@@ -10,18 +10,26 @@
 
 ;; Reflexivity
 (define-fun reflexivity () Bool
-    (forall ((x Sign)) (Sign.leq x x)))
-(assert (not reflexivity))
-(echo "Reflexivity:")
-(check-sat)
+    (forall ((x Sign))
+        (Sign.leq x x)))
 
 ;; Anti-symmetri
-(push)
-    (define-fun anti-symmetri () Bool
-        (forall ((x Sign) (y Sign)) (=> (and (Sign.leq x y) (Sign.leq y x)) (= x y))))
-    (assert (not anti-symmetri))
-    (echo "Anti-symmetri:")
-    (check-sat)
-(pop)
+(define-fun anti-symmetri () Bool
+    (forall ((x Sign) (y Sign))
+        (=> (and (Sign.leq x y) (Sign.leq y x)) (= x y))))
 
+;; Transitivity
+(define-fun transitivity () Bool
+    (forall ((x Sign) (y Sign) (z Sign))
+        (=> (and (Sign.leq x y) (Sign.leq y z)) (Sign.leq x z))))
 
+;; LeastElement
+(define-fun least-element () Bool
+    (forall ((x Sign))
+        (Sign.leq Sign.Bot x)))
+
+(assert reflexivity)
+(assert anti-symmetri)
+(assert transitivity)
+(assert least-element)
+(check-sat)
