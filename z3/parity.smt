@@ -59,7 +59,10 @@
 
 
 ;; Join-Total
-
+(define-fun join-total () Bool
+    (forall ((x Sign) (y Sign))
+        (exists ((z Sign))
+            (Sign.join x y z))))
 
 ;; TODO: Need help with join-1
 ;; Join-1
@@ -105,12 +108,12 @@
 (assert transitivity)
 (assert least-element)
 
-(assert sum-strict)
-
 (push)
-(assert (not sum-monotone))
-(check-sat)
-(get-model)
+    (assert (not join-total))
+    (check-sat)
+    (get-model)
 (pop)
+
+;;(assert sum-strict)
 
 
