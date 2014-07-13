@@ -14,6 +14,8 @@ object Error {
 
   case class NonUniqueModel(p: Symbol.PredicateSymbol) extends RuntimeException
 
+  case class NonGroundPredicate(p: Symbol.PredicateSymbol) extends RuntimeException
+
   /*
    * An error to indicate that the meaning of the function symbol is unknown.
    */
