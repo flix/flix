@@ -6,7 +6,7 @@ class Relation1[K, V] extends Relation[K, V] {
 
   val m0 = mutable.Set.empty[V]
 
-  def get(i: Int, k: K): Relation[K, V] = ???
+  def get(i: Int, k: K): Relation[K, V] = this
 
   def put(v: V): Boolean = {
     if (m0 contains v) {
