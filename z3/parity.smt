@@ -45,14 +45,13 @@
         (and (= y Sign.Top) (= z Sign.Top))))
 
 ;; Definition of height
-(define-fun Sign.Height () Bool
-    (forall ((s Sign) (h Int))
-        (or
-            (and (= s Sign.Top) (= h 1))
-            (and (= s Sign.Neg) (= h 2))
-            (and (= s Sign.Zer) (= h 2))
-            (and (= s Sign.Pos) (= h 2))
-            (and (= s Sign.Bot) (= h 3)))))
+(define-fun Sign.height ((x Sign) (h Int)) Bool
+    (or
+        (and (= x Sign.Top) (= h 1))
+        (and (= x Sign.Neg) (= h 2))
+        (and (= x Sign.Zer) (= h 2))
+        (and (= x Sign.Pos) (= h 2))
+        (and (= x Sign.Bot) (= h 3))))
 
 ;; Reflexivity
 (define-fun reflexivity () Bool
@@ -74,7 +73,7 @@
     (forall ((x Sign))
         (Sign.leq Sign.Bot x)))
 
-
+;; TODO: 1. Join must be a total function (this one I got in place)
 ;; Join Total
 (define-fun join-total () Bool
     (forall ((x Sign) (y Sign))
@@ -96,7 +95,7 @@
         (=>
             (and (Sign.leq x z) (Sign.leq y z))
             (and (Sign.join x y w) (Sign.leq z w)))))
-
+;; \forall x, y, z: ( x <= z AND y <= z ) => x |_| y <= z
 
 ;; Sum-Strict
 (define-fun sum-strict () Bool
@@ -118,6 +117,14 @@
 
 
 ;; Height-Function
+(define-fun height-function () Bool
+    (forall ((x Sign) (y Sign) (r1 Int) (r2 Int))
+        (=>
+            (and
+                (Sign.height x r1)
+                (Sign.height y r2)
+                (= x y))
+            (= r1 r2))))
 
 ;; Height-Total
 
