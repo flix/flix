@@ -2,12 +2,18 @@ package impl.runtime
 
 import impl.logic.Symbol.{PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
+import util.Relation1
 import util.collection.mutable
 
 /**
  * A semi-naive solver.
  */
 class Solver(val program: Program) {
+
+  /**
+   * A set of predicate facts.
+   */
+  val facts = scala.collection.mutable.Set.empty[Predicate]
 
   /**
    * The tables for n-ary relations.
