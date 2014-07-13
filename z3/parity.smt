@@ -13,6 +13,14 @@
     (or (and (= x Sign.Bot) (= y z))
         (and (= y Sign.Bot) (= x z))
         (and (= x y z))
+
+        (and (= x Sign.Neg) (= y Sign.Zer) (= z Sign.Top))
+        (and (= x Sign.Neg) (= y Sign.Pos) (= z Sign.Top))
+        (and (= x Sign.Zer) (= y Sign.Neg) (= z Sign.Top))
+        (and (= x Sign.Zer) (= y Sign.Pos) (= z Sign.Top))
+        (and (= x Sign.Pos) (= y Sign.Neg) (= z Sign.Top))
+        (and (= x Sign.Pos) (= y Sign.Zer) (= z Sign.Top))
+
         (and (= x Sign.Top) (= z Sign.Top))
         (and (= y Sign.Top) (= z Sign.Top))))
 
@@ -36,29 +44,38 @@
         (and (= x Sign.Top) (= z Sign.Top))
         (and (= y Sign.Top) (= z Sign.Top))))
 
+;; Definition of height
+(define-fun Sign.Height () Bool
+    (forall ((s Sign) (h Int))
+        (or
+            (and (= s Sign.Top) (= h 1))
+            (and (= s Sign.Neg) (= h 2))
+            (and (= s Sign.Zer) (= h 2))
+            (and (= s Sign.Pos) (= h 2))
+            (and (= s Sign.Bot) (= h 3)))))
 
-;; Leq-Reflexivity
+;; Reflexivity
 (define-fun reflexivity () Bool
     (forall ((x Sign))
         (Sign.leq x x)))
 
-;; Leq-Anti-symmetri
+;; Anti-symmetri
 (define-fun anti-symmetri () Bool
     (forall ((x Sign) (y Sign))
         (=> (and (Sign.leq x y) (Sign.leq y x)) (= x y))))
 
-;; Leq-Transitivity
+;; Transitivity
 (define-fun transitivity () Bool
     (forall ((x Sign) (y Sign) (z Sign))
         (=> (and (Sign.leq x y) (Sign.leq y z)) (Sign.leq x z))))
 
-;; Leq-LeastElement
+;; LeastElement
 (define-fun least-element () Bool
     (forall ((x Sign))
         (Sign.leq Sign.Bot x)))
 
 
-;; Join-Total
+;; Join Total
 (define-fun join-total () Bool
     (forall ((x Sign) (y Sign))
         (exists ((z Sign))
@@ -82,8 +99,6 @@
 
 
 ;; Sum-Strict
-
-;; Sum-Strict
 (define-fun sum-strict () Bool
     (forall ((x Sign))
         (and
@@ -101,17 +116,22 @@
                 (Sign.sum x2 y2 r2))
             (Sign.leq r1 r2))))
 
-;; TODO: Now, what about the lattice height?
+
+;; Height-Function
+
+;; Height-Total
+
+;; Height-Decreasing
 
 (assert reflexivity)
 (assert anti-symmetri)
 (assert transitivity)
 (assert least-element)
+(assert join-total)
 
 (push)
-    (assert (not join-total))
+
     (check-sat)
-    (get-model)
 (pop)
 
 ;;(assert sum-strict)
