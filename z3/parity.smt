@@ -90,7 +90,7 @@
 ;; Join is Functional:
 (define-fun join-function () Bool true)
 
-;; Join is Total:
+;; Join is Total: ∀x, y, ∃z. z = x ⨆ y.
 (define-fun join-total () Bool
     (forall ((x Sign) (y Sign))
         (exists ((z Sign))
