@@ -1,4 +1,11 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Lattice Elements                                                          ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (declare-datatypes () ((Sign Sign.Top Sign.Bot Sign.Neg Sign.Zer Sign.Pos)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Lattice Operations                                                        ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Definition of Leq
 (define-fun Sign.leq ((x Sign) (y Sign)) Bool
@@ -87,7 +94,7 @@
 ;; Join                                                                      ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Join is Functional:
+;; Join is Functional: ∀x1, x2, y1, y2. (x1 = x2 ∧ y1 = y2) ⇒ (x1 ⨆ y1 = x2 ⨆ y2)
 (define-fun join-function () Bool true)
 
 ;; Join is Total: ∀x, y, ∃z. z = x ⨆ y.
@@ -133,8 +140,11 @@
                 (Sign.sum x2 y2 r2))
             (Sign.leq r1 r2))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Height                                                                    ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Height-Function
+;; Height-Function:
 (define-fun height-function () Bool
     (forall ((x Sign) (y Sign) (r1 Int) (r2 Int))
         (=>
@@ -144,20 +154,20 @@
                 (Sign.height y r2))
             (= r1 r2))))
 
-;; Height-Total
+;; Height-Total: ∀x. ∃y. y = h(x).
 (define-fun height-total () Bool
     (forall ((x Sign))
         (exists ((r Int))
             (Sign.height x r))))
 
-;; Height-NonNegative
+;; Height-NonNegative: ∀x. h(x) > 0.
 (define-fun height-non-negative () Bool
     (forall ((x Sign) (h Int))
         (=>
             (Sign.height x h)
             (> h 0))))
 
-;; Height-Decreasing
+;; Height-Decreasing: ∀x, y. x ⊑ y ∧ x != y ⇒ h(x) > h(y).
 (define-fun height-decreasing () Bool
     (forall ((x Sign) (y Sign) (h1 Int) (h2 Int))
         (=>
@@ -166,6 +176,11 @@
                  (Sign.height x h1)
                  (Sign.height y h2))
             (> h1 h2))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Assertions                                                                ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 ;; lattice order
