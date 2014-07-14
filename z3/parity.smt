@@ -197,7 +197,7 @@
 ;; transfer functions
 (assert sum-strict)
 ;; (assert sum-monotone)
-;; TODO: Distributive
+;; TODO: Distributive Distributivity: ∀x, y, f(x ⨆ y) = f(x) ⨆ f(y).
 
 ;; height
 (assert height-function)
