@@ -121,12 +121,16 @@
     (forall ((x Sign) (y Sign) (r1 Int) (r2 Int))
         (=>
             (and
+                (= x y)
                 (Sign.height x r1)
-                (Sign.height y r2)
-                (= x y))
+                (Sign.height y r2))
             (= r1 r2))))
 
 ;; Height-Total
+(define-fun height-total () Bool
+    (forall ((x Sign))
+        (exists ((r Int))
+            (Sign.height x r))))
 
 ;; Height-Decreasing
 
@@ -135,6 +139,8 @@
 (assert transitivity)
 (assert least-element)
 (assert join-total)
+(assert height-function)
+(assert height-total)
 
 (push)
 
