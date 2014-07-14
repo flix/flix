@@ -73,7 +73,10 @@
     (forall ((x Sign))
         (Sign.leq Sign.Bot x)))
 
-;; TODO: 1. Join must be a total function (this one I got in place)
+;; TODO: Join function
+
+
+
 ;; Join Total
 (define-fun join-total () Bool
     (forall ((x Sign) (y Sign))
@@ -88,14 +91,15 @@
             (=> (Sign.join x y z) (Sign.leq x z))
             (=> (Sign.join x y z) (Sign.leq y z)))))
 
-;; TODO: Need help with join-2
 ;; Join-2
 ;; \forall x, y, z: ( x <= z AND y <= z ) => x |_| y <= z
 (define-fun join-2 () Bool
     (forall ((x Sign) (y Sign) (z Sign) (w Sign))
         (=>
-            (and (Sign.leq x z) (Sign.leq y z))
-            (and (Sign.join x y w) (Sign.leq z w)))))
+            (and (Sign.leq x z)
+                 (Sign.leq y z)
+                 (Sign.join x y w))
+            (Sign.leq w z))))
 
 
 ;; Sum-Strict
@@ -159,6 +163,7 @@
 
 ;; join
 (assert join-total)
+(assert join-2)
 
 ;; height
 (assert height-function)
