@@ -197,6 +197,7 @@
 ;; transfer functions
 (assert sum-strict)
 ;; (assert sum-monotone)
+;; TODO: Distributive
 
 ;; height
 (assert height-function)
