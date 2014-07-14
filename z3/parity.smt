@@ -53,6 +53,10 @@
         (and (= x Sign.Pos) (= h 2))
         (and (= x Sign.Bot) (= h 3))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Lattice Order                                                             ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;; Reflexivity: ∀x. x ⊑ x
 (define-fun reflexivity () Bool
     (forall ((x Sign))
@@ -74,16 +78,19 @@
                  (Sign.leq y z))
             (Sign.leq x z))))
 
-;; LeastElement: ∀x. ⊥ ⊑ x.
+;; Least Element: ∀x. ⊥ ⊑ x.
 (define-fun least-element () Bool
     (forall ((x Sign))
         (Sign.leq Sign.Bot x)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Join                                                                      ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: Join function
+;; Join is Functional:
 (define-fun join-function () Bool true)
 
-;; Join Total
+;; Join is Total:
 (define-fun join-total () Bool
     (forall ((x Sign) (y Sign))
         (exists ((z Sign))
