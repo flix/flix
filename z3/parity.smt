@@ -96,6 +96,7 @@
 
 ;; Join is Functional: ∀x1, x2, y1, y2. (x1 = x2 ∧ y1 = y2) ⇒ (x1 ⨆ y1 = x2 ⨆ y2)
 (define-fun join-function () Bool true)
+;; TODO
 
 ;; Join is Total: ∀x, y, ∃z. z = x ⨆ y.
 (define-fun join-total () Bool
@@ -122,7 +123,7 @@
             (Sign.leq w z))))
 
 
-;; Sum-Strict
+;; Sum-Strict ∀x. sum(⊥, x) = ⊥ ∧ sum(x, ⊥) = ⊥
 (define-fun sum-strict () Bool
     (forall ((x Sign))
         (and
@@ -144,7 +145,7 @@
 ;; Height                                                                    ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Height-Function:
+;; Height-Function: ∀x, y. x = y ⇒ h(x) = h(y)
 (define-fun height-function () Bool
     (forall ((x Sign) (y Sign) (r1 Int) (r2 Int))
         (=>
@@ -182,7 +183,6 @@
 ;; Assertions                                                                ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 ;; lattice order
 (assert reflexivity)
 (assert anti-symmetri)
@@ -194,6 +194,10 @@
 (assert join-total)
 (assert join-1)
 (assert join-2)
+
+;; transfer functions
+(assert sum-strict)
+;; (assert sum-monotone)
 
 ;; height
 (assert height-function)
