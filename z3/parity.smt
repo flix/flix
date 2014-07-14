@@ -133,6 +133,11 @@
             (Sign.height x r))))
 
 ;; Height-NonNegative
+(define-fun height-non-negative () Bool
+    (forall ((x Sign) (h Int))
+        (=>
+            (Sign.height x h)
+            (> h 0))))
 
 ;; Height-Decreasing
 (define-fun height-decreasing () Bool
@@ -153,9 +158,7 @@
 
 (assert height-function)
 (assert height-total)
+(assert height-non-negative)
 (assert height-decreasing)
 
 (check-sat)
-
-
-
