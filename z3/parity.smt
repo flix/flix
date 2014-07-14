@@ -90,12 +90,13 @@
 
 ;; TODO: Need help with join-2
 ;; Join-2
+;; \forall x, y, z: ( x <= z AND y <= z ) => x |_| y <= z
 (define-fun join-2 () Bool
     (forall ((x Sign) (y Sign) (z Sign) (w Sign))
         (=>
             (and (Sign.leq x z) (Sign.leq y z))
             (and (Sign.join x y w) (Sign.leq z w)))))
-;; \forall x, y, z: ( x <= z AND y <= z ) => x |_| y <= z
+
 
 ;; Sum-Strict
 (define-fun sum-strict () Bool
@@ -150,12 +151,16 @@
             (> h1 h2))))
 
 
+;; lattice order
 (assert reflexivity)
 (assert anti-symmetri)
 (assert transitivity)
 (assert least-element)
+
+;; join
 (assert join-total)
 
+;; height
 (assert height-function)
 (assert height-total)
 (assert height-non-negative)
