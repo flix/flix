@@ -132,21 +132,30 @@
         (exists ((r Int))
             (Sign.height x r))))
 
+;; Height-NonNegative
+
 ;; Height-Decreasing
+(define-fun height-decreasing () Bool
+    (forall ((x Sign) (y Sign) (h1 Int) (h2 Int))
+        (=>
+            (and (distinct x y)
+                 (Sign.leq x y)
+                 (Sign.height x h1)
+                 (Sign.height y h2))
+            (> h1 h2))))
+
 
 (assert reflexivity)
 (assert anti-symmetri)
 (assert transitivity)
 (assert least-element)
 (assert join-total)
+
 (assert height-function)
 (assert height-total)
+(assert height-decreasing)
 
-(push)
+(check-sat)
 
-    (check-sat)
-(pop)
-
-;;(assert sum-strict)
 
 
