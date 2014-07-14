@@ -1,7 +1,9 @@
 package impl.runtime
 
 import impl.logic._
+import impl.logic.Symbol.{PredicateSymbol => PSym}
 import syntax.Symbols._
+
 /**
  * A verifier / type checker.
  */
@@ -13,10 +15,12 @@ class Verifier(val program: Program) {
   def verify(): Unit = {
 
     println("Proof Burdens")
+    // TODO: Need better access to lattices
     for ((p, i) <- program.interpretation) {
       i match {
         case Interpretation.LatticeMap(lattice) => {
-          println(reflexive(p, lattice.leq))
+          println(reflexivity(p, lattice.leq))
+          println(antiSymmetri(p, lattice.leq))
         }
         case _ => // nop
       }
@@ -29,14 +33,30 @@ class Verifier(val program: Program) {
   /**
    * Reflexivity: ∀x. x ⊑ x
    */
-  def reflexive(sort: Symbol.PredicateSymbol, leq: Symbol.PredicateSymbol): String = smt"""
-    | ;; Reflexivity: ∀x. x ⊑ x
+  def reflexivity(sort: PSym, leq: PSym): String = smt"""
+    |;; Reflexivity: ∀x. x ⊑ x
     |(define-fun reflexivity () Bool
     |    (forall ((x $sort))
-    |        (${leq.s} x x)))
-   """.stripMargin
+    |        ($leq x x)))
+    """.stripMargin
 
+  /**
+   * Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
+   */
+  def antiSymmetri(sort: PSym, leq: PSym): String = smt"""
+    |;; Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
+    |(define-fun anti-symmetri () Bool
+    |    (forall ((x $sort) (y $sort))
+    |        (=>
+    |            (and ($leq x y)
+    |                 ($leq y x))
+    |            (= x y))))
+    """.stripMargin
+  
 
+  /**
+   * A string interpolator which takes symbols into account.
+   */
   implicit class SmtSyntaxInterpolator(sc: StringContext) {
     def smt(args: Any*): String = {
       def format(a: Any): String = a match {

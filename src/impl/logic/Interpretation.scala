@@ -13,6 +13,7 @@ object Interpretation {
   // TODO: Atleast and Atmost
 }
 
+// TODO: Move into "Hints"
 sealed trait Representation
 
 object Representation {
