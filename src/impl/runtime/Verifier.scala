@@ -29,45 +29,6 @@ class Verifier(val program: Program) {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Reflexivity: ∀x. x ⊑ x
-   */
-  def reflexivity(leq: PSym): Formula = typer(
-    Formula.Forall("x", Formula.Atom(Predicate(leq, List(Term.Variable("x"), Term.Variable("x")))))
-  )
-
-  /**
-   * Anti-Symmetry: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y.
-   */
-  def antiSymmetry(leq: PSym): Formula = typer(
-    Formula.Implication(
-      Formula.Conjunction(Set(
-        Formula.Atom(Predicate(leq, List(Term.Variable(Symbol.VariableSymbol("x")), Term.Variable(Symbol.VariableSymbol("y"))))),
-        Formula.Atom(Predicate(leq, List(Term.Variable(Symbol.VariableSymbol("y")), Term.Variable(Symbol.VariableSymbol("x")))))
-      )),
-      Formula.Atom(Predicate(Symbol.PredicateSymbol("Eq"), List(Term.Variable(Symbol.VariableSymbol("y")), Term.Variable(Symbol.VariableSymbol("x")))))
-    )
-  )
-
-  /**
-   * Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
-   */
-  def transitivity(leq: PSym): Formula = typer(
-    Formula.Implication(
-      Formula.Conjunction(Set(
-        Formula.Atom(Predicate(leq, List(Term.Variable(Symbol.VariableSymbol("x")), Term.Variable(Symbol.VariableSymbol("y"))))),
-        Formula.Atom(Predicate(leq, List(Term.Variable(Symbol.VariableSymbol("y")), Term.Variable(Symbol.VariableSymbol("z")))))
-      )),
-      Formula.Atom(Predicate(leq, List(Term.Variable(Symbol.VariableSymbol("x")), Term.Variable(Symbol.VariableSymbol("z")))))
-    )
-  )
-
-  /**
-   * Least Element: ∀x. ⊥ ⊑ x.
-   */
-  def leastElement(leq: PSym, bot: Value): Formula = ???
-
-
-  /**
    * Function: ∀x, y. x = y ⇒ f(x) = f(y).
    */
   def function(f: PSym): Formula = typer(
@@ -103,12 +64,7 @@ class Verifier(val program: Program) {
   /**
    * Monotonicity: ∀x, x ⊑ y ⇒ f(x) ⊑ f(y).
    */
-  def monotonicity(f: PSym, leq: PSym): Formula = typer(
-    Formula.Implication(
-      Formula.Atom(Predicate(leq, List(Term.Variable("x"), Term.Variable("y")))),
-      ??? // TODO: Again we need equality
-    )
-  )
+  def monotonicity(f: PSym, leq: PSym): Formula = ???
 
   /**
    * Strictness: f(⊥) = ⊥
@@ -121,14 +77,4 @@ class Verifier(val program: Program) {
    */
   // TODO
   trait Distributivity
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Typer                                                                   //
-  /////////////////////////////////////////////////////////////////////////////
-
-  def typer(f: Formula): Formula = ???
-
-  def unify(t: Term, tt: Type, env: Map[Term, Type]) = ???
-
 }

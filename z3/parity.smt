@@ -53,29 +53,35 @@
         (and (= x Sign.Pos) (= h 2))
         (and (= x Sign.Bot) (= h 3))))
 
-;; Reflexivity
+;; Reflexivity: ∀x. x ⊑ x
 (define-fun reflexivity () Bool
     (forall ((x Sign))
         (Sign.leq x x)))
 
-;; Anti-symmetri
+;; Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
 (define-fun anti-symmetri () Bool
     (forall ((x Sign) (y Sign))
-        (=> (and (Sign.leq x y) (Sign.leq y x)) (= x y))))
+        (=>
+            (and (Sign.leq x y)
+                 (Sign.leq y x))
+            (= x y))))
 
-;; Transitivity
+;; Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
 (define-fun transitivity () Bool
     (forall ((x Sign) (y Sign) (z Sign))
-        (=> (and (Sign.leq x y) (Sign.leq y z)) (Sign.leq x z))))
+        (=>
+            (and (Sign.leq x y)
+                 (Sign.leq y z))
+            (Sign.leq x z))))
 
-;; LeastElement
+;; LeastElement: ∀x. ⊥ ⊑ x.
 (define-fun least-element () Bool
     (forall ((x Sign))
         (Sign.leq Sign.Bot x)))
 
+
 ;; TODO: Join function
-
-
+(define-fun join-function () Bool true)
 
 ;; Join Total
 (define-fun join-total () Bool
@@ -83,7 +89,7 @@
         (exists ((z Sign))
             (Sign.join x y z))))
 
-;; TODO: Need help with join-1
+;; TODO: Verify
 ;; Join-1
 (define-fun join-1 () Bool
     (forall ((x Sign) (y Sign) (z Sign))
@@ -162,7 +168,9 @@
 (assert least-element)
 
 ;; join
+(assert join-function)
 (assert join-total)
+(assert join-1)
 (assert join-2)
 
 ;; height
