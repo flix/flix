@@ -104,17 +104,16 @@
         (exists ((z Sign))
             (Sign.join x y z))))
 
-;; TODO: Verify
-;; Join-1
-(define-fun join-1 () Bool
+;; Join-Lub-1: ∀x, y, z. x ⊑ x ⨆ y ∧ y ⊑ x ⨆ y.
+(define-fun join-lub-1 () Bool
     (forall ((x Sign) (y Sign) (z Sign))
         (and
             (=> (Sign.join x y z) (Sign.leq x z))
             (=> (Sign.join x y z) (Sign.leq y z)))))
 
-;; Join-2
-;; \forall x, y, z: ( x <= z AND y <= z ) => x |_| y <= z
-(define-fun join-2 () Bool
+;; Join-Lub-2
+;; ∀x, y, z. x ⊑ z ∧ y ⊑ z ⇒ x ⨆ y ⊑ z.
+(define-fun join-lub-2 () Bool
     (forall ((x Sign) (y Sign) (z Sign) (w Sign))
         (=>
             (and (Sign.leq x z)
@@ -192,8 +191,8 @@
 ;; join
 (assert join-function)
 (assert join-total)
-(assert join-1)
-(assert join-2)
+(assert join-lub-1)
+(assert join-lub-2)
 
 ;; transfer functions
 (assert sum-strict)
