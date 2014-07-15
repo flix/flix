@@ -1,3 +1,4 @@
+;; Automatically generated. DO NOT EDIT.
 (declare-datatypes () ((Sign Sign.Top Sign.Neg Sign.Zer Sign.Pos Sign.Bot)))
 
 (define-fun Sign.Leq ((x0 Sign) (y0 Sign)) Bool
@@ -8,7 +9,7 @@
         (and (= x0 Sign.Pos) (= y0 Sign.Pos))
         (and (= y0 Sign.Top))))
 
-(define-fun Sign.Join ((x0 Sign) (y0 Sign)) Bool
+(define-fun Sign.Join ((x0 Sign) (y0 Sign) (z0 Sign)) Bool
     (or 
         (and (= x0 Sign.Bot) (= z0 y0))
         (and (= y0 Sign.Bot) (= z0 x0))
@@ -24,10 +25,13 @@
         (and (= y0 Sign.Top) (= z0 Sign.Top))
         (and (= x0 Sign.Top) (= z0 Sign.Top))))
 
+
 ;; Reflexivity: ∀x. x ⊑ x
 (define-fun reflexivity () Bool
     (forall ((x Sign))
         (Sign.Leq x x)))
+(assert reflexivity)
+(check-sat)
     
 
 ;; Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y

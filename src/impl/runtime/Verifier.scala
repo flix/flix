@@ -15,6 +15,7 @@ class Verifier(val program: Program) {
   def verify(): Unit = {
 
     for ((s, lattice) <- program.lattices) {
+      println(";; Automatically generated. DO NOT EDIT.")
       println(datatype(lattice.name, lattice.domain).fmt)
       println(relation2(lattice.name, lattice.leq).fmt)
       println(relation3(lattice.name, lattice.join).fmt)
@@ -43,6 +44,8 @@ class Verifier(val program: Program) {
     |(define-fun reflexivity () Bool
     |    (forall ((x $sort))
     |        ($leq x x)))
+    |(assert reflexivity)
+    |(check-sat)
     """.stripMargin
 
   /**
@@ -150,7 +153,7 @@ class Verifier(val program: Program) {
         smt"(define-fun $s (($var1 $sort) ($var2 $sort)) Bool" + "\n    " + formula.fmt(1) + ")\n"
 
       case Declaration.Relation3(s, sort, var1, var2, var3, formula) =>
-        smt"(define-fun $s (($var1 $sort) ($var2 $sort)) Bool" + "\n    " + formula.fmt(1) + ")\n"
+        smt"(define-fun $s (($var1 $sort) ($var2 $sort) ($var3 $sort)) Bool" + "\n    " + formula.fmt(1) + ")\n"
 
       case Declaration.Datatype(s, variants) =>
         smt"(declare-datatypes () (($s " + variants.map(_.s).mkString(" ") + ")))\n"
