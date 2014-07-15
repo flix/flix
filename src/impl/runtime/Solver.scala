@@ -90,9 +90,10 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
   def newGroundFact(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Unit = {
     // Cache ground fact?
     if (hints.get(p.name).exists(_.repr == Representation.Code)) {
-      facts += p.toGround(env)
       return
     }
+
+    facts += p.toGround(env)
 
     i match {
       case Interpretation.Relation => p.terms match {
