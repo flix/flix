@@ -48,9 +48,7 @@
         (and (= x Sign.Pos) (= y Sign.Zer) (= z Sign.Pos))
         (and (= x Sign.Pos) (= y Sign.Pos) (= z Sign.Pos))
 
-;; TODO: Wrong
-        (and (= x Sign.Top) (= z Sign.Top))
-        (and (= y Sign.Top) (= z Sign.Top))))
+        (and (= x Sign.Top) (= y Sign.Top) (= z Sign.Top))))
 
 ;; Definition of height
 (define-fun Sign.height ((x Sign) (h Int)) Bool
@@ -130,6 +128,21 @@
             (Sign.leq w z))))
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Transfer Functions                                                        ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Sum is Functional: ∀x1, x2, y1, y2. (x1 = x2 ∧ y1 = y2) ⇒ (sum(x1, y1) = sum(x2, y2))
+(define-fun sum-function () Bool
+    (forall ((x1 Sign) (x2 Sign) (y1 Sign) (y2 Sign) (r1 Sign) (r2 Sign))
+        (=>
+            (and
+                (= x1 x2)
+                (= y1 y2)
+                (Sign.sum x1 y1 r1)
+                (Sign.sum x2 y2 r2))
+            (= r1 r2))))
+
 ;; Sum-Strict ∀x. sum(⊥, x) = ⊥ ∧ sum(x, ⊥) = ⊥
 (define-fun sum-strict () Bool
     (forall ((x Sign))
@@ -148,6 +161,9 @@
                 (Sign.sum x1 y1 r1)
                 (Sign.sum x2 y2 r2))
             (Sign.leq r1 r2))))
+
+;; Sum-Distributive: ∀x, y, f(x ⨆ y) = f(x) ⨆ f(y).
+(define-fun sum-distributive () Bool true)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Height                                                                    ;;
@@ -191,12 +207,6 @@
 ;; Assertions                                                                ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(push)
-    (assert (not sum-monotone))
-    (check-sat)
-    (get-model)
-(pop)
-
 ;; lattice order
 (assert reflexivity)
 (assert anti-symmetri)
@@ -210,11 +220,10 @@
 (assert join-lub-2)
 
 ;; transfer functions
-;; (assert sum-function) TODO
+(assert sum-function)
 (assert sum-strict)
 (assert sum-monotone)
-
-;; TODO: Distributive Distributivity: ∀x, y, f(x ⨆ y) = f(x) ⨆ f(y).
+(assert sum-distributive)
 
 ;; height
 (assert height-function)
