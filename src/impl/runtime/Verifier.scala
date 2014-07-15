@@ -84,7 +84,7 @@ class Verifier(val program: Program) {
       }
     })
 
-    Declaration.Relation2(s, Sort.Named("TODO"), x, y, formulae)
+    Declaration.Relation2(s, Sort.Named("rel2-todo"), x, y, formulae)
   }
 
 
@@ -105,7 +105,7 @@ class Verifier(val program: Program) {
       }
     })
 
-    Declaration.Relation3(s, Sort.Named("TODO"), x, y, z, formulae)
+    Declaration.Relation3(s, Sort.Named("rel2-todo"), x, y, z, formulae)
   }
 
 
@@ -126,17 +126,11 @@ class Verifier(val program: Program) {
    */
   sealed trait Declaration {
     def fmt: String = this match {
-      case Declaration.Relation2(s, sort, var1, var2, formula) => {
-        smt"""(define-fun $s (($var1 Sign) ($var2 Sign)) Bool
-              |    ${formula.fmt(1)})
-           """.stripMargin
-      }
+      case Declaration.Relation2(s, sort, var1, var2, formula) =>
+        smt"(define-fun $s (($var1 $sort) ($var2 $sort)) Bool" + "\n    " + formula.fmt(1) + ")\n"
 
-      case Declaration.Relation3(s, sort, var1, var2, var3, formula) => {
-        smt"""(define-fun $s (($var1 Sign) ($var2 Sign) ($var3)) Bool
-              |    ${formula.fmt(1)})
-           """.stripMargin
-      }
+      case Declaration.Relation3(s, sort, var1, var2, var3, formula) =>
+        smt"(define-fun $s (($var1 $sort) ($var2 $sort)) Bool" + "\n    " + formula.fmt(1) + ")\n"
     }
   }
 
@@ -166,7 +160,7 @@ class Verifier(val program: Program) {
       case SmtFormula.Conjunction(formulae) =>
         "(and " + formulae.map(_.fmt(indent)).mkString(" ") + ")"
       case SmtFormula.Disjunction(formulae) =>
-        "(or \n" + "    " * indent + formulae.map(_.fmt(indent + 1)).mkString("\n" + "     " * indent) + ")"
+        "(or \n" + "    " * (indent + 1) + formulae.map(_.fmt(indent + 1)).mkString("\n" + "    " * (indent + 1)) + ")"
       case SmtFormula.Eq(lhs, rhs) => "(= " + lhs.fmt(indent) + " " + rhs.fmt(indent) + ")"
 
     }
@@ -248,6 +242,7 @@ class Verifier(val program: Program) {
     def smt(args: Any*): String = {
       def format(a: Any): String = a match {
         case x: Symbol => x.fmt
+        case x: Sort.Named => x.s
         case x => x.toString
       }
 
