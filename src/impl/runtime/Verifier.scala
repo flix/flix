@@ -52,14 +52,30 @@ class Verifier(val program: Program) {
     |                 ($leq y x))
     |            (= x y))))
     """.stripMargin
-  
+
+
+
+
+  // TODO: Need unification and all that jazz?
+  def genFormula(s: PSym): Formula = {
+    val clauses = program.clauses.filter(_.head.name == s)
+
+    Formula.Disjunction(clauses map {
+      h => Formula.Implication(???, ???)
+    })
+  }
+
 
 
 
   sealed trait Formula
 
   object Formula {
-
+    case class Conjunction(formulae: List[Formula]) extends Formula
+    case class Disjunction(formulae: List[Formula]) extends Formula
+    case class Implication(left: Formula, right: Formula) extends Formula
+    case class Forall() extends Formula
+    case class Exists() extends Formula
   }
 
   /**

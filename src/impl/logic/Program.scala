@@ -3,7 +3,7 @@ package impl.logic
 /**
  * A program consists of a set of horn clauses.
  */
-case class Program(clauses: List[HornClause], interpretation: Map[Symbol.PredicateSymbol, Interpretation]) {
+case class Program(clauses: List[HornClause], interpretation: Map[Symbol.PredicateSymbol, Interpretation]) { // todo: Add lattices?
   /**
    * Returns the set of facts, i.e. horn clauses with an empty body.
    */
