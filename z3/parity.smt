@@ -95,8 +95,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Join is Functional: ∀x1, x2, y1, y2. (x1 = x2 ∧ y1 = y2) ⇒ (x1 ⨆ y1 = x2 ⨆ y2)
-(define-fun join-function () Bool true)
-;; TODO
+(define-fun join-function () Bool
+    (forall ((x1 Sign) (x2 Sign) (y1 Sign) (y2 Sign) (r1 Sign) (r2 Sign))
+        (=>
+            (and
+                (= x1 x2)
+                (= y1 y2)
+                (Sign.join x1 y1 r1)
+                (Sign.join x2 y2 r2))
+            (= r1 r2))))
 
 ;; Join is Total: ∀x, y, ∃z. z = x ⨆ y.
 (define-fun join-total () Bool
