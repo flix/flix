@@ -19,13 +19,15 @@ class Verifier(val program: Program) {
     for ((p, i) <- program.interpretation) {
       i match {
         case Interpretation.LatticeMap(lattice) => {
-          println(reflexivity(p, lattice.leq))
-          println(antiSymmetri(p, lattice.leq))
+
 
           println("~~~~~~~~")
           println(genRelation2(lattice.leq).fmt)
           //println(genJoin(lattice.join).fmt)
           println("~~~~~~~~")
+
+          println(reflexivity(p, lattice.leq))
+          println(antiSymmetri(p, lattice.leq))
 
         }
         case _ => // nop
@@ -163,15 +165,25 @@ class Verifier(val program: Program) {
      */
     case class Eq(left: SmtFormula, right: SmtFormula) extends SmtFormula
 
-
+    /**
+     * A conjunction of formulae.
+     */
     case class Conjunction(formulae: List[SmtFormula]) extends SmtFormula
 
+    /**
+     * A disjunction of formulae.
+     */
     case class Disjunction(formulae: List[SmtFormula]) extends SmtFormula
 
-    case class Implication(left: SmtFormula, right: SmtFormula) extends SmtFormula
+    /**
+     * An implication of antecedent => consequent.
+     */
+    case class Implication(antecedent: SmtFormula, consequent: SmtFormula) extends SmtFormula
 
+    // TODO
     case class ForAll() extends SmtFormula
 
+    // TODO
     case class Exists() extends SmtFormula
 
   }
