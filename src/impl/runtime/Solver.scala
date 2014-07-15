@@ -161,11 +161,10 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
   // Evaluation                                                              //
   /////////////////////////////////////////////////////////////////////////////
 
-
   /**
-   * Returns a list of models for the given horn clause `h` under the given environment `env`.
+   * Returns a list of models for the given horn clause `h` under the given environment `env0`.
    */
-  def evaluate(h: HornClause, env: Map[VSym, Value]): List[Map[VSym, Value]] = {
+  def evaluate(h: HornClause, env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
     def isData(p: Predicate): Boolean = hints.get(p.name).exists(_.repr == Representation.Data)
 
     // Evaluate relational predicates before functional predicates.
@@ -174,17 +173,10 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
     val predicates = relationals ::: functionals
 
     // Fold each predicate over the intial environment.
-    val init = List(env)
+    val init = List(env0)
     (init /: predicates) {
-      case (envs, p) => evaluate(p, program.interpretation(p.name), envs)
+      case (envs, p) => envs.flatMap(env => evaluate(p, program.interpretation(p.name), env))
     }
-  }
-
-  /**
-   * Returns a list of environments for the given predicate `p` with interpretation `i` under *each* of the given environments `envs`.
-   */
-  def evaluate(p: Predicate, i: Interpretation, envs: List[Map[VSym, Value]]): List[Map[VSym, Value]] = {
-    envs flatMap (evaluate(p, i, _))
   }
 
   /**
@@ -275,8 +267,8 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
   private def join(s: PSym, v1: Value, v2: Value): Value = {
     val p = Predicate(s, List(v1.asTerm, v2.asTerm, Term.Variable(Symbol.VariableSymbol("!x"))))
     val models = getSat(p)
-    val value = asUniqueValue(Symbol.VariableSymbol("!x"), models)
 
+    val value = asUniqueValue(Symbol.VariableSymbol("!x"), models)
     value match {
       case None => throw Error.NonUniqueModel(s)
       case Some(v) => v
