@@ -10,4 +10,5 @@ case class Lattice(domain: Type,
                    clauses: List[HornClause],
                    interpretation: Map[Symbol.PredicateSymbol, Interpretation])
 
+// TODO: Remove interpretation?
 // TODO: Need transfer function symbols

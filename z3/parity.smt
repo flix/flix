@@ -7,8 +7,6 @@
 ;; Lattice Definitions                                                       ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: We could also use define-fun in a better way.
-
 ;; Definition of Leq
 (define-fun Sign.leq ((x Sign) (y Sign)) Bool
     (or (= x Sign.Bot)

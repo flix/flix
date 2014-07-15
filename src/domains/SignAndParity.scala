@@ -52,10 +52,7 @@ object SignAndParity {
     )
   )
 
-  val Interpretations = Map(
-    LeqSymbol -> Interpretation.Leq,
-    JoinSymbol -> Interpretation.Join
-  ) ++ Sign.Interpretations ++ Parity.Interpretations
+  val Interpretations = Map.empty[Symbol.PredicateSymbol, Interpretation]
 
   val Hints = Map(
     SumSymbol -> Hint(Representation.Code)

@@ -26,8 +26,8 @@ object SignAndParity01 {
     val interpretations = Map(
       X -> Interpretation.Relation,
       Y -> Interpretation.Relation,
-      R -> Interpretation.LatticeMap(SignAndParity.lattice)
-    ) ++ SignAndParity.lattice.interpretation
+      R -> Interpretation.Lattice
+    )
 
     val hints = Map(
       X -> Hint(Representation.Data),
@@ -35,7 +35,11 @@ object SignAndParity01 {
       R -> Hint(Representation.Data)
     ) ++ SignAndParity.Hints
 
-    val program = Program(facts ::: clauses ::: SignAndParity.lattice.clauses, interpretations)
+    val lattices = Map(
+      R -> SignAndParity.lattice
+    )
+
+    val program = Program(facts ::: clauses ::: SignAndParity.lattice.clauses, interpretations, lattices)
 
     Runner.run(program, hints)
   }

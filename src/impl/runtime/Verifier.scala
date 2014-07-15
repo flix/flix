@@ -15,22 +15,15 @@ class Verifier(val program: Program) {
   def verify(): Unit = {
 
     println("Proof Burdens")
-    // TODO: Need better access to lattices
-    for ((p, i) <- program.interpretation) {
-      i match {
-        case Interpretation.LatticeMap(lattice) => {
+    for ((s, lattice) <- program.lattices) {
+      println("~~~~~~~~")
+      println(relation2(lattice.leq).fmt)
+      println(relation3(lattice.join).fmt)
+      println("~~~~~~~~")
 
-          println("~~~~~~~~")
-          println(relation2(lattice.leq).fmt)
-          println(relation3(lattice.join).fmt)
-          println("~~~~~~~~")
-
-          println(reflexivity(Sort.Named("TODO"), lattice.leq))
-          println(antiSymmetri(Sort.Named("TODO"), lattice.leq))
-          println(transitivity(Sort.Named("TODO"), lattice.leq))
-        }
-        case _ => // nop
-      }
+      println(reflexivity(Sort.Named("TODO"), lattice.leq))
+      println(antiSymmetri(Sort.Named("TODO"), lattice.leq))
+      println(transitivity(Sort.Named("TODO"), lattice.leq))
     }
 
     println()

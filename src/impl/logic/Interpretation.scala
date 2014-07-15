@@ -3,12 +3,35 @@ package impl.logic
 sealed trait Interpretation
 
 object Interpretation {
+
+  /**
+   * A semantics where the predicate P(x) holds iff x ∈ P.
+   */
   case object Relation extends Interpretation
-  case class LatticeMap(lattice: Lattice) extends Interpretation
 
-// TODO: Why are these not used by the solver?
-  case object Leq extends Interpretation
-  case object Join extends Interpretation
+  /**
+   * A semantics where the predicate P(x) holds iff x ⊑ P.
+   */
+  case object Lattice extends Interpretation
 
-  // TODO: Atleast and Atmost
+  /**
+   * A semantics where the predicate P() holds iff |P| = 1.
+   */
+  case object Singleton extends Interpretation
+
+  /**
+   * A semantics where the predicate P() holds iff |x| > 1.
+   */
+  case object NonSingleton extends Interpretation
+
+  /**
+   * A semantics where the predicate P(c, x) holds iff c ⊑ x.
+   */
+  case object Atleast extends Interpretation
+
+  /**
+   * A semantics where the predicate P(x, c) holds iff x ⊑ c.
+   */
+  case object Atmost extends Interpretation
+
 }

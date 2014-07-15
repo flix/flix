@@ -70,10 +70,7 @@ object Sign {
     HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Top, Top)))
   )
 
-  val Interpretations = Map(
-    LeqSymbol -> Interpretation.Leq,
-    JoinSymbol -> Interpretation.Join
-  )
+  val Interpretations = Map.empty[Symbol.PredicateSymbol, Interpretation]
 
   val Hints = Map(
     SumSymbol -> Hint(Representation.Code)

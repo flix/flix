@@ -95,7 +95,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
     }
 
     facts += p.toGround(env)
-// TODO: Collapse into one DataStore
+    // TODO: Collapse into one DataStore
     i match {
       case Interpretation.Relation => p.terms match {
         case List(t1) =>
@@ -129,8 +129,9 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
             propagateFact(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm, v5.asTerm)))
       }
 
-      case Interpretation.LatticeMap(lattice) => p.terms match {
+      case Interpretation.Lattice => p.terms match {
         case List(t1) =>
+          val lattice = program.lattices(p.name)
           val newValue = t1.toValue(env)
           val oldValue = map1.get(p.name).getOrElse(lattice.bot)
           val joinValue = join(lattice.join, newValue, oldValue)

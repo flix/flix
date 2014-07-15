@@ -46,7 +46,7 @@ object FamilyTree03 {
       ParentChildSymbol -> Hint(Representation.Data)
     )
 
-    val program = Program(facts ::: clauses, interpretations)
+    val program = Program(facts ::: clauses, interpretations, Map.empty)
 
     Runner.run(program, hints)
   }

@@ -117,7 +117,7 @@ summaryedge(d4, c, d5) :-
       name: String => (Symbol.PredicateSymbol(name), Hint(Representation.Data))
     }.toMap
 
-    val program = Program(facts ::: clauses, interpretations)
+    val program = Program(facts ::: clauses, interpretations, Map.empty)
 
     Runner.run(program, hints)
   }

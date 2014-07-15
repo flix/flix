@@ -26,8 +26,8 @@ object Sign01 {
     val interpretations = Map(
       X -> Interpretation.Relation,
       Y -> Interpretation.Relation,
-      R -> Interpretation.LatticeMap(Sign.lattice)
-    ) ++ Sign.lattice.interpretation
+      R -> Interpretation.Lattice
+    )
 
     val hints = Map(
       X -> Hint(Representation.Data),
@@ -35,7 +35,11 @@ object Sign01 {
       R -> Hint(Representation.Data)
     ) ++ Sign.Hints
 
-    val program = Program(facts ::: clauses ::: Sign.lattice.clauses, interpretations)
+    val lattices = Map(
+      R -> Sign.lattice
+    )
+
+    val program = Program(facts ::: clauses ::: Sign.lattice.clauses, interpretations, lattices)
 
     Runner.run(program, hints)
   }
