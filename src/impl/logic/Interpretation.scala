@@ -4,7 +4,6 @@ sealed trait Interpretation
 
 object Interpretation {
   case object Relation extends Interpretation
-  case object Function extends Interpretation
   case class LatticeMap(lattice: Lattice) extends Interpretation
 
   // TODO: Atleast and Atmost
