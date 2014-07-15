@@ -23,7 +23,7 @@ class Verifier(val program: Program) {
           println(antiSymmetri(p, lattice.leq))
 
           println("~~~~~~~~")
-          println(genLeq(lattice.leq))
+          println(genLeq(lattice.leq).fmt)
           println("~~~~~~~~")
 
         }
@@ -91,7 +91,7 @@ class Verifier(val program: Program) {
       }
     })
 
-    Declaration.Relation3("x", "y", formulae)
+    Declaration.Function2(s, "x", "y", formulae)
   }
 
   def genJoin: Formula = ???
@@ -101,22 +101,50 @@ class Verifier(val program: Program) {
   def genEnv(env: Map[VSym, Term]): Formula = Formula.Conjunction(env.toList.map {
     case (v, t) => t match {
       case Term.Bool(true) => Formula.True
-      case Term.Constructor0(s) => Formula.Eq(v, s)
+      case Term.Variable(_) => Formula.True
+      case Term.Constructor0(s) => Formula.Eq(Formula.Variable(v), Formula.Constructor0(s))
     }
   })
 
 
-  sealed trait Declaration
+  sealed trait Declaration {
+    def fmt: String = this match {
+      case Declaration.Function2(s, var1, var2, formula) =>
+        smt"""(define-fun $s (($var1 Sign) ($var2 Sign)) Bool
+             |  ${formula.fmt})
+           """.stripMargin
+    }
+  }
 
   object Declaration {
 
-    case class Relation3(var1: String, var2: String, formula: Formula) extends Declaration
+    // TODO: Need sort
+    case class Function2(name: Symbol.PredicateSymbol, var1: String, var2: String, formula: Formula) extends Declaration
 
   }
 
-  sealed trait Formula
+  sealed trait Formula {
+    def fmt: String = this match {
+      case Formula.True => "true"
+      case Formula.False => "false"
+      case Formula.Variable(s) => s.fmt
+      case Formula.Constructor0(s) => s.fmt
+      case Formula.Conjunction(formulae) => "(and " + formulae.map(_.fmt).mkString(" ") + ")"
+      case Formula.Disjunction(formulae) => "(or " + formulae.map(_.fmt).mkString(" ") + ")"
+      case Formula.Eq(lhs, rhs) => "(= " + lhs.fmt + " " + rhs.fmt + ")"
+
+    }
+  }
 
   object Formula {
+
+    case object True extends Formula
+
+    case object False extends Formula
+
+    case class Variable(v: Symbol.VariableSymbol) extends Formula
+
+    case class Constructor0(s: Symbol.NamedSymbol) extends Formula
 
     case class Conjunction(formulae: List[Formula]) extends Formula
 
@@ -128,11 +156,7 @@ class Verifier(val program: Program) {
 
     case class Exists() extends Formula
 
-    case class Eq(left: Any, right: Any) extends Formula
-
-    case object True extends Formula
-
-    case object False extends Formula
+    case class Eq(left: Formula, right: Formula) extends Formula
 
 
   }
