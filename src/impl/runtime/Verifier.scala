@@ -54,7 +54,13 @@ class Verifier(val program: Program) {
     """.stripMargin
 
 
+  def genDatatype: String = ???
 
+  def genLeq: Formula = ???
+
+  def genJoin: Formula = ???
+
+  def genTransfer2: Formula = ???
 
   // TODO: Need unification and all that jazz?
   def genFormula(s: PSym): Formula = {
