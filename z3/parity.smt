@@ -163,7 +163,19 @@
             (Sign.leq r1 r2))))
 
 ;; Sum-Distributive: ∀x, y, f(x ⨆ y) = f(x) ⨆ f(y).
-(define-fun sum-distributive () Bool true)
+;; Sum-Distributive: ∀x1, x2, y1, y2, sum(x1 ⨆ y1, x2 ⨆ y2) = sum(x1, y1) ⨆ sum(x2, y2).
+;; Sum-Distributive: ∀x1, x2, y1, y2, r1 = x1 ⨆ y1, r2 = x2 ⨆ y2, r3 = sum(r1, r2), r4 = sum(x1, y1), r5 = sum(x2, y2), r6 = r4 ⨆ r5 ⇒ r3 = r6.
+;;(define-fun sum-distributive () Bool
+;;    (forall ((x1 Sign) (x2 Sign) (y1 Sign) (y2 Sign) (r1 Sign) (r2 Sign) (r3 Sign) (r4 Sign) (r5 Sign) (r6 Sign))
+;;        (=>
+;;            (and
+;;                (Sign.join x1 y1 r1)
+;;                (Sign.join x2 y2 r2)
+;;                (Sign.sum r1 r2 r3)
+;;                (Sign.sum x1 y1 r4)
+;;                (Sign.sum x2 y2 r5)
+;;                (Sign.join r4 r5 r6))
+;;            (= r3 r6))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Height                                                                    ;;
@@ -223,7 +235,7 @@
 (assert sum-function)
 (assert sum-strict)
 (assert sum-monotone)
-(assert sum-distributive)
+;;(assert sum-distributive)
 
 ;; height
 (assert height-function)
