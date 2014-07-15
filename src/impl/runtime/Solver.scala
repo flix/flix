@@ -9,8 +9,6 @@ import util.collection.mutable
  */
 class Solver(val program: Program, hints: Map[PSym, Hint]) {
 
-  // TODO: Remove inv from arg since it doesnt change.
-
   /**
    * A set of predicate facts.
    */
@@ -70,7 +68,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
     // Satisfying a horn clause may cause additional items to be added to the work list.
     while (queue.nonEmpty) {
       val (h, env) = queue.dequeue()
-      satisfy(h, program.interpretation, env)
+      satisfy(h, env)
     }
   }
 
@@ -87,9 +85,9 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
   }
 
   /**
-   * Returns a list of models for the given horn clause `h` with interpretations `inv` under the given environment `env`.
+   * Returns a list of models for the given horn clause `h` under the given environment `env`.
    */
-  def evaluate(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): List[Map[VSym, Value]] = {
+  def evaluate(h: HornClause, env: Map[VSym, Value]): List[Map[VSym, Value]] = {
     def isData(p: Predicate): Boolean = hints.get(p.name).exists(_.repr == Representation.Data)
 
     // Evaluate relational predicates before functional predicates.
@@ -100,7 +98,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
     // Fold each predicate over the intial environment.
     val init = List(env)
     (init /: predicates) {
-      case (envs, p) => evaluate(p, inv(p.name), envs)
+      case (envs, p) => evaluate(p, program.interpretation(p.name), envs)
     }
   }
 
@@ -152,10 +150,10 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
    *
    * Adds all facts which satisfies the given horn clause `h`.
    */
-  def satisfy(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): Unit = {
-    val models = evaluate(h, inv, env)
+  def satisfy(h: HornClause, env: Map[VSym, Value]): Unit = {
+    val models = evaluate(h, env)
     for (model <- models) {
-      satisfy(h.head, inv(h.head.name), model)
+      satisfy(h.head, program.interpretation(h.head.name), model)
     }
   }
 
