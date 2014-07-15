@@ -48,6 +48,7 @@
         (and (= x Sign.Pos) (= y Sign.Zer) (= z Sign.Pos))
         (and (= x Sign.Pos) (= y Sign.Pos) (= z Sign.Pos))
 
+;; TODO: Wrong
         (and (= x Sign.Top) (= z Sign.Top))
         (and (= y Sign.Top) (= z Sign.Top))))
 
@@ -137,10 +138,11 @@
             (Sign.sum x Sign.Bot Sign.Bot))))
 
 ;; Sum-Montone
-;; TODO: Currently broken.
+;; ∀x1, x2, y1, y2. x1 ⊑ x2 ∧ y1 ⊑ y2 ⇒ f(x1, y1) ⊑ f(x2, y2)
 (define-fun sum-monotone () Bool
-    (forall ((x1 Sign) (y1 Sign) (r1 Sign) (x2 Sign) (y2 Sign) (r2 Sign))
-        (=> (and
+    (forall ((x1 Sign) (x2 Sign) (y1 Sign) (y2 Sign) (r1 Sign) (r2 Sign))
+        (=>
+            (and
                 (Sign.leq x1 x2)
                 (Sign.leq y1 y2)
                 (Sign.sum x1 y1 r1)
@@ -189,6 +191,12 @@
 ;; Assertions                                                                ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(push)
+    (assert (not sum-monotone))
+    (check-sat)
+    (get-model)
+(pop)
+
 ;; lattice order
 (assert reflexivity)
 (assert anti-symmetri)
@@ -202,8 +210,10 @@
 (assert join-lub-2)
 
 ;; transfer functions
+;; (assert sum-function) TODO
 (assert sum-strict)
-;; (assert sum-monotone)
+(assert sum-monotone)
+
 ;; TODO: Distributive Distributivity: ∀x, y, f(x ⨆ y) = f(x) ⨆ f(y).
 
 ;; height
