@@ -89,7 +89,7 @@ class Verifier(val program: Program) {
         case None => SmtFormula.True // nop
         case Some(env) =>
           if (h.isFact)
-            genEnv(env)
+            asFormula(Set(x, y), env)
           else
             SmtFormula.True // TODO
       }
@@ -102,6 +102,7 @@ class Verifier(val program: Program) {
   def relation3(sort: LSym, s: PSym): Declaration = {
     val clauses = program.clauses.filter(_.head.name == s)
 
+    // TODO: Need to genereate fresh symbols.
     val (x, y, z) = (Symbol.VariableSymbol("x0"), Symbol.VariableSymbol("y0"), Symbol.VariableSymbol("z0"))
 
     val p = Predicate(s, List(Term.Variable(x), Term.Variable(y), Term.Variable(z)))
@@ -110,7 +111,7 @@ class Verifier(val program: Program) {
         case None => SmtFormula.True // nop
         case Some(env) =>
           if (h.isFact)
-            genEnv(env)
+            asFormula(Set(x, y, z), env)
           else
             SmtFormula.True // TODO
       }
@@ -120,11 +121,20 @@ class Verifier(val program: Program) {
   }
 
   // TODO: Add bound variables?
-  def genEnv(env: Map[VSym, Term]): SmtFormula = SmtFormula.Conjunction(env.toList.map {
-    case (v, t) => SmtFormula.Eq(SmtFormula.Variable(v), asFormula(t, env))
+  def asFormula(bound: Set[VSym], env: Map[VSym, Term]): SmtFormula = SmtFormula.Conjunction(env.toList.flatMap {
+    case (v, t) => {
+      val f = SmtFormula.Eq(SmtFormula.Variable(v), asFormula(t, env))
+      if (f.variables.exists(s => !(bound contains s) && !(env.keySet contains s))) {
+        // A free variable exists in the formula. Ignore the clause.
+        None
+      } else
+        Some(f)
+    }
   })
 
-  // TODO
+  /**
+   * Returns the given term `t` as a SMT-LIB formula under the given environment `env`.
+   */
   def asFormula(t: Term, env: Map[VSym, Term]): SmtFormula = t match {
     case Term.Bool(b) => if (b) SmtFormula.True else SmtFormula.False
     case Term.Variable(s) => env.get(s) match {
@@ -173,6 +183,16 @@ class Verifier(val program: Program) {
    * An SMT-LIB formula.
    */
   sealed trait SmtFormula {
+    def variables: Set[Symbol.VariableSymbol] = this match {
+      case SmtFormula.True => Set.empty
+      case SmtFormula.False => Set.empty
+      case SmtFormula.Variable(s) => Set(s)
+      case SmtFormula.Constructor0(s) => Set.empty
+      case SmtFormula.Conjunction(formulae) => (Set.empty[VSym] /: formulae)((xs, f) => xs ++ f.variables)
+      case SmtFormula.Disjunction(formulae) => (Set.empty[VSym] /: formulae)((xs, f) => xs ++ f.variables)
+      case SmtFormula.Eq(lhs, rhs) => lhs.variables ++ rhs.variables
+    }
+
     def fmt(indent: Int): String = this match {
       case SmtFormula.True => "true"
       case SmtFormula.False => "false"
