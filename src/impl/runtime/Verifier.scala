@@ -14,13 +14,10 @@ class Verifier(val program: Program) {
    */
   def verify(): Unit = {
 
-    println("Proof Burdens")
     for ((s, lattice) <- program.lattices) {
-      println("~~~~~~~~")
       println(datatype(lattice.name, lattice.domain).fmt)
       println(relation2(lattice.name, lattice.leq).fmt)
       println(relation3(lattice.name, lattice.join).fmt)
-      println("~~~~~~~~")
 
       println(reflexivity(lattice.name, lattice.leq))
       println(antiSymmetri(lattice.name, lattice.leq))
@@ -124,7 +121,7 @@ class Verifier(val program: Program) {
   def asFormula(bound: Set[VSym], env: Map[VSym, Term]): SmtFormula = SmtFormula.Conjunction(env.toList.flatMap {
     case (v, t) => {
       val f = SmtFormula.Eq(SmtFormula.Variable(v), asFormula(t, env))
-      if (f.variables.exists(s => !(bound contains s) && !(env.keySet contains s))) {
+      if (f.variables.exists(s => !(bound contains s))) {
         // A free variable exists in the formula. Ignore the clause.
         None
       } else
@@ -156,7 +153,7 @@ class Verifier(val program: Program) {
         smt"(define-fun $s (($var1 $sort) ($var2 $sort)) Bool" + "\n    " + formula.fmt(1) + ")\n"
 
       case Declaration.Datatype(s, variants) =>
-        smt"(declare-datatypes () (($s " + variants.map(_.s).mkString(", ") + ")))\n"
+        smt"(declare-datatypes () (($s " + variants.map(_.s).mkString(" ") + ")))\n"
     }
   }
 
