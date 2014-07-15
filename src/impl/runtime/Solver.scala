@@ -222,6 +222,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
    */
   // TODO: Must take cycles into account.
   def getSat(p: Predicate, env0: Map[VSym, Term] = Map.empty): List[Map[VSym, Term]] = {
+    // TODO: Rewrite to loop
     program.clauses.flatMap {
       h => Unification.unify(p, h.head, env0) match {
         case None =>
