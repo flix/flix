@@ -23,7 +23,8 @@ class Verifier(val program: Program) {
           println(antiSymmetri(p, lattice.leq))
 
           println("~~~~~~~~")
-          println(genLeq(lattice.leq).fmt)
+          println(genRelation2(lattice.leq).fmt)
+          //println(genJoin(lattice.join).fmt)
           println("~~~~~~~~")
 
         }
@@ -61,25 +62,13 @@ class Verifier(val program: Program) {
 
   def genDatatype: String = ???
 
-  def genLeq(s: PSym): Declaration = {
-    //    val Leq = List(
-    //      HornClause(Predicate(LeqSymbol, List(Bot, Term.Variable("_")))),
-    //      HornClause(Predicate(LeqSymbol, List(Neg, Neg))),
-    //      HornClause(Predicate(LeqSymbol, List(Zero, Zero))),
-    //      HornClause(Predicate(LeqSymbol, List(Pos, Pos))),
-    //      HornClause(Predicate(LeqSymbol, List(Term.Variable("_"), Top)))
-    //    )
-    //    (define-fun Sign.leq ((x Sign) (y Sign)) Bool
-    //      (or (= x Sign.Bot)
-    //    (and (= x Sign.Neg) (= y Sign.Neg))
-    //    (and (= x Sign.Zer) (= y Sign.Zer))
-    //    (and (= x Sign.Pos) (= y Sign.Pos))
-    //    (= y Sign.Top)))
-
+  /**
+   * Returns an SMT formula for binary function defined by the given predicate symbol `s`.
+   */
+  def genRelation2(s: PSym): Declaration = {
     val clauses = program.clauses.filter(_.head.name == s)
 
     val p = Predicate(s, List(Term.Variable("x"), Term.Variable("y")))
-
     val formulae = SmtFormula.Disjunction(clauses.map {
       h => Unification.unify(h.head, p, Map.empty[VSym, Term]) match {
         case None => SmtFormula.True // nop
@@ -96,8 +85,10 @@ class Verifier(val program: Program) {
 
   def genJoin: SmtFormula = ???
 
-  def genTransfer2: SmtFormula = ???
 
+  /**
+   * TODO: DOC
+   */
   def genEnv(env: Map[VSym, Term]): SmtFormula = SmtFormula.Conjunction(env.toList.map {
     case (v, t) => t match {
       case Term.Bool(true) => SmtFormula.True
@@ -107,6 +98,9 @@ class Verifier(val program: Program) {
   })
 
 
+  /**
+   * An SMT-LIB declaration.
+   */
   sealed trait Declaration {
     def fmt: String = this match {
       case Declaration.Function2(s, var1, var2, formula) =>
@@ -121,8 +115,12 @@ class Verifier(val program: Program) {
     // TODO: Need sort
     case class Function2(name: Symbol.PredicateSymbol, var1: String, var2: String, formula: SmtFormula) extends Declaration
 
+
   }
 
+  /**
+   * An SMT-LIB formula.
+   */
   sealed trait SmtFormula {
     def fmt(indent: Int): String = this match {
       case SmtFormula.True => "true"
@@ -140,13 +138,31 @@ class Verifier(val program: Program) {
 
   object SmtFormula {
 
+    /**
+     * The true literal.
+     */
     case object True extends SmtFormula
 
+    /**
+     * The false literal.
+     */
     case object False extends SmtFormula
 
+    /**
+     * A variable.
+     */
     case class Variable(v: Symbol.VariableSymbol) extends SmtFormula
 
+    /**
+     * A null-ary constructor.
+     */
     case class Constructor0(s: Symbol.NamedSymbol) extends SmtFormula
+
+    /**
+     * A equality formula.
+     */
+    case class Eq(left: SmtFormula, right: SmtFormula) extends SmtFormula
+
 
     case class Conjunction(formulae: List[SmtFormula]) extends SmtFormula
 
@@ -157,9 +173,6 @@ class Verifier(val program: Program) {
     case class ForAll() extends SmtFormula
 
     case class Exists() extends SmtFormula
-
-    case class Eq(left: SmtFormula, right: SmtFormula) extends SmtFormula
-
 
   }
 
