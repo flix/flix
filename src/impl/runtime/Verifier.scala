@@ -54,6 +54,14 @@ class Verifier(val program: Program) {
     """.stripMargin
   
 
+
+
+  sealed trait Formula
+
+  object Formula {
+
+  }
+
   /**
    * A string interpolator which takes symbols into account.
    */
