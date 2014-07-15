@@ -3,20 +3,11 @@ package impl.logic
 sealed trait Interpretation
 
 object Interpretation {
-  case class Relation(repr: Representation) extends Interpretation
-  case class Function(repr: Representation) extends Interpretation
+  case object Relation extends Interpretation
+  case object Function extends Interpretation
   case class LatticeMap(lattice: Lattice) extends Interpretation
 
+  // TODO: Atleast and Atmost
   case object Leq extends Interpretation
   case object Join extends Interpretation
-
-  // TODO: Atleast and Atmost
-}
-
-// TODO: Move into "Hints"
-sealed trait Representation
-
-object Representation {
-  case object Code extends Representation
-  case object Data extends Representation
 }

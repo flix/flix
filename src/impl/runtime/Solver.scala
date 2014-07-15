@@ -7,7 +7,9 @@ import util.collection.mutable
 /**
  * A semi-naive solver.
  */
-class Solver(val program: Program) {
+class Solver(val program: Program, hints: Map[PSym, Hint]) {
+
+  // TODO: Remove inv from arg since it doesnt change.
 
   /**
    * A set of predicate facts.
@@ -56,11 +58,11 @@ class Solver(val program: Program) {
 
     // Satisfy all facts. Satisfying a fact adds violated horn clauses (and environments) to the work list.
     for (h <- program.facts) {
-      val interpretation = program.interpretation(h.head.name)
 
-      interpretation match {
-        case Interpretation.Relation(Representation.Data) => satisfy(h.head, interpretation, Map.empty[VSym, Value])
-        case _ => // nop
+      hints.get(h.head.name) map {
+        case Hint(Representation.Code) => // nop
+        case Hint(Representation.Data) =>
+          satisfy(h.head, program.interpretation(h.head.name), Map.empty[VSym, Value])
       }
     }
 
@@ -88,14 +90,11 @@ class Solver(val program: Program) {
    * Returns a list of models for the given horn clause `h` with interpretations `inv` under the given environment `env`.
    */
   def evaluate(h: HornClause, inv: Map[PSym, Interpretation], env: Map[VSym, Value]): List[Map[VSym, Value]] = {
-    def isData(p: Predicate, inv: Map[PSym, Interpretation]): Boolean = inv(p.name) match {
-      case Interpretation.Relation(Representation.Data) => true
-      case _ => false
-    }
+    def isData(p: Predicate): Boolean = hints.get(p.name).exists(_.repr == Representation.Data)
 
     // Evaluate relational predicates before functional predicates.
-    val relationals = h.body filter (p => isData(p, inv))
-    val functionals = h.body filterNot (p => isData(p, inv))
+    val relationals = h.body filter (p => isData(p))
+    val functionals = h.body filterNot (p => isData(p))
     val predicates = relationals ::: functionals
 
     // Fold each predicate over the intial environment.
@@ -120,9 +119,9 @@ class Solver(val program: Program) {
       return List(env0)
     }
 
-    i match {
-      // TODO: Use regular unification and then check if it as value?
-      case Interpretation.Relation(Representation.Data) =>
+    // TODO: Use regular unification and then check if it as value?
+    (i, hints.get(p.name)) match {
+      case (Interpretation.Relation, Some(Hint(Representation.Data))) =>
         p.terms match {
           case ts@List(t1) => relation1.get(p.name).toList.flatMap {
             case v1 => Unification.unifyValues(ts, List(v1), env0)
@@ -167,8 +166,10 @@ class Solver(val program: Program) {
     // Cache ground predicates (i.e. facts).
     facts += p.toGround(env)
 
-    i match {
-      case Interpretation.Relation(Representation.Data) => p.terms match {
+    val repr = hints.get(p.name).map(_.repr).getOrElse(Representation.Code)
+
+    (i, repr) match {
+      case (Interpretation.Relation, Representation.Data) => p.terms match {
         case List(t1) =>
           val v1 = t1.toValue(env)
           val newFact = relation1.put(p.name, v1)
@@ -200,7 +201,7 @@ class Solver(val program: Program) {
             propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm, v5.asTerm)))
       }
 
-      case Interpretation.LatticeMap(lattice) => p.terms match {
+      case (Interpretation.LatticeMap(lattice), Representation.Data) => p.terms match {
         case List(t1) =>
           val newValue = t1.toValue(env)
           val oldValue = map1.get(p.name).getOrElse(lattice.bot)

@@ -1,6 +1,7 @@
 package domains
 
 import impl.logic._
+import impl.runtime.{Hint, Representation}
 import syntax.Symbols._
 
 object Interval {
@@ -96,8 +97,11 @@ object Interval {
 
   val Interpretations = Map(
     LeqSymbol -> Interpretation.Leq,
-    JoinSymbol -> Interpretation.Join,
-    SumSymbol -> Interpretation.Function(Representation.Code)
+    JoinSymbol -> Interpretation.Join
+  )
+
+  val Hints = Map(
+    SumSymbol -> Hint(Representation.Code)
   )
 
   val lattice = Lattice(Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum, Interpretations)

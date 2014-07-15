@@ -1,11 +1,8 @@
 package examples
 
-import impl.logic._
+import impl.logic.{HornClause, Predicate, Term, _}
+import impl.runtime.{Hint, Representation, Runner}
 import syntax.Symbols._
-import impl.logic.HornClause
-import impl.logic.Predicate
-import impl.logic.Term
-import impl.runtime.{Runner, Verifier}
 
 object IFDS {
   def main(args: Array[String]): Unit = {
@@ -68,7 +65,7 @@ summaryedge(d4, c, d5) :-
       "main_start" -> "main_call",
       "main_call" -> "main_end",
       "proc_start" -> "proc_end"
-    ).map{case (a,b) => (Term.Constructor0(a),Term.Constructor0(b))}.toMap
+    ).map { case (a, b) => (Term.Constructor0(a), Term.Constructor0(b))}.toMap
 
     val facts = List(
       Predicate("CFG", List(Term.Constructor0("main_start"), Term.Constructor0("main_call"))),
@@ -102,14 +99,26 @@ summaryedge(d4, c, d5) :-
       "EsharpIntra",
       "EsharpCS",
       "EsharpER"
-    )
+    ).map {
+      name: String => (Symbol.PredicateSymbol(name), Interpretation.Relation)
+    }.toMap
 
-      .map {
-      name: String => (Symbol.PredicateSymbol(name), Interpretation.Relation(Representation.Data))
+    val hints = List(
+      "PathEdge",
+      "SummaryEdge",
+      "CFG",
+      "CallGraph",
+      "StartNode",
+      "EndNode",
+      "EsharpIntra",
+      "EsharpCS",
+      "EsharpER"
+    ).map {
+      name: String => (Symbol.PredicateSymbol(name), Hint(Representation.Data))
     }.toMap
 
     val program = Program(facts ::: clauses, interpretations)
 
-    Runner.run(program)
+    Runner.run(program, hints)
   }
 }

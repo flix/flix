@@ -2,7 +2,7 @@ package examples
 
 import domains.Parity
 import impl.logic._
-import impl.runtime.Runner
+import impl.runtime.{Hint, Representation, Runner}
 import syntax.Symbols._
 
 object Parity01 {
@@ -24,14 +24,20 @@ object Parity01 {
     )
 
     val interpretations = Map(
-      X -> Interpretation.Relation(Representation.Data),
-      Y -> Interpretation.Relation(Representation.Data),
+      X -> Interpretation.Relation,
+      Y -> Interpretation.Relation,
       R -> Interpretation.LatticeMap(Parity.lattice)
     ) ++ Parity.lattice.interpretation
 
+    val hints = Map(
+      X -> Hint(Representation.Data),
+      Y -> Hint(Representation.Data),
+      R -> Hint(Representation.Data)
+    ) ++ Parity.Hints
+
     val program = Program(facts ::: clauses ::: Parity.lattice.clauses, interpretations)
 
-    Runner.run(program)
+    Runner.run(program, hints)
   }
 
 }

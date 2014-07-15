@@ -1,7 +1,7 @@
 package examples
 
 import impl.logic._
-import impl.runtime.Runner
+import impl.runtime.{Hint, Representation, Runner}
 import syntax.Symbols._
 
 object FamilyTree02 {
@@ -47,14 +47,20 @@ object FamilyTree02 {
     )
 
     val interpretations = Map(
-      ParentSymbol -> Interpretation.Relation(Representation.Data),
-      AgeAndSexSymbol -> Interpretation.Relation(Representation.Data),
-      MaleGrandParent -> Interpretation.Relation(Representation.Data)
+      ParentSymbol -> Interpretation.Relation,
+      AgeAndSexSymbol -> Interpretation.Relation,
+      MaleGrandParent -> Interpretation.Relation
+    )
+
+    val hints = Map(
+      ParentSymbol -> Hint(Representation.Data),
+      AgeAndSexSymbol -> Hint(Representation.Data),
+      MaleGrandParent -> Hint(Representation.Data)
     )
 
     val program = Program(facts ::: clauses, interpretations)
 
-    Runner.run(program)
+    Runner.run(program, hints)
   }
 
 }

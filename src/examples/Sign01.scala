@@ -2,7 +2,7 @@ package examples
 
 import domains.Sign
 import impl.logic._
-import impl.runtime.{Unification, Runner}
+import impl.runtime.{Hint, Representation, Runner}
 import syntax.Symbols._
 
 object Sign01 {
@@ -24,14 +24,20 @@ object Sign01 {
     )
 
     val interpretations = Map(
-      X -> Interpretation.Relation(Representation.Data),
-      Y -> Interpretation.Relation(Representation.Data),
+      X -> Interpretation.Relation,
+      Y -> Interpretation.Relation,
       R -> Interpretation.LatticeMap(Sign.lattice)
     ) ++ Sign.lattice.interpretation
 
+    val hints = Map(
+      X -> Hint(Representation.Data),
+      Y -> Hint(Representation.Data),
+      R -> Hint(Representation.Data)
+    ) ++ Sign.Hints
+
     val program = Program(facts ::: clauses ::: Sign.lattice.clauses, interpretations)
 
-    Runner.run(program)
+    Runner.run(program, hints)
   }
 
 }

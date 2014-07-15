@@ -1,7 +1,7 @@
 package examples
 
 import impl.logic._
-import impl.runtime.Runner
+import impl.runtime.{Hint, Representation, Runner}
 import syntax.Symbols._
 
 import scala.util.Random
@@ -43,13 +43,18 @@ object RandomGraph01 {
     )
 
     val interpretations = Map(
-      EdgeSymbol -> Interpretation.Relation(Representation.Data),
-      CycleSymbol -> Interpretation.Relation(Representation.Data)
+      EdgeSymbol -> Interpretation.Relation,
+      CycleSymbol -> Interpretation.Relation
+    )
+
+    val hints = Map(
+      EdgeSymbol -> Hint(Representation.Data),
+      CycleSymbol -> Hint(Representation.Data)
     )
 
     val program = Program(facts ::: clauses, interpretations)
 
-    Runner.run(program)
+    Runner.run(program, hints)
   }
 
 }

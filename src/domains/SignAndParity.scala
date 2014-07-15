@@ -1,6 +1,7 @@
 package domains
 
 import impl.logic._
+import impl.runtime.{Hint, Representation}
 import syntax.Symbols._
 
 object SignAndParity {
@@ -53,9 +54,12 @@ object SignAndParity {
 
   val Interpretations = Map(
     LeqSymbol -> Interpretation.Leq,
-    JoinSymbol -> Interpretation.Join,
-    SumSymbol -> Interpretation.Function(Representation.Code)
+    JoinSymbol -> Interpretation.Join
   ) ++ Sign.Interpretations ++ Parity.Interpretations
+
+  val Hints = Map(
+    SumSymbol -> Hint(Representation.Code)
+  ) ++ Sign.Hints ++ Parity.Hints
 
   val lattice = Lattice(Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum ::: Sign.lattice.clauses ::: Parity.lattice.clauses, Interpretations)
 
