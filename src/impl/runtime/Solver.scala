@@ -60,7 +60,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
       hints.get(h.head.name) map {
         case Hint(Representation.Code) => // nop
         case Hint(Representation.Data) =>
-          satisfy(h.head, program.interpretation(h.head.name), Map.empty[VSym, Value])
+          newGroundFact(h.head, program.interpretation(h.head.name), Map.empty[VSym, Value])
       }
     }
 
@@ -73,16 +73,78 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Evaluation                                                              //
+  // Facts                                                                   //
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Returns `true` iff the given predicate `p` under the environment `env0` is a known ground fact.
+   * Returns `true` iff the given predicate `p` under the environment `env0` is a ground fact.
    */
   def isGroundFact(p: Predicate, env0: Map[VSym, Value]): Boolean = p.asGround(env0) match {
     case None => false
     case Some(pg) => facts contains pg
   }
+
+  /**
+   * Adds the given predicate `p` as a known ground fact under the given interpretation `i` and environment `env`.
+   */
+  def newGroundFact(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Unit = {
+    // Cache ground fact?
+    if (hints.get(p.name).exists(_.repr == Representation.Code)) {
+      facts += p.toGround(env)
+      return
+    }
+
+    i match {
+      case Interpretation.Relation => p.terms match {
+        case List(t1) =>
+          val v1 = t1.toValue(env)
+          val newFact = relation1.put(p.name, v1)
+          if (newFact)
+            propagate(Predicate(p.name, List(v1.asTerm)))
+
+        case List(t1, t2) =>
+          val (v1, v2) = (t1.toValue(env), t2.toValue(env))
+          val newFact = relation2.put(p.name, (v1, v2))
+          if (newFact)
+            propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm)))
+
+        case List(t1, t2, t3) =>
+          val (v1, v2, v3) = (t1.toValue(env), t2.toValue(env), t3.toValue(env))
+          val newFact = relation3.put(p.name, (v1, v2, v3))
+          if (newFact)
+            propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm)))
+
+        case List(t1, t2, t3, t4) =>
+          val (v1, v2, v3, v4) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env))
+          val newFact = relation4.put(p.name, (v1, v2, v3, v4))
+          if (newFact)
+            propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm)))
+
+        case List(t1, t2, t3, t4, t5) =>
+          val (v1, v2, v3, v4, v5) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env), t5.toValue(env))
+          val newFact = relation5.put(p.name, (v1, v2, v3, v4, v5))
+          if (newFact)
+            propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm, v5.asTerm)))
+      }
+
+      case Interpretation.LatticeMap(lattice) => p.terms match {
+        case List(t1) =>
+          val newValue = t1.toValue(env)
+          val oldValue = map1.get(p.name).getOrElse(lattice.bot)
+          val joinValue = join(lattice.join, newValue, oldValue)
+          val newFact: Boolean = !leq(lattice.leq, joinValue, oldValue)
+          if (newFact) {
+            map1.put(p.name, joinValue)
+            propagate(Predicate(p.name, List(joinValue.asTerm)))
+          }
+      }
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Evaluation                                                              //
+  /////////////////////////////////////////////////////////////////////////////
+
 
   /**
    * Returns a list of models for the given horn clause `h` under the given environment `env`.
@@ -153,65 +215,10 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
   def satisfy(h: HornClause, env: Map[VSym, Value]): Unit = {
     val models = evaluate(h, env)
     for (model <- models) {
-      satisfy(h.head, program.interpretation(h.head.name), model)
+      newGroundFact(h.head, program.interpretation(h.head.name), model)
     }
   }
 
-  /**
-   * Satisfies the given predicate `p` under the given interpretation `i` and environment `env`.
-   */
-  def satisfy(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Unit = {
-    // Cache ground predicates (i.e. facts).
-    facts += p.toGround(env)
-
-    val repr = hints.get(p.name).map(_.repr).getOrElse(Representation.Code)
-
-    (i, repr) match {
-      case (Interpretation.Relation, Representation.Data) => p.terms match {
-        case List(t1) =>
-          val v1 = t1.toValue(env)
-          val newFact = relation1.put(p.name, v1)
-          if (newFact)
-            propagate(Predicate(p.name, List(v1.asTerm)))
-
-        case List(t1, t2) =>
-          val (v1, v2) = (t1.toValue(env), t2.toValue(env))
-          val newFact = relation2.put(p.name, (v1, v2))
-          if (newFact)
-            propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm)))
-
-        case List(t1, t2, t3) =>
-          val (v1, v2, v3) = (t1.toValue(env), t2.toValue(env), t3.toValue(env))
-          val newFact = relation3.put(p.name, (v1, v2, v3))
-          if (newFact)
-            propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm)))
-
-        case List(t1, t2, t3, t4) =>
-          val (v1, v2, v3, v4) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env))
-          val newFact = relation4.put(p.name, (v1, v2, v3, v4))
-          if (newFact)
-            propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm)))
-
-        case List(t1, t2, t3, t4, t5) =>
-          val (v1, v2, v3, v4, v5) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env), t5.toValue(env))
-          val newFact = relation5.put(p.name, (v1, v2, v3, v4, v5))
-          if (newFact)
-            propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm, v5.asTerm)))
-      }
-
-      case (Interpretation.LatticeMap(lattice), Representation.Data) => p.terms match {
-        case List(t1) =>
-          val newValue = t1.toValue(env)
-          val oldValue = map1.get(p.name).getOrElse(lattice.bot)
-          val joinValue = join(lattice.join, newValue, oldValue)
-          val newFact: Boolean = !leq(lattice.leq, joinValue, oldValue)
-          if (newFact) {
-            map1.put(p.name, joinValue)
-            propagate(Predicate(p.name, List(joinValue.asTerm)))
-          }
-      }
-    }
-  }
 
   /**
    * Enqueues all horn clauses which depend on the given predicate.
