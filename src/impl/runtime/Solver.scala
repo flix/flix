@@ -56,11 +56,8 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
 
     // Satisfy all facts. Satisfying a fact adds violated horn clauses (and environments) to the work list.
     for (h <- program.facts) {
-
-      hints.get(h.head.name) map {
-        case Hint(Representation.Code) => // nop
-        case Hint(Representation.Data) =>
-          newGroundFact(h.head, program.interpretation(h.head.name), Map.empty[VSym, Value])
+      if (hints.get(h.head.name).exists(_.repr == Representation.Data)) {
+        newGroundFact(h.head, program.interpretation(h.head.name), Map.empty[VSym, Value])
       }
     }
 
