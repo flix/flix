@@ -22,8 +22,8 @@ class Verifier(val program: Program) {
 
 
           println("~~~~~~~~")
-          println(genRelation2(lattice.leq).fmt)
-          println(getFunction2(lattice.join).fmt)
+          println(relation2(lattice.leq).fmt)
+          println(relation3(lattice.join).fmt)
           println("~~~~~~~~")
 
           println(reflexivity(p, lattice.leq))
@@ -67,10 +67,12 @@ class Verifier(val program: Program) {
   /**
    * Returns an SMT formula for binary function defined by the given predicate symbol `s`.
    */
-  def genRelation2(s: PSym): Declaration = {
+  def relation2(s: PSym): Declaration = {
     val clauses = program.clauses.filter(_.head.name == s)
 
-    val p = Predicate(s, List(Term.Variable("x"), Term.Variable("y")))
+    val (x, y) = (Symbol.VariableSymbol("x"), Symbol.VariableSymbol("y"))
+
+    val p = Predicate(s, List(Term.Variable(x), Term.Variable(y)))
     val formulae = SmtFormula.Disjunction(clauses.map {
       h => Unification.unify(h.head, p, Map.empty[VSym, Term]) match {
         case None => SmtFormula.True // nop
@@ -82,14 +84,16 @@ class Verifier(val program: Program) {
       }
     })
 
-    Declaration.Relation2(s, "x", "y", formulae)
+    Declaration.Relation2(s, Sort.Named("TODO"), x, y, formulae)
   }
 
 
-  def getFunction2(s: PSym): Declaration = {
+  def relation3(s: PSym): Declaration = {
     val clauses = program.clauses.filter(_.head.name == s)
 
-    val p = Predicate(s, List(Term.Variable("x"), Term.Variable("y"), Term.Variable("z")))
+    val (x, y, z) = (Symbol.VariableSymbol("x"), Symbol.VariableSymbol("y"), Symbol.VariableSymbol("z"))
+
+    val p = Predicate(s, List(Term.Variable(x), Term.Variable(y), Term.Variable(z)))
     val formulae = SmtFormula.Disjunction(clauses.map {
       h => Unification.unify(h.head, p, Map.empty[VSym, Term]) match {
         case None => SmtFormula.True // nop
@@ -101,7 +105,7 @@ class Verifier(val program: Program) {
       }
     })
 
-    Declaration.Function3(s, "x", "y", "z", formulae)
+    Declaration.Relation3(s, Sort.Named("TODO"), x, y, z, formulae)
   }
 
 
@@ -122,15 +126,15 @@ class Verifier(val program: Program) {
    */
   sealed trait Declaration {
     def fmt: String = this match {
-      case Declaration.Relation2(s, var1, var2, formula) => {
+      case Declaration.Relation2(s, sort, var1, var2, formula) => {
         smt"""(define-fun $s (($var1 Sign) ($var2 Sign)) Bool
-              |    ${formula.fmt(2)})
+              |    ${formula.fmt(1)})
            """.stripMargin
       }
 
-      case Declaration.Function3(s, var1, var2, var3, formula) => {
+      case Declaration.Relation3(s, sort, var1, var2, var3, formula) => {
         smt"""(define-fun $s (($var1 Sign) ($var2 Sign) ($var3)) Bool
-              |    ${formula.fmt(2)})
+              |    ${formula.fmt(1)})
            """.stripMargin
       }
     }
@@ -138,11 +142,15 @@ class Verifier(val program: Program) {
 
   object Declaration {
 
-    // TODO: Need sort
-    case class Relation2(name: Symbol.PredicateSymbol, var1: String, var2: String, formula: SmtFormula) extends Declaration
+    /**
+     * A 2-ary boolean function.
+     */
+    case class Relation2(name: Symbol.PredicateSymbol, sort: Sort, var1: VSym, var2: VSym, formula: SmtFormula) extends Declaration
 
-    case class Function3(name: Symbol.PredicateSymbol, var1: String, var2: String, var3: String, formula: SmtFormula) extends Declaration
-
+    /**
+     * A 3-ary boolean function.
+     */
+    case class Relation3(name: Symbol.PredicateSymbol, sort: Sort, var1: VSym, var2: VSym, var3: VSym, formula: SmtFormula) extends Declaration
 
   }
 
@@ -182,11 +190,6 @@ class Verifier(val program: Program) {
     case class Variable(v: Symbol.VariableSymbol) extends SmtFormula
 
     /**
-     * A null-ary constructor.
-     */
-    case class Constructor0(s: Symbol.NamedSymbol) extends SmtFormula
-
-    /**
      * A equality formula.
      */
     case class Eq(left: SmtFormula, right: SmtFormula) extends SmtFormula
@@ -206,11 +209,35 @@ class Verifier(val program: Program) {
      */
     case class Implication(antecedent: SmtFormula, consequent: SmtFormula) extends SmtFormula
 
-    // TODO
-    case class ForAll() extends SmtFormula
+    /**
+     * A null-ary constructor.
+     */
+    case class Constructor0(s: Symbol.NamedSymbol) extends SmtFormula
 
-    // TODO
-    case class Exists() extends SmtFormula
+    /**
+     * A 1-ary constructor.
+     */
+    case class Constructor1(s: Symbol.NamedSymbol, f1: Formula) extends SmtFormula
+
+    /**
+     * A 2-ary constructor.
+     */
+    case class Constructor2(s: Symbol.NamedSymbol, f1: Formula, f2: Formula) extends SmtFormula
+
+    /**
+     * A 3-ary constructor.
+     */
+    case class Constructor3(s: Symbol.NamedSymbol, f1: Formula, f2: Formula, f3: Formula) extends SmtFormula
+
+    /**
+     * A 4-ary constructor.
+     */
+    case class Constructor4(s: Symbol.NamedSymbol, f1: Formula, f2: Formula, f3: Formula, f4: Formula) extends SmtFormula
+
+    /**
+     * A 5-ary constructor.
+     */
+    case class Constructor5(s: Symbol.NamedSymbol, f1: Formula, f2: Formula, f3: Formula, f4: Formula, f5: Formula) extends SmtFormula
 
   }
 
