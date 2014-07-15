@@ -20,15 +20,14 @@ class Verifier(val program: Program) {
       i match {
         case Interpretation.LatticeMap(lattice) => {
 
-
           println("~~~~~~~~")
           println(relation2(lattice.leq).fmt)
           println(relation3(lattice.join).fmt)
           println("~~~~~~~~")
 
-          println(reflexivity(p, lattice.leq))
-          println(antiSymmetri(p, lattice.leq))
-
+          println(reflexivity(Sort.Named("TODO"), lattice.leq))
+          println(antiSymmetri(Sort.Named("TODO"), lattice.leq))
+          println(transitivity(Sort.Named("TODO"), lattice.leq))
         }
         case _ => // nop
       }
@@ -41,7 +40,7 @@ class Verifier(val program: Program) {
   /**
    * Reflexivity: ∀x. x ⊑ x
    */
-  def reflexivity(sort: PSym, leq: PSym): String = smt"""
+  def reflexivity(sort: Sort, leq: PSym): String = smt"""
     |;; Reflexivity: ∀x. x ⊑ x
     |(define-fun reflexivity () Bool
     |    (forall ((x $sort))
@@ -51,7 +50,7 @@ class Verifier(val program: Program) {
   /**
    * Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
    */
-  def antiSymmetri(sort: PSym, leq: PSym): String = smt"""
+  def antiSymmetri(sort: Sort, leq: PSym): String = smt"""
     |;; Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
     |(define-fun anti-symmetri () Bool
     |    (forall ((x $sort) (y $sort))
@@ -61,6 +60,18 @@ class Verifier(val program: Program) {
     |            (= x y))))
     """.stripMargin
 
+  /**
+   * Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
+   */
+  def transitivity(sort: Sort, leq: PSym): String = smt"""
+    |;; Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
+    |(define-fun transitivity () Bool
+    |    (forall ((x $sort) (y $sort) (z $sort))
+    |        (=>
+    |            (and ($leq x y)
+    |                 ($leq y z))
+    |            ($leq x z))))
+    """.stripMargin
 
   def genDatatype: String = ???
 
@@ -108,10 +119,12 @@ class Verifier(val program: Program) {
     Declaration.Relation3(s, Sort.Named("rel2-todo"), x, y, z, formulae)
   }
 
+  // TODO
   def genEnv(env: Map[VSym, Term]): SmtFormula = SmtFormula.Conjunction(env.toList.map {
     case (v, t) => SmtFormula.Eq(SmtFormula.Variable(v), asFormula(t, env))
   })
 
+  // TODO
   def asFormula(t: Term, env: Map[VSym, Term]): SmtFormula = t match {
     case Term.Bool(b) => if (b) SmtFormula.True else SmtFormula.False
     case Term.Variable(s) => env.get(s) match {
