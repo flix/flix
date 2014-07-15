@@ -131,18 +131,6 @@ object Unification {
   }
 
   /**
-   * Unification with substitution.
-   */
-  // TODO
-//  def unify2(t1: Term, t2: Term, env0: Map[VSym, Term]): Option[Map[VSym, Term]] = (t1, t2) match {
-//    case (Term.Constructor2(s1, x1, x2), Term.Constructor2(s2, y1, y2)) =>
-//      for (
-//        s1 <- unify2(x1, y1, env0);
-//        s2 <- unify2(/*apply s1 here*/ ???, /*apply s1 here*/ ???, env0)
-//      ) yield /* compose s1 and s2 */ ???
-//  }
-
-  /**
    * Unifies all terms in `tx` with all terms in `ty` under the initial environment `env0`.
    */
   def unifyTerms(tx: List[Term], ty: List[Term], env0: Map[VSym, Term]): Option[Map[VSym, Term]] =

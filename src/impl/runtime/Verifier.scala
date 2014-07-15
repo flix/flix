@@ -1,7 +1,7 @@
 package impl.runtime
 
+import impl.logic.Symbol.{PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
-import impl.logic.Symbol.{PredicateSymbol => PSym}
 import syntax.Symbols._
 
 /**
@@ -21,6 +21,11 @@ class Verifier(val program: Program) {
         case Interpretation.LatticeMap(lattice) => {
           println(reflexivity(p, lattice.leq))
           println(antiSymmetri(p, lattice.leq))
+
+          println("~~~~~~~~")
+          println(genLeq(lattice.leq))
+          println("~~~~~~~~")
+
         }
         case _ => // nop
       }
@@ -56,32 +61,80 @@ class Verifier(val program: Program) {
 
   def genDatatype: String = ???
 
-  def genLeq: Formula = ???
+  def genLeq(s: PSym): Declaration = {
+    //    val Leq = List(
+    //      HornClause(Predicate(LeqSymbol, List(Bot, Term.Variable("_")))),
+    //      HornClause(Predicate(LeqSymbol, List(Neg, Neg))),
+    //      HornClause(Predicate(LeqSymbol, List(Zero, Zero))),
+    //      HornClause(Predicate(LeqSymbol, List(Pos, Pos))),
+    //      HornClause(Predicate(LeqSymbol, List(Term.Variable("_"), Top)))
+    //    )
+    //    (define-fun Sign.leq ((x Sign) (y Sign)) Bool
+    //      (or (= x Sign.Bot)
+    //    (and (= x Sign.Neg) (= y Sign.Neg))
+    //    (and (= x Sign.Zer) (= y Sign.Zer))
+    //    (and (= x Sign.Pos) (= y Sign.Pos))
+    //    (= y Sign.Top)))
+
+    val clauses = program.clauses.filter(_.head.name == s)
+
+    val p = Predicate(s, List(Term.Variable("x"), Term.Variable("y")))
+
+    val formulae = Formula.Disjunction(clauses.map {
+      h => Unification.unify(h.head, p, Map.empty[VSym, Term]) match {
+        case None => Formula.True // nop
+        case Some(env) =>
+          if (h.isFact)
+            genEnv(env)
+          else
+            Formula.True // TODO
+      }
+    })
+
+    Declaration.Relation3("x", "y", formulae)
+  }
 
   def genJoin: Formula = ???
 
   def genTransfer2: Formula = ???
 
-  // TODO: Need unification and all that jazz?
-  def genFormula(s: PSym): Formula = {
-    val clauses = program.clauses.filter(_.head.name == s)
+  def genEnv(env: Map[VSym, Term]): Formula = Formula.Conjunction(env.toList.map {
+    case (v, t) => t match {
+      case Term.Bool(true) => Formula.True
+      case Term.Constructor0(s) => Formula.Eq(v, s)
+    }
+  })
 
-    Formula.Disjunction(clauses map {
-      h => Formula.Implication(???, ???)
-    })
+
+  sealed trait Declaration
+
+  object Declaration {
+
+    case class Relation3(var1: String, var2: String, formula: Formula) extends Declaration
+
   }
-
-
-
 
   sealed trait Formula
 
   object Formula {
+
     case class Conjunction(formulae: List[Formula]) extends Formula
+
     case class Disjunction(formulae: List[Formula]) extends Formula
+
     case class Implication(left: Formula, right: Formula) extends Formula
-    case class Forall() extends Formula
+
+    case class ForAll() extends Formula
+
     case class Exists() extends Formula
+
+    case class Eq(left: Any, right: Any) extends Formula
+
+    case object True extends Formula
+
+    case object False extends Formula
+
+
   }
 
   /**

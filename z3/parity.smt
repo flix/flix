@@ -235,8 +235,8 @@
 
 ;; transfer functions
 (assert sum-function)
-(assert sum-strict)
 (assert sum-monotone)
+(assert sum-strict)
 ;;(assert sum-distributive)
 
 ;; height
