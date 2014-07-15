@@ -56,12 +56,10 @@ object Parity {
     HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Top, Top)))
   )
 
-  val Interpretations = Map.empty[Symbol.PredicateSymbol, Interpretation]
-
   val Hints = Map(
     SumSymbol -> Hint(Representation.Code)
   )
 
-  val lattice = Lattice(Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum, Interpretations)
+  val lattice = Lattice(Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum)
 
 }

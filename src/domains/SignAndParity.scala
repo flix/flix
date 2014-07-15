@@ -52,12 +52,10 @@ object SignAndParity {
     )
   )
 
-  val Interpretations = Map.empty[Symbol.PredicateSymbol, Interpretation]
-
   val Hints = Map(
     SumSymbol -> Hint(Representation.Code)
   ) ++ Sign.Hints ++ Parity.Hints
 
-  val lattice = Lattice(Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum ::: Sign.lattice.clauses ::: Parity.lattice.clauses, Interpretations)
+  val lattice = Lattice(Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum ::: Sign.lattice.clauses ::: Parity.lattice.clauses)
 
 }

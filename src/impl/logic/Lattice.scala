@@ -7,8 +7,6 @@ case class Lattice(domain: Type,
                    bot: Value,
                    leq: Symbol.PredicateSymbol,
                    join: Symbol.PredicateSymbol,
-                   clauses: List[HornClause],
-                   interpretation: Map[Symbol.PredicateSymbol, Interpretation])
+                   clauses: List[HornClause])
 
-// TODO: Remove interpretation?
 // TODO: Need transfer function symbols
