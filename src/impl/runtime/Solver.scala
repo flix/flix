@@ -68,7 +68,11 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
     // Satisfying a horn clause may cause additional items to be added to the work list.
     while (queue.nonEmpty) {
       val (h, env) = queue.dequeue()
-      satisfy(h, env)
+
+      val models = evaluate(h, env)
+      for (model <- models) {
+        newGroundFact(h.head, program.interpretation(h.head.name), model)
+      }
     }
   }
 
@@ -204,23 +208,6 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
     }
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Satisfaction                                                            //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-   * Satisfies the given horn clause `h` by finding all valid models of the given environment `env`.
-   *
-   * Adds all facts which satisfies the given horn clause `h`.
-   */
-  def satisfy(h: HornClause, env: Map[VSym, Value]): Unit = {
-    val models = evaluate(h, env)
-    for (model <- models) {
-      newGroundFact(h.head, program.interpretation(h.head.name), model)
-    }
-  }
-
-
   /**
    * Enqueues all horn clauses which depend on the given predicate.
    */
@@ -261,7 +248,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
   /**
    * Optionally returns the unique term of the variable `x` in all the given models `xs`.
    */
-  def uniqueTerm(x: VSym, xs: List[Map[VSym, Term]]): Option[Term] = {
+  private def asUniqueTerm(x: VSym, xs: List[Map[VSym, Term]]): Option[Term] = {
     val vs = xs.flatMap(_.get(x)).toSet
     if (vs.size == 1)
       Some(vs.head)
@@ -272,13 +259,13 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
   /**
    * Optionally returns the unique value of the variable `x` in all the given models `xs`.
    */
-  def uniqueValue(x: VSym, xs: List[Map[VSym, Term]]): Option[Value] =
-    uniqueTerm(x, xs).flatMap(t => t.asValue)
+  private def asUniqueValue(x: VSym, xs: List[Map[VSym, Term]]): Option[Value] =
+    asUniqueTerm(x, xs).flatMap(t => t.asValue)
 
   /**
    * Returns `true` iff `v1` is less or equal to `v2`.
    */
-  def leq(s: PSym, v1: Value, v2: Value): Boolean = {
+  private def leq(s: PSym, v1: Value, v2: Value): Boolean = {
     val p = Predicate(s, List(v1.asTerm, v2.asTerm))
     val models = getSat(p)
     models.nonEmpty
@@ -287,10 +274,10 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
   /**
    * Returns the join of `v1` and `v2`.
    */
-  def join(s: PSym, v1: Value, v2: Value): Value = {
+  private def join(s: PSym, v1: Value, v2: Value): Value = {
     val p = Predicate(s, List(v1.asTerm, v2.asTerm, Term.Variable(Symbol.VariableSymbol("!x"))))
     val models = getSat(p)
-    val value = uniqueValue(Symbol.VariableSymbol("!x"), models)
+    val value = asUniqueValue(Symbol.VariableSymbol("!x"), models)
 
     value match {
       case None => throw Error.NonUniqueModel(s)
