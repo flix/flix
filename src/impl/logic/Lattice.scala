@@ -9,4 +9,4 @@ case class Lattice(domain: Type,
                    join: Symbol.PredicateSymbol,
                    clauses: List[HornClause])
 
-// TODO: Need transfer function symbols
+// TODO: Need transfer function symbols?

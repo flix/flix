@@ -2,6 +2,7 @@ package impl.runtime
 
 import impl.logic.Symbol.{PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
+import syntax.Predicates.RichPredicate
 import util.collection.mutable
 
 /**
@@ -57,7 +58,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
     // Satisfy all facts. Satisfying a fact adds violated horn clauses (and environments) to the work list.
     for (h <- program.facts) {
       if (hints.get(h.head.name).exists(_.repr == Representation.Data)) {
-        newGroundFact(h.head, program.interpretation(h.head.name), Map.empty[VSym, Value])
+        newProvenFact(h.head, program.interpretation(h.head.name), Map.empty[VSym, Value])
       }
     }
 
@@ -68,7 +69,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
 
       val models = evaluate(h, env)
       for (model <- models) {
-        newGroundFact(h.head, program.interpretation(h.head.name), model)
+        newProvenFact(h.head, program.interpretation(h.head.name), model)
       }
     }
   }
@@ -77,10 +78,12 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
   // Facts                                                                   //
   /////////////////////////////////////////////////////////////////////////////
 
+  // TODO: Split into intrisinic and extrinsic
+
   /**
    * Returns `true` iff the given predicate `p` under the environment `env0` is a ground fact.
    */
-  def isGroundFact(p: Predicate, env0: Map[VSym, Value]): Boolean = p.asGround(env0) match {
+  def newProvenFact(p: Predicate, env0: Map[VSym, Value]): Boolean = p.asGround(env0) match {
     case None => false
     case Some(pg) => facts contains pg
   }
@@ -88,11 +91,13 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
   /**
    * Adds the given predicate `p` as a known ground fact under the given interpretation `i` and environment `env`.
    */
-  def newGroundFact(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Unit = {
+  def newProvenFact(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Unit = {
     // Cache ground fact?
     if (hints.get(p.name).exists(_.repr == Representation.Code)) {
       return
     }
+    
+    println("--> " + p.toGround(env).fmt)
 
     facts += p.toGround(env)
     // TODO: Collapse into one DataStore
@@ -186,7 +191,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
    * Returns a list of environments for the given predicate `p` with interpretation `i` under the given environment `env0`.
    */
   def evaluate(p: Predicate, i: Interpretation, env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
-    if (isGroundFact(p, env0)) {
+    if (newProvenFact(p, env0)) {
       return List(env0)
     }
 
