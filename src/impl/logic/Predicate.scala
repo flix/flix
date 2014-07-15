@@ -5,7 +5,6 @@ import impl.runtime.Error
 /**
  * A predicate consists of a predicate symbol and a list of terms.
  */
-// TODO: Add Arity???
 case class Predicate(name: Symbol.PredicateSymbol, terms: List[Term]) {
   /**
    * Returns `true` iff the predicate is a ground truth, i.e. all terms are constant.

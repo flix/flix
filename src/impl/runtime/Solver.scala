@@ -95,7 +95,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
     }
 
     facts += p.toGround(env)
-
+// TODO: Collapse into one DataStore
     i match {
       case Interpretation.Relation => p.terms match {
         case List(t1) =>
