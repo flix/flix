@@ -23,7 +23,7 @@ class Verifier(val program: Program) {
 
           println("~~~~~~~~")
           println(genRelation2(lattice.leq).fmt)
-          //println(genJoin(lattice.join).fmt)
+          println(getFunction2(lattice.join).fmt)
           println("~~~~~~~~")
 
           println(reflexivity(p, lattice.leq))
@@ -82,10 +82,27 @@ class Verifier(val program: Program) {
       }
     })
 
-    Declaration.Function2(s, "x", "y", formulae)
+    Declaration.Relation2(s, "x", "y", formulae)
   }
 
-  def genJoin: SmtFormula = ???
+
+  def getFunction2(s: PSym): Declaration = {
+    val clauses = program.clauses.filter(_.head.name == s)
+
+    val p = Predicate(s, List(Term.Variable("x"), Term.Variable("y"), Term.Variable("z")))
+    val formulae = SmtFormula.Disjunction(clauses.map {
+      h => Unification.unify(h.head, p, Map.empty[VSym, Term]) match {
+        case None => SmtFormula.True // nop
+        case Some(env) =>
+          if (h.isFact)
+            genEnv(env)
+          else
+            SmtFormula.True // TODO
+      }
+    })
+
+    Declaration.Function3(s, "x", "y", "z", formulae)
+  }
 
 
   /**
@@ -105,17 +122,26 @@ class Verifier(val program: Program) {
    */
   sealed trait Declaration {
     def fmt: String = this match {
-      case Declaration.Function2(s, var1, var2, formula) =>
+      case Declaration.Relation2(s, var1, var2, formula) => {
         smt"""(define-fun $s (($var1 Sign) ($var2 Sign)) Bool
               |    ${formula.fmt(2)})
            """.stripMargin
+      }
+
+      case Declaration.Function3(s, var1, var2, var3, formula) => {
+        smt"""(define-fun $s (($var1 Sign) ($var2 Sign) ($var3)) Bool
+              |    ${formula.fmt(2)})
+           """.stripMargin
+      }
     }
   }
 
   object Declaration {
 
     // TODO: Need sort
-    case class Function2(name: Symbol.PredicateSymbol, var1: String, var2: String, formula: SmtFormula) extends Declaration
+    case class Relation2(name: Symbol.PredicateSymbol, var1: String, var2: String, formula: SmtFormula) extends Declaration
+
+    case class Function3(name: Symbol.PredicateSymbol, var1: String, var2: String, var3: String, formula: SmtFormula) extends Declaration
 
 
   }
