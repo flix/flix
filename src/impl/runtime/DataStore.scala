@@ -24,7 +24,7 @@ class DataStore {
 
 
   class Relation1 extends Relation {
-    val v0 = mutable.Set.empty[List[Value]]
+    val v0 = mutable.Set.empty[List[Value]] // TODO: Actually needs to be a map? from a single key to the value?
 
     def get(q: List[Option[Value]]): Set[List[Value]] = q match {
       case Nil => v0.toSet
@@ -43,10 +43,17 @@ class DataStore {
   }
 
   class Relation2 extends Relation {
-    val v0: Option[mutable.Map[Value, Relation1]] = None
-    val v1: Option[mutable.Map[Value, Relation1]] = None
+    val m0: mutable.Map[Value, Relation1] = mutable.Map.empty
+    val m1: Option[mutable.Map[Value, Relation1]] = None
 
-    def get(q: List[Option[Value]]): Set[List[Value]] = ???
+    def get(q: List[Option[Value]]): Set[List[Value]] = q match {
+      case Some(v) :: xs => m0.get(v).map(_.get(xs)).getOrElse(Set.empty)
+      case None :: Some(v) :: xs => m1 match {
+        case None => ???
+        case Some(i1) => ???
+      }
+      case xs => throw new RuntimeException(s"Illegal query: '$xs'.")
+    }
 
     def put(k: List[Value], v: List[Value]): Boolean = ???
 
