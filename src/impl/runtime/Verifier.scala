@@ -80,29 +80,29 @@ class Verifier(val program: Program) {
 
     val p = Predicate(s, List(Term.Variable("x"), Term.Variable("y")))
 
-    val formulae = Formula.Disjunction(clauses.map {
+    val formulae = SmtFormula.Disjunction(clauses.map {
       h => Unification.unify(h.head, p, Map.empty[VSym, Term]) match {
-        case None => Formula.True // nop
+        case None => SmtFormula.True // nop
         case Some(env) =>
           if (h.isFact)
             genEnv(env)
           else
-            Formula.True // TODO
+            SmtFormula.True // TODO
       }
     })
 
     Declaration.Function2(s, "x", "y", formulae)
   }
 
-  def genJoin: Formula = ???
+  def genJoin: SmtFormula = ???
 
-  def genTransfer2: Formula = ???
+  def genTransfer2: SmtFormula = ???
 
-  def genEnv(env: Map[VSym, Term]): Formula = Formula.Conjunction(env.toList.map {
+  def genEnv(env: Map[VSym, Term]): SmtFormula = SmtFormula.Conjunction(env.toList.map {
     case (v, t) => t match {
-      case Term.Bool(true) => Formula.True
-      case Term.Variable(_) => Formula.True
-      case Term.Constructor0(s) => Formula.Eq(Formula.Variable(v), Formula.Constructor0(s))
+      case Term.Bool(true) => SmtFormula.True
+      case Term.Variable(_) => SmtFormula.True
+      case Term.Constructor0(s) => SmtFormula.Eq(SmtFormula.Variable(v), SmtFormula.Constructor0(s))
     }
   })
 
@@ -111,7 +111,7 @@ class Verifier(val program: Program) {
     def fmt: String = this match {
       case Declaration.Function2(s, var1, var2, formula) =>
         smt"""(define-fun $s (($var1 Sign) ($var2 Sign)) Bool
-             |  ${formula.fmt})
+              |    ${formula.fmt(2)})
            """.stripMargin
     }
   }
@@ -119,44 +119,46 @@ class Verifier(val program: Program) {
   object Declaration {
 
     // TODO: Need sort
-    case class Function2(name: Symbol.PredicateSymbol, var1: String, var2: String, formula: Formula) extends Declaration
+    case class Function2(name: Symbol.PredicateSymbol, var1: String, var2: String, formula: SmtFormula) extends Declaration
 
   }
 
-  sealed trait Formula {
-    def fmt: String = this match {
-      case Formula.True => "true"
-      case Formula.False => "false"
-      case Formula.Variable(s) => s.fmt
-      case Formula.Constructor0(s) => s.fmt
-      case Formula.Conjunction(formulae) => "(and " + formulae.map(_.fmt).mkString(" ") + ")"
-      case Formula.Disjunction(formulae) => "(or " + formulae.map(_.fmt).mkString(" ") + ")"
-      case Formula.Eq(lhs, rhs) => "(= " + lhs.fmt + " " + rhs.fmt + ")"
+  sealed trait SmtFormula {
+    def fmt(indent: Int): String = this match {
+      case SmtFormula.True => "true"
+      case SmtFormula.False => "false"
+      case SmtFormula.Variable(s) => s.fmt
+      case SmtFormula.Constructor0(s) => s.fmt
+      case SmtFormula.Conjunction(formulae) =>
+        "(and " + formulae.map(_.fmt(indent)).mkString(" ") + ")"
+      case SmtFormula.Disjunction(formulae) =>
+        "(or \n" + "    " * indent + formulae.map(_.fmt(indent + 1)).mkString("\n" + "     " * indent) + ")"
+      case SmtFormula.Eq(lhs, rhs) => "(= " + lhs.fmt(indent) + " " + rhs.fmt(indent) + ")"
 
     }
   }
 
-  object Formula {
+  object SmtFormula {
 
-    case object True extends Formula
+    case object True extends SmtFormula
 
-    case object False extends Formula
+    case object False extends SmtFormula
 
-    case class Variable(v: Symbol.VariableSymbol) extends Formula
+    case class Variable(v: Symbol.VariableSymbol) extends SmtFormula
 
-    case class Constructor0(s: Symbol.NamedSymbol) extends Formula
+    case class Constructor0(s: Symbol.NamedSymbol) extends SmtFormula
 
-    case class Conjunction(formulae: List[Formula]) extends Formula
+    case class Conjunction(formulae: List[SmtFormula]) extends SmtFormula
 
-    case class Disjunction(formulae: List[Formula]) extends Formula
+    case class Disjunction(formulae: List[SmtFormula]) extends SmtFormula
 
-    case class Implication(left: Formula, right: Formula) extends Formula
+    case class Implication(left: SmtFormula, right: SmtFormula) extends SmtFormula
 
-    case class ForAll() extends Formula
+    case class ForAll() extends SmtFormula
 
-    case class Exists() extends Formula
+    case class Exists() extends SmtFormula
 
-    case class Eq(left: Formula, right: Formula) extends Formula
+    case class Eq(left: SmtFormula, right: SmtFormula) extends SmtFormula
 
 
   }
