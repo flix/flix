@@ -115,7 +115,10 @@ class Verifier(val program: Program) {
   def genEnv(env: Map[VSym, Term]): SmtFormula = SmtFormula.Conjunction(env.toList.map {
     case (v, t) => t match {
       case Term.Bool(true) => SmtFormula.True
-      case Term.Variable(_) => SmtFormula.True
+      case Term.Variable(s) => env.get(s) match {
+        case None => SmtFormula.True
+        case Some(tt) => SmtFormula.True // Wrong
+      }
       case Term.Constructor0(s) => SmtFormula.Eq(SmtFormula.Variable(v), SmtFormula.Constructor0(s))
     }
   })
@@ -157,12 +160,9 @@ class Verifier(val program: Program) {
       case SmtFormula.False => "false"
       case SmtFormula.Variable(s) => s.fmt
       case SmtFormula.Constructor0(s) => s.fmt
-      case SmtFormula.Conjunction(formulae) =>
-        "(and " + formulae.map(_.fmt(indent)).mkString(" ") + ")"
-      case SmtFormula.Disjunction(formulae) =>
-        "(or \n" + "    " * (indent + 1) + formulae.map(_.fmt(indent + 1)).mkString("\n" + "    " * (indent + 1)) + ")"
+      case SmtFormula.Conjunction(formulae) => "(and " + formulae.map(_.fmt(indent)).mkString(" ") + ")"
+      case SmtFormula.Disjunction(formulae) => "(or \n" + "    " * (indent + 1) + formulae.map(_.fmt(indent + 1)).mkString("\n" + "    " * (indent + 1)) + ")"
       case SmtFormula.Eq(lhs, rhs) => "(= " + lhs.fmt(indent) + " " + rhs.fmt(indent) + ")"
-
     }
   }
 
