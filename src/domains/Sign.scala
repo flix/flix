@@ -74,6 +74,6 @@ object Sign {
     SumSymbol -> Hint(Representation.Code)
   )
 
-  val lattice = Lattice(Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum)
+  val lattice = Lattice("Sign", Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum)
 
 }

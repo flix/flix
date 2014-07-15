@@ -99,6 +99,6 @@ object Interval {
     SumSymbol -> Hint(Representation.Code)
   )
 
-  val lattice = Lattice(Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum)
+  val lattice = Lattice("Interval", Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum)
 
 }

@@ -1,6 +1,6 @@
 package impl.runtime
 
-import impl.logic.Symbol.{PredicateSymbol => PSym, VariableSymbol => VSym}
+import impl.logic.Symbol.{PredicateSymbol => PSym, LatticeSymbol => LSym, VariableSymbol => VSym}
 import impl.logic._
 import syntax.Symbols._
 
@@ -17,13 +17,13 @@ class Verifier(val program: Program) {
     println("Proof Burdens")
     for ((s, lattice) <- program.lattices) {
       println("~~~~~~~~")
-      println(relation2(lattice.leq).fmt)
-      println(relation3(lattice.join).fmt)
+      println(relation2(lattice.s, lattice.leq).fmt)
+      println(relation3(lattice.s, lattice.join).fmt)
       println("~~~~~~~~")
 
-      println(reflexivity(Sort.Named("TODO"), lattice.leq))
-      println(antiSymmetri(Sort.Named("TODO"), lattice.leq))
-      println(transitivity(Sort.Named("TODO"), lattice.leq))
+      println(reflexivity(lattice.s, lattice.leq))
+      println(antiSymmetri(lattice.s, lattice.leq))
+      println(transitivity(lattice.s, lattice.leq))
     }
 
     println()
@@ -33,7 +33,7 @@ class Verifier(val program: Program) {
   /**
    * Reflexivity: ∀x. x ⊑ x
    */
-  def reflexivity(sort: Sort, leq: PSym): String = smt"""
+  def reflexivity(sort: LSym, leq: PSym): String = smt"""
     |;; Reflexivity: ∀x. x ⊑ x
     |(define-fun reflexivity () Bool
     |    (forall ((x $sort))
@@ -43,7 +43,7 @@ class Verifier(val program: Program) {
   /**
    * Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
    */
-  def antiSymmetri(sort: Sort, leq: PSym): String = smt"""
+  def antiSymmetri(sort: LSym, leq: PSym): String = smt"""
     |;; Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
     |(define-fun anti-symmetri () Bool
     |    (forall ((x $sort) (y $sort))
@@ -56,7 +56,7 @@ class Verifier(val program: Program) {
   /**
    * Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
    */
-  def transitivity(sort: Sort, leq: PSym): String = smt"""
+  def transitivity(sort: LSym, leq: PSym): String = smt"""
     |;; Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
     |(define-fun transitivity () Bool
     |    (forall ((x $sort) (y $sort) (z $sort))
@@ -71,7 +71,7 @@ class Verifier(val program: Program) {
   /**
    * Returns an SMT formula for binary function defined by the given predicate symbol `s`.
    */
-  def relation2(s: PSym): Declaration = {
+  def relation2(sort: LSym, s: PSym): Declaration = {
     val clauses = program.clauses.filter(_.head.name == s)
 
     val (x, y) = (Symbol.VariableSymbol("x0"), Symbol.VariableSymbol("y0"))
@@ -88,18 +88,18 @@ class Verifier(val program: Program) {
       }
     })
 
-    Declaration.Relation2(s, Sort.Named("rel2-todo"), x, y, formulae)
+    Declaration.Relation2(s, sort, x, y, formulae)
   }
 
 
-  def relation3(s: PSym): Declaration = {
+  def relation3(sort: LSym, s: PSym): Declaration = {
     val clauses = program.clauses.filter(_.head.name == s)
 
     val (x, y, z) = (Symbol.VariableSymbol("x0"), Symbol.VariableSymbol("y0"), Symbol.VariableSymbol("z0"))
 
     val p = Predicate(s, List(Term.Variable(x), Term.Variable(y), Term.Variable(z)))
     val formulae = SmtFormula.Disjunction(clauses.map {
-      h => Unification.unify(h.head, p, Map.empty[VSym, Term]) match {
+      h => Unification.unify(p, h.head, Map.empty[VSym, Term]) match {
         case None => SmtFormula.True // nop
         case Some(env) =>
           if (h.isFact)
@@ -109,7 +109,7 @@ class Verifier(val program: Program) {
       }
     })
 
-    Declaration.Relation3(s, Sort.Named("rel2-todo"), x, y, z, formulae)
+    Declaration.Relation3(s, sort, x, y, z, formulae)
   }
 
   // TODO
@@ -145,12 +145,12 @@ class Verifier(val program: Program) {
     /**
      * A 2-ary boolean function.
      */
-    case class Relation2(name: Symbol.PredicateSymbol, sort: Sort, var1: VSym, var2: VSym, formula: SmtFormula) extends Declaration
+    case class Relation2(name: Symbol.PredicateSymbol, sort: Symbol.LatticeSymbol, var1: VSym, var2: VSym, formula: SmtFormula) extends Declaration
 
     /**
      * A 3-ary boolean function.
      */
-    case class Relation3(name: Symbol.PredicateSymbol, sort: Sort, var1: VSym, var2: VSym, var3: VSym, formula: SmtFormula) extends Declaration
+    case class Relation3(name: Symbol.PredicateSymbol, sort: Symbol.LatticeSymbol, var1: VSym, var2: VSym, var3: VSym, formula: SmtFormula) extends Declaration
 
   }
 
@@ -245,7 +245,6 @@ class Verifier(val program: Program) {
     def smt(args: Any*): String = {
       def format(a: Any): String = a match {
         case x: Symbol => x.fmt
-        case x: Sort.Named => x.s
         case x => x.toString
       }
 

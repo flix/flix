@@ -83,7 +83,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
   /**
    * Returns `true` iff the given predicate `p` under the environment `env0` is a ground fact.
    */
-  def newProvenFact(p: Predicate, env0: Map[VSym, Value]): Boolean = p.asGround(env0) match {
+  def isProvenFact(p: Predicate, env0: Map[VSym, Value]): Boolean = p.asGround(env0) match {
     case None => false
     case Some(pg) => facts contains pg
   }
@@ -191,7 +191,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
    * Returns a list of environments for the given predicate `p` with interpretation `i` under the given environment `env0`.
    */
   def evaluate(p: Predicate, i: Interpretation, env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
-    if (newProvenFact(p, env0)) {
+    if (isProvenFact(p, env0)) {
       return List(env0)
     }
 
