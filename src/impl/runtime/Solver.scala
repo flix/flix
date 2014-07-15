@@ -161,6 +161,8 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
   // Evaluation                                                              //
   /////////////////////////////////////////////////////////////////////////////
 
+  // TODO: Harmonize evaluate and getModel
+
   /**
    * Returns a list of models for the given horn clause `h` under the given environment `env0`.
    */
