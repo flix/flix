@@ -187,7 +187,6 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
       return List(env0)
     }
 
-    // TODO: Use regular unification and then check if it as value?
     (i, hints.get(p.name)) match {
       case (Interpretation.Relation, Some(Hint(Representation.Data))) =>
         p.terms match {
