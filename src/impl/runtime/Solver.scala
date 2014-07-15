@@ -105,31 +105,31 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
           val v1 = t1.toValue(env)
           val newFact = relation1.put(p.name, v1)
           if (newFact)
-            propagate(Predicate(p.name, List(v1.asTerm)))
+            propagateFact(Predicate(p.name, List(v1.asTerm)))
 
         case List(t1, t2) =>
           val (v1, v2) = (t1.toValue(env), t2.toValue(env))
           val newFact = relation2.put(p.name, (v1, v2))
           if (newFact)
-            propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm)))
+            propagateFact(Predicate(p.name, List(v1.asTerm, v2.asTerm)))
 
         case List(t1, t2, t3) =>
           val (v1, v2, v3) = (t1.toValue(env), t2.toValue(env), t3.toValue(env))
           val newFact = relation3.put(p.name, (v1, v2, v3))
           if (newFact)
-            propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm)))
+            propagateFact(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm)))
 
         case List(t1, t2, t3, t4) =>
           val (v1, v2, v3, v4) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env))
           val newFact = relation4.put(p.name, (v1, v2, v3, v4))
           if (newFact)
-            propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm)))
+            propagateFact(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm)))
 
         case List(t1, t2, t3, t4, t5) =>
           val (v1, v2, v3, v4, v5) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env), t5.toValue(env))
           val newFact = relation5.put(p.name, (v1, v2, v3, v4, v5))
           if (newFact)
-            propagate(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm, v5.asTerm)))
+            propagateFact(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm, v5.asTerm)))
       }
 
       case Interpretation.LatticeMap(lattice) => p.terms match {
@@ -140,8 +140,22 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
           val newFact: Boolean = !leq(lattice.leq, joinValue, oldValue)
           if (newFact) {
             map1.put(p.name, joinValue)
-            propagate(Predicate(p.name, List(joinValue.asTerm)))
+            propagateFact(Predicate(p.name, List(joinValue.asTerm)))
           }
+      }
+    }
+  }
+
+  /**
+   * Enqueues all horn clauses which depend on the given predicate.
+   */
+  def propagateFact(p: Predicate): Unit = {
+    for (h <- dependencies.get(p.name)) {
+      for (p2 <- h.body) {
+        Unification.unify(p, p2, Map.empty[VSym, Term]) match {
+          case None => // nop
+          case Some(env0) => queue.enqueue((h, env0.mapValues(_.toValue)))
+        }
       }
     }
   }
@@ -208,19 +222,6 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
     }
   }
 
-  /**
-   * Enqueues all horn clauses which depend on the given predicate.
-   */
-  def propagate(p: Predicate): Unit = {
-    for (h <- dependencies.get(p.name)) {
-      for (p2 <- h.body) {
-        Unification.unify(p, p2, Map.empty[VSym, Term]) match {
-          case None => // nop
-          case Some(env0) => queue.enqueue((h, env0.mapValues(_.toValue)))
-        }
-      }
-    }
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Top-down satisfiability                                                 //
