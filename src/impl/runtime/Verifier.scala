@@ -70,7 +70,7 @@ class Verifier(val program: Program) {
   def relation2(s: PSym): Declaration = {
     val clauses = program.clauses.filter(_.head.name == s)
 
-    val (x, y) = (Symbol.VariableSymbol("x"), Symbol.VariableSymbol("y"))
+    val (x, y) = (Symbol.VariableSymbol("x0"), Symbol.VariableSymbol("y0"))
 
     val p = Predicate(s, List(Term.Variable(x), Term.Variable(y)))
     val formulae = SmtFormula.Disjunction(clauses.map {
@@ -91,7 +91,7 @@ class Verifier(val program: Program) {
   def relation3(s: PSym): Declaration = {
     val clauses = program.clauses.filter(_.head.name == s)
 
-    val (x, y, z) = (Symbol.VariableSymbol("x"), Symbol.VariableSymbol("y"), Symbol.VariableSymbol("z"))
+    val (x, y, z) = (Symbol.VariableSymbol("x0"), Symbol.VariableSymbol("y0"), Symbol.VariableSymbol("z0"))
 
     val p = Predicate(s, List(Term.Variable(x), Term.Variable(y), Term.Variable(z)))
     val formulae = SmtFormula.Disjunction(clauses.map {
@@ -108,21 +108,18 @@ class Verifier(val program: Program) {
     Declaration.Relation3(s, Sort.Named("rel2-todo"), x, y, z, formulae)
   }
 
-
-  /**
-   * TODO: DOC
-   */
   def genEnv(env: Map[VSym, Term]): SmtFormula = SmtFormula.Conjunction(env.toList.map {
-    case (v, t) => t match {
-      case Term.Bool(true) => SmtFormula.True
-      case Term.Variable(s) => env.get(s) match {
-        case None => SmtFormula.True
-        case Some(tt) => SmtFormula.True // Wrong
-      }
-      case Term.Constructor0(s) => SmtFormula.Eq(SmtFormula.Variable(v), SmtFormula.Constructor0(s))
-    }
+    case (v, t) => SmtFormula.Eq(SmtFormula.Variable(v), asFormula(t, env))
   })
 
+  def asFormula(t: Term, env: Map[VSym, Term]): SmtFormula = t match {
+    case Term.Bool(b) => if (b) SmtFormula.True else SmtFormula.False
+    case Term.Variable(s) => env.get(s) match {
+      case None => SmtFormula.Variable(s)
+      case Some(tt) => asFormula(tt, env)
+    }
+    case Term.Constructor0(s) => SmtFormula.Constructor0(s)
+  }
 
   /**
    * An SMT-LIB declaration.
@@ -211,27 +208,27 @@ class Verifier(val program: Program) {
     /**
      * A 1-ary constructor.
      */
-    case class Constructor1(s: Symbol.NamedSymbol, f1: Formula) extends SmtFormula
+    case class Constructor1(s: Symbol.NamedSymbol, f1: SmtFormula) extends SmtFormula
 
     /**
      * A 2-ary constructor.
      */
-    case class Constructor2(s: Symbol.NamedSymbol, f1: Formula, f2: Formula) extends SmtFormula
+    case class Constructor2(s: Symbol.NamedSymbol, f1: SmtFormula, f2: SmtFormula) extends SmtFormula
 
     /**
      * A 3-ary constructor.
      */
-    case class Constructor3(s: Symbol.NamedSymbol, f1: Formula, f2: Formula, f3: Formula) extends SmtFormula
+    case class Constructor3(s: Symbol.NamedSymbol, f1: SmtFormula, f2: SmtFormula, f3: SmtFormula) extends SmtFormula
 
     /**
      * A 4-ary constructor.
      */
-    case class Constructor4(s: Symbol.NamedSymbol, f1: Formula, f2: Formula, f3: Formula, f4: Formula) extends SmtFormula
+    case class Constructor4(s: Symbol.NamedSymbol, f1: SmtFormula, f2: SmtFormula, f3: SmtFormula, f4: SmtFormula) extends SmtFormula
 
     /**
      * A 5-ary constructor.
      */
-    case class Constructor5(s: Symbol.NamedSymbol, f1: Formula, f2: Formula, f3: Formula, f4: Formula, f5: Formula) extends SmtFormula
+    case class Constructor5(s: Symbol.NamedSymbol, f1: SmtFormula, f2: SmtFormula, f3: SmtFormula, f4: SmtFormula, f5: SmtFormula) extends SmtFormula
 
   }
 

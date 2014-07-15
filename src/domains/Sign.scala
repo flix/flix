@@ -8,13 +8,13 @@ object Sign {
 
   val Elements = Type.Variant(IndexedSeq(
     Type.Constructor0("Sign.Top"),
-    Type.Constructor0("Sign.Neg"), Type.Constructor0("Sign.Zero"), Type.Constructor0("Sign.Pos"),
+    Type.Constructor0("Sign.Neg"), Type.Constructor0("Sign.Zer"), Type.Constructor0("Sign.Pos"),
     Type.Constructor0("Sign.Bot")
   ))
 
   val Top = Term.Constructor0("Sign.Top")
   val Neg = Term.Constructor0("Sign.Neg")
-  val Zero = Term.Constructor0("Sign.Zero")
+  val Zero = Term.Constructor0("Sign.Zer")
   val Pos = Term.Constructor0("Sign.Pos")
   val Bot = Term.Constructor0("Sign.Bot")
 
