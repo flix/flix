@@ -1,6 +1,6 @@
 package impl.runtime
 
-import impl.logic.Symbol.{PredicateSymbol => PSym, LatticeSymbol => LSym, VariableSymbol => VSym}
+import impl.logic.Symbol.{LatticeSymbol => LSym, PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
 import syntax.Symbols._
 
@@ -17,17 +17,25 @@ class Verifier(val program: Program) {
     println("Proof Burdens")
     for ((s, lattice) <- program.lattices) {
       println("~~~~~~~~")
-      println(relation2(lattice.s, lattice.leq).fmt)
-      println(relation3(lattice.s, lattice.join).fmt)
+      println(datatype(lattice.name, lattice.domain).fmt)
+      println(relation2(lattice.name, lattice.leq).fmt)
+      println(relation3(lattice.name, lattice.join).fmt)
       println("~~~~~~~~")
 
-      println(reflexivity(lattice.s, lattice.leq))
-      println(antiSymmetri(lattice.s, lattice.leq))
-      println(transitivity(lattice.s, lattice.leq))
+      println(reflexivity(lattice.name, lattice.leq))
+      println(antiSymmetri(lattice.name, lattice.leq))
+      println(transitivity(lattice.name, lattice.leq))
     }
 
     println()
     println()
+  }
+
+  /**
+   * Returns a datatype declaration for the given lattice symbol `l` and type `t`.
+   */
+  def datatype(l: LSym, t: Type): Declaration = t match {
+    case Type.Variant(ts) => Declaration.Datatype(l, ts.toList.map(_.asInstanceOf[Type.Constructor0].name))
   }
 
   /**
@@ -66,7 +74,6 @@ class Verifier(val program: Program) {
     |            ($leq x z))))
     """.stripMargin
 
-  def genDatatype: String = ???
 
   /**
    * Returns an SMT formula for binary function defined by the given predicate symbol `s`.
@@ -112,7 +119,7 @@ class Verifier(val program: Program) {
     Declaration.Relation3(s, sort, x, y, z, formulae)
   }
 
-  // TODO
+  // TODO: Add bound variables?
   def genEnv(env: Map[VSym, Term]): SmtFormula = SmtFormula.Conjunction(env.toList.map {
     case (v, t) => SmtFormula.Eq(SmtFormula.Variable(v), asFormula(t, env))
   })
@@ -137,20 +144,28 @@ class Verifier(val program: Program) {
 
       case Declaration.Relation3(s, sort, var1, var2, var3, formula) =>
         smt"(define-fun $s (($var1 $sort) ($var2 $sort)) Bool" + "\n    " + formula.fmt(1) + ")\n"
+
+      case Declaration.Datatype(s, variants) =>
+        smt"(declare-datatypes () (($s " + variants.map(_.s).mkString(", ") + ")))\n"
     }
   }
 
   object Declaration {
 
     /**
-     * A 2-ary boolean function.
+     * A 2-ary boolean function declaration.
      */
     case class Relation2(name: Symbol.PredicateSymbol, sort: Symbol.LatticeSymbol, var1: VSym, var2: VSym, formula: SmtFormula) extends Declaration
 
     /**
-     * A 3-ary boolean function.
+     * A 3-ary boolean function declaration.
      */
     case class Relation3(name: Symbol.PredicateSymbol, sort: Symbol.LatticeSymbol, var1: VSym, var2: VSym, var3: VSym, formula: SmtFormula) extends Declaration
+
+    /**
+     * A datatype declaration.
+     */
+    case class Datatype(name: Symbol.LatticeSymbol, variants: List[Symbol.NamedSymbol]) extends Declaration
 
   }
 
