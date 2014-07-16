@@ -34,6 +34,8 @@ class Verifier(val program: Program) {
       writer.println(transitivity(lattice.name, lattice.leq))
       writer.println(leastElement(lattice.name, lattice.bot, lattice.leq))
 
+      writer.println(joinTotal(lattice.name, lattice.join))
+      writer.println(joinFunction(lattice.name, lattice.join))
       writer.println(joinLub1(lattice.name, lattice.leq, lattice.join))
       writer.println(joinLub2(lattice.name, lattice.leq, lattice.join))
 
@@ -108,7 +110,15 @@ class Verifier(val program: Program) {
     """.stripMargin
 
 
+  /**
+   * Join is Total.
+   */
+  def joinTotal(sort: LSym, join: PSym): String = isTotal2("join-total", sort, join)
 
+  /**
+   * Join is Function.
+   */
+  def joinFunction(sort: LSym, join: PSym): String = isFunction2(sort, join)
 
   /**
    * Join Lub 1: ∀x, y, z. x ⊑ x ⨆ y ∧ y ⊑ x ⨆ y.
@@ -139,6 +149,27 @@ class Verifier(val program: Program) {
     |(assert join-lub-2)
     |(check-sat)
     """.stripMargin
+
+  /**
+   * Function2 is Total: ∀x, y, ∃z. z = f(x, y).
+   */
+  def isTotal2(name: String, sort: LSym, f: PSym): String = smt"""
+    |;; Function2 is Total: ∀x, y, ∃z. z = f(x, y).
+    |(define-fun $name () Bool
+    |    (forall ((x $sort) (y $sort))
+    |        (exists ((z $sort))
+    |            ($f x y z))))
+    |(assert $name)
+    |(check-sat)
+     """.stripMargin
+
+  /**
+   * TODO: DOC
+   */
+  def isFunction2(sort: LSym, s: PSym): String = smt"""
+
+     """.stripMargin
+
 
   /**
    * Returns an SMT formula for function defined by the predicate symbol `s` with the given `sort`.
