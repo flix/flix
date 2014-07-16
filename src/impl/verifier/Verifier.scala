@@ -110,7 +110,7 @@ class Verifier(val program: Program) {
       }
     })
 
-    SmtDeclaration.Relation2(s, sort, x, y, formulae)
+    SmtDeclaration.Relation(s, List(sort.fmt, sort.fmt), List(x, y), formulae)
   }
 
   /**
@@ -134,7 +134,7 @@ class Verifier(val program: Program) {
       }
     })
 
-    SmtDeclaration.Relation3(s, sort, x, y, z, formulae)
+    SmtDeclaration.Relation(s, List(sort.fmt, sort.fmt, sort.fmt), List(x, y, z), formulae)
   }
 
   /**
