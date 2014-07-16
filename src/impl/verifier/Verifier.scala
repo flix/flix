@@ -52,7 +52,7 @@ class Verifier(val program: Program) {
 
     writer.close();
 
-   run(datatype(lattice.name, lattice.domain).fmt + relation2(lattice.leq, List(lattice.name.fmt, lattice.name.fmt)).fmt + latticeLeq(lattice, writer))
+   run(datatype(lattice.name, lattice.domain).fmt + "\n" + relation2(lattice.leq, List(lattice.name.fmt, lattice.name.fmt)).fmt +"\n" + latticeLeq(lattice, writer))
   }
 
   /**
@@ -181,9 +181,16 @@ class Verifier(val program: Program) {
    */
   def run(s: String): Unit = {
     val tmpFile = File.createTempFile("z3-temp", ".txt");
-    tmpFile.deleteOnExit()
+
+    val writer = new PrintWriter(tmpFile)
+    writer.println(s)
+    writer.close()
 
     val process = Runtime.getRuntime.exec(Array(Z3, "/smt2", tmpFile.getAbsolutePath))
+
+    println(tmpFile)
+
+    println(scala.io.Source.fromInputStream(process.getInputStream).getLines().mkString("\n"))
 
     process.waitFor()
     println(process.exitValue())
