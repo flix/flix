@@ -26,7 +26,7 @@ object Transfer {
    */
   def isMonotone2(sort: LSym, f: PSym, leq: PSym): String = smt"""
     |;; Monotone: ∀x1, x2, y1, y2. x1 ⊑ x2 ∧ y1 ⊑ y2 ⇒ f(x1, y1) ⊑ f(x2, y2).
-    |(define-fun sum-monotone () Bool
+    |(define-fun $f-monotone () Bool
     |    (forall ((x1 $sort) (x2 $sort) (y1 $sort) (y2 $sort) (r1 $sort) (r2 $sort))
     |        (=>
     |            (and
@@ -36,7 +36,7 @@ object Transfer {
     |                ($f x2 y2 r2))
     |                ($leq r1 r2))))
     |(push)
-    |(assert $f-strict)
+    |(assert $f-monotone)
     |(check-sat)
     |(pop)
     """.stripMargin

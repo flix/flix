@@ -27,72 +27,84 @@ class Verifier(val program: Program) {
    * Emit verifications conditions.
    */
   private def emitVerificationConditions(lattice: Lattice): Unit = {
-    val file = new File("./z3/" + lattice.name.s + "0.smt")
-    val writer = new PrintWriter(file)
+    /**
+     * Verification conditions for the lattice ordering: Leq.
+     */
+    run(lattice, "Leq is reflexivity", LatticeLeq.reflexivity(lattice.name, lattice.leq))
+    run(lattice, "Leq is antisymmetric", LatticeLeq.antiSymmetri(lattice.name, lattice.leq))
+    run(lattice, "Leq is transitive", LatticeLeq.transitivity(lattice.name, lattice.leq))
+    run(lattice, "Leq has a bottom element", LatticeLeq.leastElement(lattice.name, lattice.bot, lattice.leq))
 
-    writer.println(";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")
-    writer.println(";;;; AUTOMATICALLY GENERATED FILE. DO NOT EDIT.                              ;;")
-    writer.println(";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")
-    writer.println()
+    /**
+     * Verification conditions for the lattice least-upper-bound: Lub.
+     */
+    run(lattice, "Lub is a function", Function2.isFunction(lattice.name, lattice.lub))
+    run(lattice, "Lub is total", Function2.isTotal(lattice.name, lattice.lub))
+    run(lattice, "Lub is an upper bound", LatticeLub.upperBound(lattice.name, lattice.leq, lattice.lub))
+    run(lattice, "Lub is a least upper bound", LatticeLub.leastUpperBound(lattice.name, lattice.leq, lattice.lub))
 
-    writer.println(datatype(lattice.name, lattice.domain).fmt)
-    writer.println(relation2(lattice.leq, List(lattice.name.fmt, lattice.name.fmt)).fmt)
-    writer.println(relation3(lattice.lub, List(lattice.name.fmt, lattice.name.fmt, lattice.name.fmt)).fmt)
-    writer.println(relation2(lattice.height, List(lattice.name.fmt, "Int")).fmt)
-
-    latticeLeq(lattice, writer)
-    latticeLub(lattice, writer)
-    latticeHeight(lattice, writer)
+    /**
+     * Verification conditions for the lattice height.
+     */
+    run(lattice, "The height function is a function", Function1.isFunction(lattice.name.fmt, "Int", lattice.height))
+    run(lattice, "The height function is total", Function1.isTotal(lattice.name.fmt, "Int", lattice.height))
+    run(lattice, "The height function is strictly decreasing", LatticeHeight.strictlyDecreasing(lattice.name, lattice.height, lattice.leq))
+    run(lattice, "The height function is always non-negative", LatticeHeight.nonNegative(lattice.name, lattice.height))
 
     for (s <- lattice.funcs) {
-      // TODO: Assumes fixed arity...
-      writer.println(relation3(s, List(lattice.name.fmt, lattice.name.fmt, lattice.name.fmt)).fmt)
-      transfer(lattice, s, writer)
+      run(lattice, s.fmt + " is a function", Function2.isFunction(lattice.name, s))
+      run(lattice, s.fmt + " is a total", Function2.isTotal(lattice.name, s))
+      run(lattice, s.fmt + " is a strict", Transfer.isStrict2(lattice.name, lattice.bot, s))
+      run(lattice, s.fmt + " is monotone", Transfer.isMonotone2(lattice.name, s, lattice.leq))
     }
-
-    writer.close();
-
-   run(datatype(lattice.name, lattice.domain).fmt + "\n" + relation2(lattice.leq, List(lattice.name.fmt, lattice.name.fmt)).fmt +"\n" + latticeLeq(lattice, writer))
   }
 
   /**
-   * Verifications conditions for lattice order.
+   * Run Z3 on the given input.
    */
-  def latticeLeq(lattice: Lattice, writer: PrintWriter): Unit = {
-    writer.println(LatticeLeq.reflexivity(lattice.name, lattice.leq))
-    writer.println(LatticeLeq.antiSymmetri(lattice.name, lattice.leq))
-    writer.println(LatticeLeq.transitivity(lattice.name, lattice.leq))
-    writer.println(LatticeLeq.leastElement(lattice.name, lattice.bot, lattice.leq))
+  def run(lattice: Lattice, name: String, s: String): Unit = {
+    // Create a temporary file and store the lattice declarations and constraints.
+    val tmpFile = File.createTempFile("z3-constraint", ".txt");
+    val writer = new PrintWriter(tmpFile)
+    writer.println(declarations(lattice))
+    writer.println(s)
+    writer.close()
+
+    // Run z3
+    val process = Runtime.getRuntime.exec(Array(Z3, "/smt2", tmpFile.getAbsolutePath))
+    val output = scala.io.Source.fromInputStream(process.getInputStream).getLines().mkString("\n")
+
+    if (output == "sat") {
+      println(s"$name: Yes.")
+    } else {
+      println()
+      println(s"$name: NO!!!!!!!!")
+      println(s"Constraint File: $tmpFile")
+      println(s"Z3 Output:")
+      println(output)
+      println()
+    }
   }
 
   /**
-   * Verifications conditions for lattice least-upper-bound
+   * Returns the lattice declarations.
    */
-  def latticeLub(lattice: Lattice, writer: PrintWriter): Unit = {
-    writer.println(Function2.isFunction(lattice.name, lattice.lub))
-    writer.println(Function2.isTotal(lattice.name, lattice.lub))
-    writer.println(LatticeLub.upperBound(lattice.name, lattice.leq, lattice.lub))
-    writer.println(LatticeLub.leastUpperBound(lattice.name, lattice.leq, lattice.lub))
-  }
-
-  /**
-   * Verifications conditions for lattice height.
-   */
-  def latticeHeight(lattice: Lattice, writer: PrintWriter): Unit = {
-    writer.println(Function1.isFunction(lattice.name.fmt, "Int", lattice.height))
-    writer.println(Function1.isTotal(lattice.name.fmt, "Int", lattice.height))
-    writer.println(LatticeHeight.strictlyDecreasing(lattice.name, lattice.height, lattice.leq))
-    writer.println(LatticeHeight.nonNegative(lattice.name, lattice.height))
-  }
-
-  /**
-   * Verifications conditions for transfer functions.
-   */
-  def transfer(lattice: Lattice, s: PSym, writer: PrintWriter) {
-    writer.println(Function2.isFunction(lattice.name, s))
-    writer.println(Function2.isTotal(lattice.name, s))
-    writer.println(Transfer.isStrict2(lattice.name, lattice.bot, s))
-    writer.println(Transfer.isMonotone2(lattice.name, s, lattice.leq))
+  private def declarations(lattice: Lattice): String = {
+    val sb = new StringBuilder()
+    sb.append(datatype(lattice.name, lattice.domain).fmt)
+    sb.append("\n")
+    sb.append(relation2(lattice.leq, List(lattice.name.fmt, lattice.name.fmt)).fmt)
+    sb.append("\n")
+    sb.append(relation3(lattice.lub, List(lattice.name.fmt, lattice.name.fmt, lattice.name.fmt)).fmt)
+    sb.append("\n")
+    sb.append(relation2(lattice.height, List(lattice.name.fmt, "Int")).fmt)
+    sb.append("\n")
+    for (s <- lattice.funcs) {
+      // TODO: Assumes fixed arity...
+      sb.append(relation3(s, List(lattice.name.fmt, lattice.name.fmt, lattice.name.fmt)).fmt)
+      sb.append("\n")
+    }
+    sb.toString()
   }
 
   /**
@@ -176,23 +188,5 @@ class Verifier(val program: Program) {
     case Term.Constructor0(s) => SmtFormula.Constructor0(s)
   }
 
-  /**
-   * Run Z3 on the given input.
-   */
-  def run(s: String): Unit = {
-    val tmpFile = File.createTempFile("z3-temp", ".txt");
 
-    val writer = new PrintWriter(tmpFile)
-    writer.println(s)
-    writer.close()
-
-    val process = Runtime.getRuntime.exec(Array(Z3, "/smt2", tmpFile.getAbsolutePath))
-
-    println(tmpFile)
-
-    println(scala.io.Source.fromInputStream(process.getInputStream).getLines().mkString("\n"))
-
-    process.waitFor()
-    println(process.exitValue())
-  }
 }
