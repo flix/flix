@@ -29,17 +29,17 @@ class Verifier(val program: Program) {
 
       writer.println(datatype(lattice.name, lattice.domain).fmt)
       writer.println(relation2(lattice.name, lattice.leq).fmt)
-      writer.println(relation3(lattice.name, lattice.join).fmt)
+      writer.println(relation3(lattice.name, lattice.lub).fmt)
 
       writer.println(LatticeLeq.reflexivity(lattice.name, lattice.leq))
       writer.println(LatticeLeq.antiSymmetri(lattice.name, lattice.leq))
       writer.println(LatticeLeq.transitivity(lattice.name, lattice.leq))
       writer.println(LatticeLeq.leastElement(lattice.name, lattice.bot, lattice.leq))
 
-      writer.println(Function2.isFunction(lattice.name, lattice.join))
-      writer.println(Function2.isTotal(lattice.name, lattice.join))
-      writer.println(LatticeLub.joinLub1(lattice.name, lattice.leq, lattice.join))
-      writer.println(LatticeLub.joinLub2(lattice.name, lattice.leq, lattice.join))
+      writer.println(Function2.isFunction(lattice.name, lattice.lub))
+      writer.println(Function2.isTotal(lattice.name, lattice.lub))
+      writer.println(LatticeLub.upperBound(lattice.name, lattice.leq, lattice.lub))
+      writer.println(LatticeLub.leastUpperBound(lattice.name, lattice.leq, lattice.lub))
 
       for (s <- List(Symbol.PredicateSymbol("Sign.Sum"))) {
         // TODO: Need to find transfer functions...

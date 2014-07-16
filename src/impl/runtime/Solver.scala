@@ -139,7 +139,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
           val lattice = program.lattices(p.name)
           val newValue = t1.toValue(env)
           val oldValue = map1.get(p.name).getOrElse(lattice.bot)
-          val joinValue = join(lattice.join, newValue, oldValue)
+          val joinValue = join(lattice.lub, newValue, oldValue)
           val newFact: Boolean = !leq(lattice.leq, joinValue, oldValue)
           if (newFact) {
             map1.put(p.name, joinValue)

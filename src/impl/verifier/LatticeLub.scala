@@ -5,32 +5,32 @@ import syntax._
 
 object LatticeLub {
   /**
-   * Join Lub 1: ∀x, y, z. x ⊑ x ⨆ y ∧ y ⊑ x ⨆ y.
+   * Upper Bound: ∀x, y, z. x ⊑ x ⨆ y ∧ y ⊑ x ⨆ y.
    */
-  def joinLub1(sort: LSym, leq: PSym, join: PSym): String = smt"""
-    |;; Join-Lub-1: ∀x, y, z. x ⊑ x ⨆ y ∧ y ⊑ x ⨆ y.
-    |(define-fun join-lub-1 () Bool
+  def upperBound(sort: LSym, leq: PSym, lub: PSym): String = smt"""
+    |;; Upper Bound: ∀x, y, z. x ⊑ x ⨆ y ∧ y ⊑ x ⨆ y.
+    |(define-fun $sort-upper-bound () Bool
     |    (forall ((x $sort) (y $sort) (z $sort))
     |        (and
-    |            (=> ($join x y z) ($leq x z))
-    |            (=> ($join x y z) ($leq y z)))))
-    |(assert join-lub-1)
+    |            (=> ($lub x y z) ($leq x z))
+    |            (=> ($lub x y z) ($leq y z)))))
+    |(assert $sort-upper-bound)
     |(check-sat)
     """.stripMargin
 
   /**
-   * Join-Lub-2: ∀x, y, z. x ⊑ z ∧ y ⊑ z ⇒ x ⨆ y ⊑ z.
+   * Least Upper Bound: ∀x, y, z. x ⊑ z ∧ y ⊑ z ⇒ x ⨆ y ⊑ z.
    */
-  def joinLub2(sort: LSym, leq: PSym, join: PSym): String = smt"""
-    |;; Join-Lub-2: ∀x, y, z. x ⊑ z ∧ y ⊑ z ⇒ x ⨆ y ⊑ z.
-    |(define-fun join-lub-2 () Bool
+  def leastUpperBound(sort: LSym, leq: PSym, lub: PSym): String = smt"""
+    |;; Least Upper Bound: ∀x, y, z. x ⊑ z ∧ y ⊑ z ⇒ x ⨆ y ⊑ z.
+    |(define-fun $sort-least-upper-bound () Bool
     |    (forall ((x $sort) (y $sort) (z $sort) (w $sort))
     |        (=>
     |            (and ($leq x z)
     |                 ($leq y z)
-    |                 ($join x y w))
+    |                 ($lub x y w))
     |        ($leq w z))))
-    |(assert join-lub-2)
+    |(assert $sort-least-upper-bound)
     |(check-sat)
     """.stripMargin
 }

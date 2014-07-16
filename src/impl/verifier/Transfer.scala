@@ -4,7 +4,6 @@ import impl.logic.Symbol.{LatticeSymbol => LSym, PredicateSymbol => PSym}
 import impl.logic.Value
 import syntax._
 
-// TODO: Rename join to lub everywhere
 object Transfer {
   /**
    * Strict ∀x. f(⊥, x) = ⊥ ∧ f(x, ⊥) = ⊥.

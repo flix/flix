@@ -7,7 +7,7 @@ case class Lattice(name: Symbol.LatticeSymbol,
                    domain: Type,
                    bot: Value,
                    leq: Symbol.PredicateSymbol,
-                   join: Symbol.PredicateSymbol,
+                   lub: Symbol.PredicateSymbol,
                    clauses: List[HornClause])
 
 //  termination: List[HornClause]
