@@ -29,4 +29,17 @@ object Symbol {
    */
   case class VariableSymbol(s: String) extends Symbol
 
+  /**
+   * An internal counter.
+   */
+  private var Counter: Int = 0;
+
+  /**
+   * Returns a fresh function symbol.
+   */
+  def freshVariableSymbol(prefix: String): VariableSymbol = {
+    Counter += 1
+    VariableSymbol(prefix + Counter)
+  }
+
 }

@@ -50,4 +50,8 @@
             (and (Sign.Leq x y)
                  (Sign.Leq y z))
             (Sign.Leq x z))))
-    
+
+;; Least Element: ∀x. ⊥ ⊑ x.
+(define-fun least-element () Bool
+    (forall ((x Sign))
+        (Sign.Leq Sign.Bot x)))

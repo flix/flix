@@ -23,6 +23,9 @@ class Verifier(val program: Program) {
       println(reflexivity(lattice.name, lattice.leq))
       println(antiSymmetri(lattice.name, lattice.leq))
       println(transitivity(lattice.name, lattice.leq))
+      println(leastElement(lattice.name, lattice.bot, lattice.leq))
+
+
     }
 
     println()
@@ -76,12 +79,23 @@ class Verifier(val program: Program) {
 
 
   /**
-   * Returns an SMT formula for binary function defined by the given predicate symbol `s`.
+   * Least Element: ∀x. ⊥ ⊑ x.
+   */
+  def leastElement(sort: LSym, bot: Value, leq: PSym): String = smt"""
+    |;; Least Element: ∀x. ⊥ ⊑ x.
+    |(define-fun least-element () Bool
+    |    (forall ((x $sort))
+    |        ($leq $bot x)))
+    """.stripMargin
+
+
+  /**
+   * Returns an SMT formula for function defined by the predicate symbol `s` with the given `sort`.
    */
   def relation2(sort: LSym, s: PSym): Declaration = {
     val clauses = program.clauses.filter(_.head.name == s)
 
-    val (x, y) = (Symbol.VariableSymbol("x0"), Symbol.VariableSymbol("y0"))
+    val (x, y) = (Symbol.freshVariableSymbol("x"), Symbol.freshVariableSymbol("y"))
 
     val p = Predicate(s, List(Term.Variable(x), Term.Variable(y)))
     val formulae = SmtFormula.Disjunction(clauses.map {
@@ -98,7 +112,9 @@ class Verifier(val program: Program) {
     Declaration.Relation2(s, sort, x, y, formulae)
   }
 
-
+  /**
+   * Returns an SMT formula for function defined by the predicate symbol `s` with the given `sort`.
+   */
   def relation3(sort: LSym, s: PSym): Declaration = {
     val clauses = program.clauses.filter(_.head.name == s)
 
@@ -120,7 +136,9 @@ class Verifier(val program: Program) {
     Declaration.Relation3(s, sort, x, y, z, formulae)
   }
 
-  // TODO: Add bound variables?
+  /**
+   * TODO: DOC
+   */
   def asFormula(bound: Set[VSym], env: Map[VSym, Term]): SmtFormula = SmtFormula.Conjunction(env.toList.flatMap {
     case (v, t) => {
       val f = SmtFormula.Eq(SmtFormula.Variable(v), asFormula(t, env))
@@ -281,6 +299,8 @@ class Verifier(val program: Program) {
       def format(a: Any): String = a match {
         case x: Symbol => x.fmt
         case x => x.toString
+        case Value.Constructor0(s) => s.fmt
+          // TODO: Handle values...
       }
 
       val pi = sc.parts.iterator
