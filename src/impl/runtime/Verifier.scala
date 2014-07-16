@@ -51,7 +51,9 @@ class Verifier(val program: Program) {
       }
 
       val h = Symbol.PredicateSymbol("Sign.Height")
-      writer.println(Termination.dereasing()) // TODO
+      // TODO: function + total
+      writer.println(Termination.strictlyDecreasing(lattice.name, h, lattice.leq)) // TODO
+      writer.println(Termination.nonNegative(lattice.name, h))
 
 
       writer.close();
