@@ -4,7 +4,7 @@ import java.io.{File, PrintWriter}
 
 import impl.logic.Symbol.{LatticeSymbol => LSym, PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
-import impl.verifier.{LatticeLub, LatticeLeq}
+import impl.verifier.{Function2, LatticeLub, LatticeLeq}
 import syntax.Symbols._
 import syntax._
 
@@ -36,12 +36,17 @@ class Verifier(val program: Program) {
       writer.println(LatticeLeq.transitivity(lattice.name, lattice.leq))
       writer.println(LatticeLeq.leastElement(lattice.name, lattice.bot, lattice.leq))
 
-      writer.println(LatticeLub.joinFunction(lattice.name, lattice.join))
-      writer.println(LatticeLub.joinTotal(lattice.name, lattice.join))
+      writer.println(Function2.isFunction(lattice.name, lattice.join))
+      writer.println(Function2.isTotal(lattice.name, lattice.join))
       writer.println(LatticeLub.joinLub1(lattice.name, lattice.leq, lattice.join))
       writer.println(LatticeLub.joinLub2(lattice.name, lattice.leq, lattice.join))
 
-      writer.println()
+      for (s <- List(Symbol.PredicateSymbol("Sign.sum"))) {
+        // TODO: Need to find transfer functions...
+        // TODO: Need termination function.
+        writer.println(Function2.isFunction(lattice.name, s))
+      }
+
 
       writer.close();
     }
@@ -90,41 +95,6 @@ class Verifier(val program: Program) {
 //    (Sign.sum x2 y2 r2))
 //  (Sign.leq r1 r2))))
 
-
-
-
-//  ;; Height-Function: ∀x, y. x = y ⇒ h(x) = h(y)
-//  (define-fun height-function () Bool
-//    (forall ((x Sign) (y Sign) (r1 Int) (r2 Int))
-//      (=>
-//  (and
-//    (= x y)
-//  (Sign.height x r1)
-//  (Sign.height y r2))
-//  (= r1 r2))))
-//
-//  ;; Height-Total: ∀x. ∃y. y = h(x).
-//  (define-fun height-total () Bool
-//    (forall ((x Sign))
-//      (exists ((r Int))
-//        (Sign.height x r))))
-//
-//  ;; Height-NonNegative: ∀x. h(x) > 0.
-//  (define-fun height-non-negative () Bool
-//    (forall ((x Sign) (h Int))
-//      (=>
-//  (Sign.height x h)
-//  (> h 0))))
-//
-//  ;; Height-Decreasing: ∀x, y. x ⊑ y ∧ x != y ⇒ h(x) > h(y).
-//  (define-fun height-decreasing () Bool
-//    (forall ((x Sign) (y Sign) (h1 Int) (h2 Int))
-//      (=>
-//  (and (distinct x y)
-//    (Sign.leq x y)
-//    (Sign.height x h1)
-//    (Sign.height y h2))
-//  (> h1 h2))))
 
   /**
    * Returns an SMT formula for function defined by the predicate symbol `s` with the given `sort`.

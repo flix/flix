@@ -10,4 +10,5 @@ case class Lattice(name: Symbol.LatticeSymbol,
                    join: Symbol.PredicateSymbol,
                    clauses: List[HornClause])
 
+//  termination: List[HornClause]
 // TODO: Need transfer function symbols?

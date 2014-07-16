@@ -5,16 +5,6 @@ import syntax._
 
 object LatticeLub {
   /**
-   * Join is Function.
-   */
-  def joinFunction(sort: LSym, join: PSym): String = Function2.isFunction("join-func", sort, join)
-
-  /**
-   * Join is Total.
-   */
-  def joinTotal(sort: LSym, join: PSym): String = Function2.isTotal("join-total", sort, join)
-
-  /**
    * Join Lub 1: ∀x, y, z. x ⊑ x ⨆ y ∧ y ⊑ x ⨆ y.
    */
   def joinLub1(sort: LSym, leq: PSym, join: PSym): String = smt"""
