@@ -8,7 +8,7 @@ case class Lattice(name: Symbol.LatticeSymbol,
                    bot: Value,
                    leq: Symbol.PredicateSymbol,
                    lub: Symbol.PredicateSymbol,
+                   height: Symbol.PredicateSymbol,
                    clauses: List[HornClause])
 
-//  termination: List[HornClause]
 // TODO: Need transfer function symbols?

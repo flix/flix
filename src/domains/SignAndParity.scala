@@ -10,6 +10,7 @@ object SignAndParity {
 
   val LeqSymbol = Symbol.PredicateSymbol("SP.Leq")
   val JoinSymbol = Symbol.PredicateSymbol("SP.Join")
+  val HeightSymbol =Symbol.PredicateSymbol("SP.Height")
   val SumSymbol = Symbol.PredicateSymbol("SP.Sum")
 
   val Bot = Term.Constructor2("SP", Sign.Bot, Parity.Bot)
@@ -38,6 +39,10 @@ object SignAndParity {
         Predicate("Parity.Join", List(Term.Variable("p1"), Term.Variable("p2"), Term.Variable("p3")))
       )))
 
+  val Height = List(
+    // TODO: How to define?
+  )
+
   val Sum = List(
     HornClause(
       head = Predicate(SumSymbol, List(
@@ -56,6 +61,6 @@ object SignAndParity {
     SumSymbol -> Hint(Representation.Code)
   ) ++ Sign.Hints ++ Parity.Hints
 
-  val lattice = Lattice("SP", Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum ::: Sign.lattice.clauses ::: Parity.lattice.clauses)
+  val lattice = Lattice("SP", Elements, Bot.toValue, LeqSymbol, JoinSymbol, HeightSymbol, Leq ::: Join ::: Height ::: Sum ::: Sign.lattice.clauses ::: Parity.lattice.clauses)
 
 }

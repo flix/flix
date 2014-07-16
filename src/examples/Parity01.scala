@@ -1,8 +1,9 @@
 package examples
 
 import domains.Parity
+import impl.Runner
 import impl.logic._
-import impl.runtime.{Hint, Representation, Runner}
+import impl.runtime.{Hint, Representation}
 import syntax.Symbols._
 
 object Parity01 {

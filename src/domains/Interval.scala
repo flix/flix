@@ -17,6 +17,7 @@ object Interval {
 
   val LeqSymbol = Symbol.PredicateSymbol("Interval.Leq")
   val JoinSymbol = Symbol.PredicateSymbol("Interval.Join")
+  val HeightSymbol = Symbol.PredicateSymbol("Interval.Height")
   val SumSymbol = Symbol.PredicateSymbol("Interval.Sum")
 
   val Leq = List(
@@ -79,6 +80,10 @@ object Interval {
     HornClause(Predicate(JoinSymbol, List(Term.Variable("_"), Top, Top)))
   )
 
+  val Height = List(
+    // TODO: How to define?
+  )
+
   val Sum = List(
     HornClause(Predicate(SumSymbol, List(Bot, Term.Variable("_"), Bot))),
     HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Bot, Bot))),
@@ -99,6 +104,6 @@ object Interval {
     SumSymbol -> Hint(Representation.Code)
   )
 
-  val lattice = Lattice("Interval", Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum)
+  val lattice = Lattice("Interval", Elements, Bot.toValue, LeqSymbol, JoinSymbol, HeightSymbol, Leq ::: Join ::: Height ::: Sum)
 
 }

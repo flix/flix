@@ -1,6 +1,8 @@
-package impl.runtime
+package impl
 
-import impl.logic.{Symbol, Program}
+import impl.logic.{Program, Symbol}
+import impl.runtime.{Hint, Solver}
+import impl.verifier.Verifier
 import util.output.Solution
 
 object Runner {

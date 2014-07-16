@@ -19,6 +19,7 @@ object Parity {
 
   val LeqSymbol = Symbol.PredicateSymbol("Parity.Leq")
   val JoinSymbol = Symbol.PredicateSymbol("Parity.Join")
+  val HeightSymbol = Symbol.PredicateSymbol("Parity.Height")
   val SumSymbol = Symbol.PredicateSymbol("Parity.Sum")
 
   val Leq = List(
@@ -42,6 +43,13 @@ object Parity {
     HornClause(Predicate(JoinSymbol, List(Term.Variable("_"), Top, Top)))
   )
 
+  val Height = List(
+    HornClause(Predicate(HeightSymbol, List(Bot, Term.Int(3)))),
+    HornClause(Predicate(HeightSymbol, List(Odd, Term.Int(2)))),
+    HornClause(Predicate(HeightSymbol, List(Even, Term.Int(2)))),
+    HornClause(Predicate(HeightSymbol, List(Top, Term.Int(1))))
+  )
+
   val Sum = List(
     HornClause(Predicate(SumSymbol, List(Bot, Term.Variable("_"), Bot))),
     HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Bot, Bot))),
@@ -60,6 +68,6 @@ object Parity {
     SumSymbol -> Hint(Representation.Code)
   )
 
-  val lattice = Lattice("Parity", Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum)
+  val lattice = Lattice("Parity", Elements, Bot.toValue, LeqSymbol, JoinSymbol, HeightSymbol, Leq ::: Join ::: Height ::: Sum)
 
 }

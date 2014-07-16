@@ -3,7 +3,7 @@ package impl.verifier
 import impl.logic.Symbol.{LatticeSymbol => LSym, PredicateSymbol => PSym}
 import syntax._
 
-object Termination {
+object LatticeHeight {
   /**
    * Stricly-Decreasing: ∀x, y. x ⊑ y ∧ x != y ⇒ f(x) > f(y).
    */

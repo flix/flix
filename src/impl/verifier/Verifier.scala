@@ -1,10 +1,10 @@
-package impl.runtime
+package impl.verifier
 
 import java.io.{File, PrintWriter}
 
 import impl.logic.Symbol.{LatticeSymbol => LSym, PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
-import impl.verifier._
+import impl.runtime.Unification
 import syntax.Symbols._
 
 /**
@@ -16,51 +16,70 @@ class Verifier(val program: Program) {
    * Verifies that the program is safe.
    */
   def verify(): Unit = {
+    for ((_, lattice) <- program.lattices) {
+      emitVerificationConditions(lattice)
+    }
+  }
 
-    for ((s, lattice) <- program.lattices) {
-      val file = new File("./z3/" + lattice.name.s + "0.smt")
-      val writer = new PrintWriter(file)
+  /**
+   * Emit verifications conditions.
+   */
+  private def emitVerificationConditions(lattice: Lattice): Unit = {
+    val file = new File("./z3/" + lattice.name.s + "0.smt")
+    val writer = new PrintWriter(file)
 
-      writer.println(";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")
-      writer.println(";;;; AUTOMATICALLY GENERATED FILE. DO NOT EDIT.                              ;;")
-      writer.println(";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")
-      writer.println()
+    writer.println(";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")
+    writer.println(";;;; AUTOMATICALLY GENERATED FILE. DO NOT EDIT.                              ;;")
+    writer.println(";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")
+    writer.println()
 
-      writer.println(datatype(lattice.name, lattice.domain).fmt)
-      writer.println(relation2(lattice.name, lattice.leq).fmt)
-      writer.println(relation3(lattice.name, lattice.lub).fmt)
+    writer.println(datatype(lattice.name, lattice.domain).fmt)
+    writer.println(relation2(lattice.name, lattice.leq).fmt)
+    writer.println(relation3(lattice.name, lattice.lub).fmt)
 
-      writer.println(LatticeLeq.reflexivity(lattice.name, lattice.leq))
-      writer.println(LatticeLeq.antiSymmetri(lattice.name, lattice.leq))
-      writer.println(LatticeLeq.transitivity(lattice.name, lattice.leq))
-      writer.println(LatticeLeq.leastElement(lattice.name, lattice.bot, lattice.leq))
+    latticeLeq(lattice, writer)
+    latticeLub(lattice, writer)
+    latticeHeight(lattice, writer)
 
-      writer.println(Function2.isFunction(lattice.name, lattice.lub))
-      writer.println(Function2.isTotal(lattice.name, lattice.lub))
-      writer.println(LatticeLub.upperBound(lattice.name, lattice.leq, lattice.lub))
-      writer.println(LatticeLub.leastUpperBound(lattice.name, lattice.leq, lattice.lub))
-
-      for (s <- List(Symbol.PredicateSymbol("Sign.Sum"))) {
-        // TODO: Need to find transfer functions...
-        writer.println(Function2.isFunction(lattice.name, s))
-        writer.println(Function2.isTotal(lattice.name, s))
-        writer.println(Transfer.isStrict2(lattice.name, lattice.bot, s))
-        writer.println(Transfer.isMonotone2(lattice.name, s, lattice.leq))
-      }
-
-      // TODO: Need termination function.
-      val h = Symbol.PredicateSymbol("Sign.Height")
-      writer.println(Function1.isFunction(lattice.name.fmt, "Int", h))
-      writer.println(Function1.isTotal(lattice.name.fmt, "Int", h))
-      writer.println(Termination.strictlyDecreasing(lattice.name, h, lattice.leq))
-      writer.println(Termination.nonNegative(lattice.name, h))
-
-
-      writer.close();
+    for (s <- List(Symbol.PredicateSymbol("Sign.Sum"))) {
+      // TODO: Need to find transfer functions...
+      writer.println(Function2.isFunction(lattice.name, s))
+      writer.println(Function2.isTotal(lattice.name, s))
+      writer.println(Transfer.isStrict2(lattice.name, lattice.bot, s))
+      writer.println(Transfer.isMonotone2(lattice.name, s, lattice.leq))
     }
 
-    println()
-    println()
+    writer.close();
+  }
+
+  /**
+   * Verifications conditions for lattice order.
+   */
+  def latticeLeq(lattice: Lattice, writer: PrintWriter): Unit = {
+    writer.println(LatticeLeq.reflexivity(lattice.name, lattice.leq))
+    writer.println(LatticeLeq.antiSymmetri(lattice.name, lattice.leq))
+    writer.println(LatticeLeq.transitivity(lattice.name, lattice.leq))
+    writer.println(LatticeLeq.leastElement(lattice.name, lattice.bot, lattice.leq))
+  }
+
+  /**
+   * Verifications conditions for lattice least-upper-bound
+   */
+  def latticeLub(lattice: Lattice, writer: PrintWriter): Unit = {
+    writer.println(Function2.isFunction(lattice.name, lattice.lub))
+    writer.println(Function2.isTotal(lattice.name, lattice.lub))
+    writer.println(LatticeLub.upperBound(lattice.name, lattice.leq, lattice.lub))
+    writer.println(LatticeLub.leastUpperBound(lattice.name, lattice.leq, lattice.lub))
+  }
+
+  /**
+   * Verifications conditions for lattice height.
+   */
+  def latticeHeight(lattice: Lattice, writer: PrintWriter): Unit = {
+    writer.println(Function1.isFunction(lattice.name.fmt, "Int", lattice.height))
+    writer.println(Function1.isTotal(lattice.name.fmt, "Int", lattice.height))
+    writer.println(LatticeHeight.strictlyDecreasing(lattice.name, lattice.height, lattice.leq))
+    writer.println(LatticeHeight.nonNegative(lattice.name, lattice.height))
   }
 
   /**

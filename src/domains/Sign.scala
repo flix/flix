@@ -14,18 +14,19 @@ object Sign {
 
   val Top = Term.Constructor0("Sign.Top")
   val Neg = Term.Constructor0("Sign.Neg")
-  val Zero = Term.Constructor0("Sign.Zer")
+  val Zer = Term.Constructor0("Sign.Zer")
   val Pos = Term.Constructor0("Sign.Pos")
   val Bot = Term.Constructor0("Sign.Bot")
 
   val LeqSymbol = Symbol.PredicateSymbol("Sign.Leq")
   val JoinSymbol = Symbol.PredicateSymbol("Sign.Join")
+  val HeightSymbol = Symbol.PredicateSymbol("Sign.Height")
   val SumSymbol = Symbol.PredicateSymbol("Sign.Sum")
 
   val Leq = List(
     HornClause(Predicate(LeqSymbol, List(Bot, Term.Variable("_")))),
     HornClause(Predicate(LeqSymbol, List(Neg, Neg))),
-    HornClause(Predicate(LeqSymbol, List(Zero, Zero))),
+    HornClause(Predicate(LeqSymbol, List(Zer, Zer))),
     HornClause(Predicate(LeqSymbol, List(Pos, Pos))),
     HornClause(Predicate(LeqSymbol, List(Term.Variable("_"), Top)))
   )
@@ -35,19 +36,27 @@ object Sign {
     HornClause(Predicate(JoinSymbol, List(Term.Variable("x"), Bot, Term.Variable("x")))),
 
     HornClause(Predicate(JoinSymbol, List(Neg, Neg, Neg))),
-    HornClause(Predicate(JoinSymbol, List(Neg, Zero, Top))),
+    HornClause(Predicate(JoinSymbol, List(Neg, Zer, Top))),
     HornClause(Predicate(JoinSymbol, List(Neg, Pos, Top))),
 
-    HornClause(Predicate(JoinSymbol, List(Zero, Neg, Top))),
-    HornClause(Predicate(JoinSymbol, List(Zero, Zero, Zero))),
-    HornClause(Predicate(JoinSymbol, List(Zero, Pos, Top))),
+    HornClause(Predicate(JoinSymbol, List(Zer, Neg, Top))),
+    HornClause(Predicate(JoinSymbol, List(Zer, Zer, Zer))),
+    HornClause(Predicate(JoinSymbol, List(Zer, Pos, Top))),
 
     HornClause(Predicate(JoinSymbol, List(Pos, Neg, Top))),
-    HornClause(Predicate(JoinSymbol, List(Pos, Zero, Top))),
+    HornClause(Predicate(JoinSymbol, List(Pos, Zer, Top))),
     HornClause(Predicate(JoinSymbol, List(Pos, Pos, Pos))),
 
     HornClause(Predicate(JoinSymbol, List(Term.Variable("_"), Top, Top))),
     HornClause(Predicate(JoinSymbol, List(Top, Term.Variable("_"), Top)))
+  )
+
+  val Height = List(
+    HornClause(Predicate(HeightSymbol, List(Bot, Term.Int(3)))),
+    HornClause(Predicate(HeightSymbol, List(Neg, Term.Int(2)))),
+    HornClause(Predicate(HeightSymbol, List(Zer, Term.Int(2)))),
+    HornClause(Predicate(HeightSymbol, List(Pos, Term.Int(2)))),
+    HornClause(Predicate(HeightSymbol, List(Top, Term.Int(1))))
   )
 
   val Sum = List(
@@ -55,15 +64,15 @@ object Sign {
     HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Bot, Bot))),
 
     HornClause(Predicate(SumSymbol, List(Neg, Neg, Neg))),
-    HornClause(Predicate(SumSymbol, List(Neg, Zero, Neg))),
+    HornClause(Predicate(SumSymbol, List(Neg, Zer, Neg))),
     HornClause(Predicate(SumSymbol, List(Neg, Pos, Top))),
 
-    HornClause(Predicate(SumSymbol, List(Zero, Neg, Neg))),
-    HornClause(Predicate(SumSymbol, List(Zero, Zero, Zero))),
-    HornClause(Predicate(SumSymbol, List(Zero, Pos, Pos))),
+    HornClause(Predicate(SumSymbol, List(Zer, Neg, Neg))),
+    HornClause(Predicate(SumSymbol, List(Zer, Zer, Zer))),
+    HornClause(Predicate(SumSymbol, List(Zer, Pos, Pos))),
 
     HornClause(Predicate(SumSymbol, List(Pos, Neg, Top))),
-    HornClause(Predicate(SumSymbol, List(Pos, Zero, Pos))),
+    HornClause(Predicate(SumSymbol, List(Pos, Zer, Pos))),
     HornClause(Predicate(SumSymbol, List(Pos, Pos, Pos))),
 
     HornClause(Predicate(SumSymbol, List(Top, Term.Variable("_"), Top))),
@@ -74,6 +83,6 @@ object Sign {
     SumSymbol -> Hint(Representation.Code)
   )
 
-  val lattice = Lattice("Sign", Elements, Bot.toValue, LeqSymbol, JoinSymbol, Leq ::: Join ::: Sum)
+  val lattice = Lattice("Sign", Elements, Bot.toValue, LeqSymbol, JoinSymbol, HeightSymbol, Leq ::: Join ::: Height ::: Sum)
 
 }
