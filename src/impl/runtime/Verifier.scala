@@ -4,7 +4,7 @@ import java.io.{File, PrintWriter}
 
 import impl.logic.Symbol.{LatticeSymbol => LSym, PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
-import impl.verifier.LatticeLeq
+import impl.verifier.{LatticeLub, LatticeLeq}
 import syntax.Symbols._
 import syntax._
 
@@ -36,10 +36,10 @@ class Verifier(val program: Program) {
       writer.println(LatticeLeq.transitivity(lattice.name, lattice.leq))
       writer.println(LatticeLeq.leastElement(lattice.name, lattice.bot, lattice.leq))
 
-      writer.println(joinFunction(lattice.name, lattice.join))
-      writer.println(joinTotal(lattice.name, lattice.join))
-      writer.println(joinLub1(lattice.name, lattice.leq, lattice.join))
-      writer.println(joinLub2(lattice.name, lattice.leq, lattice.join))
+      writer.println(LatticeLub.joinFunction(lattice.name, lattice.join))
+      writer.println(LatticeLub.joinTotal(lattice.name, lattice.join))
+      writer.println(LatticeLub.joinLub1(lattice.name, lattice.leq, lattice.join))
+      writer.println(LatticeLub.joinLub2(lattice.name, lattice.leq, lattice.join))
 
       writer.println()
 
@@ -57,50 +57,7 @@ class Verifier(val program: Program) {
     case Type.Variant(ts) => Declaration.Datatype(l, ts.toList.map(_.asInstanceOf[Type.Constructor0].name))
   }
 
-  /**
-   * Join is Function.
-   */
-  def joinFunction(sort: LSym, join: PSym): String = isFunction2("join-func", sort, join)
-
-  /**
-   * Join is Total.
-   */
-  def joinTotal(sort: LSym, join: PSym): String = isTotal2("join-total", sort, join)
-
-  /**
-   * Join Lub 1: ∀x, y, z. x ⊑ x ⨆ y ∧ y ⊑ x ⨆ y.
-   */
-  def joinLub1(sort: LSym, leq: PSym, join: PSym): String = smt"""
-    |;; Join-Lub-1: ∀x, y, z. x ⊑ x ⨆ y ∧ y ⊑ x ⨆ y.
-    |(define-fun join-lub-1 () Bool
-    |    (forall ((x $sort) (y $sort) (z $sort))
-    |        (and
-    |            (=> ($join x y z) ($leq x z))
-    |            (=> ($join x y z) ($leq y z)))))
-    |(assert join-lub-1)
-    |(check-sat)
-    """.stripMargin
-
-  /**
-   * Join-Lub-2: ∀x, y, z. x ⊑ z ∧ y ⊑ z ⇒ x ⨆ y ⊑ z.
-   */
-  def joinLub2(sort: LSym, leq: PSym, join: PSym): String = smt"""
-    |;; Join-Lub-2: ∀x, y, z. x ⊑ z ∧ y ⊑ z ⇒ x ⨆ y ⊑ z.
-    |(define-fun join-lub-2 () Bool
-    |    (forall ((x $sort) (y $sort) (z $sort) (w $sort))
-    |        (=>
-    |            (and ($leq x z)
-    |                 ($leq y z)
-    |                 ($join x y w))
-    |        ($leq w z))))
-    |(assert join-lub-2)
-    |(check-sat)
-    """.stripMargin
-
-
   def transfer2(f: PSym): String = ???
-
-
 
 
 //  ;; Sum is Functional: ∀x1, x2, y1, y2. (x1 = x2 ∧ y1 = y2) ⇒ (sum(x1, y1) = sum(x2, y2))
@@ -168,39 +125,6 @@ class Verifier(val program: Program) {
 //    (Sign.height x h1)
 //    (Sign.height y h2))
 //  (> h1 h2))))
-
-
-
-  /**
-   * Function2 is Functional: ∀x1, x2, y1, y2. (x1 = x2 ∧ y1 = y2) ⇒ f(x1, y1) = f(x2, y2).
-   */
-  def isFunction2(name: String, sort: LSym, f: PSym): String = smt"""
-    |;; Function2 is Functional: ∀x1, x2, y1, y2. (x1 = x2 ∧ y1 = y2) ⇒ f(x1, y1) = f(x2, y2).
-    |(define-fun $name () Bool
-    |    (forall ((x1 $sort) (x2 $sort) (y1 $sort) (y2 $sort) (r1 $sort) (r2 $sort))
-    |        (=>
-    |            (and
-    |                (= x1 x2)
-    |                (= y1 y2)
-    |                ($f x1 y1 r1)
-    |                ($f x2 y2 r2))
-    |        (= r1 r2))))
-    |(assert $name)
-    |(check-sat)
-     """.stripMargin
-
-  /**
-   * Function2 is Total: ∀x, y, ∃z. z = f(x, y).
-   */
-  def isTotal2(name: String, sort: LSym, f: PSym): String = smt"""
-    |;; Function2 is Total: ∀x, y, ∃z. z = f(x, y).
-    |(define-fun $name () Bool
-    |    (forall ((x $sort) (y $sort))
-    |        (exists ((z $sort))
-    |            ($f x y z))))
-    |(assert $name)
-    |(check-sat)
-     """.stripMargin
 
   /**
    * Returns an SMT formula for function defined by the predicate symbol `s` with the given `sort`.
