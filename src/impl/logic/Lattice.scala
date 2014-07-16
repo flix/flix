@@ -9,6 +9,5 @@ case class Lattice(name: Symbol.LatticeSymbol,
                    leq: Symbol.PredicateSymbol,
                    lub: Symbol.PredicateSymbol,
                    height: Symbol.PredicateSymbol,
+                   funcs: List[Symbol.PredicateSymbol], // TODO: Consider different way to represent this??? should leq etc go here?
                    clauses: List[HornClause])
-
-// TODO: Need transfer function symbols?

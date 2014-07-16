@@ -61,6 +61,6 @@ object SignAndParity {
     SumSymbol -> Hint(Representation.Code)
   ) ++ Sign.Hints ++ Parity.Hints
 
-  val lattice = Lattice("SP", Elements, Bot.toValue, LeqSymbol, JoinSymbol, HeightSymbol, Leq ::: Join ::: Height ::: Sum ::: Sign.lattice.clauses ::: Parity.lattice.clauses)
+  val lattice = Lattice("SP", Elements, Bot.toValue, LeqSymbol, JoinSymbol, HeightSymbol, List(SumSymbol), Leq ::: Join ::: Height ::: Sum ::: Sign.lattice.clauses ::: Parity.lattice.clauses)
 
 }

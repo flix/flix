@@ -104,6 +104,6 @@ object Interval {
     SumSymbol -> Hint(Representation.Code)
   )
 
-  val lattice = Lattice("Interval", Elements, Bot.toValue, LeqSymbol, JoinSymbol, HeightSymbol, Leq ::: Join ::: Height ::: Sum)
+  val lattice = Lattice("Interval", Elements, Bot.toValue, LeqSymbol, JoinSymbol, HeightSymbol, List(SumSymbol), Leq ::: Join ::: Height ::: Sum)
 
 }

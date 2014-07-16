@@ -34,20 +34,18 @@ class Verifier(val program: Program) {
     writer.println()
 
     writer.println(datatype(lattice.name, lattice.domain).fmt)
-    writer.println(relation2(lattice.leq, List(lattice.name.fmt,lattice.name.fmt)).fmt)
-    writer.println(relation3(lattice.lub, List(lattice.name.fmt,lattice.name.fmt, lattice.name.fmt)).fmt)
+    writer.println(relation2(lattice.leq, List(lattice.name.fmt, lattice.name.fmt)).fmt)
+    writer.println(relation3(lattice.lub, List(lattice.name.fmt, lattice.name.fmt, lattice.name.fmt)).fmt)
     writer.println(relation2(lattice.height, List(lattice.name.fmt, "Int")).fmt)
 
     latticeLeq(lattice, writer)
     latticeLub(lattice, writer)
     latticeHeight(lattice, writer)
 
-    for (s <- List(Symbol.PredicateSymbol("Sign.Sum"))) {
-      // TODO: Need to find transfer functions...
-      writer.println(Function2.isFunction(lattice.name, s))
-      writer.println(Function2.isTotal(lattice.name, s))
-      writer.println(Transfer.isStrict2(lattice.name, lattice.bot, s))
-      writer.println(Transfer.isMonotone2(lattice.name, s, lattice.leq))
+    for (s <- lattice.funcs) {
+      // TODO: Assumes fixed arity...
+      writer.println(relation3(s, List(lattice.name.fmt, lattice.name.fmt, lattice.name.fmt)).fmt)
+      transfer(lattice, s, writer)
     }
 
     writer.close();
@@ -81,6 +79,16 @@ class Verifier(val program: Program) {
     writer.println(Function1.isTotal(lattice.name.fmt, "Int", lattice.height))
     writer.println(LatticeHeight.strictlyDecreasing(lattice.name, lattice.height, lattice.leq))
     writer.println(LatticeHeight.nonNegative(lattice.name, lattice.height))
+  }
+
+  /**
+   * Verifications conditions for transfer functions.
+   */
+  def transfer(lattice: Lattice, s: PSym, writer: PrintWriter) {
+    writer.println(Function2.isFunction(lattice.name, s))
+    writer.println(Function2.isTotal(lattice.name, s))
+    writer.println(Transfer.isStrict2(lattice.name, lattice.bot, s))
+    writer.println(Transfer.isMonotone2(lattice.name, s, lattice.leq))
   }
 
   /**
