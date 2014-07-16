@@ -1,19 +1,17 @@
 package impl.verifier
 
-import impl.logic.Symbol.{LatticeSymbol => LSym, PredicateSymbol => PSym}
+import impl.logic.Symbol.{PredicateSymbol => PSym}
 import syntax._
 
 object Function1 {
 
-  // TODO: Problem with types
-
   /**
    * Functional: ∀x, y. x = y ⇒ f(x) = f(y).
    */
-  def isFunction(sort: LSym, f: PSym): String = smt"""
+  def isFunction(argSort: String, resSort: String, f: PSym): String = smt"""
     |;; Functional: ∀x, y. x = y ⇒ f(x) = f(y).
     |(define-fun $f-functional () Bool
-    |    (forall ((x $sort) (y $sort) (r1 Int) (r2 Int))
+    |    (forall ((x $argSort) (y $argSort) (r1 $resSort) (r2 $resSort))
     |        (=>
     |            (and
     |                (= x y)
@@ -27,11 +25,11 @@ object Function1 {
   /**
    * Total: ∀x. ∃y. y = f(x).
    */
-  def isTotal(sort: LSym, f: PSym): String = smt"""
+  def isTotal(argSort: String, resSort: String, f: PSym): String = smt"""
     | ;; Total: ∀x. ∃y. y = f(x).
     |(define-fun $f-total () Bool
-    |    (forall ((x $sort))
-    |        (exists ((r Int))
+    |    (forall ((x $argSort))
+    |        (exists ((r $resSort))
     |            ($f x r))))
     |(assert $f-total)
     |(check-sat)

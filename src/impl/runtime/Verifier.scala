@@ -51,8 +51,8 @@ class Verifier(val program: Program) {
 
       // TODO: Need termination function.
       val h = Symbol.PredicateSymbol("Sign.Height")
-      writer.println(Function1.isFunction(lattice.name, h))
-      writer.println(Function1.isTotal(lattice.name, h))
+      writer.println(Function1.isFunction(lattice.name.fmt, "Int", h))
+      writer.println(Function1.isTotal(lattice.name.fmt, "Int", h))
       writer.println(Termination.strictlyDecreasing(lattice.name, h, lattice.leq))
       writer.println(Termination.nonNegative(lattice.name, h))
 
