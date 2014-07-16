@@ -43,16 +43,17 @@ class Verifier(val program: Program) {
 
       for (s <- List(Symbol.PredicateSymbol("Sign.Sum"))) {
         // TODO: Need to find transfer functions...
-        // TODO: Need termination function.
         writer.println(Function2.isFunction(lattice.name, s))
         writer.println(Function2.isTotal(lattice.name, s))
         writer.println(Transfer.isStrict2(lattice.name, lattice.bot, s))
         writer.println(Transfer.isMonotone2(lattice.name, s, lattice.leq))
       }
 
+      // TODO: Need termination function.
       val h = Symbol.PredicateSymbol("Sign.Height")
-      // TODO: function + total
-      writer.println(Termination.strictlyDecreasing(lattice.name, h, lattice.leq)) // TODO
+      writer.println(Function1.isFunction(lattice.name, h))
+      writer.println(Function1.isTotal(lattice.name, h))
+      writer.println(Termination.strictlyDecreasing(lattice.name, h, lattice.leq))
       writer.println(Termination.nonNegative(lattice.name, h))
 
 
@@ -69,11 +70,6 @@ class Verifier(val program: Program) {
   def datatype(l: LSym, t: Type): Declaration = t match {
     case Type.Variant(ts) => Declaration.Datatype(l, ts.toList.map(_.asInstanceOf[Type.Constructor0].name))
   }
-
-  def transfer2(f: PSym): String = ???
-
-
-
 
   /**
    * Returns an SMT formula for function defined by the predicate symbol `s` with the given `sort`.

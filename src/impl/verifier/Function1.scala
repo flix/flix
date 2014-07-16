@@ -1,19 +1,39 @@
 package impl.verifier
 
-class Function1 {
-  //  ;; Height-Function: ∀x, y. x = y ⇒ h(x) = h(y)
-  //  (define-fun height-function () Bool
-  //    (forall ((x Sign) (y Sign) (r1 Int) (r2 Int))
-  //      (=>
-  //  (and
-  //    (= x y)
-  //  (Sign.height x r1)
-  //  (Sign.height y r2))
-  //  (= r1 r2))))
-  //
-  //  ;; Height-Total: ∀x. ∃y. y = h(x).
-  //  (define-fun height-total () Bool
-  //    (forall ((x Sign))
-  //      (exists ((r Int))
-  //        (Sign.height x r))))
+import impl.logic.Symbol.{LatticeSymbol => LSym, PredicateSymbol => PSym}
+import syntax._
+
+object Function1 {
+
+  // TODO: Problem with types
+
+  /**
+   * Functional: ∀x, y. x = y ⇒ f(x) = f(y).
+   */
+  def isFunction(sort: LSym, f: PSym): String = smt"""
+    |;; Functional: ∀x, y. x = y ⇒ f(x) = f(y).
+    |(define-fun $f-functional () Bool
+    |    (forall ((x $sort) (y $sort) (r1 Int) (r2 Int))
+    |        (=>
+    |            (and
+    |                (= x y)
+    |                ($f x r1)
+    |                ($f y r2))
+    |                (= r1 r2))))
+    |(assert $f-functional)
+    |(check-sat)
+     """.stripMargin
+
+  /**
+   * Total: ∀x. ∃y. y = f(x).
+   */
+  def isTotal(sort: LSym, f: PSym): String = smt"""
+    | ;; Total: ∀x. ∃y. y = f(x).
+    |(define-fun $f-total () Bool
+    |    (forall ((x $sort))
+    |        (exists ((r Int))
+    |            ($f x r))))
+    |(assert $f-total)
+    |(check-sat)
+     """.stripMargin
 }
