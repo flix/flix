@@ -12,6 +12,8 @@ import syntax.Symbols._
  */
 class Verifier(val program: Program) {
 
+  val Z3 = System.getProperty("Z3", "C:\\Program Files\\Microsoft Z3\\z3-4.3.0-x64\\bin\\z3.exe")
+
   /**
    * Verifies that the program is safe.
    */
@@ -49,6 +51,8 @@ class Verifier(val program: Program) {
     }
 
     writer.close();
+
+   run(datatype(lattice.name, lattice.domain).fmt + relation2(lattice.leq, List(lattice.name.fmt, lattice.name.fmt)).fmt + latticeLeq(lattice, writer))
   }
 
   /**
@@ -172,4 +176,16 @@ class Verifier(val program: Program) {
     case Term.Constructor0(s) => SmtFormula.Constructor0(s)
   }
 
+  /**
+   * Run Z3 on the given input.
+   */
+  def run(s: String): Unit = {
+    val tmpFile = File.createTempFile("z3-temp", ".txt");
+    tmpFile.deleteOnExit()
+
+    val process = Runtime.getRuntime.exec(Array(Z3, "/smt2", tmpFile.getAbsolutePath))
+
+    process.waitFor()
+    println(process.exitValue())
+  }
 }
