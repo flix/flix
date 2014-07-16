@@ -4,7 +4,9 @@ import java.io.{File, PrintWriter}
 
 import impl.logic.Symbol.{LatticeSymbol => LSym, PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
+import impl.verifier.LatticeLeq
 import syntax.Symbols._
+import syntax._
 
 /**
  * A verifier / type checker.
@@ -29,16 +31,17 @@ class Verifier(val program: Program) {
       writer.println(relation2(lattice.name, lattice.leq).fmt)
       writer.println(relation3(lattice.name, lattice.join).fmt)
 
-      writer.println(reflexivity(lattice.name, lattice.leq))
-      writer.println(antiSymmetri(lattice.name, lattice.leq))
-      writer.println(transitivity(lattice.name, lattice.leq))
-      writer.println(leastElement(lattice.name, lattice.bot, lattice.leq))
+      writer.println(LatticeLeq.reflexivity(lattice.name, lattice.leq))
+      writer.println(LatticeLeq.antiSymmetri(lattice.name, lattice.leq))
+      writer.println(LatticeLeq.transitivity(lattice.name, lattice.leq))
+      writer.println(LatticeLeq.leastElement(lattice.name, lattice.bot, lattice.leq))
 
       writer.println(joinFunction(lattice.name, lattice.join))
       writer.println(joinTotal(lattice.name, lattice.join))
       writer.println(joinLub1(lattice.name, lattice.leq, lattice.join))
       writer.println(joinLub2(lattice.name, lattice.leq, lattice.join))
 
+      writer.println()
 
       writer.close();
     }
@@ -53,61 +56,6 @@ class Verifier(val program: Program) {
   def datatype(l: LSym, t: Type): Declaration = t match {
     case Type.Variant(ts) => Declaration.Datatype(l, ts.toList.map(_.asInstanceOf[Type.Constructor0].name))
   }
-
-  /**
-   * Reflexivity: ∀x. x ⊑ x
-   */
-  def reflexivity(sort: LSym, leq: PSym): String = smt"""
-    |;; Reflexivity: ∀x. x ⊑ x
-    |(define-fun reflexivity () Bool
-    |    (forall ((x $sort))
-    |        ($leq x x)))
-    |(assert reflexivity)
-    |(check-sat)
-    """.stripMargin
-
-  /**
-   * Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
-   */
-  def antiSymmetri(sort: LSym, leq: PSym): String = smt"""
-    |;; Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
-    |(define-fun anti-symmetri () Bool
-    |    (forall ((x $sort) (y $sort))
-    |        (=>
-    |            (and ($leq x y)
-    |                 ($leq y x))
-    |            (= x y))))
-    |(assert anti-symmetri)
-    |(check-sat)
-    """.stripMargin
-
-  /**
-   * Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
-   */
-  def transitivity(sort: LSym, leq: PSym): String = smt"""
-    |;; Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
-    |(define-fun transitivity () Bool
-    |    (forall ((x $sort) (y $sort) (z $sort))
-    |        (=>
-    |            (and ($leq x y)
-    |                 ($leq y z))
-    |            ($leq x z))))
-    |(assert transitivity)
-    |(check-sat)
-    """.stripMargin
-
-
-  /**
-   * Least Element: ∀x. ⊥ ⊑ x.
-   */
-  def leastElement(sort: LSym, bot: Value, leq: PSym): String = smt"""
-    |;; Least Element: ∀x. ⊥ ⊑ x.
-    |(define-fun least-element () Bool
-    |    (forall ((x $sort))
-    |        ($leq $bot x)))
-    |(assert least-element)
-    |(check-sat)
-    """.stripMargin
 
   /**
    * Join is Function.
@@ -148,6 +96,80 @@ class Verifier(val program: Program) {
     |(assert join-lub-2)
     |(check-sat)
     """.stripMargin
+
+
+  def transfer2(f: PSym): String = ???
+
+
+
+
+//  ;; Sum is Functional: ∀x1, x2, y1, y2. (x1 = x2 ∧ y1 = y2) ⇒ (sum(x1, y1) = sum(x2, y2))
+//  (define-fun sum-function () Bool
+//    (forall ((x1 Sign) (x2 Sign) (y1 Sign) (y2 Sign) (r1 Sign) (r2 Sign))
+//      (=>
+//  (and
+//    (= x1 x2)
+//  (= y1 y2)
+//  (Sign.sum x1 y1 r1)
+//  (Sign.sum x2 y2 r2))
+//  (= r1 r2))))
+//
+//  ;; Sum-Strict ∀x. sum(⊥, x) = ⊥ ∧ sum(x, ⊥) = ⊥
+//  (define-fun sum-strict () Bool
+//    (forall ((x Sign))
+//      (and
+//        (Sign.sum Sign.Bot x Sign.Bot)
+//      (Sign.sum x Sign.Bot Sign.Bot))))
+//
+//  ;; Sum-Montone
+//  ;; ∀x1, x2, y1, y2. x1 ⊑ x2 ∧ y1 ⊑ y2 ⇒ f(x1, y1) ⊑ f(x2, y2)
+//  (define-fun sum-monotone () Bool
+//    (forall ((x1 Sign) (x2 Sign) (y1 Sign) (y2 Sign) (r1 Sign) (r2 Sign))
+//      (=>
+//  (and
+//    (Sign.leq x1 x2)
+//    (Sign.leq y1 y2)
+//    (Sign.sum x1 y1 r1)
+//    (Sign.sum x2 y2 r2))
+//  (Sign.leq r1 r2))))
+
+
+
+
+//  ;; Height-Function: ∀x, y. x = y ⇒ h(x) = h(y)
+//  (define-fun height-function () Bool
+//    (forall ((x Sign) (y Sign) (r1 Int) (r2 Int))
+//      (=>
+//  (and
+//    (= x y)
+//  (Sign.height x r1)
+//  (Sign.height y r2))
+//  (= r1 r2))))
+//
+//  ;; Height-Total: ∀x. ∃y. y = h(x).
+//  (define-fun height-total () Bool
+//    (forall ((x Sign))
+//      (exists ((r Int))
+//        (Sign.height x r))))
+//
+//  ;; Height-NonNegative: ∀x. h(x) > 0.
+//  (define-fun height-non-negative () Bool
+//    (forall ((x Sign) (h Int))
+//      (=>
+//  (Sign.height x h)
+//  (> h 0))))
+//
+//  ;; Height-Decreasing: ∀x, y. x ⊑ y ∧ x != y ⇒ h(x) > h(y).
+//  (define-fun height-decreasing () Bool
+//    (forall ((x Sign) (y Sign) (h1 Int) (h2 Int))
+//      (=>
+//  (and (distinct x y)
+//    (Sign.leq x y)
+//    (Sign.height x h1)
+//    (Sign.height y h2))
+//  (> h1 h2))))
+
+
 
   /**
    * Function2 is Functional: ∀x1, x2, y1, y2. (x1 = x2 ∧ y1 = y2) ⇒ f(x1, y1) = f(x2, y2).
@@ -380,29 +402,6 @@ class Verifier(val program: Program) {
      */
     case class Constructor5(s: Symbol.NamedSymbol, f1: SmtFormula, f2: SmtFormula, f3: SmtFormula, f4: SmtFormula, f5: SmtFormula) extends SmtFormula
 
-  }
-
-  /**
-   * A string interpolator which takes symbols into account.
-   */
-  implicit class SmtSyntaxInterpolator(sc: StringContext) {
-    def smt(args: Any*): String = {
-      def format(a: Any): String = a match {
-        case Value.Constructor0(s) => s.fmt
-        case x: Symbol => x.fmt
-        case x => x.toString
-        // TODO: Handle values...
-      }
-
-      val pi = sc.parts.iterator
-      val ai = args.iterator
-      val bldr = new java.lang.StringBuilder(pi.next())
-      while (ai.hasNext) {
-        bldr append format(ai.next())
-        bldr append pi.next()
-      }
-      bldr.toString
-    }
   }
 
 }
