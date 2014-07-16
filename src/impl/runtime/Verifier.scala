@@ -35,6 +35,7 @@ class Verifier(val program: Program) {
       writer.println(leastElement(lattice.name, lattice.bot, lattice.leq))
 
       writer.println(joinLub1(lattice.name, lattice.leq, lattice.join))
+      writer.println(joinLub2(lattice.name, lattice.leq, lattice.join))
 
 
       writer.close();
@@ -107,23 +108,7 @@ class Verifier(val program: Program) {
     """.stripMargin
 
 
-  //  ;; Join is Functional: ∀x1, x2, y1, y2. (x1 = x2 ∧ y1 = y2) ⇒ (x1 ⨆ y1 = x2 ⨆ y2)
-  //  (define-fun join-function () Bool
-  //    (forall ((x1 Sign) (x2 Sign) (y1 Sign) (y2 Sign) (r1 Sign) (r2 Sign))
-  //      (=>
-  //  (and
-  //    (= x1 x2)
-  //  (= y1 y2)
-  //  (Sign.join x1 y1 r1)
-  //  (Sign.join x2 y2 r2))
-  //  (= r1 r2))))
-  //
-  //  ;; Join is Total: ∀x, y, ∃z. z = x ⨆ y.
-  //  (define-fun join-total () Bool
-  //    (forall ((x Sign) (y Sign))
-  //      (exists ((z Sign))
-  //        (Sign.join x y z))))
-  //
+
 
   /**
    * Join Lub 1: ∀x, y, z. x ⊑ x ⨆ y ∧ y ⊑ x ⨆ y.
@@ -139,16 +124,21 @@ class Verifier(val program: Program) {
     |(check-sat)
     """.stripMargin
 
-  //
-  //  ;; Join-Lub-2
-  //  ;; ∀x, y, z. x ⊑ z ∧ y ⊑ z ⇒ x ⨆ y ⊑ z.
-  //  (define-fun join-lub-2 () Bool
-  //    (forall ((x Sign) (y Sign) (z Sign) (w Sign))
-  //      (=>
-  //  (and (Sign.leq x z)
-  //    (Sign.leq y z)
-  //    (Sign.join x y w))
-  //  (Sign.leq w z))))
+  /**
+   * Join-Lub-2: ∀x, y, z. x ⊑ z ∧ y ⊑ z ⇒ x ⨆ y ⊑ z.
+   */
+  def joinLub2(sort: LSym, leq: PSym, join: PSym): String = smt"""
+    |;; Join-Lub-2: ∀x, y, z. x ⊑ z ∧ y ⊑ z ⇒ x ⨆ y ⊑ z.
+    |(define-fun join-lub-2 () Bool
+    |    (forall ((x $sort) (y $sort) (z $sort) (w $sort))
+    |        (=>
+    |            (and ($leq x z)
+    |                 ($leq y z)
+    |                 ($join x y w))
+    |        ($leq w z))))
+    |(assert join-lub-2)
+    |(check-sat)
+    """.stripMargin
 
   /**
    * Returns an SMT formula for function defined by the predicate symbol `s` with the given `sort`.

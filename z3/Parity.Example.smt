@@ -117,8 +117,7 @@
             (=> (Sign.join x y z) (Sign.leq x z))
             (=> (Sign.join x y z) (Sign.leq y z)))))
 
-;; Join-Lub-2
-;; ∀x, y, z. x ⊑ z ∧ y ⊑ z ⇒ x ⨆ y ⊑ z.
+;; Join-Lub-2: ∀x, y, z. x ⊑ z ∧ y ⊑ z ⇒ x ⨆ y ⊑ z.
 (define-fun join-lub-2 () Bool
     (forall ((x Sign) (y Sign) (z Sign) (w Sign))
         (=>
