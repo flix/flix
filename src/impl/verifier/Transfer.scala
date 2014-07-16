@@ -15,8 +15,10 @@ object Transfer {
     |        (and
     |            ($f $bot x $bot)
     |            ($f x $bot $bot))))
+    |(push)
     |(assert $f-strict)
     |(check-sat)
+    |(pop)
     """.stripMargin
 
   /**
@@ -33,7 +35,9 @@ object Transfer {
     |                ($f x1 y1 r1)
     |                ($f x2 y2 r2))
     |                ($leq r1 r2))))
+    |(push)
     |(assert $f-strict)
     |(check-sat)
+    |(pop)
     """.stripMargin
 }

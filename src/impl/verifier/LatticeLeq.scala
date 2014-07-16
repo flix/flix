@@ -13,8 +13,10 @@ object LatticeLeq {
     |(define-fun reflexivity () Bool
     |    (forall ((x $sort))
     |        ($leq x x)))
+    |(push)
     |(assert reflexivity)
     |(check-sat)
+    |(pop)
     """.stripMargin
 
   /**
@@ -28,8 +30,10 @@ object LatticeLeq {
     |            (and ($leq x y)
     |                 ($leq y x))
     |            (= x y))))
+    |(push)
     |(assert anti-symmetri)
     |(check-sat)
+    |(pop)
     """.stripMargin
 
   /**
@@ -43,8 +47,10 @@ object LatticeLeq {
     |            (and ($leq x y)
     |                 ($leq y z))
     |            ($leq x z))))
+    |(push)
     |(assert transitivity)
     |(check-sat)
+    |(pop)
     """.stripMargin
 
   /**
@@ -55,7 +61,9 @@ object LatticeLeq {
     |(define-fun least-element () Bool
     |    (forall ((x $sort))
     |        ($leq $bot x)))
+    |(push)
     |(assert least-element)
     |(check-sat)
+    |(pop)
     """.stripMargin
 }

@@ -17,8 +17,10 @@ object LatticeHeight {
     |                 ($f x r1)
     |                 ($f y r2))
     |            (> r1 r2))))
+    |(push)
     |(assert  $f-strictly-decreasing)
     |(check-sat)
+    |(pop)
     """.stripMargin
 
   /**
@@ -27,11 +29,13 @@ object LatticeHeight {
   def nonNegative(sort: LSym, f: PSym): String = smt"""
     |;; Non-Negative: ∀x. f(x) > 0.
     |(define-fun $f-non-negative () Bool
-    |    (forall ((x Sign) (r Int))
+    |    (forall ((x $sort) (r Int))
     |        (=>
     |            ($f x r)
     |                (> r 0))))
+    |(push)
     |(assert $f-non-negative)
     |(check-sat)
+    |(pop)
     """.stripMargin
 }

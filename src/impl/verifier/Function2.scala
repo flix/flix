@@ -18,8 +18,10 @@ object Function2 {
     |                ($f x1 y1 r1)
     |                ($f x2 y2 r2))
     |        (= r1 r2))))
+    |(push)
     |(assert $f-functional)
     |(check-sat)
+    |(pop)
      """.stripMargin
 
   /**
@@ -31,7 +33,9 @@ object Function2 {
     |    (forall ((x $sort) (y $sort))
     |        (exists ((z $sort))
     |            ($f x y z))))
+    |(push)
     |(assert $f-total)
     |(check-sat)
+    |(pop)
      """.stripMargin
 }

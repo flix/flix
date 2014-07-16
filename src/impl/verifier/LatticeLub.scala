@@ -14,8 +14,10 @@ object LatticeLub {
     |        (and
     |            (=> ($lub x y z) ($leq x z))
     |            (=> ($lub x y z) ($leq y z)))))
+    |(push)
     |(assert $sort-upper-bound)
     |(check-sat)
+    |(pop)
     """.stripMargin
 
   /**
@@ -30,7 +32,9 @@ object LatticeLub {
     |                 ($leq y z)
     |                 ($lub x y w))
     |        ($leq w z))))
+    |(push)
     |(assert $sort-least-upper-bound)
     |(check-sat)
+    |(pop)
     """.stripMargin
 }

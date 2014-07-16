@@ -18,8 +18,10 @@ object Function1 {
     |                ($f x r1)
     |                ($f y r2))
     |                (= r1 r2))))
+    |(push)
     |(assert $f-functional)
     |(check-sat)
+    |(pop)
      """.stripMargin
 
   /**
@@ -31,7 +33,9 @@ object Function1 {
     |    (forall ((x $argSort))
     |        (exists ((r $resSort))
     |            ($f x r))))
+    |(push)
     |(assert $f-total)
     |(check-sat)
+    |(pop)
      """.stripMargin
 }
