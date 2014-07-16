@@ -1,5 +1,7 @@
 package impl.runtime
 
+import java.io.{File, PrintWriter}
+
 import impl.logic.Symbol.{LatticeSymbol => LSym, PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
 import syntax.Symbols._
@@ -15,17 +17,24 @@ class Verifier(val program: Program) {
   def verify(): Unit = {
 
     for ((s, lattice) <- program.lattices) {
-      println(";; Automatically generated. DO NOT EDIT.")
-      println(datatype(lattice.name, lattice.domain).fmt)
-      println(relation2(lattice.name, lattice.leq).fmt)
-      println(relation3(lattice.name, lattice.join).fmt)
+      val file = new File("./z3/" + lattice.name.s + "0.smt")
+      val writer = new PrintWriter(file)
 
-      println(reflexivity(lattice.name, lattice.leq))
-      println(antiSymmetri(lattice.name, lattice.leq))
-      println(transitivity(lattice.name, lattice.leq))
-      println(leastElement(lattice.name, lattice.bot, lattice.leq))
+      writer.println(";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")
+      writer.println(";;;; AUTOMATICALLY GENERATED FILE. DO NOT EDIT.                              ;;")
+      writer.println(";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")
+      writer.println()
 
+      writer.println(datatype(lattice.name, lattice.domain).fmt)
+      writer.println(relation2(lattice.name, lattice.leq).fmt)
+      writer.println(relation3(lattice.name, lattice.join).fmt)
 
+      writer.println(reflexivity(lattice.name, lattice.leq))
+      writer.println(antiSymmetri(lattice.name, lattice.leq))
+      writer.println(transitivity(lattice.name, lattice.leq))
+      writer.println(leastElement(lattice.name, lattice.bot, lattice.leq))
+
+      writer.close();
     }
 
     println()
@@ -62,6 +71,8 @@ class Verifier(val program: Program) {
     |            (and ($leq x y)
     |                 ($leq y x))
     |            (= x y))))
+    |(assert anti-symmetri)
+    |(check-sat)
     """.stripMargin
 
   /**
@@ -297,10 +308,10 @@ class Verifier(val program: Program) {
   implicit class SmtSyntaxInterpolator(sc: StringContext) {
     def smt(args: Any*): String = {
       def format(a: Any): String = a match {
+        case Value.Constructor0(s) => s.fmt
         case x: Symbol => x.fmt
         case x => x.toString
-        case Value.Constructor0(s) => s.fmt
-          // TODO: Handle values...
+        // TODO: Handle values...
       }
 
       val pi = sc.parts.iterator
