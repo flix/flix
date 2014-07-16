@@ -75,8 +75,15 @@ object Sign {
     HornClause(Predicate(SumSymbol, List(Pos, Zer, Pos))),
     HornClause(Predicate(SumSymbol, List(Pos, Pos, Pos))),
 
-    HornClause(Predicate(SumSymbol, List(Top, Term.Variable("_"), Top))),
-    HornClause(Predicate(SumSymbol, List(Term.Variable("_"), Top, Top)))
+    HornClause(Predicate(SumSymbol, List(Top, Neg, Top))),
+    HornClause(Predicate(SumSymbol, List(Top, Zer, Top))),
+    HornClause(Predicate(SumSymbol, List(Top, Pos, Top))),
+
+    HornClause(Predicate(SumSymbol, List(Neg, Top, Top))),
+    HornClause(Predicate(SumSymbol, List(Zer, Top, Top))),
+    HornClause(Predicate(SumSymbol, List(Pos, Top, Top))),
+
+    HornClause(Predicate(SumSymbol, List(Top, Top, Top)))
   )
 
   val Hints = Map(
