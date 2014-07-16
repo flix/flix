@@ -4,7 +4,7 @@ import java.io.{File, PrintWriter}
 
 import impl.logic.Symbol.{LatticeSymbol => LSym, PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
-import impl.verifier.{Function2, LatticeLub, LatticeLeq}
+import impl.verifier._
 import syntax.Symbols._
 import syntax._
 
@@ -41,11 +41,17 @@ class Verifier(val program: Program) {
       writer.println(LatticeLub.joinLub1(lattice.name, lattice.leq, lattice.join))
       writer.println(LatticeLub.joinLub2(lattice.name, lattice.leq, lattice.join))
 
-      for (s <- List(Symbol.PredicateSymbol("Sign.sum"))) {
+      for (s <- List(Symbol.PredicateSymbol("Sign.Sum"))) {
         // TODO: Need to find transfer functions...
         // TODO: Need termination function.
         writer.println(Function2.isFunction(lattice.name, s))
+        writer.println(Function2.isTotal(lattice.name, s))
+        writer.println(Transfer.isStrict2(lattice.name, lattice.bot, s))
+        writer.println(Transfer.isMonotone2(lattice.name, s, lattice.leq))
       }
+
+      val h = Symbol.PredicateSymbol("Sign.Height")
+      writer.println(Termination.dereasing()) // TODO
 
 
       writer.close();
@@ -65,35 +71,6 @@ class Verifier(val program: Program) {
   def transfer2(f: PSym): String = ???
 
 
-//  ;; Sum is Functional: ∀x1, x2, y1, y2. (x1 = x2 ∧ y1 = y2) ⇒ (sum(x1, y1) = sum(x2, y2))
-//  (define-fun sum-function () Bool
-//    (forall ((x1 Sign) (x2 Sign) (y1 Sign) (y2 Sign) (r1 Sign) (r2 Sign))
-//      (=>
-//  (and
-//    (= x1 x2)
-//  (= y1 y2)
-//  (Sign.sum x1 y1 r1)
-//  (Sign.sum x2 y2 r2))
-//  (= r1 r2))))
-//
-//  ;; Sum-Strict ∀x. sum(⊥, x) = ⊥ ∧ sum(x, ⊥) = ⊥
-//  (define-fun sum-strict () Bool
-//    (forall ((x Sign))
-//      (and
-//        (Sign.sum Sign.Bot x Sign.Bot)
-//      (Sign.sum x Sign.Bot Sign.Bot))))
-//
-//  ;; Sum-Montone
-//  ;; ∀x1, x2, y1, y2. x1 ⊑ x2 ∧ y1 ⊑ y2 ⇒ f(x1, y1) ⊑ f(x2, y2)
-//  (define-fun sum-monotone () Bool
-//    (forall ((x1 Sign) (x2 Sign) (y1 Sign) (y2 Sign) (r1 Sign) (r2 Sign))
-//      (=>
-//  (and
-//    (Sign.leq x1 x2)
-//    (Sign.leq y1 y2)
-//    (Sign.sum x1 y1 r1)
-//    (Sign.sum x2 y2 r2))
-//  (Sign.leq r1 r2))))
 
 
   /**
