@@ -34,8 +34,8 @@ class Verifier(val program: Program) {
       writer.println(transitivity(lattice.name, lattice.leq))
       writer.println(leastElement(lattice.name, lattice.bot, lattice.leq))
 
-      writer.println(joinTotal(lattice.name, lattice.join))
       writer.println(joinFunction(lattice.name, lattice.join))
+      writer.println(joinTotal(lattice.name, lattice.join))
       writer.println(joinLub1(lattice.name, lattice.leq, lattice.join))
       writer.println(joinLub2(lattice.name, lattice.leq, lattice.join))
 
@@ -109,16 +109,15 @@ class Verifier(val program: Program) {
     |(check-sat)
     """.stripMargin
 
+  /**
+   * Join is Function.
+   */
+  def joinFunction(sort: LSym, join: PSym): String = isFunction2("join-func", sort, join)
 
   /**
    * Join is Total.
    */
   def joinTotal(sort: LSym, join: PSym): String = isTotal2("join-total", sort, join)
-
-  /**
-   * Join is Function.
-   */
-  def joinFunction(sort: LSym, join: PSym): String = isFunction2(sort, join)
 
   /**
    * Join Lub 1: ∀x, y, z. x ⊑ x ⨆ y ∧ y ⊑ x ⨆ y.
@@ -151,6 +150,24 @@ class Verifier(val program: Program) {
     """.stripMargin
 
   /**
+   * Function2 is Functional: ∀x1, x2, y1, y2. (x1 = x2 ∧ y1 = y2) ⇒ f(x1, y1) = f(x2, y2).
+   */
+  def isFunction2(name: String, sort: LSym, f: PSym): String = smt"""
+    |;; Function2 is Functional: ∀x1, x2, y1, y2. (x1 = x2 ∧ y1 = y2) ⇒ f(x1, y1) = f(x2, y2).
+    |(define-fun $name () Bool
+    |    (forall ((x1 $sort) (x2 $sort) (y1 $sort) (y2 $sort) (r1 $sort) (r2 $sort))
+    |        (=>
+    |            (and
+    |                (= x1 x2)
+    |                (= y1 y2)
+    |                ($f x1 y1 r1)
+    |                ($f x2 y2 r2))
+    |        (= r1 r2))))
+    |(assert $name)
+    |(check-sat)
+     """.stripMargin
+
+  /**
    * Function2 is Total: ∀x, y, ∃z. z = f(x, y).
    */
   def isTotal2(name: String, sort: LSym, f: PSym): String = smt"""
@@ -162,14 +179,6 @@ class Verifier(val program: Program) {
     |(assert $name)
     |(check-sat)
      """.stripMargin
-
-  /**
-   * TODO: DOC
-   */
-  def isFunction2(sort: LSym, s: PSym): String = smt"""
-
-     """.stripMargin
-
 
   /**
    * Returns an SMT formula for function defined by the predicate symbol `s` with the given `sort`.
