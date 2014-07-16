@@ -29,9 +29,4 @@ object Interpretation {
    */
   case object Atleast extends Interpretation
 
-  /**
-   * A semantics where the predicate P(x, c) holds iff x ⊑ c.
-   */
-  case object Atmost extends Interpretation
-
 }

@@ -34,9 +34,9 @@ class Verifier(val program: Program) {
     writer.println()
 
     writer.println(datatype(lattice.name, lattice.domain).fmt)
-    writer.println(relation2(lattice.name, lattice.leq).fmt)
-    writer.println(relation3(lattice.name, lattice.lub).fmt)
-    writer.println(relation2(lattice.name, lattice.height).fmt)
+    writer.println(relation2(lattice.leq, List(lattice.name.fmt,lattice.name.fmt)).fmt)
+    writer.println(relation3(lattice.lub, List(lattice.name.fmt,lattice.name.fmt, lattice.name.fmt)).fmt)
+    writer.println(relation2(lattice.height, List(lattice.name.fmt, "Int")).fmt)
 
     latticeLeq(lattice, writer)
     latticeLub(lattice, writer)
@@ -93,7 +93,7 @@ class Verifier(val program: Program) {
   /**
    * Returns an SMT formula for function defined by the predicate symbol `s` with the given `sort`.
    */
-  def relation2(sort: LSym, s: PSym): SmtDeclaration = {
+  def relation2(s: PSym, sorts: List[String]): SmtDeclaration = {
     val clauses = program.clauses.filter(_.head.name == s)
 
     val (x, y) = (Symbol.freshVariableSymbol("x"), Symbol.freshVariableSymbol("y"))
@@ -110,13 +110,13 @@ class Verifier(val program: Program) {
       }
     })
 
-    SmtDeclaration.Relation(s, List(sort.fmt, sort.fmt), List(x, y), formulae)
+    SmtDeclaration.Relation(s, sorts, List(x, y), formulae)
   }
 
   /**
    * Returns an SMT formula for function defined by the predicate symbol `s` with the given `sort`.
    */
-  def relation3(sort: LSym, s: PSym): SmtDeclaration = {
+  def relation3(s: PSym, sorts: List[String]): SmtDeclaration = {
     val clauses = program.clauses.filter(_.head.name == s)
 
     // TODO: Need to genereate fresh symbols.
@@ -134,7 +134,7 @@ class Verifier(val program: Program) {
       }
     })
 
-    SmtDeclaration.Relation(s, List(sort.fmt, sort.fmt, sort.fmt), List(x, y, z), formulae)
+    SmtDeclaration.Relation(s, sorts, List(x, y, z), formulae)
   }
 
   /**
