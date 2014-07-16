@@ -10,6 +10,7 @@ sealed trait SmtFormula {
   def variables: Set[Symbol.VariableSymbol] = this match {
     case SmtFormula.True => Set.empty
     case SmtFormula.False => Set.empty
+    case SmtFormula.Int(i) => Set.empty
     case SmtFormula.Variable(s) => Set(s)
     case SmtFormula.Constructor0(s) => Set.empty
     case SmtFormula.Conjunction(formulae) => (Set.empty[Symbol.VariableSymbol] /: formulae)((xs, f) => xs ++ f.variables)
@@ -20,6 +21,7 @@ sealed trait SmtFormula {
   def fmt(indent: Int): String = this match {
     case SmtFormula.True => "true"
     case SmtFormula.False => "false"
+    case SmtFormula.Int(i) => i.toString
     case SmtFormula.Variable(s) => s.fmt
     case SmtFormula.Constructor0(s) => s.fmt
     case SmtFormula.Conjunction(formulae) => "(and " + formulae.map(_.fmt(indent)).mkString(" ") + ")"
@@ -39,6 +41,11 @@ object SmtFormula {
    * The false literal.
    */
   case object False extends SmtFormula
+
+  /**
+   * An integer literal.
+   */
+  case class Int(i: scala.Int) extends SmtFormula
 
   /**
    * A variable.

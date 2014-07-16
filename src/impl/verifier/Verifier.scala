@@ -36,6 +36,7 @@ class Verifier(val program: Program) {
     writer.println(datatype(lattice.name, lattice.domain).fmt)
     writer.println(relation2(lattice.name, lattice.leq).fmt)
     writer.println(relation3(lattice.name, lattice.lub).fmt)
+    writer.println(relation2(lattice.name, lattice.height).fmt)
 
     latticeLeq(lattice, writer)
     latticeLub(lattice, writer)
@@ -155,6 +156,7 @@ class Verifier(val program: Program) {
    */
   def asFormula(t: Term, env: Map[VSym, Term]): SmtFormula = t match {
     case Term.Bool(b) => if (b) SmtFormula.True else SmtFormula.False
+    case Term.Int(i) => SmtFormula.Int(i)
     case Term.Variable(s) => env.get(s) match {
       case None => SmtFormula.Variable(s)
       case Some(tt) => asFormula(tt, env)
