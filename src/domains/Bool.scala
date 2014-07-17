@@ -39,19 +39,32 @@ object Bool {
     HornClause(Predicate(JoinSymbol, List(True, False, Top))),
     HornClause(Predicate(JoinSymbol, List(False, True, Top))),
 
-    HornClause(Predicate(JoinSymbol, List(Top, Top, Top)))
+    HornClause(Predicate(JoinSymbol, List(Top, Term.Variable("_"), Top))),
+    HornClause(Predicate(JoinSymbol, List(Term.Variable("_"), Top, Top)))
   )
 
   val Height = List(
     HornClause(Predicate(HeightSymbol, List(Bot, Term.Int(3)))),
     HornClause(Predicate(HeightSymbol, List(True, Term.Int(2)))),
-    HornClause(Predicate(HeightSymbol, List(False, Term.Int(17)))),
+    HornClause(Predicate(HeightSymbol, List(False, Term.Int(2)))),
     HornClause(Predicate(HeightSymbol, List(Top, Term.Int(1))))
   )
 
   val And = List(
     HornClause(Predicate(AndSymbol, List(Bot, Term.Variable("_"), Bot))),
-    HornClause(Predicate(AndSymbol, List(Term.Variable("_"), Bot, Bot)))
+    HornClause(Predicate(AndSymbol, List(Term.Variable("_"), Bot, Bot))),
+
+    HornClause(Predicate(AndSymbol, List(True, True, True))),
+    HornClause(Predicate(AndSymbol, List(False, False, False))),
+    HornClause(Predicate(AndSymbol, List(True, False, Top))),
+    HornClause(Predicate(AndSymbol, List(False, True, Top))),
+
+    HornClause(Predicate(AndSymbol, List(Top, True, Top))),
+    HornClause(Predicate(AndSymbol, List(Top, False, Top))),
+
+    HornClause(Predicate(AndSymbol, List(True, Top, Top))),
+    HornClause(Predicate(AndSymbol, List(False, Top, Top))),
+    HornClause(Predicate(AndSymbol, List(Top, Top, Top)))
   )
 
   val Hints = Map(
