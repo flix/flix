@@ -17,7 +17,7 @@
         (case (_, _) => Bool.Top)): Bool)
 
 (def-fn and (e1: Bool e2: Bool)
-    (match (e1 e2)
+    (match (e1 e2) with
         (case (Bool.Bot _) => Bool.Bot)
         (case (Bool.True Bool.False) => Bool.False)
 
@@ -34,6 +34,6 @@ PointsTo(h1,f,h2) :- VarPointsTo(), Assign(), Assign().
     (Assign v1 v2)
     (VarPointsTo v2 o)))
 
-(def-rule (VarPointsTo v1 o) <= (Assign v1 v2) (VarPointsTo v2 o)))
+(rule (VarPointsTo v1 o) <= (Assign v1 v2) (VarPointsTo v2 o)))
 
 (VarPointsTo v1 o) <= (Assign v1 v2) (VarPointsTo v2 o)
