@@ -1,6 +1,6 @@
 package impl.logic
 
-import impl.runtime.{Functions, Error}
+import impl.runtime.{Error, Functions}
 
 sealed trait Term {
   /**
@@ -120,8 +120,6 @@ sealed trait Term {
 
 object Term {
 
-  // TODO: Add lambdas as terms?? Or... What about unification?
-
   /**
    * A variable term.
    */
@@ -130,7 +128,33 @@ object Term {
   /**
    * A function application term.
    */
+  @deprecated("replace with real lambda", "1.0")
   case class Apply(name: Symbol.FunctionSymbol, terms: List[Term]) extends Term
+
+  /**
+   * A lambda term.
+   */
+  case class Abs(s: Symbol.VariableSymbol, t: Term) extends Term
+
+  /**
+   * An application term.
+   */
+  case class App(t1: Term, t2: Term) extends Term
+
+  /**
+   * An if-then-else term.
+   */
+  case class Ite(t1: Term, t2: Term, t3: Term) extends Term
+
+  /**
+   * A unary operator term.
+   */
+  case class UnaryOp(op: UnaryOperator, t1: Term, t2: Term) extends Term
+
+  /**
+   * A binary operator term.
+   */
+  case class BinaryOp(op: BinaryOperator, t1: Term, t2: Term) extends Term
 
   /**
    * A boolean constant term.
