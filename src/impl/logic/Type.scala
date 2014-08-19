@@ -4,6 +4,8 @@ sealed trait Type
 
 object Type {
 
+  // TODO: Add lambdas
+
   /**
    * The type of variants.
    */

@@ -3,6 +3,8 @@
     (Bool.True) (Bool.False)
     (Bool.Bot)))
 
+(def-bot Bool Bool.Bot)
+
 (def-leq (e1: Bool e2: Bool)
     (match (e1 e2)
         (case (Bool.Bot _) => true)

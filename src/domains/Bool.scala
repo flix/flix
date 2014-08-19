@@ -22,6 +22,20 @@ object Bool {
   val HeightSymbol = Symbol.PredicateSymbol("Bool.Height")
   val AndSymbol = Symbol.PredicateSymbol("Bool.And")
 
+  // TODO
+  sealed trait Lambda
+  object Lambda {
+    case class Abs(variable: Symbol.VariableSymbol, l: Lambda) extends Lambda
+    case class IfThenElse() extends Lambda
+    case class Eq() extends Lambda
+  }
+
+//  val Leq2 = Lambda.Abs(Symbol.VariableSymbol("x"),
+//    Lambda.Abs(Symbol.VariableSymbol("y"),
+//      Lambda.Match(???, List(
+//        Lambda.Case(List(True, True))
+//      ))))
+
   val Leq = List(
     HornClause(Predicate(LeqSymbol, List(Bot, Term.Variable("_")))),
     HornClause(Predicate(LeqSymbol, List(True, True))),

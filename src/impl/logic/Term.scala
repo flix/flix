@@ -120,6 +120,8 @@ sealed trait Term {
 
 object Term {
 
+  // TODO: Add lambdas as terms?? Or... What about unification?
+
   /**
    * A variable term.
    */
