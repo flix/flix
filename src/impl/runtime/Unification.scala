@@ -88,7 +88,7 @@ object Unification {
     }
     case (Term.Variable(x), t) => env0.get(x) match {
       case None =>
-        if (t.variables contains x)
+        if (t.freeVariables contains x)
           None // Ensure that y does not occur free in t.
         else
           Some(substitute(x, t, env0) + (x -> t))
@@ -96,7 +96,7 @@ object Unification {
     }
     case (t, Term.Variable(y)) => env0.get(y) match {
       case None =>
-        if (t.variables contains y)
+        if (t.freeVariables contains y)
           None // Ensure that y does not occur free in t.
         else
           Some(substitute(y, t, env0) + (y -> t))

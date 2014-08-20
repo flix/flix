@@ -116,20 +116,25 @@ sealed trait Term {
   }
 
   /**
-   * Returns the set of (free) variables in the term.
+   * Returns the set of free variables in the term.
    */
-  def variables: Set[Symbol.VariableSymbol] = this match {
+  def freeVariables: Set[Symbol.VariableSymbol] = this match {
     case Term.Bool(b) => Set.empty
     case Term.Int(i) => Set.empty
     case Term.String(s) => Set.empty
     case Term.Variable(s) => Set(s)
-    case Term.Apply(s, ts) => ts.flatMap(t => t.variables).toSet
+    case Term.Apply(s, ts) => ts.flatMap(t => t.freeVariables).toSet
+    case Term.Abs(s, t1) => t1.freeVariables - s
+    case Term.App(t1, t2) => t1.freeVariables ++ t2.freeVariables
+    case Term.UnaryOp(op, t) => t.freeVariables
+    case Term.BinaryOp(op, t1, t2) => t1.freeVariables ++ t2.freeVariables
+    case Term.Ite(t1, t2, t3) => t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
     case Term.Constructor0(s) => Set.empty
-    case Term.Constructor1(s, t1) => t1.variables
-    case Term.Constructor2(s, t1, t2) => t1.variables ++ t2.variables
-    case Term.Constructor3(s, t1, t2, t3) => t1.variables ++ t2.variables ++ t3.variables
-    case Term.Constructor4(s, t1, t2, t3, t4) => t1.variables ++ t2.variables ++ t3.variables ++ t4.variables
-    case Term.Constructor5(s, t1, t2, t3, t4, t5) => t1.variables ++ t2.variables ++ t3.variables ++ t4.variables ++ t5.variables
+    case Term.Constructor1(s, t1) => t1.freeVariables
+    case Term.Constructor2(s, t1, t2) => t1.freeVariables ++ t2.freeVariables
+    case Term.Constructor3(s, t1, t2, t3) => t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
+    case Term.Constructor4(s, t1, t2, t3, t4) => t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables
+    case Term.Constructor5(s, t1, t2, t3, t4, t5) => t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables ++ t5.freeVariables
   }
 }
 

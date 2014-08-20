@@ -34,5 +34,5 @@ case class Predicate(name: Symbol.PredicateSymbol, terms: List[Term]) {
   /**
    * Returns all (free) variable symbols in the predicate.
    */
-  def variables: Set[Symbol.VariableSymbol] = terms.flatMap(_.variables).toSet
+  def variables: Set[Symbol.VariableSymbol] = terms.flatMap(_.freeVariables).toSet
 }
