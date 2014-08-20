@@ -45,6 +45,26 @@ object Bool {
     HornClause(Predicate(LeqSymbol, List(Term.Variable("_"), Top)))
   )
 
+  val Join2 = Term.Abs("x", Term.Abs("y",
+    Term.Ite(
+      Term.BinaryOp(BinaryOperator.Eq, Term.Variable("x"), Bot),
+      Term.Variable("y"),
+      Term.Ite(
+        Term.BinaryOp(BinaryOperator.Eq, Term.Variable("y"), Bot),
+        Term.Variable("y"),
+        Term.Ite(
+          Term.BinaryOp(BinaryOperator.Eq, Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y")), Term.Constructor2("2-tuple", True, True)),
+          True,
+          Term.Ite(
+            Term.BinaryOp(BinaryOperator.Eq, Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y")), Term.Constructor2("2-tuple", False, False)),
+            False,
+            Top
+          )
+        )
+      )
+    )
+  ))
+
   val Join = List(
     HornClause(Predicate(JoinSymbol, List(Term.Variable("x"), Bot, Term.Variable("x")))),
     HornClause(Predicate(JoinSymbol, List(Bot, Term.Variable("x"), Term.Variable("x")))),
