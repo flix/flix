@@ -18,4 +18,6 @@ object BinaryOperator {
 
   case object Eq extends BinaryOperator
 
+  case object And extends BinaryOperator
+
 }

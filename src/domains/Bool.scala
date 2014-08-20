@@ -22,6 +22,22 @@ object Bool {
   val HeightSymbol = Symbol.PredicateSymbol("Bool.Height")
   val AndSymbol = Symbol.PredicateSymbol("Bool.And")
 
+  val Leq2 = Term.Abs("x", Term.Abs("y",
+    Term.Ite(
+      Term.BinaryOp(BinaryOperator.Eq, Bot, Term.Variable("x")),
+      Term.Bool(b = true),
+      Term.Ite(
+        Term.BinaryOp(BinaryOperator.Eq, Term.Constructor2("2-tuple", True, True), Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y"))),
+        Term.Bool(b = true),
+        Term.Ite(
+          Term.BinaryOp(BinaryOperator.Eq, Term.Constructor2("2-tuple", False, False), Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y"))),
+          Term.Bool(b = true),
+          Term.Ite(
+            Term.BinaryOp(BinaryOperator.Eq, Top, Term.Variable("y")),
+            Term.Bool(b = true),
+            Term.Bool(b = false)
+          ))))))
+
   val Leq = List(
     HornClause(Predicate(LeqSymbol, List(Bot, Term.Variable("_")))),
     HornClause(Predicate(LeqSymbol, List(True, True))),
@@ -42,6 +58,18 @@ object Bool {
     HornClause(Predicate(JoinSymbol, List(Top, Term.Variable("_"), Top))),
     HornClause(Predicate(JoinSymbol, List(Term.Variable("_"), Top, Top)))
   )
+
+  val Height2 = Term.Abs("x",
+    Term.Ite(
+      Term.BinaryOp(BinaryOperator.Eq, Term.Variable("x"), Bot),
+      Term.Int(3),
+      Term.Ite(
+        Term.BinaryOp(BinaryOperator.Eq, Term.Variable("x"), True),
+        Term.Int(2),
+        Term.Ite(
+          Term.BinaryOp(BinaryOperator.Eq, Term.Variable("x"), False),
+          Term.Int(2),
+          Term.Int(0)))))
 
   val Height = List(
     HornClause(Predicate(HeightSymbol, List(Bot, Term.Int(3)))),
