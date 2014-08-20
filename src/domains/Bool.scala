@@ -41,7 +41,9 @@ object Bool {
 
   println(Exp.compile(
     Exp.Match(Exp.Tuple2(Exp.Var("x"), Exp.Var("y")), List(
-      (Exp.Tuple2(Exp.Constructor0("Bool.Bot"), Exp.Wildcard()), Exp.Var("y")),
+      (Exp.Tuple2(Exp.Constructor0("Bool.Bot"), Exp.Constructor0("Bool.Bot")), Exp.Var("Bool.Bot")),
+      (Exp.Tuple2(Exp.Constructor0("Bool.Bot"), Exp.Constructor0("Bool.True")), Exp.Var("Bool.Bot")),
+      (Exp.Tuple2(Exp.Constructor0("Bool.Bot"), Exp.Constructor0("Bool.False")), Exp.Var("Bool.Bot")),
       (Exp.Tuple2(Exp.Constructor0("Bool.True"), Exp.Constructor0("Bool.True")), Exp.Constructor0("Bool.Top"))
     ))
   ))
