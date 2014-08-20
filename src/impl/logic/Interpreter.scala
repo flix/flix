@@ -7,6 +7,7 @@ object Interpreter {
   /**
    * A big-step evaluator for lambda terms.
    */
+  // TODO: Env not used.
   def reduce(t: Term, env: Map[Symbol.VariableSymbol, Term]): Term = t match {
     case Term.Bool(b) => t
     case Term.Int(i) => t
@@ -22,11 +23,16 @@ object Interpreter {
     // Abstraction
     case Term.Abs(s, t1) => t
     // Application
-    case Term.App(Term.Abs(s, t1), t2) => t1.substitute(s, t2)
+    case Term.App(Term.Abs(s, t1), t2) => reduce(t1.substitute(s, t2), env)
     case Term.App(t1, t2) => reduce(Term.App(reduce(t1, env), t2), env)
     // Unary Operator
     case Term.UnaryOp(op, t1) => ???
     // Binary Operator
+    case Term.BinaryOp(BinaryOperator.Eq, t1, t2) =>
+      val v1 = reduce(t1, env)
+      val v2 = reduce(t2, env)
+      Term.Bool(v1 == v2)
+
     case Term.BinaryOp(op, t1, t2) => ???
     // If-Then-Else
     case Term.Ite(t1, t2, t3) =>
