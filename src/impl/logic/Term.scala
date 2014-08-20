@@ -107,6 +107,15 @@ sealed trait Term {
     case Term.Variable(y) if x == y => t
     case Term.Variable(y) => Term.Variable(y)
     case Term.Apply(s, ts) => Term.Apply(s, ts)
+    case Term.Abs(s, t1) =>
+      if (x == s)
+        Term.Abs(s, t1)
+      else
+        Term.Abs(s, t1.substitute(x, t))
+    case Term.App(t1, t2) => Term.App(t1.substitute(x, t), t2.substitute(x, t))
+    case Term.UnaryOp(op, t1) => Term.UnaryOp(op, t1.substitute(x, t))
+    case Term.BinaryOp(op, t1, t2) => Term.BinaryOp(op, t1.substitute(x, t), t2.substitute(x, t))
+    case Term.Ite(t1, t2, t3) => Term.Ite(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
     case Term.Constructor0(s) => Term.Constructor0(s)
     case Term.Constructor1(s, t1) => Term.Constructor1(s, t1.substitute(x, t))
     case Term.Constructor2(s, t1, t2) => Term.Constructor2(s, t1.substitute(x, t), t2.substitute(x, t))
@@ -136,6 +145,8 @@ sealed trait Term {
     case Term.Constructor4(s, t1, t2, t3, t4) => t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables
     case Term.Constructor5(s, t1, t2, t3, t4, t5) => t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables ++ t5.freeVariables
   }
+
+  // TODO: Consider Map/Fold
 }
 
 object Term {
