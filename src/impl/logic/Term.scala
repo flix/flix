@@ -14,6 +14,14 @@ sealed trait Term {
   def asValue: Option[Value] = asValue(Map.empty)
 
   /**
+   * Optionally returns the term as a bool (under the empty environment.)
+   */
+  def asBool: Option[Value.Bool] = this match {
+    case Term.Bool(b) => Some(Value.Bool(b))
+    case _ => None
+  }
+
+  /**
    * Optionally returns the term as a value under the given environment `env`.
    *
    * Returns `None` if the term has free variables under the given environment.
@@ -81,6 +89,13 @@ sealed trait Term {
     case None => throw Error.NonValueTerm(this)
     case Some(v) => v
   }
+
+  /**
+   * Returns the term as a boolean under the empty environment.
+   *
+   * Throws an exception if the term is not a bool value.
+   */
+  def toBool: Value.Bool = asBool.getOrElse(throw Error.TypeError2(Type.Bool, this))
 
   /**
    * Returns the term where all occurences of the variable symbol `s` has been replaced by the term `t`.
@@ -151,7 +166,7 @@ object Term {
   /**
    * A unary operator term.
    */
-  case class UnaryOp(op: UnaryOperator, t1: Term, t2: Term) extends Term
+  case class UnaryOp(op: UnaryOperator, t1: Term) extends Term
 
   /**
    * A binary operator term.
