@@ -10,13 +10,13 @@
         (case (Bool.Bot _) => true)
         (case (Bool.True True) => true)): Boolean)
 
-(def-join (e1: Bool e2: Bool)
+(def-join (e1 e2)
     (match (e1 e2)
-        (case (Bool.Bot _) => Bool.Bot)
-        (case (_ Bool.Bot) => Bool.Bot)
-        (case (Bool.True Bool.True) => Bool.True)
-        (case (Bool.False Bool.False) => Bool.False)
-        (case (_, _) => Bool.Top)): Bool)
+        ((Bool.Bot x) x)
+        ((x Bool.Bot) x)
+        ((Bool.True Bool.True) Bool.True)
+        ((Bool.False Bool.False) Bool.False)
+        (_ Bool.Top)))
 
 (def-fn and (e1: Bool e2: Bool)
     (match (e1 e2) with

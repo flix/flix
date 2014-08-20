@@ -1,5 +1,6 @@
 package domains
 
+import impl.ast.Exp
 import impl.logic._
 import impl.runtime.{Hint, Representation}
 import syntax.Symbols._
@@ -37,6 +38,13 @@ object Bool {
             Term.Bool(b = true),
             Term.Bool(b = false)
           ))))))
+
+  println(Exp.compile(
+    Exp.Match(Exp.Tuple2(Exp.Var("x"), Exp.Var("y")), List(
+      (Exp.Tuple2(Exp.Constructor0("Bool.Bot"), Exp.Wildcard()), Exp.Var("y")),
+      (Exp.Tuple2(Exp.Constructor0("Bool.True"), Exp.Constructor0("Bool.True")), Exp.Constructor0("Bool.Top"))
+    ))
+  ))
 
   val Leq = List(
     HornClause(Predicate(LeqSymbol, List(Bot, Term.Variable("_")))),

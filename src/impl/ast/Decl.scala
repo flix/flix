@@ -14,7 +14,7 @@ object Decl {
 
   case class DeclareLub(name: Symbol.NamedSymbol, term: Term) extends Decl
 
-  case class DeclareFn(name: Symbol.NamedSymbol, term: Term) extends Decl
+  case class DeclareFn(name: Symbol.NamedSymbol, exp: Exp) extends Decl
 
   case class DeclareRule() extends Decl
 
