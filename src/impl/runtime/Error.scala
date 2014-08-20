@@ -24,6 +24,13 @@ object Error {
   /*
    * An error to indicate that a value has the wrong type.
    */
+  @deprecated("", "")
   case class TypeError(expected: Type, actual: Value) extends RuntimeException(s"Expected value of type '$expected'. But got: '$actual'.")
+
+  case class TypeError2(expected: Type, actual: Term) extends RuntimeException(s"Expected value of type '$expected'. But got: '$actual'.")
+
+
+
+  case class UnboundVariable(s: Symbol.VariableSymbol) extends RuntimeException
 
 }

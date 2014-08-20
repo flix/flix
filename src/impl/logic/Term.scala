@@ -120,6 +120,8 @@ sealed trait Term {
 
 object Term {
 
+  //TODO: Ordering
+
   /**
    * A variable term.
    */

@@ -65,6 +65,10 @@ object Bool {
     )
   ))
 
+  println("----")
+  println(Interpreter.reduce(Term.App(Term.App(Join2, True), True), Map.empty))
+  println(Interpreter.reduce(Term.App(Term.App(Join2, True), False), Map.empty))
+
   val Join = List(
     HornClause(Predicate(JoinSymbol, List(Term.Variable("x"), Bot, Term.Variable("x")))),
     HornClause(Predicate(JoinSymbol, List(Bot, Term.Variable("x"), Term.Variable("x")))),
