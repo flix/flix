@@ -10,6 +10,11 @@ object Type {
   case object Unit extends Type
 
   /**
+   * The type of tagged types.
+   */
+  case class Tagged(name: Symbol.NamedSymbol, t: Type) extends Type
+
+  /**
    * The type of variants.
    */
   case class Variant(t: IndexedSeq[Type]) extends Type

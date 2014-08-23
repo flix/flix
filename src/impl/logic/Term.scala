@@ -1,5 +1,6 @@
 package impl.logic
 
+import impl.logic.Symbol.NamedSymbol
 import impl.runtime.{Error, Functions}
 
 sealed trait Term {
@@ -200,6 +201,15 @@ object Term {
    */
   case class BinaryOp(op: BinaryOperator, t1: Term, t2: Term) extends Term
 
+  /**
+   * A tagged term.
+   */
+  case class Tagged(name: Symbol.NamedSymbol, t: Term, typ: Type) extends Term
+
+  /**
+   * A case term.
+   */
+  case class Case(t: Term, cases: Map[NamedSymbol, Term]) extends Term
 
   /**
    * A function application term.
