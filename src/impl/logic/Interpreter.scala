@@ -61,4 +61,9 @@ object Interpreter {
     }
   }
 
+  /**
+   * Returns the result of applying the binary operator `op` to the given values `v1` and `v2`.
+   */
+
+
 }

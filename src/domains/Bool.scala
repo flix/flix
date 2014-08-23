@@ -25,19 +25,21 @@ object Bool {
 
   val Leq2 = Term.Abs("x", Term.Abs("y",
     Term.Ite(
-      Term.BinaryOp(BinaryOperator.Eq, Bot, Term.Variable("x")),
+      Term.BinaryOp(BinaryOperator.Equal, Bot, Term.Variable("x")),
       Term.Bool(b = true),
       Term.Ite(
-        Term.BinaryOp(BinaryOperator.Eq, Term.Constructor2("2-tuple", True, True), Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y"))),
+        Term.BinaryOp(BinaryOperator.Equal, Term.Constructor2("2-tuple", True, True), Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y"))),
         Term.Bool(b = true),
         Term.Ite(
-          Term.BinaryOp(BinaryOperator.Eq, Term.Constructor2("2-tuple", False, False), Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y"))),
+          Term.BinaryOp(BinaryOperator.Equal, Term.Constructor2("2-tuple", False, False), Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y"))),
           Term.Bool(b = true),
           Term.Ite(
-            Term.BinaryOp(BinaryOperator.Eq, Top, Term.Variable("y")),
+            Term.BinaryOp(BinaryOperator.Equal, Top, Term.Variable("y")),
             Term.Bool(b = true),
             Term.Bool(b = false)
           ))))))
+
+
 
   println(Exp.compile(
     Exp.Match(Exp.Tuple2(Exp.Var("x"), Exp.Var("y")), List(
