@@ -4,8 +4,8 @@ package impl.logic
 // DONE 00. Introduce Unit.
 // DONE 01. Introduce proper variants.
 // DONE 02. Introduce proper tuples.
-// 02. Introduce let binding
-// 03. Introduce bool, int and string operators.
+// DONE 02. Introduce let binding
+// DONE 03. Introduce bool, int and string operators.
 // 04. Introduce set and its operators.
 // 05. Ensure that the lambda evaluator works together with substitution...
 // 06. Introduce proper types for all of the above.
