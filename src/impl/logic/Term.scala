@@ -217,6 +217,11 @@ object Term {
   case class Apply(name: Symbol.FunctionSymbol, terms: List[Term]) extends Term
 
   /**
+   * A let binding term.
+   */
+  case class Let(name: Symbol.VariableSymbol, t1: Term, t2: Term) extends Term
+
+  /**
    * A 2-tuple term.
    */
   case class Tuple2(t1: Term, t2: Term) extends Term
