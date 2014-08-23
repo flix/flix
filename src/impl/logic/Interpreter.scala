@@ -28,7 +28,7 @@ object Interpreter {
     // Unary Operator
     case Term.UnaryOp(op, t1) => ???
     // Binary Operator
-    case Term.BinaryOp(BinaryOperator.Eq, t1, t2) =>
+    case Term.BinaryOp(BinaryOperator.Equal, t1, t2) =>
       val v1 = reduce(t1, env)
       val v2 = reduce(t2, env)
       Term.Bool(v1 == v2)
@@ -43,6 +43,22 @@ object Interpreter {
         reduce(t3, env)
   }
 
-
+  /**
+   * Returns the result of applying the unary operator `op` to the given value `v`.
+   */
+  def apply(op: UnaryOperator, v: Value): Value = op match {
+    case UnaryOperator.Not => v match {
+      case Value.Bool(b) => Value.Bool(!b)
+      case _ => throw Error.TypeError(Type.Bool, v)
+    }
+    case UnaryOperator.UnaryPlus => v match {
+      case Value.Int(i) => Value.Int(i)
+      case _ => throw Error.TypeError(Type.Int, v)
+    }
+    case UnaryOperator.UnaryMinus => v match {
+      case Value.Int(i) => Value.Int(-i)
+      case _ => throw Error.TypeError(Type.Int, v)
+    }
+  }
 
 }
