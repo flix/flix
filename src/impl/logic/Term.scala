@@ -30,7 +30,7 @@ sealed trait Term {
   def asValue(env: Map[Symbol.VariableSymbol, Value]): Option[Value] = this match {
     case Term.Bool(b) => Some(Value.Bool(b))
     case Term.Int(i) => Some(Value.Int(i))
-    case Term.String(s) => Some(Value.String(s))
+    case Term.String(s) => Some(Value.Str(s))
     case Term.Variable(s) => env.get(s)
     case Term.Apply(s, args) => asValue(args, env) map (xs => Functions.evaluate(s, xs))
     case Term.Constructor0(s) => Some(Value.Constructor0(s))

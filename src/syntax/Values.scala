@@ -15,7 +15,7 @@ object Values {
     def fmt: String = v match {
       case Value.Bool(b) => b.toString
       case Value.Int(i) => i.toString
-      case Value.String(s) => "\"" + s + "\""
+      case Value.Str(s) => "\"" + s + "\""
       case Value.Constructor0(s) => s.fmt
       case Value.Constructor1(s, v1) => s.fmt + "(" + v1.fmt + ")"
       case Value.Constructor2(s, v1, v2) => s.fmt + "(" + v1.fmt + "," + v2.fmt + ")"

@@ -107,31 +107,31 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
           val v1 = t1.toValue(env)
           val newFact = relation1.put(p.name, v1)
           if (newFact)
-            propagateFact(Predicate(p.name, List(v1.asTerm)))
+            propagateFact(Predicate(p.name, List(v1.toTerm)))
 
         case List(t1, t2) =>
           val (v1, v2) = (t1.toValue(env), t2.toValue(env))
           val newFact = relation2.put(p.name, (v1, v2))
           if (newFact)
-            propagateFact(Predicate(p.name, List(v1.asTerm, v2.asTerm)))
+            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm)))
 
         case List(t1, t2, t3) =>
           val (v1, v2, v3) = (t1.toValue(env), t2.toValue(env), t3.toValue(env))
           val newFact = relation3.put(p.name, (v1, v2, v3))
           if (newFact)
-            propagateFact(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm)))
+            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm)))
 
         case List(t1, t2, t3, t4) =>
           val (v1, v2, v3, v4) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env))
           val newFact = relation4.put(p.name, (v1, v2, v3, v4))
           if (newFact)
-            propagateFact(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm)))
+            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm)))
 
         case List(t1, t2, t3, t4, t5) =>
           val (v1, v2, v3, v4, v5) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env), t5.toValue(env))
           val newFact = relation5.put(p.name, (v1, v2, v3, v4, v5))
           if (newFact)
-            propagateFact(Predicate(p.name, List(v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm, v5.asTerm)))
+            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm, v5.toTerm)))
       }
 
       case Interpretation.Lattice => p.terms match {
@@ -143,7 +143,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
           val newFact: Boolean = !leq(lattice.leq, joinValue, oldValue)
           if (newFact) {
             map1.put(p.name, joinValue)
-            propagateFact(Predicate(p.name, List(joinValue.asTerm)))
+            propagateFact(Predicate(p.name, List(joinValue.toTerm)))
           }
       }
     }
@@ -264,7 +264,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
    * Returns `true` iff `v1` is less or equal to `v2`.
    */
   private def leq(s: PSym, v1: Value, v2: Value): Boolean = {
-    val p = Predicate(s, List(v1.asTerm, v2.asTerm))
+    val p = Predicate(s, List(v1.toTerm, v2.toTerm))
     val models = getSat(p)
     models.nonEmpty
   }
@@ -273,7 +273,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
    * Returns the join of `v1` and `v2`.
    */
   private def join(s: PSym, v1: Value, v2: Value): Value = {
-    val p = Predicate(s, List(v1.asTerm, v2.asTerm, Term.Variable(Symbol.VariableSymbol("!x"))))
+    val p = Predicate(s, List(v1.toTerm, v2.toTerm, Term.Variable(Symbol.VariableSymbol("!x"))))
     val models = getSat(p)
 
     val value = asUniqueValue(Symbol.VariableSymbol("!x"), models)

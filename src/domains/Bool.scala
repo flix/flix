@@ -13,10 +13,10 @@ object Bool {
     Type.Constructor0("Bool.Bot")
   ))
 
-  val Top = Value.Constructor0("Bool.Top").asTerm
-  val True = Value.Constructor0("Bool.True").asTerm
-  val False = Value.Constructor0("Bool.False").asTerm
-  val Bot = Value.Constructor0("Bool.Bot").asTerm
+  val Top = Value.Constructor0("Bool.Top").toTerm
+  val True = Value.Constructor0("Bool.True").toTerm
+  val False = Value.Constructor0("Bool.False").toTerm
+  val Bot = Value.Constructor0("Bool.Bot").toTerm
 
   val LeqSymbol = Symbol.PredicateSymbol("Bool.Leq")
   val JoinSymbol = Symbol.PredicateSymbol("Bool.Join")
@@ -59,16 +59,16 @@ object Bool {
 
   val Join2 = Term.Abs("x", Term.Abs("y",
     Term.Ite(
-      Term.BinaryOp(BinaryOperator.Eq, Term.Variable("x"), Bot),
+      Term.BinaryOp(BinaryOperator.Equal, Term.Variable("x"), Bot),
       Term.Variable("y"),
       Term.Ite(
-        Term.BinaryOp(BinaryOperator.Eq, Term.Variable("y"), Bot),
+        Term.BinaryOp(BinaryOperator.Equal, Term.Variable("y"), Bot),
         Term.Variable("y"),
         Term.Ite(
-          Term.BinaryOp(BinaryOperator.Eq, Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y")), Term.Constructor2("2-tuple", True, True)),
+          Term.BinaryOp(BinaryOperator.Equal, Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y")), Term.Constructor2("2-tuple", True, True)),
           True,
           Term.Ite(
-            Term.BinaryOp(BinaryOperator.Eq, Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y")), Term.Constructor2("2-tuple", False, False)),
+            Term.BinaryOp(BinaryOperator.Equal, Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y")), Term.Constructor2("2-tuple", False, False)),
             False,
             Top
           )
@@ -78,8 +78,8 @@ object Bool {
   ))
 
   println("----")
-  println(Interpreter.reduce(Term.App(Term.App(Join2, True), True), Map.empty))
-  println(Interpreter.reduce(Term.App(Term.App(Join2, True), False), Map.empty))
+  println(Interpreter.evaluate(Term.App(Term.App(Join2, True), True), Map.empty))
+  println(Interpreter.evaluate(Term.App(Term.App(Join2, True), False), Map.empty))
 
   val Join = List(
     HornClause(Predicate(JoinSymbol, List(Term.Variable("x"), Bot, Term.Variable("x")))),
@@ -97,13 +97,13 @@ object Bool {
 
   val Height2 = Term.Abs("x",
     Term.Ite(
-      Term.BinaryOp(BinaryOperator.Eq, Term.Variable("x"), Bot),
+      Term.BinaryOp(BinaryOperator.Equal, Term.Variable("x"), Bot),
       Term.Int(3),
       Term.Ite(
-        Term.BinaryOp(BinaryOperator.Eq, Term.Variable("x"), True),
+        Term.BinaryOp(BinaryOperator.Equal, Term.Variable("x"), True),
         Term.Int(2),
         Term.Ite(
-          Term.BinaryOp(BinaryOperator.Eq, Term.Variable("x"), False),
+          Term.BinaryOp(BinaryOperator.Equal, Term.Variable("x"), False),
           Term.Int(2),
           Term.Int(0)))))
 

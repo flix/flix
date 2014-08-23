@@ -22,7 +22,7 @@ package impl.logic
 /**
  * A program consists of a set of horn clauses.
  */
-case class Program(clauses: List[HornClause], @deprecated interpretation: Map[Symbol.PredicateSymbol, Interpretation], @deprecated lattices: Map[Symbol.PredicateSymbol, Lattice]) {
+case class Program(clauses: List[HornClause], interpretation: Map[Symbol.PredicateSymbol, Interpretation], lattices: Map[Symbol.PredicateSymbol, Lattice]) {
   /**
    * Returns the set of facts, i.e. horn clauses with an empty body.
    */

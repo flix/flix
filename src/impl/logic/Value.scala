@@ -1,20 +1,47 @@
 package impl.logic
 
+import impl.runtime.Error
+
 sealed trait Value {
   /**
-   * Returns the value as a term (with no free variables).
+   * Returns `this` value as a term. Always succeeds.
    */
-  def asTerm: Term = this match {
+  def toTerm: Term = this match {
     case Value.Bool(b) => Term.Bool(b)
     case Value.Int(i) => Term.Int(i)
-    case Value.String(s) => Term.String(s)
+    case Value.Str(s) => Term.String(s)
     case Value.Constructor0(s) => Term.Constructor0(s)
-    case Value.Constructor1(s, v1) => Term.Constructor1(s, v1.asTerm)
-    case Value.Constructor2(s, v1, v2) => Term.Constructor2(s, v1.asTerm, v2.asTerm)
-    case Value.Constructor3(s, v1, v2, v3) => Term.Constructor3(s, v1.asTerm, v2.asTerm, v3.asTerm)
-    case Value.Constructor4(s, v1, v2, v3, v4) => Term.Constructor4(s, v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm)
-    case Value.Constructor5(s, v1, v2, v3, v4, v5) => Term.Constructor5(s, v1.asTerm, v2.asTerm, v3.asTerm, v4.asTerm, v5.asTerm)
+    case Value.Constructor1(s, v1) => Term.Constructor1(s, v1.toTerm)
+    case Value.Constructor2(s, v1, v2) => Term.Constructor2(s, v1.toTerm, v2.toTerm)
+    case Value.Constructor3(s, v1, v2, v3) => Term.Constructor3(s, v1.toTerm, v2.toTerm, v3.toTerm)
+    case Value.Constructor4(s, v1, v2, v3, v4) => Term.Constructor4(s, v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm)
+    case Value.Constructor5(s, v1, v2, v3, v4, v5) => Term.Constructor5(s, v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm, v5.toTerm)
   }
+
+  /**
+   * Returns `this` value as a boolean or throws a type error.
+   */
+  def toBool: Boolean = this match {
+    case Value.Bool(b) => b
+    case _ => throw Error.TypeError(Type.Bool, this)
+  }
+
+  /**
+   * Returns `this` value as an int or throws a type error.
+   */
+  def toInt: Int = this match {
+    case Value.Int(i) => i
+    case _ => throw Error.TypeError(Type.Bool, this)
+  }
+
+  /**
+   * Returns `this` value as a string or throws a type error.
+   */
+  def toStr: String = this match {
+    case Value.Str(s) => s
+    case _ => throw Error.TypeError(Type.Bool, this)
+  }
+
 }
 
 object Value {
@@ -32,7 +59,7 @@ object Value {
   /**
    * A string value.
    */
-  case class String(s: java.lang.String) extends Value
+  case class Str(s: java.lang.String) extends Value
 
   /**
    * A null-ary constructor value.

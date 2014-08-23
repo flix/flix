@@ -16,7 +16,7 @@ case class Predicate(name: Symbol.PredicateSymbol, terms: List[Term]) {
    */
   def asGround(env: Map[Symbol.VariableSymbol, Value]): Option[Predicate] = {
     val terms2 = terms.map(_.asValue(env)).foldLeft(Option(List.empty[Term])) {
-      case (Some(ys), Some(v)) => Some(v.asTerm :: ys)
+      case (Some(ys), Some(v)) => Some(v.toTerm :: ys)
       case _ => None
     }
 
