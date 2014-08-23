@@ -1,7 +1,7 @@
 package impl.logic
 
 // TODO:
-// 00. Introduce Unit.
+// DONE 00. Introduce Unit.
 // 01. Introduce proper variants.
 // 02. Introduce proper tuples.
 // 03. Introduce bool, int and string operators.

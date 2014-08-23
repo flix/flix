@@ -4,7 +4,10 @@ sealed trait Type
 
 object Type {
 
-  // TODO: Add lambdas
+  /**
+   * The type of the Unit value.
+   */
+  case object Unit extends Type
 
   /**
    * The type of variants.

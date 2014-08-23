@@ -146,23 +146,34 @@ sealed trait Term {
     case Term.Constructor5(s, t1, t2, t3, t4, t5) => t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables ++ t5.freeVariables
   }
 
-  // TODO: Consider Map/Fold
 }
 
 object Term {
 
-  //TODO: Ordering
+  /**
+   * The Unit term.
+   */
+  case object Unit extends Term
+
+  /**
+   * A boolean constant term.
+   */
+  case class Bool(b: scala.Boolean) extends Term
+
+  /**
+   * An integer constant term.
+   */
+  case class Int(i: scala.Int) extends Term
+
+  /**
+   * A string constant term.
+   */
+  case class String(s: java.lang.String) extends Term
 
   /**
    * A variable term.
    */
   case class Variable(name: Symbol.VariableSymbol) extends Term
-
-  /**
-   * A function application term.
-   */
-  @deprecated("replace with real lambda", "1.0")
-  case class Apply(name: Symbol.FunctionSymbol, terms: List[Term]) extends Term
 
   /**
    * A lambda term.
@@ -189,20 +200,11 @@ object Term {
    */
   case class BinaryOp(op: BinaryOperator, t1: Term, t2: Term) extends Term
 
-  /**
-   * A boolean constant term.
-   */
-  case class Bool(b: scala.Boolean) extends Term
 
   /**
-   * An integer constant term.
+   * A function application term.
    */
-  case class Int(i: scala.Int) extends Term
-
-  /**
-   * A string constant term.
-   */
-  case class String(s: java.lang.String) extends Term
+  case class Apply(name: Symbol.FunctionSymbol, terms: List[Term]) extends Term
 
   /**
    * A null-ary constructor.
