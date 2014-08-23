@@ -3,26 +3,23 @@ package impl.logic
 trait Operator
 
 sealed trait UnaryOperator extends Operator
-
 object UnaryOperator {
-  // Logical
-  case object Not extends BinaryOperator
-
-  // Integer
-  case object Plus extends UnaryOperator
-  case object Minus extends UnaryOperator
-  case object Times extends UnaryOperator
-  case object Divide extends UnaryOperator
+  case object Not extends UnaryOperator
+  case object UnaryPlus extends UnaryOperator
+  case object UnaryMinus extends UnaryOperator
 }
 
 sealed trait BinaryOperator extends Operator
-
 object BinaryOperator {
-  // Comparison
-  case object Eq extends BinaryOperator
-  case object Neq extends BinaryOperator
-
-  // Logical
-  case object Or extends BinaryOperator
-  case object And extends BinaryOperator
+  case object Plus extends BinaryOperator
+  case object Minus extends BinaryOperator
+  case object Times extends BinaryOperator
+  case object Divide extends BinaryOperator
+  case object Modulo extends BinaryOperator
+  case object Less extends BinaryOperator
+  case object LessEqual extends BinaryOperator
+  case object Greater extends BinaryOperator
+  case object GreaterEqual extends BinaryOperator
+  case object Equal extends BinaryOperator
+  case object NotEqual extends BinaryOperator
 }
