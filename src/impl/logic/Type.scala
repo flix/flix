@@ -35,6 +35,26 @@ object Type {
   case object String extends Type
 
   /**
+   * The type of 2-tuples.
+   */
+  case class Tuple2(t1: Type, t2: Type) extends Type
+
+  /**
+   * The type of 3-tuples.
+   */
+  case class Tuple3(t1: Type, t2: Type) extends Type
+
+  /**
+   * The type of 4-tuples.
+   */
+  case class Tuple4(t1: Type, t2: Type) extends Type
+
+  /**
+   * The type of 5-tuples.
+   */
+  case class Tuple5(t1: Type, t2: Type) extends Type
+
+  /**
    * The type of null-ary constructors.
    */
   case class Constructor0(name: Symbol.NamedSymbol) extends Type

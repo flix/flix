@@ -3,7 +3,7 @@ package impl.logic
 // TODO:
 // DONE 00. Introduce Unit.
 // DONE 01. Introduce proper variants.
-// 02. Introduce proper tuples.
+// DONE 02. Introduce proper tuples.
 // 02. Introduce let binding
 // 03. Introduce bool, int and string operators.
 // 04. Introduce set and its operators.

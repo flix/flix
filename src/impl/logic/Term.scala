@@ -217,6 +217,26 @@ object Term {
   case class Apply(name: Symbol.FunctionSymbol, terms: List[Term]) extends Term
 
   /**
+   * A 2-tuple term.
+   */
+  case class Tuple2(t1: Term, t2: Term) extends Term
+
+  /**
+   * A 3-tuple term.
+   */
+  case class Tuple3(t1: Term, t2: Term) extends Term
+
+  /**
+   * A 4-tuple term.
+   */
+  case class Tuple4(t1: Term, t2: Term) extends Term
+
+  /**
+   * A 5-tuple term.
+   */
+  case class Tuple5(t1: Term, t2: Term) extends Term
+
+  /**
    * A null-ary constructor.
    */
   case class Constructor0(name: Symbol.NamedSymbol) extends Term
