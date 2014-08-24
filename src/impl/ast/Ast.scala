@@ -20,7 +20,7 @@ object Decl {
 
   case class DeclareType(name: Symbol.NamedSymbol) extends Decl
 
-  case class DeclareBot(name: Symbol.NamedSymbol) extends Decl
+  case class DeclareBot(name: Symbol.NamedSymbol, typ: String, exp: Exp) extends Decl
 
   case class DeclareLeq(name: Symbol.NamedSymbol) extends Decl
 

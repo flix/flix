@@ -4,6 +4,8 @@ sealed trait Symbol
 
 object Symbol {
 
+  // TODO: Which symbols to remove??
+
   /**
    * A function symbol.
    */
