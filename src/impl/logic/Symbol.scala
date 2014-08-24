@@ -35,7 +35,12 @@ object Symbol {
   private var Counter: Int = 0;
 
   /**
-   * Returns a fresh function symbol.
+   * Returns a fresh variable symbol.
+   */
+  def freshVariableSymbol(s: VariableSymbol): VariableSymbol = freshVariableSymbol(s.s)
+
+  /**
+   * Returns a fresh variable symbol.
    */
   def freshVariableSymbol(prefix: String): VariableSymbol = {
     Counter += 1

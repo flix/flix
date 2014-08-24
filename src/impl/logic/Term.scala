@@ -110,7 +110,7 @@ sealed trait Term {
     case Term.Variable(s) if s == x => Term.Variable(y)
     case Term.Variable(s) => this
 
-    case Term.Abs(s, typ, t) if s == x =>   Term.Abs(s, typ, t)
+    case Term.Abs(s, typ, t) if s == x =>   this
     case Term.Abs(s, typ, t) =>             Term.Abs(s, typ, t.rename(x, y))
 
     case Term.App(t1, t2) =>                Term.App(t1.rename(x, y), t2.rename(x, y))
