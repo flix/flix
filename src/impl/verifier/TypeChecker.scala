@@ -17,12 +17,18 @@ object TypeChecker {
    * Type-checks and returns the type of the given term `t` under the given type environment `typenv`.
    */
   def typecheck(t: Term, typenv: Map[VSym, Type]): Type = t match {
+    case Term.Unit => Type.Unit
     case Term.Bool(b) => Type.Bool
     case Term.Int(i) => Type.Int
     case Term.Str(s) => Type.Str
 
+    case Term.IfThenElse(t1, t2, t3) =>
+      val typ1 = typecheck(t1, typenv)
+      val typ2 = typecheck(t2, typenv)
+      val typ3 = typecheck(t3, typenv)
+      assertType(Type.Bool, typ1, t)
+      assertType(typ2, typ3, t)
 
-      
     case Term.UnaryOp(op, t1) =>
       val typ1 = typecheck(t1, typenv)
       op match {

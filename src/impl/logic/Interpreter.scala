@@ -8,6 +8,7 @@ object Interpreter {
    * A big-step evaluator for lambda terms.
    */
   def evaluate(t: Term, env: Map[VSym, Term]): Value = t match {
+    case Term.Unit => Value.Unit
     case Term.Bool(b) => Value.Bool(b)
     case Term.Int(i) => Value.Int(i)
     case Term.Str(s) => Value.Str(s)
@@ -15,6 +16,13 @@ object Interpreter {
     case Term.Variable(s) => ???
     case Term.Abs(s, t1) => ???
     case Term.App(Term.Abs(s, t1), t2) => ???
+
+    case Term.IfThenElse(t1, t2, t3) =>
+      val Value.Bool(b) = evaluate(t1, env)
+      if (b)
+        evaluate(t2, env)
+      else
+        evaluate(t3, env)
 
     case Term.UnaryOp(op, t1) =>
       val v1 = evaluate(t, env)
@@ -24,6 +32,7 @@ object Interpreter {
       val v1 = evaluate(t1, env)
       val v2 = evaluate(t2, env)
       apply(op, v1, v2)
+
 
   }
 

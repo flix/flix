@@ -116,7 +116,7 @@ sealed trait Term {
     case Term.App(t1, t2) => Term.App(t1.substitute(x, t), t2.substitute(x, t))
     case Term.UnaryOp(op, t1) => Term.UnaryOp(op, t1.substitute(x, t))
     case Term.BinaryOp(op, t1, t2) => Term.BinaryOp(op, t1.substitute(x, t), t2.substitute(x, t))
-    case Term.Ite(t1, t2, t3) => Term.Ite(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
+    case Term.IfThenElse(t1, t2, t3) => Term.IfThenElse(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
     case Term.Constructor0(s) => Term.Constructor0(s)
     case Term.Constructor1(s, t1) => Term.Constructor1(s, t1.substitute(x, t))
     case Term.Constructor2(s, t1, t2) => Term.Constructor2(s, t1.substitute(x, t), t2.substitute(x, t))
@@ -138,7 +138,7 @@ sealed trait Term {
     case Term.App(t1, t2) => t1.freeVariables ++ t2.freeVariables
     case Term.UnaryOp(op, t) => t.freeVariables
     case Term.BinaryOp(op, t1, t2) => t1.freeVariables ++ t2.freeVariables
-    case Term.Ite(t1, t2, t3) => t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
+    case Term.IfThenElse(t1, t2, t3) => t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
     case Term.Constructor0(s) => Set.empty
     case Term.Constructor1(s, t1) => t1.freeVariables
     case Term.Constructor2(s, t1, t2) => t1.freeVariables ++ t2.freeVariables
@@ -189,7 +189,7 @@ object Term {
   /**
    * An if-then-else term.
    */
-  case class Ite(t1: Term, t2: Term, t3: Term) extends Term
+  case class IfThenElse(t1: Term, t2: Term, t3: Term) extends Term
 
   /**
    * A unary operator term.
@@ -212,11 +212,6 @@ object Term {
   case class Case(t: Term, cases: Map[NamedSymbol, Term]) extends Term
 
   /**
-   * A function application term.
-   */
-  case class Apply(name: Symbol.FunctionSymbol, terms: List[Term]) extends Term
-
-  /**
    * A let binding term.
    */
   case class Let(name: Symbol.VariableSymbol, t1: Term, t2: Term) extends Term
@@ -229,46 +224,58 @@ object Term {
   /**
    * A 3-tuple term.
    */
-  case class Tuple3(t1: Term, t2: Term) extends Term
+  case class Tuple3(t1: Term, t2: Term, t3: Term) extends Term
 
   /**
    * A 4-tuple term.
    */
-  case class Tuple4(t1: Term, t2: Term) extends Term
+  case class Tuple4(t1: Term, t2: Term, t3: Term, t4: Term) extends Term
 
   /**
    * A 5-tuple term.
    */
-  case class Tuple5(t1: Term, t2: Term) extends Term
+  case class Tuple5(t1: Term, t2: Term, t3: Term, t4: Term, t5: Term) extends Term
+
+  /**
+   * A function application term.
+   */
+  @deprecated("", "")
+  case class Apply(name: Symbol.FunctionSymbol, terms: List[Term]) extends Term
 
   /**
    * A null-ary constructor.
    */
+  @deprecated("", "")
   case class Constructor0(name: Symbol.NamedSymbol) extends Term
 
   /**
    * A 1-ary constructor.
    */
+  @deprecated("", "")
   case class Constructor1(name: Symbol.NamedSymbol, t1: Term) extends Term
 
   /**
    * A 2-ary constructor.
    */
+  @deprecated("", "")
   case class Constructor2(name: Symbol.NamedSymbol, t1: Term, t2: Term) extends Term
 
   /**
    * A 3-ary constructor.
    */
+  @deprecated("", "")
   case class Constructor3(name: Symbol.NamedSymbol, t1: Term, t2: Term, t3: Term) extends Term
 
   /**
    * A 4-ary constructor.
    */
+  @deprecated("", "")
   case class Constructor4(name: Symbol.NamedSymbol, t1: Term, t2: Term, t3: Term, t4: Term) extends Term
 
   /**
    * A 5-ary constructor.
    */
+  @deprecated("", "")
   case class Constructor5(name: Symbol.NamedSymbol, t1: Term, t2: Term, t3: Term, t4: Term, t5: Term) extends Term
 
 }

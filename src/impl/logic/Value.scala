@@ -47,6 +47,11 @@ sealed trait Value {
 object Value {
 
   /**
+   * The unit value.
+   */
+  case object Unit extends Value
+
+  /**
    * A boolean value.
    */
   case class Bool(b: scala.Boolean) extends Value
