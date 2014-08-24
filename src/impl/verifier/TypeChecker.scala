@@ -81,9 +81,14 @@ object TypeChecker {
         throw Error.TypingError(typ1, typ, t)
 
     case Term.Case(t1, cases) =>
-      typecheck(t1, typenv) match {
-        case Type.Sum(ts) => ??? // TODO
-        case typ1 => ??? // TODO
+      val typ1 = typecheck(t1, typenv)
+      typ1 match {
+        case Type.Sum(ts) =>
+          for ((n, (x, t2)) <- cases) {
+            ???
+          }
+          ???
+        case _ => throw Error.TypingError2(t)
       }
 
     case Term.Tuple2(t1, t2) =>
