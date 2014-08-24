@@ -68,6 +68,8 @@ object TypeChecker {
           assertType(typ1, typ2, t)
       }
 
+    case Term.Tagged(s, t1, typ) => typ
+
     case Term.Tuple2(t1, t2) =>
       val typ1 = typecheck(t1, typenv)
       val typ2 = typecheck(t2, typenv)

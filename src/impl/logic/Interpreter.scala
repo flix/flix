@@ -37,6 +37,10 @@ object Interpreter {
       val v2 = evaluate(t2, env)
       apply(op, v1, v2)
 
+    case Term.Tagged(s, t1, typ) =>
+      val v1 = evaluate(t1, env)
+      Value.Tagged(s, v1)
+
     case Term.Tuple2(t1, t2) =>
       val v1 = evaluate(t1, env)
       val v2 = evaluate(t2, env)

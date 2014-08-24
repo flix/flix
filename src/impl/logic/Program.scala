@@ -7,9 +7,9 @@ package impl.logic
 // DONE 02. Introduce let binding
 // DONE 03. Introduce bool, int and string operators.
 // 04. Introduce set and its operators.
-// 05. Ensure that the lambda evaluator works together with substitution...
+// DONE 05. Ensure that the lambda evaluator works together with substitution...
 // 06. Introduce proper types for all of the above.
-// 07. Annotate lamdas with types.
+// DONE 07. Annotate lamdas with types.
 // 08. Write type checking algorithm.
 // 09. Introduce pattern datatype and pattern match term.
 // 10. Introduce types in horn clauses.
