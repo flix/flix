@@ -73,7 +73,13 @@ object TypeChecker {
           assertType(typ1, typ2, t)
       }
 
-    case Term.Tagged(s, t1, typ) => typ
+    case Term.Tagged(s, t1, typ) => ???
+
+    case Term.Case(t1, cases) =>
+      typecheck(t1, typenv) match {
+        case Type.Sum(ts) => ???
+        case typ1 => ???
+      }
 
     case Term.Tuple2(t1, t2) =>
       val typ1 = typecheck(t1, typenv)

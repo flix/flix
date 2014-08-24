@@ -1,6 +1,5 @@
 package impl.logic
 
-import impl.logic.Symbol.NamedSymbol
 import impl.runtime.{Error, Functions}
 
 sealed trait Term {
@@ -233,7 +232,7 @@ object Term {
   /**
    * A case term.
    */
-  case class Case(t: Term, cases: Map[NamedSymbol, Term]) extends Term
+  case class Case(t: Term, cases: Map[Symbol.NamedSymbol, (Symbol.VariableSymbol, Term)]) extends Term
 
   /**
    * A tagged term.

@@ -35,6 +35,11 @@ object Type {
   case class Tagged(name: Symbol.NamedSymbol, typ: Type) extends Type
 
   /**
+   * The type of sum types.
+   */
+  case class Sum(ts: List[Type]) extends Type
+
+  /**
    * The type of 2-tuples.
    */
   case class Tuple2(typ1: Type, typ2: Type) extends Type
