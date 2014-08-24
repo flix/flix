@@ -13,19 +13,13 @@
         (case (x Bool.Bot) x)
         (case (Bool.True Bool.True) Bool.True)
         (case (Bool.False Bool.False) Bool.False)
-        (case (_) Bool.Top)))
+        (case _ Bool.Top)))
 
-(def-fn and (e1 Bool e2 Bool)
+(def-fun and (e1 Bool e2 Bool)
     (match (e1 e2)
         (case (Bool.Bot _) Bool.Bot)
-        (case (Bool.True Bool.False) Bool.False)
+        (case (Bool.True Bool.False) Bool.False)))
 
 (rule (VarPointsTo (v1, o))
-    (Assign (v1 v2)
-    (VarPointsTo (v2 o))))
-
-(def-rule (VarPointsTo (v1, o)) (Assign (v1 v2) (VarPointsTo (v2 o))))
-
-(def-rule (VarPointsTo v1 o)
-    (Assign v1 v2)
-    (VarPointsTo v2 o)))
+    (<= (Assign (v1 v2)
+        (VarPointsTo (v2 o)))))

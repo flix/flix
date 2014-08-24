@@ -7,11 +7,9 @@ object Compiler {
   def parse(e: SExp): ConstraintSystem = ???
 
   def parseDeclaration(e: SExp): Declaration = e match {
-    case SExp.Lst(SExp.Str("def-type") :: Nil) => ???
-    //    case "def-bot" => {
-    //      val List(typ, value) = ???
-    //      Declaration.DeclareBot(parseValue(???), parseType(???))
-    //    }
+
+    case SExp.Lst(Keyword.DefBot :: Nil) => ???
+    case SExp.Lst(Keyword.DefLeq :: Nil) => ???
     //    case "def-leq" => ???
     //    case "def-lub" => ???
     //    case "def-fun" => ???
