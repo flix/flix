@@ -23,22 +23,21 @@ object Bool {
   val HeightSymbol = Symbol.PredicateSymbol("Bool.Height")
   val AndSymbol = Symbol.PredicateSymbol("Bool.And")
 
-  val Leq2 = Term.Abs("x", Term.Abs("y",
-    Term.IfThenElse(
-      Term.BinaryOp(BinaryOperator.Equal, Bot, Term.Variable("x")),
-      Term.Bool(b = true),
-      Term.IfThenElse(
-        Term.BinaryOp(BinaryOperator.Equal, Term.Constructor2("2-tuple", True, True), Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y"))),
-        Term.Bool(b = true),
-        Term.IfThenElse(
-          Term.BinaryOp(BinaryOperator.Equal, Term.Constructor2("2-tuple", False, False), Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y"))),
-          Term.Bool(b = true),
-          Term.IfThenElse(
-            Term.BinaryOp(BinaryOperator.Equal, Top, Term.Variable("y")),
-            Term.Bool(b = true),
-            Term.Bool(b = false)
-          ))))))
-
+//  val Leq2 = Term.Abs("x", Term.Abs("y",
+//    Term.IfThenElse(
+//      Term.BinaryOp(BinaryOperator.Equal, Bot, Term.Variable("x")),
+//      Term.Bool(b = true),
+//      Term.IfThenElse(
+//        Term.BinaryOp(BinaryOperator.Equal, Term.Constructor2("2-tuple", True, True), Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y"))),
+//        Term.Bool(b = true),
+//        Term.IfThenElse(
+//          Term.BinaryOp(BinaryOperator.Equal, Term.Constructor2("2-tuple", False, False), Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y"))),
+//          Term.Bool(b = true),
+//          Term.IfThenElse(
+//            Term.BinaryOp(BinaryOperator.Equal, Top, Term.Variable("y")),
+//            Term.Bool(b = true),
+//            Term.Bool(b = false)
+//          ))))))
 
 
   println(Exp.compile(
@@ -57,29 +56,29 @@ object Bool {
     HornClause(Predicate(LeqSymbol, List(Term.Variable("_"), Top)))
   )
 
-  val Join2 = Term.Abs("x", Term.Abs("y",
-    Term.IfThenElse(
-      Term.BinaryOp(BinaryOperator.Equal, Term.Variable("x"), Bot),
-      Term.Variable("y"),
-      Term.IfThenElse(
-        Term.BinaryOp(BinaryOperator.Equal, Term.Variable("y"), Bot),
-        Term.Variable("y"),
-        Term.IfThenElse(
-          Term.BinaryOp(BinaryOperator.Equal, Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y")), Term.Constructor2("2-tuple", True, True)),
-          True,
-          Term.IfThenElse(
-            Term.BinaryOp(BinaryOperator.Equal, Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y")), Term.Constructor2("2-tuple", False, False)),
-            False,
-            Top
-          )
-        )
-      )
-    )
-  ))
+//  val Join2 = Term.Abs("x", Term.Abs("y",
+//    Term.IfThenElse(
+//      Term.BinaryOp(BinaryOperator.Equal, Term.Variable("x"), Bot),
+//      Term.Variable("y"),
+//      Term.IfThenElse(
+//        Term.BinaryOp(BinaryOperator.Equal, Term.Variable("y"), Bot),
+//        Term.Variable("y"),
+//        Term.IfThenElse(
+//          Term.BinaryOp(BinaryOperator.Equal, Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y")), Term.Constructor2("2-tuple", True, True)),
+//          True,
+//          Term.IfThenElse(
+//            Term.BinaryOp(BinaryOperator.Equal, Term.Constructor2("2-tuple", Term.Variable("x"), Term.Variable("y")), Term.Constructor2("2-tuple", False, False)),
+//            False,
+//            Top
+//          )
+//        )
+//      )
+//    )
+//  ))
 
-  println("----")
-  println(Interpreter.evaluate(Term.App(Term.App(Join2, True), True), Map.empty))
-  println(Interpreter.evaluate(Term.App(Term.App(Join2, True), False), Map.empty))
+//  println("----")
+//  println(Interpreter.evaluate(Term.App(Term.App(Join2, True), True), Map.empty))
+//  println(Interpreter.evaluate(Term.App(Term.App(Join2, True), False), Map.empty))
 
   val Join = List(
     HornClause(Predicate(JoinSymbol, List(Term.Variable("x"), Bot, Term.Variable("x")))),
@@ -95,17 +94,17 @@ object Bool {
     HornClause(Predicate(JoinSymbol, List(Term.Variable("_"), Top, Top)))
   )
 
-  val Height2 = Term.Abs("x",
-    Term.IfThenElse(
-      Term.BinaryOp(BinaryOperator.Equal, Term.Variable("x"), Bot),
-      Term.Int(3),
-      Term.IfThenElse(
-        Term.BinaryOp(BinaryOperator.Equal, Term.Variable("x"), True),
-        Term.Int(2),
-        Term.IfThenElse(
-          Term.BinaryOp(BinaryOperator.Equal, Term.Variable("x"), False),
-          Term.Int(2),
-          Term.Int(0)))))
+//  val Height2 = Term.Abs("x",
+//    Term.IfThenElse(
+//      Term.BinaryOp(BinaryOperator.Equal, Term.Variable("x"), Bot),
+//      Term.Int(3),
+//      Term.IfThenElse(
+//        Term.BinaryOp(BinaryOperator.Equal, Term.Variable("x"), True),
+//        Term.Int(2),
+//        Term.IfThenElse(
+//          Term.BinaryOp(BinaryOperator.Equal, Term.Variable("x"), False),
+//          Term.Int(2),
+//          Term.Int(0)))))
 
   val Height = List(
     HornClause(Predicate(HeightSymbol, List(Bot, Term.Int(3)))),

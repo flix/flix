@@ -108,11 +108,7 @@ sealed trait Term {
     case Term.Variable(y) if x == y => t
     case Term.Variable(y) => Term.Variable(y)
     case Term.Apply(s, ts) => Term.Apply(s, ts)
-    case Term.Abs(s, t1) =>
-      if (x == s)
-        Term.Abs(s, t1)
-      else
-        Term.Abs(s, t1.substitute(x, t))
+
     case Term.App(t1, t2) => Term.App(t1.substitute(x, t), t2.substitute(x, t))
     case Term.UnaryOp(op, t1) => Term.UnaryOp(op, t1.substitute(x, t))
     case Term.BinaryOp(op, t1, t2) => Term.BinaryOp(op, t1.substitute(x, t), t2.substitute(x, t))
@@ -134,7 +130,6 @@ sealed trait Term {
     case Term.Str(s) => Set.empty
     case Term.Variable(s) => Set(s)
     case Term.Apply(s, ts) => ts.flatMap(t => t.freeVariables).toSet
-    case Term.Abs(s, t1) => t1.freeVariables - s
     case Term.App(t1, t2) => t1.freeVariables ++ t2.freeVariables
     case Term.UnaryOp(op, t) => t.freeVariables
     case Term.BinaryOp(op, t1, t2) => t1.freeVariables ++ t2.freeVariables
@@ -179,7 +174,7 @@ object Term {
   /**
    * A lambda term.
    */
-  case class Abs(s: Symbol.VariableSymbol, t: Term) extends Term
+  case class Abs(s: Symbol.VariableSymbol, typ: Type, t: Term) extends Term
 
   /**
    * An application term.

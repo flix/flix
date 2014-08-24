@@ -19,7 +19,7 @@ object Terms {
       case Term.Str(s) => s
       case Term.Variable(s) => s.fmt
       case Term.Apply(s, ts) => s.fmt + "(" + ts.map(t => t.fmt).mkString(",") + ")"
-      case Term.Abs(s, t1) => "λ" + s.fmt + ". " + t1.fmt
+     // case Term.Abs(s, t1) => "λ" + s.fmt + ". " + t1.fmt
       case Term.App(t1, t2) => t1.fmt + " " + t2.fmt
       case Term.UnaryOp(op, t1) => op.fmt + " " + t1.fmt
       case Term.BinaryOp(op, t1, t2) => t1.fmt + " " + op.fmt + " " + t2.fmt

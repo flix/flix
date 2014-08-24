@@ -67,6 +67,11 @@ object Value {
   case class Str(s: java.lang.String) extends Value
 
   /**
+   * A lambda value.
+   */
+  case class Abs(s: Symbol.VariableSymbol, typ: Type, t: Term) extends Value
+
+  /**
    * A tagged value.
    */
   case class Tagged(name: Symbol.NamedSymbol, v: Value) extends Value
