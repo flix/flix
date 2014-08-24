@@ -1,7 +1,7 @@
 package impl.verifier
 
 import impl.logic.Symbol.{VariableSymbol => VSym}
-import impl.logic.{Term, Type, UnaryOperator}
+import impl.logic.{BinaryOperator, Term, Type, UnaryOperator}
 import impl.runtime.Error
 
 object TypeChecker {
@@ -17,6 +17,14 @@ object TypeChecker {
         case UnaryOperator.Not => assertType(Type.Bool, typ1, t)
         case UnaryOperator.UnaryPlus => assertType(Type.Int, typ1, t)
         case UnaryOperator.UnaryMinus => assertType(Type.Int, typ1, t)
+      }
+    case Term.BinaryOp(op, t1, t2) =>
+      val typ1 = typecheck(t1, typenv)
+      val typ2 = typecheck(t2, typenv)
+      op match {
+        case BinaryOperator.Plus => ???
+
+
       }
   }
 
