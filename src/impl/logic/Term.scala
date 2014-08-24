@@ -69,6 +69,7 @@ sealed trait Term {
   /**
    * Optionally returns the given list of terms `ts` as a list of values under the given environment `env`.
    */
+  @deprecated("", "")
   def asValue(ts: List[Term], env: Map[Symbol.VariableSymbol, Value]): Option[List[Value]] = (ts :\ Option(List.empty[Value])) {
     case (t, None) => None
     case (t, Some(xs)) => t.asValue(env) map (v => v :: xs)
@@ -79,6 +80,7 @@ sealed trait Term {
    *
    * Throws an exception if the term is not a value.
    */
+  @deprecated("", "")
   def toValue: Value = toValue(Map.empty)
 
   /**
@@ -86,6 +88,7 @@ sealed trait Term {
    *
    * Throws an exception if the term is not a value.
    */
+  @deprecated("", "")
   def toValue(env: Map[Symbol.VariableSymbol, Value]): Value = asValue(env) match {
     case None => throw Error.NonValueTerm(this)
     case Some(v) => v
@@ -96,10 +99,12 @@ sealed trait Term {
    *
    * Throws an exception if the term is not a bool value.
    */
+  @deprecated("", "")
   def toBool: Value.Bool = asBool.getOrElse(throw Error.TypeError2(Type.Bool, this))
 
   /**
-   * Returns the term where all occurences (up to lambda- and let terms) of the given variable `x` has been replaced by `y`.
+   * Returns the term where all occurences (up to lambda- and let terms)
+   * of the given variable `x` has been replaced by the variable `y`.
    */
   def rename(x: Symbol.VariableSymbol, y: Symbol.VariableSymbol): Term = this match {
     case Term.Unit =>     this
@@ -117,9 +122,9 @@ sealed trait Term {
     case Term.Let(s, t1, t2) if s == x =>   this
     case Term.Let(s, t1, t2) =>             Term.Let(s, t1.rename(x, y), t2.rename(x, y))
 
-    case Term.IfThenElse(t1, t2, t3) =>     Term.IfThenElse(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y))
     case Term.UnaryOp(op, t1) =>            Term.UnaryOp(op, t1.rename(x, y))
     case Term.BinaryOp(op, t1, t2) =>       Term.BinaryOp(op, t1.rename(x, y), t2.rename(x, y))
+    case Term.IfThenElse(t1, t2, t3) =>     Term.IfThenElse(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y))
     case Term.Tagged(s, t, typ) =>          Term.Tagged(s, t.rename(x, y), typ)
     case Term.Tuple2(t1, t2) =>             Term.Tuple2(t1.rename(x, y), t2.rename(x, y))
     case Term.Tuple3(t1, t2, t3) =>         Term.Tuple3(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y))
@@ -128,21 +133,36 @@ sealed trait Term {
   }
 
   /**
-   * Returns the term where all occurences of the variable symbol `s` has been replaced by the term `t`.
-   * TODO: Update
+   * Returns the term where all occurences (up to lambda- and let terms)
+   * of the given variable `x` has been replaced by the term `t`.
    */
   def substitute(x: Symbol.VariableSymbol, t: Term): Term = this match {
+    case Term.Unit => Term.Unit
     case Term.Bool(b) => Term.Bool(b)
     case Term.Int(i) => Term.Int(i)
     case Term.Str(s) => Term.Str(s)
-    case Term.Variable(y) if x == y => t
-    case Term.Variable(y) => Term.Variable(y)
-    case Term.Apply(s, ts) => Term.Apply(s, ts)
 
+    case Term.Variable(s) if s == x => t
+    case Term.Variable(s) => Term.Variable(s)
+
+    case Term.Abs(s, typ, t1) if s == x => this
+    case Term.Abs(s, typ, t1) => Term.Abs(s, typ, t1.substitute(x, t))
     case Term.App(t1, t2) => Term.App(t1.substitute(x, t), t2.substitute(x, t))
+
+    case Term.Let(s, t1, t2) if s == x => this
+    case Term.Let(s, t1, t2) => Term.Let(s, t1.substitute(x, t), t2.substitute(x, t))
+
     case Term.UnaryOp(op, t1) => Term.UnaryOp(op, t1.substitute(x, t))
     case Term.BinaryOp(op, t1, t2) => Term.BinaryOp(op, t1.substitute(x, t), t2.substitute(x, t))
     case Term.IfThenElse(t1, t2, t3) => Term.IfThenElse(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
+
+    case Term.Tagged(s, t1, typ) =>         Term.Tagged(s, t1.substitute(x, t), typ)
+    case Term.Tuple2(t1, t2) =>             Term.Tuple2(t1.substitute(x, t), t2.substitute(x, t))
+    case Term.Tuple3(t1, t2, t3) =>         Term.Tuple3(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
+    case Term.Tuple4(t1, t2, t3, t4) =>     Term.Tuple4(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t))
+    case Term.Tuple5(t1, t2, t3, t4, t5) => Term.Tuple5(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t), t5.substitute(x, t))
+
+    case Term.Apply(s, ts) => Term.Apply(s, ts)
     case Term.Constructor0(s) => Term.Constructor0(s)
     case Term.Constructor1(s, t1) => Term.Constructor1(s, t1.substitute(x, t))
     case Term.Constructor2(s, t1, t2) => Term.Constructor2(s, t1.substitute(x, t), t2.substitute(x, t))
