@@ -26,6 +26,14 @@ object TypeChecker {
     case Term.Abs(s, typ1, t1) =>
       val typ2 = typecheck(t1, typenv + (s -> typ1))
       Type.Function(typ1, typ2)
+    case Term.App(t1, t2) =>
+      val typ1 = typecheck(t1, typenv)
+      val typ2 = typecheck(t2, typenv)
+      typ1 match {
+        case Type.Function(a, b) if a == typ2 => b
+        case Type.Function(a, b) => throw Error.TypingError(a, typ2, t)
+        case _ => throw Error.TypeError2(Type.Function(typ1, typ2), t)
+      }
 
     case Term.IfThenElse(t1, t2, t3) =>
       val typ1 = typecheck(t1, typenv)
