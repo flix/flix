@@ -6,6 +6,10 @@ object Compiler {
 
   def compile(ast: Ast): Program = ???
 
+  def compile(d: Declaration): Term = {
+    ???
+  }
+
   def compile(e: Exp): Term = e match {
     case Exp.FunctionExp(formals, body) =>
       (compile(body) /: formals) {
