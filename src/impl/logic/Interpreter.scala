@@ -14,7 +14,7 @@ object Interpreter {
     case Term.Str(s) => Value.Str(s)
 
     case Term.Variable(s) => env(s)
-    case Term.Abs(s, typ, t1) => ???
+    case Term.Abs(s, typ, t1) => Value.Abs(s, typ, t1)
     case Term.App(t1, t2) => ???
 
     case Term.IfThenElse(t1, t2, t3) =>

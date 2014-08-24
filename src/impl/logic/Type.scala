@@ -10,16 +10,6 @@ object Type {
   case object Unit extends Type
 
   /**
-   * The type of tagged types.
-   */
-  case class Tagged(name: Symbol.NamedSymbol, t: Type) extends Type
-
-  /**
-   * The type of variants.
-   */
-  case class Variant(t: IndexedSeq[Type]) extends Type
-
-  /**
    * The type of booleans.
    */
   case object Bool extends Type
@@ -35,24 +25,41 @@ object Type {
   case object Str extends Type
 
   /**
+   * The type of functions.
+   */
+  case class Function(typ1: Type, typ2: Type) extends Type
+
+  /**
+   * The type of tagged types.
+   */
+  case class Tagged(name: Symbol.NamedSymbol, typ: Type) extends Type
+
+  /**
    * The type of 2-tuples.
    */
-  case class Tuple2(t1: Type, t2: Type) extends Type
+  case class Tuple2(typ1: Type, typ2: Type) extends Type
 
   /**
    * The type of 3-tuples.
    */
-  case class Tuple3(t1: Type, t2: Type, t3: Type) extends Type
+  case class Tuple3(typ1: Type, typ2: Type, typ3: Type) extends Type
 
   /**
    * The type of 4-tuples.
    */
-  case class Tuple4(t1: Type, t2: Type, t3: Type, t4: Type) extends Type
+  case class Tuple4(t1: Type, typ2: Type, typ3: Type, typ4: Type) extends Type
 
   /**
    * The type of 5-tuples.
    */
-  case class Tuple5(t1: Type, t2: Type, t3: Type, t4: Type, t5: Type) extends Type
+  case class Tuple5(t1: Type, typ2: Type, typ3: Type, typ4: Type, typ5: Type) extends Type
+
+
+  /**
+   * The type of variants.
+   */
+  @deprecated("", "")
+  case class Variant(t: IndexedSeq[Type]) extends Type
 
   /**
    * The type of null-ary constructors.
