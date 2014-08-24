@@ -237,7 +237,7 @@ object Term {
   /**
    * A tagged term.
    */
-  case class Tagged(name: Symbol.NamedSymbol, t: Term, typ: Type) extends Term
+  case class Tagged(name: Symbol.NamedSymbol, t: Term, typ: Type.Sum) extends Term
 
   /**
    * A 2-tuple term.
