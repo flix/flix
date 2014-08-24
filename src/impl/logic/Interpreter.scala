@@ -21,6 +21,11 @@ object Interpreter {
       val freshVar = Symbol.freshVariableSymbol(x)
       evaluate(t3.rename(x, freshVar), env + (freshVar -> argVal))
 
+    case Term.Let(x, t1, t2) =>
+      val v1 = evaluate(t1, env)
+      val y = Symbol.freshVariableSymbol(x)
+      evaluate(t2.rename(x, y), env + (y -> v1))
+
     case Term.IfThenElse(t1, t2, t3) =>
       val Value.Bool(b) = evaluate(t1, env)
       if (b)

@@ -99,7 +99,7 @@ sealed trait Term {
   def toBool: Value.Bool = asBool.getOrElse(throw Error.TypeError2(Type.Bool, this))
 
   /**
-   * Returns the term where all occurences (up to lambda terms) of the given variable `x` has been replaced by `y`.
+   * Returns the term where all occurences (up to lambda- and let terms) of the given variable `x` has been replaced by `y`.
    */
   def rename(x: Symbol.VariableSymbol, y: Symbol.VariableSymbol): Term = this match {
     case Term.Unit =>     this
@@ -112,8 +112,11 @@ sealed trait Term {
 
     case Term.Abs(s, typ, t) if s == x =>   this
     case Term.Abs(s, typ, t) =>             Term.Abs(s, typ, t.rename(x, y))
-
     case Term.App(t1, t2) =>                Term.App(t1.rename(x, y), t2.rename(x, y))
+
+    case Term.Let(s, t1, t2) if s == x =>   this
+    case Term.Let(s, t1, t2) =>             Term.Let(s, t1.rename(x, y), t2.rename(x, y))
+
     case Term.IfThenElse(t1, t2, t3) =>     Term.IfThenElse(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y))
     case Term.UnaryOp(op, t1) =>            Term.UnaryOp(op, t1.rename(x, y))
     case Term.BinaryOp(op, t1, t2) =>       Term.BinaryOp(op, t1.rename(x, y), t2.rename(x, y))
@@ -208,6 +211,11 @@ object Term {
   case class App(t1: Term, t2: Term) extends Term
 
   /**
+   * A let binding term.
+   */
+  case class Let(name: Symbol.VariableSymbol, t1: Term, t2: Term) extends Term
+
+  /**
    * An if-then-else term.
    */
   case class IfThenElse(t1: Term, t2: Term, t3: Term) extends Term
@@ -226,11 +234,6 @@ object Term {
    * A case term.
    */
   case class Case(t: Term, cases: Map[NamedSymbol, Term]) extends Term
-
-  /**
-   * A let binding term.
-   */
-  case class Let(name: Symbol.VariableSymbol, t1: Term, t2: Term) extends Term
 
   /**
    * A tagged term.

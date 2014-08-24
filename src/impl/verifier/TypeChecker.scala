@@ -35,6 +35,11 @@ object TypeChecker {
         case _ => throw Error.TypeError2(Type.Function(typ1, typ2), t)
       }
 
+    case Term.Let(x, t1, t2) =>
+      val typ1 = typecheck(t1, typenv)
+      val typ2 = typecheck(t2, typenv + (x -> typ1))
+      typ2
+
     case Term.IfThenElse(t1, t2, t3) =>
       val typ1 = typecheck(t1, typenv)
       val typ2 = typecheck(t2, typenv)
