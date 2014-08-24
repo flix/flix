@@ -1,17 +1,5 @@
 package impl.logic
 
-// TODO:
-// DONE 00. Introduce Unit.
-// DONE 01. Introduce proper variants.
-// DONE 02. Introduce proper tuples.
-// DONE 02. Introduce let binding
-// DONE 03. Introduce bool, int and string operators.
-// 04. Introduce set and its operators.
-// DONE 05. Ensure that the lambda evaluator works together with substitution...
-// 06. Introduce proper types for all of the above.
-// DONE 07. Annotate lamdas with types.
-// 08. Write type checking algorithm.
-// 09. Introduce pattern datatype and pattern match term.
 // 10. Introduce types in horn clauses.
 // 11. Change definition of a program to be a list of rules and a list of named lambdas, and a list of declared types.
 // 12. Rewrite solver to use lambdas and types.

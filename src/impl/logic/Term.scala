@@ -207,6 +207,7 @@ sealed trait Term {
 
 }
 
+// TODO: Introduce set and its operations.
 object Term {
 
   /**
