@@ -26,6 +26,8 @@ sealed trait Exp
 
 object Exp {
 
+  case class FunctionExp(formals: List[(String, String)], body: Exp) extends Exp
+
   case class Variable(s: String) extends Exp
 
   case class Match(e: Exp, cases: List[(Exp, Exp)]) extends Exp
