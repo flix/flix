@@ -16,7 +16,7 @@ object Terms {
     def fmt: String = t match {
       case Term.Bool(b) => b.toString
       case Term.Int(i) => i.toString
-      case Term.String(s) => s
+      case Term.Str(s) => s
       case Term.Variable(s) => s.fmt
       case Term.Apply(s, ts) => s.fmt + "(" + ts.map(t => t.fmt).mkString(",") + ")"
       case Term.Abs(s, t1) => "λ" + s.fmt + ". " + t1.fmt

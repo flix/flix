@@ -32,7 +32,7 @@ object Type {
   /**
    * The type of strings.
    */
-  case object String extends Type
+  case object Str extends Type
 
   /**
    * The type of 2-tuples.

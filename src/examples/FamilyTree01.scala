@@ -15,30 +15,30 @@ object FamilyTree01 {
     val MaleGrandParentSymbol = Symbol.PredicateSymbol("MaleGrandParent")
 
     val facts = List(
-      HornClause(Predicate(ParentSymbol, List(Term.String("Caroline"), Term.String("Inger M")))),
-      HornClause(Predicate(ParentSymbol, List(Term.String("Caroline"), Term.String("Frits")))),
+      HornClause(Predicate(ParentSymbol, List(Term.Str("Caroline"), Term.Str("Inger M")))),
+      HornClause(Predicate(ParentSymbol, List(Term.Str("Caroline"), Term.Str("Frits")))),
 
-      HornClause(Predicate(ParentSymbol, List(Term.String("Bjarke"), Term.String("Inger M")))),
-      HornClause(Predicate(ParentSymbol, List(Term.String("Bjarke"), Term.String("Frits")))),
+      HornClause(Predicate(ParentSymbol, List(Term.Str("Bjarke"), Term.Str("Inger M")))),
+      HornClause(Predicate(ParentSymbol, List(Term.Str("Bjarke"), Term.Str("Frits")))),
 
-      HornClause(Predicate(ParentSymbol, List(Term.String("Magnus"), Term.String("Inger M")))),
-      HornClause(Predicate(ParentSymbol, List(Term.String("Magnus"), Term.String("Frits")))),
+      HornClause(Predicate(ParentSymbol, List(Term.Str("Magnus"), Term.Str("Inger M")))),
+      HornClause(Predicate(ParentSymbol, List(Term.Str("Magnus"), Term.Str("Frits")))),
 
 
-      HornClause(Predicate(ParentSymbol, List(Term.String("Frits"), Term.String("Inger T")))),
-      HornClause(Predicate(ParentSymbol, List(Term.String("Frits"), Term.String("Orla")))),
+      HornClause(Predicate(ParentSymbol, List(Term.Str("Frits"), Term.Str("Inger T")))),
+      HornClause(Predicate(ParentSymbol, List(Term.Str("Frits"), Term.Str("Orla")))),
 
-      HornClause(Predicate(ParentSymbol, List(Term.String("Inger M"), Term.String("Grete")))),
+      HornClause(Predicate(ParentSymbol, List(Term.Str("Inger M"), Term.Str("Grete")))),
 
-      HornClause(Predicate(MaleSymbol, List(Term.String("Bjarke")))),
-      HornClause(Predicate(MaleSymbol, List(Term.String("Magnus")))),
-      HornClause(Predicate(MaleSymbol, List(Term.String("Frits")))),
-      HornClause(Predicate(MaleSymbol, List(Term.String("Orla")))),
+      HornClause(Predicate(MaleSymbol, List(Term.Str("Bjarke")))),
+      HornClause(Predicate(MaleSymbol, List(Term.Str("Magnus")))),
+      HornClause(Predicate(MaleSymbol, List(Term.Str("Frits")))),
+      HornClause(Predicate(MaleSymbol, List(Term.Str("Orla")))),
 
-      HornClause(Predicate(FemaleSymbol, List(Term.String("Caroline")))),
-      HornClause(Predicate(FemaleSymbol, List(Term.String("Inger M")))),
-      HornClause(Predicate(FemaleSymbol, List(Term.String("Inger T")))),
-      HornClause(Predicate(FemaleSymbol, List(Term.String("Grete"))))
+      HornClause(Predicate(FemaleSymbol, List(Term.Str("Caroline")))),
+      HornClause(Predicate(FemaleSymbol, List(Term.Str("Inger M")))),
+      HornClause(Predicate(FemaleSymbol, List(Term.Str("Inger T")))),
+      HornClause(Predicate(FemaleSymbol, List(Term.Str("Grete"))))
     )
 
     val clauses = List(

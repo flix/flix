@@ -13,10 +13,10 @@ object Graph01 {
     val CycleSymbol = Symbol.PredicateSymbol("Cycle")
 
     val facts = List(
-      HornClause(Predicate(EdgeSymbol, List(Term.String("c"), Term.String("d")))),
-      HornClause(Predicate(EdgeSymbol, List(Term.String("b"), Term.String("c")))),
-      HornClause(Predicate(EdgeSymbol, List(Term.String("a"), Term.String("b")))),
-      HornClause(Predicate(EdgeSymbol, List(Term.String("d"), Term.String("a"))))
+      HornClause(Predicate(EdgeSymbol, List(Term.Str("c"), Term.Str("d")))),
+      HornClause(Predicate(EdgeSymbol, List(Term.Str("b"), Term.Str("c")))),
+      HornClause(Predicate(EdgeSymbol, List(Term.Str("a"), Term.Str("b")))),
+      HornClause(Predicate(EdgeSymbol, List(Term.Str("d"), Term.Str("a"))))
     )
 
     val clauses = List(

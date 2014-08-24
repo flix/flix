@@ -30,7 +30,7 @@ sealed trait Term {
   def asValue(env: Map[Symbol.VariableSymbol, Value]): Option[Value] = this match {
     case Term.Bool(b) => Some(Value.Bool(b))
     case Term.Int(i) => Some(Value.Int(i))
-    case Term.String(s) => Some(Value.Str(s))
+    case Term.Str(s) => Some(Value.Str(s))
     case Term.Variable(s) => env.get(s)
     case Term.Apply(s, args) => asValue(args, env) map (xs => Functions.evaluate(s, xs))
     case Term.Constructor0(s) => Some(Value.Constructor0(s))
@@ -104,7 +104,7 @@ sealed trait Term {
   def substitute(x: Symbol.VariableSymbol, t: Term): Term = this match {
     case Term.Bool(b) => Term.Bool(b)
     case Term.Int(i) => Term.Int(i)
-    case Term.String(s) => Term.String(s)
+    case Term.Str(s) => Term.Str(s)
     case Term.Variable(y) if x == y => t
     case Term.Variable(y) => Term.Variable(y)
     case Term.Apply(s, ts) => Term.Apply(s, ts)
@@ -131,7 +131,7 @@ sealed trait Term {
   def freeVariables: Set[Symbol.VariableSymbol] = this match {
     case Term.Bool(b) => Set.empty
     case Term.Int(i) => Set.empty
-    case Term.String(s) => Set.empty
+    case Term.Str(s) => Set.empty
     case Term.Variable(s) => Set(s)
     case Term.Apply(s, ts) => ts.flatMap(t => t.freeVariables).toSet
     case Term.Abs(s, t1) => t1.freeVariables - s
@@ -169,7 +169,7 @@ object Term {
   /**
    * A string constant term.
    */
-  case class String(s: java.lang.String) extends Term
+  case class Str(s: java.lang.String) extends Term
 
   /**
    * A variable term.

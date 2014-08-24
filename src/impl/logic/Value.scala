@@ -9,7 +9,7 @@ sealed trait Value {
   def toTerm: Term = this match {
     case Value.Bool(b) => Term.Bool(b)
     case Value.Int(i) => Term.Int(i)
-    case Value.Str(s) => Term.String(s)
+    case Value.Str(s) => Term.Str(s)
     case Value.Constructor0(s) => Term.Constructor0(s)
     case Value.Constructor1(s, v1) => Term.Constructor1(s, v1.toTerm)
     case Value.Constructor2(s, v1, v2) => Term.Constructor2(s, v1.toTerm, v2.toTerm)

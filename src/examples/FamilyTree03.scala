@@ -14,18 +14,18 @@ object FamilyTree03 {
     val ParentChildSymbol = Symbol.PredicateSymbol("P")
 
     val facts = List(
-      HornClause(Predicate(ParentSymbol, List(Term.String("Caroline"), Term.String("Inger")))),
-      HornClause(Predicate(ParentSymbol, List(Term.String("Caroline"), Term.String("Frits")))),
+      HornClause(Predicate(ParentSymbol, List(Term.Str("Caroline"), Term.Str("Inger")))),
+      HornClause(Predicate(ParentSymbol, List(Term.Str("Caroline"), Term.Str("Frits")))),
 
-      HornClause(Predicate(ParentSymbol, List(Term.String("Bjarke"), Term.String("Inger")))),
-      HornClause(Predicate(ParentSymbol, List(Term.String("Bjarke"), Term.String("Frits")))),
+      HornClause(Predicate(ParentSymbol, List(Term.Str("Bjarke"), Term.Str("Inger")))),
+      HornClause(Predicate(ParentSymbol, List(Term.Str("Bjarke"), Term.Str("Frits")))),
 
-      HornClause(Predicate(ParentSymbol, List(Term.String("Magnus"), Term.String("Inger")))),
-      HornClause(Predicate(ParentSymbol, List(Term.String("Magnus"), Term.String("Frits")))),
+      HornClause(Predicate(ParentSymbol, List(Term.Str("Magnus"), Term.Str("Inger")))),
+      HornClause(Predicate(ParentSymbol, List(Term.Str("Magnus"), Term.Str("Frits")))),
 
-      HornClause(Predicate(AgeSymbol, List(Term.String("Caroline"), Term.String("17")))),
-      HornClause(Predicate(AgeSymbol, List(Term.String("Bjarke"), Term.String("23")))),
-      HornClause(Predicate(AgeSymbol, List(Term.String("Magnus"), Term.String("28"))))
+      HornClause(Predicate(AgeSymbol, List(Term.Str("Caroline"), Term.Str("17")))),
+      HornClause(Predicate(AgeSymbol, List(Term.Str("Bjarke"), Term.Str("23")))),
+      HornClause(Predicate(AgeSymbol, List(Term.Str("Magnus"), Term.Str("28"))))
     )
 
     val clauses = List(
