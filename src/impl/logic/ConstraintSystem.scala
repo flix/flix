@@ -1,10 +1,13 @@
 package impl.logic
 
 /**
- *
+ * A logical program is a sequence of declarations.
  */
 case class ConstraintSystem(decl: List[Declaration])
 
+/**
+ * A declaration is a top-level statement.
+ */
 trait Declaration
 
 object Declaration {
@@ -17,6 +20,9 @@ object Declaration {
 
   case class DeclareLeq(t: Term.Abs, typ: Type) extends Declaration
 
+  /**
+   * A declaration of the least-upper-bound function `t` for the type `typ`.
+   */
   case class DeclareLub(t: Term.Abs, typ: Type) extends Declaration
 }
 
