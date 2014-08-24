@@ -10,6 +10,8 @@ object SExp {
 
   case class Str(s: java.lang.String) extends SExp
 
+  case class Name(s: java.lang.String) extends SExp
+
   case class Lst(xs: List[SExp]) extends SExp
 
 }

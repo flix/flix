@@ -1,6 +1,6 @@
 package impl.ast
 
-import impl.logic.{ConstraintSystem, Declaration, Type, Value}
+import impl.logic._
 
 object Compiler {
 
@@ -24,6 +24,8 @@ object Compiler {
     case SExp.Bool(b) => Value.Bool(b)
     case SExp.Int(i) => Value.Int(i)
     case SExp.Str(s) => Value.Str(s)
+    case SExp.Lst(SExp.Name(s) :: e1 :: Nil) => Value.Tagged(Symbol.NamedSymbol(s), parseValue(e1), ???)
+
     case SExp.Lst(a :: b :: Nil) => ???
   }
 }

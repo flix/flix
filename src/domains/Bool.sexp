@@ -29,7 +29,3 @@
 (def-rule (VarPointsTo v1 o)
     (Assign v1 v2)
     (VarPointsTo v2 o)))
-
-(rule (VarPointsTo v1 o) <= (Assign v1 v2) (VarPointsTo v2 o)))
-
-(VarPointsTo v1 o) <= (Assign v1 v2) (VarPointsTo v2 o)
