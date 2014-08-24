@@ -99,6 +99,31 @@ sealed trait Term {
   def toBool: Value.Bool = asBool.getOrElse(throw Error.TypeError2(Type.Bool, this))
 
   /**
+   * Returns the term where all occurences (up to lambda terms) of the given variable `x` has been replaced by `y`.
+   */
+  def rename(x: Symbol.VariableSymbol, y: Symbol.VariableSymbol): Term = this match {
+    case Term.Unit =>     this
+    case Term.Bool(b) =>  this
+    case Term.Int(i) =>   this
+    case Term.Str(s) =>   this
+
+    case Term.Variable(s) if s == x => Term.Variable(y)
+    case Term.Variable(s) => this
+
+    case Term.Abs(s, typ, t) if s == x =>   Term.Abs(s, typ, t)
+    case Term.Abs(s, typ, t) =>             Term.Abs(s, typ, t.rename(x, y))
+
+    case Term.App(t1, t2) =>                Term.App(t1.rename(x, y), t2.rename(x, y))
+    case Term.IfThenElse(t1, t2, t3) =>     Term.IfThenElse(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y))
+    case Term.UnaryOp(op, t1) =>            Term.UnaryOp(op, t1.rename(x, y))
+    case Term.BinaryOp(op, t1, t2) =>       Term.BinaryOp(op, t1.rename(x, y), t2.rename(x, y))
+    case Term.Tuple2(t1, t2) =>             Term.Tuple2(t1.rename(x, y), t2.rename(x, y))
+    case Term.Tuple3(t1, t2, t3) =>         Term.Tuple3(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y))
+    case Term.Tuple4(t1, t2, t3, t4) =>     Term.Tuple4(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y), t4.rename(x, y))
+    case Term.Tuple5(t1, t2, t3, t4, t5) => Term.Tuple5(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y), t4.rename(x, y), t5.rename(x, y))
+  }
+
+  /**
    * Returns the term where all occurences of the variable symbol `s` has been replaced by the term `t`.
    */
   def substitute(x: Symbol.VariableSymbol, t: Term): Term = this match {

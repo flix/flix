@@ -15,7 +15,10 @@ object Interpreter {
 
     case Term.Variable(s) => env(s)
     case Term.Abs(s, typ, t1) => Value.Abs(s, typ, t1)
-    case Term.App(t1, t2) => ???
+    case Term.App(t1, t2) =>
+      val Term.Abs(s, typ, t3) = t1
+      ???
+      //t3.rename()
 
     case Term.IfThenElse(t1, t2, t3) =>
       val Value.Bool(b) = evaluate(t1, env)
