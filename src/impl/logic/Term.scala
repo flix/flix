@@ -117,6 +117,7 @@ sealed trait Term {
     case Term.IfThenElse(t1, t2, t3) =>     Term.IfThenElse(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y))
     case Term.UnaryOp(op, t1) =>            Term.UnaryOp(op, t1.rename(x, y))
     case Term.BinaryOp(op, t1, t2) =>       Term.BinaryOp(op, t1.rename(x, y), t2.rename(x, y))
+    case Term.Tagged(s, t, typ) =>          Term.Tagged(s, t.rename(x, y), typ)
     case Term.Tuple2(t1, t2) =>             Term.Tuple2(t1.rename(x, y), t2.rename(x, y))
     case Term.Tuple3(t1, t2, t3) =>         Term.Tuple3(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y))
     case Term.Tuple4(t1, t2, t3, t4) =>     Term.Tuple4(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y), t4.rename(x, y))
