@@ -10,7 +10,7 @@
         (case (Bool.Bot _) => true)
         (case (Bool.True True) => true)): Boolean)
 
-(def-join (e1 e2)
+(def-join ((e1 Bool) (e2 Bool))
     (match (e1 e2)
         ((Bool.Bot x) x)
         ((x Bool.Bot) x)
