@@ -1,7 +1,4 @@
-(def-type Bool (
-    (Bool.Top)
-    (Bool.True) (Bool.False)
-    (Bool.Bot)))
+(def-type Bool (Bool.Top Bool.True Bool.False Bool.Bot))
 
 (def-bot Bool Bool.Bot)
 
@@ -18,11 +15,10 @@
         (case (Bool.False Bool.False) Bool.False)
         (case (_) Bool.Top)))
 
-(def-fn and (e1: Bool e2: Bool)
-    (match (e1 e2) with
-        (case (Bool.Bot _) => Bool.Bot)
-        (case (Bool.True Bool.False) => Bool.False)
-
+(def-fn and (e1 Bool e2 Bool)
+    (match (e1 e2)
+        (case (Bool.Bot _) Bool.Bot)
+        (case (Bool.True Bool.False) Bool.False)
 
 (rule (VarPointsTo (v1, o))
     (Assign (v1 v2)

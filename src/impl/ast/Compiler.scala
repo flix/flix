@@ -1,24 +1,27 @@
 package impl.ast
 
-import impl.logic.{Symbol, Type, Program, Term}
+import impl.logic.{ConstraintSystem, Declaration, Type, Value}
 
 object Compiler {
 
-  def compile(ast: Ast): Program = ???
+  def parse(e: SExp): ConstraintSystem = ???
 
-  def compile(d: Declaration): Term = {
-    ???
+  def parseDeclaration(e: SExp): Declaration = e.head match {
+    case "def-type" => ???
+    case "def-bot" => {
+      val List(typ, value) = e.body
+      Declaration.DeclareBot(parseValue(value), parseType(typ))
+    }
+    case "def-leq" => ???
+    case "def-lub" => ???
+    case "def-fun" => ???
+    case "constraint" => ???
   }
 
-  def compile(e: Exp): Term = e match {
-    case Exp.FunctionExp(formals, body) =>
-      (compile(body) /: formals) {
-        case (exp, (arg, typ)) => Term.Abs(symbolOf(arg), typeOf(typ), exp)
-      }
-  }
+  def parseType(e: SExp): Type = ???
 
-  def symbolOf(s: String): Symbol.VariableSymbol = ???
 
-  def typeOf(s: String): Type = ???
+  def parseValue(e: SExp): Value = ???
+
 
 }

@@ -12,7 +12,7 @@ trait Declaration
 
 object Declaration {
 
-  case class DeclareClause(constraint: Constraint) extends Declaration
+  case class DeclareConstraint(constraint: Constraint) extends Declaration
 
   case class DeclareFun(name: Symbol.FunctionSymbol, t: Term.Abs, typ: Type) extends Declaration
 
