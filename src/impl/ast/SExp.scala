@@ -24,22 +24,27 @@ trait Keyword extends SExp
 
 object Keyword {
 
-  case object DefType extends SExp
+  case object DefType extends Keyword
 
-  case object DefBot extends SExp
+  case object DefBot extends Keyword
 
-  case object DefLeq extends SExp
+  case object DefLeq extends Keyword
 
-  case object DefLub extends SExp
+  case object DefLub extends Keyword
 
-  case object DefFun extends SExp
+  case object DefFun extends Keyword
 
-  case object Rule extends SExp
+  case object Rule extends Keyword
 
-  case object Let extends SExp
+  case object Let extends Keyword
 
-  case object Case extends SExp
+  case object Case extends Keyword
 
-  case object Matcg extends SExp
+  case object Match extends Keyword
+
+  case object Equal extends Keyword
+
+  case object NotEqual extends Keyword
+
 
 }
