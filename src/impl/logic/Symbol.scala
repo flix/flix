@@ -19,12 +19,18 @@ object Symbol {
   /**
    * A lattice symbol.
    */
+  @deprecated("", "")
   case class LatticeSymbol(s: String) extends Symbol
 
   /**
    * A named symbol.
    */
   case class NamedSymbol(s: String) extends Symbol
+
+  /**
+   * A type symbol.
+   */
+  case class TypeSymbol(s: String) extends Symbol
 
   /**
    * A variable symbol.
