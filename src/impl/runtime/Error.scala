@@ -33,4 +33,7 @@ object Error {
 
   case class UnboundVariable(s: Symbol.VariableSymbol) extends RuntimeException
 
+  case class TypingError(expected: Type, actual: Type, t: Term) extends RuntimeException
+
+
 }

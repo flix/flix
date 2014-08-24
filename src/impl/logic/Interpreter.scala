@@ -1,5 +1,6 @@
 package impl.logic
 
+import impl.logic.Symbol.{VariableSymbol => VSym}
 import impl.runtime.Error
 
 object Interpreter {
@@ -8,7 +9,7 @@ object Interpreter {
    * A big-step evaluator for lambda terms.
    */
   // TODO: Env not used. Should return a value.
-  def evaluate(t: Term, env: Map[Symbol.VariableSymbol, Term]): Term = t match {
+  def evaluate(t: Term, env: Map[VSym, Term]): Term = t match {
     case Term.Bool(b) => t
     case Term.Int(i) => t
     case Term.String(s) => t
