@@ -1,6 +1,5 @@
 package domains
 
-import impl.ast.Exp
 import impl.logic._
 import impl.runtime.{Hint, Representation}
 import syntax.Symbols._
