@@ -4,12 +4,19 @@ import impl.runtime.Error
 
 sealed trait Value {
   /**
-   * Returns `this` value as a term. Always succeeds.
+   * Returns the value as a term.
    */
   def toTerm: Term = this match {
+    case Value.Unit => Term.Unit
     case Value.Bool(b) => Term.Bool(b)
     case Value.Int(i) => Term.Int(i)
     case Value.Str(s) => Term.Str(s)
+    case Value.Abs(s, typ, t) => Term.Abs(s, typ, t)
+    case Value.Tagged(s, v, typ) => Term.Tagged(s, v.toTerm, typ)
+    case Value.Tuple2(v1, v2) => Term.Tuple2(v1.toTerm, v2.toTerm)
+    case Value.Tuple3(v1, v2, v3) => Term.Tuple3(v1.toTerm, v2.toTerm, v3.toTerm)
+    case Value.Tuple4(v1, v2, v3, v4) => Term.Tuple4(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm)
+    case Value.Tuple5(v1, v2, v3, v4, v5) => Term.Tuple5(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm, v5.toTerm)
     case Value.Constructor0(s) => Term.Constructor0(s)
     case Value.Constructor1(s, v1) => Term.Constructor1(s, v1.toTerm)
     case Value.Constructor2(s, v1, v2) => Term.Constructor2(s, v1.toTerm, v2.toTerm)
@@ -74,7 +81,7 @@ object Value {
   /**
    * A tagged value.
    */
-  case class Tagged(name: Symbol.NamedSymbol, v: Value) extends Value
+  case class Tagged(name: Symbol.NamedSymbol, v: Value, typ: Type.Sum) extends Value
 
   /**
    * A 2-tuple value.
@@ -99,31 +106,37 @@ object Value {
   /**
    * A null-ary constructor value.
    */
+  @deprecated("", "")
   case class Constructor0(name: Symbol.NamedSymbol) extends Value
 
   /**
    * A 1-ary constructor value.
    */
+  @deprecated("", "")
   case class Constructor1(name: Symbol.NamedSymbol, v1: Value) extends Value
 
   /**
    * A 2-ary constructor value.
    */
+  @deprecated("", "")
   case class Constructor2(name: Symbol.NamedSymbol, v1: Value, v2: Value) extends Value
 
   /**
    * A 3-ary constructor value.
    */
+  @deprecated("", "")
   case class Constructor3(name: Symbol.NamedSymbol, v1: Value, v2: Value, v3: Value) extends Value
 
   /**
    * A 4-ary constructor value.
    */
+  @deprecated("", "")
   case class Constructor4(name: Symbol.NamedSymbol, v1: Value, v2: Value, v3: Value, v4: Value) extends Value
 
   /**
    * A 5-ary constructor value.
    */
+  @deprecated("", "")
   case class Constructor5(name: Symbol.NamedSymbol, v1: Value, v2: Value, v3: Value, v4: Value, v5: Value) extends Value
 
 }

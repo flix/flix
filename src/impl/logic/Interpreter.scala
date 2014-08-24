@@ -44,10 +44,10 @@ object Interpreter {
 
     case Term.Tagged(s, t1, typ) =>
       val v1 = evaluate(t1, env)
-      Value.Tagged(s, v1)
+      Value.Tagged(s, v1, typ)
 
     case Term.Case(t1, cases) =>
-      val Value.Tagged(s, v) = evaluate(t1, env)
+      val Value.Tagged(s, v, typ) = evaluate(t1, env)
       val (x, t2) = cases(s)
       val y = Symbol.freshVariableSymbol(x)
       evaluate(t2.rename(x, y), env + (y -> v))

@@ -26,6 +26,7 @@ sealed trait Term {
    *
    * Returns `None` if the term has free variables under the given environment.
    */
+  @deprecated("", "")
   def asValue(env: Map[Symbol.VariableSymbol, Value]): Option[Value] = this match {
     case Term.Bool(b) => Some(Value.Bool(b))
     case Term.Int(i) => Some(Value.Int(i))
@@ -128,6 +129,7 @@ sealed trait Term {
 
   /**
    * Returns the term where all occurences of the variable symbol `s` has been replaced by the term `t`.
+   * TODO: Update
    */
   def substitute(x: Symbol.VariableSymbol, t: Term): Term = this match {
     case Term.Bool(b) => Term.Bool(b)
@@ -152,6 +154,7 @@ sealed trait Term {
   /**
    * Returns the set of free variables in the term.
    */
+  //  TODO: Update
   def freeVariables: Set[Symbol.VariableSymbol] = this match {
     case Term.Bool(b) => Set.empty
     case Term.Int(i) => Set.empty
