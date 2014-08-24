@@ -67,6 +67,26 @@ object Value {
   case class Str(s: java.lang.String) extends Value
 
   /**
+   * A 2-tuple value.
+   */
+  case class Tuple2(v1: Value, v2: Value) extends Value
+
+  /**
+   * A 3-tuple value.
+   */
+  case class Tuple3(v1: Value, v2: Value, v3: Value) extends Value
+
+  /**
+   * A 4-tuple value.
+   */
+  case class Tuple4(v1: Value, v2: Value, v3: Value, v4: Value) extends Value
+
+  /**
+   * A 5-tuple value.
+   */
+  case class Tuple5(v1: Value, v2: Value, v3: Value, v4: Value, v5: Value) extends Value
+
+  /**
    * A null-ary constructor value.
    */
   case class Constructor0(name: Symbol.NamedSymbol) extends Value
