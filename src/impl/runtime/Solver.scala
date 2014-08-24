@@ -96,7 +96,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
     if (hints.get(p.name).exists(_.repr == Representation.Code)) {
       return
     }
-    
+
     println("--> " + p.toGround(env).fmt)
 
     facts += p.toGround(env)
@@ -139,8 +139,8 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
           val lattice = program.lattices(p.name)
           val newValue = t1.toValue(env)
           val oldValue = map1.get(p.name).getOrElse(lattice.bot)
-          val joinValue = join(lattice.lub, newValue, oldValue)
-          val newFact: Boolean = !leq(lattice.leq, joinValue, oldValue)
+          val joinValue = join2(lattice.lub, newValue, oldValue)
+          val newFact: Boolean = !leq2(lattice.leq, joinValue, oldValue)
           if (newFact) {
             map1.put(p.name, joinValue)
             propagateFact(Predicate(p.name, List(joinValue.toTerm)))
@@ -263,7 +263,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
   /**
    * Returns `true` iff `v1` is less or equal to `v2`.
    */
-  private def leq(s: PSym, v1: Value, v2: Value): Boolean = {
+  private def leq2(s: PSym, v1: Value, v2: Value): Boolean = {
     val p = Predicate(s, List(v1.toTerm, v2.toTerm))
     val models = getSat(p)
     models.nonEmpty
@@ -272,7 +272,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
   /**
    * Returns the join of `v1` and `v2`.
    */
-  private def join(s: PSym, v1: Value, v2: Value): Value = {
+  private def join2(s: PSym, v1: Value, v2: Value): Value = {
     val p = Predicate(s, List(v1.toTerm, v2.toTerm, Term.Variable(Symbol.VariableSymbol("!x"))))
     val models = getSat(p)
 
@@ -281,5 +281,22 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
       case None => throw Error.NonUniqueModel(s)
       case Some(v) => v
     }
+  }
+
+  /**
+   * Returns `true` iff `v1` is less or equal to `v2`.
+   */
+  private def leq(t: Term.Abs, v1: Value, v2: Value): Boolean = {
+    val tt = Term.App(Term.App(t, v2.toTerm), v1.toTerm)
+    val Value.Bool(b) = Interpreter.evaluate(tt, Map.empty)
+    b
+  }
+
+  /**
+   * Returns the join of `v1` and `v2`.
+   */
+  private def join(t: Term.Abs, v1: Value, v2: Value): Value = {
+    val tt = Term.App(Term.App(t, v2.toTerm), v1.toTerm)
+    Interpreter.evaluate(tt, Map.empty)
   }
 }
