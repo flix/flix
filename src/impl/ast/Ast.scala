@@ -2,7 +2,17 @@ package impl.ast
 
 import impl.logic.Symbol
 
-case class Ast(declarations: List[Decl])
+trait Ast
+
+/**
+ * The top level is a list of declarations:
+ *
+ * (decl_1 ...)
+ * ...
+ * (decl_n ...)
+ */
+case class TopLevel(declarations: List[Decl])
+
 
 sealed trait Decl
 
