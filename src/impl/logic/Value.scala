@@ -67,6 +67,11 @@ object Value {
   case class Str(s: java.lang.String) extends Value
 
   /**
+   * A tagged value.
+   */
+  case class Tagged(name: Symbol.NamedSymbol, v: Value) extends Value
+
+  /**
    * A 2-tuple value.
    */
   case class Tuple2(v1: Value, v2: Value) extends Value

@@ -202,11 +202,6 @@ object Term {
   case class BinaryOp(op: BinaryOperator, t1: Term, t2: Term) extends Term
 
   /**
-   * A tagged term.
-   */
-  case class Tagged(name: Symbol.NamedSymbol, t: Term, typ: Type) extends Term
-
-  /**
    * A case term.
    */
   case class Case(t: Term, cases: Map[NamedSymbol, Term]) extends Term
@@ -215,6 +210,11 @@ object Term {
    * A let binding term.
    */
   case class Let(name: Symbol.VariableSymbol, t1: Term, t2: Term) extends Term
+
+  /**
+   * A tagged term.
+   */
+  case class Tagged(name: Symbol.NamedSymbol, t: Term, typ: Type) extends Term
 
   /**
    * A 2-tuple term.
