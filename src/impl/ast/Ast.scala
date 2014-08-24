@@ -20,8 +20,18 @@ object Decl {
 
   case class DeclareType(name: Symbol.NamedSymbol) extends Decl
 
-  case class DeclareBot(name: Symbol.NamedSymbol, typ: String, exp: Exp) extends Decl
+  /**
+   * Declaration of the bottom element for a named type.
+   *
+   * (def-bot name exp)
+   */
+  case class DeclareBot(name: Symbol.TypeSymbol, exp: Exp) extends Decl
 
+  /**
+   * Declaration of the leq relation for a named type.
+   *
+   * (def-leq name (arg_1 type_1 ... arg_n type_n) exp)
+   */
   case class DeclareLeq(name: Symbol.NamedSymbol) extends Decl
 
   case class DeclareLub(name: Symbol.NamedSymbol) extends Decl

@@ -5,10 +5,10 @@
 
 (def-bot Bool Bool.Bot)
 
-(def-leq (e1: Bool e2: Bool)
+(def-leq (e1 Bool e2 Bool)
     (match (e1 e2)
-        (case (Bool.Bot _) => true)
-        (case (Bool.True True) => true)): Boolean)
+        (case (Bool.Bot _) true)
+        (case (Bool.True True) true)))
 
 (def-join ((e1 Bool) (e2 Bool))
     (match (e1 e2)
