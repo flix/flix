@@ -42,17 +42,17 @@ object Type {
   /**
    * The type of 3-tuples.
    */
-  case class Tuple3(t1: Type, t2: Type) extends Type
+  case class Tuple3(t1: Type, t2: Type, t3: Type) extends Type
 
   /**
    * The type of 4-tuples.
    */
-  case class Tuple4(t1: Type, t2: Type) extends Type
+  case class Tuple4(t1: Type, t2: Type, t3: Type, t4: Type) extends Type
 
   /**
    * The type of 5-tuples.
    */
-  case class Tuple5(t1: Type, t2: Type) extends Type
+  case class Tuple5(t1: Type, t2: Type, t3: Type, t4: Type, t5: Type) extends Type
 
   /**
    * The type of null-ary constructors.

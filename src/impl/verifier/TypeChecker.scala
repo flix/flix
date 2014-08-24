@@ -54,6 +54,32 @@ object TypeChecker {
         case BinaryOperator.Equal | BinaryOperator.NotEqual =>
           assertType(typ1, typ2, t)
       }
+
+    case Term.Tuple2(t1, t2) =>
+      val typ1 = typecheck(t1, typenv)
+      val typ2 = typecheck(t2, typenv)
+      Type.Tuple2(typ1, typ2)
+
+    case Term.Tuple3(t1, t2, t3) =>
+      val typ1 = typecheck(t1, typenv)
+      val typ2 = typecheck(t2, typenv)
+      val typ3 = typecheck(t3, typenv)
+      Type.Tuple3(typ1, typ2, typ3)
+
+    case Term.Tuple4(t1, t2, t3, t4) =>
+      val typ1 = typecheck(t1, typenv)
+      val typ2 = typecheck(t2, typenv)
+      val typ3 = typecheck(t3, typenv)
+      val typ4 = typecheck(t4, typenv)
+      Type.Tuple4(typ1, typ2, typ3, typ4)
+
+    case Term.Tuple5(t1, t2, t3, t4, t5) =>
+      val typ1 = typecheck(t1, typenv)
+      val typ2 = typecheck(t2, typenv)
+      val typ3 = typecheck(t3, typenv)
+      val typ4 = typecheck(t4, typenv)
+      val typ5 = typecheck(t5, typenv)
+      Type.Tuple5(typ1, typ2, typ3, typ4, typ5)
   }
 
   /**

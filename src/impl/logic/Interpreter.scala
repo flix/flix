@@ -33,7 +33,31 @@ object Interpreter {
       val v2 = evaluate(t2, env)
       apply(op, v1, v2)
 
+    case Term.Tuple2(t1, t2) =>
+      val v1 = evaluate(t1, env)
+      val v2 = evaluate(t2, env)
+      Value.Tuple2(v1, v2)
 
+    case Term.Tuple3(t1, t2, t3) =>
+      val v1 = evaluate(t1, env)
+      val v2 = evaluate(t2, env)
+      val v3 = evaluate(t3, env)
+      Value.Tuple3(v1, v2, v3)
+
+    case Term.Tuple4(t1, t2, t3, t4) =>
+      val v1 = evaluate(t1, env)
+      val v2 = evaluate(t2, env)
+      val v3 = evaluate(t3, env)
+      val v4 = evaluate(t4, env)
+      Value.Tuple4(v1, v2, v3, v4)
+
+    case Term.Tuple5(t1, t2, t3, t4, t5) =>
+      val v1 = evaluate(t1, env)
+      val v2 = evaluate(t2, env)
+      val v3 = evaluate(t3, env)
+      val v4 = evaluate(t4, env)
+      val v5 = evaluate(t5, env)
+      Value.Tuple5(v1, v2, v3, v4, v5)
   }
 
   /**
