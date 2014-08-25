@@ -1,0 +1,21 @@
+(rule (Parent "Caroline" "IngerM"))
+(rule (Parent "Caroline" "FritsT"))
+(rule (Parent "Bjarke" "IngerM"))
+(rule (Parent "Bjarke" "FritsT"))
+(rule (Parent "Magnus" "IngerM"))
+(rule (Parent "Magnus" "FritsT"))
+(rule (Parent "FritsT" "IngerT"))
+(rule (Parent "Frits" "OrlaT"))
+(rule (Parent "IngerM" "GreteM"))
+
+(rule (Male "Bjarke"))
+(rule (Male "Magnus"))
+(rule (Male "Frits"))
+(rule (Male "Orla"))
+
+(rule (Female "Caroline"))
+(rule (Female "IngerM"))
+(rule (Female "IngerT"))
+(rule (Female "GreteM"))
+
+(rule (MaleGrandParent x z) ((Parent x y) (Parent y z) (Male z)))

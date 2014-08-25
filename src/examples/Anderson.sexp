@@ -1,11 +1,4 @@
-package examples
-
-import impl.logic._
-import syntax.Symbols._
-
-object PointsTo {
-
-  val clauses = List(
+ val clauses = List(
     HornClause(Predicate("VarPointsTo", List(Term.Variable("var"), Term.Variable("obj"))), List(
       Predicate("New", List(Term.Variable("var"), Term.Variable("obj")))
     )),
@@ -27,5 +20,3 @@ object PointsTo {
       Predicate("VarPointsTo", List(Term.Variable("var2"), Term.Variable("value")))
     ))
   )
-
-}
