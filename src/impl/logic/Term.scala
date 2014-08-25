@@ -32,37 +32,6 @@ sealed trait Term {
     case Term.Int(i) => Some(Value.Int(i))
     case Term.Str(s) => Some(Value.Str(s))
     case Term.Variable(s) => env.get(s)
-    case Term.Constructor0(s) => Some(Value.Constructor0(s))
-    case Term.Constructor1(s, t1) =>
-      for (v1 <- t1.asValue(env))
-      yield Value.Constructor1(s, v1)
-
-    case Term.Constructor2(s, t1, t2) =>
-      for (v1 <- t1.asValue(env);
-           v2 <- t2.asValue(env))
-      yield Value.Constructor2(s, v1, v2)
-
-    case Term.Constructor3(s, t1, t2, t3) =>
-      for (v1 <- t1.asValue(env);
-           v2 <- t2.asValue(env);
-           v3 <- t3.asValue(env))
-      yield Value.Constructor3(s, v1, v2, v3)
-
-    case Term.Constructor4(s, t1, t2, t3, t4) =>
-      for (v1 <- t1.asValue(env);
-           v2 <- t2.asValue(env);
-           v3 <- t3.asValue(env);
-           v4 <- t4.asValue(env))
-      yield Value.Constructor4(s, v1, v2, v3, v4)
-
-    case Term.Constructor5(s, t1, t2, t3, t4, t5) =>
-      for (v1 <- t1.asValue(env);
-           v2 <- t2.asValue(env);
-           v3 <- t3.asValue(env);
-           v4 <- t4.asValue(env);
-           v5 <- t5.asValue(env)
-      )
-      yield Value.Constructor5(s, v1, v2, v3, v4, v5)
   }
 
   /**
@@ -160,13 +129,6 @@ sealed trait Term {
     case Term.Tuple3(t1, t2, t3) =>         Term.Tuple3(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
     case Term.Tuple4(t1, t2, t3, t4) =>     Term.Tuple4(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t))
     case Term.Tuple5(t1, t2, t3, t4, t5) => Term.Tuple5(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t), t5.substitute(x, t))
-
-    case Term.Constructor0(s) => Term.Constructor0(s)
-    case Term.Constructor1(s, t1) => Term.Constructor1(s, t1.substitute(x, t))
-    case Term.Constructor2(s, t1, t2) => Term.Constructor2(s, t1.substitute(x, t), t2.substitute(x, t))
-    case Term.Constructor3(s, t1, t2, t3) => Term.Constructor3(s, t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
-    case Term.Constructor4(s, t1, t2, t3, t4) => Term.Constructor4(s, t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t))
-    case Term.Constructor5(s, t1, t2, t3, t4, t5) => Term.Constructor5(s, t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t), t5.substitute(x, t))
   }
 
   /**
@@ -193,13 +155,6 @@ sealed trait Term {
     case Term.Tuple3(t1, t2, t3) =>           t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
     case Term.Tuple4(t1, t2, t3, t4) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables
     case Term.Tuple5(t1, t2, t3, t4, t5) =>   t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables ++ t5.freeVariables
-
-    case Term.Constructor0(s) => Set.empty
-    case Term.Constructor1(s, t1) => t1.freeVariables
-    case Term.Constructor2(s, t1, t2) => t1.freeVariables ++ t2.freeVariables
-    case Term.Constructor3(s, t1, t2, t3) => t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
-    case Term.Constructor4(s, t1, t2, t3, t4) => t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables
-    case Term.Constructor5(s, t1, t2, t3, t4, t5) => t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables ++ t5.freeVariables
   }
 
 }
@@ -291,41 +246,4 @@ object Term {
    * A 5-tuple term.
    */
   case class Tuple5(t1: Term, t2: Term, t3: Term, t4: Term, t5: Term) extends Term
-
-  /**
-   * A null-ary constructor.
-   */
-  @deprecated("", "")
-  case class Constructor0(name: Symbol.NamedSymbol) extends Term
-
-  /**
-   * A 1-ary constructor.
-   */
-  @deprecated("", "")
-  case class Constructor1(name: Symbol.NamedSymbol, t1: Term) extends Term
-
-  /**
-   * A 2-ary constructor.
-   */
-  @deprecated("", "")
-  case class Constructor2(name: Symbol.NamedSymbol, t1: Term, t2: Term) extends Term
-
-  /**
-   * A 3-ary constructor.
-   */
-  @deprecated("", "")
-  case class Constructor3(name: Symbol.NamedSymbol, t1: Term, t2: Term, t3: Term) extends Term
-
-  /**
-   * A 4-ary constructor.
-   */
-  @deprecated("", "")
-  case class Constructor4(name: Symbol.NamedSymbol, t1: Term, t2: Term, t3: Term, t4: Term) extends Term
-
-  /**
-   * A 5-ary constructor.
-   */
-  @deprecated("", "")
-  case class Constructor5(name: Symbol.NamedSymbol, t1: Term, t2: Term, t3: Term, t4: Term, t5: Term) extends Term
-
 }

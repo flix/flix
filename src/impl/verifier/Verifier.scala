@@ -185,7 +185,6 @@ class Verifier(val program: Program) {
       case None => SmtFormula.Variable(s)
       case Some(tt) => asFormula(tt, env)
     }
-    case Term.Constructor0(s) => SmtFormula.Constructor0(s)
   }
 
 

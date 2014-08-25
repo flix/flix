@@ -10,7 +10,6 @@ package object syntax {
     def smt(args: Any*): String = {
       def format(a: Any): String = a match {
         case x: Value => x match {
-          case Value.Constructor0(s) => s.fmt
           case _ => x.toString
         }
         case x: Symbol => x.fmt

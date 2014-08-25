@@ -33,30 +33,6 @@ object Unification {
       case Some(v3) if v2 != v3 => None
       case Some(v3) if v2 == v3 => Some(env0)
     }
-    case (Term.Constructor0(s1), Value.Constructor0(s2)) if s1 == s2 => Some(env0)
-    case (Term.Constructor1(s1, t1), Value.Constructor1(s2, v1)) if s1 == s2 => unify(t1, v1, env0)
-    case (Term.Constructor2(s1, t1, t2), Value.Constructor2(s2, v1, v2)) if s1 == s2 =>
-      for (env1 <- unify(t1, v1, env0);
-           env2 <- unify(t2, v2, env1))
-      yield env2
-    case (Term.Constructor3(s1, t1, t2, t3), Value.Constructor3(s2, v1, v2, v3)) if s1 == s2 =>
-      for (env1 <- unify(t1, v1, env0);
-           env2 <- unify(t2, v2, env1);
-           env3 <- unify(t3, v3, env2))
-      yield env3
-    case (Term.Constructor4(s1, t1, t2, t3, t4), Value.Constructor4(s2, v1, v2, v3, v4)) if s1 == s2 =>
-      for (env1 <- unify(t1, v1, env0);
-           env2 <- unify(t2, v2, env1);
-           env3 <- unify(t3, v3, env2);
-           env4 <- unify(t4, v4, env3))
-      yield env4
-    case (Term.Constructor5(s1, t1, t2, t3, t4, t5), Value.Constructor5(s2, v1, v2, v3, v4, v5)) if s1 == s2 =>
-      for (env1 <- unify(t1, v1, env0);
-           env2 <- unify(t2, v2, env1);
-           env3 <- unify(t3, v3, env2);
-           env4 <- unify(t4, v4, env3);
-           env5 <- unify(t5, v5, env4))
-      yield env5
     case _ => None
   }
 
@@ -102,25 +78,25 @@ object Unification {
           Some(substitute(y, t, env0) + (y -> t))
       case Some(tt) => unify(t, tt, env0)
     }
-    case (Term.Constructor0(s1), Term.Constructor0(s2)) if s1 == s2 => Some(env0)
-    case (Term.Constructor1(s1, x1), Term.Constructor1(s2, y1)) if s1 == s2 =>
-      unify(x1, y1, env0)
-    case (Term.Constructor2(s1, x1, x2), Term.Constructor2(s2, y1, y2)) if s1 == s2 =>
+
+    // TODO: More
+
+    case (Term.Tuple2(x1, x2), Term.Tuple2(y1, y2)) =>
       for (env1 <- unify(x1, y1, env0);
            env2 <- unify(x2, y2, env1))
       yield env2
-    case (Term.Constructor3(s1, x1, x2, x3), Term.Constructor3(s2, y1, y2, y3)) if s1 == s2 =>
+    case (Term.Tuple3(x1, x2, x3), Term.Tuple3(y1, y2, y3)) =>
       for (env1 <- unify(x1, y1, env0);
            env2 <- unify(x2, y2, env1);
            env3 <- unify(x3, y3, env2))
       yield env3
-    case (Term.Constructor4(s1, x1, x2, x3, x4), Term.Constructor4(s2, y1, y2, y3, y4)) if s1 == s2 =>
+    case (Term.Tuple4(x1, x2, x3, x4), Term.Tuple4(y1, y2, y3, y4)) =>
       for (env1 <- unify(x1, y1, env0);
            env2 <- unify(x2, y2, env1);
            env3 <- unify(x3, y3, env2);
            env4 <- unify(x4, y4, env3))
       yield env4
-    case (Term.Constructor5(s1, x1, x2, x3, x4, x5), Term.Constructor5(s2, y1, y2, y3, y4, y5)) if s1 == s2 =>
+    case (Term.Tuple5(x1, x2, x3, x4, x5), Term.Tuple5(y1, y2, y3, y4, y5)) =>
       for (env1 <- unify(x1, y1, env0);
            env2 <- unify(x2, y2, env1);
            env3 <- unify(x3, y3, env2);

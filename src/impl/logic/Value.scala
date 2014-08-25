@@ -17,12 +17,6 @@ sealed trait Value {
     case Value.Tuple3(v1, v2, v3) => Term.Tuple3(v1.toTerm, v2.toTerm, v3.toTerm)
     case Value.Tuple4(v1, v2, v3, v4) => Term.Tuple4(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm)
     case Value.Tuple5(v1, v2, v3, v4, v5) => Term.Tuple5(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm, v5.toTerm)
-    case Value.Constructor0(s) => Term.Constructor0(s)
-    case Value.Constructor1(s, v1) => Term.Constructor1(s, v1.toTerm)
-    case Value.Constructor2(s, v1, v2) => Term.Constructor2(s, v1.toTerm, v2.toTerm)
-    case Value.Constructor3(s, v1, v2, v3) => Term.Constructor3(s, v1.toTerm, v2.toTerm, v3.toTerm)
-    case Value.Constructor4(s, v1, v2, v3, v4) => Term.Constructor4(s, v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm)
-    case Value.Constructor5(s, v1, v2, v3, v4, v5) => Term.Constructor5(s, v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm, v5.toTerm)
   }
 
   /**
@@ -102,41 +96,5 @@ object Value {
    * A 5-tuple value.
    */
   case class Tuple5(v1: Value, v2: Value, v3: Value, v4: Value, v5: Value) extends Value
-
-  /**
-   * A null-ary constructor value.
-   */
-  @deprecated("", "")
-  case class Constructor0(name: Symbol.NamedSymbol) extends Value
-
-  /**
-   * A 1-ary constructor value.
-   */
-  @deprecated("", "")
-  case class Constructor1(name: Symbol.NamedSymbol, v1: Value) extends Value
-
-  /**
-   * A 2-ary constructor value.
-   */
-  @deprecated("", "")
-  case class Constructor2(name: Symbol.NamedSymbol, v1: Value, v2: Value) extends Value
-
-  /**
-   * A 3-ary constructor value.
-   */
-  @deprecated("", "")
-  case class Constructor3(name: Symbol.NamedSymbol, v1: Value, v2: Value, v3: Value) extends Value
-
-  /**
-   * A 4-ary constructor value.
-   */
-  @deprecated("", "")
-  case class Constructor4(name: Symbol.NamedSymbol, v1: Value, v2: Value, v3: Value, v4: Value) extends Value
-
-  /**
-   * A 5-ary constructor value.
-   */
-  @deprecated("", "")
-  case class Constructor5(name: Symbol.NamedSymbol, v1: Value, v2: Value, v3: Value, v4: Value, v5: Value) extends Value
 
 }
