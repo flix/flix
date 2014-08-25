@@ -1,6 +1,6 @@
 package impl.logic
 
-import impl.runtime.{Error, Functions}
+import impl.runtime.Error
 
 sealed trait Term {
   /**
@@ -32,7 +32,6 @@ sealed trait Term {
     case Term.Int(i) => Some(Value.Int(i))
     case Term.Str(s) => Some(Value.Str(s))
     case Term.Variable(s) => env.get(s)
-    case Term.Apply(s, args) => asValue(args, env) map (xs => Functions.evaluate(s, xs))
     case Term.Constructor0(s) => Some(Value.Constructor0(s))
     case Term.Constructor1(s, t1) =>
       for (v1 <- t1.asValue(env))
@@ -162,7 +161,6 @@ sealed trait Term {
     case Term.Tuple4(t1, t2, t3, t4) =>     Term.Tuple4(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t))
     case Term.Tuple5(t1, t2, t3, t4, t5) => Term.Tuple5(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t), t5.substitute(x, t))
 
-    case Term.Apply(s, ts) => Term.Apply(s, ts)
     case Term.Constructor0(s) => Term.Constructor0(s)
     case Term.Constructor1(s, t1) => Term.Constructor1(s, t1.substitute(x, t))
     case Term.Constructor2(s, t1, t2) => Term.Constructor2(s, t1.substitute(x, t), t2.substitute(x, t))
@@ -196,7 +194,6 @@ sealed trait Term {
     case Term.Tuple4(t1, t2, t3, t4) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables
     case Term.Tuple5(t1, t2, t3, t4, t5) =>   t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables ++ t5.freeVariables
 
-    case Term.Apply(s, ts) => ts.flatMap(t => t.freeVariables).toSet
     case Term.Constructor0(s) => Set.empty
     case Term.Constructor1(s, t1) => t1.freeVariables
     case Term.Constructor2(s, t1, t2) => t1.freeVariables ++ t2.freeVariables
@@ -294,12 +291,6 @@ object Term {
    * A 5-tuple term.
    */
   case class Tuple5(t1: Term, t2: Term, t3: Term, t4: Term, t5: Term) extends Term
-
-  /**
-   * A function application term.
-   */
-  @deprecated("", "")
-  case class Apply(name: Symbol.FunctionSymbol, terms: List[Term]) extends Term
 
   /**
    * A null-ary constructor.

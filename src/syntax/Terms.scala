@@ -19,8 +19,6 @@ object Terms {
       case Term.Int(i) => i.toString
       case Term.Str(s) => s
 
-      case Term.Apply(s, ts) => s.fmt + "(" + ts.map(t => t.fmt).mkString(",") + ")"
-
       case Term.Variable(s) => s.fmt
       case Term.Abs(x, typ, t) => "λ" + x.fmt + " " + t.fmt
       case Term.App(t1, t2) => t1.fmt + " " + t2.fmt
