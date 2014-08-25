@@ -4,6 +4,8 @@ import java.io.File
 
 import impl.logic._
 
+// TODO: Rename: def-type to def lattice?
+
 object Compiler {
 
   def main(args: Array[String]): Unit = {
@@ -25,14 +27,12 @@ object Compiler {
     case SExp.Lst(SExp.Keyword("def-lub") :: SExp.Name(n) :: args :: body :: Nil) =>
     case SExp.Lst(SExp.Keyword("def-height") :: SExp.Name(n) :: args :: body :: Nil) => compileTerm(body)
     case SExp.Lst(SExp.Keyword("def-fun") :: SExp.Name(n) :: args :: body :: Nil) =>
-    case SExp.Lst(SExp.Keyword("rule") :: head :: tail) =>
+    case SExp.Lst(SExp.Keyword("rule") :: head :: tail) => compileRule(head, tail)
   }
 
-  def compileType(e: SExp): Type = e match {
-    case SExp.Name(s) => Type.Tagged(Symbol.NamedSymbol(s), Type.Unit)
-    case SExp.Lst(xs) => Type.Sum(xs.map(compileType))
-    case _ => throw new RuntimeException(s"Unexpected type: $e")
-  }
+  def compileRule(head: SExp, body: List[SExp]): Unit = ???
+
+  def compilePredicate(e: SExp): Unit = ???
 
   def compileTerm(e: SExp): Term = e match {
     case SExp.Lst(SExp.Keyword("match") :: exp :: cases) => compileTerm(exp); Term.Unit // TODO
@@ -58,6 +58,12 @@ object Compiler {
     case SExp.Lst(List(e1, e2, e3, e4)) => Pattern.Tuple4(compilePattern(e1), compilePattern(e2), compilePattern(e3), compilePattern(e4))
     case SExp.Lst(List(e1, e2, e3, e4, e5)) => Pattern.Tuple5(compilePattern(e1), compilePattern(e2), compilePattern(e3), compilePattern(e4), compilePattern(e5))
     case _ => throw new RuntimeException(s"Unexpected pattern: $e")
+  }
+
+  def compileType(e: SExp): Type = e match {
+    case SExp.Name(s) => Type.Tagged(Symbol.NamedSymbol(s), Type.Unit)
+    case SExp.Lst(xs) => Type.Sum(xs.map(compileType))
+    case _ => throw new RuntimeException(s"Unexpected type: $e")
   }
 
 }
