@@ -5,7 +5,7 @@
 (rule (Parent "Magnus" "IngerM"))
 (rule (Parent "Magnus" "FritsT"))
 (rule (Parent "FritsT" "IngerT"))
-(rule (Parent "Frits" "OrlaT"))
+(rule (Parent "FritsT" "OrlaT"))
 (rule (Parent "IngerM" "GreteM"))
 
 (rule (Male "Bjarke"))

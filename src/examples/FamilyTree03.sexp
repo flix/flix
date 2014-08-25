@@ -1,13 +1,3 @@
-package examples
-
-import impl.Runner
-import impl.logic._
-import impl.runtime.{Hint, Representation}
-import syntax.Symbols._
-
-object FamilyTree03 {
-
-  def main(args: Array[String]): Unit = {
 
     val ParentSymbol = Symbol.PredicateSymbol("Parent")
     val AgeSymbol = Symbol.PredicateSymbol("Age")
@@ -34,21 +24,3 @@ object FamilyTree03 {
         Predicate(AgeSymbol, List(Term.Variable("child"), Term.Variable("age")))
       ))
     )
-
-    val interpretations = Map(
-      ParentSymbol -> Interpretation.Relation,
-      AgeSymbol -> Interpretation.Relation,
-      ParentChildSymbol -> Interpretation.Relation
-    )
-
-    val hints = Map(
-      ParentSymbol -> Hint(Representation.Data),
-      AgeSymbol -> Hint(Representation.Data),
-      ParentChildSymbol -> Hint(Representation.Data)
-    )
-
-    val program = Program(facts ::: clauses, interpretations, Map.empty)
-
-    Runner.run(program, hints)
-  }
-}
