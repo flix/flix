@@ -1,10 +1,5 @@
 package examples
 
-import impl.Runner
-import impl.logic.{HornClause, Predicate, Term, _}
-import impl.runtime.{Hint, Representation}
-import syntax.Symbols._
-
 object IFDS {
 
   // TODO: Ondrej: Translate to S-expressions.

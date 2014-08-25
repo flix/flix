@@ -8,7 +8,7 @@ import util.collection.mutable
 /**
  * A semi-naive solver.
  */
-class Solver(val program: Program, hints: Map[PSym, Hint]) {
+class Solver(val program: Program) {
 
   /**
    * A set of predicate facts.
@@ -57,9 +57,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
 
     // Satisfy all facts. Satisfying a fact adds violated horn clauses (and environments) to the work list.
     for (h <- program.facts) {
-      if (hints.get(h.head.name).exists(_.repr == Representation.Data)) {
-        newProvenFact(h.head, program.interpretation(h.head.name), Map.empty[VSym, Value])
-      }
+      newProvenFact(h.head, program.interpretation(h.head.name), Map.empty[VSym, Value])
     }
 
     // Iteratively try to satisfy pending horn clauses.
@@ -92,11 +90,6 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
    * Adds the given predicate `p` as a known ground fact under the given interpretation `i` and environment `env`.
    */
   def newProvenFact(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Unit = {
-    // Cache ground fact?
-    if (hints.get(p.name).exists(_.repr == Representation.Code)) {
-      return
-    }
-
     println("--> " + p.toGround(env).fmt)
 
     facts += p.toGround(env)
@@ -173,12 +166,8 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
    * Returns a list of models for the given horn clause `h` under the given environment `env0`.
    */
   def evaluate(h: HornClause, env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
-    def isData(p: Predicate): Boolean = hints.get(p.name).exists(_.repr == Representation.Data)
-
     // Evaluate relational predicates before functional predicates.
-    val relationals = h.body filter (p => isData(p))
-    val functionals = h.body filterNot (p => isData(p))
-    val predicates = relationals ::: functionals
+    val predicates = h.body // TODO: Decide evaluation order.
 
     // Fold each predicate over the intial environment.
     val init = List(env0)
@@ -195,8 +184,8 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
       return List(env0)
     }
 
-    (i, hints.get(p.name)) match {
-      case (Interpretation.Relation, Some(Hint(Representation.Data))) =>
+    i match {
+      case Interpretation.Relation =>
         p.terms match {
           case ts@List(t1) => relation1.get(p.name).toList.flatMap {
             case v1 => Unification.unifyValues(ts, List(v1), env0)
