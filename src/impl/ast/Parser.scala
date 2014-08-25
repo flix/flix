@@ -12,6 +12,8 @@ object Parser {
    */
   object InternalParser extends RegexParsers {
 
+    // TODO: Align better with Term/Value.
+
     /**
      * Keywords.
      */
