@@ -19,7 +19,7 @@ object Compiler {
   }
 
   def parseDeclaration(e: SExp): Unit = e match {
-    case SExp.Lst(SExp.Keyword("def-type") :: Literal.Name(n) :: types :: Nil) =>
+    case SExp.Lst(SExp.Keyword("def-type") :: Literal.Name(n) :: typ :: Nil) => parseType(typ)
     case SExp.Lst(SExp.Keyword("def-bot") :: Literal.Name(n) :: v :: Nil) => parseValue(v)
     case SExp.Lst(SExp.Keyword("def-leq") :: Literal.Name(n) :: args :: body :: Nil) =>
     case SExp.Lst(SExp.Keyword("def-lub") :: Literal.Name(n) :: args :: body :: Nil) =>
@@ -29,7 +29,8 @@ object Compiler {
   }
 
   def parseType(e: SExp): Type = e match {
-    case Literal.Name(s) => ???
+    case Literal.Name(s) => Type.Tagged(Symbol.NamedSymbol(s), Type.Unit)
+    case SExp.Lst(xs) => Type.Sum(xs.map(parseType))
   }
 
   def parseTerm(e: SExp): Term = ???

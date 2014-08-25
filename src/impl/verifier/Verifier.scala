@@ -110,9 +110,7 @@ class Verifier(val program: Program) {
   /**
    * Returns a datatype declaration for the given lattice symbol `l` and type `t`.
    */
-  def datatype(l: LSym, t: Type): SmtDeclaration = t match {
-    case Type.Variant(ts) => SmtDeclaration.Datatype(l, ts.toList.map(_.asInstanceOf[Type.Constructor0].name))
-  }
+  def datatype(l: LSym, t: Type): SmtDeclaration = ???
 
   /**
    * Returns an SMT formula for function defined by the predicate symbol `s` with the given `sort`.
