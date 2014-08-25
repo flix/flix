@@ -1,8 +1,18 @@
 package impl.ast
 
+import java.io.File
+
 import impl.logic._
 
 object Compiler {
+
+  def main(args: Array[String]): Unit = {
+    val file = new File(args(0))
+    val ast = Parser.parse(file)
+    println(ast)
+
+    parse(ast)
+  }
 
   def parse(e: SExp): ConstraintSystem = ???
 

@@ -25,7 +25,7 @@ trait Keyword extends SExp
 
 object Keyword {
 
-  case object DefType extends Keyword
+  case class DefType(s: String) extends Keyword
 
   case object DefBot extends Keyword
 
