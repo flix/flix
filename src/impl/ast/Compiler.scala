@@ -1,12 +1,16 @@
 package impl.ast
 
-import java.io.File
-
 import impl.logic._
+
+import scala.collection.mutable
+import java.io.File
 
 // TODO: Rename: def-type to def lattice?
 
 object Compiler {
+
+  val types = mutable.Map.empty[SExp.Name, Type]
+  val funcs = mutable.Map.empty[SExp.Name, Term]
 
   def main(args: Array[String]): Unit = {
     val file = new File(args(0))

@@ -20,6 +20,7 @@ object Parser {
 
     def int = regex( """[0-9]+""".r) ^^ { (i: String) => SExp.Int(i.toInt)}
 
+    def str = regex( """"[a-zA-Z]+"""".r) ^^ SExp.Str
 
     /**
      *
@@ -30,7 +31,7 @@ object Parser {
 
     def variable = "_".r ^^ SExp.Var
 
-    def node: Parser[SExp] = keyword | int | ident | name | sexp | variable
+    def node: Parser[SExp] = keyword | int | str | ident | name | sexp | variable
 
     def sexp = "(" ~> rep(node) <~ ")" ^^ SExp.Lst
 
