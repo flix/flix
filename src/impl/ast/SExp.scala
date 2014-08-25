@@ -8,8 +8,6 @@ object SExp {
 
   case class Variable(x: java.lang.String) extends SExp
 
-  case class Name(s: java.lang.String) extends SExp
-
   case class Lst(xs: List[SExp]) extends SExp
 
 }
@@ -17,6 +15,8 @@ object SExp {
 trait Literal
 
 object Literal {
+  case class Name(s: java.lang.String) extends SExp
+
   case class Bool(b: scala.Boolean) extends SExp
 
   case class Int(i: scala.Int) extends SExp

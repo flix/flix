@@ -15,15 +15,21 @@ object Parser {
     /**
      * Keywords.
      */
-    def keyword: Parser[SExp.Keyword] = ("def-type" | "def-bot") ^^ SExp.Keyword
+    def keyword: Parser[SExp.Keyword] = ("def-type" | "def-bot" | "def-leq" | "def-lub" | "def-fun" | "rule" ) ^^ SExp.Keyword
+
 
     def int = regex( """[0-9]+""".r) ^^ { (i: String) => Literal.Int(i.toInt)}
 
-    def ident = regex( """[A-Za-z+-/\*]+""".r) ^^ Literal.Str
+    /**
+     *
+     */
+    def name = regex( """[A-Z][A-Za-z+-/\*]*""".r) ^^ Literal.Name
+
+    def ident = regex( """[a-z+-/\*]+""".r) ^^ Literal.Str
 
     def variable = "_".r ^^ SExp.Variable
 
-    def node: Parser[SExp] = keyword | int | ident | sexp | variable
+    def node: Parser[SExp] = keyword | int | ident | name | sexp | variable
 
     def sexp = "(" ~> rep(node) <~ ")" ^^ SExp.Lst
 
