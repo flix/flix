@@ -21,6 +21,7 @@ object Compiler {
   def parseDeclaration(e: SExp): Unit = e match {
     case SExp.Lst(SExp.Keyword("def-type") :: Literal.Name(n) :: types :: Nil) =>
     case SExp.Lst(SExp.Keyword("def-bot") :: Literal.Name(n) :: v :: Nil) => parseValue(v)
+    case SExp.Lst(SExp.Keyword("def-leq") :: Literal.Name(n) :: args :: body :: Nil) =>
   }
 
   def parseType(e: SExp): Type = e match {
