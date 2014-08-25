@@ -35,8 +35,8 @@
         (case (BTop _)          BTop)
         (case (_ BTop)          BTop)))
 
-(rule A(BTrue))
-(rule B(BFalse))
+(rule (A BTrue))
+(rule (B BFalse))
 
-(rule R(x) (A(x)))
-(rule R(x) (B(x)))
+(rule (R x) ((A x)))
+(rule (R x) ((B x)))
