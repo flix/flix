@@ -11,7 +11,7 @@ object Compiler {
     val ast = Parser.parse(file)
     println(ast)
 
-    parse(ast)
+    //parse(ast)
   }
 
   def parse(e: SExp): ConstraintSystem = ???
