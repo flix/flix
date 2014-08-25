@@ -9,18 +9,19 @@ case class Predicate(name: Symbol.PredicateSymbol, terms: List[Term]) {
   /**
    * Returns `true` iff the predicate is a ground truth, i.e. all terms are constant.
    */
-  def isGround: Boolean = terms forall (_.isValue)
+  def isGround: Boolean = ???
 
   /**
    * Optionally returns the predicate iff it is ground under the given environment `env`
    */
   def asGround(env: Map[Symbol.VariableSymbol, Value]): Option[Predicate] = {
-    val terms2 = terms.map(_.asValue(env)).foldLeft(Option(List.empty[Term])) {
-      case (Some(ys), Some(v)) => Some(v.toTerm :: ys)
-      case _ => None
-    }
-
-    terms2 map (x => Predicate(name, x))
+//    val terms2 = terms.map(_.asValue(env)).foldLeft(Option(List.empty[Term])) {
+//      case (Some(ys), Some(v)) => Some(v.toTerm :: ys)
+//      case _ => None
+//    }
+//
+//    terms2 map (x => Predicate(name, x))
+    ???
   }
 
   /**

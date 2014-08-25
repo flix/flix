@@ -120,7 +120,7 @@ class Verifier(val program: Program) {
 
     val (x, y) = (Symbol.freshVariableSymbol("x"), Symbol.freshVariableSymbol("y"))
 
-    val p = Predicate(s, List(Term.Variable(x), Term.Variable(y)))
+    val p = Predicate(s, List(Term.Var(x), Term.Var(y)))
     val formulae = SmtFormula.Disjunction(clauses.map {
       h => Unification.unify(h.head, p, Map.empty[VSym, Term]) match {
         case None => SmtFormula.True // nop
@@ -144,7 +144,7 @@ class Verifier(val program: Program) {
     // TODO: Need to genereate fresh symbols.
     val (x, y, z) = (Symbol.VariableSymbol("x0"), Symbol.VariableSymbol("y0"), Symbol.VariableSymbol("z0"))
 
-    val p = Predicate(s, List(Term.Variable(x), Term.Variable(y), Term.Variable(z)))
+    val p = Predicate(s, List(Term.Var(x), Term.Var(y), Term.Var(z)))
     val formulae = SmtFormula.Disjunction(clauses.map {
       h => Unification.unify(p, h.head, Map.empty[VSym, Term]) match {
         case None => SmtFormula.True // nop
@@ -179,7 +179,7 @@ class Verifier(val program: Program) {
   def asFormula(t: Term, env: Map[VSym, Term]): SmtFormula = t match {
     case Term.Bool(b) => if (b) SmtFormula.True else SmtFormula.False
     case Term.Int(i) => SmtFormula.Int(i)
-    case Term.Variable(s) => env.get(s) match {
+    case Term.Var(s) => env.get(s) match {
       case None => SmtFormula.Variable(s)
       case Some(tt) => asFormula(tt, env)
     }

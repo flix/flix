@@ -22,7 +22,7 @@ object TypeChecker {
     case Term.Int(i) => Type.Int
     case Term.Str(s) => Type.Str
 
-    case Term.Variable(s) => typenv.getOrElse(s, throw Error.UnboundVariable(s))
+    case Term.Var(s) => typenv.getOrElse(s, throw Error.UnboundVariable(s))
     case Term.Abs(s, typ1, t1) =>
       val typ2 = typecheck(t1, typenv + (s -> typ1))
       Type.Function(typ1, typ2)

@@ -19,7 +19,7 @@ object Terms {
       case Term.Int(i) => i.toString
       case Term.Str(s) => s
 
-      case Term.Variable(s) => s.fmt
+      case Term.Var(s) => s.fmt
       case Term.Abs(x, typ, t) => "λ" + x.fmt + " " + t.fmt
       case Term.App(t1, t2) => t1.fmt + " " + t2.fmt
       case Term.Let(x, t1, t2) => "let " + x.fmt + " = " + t1.fmt + " in " + t2.fmt

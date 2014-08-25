@@ -1,60 +1,6 @@
 package impl.logic
 
-import impl.runtime.Error
-
 sealed trait Term {
-  /**
-   * Returns `true` iff the term is a value, i.e. has no free variables.
-   */
-  def isValue: Boolean = asValue.nonEmpty
-
-  /**
-   * Optionally returns the term as a value (under the empty environment.)
-   */
-  def asValue: Option[Value] = asValue(Map.empty)
-
-  /**
-   * Optionally returns the term as a value under the given environment `env`.
-   *
-   * Returns `None` if the term has free variables under the given environment.
-   */
-  @deprecated("", "")
-  def asValue(env: Map[Symbol.VariableSymbol, Value]): Option[Value] = this match {
-    case Term.Bool(b) => Some(Value.Bool(b))
-    case Term.Int(i) => Some(Value.Int(i))
-    case Term.Str(s) => Some(Value.Str(s))
-    case Term.Variable(s) => env.get(s)
-  }
-
-  /**
-   * Optionally returns the given list of terms `ts` as a list of values under the given environment `env`.
-   */
-  @deprecated("", "")
-  def asValue(ts: List[Term], env: Map[Symbol.VariableSymbol, Value]): Option[List[Value]] = (ts :\ Option(List.empty[Value])) {
-    case (t, None) => None
-    case (t, Some(xs)) => t.asValue(env) map (v => v :: xs)
-  }
-
-  /**
-   * Returns the term as a value under the empty environment.
-   *
-   * Throws an exception if the term is not a value.
-   */
-  @deprecated("", "")
-  def toValue: Value = toValue(Map.empty)
-
-  /**
-   * Returns the term as a value under the given environment `env`.
-   *
-   * Throws an exception if the term is not a value.
-   */
-  @deprecated("", "")
-  def toValue(env: Map[Symbol.VariableSymbol, Value]): Value = asValue(env) match {
-    case None => throw Error.NonValueTerm(this)
-    case Some(v) => v
-  }
-
-
   /**
    * Returns the term where all occurences (up to lambda- and let terms)
    * of the given variable `x` has been replaced by the variable `y`.
@@ -65,8 +11,8 @@ sealed trait Term {
     case Term.Int(i) =>   this
     case Term.Str(s) =>   this
 
-    case Term.Variable(s) if s == x => Term.Variable(y)
-    case Term.Variable(s) => this
+    case Term.Var(s) if s == x => Term.Var(y)
+    case Term.Var(s) => this
 
     case Term.Abs(s, typ, t) if s == x =>   this
     case Term.Abs(s, typ, t) =>             Term.Abs(s, typ, t.rename(x, y))
@@ -95,8 +41,8 @@ sealed trait Term {
     case Term.Int(i) => Term.Int(i)
     case Term.Str(s) => Term.Str(s)
 
-    case Term.Variable(s) if s == x => t
-    case Term.Variable(s) => Term.Variable(s)
+    case Term.Var(s) if s == x => t
+    case Term.Var(s) => Term.Var(s)
 
     case Term.Abs(s, typ, t1) if s == x => this
     case Term.Abs(s, typ, t1) => Term.Abs(s, typ, t1.substitute(x, t))
@@ -125,7 +71,7 @@ sealed trait Term {
     case Term.Int(i) => Set.empty
     case Term.Str(s) => Set.empty
 
-    case Term.Variable(s) => Set(s)
+    case Term.Var(s) => Set(s)
     case Term.Abs(x, typ, t) =>               t.freeVariables - x
     case Term.App(t1, t2) =>                  t1.freeVariables ++ t2.freeVariables
     case Term.Let(x, t1, t2) =>               (t1.freeVariables ++ t2.freeVariables) - x
@@ -141,7 +87,6 @@ sealed trait Term {
     case Term.Tuple4(t1, t2, t3, t4) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables
     case Term.Tuple5(t1, t2, t3, t4, t5) =>   t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables ++ t5.freeVariables
   }
-
 }
 
 // TODO: Introduce set and its operations.
@@ -170,7 +115,7 @@ object Term {
   /**
    * A variable term.
    */
-  case class Variable(name: Symbol.VariableSymbol) extends Term
+  case class Var(name: Symbol.VariableSymbol) extends Term
 
   /**
    * A lambda term.

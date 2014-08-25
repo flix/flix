@@ -28,7 +28,7 @@ object Unification {
     case (Term.Bool(b1), Value.Bool(b2)) if b1 == b2 => Some(env0)
     case (Term.Int(i1), Value.Int(i2)) if i1 == i2 => Some(env0)
     case (Term.Str(s1), Value.Str(s2)) if s1 == s2 => Some(env0)
-    case (Term.Variable(s), v2) => env0.get(s) match {
+    case (Term.Var(s), v2) => env0.get(s) match {
       case None => Some(env0 + (s -> v2))
       case Some(v3) if v2 != v3 => None
       case Some(v3) if v2 == v3 => Some(env0)
@@ -56,13 +56,13 @@ object Unification {
     case (Term.Bool(b1), Term.Bool(b2)) if b1 == b2 => Some(env0)
     case (Term.Int(i1), Term.Int(i2)) if i1 == i2 => Some(env0)
     case (Term.Str(s1), Term.Str(s2)) if s1 == s2 => Some(env0)
-    case (Term.Variable(x), Term.Variable(y)) => (env0.get(x), env0.get(y)) match {
-      case (None, None) => Some(substitute(x, Term.Variable(y), env0) + (y -> Term.Variable(x)))
+    case (Term.Var(x), Term.Var(y)) => (env0.get(x), env0.get(y)) match {
+      case (None, None) => Some(substitute(x, Term.Var(y), env0) + (y -> Term.Var(x)))
       case (None, Some(tt2)) => Some(substitute(x, tt2, env0) + (x -> tt2))
       case (Some(tt1), None) => Some(substitute(x, tt1, env0) + (y -> tt1))
       case (Some(tt1), Some(tt2)) => unify(tt1, tt2, env0)
     }
-    case (Term.Variable(x), t) => env0.get(x) match {
+    case (Term.Var(x), t) => env0.get(x) match {
       case None =>
         if (t.freeVariables contains x)
           None // Ensure that y does not occur free in t.
@@ -70,7 +70,7 @@ object Unification {
           Some(substitute(x, t, env0) + (x -> t))
       case Some(tt) => unify(tt, t, env0)
     }
-    case (t, Term.Variable(y)) => env0.get(y) match {
+    case (t, Term.Var(y)) => env0.get(y) match {
       case None =>
         if (t.freeVariables contains y)
           None // Ensure that y does not occur free in t.

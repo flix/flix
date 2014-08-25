@@ -13,7 +13,7 @@ object Interpreter {
     case Term.Int(i) => Value.Int(i)
     case Term.Str(s) => Value.Str(s)
 
-    case Term.Variable(s) => env(s)
+    case Term.Var(s) => env(s)
     case Term.Abs(s, typ, t1) => Value.Abs(s, typ, t1)
     case Term.App(t1, t2) =>
       val Value.Abs(x, _, t3) = evaluate(t1, env)

@@ -104,31 +104,31 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
     i match {
       case Interpretation.Relation => p.terms match {
         case List(t1) =>
-          val v1 = t1.toValue(env)
+          val v1 = Interpreter.evaluate(t1, env)
           val newFact = relation1.put(p.name, v1)
           if (newFact)
             propagateFact(Predicate(p.name, List(v1.toTerm)))
 
         case List(t1, t2) =>
-          val (v1, v2) = (t1.toValue(env), t2.toValue(env))
+          val (v1, v2) = (Interpreter.evaluate(t1, env), Interpreter.evaluate(t2, env))
           val newFact = relation2.put(p.name, (v1, v2))
           if (newFact)
             propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm)))
 
         case List(t1, t2, t3) =>
-          val (v1, v2, v3) = (t1.toValue(env), t2.toValue(env), t3.toValue(env))
+          val (v1, v2, v3) = (Interpreter.evaluate(t1, env), Interpreter.evaluate(t2, env), Interpreter.evaluate(t3, env))
           val newFact = relation3.put(p.name, (v1, v2, v3))
           if (newFact)
             propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm)))
 
         case List(t1, t2, t3, t4) =>
-          val (v1, v2, v3, v4) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env))
+          val (v1, v2, v3, v4) = (Interpreter.evaluate(t1, env), Interpreter.evaluate(t2, env), Interpreter.evaluate(t3, env), Interpreter.evaluate(t4, env))
           val newFact = relation4.put(p.name, (v1, v2, v3, v4))
           if (newFact)
             propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm)))
 
         case List(t1, t2, t3, t4, t5) =>
-          val (v1, v2, v3, v4, v5) = (t1.toValue(env), t2.toValue(env), t3.toValue(env), t4.toValue(env), t5.toValue(env))
+          val (v1, v2, v3, v4, v5) = (Interpreter.evaluate(t1, env), Interpreter.evaluate(t2, env), Interpreter.evaluate(t3, env), Interpreter.evaluate(t4, env), Interpreter.evaluate(t5, env))
           val newFact = relation5.put(p.name, (v1, v2, v3, v4, v5))
           if (newFact)
             propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm, v5.toTerm)))
@@ -137,7 +137,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
       case Interpretation.Lattice => p.terms match {
         case List(t1) =>
           val lattice = program.lattices(p.name)
-          val newValue = t1.toValue(env)
+          val newValue = Interpreter.evaluate(t1, env)
           val oldValue = map1.get(p.name).getOrElse(lattice.bot)
           val joinValue = join2(lattice.lub, newValue, oldValue)
           val newFact: Boolean = !leq2(lattice.leq, joinValue, oldValue)
@@ -157,7 +157,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
       for (p2 <- h.body) {
         Unification.unify(p, p2, Map.empty[VSym, Term]) match {
           case None => // nop
-          case Some(env0) => queue.enqueue((h, env0.mapValues(_.toValue)))
+          case Some(env0) => queue.enqueue((h, env0.mapValues(t => Interpreter.evaluate(t, Map.empty))))
         }
       }
     }
@@ -258,7 +258,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
    * Optionally returns the unique value of the variable `x` in all the given models `xs`.
    */
   private def asUniqueValue(x: VSym, xs: List[Map[VSym, Term]]): Option[Value] =
-    asUniqueTerm(x, xs).flatMap(t => t.asValue)
+    asUniqueTerm(x, xs).map(t => Interpreter.evaluate(t, Map.empty))
 
   /**
    * Returns `true` iff `v1` is less or equal to `v2`.
@@ -273,7 +273,7 @@ class Solver(val program: Program, hints: Map[PSym, Hint]) {
    * Returns the join of `v1` and `v2`.
    */
   private def join2(s: PSym, v1: Value, v2: Value): Value = {
-    val p = Predicate(s, List(v1.toTerm, v2.toTerm, Term.Variable(Symbol.VariableSymbol("!x"))))
+    val p = Predicate(s, List(v1.toTerm, v2.toTerm, Term.Var(Symbol.VariableSymbol("!x"))))
     val models = getSat(p)
 
     val value = asUniqueValue(Symbol.VariableSymbol("!x"), models)
