@@ -35,7 +35,7 @@ object Compiler {
   }
 
   def compileTerm(e: SExp): Term = e match {
-    case SExp.Lst(SExp.Keyword("match") :: exp :: cases) => ???
+    case SExp.Lst(SExp.Keyword("match") :: exp :: cases) => compileTerm(exp); Term.Unit // TODO
 
     case SExp.Unit => Term.Unit
     case SExp.Bool(b) => Term.Bool(b)
