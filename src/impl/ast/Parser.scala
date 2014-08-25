@@ -17,7 +17,9 @@ object Parser {
 
     def ident = regex( """[A-Za-z+-/\*]+""".r) ^^ Literal.Str
 
-    def node: Parser[SExp] = keyword | int | ident | sexp
+    def variable = "_".r ^^ SExp.Variable
+
+    def node: Parser[SExp] = keyword | int | ident | sexp | variable
 
     def sexp = "(" ~> rep(node) <~ ")" ^^ SExp.Lst
 
@@ -28,13 +30,10 @@ object Parser {
 
   def parse(f: File): List[SExp] = {
     val source = Source.fromFile(f).getLines().mkString("\n")
-    InternalParser(source) match {
-      case InternalParser.Success(p, _) => p
+    InternalParser.parseAll(InternalParser.decl, source) match {
+      case InternalParser.Success(p, x) => p
       case a => println(a); ???
     }
   }
-
-  // TODO: Q:
-  // When to use lists?
 
 }
