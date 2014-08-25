@@ -7,7 +7,6 @@ object Compiler {
   def parse(e: SExp): ConstraintSystem = ???
 
   def parseDeclaration(e: SExp): Declaration = e match {
-
     case SExp.Lst(Keyword.DefBot :: Nil) => ???
     case SExp.Lst(Keyword.DefLeq :: Nil) => ???
     //    case "def-leq" => ???
@@ -24,9 +23,9 @@ object Compiler {
   def parseTerm(e: SExp): Term = ???
 
   def parseValue(e: SExp): Value = e match {
-    case SExp.Bool(b) => Value.Bool(b)
-    case SExp.Int(i) => Value.Int(i)
-    case SExp.Str(s) => Value.Str(s)
+    case Literal.Bool(b) => Value.Bool(b)
+    case Literal.Int(i) => Value.Int(i)
+    case Literal.Str(s) => Value.Str(s)
     case SExp.Lst(SExp.Name(s) :: e1 :: Nil) => Value.Tagged(Symbol.NamedSymbol(s), parseValue(e1), ???)
 
     case SExp.Lst(a :: b :: Nil) => ???
