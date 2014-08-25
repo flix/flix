@@ -31,10 +31,11 @@ object Compiler {
   def compileType(e: SExp): Type = e match {
     case SExp.Name(s) => Type.Tagged(Symbol.NamedSymbol(s), Type.Unit)
     case SExp.Lst(xs) => Type.Sum(xs.map(compileType))
+    case _ => throw new RuntimeException(s"Unexpected type: $e")
   }
 
   def compileTerm(e: SExp): Term = e match {
-    case SExp.Lst(SExp.Keyword("match") :: exp :: cases :: Nil) => ???
+    case SExp.Lst(SExp.Keyword("match") :: exp :: cases) => ???
 
     case SExp.Unit => Term.Unit
     case SExp.Bool(b) => Term.Bool(b)
@@ -46,9 +47,17 @@ object Compiler {
     case SExp.Lst(List(e1, e2, e3)) => Term.Tuple3(compileTerm(e1), compileTerm(e2), compileTerm(e3))
     case SExp.Lst(List(e1, e2, e3, e4)) => Term.Tuple4(compileTerm(e1), compileTerm(e2), compileTerm(e3), compileTerm(e4))
     case SExp.Lst(List(e1, e2, e3, e4, e5)) => Term.Tuple5(compileTerm(e1), compileTerm(e2), compileTerm(e3), compileTerm(e4), compileTerm(e5))
+
+    case _ => throw new RuntimeException(s"Unexpected term: $e")
   }
 
-  def compilePattern(s: SExp): Pattern = ???
-
+  def compilePattern(e: SExp): Pattern = e match {
+    case SExp.Var(x) => Pattern.Var(Symbol.VariableSymbol(x))
+    case SExp.Lst(List(e1, e2)) => Pattern.Tuple2(compilePattern(e1), compilePattern(e2))
+    case SExp.Lst(List(e1, e2, e3)) => Pattern.Tuple3(compilePattern(e1), compilePattern(e2), compilePattern(e3))
+    case SExp.Lst(List(e1, e2, e3, e4)) => Pattern.Tuple4(compilePattern(e1), compilePattern(e2), compilePattern(e3), compilePattern(e4))
+    case SExp.Lst(List(e1, e2, e3, e4, e5)) => Pattern.Tuple5(compilePattern(e1), compilePattern(e2), compilePattern(e3), compilePattern(e4), compilePattern(e5))
+    case _ => throw new RuntimeException(s"Unexpected pattern: $e")
+  }
 
 }

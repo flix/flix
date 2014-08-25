@@ -16,7 +16,7 @@ object SExp {
 
   case class Name(s: java.lang.String) extends SExp
 
-  case class Variable(x: java.lang.String) extends SExp
+  case class Var(x: java.lang.String) extends SExp
 
   case class Lst(xs: List[SExp]) extends SExp
 
