@@ -12,16 +12,14 @@ object Parser {
    */
   object InternalParser extends RegexParsers {
 
-    // TODO: Align better with Term/Value.
-
     /**
-     * Keyword Productions.
+     * Keyword production.
      */
     def keyword: Parser[SExp.Keyword] =
       ("def-type" | "def-bot" | "def-leq" | "def-lub" | "def-height" | "def-fun" | "rule" | "match" | "case") ^^ SExp.Keyword
 
     /**
-     * Value Productions.
+     * Value production.
      */
     // unit literal
     def unit: Parser[SExp.Unit] = "unit" ^^ SExp.Unit
@@ -38,9 +36,7 @@ object Parser {
     // value production
     def value: Parser[SExp] = unit | bool | int | str
 
-    /**
-     *
-     */
+
     def name = regex( """[A-Z][A-Za-z+-/\*]*""".r) ^^ SExp.Name
 
     def ident = regex( """[a-z+-/\*]+""".r) ^^ SExp.Str
@@ -49,21 +45,29 @@ object Parser {
 
     def node: Parser[SExp] = keyword | value | ident | name | sexp | variable
 
-    def sexp = "(" ~> rep(node) <~ ")" ^^ SExp.Lst
+    /**
+     * S-expression production.
+     */
+    def sexp: Parser[SExp] = "(" ~> rep(node) <~ ")" ^^ SExp.Lst
 
     /**
-     * Declarations.
+     * Declaration production.
      */
-    def declarations: Parser[List[SExp]] = rep(sexp)
-
-    def apply(s: String) = parse(declarations, s)
+    def decl: Parser[List[SExp]] = rep(sexp)
   }
 
+  /**
+   * Returns a list of s-expressions parsed from the given file `f`.
+   */
   def parse(f: File): List[SExp] = {
+    // read all lines into a single string.
     val source = Source.fromFile(f).getLines().mkString("\n")
-    InternalParser.parseAll(InternalParser.declarations, source) match {
-      case InternalParser.Success(p, x) => p
-      case a => println(a); ???
+    // parse the entire file
+    val parseResult = InternalParser.parseAll(InternalParser.decl, source)
+    // inspect the result
+    parseResult match {
+      case InternalParser.Success(ast, next) => ast
+      case InternalParser.Failure(msg, next) => throw new RuntimeException(s"Parsing Failed!: $msg")
     }
   }
 
