@@ -28,7 +28,7 @@
         (case Pos   2)
         (case STop  1)))
 
-(def-fun sum (e1 Sign e2 Sign)
+(def-fun Sum (e1 Sign e2 Sign)
     (match (e1 e2)
         (case (SBot _)  SBot)
         (case (_ SBot)  SBot)

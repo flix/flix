@@ -11,7 +11,7 @@ object Compiler {
     val ast = Parser.parse(file)
     println(ast)
 
-    parse(ast)
+    println(parse(ast))
   }
 
   def parse(e: List[SExp]): Unit = {
@@ -22,6 +22,10 @@ object Compiler {
     case SExp.Lst(SExp.Keyword("def-type") :: Literal.Name(n) :: types :: Nil) =>
     case SExp.Lst(SExp.Keyword("def-bot") :: Literal.Name(n) :: v :: Nil) => parseValue(v)
     case SExp.Lst(SExp.Keyword("def-leq") :: Literal.Name(n) :: args :: body :: Nil) =>
+    case SExp.Lst(SExp.Keyword("def-lub") :: Literal.Name(n) :: args :: body :: Nil) =>
+    case SExp.Lst(SExp.Keyword("def-height") :: Literal.Name(n) :: args :: body :: Nil) =>
+    case SExp.Lst(SExp.Keyword("def-fun") :: Literal.Name(n) :: args :: body :: Nil) =>
+    case SExp.Lst(SExp.Keyword("rule") :: head :: tail) =>
   }
 
   def parseType(e: SExp): Type = e match {

@@ -15,8 +15,8 @@ object Parser {
     /**
      * Keywords.
      */
-    def keyword: Parser[SExp.Keyword] = ("def-type" | "def-bot" | "def-leq" | "def-lub" | "def-fun" | "rule" ) ^^ SExp.Keyword
-
+    def keyword: Parser[SExp.Keyword] =
+      ("def-type" | "def-bot" | "def-leq" | "def-lub" | "def-height" | "def-fun" | "rule" ) ^^ SExp.Keyword
 
     def int = regex( """[0-9]+""".r) ^^ { (i: String) => Literal.Int(i.toInt)}
 
