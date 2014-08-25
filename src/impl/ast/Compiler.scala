@@ -1,15 +1,17 @@
 package impl.ast
 
+import java.io.File
+
 import impl.logic._
 
 import scala.collection.mutable
-import java.io.File
 
 // TODO: Rename: def-type to def lattice?
+// TODO: Figure out ordering.
 
 object Compiler {
 
-  val types = mutable.Map.empty[SExp.Name, Type]
+  val types = mutable.Map.empty[Symbol.TypeSymbol, Type]
   val funcs = mutable.Map.empty[SExp.Name, Term]
 
   def main(args: Array[String]): Unit = {
@@ -20,23 +22,34 @@ object Compiler {
     println(compile(ast))
   }
 
-  def compile(e: List[SExp]): Unit = {
-    e map compileDeclaration
+  def compile(es: List[SExp]): Unit = {
+    for (e <- es) {
+      e match {
+        case SExp.Lst(List(SExp.Keyword("def-type"), SExp.Name(n), typ)) =>
+          types += ((Symbol.TypeSymbol(n), compileType(typ)))
+
+        case SExp.Lst(List(SExp.Keyword("def-bot"), SExp.Name(n), exp)) => compileTerm(exp)
+
+        case SExp.Lst(List(SExp.Keyword("def-leq"), SExp.Name(n), args, body)) => compileFunction(args, body)
+
+        case SExp.Lst(List(SExp.Keyword("def-lub"), SExp.Name(n), args, body)) => compileFunction(args, body)
+
+        case SExp.Lst(List(SExp.Keyword("def-height"), SExp.Name(n), args, body)) => compileFunction(args, body)
+
+        case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Str(n), args, body)) => compileFunction(args, body)
+
+        case SExp.Lst(SExp.Keyword("rule") :: head :: tail) => compileRule(head, tail)
+      }
+    }
   }
 
-  def compileDeclaration(e: SExp): Unit = e match {
-    case SExp.Lst(SExp.Keyword("def-type") :: SExp.Name(n) :: typ :: Nil) => compileType(typ)
-    case SExp.Lst(SExp.Keyword("def-bot") :: SExp.Name(n) :: v :: Nil) => compileTerm(v)
-    case SExp.Lst(SExp.Keyword("def-leq") :: SExp.Name(n) :: args :: body :: Nil) =>
-    case SExp.Lst(SExp.Keyword("def-lub") :: SExp.Name(n) :: args :: body :: Nil) =>
-    case SExp.Lst(SExp.Keyword("def-height") :: SExp.Name(n) :: args :: body :: Nil) => compileTerm(body)
-    case SExp.Lst(SExp.Keyword("def-fun") :: SExp.Name(n) :: args :: body :: Nil) =>
-    case SExp.Lst(SExp.Keyword("rule") :: head :: tail) => compileRule(head, tail)
-  }
+  def compileRule(head: SExp, body: List[SExp]): Unit = {
 
-  def compileRule(head: SExp, body: List[SExp]): Unit = ???
+  }
 
   def compilePredicate(e: SExp): Unit = ???
+
+  def compileFunction(args: SExp, body: SExp): Term = Term.Unit // TODO
 
   def compileTerm(e: SExp): Term = e match {
     case SExp.Lst(SExp.Keyword("match") :: exp :: cases) => compileTerm(exp); Term.Unit // TODO

@@ -184,6 +184,13 @@ class Solver(val program: Program) {
       return List(env0)
     }
 
+//    val typ: Type = ???
+//    typ match {
+//      case Type.Function(t1, t2) if t2.isBaseType => ???
+//      case Type.Function(t1, Type.Function(t2, t3)) if t3.isBaseType => ???
+//    }
+
+
     i match {
       case Interpretation.Relation =>
         p.terms match {

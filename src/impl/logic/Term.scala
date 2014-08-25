@@ -89,7 +89,7 @@ sealed trait Term {
   }
 }
 
-// TODO: Introduce set and its operations.
+// TODO: Introduce set and its operations. (and the size of sets)
 object Term {
 
   /**

@@ -1,23 +1,23 @@
 (def-type Parity (
     PTop POdd PEven PBot))
 
-(def-leq (e1 Parity e2 Parity)
+(def-leq Parity (e1 Parity e2 Parity)
     (match (e1 e2)
         (case (PBot _)      true)
         (case (POdd POdd)   true)
         (case (PEven PEven) true)
         (case (_ PTop)      true)))
 
-(def-lub (e1 Parity e2 Parity)
+(def-lub Parity (e1 Parity e2 Parity)
     (match (e1 e2)
-        (case PBot x)       x)
+        (case (PBot x)      x)
         (case (x PBot)      x)
         (case (POdd POdd)   POdd)
         (case (PEven PEven) PEven)
         (case (PTop _)      PTop)
-        (case (_ PTop)      PTop))
+        (case (_ PTop)      PTop)))
 
-(def-height (e Parity)
+(def-height Parity (e Parity)
     (match e
         (case PTop  1)
         (case POdd  2)

@@ -1,6 +1,13 @@
 package impl.logic
 
-sealed trait Type
+sealed trait Type {
+
+  /**
+   * Returns `true` iff the type is a base type.
+   */
+  def isBaseType: Boolean = ??? // TODO: Non function type?????
+
+}
 
 object Type {
 
