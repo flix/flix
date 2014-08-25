@@ -17,8 +17,8 @@ object Compiler {
   def parse(e: SExp): ConstraintSystem = ???
 
   def parseDeclaration(e: SExp): Declaration = e match {
-    case SExp.Lst(Keyword.DefBot :: Nil) => ???
-    case SExp.Lst(Keyword.DefLeq :: Nil) => ???
+    case SExp.Lst(SExp.Keyword("def-type") :: Nil) => ???
+    case SExp.Lst(SExp.Keyword("def-bot") :: Nil) => ???
     //    case "def-leq" => ???
     //    case "def-lub" => ???
     //    case "def-fun" => ???

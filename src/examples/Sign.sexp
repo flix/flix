@@ -1,5 +1,7 @@
 (def-type Sign (STop Neg Zer Pos SBot))
 
+(def-bot Sign SBot)
+
 (def-leq Sign (e1 Sign e2 Sign)
     (match (e1 e2)
         (case (SBot x)      true)
