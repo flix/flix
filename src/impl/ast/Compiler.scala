@@ -62,7 +62,7 @@ object Compiler {
 
   def compileType(e: SExp): Type = e match {
     case SExp.Name(s) => Type.Tagged(Symbol.NamedSymbol(s), Type.Unit)
-    case SExp.Lst(xs) => Type.Sum(xs.map(compileType))
+    case SExp.Lst(types) => Type.Sum(types.map(compileType))
     case _ => throw new RuntimeException(s"Unexpected type: $e")
   }
 
