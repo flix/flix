@@ -15,14 +15,28 @@ object Parser {
     // TODO: Align better with Term/Value.
 
     /**
-     * Keywords.
+     * Keyword Productions.
      */
     def keyword: Parser[SExp.Keyword] =
       ("def-type" | "def-bot" | "def-leq" | "def-lub" | "def-height" | "def-fun" | "rule" | "match" | "case") ^^ SExp.Keyword
 
-    def int = regex( """[0-9]+""".r) ^^ { (i: String) => SExp.Int(i.toInt)}
+    /**
+     * Value Productions.
+     */
+    // unit literal
+    def unit: Parser[SExp.Unit] = "unit" ^^ SExp.Unit
 
-    def str = regex( """"[a-zA-Z]+"""".r) ^^ SExp.Str
+    // boolean literal
+    def bool: Parser[SExp.Bool] = ("true" | "false") ^^ SExp.Bool
+
+    // integer literal
+    def int: Parser[SExp.Int] = """[0-9]+""".r ^^ SExp.Int
+
+    // string literal
+    def str: Parser[SExp.Str] = """"[a-zA-Z]+"""".r ^^ SExp.Str
+
+    // value production
+    def value: Parser[SExp] = unit | bool | int | str
 
     /**
      *
@@ -33,7 +47,7 @@ object Parser {
 
     def variable = "_".r ^^ SExp.Var
 
-    def node: Parser[SExp] = keyword | int | str | ident | name | sexp | variable
+    def node: Parser[SExp] = keyword | value | ident | name | sexp | variable
 
     def sexp = "(" ~> rep(node) <~ ")" ^^ SExp.Lst
 

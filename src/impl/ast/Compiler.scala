@@ -54,10 +54,10 @@ object Compiler {
   def compileTerm(e: SExp): Term = e match {
     case SExp.Lst(SExp.Keyword("match") :: exp :: cases) => compileTerm(exp); Term.Unit // TODO
 
-    case SExp.Unit => Term.Unit
-    case SExp.Bool(b) => Term.Bool(b)
-    case SExp.Int(i) => Term.Int(i)
-    case SExp.Str(s) => Term.Str(s)
+    case SExp.Unit(token) => Term.Unit
+    case SExp.Bool(token) => Term.Bool(token.toBoolean)
+    case SExp.Int(token) => Term.Int(token.toInt)
+    case SExp.Str(token) => Term.Str(token)
     case SExp.Name(n) => Term.Tagged(Symbol.NamedSymbol(n), Term.Unit, Type.Sum(List.empty)) // TODO: Type
     case SExp.Lst(List(SExp.Name(s), e1)) => Term.Tagged(Symbol.NamedSymbol(s), compileTerm(e1), ???) // TODO: Type
     case SExp.Lst(List(e1, e2)) => Term.Tuple2(compileTerm(e1), compileTerm(e2))
