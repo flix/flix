@@ -13,11 +13,15 @@ object Compiler {
     //    case "def-leq" => ???
     //    case "def-lub" => ???
     //    case "def-fun" => ???
-    //    case "constraint" => ???
+    //    case "rule" => ???
 
   }
 
-  def parseType(e: SExp): Type = ???
+  def parseType(e: SExp): Type = e match {
+    case SExp.Name(s) => ???
+  }
+
+  def parseTerm(e: SExp): Term = ???
 
   def parseValue(e: SExp): Value = e match {
     case SExp.Bool(b) => Value.Bool(b)
