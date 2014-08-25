@@ -20,7 +20,7 @@ object Compiler {
 
   def compileDeclaration(e: SExp): Unit = e match {
     case SExp.Lst(SExp.Keyword("def-type") :: SExp.Name(n) :: typ :: Nil) => compileType(typ)
-    case SExp.Lst(SExp.Keyword("def-bot") :: SExp.Name(n) :: v :: Nil) => compileValue(v)
+    case SExp.Lst(SExp.Keyword("def-bot") :: SExp.Name(n) :: v :: Nil) => compileTerm(v)
     case SExp.Lst(SExp.Keyword("def-leq") :: SExp.Name(n) :: args :: body :: Nil) =>
     case SExp.Lst(SExp.Keyword("def-lub") :: SExp.Name(n) :: args :: body :: Nil) =>
     case SExp.Lst(SExp.Keyword("def-height") :: SExp.Name(n) :: args :: body :: Nil) => compileTerm(body)
@@ -35,21 +35,20 @@ object Compiler {
 
   def compileTerm(e: SExp): Term = e match {
     case SExp.Lst(SExp.Keyword("match") :: exp :: cases :: Nil) => ???
+
+    case SExp.Unit => Term.Unit
+    case SExp.Bool(b) => Term.Bool(b)
+    case SExp.Int(i) => Term.Int(i)
+    case SExp.Str(s) => Term.Str(s)
+    case SExp.Name(n) => Term.Tagged(Symbol.NamedSymbol(n), Term.Unit, Type.Sum(List.empty)) // TODO: Type
+    case SExp.Lst(List(SExp.Name(s), e1)) => Term.Tagged(Symbol.NamedSymbol(s), compileTerm(e1), ???) // TODO: Type
+    case SExp.Lst(List(e1, e2)) => Term.Tuple2(compileTerm(e1), compileTerm(e2))
+    case SExp.Lst(List(e1, e2, e3)) => Term.Tuple3(compileTerm(e1), compileTerm(e2), compileTerm(e3))
+    case SExp.Lst(List(e1, e2, e3, e4)) => Term.Tuple4(compileTerm(e1), compileTerm(e2), compileTerm(e3), compileTerm(e4))
+    case SExp.Lst(List(e1, e2, e3, e4, e5)) => Term.Tuple5(compileTerm(e1), compileTerm(e2), compileTerm(e3), compileTerm(e4), compileTerm(e5))
   }
 
   def compilePattern(s: SExp): Pattern = ???
 
 
-  def compileValue(e: SExp): Value = e match {
-    case SExp.Unit => Value.Unit
-    case SExp.Bool(b) => Value.Bool(b)
-    case SExp.Int(i) => Value.Int(i)
-    case SExp.Str(s) => Value.Str(s)
-    case SExp.Name(n) => Value.Tagged(Symbol.NamedSymbol(n), Value.Unit, Type.Sum(List.empty)) // TODO: Type
-    case SExp.Lst(List(SExp.Name(s), e1)) => Value.Tagged(Symbol.NamedSymbol(s), compileValue(e1), ???) // TODO: Type
-    case SExp.Lst(List(e1, e2)) => Value.Tuple2(compileValue(e1), compileValue(e2))
-    case SExp.Lst(List(e1, e2, e3)) => Value.Tuple3(compileValue(e1), compileValue(e2), compileValue(e3))
-    case SExp.Lst(List(e1, e2, e3, e4)) => Value.Tuple4(compileValue(e1), compileValue(e2), compileValue(e3), compileValue(e4))
-    case SExp.Lst(List(e1, e2, e3, e4, e5)) => Value.Tuple5(compileValue(e1), compileValue(e2), compileValue(e3), compileValue(e4), compileValue(e5))
-  }
 }
