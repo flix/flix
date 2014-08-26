@@ -1,11 +1,6 @@
 package impl.logic
 
 /**
- * A logical program is a sequence of declarations.
- */
-case class ConstraintSystem(decl: List[Declaration])
-
-/**
  * A declaration is a top-level statement.
  */
 trait Declaration

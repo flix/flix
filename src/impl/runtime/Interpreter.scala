@@ -1,6 +1,7 @@
-package impl.logic
+package impl.runtime
 
 import impl.logic.Symbol.{VariableSymbol => VSym}
+import impl.logic._
 
 object Interpreter {
 
