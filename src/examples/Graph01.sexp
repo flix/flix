@@ -1,4 +1,4 @@
-(def-type Edge (String String))
+(def-type Edge (Str Str))
 
 (fact (Edge "c" "d"))
 (fact (Edge "b" "c"))

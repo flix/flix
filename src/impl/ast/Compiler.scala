@@ -5,7 +5,6 @@ import impl.logic._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-// TODO: Str or String. FIXME.
 // TODO: Figure out ordering.
 // TODO typechecker
 // TODO 15. Desugar Terms and Types to SMT Lib
@@ -83,7 +82,7 @@ object Compiler {
   def compileType(e: SExp): Type = e match {
     case SExp.Name("Bool") => Type.Bool
     case SExp.Name("Int") => Type.Int
-    case SExp.Name("String") => Type.Str
+    case SExp.Name("Str") => Type.Str
     case SExp.Lst(List(SExp.Name("Set"), e1)) => Type.Set(compileType(e1))
     case SExp.Lst(List(SExp.Name("Lat"), e1)) => Type.Lat(compileType(e1))
     case SExp.Lst(List(SExp.Name("Tuple"), e1, e2)) => Type.Tuple2(compileType(e1), compileType(e2))
