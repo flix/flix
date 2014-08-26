@@ -2,7 +2,7 @@ package impl.ast
 
 import impl.logic._
 import impl.runtime.{Interpreter, Error}
-import impl.verifier.TypeChecker
+import impl.verifier.Typer
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -36,28 +36,28 @@ object Compiler {
 
         case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Str(n), SExp.Lst(args), body)) =>
           val t = compileAbs(args, body)
-          val typ = TypeChecker.typecheck(t)
+          val typ = Typer.typecheck(t)
           funcs += (n -> t)
 
         case SExp.Lst(List(SExp.Keyword("def-bot"), SExp.Name(n), exp)) =>
           val t = compileTerm(exp)
-          val typ = TypeChecker.typecheck(t)
+          val typ = Typer.typecheck(t)
           val v = Interpreter.evaluate(t)
           declarations += Declaration.DeclareBot(v, typ)
 
         case SExp.Lst(List(SExp.Keyword("def-leq"), SExp.Name(n), SExp.Lst(args), body)) =>
           val t = compileAbs(args, body)
-          val typ = TypeChecker.typecheck(t)
+          val typ = Typer.typecheck(t)
           declarations += Declaration.DeclareLeq(t, typ)
 
         case SExp.Lst(List(SExp.Keyword("def-lub"), SExp.Name(n), SExp.Lst(args), body)) =>
           val t = compileAbs(args, body)
-          val typ = TypeChecker.typecheck(t)
+          val typ = Typer.typecheck(t)
           declarations += Declaration.DeclareLub(t, typ)
 
         case SExp.Lst(List(SExp.Keyword("def-height"), SExp.Name(n), SExp.Lst(args), body)) =>
           val t = compileAbs(args, body)
-          val typ = TypeChecker.typecheck(t)
+          val typ = Typer.typecheck(t)
           declarations += Declaration.DeclareHeight(t, typ)
 
         case SExp.Lst(List(SExp.Keyword("fact"), head)) =>

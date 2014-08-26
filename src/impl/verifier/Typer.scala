@@ -4,7 +4,7 @@ import impl.logic.Symbol.{VariableSymbol => VSym}
 import impl.logic.{BinaryOperator, Term, Type, UnaryOperator}
 import impl.runtime.Error
 
-object TypeChecker {
+object Typer {
 
   /**
    * Returns the type of the given term `t` under the empty typing enviroment.

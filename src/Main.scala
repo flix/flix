@@ -2,6 +2,7 @@ import java.io.File
 
 import impl.ast.{Compiler, Parser}
 import impl.runtime.Solver
+import impl.verifier.Verifier
 import util.output.Solution
 
 object Main {
@@ -18,6 +19,9 @@ object Main {
 
     // logic program
     val program = Compiler.compile(ast)
+
+    // verify
+    Verifier.verify(program)
 
     // compute fixpoint
     val solver = new Solver(program)
