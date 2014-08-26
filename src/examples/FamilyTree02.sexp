@@ -1,6 +1,6 @@
-(def-type Parent (Set [Tuple2 String String]))
-(def-type Person (Set [String (AgeAndSex [String Int])]))
-(def-type MaleGrandParent (Set [String String]))
+(def-type Parent (Set [Tuple String String]))
+(def-type Person (Set [Tuple String (AgeAndSex [Tuple String Int])]))
+(def-type MaleGrandParent (Set [Tuple String String]))
 
 (fact (Parent "Caroline" "IngerM"))
 (fact (Parent "Caroline" "FritsT"))
