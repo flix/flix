@@ -1,22 +1,28 @@
 package impl.logic
 
-/**
- * A declaration is a top-level statement.
- */
 trait Declaration
 
 object Declaration {
-
-  case class DeclareConstraint(constraint: String) extends Declaration
-
+  // TODO: Do we need this?
   case class DeclareFun(name: Symbol.FunctionSymbol, t: Term.Abs, typ: Type) extends Declaration
 
+  /**
+   * A declaration of the bottom element for the type `typ`.
+   */
   case class DeclareBot(v: Value, typ: Type) extends Declaration
 
+  /**
+   * A declaration of the less-than-equal function `t` for the type `typ`.
+   */
   case class DeclareLeq(t: Term.Abs, typ: Type) extends Declaration
 
   /**
    * A declaration of the least-upper-bound function `t` for the type `typ`.
    */
   case class DeclareLub(t: Term.Abs, typ: Type) extends Declaration
+
+  /**
+   * A declaration of the height function `t` for the type `typ`.
+   */
+  case class DeclareHeight(t: Term.Abs, typ: Type) extends Declaration
 }
