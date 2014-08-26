@@ -2,8 +2,18 @@ package impl.logic
 
 sealed trait Type {
 
-  def isSetMap: Boolean = ???
+  /**
+   * Returns `true` iff the type is a set type or a function type which ultimately results in a set type.
+   */
+  def isSetMap: Boolean = this match {
+    case Type.Set(typ) => true
+    case Type.Function(typ1, typ2) => typ2.isSetMap
+    case _ => false
+  }
 
+  /**
+   * Returns `true` iff the type is a lat type or a function type which ultimately results in a lat type.
+   */
   def isLatMap: Boolean = ???
 
 }
