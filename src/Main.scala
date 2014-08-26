@@ -18,7 +18,6 @@ object Main {
 
     // logic program
     val program = Compiler.compile(ast)
-    println(program)
 
     // compute fixpoint
     val solver = new Solver(program)

@@ -86,9 +86,9 @@ object Compiler {
     case SExp.Name("Bool") => Type.Bool
     case SExp.Name("Int") => Type.Int
     case SExp.Name("String") => Type.Str
-
-    case SExp.Lst(List(SExp.Name("Set"), t)) => Type.Set(compileType(t))
-    case SExp.Lst(List(SExp.Name("Lat"), t)) => Type.Lat(compileType(t))
+    case SExp.Lst(List(SExp.Name("Set"), e)) => Type.Set(compileType(e))
+    case SExp.Lst(List(SExp.Name("Lat"), e)) => Type.Lat(compileType(e))
+    case SExp.Lst(List(SExp.Name(s), e)) => Type.Tagged(Symbol.NamedSymbol(s), compileType(e))
     case SExp.Lst(List(e1, e2)) => Type.Tuple2(compileType(e1), compileType(e2))
     case SExp.Lst(List(e1, e2, e3)) => Type.Tuple3(compileType(e1), compileType(e2), compileType(e3))
     case SExp.Lst(List(e1, e2, e3, e4)) => Type.Tuple4(compileType(e1), compileType(e2), compileType(e3), compileType(e4))
