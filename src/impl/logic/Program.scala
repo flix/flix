@@ -3,7 +3,7 @@ package impl.logic
 /**
  * A program consists of a list of declarations and constraints.
  */
-case class Program(declarations: List[Declaration], constraints: List[Constraint], lattices: Map[Symbol.PredicateSymbol, Lattice]) {
+case class Program(declarations: List[Declaration], constraints: List[Constraint]) {
   /**
    * Returns the list of facts.
    */

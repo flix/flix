@@ -18,55 +18,53 @@ class Verifier(val program: Program) {
    * Verifies that the program is safe.
    */
   def verify(): Unit = {
-    for ((_, lattice) <- program.lattices) {
-      emitVerificationConditions(lattice)
-    }
+
   }
 
   /**
    * Emit verifications conditions.
    */
-  private def emitVerificationConditions(lattice: Lattice): Unit = {
-    /**
-     * Verification conditions for the lattice ordering: Leq.
-     */
-    run(lattice, "Leq is reflexivity", LatticeLeq.reflexivity(lattice.name, lattice.leq))
-    run(lattice, "Leq is antisymmetric", LatticeLeq.antiSymmetri(lattice.name, lattice.leq))
-    run(lattice, "Leq is transitive", LatticeLeq.transitivity(lattice.name, lattice.leq))
-    run(lattice, "Leq has a bottom element", LatticeLeq.leastElement(lattice.name, lattice.bot, lattice.leq))
-
-    /**
-     * Verification conditions for the lattice least-upper-bound: Lub.
-     */
-    run(lattice, "Lub is a function", Function2.isFunction(lattice.name, lattice.lub))
-    run(lattice, "Lub is total", Function2.isTotal(lattice.name, lattice.lub))
-    run(lattice, "Lub is an upper bound", LatticeLub.upperBound(lattice.name, lattice.leq, lattice.lub))
-    run(lattice, "Lub is a least upper bound", LatticeLub.leastUpperBound(lattice.name, lattice.leq, lattice.lub))
-
-    /**
-     * Verification conditions for the lattice height.
-     */
-    run(lattice, "The height function is a function", Function1.isFunction(lattice.name.fmt, "Int", lattice.height))
-    run(lattice, "The height function is total", Function1.isTotal(lattice.name.fmt, "Int", lattice.height))
-    run(lattice, "The height function is strictly decreasing", LatticeHeight.strictlyDecreasing(lattice.name, lattice.height, lattice.leq))
-    run(lattice, "The height function is always non-negative", LatticeHeight.nonNegative(lattice.name, lattice.height))
-
-    for (s <- lattice.funcs) {
-      run(lattice, s.fmt + " is a function", Function2.isFunction(lattice.name, s))
-      run(lattice, s.fmt + " is a total", Function2.isTotal(lattice.name, s))
-      run(lattice, s.fmt + " is a strict", Transfer.isStrict2(lattice.name, lattice.bot, s))
-      run(lattice, s.fmt + " is monotone", Transfer.isMonotone2(lattice.name, s, lattice.leq))
-    }
+  private def emitVerificationConditions(): Unit = {
+//    /**
+//     * Verification conditions for the lattice ordering: Leq.
+//     */
+//    run(lattice, "Leq is reflexivity", LatticeLeq.reflexivity(lattice.name, lattice.leq))
+//    run(lattice, "Leq is antisymmetric", LatticeLeq.antiSymmetri(lattice.name, lattice.leq))
+//    run(lattice, "Leq is transitive", LatticeLeq.transitivity(lattice.name, lattice.leq))
+//    run(lattice, "Leq has a bottom element", LatticeLeq.leastElement(lattice.name, lattice.bot, lattice.leq))
+//
+//    /**
+//     * Verification conditions for the lattice least-upper-bound: Lub.
+//     */
+//    run(lattice, "Lub is a function", Function2.isFunction(lattice.name, lattice.lub))
+//    run(lattice, "Lub is total", Function2.isTotal(lattice.name, lattice.lub))
+//    run(lattice, "Lub is an upper bound", LatticeLub.upperBound(lattice.name, lattice.leq, lattice.lub))
+//    run(lattice, "Lub is a least upper bound", LatticeLub.leastUpperBound(lattice.name, lattice.leq, lattice.lub))
+//
+//    /**
+//     * Verification conditions for the lattice height.
+//     */
+//    run(lattice, "The height function is a function", Function1.isFunction(lattice.name.fmt, "Int", lattice.height))
+//    run(lattice, "The height function is total", Function1.isTotal(lattice.name.fmt, "Int", lattice.height))
+//    run(lattice, "The height function is strictly decreasing", LatticeHeight.strictlyDecreasing(lattice.name, lattice.height, lattice.leq))
+//    run(lattice, "The height function is always non-negative", LatticeHeight.nonNegative(lattice.name, lattice.height))
+//
+//    for (s <- lattice.funcs) {
+//      run(lattice, s.fmt + " is a function", Function2.isFunction(lattice.name, s))
+//      run(lattice, s.fmt + " is a total", Function2.isTotal(lattice.name, s))
+//      run(lattice, s.fmt + " is a strict", Transfer.isStrict2(lattice.name, lattice.bot, s))
+//      run(lattice, s.fmt + " is monotone", Transfer.isMonotone2(lattice.name, s, lattice.leq))
+//    }
   }
 
   /**
    * Run Z3 on the given input.
    */
-  def run(lattice: Lattice, name: String, s: String): Unit = {
+  def run(name: String, s: String): Unit = {
     // Create a temporary file and store the lattice declarations and constraints.
     val tmpFile = File.createTempFile("z3-constraint", ".txt");
     val writer = new PrintWriter(tmpFile)
-    writer.println(declarations(lattice))
+    writer.println(declarations())
     writer.println(s)
     writer.close()
 
@@ -89,22 +87,23 @@ class Verifier(val program: Program) {
   /**
    * Returns the lattice declarations.
    */
-  private def declarations(lattice: Lattice): String = {
-    val sb = new StringBuilder()
-    sb.append(datatype(lattice.name, lattice.domain).fmt)
-    sb.append("\n")
-    sb.append(relation2(lattice.leq, List(lattice.name.fmt, lattice.name.fmt)).fmt)
-    sb.append("\n")
-    sb.append(relation3(lattice.lub, List(lattice.name.fmt, lattice.name.fmt, lattice.name.fmt)).fmt)
-    sb.append("\n")
-    sb.append(relation2(lattice.height, List(lattice.name.fmt, "Int")).fmt)
-    sb.append("\n")
-    for (s <- lattice.funcs) {
-      // TODO: Assumes fixed arity...
-      sb.append(relation3(s, List(lattice.name.fmt, lattice.name.fmt, lattice.name.fmt)).fmt)
-      sb.append("\n")
-    }
-    sb.toString()
+  private def declarations(): String = {
+//    val sb = new StringBuilder()
+//    sb.append(datatype(lattice.name, lattice.domain).fmt)
+//    sb.append("\n")
+//    sb.append(relation2(lattice.leq, List(lattice.name.fmt, lattice.name.fmt)).fmt)
+//    sb.append("\n")
+//    sb.append(relation3(lattice.lub, List(lattice.name.fmt, lattice.name.fmt, lattice.name.fmt)).fmt)
+//    sb.append("\n")
+//    sb.append(relation2(lattice.height, List(lattice.name.fmt, "Int")).fmt)
+//    sb.append("\n")
+//    for (s <- lattice.funcs) {
+//      // TODO: Assumes fixed arity...
+//      sb.append(relation3(s, List(lattice.name.fmt, lattice.name.fmt, lattice.name.fmt)).fmt)
+//      sb.append("\n")
+//    }
+//    sb.toString()
+    ???
   }
 
   /**

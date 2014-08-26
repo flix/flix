@@ -127,18 +127,19 @@ class Solver(val program: Program) {
             propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm, v5.toTerm), ???))
       }
     } else if (p.typ.isLatMap) {
-      p.terms match {
-        case List(t1) =>
-          val lattice = program.lattices(p.name)
-          val newValue = Interpreter.evaluate(t1, env)
-          val oldValue = map1.get(p.name).getOrElse(lattice.bot)
-          val joinValue = join2(lattice.lub, newValue, oldValue)
-          val newFact: Boolean = !leq2(lattice.leq, joinValue, oldValue)
-          if (newFact) {
-            map1.put(p.name, joinValue)
-            propagateFact(Predicate(p.name, List(joinValue.toTerm), ???))
-          }
-      }
+      ???
+//      p.terms match {
+//        case List(t1) =>
+//          val lattice = program.lattices(p.name)
+//          val newValue = Interpreter.evaluate(t1, env)
+//          val oldValue = map1.get(p.name).getOrElse(lattice.bot)
+//          val joinValue = join2(lattice.lub, newValue, oldValue)
+//          val newFact: Boolean = !leq2(lattice.leq, joinValue, oldValue)
+//          if (newFact) {
+//            map1.put(p.name, joinValue)
+//            propagateFact(Predicate(p.name, List(joinValue.toTerm), ???))
+//          }
+//      }
     } else {
       throw new RuntimeException()
     }
