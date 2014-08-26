@@ -78,9 +78,8 @@ object Unification {
           Some(substitute(y, t, env0) + (y -> t))
       case Some(tt) => unify(t, tt, env0)
     }
-
-    // TODO: More
-
+    case (Term.Tagged(s1, x1, _), Term.Tagged(s2, y1, _)) if s1 == s2 =>
+      unify(x1, y1, env0)
     case (Term.Tuple2(x1, x2), Term.Tuple2(y1, y2)) =>
       for (env1 <- unify(x1, y1, env0);
            env2 <- unify(x2, y2, env1))
@@ -103,6 +102,8 @@ object Unification {
            env4 <- unify(x4, y4, env3);
            env5 <- unify(x5, y5, env4))
       yield env5
+
+    // TODO: Unification for other terms?
     case _ => None
   }
 

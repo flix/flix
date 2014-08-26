@@ -1,14 +1,19 @@
-(rule (Parent "Caroline" "IngerM"))
-(rule (Parent "Caroline" "FritsT"))
-(rule (Parent "Bjarke" "IngerM"))
-(rule (Parent "Bjarke" "FritsT"))
-(rule (Parent "Magnus" "IngerM"))
-(rule (Parent "Magnus" "FritsT"))
+(def-type Parent (Set (Str Str)))
+(def-type Age (Set (Str Int)))
+(def-type NameAndAge (variant ((:NameAndAge (Str Int)))))
+(def-type R (Str (variant ((:NameAndAge (Str Int))))))
 
-(rule (Age "Caroline" 18))
-(rule (Age "Bjarke" 24))
-(rule (Age "Magnus" 28))
+(fact (Parent "Caroline" "IngerM"))
+(fact (Parent "Caroline" "FritsT"))
+(fact (Parent "Bjarke" "IngerM"))
+(fact (Parent "Bjarke" "FritsT"))
+(fact (Parent "Magnus" "IngerM"))
+(fact (Parent "Magnus" "FritsT"))
 
-(rule (R (p, (NameAndAge c a))) (
+(fact (Age "Caroline" 18))
+(fact (Age "Bjarke" 24))
+(fact (Age "Magnus" 28))
+
+(rule (R (p (:NameAndAge c a))) (
     (Parent c p)
     (Age c a)))
