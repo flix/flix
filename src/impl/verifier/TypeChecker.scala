@@ -77,7 +77,7 @@ object TypeChecker {
 
     case Term.Tagged(s, t1, typ) =>
       val typ1 = typecheck(t1, typenv)
-      if (typ.ts contains typ1)
+      if (typ.ts contains Type.Tagged(s, typ1))
         typ
       else
         throw Error.TypingError(typ1, typ, t)

@@ -15,6 +15,7 @@ import scala.collection.mutable.ListBuffer
 object Compiler {
 
   val types = mutable.Map.empty[String, Type]
+  val labels = mutable.Map.empty[String, Type.Sum]
   val funcs = mutable.Map.empty[String, Term]
 
   def lookupType(name: String): Type = types.get(name) match {
@@ -99,12 +100,9 @@ object Compiler {
     case SExp.Int(token) => Term.Int(token.toInt)
     case SExp.Str(token) => Term.Str(token)
 
-      // TODO: Check these three..
-    case SExp.Name(n) => Term.Tagged(Symbol.NamedSymbol(n), Term.Unit, Type.Sum(List.empty)) // TODO: Type
-    case SExp.Lst(List(SExp.Name(s), e1)) => Term.Tagged(Symbol.NamedSymbol(s), compileTerm(e1), ???) // TODO: Type
-    case SExp.Lst(SExp.Keyword("match") :: exp :: cases) => compileTerm(exp); Term.Unit // TODO
+    case SExp.Label(s) => Term.Tagged(Symbol.NamedSymbol(s), Term.Unit, labels(s))
+    case SExp.Lst(List(SExp.Label(s), es)) => Term.Tagged(Symbol.NamedSymbol(s), compileTerm(es), labels(s))
 
-    case SExp.Lst(SExp.Label(s) :: es) => Term.Tagged(Symbol.NamedSymbol(s), ???, ???) // TODO
     case SExp.Lst(List(e1, e2)) => Term.Tuple2(compileTerm(e1), compileTerm(e2))
     case SExp.Lst(List(e1, e2, e3)) => Term.Tuple3(compileTerm(e1), compileTerm(e2), compileTerm(e3))
     case SExp.Lst(List(e1, e2, e3, e4)) => Term.Tuple4(compileTerm(e1), compileTerm(e2), compileTerm(e3), compileTerm(e4))
@@ -132,9 +130,18 @@ object Compiler {
     case SExp.Name("Bool") => Type.Bool
     case SExp.Name("Int") => Type.Int
     case SExp.Name("Str") => Type.Str
-    case SExp.Lst(List(SExp.Label(n), e1)) => Type.Tagged(Symbol.NamedSymbol(n), compileType(e1))
+    case SExp.Lst(List(SExp.Label(s))) => Type.Tagged(Symbol.NamedSymbol(s), Type.Unit)
+    case SExp.Lst(List(SExp.Label(s), e1)) => Type.Tagged(Symbol.NamedSymbol(s), compileType(e))
     case SExp.Lst(List(SExp.Name("Set"), e1)) => Type.Set(compileType(e1))
     case SExp.Lst(List(SExp.Name("Lat"), e1)) => Type.Lat(compileType(e1))
+    case SExp.Lst(List(SExp.Keyword("variant"), SExp.Lst(variants))) =>
+      val typ = Type.Sum(variants map compileType)
+      typ.ts.foreach {
+        case Type.Tagged(Symbol.NamedSymbol(s), _) => labels += s -> typ
+        case _ => // nop
+      }
+      typ
+
     case SExp.Lst(List(e1, e2)) => Type.Tuple2(compileType(e1), compileType(e2))
     case SExp.Lst(List(e1, e2, e3)) => Type.Tuple3(compileType(e1), compileType(e2), compileType(e3))
     case SExp.Lst(List(e1, e2, e3, e4)) => Type.Tuple4(compileType(e1), compileType(e2), compileType(e3), compileType(e4))
