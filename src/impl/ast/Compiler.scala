@@ -102,6 +102,11 @@ object Compiler {
     case SExp.Int(token) => Term.Int(token.toInt)
     case SExp.Str(token) => Term.Str(token)
 
+    case SExp.Lst(SExp.Keyword("match") :: cond :: cases) =>
+      val pattern = compilePattern(cond)
+
+      ???
+
     case SExp.Label(s) => Term.Tagged(Symbol.NamedSymbol(s), Term.Unit, labels(s))
     case SExp.Lst(List(SExp.Label(s), es)) => Term.Tagged(Symbol.NamedSymbol(s), compileTerm(es), labels(s))
 
@@ -118,6 +123,7 @@ object Compiler {
    */
   def compilePattern(e: SExp): Pattern = e match {
     case SExp.Var(x) => Pattern.Var(Symbol.VariableSymbol(x))
+    case SExp.Lst(List(e1)) => compilePattern(e1)
     case SExp.Lst(List(e1, e2)) => Pattern.Tuple2(compilePattern(e1), compilePattern(e2))
     case SExp.Lst(List(e1, e2, e3)) => Pattern.Tuple3(compilePattern(e1), compilePattern(e2), compilePattern(e3))
     case SExp.Lst(List(e1, e2, e3, e4)) => Pattern.Tuple4(compilePattern(e1), compilePattern(e2), compilePattern(e3), compilePattern(e4))
