@@ -16,7 +16,7 @@
 (fact (Male "Bjarke"))
 (fact (Male "Magnus"))
 (fact (Male "Frits"))
-(fact (Male "Orla"))
+(fact (Male "OrlaT"))
 
 (fact (Female "Caroline"))
 (fact (Female "IngerM"))
