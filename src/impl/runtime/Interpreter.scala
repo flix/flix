@@ -3,6 +3,8 @@ package impl.runtime
 import impl.logic.Symbol.{VariableSymbol => VSym}
 import impl.logic._
 
+import scala.util.Try
+
 object Interpreter {
 
   /**
@@ -10,6 +12,18 @@ object Interpreter {
    */
   def evaluate(p: Predicate, env: Map[VSym, Value]): Predicate =
     Predicate(p.name, p.terms map (t => evaluate(t, env).toTerm), p.typ)
+
+  /**
+   * TODO: DOC
+   */
+  def evaluateOpt(p: Predicate, env: Map[VSym, Value]): Option[Predicate] = {
+    val terms = p.terms.map(t => evaluateOpt(t, env))
+
+    if (terms.exists(_.isEmpty))
+      None
+    else
+      Some(Predicate(p.name, terms.map(_.get.toTerm), p.typ))
+  }
 
   /**
    * A big-step evaluator for lambda terms.
@@ -54,7 +68,7 @@ object Interpreter {
       Value.Tagged(s, v1, typ)
 
     case Term.Case(t1, cases) =>
-      val Value.Tagged(s, v, typ) = evaluate(t1, env)
+      val Value.Tagged(s, v, _) = evaluate(t1, env)
       val (x, t2) = cases(s)
       val y = Symbol.freshVariableSymbol(x)
       evaluate(t2.rename(x, y), env + (y -> v))
@@ -85,6 +99,14 @@ object Interpreter {
       val v5 = evaluate(t5, env)
       Value.Tuple5(v1, v2, v3, v4, v5)
   }
+
+  /**
+   * Optionally returns the value of evaluating the given term `t` under the given environment `env`.
+   */
+  // TODO: Implementation is a hack
+  def evaluateOpt(t: Term, env: Map[VSym, Value]): Option[Value] =
+    Try(evaluate(t, env)).toOption
+
 
   /**
    * Returns the result of applying the unary operator `op` to the given value `v`.

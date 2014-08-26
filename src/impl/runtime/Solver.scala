@@ -81,7 +81,7 @@ class Solver(program: Program) {
   /**
    * Returns `true` iff the given predicate `p` under the environment `env0` is a ground fact.
    */
-  def isProvenFact(p: Predicate, env0: Map[VSym, Value]): Boolean = p.asGround(env0) match {
+  def isProvenFact(p: Predicate, env0: Map[VSym, Value]): Boolean = Interpreter.evaluateOpt(p, env0) match {
     case None => false
     case Some(pg) => facts contains pg
   }
