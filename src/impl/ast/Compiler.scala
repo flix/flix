@@ -1,14 +1,15 @@
 package impl.ast
 
 import impl.logic._
+import impl.runtime.Error
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-// TODO: Figure out ordering.
+// TODO: Solve type dilema by having uppercase labels and lowercase type names?
+// TODO: Figure out ordering or leq, lub etc.
 // TODO typechecker
 // TODO 15. Desugar Terms and Types to SMT Lib
-// TODO: Howto correctly parse types.
 
 object Compiler {
 
@@ -45,12 +46,19 @@ object Compiler {
     Program(declarations.toList, constraints.toList)
   }
 
+  /**
+   * Compiles the given s-expression `e` to a predicate.
+   */
   def compilePredicate(e: SExp): Predicate = e match {
     case SExp.Lst(SExp.Name(s) :: terms) => Predicate(Symbol.PredicateSymbol(s), terms map compileTerm, lookupType(s))
+    // TODO case _ => throw Error.ParseException()
   }
 
   def compileFunction(args: SExp, body: SExp): Term = Term.Unit // TODO
 
+  /**
+   * Compiles the given s-expression `e` to a term.
+   */
   def compileTerm(e: SExp): Term = e match {
     case SExp.Var(x) => Term.Var(Symbol.VariableSymbol(x))
     case SExp.Unit(token) => Term.Unit
@@ -70,6 +78,9 @@ object Compiler {
     case _ => throw new RuntimeException(s"Unexpected term: $e")
   }
 
+  /**
+   * Compiles the given s-expression `e` to a pattern.
+   */
   def compilePattern(e: SExp): Pattern = e match {
     case SExp.Var(x) => Pattern.Var(Symbol.VariableSymbol(x))
     case SExp.Lst(List(e1, e2)) => Pattern.Tuple2(compilePattern(e1), compilePattern(e2))
@@ -79,6 +90,9 @@ object Compiler {
     case _ => throw new RuntimeException(s"Unexpected pattern: $e")
   }
 
+  /**
+   * Compiles the given s-expression `e` to a type.
+   */
   def compileType(e: SExp): Type = e match {
     case SExp.Name("Bool") => Type.Bool
     case SExp.Name("Int") => Type.Int
