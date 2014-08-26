@@ -1,5 +1,5 @@
 (def-type Parent (Set [Str Str]))
-(def-type Person (Set [Str (:AgeAndSex [Str Int])]))
+(def-type Person (Set [Str (variant ((:AgeAndSex [Str Int])))]))
 (def-type MaleGrandParent (Set [Str Str]))
 
 (fact (Parent "Caroline" "IngerM"))

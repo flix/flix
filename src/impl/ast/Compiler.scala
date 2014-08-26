@@ -132,7 +132,7 @@ object Compiler {
     case SExp.Name("Str") => Type.Str
     case SExp.Name(s) => types(s)
     case SExp.Lst(List(SExp.Label(s))) => Type.Tagged(Symbol.NamedSymbol(s), Type.Unit)
-    case SExp.Lst(List(SExp.Label(s), e1)) => Type.Tagged(Symbol.NamedSymbol(s), compileType(e))
+    case SExp.Lst(List(SExp.Label(s), e1)) => Type.Tagged(Symbol.NamedSymbol(s), compileType(e1))
     case SExp.Lst(List(SExp.Name("Set"), e1)) => Type.Set(compileType(e1))
     case SExp.Lst(List(SExp.Name("Lat"), e1)) => Type.Lat(compileType(e1))
     case SExp.Lst(List(SExp.Keyword("variant"), SExp.Lst(variants))) =>
