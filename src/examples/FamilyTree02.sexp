@@ -25,4 +25,4 @@
 (rule (MaleGrandParent x z) (
     (Parent x y)
     (Parent y z)
-    (Person z (AgeAndSex ("Male" _)))))
+    (Person z (:AgeAndSex ("Male" _)))))

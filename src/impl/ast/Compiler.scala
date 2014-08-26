@@ -94,7 +94,9 @@ object Compiler {
    * Compiles the given s-expression `e` to a term.
    */
   def compileTerm(e: SExp): Term = e match {
+    case SExp.Var(x) if x == "_" => Term.Var(Symbol.freshVariableSymbol("_"))
     case SExp.Var(x) => Term.Var(Symbol.VariableSymbol(x))
+
     case SExp.Unit(token) => Term.Unit
     case SExp.Bool(token) => Term.Bool(token.toBoolean)
     case SExp.Int(token) => Term.Int(token.toInt)
