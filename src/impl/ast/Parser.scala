@@ -13,13 +13,13 @@ object Parser {
   object InternalParser extends RegexParsers {
 
     /**
-     * Keyword production.
+     * Keywords.
      */
     def keyword: Parser[SExp.Keyword] =
       ("def-type" | "def-bot" | "def-leq" | "def-lub" | "def-height" | "def-fun" | "rule" | "match" | "case") ^^ SExp.Keyword
 
     /**
-     * Value production.
+     * Values.
      */
     // unit literal
     def unit: Parser[SExp.Unit] = "unit" ^^ SExp.Unit
@@ -36,22 +36,28 @@ object Parser {
     // value production
     def value: Parser[SExp] = unit | bool | int | str
 
-
-    def name = regex( """[A-Z][A-Za-z+-/\*]*""".r) ^^ SExp.Name
-
-    def ident = regex( """[a-z+-/\*]+""".r) ^^ SExp.Str
-
-    def variable = "_".r ^^ SExp.Var
-
-    def node: Parser[SExp] = keyword | value | ident | name | sexp | variable
-
     /**
-     * S-expression production.
+     * Names.
      */
-    def sexp: Parser[SExp] = "(" ~> rep(node) <~ ")" ^^ SExp.Lst
+    def name: Parser[SExp.Name] = """[A-Z][A-Za-z+-/\*]*""".r ^^ SExp.Name
 
     /**
-     * Declaration production.
+     * Variables.
+     */
+    def variable =  ("""[a-z+-/\*]+""".r | "_") ^^ SExp.Var
+
+    /**
+     * S-expression body.
+     */
+    def body: Parser[SExp] = keyword | value | variable | name | sexp
+
+    /**
+     * S-expression.
+     */
+    def sexp: Parser[SExp] = "(" ~> rep(body) <~ ")" ^^ SExp.Lst
+
+    /**
+     * Declaration.
      */
     def decl: Parser[List[SExp]] = rep(sexp)
   }
