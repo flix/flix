@@ -101,31 +101,31 @@ class Solver(program: Program) {
           val v1 = Interpreter.evaluate(t1, env)
           val newFact = relation1.put(p.name, v1)
           if (newFact)
-            propagateFact(Predicate(p.name, List(v1.toTerm), ???))
+            propagateFact(Predicate(p.name, List(v1.toTerm), p.typ))
 
         case List(t1, t2) =>
           val (v1, v2) = (Interpreter.evaluate(t1, env), Interpreter.evaluate(t2, env))
           val newFact = relation2.put(p.name, (v1, v2))
           if (newFact)
-            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm), ???))
+            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm), p.typ))
 
         case List(t1, t2, t3) =>
           val (v1, v2, v3) = (Interpreter.evaluate(t1, env), Interpreter.evaluate(t2, env), Interpreter.evaluate(t3, env))
           val newFact = relation3.put(p.name, (v1, v2, v3))
           if (newFact)
-            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm), ???))
+            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm), p.typ))
 
         case List(t1, t2, t3, t4) =>
           val (v1, v2, v3, v4) = (Interpreter.evaluate(t1, env), Interpreter.evaluate(t2, env), Interpreter.evaluate(t3, env), Interpreter.evaluate(t4, env))
           val newFact = relation4.put(p.name, (v1, v2, v3, v4))
           if (newFact)
-            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm), ???))
+            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm), p.typ))
 
         case List(t1, t2, t3, t4, t5) =>
           val (v1, v2, v3, v4, v5) = (Interpreter.evaluate(t1, env), Interpreter.evaluate(t2, env), Interpreter.evaluate(t3, env), Interpreter.evaluate(t4, env), Interpreter.evaluate(t5, env))
           val newFact = relation5.put(p.name, (v1, v2, v3, v4, v5))
           if (newFact)
-            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm, v5.toTerm), ???))
+            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm, v5.toTerm), p.typ))
       }
     } else if (p.typ.isLatMap) {
       ???
@@ -142,7 +142,7 @@ class Solver(program: Program) {
 //          }
 //      }
     } else {
-      throw new RuntimeException()
+      throw new RuntimeException(s"Unworkable type: ${p.typ}")
     }
   }
 

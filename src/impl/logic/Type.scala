@@ -14,7 +14,11 @@ sealed trait Type {
   /**
    * Returns `true` iff the type is a lat type or a function type which ultimately results in a lat type.
    */
-  def isLatMap: Boolean = ???
+  def isLatMap: Boolean = this match {
+    case Type.Lat(typ) => true
+    case Type.Function(typ1, typ2) => typ2.isLatMap
+    case _ => false
+  }
 
 }
 

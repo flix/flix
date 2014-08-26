@@ -18,6 +18,11 @@ object Compiler {
   val types = mutable.Map.empty[Symbol.TypeSymbol, Type]
   val funcs = mutable.Map.empty[SExp.Name, Term]
 
+  def lookupType(name: String): Type = types.get(Symbol.TypeSymbol(name)) match {
+    case None => throw new RuntimeException(s"No type defined for name: $name")
+    case Some(typ) => typ
+  }
+
   def compile(es: List[SExp]): Program = {
     val declarations = ListBuffer.empty[Declaration]
     val constraints = ListBuffer.empty[Constraint]
@@ -44,7 +49,7 @@ object Compiler {
   }
 
   def compilePredicate(e: SExp): Predicate = e match {
-    case SExp.Lst(SExp.Name(s) :: terms) => Predicate(Symbol.PredicateSymbol(s), terms map compileTerm, Type.Unit) // TODO: Type
+    case SExp.Lst(SExp.Name(s) :: terms) => Predicate(Symbol.PredicateSymbol(s), terms map compileTerm, lookupType(s))
   }
 
   def compileFunction(args: SExp, body: SExp): Term = Term.Unit // TODO
@@ -85,7 +90,9 @@ object Compiler {
     case SExp.Lst(List(SExp.Name("Set"), t)) => Type.Set(compileType(t))
     case SExp.Lst(List(SExp.Name("Lat"), t)) => Type.Lat(compileType(t))
     case SExp.Lst(List(e1, e2)) => Type.Tuple2(compileType(e1), compileType(e2))
-
+    case SExp.Lst(List(e1, e2, e3)) => Type.Tuple3(compileType(e1), compileType(e2), compileType(e3))
+    case SExp.Lst(List(e1, e2, e3, e4)) => Type.Tuple4(compileType(e1), compileType(e2), compileType(e3), compileType(e4))
+    case SExp.Lst(List(e1, e2, e3, e4, e5)) => Type.Tuple5(compileType(e1), compileType(e2), compileType(e3), compileType(e4), compileType(e5))
 
     // TODO: Need a way to deal with variants. Probably introducing a Variant keywoird in the sexp
     case _ => throw new RuntimeException(s"Unexpected type: $e")
