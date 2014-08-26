@@ -127,6 +127,7 @@ class Solver(program: Program) {
       }
     } else if (p.typ.isLatMap) {
       ???
+      // TODO: Need a way to get the right most type, i.e. result type..
 //      p.terms match {
 //        case List(t1) =>
 //          val lattice = program.lattices(p.name)
@@ -210,25 +211,40 @@ class Solver(program: Program) {
   /**
    * Returns `true` iff `v1` is less or equal to `v2`.
    */
-  private def leq(t: Term.Abs, v1: Value, v2: Value): Boolean = {
-    val tt = Term.App(Term.App(t, v2.toTerm), v1.toTerm)
-    val Value.Bool(b) = Interpreter.evaluate(tt, Map.empty[VSym, Value])
+  private def leq(typ: Type, v1: Value, v2: Value): Boolean = {
+    val abs = lookupLeq(typ)
+    val app = Term.App(Term.App(abs, v2.toTerm), v1.toTerm)
+    val Value.Bool(b) = Interpreter.evaluate(app)
     b
   }
 
   /**
    * Returns the join of `v1` and `v2`.
    */
-  private def join(t: Term.Abs, v1: Value, v2: Value): Value = {
-    val tt = Term.App(Term.App(t, v2.toTerm), v1.toTerm)
-    Interpreter.evaluate(tt, Map.empty[VSym, Value])
+  private def lub(typ: Type, v1: Value, v2: Value): Value = {
+    val abs = lookupLub(typ)
+    val app = Term.App(Term.App(abs, v2.toTerm), v1.toTerm)
+    Interpreter.evaluate(app)
   }
 
-  private def findLeq(typ: Type): Term.Abs = {
-    val leqType = Type.Function(typ, Type.Function(typ, typ))
+  /**
+   * Returns the less-than-equal function for the given type `typ`.
+   */
+  private def lookupLeq(typ: Type): Term.Abs = {
+    val targetType = Type.Function(typ, Type.Function(typ, Type.Bool))
     program.declarations.collectFirst {
-      case Declaration.DeclareLeq(leq, typ2) if typ == typ2 => leq
+      case Declaration.DeclareLeq(leq, actualType) if actualType == targetType => leq
     }.get
   }
-  // TODO: More ...
+
+  /**
+   * Returns the least-upper-bound function for the given type `typ`.
+   */
+  private def lookupLub(typ: Type): Term.Abs = {
+    val targetType = Type.Function(typ, Type.Function(typ, typ))
+    program.declarations.collectFirst {
+      case Declaration.DeclareLub(lub, actualType) if actualType == targetType => lub
+    }.get
+  }
+
 }
