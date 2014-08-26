@@ -28,6 +28,6 @@ object SmtDeclaration {
   /**
    * A datatype declaration.
    */
-  case class Datatype(name: Symbol.LatticeSymbol, variants: List[Symbol.NamedSymbol]) extends SmtDeclaration
+  case class Datatype(name: String, variants: List[Symbol.NamedSymbol]) extends SmtDeclaration
 
 }

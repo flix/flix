@@ -4,8 +4,6 @@ sealed trait Symbol
 
 object Symbol {
 
-  // TODO: Which symbols to remove??
-
   /**
    * A function symbol.
    */
@@ -15,12 +13,6 @@ object Symbol {
    * A predicate symbol.
    */
   case class PredicateSymbol(s: String) extends Symbol
-
-  /**
-   * A lattice symbol.
-   */
-  @deprecated("", "")
-  case class LatticeSymbol(s: String) extends Symbol
 
   /**
    * A named symbol.

@@ -2,7 +2,7 @@ package impl.verifier
 
 import java.io.{File, PrintWriter}
 
-import impl.logic.Symbol.{LatticeSymbol => LSym, PredicateSymbol => PSym, VariableSymbol => VSym}
+import impl.logic.Symbol.{PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
 import impl.runtime.Unification
 import syntax.Symbols._
@@ -109,7 +109,7 @@ class Verifier(val program: Program) {
   /**
    * Returns a datatype declaration for the given lattice symbol `l` and type `t`.
    */
-  def datatype(l: LSym, t: Type): SmtDeclaration = ???
+  def datatype(l: String, t: Type): SmtDeclaration = ???
 
   /**
    * Returns an SMT formula for function defined by the predicate symbol `s` with the given `sort`.

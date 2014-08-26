@@ -17,8 +17,8 @@ object Symbols {
     def fmt: String = s match {
       case Symbol.FunctionSymbol(x) => x
       case Symbol.PredicateSymbol(x) => x
-      case Symbol.LatticeSymbol(x) => x
       case Symbol.NamedSymbol(x) => x
+      case Symbol.TypeSymbol(x) => x
       case Symbol.VariableSymbol(x) => x
     }
   }
@@ -32,11 +32,6 @@ object Symbols {
    * Implicitely converts a string to a predicate symbol.
    */
   implicit def string2predicate(s: String): PredicateSymbol = PredicateSymbol(s)
-
-  /**
-   * Implicitely converts a string to a lattice symbol.
-   */
-  implicit def string2lattice(s: String): LatticeSymbol = LatticeSymbol(s)
 
   /**
    * Implicitely converts a string to a named symbol.

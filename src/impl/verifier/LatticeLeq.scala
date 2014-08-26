@@ -1,6 +1,6 @@
 package impl.verifier
 
-import impl.logic.Symbol.{LatticeSymbol => LSym, PredicateSymbol => PSym}
+import impl.logic.Symbol.{PredicateSymbol => PSym}
 import impl.logic.Value
 import syntax._
 
@@ -8,7 +8,7 @@ object LatticeLeq {
   /**
    * Reflexivity: ∀x. x ⊑ x
    */
-  def reflexivity(sort: LSym, leq: PSym): String = smt"""
+  def reflexivity(sort: String, leq: PSym): String = smt"""
     |;; Reflexivity: ∀x. x ⊑ x
     |(define-fun reflexivity () Bool
     |    (forall ((x $sort))
@@ -22,7 +22,7 @@ object LatticeLeq {
   /**
    * Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
    */
-  def antiSymmetri(sort: LSym, leq: PSym): String = smt"""
+  def antiSymmetri(sort: String, leq: PSym): String = smt"""
     |;; Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
     |(define-fun anti-symmetri () Bool
     |    (forall ((x $sort) (y $sort))
@@ -39,7 +39,7 @@ object LatticeLeq {
   /**
    * Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
    */
-  def transitivity(sort: LSym, leq: PSym): String = smt"""
+  def transitivity(sort: String, leq: PSym): String = smt"""
     |;; Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
     |(define-fun transitivity () Bool
     |    (forall ((x $sort) (y $sort) (z $sort))
@@ -56,7 +56,7 @@ object LatticeLeq {
   /**
    * Least Element: ∀x. ⊥ ⊑ x.
    */
-  def leastElement(sort: LSym, bot: Value, leq: PSym): String = smt"""
+  def leastElement(sort: String, bot: Value, leq: PSym): String = smt"""
     |;; Least Element: ∀x. ⊥ ⊑ x.
     |(define-fun least-element () Bool
     |    (forall ((x $sort))
