@@ -86,13 +86,13 @@ object Compiler {
     case SExp.Name("Bool") => Type.Bool
     case SExp.Name("Int") => Type.Int
     case SExp.Name("String") => Type.Str
-    case SExp.Lst(List(SExp.Name("Set"), e)) => Type.Set(compileType(e))
-    case SExp.Lst(List(SExp.Name("Lat"), e)) => Type.Lat(compileType(e))
-    case SExp.Lst(List(SExp.Name(s), e)) => Type.Tagged(Symbol.NamedSymbol(s), compileType(e))
-    case SExp.Lst(List(e1, e2)) => Type.Tuple2(compileType(e1), compileType(e2))
-    case SExp.Lst(List(e1, e2, e3)) => Type.Tuple3(compileType(e1), compileType(e2), compileType(e3))
-    case SExp.Lst(List(e1, e2, e3, e4)) => Type.Tuple4(compileType(e1), compileType(e2), compileType(e3), compileType(e4))
-    case SExp.Lst(List(e1, e2, e3, e4, e5)) => Type.Tuple5(compileType(e1), compileType(e2), compileType(e3), compileType(e4), compileType(e5))
+    case SExp.Lst(List(SExp.Name("Set"), e1)) => Type.Set(compileType(e1))
+    case SExp.Lst(List(SExp.Name("Lat"), e1)) => Type.Lat(compileType(e1))
+    case SExp.Lst(List(SExp.Name("Tuple2"), e1, e2)) => Type.Tuple2(compileType(e1), compileType(e2))
+    case SExp.Lst(List(SExp.Name("Tuple3"), e1, e2, e3)) => Type.Tuple3(compileType(e1), compileType(e2), compileType(e3))
+    case SExp.Lst(List(SExp.Name("Tuple4"), e1, e2, e3, e4)) => Type.Tuple4(compileType(e1), compileType(e2), compileType(e3), compileType(e4))
+    case SExp.Lst(List(SExp.Name("Tuple5"), e1, e2, e3, e4, e5)) => Type.Tuple5(compileType(e1), compileType(e2), compileType(e3), compileType(e4), compileType(e5))
+    case SExp.Lst(List(SExp.Name(s), e1)) => Type.Tagged(Symbol.NamedSymbol(s), compileType(e1))
 
     // TODO: Need a way to deal with variants. Probably introducing a Variant keywoird in the sexp
     case _ => throw new RuntimeException(s"Unexpected type: $e")

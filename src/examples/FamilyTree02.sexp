@@ -1,4 +1,4 @@
-(def-type Parent (Set [String String]))
+(def-type Parent (Set [Tuple2 String String]))
 (def-type Person (Set [String (AgeAndSex [String Int])]))
 (def-type MaleGrandParent (Set [String String]))
 
@@ -12,10 +12,10 @@
 (fact (Parent "FritsT" "OrlaT"))
 (fact (Parent "IngerM" "GreteM"))
 
-(fact (Person "Bjarke" (AgeAndSex "Male" 1)))
-(fact (Person "Magnus" (AgeAndSex "Male" 2)))
-(fact (Person "FritsT" (AgeAndSex "Male" 3)))
-(fact (Person "OrlaT"  (AgeAndSex "Male" 4)))
+(fact (Person "Bjarke"   (AgeAndSex "Male" 1)))
+(fact (Person "Magnus"   (AgeAndSex "Male" 2)))
+(fact (Person "FritsT"   (AgeAndSex "Male" 3)))
+(fact (Person "OrlaT"    (AgeAndSex "Male" 4)))
 
 (fact (Person "Caroline" (AgeAndSex "Female" 5)))
 (fact (Person "IngerM"   (AgeAndSex "Female" 6)))
