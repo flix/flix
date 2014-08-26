@@ -6,12 +6,10 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 // TODO: Str or String. FIXME.
-// TODO: Rename: def-type to def lattice?
 // TODO: Figure out ordering.
-// TODO: Introduce fact and rule, not just rule.
-// TODO 10. Introduce types in horn clauses.
-// TODO 12. Rewrite solver to use lambdas and types.
+// TODO typechecker
 // TODO 15. Desugar Terms and Types to SMT Lib
+// TODO: Howto correctly parse types.
 
 object Compiler {
 
