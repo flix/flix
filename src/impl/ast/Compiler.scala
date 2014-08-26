@@ -3,6 +3,7 @@ package impl.ast
 import impl.logic._
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 // TODO: Rename: def-type to def lattice?
 // TODO: Figure out ordering.
@@ -17,6 +18,8 @@ object Compiler {
   val funcs = mutable.Map.empty[SExp.Name, Term]
 
   def compile(es: List[SExp]): Program = {
+    val declarations = ListBuffer.empty[Declaration]
+    val constraints = ListBuffer.empty[Constraint]
     for (e <- es) {
       e match {
         case SExp.Lst(List(SExp.Keyword("def-type"), SExp.Name(n), typ)) =>
@@ -32,17 +35,20 @@ object Compiler {
 
         case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Str(n), args, body)) => compileFunction(args, body)
 
-        case SExp.Lst(SExp.Keyword("rule") :: head :: tail) => compileRule(head, tail)
+        case SExp.Lst(List(SExp.Keyword("fact"), head)) => constraints += Constraint.Fact(compilePredicate(head))
+        case SExp.Lst(SExp.Keyword("rule") :: head :: tail) => constraints += compileRule(head, tail)
       }
     }
+    Program(declarations.toList, constraints.toList)
+  }
+
+  def compileRule(head: SExp, body: List[SExp]): Constraint = {
     ???
   }
 
-  def compileRule(head: SExp, body: List[SExp]): Unit = {
-
+  def compilePredicate(e: SExp): Predicate = e match {
+    case SExp.Lst(SExp.Name(s) :: terms) => Predicate(Symbol.PredicateSymbol(s), terms map compileTerm, Type.Unit) // TODO: Type
   }
-
-  def compilePredicate(e: SExp): Unit = ???
 
   def compileFunction(args: SExp, body: SExp): Term = Term.Unit // TODO
 
