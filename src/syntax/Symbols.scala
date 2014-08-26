@@ -18,7 +18,6 @@ object Symbols {
       case Symbol.FunctionSymbol(x) => x
       case Symbol.PredicateSymbol(x) => x
       case Symbol.NamedSymbol(x) => x
-      case Symbol.TypeSymbol(x) => x
       case Symbol.VariableSymbol(x) => x
     }
   }

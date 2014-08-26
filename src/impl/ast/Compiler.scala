@@ -14,10 +14,10 @@ import scala.collection.mutable.ListBuffer
 
 object Compiler {
 
-  val types = mutable.Map.empty[Symbol.TypeSymbol, Type]
-  val funcs = mutable.Map.empty[SExp.Name, Term]
+  val types = mutable.Map.empty[String, Type]
+  val funcs = mutable.Map.empty[String, Term]
 
-  def lookupType(name: String): Type = types.get(Symbol.TypeSymbol(name)) match {
+  def lookupType(name: String): Type = types.get(name) match {
     case None => throw new RuntimeException(s"No type defined for name: $name")
     case Some(typ) => typ
   }
@@ -31,7 +31,12 @@ object Compiler {
     for (e <- es) {
       e match {
         case SExp.Lst(List(SExp.Keyword("def-type"), SExp.Name(n), typ)) =>
-          types += ((Symbol.TypeSymbol(n), compileType(typ)))
+          types += (n -> compileType(typ))
+
+        case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Str(n), SExp.Lst(args), body)) =>
+          val t = compileAbs(args, body)
+          val typ = TypeChecker.typecheck(t)
+          funcs += (n -> t)
 
         case SExp.Lst(List(SExp.Keyword("def-bot"), SExp.Name(n), exp)) =>
           val t = compileTerm(exp)
@@ -47,12 +52,12 @@ object Compiler {
         case SExp.Lst(List(SExp.Keyword("def-lub"), SExp.Name(n), SExp.Lst(args), body)) =>
           val t = compileAbs(args, body)
           val typ = TypeChecker.typecheck(t)
+          declarations += Declaration.DeclareLub(t, typ)
 
         case SExp.Lst(List(SExp.Keyword("def-height"), SExp.Name(n), SExp.Lst(args), body)) =>
           val t = compileAbs(args, body)
-
-        case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Str(n), SExp.Lst(args), body)) =>
-          val t = compileAbs(args, body)
+          val typ = TypeChecker.typecheck(t)
+          declarations += Declaration.DeclareHeight(t, typ)
 
         case SExp.Lst(List(SExp.Keyword("fact"), head)) =>
           constraints += Constraint.Fact(compilePredicate(head))

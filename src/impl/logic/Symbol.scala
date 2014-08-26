@@ -20,11 +20,6 @@ object Symbol {
   case class NamedSymbol(s: String) extends Symbol
 
   /**
-   * A type symbol.
-   */
-  case class TypeSymbol(s: String) extends Symbol
-
-  /**
    * A variable symbol.
    */
   case class VariableSymbol(s: String) extends Symbol
