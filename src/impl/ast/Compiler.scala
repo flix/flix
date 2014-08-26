@@ -21,6 +21,9 @@ object Compiler {
     case Some(typ) => typ
   }
 
+  /**
+   * Compiles a list of top-level declarations to a logic program.
+   */
   def compile(es: List[SExp]): Program = {
     val declarations = ListBuffer.empty[Declaration]
     val constraints = ListBuffer.empty[Constraint]
@@ -73,9 +76,7 @@ object Compiler {
     case SExp.Lst(List(e1, e2, e3, e4, e5)) => Term.Tuple5(compileTerm(e1), compileTerm(e2), compileTerm(e3), compileTerm(e4), compileTerm(e5))
 
     case SExp.Lst(SExp.Keyword("match") :: exp :: cases) => compileTerm(exp); Term.Unit // TODO
-
-
-    case _ => throw new RuntimeException(s"Unexpected term: $e")
+    case _ => throw Error.UnableToParseTerm(e)
   }
 
   /**
@@ -87,7 +88,7 @@ object Compiler {
     case SExp.Lst(List(e1, e2, e3)) => Pattern.Tuple3(compilePattern(e1), compilePattern(e2), compilePattern(e3))
     case SExp.Lst(List(e1, e2, e3, e4)) => Pattern.Tuple4(compilePattern(e1), compilePattern(e2), compilePattern(e3), compilePattern(e4))
     case SExp.Lst(List(e1, e2, e3, e4, e5)) => Pattern.Tuple5(compilePattern(e1), compilePattern(e2), compilePattern(e3), compilePattern(e4), compilePattern(e5))
-    case _ => throw new RuntimeException(s"Unexpected pattern: $e")
+    case _ => throw Error.UnableToParsePattern(e)
   }
 
   /**
@@ -104,9 +105,7 @@ object Compiler {
     case SExp.Lst(List(SExp.Name("Tuple"), e1, e2, e3, e4)) => Type.Tuple4(compileType(e1), compileType(e2), compileType(e3), compileType(e4))
     case SExp.Lst(List(SExp.Name("Tuple"), e1, e2, e3, e4, e5)) => Type.Tuple5(compileType(e1), compileType(e2), compileType(e3), compileType(e4), compileType(e5))
     case SExp.Lst(List(SExp.Name(s), e1)) => Type.Tagged(Symbol.NamedSymbol(s), compileType(e1))
-
-    // TODO: Need a way to deal with variants. Probably introducing a Variant keywoird in the sexp
-    case _ => throw new RuntimeException(s"Unexpected type: $e")
+    case _ => throw Error.UnableToParseType(e)
   }
 
 }
