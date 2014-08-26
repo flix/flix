@@ -13,9 +13,8 @@ object Error {
   case class TypingError(expected: Type, actual: Type, t: Term) extends RuntimeException
   case class TypingError2(t: Term) extends RuntimeException
 
-  sealed trait ParseException extends RuntimeException
-  case class UnableToParsePredicate(e: SExp) extends ParseException
-  case class UnableToParseTerm(e: SExp) extends ParseException
-  case class UnableToParsePattern(e: SExp) extends ParseException
-  case class UnableToParseType(e: SExp) extends ParseException
+  case class UnableToParsePredicate(e: SExp) extends RuntimeException(s"Exp: $e")
+  case class UnableToParseTerm(e: SExp) extends RuntimeException(s"Exp: $e")
+  case class UnableToParsePattern(e: SExp) extends RuntimeException(s"Exp: $e")
+  case class UnableToParseType(e: SExp) extends RuntimeException(s"Exp: $e")
 }

@@ -14,9 +14,11 @@ object SExp {
 
   case class Keyword(token: String) extends SExp
 
-  case class Name(s: java.lang.String) extends SExp
+  case class Var(token: String) extends SExp
 
-  case class Var(x: java.lang.String) extends SExp
+  case class Name(token: String) extends SExp
+
+  case class Label(token: String) extends SExp
 
   case class Lst(xs: List[SExp]) extends SExp
 

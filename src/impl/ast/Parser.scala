@@ -42,14 +42,19 @@ object Parser {
     def name: Parser[SExp.Name] = """[A-Z][A-Za-z+-/\*]*""".r ^^ SExp.Name
 
     /**
+     * Labels.
+     */
+    def label: Parser[SExp.Label] = (":" ~> """[A-Za-z+-/\*]*""".r) ^^ SExp.Label
+
+    /**
      * Variables.
      */
-    def variable =  ("""[a-z+-/\*]+""".r | "_") ^^ SExp.Var
+    def variable: Parser[SExp.Var] =  ("""[a-z+-/\*]+""".r | "_") ^^ SExp.Var
 
     /**
      * S-expression body.
      */
-    def body: Parser[SExp] = keyword | value | variable | name | sexp
+    def body: Parser[SExp] = keyword | value | variable | name | label | sexp
 
     /**
      * S-expression.

@@ -98,14 +98,18 @@ object Compiler {
     case SExp.Bool(token) => Term.Bool(token.toBoolean)
     case SExp.Int(token) => Term.Int(token.toInt)
     case SExp.Str(token) => Term.Str(token)
+
+      // TODO: Check these three..
     case SExp.Name(n) => Term.Tagged(Symbol.NamedSymbol(n), Term.Unit, Type.Sum(List.empty)) // TODO: Type
     case SExp.Lst(List(SExp.Name(s), e1)) => Term.Tagged(Symbol.NamedSymbol(s), compileTerm(e1), ???) // TODO: Type
+    case SExp.Lst(SExp.Keyword("match") :: exp :: cases) => compileTerm(exp); Term.Unit // TODO
+
+    case SExp.Lst(SExp.Label(s) :: es) => Term.Tagged(Symbol.NamedSymbol(s), ???, ???) // TODO
     case SExp.Lst(List(e1, e2)) => Term.Tuple2(compileTerm(e1), compileTerm(e2))
     case SExp.Lst(List(e1, e2, e3)) => Term.Tuple3(compileTerm(e1), compileTerm(e2), compileTerm(e3))
     case SExp.Lst(List(e1, e2, e3, e4)) => Term.Tuple4(compileTerm(e1), compileTerm(e2), compileTerm(e3), compileTerm(e4))
     case SExp.Lst(List(e1, e2, e3, e4, e5)) => Term.Tuple5(compileTerm(e1), compileTerm(e2), compileTerm(e3), compileTerm(e4), compileTerm(e5))
 
-    case SExp.Lst(SExp.Keyword("match") :: exp :: cases) => compileTerm(exp); Term.Unit // TODO
     case _ => throw Error.UnableToParseTerm(e)
   }
 
@@ -128,13 +132,13 @@ object Compiler {
     case SExp.Name("Bool") => Type.Bool
     case SExp.Name("Int") => Type.Int
     case SExp.Name("Str") => Type.Str
+    case SExp.Lst(List(SExp.Label(n), e1)) => Type.Tagged(Symbol.NamedSymbol(n), compileType(e1))
     case SExp.Lst(List(SExp.Name("Set"), e1)) => Type.Set(compileType(e1))
     case SExp.Lst(List(SExp.Name("Lat"), e1)) => Type.Lat(compileType(e1))
-    case SExp.Lst(List(SExp.Name("Tuple"), e1, e2)) => Type.Tuple2(compileType(e1), compileType(e2))
-    case SExp.Lst(List(SExp.Name("Tuple"), e1, e2, e3)) => Type.Tuple3(compileType(e1), compileType(e2), compileType(e3))
-    case SExp.Lst(List(SExp.Name("Tuple"), e1, e2, e3, e4)) => Type.Tuple4(compileType(e1), compileType(e2), compileType(e3), compileType(e4))
-    case SExp.Lst(List(SExp.Name("Tuple"), e1, e2, e3, e4, e5)) => Type.Tuple5(compileType(e1), compileType(e2), compileType(e3), compileType(e4), compileType(e5))
-    case SExp.Lst(List(SExp.Name(s), e1)) => Type.Tagged(Symbol.NamedSymbol(s), compileType(e1))
+    case SExp.Lst(List(e1, e2)) => Type.Tuple2(compileType(e1), compileType(e2))
+    case SExp.Lst(List(e1, e2, e3)) => Type.Tuple3(compileType(e1), compileType(e2), compileType(e3))
+    case SExp.Lst(List(e1, e2, e3, e4)) => Type.Tuple4(compileType(e1), compileType(e2), compileType(e3), compileType(e4))
+    case SExp.Lst(List(e1, e2, e3, e4, e5)) => Type.Tuple5(compileType(e1), compileType(e2), compileType(e3), compileType(e4), compileType(e5))
     case _ => throw Error.UnableToParseType(e)
   }
 
