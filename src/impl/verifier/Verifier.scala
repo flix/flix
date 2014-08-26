@@ -10,7 +10,7 @@ import syntax.Symbols._
 /**
  * A verifier / type checker.
  */
-class Verifier(val program: Program) {
+class Verifier(program: Program) {
 
   val Z3 = System.getProperty("Z3", "C:\\Program Files\\Microsoft Z3\\z3-4.3.0-x64\\bin\\z3.exe")
 

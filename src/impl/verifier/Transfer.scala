@@ -1,22 +1,18 @@
 package impl.verifier
 
-import impl.logic.Symbol.{PredicateSymbol => PSym}
-import impl.logic.Value
-import syntax._
-
 object Transfer {
   /**
    * Strict ∀x. f(⊥, x) = ⊥ ∧ f(x, ⊥) = ⊥.
    */
-  def isStrict2(sort: String, bot: Value, f: PSym): String = smt"""
+  def isStrict(typ: String, bot: String, fn: String): String = s"""
     |;; Strict ∀x. f(⊥, x) = ⊥ ∧ f(x, ⊥) = ⊥.
-    |(define-fun $f-strict () Bool
-    |    (forall ((x $sort))
+    |(define-fun $fn-strict () Bool
+    |    (forall ((x $typ))
     |        (and
-    |            ($f $bot x $bot)
-    |            ($f x $bot $bot))))
+    |            ($fn $bot x $bot)
+    |            ($fn x $bot $bot))))
     |(push)
-    |(assert $f-strict)
+    |(assert $fn-strict)
     |(check-sat)
     |(pop)
     """.stripMargin
@@ -24,19 +20,19 @@ object Transfer {
   /**
    * Monotone: ∀x1, x2, y1, y2. x1 ⊑ x2 ∧ y1 ⊑ y2 ⇒ f(x1, y1) ⊑ f(x2, y2).
    */
-  def isMonotone2(sort: String, f: PSym, leq: PSym): String = smt"""
+  def isMonotone(typ: String, fn: String, leq: String): String = s"""
     |;; Monotone: ∀x1, x2, y1, y2. x1 ⊑ x2 ∧ y1 ⊑ y2 ⇒ f(x1, y1) ⊑ f(x2, y2).
-    |(define-fun $f-monotone () Bool
-    |    (forall ((x1 $sort) (x2 $sort) (y1 $sort) (y2 $sort) (r1 $sort) (r2 $sort))
+    |(define-fun $fn-monotone () Bool
+    |    (forall ((x1 $typ) (x2 $typ) (y1 $typ) (y2 $typ) (r1 $typ) (r2 $typ))
     |        (=>
     |            (and
     |                ($leq x1 x2)
     |                ($leq y1 y2)
-    |                ($f x1 y1 r1)
-    |                ($f x2 y2 r2))
+    |                ($fn x1 y1 r1)
+    |                ($fn x2 y2 r2))
     |                ($leq r1 r2))))
     |(push)
-    |(assert $f-monotone)
+    |(assert $fn-monotone)
     |(check-sat)
     |(pop)
     """.stripMargin

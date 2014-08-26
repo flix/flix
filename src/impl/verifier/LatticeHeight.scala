@@ -1,24 +1,21 @@
 package impl.verifier
 
-import impl.logic.Symbol.{PredicateSymbol => PSym}
-import syntax._
-
 object LatticeHeight {
   /**
    * Stricly-Decreasing: ∀x, y. x ⊑ y ∧ x != y ⇒ f(x) > f(y).
    */
-  def strictlyDecreasing(sort: String, f: PSym, leq: PSym): String = smt"""
+  def strictlyDecreasing(typ: String, fn: String, leq: String): String = s"""
     |;; Stricly-Decreasing: ∀x, y. x ⊑ y ∧ x != y ⇒ f(x) > f(y).
-    |(define-fun $f-strictly-decreasing () Bool
-    |    (forall ((x $sort) (y $sort) (r1 Int) (r2 Int))
+    |(define-fun $fn-strictly-decreasing () Bool
+    |    (forall ((x $typ) (y $typ) (r1 Int) (r2 Int))
     |        (=>
     |            (and (distinct x y)
     |                 ($leq x y)
-    |                 ($f x r1)
-    |                 ($f y r2))
+    |                 ($fn x r1)
+    |                 ($fn y r2))
     |            (> r1 r2))))
     |(push)
-    |(assert  $f-strictly-decreasing)
+    |(assert  $fn-strictly-decreasing)
     |(check-sat)
     |(pop)
     """.stripMargin
@@ -26,15 +23,15 @@ object LatticeHeight {
   /**
    * Non-Negative: ∀x. f(x) > 0.
    */
-  def nonNegative(sort: String, f: PSym): String = smt"""
+  def nonNegative(typ: String, fn: String): String = s"""
     |;; Non-Negative: ∀x. f(x) > 0.
-    |(define-fun $f-non-negative () Bool
-    |    (forall ((x $sort) (r Int))
+    |(define-fun $fn-non-negative () Bool
+    |    (forall ((x $typ) (r Int))
     |        (=>
-    |            ($f x r)
+    |            ($fn x r)
     |                (> r 0))))
     |(push)
-    |(assert $f-non-negative)
+    |(assert $fn-non-negative)
     |(check-sat)
     |(pop)
     """.stripMargin

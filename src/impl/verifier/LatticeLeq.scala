@@ -1,17 +1,13 @@
 package impl.verifier
 
-import impl.logic.Symbol.{PredicateSymbol => PSym}
-import impl.logic.Value
-import syntax._
-
 object LatticeLeq {
   /**
    * Reflexivity: ∀x. x ⊑ x
    */
-  def reflexivity(sort: String, leq: PSym): String = smt"""
+  def reflexivity(typ: String, leq: String): String = s"""
     |;; Reflexivity: ∀x. x ⊑ x
     |(define-fun reflexivity () Bool
-    |    (forall ((x $sort))
+    |    (forall ((x $typ))
     |        ($leq x x)))
     |(push)
     |(assert reflexivity)
@@ -22,10 +18,10 @@ object LatticeLeq {
   /**
    * Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
    */
-  def antiSymmetri(sort: String, leq: PSym): String = smt"""
+  def antiSymmetri(typ: String, leq: String): String = s"""
     |;; Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
     |(define-fun anti-symmetri () Bool
-    |    (forall ((x $sort) (y $sort))
+    |    (forall ((x $typ) (y $typ))
     |        (=>
     |            (and ($leq x y)
     |                 ($leq y x))
@@ -39,10 +35,10 @@ object LatticeLeq {
   /**
    * Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
    */
-  def transitivity(sort: String, leq: PSym): String = smt"""
+  def transitivity(typ: String, leq: String): String = s"""
     |;; Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
     |(define-fun transitivity () Bool
-    |    (forall ((x $sort) (y $sort) (z $sort))
+    |    (forall ((x $typ) (y $typ) (z $typ))
     |        (=>
     |            (and ($leq x y)
     |                 ($leq y z))
@@ -56,10 +52,10 @@ object LatticeLeq {
   /**
    * Least Element: ∀x. ⊥ ⊑ x.
    */
-  def leastElement(sort: String, bot: Value, leq: PSym): String = smt"""
+  def leastElement(typ: String, bot: String, leq: String): String = s"""
     |;; Least Element: ∀x. ⊥ ⊑ x.
     |(define-fun least-element () Bool
-    |    (forall ((x $sort))
+    |    (forall ((x $typ))
     |        ($leq $bot x)))
     |(push)
     |(assert least-element)

@@ -11,10 +11,10 @@ sealed trait SmtDeclaration {
   def fmt: String = this match {
     case SmtDeclaration.Relation(s, sorts, vars, formula) =>
       val args = (vars zip sorts).map({ case (x, y) => "(" + x.fmt + " " + y + ")"}).mkString(" ")
-      smt"(define-fun $s ($args) Bool" + "\n    " + formula.fmt(1) + ")\n"
+      s"(define-fun $s ($args) Bool" + "\n    " + formula.fmt(1) + ")\n"
 
     case SmtDeclaration.Datatype(s, variants) =>
-      smt"(declare-datatypes () (($s " + variants.map(_.s).mkString(" ") + ")))\n"
+      s"(declare-datatypes () (($s " + variants.map(_.s).mkString(" ") + ")))\n"
   }
 }
 
