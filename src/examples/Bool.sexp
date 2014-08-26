@@ -2,6 +2,13 @@
 
 (def-bot BoolLat :Bot)
 
+(def-height BoolLat (e BoolLat)
+    (match e
+        (case :Top      1)
+        (case :True     2)
+        (case :False    2)
+        (case :Bot      3)))
+
 (def-leq BoolLat (e1 BoolLat e2 BoolLat)
     (match (e1 e2)
         (case (:Bot _)          true)
@@ -16,13 +23,6 @@
         (case (:True :True)     :True)
         (case (:False :False)   :False)
         (case _                 :Top)))
-
-(def-height BoolLat (e BoolLat)
-    (match (e)
-        (case :Top      1)
-        (case :True     2)
-        (case :False    2)
-        (case :Bot      3)))
 
 (def-fun and (e1 BoolLat e2 BoolLat)
     (match (e1 e2)
