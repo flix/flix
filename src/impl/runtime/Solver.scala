@@ -90,9 +90,10 @@ class Solver(program: Program) {
    * Adds the given predicate `p` as a known ground fact under the given interpretation `i` and environment `env`.
    */
   def newProvenFact(p: Predicate, env: Map[VSym, Value]): Unit = {
-    println("--> " + p.toGround(env).fmt)
+    val p2 = Interpreter.evaluate(p, env)
+    println("--> " + p2.fmt)
 
-    facts += p.toGround(env)
+    facts += p2
 
     if (p.typ.isSetMap) {
       p.terms match {
@@ -280,7 +281,7 @@ class Solver(program: Program) {
    */
   private def leq(t: Term.Abs, v1: Value, v2: Value): Boolean = {
     val tt = Term.App(Term.App(t, v2.toTerm), v1.toTerm)
-    val Value.Bool(b) = Interpreter.evaluate(tt, Map.empty)
+    val Value.Bool(b) = Interpreter.evaluate(tt, Map.empty[VSym, Value])
     b
   }
 
@@ -289,6 +290,6 @@ class Solver(program: Program) {
    */
   private def join(t: Term.Abs, v1: Value, v2: Value): Value = {
     val tt = Term.App(Term.App(t, v2.toTerm), v1.toTerm)
-    Interpreter.evaluate(tt, Map.empty)
+    Interpreter.evaluate(tt, Map.empty[VSym, Value])
   }
 }

@@ -6,6 +6,12 @@ import impl.logic._
 object Interpreter {
 
   /**
+   * A big-step evaluator for predicates.
+   */
+  def evaluate(p: Predicate, env: Map[VSym, Value]): Predicate =
+    Predicate(p.name, p.terms map (t => evaluate(t, env).toTerm), p.typ)
+
+  /**
    * A big-step evaluator for lambda terms.
    */
   def evaluate(t: Term, env: Map[VSym, Value]): Value = t match {
