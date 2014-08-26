@@ -76,8 +76,6 @@ class Solver(program: Program) {
   // Facts                                                                   //
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Split into intrisinic and extrinsic
-
   /**
    * Returns `true` iff the given predicate `p` under the environment `env0` is a ground fact.
    */
@@ -208,71 +206,6 @@ class Solver(program: Program) {
       }
     } else {
       throw new RuntimeException()
-    }
-  }
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Top-down satisfiability                                                 //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-   * Returns all satisfiable models for the given predicate `p` under the given environment `env0`.
-   */
-  // TODO: Must take cycles into account.
-  def getSat(p: Predicate, env0: Map[VSym, Term] = Map.empty): List[Map[VSym, Term]] = {
-    // TODO: Rewrite to loop
-    program.constraints.flatMap {
-      h => Unification.unify(p, h.head, env0) match {
-        case None =>
-          // Head predicate is not satisfied. No need to look at body.
-          List.empty
-        case Some(env) =>
-          // Head predicate is satisfied. Check whether the body can be made satisfiable.
-          h.body.foldLeft(List(env)) {
-            case (envs, p2) => envs.flatMap(e => getSat(p2, e))
-          }
-      }
-    }
-  }
-
-  /**
-   * Optionally returns the unique term of the variable `x` in all the given models `xs`.
-   */
-  private def asUniqueTerm(x: VSym, xs: List[Map[VSym, Term]]): Option[Term] = {
-    val vs = xs.flatMap(_.get(x)).toSet
-    if (vs.size == 1)
-      Some(vs.head)
-    else
-      None
-  }
-
-  /**
-   * Optionally returns the unique value of the variable `x` in all the given models `xs`.
-   */
-  private def asUniqueValue(x: VSym, xs: List[Map[VSym, Term]]): Option[Value] =
-    asUniqueTerm(x, xs).map(t => Interpreter.evaluate(t, Map.empty))
-
-  /**
-   * Returns `true` iff `v1` is less or equal to `v2`.
-   */
-  private def leq2(s: PSym, v1: Value, v2: Value): Boolean = {
-    val p = Predicate(s, List(v1.toTerm, v2.toTerm), ???)
-    val models = getSat(p)
-    models.nonEmpty
-  }
-
-  /**
-   * Returns the join of `v1` and `v2`.
-   */
-  private def join2(s: PSym, v1: Value, v2: Value): Value = {
-    val p = Predicate(s, List(v1.toTerm, v2.toTerm, Term.Var(Symbol.VariableSymbol("!x"))), ???)
-    val models = getSat(p)
-
-    val value = asUniqueValue(Symbol.VariableSymbol("!x"), models)
-    value match {
-      case None => throw Error.NonUniqueModel(s)
-      case Some(v) => v
     }
   }
 

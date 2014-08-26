@@ -54,7 +54,7 @@ object Compiler {
    */
   def compilePredicate(e: SExp): Predicate = e match {
     case SExp.Lst(SExp.Name(s) :: terms) => Predicate(Symbol.PredicateSymbol(s), terms map compileTerm, lookupType(s))
-    case _ => ???
+    case _ => throw Error.UnableToParsePredicate(e)
   }
 
   def compileFunction(args: SExp, body: SExp): Term = Term.Unit // TODO
