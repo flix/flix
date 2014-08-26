@@ -223,4 +223,12 @@ class Solver(program: Program) {
     val tt = Term.App(Term.App(t, v2.toTerm), v1.toTerm)
     Interpreter.evaluate(tt, Map.empty[VSym, Value])
   }
+
+  private def findLeq(typ: Type): Term.Abs = {
+    val leqType = Type.Function(typ, Type.Function(typ, typ))
+    program.declarations.collectFirst {
+      case Declaration.DeclareLeq(leq, typ2) if typ == typ2 => leq
+    }.get
+  }
+  // TODO: More ...
 }

@@ -46,6 +46,7 @@ object Compiler {
 
         case SExp.Lst(List(SExp.Keyword("def-lub"), SExp.Name(n), SExp.Lst(args), body)) =>
           val t = compileAbs(args, body)
+          val typ = TypeChecker.typecheck(t)
 
         case SExp.Lst(List(SExp.Keyword("def-height"), SExp.Name(n), SExp.Lst(args), body)) =>
           val t = compileAbs(args, body)
