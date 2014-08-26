@@ -36,14 +36,10 @@ object Compiler {
         case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Str(n), args, body)) => compileFunction(args, body)
 
         case SExp.Lst(List(SExp.Keyword("fact"), head)) => constraints += Constraint.Fact(compilePredicate(head))
-        case SExp.Lst(SExp.Keyword("rule") :: head :: tail) => constraints += compileRule(head, tail)
+        case SExp.Lst(List(SExp.Keyword("rule"), head, SExp.Lst(body))) => constraints += Constraint.Rule(compilePredicate(head), body map compilePredicate)
       }
     }
     Program(declarations.toList, constraints.toList)
-  }
-
-  def compileRule(head: SExp, body: List[SExp]): Constraint = {
-    ???
   }
 
   def compilePredicate(e: SExp): Predicate = e match {
@@ -53,8 +49,7 @@ object Compiler {
   def compileFunction(args: SExp, body: SExp): Term = Term.Unit // TODO
 
   def compileTerm(e: SExp): Term = e match {
-    case SExp.Lst(SExp.Keyword("match") :: exp :: cases) => compileTerm(exp); Term.Unit // TODO
-
+    case SExp.Var(x) => Term.Var(Symbol.VariableSymbol(x))
     case SExp.Unit(token) => Term.Unit
     case SExp.Bool(token) => Term.Bool(token.toBoolean)
     case SExp.Int(token) => Term.Int(token.toInt)
@@ -65,6 +60,9 @@ object Compiler {
     case SExp.Lst(List(e1, e2, e3)) => Term.Tuple3(compileTerm(e1), compileTerm(e2), compileTerm(e3))
     case SExp.Lst(List(e1, e2, e3, e4)) => Term.Tuple4(compileTerm(e1), compileTerm(e2), compileTerm(e3), compileTerm(e4))
     case SExp.Lst(List(e1, e2, e3, e4, e5)) => Term.Tuple5(compileTerm(e1), compileTerm(e2), compileTerm(e3), compileTerm(e4), compileTerm(e5))
+
+    case SExp.Lst(SExp.Keyword("match") :: exp :: cases) => compileTerm(exp); Term.Unit // TODO
+
 
     case _ => throw new RuntimeException(s"Unexpected term: $e")
   }
