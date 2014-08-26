@@ -18,14 +18,6 @@ object Compiler {
   val types = mutable.Map.empty[Symbol.TypeSymbol, Type]
   val funcs = mutable.Map.empty[SExp.Name, Term]
 
-  def main(args: Array[String]): Unit = {
-    val file = new File(args(0))
-    val ast = Parser.parse(file)
-    println(ast)
-
-    println(compile(ast))
-  }
-
   def compile(es: List[SExp]): Unit = {
     for (e <- es) {
       e match {
