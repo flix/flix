@@ -1,20 +1,20 @@
 package impl.logic
 
-// 10. Introduce types in horn clauses.
-// 12. Rewrite solver to use lambdas and types.
-// 15. Desugar Terms and Types to SMT Lib
-
 /**
- * A program consists of a set of horn clauses.
+ * A program consists of a list of declarations and constraints.
  */
-case class Program(clauses: List[HornClause], lattices: Map[Symbol.PredicateSymbol, Lattice]) {
+case class Program(constraints: List[Constraint], lattices: Map[Symbol.PredicateSymbol, Lattice]) {
   /**
-   * Returns the set of facts, i.e. horn clauses with an empty body.
+   * Returns the list of facts.
    */
-  def facts: List[HornClause] = clauses filter (c => c.isFact)
+  def facts: List[Constraint.Fact] = constraints collect {
+    case f@Constraint.Fact(head) => f
+  }
 
   /**
-   * Returns the set of rules, i.e. horn clauses with a non-empty body.
+   * Returns the list of rules.
    */
-  def rules: List[HornClause] = clauses filterNot (c => c.isFact)
+  def rules: List[Constraint.Rule] = constraints collect {
+    case r@Constraint.Rule(head, body) => r
+  }
 }

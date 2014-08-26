@@ -12,7 +12,7 @@ trait Declaration
 
 object Declaration {
 
-  case class DeclareConstraint(constraint: Constraint) extends Declaration
+  case class DeclareConstraint(constraint: String) extends Declaration
 
   case class DeclareFun(name: Symbol.FunctionSymbol, t: Term.Abs, typ: Type) extends Declaration
 
@@ -24,14 +24,4 @@ object Declaration {
    * A declaration of the least-upper-bound function `t` for the type `typ`.
    */
   case class DeclareLub(t: Term.Abs, typ: Type) extends Declaration
-}
-
-trait Constraint
-
-object Constraint {
-
-  case class Fact(head: Predicate) extends Constraint
-
-  case class Rule(head: Predicate, body: List[Predicate]) extends Constraint
-
 }

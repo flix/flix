@@ -116,47 +116,49 @@ class Verifier(val program: Program) {
    * Returns an SMT formula for function defined by the predicate symbol `s` with the given `sort`.
    */
   def relation2(s: PSym, sorts: List[String]): SmtDeclaration = {
-    val clauses = program.clauses.filter(_.head.name == s)
-
-    val (x, y) = (Symbol.freshVariableSymbol("x"), Symbol.freshVariableSymbol("y"))
-
-    val p = Predicate(s, List(Term.Var(x), Term.Var(y)), ???)
-    val formulae = SmtFormula.Disjunction(clauses.map {
-      h => Unification.unify(h.head, p, Map.empty[VSym, Term]) match {
-        case None => SmtFormula.True // nop
-        case Some(env) =>
-          if (h.isFact)
-            asFormula(Set(x, y), env)
-          else
-            SmtFormula.True // TODO
-      }
-    })
-
-    SmtDeclaration.Relation(s, sorts, List(x, y), formulae)
+    ???
+//    val clauses = program.clauses.filter(_.head.name == s)
+//
+//    val (x, y) = (Symbol.freshVariableSymbol("x"), Symbol.freshVariableSymbol("y"))
+//
+//    val p = Predicate(s, List(Term.Var(x), Term.Var(y)), ???)
+//    val formulae = SmtFormula.Disjunction(clauses.map {
+//      h => Unification.unify(h.head, p, Map.empty[VSym, Term]) match {
+//        case None => SmtFormula.True // nop
+//        case Some(env) =>
+//          if (h.isFact)
+//            asFormula(Set(x, y), env)
+//          else
+//            SmtFormula.True // TODO
+//      }
+//    })
+//
+//    SmtDeclaration.Relation(s, sorts, List(x, y), formulae)
   }
 
   /**
    * Returns an SMT formula for function defined by the predicate symbol `s` with the given `sort`.
    */
   def relation3(s: PSym, sorts: List[String]): SmtDeclaration = {
-    val clauses = program.clauses.filter(_.head.name == s)
-
-    // TODO: Need to genereate fresh symbols.
-    val (x, y, z) = (Symbol.VariableSymbol("x0"), Symbol.VariableSymbol("y0"), Symbol.VariableSymbol("z0"))
-
-    val p = Predicate(s, List(Term.Var(x), Term.Var(y), Term.Var(z)), ???)
-    val formulae = SmtFormula.Disjunction(clauses.map {
-      h => Unification.unify(p, h.head, Map.empty[VSym, Term]) match {
-        case None => SmtFormula.True // nop
-        case Some(env) =>
-          if (h.isFact)
-            asFormula(Set(x, y, z), env)
-          else
-            SmtFormula.True // TODO
-      }
-    })
-
-    SmtDeclaration.Relation(s, sorts, List(x, y, z), formulae)
+    ???
+//    val clauses = program.clauses.filter(_.head.name == s)
+//
+//    // TODO: Need to genereate fresh symbols.
+//    val (x, y, z) = (Symbol.VariableSymbol("x0"), Symbol.VariableSymbol("y0"), Symbol.VariableSymbol("z0"))
+//
+//    val p = Predicate(s, List(Term.Var(x), Term.Var(y), Term.Var(z)), ???)
+//    val formulae = SmtFormula.Disjunction(clauses.map {
+//      h => Unification.unify(p, h.head, Map.empty[VSym, Term]) match {
+//        case None => SmtFormula.True // nop
+//        case Some(env) =>
+//          if (h.isFact)
+//            asFormula(Set(x, y, z), env)
+//          else
+//            SmtFormula.True // TODO
+//      }
+//    })
+//
+//    SmtDeclaration.Relation(s, sorts, List(x, y, z), formulae)
   }
 
   /**

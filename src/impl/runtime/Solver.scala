@@ -38,12 +38,12 @@ class Solver(val program: Program) {
    *
    * If a horn clause `h` contains a predicate `p` then the map contains the element `p -> h`.
    */
-  val dependencies = mutable.MultiMap1.empty[PSym, HornClause]
+  val dependencies = mutable.MultiMap1.empty[PSym, Constraint.Rule]
 
   /**
    * A work list of pending horn clauses (and their associated environments).
    */
-  val queue = scala.collection.mutable.Queue.empty[(HornClause, Map[VSym, Value])]
+  val queue = scala.collection.mutable.Queue.empty[(Constraint, Map[VSym, Value])]
 
   /**
    * The fixpoint computation.
@@ -51,7 +51,7 @@ class Solver(val program: Program) {
   def solve(): Unit = {
     // Find dependencies between predicates and horn clauses.
     // A horn clause `h` depends on predicate `p` iff `p` occurs in the body of `h`.
-    for (h <- program.clauses; p <- h.body) {
+    for (h <- program.rules; p <- h.body) {
       dependencies.put(p.name, h)
     }
 
@@ -167,7 +167,7 @@ class Solver(val program: Program) {
   /**
    * Returns a list of models for the given horn clause `h` under the given environment `env0`.
    */
-  def evaluate(h: HornClause, env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
+  def evaluate(h: Constraint, env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
     // Evaluate relational predicates before functional predicates.
     val predicates = h.body // TODO: Decide evaluation order.
 
@@ -220,7 +220,7 @@ class Solver(val program: Program) {
   // TODO: Must take cycles into account.
   def getSat(p: Predicate, env0: Map[VSym, Term] = Map.empty): List[Map[VSym, Term]] = {
     // TODO: Rewrite to loop
-    program.clauses.flatMap {
+    program.constraints.flatMap {
       h => Unification.unify(p, h.head, env0) match {
         case None =>
           // Head predicate is not satisfied. No need to look at body.

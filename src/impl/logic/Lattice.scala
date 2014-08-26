@@ -10,4 +10,4 @@ case class Lattice(name: Symbol.LatticeSymbol,
                    lub: Symbol.PredicateSymbol,
                    height: Symbol.PredicateSymbol,
                    funcs: List[Symbol.PredicateSymbol], // TODO: Consider different way to represent this??? should leq etc go here?
-                   clauses: List[HornClause])
+                   clauses: List[Constraint])
