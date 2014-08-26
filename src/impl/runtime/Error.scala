@@ -6,7 +6,6 @@ trait Error
 
 object Error {
   // TODO: Cleanup in errors...
-  case class UnsupportedInterpretation(s: Symbol.PredicateSymbol, i: Interpretation) extends RuntimeException(s"$s: $i")
   case class NonUniqueModel(p: Symbol.PredicateSymbol) extends RuntimeException
   case class NonGroundPredicate(p: Symbol.PredicateSymbol) extends RuntimeException
   case class TypeError(expected: Type, actual: Value) extends RuntimeException(s"Expected value of type '$expected'. But got: '$actual'.")

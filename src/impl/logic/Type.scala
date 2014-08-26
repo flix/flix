@@ -2,10 +2,9 @@ package impl.logic
 
 sealed trait Type {
 
-  /**
-   * Returns `true` iff the type is a base type.
-   */
-  def isBaseType: Boolean = ??? // TODO: Non function type?????
+  def isSetMap: Boolean = ???
+
+  def isLatMap: Boolean = ???
 
 }
 
@@ -42,9 +41,14 @@ object Type {
   case class Tagged(name: Symbol.NamedSymbol, typ: Type) extends Type
 
   /**
-   * The type of sum types.
+   * The type of sums.
    */
   case class Sum(ts: List[Type]) extends Type
+
+  /**
+   * The type of sets.
+   */
+  case class Set(typ1: Type) extends Type
 
   /**
    * The type of 2-tuples.

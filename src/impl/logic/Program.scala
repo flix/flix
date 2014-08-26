@@ -1,16 +1,13 @@
 package impl.logic
 
 // 10. Introduce types in horn clauses.
-// 11. Change definition of a program to be a list of rules and a list of named lambdas, and a list of declared types.
 // 12. Rewrite solver to use lambdas and types.
-// 13. Remove deprecated code.
-// 14. Introduce s-expression like language for all of the above.
 // 15. Desugar Terms and Types to SMT Lib
 
 /**
  * A program consists of a set of horn clauses.
  */
-case class Program(clauses: List[HornClause], interpretation: Map[Symbol.PredicateSymbol, Interpretation], lattices: Map[Symbol.PredicateSymbol, Lattice]) {
+case class Program(clauses: List[HornClause], lattices: Map[Symbol.PredicateSymbol, Lattice]) {
   /**
    * Returns the set of facts, i.e. horn clauses with an empty body.
    */

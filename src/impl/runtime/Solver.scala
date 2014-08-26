@@ -57,7 +57,7 @@ class Solver(val program: Program) {
 
     // Satisfy all facts. Satisfying a fact adds violated horn clauses (and environments) to the work list.
     for (h <- program.facts) {
-      newProvenFact(h.head, program.interpretation(h.head.name), Map.empty[VSym, Value])
+      newProvenFact(h.head, Map.empty[VSym, Value])
     }
 
     // Iteratively try to satisfy pending horn clauses.
@@ -67,7 +67,7 @@ class Solver(val program: Program) {
 
       val models = evaluate(h, env)
       for (model <- models) {
-        newProvenFact(h.head, program.interpretation(h.head.name), model)
+        newProvenFact(h.head, model)
       }
     }
   }
@@ -89,45 +89,45 @@ class Solver(val program: Program) {
   /**
    * Adds the given predicate `p` as a known ground fact under the given interpretation `i` and environment `env`.
    */
-  def newProvenFact(p: Predicate, i: Interpretation, env: Map[VSym, Value]): Unit = {
+  def newProvenFact(p: Predicate, env: Map[VSym, Value]): Unit = {
     println("--> " + p.toGround(env).fmt)
 
     facts += p.toGround(env)
-    // TODO: Collapse into one DataStore
-    i match {
-      case Interpretation.Relation => p.terms match {
+
+    if (p.typ.isSetMap) {
+      p.terms match {
         case List(t1) =>
           val v1 = Interpreter.evaluate(t1, env)
           val newFact = relation1.put(p.name, v1)
           if (newFact)
-            propagateFact(Predicate(p.name, List(v1.toTerm)))
+            propagateFact(Predicate(p.name, List(v1.toTerm), ???))
 
         case List(t1, t2) =>
           val (v1, v2) = (Interpreter.evaluate(t1, env), Interpreter.evaluate(t2, env))
           val newFact = relation2.put(p.name, (v1, v2))
           if (newFact)
-            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm)))
+            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm), ???))
 
         case List(t1, t2, t3) =>
           val (v1, v2, v3) = (Interpreter.evaluate(t1, env), Interpreter.evaluate(t2, env), Interpreter.evaluate(t3, env))
           val newFact = relation3.put(p.name, (v1, v2, v3))
           if (newFact)
-            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm)))
+            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm), ???))
 
         case List(t1, t2, t3, t4) =>
           val (v1, v2, v3, v4) = (Interpreter.evaluate(t1, env), Interpreter.evaluate(t2, env), Interpreter.evaluate(t3, env), Interpreter.evaluate(t4, env))
           val newFact = relation4.put(p.name, (v1, v2, v3, v4))
           if (newFact)
-            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm)))
+            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm), ???))
 
         case List(t1, t2, t3, t4, t5) =>
           val (v1, v2, v3, v4, v5) = (Interpreter.evaluate(t1, env), Interpreter.evaluate(t2, env), Interpreter.evaluate(t3, env), Interpreter.evaluate(t4, env), Interpreter.evaluate(t5, env))
           val newFact = relation5.put(p.name, (v1, v2, v3, v4, v5))
           if (newFact)
-            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm, v5.toTerm)))
+            propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm, v5.toTerm), ???))
       }
-
-      case Interpretation.Lattice => p.terms match {
+    } else if (p.typ.isLatMap) {
+      p.terms match {
         case List(t1) =>
           val lattice = program.lattices(p.name)
           val newValue = Interpreter.evaluate(t1, env)
@@ -136,9 +136,11 @@ class Solver(val program: Program) {
           val newFact: Boolean = !leq2(lattice.leq, joinValue, oldValue)
           if (newFact) {
             map1.put(p.name, joinValue)
-            propagateFact(Predicate(p.name, List(joinValue.toTerm)))
+            propagateFact(Predicate(p.name, List(joinValue.toTerm), ???))
           }
       }
+    } else {
+      throw new RuntimeException()
     }
   }
 
@@ -172,45 +174,38 @@ class Solver(val program: Program) {
     // Fold each predicate over the intial environment.
     val init = List(env0)
     (init /: predicates) {
-      case (envs, p) => envs.flatMap(env => evaluate(p, program.interpretation(p.name), env))
+      case (envs, p) => envs.flatMap(env => evaluate(p, env))
     }
   }
 
   /**
    * Returns a list of environments for the given predicate `p` with interpretation `i` under the given environment `env0`.
    */
-  def evaluate(p: Predicate, i: Interpretation, env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
+  def evaluate(p: Predicate, env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
     if (isProvenFact(p, env0)) {
       return List(env0)
     }
 
-//    val typ: Type = ???
-//    typ match {
-//      case Type.Function(t1, t2) if t2.isBaseType => ???
-//      case Type.Function(t1, Type.Function(t2, t3)) if t3.isBaseType => ???
-//    }
-
-
-    i match {
-      case Interpretation.Relation =>
-        p.terms match {
-          case ts@List(t1) => relation1.get(p.name).toList.flatMap {
-            case v1 => Unification.unifyValues(ts, List(v1), env0)
-          }
-          case ts@List(t1, t2) => relation2.get(p.name).toList.flatMap {
-            case (v1, v2) => Unification.unifyValues(ts, List(v1, v2), env0)
-          }
-          case ts@List(t1, t2, t3) => relation3.get(p.name).toList.flatMap {
-            case (v1, v2, v3) => Unification.unifyValues(ts, List(v1, v2, v3), env0)
-          }
-          case ts@List(t1, t2, t3, t4) => relation4.get(p.name).toList.flatMap {
-            case (v1, v2, v3, v4) => Unification.unifyValues(ts, List(v1, v2, v3, v4), env0)
-          }
-          case ts@List(t1, t2, t3, t4, t5) => relation5.get(p.name).toList.flatMap {
-            case (v1, v2, v3, v4, v5) => Unification.unifyValues(ts, List(v1, v2, v3, v4, v5), env0)
-          }
+    if (p.typ.isSetMap) {
+      p.terms match {
+        case ts@List(t1) => relation1.get(p.name).toList.flatMap {
+          case v1 => Unification.unifyValues(ts, List(v1), env0)
         }
-      case _ => throw Error.UnsupportedInterpretation(p.name, i)
+        case ts@List(t1, t2) => relation2.get(p.name).toList.flatMap {
+          case (v1, v2) => Unification.unifyValues(ts, List(v1, v2), env0)
+        }
+        case ts@List(t1, t2, t3) => relation3.get(p.name).toList.flatMap {
+          case (v1, v2, v3) => Unification.unifyValues(ts, List(v1, v2, v3), env0)
+        }
+        case ts@List(t1, t2, t3, t4) => relation4.get(p.name).toList.flatMap {
+          case (v1, v2, v3, v4) => Unification.unifyValues(ts, List(v1, v2, v3, v4), env0)
+        }
+        case ts@List(t1, t2, t3, t4, t5) => relation5.get(p.name).toList.flatMap {
+          case (v1, v2, v3, v4, v5) => Unification.unifyValues(ts, List(v1, v2, v3, v4, v5), env0)
+        }
+      }
+    } else {
+      throw new RuntimeException()
     }
   }
 
@@ -260,7 +255,7 @@ class Solver(val program: Program) {
    * Returns `true` iff `v1` is less or equal to `v2`.
    */
   private def leq2(s: PSym, v1: Value, v2: Value): Boolean = {
-    val p = Predicate(s, List(v1.toTerm, v2.toTerm))
+    val p = Predicate(s, List(v1.toTerm, v2.toTerm), ???)
     val models = getSat(p)
     models.nonEmpty
   }
@@ -269,7 +264,7 @@ class Solver(val program: Program) {
    * Returns the join of `v1` and `v2`.
    */
   private def join2(s: PSym, v1: Value, v2: Value): Value = {
-    val p = Predicate(s, List(v1.toTerm, v2.toTerm, Term.Var(Symbol.VariableSymbol("!x"))))
+    val p = Predicate(s, List(v1.toTerm, v2.toTerm, Term.Var(Symbol.VariableSymbol("!x"))), ???)
     val models = getSat(p)
 
     val value = asUniqueValue(Symbol.VariableSymbol("!x"), models)
