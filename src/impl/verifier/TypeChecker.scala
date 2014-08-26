@@ -4,17 +4,19 @@ import impl.logic.Symbol.{VariableSymbol => VSym}
 import impl.logic.{BinaryOperator, Term, Type, UnaryOperator}
 import impl.runtime.Error
 
-import scala.util.Try
-
 object TypeChecker {
 
   /**
-   * Tryes to type check the given term `t`. 
+   * Returns the type of the given term `t` under the empty typing enviroment.
+   *
+   * Throws an exception if the term cannot be typed.
    */
-  def typecheck(t: Term): Try[Type] = Try(typecheck(t, Map.empty))
+  def typecheck(t: Term): Type = typecheck(t, Map.empty[VSym, Type])
 
   /**
-   * Type-checks and returns the type of the given term `t` under the given type environment `typenv`.
+   * Returns the type of the given term `t` under the given typing enviroment `typenv`.
+   *
+   * Throws an exception if the term cannot be typed.
    */
   def typecheck(t: Term, typenv: Map[VSym, Type]): Type = t match {
     case Term.Unit => Type.Unit

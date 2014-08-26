@@ -26,6 +26,11 @@ object Interpreter {
   }
 
   /**
+   * Evaluates the given term `t` under the empty environment.
+   */
+  def evaluate(t: Term): Value = evaluate(t, Map.empty[VSym, Value])
+
+  /**
    * A big-step evaluator for lambda terms.
    */
   def evaluate(t: Term, env: Map[VSym, Value]): Value = t match {

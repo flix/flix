@@ -1,7 +1,8 @@
 package impl.ast
 
 import impl.logic._
-import impl.runtime.Error
+import impl.runtime.{Interpreter, Error}
+import impl.verifier.TypeChecker
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -32,7 +33,11 @@ object Compiler {
         case SExp.Lst(List(SExp.Keyword("def-type"), SExp.Name(n), typ)) =>
           types += ((Symbol.TypeSymbol(n), compileType(typ)))
 
-        case SExp.Lst(List(SExp.Keyword("def-bot"), SExp.Name(n), exp)) => compileTerm(exp)
+        case SExp.Lst(List(SExp.Keyword("def-bot"), SExp.Name(n), exp)) =>
+          val t = compileTerm(exp)
+          val typ = TypeChecker.typecheck(t)
+          val v = Interpreter.evaluate(t)
+          Declaration.DeclareBot(v, typ)
 
         case SExp.Lst(List(SExp.Keyword("def-leq"), SExp.Name(n), args, body)) => compileFunction(args, body)
 
