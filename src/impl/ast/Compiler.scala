@@ -39,16 +39,16 @@ object Compiler {
           val v = Interpreter.evaluate(t)
           declarations += Declaration.DeclareBot(v, typ)
 
-        case SExp.Lst(List(SExp.Keyword("def-leq"), SExp.Name(n), args, body)) =>
+        case SExp.Lst(List(SExp.Keyword("def-leq"), SExp.Name(n), SExp.Lst(args), body)) =>
           val t = compileFunction(args, body)
 
-        case SExp.Lst(List(SExp.Keyword("def-lub"), SExp.Name(n), args, body)) =>
+        case SExp.Lst(List(SExp.Keyword("def-lub"), SExp.Name(n), SExp.Lst(args), body)) =>
           val t = compileFunction(args, body)
 
-        case SExp.Lst(List(SExp.Keyword("def-height"), SExp.Name(n), args, body)) =>
+        case SExp.Lst(List(SExp.Keyword("def-height"), SExp.Name(n), SExp.Lst(args), body)) =>
           val t = compileFunction(args, body)
 
-        case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Str(n), args, body)) =>
+        case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Str(n), SExp.Lst(args), body)) =>
           val t = compileFunction(args, body)
 
         case SExp.Lst(List(SExp.Keyword("fact"), head)) =>
@@ -69,7 +69,17 @@ object Compiler {
     case _ => throw Error.UnableToParsePredicate(e)
   }
 
-  def compileFunction(args: SExp, body: SExp): Term = Term.Unit // TODO
+  /**
+   * Compiles the given function to a term.
+   */
+  def compileFunction(args: List[SExp], body: SExp): Term = {
+    def visit(xs: List[SExp]): Term = xs match {
+      case SExp.Var(x) :: t :: rest => Term.Abs(Symbol.VariableSymbol(x), compileType(t), visit(rest))
+      case Nil => compileTerm(body)
+      case _ => ???
+    }
+    visit(args)
+  }
 
   /**
    * Compiles the given s-expression `e` to a term.
