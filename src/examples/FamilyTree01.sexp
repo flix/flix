@@ -1,3 +1,8 @@
+(def-type Parent (Set [String String]))
+(def-type Male (Set String))
+(def-type Female (Set String))
+(def-type MaleGrandParent (Set [String String]))
+
 (fact (Parent "Caroline" "IngerM"))
 (fact (Parent "Caroline" "FritsT"))
 (fact (Parent "Bjarke" "IngerM"))

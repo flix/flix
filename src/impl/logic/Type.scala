@@ -61,6 +61,11 @@ object Type {
   case class Set(typ1: Type) extends Type
 
   /**
+   * The type of lattices.
+   */
+  case class Lat(typ1: Type) extends Type
+
+  /**
    * The type of 2-tuples.
    */
   case class Tuple2(typ1: Type, typ2: Type) extends Type

@@ -54,7 +54,7 @@ object Parser {
     /**
      * S-expression.
      */
-    def sexp: Parser[SExp] = "(" ~> rep(body) <~ ")" ^^ SExp.Lst
+    def sexp: Parser[SExp] = ("(" ~> rep(body) <~ ")" ^^ SExp.Lst) | ("[" ~> rep(body) <~ "]" ^^ SExp.Lst)
 
     /**
      * Declaration.

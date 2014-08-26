@@ -5,6 +5,7 @@ import impl.logic._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+// TODO: Str or String. FIXME.
 // TODO: Rename: def-type to def lattice?
 // TODO: Figure out ordering.
 // TODO: Introduce fact and rule, not just rule.
@@ -77,8 +78,16 @@ object Compiler {
   }
 
   def compileType(e: SExp): Type = e match {
-    case SExp.Name(s) => Type.Tagged(Symbol.NamedSymbol(s), Type.Unit)
-    case SExp.Lst(types) => Type.Sum(types.map(compileType))
+    case SExp.Name("Bool") => Type.Bool
+    case SExp.Name("Int") => Type.Int
+    case SExp.Name("String") => Type.Str
+
+    case SExp.Lst(List(SExp.Name("Set"), t)) => Type.Set(compileType(t))
+    case SExp.Lst(List(SExp.Name("Lat"), t)) => Type.Lat(compileType(t))
+    case SExp.Lst(List(e1, e2)) => Type.Tuple2(compileType(e1), compileType(e2))
+
+
+    // TODO: Need a way to deal with variants. Probably introducing a Variant keywoird in the sexp
     case _ => throw new RuntimeException(s"Unexpected type: $e")
   }
 
