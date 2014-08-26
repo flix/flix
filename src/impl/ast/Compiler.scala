@@ -40,16 +40,18 @@ object Compiler {
           declarations += Declaration.DeclareBot(v, typ)
 
         case SExp.Lst(List(SExp.Keyword("def-leq"), SExp.Name(n), SExp.Lst(args), body)) =>
-          val t = compileFunction(args, body)
+          val t = compileAbs(args, body)
+          val typ = TypeChecker.typecheck(t)
+          declarations += Declaration.DeclareLeq(t, typ)
 
         case SExp.Lst(List(SExp.Keyword("def-lub"), SExp.Name(n), SExp.Lst(args), body)) =>
-          val t = compileFunction(args, body)
+          val t = compileAbs(args, body)
 
         case SExp.Lst(List(SExp.Keyword("def-height"), SExp.Name(n), SExp.Lst(args), body)) =>
-          val t = compileFunction(args, body)
+          val t = compileAbs(args, body)
 
         case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Str(n), SExp.Lst(args), body)) =>
-          val t = compileFunction(args, body)
+          val t = compileAbs(args, body)
 
         case SExp.Lst(List(SExp.Keyword("fact"), head)) =>
           constraints += Constraint.Fact(compilePredicate(head))
@@ -72,13 +74,13 @@ object Compiler {
   /**
    * Compiles the given function to a term.
    */
-  def compileFunction(args: List[SExp], body: SExp): Term = {
+  def compileAbs(args: List[SExp], body: SExp): Term.Abs = {
     def visit(xs: List[SExp]): Term = xs match {
       case SExp.Var(x) :: t :: rest => Term.Abs(Symbol.VariableSymbol(x), compileType(t), visit(rest))
       case Nil => compileTerm(body)
       case _ => ???
     }
-    visit(args)
+    visit(args).asInstanceOf[Term.Abs]
   }
 
   /**
