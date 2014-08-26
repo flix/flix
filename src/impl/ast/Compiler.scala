@@ -104,7 +104,6 @@ object Compiler {
 
     case SExp.Lst(SExp.Keyword("match") :: cond :: cases) =>
       val pattern = compilePattern(cond)
-
       ???
 
     case SExp.Label(s) => Term.Tagged(Symbol.NamedSymbol(s), Term.Unit, labels(s))
