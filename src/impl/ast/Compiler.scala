@@ -40,16 +40,16 @@ object Compiler {
           declarations += Declaration.DeclareBot(v, typ)
 
         case SExp.Lst(List(SExp.Keyword("def-leq"), SExp.Name(n), args, body)) =>
-          compileFunction(args, body)
+          val t = compileFunction(args, body)
 
         case SExp.Lst(List(SExp.Keyword("def-lub"), SExp.Name(n), args, body)) =>
-          compileFunction(args, body)
+          val t = compileFunction(args, body)
 
         case SExp.Lst(List(SExp.Keyword("def-height"), SExp.Name(n), args, body)) =>
-          compileFunction(args, body)
+          val t = compileFunction(args, body)
 
         case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Str(n), args, body)) =>
-          compileFunction(args, body)
+          val t = compileFunction(args, body)
 
         case SExp.Lst(List(SExp.Keyword("fact"), head)) =>
           constraints += Constraint.Fact(compilePredicate(head))
