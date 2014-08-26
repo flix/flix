@@ -130,6 +130,7 @@ object Compiler {
     case SExp.Name("Bool") => Type.Bool
     case SExp.Name("Int") => Type.Int
     case SExp.Name("Str") => Type.Str
+    case SExp.Name(s) => types(s)
     case SExp.Lst(List(SExp.Label(s))) => Type.Tagged(Symbol.NamedSymbol(s), Type.Unit)
     case SExp.Lst(List(SExp.Label(s), e1)) => Type.Tagged(Symbol.NamedSymbol(s), compileType(e))
     case SExp.Lst(List(SExp.Name("Set"), e1)) => Type.Set(compileType(e1))

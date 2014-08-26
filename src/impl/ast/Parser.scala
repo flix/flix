@@ -49,7 +49,7 @@ object Parser {
     /**
      * Variables.
      */
-    def variable: Parser[SExp.Var] =  ("""[a-z+-/\*]+""".r | "_") ^^ SExp.Var
+    def variable: Parser[SExp.Var] =  ("""[a-z][0-9a-z]*""".r | "_") ^^ SExp.Var
 
     /**
      * S-expression body.

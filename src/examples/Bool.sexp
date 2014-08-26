@@ -2,14 +2,14 @@
 
 (def-bot BoolLat :Bot)
 
-(def-leq (e1 BoolLat e2 BoolLat)
+(def-leq BoolLat (e1 BoolLat e2 BoolLat)
     (match (e1 e2)
         (case (:Bot _)          true)
         (case (:True :True)     true)
         (case (:False :False)   true)
         (case (_ :Top)          true)))
 
-(def-lub (e1 BoolLat e2 BoolLat)
+(def-lub BoolLat (e1 BoolLat e2 BoolLat)
     (match (e1 e2)
         (case (:Bot x)          x)
         (case (x :Bot)          x)
@@ -17,7 +17,7 @@
         (case (:False :False)   :False)
         (case _                 :Top)))
 
-(def-height (e BoolLat)
+(def-height BoolLat (e BoolLat)
     (match (e)
         (case :Top      1)
         (case :True     2)
