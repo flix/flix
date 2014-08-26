@@ -37,18 +37,25 @@ object Compiler {
           val t = compileTerm(exp)
           val typ = TypeChecker.typecheck(t)
           val v = Interpreter.evaluate(t)
-          Declaration.DeclareBot(v, typ)
+          declarations += Declaration.DeclareBot(v, typ)
 
-        case SExp.Lst(List(SExp.Keyword("def-leq"), SExp.Name(n), args, body)) => compileFunction(args, body)
+        case SExp.Lst(List(SExp.Keyword("def-leq"), SExp.Name(n), args, body)) =>
+          compileFunction(args, body)
 
-        case SExp.Lst(List(SExp.Keyword("def-lub"), SExp.Name(n), args, body)) => compileFunction(args, body)
+        case SExp.Lst(List(SExp.Keyword("def-lub"), SExp.Name(n), args, body)) =>
+          compileFunction(args, body)
 
-        case SExp.Lst(List(SExp.Keyword("def-height"), SExp.Name(n), args, body)) => compileFunction(args, body)
+        case SExp.Lst(List(SExp.Keyword("def-height"), SExp.Name(n), args, body)) =>
+          compileFunction(args, body)
 
-        case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Str(n), args, body)) => compileFunction(args, body)
+        case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Str(n), args, body)) =>
+          compileFunction(args, body)
 
-        case SExp.Lst(List(SExp.Keyword("fact"), head)) => constraints += Constraint.Fact(compilePredicate(head))
-        case SExp.Lst(List(SExp.Keyword("rule"), head, SExp.Lst(body))) => constraints += Constraint.Rule(compilePredicate(head), body map compilePredicate)
+        case SExp.Lst(List(SExp.Keyword("fact"), head)) =>
+          constraints += Constraint.Fact(compilePredicate(head))
+
+        case SExp.Lst(List(SExp.Keyword("rule"), head, SExp.Lst(body))) =>
+          constraints += Constraint.Rule(compilePredicate(head), body map compilePredicate)
       }
     }
     Program(declarations.toList, constraints.toList)
