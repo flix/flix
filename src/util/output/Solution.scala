@@ -8,11 +8,6 @@ import syntax.Values._
 object Solution {
 
   def print(s: Solver): Unit = {
-    println("*** Program ***")
-    println(s.program.fmt)
-    println()
-    println()
-
     println("*** Relations ***")
     for ((p, vs) <- s.relation1; v1 <- vs) {
       println(p.fmt + "(" + v1.fmt + ").")

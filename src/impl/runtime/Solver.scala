@@ -8,7 +8,7 @@ import util.collection.mutable
 /**
  * A semi-naive solver.
  */
-class Solver(val program: Program) {
+class Solver(program: Program) {
 
   /**
    * A set of predicate facts.

@@ -1,7 +1,5 @@
 package impl.ast
 
-import java.io.File
-
 import impl.logic._
 
 import scala.collection.mutable
@@ -18,7 +16,7 @@ object Compiler {
   val types = mutable.Map.empty[Symbol.TypeSymbol, Type]
   val funcs = mutable.Map.empty[SExp.Name, Term]
 
-  def compile(es: List[SExp]): Unit = {
+  def compile(es: List[SExp]): Program = {
     for (e <- es) {
       e match {
         case SExp.Lst(List(SExp.Keyword("def-type"), SExp.Name(n), typ)) =>
@@ -37,6 +35,7 @@ object Compiler {
         case SExp.Lst(SExp.Keyword("rule") :: head :: tail) => compileRule(head, tail)
       }
     }
+    ???
   }
 
   def compileRule(head: SExp, body: List[SExp]): Unit = {
