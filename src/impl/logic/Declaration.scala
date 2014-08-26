@@ -3,9 +3,6 @@ package impl.logic
 trait Declaration
 
 object Declaration {
-  // TODO: Do we need this?
-  case class DeclareFun(name: Symbol.FunctionSymbol, t: Term.Abs, typ: Type) extends Declaration
-
   /**
    * A declaration of the bottom element for the type `typ`.
    */

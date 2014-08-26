@@ -162,8 +162,6 @@ class Solver(program: Program) {
   // Evaluation                                                              //
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Harmonize evaluate and getModel
-
   /**
    * Returns a list of models for the given horn clause `h` under the given environment `env0`.
    */
