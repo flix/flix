@@ -137,7 +137,9 @@ object Verifier {
       case Type.Tuple2(typ1, typ2) =>
         val (sortName, fieldSort1, fieldSort2) = (freshTypeName, visit(typ1), visit(typ2))
         types += typ -> sortName
-        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"),  SmtExp.Lst(Nil), SmtExp.Literal(sortName), SmtExp.Literal(fieldSort1), SmtExp.Literal(fieldSort2)))
+        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"),  SmtExp.Lst(Nil), SmtExp.Literal(sortName),
+          SmtExp.Lst(List(SmtExp.Literal(freshTypeName), SmtExp.Literal(fieldSort1))),
+          SmtExp.Lst(List(SmtExp.Literal(freshTypeName), SmtExp.Literal(fieldSort2)))))
         sortName
       case Type.Tuple3(typ1, typ2, typ3) =>
         val (sortName, fieldSort1, fieldSort2, fieldSort3) =  (freshTypeName, visit(typ1), visit(typ2), visit(typ3))
