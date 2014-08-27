@@ -110,29 +110,35 @@ object Verifier {
     "t" + Counter
   }
 
+  //  (declare-datatypes () ((Tuple2_Sort (Tuple2 (x Int) (y Int)))))
+  //  (declare-const z Tuple2_Sort)
+  //  (assert (= z (Tuple2 1 2)))
+  //  (check-sat)
+  //  (get-model)
+
+
   def foo(typ: Type): List[SmtExp] = {
     val result = ListBuffer.empty[SmtExp]
     def visit(typ: Type): String = typ match {
+      case Type.Unit => "unit"
       case Type.Bool => "bool"
       case Type.Int => "int"
+      case Type.Str => "str"
+
       case Type.Tuple2(typ1, typ2) =>
         val (n, n1, n2) = (freshTypeName, visit(typ1), visit(typ2))
-        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"), SmtExp.Literal(n), SmtExp.Literal(n1), SmtExp.Literal(n2)))
+        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"),  SmtExp.Lst(Nil), SmtExp.Literal(n), SmtExp.Literal(n1), SmtExp.Literal(n2)))
         n
       case Type.Tuple3(typ1, typ2, typ3) =>
         val (n, n1, n2, n3) =  (freshTypeName, visit(typ1), visit(typ2), visit(typ3))
-        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"), SmtExp.Literal(n), SmtExp.Literal(n1), SmtExp.Literal(n2), SmtExp.Literal(n3)))
+        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"), SmtExp.Lst(Nil), SmtExp.Literal(n), SmtExp.Literal(n1), SmtExp.Literal(n2), SmtExp.Literal(n3)))
         n
+
     }
     visit(typ)
 
     result.toList
   }
 
-  //  (declare-datatypes () ((Tuple2_Sort (Tuple2 (x Int) (y Int)))))
-  //  (declare-const z Tuple2_Sort)
-  //  (assert (= z (Tuple2 1 2)))
-  //  (check-sat)
-  //  (get-model)
 
 }
