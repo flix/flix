@@ -5,6 +5,8 @@ import java.io.{File, PrintWriter}
 import impl.logic.Symbol.{PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
 
+import scala.collection.mutable.ListBuffer
+
 object Verifier {
 
   val Z3 = System.getProperty("Z3", "C:\\Program Files\\Microsoft Z3\\z3-4.3.0-x64\\bin\\z3.exe")
@@ -23,8 +25,14 @@ object Verifier {
   def verify(program: Program): Unit = {
     for (decl <- program.declarations) {
       decl match {
-        case Declaration.DeclareLeq(t, typ) =>
-          LatticeLeq.reflexivity(???, ???)
+        case Declaration.DeclareLeq(t, Type.Function(typ1, typ2)) =>
+
+          val typDecl = genSym(typ1)
+          println(typDecl)
+
+          val r = getDecl(typ1)
+          println(r)
+
         case _ => // TODO
       }
     }
@@ -81,7 +89,6 @@ object Verifier {
   }
 
 
-
   def compileTerm(t: Term): SmtExp = t match {
     case Term.Unit => SmtExp.Literal("unit")
     case Term.Bool(b) => SmtExp.Literal(b.toString)
@@ -90,11 +97,11 @@ object Verifier {
 
     case Term.Var(x) => ???
 
-    case Term.Tagged(x, t1, _) =>             List(SmtExp.Literal(x.s), compileTerm(t1))
-    case Term.Tuple2(t1, t2) =>               List(SmtExp.Literal("Tuple2"), compileTerm(t1), compileTerm(t2))
-    case Term.Tuple3(t1, t2, t3) =>           List(SmtExp.Literal("Tuple3"), compileTerm(t1), compileTerm(t2), compileTerm(t3))
-    case Term.Tuple4(t1, t2, t3, t4) =>       List(SmtExp.Literal("Tuple4"), compileTerm(t1), compileTerm(t2), compileTerm(t3), compileTerm(t4))
-    case Term.Tuple5(t1, t2, t3, t4, t5) =>   List(SmtExp.Literal("Tuple5"), compileTerm(t1), compileTerm(t2), compileTerm(t3), compileTerm(t4), compileTerm(t5))
+    case Term.Tagged(x, t1, _) => List(SmtExp.Literal(x.s), compileTerm(t1))
+    case Term.Tuple2(t1, t2) => List(SmtExp.Literal("Tuple2"), compileTerm(t1), compileTerm(t2))
+    case Term.Tuple3(t1, t2, t3) => List(SmtExp.Literal("Tuple3"), compileTerm(t1), compileTerm(t2), compileTerm(t3))
+    case Term.Tuple4(t1, t2, t3, t4) => List(SmtExp.Literal("Tuple4"), compileTerm(t1), compileTerm(t2), compileTerm(t3), compileTerm(t4))
+    case Term.Tuple5(t1, t2, t3, t4, t5) => List(SmtExp.Literal("Tuple5"), compileTerm(t1), compileTerm(t2), compileTerm(t3), compileTerm(t4), compileTerm(t5))
 
   }
 
@@ -104,20 +111,52 @@ object Verifier {
   //  (check-sat)
   //  (get-model)
 
-  def compileType(typ: Type): SmtExp = typ match {
-    case Type.Unit => SmtExp.Literal("Unit")
-    case Type.Bool => SmtExp.Literal("Bool")
-    case Type.Int => SmtExp.Literal("Int")
-    case Type.Str => SmtExp.Literal("Int") // NB: Not a typo. Strings are simple constants.
+  private var Counter: Int = 0
 
-    case Type.Tagged(s, typ1) => ???
-    case Type.Tuple2(typ1, typ2) => List(SmtExp.Literal("declare-datatypes"), SmtExp.Literal("()"), SmtExp.Lst(List()))
-    case Type.Tuple3(typ1, typ2, typ3) => ???
-    case Type.Tuple4(typ1, typ2, typ3, typ4) => ???
-    case Type.Tuple5(typ1, typ2, typ3, typ4, typ5) => ???
+  private def freshTypeName: String = {
+    Counter += 1
+    "t" + Counter
   }
 
+  def getDecl(typ: Type): List[SmtExp] = {
+    val result = ListBuffer.empty[SmtExp]
+
+    def visit(t: Type): Unit = {
+      val name = genSym(t)
+      t match {
+        case Type.Bool => ???
+        case Type.Tuple2(typ1, typ2) =>
+          val name1 = genSym(typ1)
+          val name2 = genSym(typ2)
+
+          result += SmtExp.Lst(List(SmtExp.Literal("declare-type"), SmtExp.Literal(name), SmtExp.Lst(List(SmtExp.Literal(name), SmtExp.Literal(name1), SmtExp.Literal(name2)))))
+      }
+    }
+
+    visit(typ)
+
+    result.toList
+  }
+
+  def genSym(typ: Type): String = typ match {
+    case Type.Unit => "unit"
+    case Type.Bool => "bool"
+    case Type.Int => "int"
+    case Type.Str => "str"
+
+    case Type.Sum(ts) => "variant_" + ts.map(genSym).mkString("_")
+
+    case Type.Tagged(s, typ1) => s.s + "_" + genSym(typ1)
+    case Type.Tuple2(typ1, typ2) => "tuple2_" + genSym(typ1) + "_" + genSym(typ2)
+    case Type.Tuple3(typ1, typ2, typ3) => "tuple3_" + genSym(typ1) + "_" + genSym(typ2) + "_" + genSym(typ3)
+    case Type.Tuple4(typ1, typ2, typ3, typ4) => "tuple4_" + genSym(typ1) + "_" + genSym(typ2) + "_" + genSym(typ3) + "_" + genSym(typ4)
+    case Type.Tuple5(typ1, typ2, typ3, typ4, typ5) => "tuple5_" + genSym(typ1) + "_" + genSym(typ2) + "_" + genSym(typ3) + "_" + genSym(typ4) + "_" + genSym(typ5)
+  }
+
+  // TODO: Dont do this
+
   import scala.language.implicitConversions
+
   private implicit def lift(xs: List[SmtExp]): SmtExp = SmtExp.Lst(xs)
 
 }
