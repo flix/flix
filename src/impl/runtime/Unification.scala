@@ -4,6 +4,8 @@ import impl.logic.Symbol.{VariableSymbol => VSym}
 import impl.logic.{Predicate, Term, Value}
 
 object Unification {
+  // TODO: Need to take all new terms into consideration...
+
   /////////////////////////////////////////////////////////////////////////////
   // Predicate Unification                                                   //
   /////////////////////////////////////////////////////////////////////////////
@@ -25,14 +27,41 @@ object Unification {
    * Unifies the term `t` with the value `v` under the given environment `env0`.
    */
   def unify(t: Term, v: Value, env0: Map[VSym, Value]): Option[Map[VSym, Value]] = (t, v) match {
+    case (Term.Unit, Value.Unit) => Some(env0)
     case (Term.Bool(b1), Value.Bool(b2)) if b1 == b2 => Some(env0)
     case (Term.Int(i1), Value.Int(i2)) if i1 == i2 => Some(env0)
     case (Term.Str(s1), Value.Str(s2)) if s1 == s2 => Some(env0)
+
     case (Term.Var(s), v2) => env0.get(s) match {
       case None => Some(env0 + (s -> v2))
       case Some(v3) if v2 != v3 => None
       case Some(v3) if v2 == v3 => Some(env0)
     }
+
+    case (Term.Tagged(s1, t1, _), Value.Tagged(s2, v1, _)) if s1 == s2 => unify(t1, v1, env0)
+    case (Term.Tuple2(t1, t2), Value.Tuple2(v1, v2)) =>
+      for (env1 <- unify(t1, v1, env0);
+           env2 <- unify(t2, v2, env1))
+      yield env2
+    case (Term.Tuple3(t1, t2, t3), Value.Tuple3(v1, v2, v3)) =>
+      for (env1 <- unify(t1, v1, env0);
+           env2 <- unify(t2, v2, env1);
+           env3 <- unify(t3, v3, env2))
+      yield env3
+    case (Term.Tuple4(t1, t2, t3, t4), Value.Tuple4(v1, v2, v3, v4)) =>
+      for (env1 <- unify(t1, v1, env0);
+           env2 <- unify(t2, v2, env1);
+           env3 <- unify(t3, v3, env2);
+           env4 <- unify(t4, v4, env3))
+      yield env4
+    case (Term.Tuple5(t1, t2, t3, t4, t5), Value.Tuple5(v1, v2, v3, v4, v5)) =>
+      for (env1 <- unify(t1, v1, env0);
+           env2 <- unify(t2, v2, env1);
+           env3 <- unify(t3, v3, env2);
+           env4 <- unify(t4, v4, env3);
+           env5 <- unify(t5, v5, env4))
+      yield env5
+
     case _ => None
   }
 
@@ -47,7 +76,6 @@ object Unification {
   /////////////////////////////////////////////////////////////////////////////
   // Term-Term Unification                                                   //
   /////////////////////////////////////////////////////////////////////////////
-  // TODO: Consider substitions.
 
   /**
    * Unifies the term `t1` with the term `t2` under the given environment `env0`.
@@ -103,7 +131,6 @@ object Unification {
            env5 <- unify(x5, y5, env4))
       yield env5
 
-    // TODO: Unification for other terms?
     case _ => None
   }
 
