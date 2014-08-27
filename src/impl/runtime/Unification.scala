@@ -4,8 +4,6 @@ import impl.logic.Symbol.{VariableSymbol => VSym}
 import impl.logic.{Predicate, Term, Value}
 
 object Unification {
-  // TODO: Need to take all new terms into consideration...
-
   /////////////////////////////////////////////////////////////////////////////
   // Predicate Unification                                                   //
   /////////////////////////////////////////////////////////////////////////////
@@ -106,6 +104,7 @@ object Unification {
           Some(substitute(y, t, env0) + (y -> t))
       case Some(tt) => unify(t, tt, env0)
     }
+
     case (Term.Tagged(s1, x1, _), Term.Tagged(s2, y1, _)) if s1 == s2 =>
       unify(x1, y1, env0)
     case (Term.Tuple2(x1, x2), Term.Tuple2(y1, y2)) =>

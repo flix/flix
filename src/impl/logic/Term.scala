@@ -81,7 +81,7 @@ sealed trait Term {
     case Term.IfThenElse(t1, t2, t3) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
 
     case Term.Tagged(s, t, typ) =>            t.freeVariables
-    case Term.Case(t, cases) =>               ???
+    case Term.Case(t, cases) =>               cases.values.map(t => t._2.freeVariables - t._1).flatten.toSet
     case Term.Tuple2(t1, t2) =>               t1.freeVariables ++ t2.freeVariables
     case Term.Tuple3(t1, t2, t3) =>           t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
     case Term.Tuple4(t1, t2, t3, t4) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables
