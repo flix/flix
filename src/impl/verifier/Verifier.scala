@@ -2,10 +2,9 @@ package impl.verifier
 
 import java.io.{File, PrintWriter}
 
-import impl.logic.Symbol.{PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
 
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable
 
 object Verifier {
 
@@ -127,7 +126,8 @@ object Verifier {
   // (declare-datatypes () ((SortName (ConstructorName (FieldName Type)))))
 
   def foo(typ: Type): List[SmtExp] = {
-    val result = ListBuffer.empty[SmtExp]
+    val types = mutable.Map.empty[Type, String]
+    val result = mutable.ListBuffer.empty[SmtExp]
     def visit(typ: Type): String = typ match {
       case Type.Unit => "unit"
       case Type.Bool => "bool"
@@ -135,13 +135,15 @@ object Verifier {
       case Type.Str => "str"
 
       case Type.Tuple2(typ1, typ2) =>
-        val (sortName, field1, field2) = (freshTypeName, visit(typ1), visit(typ2))
-        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"),  SmtExp.Lst(Nil), SmtExp.Literal(sortName), SmtExp.Literal(field1), SmtExp.Literal(field2)))
+        val (sortName, fieldSort1, fieldSort2) = (freshTypeName, visit(typ1), visit(typ2))
+        types += typ -> sortName
+        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"),  SmtExp.Lst(Nil), SmtExp.Literal(sortName), SmtExp.Literal(fieldSort1), SmtExp.Literal(fieldSort2)))
         sortName
       case Type.Tuple3(typ1, typ2, typ3) =>
-        val (n, n1, n2, n3) =  (freshTypeName, visit(typ1), visit(typ2), visit(typ3))
-        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"), SmtExp.Lst(Nil), SmtExp.Literal(n), SmtExp.Literal(n1), SmtExp.Literal(n2), SmtExp.Literal(n3)))
-        n
+        val (sortName, fieldSort1, fieldSort2, fieldSort3) =  (freshTypeName, visit(typ1), visit(typ2), visit(typ3))
+        types += typ -> sortName
+        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"), SmtExp.Lst(Nil), SmtExp.Literal(sortName), SmtExp.Literal(fieldSort1), SmtExp.Literal(fieldSort2), SmtExp.Literal(fieldSort3)))
+        sortName
 
     }
     visit(typ)
