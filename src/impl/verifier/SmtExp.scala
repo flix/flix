@@ -8,10 +8,7 @@ import syntax.Symbols._
  */
 sealed trait SmtExp {
   def fmt(indent: Int): String = this match {
-    case SmtExp.True => "true"
-    case SmtExp.False => "false"
-    case SmtExp.Int(i) => i.toString
-    case SmtExp.Variable(s) => s.fmt
+    case SmtExp.Var(s) => s.fmt
     case SmtExp.And(formulae) => "(and " + formulae.map(_.fmt(indent)).mkString(" ") + ")"
     case SmtExp.Or(formulae) => "(or \n" + "    " * (indent + 1) + formulae.map(_.fmt(indent + 1)).mkString("\n" + "    " * (indent + 1)) + ")"
     case SmtExp.Implies(antecedent, consequent) => "(=> " + antecedent.fmt(indent) + " " + consequent.fmt(indent) + ")"
@@ -22,24 +19,20 @@ sealed trait SmtExp {
 object SmtExp {
 
   /**
-   * The true literal.
+   * A literal.
    */
-  case object True extends SmtExp
+  case class Literal(token: String) extends SmtExp
+
 
   /**
-   * The false literal.
+   * A literal.
    */
-  case object False extends SmtExp
-
-  /**
-   * An integer literal.
-   */
-  case class Int(i: scala.Int) extends SmtExp
+  case class Lst(xs: List[SmtExp]) extends SmtExp
 
   /**
    * A variable.
    */
-  case class Variable(v: Symbol.VariableSymbol) extends SmtExp
+  case class Var(v: Symbol.VariableSymbol) extends SmtExp
 
   /**
    * A equality formula.

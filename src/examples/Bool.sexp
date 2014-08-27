@@ -1,5 +1,9 @@
 (def-type BoolLat (variant ((:Top) (:True) (:False) (:Bot))))
 
+(def-type A BoolLat)
+(def-type B BoolLat)
+(def-type R BoolLat)
+
 (def-bot BoolLat :Bot)
 
 (def-height BoolLat (e BoolLat)
@@ -24,7 +28,7 @@
         (case (:False :False)   :False)
         (case _                 :Top)))
 
-(def-fun and (e1 BoolLat e2 BoolLat)
+(def-fun And (e1 BoolLat e2 BoolLat)
     (match (e1 e2)
         (case (:Bot _)          :Bot)
         (case (_ :Bot)          :Bot)
@@ -35,8 +39,8 @@
         (case (:Top _)          :Top)
         (case (_ :Top)          :Top)))
 
-(rule (A :True))
-(rule (B :False))
+(fact (A :True))
+(fact (B :False))
 
 (rule (R x) ((A x)))
 (rule (R x) ((B x)))

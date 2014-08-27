@@ -11,19 +11,26 @@ object Verifier {
 
   val Z3 = System.getProperty("Z3", "C:\\Program Files\\Microsoft Z3\\z3-4.3.0-x64\\bin\\z3.exe")
 
+  // A map from types to type names.
+  val types = Map.empty[Type, String]
+
+  def lookupType(typ: Type): String = types.get(typ) match {
+    case None => ??? // TODO: Gen fresh name
+    case Some(s) => s
+  }
+
   /**
    * Verifies that the program is safe.
    */
   def verify(program: Program): Unit = {
-
     for (decl <- program.declarations) {
       decl match {
         case Declaration.DeclareLeq(t, typ) =>
-
+          LatticeLeq.reflexivity(???, ???)
+        case _ => // TODO
       }
     }
-
-
+  }
 
 //     * Verification conditions for the lattice ordering: Leq.
 //     */
@@ -47,7 +54,7 @@ object Verifier {
 //    for (s <- lattice.funcs) {
 //      run(lattice, s.fmt + " is monotone", Transfer.isMonotone2(lattice.name, s, lattice.leq))
 //    }
-  }
+
 
   /**
    * Run Z3 on the given input.
@@ -74,4 +81,20 @@ object Verifier {
       println()
     }
   }
+
+  def compileTerm(t: Term): SmtExp = t match {
+    case Term.Unit =>  SmtExp.Literal("unit")
+    case Term.Bool(b) => SmtExp.Literal(b.toString)
+    case Term.Int(i) => SmtExp.Literal(i.toString)
+    case Term.Str(s) => SmtExp.Literal(s.hashCode.toString) // TODO: Need a better way to map string constants to integers.
+
+    case Term.Var(x) => SmtExp.Var(x)
+      
+    case Term.Tagged(x, t1, _) => SmtExp.Lst(List(SmtExp.Literal(x.s), compileTerm(t1)))
+    case Term.Tuple2(t1, t2) => ???
+
+  }
+
+  def compileType(typ: Type): SmtExp = ???
+
 }

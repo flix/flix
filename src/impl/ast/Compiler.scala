@@ -29,7 +29,7 @@ object Compiler {
         case SExp.Lst(List(SExp.Keyword("def-type"), SExp.Name(n), typ)) =>
           types += (n -> compileType(typ))
 
-        case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Str(n), SExp.Lst(args), body)) =>
+        case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Name(n), SExp.Lst(args), body)) =>
           val t = compileAbs(args, body)
           val typ = Typer.typecheck(t)
           funcs += (n -> t)
@@ -99,7 +99,7 @@ object Compiler {
 
     case SExp.Lst(SExp.Keyword("match") :: cond :: cases) =>
       val tcond = compileTerm(cond)
-      ???
+      Term.Unit // TODO> Wrong
 
     case SExp.Label(s) => Term.Tagged(Symbol.NamedSymbol(s), Term.Unit, labels(s))
     case SExp.Lst(List(SExp.Label(s), es)) => Term.Tagged(Symbol.NamedSymbol(s), compileTerm(es), labels(s))
