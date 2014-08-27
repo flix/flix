@@ -83,15 +83,8 @@ object Typer {
         throw Error.StaticTypeError(typ1, typ, t)
 
     case Term.Case(t1, cases) =>
-      val typ1 = typecheck(t1, typenv)
-      typ1 match {
-        case Type.Sum(types) =>
-          for ((typ2, (x, t2)) <- types zip cases.values) {
-            val resultType = typecheck(t2, typenv + (x -> typ2))
-          }
-          ??? // TODO The result type should be the same.
-        case _ => ???
-      }
+      // TODO: Typing for the case term.
+      ???
 
     case Term.Tuple2(t1, t2) =>
       val typ1 = typecheck(t1, typenv)

@@ -8,38 +8,19 @@ import scala.util.Try
 object Interpreter {
 
   /**
-   * A big-step evaluator for predicates.
+   * Returns the value of evaluating the given term `t` under the given environment `env`.
+   *
+   * If the environment is not specified, the empty environment is assumed.
+   *
+   * Throws an exception if the term is not reducible, i.e. it contains free variables under the environment.
    */
-  def evaluate(p: Predicate, env: Map[VSym, Value]): Predicate =
-    Predicate(p.name, p.terms map (t => evaluate(t, env).toTerm), p.typ)
-
-  /**
-   * TODO: DOC
-   */
-  def evaluateOpt(p: Predicate, env: Map[VSym, Value]): Option[Predicate] = {
-    val terms = p.terms.map(t => evaluateOpt(t, env))
-
-    if (terms.exists(_.isEmpty))
-      None
-    else
-      Some(Predicate(p.name, terms.map(_.get.toTerm), p.typ))
-  }
-
-  /**
-   * Evaluates the given term `t` under the empty environment.
-   */
-  def evaluate(t: Term): Value = evaluate(t, Map.empty[VSym, Value])
-
-  /**
-   * A big-step evaluator for lambda terms.
-   */
-  def evaluate(t: Term, env: Map[VSym, Value]): Value = t match {
+  def evaluate(t: Term, env: Map[VSym, Value] = Map.empty): Value = t match {
     case Term.Unit => Value.Unit
     case Term.Bool(b) => Value.Bool(b)
     case Term.Int(i) => Value.Int(i)
     case Term.Str(s) => Value.Str(s)
 
-    case Term.Var(s) => env(s)
+    case Term.Var(s) => env.getOrElse(s, throw Error.UnboundVariableError(s))
     case Term.Abs(s, typ, t1) => Value.Abs(s, typ, t1)
     case Term.App(t1, t2) =>
       val Value.Abs(x, _, t3) = evaluate(t1, env)
@@ -107,11 +88,36 @@ object Interpreter {
 
   /**
    * Optionally returns the value of evaluating the given term `t` under the given environment `env`.
+   *
+   * If the environment is not specified, the empty environment is assumed.
+   *
+   * Returns `None` iff the term does not reduce to a value under the given environment.
    */
-  // TODO: Implementation is a hack
-  def evaluateOpt(t: Term, env: Map[VSym, Value]): Option[Value] =
+  def evaluateOpt(t: Term, env: Map[VSym, Value] = Map.empty): Option[Value] =
     Try(evaluate(t, env)).toOption
 
+  /**
+   * Returns a predicate with ground terms for the given predicate `p` under the environment `env`.
+   *
+   * If the environment is not specified, the empty environment is assumed.
+   */
+  def evaluatePredicate(p: Predicate, env: Map[VSym, Value] = Map.empty): Predicate =
+    Predicate(p.name, p.terms map (t => evaluate(t, env).toTerm), p.typ)
+
+  /**
+   * Optionally returns a predicate with ground terms for the given predicate `p` under the environment `env`.
+   *
+   * If the environment is not specified, the empty environment is assumed.
+   *
+   * Returns `None` if the predicate contains non-ground terms after evaluation.
+   */
+  def evaluatePredicateOpt(p: Predicate, env: Map[VSym, Value] = Map.empty): Option[Predicate] = {
+    val terms = p.terms.map(t => evaluateOpt(t, env))
+    if (terms.exists(_.isEmpty))
+      None
+    else
+      Some(Predicate(p.name, terms.map(_.get.toTerm), p.typ))
+  }
 
   /**
    * Returns the result of applying the unary operator `op` to the given value `v`.

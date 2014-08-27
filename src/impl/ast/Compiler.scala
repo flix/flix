@@ -7,11 +7,6 @@ import impl.verifier.Typer
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-// TODO: Solve type dilema by having uppercase labels and lowercase type names?
-// TODO: Figure out ordering or leq, lub etc.
-// TODO typechecker
-// TODO 15. Desugar Terms and Types to SMT Lib
-
 object Compiler {
 
   val types = mutable.Map.empty[String, Type]
