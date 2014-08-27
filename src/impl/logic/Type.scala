@@ -3,6 +3,14 @@ package impl.logic
 sealed trait Type {
 
   /**
+   * Returns the "right-most" or "result" type of a the type.
+   */
+  def resultType: Type = this match {
+    case Type.Function(typ1, typ2) => typ2.resultType
+    case _ => this
+  }
+
+  /**
    * Returns `true` iff the type is a set type or a function type which ultimately results in a set type.
    */
   def isSetMap: Boolean = this match {

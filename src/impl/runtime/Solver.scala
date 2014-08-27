@@ -126,20 +126,18 @@ class Solver(program: Program) {
             propagateFact(Predicate(p.name, List(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm, v5.toTerm), p.typ))
       }
     } else if (p.typ.isLatMap) {
-      ???
-      // TODO: Need a way to get the right most type, i.e. result type..
-//      p.terms match {
-//        case List(t1) =>
-//          val lattice = program.lattices(p.name)
-//          val newValue = Interpreter.evaluate(t1, env)
-//          val oldValue = map1.get(p.name).getOrElse(lattice.bot)
-//          val joinValue = join2(lattice.lub, newValue, oldValue)
-//          val newFact: Boolean = !leq2(lattice.leq, joinValue, oldValue)
-//          if (newFact) {
-//            map1.put(p.name, joinValue)
-//            propagateFact(Predicate(p.name, List(joinValue.toTerm), ???))
-//          }
-//      }
+      val elmType = p.typ.resultType
+      p.terms match {
+        case List(t1) =>
+          val newValue = Interpreter.evaluate(t1, env)
+          val oldValue = map1.get(p.name).getOrElse(bot(elmType))
+          val lubValue = lub(elmType, newValue, oldValue)
+          val newFact: Boolean = !leq(elmType, lubValue, oldValue)
+          if (newFact) {
+            map1.put(p.name, lubValue)
+            propagateFact(Predicate(p.name, List(lubValue.toTerm), p.typ))
+          }
+      }
     } else {
       throw new RuntimeException(s"Unworkable type: ${p.typ}")
     }
@@ -153,7 +151,7 @@ class Solver(program: Program) {
       for (p2 <- h.body) {
         Unification.unify(p, p2, Map.empty[VSym, Term]) match {
           case None => // nop
-          case Some(env0) => queue.enqueue((h, env0.mapValues(t => Interpreter.evaluate(t, Map.empty))))
+          case Some(env0) => queue.enqueue((h, env0.mapValues(t => Interpreter.evaluate(t))))
         }
       }
     }
@@ -167,8 +165,7 @@ class Solver(program: Program) {
    * Returns a list of models for the given horn clause `h` under the given environment `env0`.
    */
   def evaluate(h: Constraint, env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
-    // Evaluate relational predicates before functional predicates.
-    val predicates = h.body // TODO: Decide evaluation order.
+    val predicates = h.body
 
     // Fold each predicate over the intial environment.
     val init = List(env0)
@@ -213,10 +210,26 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
+   * Returns the bottom element for the given type `targetType`.
+   */
+  private def bot(targetType: Type): Value = {
+    // find declaration
+    program.declarations.collectFirst {
+      case Declaration.DeclareBot(bot, actualType) if actualType == targetType => bot
+    }.get
+  }
+
+  /**
    * Returns `true` iff `v1` is less or equal to `v2`.
    */
   private def leq(typ: Type, v1: Value, v2: Value): Boolean = {
-    val abs = lookupLeq(typ)
+    // construct the specific function type we are looking for
+    val targetType = Type.Function(typ, Type.Function(typ, Type.Bool))
+    // find the declaration
+    val abs = program.declarations.collectFirst {
+      case Declaration.DeclareLeq(leq, actualType) if actualType == targetType => leq
+    }.get
+
     val app = Term.App(Term.App(abs, v2.toTerm), v1.toTerm)
     val Value.Bool(b) = Interpreter.evaluate(app)
     b
@@ -226,29 +239,15 @@ class Solver(program: Program) {
    * Returns the join of `v1` and `v2`.
    */
   private def lub(typ: Type, v1: Value, v2: Value): Value = {
-    val abs = lookupLub(typ)
-    val app = Term.App(Term.App(abs, v2.toTerm), v1.toTerm)
-    Interpreter.evaluate(app)
-  }
-
-  /**
-   * Returns the less-than-equal function for the given type `typ`.
-   */
-  private def lookupLeq(typ: Type): Term.Abs = {
-    val targetType = Type.Function(typ, Type.Function(typ, Type.Bool))
-    program.declarations.collectFirst {
-      case Declaration.DeclareLeq(leq, actualType) if actualType == targetType => leq
-    }.get
-  }
-
-  /**
-   * Returns the least-upper-bound function for the given type `typ`.
-   */
-  private def lookupLub(typ: Type): Term.Abs = {
+    // construct the specific function type we are looking for
     val targetType = Type.Function(typ, Type.Function(typ, typ))
-    program.declarations.collectFirst {
+    // find the declaration
+    val abs = program.declarations.collectFirst {
       case Declaration.DeclareLub(lub, actualType) if actualType == targetType => lub
     }.get
+
+    val app = Term.App(Term.App(abs, v2.toTerm), v1.toTerm)
+    Interpreter.evaluate(app)
   }
 
 }
