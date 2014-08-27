@@ -80,11 +80,7 @@ object Verifier {
     }
   }
 
-  //  (declare-datatypes () ((Tuple2_Sort (Tuple2 (x Int) (y Int)))))
-  //  (declare-const z Tuple2_Sort)
-  //  (assert (= z (Tuple2 1 2)))
-  //  (check-sat)
-  //  (get-model)
+
 
   def compileTerm(t: Term): SmtExp = t match {
     case Term.Unit => SmtExp.Literal("unit")
@@ -101,6 +97,12 @@ object Verifier {
     case Term.Tuple5(t1, t2, t3, t4, t5) =>   List(SmtExp.Literal("Tuple5"), compileTerm(t1), compileTerm(t2), compileTerm(t3), compileTerm(t4), compileTerm(t5))
 
   }
+
+  //  (declare-datatypes () ((Tuple2_Sort (Tuple2 (x Int) (y Int)))))
+  //  (declare-const z Tuple2_Sort)
+  //  (assert (= z (Tuple2 1 2)))
+  //  (check-sat)
+  //  (get-model)
 
   def compileType(typ: Type): SmtExp = typ match {
     case Type.Tagged(s, typ1) => ???
