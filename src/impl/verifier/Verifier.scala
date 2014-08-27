@@ -109,6 +109,15 @@ object Verifier {
     "t" + Counter
   }
 
+//  (declare-datatypes (T1 T2) ((Pair (mk-pair (first T1) (second T2)))))
+//  (declare-datatypes (T1) ((Tag (mk-tag (first T1)))))
+//  (define-fun f ((x (Pair Int Int))) Int (first x))
+//  (declare-const p1 (Pair Int (Pair Bool Bool)))
+//  (declare-const p2 (Pair Int (Pair Bool Bool)))
+//  (assert (not (= p1 p2)))
+//  (check-sat)
+//  (get-model)
+
   //  (declare-datatypes () ((Tuple2_Sort (Tuple2 (x Int) (y Int)))))
   //  (declare-const z Tuple2_Sort)
   //  (assert (= z (Tuple2 1 2)))
