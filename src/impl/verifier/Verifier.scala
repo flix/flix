@@ -16,13 +16,15 @@ object Verifier {
    */
   def verify(program: Program): Unit = {
 
-  }
+    for (decl <- program.declarations) {
+      decl match {
+        case Declaration.DeclareLeq(t, typ) =>
 
-  /**
-   * Emit verifications conditions.
-   */
-  private def emitVerificationConditions(): Unit = {
-//    /**
+      }
+    }
+
+
+
 //     * Verification conditions for the lattice ordering: Leq.
 //     */
 //    run(lattice, "Leq is reflexivity", LatticeLeq.reflexivity(lattice.name, lattice.leq))
