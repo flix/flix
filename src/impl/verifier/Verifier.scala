@@ -116,6 +116,15 @@ object Verifier {
   //  (check-sat)
   //  (get-model)
 
+//  (declare-datatypes () ((Pair (mk-pair (first Int) (second Int)))))
+//  (declare-datatypes () ((Flaf (mk-flaf (fst Pair)))))
+//  (declare-const p1 Flaf)
+//  (declare-const p2 Flaf)
+//  (assert (not (= p1 p2)))
+//  (check-sat)
+//  (get-model)
+
+  // (declare-datatypes () ((SortName (ConstructorName (FieldName Type)))))
 
   def foo(typ: Type): List[SmtExp] = {
     val result = ListBuffer.empty[SmtExp]
@@ -126,9 +135,9 @@ object Verifier {
       case Type.Str => "str"
 
       case Type.Tuple2(typ1, typ2) =>
-        val (n, n1, n2) = (freshTypeName, visit(typ1), visit(typ2))
-        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"),  SmtExp.Lst(Nil), SmtExp.Literal(n), SmtExp.Literal(n1), SmtExp.Literal(n2)))
-        n
+        val (sortName, field1, field2) = (freshTypeName, visit(typ1), visit(typ2))
+        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"),  SmtExp.Lst(Nil), SmtExp.Literal(sortName), SmtExp.Literal(field1), SmtExp.Literal(field2)))
+        sortName
       case Type.Tuple3(typ1, typ2, typ3) =>
         val (n, n1, n2, n3) =  (freshTypeName, visit(typ1), visit(typ2), visit(typ3))
         result += SmtExp.Lst(List(SmtExp.Literal("declare-type"), SmtExp.Lst(Nil), SmtExp.Literal(n), SmtExp.Literal(n1), SmtExp.Literal(n2), SmtExp.Literal(n3)))
