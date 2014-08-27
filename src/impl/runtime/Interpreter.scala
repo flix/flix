@@ -53,7 +53,7 @@ object Interpreter {
       evaluate(t2.rename(x, y), env + (y -> v1))
 
     case Term.IfThenElse(t1, t2, t3) =>
-      val Value.Bool(b) = evaluate(t1, env)
+      val b = evaluate(t1, env).toBool
       if (b)
         evaluate(t2, env)
       else

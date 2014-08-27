@@ -24,7 +24,7 @@ sealed trait Value {
    */
   def toBool: Boolean = this match {
     case Value.Bool(b) => b
-    case _ => throw Error.TypeError(Type.Bool, this)
+    case _ => throw Error.RuntimeTypeError(Type.Bool, this)
   }
 
   /**
@@ -32,7 +32,7 @@ sealed trait Value {
    */
   def toInt: Int = this match {
     case Value.Int(i) => i
-    case _ => throw Error.TypeError(Type.Bool, this)
+    case _ => throw Error.RuntimeTypeError(Type.Bool, this)
   }
 
   /**
@@ -40,7 +40,7 @@ sealed trait Value {
    */
   def toStr: String = this match {
     case Value.Str(s) => s
-    case _ => throw Error.TypeError(Type.Bool, this)
+    case _ => throw Error.RuntimeTypeError(Type.Bool, this)
   }
 
 }

@@ -231,8 +231,7 @@ class Solver(program: Program) {
     }.get
 
     val app = Term.App(Term.App(abs, v2.toTerm), v1.toTerm)
-    val Value.Bool(b) = Interpreter.evaluate(app)
-    b
+    Interpreter.evaluate(app).toBool
   }
 
   /**

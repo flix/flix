@@ -24,7 +24,7 @@ object Typer {
     case Term.Int(i) => Type.Int
     case Term.Str(s) => Type.Str
 
-    case Term.Var(s) => typenv.getOrElse(s, throw Error.UnboundVariable(s))
+    case Term.Var(s) => typenv.getOrElse(s, throw Error.UnboundVariableError(s))
     case Term.Abs(s, typ1, t1) =>
       val typ2 = typecheck(t1, typenv + (s -> typ1))
       Type.Function(typ1, typ2)
@@ -33,8 +33,8 @@ object Typer {
       val typ2 = typecheck(t2, typenv)
       typ1 match {
         case Type.Function(a, b) if a == typ2 => b
-        case Type.Function(a, b) => throw Error.TypingError(a, typ2, t)
-        case _ => throw Error.TypeError2(Type.Function(typ1, typ2), t)
+        case Type.Function(a, b) => throw Error.StaticTypeError(a, typ2, t)
+        case _ => throw Error.UnexpectedTypeError(t, s"The term '$t1' does not have a function type in the application '$t'.")
       }
 
     case Term.Let(x, t1, t2) =>
@@ -80,7 +80,7 @@ object Typer {
       if (typ.ts contains Type.Tagged(s, typ1))
         typ
       else
-        throw Error.TypingError(typ1, typ, t)
+        throw Error.StaticTypeError(typ1, typ, t)
 
     case Term.Case(t1, cases) =>
       val typ1 = typecheck(t1, typenv)
@@ -90,7 +90,7 @@ object Typer {
             val resultType = typecheck(t2, typenv + (x -> typ2))
           }
           ??? // TODO The result type should be the same.
-        case _ => throw Error.TypingError2(t)
+        case _ => ???
       }
 
     case Term.Tuple2(t1, t2) =>
@@ -128,5 +128,5 @@ object Typer {
     if (expected == actual)
       actual
     else
-      throw Error.TypingError(expected, actual, t)
+      throw Error.StaticTypeError(expected, actual, t)
 }
