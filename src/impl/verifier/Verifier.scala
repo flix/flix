@@ -88,7 +88,7 @@ object Verifier {
     case Term.Int(i) => SmtExp.Literal(i.toString)
     case Term.Str(s) => SmtExp.Literal(s.hashCode.toString) // TODO: Need a better way to map string constants to integers.
 
-    case Term.Var(x) => SmtExp.Var(x)
+    case Term.Var(x) => ???
 
     case Term.Tagged(x, t1, _) =>             List(SmtExp.Literal(x.s), compileTerm(t1))
     case Term.Tuple2(t1, t2) =>               List(SmtExp.Literal("Tuple2"), compileTerm(t1), compileTerm(t2))
@@ -105,8 +105,13 @@ object Verifier {
   //  (get-model)
 
   def compileType(typ: Type): SmtExp = typ match {
+    case Type.Unit => SmtExp.Literal("Unit")
+    case Type.Bool => SmtExp.Literal("Bool")
+    case Type.Int => SmtExp.Literal("Int")
+    case Type.Str => SmtExp.Literal("Int") // NB: Not a typo. Strings are simple constants.
+
     case Type.Tagged(s, typ1) => ???
-    case Type.Tuple2(typ1, typ2) => ???
+    case Type.Tuple2(typ1, typ2) => List(SmtExp.Literal("declare-datatypes"), SmtExp.Literal("()"), SmtExp.Lst(List()))
     case Type.Tuple3(typ1, typ2, typ3) => ???
     case Type.Tuple4(typ1, typ2, typ3, typ4) => ???
     case Type.Tuple5(typ1, typ2, typ3, typ4, typ5) => ???
