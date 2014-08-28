@@ -101,8 +101,8 @@ object Interpreter {
    *
    * If the environment is not specified, the empty environment is assumed.
    */
-  def evaluatePredicate(p: Predicate, env: Map[VSym, Value] = Map.empty): Predicate =
-    Predicate(p.name, p.terms map (t => evaluate(t, env).toTerm), p.typ)
+  def evaluatePredicate(p: Predicate, env: Map[VSym, Value] = Map.empty): Predicate.GroundPredicate =
+    Predicate.GroundPredicate(p.name, p.terms map (t => evaluate(t, env)), p.typ)
 
   /**
    * Optionally returns a predicate with ground terms for the given predicate `p` under the environment `env`.
@@ -111,12 +111,12 @@ object Interpreter {
    *
    * Returns `None` if the predicate contains non-ground terms after evaluation.
    */
-  def evaluatePredicateOpt(p: Predicate, env: Map[VSym, Value] = Map.empty): Option[Predicate] = {
+  def evaluatePredicateOpt(p: Predicate, env: Map[VSym, Value] = Map.empty): Option[Predicate.GroundPredicate] = {
     val terms = p.terms.map(t => evaluateOpt(t, env))
     if (terms.exists(_.isEmpty))
       None
     else
-      Some(Predicate(p.name, terms.map(_.get.toTerm), p.typ))
+      Some(Predicate.GroundPredicate(p.name, terms.map(_.get), p.typ))
   }
 
   /**

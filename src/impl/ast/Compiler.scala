@@ -1,7 +1,7 @@
 package impl.ast
 
 import impl.logic._
-import impl.runtime.{Interpreter, Error}
+import impl.runtime.{Error, Interpreter}
 import impl.verifier.Typer
 
 import scala.collection.mutable
@@ -69,7 +69,15 @@ object Compiler {
    * Compiles the given s-expression `e` to a predicate.
    */
   def compilePredicate(e: SExp): Predicate = e match {
-    case SExp.Lst(SExp.Name(s) :: terms) => Predicate(Symbol.PredicateSymbol(s), terms map compileTerm, lookupType(s))
+    case SExp.Lst(SExp.Name(s) :: xs) =>
+      val terms = xs map compileTerm
+      val values = terms map (t => Interpreter.evaluateOpt(t))
+
+      if (values.forall(_.nonEmpty))
+        Predicate.GroundPredicate(Symbol.PredicateSymbol(s), values map (_.get), lookupType(s))
+      else
+        Predicate.NonGroundPredicate(Symbol.PredicateSymbol(s), terms, lookupType(s))
+
     case _ => throw Error.PredicateParseError(e)
   }
 
