@@ -1,5 +1,6 @@
 package impl.ast
 
+import impl.logic.Declaration.{DeclareBot, DeclareLeq, DeclareLub}
 import impl.logic._
 import impl.runtime.{Error, Interpreter}
 import impl.verifier.Typer
@@ -26,8 +27,16 @@ object Compiler {
     val constraints = ListBuffer.empty[Constraint]
     for (e <- es) {
       e match {
-        case SExp.Lst(List(SExp.Keyword("def-type"), SExp.Name(n), typ)) =>
-          types += (n -> compileType(typ))
+        case SExp.Lst(List(SExp.Keyword("def-type"), SExp.Name(n), e1)) =>
+          val typ = compileType(e1)
+          types += (n -> typ)
+          typ match {
+            case x: Type.Set =>
+              declarations += synthesizeBot(x)
+              declarations += synthesizeLeq(x)
+              declarations += synthesizeLub(x)
+            case _ => // nop
+          }
 
         case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Name(n), SExp.Lst(args), body)) =>
           val t = compileAbs(args, body)
@@ -158,6 +167,43 @@ object Compiler {
     case SExp.Lst(List(e1, e2, e3, e4)) => Type.Tuple4(compileType(e1), compileType(e2), compileType(e3), compileType(e4))
     case SExp.Lst(List(e1, e2, e3, e4, e5)) => Type.Tuple5(compileType(e1), compileType(e2), compileType(e3), compileType(e4), compileType(e5))
     case _ => throw Error.TypeParseError(e)
+  }
+
+  /**
+   * Synthesizes a declaration of the bottom element for the given set type `typ`.
+   */
+  private def synthesizeBot(typ: Type.Set): DeclareBot = {
+    Declaration.DeclareBot(Value.Set(Set.empty), typ)
+  }
+
+  /**
+   * Synthesizes a declaration of the less-than-equal function for the given set type `typ`.
+   */
+  private def synthesizeLeq(typ: Type.Set): DeclareLeq = {
+    val x = Symbol.freshVariableSymbol("x")
+    val y = Symbol.freshVariableSymbol("y")
+    val abs = Term.Abs(x, typ,
+      Term.Abs(y, typ,
+        Term.BinaryOp(
+          BinaryOperator.Subset,
+          Term.Var(x),
+          Term.Var(y))))
+    Declaration.DeclareLeq(abs, Type.Function(typ, Type.Function(typ, Type.Bool)))
+  }
+
+  /**
+   * Synthesizes a declaration of the least-upper-bound function for the given set type `typ`.
+   */
+  private def synthesizeLub(typ: Type.Set): DeclareLub = {
+    val x = Symbol.freshVariableSymbol("x")
+    val y = Symbol.freshVariableSymbol("y")
+    val abs = Term.Abs(x, typ,
+      Term.Abs(y, typ,
+        Term.BinaryOp(
+          BinaryOperator.Union,
+          Term.Var(x),
+          Term.Var(y))))
+    Declaration.DeclareLub(abs, Type.Function(typ, Type.Function(typ, typ)))
   }
 
 }
