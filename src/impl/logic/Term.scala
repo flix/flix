@@ -129,6 +129,7 @@ object Term {
   /**
    * A let binding term.
    */
+  // TODO: Elimante?
   case class Let(name: Symbol.VariableSymbol, t1: Term, t2: Term) extends Term
 
   /**
@@ -149,6 +150,7 @@ object Term {
   /**
    * A case term.
    */
+  // TODO: Elimante?
   case class Case(t: Term, cases: Map[Symbol.NamedSymbol, (Symbol.VariableSymbol, Term)]) extends Term
 
   /**

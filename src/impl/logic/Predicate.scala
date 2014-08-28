@@ -5,4 +5,4 @@ package impl.logic
  */
 case class Predicate(name: Symbol.PredicateSymbol, terms: List[Term], typ: Type)
 
-// TODO: Consider splitting into two one for terms and one for values.
+// TODO: Consider splitting into two one for terms and one for values. Ground and NonGround

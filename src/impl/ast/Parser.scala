@@ -7,6 +7,8 @@ import scala.util.parsing.combinator.RegexParsers
 
 object Parser {
 
+  // TODO: Consider more closely aligning the parser with the AST
+
   /**
    * A simple parser for s-expression based on Scala's parser combinators.
    */
