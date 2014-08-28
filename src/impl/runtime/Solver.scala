@@ -93,10 +93,15 @@ class Solver(program: Program) {
 
     facts += p2
 
+    // TODO: Need Term.Set to implement this.
+
     if (p.typ.isSetMap) {
       p.terms match {
         case List(t1) =>
           val v1 = Interpreter.evaluate(t1, env)
+
+          //relation1.get(p.name)
+
           val newFact = relation1.put(p.name, v1)
           if (newFact)
             propagateFact(Predicate(p.name, List(v1.toTerm), p.typ))
