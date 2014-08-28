@@ -1,6 +1,6 @@
-(def-type Parent (Set [Str Str]))
 (def-type Male (Set Str))
 (def-type Female (Set Str))
+(def-type Parent (Set [Str Str]))
 (def-type MaleGrandParent (Set [Str Str]))
 
 (fact (Parent "Caroline" "IngerM"))
