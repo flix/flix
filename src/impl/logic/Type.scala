@@ -53,6 +53,11 @@ object Type {
   case object Str extends Type
 
   /**
+   * The type of sets.
+   */
+  case class Set(typ1: Type) extends Type
+
+  /**
    * The type of functions.
    */
   case class Function(typ1: Type, typ2: Type) extends Type
@@ -66,11 +71,6 @@ object Type {
    * The type of sums.
    */
   case class Sum(ts: List[Type]) extends Type
-
-  /**
-   * The type of sets.
-   */
-  case class Set(typ1: Type) extends Type
 
   /**
    * The type of lattices.

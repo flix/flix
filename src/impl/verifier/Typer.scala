@@ -23,6 +23,12 @@ object Typer {
     case Term.Bool(b) => Type.Bool
     case Term.Int(i) => Type.Int
     case Term.Str(s) => Type.Str
+    case Term.Set(xs) =>
+      val types = xs.map(x => typecheck(x, typenv))
+      if (types.size == 1)
+        Type.Set(types.head)
+      else
+        throw Error.UnexpectedTypeError(t, s"The subterms have different types: {${types.mkString(", ")}}")
 
     case Term.Var(s) => typenv.getOrElse(s, throw Error.UnboundVariableError(s))
     case Term.Abs(s, typ1, t1) =>
@@ -69,10 +75,18 @@ object Typer {
         case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual | BinaryOperator.GreaterEqual =>
           assertType(Type.Int, typ1, t1)
           assertType(Type.Int, typ2, t2)
-          Type.Int
+          Type.Bool
 
         case BinaryOperator.Equal | BinaryOperator.NotEqual =>
           assertType(typ1, typ2, t)
+          Type.Bool
+
+        case BinaryOperator.Union =>
+          assertType(typ1, typ2, t)
+
+        case BinaryOperator.Subset =>
+          assertType(typ1, typ2, t)
+          Type.Bool
       }
 
     case Term.Tagged(s, t1, typ) =>

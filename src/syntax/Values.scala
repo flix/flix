@@ -18,6 +18,8 @@ object Values {
       case Value.Bool(b) => b.toString
       case Value.Int(i) => i.toString
       case Value.Str(s) => "\"" + s + "\""
+      case Value.Set(xs) => "{" + xs.map(x => x.fmt).mkString(", ") + "}"
+
       case Value.Abs(x, typ, t) => "λ" + x.fmt + " " + t.fmt
 
       case Value.Tagged(s, v1, typ) => s.fmt + " " + v1.fmt

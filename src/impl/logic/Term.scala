@@ -10,6 +10,7 @@ sealed trait Term {
     case Term.Bool(b) =>  this
     case Term.Int(i) =>   this
     case Term.Str(s) =>   this
+    case Term.Set(xs) =>  Term.Set(xs map (_.rename(x, y)))
 
     case Term.Var(s) if s == x => Term.Var(y)
     case Term.Var(s) => this
@@ -36,10 +37,11 @@ sealed trait Term {
    * of the given variable `x` has been replaced by the term `t`.
    */
   def substitute(x: Symbol.VariableSymbol, t: Term): Term = this match {
-    case Term.Unit => Term.Unit
-    case Term.Bool(b) => Term.Bool(b)
-    case Term.Int(i) => Term.Int(i)
-    case Term.Str(s) => Term.Str(s)
+    case Term.Unit =>     Term.Unit
+    case Term.Bool(b) =>  Term.Bool(b)
+    case Term.Int(i) =>   Term.Int(i)
+    case Term.Str(s) =>   Term.Str(s)
+    case Term.Set(xs) =>  Term.Set(xs map (_.substitute(x, t)))
 
     case Term.Var(s) if s == x => t
     case Term.Var(s) => Term.Var(s)
@@ -66,10 +68,11 @@ sealed trait Term {
    * Returns the set of free variables in the term.
    */
   def freeVariables: Set[Symbol.VariableSymbol] = this match {
-    case Term.Unit => Set.empty
-    case Term.Bool(b) => Set.empty
-    case Term.Int(i) => Set.empty
-    case Term.Str(s) => Set.empty
+    case Term.Unit =>     Set.empty
+    case Term.Bool(b) =>  Set.empty
+    case Term.Int(i) =>   Set.empty
+    case Term.Str(s) =>   Set.empty
+    case Term.Set(xs) =>  xs flatMap (_.freeVariables)
 
     case Term.Var(s) => Set(s)
     case Term.Abs(x, typ, t) =>               t.freeVariables - x
@@ -112,6 +115,11 @@ object Term {
   case class Str(s: java.lang.String) extends Term
 
   /**
+   * A set constant term.
+   */
+  case class Set(xs: scala.collection.immutable.Set[Term]) extends Term
+
+  /**
    * A variable term.
    */
   case class Var(name: Symbol.VariableSymbol) extends Term
@@ -129,7 +137,7 @@ object Term {
   /**
    * A let binding term.
    */
-  // TODO: Elimante?
+  // TODO: Remove?
   case class Let(name: Symbol.VariableSymbol, t1: Term, t2: Term) extends Term
 
   /**
@@ -150,7 +158,7 @@ object Term {
   /**
    * A case term.
    */
-  // TODO: Elimante?
+  // TODO: Remove?
   case class Case(t: Term, cases: Map[Symbol.NamedSymbol, (Symbol.VariableSymbol, Term)]) extends Term
 
   /**

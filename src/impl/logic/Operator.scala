@@ -16,10 +16,15 @@ object BinaryOperator {
   case object Times extends BinaryOperator
   case object Divide extends BinaryOperator
   case object Modulo extends BinaryOperator
+
   case object Less extends BinaryOperator
   case object LessEqual extends BinaryOperator
   case object Greater extends BinaryOperator
   case object GreaterEqual extends BinaryOperator
+
   case object Equal extends BinaryOperator
   case object NotEqual extends BinaryOperator
+
+  case object Union extends BinaryOperator
+  case object Subset extends BinaryOperator
 }

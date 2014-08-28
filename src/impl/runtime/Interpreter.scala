@@ -19,6 +19,7 @@ object Interpreter {
     case Term.Bool(b) => Value.Bool(b)
     case Term.Int(i) => Value.Int(i)
     case Term.Str(s) => Value.Str(s)
+    case Term.Set(xs) => Value.Set(xs.map(x => evaluate(x, env)))
 
     case Term.Var(s) => env.getOrElse(s, throw Error.UnboundVariableError(s))
     case Term.Abs(s, typ, t1) => Value.Abs(s, typ, t1)
@@ -143,5 +144,7 @@ object Interpreter {
     case BinaryOperator.GreaterEqual => Value.Bool(v1.toInt >= v2.toInt)
     case BinaryOperator.Equal => Value.Bool(v1 == v2)
     case BinaryOperator.NotEqual => Value.Bool(v1 != v2)
+    case BinaryOperator.Union => Value.Set(v1.toSet ++ v2.toSet)
+    case BinaryOperator.Subset => Value.Bool(v1.toSet subsetOf v2.toSet)
   }
 }

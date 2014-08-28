@@ -24,6 +24,7 @@ object Error {
    * An exception thrown to indicate that an "unexpected" type appeared during type checking.
    */
   case class UnexpectedTypeError(t: Term, msg: String) extends RuntimeException(msg)
+  // TODO: Maybe fix this by introducing variable in type?
 
   /**
    * An exception thrown to indicate a parsing error when trying to parse a predicate.

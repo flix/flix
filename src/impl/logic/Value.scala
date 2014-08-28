@@ -11,6 +11,7 @@ sealed trait Value {
     case Value.Bool(b) => Term.Bool(b)
     case Value.Int(i) => Term.Int(i)
     case Value.Str(s) => Term.Str(s)
+    case Value.Set(xs) => Term.Set(xs map (_.toTerm))
     case Value.Abs(s, typ, t) => Term.Abs(s, typ, t)
     case Value.Tagged(s, v, typ) => Term.Tagged(s, v.toTerm, typ)
     case Value.Tuple2(v1, v2) => Term.Tuple2(v1.toTerm, v2.toTerm)
@@ -43,6 +44,14 @@ sealed trait Value {
     case _ => throw Error.RuntimeTypeError(Type.Bool, this)
   }
 
+  /**
+   * Returns `this` value as a set or throws a type error.
+   */
+  def toSet: Set[Value] = this match {
+    case Value.Set(xs) => xs
+    case _ => throw Error.RuntimeTypeError(Type.Set(Type.Unit), this) // TODO
+  }
+
 }
 
 object Value {
@@ -66,6 +75,11 @@ object Value {
    * A string value.
    */
   case class Str(s: java.lang.String) extends Value
+
+  /**
+   * A set value.
+   */
+  case class Set(xs: scala.collection.immutable.Set[Value]) extends Value
 
   /**
    * A lambda value.
