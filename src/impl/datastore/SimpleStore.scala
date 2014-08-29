@@ -36,11 +36,11 @@ class SimpleStore extends DataStore {
   }
 
   def query(p: Predicate): List[List[Value]] = p.terms match {
-    case List(t1) =>                    map1.toList.collect({case (s, v1)                   if p.name == s => List(v1)})
-    case List(t1, t2) =>                map2.toList.collect({case ((s, v1), v2)             if p.name == s => List(v1, v2)})
-    case List(t1, t2, t3) =>            map3.toList.collect({case ((s, v1, v2), v3)         if p.name == s => List(v1, v2, v3)})
-    case List(t1, t2, t3, t4) =>        map4.toList.collect({case ((s, v1, v2, v3), v4)     if p.name == s => List(v1, v2, v3, v4)})
-    case List(t1, t2, t3, t4, t5) =>    map5.toList.collect({case ((s, v1, v2, v3, v4), v5) if p.name == s => List(v1, v2, v3, v4, v5)})
+    case List(_) =>                     map1.toList.collect({case (s, v1)                   if p.name == s => List(v1)})
+    case List(t1, _) =>                 map2.toList.collect({case ((s, v1), v2)             if p.name == s => List(v1, v2)})
+    case List(t1, t2, _) =>             map3.toList.collect({case ((s, v1, v2), v3)         if p.name == s => List(v1, v2, v3)})
+    case List(t1, t2, t3, _) =>         map4.toList.collect({case ((s, v1, v2, v3), v4)     if p.name == s => List(v1, v2, v3, v4)})
+    case List(t1, t2, t3, t4, _) =>     map5.toList.collect({case ((s, v1, v2, v3, v4), v5) if p.name == s => List(v1, v2, v3, v4, v5)})
     case _ => throw new UnsupportedOperationException()
   }
 
