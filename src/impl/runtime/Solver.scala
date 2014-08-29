@@ -3,8 +3,6 @@ package impl.runtime
 import impl.datastore.{SimpleStore, DataStore}
 import impl.logic.Symbol.{PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
-import syntax.Constraints.RichConstraint
-import syntax.Predicates.RichPredicate
 import util.collection.mutable
 
 /**
