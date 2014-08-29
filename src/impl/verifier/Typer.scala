@@ -1,10 +1,28 @@
 package impl.verifier
 
 import impl.logic.Symbol.{VariableSymbol => VSym}
-import impl.logic.{BinaryOperator, Term, Type, UnaryOperator}
+import impl.logic._
 import impl.runtime.Error
 
 object Typer {
+
+  /**
+   * Typechecks the given logic program `p`.
+   */
+  def typecheck(p: Program): Unit = {
+    for (declaration <- p.declarations) {
+      declaration match {
+        case Declaration.DeclareBot(v, typ) =>
+          // TODO
+        case Declaration.DeclareLeq(t, typ) =>
+          // TODO
+        case Declaration.DeclareLub(t, typ) =>
+          // TODO
+        case Declaration.DeclareHeight(t, typ) =>
+          // TODO
+      }
+    }
+  }
 
   /**
    * Returns the type of the given term `t` under the empty typing enviroment.

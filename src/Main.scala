@@ -2,7 +2,7 @@ import java.io.File
 
 import impl.ast.{Compiler, Parser}
 import impl.runtime.Solver
-import impl.verifier.Verifier
+import impl.verifier.{Typer, Verifier}
 
 object Main {
   def main(args: Array[String]): Unit = {
@@ -14,12 +14,12 @@ object Main {
 
     // abstract syntax tree
     val ast = Parser.parse(file)
-    println(ast)
 
     // logic program
     val program = Compiler.compile(ast)
 
     // verify
+    Typer.typecheck(program)
     Verifier.verify(program)
 
     // compute fixpoint

@@ -129,9 +129,11 @@ class Solver(program: Program) {
    * Returns the bottom element for the given type `targetType`.
    */
   private def bot(typ: Type): Value = {
+    // construct the specific type we are looking for
+    val baseType = typ.resultType
     // find declaration
     program.declarations.collectFirst {
-      case Declaration.DeclareBot(bot, actualType) if actualType == typ => bot
+      case Declaration.DeclareBot(bot, actualType) if actualType == baseType => bot
     }.get
   }
 
@@ -140,7 +142,8 @@ class Solver(program: Program) {
    */
   private def leq(v1: Value, v2: Value, typ: Type): Boolean = {
     // construct the specific function type we are looking for
-    val targetType = Type.Function(typ, Type.Function(typ, Type.Bool))
+    val baseType = typ.resultType
+    val targetType = Type.Function(baseType, Type.Function(baseType, Type.Bool))
     // find the declaration
     val abs = program.declarations.collectFirst {
       case Declaration.DeclareLeq(leq, actualType) if actualType == targetType => leq
@@ -155,7 +158,8 @@ class Solver(program: Program) {
    */
   private def lub(v1: Value, v2: Value, typ: Type): Value = {
     // construct the specific function type we are looking for
-    val targetType = Type.Function(typ, Type.Function(typ, typ))
+    val baseType = typ.resultType
+    val targetType = Type.Function(baseType, Type.Function(baseType, baseType))
     // find the declaration
     val abs = program.declarations.collectFirst {
       case Declaration.DeclareLub(lub, actualType) if actualType == targetType => lub

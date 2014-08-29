@@ -30,7 +30,7 @@ object Compiler {
         case SExp.Lst(List(SExp.Keyword("def-type"), SExp.Name(n), e1)) =>
           val typ = compileType(e1)
           types += (n -> typ)
-          typ match {
+          typ.resultType match {
             case x: Type.Set =>
               declarations += synthesizeBot(x)
               declarations += synthesizeLeq(x)
@@ -82,10 +82,12 @@ object Compiler {
       val terms = xs map compileTerm
       val values = terms map (t => Interpreter.evaluateOpt(t))
 
+      val declaredType = lookupType(s)
+
       if (values.forall(_.nonEmpty))
-        Predicate.GroundPredicate(Symbol.PredicateSymbol(s), values map (_.get), lookupType(s))
+        Predicate.GroundPredicate(Symbol.PredicateSymbol(s), values map (_.get), declaredType)
       else
-        Predicate.NonGroundPredicate(Symbol.PredicateSymbol(s), terms, lookupType(s))
+        Predicate.NonGroundPredicate(Symbol.PredicateSymbol(s), terms, declaredType)
 
     case _ => throw Error.PredicateParseError(e)
   }
@@ -151,6 +153,7 @@ object Compiler {
     case SExp.Lst(List(SExp.Label(s), e1)) => Type.Tagged(Symbol.NamedSymbol(s), compileType(e1))
     case SExp.Lst(List(SExp.Name("Set"), e1)) => Type.Set(compileType(e1))
     case SExp.Lst(List(SExp.Name("Lat"), e1)) => Type.Lat(compileType(e1))
+    case SExp.Lst(List(SExp.Keyword("->"), e1, e2)) => Type.Function(compileType(e1), compileType(e2))
     case SExp.Lst(List(SExp.Keyword("variant"), SExp.Lst(variants))) =>
       val typ = Type.Sum(variants map compileType)
       typ.ts.foreach {
