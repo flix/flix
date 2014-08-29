@@ -10,12 +10,12 @@ trait DataStore {
   def store(p: Predicate.GroundPredicate): Unit
 
   /**
-   * TODO: DOC
+   * Returns the single value which matches the init of the predicate terms.
    */
   def lookup(p: Predicate.GroundPredicate): Option[Value]
 
   /**
-   * TODO: DOC
+   * Returns a list of  value lists which may satisfy the predicate.
    */
   def query(p: Predicate): List[List[Value]]
 

@@ -43,11 +43,6 @@ object Typer {
         case _ => throw Error.UnexpectedTypeError(t, s"The term '$t1' does not have a function type in the application '$t'.")
       }
 
-    case Term.Let(x, t1, t2) =>
-      val typ1 = typecheck(t1, typenv)
-      val typ2 = typecheck(t2, typenv + (x -> typ1))
-      typ2
-
     case Term.IfThenElse(t1, t2, t3) =>
       val typ1 = typecheck(t1, typenv)
       val typ2 = typecheck(t2, typenv)
@@ -95,10 +90,6 @@ object Typer {
         typ
       else
         throw Error.StaticTypeError(typ1, typ, t)
-
-    case Term.Case(t1, cases) =>
-      // TODO: Typing for the case term.
-      ???
 
     case Term.Tuple2(t1, t2) =>
       val typ1 = typecheck(t1, typenv)

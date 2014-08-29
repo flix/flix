@@ -23,13 +23,10 @@ object Terms {
       case Term.Var(s) => s.fmt
       case Term.Abs(x, typ, t1) => "λ" + x.fmt + " " + t1.fmt
       case Term.App(t1, t2) => t1.fmt + " " + t2.fmt
-      case Term.Let(x, t1, t2) => "let " + x.fmt + " = " + t1.fmt + " in " + t2.fmt
 
       case Term.UnaryOp(op, t1) => op.fmt + " " + t1.fmt
       case Term.BinaryOp(op, t1, t2) => t1.fmt + " " + op.fmt + " " + t2.fmt
       case Term.IfThenElse(t1, t2, t3) => "if " + t1.fmt + " then " + t2.fmt + " else " + t3.fmt
-
-      case Term.Case(t, cases) => ???
 
       case Term.Tagged(s, t1, typ) => s.fmt + " " + t1.fmt
       case Term.Tuple2(t1, t2) =>              "(" + t1.fmt + "," + t2.fmt + ")"

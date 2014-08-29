@@ -114,9 +114,6 @@ object Compiler {
     case SExp.Int(token) => Term.Int(token.toInt)
     case SExp.Str(token) => Term.Str(token)
 
-    case SExp.Lst(SExp.Keyword("match") :: cond :: cases) =>
-      Term.Unit // TODO
-
     case SExp.Lst(SExp.Keyword("set") :: rest) => Term.Set(rest.map(compileTerm).toSet)
 
     case SExp.Label(s) => Term.Tagged(Symbol.NamedSymbol(s), Term.Unit, labels(s))

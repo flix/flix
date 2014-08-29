@@ -19,9 +19,6 @@ sealed trait Term {
     case Term.Abs(s, typ, t) =>             Term.Abs(s, typ, t.rename(x, y))
     case Term.App(t1, t2) =>                Term.App(t1.rename(x, y), t2.rename(x, y))
 
-    case Term.Let(s, t1, t2) if s == x =>   this
-    case Term.Let(s, t1, t2) =>             Term.Let(s, t1.rename(x, y), t2.rename(x, y))
-
     case Term.UnaryOp(op, t1) =>            Term.UnaryOp(op, t1.rename(x, y))
     case Term.BinaryOp(op, t1, t2) =>       Term.BinaryOp(op, t1.rename(x, y), t2.rename(x, y))
     case Term.IfThenElse(t1, t2, t3) =>     Term.IfThenElse(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y))
@@ -50,9 +47,6 @@ sealed trait Term {
     case Term.Abs(s, typ, t1) => Term.Abs(s, typ, t1.substitute(x, t))
     case Term.App(t1, t2) => Term.App(t1.substitute(x, t), t2.substitute(x, t))
 
-    case Term.Let(s, t1, t2) if s == x => this
-    case Term.Let(s, t1, t2) => Term.Let(s, t1.substitute(x, t), t2.substitute(x, t))
-
     case Term.UnaryOp(op, t1) => Term.UnaryOp(op, t1.substitute(x, t))
     case Term.BinaryOp(op, t1, t2) => Term.BinaryOp(op, t1.substitute(x, t), t2.substitute(x, t))
     case Term.IfThenElse(t1, t2, t3) => Term.IfThenElse(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
@@ -77,14 +71,12 @@ sealed trait Term {
     case Term.Var(s) => Set(s)
     case Term.Abs(x, typ, t) =>               t.freeVariables - x
     case Term.App(t1, t2) =>                  t1.freeVariables ++ t2.freeVariables
-    case Term.Let(x, t1, t2) =>               (t1.freeVariables ++ t2.freeVariables) - x
 
     case Term.UnaryOp(op, t) =>               t.freeVariables
     case Term.BinaryOp(op, t1, t2) =>         t1.freeVariables ++ t2.freeVariables
     case Term.IfThenElse(t1, t2, t3) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
 
     case Term.Tagged(s, t, typ) =>            t.freeVariables
-    case Term.Case(t, cases) =>               cases.values.map(t => t._2.freeVariables - t._1).flatten.toSet
     case Term.Tuple2(t1, t2) =>               t1.freeVariables ++ t2.freeVariables
     case Term.Tuple3(t1, t2, t3) =>           t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
     case Term.Tuple4(t1, t2, t3, t4) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables
@@ -135,12 +127,6 @@ object Term {
   case class App(t1: Term, t2: Term) extends Term
 
   /**
-   * A let binding term.
-   */
-  // TODO: Remove?
-  case class Let(name: Symbol.VariableSymbol, t1: Term, t2: Term) extends Term
-
-  /**
    * An if-then-else term.
    */
   case class IfThenElse(t1: Term, t2: Term, t3: Term) extends Term
@@ -154,12 +140,6 @@ object Term {
    * A binary operator term.
    */
   case class BinaryOp(op: BinaryOperator, t1: Term, t2: Term) extends Term
-
-  /**
-   * A case term.
-   */
-  // TODO: Remove?
-  case class Case(t: Term, cases: Map[Symbol.NamedSymbol, (Symbol.VariableSymbol, Term)]) extends Term
 
   /**
    * A tagged term.

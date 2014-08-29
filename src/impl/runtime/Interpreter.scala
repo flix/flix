@@ -31,11 +31,6 @@ object Interpreter {
       val argVal = evaluate(t2, env)
       evaluate(t3.substitute(x, argVal.toTerm), env) // TODO: Eliminate free occurences in argVal and remove environment.
 
-    case Term.Let(x, t1, t2) =>
-      val v1 = evaluate(t1, env)
-      val y = Symbol.freshVariableSymbol(x)
-      evaluate(t2.rename(x, y), env + (y -> v1))
-
     case Term.IfThenElse(t1, t2, t3) =>
       val b = evaluate(t1, env).toBool
       if (b)
@@ -55,12 +50,6 @@ object Interpreter {
     case Term.Tagged(s, t1, typ) =>
       val v1 = evaluate(t1, env)
       Value.Tagged(s, v1, typ)
-
-    case Term.Case(t1, cases) =>
-      val Value.Tagged(s, v, _) = evaluate(t1, env)
-      val (x, t2) = cases(s)
-      val y = Symbol.freshVariableSymbol(x)
-      evaluate(t2.rename(x, y), env + (y -> v))
 
     case Term.Tuple2(t1, t2) =>
       val v1 = evaluate(t1, env)
