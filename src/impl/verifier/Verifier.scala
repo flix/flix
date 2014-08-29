@@ -27,7 +27,6 @@ object Verifier {
         case Declaration.DeclareLeq(t, Type.Function(typ1, typ2)) =>
 
           val typDecl = foo(Type.Tuple3(Type.Int, Type.Tuple2(Type.Bool, Type.Tuple2(Type.Bool, Type.Bool)), Type.Bool))
-          println(typDecl.mkString("\n"))
 
         case _ => // TODO Verifier
       }
