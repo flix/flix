@@ -10,7 +10,7 @@ import util.collection.mutable
 /**
  * A datastore which is indexed left-to-right.
  */
-class IndexedStore {
+class IndexedStore extends DataStore {
 
   val map1 = mutable.Map1.empty[Symbol.PredicateSymbol, Value]
   val map2 = mutable.Map2.empty[Symbol.PredicateSymbol, Value, Value]
@@ -37,15 +37,19 @@ class IndexedStore {
   }
 
   def query(p: Predicate): List[List[Value]] = p.terms.map(t => Interpreter.evaluateOpt(t)) match {
-    case List(_) =>                     map1.get(p.name).map(x => List(x)).toList
+    case List(_) =>                                           map1.get(p.name).map(x => List(x)).toList
 
-    case List(Some(v1), _) =>           map2.get(p.name, v1).map(x => List(v1, x)).toList
-    case List(_, _) =>                  map2.get(p.name).map({case (v1, v2) => List(v1, v2)}).toList
+    case List(Some(v1), _) =>                                 map2.get(p.name, v1).map(x => List(v1, x)).toList
+    case List(_, _) =>                                        map2.get(p.name).map({case (v1, v2) => List(v1, v2)}).toList
 
-    case List(Some(v1), Some(v2), _) => map3.get(p.name, v1, v2).map(x => List(v1, v2, x)).toList
-    case List(_, _, _) =>               map3.get(p.name).map({case (v1, v2, v3) => List(v1, v2, v3)}).toList
+    case List(Some(v1), Some(v2), _) =>                       map3.get(p.name, v1, v2).map(x => List(v1, v2, x)).toList
+    case List(_, _, _) =>                                     map3.get(p.name).map({case (v1, v2, v3) => List(v1, v2, v3)}).toList
 
-    // TODO: Rest
+    case List(Some(v1), Some(v2), Some(v3), _) =>             map4.get(p.name, v1, v2, v3).map(x => List(v1, v2, v3, x)).toList
+    case List(_, _, _, _) =>                                  map4.get(p.name).map({case (v1, v2, v3, v4) => List(v1, v2, v3, v4)}).toList
+
+    case List(Some(v1), Some(v2), Some(v3), Some(v4), _) =>   map5.get(p.name, v1, v2, v3, v4).map(x => List(v1, v2, v3, v4, x)).toList
+    case List(_, _, _, _, _) =>                               map5.get(p.name).map({case (v1, v2, v3, v4, v5) => List(v1, v2, v3, v4, v5)}).toList
 
     case _ => throw new UnsupportedOperationException()
   }

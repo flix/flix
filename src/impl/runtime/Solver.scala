@@ -1,6 +1,6 @@
 package impl.runtime
 
-import impl.datastore.{SimpleStore, DataStore}
+import impl.datastore.{IndexedStore, SimpleStore, DataStore}
 import impl.logic.Symbol.{PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
 import util.collection.mutable
@@ -13,7 +13,7 @@ class Solver(program: Program) {
   /**
    * A datastore for facts.
    */
-  val datastore: DataStore = new SimpleStore
+  val datastore: DataStore = new IndexedStore
 
   /**
    * A map of dependencies between predicate symbols and horn clauses.
