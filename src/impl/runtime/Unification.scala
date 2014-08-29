@@ -11,9 +11,9 @@ object Unification {
   /**
    * Unifies all terms in the given predicate `p1` with the predicate `p2` iff they share the same symbol.
    */
-  def unify(p1: Predicate, p2: Predicate, env0: Map[VSym, Term]): Option[Map[VSym, Term]] =
+  def unify(p1: Predicate, p2: Predicate, env0: Map[VSym, Term]): List[Map[VSym, Term]] =
     if (p1.name != p2.name)
-      None
+      List.empty
     else
       Unification.unifyTerms(p1.terms, p2.terms, env0)
 
@@ -24,16 +24,23 @@ object Unification {
   /**
    * Unifies the term `t` with the value `v` under the given environment `env0`.
    */
-  def unify(t: Term, v: Value, env0: Map[VSym, Value]): Option[Map[VSym, Value]] = (t, v) match {
-    case (Term.Unit, Value.Unit) => Some(env0)
-    case (Term.Bool(b1), Value.Bool(b2)) if b1 == b2 => Some(env0)
-    case (Term.Int(i1), Value.Int(i2)) if i1 == i2 => Some(env0)
-    case (Term.Str(s1), Value.Str(s2)) if s1 == s2 => Some(env0)
+  def unify(t: Term, v: Value, env0: Map[VSym, Value]): List[Map[VSym, Value]] = (t, v) match {
+    case (Term.Unit, Value.Unit) => List(env0)
+    case (Term.Bool(b1), Value.Bool(b2)) if b1 == b2 => List(env0)
+    case (Term.Int(i1), Value.Int(i2)) if i1 == i2 => List(env0)
+    case (Term.Str(s1), Value.Str(s2)) if s1 == s2 => List(env0)
+
+    case (Term.Set(xs), Value.Set(ys)) =>
+      val xss = xs.toList.permutations
+      val yss = ys.toList.permutations
+      xss.flatMap(xs =>
+        yss.flatMap(ys =>
+          unifyValues(xs, ys, env0))).toList
 
     case (Term.Var(s), v2) => env0.get(s) match {
-      case None => Some(env0 + (s -> v2))
-      case Some(v3) if v2 != v3 => None
-      case Some(v3) if v2 == v3 => Some(env0)
+      case None => List(env0 + (s -> v2))
+      case Some(v3) if v2 != v3 => List.empty
+      case Some(v3) if v2 == v3 => List(env0)
     }
 
     case (Term.Tagged(s1, t1, _), Value.Tagged(s2, v1, _)) if s1 == s2 => unify(t1, v1, env0)
@@ -60,14 +67,14 @@ object Unification {
            env5 <- unify(t5, v5, env4))
       yield env5
 
-    case _ => None
+    case _ => List.empty
   }
 
   /**
    * Unifies all terms in `tx` with all terms in `ty` under the initial environment `env0`.
    */
-  def unifyValues(tx: List[Term], ty: List[Value], env0: Map[VSym, Value]): Option[Map[VSym, Value]] =
-    (tx zip ty).foldLeft(Option(env0)) {
+  def unifyValues(tx: List[Term], ty: List[Value], env0: Map[VSym, Value]): List[Map[VSym, Value]] =
+    (tx zip ty).foldLeft(List(env0)) {
       case (env, (t1, t2)) => env.flatMap(e => unify(t1, t2, e))
     }
 
@@ -78,30 +85,38 @@ object Unification {
   /**
    * Unifies the term `t1` with the term `t2` under the given environment `env0`.
    */
-  def unify(t1: Term, t2: Term, env0: Map[VSym, Term]): Option[Map[VSym, Term]] = (t1, t2) match {
-    case (Term.Bool(b1), Term.Bool(b2)) if b1 == b2 => Some(env0)
-    case (Term.Int(i1), Term.Int(i2)) if i1 == i2 => Some(env0)
-    case (Term.Str(s1), Term.Str(s2)) if s1 == s2 => Some(env0)
+  def unify(t1: Term, t2: Term, env0: Map[VSym, Term]): List[Map[VSym, Term]] = (t1, t2) match {
+    case (Term.Bool(b1), Term.Bool(b2)) if b1 == b2 => List(env0)
+    case (Term.Int(i1), Term.Int(i2)) if i1 == i2 => List(env0)
+    case (Term.Str(s1), Term.Str(s2)) if s1 == s2 => List(env0)
+
+    case (Term.Set(xs), Term.Set(ys)) =>
+      val xss = xs.toList.permutations
+      val yss = ys.toList.permutations
+      xss.flatMap(xs =>
+        yss.flatMap(ys =>
+          unifyTerms(xs, ys, env0))).toList
+
     case (Term.Var(x), Term.Var(y)) => (env0.get(x), env0.get(y)) match {
-      case (None, None) => Some(substitute(x, Term.Var(y), env0) + (y -> Term.Var(x)))
-      case (None, Some(tt2)) => Some(substitute(x, tt2, env0) + (x -> tt2))
-      case (Some(tt1), None) => Some(substitute(x, tt1, env0) + (y -> tt1))
+      case (None, None) => List(substitute(x, Term.Var(y), env0) + (y -> Term.Var(x)))
+      case (None, Some(tt2)) => List(substitute(x, tt2, env0) + (x -> tt2))
+      case (Some(tt1), None) => List(substitute(x, tt1, env0) + (y -> tt1))
       case (Some(tt1), Some(tt2)) => unify(tt1, tt2, env0)
     }
     case (Term.Var(x), t) => env0.get(x) match {
       case None =>
         if (t.freeVariables contains x)
-          None // Ensure that y does not occur free in t.
+          List.empty // Ensure that y does not occur free in t.
         else
-          Some(substitute(x, t, env0) + (x -> t))
+          List(substitute(x, t, env0) + (x -> t))
       case Some(tt) => unify(tt, t, env0)
     }
     case (t, Term.Var(y)) => env0.get(y) match {
       case None =>
         if (t.freeVariables contains y)
-          None // Ensure that y does not occur free in t.
+          List.empty // Ensure that y does not occur free in t.
         else
-          Some(substitute(y, t, env0) + (y -> t))
+          List(substitute(y, t, env0) + (y -> t))
       case Some(tt) => unify(t, tt, env0)
     }
 
@@ -130,14 +145,14 @@ object Unification {
            env5 <- unify(x5, y5, env4))
       yield env5
 
-    case _ => None
+    case _ => List.empty
   }
 
   /**
    * Unifies all terms in `tx` with all terms in `ty` under the initial environment `env0`.
    */
-  def unifyTerms(tx: List[Term], ty: List[Term], env0: Map[VSym, Term]): Option[Map[VSym, Term]] =
-    (tx zip ty).foldLeft(Option(env0)) {
+  def unifyTerms(tx: List[Term], ty: List[Term], env0: Map[VSym, Term]): List[Map[VSym, Term]] =
+    (tx zip ty).foldLeft(List(env0)) {
       case (env, (t1, t2)) => env.flatMap(e => unify(t1, t2, e))
     }
 

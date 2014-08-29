@@ -1,7 +1,9 @@
 package impl.runtime
 
+import impl.datastore.{SimpleStore, DataStore}
 import impl.logic.Symbol.{PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
+import syntax.Constraints.RichConstraint
 import syntax.Predicates.RichPredicate
 import util.collection.mutable
 
@@ -11,27 +13,9 @@ import util.collection.mutable
 class Solver(program: Program) {
 
   /**
-   * A set of predicate facts.
+   * A datastore for facts.
    */
-  val facts = scala.collection.mutable.Set.empty[Predicate]
-
-  /**
-   * The tables for n-ary relations.
-   */
-  val relation1 = mutable.MultiMap1.empty[PSym, Value]
-  val relation2 = mutable.MultiMap1.empty[PSym, (Value, Value)]
-  val relation3 = mutable.MultiMap1.empty[PSym, (Value, Value, Value)]
-  val relation4 = mutable.MultiMap1.empty[PSym, (Value, Value, Value, Value)]
-  val relation5 = mutable.MultiMap1.empty[PSym, (Value, Value, Value, Value, Value)]
-
-  /**
-   * Maps for n-ary lattices.
-   */
-  val map1 = mutable.Map1.empty[PSym, Value]
-  val map2 = mutable.Map1.empty[PSym, (Value, Value)]
-  val map3 = mutable.Map1.empty[PSym, (Value, Value, Value)]
-  val map4 = mutable.Map1.empty[PSym, (Value, Value, Value, Value)]
-  val map5 = mutable.Map1.empty[PSym, (Value, Value, Value, Value, Value)]
+  val datastore: DataStore = new SimpleStore
 
   /**
    * A map of dependencies between predicate symbols and horn clauses.
@@ -72,80 +56,38 @@ class Solver(program: Program) {
     }
   }
 
+  /**
+   * Prints the solution.
+   */
+  def print(): Unit = {
+    datastore.output()
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Facts                                                                   //
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Returns `true` iff the given predicate `p` under the environment `env0` is a ground fact.
-   */
-  def isProvenFact(p: Predicate, env0: Map[VSym, Value]): Boolean = Interpreter.evaluatePredicateOpt(p, env0) match {
-    case None => false
-    case Some(pg) => facts contains pg
-  }
-
-  /**
    * Adds the given predicate `p` as a known ground fact under the given interpretation `i` and environment `env`.
    */
+  // TODO: Argu should be ground predicate.
   def newProvenFact(p: Predicate, env: Map[VSym, Value]): Unit = {
     val p2 = Interpreter.evaluatePredicate(p, env)
-    println("--> " + p2.fmt)
 
-    facts += p2
+    val typ = p.typ.resultType
 
-    // TODO: Need Term.Set to implement this.
-    // TODO: Synthesis join and lub terms.
+    val newValue = p2.values.last
+    val oldValue = datastore.lookup(p2) match {
+      case None => bot(typ)
+      case Some(v) => v
+    }
 
-    if (p.typ.isSetMap) {
-      p.terms match {
-        case List(t1) =>
-          val v1 = Interpreter.evaluate(t1, env)
-
-          //relation1.get(p.name)
-
-          val newFact = relation1.put(p.name, v1)
-          if (newFact)
-            propagateFact(Predicate.GroundPredicate(p.name, List(v1), p.typ))
-
-        case List(t1, t2) =>
-          val (v1, v2) = (Interpreter.evaluate(t1, env), Interpreter.evaluate(t2, env))
-          val newFact = relation2.put(p.name, (v1, v2))
-          if (newFact)
-            propagateFact(Predicate.GroundPredicate(p.name, List(v1, v2), p.typ))
-
-        case List(t1, t2, t3) =>
-          val (v1, v2, v3) = (Interpreter.evaluate(t1, env), Interpreter.evaluate(t2, env), Interpreter.evaluate(t3, env))
-          val newFact = relation3.put(p.name, (v1, v2, v3))
-          if (newFact)
-            propagateFact(Predicate.GroundPredicate(p.name, List(v1, v2, v3), p.typ))
-
-        case List(t1, t2, t3, t4) =>
-          val (v1, v2, v3, v4) = (Interpreter.evaluate(t1, env), Interpreter.evaluate(t2, env), Interpreter.evaluate(t3, env), Interpreter.evaluate(t4, env))
-          val newFact = relation4.put(p.name, (v1, v2, v3, v4))
-          if (newFact)
-            propagateFact(Predicate.GroundPredicate(p.name, List(v1, v2, v3, v4), p.typ))
-
-        case List(t1, t2, t3, t4, t5) =>
-          val (v1, v2, v3, v4, v5) = (Interpreter.evaluate(t1, env), Interpreter.evaluate(t2, env), Interpreter.evaluate(t3, env), Interpreter.evaluate(t4, env), Interpreter.evaluate(t5, env))
-          val newFact = relation5.put(p.name, (v1, v2, v3, v4, v5))
-          if (newFact)
-            propagateFact(Predicate.GroundPredicate(p.name, List(v1, v2, v3, v4, v5), p.typ))
-      }
-    } else if (p.typ.isLatMap) {
-      val elmType = p.typ.resultType
-      p.terms match {
-        case List(t1) =>
-          val newValue = Interpreter.evaluate(t1, env)
-          val oldValue = map1.get(p.name).getOrElse(bot(elmType))
-          val lubValue = lub(elmType, newValue, oldValue)
-          val newFact: Boolean = !leq(elmType, lubValue, oldValue)
-          if (newFact) {
-            map1.put(p.name, lubValue)
-            propagateFact(Predicate.GroundPredicate(p.name, List(lubValue), p.typ))
-          }
-      }
-    } else {
-      throw new RuntimeException(s"Unworkable type: ${p.typ}")
+    val lubValue = lub(newValue, oldValue, typ)
+    val newFact: Boolean = !leq(lubValue, oldValue, typ)
+    if (newFact) {
+      val pn = Predicate.GroundPredicate(p.name, p2.values.init ::: lubValue :: Nil, p.typ)
+      datastore.store(pn)
+      propagateFact(pn)
     }
   }
 
@@ -155,9 +97,9 @@ class Solver(program: Program) {
   def propagateFact(p: Predicate): Unit = {
     for (h <- dependencies.get(p.name)) {
       for (p2 <- h.body) {
-        Unification.unify(p, p2, Map.empty[VSym, Term]) match {
-          case None => // nop
-          case Some(env0) => queue.enqueue((h, env0.mapValues(t => Interpreter.evaluate(t))))
+        for (env0 <- Unification.unify(p, p2, Map.empty[VSym, Term])) {
+          val values = env0.mapValues(t => Interpreter.evaluate(t))
+          queue.enqueue((h, values))
         }
       }
     }
@@ -181,33 +123,11 @@ class Solver(program: Program) {
   }
 
   /**
-   * Returns a list of environments for the given predicate `p` with interpretation `i` under the given environment `env0`.
+   * Returns a list of environments for the given predicate `p` with interpretation `i` under the given environment `env`.
    */
-  def evaluate(p: Predicate, env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
-    if (isProvenFact(p, env0)) {
-      return List(env0)
-    }
-
-    if (p.typ.isSetMap) {
-      p.terms match {
-        case ts@List(t1) => relation1.get(p.name).toList.flatMap {
-          case v1 => Unification.unifyValues(ts, List(v1), env0)
-        }
-        case ts@List(t1, t2) => relation2.get(p.name).toList.flatMap {
-          case (v1, v2) => Unification.unifyValues(ts, List(v1, v2), env0)
-        }
-        case ts@List(t1, t2, t3) => relation3.get(p.name).toList.flatMap {
-          case (v1, v2, v3) => Unification.unifyValues(ts, List(v1, v2, v3), env0)
-        }
-        case ts@List(t1, t2, t3, t4) => relation4.get(p.name).toList.flatMap {
-          case (v1, v2, v3, v4) => Unification.unifyValues(ts, List(v1, v2, v3, v4), env0)
-        }
-        case ts@List(t1, t2, t3, t4, t5) => relation5.get(p.name).toList.flatMap {
-          case (v1, v2, v3, v4, v5) => Unification.unifyValues(ts, List(v1, v2, v3, v4, v5), env0)
-        }
-      }
-    } else {
-      throw new RuntimeException()
+  def evaluate(p: Predicate, env: Map[VSym, Value]): List[Map[VSym, Value]] = {
+    datastore.query(p) flatMap {
+      case values => Unification.unifyValues(p.terms, values, env)
     }
   }
 
@@ -218,17 +138,17 @@ class Solver(program: Program) {
   /**
    * Returns the bottom element for the given type `targetType`.
    */
-  private def bot(targetType: Type): Value = {
+  private def bot(typ: Type): Value = {
     // find declaration
     program.declarations.collectFirst {
-      case Declaration.DeclareBot(bot, actualType) if actualType == targetType => bot
+      case Declaration.DeclareBot(bot, actualType) if actualType == typ => bot
     }.get
   }
 
   /**
    * Returns `true` iff `v1` is less or equal to `v2`.
    */
-  private def leq(typ: Type, v1: Value, v2: Value): Boolean = {
+  private def leq(v1: Value, v2: Value, typ: Type): Boolean = {
     // construct the specific function type we are looking for
     val targetType = Type.Function(typ, Type.Function(typ, Type.Bool))
     // find the declaration
@@ -236,14 +156,14 @@ class Solver(program: Program) {
       case Declaration.DeclareLeq(leq, actualType) if actualType == targetType => leq
     }.get
 
-    val app = Term.App(Term.App(abs, v2.toTerm), v1.toTerm)
+    val app = Term.App(Term.App(abs, v1.toTerm), v2.toTerm)
     Interpreter.evaluate(app).toBool
   }
 
   /**
    * Returns the join of `v1` and `v2`.
    */
-  private def lub(typ: Type, v1: Value, v2: Value): Value = {
+  private def lub(v1: Value, v2: Value, typ: Type): Value = {
     // construct the specific function type we are looking for
     val targetType = Type.Function(typ, Type.Function(typ, typ))
     // find the declaration
@@ -251,7 +171,7 @@ class Solver(program: Program) {
       case Declaration.DeclareLub(lub, actualType) if actualType == targetType => lub
     }.get
 
-    val app = Term.App(Term.App(abs, v2.toTerm), v1.toTerm)
+    val app = Term.App(Term.App(abs, v1.toTerm), v2.toTerm)
     Interpreter.evaluate(app)
   }
 

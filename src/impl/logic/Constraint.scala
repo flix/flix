@@ -13,7 +13,7 @@ object Constraint {
   /**
    * A fact consists of a single predicate.
    */
-  case class Fact(head: Predicate) extends Constraint {
+  case class Fact(head: Predicate.GroundPredicate) extends Constraint {
     def body: List[Predicate] = List.empty
   }
 

@@ -59,9 +59,16 @@ object Parser {
     def body: Parser[SExp] = keyword | value | variable | name | label | sexp
 
     /**
+     * A set-expression.
+     */
+    def setexp: Parser[SExp] =  "{" ~> rep(body) <~ "}" ^^ {
+      case xs: List[SExp] => SExp.Lst(List(SExp.Keyword("set")) ::: xs)
+    }
+
+    /**
      * S-expression.
      */
-    def sexp: Parser[SExp] = ("(" ~> rep(body) <~ ")" ^^ SExp.Lst) | ("[" ~> rep(body) <~ "]" ^^ SExp.Lst)
+    def sexp: Parser[SExp] = ("(" ~> rep(body) <~ ")" ^^ SExp.Lst) | ("[" ~> rep(body) <~ "]" ^^ SExp.Lst) | setexp
 
     /**
      * Declaration.

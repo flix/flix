@@ -3,7 +3,6 @@ import java.io.File
 import impl.ast.{Compiler, Parser}
 import impl.runtime.Solver
 import impl.verifier.Verifier
-import util.output.Solution
 
 object Main {
   def main(args: Array[String]): Unit = {
@@ -28,6 +27,6 @@ object Main {
     solver.solve()
 
     // print solution
-    Solution.print(solver)
+    solver.print()
   }
 }

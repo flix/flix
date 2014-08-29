@@ -65,7 +65,7 @@ object Compiler {
           declarations += Declaration.DeclareHeight(t, typ)
 
         case SExp.Lst(List(SExp.Keyword("fact"), head)) =>
-          constraints += Constraint.Fact(compilePredicate(head))
+          constraints += Constraint.Fact(compilePredicate(head).asInstanceOf[Predicate.GroundPredicate])
 
         case SExp.Lst(List(SExp.Keyword("rule"), head, SExp.Lst(body))) =>
           constraints += Constraint.Rule(compilePredicate(head), body map compilePredicate)
@@ -115,12 +115,12 @@ object Compiler {
     case SExp.Str(token) => Term.Str(token)
 
     case SExp.Lst(SExp.Keyword("match") :: cond :: cases) =>
-      val tcond = compileTerm(cond)
-      Term.Unit // TODO> Wrong
+      Term.Unit // TODO
+
+    case SExp.Lst(SExp.Keyword("set") :: rest) => Term.Set(rest.map(compileTerm).toSet)
 
     case SExp.Label(s) => Term.Tagged(Symbol.NamedSymbol(s), Term.Unit, labels(s))
     case SExp.Lst(List(SExp.Label(s), es)) => Term.Tagged(Symbol.NamedSymbol(s), compileTerm(es), labels(s))
-
     case SExp.Lst(List(e1, e2)) => Term.Tuple2(compileTerm(e1), compileTerm(e2))
     case SExp.Lst(List(e1, e2, e3)) => Term.Tuple3(compileTerm(e1), compileTerm(e2), compileTerm(e3))
     case SExp.Lst(List(e1, e2, e3, e4)) => Term.Tuple4(compileTerm(e1), compileTerm(e2), compileTerm(e3), compileTerm(e4))

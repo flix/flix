@@ -21,13 +21,15 @@ object Interpreter {
     case Term.Str(s) => Value.Str(s)
     case Term.Set(xs) => Value.Set(xs.map(x => evaluate(x, env)))
 
-    case Term.Var(s) => env.getOrElse(s, throw Error.UnboundVariableError(s))
+    case Term.Var(s) => env.get(s) match {
+      case None => throw Error.UnboundVariableError(s)
+      case Some(v) => v
+    }
     case Term.Abs(s, typ, t1) => Value.Abs(s, typ, t1)
     case Term.App(t1, t2) =>
       val Value.Abs(x, _, t3) = evaluate(t1, env)
       val argVal = evaluate(t2, env)
-      val freshVar = Symbol.freshVariableSymbol(x)
-      evaluate(t3.rename(x, freshVar), env + (freshVar -> argVal))
+      evaluate(t3.substitute(x, argVal.toTerm), env) // TODO: Eliminate free occurences in argVal and remove environment.
 
     case Term.Let(x, t1, t2) =>
       val v1 = evaluate(t1, env)
