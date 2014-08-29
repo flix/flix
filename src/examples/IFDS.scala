@@ -2,8 +2,6 @@ package examples
 
 object IFDS {
 
-  // TODO: Ondrej: Translate to S-expressions.
-
   def main(args: Array[String]): Unit = {
 
     /*

@@ -1,6 +1,7 @@
 package impl.logic
 
 import impl.runtime.Error
+import impl.verifier.Typer
 
 sealed trait Value {
   /**
@@ -49,7 +50,9 @@ sealed trait Value {
    */
   def toSet: Set[Value] = this match {
     case Value.Set(xs) => xs
-    case _ => throw Error.RuntimeTypeError(Type.Set(Type.Unit), this) // TODO
+    case _ =>
+      val typ = Typer.typecheck(this.toTerm)
+      throw Error.RuntimeTypeError(Type.Set(typ), this)
   }
 
 }

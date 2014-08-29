@@ -14,7 +14,7 @@ object Verifier {
   val types = Map.empty[Type, String]
 
   def lookupType(typ: Type): String = types.get(typ) match {
-    case None => ??? // TODO: Gen fresh name
+    case None => ??? // TODO: Verifier
     case Some(s) => s
   }
 
@@ -29,7 +29,7 @@ object Verifier {
           val typDecl = foo(Type.Tuple3(Type.Int, Type.Tuple2(Type.Bool, Type.Tuple2(Type.Bool, Type.Bool)), Type.Bool))
           println(typDecl.mkString("\n"))
 
-        case _ => // TODO
+        case _ => // TODO Verifier
       }
     }
   }

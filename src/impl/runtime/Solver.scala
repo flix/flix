@@ -41,7 +41,8 @@ class Solver(program: Program) {
 
     // Satisfy all facts. Satisfying a fact adds violated horn clauses (and environments) to the work list.
     for (h <- program.facts) {
-      newProvenFact(h.head, Map.empty[VSym, Value])
+      val fact = Interpreter.evaluatePredicate(h.head)
+      newProvenFact(fact)
     }
 
     // Iteratively try to satisfy pending horn clauses.
@@ -51,7 +52,8 @@ class Solver(program: Program) {
 
       val models = evaluate(h, env)
       for (model <- models) {
-        newProvenFact(h.head, model)
+        val fact = Interpreter.evaluatePredicate(h.head, model)
+        newProvenFact(fact)
       }
     }
   }
@@ -66,28 +68,18 @@ class Solver(program: Program) {
   /////////////////////////////////////////////////////////////////////////////
   // Facts                                                                   //
   /////////////////////////////////////////////////////////////////////////////
-
   /**
-   * Adds the given predicate `p` as a known ground fact under the given interpretation `i` and environment `env`.
+   * Adds the given predicate `p` as a known ground fact.
    */
-  // TODO: Argu should be ground predicate.
-  def newProvenFact(p: Predicate, env: Map[VSym, Value]): Unit = {
-    val p2 = Interpreter.evaluatePredicate(p, env)
-
-    val typ = p.typ.resultType
-
-    val newValue = p2.values.last
-    val oldValue = datastore.lookup(p2) match {
-      case None => bot(typ)
-      case Some(v) => v
-    }
-
-    val lubValue = lub(newValue, oldValue, typ)
-    val newFact: Boolean = !leq(lubValue, oldValue, typ)
+  def newProvenFact(p: Predicate.GroundPredicate): Unit = {
+    val newValue = p.values.last
+    val oldValue = datastore.lookup(p).getOrElse(bot(p.typ))
+    val lubValue = lub(newValue, oldValue, p.typ)
+    val newFact: Boolean = !leq(lubValue, oldValue, p.typ)
     if (newFact) {
-      val pn = Predicate.GroundPredicate(p.name, p2.values.init ::: lubValue :: Nil, p.typ)
-      datastore.store(pn)
-      propagateFact(pn)
+      val np = Predicate.GroundPredicate(p.name, p.values.init ::: lubValue :: Nil, p.typ)
+      datastore.store(np)
+      propagateFact(np)
     }
   }
 
