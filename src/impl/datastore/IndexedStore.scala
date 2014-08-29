@@ -39,8 +39,11 @@ class IndexedStore {
   def query(p: Predicate): List[List[Value]] = p.terms.map(t => Interpreter.evaluateOpt(t)) match {
     case List(_) =>                     map1.get(p.name).map(x => List(x)).toList
 
-    case List(None, _) =>               map2.get(p.name).map({case (v1, v2) => List(v1, v2)}).toList
-    case List(Some(v1), _) =>           map2.get(p.name, v1).map(x => List(x)).toList
+    case List(Some(v1), _) =>           map2.get(p.name, v1).map(x => List(v1, x)).toList
+    case List(_, _) =>                  map2.get(p.name).map({case (v1, v2) => List(v1, v2)}).toList
+
+    case List(Some(v1), Some(v2), _) => map3.get(p.name, v1, v2).map(x => List(v1, v2, x)).toList
+    case List(_, _, _) =>               map3.get(p.name).map({case (v1, v2, v3) => List(v1, v2, v3)}).toList
 
     // TODO: Rest
 
