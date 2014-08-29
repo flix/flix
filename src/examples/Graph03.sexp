@@ -1,6 +1,5 @@
-(def-type Edge (Set (Str Str)))
-(def-type Reachable (Set (Str Str)))
-(def-type Cycle (Set Str))
+(def-type Edge (-> Str (Set Str)))
+(def-type Reachable (-> Str (Set Str)))
 
 (fact (Edge "z" {"x"}))
 (fact (Edge "b" {"c"}))

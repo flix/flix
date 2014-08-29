@@ -1,6 +1,5 @@
-(def-type Parent (Set (Str Str)))
-(def-type Age (Set (Str Int)))
-(def-type NameAndAge (variant ((:NameAndAge (Str Int)))))
+(def-type Parent (-> Str (Set Str)))
+(def-type Age (-> Str (Set Int)))
 (def-type R (Set (Str (variant ((:NameAndAge (Str Int)))))))
 
 (fact (Parent "Caroline" {"IngerM"}))
