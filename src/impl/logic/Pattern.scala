@@ -10,6 +10,11 @@ object Pattern {
   case class Var(s: Symbol.VariableSymbol) extends Pattern
 
   /**
+   * A tagged pattern.
+   */
+  case class Tagged()
+
+  /**
    * A 2-tuple pattern.
    */
   case class Tuple2(p1: Pattern, p2: Pattern) extends Pattern
