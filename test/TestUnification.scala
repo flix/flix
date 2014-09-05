@@ -185,4 +185,39 @@ class TestUnification extends FunSuite {
     val r = Unification.unify(t, v)
     assertResult(List(Map(x -> Value.Unit)))(r)
   }
+
+  test("Unification.Match.02") {
+    val t = Term.Var(x)
+    val v = Value.Bool(true)
+    val r = Unification.unify(t, v)
+    assertResult(List(Map(x -> Value.Bool(true))))(r)
+  }
+
+  test("Unification.Match.03") {
+    val t = Term.Var(x)
+    val v = Value.Int(42)
+    val r = Unification.unify(t, v)
+    assertResult(List(Map(x -> Value.Int(42))))(r)
+  }
+
+  test("Unification.Match.04") {
+    val t = Term.Var(x)
+    val v = Value.Tuple2(Value.Int(1), Value.Int(2))
+    val r = Unification.unify(t, v)
+    assertResult(List(Map(x -> Value.Tuple2(Value.Int(1), Value.Int(2)))))(r)
+  }
+
+  test("Unification.Match.05") {
+    val t = Term.Tuple2(Term.Var(x), Term.Var(y))
+    val v = Value.Tuple2(Value.Int(1), Value.Int(2))
+    val r = Unification.unify(t, v)
+    assertResult(List(Map(x -> Value.Int(1), y -> Value.Int(2))))(r)
+  }
+
+  test("Unification.Match.06") {
+    val t = Term.Tuple2(Term.Var(x), Term.Var(x))
+    val v = Value.Tuple2(Value.Int(42), Value.Int(42))
+    val r = Unification.unify(t, v)
+    assertResult(List(Map(x -> Value.Int(42))))(r)
+  }
 }
