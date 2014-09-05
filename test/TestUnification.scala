@@ -1,6 +1,5 @@
 import impl.logic.{Symbol, Term, Type, Value}
 import impl.runtime.Unification
-
 import org.scalatest.FunSuite
 
 class TestUnification extends FunSuite {
@@ -219,5 +218,35 @@ class TestUnification extends FunSuite {
     val v = Value.Tuple2(Value.Int(42), Value.Int(42))
     val r = Unification.unify(t, v)
     assertResult(List(Map(x -> Value.Int(42))))(r)
+  }
+
+  test("Unification.Match.07") {
+    val t = Term.Set(Set(Term.Var(x)))
+    val v = Value.Set(Set(Value.Int(1), Value.Int(2), Value.Int(3)))
+    val r = Unification.unify(t, v)
+    assertResult(List(
+      Map(x -> Value.Int(1)),
+      Map(x -> Value.Int(2)),
+      Map(x -> Value.Int(3))
+    ))(r)
+  }
+
+  test("Unification.Match.08") {
+    val t = Term.Set(Set(Term.Int(1), Term.Var(x), Term.Int(3)))
+    val v = Value.Set(Set(Value.Int(1), Value.Int(2), Value.Int(3)))
+    val r = Unification.unify(t, v)
+    assertResult(List(
+      Map(x -> Value.Int(2))
+    ))(r)
+  }
+
+  test("Unification.Match.09") {
+    val t = Term.Set(Set(Term.Var(x), Term.Var(y)))
+    val v = Value.Set(Set(Value.Int(1), Value.Int(2)))
+    val r = Unification.unify(t, v)
+    assertResult(List(
+      Map(x -> Value.Int(1), y -> Value.Int(2)),
+      Map(x -> Value.Int(2), y -> Value.Int(1))
+    ))(r)
   }
 }
