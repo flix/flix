@@ -84,12 +84,11 @@ class Solver(program: Program) {
   /**
    * Enqueues all horn clauses which depend on the given predicate.
    */
-  def propagateFact(p: Predicate): Unit = {
+  def propagateFact(p: Predicate.GroundPredicate): Unit = {
     for (h <- dependencies.get(p.name)) {
       for (p2 <- h.body) {
-        for (env0 <- Unification.unify(p, p2, Map.empty[VSym, Term])) {
-          val values = env0.mapValues(t => Interpreter.evaluate(t))
-          queue.enqueue((h, values))
+        for (env0 <- Unification.unifyPredicate(p, p2)) {
+          queue.enqueue((h, env0))
         }
       }
     }
