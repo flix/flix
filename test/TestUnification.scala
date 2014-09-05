@@ -88,4 +88,21 @@ class TestUnification extends FunSuite {
     val r = Unification.unify(t, v)
     assertResult(List.empty)(r)
   }
+
+  test("Unification.Failure.06") {
+    val t = Term.Tuple2(Term.Int(1), Term.Str("one"))
+    val v = Value.Tuple2(Value.Str("one"), Value.Int(1))
+    val r = Unification.unify(t, v)
+    assertResult(List.empty)(r)
+  }
+
+  test("Unification.Failure.07") {
+    val typ = Type.Sum(List(Type.Tagged(Symbol.NamedSymbol("Foo"), Type.Int)))
+    val t = Term.Tagged(Symbol.NamedSymbol("Foo"), Term.Int(42), typ)
+    val v = Value.Tagged(Symbol.NamedSymbol("Bar"), Value.Int(42), typ)
+    val r = Unification.unify(t, v)
+    assertResult(List.empty)(r)
+  }
+
+
 }
