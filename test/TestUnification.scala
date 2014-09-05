@@ -1,8 +1,13 @@
 import impl.logic.{Symbol, Term, Type, Value}
 import impl.runtime.Unification
+
 import org.scalatest.FunSuite
 
 class TestUnification extends FunSuite {
+
+  val x = Symbol.VariableSymbol("x")
+  val y = Symbol.VariableSymbol("y")
+  val z = Symbol.VariableSymbol("z")
 
   test("Unification.Success.01") {
     val t = Term.Unit
@@ -50,6 +55,34 @@ class TestUnification extends FunSuite {
     val typ = Type.Sum(List(Type.Tagged(Symbol.NamedSymbol("Foo"), Type.Int)))
     val t = Term.Tagged(Symbol.NamedSymbol("Foo"), Term.Int(42), typ)
     val v = Value.Tagged(Symbol.NamedSymbol("Foo"), Value.Int(42), typ)
+    val r = Unification.unify(t, v)
+    assertResult(List(Map.empty))(r)
+  }
+
+  test("Unification.Success.08") {
+    val t = Term.Set(Set.empty)
+    val v = Value.Set(Set.empty)
+    val r = Unification.unify(t, v)
+    assertResult(List(Map.empty))(r)
+  }
+
+  test("Unification.Success.09") {
+    val t = Term.Set(Set(Term.Unit))
+    val v = Value.Set(Set(Value.Unit))
+    val r = Unification.unify(t, v)
+    assertResult(List(Map.empty))(r)
+  }
+
+  test("Unification.Success.10") {
+    val t = Term.Set(Set(Term.Bool(true), Term.Int(42)))
+    val v = Value.Set(Set(Value.Bool(true), Value.Int(42)))
+    val r = Unification.unify(t, v)
+    assertResult(List(Map.empty))(r)
+  }
+
+  test("Unification.Success.11") {
+    val t = Term.Set(Set(Term.Set(Set(Term.Unit))))
+    val v = Value.Set(Set(Value.Set(Set(Value.Unit))))
     val r = Unification.unify(t, v)
     assertResult(List(Map.empty))(r)
   }
@@ -104,5 +137,45 @@ class TestUnification extends FunSuite {
     assertResult(List.empty)(r)
   }
 
+  test("Unification.Failure.09") {
+    val t = Term.Set(Set.empty)
+    val v = Value.Set(Set(Value.Int(42)))
+    val r = Unification.unify(t, v)
+    assertResult(List.empty)(r)
+  }
 
+  test("Unification.Failure.10") {
+    val t = Term.Set(Set(Term.Int(42)))
+    val v = Value.Set(Set.empty)
+    val r = Unification.unify(t, v)
+    assertResult(List.empty)(r)
+  }
+
+  test("Unification.Failure.11") {
+    val t = Term.Set(Set(Term.Unit))
+    val v = Value.Set(Set(Value.Int(42)))
+    val r = Unification.unify(t, v)
+    assertResult(List.empty)(r)
+  }
+
+//  test("Unification.Success.10") {
+//    val t = Term.Set(Set(Term.Bool(true), Term.Int(42)))
+//    val v = Value.Set(Set(Value.Bool(true), Value.Int(42)))
+//    val r = Unification.unify(t, v)
+//    assertResult(List(Map.empty))(r)
+//  }
+//
+//  test("Unification.Success.11") {
+//    val t = Term.Set(Set(Term.Set(Set(Term.Unit))))
+//    val v = Value.Set(Set(Value.Set(Set(Value.Unit))))
+//    val r = Unification.unify(t, v)
+//    assertResult(List(Map.empty))(r)
+//  }
+
+  test("Unification.Match.01") {
+    val t = Term.Var(x)
+    val v = Value.Unit
+    val r = Unification.unify(t, v)
+    assertResult(List(Map(x -> Value.Unit)))(r)
+  }
 }

@@ -13,10 +13,7 @@ object Verifier {
   // A map from types to type names.
   val types = Map.empty[Type, String]
 
-  def lookupType(typ: Type): String = types.get(typ) match {
-    case None => ??? // TODO: Verifier
-    case Some(s) => s
-  }
+  def lookupType(typ: Type): String = ???
 
   /**
    * Verifies that the program is safe.

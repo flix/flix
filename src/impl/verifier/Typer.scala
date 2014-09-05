@@ -13,13 +13,13 @@ object Typer {
     for (declaration <- p.declarations) {
       declaration match {
         case Declaration.DeclareBot(v, typ) =>
-          // TODO
+          // TODO: DeclareBot
         case Declaration.DeclareLeq(t, typ) =>
-          // TODO
+          // TODO: DeclareLeq
         case Declaration.DeclareLub(t, typ) =>
-          // TODO
+          // TODO: DeclareLub
         case Declaration.DeclareHeight(t, typ) =>
-          // TODO
+          // TODO: DeclareHeight
       }
     }
   }
