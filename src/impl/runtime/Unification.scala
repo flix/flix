@@ -86,6 +86,7 @@ object Unification {
    * Unifies the term `t1` with the term `t2` under the given environment `env0`.
    */
   def unify(t1: Term, t2: Term, env0: Map[VSym, Term]): List[Map[VSym, Term]] = (t1, t2) match {
+    case (Term.Unit, Term.Unit) => List(env0)
     case (Term.Bool(b1), Term.Bool(b2)) if b1 == b2 => List(env0)
     case (Term.Int(i1), Term.Int(i2)) if i1 == i2 => List(env0)
     case (Term.Str(s1), Term.Str(s2)) if s1 == s2 => List(env0)
