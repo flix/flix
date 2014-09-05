@@ -22,6 +22,12 @@ object Typer {
           // TODO: DeclareHeight
       }
     }
+    for (fact <- p.facts) {
+
+    }
+
+    for (rule <- p.rules) {
+    }
   }
 
   /**
