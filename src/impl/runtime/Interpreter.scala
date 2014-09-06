@@ -33,15 +33,10 @@ object Interpreter {
       evaluate(t3.substitute(x, argVal.toTerm), env) // TODO: Eliminate free occurences in argVal and remove environment.
 
     case Term.Match(t1, rules) =>
-      // TODO: Improve code
       val v1 = evaluate(t1, env)
-      val matches: List[(Map[VSym, Value], Term)] = rules.flatMap {
-        case (p, t2) => unify(p, v1).map(x => (x, t2))
-      }
-      matches.headOption match {
-        case Some((env1, t2)) => evaluate(t2, env ++ env1)
-        case None =>
-          throw new RuntimeException(s"No match for value ${v1.fmt}. Rule: ${t}")
+      matchRule(rules, v1) match {
+        case None => throw new RuntimeException(s"Unmatched value ${v1.fmt}")
+        case Some((t2, env1)) => evaluate(t2, env ++ env1)
       }
 
     case Term.UnaryOp(op, t1) =>
@@ -85,44 +80,14 @@ object Interpreter {
   }
 
   /**
-   * Optionally returns an environment mapping every free variable
-   * in the pattern `p` with the given value `v`.
+   * Optionally returns a pair of a term and environment for which one of the given `rules` match the given value `v`.
    */
-  def unify(p: Pattern, v: Value): Option[Map[VSym, Value]] = (p, v) match {
-    case (Pattern.Wildcard, _) => Some(Map.empty)
-    case (Pattern.Var(x), _) => Some(Map(x -> v))
-
-    case (Pattern.Unit, Value.Unit) => Some(Map.empty)
-    case (Pattern.Bool(b1), Value.Bool(b2)) if b1 == b2 => Some(Map.empty)
-    case (Pattern.Int(i1), Value.Int(i2)) if i1 == i2 => Some(Map.empty)
-    case (Pattern.Str(s1), Value.Str(s2)) if s1 == s2 => Some(Map.empty)
-
-    case (Pattern.Tag(s1, p1), Value.Tag(s2, v1, _)) if s1 == s2 => unify(p1, v1)
-
-    case (Pattern.Tuple2(p1, p2), Value.Tuple2(v1, v2)) =>
-      for (env1 <- unify(p1, v1);
-           env2 <- unify(p2, v2))
-      yield env1 ++ env2
-    case (Pattern.Tuple3(p1, p2, p3), Value.Tuple3(v1, v2, v3)) =>
-      for (env1 <- unify(p1, v1);
-           env2 <- unify(p2, v2);
-           env3 <- unify(p3, v3))
-      yield env1 ++ env2 ++ env3
-    case (Pattern.Tuple4(p1, p2, p3, p4), Value.Tuple4(v1, v2, v3, v4)) =>
-      for (env1 <- unify(p1, v1);
-           env2 <- unify(p2, v2);
-           env3 <- unify(p3, v3);
-           env4 <- unify(p4, v4))
-      yield env1 ++ env2 ++ env3 ++ env4
-    case (Pattern.Tuple5(p1, p2, p3, p4, p5), Value.Tuple5(v1, v2, v3, v4, v5)) =>
-      for (env1 <- unify(p1, v1);
-           env2 <- unify(p2, v2);
-           env3 <- unify(p3, v3);
-           env4 <- unify(p4, v4);
-           env5 <- unify(p5, v5))
-      yield env1 ++ env2 ++ env3 ++ env4 ++ env5
-
-    case _ => None
+  def matchRule(rules: List[(Pattern, Term)], v: Value): Option[(Term, Map[VSym, Value])] = rules match {
+    case Nil => None
+    case (p, t) :: rest => Unification.unify(p, v) match {
+      case None => matchRule(rest, v)
+      case Some(env) => Some((t, env))
+    }
   }
 
   /**

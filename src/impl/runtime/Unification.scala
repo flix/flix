@@ -1,7 +1,7 @@
 package impl.runtime
 
 import impl.logic.Symbol.{VariableSymbol => VSym}
-import impl.logic.{Predicate, Term, Value}
+import impl.logic.{Pattern, Predicate, Term, Value}
 
 object Unification {
   /////////////////////////////////////////////////////////////////////////////
@@ -82,4 +82,48 @@ object Unification {
       case (env, (t1, t2)) => env.flatMap(e => unify(t1, t2, e))
     }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Pattern-Value Unification                                               //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Optionally returns an environment mapping every free variable
+   * in the pattern `p` with the given value `v`.
+   */
+  def unify(p: Pattern, v: Value): Option[Map[VSym, Value]] = (p, v) match {
+    case (Pattern.Wildcard, _) => Some(Map.empty)
+    case (Pattern.Var(x), _) => Some(Map(x -> v))
+
+    case (Pattern.Unit, Value.Unit) => Some(Map.empty)
+    case (Pattern.Bool(b1), Value.Bool(b2)) if b1 == b2 => Some(Map.empty)
+    case (Pattern.Int(i1), Value.Int(i2)) if i1 == i2 => Some(Map.empty)
+    case (Pattern.Str(s1), Value.Str(s2)) if s1 == s2 => Some(Map.empty)
+
+    case (Pattern.Tag(s1, p1), Value.Tag(s2, v1, _)) if s1 == s2 => unify(p1, v1)
+
+    case (Pattern.Tuple2(p1, p2), Value.Tuple2(v1, v2)) =>
+      for (env1 <- unify(p1, v1);
+           env2 <- unify(p2, v2))
+      yield env1 ++ env2
+    case (Pattern.Tuple3(p1, p2, p3), Value.Tuple3(v1, v2, v3)) =>
+      for (env1 <- unify(p1, v1);
+           env2 <- unify(p2, v2);
+           env3 <- unify(p3, v3))
+      yield env1 ++ env2 ++ env3
+    case (Pattern.Tuple4(p1, p2, p3, p4), Value.Tuple4(v1, v2, v3, v4)) =>
+      for (env1 <- unify(p1, v1);
+           env2 <- unify(p2, v2);
+           env3 <- unify(p3, v3);
+           env4 <- unify(p4, v4))
+      yield env1 ++ env2 ++ env3 ++ env4
+    case (Pattern.Tuple5(p1, p2, p3, p4, p5), Value.Tuple5(v1, v2, v3, v4, v5)) =>
+      for (env1 <- unify(p1, v1);
+           env2 <- unify(p2, v2);
+           env3 <- unify(p3, v3);
+           env4 <- unify(p4, v4);
+           env5 <- unify(p5, v5))
+      yield env1 ++ env2 ++ env3 ++ env4 ++ env5
+
+    case _ => None
+  }
 }

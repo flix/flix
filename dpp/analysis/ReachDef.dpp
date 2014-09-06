@@ -1,7 +1,0 @@
-// TODO: So it seems we need some handle on Store, e.g. an id field or location
-// This is also required for kcfa... But, if we add a unique id, then we lose the need for relations
-// Instead we end up with partial maps.
-// Store : Location -> Var -> Field -> Var
-// PointsTo: Object x Field -> Power(Object).
-// so PointsTo(o1, f, o2) actually means exists o1, f s.t. {o2} <= PointsTo(o1, f).
-// But what if we want to match on the Power itself, instead of one of its elements?
