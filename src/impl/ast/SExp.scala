@@ -14,6 +14,8 @@ object SExp {
 
   case class Keyword(token: String) extends SExp
 
+  case class Operator(token: String) extends SExp
+
   case class Var(token: String) extends SExp
 
   case class Name(token: String) extends SExp

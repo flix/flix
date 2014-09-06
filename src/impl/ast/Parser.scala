@@ -19,6 +19,12 @@ object Parser {
       ("def-type" | "def-bot" | "def-leq" | "def-lub" | "def-height" | "def-fun" | "fact" | "rule" | "variant" | "match" | "case" | "->") ^^ SExp.Keyword
 
     /**
+     * Operators
+     */
+    def operator: Parser[SExp.Operator] =
+      ("==" | "!=" | "<" | "<=" | ">" | ">=" | "+" | "-" | "*" | "/") ^^ SExp.Operator
+
+    /**
      * Values.
      */
     // unit literal
@@ -54,7 +60,7 @@ object Parser {
     /**
      * S-expression body.
      */
-    def body: Parser[SExp] = keyword | value | variable | name | label | sexp
+    def body: Parser[SExp] = keyword | operator | value | variable | name | label | sexp
 
     /**
      * A set-expression.
