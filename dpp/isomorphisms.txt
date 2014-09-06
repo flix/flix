@@ -1,5 +1,0 @@
-Examples:
-
-    A x B x C x D
-    A x B -> P(C)
-    A -> P(B x C)

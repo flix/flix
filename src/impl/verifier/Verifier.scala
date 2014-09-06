@@ -10,11 +10,6 @@ object Verifier {
 
   val Z3 = System.getProperty("Z3", "C:\\Program Files\\Microsoft Z3\\z3-4.3.0-x64\\bin\\z3.exe")
 
-  // A map from types to type names.
-  val types = Map.empty[Type, String]
-
-  def lookupType(typ: Type): String = ???
-
   /**
    * Verifies that the program is safe.
    */
