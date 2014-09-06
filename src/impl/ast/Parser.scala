@@ -22,7 +22,7 @@ object Parser {
      * Operators
      */
     def operator: Parser[SExp.Operator] =
-      ("==" | "!=" | "<" | "<=" | ">" | ">=" | "+" | "-" | "*" | "/") ^^ SExp.Operator
+      ("==" | "!=" | "<=" | ">=" | "+" | "-" | "*" | "/") ^^ SExp.Operator
 
     /**
      * Values.
@@ -48,11 +48,6 @@ object Parser {
     def name: Parser[SExp.Name] = """[A-Z][A-Za-z+-/\*]*""".r ^^ SExp.Name
 
     /**
-     * Labels.
-     */
-    def label: Parser[SExp.Label] = (":" ~> """[A-Za-z+-/\*]*""".r) ^^ SExp.Label
-
-    /**
      * Variables.
      */
     def variable: Parser[SExp.Var] =  ("""[a-z][0-9a-z]*""".r | "_") ^^ SExp.Var
@@ -60,7 +55,7 @@ object Parser {
     /**
      * S-expression body.
      */
-    def body: Parser[SExp] = keyword | operator | value | variable | name | label | sexp
+    def body: Parser[SExp] = keyword | operator | value | variable | name | sexp
 
     /**
      * A set-expression.
@@ -70,9 +65,16 @@ object Parser {
     }
 
     /**
+     * A vector-expression.
+     */
+    def vecexp: Parser[SExp] =  "<" ~> rep(body) <~ ">" ^^ {
+      case xs: List[SExp] => SExp.Lst(List(SExp.Keyword("vec")) ::: xs)
+    }
+
+    /**
      * S-expression.
      */
-    def sexp: Parser[SExp] = ("(" ~> rep(body) <~ ")" ^^ SExp.Lst) | ("[" ~> rep(body) <~ "]" ^^ SExp.Lst) | setexp
+    def sexp: Parser[SExp] = ("(" ~> rep(body) <~ ")" ^^ SExp.Lst) | ("[" ~> rep(body) <~ "]" ^^ SExp.Lst) | setexp | vecexp
 
     /**
      * Declaration.

@@ -20,8 +20,6 @@ object SExp {
 
   case class Name(token: String) extends SExp
 
-  case class Label(token: String) extends SExp
-
   case class Lst(xs: List[SExp]) extends SExp
 
 }

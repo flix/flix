@@ -18,7 +18,8 @@ object Patterns {
       case Pattern.Bool(b) => b.toString
       case Pattern.Int(i) => i.toString
       case Pattern.Str(s) => "\"" + s + "\""
-      case Pattern.Tag(n, p1) => n + ": " + p1.fmt
+      case Pattern.Tag(n, Pattern.Unit) => n.s
+      case Pattern.Tag(n, p1) => n + " " + p1.fmt
       case Pattern.Tuple2(p1, p2) => "(" + p1.fmt + ", " + p2.fmt + ")"
       case Pattern.Tuple3(p1, p2, p3) => "(" + p1.fmt + ", " + p2.fmt + ", " + p3.fmt + ")"
       case Pattern.Tuple4(p1, p2, p3, p4) => "(" + p1.fmt + ", " + p2.fmt + ", " + p3.fmt + ", " + p4.fmt + ")"

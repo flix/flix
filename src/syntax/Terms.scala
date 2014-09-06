@@ -30,7 +30,8 @@ object Terms {
         case (p, t2) => "case (" + p + ") => " + t2.fmt
       }.mkString(" | ")
 
-      case Term.Tag(s, t1, typ) => s.fmt + " " + t1.fmt
+      case Term.Tag(s, Term.Unit, _) => s.fmt
+      case Term.Tag(s, t1, _) => s.fmt + " " + t1.fmt
       case Term.Tuple2(t1, t2) =>              "(" + t1.fmt + "," + t2.fmt + ")"
       case Term.Tuple3(t1, t2, t3) =>          "(" + t1.fmt + "," + t2.fmt + "," + t3.fmt + ")"
       case Term.Tuple4(t1, t2, t3, t4) =>      "(" + t1.fmt + "," + t2.fmt + "," + t3.fmt + "," + t4.fmt + ")"

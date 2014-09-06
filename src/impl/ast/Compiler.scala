@@ -38,7 +38,7 @@ object Compiler {
             case _ => // nop
           }
 
-        case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Name(n), SExp.Lst(args), body)) =>
+        case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Var(n), SExp.Lst(args), body)) =>
           val t = compileAbs(args, body)
           val typ = Typer.typecheck(t)
           funcs += (n -> t)
@@ -118,18 +118,19 @@ object Compiler {
 
     case SExp.Lst(SExp.Keyword("set") :: rest) => Term.Set(rest.map(compileTerm).toSet)
     case SExp.Lst(SExp.Keyword("match") :: exp :: rules) => Term.Match(compileTerm(exp), rules.map(compileRule))
-
     case SExp.Lst(List(SExp.Operator(op), left, right)) => Term.BinaryOp(compileBinaryOperator(op), compileTerm(left), compileTerm(right))
 
-    case SExp.Label(s) => Term.Tag(Symbol.NamedSymbol(s), Term.Unit, labels(s))
-    case SExp.Lst(SExp.Name(x) :: args) => args.reverse.foldLeft(funcs(x)) {
+    case SExp.Name(s) => Term.Tag(Symbol.NamedSymbol(s), Term.Unit, labels(s))
+    case SExp.Lst(List(SExp.Name(s), es)) => Term.Tag(Symbol.NamedSymbol(s), compileTerm(es), labels(s))
+
+    case SExp.Lst(SExp.Var(x) :: args) => args.reverse.foldLeft(funcs(x)) {
       case (t, a: SExp.Var) => Term.App(t, Term.Var(Symbol.VariableSymbol(a.token)))
     }
-    case SExp.Lst(List(SExp.Label(s), es)) => Term.Tag(Symbol.NamedSymbol(s), compileTerm(es), labels(s))
-    case SExp.Lst(List(e1, e2)) => Term.Tuple2(compileTerm(e1), compileTerm(e2))
-    case SExp.Lst(List(e1, e2, e3)) => Term.Tuple3(compileTerm(e1), compileTerm(e2), compileTerm(e3))
-    case SExp.Lst(List(e1, e2, e3, e4)) => Term.Tuple4(compileTerm(e1), compileTerm(e2), compileTerm(e3), compileTerm(e4))
-    case SExp.Lst(List(e1, e2, e3, e4, e5)) => Term.Tuple5(compileTerm(e1), compileTerm(e2), compileTerm(e3), compileTerm(e4), compileTerm(e5))
+
+    case SExp.Lst(List(SExp.Keyword("vec"), e1, e2)) => Term.Tuple2(compileTerm(e1), compileTerm(e2))
+    case SExp.Lst(List(SExp.Keyword("vec"), e1, e2, e3)) => Term.Tuple3(compileTerm(e1), compileTerm(e2), compileTerm(e3))
+    case SExp.Lst(List(SExp.Keyword("vec"), e1, e2, e3, e4)) => Term.Tuple4(compileTerm(e1), compileTerm(e2), compileTerm(e3), compileTerm(e4))
+    case SExp.Lst(List(SExp.Keyword("vec"), e1, e2, e3, e4, e5)) => Term.Tuple5(compileTerm(e1), compileTerm(e2), compileTerm(e3), compileTerm(e4), compileTerm(e5))
 
     case _ => throw Error.ParseError(e)
   }
@@ -151,12 +152,14 @@ object Compiler {
         Pattern.Wildcard
       else
         Pattern.Var(Symbol.VariableSymbol(x))
-    case SExp.Label(s) => Pattern.Tag(Symbol.NamedSymbol(s), Pattern.Unit)
-    case SExp.Lst(List(SExp.Lst(List(SExp.Label(s), e1)))) => Pattern.Tag(Symbol.NamedSymbol(s), compilePattern(e1))
-    case SExp.Lst(List(e1, e2)) => Pattern.Tuple2(compilePattern(e1), compilePattern(e2))
-    case SExp.Lst(List(e1, e2, e3)) => Pattern.Tuple3(compilePattern(e1), compilePattern(e2), compilePattern(e3))
-    case SExp.Lst(List(e1, e2, e3, e4)) => Pattern.Tuple4(compilePattern(e1), compilePattern(e2), compilePattern(e3), compilePattern(e4))
-    case SExp.Lst(List(e1, e2, e3, e4, e5)) => Pattern.Tuple5(compilePattern(e1), compilePattern(e2), compilePattern(e3), compilePattern(e4), compilePattern(e5))
+    case SExp.Name(s) => Pattern.Tag(Symbol.NamedSymbol(s), Pattern.Unit)
+
+    case SExp.Lst(List(SExp.Name(s), e1)) => Pattern.Tag(Symbol.NamedSymbol(s), compilePattern(e1))
+
+    case SExp.Lst(List(SExp.Keyword("vec"), e1, e2)) => Pattern.Tuple2(compilePattern(e1), compilePattern(e2))
+    case SExp.Lst(List(SExp.Keyword("vec"), e1, e2, e3)) => Pattern.Tuple3(compilePattern(e1), compilePattern(e2), compilePattern(e3))
+    case SExp.Lst(List(SExp.Keyword("vec"), e1, e2, e3, e4)) => Pattern.Tuple4(compilePattern(e1), compilePattern(e2), compilePattern(e3), compilePattern(e4))
+    case SExp.Lst(List(SExp.Keyword("vec"), e1, e2, e3, e4, e5)) => Pattern.Tuple5(compilePattern(e1), compilePattern(e2), compilePattern(e3), compilePattern(e4), compilePattern(e5))
     case _ => throw Error.ParseError(e)
   }
 
@@ -168,8 +171,6 @@ object Compiler {
     case SExp.Name("Int") => Type.Int
     case SExp.Name("Str") => Type.Str
     case SExp.Name(s) => types(s)
-    case SExp.Lst(List(SExp.Label(s))) => Type.Tag(Symbol.NamedSymbol(s), Type.Unit)
-    case SExp.Lst(List(SExp.Label(s), e1)) => Type.Tag(Symbol.NamedSymbol(s), compileType(e1))
     case SExp.Lst(List(SExp.Name("Set"), e1)) => Type.Set(compileType(e1))
     case SExp.Lst(List(SExp.Keyword("->"), e1, e2)) => Type.Function(compileType(e1), compileType(e2))
     case SExp.Lst(List(SExp.Keyword("variant"), SExp.Lst(variants))) =>
@@ -180,10 +181,13 @@ object Compiler {
       }
       typ
 
-    case SExp.Lst(List(e1, e2)) => Type.Tuple2(compileType(e1), compileType(e2))
-    case SExp.Lst(List(e1, e2, e3)) => Type.Tuple3(compileType(e1), compileType(e2), compileType(e3))
-    case SExp.Lst(List(e1, e2, e3, e4)) => Type.Tuple4(compileType(e1), compileType(e2), compileType(e3), compileType(e4))
-    case SExp.Lst(List(e1, e2, e3, e4, e5)) => Type.Tuple5(compileType(e1), compileType(e2), compileType(e3), compileType(e4), compileType(e5))
+    case SExp.Lst(List(SExp.Name(s))) => Type.Tag(Symbol.NamedSymbol(s), Type.Unit)
+    case SExp.Lst(List(SExp.Name(s), e1)) => Type.Tag(Symbol.NamedSymbol(s), compileType(e1))
+
+    case SExp.Lst(List(SExp.Keyword("vec"), e1, e2)) => Type.Tuple2(compileType(e1), compileType(e2))
+    case SExp.Lst(List(SExp.Keyword("vec"), e1, e2, e3)) => Type.Tuple3(compileType(e1), compileType(e2), compileType(e3))
+    case SExp.Lst(List(SExp.Keyword("vec"), e1, e2, e3, e4)) => Type.Tuple4(compileType(e1), compileType(e2), compileType(e3), compileType(e4))
+    case SExp.Lst(List(SExp.Keyword("vec"), e1, e2, e3, e4, e5)) => Type.Tuple5(compileType(e1), compileType(e2), compileType(e3), compileType(e4), compileType(e5))
     case _ => throw Error.ParseError(e)
   }
 

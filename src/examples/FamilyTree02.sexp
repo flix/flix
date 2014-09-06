@@ -1,5 +1,5 @@
 (def-type Parent (-> Str (Set Str)))
-(def-type Person (-> Str (Set (variant ((:AgeAndSex [Str Int]))))))
+(def-type Person (-> Str (Set (variant ((AgeAndSex <Str Int>))))))
 (def-type MaleGrandParent (-> Str (Set Str)))
 
 (fact (Parent "Caroline" {"IngerM"} ))
@@ -12,17 +12,17 @@
 (fact (Parent "FritsT" {"OrlaT"} ))
 (fact (Parent "IngerM" {"GreteM"} ))
 
-(fact (Person "Bjarke"   {(:AgeAndSex ("Male" 1))}))
-(fact (Person "Magnus"   {(:AgeAndSex ("Male" 2))}))
-(fact (Person "FritsT"   {(:AgeAndSex ("Male" 3))}))
-(fact (Person "OrlaT"    {(:AgeAndSex ("Male" 4))}))
+(fact (Person "Bjarke"   {(AgeAndSex <"Male" 1>)}))
+(fact (Person "Magnus"   {(AgeAndSex <"Male" 2>)}))
+(fact (Person "FritsT"   {(AgeAndSex <"Male" 3>)}))
+(fact (Person "OrlaT"    {(AgeAndSex <"Male" 4>)}))
 
-(fact (Person "Caroline" {(:AgeAndSex ("Female" 5))}))
-(fact (Person "IngerM"   {(:AgeAndSex ("Female" 6))}))
-(fact (Person "IngerT"   {(:AgeAndSex ("Female" 7))}))
-(fact (Person "GreteM"   {(:AgeAndSex ("Female" 8))}))
+(fact (Person "Caroline" {(AgeAndSex <"Female" 5>)}))
+(fact (Person "IngerM"   {(AgeAndSex <"Female" 6>)}))
+(fact (Person "IngerT"   {(AgeAndSex <"Female" 7>)}))
+(fact (Person "GreteM"   {(AgeAndSex <"Female" 8>)}))
 
 (rule (MaleGrandParent x {z}) (
     (Parent x {y})
     (Parent y {z})
-    (Person z {(:AgeAndSex ("Male" _))})))
+    (Person z {(AgeAndSex <"Male" _>)})))

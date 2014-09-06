@@ -23,8 +23,8 @@ object Types {
       case Type.Sum(ts) => "[" + ts.map(_.fmt).mkString(" + ") + "]"
       case Type.Function(typ1, typ2) => s"${typ1.fmt} -> (${typ2.fmt})"
 
-      case Type.Tag(s, Type.Unit) => s":${s.s}"
-      case Type.Tag(s, typ1) => s":${s.s} ${typ1.fmt}"
+      case Type.Tag(s, Type.Unit) => s"${s.s}"
+      case Type.Tag(s, typ1) => s"${s.s} ${typ1.fmt}"
       case Type.Tuple2(typ1, typ2) => s"(${typ1.fmt}, ${typ2.fmt})"
       case Type.Tuple3(typ1, typ2, typ3) => s"(${typ1.fmt}, ${typ2.fmt}, ${typ3.fmt})"
       case Type.Tuple4(typ1, typ2, typ3, typ4) => s"(${typ1.fmt}, ${typ2.fmt}, ${typ3.fmt}, ${typ4.fmt})"
