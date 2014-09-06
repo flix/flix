@@ -44,6 +44,6 @@ object Error {
   /**
    * An exception thrown to indicate a parsing error.
    */
-  case class ParseError(e: SExp) extends RuntimeException(s"Unable to parse predicate $e")
+  case class ParseError(e: SExp) extends RuntimeException(s"Unable to parse $e")
 
 }

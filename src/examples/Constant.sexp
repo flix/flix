@@ -14,7 +14,11 @@
         (case _                       false)))
 
 (def-lub Number (e1 Number e2 Number)
-    Top)
+    (match <e1 e2>
+        (case <Bot x>   x)
+        (case <x Bot>   x)
+        (case <(Cst n1) (Cst n2)>  (Cst n1))
+        (case _         Top)))
 
 (fact (A (Cst 3)))
 (fact (B (Cst 5)))
