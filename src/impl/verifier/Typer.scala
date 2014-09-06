@@ -13,13 +13,13 @@ object Typer {
     for (declaration <- p.declarations) {
       declaration match {
         case Declaration.DeclareBot(v, typ) =>
-          // TODO: DeclareBot
+        // TODO: DeclareBot
         case Declaration.DeclareLeq(t, typ) =>
-          // TODO: DeclareLeq
+        // TODO: DeclareLeq
         case Declaration.DeclareLub(t, typ) =>
-          // TODO: DeclareLub
+        // TODO: DeclareLub
         case Declaration.DeclareHeight(t, typ) =>
-          // TODO: DeclareHeight
+        // TODO: DeclareHeight
       }
     }
     for (fact <- p.facts) {
@@ -67,6 +67,20 @@ object Typer {
         case _ => throw Error.UnexpectedTypeError(t, s"The term '$t1' does not have a function type in the application '$t'.")
       }
 
+    case Term.Match(t1, rules) =>
+      val typ1 = typecheck(t1, typenv)
+
+      val types = rules.map {
+        case (p, t2) =>
+          val typenv2 = typecheck(p, typ1)
+          typecheck(t2, typenv2)
+      }
+
+      types.reduce[Type] {
+        case (typ2, typ3) if typ2 == typ3 => typ2
+        case _ => (???): Type // Type error
+      }
+
     case Term.IfThenElse(t1, t2, t3) =>
       val typ1 = typecheck(t1, typenv)
       val typ2 = typecheck(t2, typenv)
@@ -110,7 +124,7 @@ object Typer {
 
     case Term.Tagged(s, t1, typ) =>
       val typ1 = typecheck(t1, typenv)
-      if (typ.ts contains Type.Tagged(s, typ1))
+      if (typ.ts contains Type.Tag(s, typ1))
         typ
       else
         throw Error.StaticTypeError(typ1, typ, t)
@@ -140,6 +154,39 @@ object Typer {
       val typ4 = typecheck(t4, typenv)
       val typ5 = typecheck(t5, typenv)
       Type.Tuple5(typ1, typ2, typ3, typ4, typ5)
+  }
+
+  /**
+   * Unifies the given pattern `p` with the given type `typ`.
+   *
+   * Returns a type environment where all free variables in the pattern has been bound to their appropriate type.
+   *
+   * NB: Pattern variables are assumed not to occur more than once.
+   */
+  def typecheck(p: Pattern, typ: Type): Map[VSym, Type] = (p, typ) match {
+    case (Pattern.Wildcard, _) => Map.empty
+    case (Pattern.Var(s), typ1) => Map(s -> typ1)
+
+    case (Pattern.Unit, Type.Unit) => Map.empty
+    case (Pattern.Bool(b), Type.Bool) => Map.empty
+    case (Pattern.Int(i), Type.Int) => Map.empty
+    case (Pattern.Str(s), Type.Str) => Map.empty
+
+    case (Pattern.Tagged(s1, p1), Type.Sum(ts)) =>
+     ts.collectFirst {
+       case Type.Tag(s2, typ2) if s1 == s2 => typecheck(p1, typ2)
+     }.get
+
+    case (Pattern.Tuple2(p1, p2), Type.Tuple2(typ1, typ2)) =>
+      typecheck(p1, typ1) ++ typecheck(p2, typ2)
+    case (Pattern.Tuple3(p1, p2, p3), Type.Tuple3(typ1, typ2, typ3)) =>
+      typecheck(p1, typ1) ++ typecheck(p2, typ2) ++ typecheck(p3, typ3)
+    case (Pattern.Tuple4(p1, p2, p3, p4), Type.Tuple4(typ1, typ2, typ3, typ4)) =>
+      typecheck(p1, typ1) ++ typecheck(p2, typ2) ++ typecheck(p3, typ3) ++ typecheck(p4, typ4)
+    case (Pattern.Tuple5(p1, p2, p3, p4, p5), Type.Tuple5(typ1, typ2, typ3, typ4, typ5)) =>
+      typecheck(p1, typ1) ++ typecheck(p2, typ2) ++ typecheck(p3, typ3) ++ typecheck(p4, typ4) ++ typecheck(p5, typ5)
+
+    case _ => ???
   }
 
   /**

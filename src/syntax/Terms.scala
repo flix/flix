@@ -27,6 +27,9 @@ object Terms {
       case Term.UnaryOp(op, t1) => op.fmt + " " + t1.fmt
       case Term.BinaryOp(op, t1, t2) => t1.fmt + " " + op.fmt + " " + t2.fmt
       case Term.IfThenElse(t1, t2, t3) => "if " + t1.fmt + " then " + t2.fmt + " else " + t3.fmt
+      case Term.Match(t1, rules) => t1.fmt + " " + rules.map {
+        case (p, t2) => "case (" + p + ") => " + t2.fmt
+      }.mkString(" | ")
 
       case Term.Tagged(s, t1, typ) => s.fmt + " " + t1.fmt
       case Term.Tuple2(t1, t2) =>              "(" + t1.fmt + "," + t2.fmt + ")"

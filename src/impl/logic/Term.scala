@@ -49,6 +49,8 @@ sealed trait Term {
 
     case Term.UnaryOp(op, t1) => Term.UnaryOp(op, t1.substitute(x, t))
     case Term.BinaryOp(op, t1, t2) => Term.BinaryOp(op, t1.substitute(x, t), t2.substitute(x, t))
+
+    case Term.Match(t1, rules) => Term.Match(t1.substitute(x, t), rules) // TODO: Careful with free variables!
     case Term.IfThenElse(t1, t2, t3) => Term.IfThenElse(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
 
     case Term.Tagged(s, t1, typ) =>         Term.Tagged(s, t1.substitute(x, t), typ)
@@ -75,6 +77,7 @@ sealed trait Term {
     case Term.UnaryOp(op, t) =>               t.freeVariables
     case Term.BinaryOp(op, t1, t2) =>         t1.freeVariables ++ t2.freeVariables
     case Term.IfThenElse(t1, t2, t3) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
+    case Term.Match(t1, rules) =>             ??? // TODO
 
     case Term.Tagged(s, t, typ) =>            t.freeVariables
     case Term.Tuple2(t1, t2) =>               t1.freeVariables ++ t2.freeVariables
@@ -125,6 +128,11 @@ object Term {
    * An application term.
    */
   case class App(t1: Term, t2: Term) extends Term
+
+  /**
+   * A match term.
+   */
+  case class Match(t: Term, rules: List[(Pattern, Term)]) extends Term
 
   /**
    * An if-then-else term.

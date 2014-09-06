@@ -15,6 +15,11 @@ sealed trait Type {
 object Type {
 
   /**
+   * A type variable.
+   */
+  case class Var(x: Symbol.VariableSymbol) extends Type
+
+  /**
    * The type of the Unit value.
    */
   case object Unit extends Type
@@ -37,7 +42,7 @@ object Type {
   /**
    * The type of sets.
    */
-  case class Set(typ1: Type) extends Type
+  case class Set(typ: Type) extends Type
 
   /**
    * The type of functions.
@@ -47,17 +52,12 @@ object Type {
   /**
    * The type of tagged types.
    */
-  case class Tagged(name: Symbol.NamedSymbol, typ: Type) extends Type
+  case class Tag(name: Symbol.NamedSymbol, typ: Type) extends Type
 
   /**
    * The type of sums.
    */
   case class Sum(ts: List[Type]) extends Type
-
-  /**
-   * The type of lattices.
-   */
-  case class Lat(typ1: Type) extends Type
 
   /**
    * The type of 2-tuples.
@@ -72,11 +72,11 @@ object Type {
   /**
    * The type of 4-tuples.
    */
-  case class Tuple4(t1: Type, typ2: Type, typ3: Type, typ4: Type) extends Type
+  case class Tuple4(typ1: Type, typ2: Type, typ3: Type, typ4: Type) extends Type
 
   /**
    * The type of 5-tuples.
    */
-  case class Tuple5(t1: Type, typ2: Type, typ3: Type, typ4: Type, typ5: Type) extends Type
+  case class Tuple5(typ1: Type, typ2: Type, typ3: Type, typ4: Type, typ5: Type) extends Type
 
 }

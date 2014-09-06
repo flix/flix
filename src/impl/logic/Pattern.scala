@@ -5,14 +5,39 @@ sealed trait Pattern
 object Pattern {
 
   /**
+   * A wildcard pattern.
+   */
+  case object Wildcard extends Pattern
+
+  /**
    * A variable pattern.
    */
   case class Var(s: Symbol.VariableSymbol) extends Pattern
 
   /**
+   * The Unit pattern.
+   */
+  case object Unit extends Pattern
+
+  /**
+   * A boolean pattern.
+   */
+  case class Bool(b: scala.Boolean) extends Pattern
+
+  /**
+   * An integer pattern.
+   */
+  case class Int(i: scala.Int) extends Pattern
+
+  /**
+   * A string pattern.
+   */
+  case class Str(s: java.lang.String) extends Pattern
+
+  /**
    * A tagged pattern.
    */
-  case class Tagged()
+  case class Tagged(name: Symbol.NamedSymbol, p: Pattern) extends Pattern
 
   /**
    * A 2-tuple pattern.

@@ -117,8 +117,13 @@ object Compiler {
     case SExp.Str(token) => Term.Str(token)
 
     case SExp.Lst(SExp.Keyword("set") :: rest) => Term.Set(rest.map(compileTerm).toSet)
+    case SExp.Lst(SExp.Keyword("match") :: exp :: rules) => Term.Match(compileTerm(exp), rules.map(compileRule))
 
     case SExp.Label(s) => Term.Tagged(Symbol.NamedSymbol(s), Term.Unit, labels(s))
+      // TODO: Verify order of arguments
+    case SExp.Lst(SExp.Name(x) :: args) => args.foldLeft(funcs(x)) {
+      case (t, a: SExp.Var) => Term.App(t, Term.Var(Symbol.VariableSymbol(a.token)))
+    }
     case SExp.Lst(List(SExp.Label(s), es)) => Term.Tagged(Symbol.NamedSymbol(s), compileTerm(es), labels(s))
     case SExp.Lst(List(e1, e2)) => Term.Tuple2(compileTerm(e1), compileTerm(e2))
     case SExp.Lst(List(e1, e2, e3)) => Term.Tuple3(compileTerm(e1), compileTerm(e2), compileTerm(e3))
@@ -129,10 +134,23 @@ object Compiler {
   }
 
   /**
+   * Compiles the given s-expression `e` to a rule.
+   */
+  def compileRule(e: SExp): (Pattern, Term) = e match {
+    case SExp.Lst(List(SExp.Keyword("case"), pattern, body)) => (compilePattern(pattern), compileTerm(body))
+    case _ => throw Error.TermParseError(e)
+  }
+
+  /**
    * Compiles the given s-expression `e` to a pattern.
    */
   def compilePattern(e: SExp): Pattern = e match {
-    case SExp.Var(x) => Pattern.Var(Symbol.VariableSymbol(x))
+    case SExp.Var(x) =>
+      if (x == "_")
+        Pattern.Wildcard
+      else
+        Pattern.Var(Symbol.VariableSymbol(x))
+    case SExp.Label(s) => Pattern.Tagged(Symbol.NamedSymbol(s), Pattern.Unit)
     case SExp.Lst(List(e1)) => compilePattern(e1)
     case SExp.Lst(List(e1, e2)) => Pattern.Tuple2(compilePattern(e1), compilePattern(e2))
     case SExp.Lst(List(e1, e2, e3)) => Pattern.Tuple3(compilePattern(e1), compilePattern(e2), compilePattern(e3))
@@ -149,15 +167,14 @@ object Compiler {
     case SExp.Name("Int") => Type.Int
     case SExp.Name("Str") => Type.Str
     case SExp.Name(s) => types(s)
-    case SExp.Lst(List(SExp.Label(s))) => Type.Tagged(Symbol.NamedSymbol(s), Type.Unit)
-    case SExp.Lst(List(SExp.Label(s), e1)) => Type.Tagged(Symbol.NamedSymbol(s), compileType(e1))
+    case SExp.Lst(List(SExp.Label(s))) => Type.Tag(Symbol.NamedSymbol(s), Type.Unit)
+    case SExp.Lst(List(SExp.Label(s), e1)) => Type.Tag(Symbol.NamedSymbol(s), compileType(e1))
     case SExp.Lst(List(SExp.Name("Set"), e1)) => Type.Set(compileType(e1))
-    case SExp.Lst(List(SExp.Name("Lat"), e1)) => Type.Lat(compileType(e1))
     case SExp.Lst(List(SExp.Keyword("->"), e1, e2)) => Type.Function(compileType(e1), compileType(e2))
     case SExp.Lst(List(SExp.Keyword("variant"), SExp.Lst(variants))) =>
       val typ = Type.Sum(variants map compileType)
       typ.ts.foreach {
-        case Type.Tagged(Symbol.NamedSymbol(s), _) => labels += s -> typ
+        case Type.Tag(Symbol.NamedSymbol(s), _) => labels += s -> typ
         case _ => // nop
       }
       typ
