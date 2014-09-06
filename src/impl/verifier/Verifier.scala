@@ -19,15 +19,7 @@ object Verifier {
    * Verifies that the program is safe.
    */
   def verify(program: Program): Unit = {
-    for (decl <- program.declarations) {
-      decl match {
-        case Declaration.DeclareLeq(t, Type.Function(typ1, typ2)) =>
 
-          val typDecl = foo(Type.Tuple3(Type.Int, Type.Tuple2(Type.Bool, Type.Tuple2(Type.Bool, Type.Bool)), Type.Bool))
-
-        case _ => // TODO Verifier
-      }
-    }
   }
 
   //     * Verification conditions for the lattice ordering: Leq.

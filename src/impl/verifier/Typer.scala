@@ -10,23 +10,15 @@ object Typer {
    * Typechecks the given logic program `p`.
    */
   def typecheck(p: Program): Unit = {
-    for (declaration <- p.declarations) {
-      declaration match {
-        case Declaration.DeclareBot(v, typ) =>
-        // TODO: DeclareBot
-        case Declaration.DeclareLeq(t, typ) =>
-        // TODO: DeclareLeq
-        case Declaration.DeclareLub(t, typ) =>
-        // TODO: DeclareLub
-        case Declaration.DeclareHeight(t, typ) =>
-        // TODO: DeclareHeight
-      }
-    }
-    for (fact <- p.facts) {
+    // finds all types in the program
+    val types = p.facts.map(_.head.typ) ++ p.rules.flatMap(p => p.head.typ :: p.body.map(_.typ))
 
-    }
-
-    for (rule <- p.rules) {
+    // verify that all base types have lattice declarations
+    for (typ <- types) {
+      val baseType = typ.resultType
+      p.lookupBot(baseType).getOrElse(throw Error.MissingBot(baseType))
+      p.lookupLeq(baseType).getOrElse(throw Error.MissingLeq(baseType))
+      p.lookupLub(baseType).getOrElse(throw Error.MissingLub(baseType))
     }
   }
 
