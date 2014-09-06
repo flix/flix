@@ -21,6 +21,12 @@ sealed trait Term {
 
     case Term.UnaryOp(op, t1) =>            Term.UnaryOp(op, t1.rename(x, y))
     case Term.BinaryOp(op, t1, t2) =>       Term.BinaryOp(op, t1.rename(x, y), t2.rename(x, y))
+
+    case Term.Match(t, rules) =>            Term.Match(t.rename(x, y), rules.map {
+      case (p, t2) if p.freeVars contains x => (p, t2)
+      case (p, t2) => (p, t2.rename(x, y))
+    })
+
     case Term.Tag(s, t, typ) =>             Term.Tag(s, t.rename(x, y), typ)
     case Term.Tuple2(t1, t2) =>             Term.Tuple2(t1.rename(x, y), t2.rename(x, y))
     case Term.Tuple3(t1, t2, t3) =>         Term.Tuple3(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y))
@@ -50,11 +56,8 @@ sealed trait Term {
     case Term.BinaryOp(op, t1, t2) => Term.BinaryOp(op, t1.substitute(x, t), t2.substitute(x, t))
 
     case Term.Match(t1, rules) => Term.Match(t1.substitute(x, t), rules map {
-      case (p, t2) =>
-        if (p.freeVars contains x)
-          (p, t2)
-        else
-          (p, t2.substitute(x, t))
+      case (p, t2) if p.freeVars contains x => (p, t2)
+      case (p, t2) => (p, t2.substitute(x, t))
     })
 
     case Term.Tag(s, t1, typ) =>            Term.Tag(s, t1.substitute(x, t), typ)
@@ -65,27 +68,30 @@ sealed trait Term {
   }
 
   /**
-   * Returns the set of free variables in the term.
+   * Returns the free variables in the term.
    */
-  def freeVariables: Set[Symbol.VariableSymbol] = this match {
+  def freeVars: Set[Symbol.VariableSymbol] = this match {
     case Term.Unit =>     Set.empty
     case Term.Bool(b) =>  Set.empty
     case Term.Int(i) =>   Set.empty
     case Term.Str(s) =>   Set.empty
-    case Term.Set(xs) =>  xs flatMap (_.freeVariables)
+    case Term.Set(xs) =>  xs flatMap (_.freeVars)
 
-    case Term.Var(s) => Set(s)
-    case Term.Abs(x, typ, t) =>               t.freeVariables - x
-    case Term.App(t1, t2) =>                  t1.freeVariables ++ t2.freeVariables
+    case Term.Var(s) =>                       Set(s)
+    case Term.Abs(x, typ, t) =>               t.freeVars - x
+    case Term.App(t1, t2) =>                  t1.freeVars ++ t2.freeVars
 
-    case Term.UnaryOp(op, t) =>               t.freeVariables
-    case Term.BinaryOp(op, t1, t2) =>         t1.freeVariables ++ t2.freeVariables    case Term.Match(t1, rules) =>             ??? // §TODO
+    case Term.UnaryOp(op, t) =>               t.freeVars
+    case Term.BinaryOp(op, t1, t2) =>         t1.freeVars ++ t2.freeVars
+    case Term.Match(t1, rules) =>             t1.freeVars ++ rules.flatMap {
+      case (p, t2) => t2.freeVars -- p.freeVars
+    }
 
-    case Term.Tag(s, t, typ) =>               t.freeVariables
-    case Term.Tuple2(t1, t2) =>               t1.freeVariables ++ t2.freeVariables
-    case Term.Tuple3(t1, t2, t3) =>           t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
-    case Term.Tuple4(t1, t2, t3, t4) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables
-    case Term.Tuple5(t1, t2, t3, t4, t5) =>   t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables ++ t5.freeVariables
+    case Term.Tag(s, t, typ) =>               t.freeVars
+    case Term.Tuple2(t1, t2) =>               t1.freeVars ++ t2.freeVars
+    case Term.Tuple3(t1, t2, t3) =>           t1.freeVars ++ t2.freeVars ++ t3.freeVars
+    case Term.Tuple4(t1, t2, t3, t4) =>       t1.freeVars ++ t2.freeVars ++ t3.freeVars ++ t4.freeVars
+    case Term.Tuple5(t1, t2, t3, t4, t5) =>   t1.freeVars ++ t2.freeVars ++ t3.freeVars ++ t4.freeVars ++ t5.freeVars
   }
 }
 

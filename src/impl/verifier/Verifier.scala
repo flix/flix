@@ -77,9 +77,6 @@ object Verifier {
     case Term.Unit => SmtExp.Literal("unit")
     case Term.Bool(b) => SmtExp.Literal(b.toString)
     case Term.Int(i) => SmtExp.Literal(i.toString)
-    case Term.Str(s) => SmtExp.Literal(s.hashCode.toString) // TODO: Need a better way to map string constants to integers.
-
-    case Term.Var(x) => ???
 
     case Term.Tag(x, t1, _) => SmtExp.Lst(List(SmtExp.Literal(x.s), compileTerm(t1)))
     case Term.Tuple2(t1, t2) => SmtExp.Lst(List(SmtExp.Literal("Tuple2"), compileTerm(t1), compileTerm(t2)))
