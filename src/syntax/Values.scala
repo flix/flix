@@ -22,8 +22,8 @@ object Values {
 
       case Value.Abs(x, typ, t) => "λ" + x.fmt + " " + t.fmt
 
-      case Value.Tagged(s, Value.Unit, typ) =>  ":" + s.fmt
-      case Value.Tagged(s, v1, typ) =>          ":" + s.fmt + " " + v1.fmt
+      case Value.Tag(s, Value.Unit, typ) =>  ":" + s.fmt
+      case Value.Tag(s, v1, typ) =>          ":" + s.fmt + " " + v1.fmt
       case Value.Tuple2(v1, v2) =>              "(" + v1.fmt + "," + v2.fmt + ")"
       case Value.Tuple3(v1, v2, v3) =>          "(" + v1.fmt + "," + v2.fmt + "," + v3.fmt + ")"
       case Value.Tuple4(v1, v2, v3, v4) =>      "(" + v1.fmt + "," + v2.fmt + "," + v3.fmt + "," + v4.fmt + ")"

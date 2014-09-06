@@ -52,8 +52,8 @@ class TestUnification extends FunSuite {
 
   test("Unification.Success.07") {
     val typ = Type.Sum(List(Type.Tag(Symbol.NamedSymbol("Foo"), Type.Int)))
-    val t = Term.Tagged(Symbol.NamedSymbol("Foo"), Term.Int(42), typ)
-    val v = Value.Tagged(Symbol.NamedSymbol("Foo"), Value.Int(42), typ)
+    val t = Term.Tag(Symbol.NamedSymbol("Foo"), Term.Int(42), typ)
+    val v = Value.Tag(Symbol.NamedSymbol("Foo"), Value.Int(42), typ)
     val r = Unification.unify(t, v)
     assertResult(List(Map.empty))(r)
   }
@@ -130,8 +130,8 @@ class TestUnification extends FunSuite {
 
   test("Unification.Failure.07") {
     val typ = Type.Sum(List(Type.Tag(Symbol.NamedSymbol("Foo"), Type.Int)))
-    val t = Term.Tagged(Symbol.NamedSymbol("Foo"), Term.Int(42), typ)
-    val v = Value.Tagged(Symbol.NamedSymbol("Bar"), Value.Int(42), typ)
+    val t = Term.Tag(Symbol.NamedSymbol("Foo"), Term.Int(42), typ)
+    val v = Value.Tag(Symbol.NamedSymbol("Bar"), Value.Int(42), typ)
     val r = Unification.unify(t, v)
     assertResult(List.empty)(r)
   }

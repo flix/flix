@@ -47,12 +47,16 @@ object Typer {
     case Term.Bool(b) => Type.Bool
     case Term.Int(i) => Type.Int
     case Term.Str(s) => Type.Str
-    case Term.Set(xs) =>
-      val types = xs.map(x => typecheck(x, typenv))
-      if (types.size == 1)
-        Type.Set(types.head)
-      else
-        throw Error.UnexpectedTypeError(t, s"The subterms have different types: {${types.mkString(", ")}}")
+    case Term.Set(xs) => // TODO: Cleanup
+      if (xs.isEmpty)
+        throw Error.StaticTypeError(Type.Set(Type.Var(Symbol.VariableSymbol("t0"))), Type.Set(Type.Var(Symbol.VariableSymbol("t1"))), t)
+      else {
+        val types = xs.map(x => typecheck(x, typenv))
+        if (types.size == 1)
+          Type.Set(types.head)
+        else
+          throw new RuntimeException(s"The subterms have different types: {${types.mkString(", ")}}")
+      }
 
     case Term.Var(s) => typenv.getOrElse(s, throw Error.UnboundVariableError(s))
     case Term.Abs(s, typ1, t1) =>
@@ -64,7 +68,7 @@ object Typer {
       typ1 match {
         case Type.Function(a, b) if a == typ2 => b
         case Type.Function(a, b) => throw Error.StaticTypeError(a, typ2, t)
-        case _ => throw Error.UnexpectedTypeError(t, s"The term '$t1' does not have a function type in the application '$t'.")
+        case _ => throw Error.StaticTypeError(Type.Function(Type.Var(Symbol.VariableSymbol("t0")), Type.Var(Symbol.VariableSymbol("t0"))), typ1, t)
       }
 
     case Term.Match(t1, rules) =>
@@ -80,13 +84,6 @@ object Typer {
         case (typ2, typ3) if typ2 == typ3 => typ2
         case _ => (???): Type // Type error
       }
-
-    case Term.IfThenElse(t1, t2, t3) =>
-      val typ1 = typecheck(t1, typenv)
-      val typ2 = typecheck(t2, typenv)
-      val typ3 = typecheck(t3, typenv)
-      assertType(Type.Bool, typ1, t1)
-      assertType(typ2, typ3, t)
 
     case Term.UnaryOp(op, t1) =>
       val typ1 = typecheck(t1, typenv)
@@ -122,7 +119,7 @@ object Typer {
           Type.Bool
       }
 
-    case Term.Tagged(s, t1, typ) =>
+    case Term.Tag(s, t1, typ) =>
       val typ1 = typecheck(t1, typenv)
       if (typ.ts contains Type.Tag(s, typ1))
         typ
@@ -163,7 +160,7 @@ object Typer {
    *
    * NB: Pattern variables are assumed not to occur more than once.
    */
-  def typecheck(p: Pattern, typ: Type): Map[VSym, Type] = (p, typ) match {
+  private def typecheck(p: Pattern, typ: Type): Map[VSym, Type] = (p, typ) match {
     case (Pattern.Wildcard, _) => Map.empty
     case (Pattern.Var(s), typ1) => Map(s -> typ1)
 
@@ -173,9 +170,9 @@ object Typer {
     case (Pattern.Str(s), Type.Str) => Map.empty
 
     case (Pattern.Tagged(s1, p1), Type.Sum(ts)) =>
-     ts.collectFirst {
-       case Type.Tag(s2, typ2) if s1 == s2 => typecheck(p1, typ2)
-     }.get
+      ts.collectFirst {
+        case Type.Tag(s2, typ2) if s1 == s2 => typecheck(p1, typ2)
+      }.get
 
     case (Pattern.Tuple2(p1, p2), Type.Tuple2(typ1, typ2)) =>
       typecheck(p1, typ1) ++ typecheck(p2, typ2)

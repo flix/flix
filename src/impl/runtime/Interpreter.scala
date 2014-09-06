@@ -44,13 +44,6 @@ object Interpreter {
           throw new RuntimeException(s"No match for value ${v1.fmt}. Rule: ${t}")
       }
 
-    case Term.IfThenElse(t1, t2, t3) =>
-      val b = evaluate(t1, env).toBool
-      if (b)
-        evaluate(t2, env)
-      else
-        evaluate(t3, env)
-
     case Term.UnaryOp(op, t1) =>
       val v1 = evaluate(t, env)
       apply(op, v1)
@@ -60,9 +53,9 @@ object Interpreter {
       val v2 = evaluate(t2, env)
       apply(op, v1, v2)
 
-    case Term.Tagged(s, t1, typ) =>
+    case Term.Tag(s, t1, typ) =>
       val v1 = evaluate(t1, env)
-      Value.Tagged(s, v1, typ)
+      Value.Tag(s, v1, typ)
 
     case Term.Tuple2(t1, t2) =>
       val v1 = evaluate(t1, env)
@@ -104,7 +97,7 @@ object Interpreter {
     case (Pattern.Int(i1), Value.Int(i2)) if i1 == i2 => Some(Map.empty)
     case (Pattern.Str(s1), Value.Str(s2)) if s1 == s2 => Some(Map.empty)
 
-    case (Pattern.Tagged(s1, p1), Value.Tagged(s2, v1, _)) if s1 == s2 => unify(p1, v1)
+    case (Pattern.Tagged(s1, p1), Value.Tag(s2, v1, _)) if s1 == s2 => unify(p1, v1)
 
     case (Pattern.Tuple2(p1, p2), Value.Tuple2(v1, v2)) =>
       for (env1 <- unify(p1, v1);

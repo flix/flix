@@ -89,7 +89,7 @@ object Verifier {
 
     case Term.Var(x) => ???
 
-    case Term.Tagged(x, t1, _) => SmtExp.Lst(List(SmtExp.Literal(x.s), compileTerm(t1)))
+    case Term.Tag(x, t1, _) => SmtExp.Lst(List(SmtExp.Literal(x.s), compileTerm(t1)))
     case Term.Tuple2(t1, t2) => SmtExp.Lst(List(SmtExp.Literal("Tuple2"), compileTerm(t1), compileTerm(t2)))
     case Term.Tuple3(t1, t2, t3) => SmtExp.Lst(List(SmtExp.Literal("Tuple3"), compileTerm(t1), compileTerm(t2), compileTerm(t3)))
     case Term.Tuple4(t1, t2, t3, t4) => SmtExp.Lst(List(SmtExp.Literal("Tuple4"), compileTerm(t1), compileTerm(t2), compileTerm(t3), compileTerm(t4)))

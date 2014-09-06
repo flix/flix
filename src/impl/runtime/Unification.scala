@@ -47,7 +47,7 @@ object Unification {
       case Some(v3) if v2 == v3 => List(env0)
     }
 
-    case (Term.Tagged(s1, t1, _), Value.Tagged(s2, v1, _)) if s1 == s2 => unify(t1, v1, env0)
+    case (Term.Tag(s1, t1, _), Value.Tag(s2, v1, _)) if s1 == s2 => unify(t1, v1, env0)
     case (Term.Tuple2(t1, t2), Value.Tuple2(v1, v2)) =>
       for (env1 <- unify(t1, v1, env0);
            env2 <- unify(t2, v2, env1))

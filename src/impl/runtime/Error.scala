@@ -21,11 +21,6 @@ object Error {
   case class StaticTypeError(expected: Type, actual: Type, t: Term) extends RuntimeException(s"Expected the term '$t' to have type '$expected' but it has type '$actual'.")
 
   /**
-   * An exception thrown to indicate that an "unexpected" type appeared during type checking.
-   */
-  case class UnexpectedTypeError(t: Term, msg: String) extends RuntimeException(msg)
-
-  /**
    * An exception thrown to indicate a parsing error when trying to parse a predicate.
    */
   case class PredicateParseError(e: SExp) extends RuntimeException(s"Unable to parse predicate $e")

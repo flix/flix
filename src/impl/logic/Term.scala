@@ -21,8 +21,7 @@ sealed trait Term {
 
     case Term.UnaryOp(op, t1) =>            Term.UnaryOp(op, t1.rename(x, y))
     case Term.BinaryOp(op, t1, t2) =>       Term.BinaryOp(op, t1.rename(x, y), t2.rename(x, y))
-    case Term.IfThenElse(t1, t2, t3) =>     Term.IfThenElse(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y))
-    case Term.Tagged(s, t, typ) =>          Term.Tagged(s, t.rename(x, y), typ)
+    case Term.Tag(s, t, typ) =>             Term.Tag(s, t.rename(x, y), typ)
     case Term.Tuple2(t1, t2) =>             Term.Tuple2(t1.rename(x, y), t2.rename(x, y))
     case Term.Tuple3(t1, t2, t3) =>         Term.Tuple3(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y))
     case Term.Tuple4(t1, t2, t3, t4) =>     Term.Tuple4(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y), t4.rename(x, y))
@@ -51,9 +50,8 @@ sealed trait Term {
     case Term.BinaryOp(op, t1, t2) => Term.BinaryOp(op, t1.substitute(x, t), t2.substitute(x, t))
 
     case Term.Match(t1, rules) => Term.Match(t1.substitute(x, t), rules) // TODO: Careful with free variables!
-    case Term.IfThenElse(t1, t2, t3) => Term.IfThenElse(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
 
-    case Term.Tagged(s, t1, typ) =>         Term.Tagged(s, t1.substitute(x, t), typ)
+    case Term.Tag(s, t1, typ) =>            Term.Tag(s, t1.substitute(x, t), typ)
     case Term.Tuple2(t1, t2) =>             Term.Tuple2(t1.substitute(x, t), t2.substitute(x, t))
     case Term.Tuple3(t1, t2, t3) =>         Term.Tuple3(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
     case Term.Tuple4(t1, t2, t3, t4) =>     Term.Tuple4(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t))
@@ -75,11 +73,9 @@ sealed trait Term {
     case Term.App(t1, t2) =>                  t1.freeVariables ++ t2.freeVariables
 
     case Term.UnaryOp(op, t) =>               t.freeVariables
-    case Term.BinaryOp(op, t1, t2) =>         t1.freeVariables ++ t2.freeVariables
-    case Term.IfThenElse(t1, t2, t3) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
-    case Term.Match(t1, rules) =>             ??? // TODO
+    case Term.BinaryOp(op, t1, t2) =>         t1.freeVariables ++ t2.freeVariables    case Term.Match(t1, rules) =>             ??? // TODO
 
-    case Term.Tagged(s, t, typ) =>            t.freeVariables
+    case Term.Tag(s, t, typ) =>            t.freeVariables
     case Term.Tuple2(t1, t2) =>               t1.freeVariables ++ t2.freeVariables
     case Term.Tuple3(t1, t2, t3) =>           t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
     case Term.Tuple4(t1, t2, t3, t4) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables
@@ -135,11 +131,6 @@ object Term {
   case class Match(t: Term, rules: List[(Pattern, Term)]) extends Term
 
   /**
-   * An if-then-else term.
-   */
-  case class IfThenElse(t1: Term, t2: Term, t3: Term) extends Term
-
-  /**
    * A unary operator term.
    */
   case class UnaryOp(op: UnaryOperator, t1: Term) extends Term
@@ -152,7 +143,7 @@ object Term {
   /**
    * A tagged term.
    */
-  case class Tagged(name: Symbol.NamedSymbol, t: Term, typ: Type.Sum) extends Term
+  case class Tag(name: Symbol.NamedSymbol, t: Term, typ: Type.Sum) extends Term
 
   /**
    * A 2-tuple term.

@@ -1,7 +1,6 @@
 package impl.logic
 
 import impl.runtime.Error
-import impl.verifier.Typer
 
 sealed trait Value {
   /**
@@ -14,7 +13,7 @@ sealed trait Value {
     case Value.Str(s) => Term.Str(s)
     case Value.Set(xs) => Term.Set(xs map (_.toTerm))
     case Value.Abs(s, typ, t) => Term.Abs(s, typ, t)
-    case Value.Tagged(s, v, typ) => Term.Tagged(s, v.toTerm, typ)
+    case Value.Tag(s, v, typ) => Term.Tag(s, v.toTerm, typ)
     case Value.Tuple2(v1, v2) => Term.Tuple2(v1.toTerm, v2.toTerm)
     case Value.Tuple3(v1, v2, v3) => Term.Tuple3(v1.toTerm, v2.toTerm, v3.toTerm)
     case Value.Tuple4(v1, v2, v3, v4) => Term.Tuple4(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm)
@@ -50,9 +49,7 @@ sealed trait Value {
    */
   def toSet: Set[Value] = this match {
     case Value.Set(xs) => xs
-    case _ =>
-      val typ = Typer.typecheck(this.toTerm)
-      throw Error.RuntimeTypeError(Type.Set(typ), this)
+    case _ => throw Error.RuntimeTypeError(Type.Set(Type.Var(Symbol.VariableSymbol("t0"))), this)
   }
 
 }
@@ -92,7 +89,7 @@ object Value {
   /**
    * A tagged value.
    */
-  case class Tagged(name: Symbol.NamedSymbol, v: Value, typ: Type.Sum) extends Value
+  case class Tag(name: Symbol.NamedSymbol, v: Value, typ: Type.Sum) extends Value
 
   /**
    * A 2-tuple value.
