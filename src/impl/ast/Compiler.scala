@@ -89,7 +89,7 @@ object Compiler {
       else
         Predicate.NonGroundPredicate(Symbol.PredicateSymbol(s), terms, declaredType)
 
-    case _ => throw Error.PredicateParseError(e)
+    case _ => throw Error.ParseError(e)
   }
 
   /**
@@ -99,7 +99,7 @@ object Compiler {
     def visit(xs: List[SExp]): Term = xs match {
       case SExp.Var(x) :: t :: rest => Term.Abs(Symbol.VariableSymbol(x), compileType(t), visit(rest))
       case Nil => compileTerm(body)
-      case _ => ???
+      case _ => throw Error.ParseError(SExp.Lst(args))
     }
     visit(args).asInstanceOf[Term.Abs]
   }
@@ -131,7 +131,7 @@ object Compiler {
     case SExp.Lst(List(e1, e2, e3, e4)) => Term.Tuple4(compileTerm(e1), compileTerm(e2), compileTerm(e3), compileTerm(e4))
     case SExp.Lst(List(e1, e2, e3, e4, e5)) => Term.Tuple5(compileTerm(e1), compileTerm(e2), compileTerm(e3), compileTerm(e4), compileTerm(e5))
 
-    case _ => throw Error.TermParseError(e)
+    case _ => throw Error.ParseError(e)
   }
 
   /**
@@ -139,7 +139,7 @@ object Compiler {
    */
   def compileRule(e: SExp): (Pattern, Term) = e match {
     case SExp.Lst(List(SExp.Keyword("case"), pattern, body)) => (compilePattern(pattern), compileTerm(body))
-    case _ => throw Error.TermParseError(e)
+    case _ => throw Error.ParseError(e)
   }
 
   /**
@@ -157,7 +157,7 @@ object Compiler {
     case SExp.Lst(List(e1, e2, e3)) => Pattern.Tuple3(compilePattern(e1), compilePattern(e2), compilePattern(e3))
     case SExp.Lst(List(e1, e2, e3, e4)) => Pattern.Tuple4(compilePattern(e1), compilePattern(e2), compilePattern(e3), compilePattern(e4))
     case SExp.Lst(List(e1, e2, e3, e4, e5)) => Pattern.Tuple5(compilePattern(e1), compilePattern(e2), compilePattern(e3), compilePattern(e4), compilePattern(e5))
-    case _ => throw Error.PatternParseError(e)
+    case _ => throw Error.ParseError(e)
   }
 
   /**
@@ -184,7 +184,7 @@ object Compiler {
     case SExp.Lst(List(e1, e2, e3)) => Type.Tuple3(compileType(e1), compileType(e2), compileType(e3))
     case SExp.Lst(List(e1, e2, e3, e4)) => Type.Tuple4(compileType(e1), compileType(e2), compileType(e3), compileType(e4))
     case SExp.Lst(List(e1, e2, e3, e4, e5)) => Type.Tuple5(compileType(e1), compileType(e2), compileType(e3), compileType(e4), compileType(e5))
-    case _ => throw Error.TypeParseError(e)
+    case _ => throw Error.ParseError(e)
   }
 
   /**

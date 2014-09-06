@@ -42,23 +42,8 @@ object Error {
   case class MissingHeight(typ: Type) extends RuntimeException(s"Missing height function for type ${typ.fmt}")
 
   /**
-   * An exception thrown to indicate a parsing error when trying to parse a predicate.
+   * An exception thrown to indicate a parsing error.
    */
-  case class PredicateParseError(e: SExp) extends RuntimeException(s"Unable to parse predicate $e")
-
-  /**
-   * An exception thrown to indicate a parsing error when trying to parse a term.
-   */
-  case class TermParseError(e: SExp) extends RuntimeException(s"Unable to parse term $e")
-
-  /**
-   * An exception thrown to indicate a parsing error when trying to parse a pattern.
-   */
-  case class PatternParseError(e: SExp) extends RuntimeException(s"Unable to parse pattern $e")
-
-  /**
-   * An exception thrown to indicate a parsing error when trying to parse a type.
-   */
-  case class TypeParseError(e: SExp) extends RuntimeException(s"Unable to parse type $e")
+  case class ParseError(e: SExp) extends RuntimeException(s"Unable to parse predicate $e")
 
 }
