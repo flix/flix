@@ -3,6 +3,8 @@ package impl.verifier
 import impl.logic.Symbol.{VariableSymbol => VSym}
 import impl.logic._
 import impl.runtime.Error
+import syntax.Patterns.RichPattern
+import syntax.Types.RichType
 
 object Typer {
 
@@ -175,7 +177,7 @@ object Typer {
     case (Pattern.Tuple5(p1, p2, p3, p4, p5), Type.Tuple5(typ1, typ2, typ3, typ4, typ5)) =>
       typecheck(p1, typ1) ++ typecheck(p2, typ2) ++ typecheck(p3, typ3) ++ typecheck(p4, typ4) ++ typecheck(p5, typ5)
 
-    case _ => ???
+    case _ => throw new RuntimeException(s"Unable to typecheck pattern ${p.fmt} against type ${typ.fmt}")
   }
 
   /**
