@@ -46,10 +46,10 @@ object Typer {
         Type.Set(Type.Var(Symbol.freshVariableSymbol("t")))
       else {
         val types = xs.map(x => typecheck(x, typenv))
-        if (types.size == 1)
-          Type.Set(types.head)
-        else
-          throw new RuntimeException(s"The subterms have different types: {${types.mkString(", ")}}")
+        types.reduce[Type] {
+          case (typ1, typ2) if typ1 == typ2 => typ1
+          case (typ1, typ2) if typ1 != typ2 => throw new RuntimeException(s"A set must have terms of the same type, but found: ${typ1.fmt} and  Type 2: ${typ1.fmt}")
+        }
       }
 
     case Term.Var(s) => typenv.getOrElse(s, throw Error.UnboundVariableError(s))
