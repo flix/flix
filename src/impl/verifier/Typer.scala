@@ -161,7 +161,7 @@ object Typer {
     case (Pattern.Int(i), Type.Int) => Map.empty
     case (Pattern.Str(s), Type.Str) => Map.empty
 
-    case (Pattern.Tagged(s1, p1), Type.Sum(ts)) =>
+    case (Pattern.Tag(s1, p1), Type.Sum(ts)) =>
       ts.collectFirst {
         case Type.Tag(s2, typ2) if s1 == s2 => typecheck(p1, typ2)
       }.get

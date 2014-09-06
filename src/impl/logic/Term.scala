@@ -29,7 +29,7 @@ sealed trait Term {
   }
 
   /**
-   * Returns the term where all occurences (up to lambda- and let terms)
+   * Returns the term where all occurences (up to lambda- and match terms)
    * of the given variable `x` has been replaced by the term `t`.
    */
   def substitute(x: Symbol.VariableSymbol, t: Term): Term = this match {
@@ -49,7 +49,13 @@ sealed trait Term {
     case Term.UnaryOp(op, t1) => Term.UnaryOp(op, t1.substitute(x, t))
     case Term.BinaryOp(op, t1, t2) => Term.BinaryOp(op, t1.substitute(x, t), t2.substitute(x, t))
 
-    case Term.Match(t1, rules) => Term.Match(t1.substitute(x, t), rules) // TODO: Careful with free variables!
+    case Term.Match(t1, rules) => Term.Match(t1.substitute(x, t), rules map {
+      case (p, t2) =>
+        if (p.freeVars contains x)
+          (p, t2)
+        else
+          (p, t2.substitute(x, t))
+    })
 
     case Term.Tag(s, t1, typ) =>            Term.Tag(s, t1.substitute(x, t), typ)
     case Term.Tuple2(t1, t2) =>             Term.Tuple2(t1.substitute(x, t), t2.substitute(x, t))
@@ -73,9 +79,9 @@ sealed trait Term {
     case Term.App(t1, t2) =>                  t1.freeVariables ++ t2.freeVariables
 
     case Term.UnaryOp(op, t) =>               t.freeVariables
-    case Term.BinaryOp(op, t1, t2) =>         t1.freeVariables ++ t2.freeVariables    case Term.Match(t1, rules) =>             ??? // TODO
+    case Term.BinaryOp(op, t1, t2) =>         t1.freeVariables ++ t2.freeVariables    case Term.Match(t1, rules) =>             ??? // §TODO
 
-    case Term.Tag(s, t, typ) =>            t.freeVariables
+    case Term.Tag(s, t, typ) =>               t.freeVariables
     case Term.Tuple2(t1, t2) =>               t1.freeVariables ++ t2.freeVariables
     case Term.Tuple3(t1, t2, t3) =>           t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
     case Term.Tuple4(t1, t2, t3, t4) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables

@@ -122,8 +122,7 @@ object Compiler {
     case SExp.Lst(List(SExp.Operator(op), left, right)) => Term.BinaryOp(compileBinaryOperator(op), compileTerm(left), compileTerm(right))
 
     case SExp.Label(s) => Term.Tag(Symbol.NamedSymbol(s), Term.Unit, labels(s))
-      // TODO: Verify order of arguments
-    case SExp.Lst(SExp.Name(x) :: args) => args.foldLeft(funcs(x)) {
+    case SExp.Lst(SExp.Name(x) :: args) => args.reverse.foldLeft(funcs(x)) {
       case (t, a: SExp.Var) => Term.App(t, Term.Var(Symbol.VariableSymbol(a.token)))
     }
     case SExp.Lst(List(SExp.Label(s), es)) => Term.Tag(Symbol.NamedSymbol(s), compileTerm(es), labels(s))
@@ -152,8 +151,8 @@ object Compiler {
         Pattern.Wildcard
       else
         Pattern.Var(Symbol.VariableSymbol(x))
-    case SExp.Label(s) => Pattern.Tagged(Symbol.NamedSymbol(s), Pattern.Unit)
-    case SExp.Lst(List(SExp.Lst(List(SExp.Label(s), e1)))) => Pattern.Tagged(Symbol.NamedSymbol(s), compilePattern(e1))
+    case SExp.Label(s) => Pattern.Tag(Symbol.NamedSymbol(s), Pattern.Unit)
+    case SExp.Lst(List(SExp.Lst(List(SExp.Label(s), e1)))) => Pattern.Tag(Symbol.NamedSymbol(s), compilePattern(e1))
     case SExp.Lst(List(e1, e2)) => Pattern.Tuple2(compilePattern(e1), compilePattern(e2))
     case SExp.Lst(List(e1, e2, e3)) => Pattern.Tuple3(compilePattern(e1), compilePattern(e2), compilePattern(e3))
     case SExp.Lst(List(e1, e2, e3, e4)) => Pattern.Tuple4(compilePattern(e1), compilePattern(e2), compilePattern(e3), compilePattern(e4))

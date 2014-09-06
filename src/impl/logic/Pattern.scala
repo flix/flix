@@ -1,6 +1,23 @@
 package impl.logic
 
-sealed trait Pattern
+sealed trait Pattern {
+  /**
+   * Returns all free variables in the pattern.
+   */
+  def freeVars: Set[Symbol.VariableSymbol] = this match {
+    case Pattern.Wildcard => Set.empty
+    case Pattern.Var(x) => Set(x)
+    case Pattern.Unit => Set.empty
+    case Pattern.Bool(b) => Set.empty
+    case Pattern.Int(i) => Set.empty
+    case Pattern.Str(s) => Set.empty
+    case Pattern.Tag(n, p) => p.freeVars
+    case Pattern.Tuple2(p1, p2) => p1.freeVars ++ p2.freeVars
+    case Pattern.Tuple3(p1, p2, p3) => p1.freeVars ++ p2.freeVars ++ p3.freeVars
+    case Pattern.Tuple4(p1, p2, p3, p4) => p1.freeVars ++ p2.freeVars ++ p3.freeVars ++ p4.freeVars
+    case Pattern.Tuple5(p1, p2, p3, p4, p5) => p1.freeVars ++ p2.freeVars ++ p3.freeVars ++ p4.freeVars ++ p5.freeVars
+  }
+}
 
 object Pattern {
 
@@ -37,7 +54,7 @@ object Pattern {
   /**
    * A tagged pattern.
    */
-  case class Tagged(name: Symbol.NamedSymbol, p: Pattern) extends Pattern
+  case class Tag(name: Symbol.NamedSymbol, p: Pattern) extends Pattern
 
   /**
    * A 2-tuple pattern.

@@ -97,7 +97,7 @@ object Interpreter {
     case (Pattern.Int(i1), Value.Int(i2)) if i1 == i2 => Some(Map.empty)
     case (Pattern.Str(s1), Value.Str(s2)) if s1 == s2 => Some(Map.empty)
 
-    case (Pattern.Tagged(s1, p1), Value.Tag(s2, v1, _)) if s1 == s2 => unify(p1, v1)
+    case (Pattern.Tag(s1, p1), Value.Tag(s2, v1, _)) if s1 == s2 => unify(p1, v1)
 
     case (Pattern.Tuple2(p1, p2), Value.Tuple2(v1, v2)) =>
       for (env1 <- unify(p1, v1);
