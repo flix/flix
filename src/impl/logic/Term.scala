@@ -5,6 +5,7 @@ sealed trait Term {
    * Returns the term where all occurences (up to lambda- and let terms)
    * of the given variable `x` has been replaced by the variable `y`.
    */
+  // TODO: Remove rename, substitute and freeVars?
   def rename(x: Symbol.VariableSymbol, y: Symbol.VariableSymbol): Term = this match {
     case Term.Unit =>     this
     case Term.Bool(b) =>  this
