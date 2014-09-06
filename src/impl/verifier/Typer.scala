@@ -41,9 +41,9 @@ object Typer {
     case Term.Bool(b) => Type.Bool
     case Term.Int(i) => Type.Int
     case Term.Str(s) => Type.Str
-    case Term.Set(xs) => // TODO: Cleanup
+    case Term.Set(xs) =>
       if (xs.isEmpty)
-        throw Error.StaticTypeError(Type.Set(Type.Var(Symbol.VariableSymbol("t0"))), Type.Set(Type.Var(Symbol.VariableSymbol("t1"))), t)
+        Type.Set(Type.Var(Symbol.freshVariableSymbol("t")))
       else {
         val types = xs.map(x => typecheck(x, typenv))
         if (types.size == 1)
