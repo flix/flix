@@ -29,7 +29,7 @@
         (case _         Top)))
 
 (fact (A (Cst 3)))
-(fact (B (Cst 3)))
+(fact (B (Cst 4)))
 
 (rule (R (sum x y)) ((A x) (B y)))
 
