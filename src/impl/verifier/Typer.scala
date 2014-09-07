@@ -101,6 +101,16 @@ object Typer {
           assertType(typ1, typ2, t)
           Type.Bool
 
+        case BinaryOperator.And | BinaryOperator.Or =>
+          assertType(Type.Bool, typ1, t1)
+          assertType(Type.Bool, typ2, t2)
+          Type.Bool
+
+        case BinaryOperator.Minimum | BinaryOperator.Maximum =>
+          assertType(Type.Int, typ1, t1)
+          assertType(Type.Int, typ2, t2)
+          Type.Int
+
         case BinaryOperator.Union =>
           assertType(typ1, typ2, t)
 

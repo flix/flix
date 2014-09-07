@@ -28,6 +28,12 @@ object BinaryOperator {
     case ">=" => GreaterEqual
     case "==" => Equal
     case "!=" => NotEqual
+    case "and" => And
+    case "or" => Or
+    case "lte" => LessEqual
+    case "gte" => GreaterEqual
+    case "min" => Minimum
+    case "max" => Maximum
   }
 
   case object Plus extends BinaryOperator
@@ -43,6 +49,12 @@ object BinaryOperator {
 
   case object Equal extends BinaryOperator
   case object NotEqual extends BinaryOperator
+
+  case object And extends BinaryOperator
+  case object Or extends BinaryOperator
+
+  case object Minimum extends BinaryOperator
+  case object Maximum extends BinaryOperator
 
   case object Union extends BinaryOperator
   case object Subset extends BinaryOperator

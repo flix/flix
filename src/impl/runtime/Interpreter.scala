@@ -154,6 +154,10 @@ object Interpreter {
     case BinaryOperator.GreaterEqual => Value.Bool(v1.toInt >= v2.toInt)
     case BinaryOperator.Equal => Value.Bool(v1 == v2)
     case BinaryOperator.NotEqual => Value.Bool(v1 != v2)
+    case BinaryOperator.And => Value.Bool(v1.toBool && v2.toBool)
+    case BinaryOperator.Or => Value.Bool(v1.toBool || v2.toBool)
+    case BinaryOperator.Minimum => Value.Int(math.min(v1.toInt, v2.toInt))
+    case BinaryOperator.Maximum => Value.Int(math.max(v1.toInt, v2.toInt))
     case BinaryOperator.Union => Value.Set(v1.toSet ++ v2.toSet)
     case BinaryOperator.Subset => Value.Bool(v1.toSet subsetOf v2.toSet)
   }

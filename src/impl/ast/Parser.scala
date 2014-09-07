@@ -16,13 +16,14 @@ object Parser {
      * Keywords.
      */
     def keyword: Parser[SExp.Keyword] =
-      ("def-type" | "def-bot" | "def-leq" | "def-lub" | "def-height" | "def-fun" | "fact" | "rule" | "variant" | "match" | "case" | "->" | "if") ^^ SExp.Keyword
+      ("def-type" | "def-bot" | "def-leq" | "def-lub" | "def-height" | "def-fun" | "fact" | "rule" |
+        "variant" | "match" | "case" | "->" | "if" ) ^^ SExp.Keyword
 
     /**
      * Operators
      */
     def operator: Parser[SExp.Operator] =
-      ("==" | "!=" | "<=" | ">=" | "+" | "-" | "*" | "/") ^^ SExp.Operator
+      ("==" | "!=" | "<=" | ">=" | "+" | "-" | "*" | "/" | "and" | "lte" | "gte" | "min" | "max") ^^ SExp.Operator
 
     /**
      * Values.
