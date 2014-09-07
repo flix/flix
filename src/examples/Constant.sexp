@@ -17,11 +17,11 @@
     (match <e1 e2>
         (case <Bot x>   x)
         (case <x Bot>   x)
-        (case <(Cst n1) (Cst n2)>  (Cst n1))
+        (case <(Cst n1) (Cst n2)>  (if (== n1 n2) (Cst n1) Top))
         (case _         Top)))
 
 (fact (A (Cst 3)))
-(fact (B (Cst 5)))
+(fact (B (Cst 3)))
 
 (rule (R x) ((A x)))
 (rule (R x) ((B x)))

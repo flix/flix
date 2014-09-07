@@ -68,18 +68,18 @@ object Verifier {
   }
 
 
-  def compileTerm(t: Term): SmtExp = t match {
-    case Term.Unit => SmtExp.Literal("unit")
-    case Term.Bool(b) => SmtExp.Literal(b.toString)
-    case Term.Int(i) => SmtExp.Literal(i.toString)
-
-    case Term.Tag(x, t1, _) => SmtExp.Lst(List(SmtExp.Literal(x.s), compileTerm(t1)))
-    case Term.Tuple2(t1, t2) => SmtExp.Lst(List(SmtExp.Literal("Tuple2"), compileTerm(t1), compileTerm(t2)))
-    case Term.Tuple3(t1, t2, t3) => SmtExp.Lst(List(SmtExp.Literal("Tuple3"), compileTerm(t1), compileTerm(t2), compileTerm(t3)))
-    case Term.Tuple4(t1, t2, t3, t4) => SmtExp.Lst(List(SmtExp.Literal("Tuple4"), compileTerm(t1), compileTerm(t2), compileTerm(t3), compileTerm(t4)))
-    case Term.Tuple5(t1, t2, t3, t4, t5) => SmtExp.Lst(List(SmtExp.Literal("Tuple5"), compileTerm(t1), compileTerm(t2), compileTerm(t3), compileTerm(t4), compileTerm(t5)))
-
-  }
+//  def compileTerm(t: Term): SmtExp = t match {
+//    case Term.Unit => SmtExp.Literal("unit")
+//    case Term.Bool(b) => SmtExp.Literal(b.toString)
+//    case Term.Int(i) => SmtExp.Literal(i.toString)
+//
+//    case Term.Tag(x, t1, _) => SmtExp.Lst(List(SmtExp.Literal(x.s), compileTerm(t1)))
+//    case Term.Tuple2(t1, t2) => SmtExp.Lst(List(SmtExp.Literal("Tuple2"), compileTerm(t1), compileTerm(t2)))
+//    case Term.Tuple3(t1, t2, t3) => SmtExp.Lst(List(SmtExp.Literal("Tuple3"), compileTerm(t1), compileTerm(t2), compileTerm(t3)))
+//    case Term.Tuple4(t1, t2, t3, t4) => SmtExp.Lst(List(SmtExp.Literal("Tuple4"), compileTerm(t1), compileTerm(t2), compileTerm(t3), compileTerm(t4)))
+//    case Term.Tuple5(t1, t2, t3, t4, t5) => SmtExp.Lst(List(SmtExp.Literal("Tuple5"), compileTerm(t1), compileTerm(t2), compileTerm(t3), compileTerm(t4), compileTerm(t5)))
+//
+//  }
 
 
   private var Counter: Int = 0
@@ -114,33 +114,33 @@ object Verifier {
 
   // (declare-datatypes () ((SortName (ConstructorName (FieldName Type)))))
 
-  def foo(typ: Type): List[SmtExp] = {
-    val types = mutable.Map.empty[Type, String]
-    val result = mutable.ListBuffer.empty[SmtExp]
-    def visit(typ: Type): String = typ match {
-      case Type.Unit => "unit"
-      case Type.Bool => "bool"
-      case Type.Int => "int"
-      case Type.Str => "str"
-
-      case Type.Tuple2(typ1, typ2) =>
-        val (sortName, fieldSort1, fieldSort2) = (freshTypeName, visit(typ1), visit(typ2))
-        types += typ -> sortName
-        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"),  SmtExp.Lst(Nil), SmtExp.Literal(sortName),
-          SmtExp.Lst(List(SmtExp.Literal(freshTypeName), SmtExp.Literal(fieldSort1))),
-          SmtExp.Lst(List(SmtExp.Literal(freshTypeName), SmtExp.Literal(fieldSort2)))))
-        sortName
-      case Type.Tuple3(typ1, typ2, typ3) =>
-        val (sortName, fieldSort1, fieldSort2, fieldSort3) =  (freshTypeName, visit(typ1), visit(typ2), visit(typ3))
-        types += typ -> sortName
-        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"), SmtExp.Lst(Nil), SmtExp.Literal(sortName), SmtExp.Literal(fieldSort1), SmtExp.Literal(fieldSort2), SmtExp.Literal(fieldSort3)))
-        sortName
-
-    }
-    visit(typ)
-
-    result.toList
-  }
+//  def foo(typ: Type): List[SmtExp] = {
+//    val types = mutable.Map.empty[Type, String]
+//    val result = mutable.ListBuffer.empty[SmtExp]
+//    def visit(typ: Type): String = typ match {
+//      case Type.Unit => "unit"
+//      case Type.Bool => "bool"
+//      case Type.Int => "int"
+//      case Type.Str => "str"
+//
+//      case Type.Tuple2(typ1, typ2) =>
+//        val (sortName, fieldSort1, fieldSort2) = (freshTypeName, visit(typ1), visit(typ2))
+//        types += typ -> sortName
+//        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"),  SmtExp.Lst(Nil), SmtExp.Literal(sortName),
+//          SmtExp.Lst(List(SmtExp.Literal(freshTypeName), SmtExp.Literal(fieldSort1))),
+//          SmtExp.Lst(List(SmtExp.Literal(freshTypeName), SmtExp.Literal(fieldSort2)))))
+//        sortName
+//      case Type.Tuple3(typ1, typ2, typ3) =>
+//        val (sortName, fieldSort1, fieldSort2, fieldSort3) =  (freshTypeName, visit(typ1), visit(typ2), visit(typ3))
+//        types += typ -> sortName
+//        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"), SmtExp.Lst(Nil), SmtExp.Literal(sortName), SmtExp.Literal(fieldSort1), SmtExp.Literal(fieldSort2), SmtExp.Literal(fieldSort3)))
+//        sortName
+//
+//    }
+//    visit(typ)
+//
+//    result.toList
+//  }
 
 
 }

@@ -32,6 +32,13 @@ object Interpreter {
       val argVal = evaluate(t2, env)
       evaluate(t3.substitute(x, argVal.toTerm), env) // TODO: Eliminate free occurences in argVal and remove environment.
 
+    case Term.IfThenElse(t1, t2, t3) =>
+      val cond = evaluate(t1, env).toBool
+      if (cond)
+        evaluate(t2, env)
+      else
+        evaluate(t3, env)
+
     case Term.Match(t1, rules) =>
       val v1 = evaluate(t1, env)
       matchRule(rules, v1) match {

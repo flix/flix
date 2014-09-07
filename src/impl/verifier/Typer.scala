@@ -61,6 +61,13 @@ object Typer {
         case _ => throw Error.StaticTypeError(Type.Function(Type.Var(Symbol.VariableSymbol("t0")), Type.Var(Symbol.VariableSymbol("t0"))), typ1, t)
       }
 
+    case Term.IfThenElse(t1, t2,t3) =>
+      val typ1 = typecheck(t1, typenv)
+      val typ2 = typecheck(t2, typenv)
+      val typ3 = typecheck(t3, typenv)
+      assertType(Type.Bool, typ1, t1)
+      assertEqual(List(typ2, typ3))
+
     case Term.Match(t1, rules) =>
       // type check the match value
       val typ1 = typecheck(t1, typenv)

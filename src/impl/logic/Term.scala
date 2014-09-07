@@ -53,13 +53,14 @@ sealed trait Term {
     case Term.Abs(s, typ, t1) => Term.Abs(s, typ, t1.substitute(x, t))
     case Term.App(t1, t2) => Term.App(t1.substitute(x, t), t2.substitute(x, t))
 
-    case Term.UnaryOp(op, t1) => Term.UnaryOp(op, t1.substitute(x, t))
-    case Term.BinaryOp(op, t1, t2) => Term.BinaryOp(op, t1.substitute(x, t), t2.substitute(x, t))
-
+    case Term.IfThenElse(t1, t2, t3) => Term.IfThenElse(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
     case Term.Match(t1, rules) => Term.Match(t1.substitute(x, t), rules map {
       case (p, t2) if p.freeVars contains x => (p, t2)
       case (p, t2) => (p, t2.substitute(x, t))
     })
+
+    case Term.UnaryOp(op, t1) => Term.UnaryOp(op, t1.substitute(x, t))
+    case Term.BinaryOp(op, t1, t2) => Term.BinaryOp(op, t1.substitute(x, t), t2.substitute(x, t))
 
     case Term.Tag(s, t1, typ) =>            Term.Tag(s, t1.substitute(x, t), typ)
     case Term.Tuple2(t1, t2) =>             Term.Tuple2(t1.substitute(x, t), t2.substitute(x, t))
@@ -82,11 +83,13 @@ sealed trait Term {
     case Term.Abs(x, typ, t) =>               t.freeVars - x
     case Term.App(t1, t2) =>                  t1.freeVars ++ t2.freeVars
 
-    case Term.UnaryOp(op, t) =>               t.freeVars
-    case Term.BinaryOp(op, t1, t2) =>         t1.freeVars ++ t2.freeVars
+    case Term.IfThenElse(t1, t2, t3) =>       t1.freeVars ++ t2.freeVars ++ t3.freeVars
     case Term.Match(t1, rules) =>             t1.freeVars ++ rules.flatMap {
       case (p, t2) => t2.freeVars -- p.freeVars
     }
+
+    case Term.UnaryOp(op, t) =>               t.freeVars
+    case Term.BinaryOp(op, t1, t2) =>         t1.freeVars ++ t2.freeVars
 
     case Term.Tag(s, t, typ) =>               t.freeVars
     case Term.Tuple2(t1, t2) =>               t1.freeVars ++ t2.freeVars
@@ -137,6 +140,11 @@ object Term {
    * An application term.
    */
   case class App(t1: Term, t2: Term) extends Term
+
+  /**
+   * A if-then-else term.
+   */
+  case class IfThenElse(t1: Term, t2: Term, t3: Term) extends Term
 
   /**
    * A match term.
