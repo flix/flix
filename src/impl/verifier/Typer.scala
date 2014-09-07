@@ -167,7 +167,7 @@ object Typer {
    */
   private def assertEqual(types: Seq[Type]): Type = types.reduce[Type] {
     case (typ1, typ2) if typ1 == typ2 => typ1
-    case (typ1, typ2) if typ1 != typ2 => throw new RuntimeException(s"Expected equal types, but got: ${typ1.fmt} and ${typ1.fmt}")
+    case (typ1, typ2) if typ1 != typ2 => throw new RuntimeException(s"Expected equal types, but got: ${typ1.fmt} and ${typ2.fmt}")
   }
 
 }

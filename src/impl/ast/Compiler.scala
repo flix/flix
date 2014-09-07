@@ -119,7 +119,7 @@ object Compiler {
     case SExp.Lst(SExp.Keyword("set") :: rest) => Term.Set(rest.map(compileTerm).toSet)
     case SExp.Lst(List(SExp.Keyword("if"), e1, e2, e3)) => Term.IfThenElse(compileTerm(e1), compileTerm(e2), compileTerm(e3))
     case SExp.Lst(SExp.Keyword("match") :: exp :: rules) => Term.Match(compileTerm(exp), rules.map(compileRule))
-    case SExp.Lst(List(SExp.Operator(op), left, right)) => Term.BinaryOp(compileBinaryOperator(op), compileTerm(left), compileTerm(right))
+    case SExp.Lst(List(SExp.Operator(op), left, right)) => Term.BinaryOp(BinaryOperator.valueOf(op), compileTerm(left), compileTerm(right))
 
     case SExp.Name(s) => Term.Tag(Symbol.NamedSymbol(s), Term.Unit, labels(s))
     case SExp.Lst(List(SExp.Name(s), es)) => Term.Tag(Symbol.NamedSymbol(s), compileTerm(es), labels(s))
@@ -192,13 +192,6 @@ object Compiler {
     case _ => throw Error.ParseError(e)
   }
 
-  /**
-   * Compiles the given string `s` to a binary operator.
-   */
-  def compileBinaryOperator(s: String): BinaryOperator = s match {
-    case "==" => BinaryOperator.Equal
-  }
-  
   /**
    * Synthesizes a declaration of the bottom element for the given set type `typ`.
    */

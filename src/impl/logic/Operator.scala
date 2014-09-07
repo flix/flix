@@ -3,6 +3,7 @@ package impl.logic
 trait Operator
 
 sealed trait UnaryOperator extends Operator
+
 object UnaryOperator {
   case object Not extends UnaryOperator
   case object UnaryPlus extends UnaryOperator
@@ -10,7 +11,25 @@ object UnaryOperator {
 }
 
 sealed trait BinaryOperator extends Operator
+
 object BinaryOperator {
+  /**
+   * Returns the binary operator corresponding with the given string `s`.
+   */
+  def valueOf(s: String): BinaryOperator = s match {
+    case "+" => Plus
+    case "-" => Minus
+    case "*" => Times
+    case "/" => Divide
+    case "%" => Modulo
+    case "<" => Less
+    case "<=" => LessEqual
+    case ">" => Greater
+    case ">=" => GreaterEqual
+    case "==" => Equal
+    case "!=" => NotEqual
+  }
+
   case object Plus extends BinaryOperator
   case object Minus extends BinaryOperator
   case object Times extends BinaryOperator

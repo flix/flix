@@ -3,6 +3,7 @@
 (def-type A Number)
 (def-type B Number)
 (def-type R Number)
+(def-type W Number)
 
 (def-bot Number Bot)
 
@@ -20,8 +21,17 @@
         (case <(Cst n1) (Cst n2)>  (if (== n1 n2) (Cst n1) Top))
         (case _         Top)))
 
+(def-fun sum (e1 Number e2 Number)
+    (match <e1 e2>
+        (case <Bot _>   Bot)
+        (case <_ Bot>   Bot)
+        (case <(Cst n1) (Cst n2)>  (Cst (+ n1 n2)))
+        (case _         Top)))
+
 (fact (A (Cst 3)))
 (fact (B (Cst 3)))
 
-(rule (R x) ((A x)))
-(rule (R x) ((B x)))
+(rule (R (sum x y)) ((A x) (B y)))
+
+(rule (W x) ((A x)))
+(rule (W x) ((R x)))
