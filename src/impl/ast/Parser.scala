@@ -89,8 +89,10 @@ object Parser {
   def parse(f: File): List[SExp] = {
     // read all lines into a single string.
     val source = Source.fromFile(f).getLines().mkString("\n")
+    // remove comments
+    val uncommented = source.replaceAll("//[^\n]*\n", "")
     // parse the entire file
-    val parseResult = InternalParser.parseAll(InternalParser.decl, source)
+    val parseResult = InternalParser.parseAll(InternalParser.decl, uncommented)
     // inspect the result
     parseResult match {
       case InternalParser.Success(ast, next) => ast
