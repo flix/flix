@@ -38,7 +38,7 @@ object Parser {
     def int: Parser[SExp.Int] = """[0-9]+""".r ^^ SExp.Int
 
     // string literal
-    def str: Parser[SExp.Str] = ("\"" ~> """[a-zA-Z]+""".r <~ "\"") ^^ SExp.Str
+    def str: Parser[SExp.Str] = ("\"" ~> """[^\"]+""".r <~ "\"") ^^ SExp.Str
 
     // value production
     def value: Parser[SExp] = unit | bool | int | str
