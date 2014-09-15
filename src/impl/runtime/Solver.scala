@@ -98,7 +98,7 @@ class Solver(program: Program) {
     for (h <- dependencies.get(p.name)) {
       for (p2 <- h.body) {
         for (env0 <- Unification.unifyPredicate(p, p2)) {
-          queue.enqueue((h, env0))
+          queue.enqueue((h.simplify(p2), env0))
         }
       }
     }

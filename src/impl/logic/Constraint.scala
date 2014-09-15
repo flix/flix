@@ -6,6 +6,14 @@ package impl.logic
 trait Constraint {
   def head: Predicate
   def body: List[Predicate]
+
+  /**
+   * Returns a simplification of the rule where the given predicate `p`, appearing in the body, is assumed to hold.
+   */
+  def simplify(p: Predicate): Constraint = this match {
+    case Constraint.Fact(head) => this
+    case Constraint.Rule(head, body) => Constraint.Rule(head, body.filter(p2 => p != p2))
+  }
 }
 
 object Constraint {
