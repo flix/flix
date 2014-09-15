@@ -1,6 +1,6 @@
 package impl.runtime
 
-import impl.datastore.{IndexedStore, SimpleStore, DataStore}
+import impl.datastore.{DataStore, IndexedStore}
 import impl.logic.Symbol.{PredicateSymbol => PSym, VariableSymbol => VSym}
 import impl.logic._
 import util.collection.mutable
@@ -28,6 +28,11 @@ class Solver(program: Program) {
   val queue = scala.collection.mutable.Queue.empty[(Constraint, Map[VSym, Value])]
 
   /**
+   * A run-time performance monitor.
+   */
+  val monitor = new Monitor()
+
+  /**
    * The fixpoint computation.
    */
   def solve(): Unit = {
@@ -37,21 +42,25 @@ class Solver(program: Program) {
       dependencies.put(p.name, h)
     }
 
-    // Satisfy all facts. Satisfying a fact adds violated horn clauses (and environments) to the work list.
-    for (h <- program.facts) {
-      val fact = Interpreter.evaluatePredicate(h.head)
-      newProvenFact(fact)
+    monitor.init {
+      // Satisfy all facts. Satisfying a fact adds violated horn clauses (and environments) to the work list.
+      for (h <- program.facts) {
+        val fact = Interpreter.evaluatePredicate(h.head)
+        newProvenFact(fact)
+      }
     }
 
-    // Iteratively try to satisfy pending horn clauses.
-    // Satisfying a horn clause may cause additional items to be added to the work list.
-    while (queue.nonEmpty) {
-      val (h, env) = queue.dequeue()
+    monitor.fixpoint {
+      // Iteratively try to satisfy pending horn clauses.
+      // Satisfying a horn clause may cause additional items to be added to the work list.
+      while (queue.nonEmpty) {
+        val (h, env) = queue.dequeue()
 
-      val models = evaluate(h, env)
-      for (model <- models) {
-        val fact = Interpreter.evaluatePredicate(h.head, model)
-        newProvenFact(fact)
+        val models = evaluate(h, env)
+        for (model <- models) {
+          val fact = Interpreter.evaluatePredicate(h.head, model)
+          newProvenFact(fact)
+        }
       }
     }
   }
@@ -61,6 +70,7 @@ class Solver(program: Program) {
    */
   def print(): Unit = {
     datastore.output()
+    monitor.output()
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -101,10 +111,10 @@ class Solver(program: Program) {
   /**
    * Returns a list of models for the given horn clause `h` under the given environment `env0`.
    */
-  def evaluate(h: Constraint, env0: Map[VSym, Value]): List[Map[VSym, Value]] = {
+  def evaluate(h: Constraint, env0: Map[VSym, Value]): List[Map[VSym, Value]] = monitor.constraint(h) {
     val predicates = h.body
 
-    // Fold each predicate over the intial environment.
+    // Fold each predicate over the initial environment.
     val init = List(env0)
     (init /: predicates) {
       case (envs, p) => envs.flatMap(env => evaluate(p, env))
@@ -114,7 +124,7 @@ class Solver(program: Program) {
   /**
    * Returns a list of environments for the given predicate `p` with interpretation `i` under the given environment `env`.
    */
-  def evaluate(p: Predicate, env: Map[VSym, Value]): List[Map[VSym, Value]] = {
+  def evaluate(p: Predicate, env: Map[VSym, Value]): List[Map[VSym, Value]] = monitor.predicate[List[Map[VSym, Value]]](p) {
     datastore.query(p) flatMap {
       case values => Unification.unifyValues(p.terms, values, env)
     }
@@ -134,7 +144,7 @@ class Solver(program: Program) {
   /**
    * Returns `true` iff `v1` is less or equal to `v2`.
    */
-  private def leq(v1: Value, v2: Value, typ: Type): Boolean = {
+  private def leq(v1: Value, v2: Value, typ: Type): Boolean = monitor.leq(typ) {
     val abs = program.lookupLeq(typ.resultType).get
     val app = Term.App(Term.App(abs, v1.toTerm), v2.toTerm)
     Interpreter.evaluate(app).toBool
@@ -143,7 +153,7 @@ class Solver(program: Program) {
   /**
    * Returns the join of `v1` and `v2`.
    */
-  private def lub(v1: Value, v2: Value, typ: Type): Value = {
+  private def lub(v1: Value, v2: Value, typ: Type): Value = monitor.lub(typ) {
     val abs = program.lookupLub(typ.resultType).get
     val app = Term.App(Term.App(abs, v1.toTerm), v2.toTerm)
     Interpreter.evaluate(app)
