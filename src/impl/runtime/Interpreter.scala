@@ -116,6 +116,7 @@ object Interpreter {
    *
    * Returns `None` iff the term does not reduce to a value under the given environment.
    */
+  // TODO: Eliminate the use of Try.
   def evaluateOpt(t: Term, env: Map[VSym, Value] = Map.empty): Option[Value] =
     Try(evaluate(t.substitute(env))).toOption
 
