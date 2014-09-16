@@ -87,27 +87,6 @@ object Interpreter {
   }
 
   /**
-   * Optionally returns a pair of a term and environment for which one of the given `rules` match the given value `v`.
-   */
-  def matchRule(rules: List[(Pattern, Term)], v: Value): Option[(Term, Map[VSym, Value])] = rules match {
-    case Nil => None
-    case (p, t) :: rest => Unification.unify(p, v) match {
-      case None => matchRule(rest, v)
-      case Some(env) => Some((t, env))
-    }
-  }
-
-  /**
-   * Optionally returns the value of evaluating the given term `t` under the given environment `env`.
-   *
-   * If the environment is not specified, the empty environment is assumed.
-   *
-   * Returns `None` iff the term does not reduce to a value under the given environment.
-   */
-  def evaluateOpt(t: Term, env: Map[VSym, Value] = Map.empty): Option[Value] =
-    Try(evaluate(t, env)).toOption
-
-  /**
    * Returns a predicate with ground terms for the given predicate `p` under the environment `env`.
    *
    * If the environment is not specified, the empty environment is assumed.
@@ -131,9 +110,30 @@ object Interpreter {
   }
 
   /**
+   * Optionally returns the value of evaluating the given term `t` under the given environment `env`.
+   *
+   * If the environment is not specified, the empty environment is assumed.
+   *
+   * Returns `None` iff the term does not reduce to a value under the given environment.
+   */
+  def evaluateOpt(t: Term, env: Map[VSym, Value] = Map.empty): Option[Value] =
+    Try(evaluate(t, env)).toOption
+
+  /**
+   * Optionally returns a pair of a term and environment for which one of the given `rules` match the given value `v`.
+   */
+  private def matchRule(rules: List[(Pattern, Term)], v: Value): Option[(Term, Map[VSym, Value])] = rules match {
+    case Nil => None
+    case (p, t) :: rest => Unification.unify(p, v) match {
+      case None => matchRule(rest, v)
+      case Some(env) => Some((t, env))
+    }
+  }
+
+  /**
    * Returns the result of applying the unary operator `op` to the given value `v`.
    */
-  def apply(op: UnaryOperator, v: Value): Value = op match {
+  private def apply(op: UnaryOperator, v: Value): Value = op match {
     case UnaryOperator.Not => Value.Bool(!v.toBool)
     case UnaryOperator.UnaryPlus => Value.Int(v.toInt)
     case UnaryOperator.UnaryMinus => Value.Int(-v.toInt)
@@ -142,7 +142,7 @@ object Interpreter {
   /**
    * Returns the result of applying the binary operator `op` to the given values `v1` and `v2`.
    */
-  def apply(op: BinaryOperator, v1: Value, v2: Value): Value = op match {
+  private def apply(op: BinaryOperator, v1: Value, v2: Value): Value = op match {
     case BinaryOperator.Plus => Value.Int(v1.toInt + v2.toInt)
     case BinaryOperator.Minus => Value.Int(v1.toInt - v2.toInt)
     case BinaryOperator.Times => Value.Int(v1.toInt * v2.toInt)

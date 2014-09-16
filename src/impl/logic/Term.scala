@@ -5,35 +5,7 @@ sealed trait Term {
    * Returns the term where all occurences (up to lambda- and let terms)
    * of the given variable `x` has been replaced by the variable `y`.
    */
-  // TODO: Remove rename, substitute and freeVars?
-  def rename(x: Symbol.VariableSymbol, y: Symbol.VariableSymbol): Term = this match {
-    case Term.Unit =>     this
-    case Term.Bool(b) =>  this
-    case Term.Int(i) =>   this
-    case Term.Str(s) =>   this
-    case Term.Set(xs) =>  Term.Set(xs map (_.rename(x, y)))
-
-    case Term.Var(s) if s == x => Term.Var(y)
-    case Term.Var(s) => this
-
-    case Term.Abs(s, typ, t) if s == x =>   this
-    case Term.Abs(s, typ, t) =>             Term.Abs(s, typ, t.rename(x, y))
-    case Term.App(t1, t2) =>                Term.App(t1.rename(x, y), t2.rename(x, y))
-
-    case Term.UnaryOp(op, t1) =>            Term.UnaryOp(op, t1.rename(x, y))
-    case Term.BinaryOp(op, t1, t2) =>       Term.BinaryOp(op, t1.rename(x, y), t2.rename(x, y))
-
-    case Term.Match(t, rules) =>            Term.Match(t.rename(x, y), rules.map {
-      case (p, t2) if p.freeVars contains x => (p, t2)
-      case (p, t2) => (p, t2.rename(x, y))
-    })
-
-    case Term.Tag(s, t, typ) =>             Term.Tag(s, t.rename(x, y), typ)
-    case Term.Tuple2(t1, t2) =>             Term.Tuple2(t1.rename(x, y), t2.rename(x, y))
-    case Term.Tuple3(t1, t2, t3) =>         Term.Tuple3(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y))
-    case Term.Tuple4(t1, t2, t3, t4) =>     Term.Tuple4(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y), t4.rename(x, y))
-    case Term.Tuple5(t1, t2, t3, t4, t5) => Term.Tuple5(t1.rename(x, y), t2.rename(x, y), t3.rename(x, y), t4.rename(x, y), t5.rename(x, y))
-  }
+  def rename(x: Symbol.VariableSymbol, y: Symbol.VariableSymbol): Term = substitute(x, Term.Var(y))
 
   /**
    * Returns the term where all occurences (up to lambda- and match terms)
@@ -67,35 +39,6 @@ sealed trait Term {
     case Term.Tuple3(t1, t2, t3) =>         Term.Tuple3(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
     case Term.Tuple4(t1, t2, t3, t4) =>     Term.Tuple4(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t))
     case Term.Tuple5(t1, t2, t3, t4, t5) => Term.Tuple5(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t), t5.substitute(x, t))
-  }
-
-  /**
-   * Returns the free variables in the term.
-   */
-  def freeVars: Set[Symbol.VariableSymbol] = this match {
-    case Term.Unit =>     Set.empty
-    case Term.Bool(b) =>  Set.empty
-    case Term.Int(i) =>   Set.empty
-    case Term.Str(s) =>   Set.empty
-    case Term.Set(xs) =>  xs flatMap (_.freeVars)
-
-    case Term.Var(s) =>                       Set(s)
-    case Term.Abs(x, typ, t) =>               t.freeVars - x
-    case Term.App(t1, t2) =>                  t1.freeVars ++ t2.freeVars
-
-    case Term.IfThenElse(t1, t2, t3) =>       t1.freeVars ++ t2.freeVars ++ t3.freeVars
-    case Term.Match(t1, rules) =>             t1.freeVars ++ rules.flatMap {
-      case (p, t2) => t2.freeVars -- p.freeVars
-    }
-
-    case Term.UnaryOp(op, t) =>               t.freeVars
-    case Term.BinaryOp(op, t1, t2) =>         t1.freeVars ++ t2.freeVars
-
-    case Term.Tag(s, t, typ) =>               t.freeVars
-    case Term.Tuple2(t1, t2) =>               t1.freeVars ++ t2.freeVars
-    case Term.Tuple3(t1, t2, t3) =>           t1.freeVars ++ t2.freeVars ++ t3.freeVars
-    case Term.Tuple4(t1, t2, t3, t4) =>       t1.freeVars ++ t2.freeVars ++ t3.freeVars ++ t4.freeVars
-    case Term.Tuple5(t1, t2, t3, t4, t5) =>   t1.freeVars ++ t2.freeVars ++ t3.freeVars ++ t4.freeVars ++ t5.freeVars
   }
 }
 
