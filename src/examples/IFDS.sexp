@@ -31,6 +31,7 @@
   ((PathEdge {<d1 <n d2>>}) (SummaryEdge <n d2> {d3}) (CFG n {m})))
 
 // call-to-start
+// TODO: Magnus: Bug? Should d3 be d1 here?
 (rule (PathEdge {<d3 <start d3> >})
   ((PathEdge {<d1 <call d2>>})  (CallGraph {<call target>})
    (EshCallStart <<call d2> target> {d3}) (StartNode {<target start>})))

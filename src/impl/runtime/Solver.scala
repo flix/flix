@@ -11,6 +11,18 @@ import util.collection.mutable
 class Solver(program: Program) {
 
   // TODO: Need to implement filter. E.g. Foo(x, y), Bar(x, z), x != y.
+//  One thing that I definitely do need, however, and soon, is predicates
+//    that are functions evaluated top-down. For example:
+//    (rule (KillEmpty l) ((Store <l p q>) (Pt p {a b}) (!= a b)))
+//  (rule (KillNot l {a}) ((Store <l p q>) (Pt p {b}) (AllObjects {a}) (!= a b)))
+//  The != at the end should be implemented as a filter on the environment
+//    resulting from the (usual bottom-up) evaluation of the other predicates.
+//  For now, I think I only need !=, but in general, one would want to
+//    allow arbitrary filter functions that take a number of parameters and
+//  return a boolean. And even more generally, functions that compute a
+//    (non-boolean) result and bind it to some variable to be used in
+//    subsequent predicates.
+
 
   /**
    * A datastore for facts.
