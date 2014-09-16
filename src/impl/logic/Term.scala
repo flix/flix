@@ -2,13 +2,13 @@ package impl.logic
 
 sealed trait Term {
   /**
-   * Returns the term where all occurences (up to lambda- and let terms)
+   * Returns `this` term where all occurences (up to lambda- and let terms)
    * of the given variable `x` has been replaced by the variable `y`.
    */
   def rename(x: Symbol.VariableSymbol, y: Symbol.VariableSymbol): Term = substitute(x, Term.Var(y))
 
   /**
-   * Returns the term where all occurences (up to lambda- and match terms)
+   * Returns `this` term where all occurences (up to lambda- and match terms)
    * of the given variable `x` has been replaced by the term `t`.
    */
   def substitute(x: Symbol.VariableSymbol, t: Term): Term = this match {
@@ -39,6 +39,14 @@ sealed trait Term {
     case Term.Tuple3(t1, t2, t3) =>         Term.Tuple3(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
     case Term.Tuple4(t1, t2, t3, t4) =>     Term.Tuple4(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t))
     case Term.Tuple5(t1, t2, t3, t4, t5) => Term.Tuple5(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t), t5.substitute(x, t))
+  }
+
+  /**
+   * Returns `this` term where all occurences of variables in the given
+   * environment `env` have been replaced by their respective values.
+   */
+  def substitute(env: Map[Symbol.VariableSymbol, Value]): Term = env.foldLeft(this) {
+    case (t, (x, v)) => t.substitute(x, v.toTerm)
   }
 }
 

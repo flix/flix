@@ -15,74 +15,74 @@ object Interpreter {
    *
    * Throws an exception if the term is not reducible, i.e. it contains free variables under the environment.
    */
-  def evaluate(t: Term, env: Map[VSym, Value] = Map.empty): Value = t match {
+  def evaluate(t: Term): Value = t match {
     case Term.Unit => Value.Unit
     case Term.Bool(b) => Value.Bool(b)
     case Term.Int(i) => Value.Int(i)
     case Term.Str(s) => Value.Str(s)
-    case Term.Set(xs) => Value.Set(xs.map(x => evaluate(x, env)))
+    case Term.Set(xs) => Value.Set(xs.map(x => evaluate(x)))
 
-    case Term.Var(s) => env.get(s) match {
-      case None => throw Error.UnboundVariableError(s)
-      case Some(v) => v
-    }
+    case Term.Var(s) => throw Error.UnboundVariableError(s)
     case Term.Abs(s, typ, t1) => Value.Abs(s, typ, t1)
     case Term.App(t1, t2) =>
-      val Value.Abs(x, _, t3) = evaluate(t1, env)
-      val argVal = evaluate(t2, env)
-      evaluate(t3.substitute(x, argVal.toTerm), env) // TODO: Eliminate free occurences in argVal and remove environment.
+      val v1 = evaluate(t1).toAbs
+      val v2 = evaluate(t2)
+      val x = v1.s
+      val y = Symbol.freshVariableSymbol(x)
+      val r = v1.t.rename(x, y).substitute(y, v2.toTerm)
+      evaluate(r)
 
     case Term.IfThenElse(t1, t2, t3) =>
-      val cond = evaluate(t1, env).toBool
+      val cond = evaluate(t1).toBool
       if (cond)
-        evaluate(t2, env)
+        evaluate(t2)
       else
-        evaluate(t3, env)
+        evaluate(t3)
 
     case Term.Match(t1, rules) =>
-      val v1 = evaluate(t1, env)
+      val v1 = evaluate(t1)
       matchRule(rules, v1) match {
         case None => throw new RuntimeException(s"Unmatched value ${v1.fmt}")
-        case Some((t2, env1)) => evaluate(t2, env ++ env1)
+        case Some((t2, env)) => evaluate(t2.substitute(env))
       }
 
     case Term.UnaryOp(op, t1) =>
-      val v1 = evaluate(t, env)
+      val v1 = evaluate(t)
       apply(op, v1)
 
     case Term.BinaryOp(op, t1, t2) =>
-      val v1 = evaluate(t1, env)
-      val v2 = evaluate(t2, env)
+      val v1 = evaluate(t1)
+      val v2 = evaluate(t2)
       apply(op, v1, v2)
 
     case Term.Tag(s, t1, typ) =>
-      val v1 = evaluate(t1, env)
+      val v1 = evaluate(t1)
       Value.Tag(s, v1, typ)
 
     case Term.Tuple2(t1, t2) =>
-      val v1 = evaluate(t1, env)
-      val v2 = evaluate(t2, env)
+      val v1 = evaluate(t1)
+      val v2 = evaluate(t2)
       Value.Tuple2(v1, v2)
 
     case Term.Tuple3(t1, t2, t3) =>
-      val v1 = evaluate(t1, env)
-      val v2 = evaluate(t2, env)
-      val v3 = evaluate(t3, env)
+      val v1 = evaluate(t1)
+      val v2 = evaluate(t2)
+      val v3 = evaluate(t3)
       Value.Tuple3(v1, v2, v3)
 
     case Term.Tuple4(t1, t2, t3, t4) =>
-      val v1 = evaluate(t1, env)
-      val v2 = evaluate(t2, env)
-      val v3 = evaluate(t3, env)
-      val v4 = evaluate(t4, env)
+      val v1 = evaluate(t1)
+      val v2 = evaluate(t2)
+      val v3 = evaluate(t3)
+      val v4 = evaluate(t4)
       Value.Tuple4(v1, v2, v3, v4)
 
     case Term.Tuple5(t1, t2, t3, t4, t5) =>
-      val v1 = evaluate(t1, env)
-      val v2 = evaluate(t2, env)
-      val v3 = evaluate(t3, env)
-      val v4 = evaluate(t4, env)
-      val v5 = evaluate(t5, env)
+      val v1 = evaluate(t1)
+      val v2 = evaluate(t2)
+      val v3 = evaluate(t3)
+      val v4 = evaluate(t4)
+      val v5 = evaluate(t5)
       Value.Tuple5(v1, v2, v3, v4, v5)
   }
 
@@ -92,7 +92,7 @@ object Interpreter {
    * If the environment is not specified, the empty environment is assumed.
    */
   def evaluatePredicate(p: Predicate, env: Map[VSym, Value] = Map.empty): Predicate.GroundPredicate =
-    Predicate.GroundPredicate(p.name, p.terms map (t => evaluate(t, env)), p.typ)
+    Predicate.GroundPredicate(p.name, p.terms map (t => evaluate(t.substitute(env))), p.typ)
 
   /**
    * Optionally returns a predicate with ground terms for the given predicate `p` under the environment `env`.
@@ -117,7 +117,7 @@ object Interpreter {
    * Returns `None` iff the term does not reduce to a value under the given environment.
    */
   def evaluateOpt(t: Term, env: Map[VSym, Value] = Map.empty): Option[Value] =
-    Try(evaluate(t, env)).toOption
+    Try(evaluate(t.substitute(env))).toOption
 
   /**
    * Optionally returns a pair of a term and environment for which one of the given `rules` match the given value `v`.

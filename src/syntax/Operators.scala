@@ -12,6 +12,7 @@ object Operators {
    */
   implicit class RichOperator(op: Operator) {
     def fmt: String = op match {
+      case BinaryOperator.Plus => "+"
       case BinaryOperator.Equal => "=="
     }
   }

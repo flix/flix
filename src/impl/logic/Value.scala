@@ -21,6 +21,15 @@ sealed trait Value {
   }
 
   /**
+   * Returns `this` value as a lambda abstraction or throws a type error.
+   */
+  def toAbs: Value.Abs = this match {
+    case v: Value.Abs => v
+    case _ => throw Error.RuntimeTypeError(
+      Type.Function(Type.Var(Symbol.VariableSymbol("x")), Type.Var(Symbol.VariableSymbol("y"))), this)
+  }
+
+  /**
    * Returns `this` value as a boolean or throws a type error.
    */
   def toBool: Boolean = this match {
