@@ -70,7 +70,7 @@ class Solver(program: Program) {
       while (queue.nonEmpty) {
         val (h, env) = queue.dequeue()
 
-        val models = evaluate(h, env)
+        val models = satisfy(h, env)
         for (model <- models) {
           val fact = Interpreter.evaluatePredicate(h.head, model)
           newProvenFact(fact)
@@ -125,20 +125,20 @@ class Solver(program: Program) {
   /**
    * Returns a list of models for the given horn clause `h` under the given environment `env0`.
    */
-  def evaluate(h: Constraint, env0: Map[VSym, Value]): List[Map[VSym, Value]] = monitor.constraint(h) {
+  def satisfy(h: Constraint, env0: Map[VSym, Value]): List[Map[VSym, Value]] = monitor.constraint(h) {
     val predicates = h.body
 
     // Fold each predicate over the initial environment.
     val init = List(env0)
     (init /: predicates) {
-      case (envs, p) => envs.flatMap(env => evaluate(p, env))
+      case (envs, p) => envs.flatMap(env => satisfy(p, env))
     }
   }
 
   /**
    * Returns a list of environments for the given predicate `p` with interpretation `i` under the given environment `env`.
    */
-  def evaluate(p: Predicate, env: Map[VSym, Value]): List[Map[VSym, Value]] = monitor.predicate[List[Map[VSym, Value]]](p) {
+  def satisfy(p: Predicate, env: Map[VSym, Value]): List[Map[VSym, Value]] = monitor.predicate[List[Map[VSym, Value]]](p) {
     datastore.query(p) flatMap {
       case values => Unification.unifyValues(p.terms, values, env)
     }
