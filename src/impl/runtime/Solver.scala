@@ -10,6 +10,8 @@ import util.collection.mutable
  */
 class Solver(program: Program) {
 
+  // TODO: Need to implement filter. E.g. Foo(x, y), Bar(x, z), x != y.
+
   /**
    * A datastore for facts.
    */
