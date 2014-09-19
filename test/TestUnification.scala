@@ -8,6 +8,28 @@ class TestUnification extends FunSuite {
   val y = Symbol.VariableSymbol("y")
   val z = Symbol.VariableSymbol("z")
 
+
+//  P(t1, t2, t3)
+//    [4:17:14 PM] Ondrej Lhotak: (rule (Nodes n) ((CFG n {_})))
+//  [4:36:51 PM] Magnus Madsen: Set { "a", y }
+//  [4:37:11 PM] Magnus Madsen: Set { "a", "b", "z" }
+//  [4:38:01 PM] Magnus Madsen: Set { x, y }
+//  [4:40:08 PM] Ondrej Lhotak: Set {x}, Set{y}
+//    [4:40:27 PM] Ondrej Lhotak: Set{x,y}
+//  [4:40:39 PM] Magnus Madsen: Membership x, Membership y
+//  [4:40:56 PM] Ondrej Lhotak: x \in Set
+//  [4:41:05 PM] Ondrej Lhotak: ElementOf(x, Set)
+//  [4:41:47 PM] Ondrej Lhotak: Set{_,_}
+//  [4:42:37 PM] Magnus Madsen: Set {x, y, z} unify with Set {"a", "b"}
+//    [4:43:57 PM] Ondrej Lhotak: Set{_,_,_}
+//  [4:44:27 PM] Magnus Madsen: And Set {x, x}
+//  [4:45:22 PM | Edited 4:45:33 PM] Ondrej Lhotak: Set{x,y,z} unify with Set{"a","b","c"}
+//    [4:46:38 PM] Magnus Madsen: Set {"a"} unify with Set {"a", "b", "c"}
+//    [4:47:21 PM] Ondrej Lhotak: Set{x} unify with Set{"a","b","c"}
+//    [4:47:28 PM] Ondrej Lhotak: x = a, x = b, x=c
+
+  // unification properties?
+
   test("Unification.Success.01") {
     val t = Term.Unit
     val v = Value.Unit
