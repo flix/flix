@@ -46,6 +46,11 @@ class Solver(program: Program) {
    */
   val monitor = new Monitor()
 
+  // TODO: Add timeout
+
+  // TODO: Fix output
+
+
   /**
    * The fixpoint computation.
    */
