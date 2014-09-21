@@ -2,7 +2,6 @@ package impl.runtime
 
 import impl.logic.Symbol.{VariableSymbol => VSym}
 import impl.logic._
-
 import syntax.Patterns.RichPattern
 import syntax.Types.RichType
 
@@ -164,6 +163,63 @@ object Unification {
       unify(p1, typ1) ++ unify(p2, typ2) ++ unify(p3, typ3) ++ unify(p4, typ4) ++ unify(p5, typ5)
 
     case _ => throw new RuntimeException(s"Unable to typecheck pattern ${p.fmt} against type ${typ.fmt}")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Type Unification                                                        //
+  /////////////////////////////////////////////////////////////////////////////
+  def unify(typ1: Type, typ2: Type, typenv0: Map[VSym, Type]): Option[Map[VSym, Type]] = (typ1, typ2) match {
+    case (Type.Var(x), _) => typenv0.get(x) match {
+      case None => Some(typenv0 + (x -> typ2))
+      case Some(xt) => unify(xt, typ2, typenv0)
+    }
+    case (_, Type.Var(y)) => typenv0.get(y) match {
+      case None => Some(typenv0 + (y -> typ1))
+      case Some(yt) => unify(typ1, yt, typenv0)
+    }
+    case (Type.Unit, Type.Unit) => Some(typenv0)
+    case (Type.Bool, Type.Bool) => Some(typenv0)
+    case (Type.Int, Type.Int) => Some(typenv0)
+    case (Type.Str, Type.Str) => Some(typenv0)
+    case (Type.Set(x), Type.Set(y)) => unify(x, y, typenv0)
+    case (Type.Function(x1, x2), Type.Function(y1, y2)) =>
+      for (typenv1 <- unify(x1, y1, typenv0);
+           typenv2 <- unify(x2, y2, typenv1))
+      yield typenv2
+    case (Type.Tag(n1, x), Type.Tag(n2, y)) if n1 == n2 =>
+      unify(x, y, typenv0)
+    case (Type.Sum(xs), Type.Sum(ys)) =>
+      def visit(as: List[Type], bs: List[Type], env0: Map[VSym, Type]): Option[Map[VSym, Type]] = (as, bs) match {
+        case (Nil, Nil) => Some(env0)
+        case (Nil, _) => None
+        case (_, Nil) => None
+        case (a :: ass, b :: bss) => unify(a, b, env0).flatMap(env1 => visit(ass, bss, env1))
+      }
+      visit(xs, ys, typenv0)
+    case (Type.Tuple2(x1, x2), Type.Tuple2(y1, y2)) =>
+      for (typenv1 <- unify(x1, y1, typenv0);
+           typenv2 <- unify(x2, y2, typenv1))
+      yield typenv2
+    case (Type.Tuple3(x1, x2, x3), Type.Tuple3(y1, y2, y3)) =>
+      for (typenv1 <- unify(x1, y1, typenv0);
+           typenv2 <- unify(x2, y2, typenv1);
+           typenv3 <- unify(x3, y3, typenv2))
+      yield typenv3
+    case (Type.Tuple4(x1, x2, x3, x4), Type.Tuple4(y1, y2, y3, y4)) =>
+      for (typenv1 <- unify(x1, y1, typenv0);
+           typenv2 <- unify(x2, y2, typenv1);
+           typenv3 <- unify(x3, y3, typenv2);
+           typenv4 <- unify(x4, y4, typenv3))
+      yield typenv4
+    case (Type.Tuple5(x1, x2, x3, x4, x5), Type.Tuple5(y1, y2, y3, y4, y5)) =>
+      for (typenv1 <- unify(x1, y1, typenv0);
+           typenv2 <- unify(x2, y2, typenv1);
+           typenv3 <- unify(x3, y3, typenv2);
+           typenv4 <- unify(x4, y4, typenv3);
+           typenv5 <- unify(x5, y5, typenv4))
+      yield typenv5
+
+    case _ => None
   }
 
 }

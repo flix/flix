@@ -1,8 +1,11 @@
 package impl.verifier
 
+import impl.logic.Constraint.Fact
 import impl.logic.Symbol.{VariableSymbol => VSym}
 import impl.logic._
 import impl.runtime.{Error, Unification}
+import syntax.Constraints.RichConstraint
+import syntax.Predicates.RichPredicate
 import syntax.Types.RichType
 
 object Typer {
@@ -21,7 +24,54 @@ object Typer {
       p.lookupLeq(baseType).getOrElse(throw Error.MissingLeq(baseType))
       p.lookupLub(baseType).getOrElse(throw Error.MissingLub(baseType))
     }
+
+    // type check all constraints
+    for (constraint <- p.constraints) {
+      typecheck(constraint)
+    }
   }
+
+  /**
+   * Typechecks the given constraint `c`.
+   */
+  def typecheck(c: Constraint): Unit = {
+    val predicates = c.head :: c.body
+
+    predicates.foldLeft(Map.empty[VSym, Type]) {
+      case (typenv0, p) =>
+        val actual = typecheck(p, typenv0)
+        val declared = p.typ
+
+        Unification.unify(actual, declared, typenv0) match {
+          case None => throw new RuntimeException(s"Type Error in Constraint: '${c.fmt}'. Unable to unify actual type '${actual.fmt}' with declared type ${declared.fmt}.")
+          case Some(typenv1) => typenv1
+        }
+    }
+  }
+
+  /**
+   * Returns the type of the given predicate `p` under the given typing environment `typenv`.
+   *
+   * Throws an exception if the term cannot be typed.
+   */
+  def typecheck(p: Predicate, typenv: Map[VSym, Type] = Map.empty): Type = {
+    def visit(ts: List[Term]): Type = ts match {
+      case Nil => throw new RuntimeException(s"Unable to type zero-arity predicate: ${p.fmt}.")
+      case x :: Nil => typecheck(x, typenv)
+      case x :: xs => Type.Function(typecheck(x, typenv), visit(xs))
+    }
+    visit(p.terms)
+  }
+
+//  def typechecker(t: Term, typenv0: Map[VSym, Type]): (Type, Map[VSym, Type]) = t match {
+//    case Term.Unit => (Type.Unit, typenv0)
+//    case Term.IfThenElse(t1, t2, t3) =>
+//      unify(t1, Type.Bool)
+//      unify(typeOf(t2), typeOf(t3),)
+//
+//  }
+
+
 
   /**
    * Returns the type of the given term `t` under the empty typing enviroment.
@@ -45,10 +95,10 @@ object Typer {
         Type.Set(Type.Var(Symbol.freshVariableSymbol("t")))
       else {
         val types = xs.map(x => typecheck(x, typenv))
-        assertEqual(types.toSeq)
+        Type.Set(assertEqual(types.toSeq))
       }
 
-    case Term.Var(s) => typenv.getOrElse(s, throw Error.UnboundVariableError(s))
+    case Term.Var(s) => typenv.getOrElse(s, Type.Var(s)) // TODO: We are not required to check that all types are closed.
     case Term.Abs(s, typ1, t1) =>
       val typ2 = typecheck(t1, typenv + (s -> typ1))
       Type.Function(typ1, typ2)
@@ -57,11 +107,12 @@ object Typer {
       val typ2 = typecheck(t2, typenv)
       typ1 match {
         case Type.Function(a, b) if a == typ2 => b
+        case Type.Function(a, b) if typ2.isInstanceOf[Type.Var] => b // TODO: Hack until we get unification for terms.
         case Type.Function(a, b) => throw Error.StaticTypeError(a, typ2, t)
         case _ => throw Error.StaticTypeError(Type.Function(Type.Var(Symbol.VariableSymbol("t0")), Type.Var(Symbol.VariableSymbol("t0"))), typ1, t)
       }
 
-    case Term.IfThenElse(t1, t2,t3) =>
+    case Term.IfThenElse(t1, t2, t3) =>
       val typ1 = typecheck(t1, typenv)
       val typ2 = typecheck(t2, typenv)
       val typ3 = typecheck(t3, typenv)
