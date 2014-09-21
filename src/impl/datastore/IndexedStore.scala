@@ -4,6 +4,7 @@ import impl.logic.{Predicate, Symbol, Value}
 import impl.runtime.Interpreter
 import syntax.Symbols._
 import syntax.Values._
+import util.ascii.AsciiTable
 
 import util.collection.mutable
 
@@ -55,20 +56,45 @@ class IndexedStore extends DataStore {
   }
 
   def output(): Unit = {
-    for ((p, v1) <- map1) {
-      println(p.fmt + "(" + v1.fmt + ").")
+    if (map1.nonEmpty) {
+      val t = new AsciiTable().mkCol("Predicate").mkCol("Value").mkRows(map1.toSeq.map {
+        case (p, v1) => List(p.fmt, v1.fmt)
+      })
+      println(t.output)
     }
-    for ((p, v1, v2) <- map2) {
-      println(p.fmt + "(" + v1.fmt + ", " + v2.fmt + ").")
+
+    if (map2.nonEmpty) {
+      val t = new AsciiTable()
+        .mkCol("Predicate").mkCol("Key1").mkCol("Value").mkRows(map2.toSeq.map {
+        case (p, v1, v2) => List(p.fmt, v1.fmt, v2.fmt)
+      })
+      println(t.output)
     }
-    for ((p, v1, v2, v3) <- map3) {
-      println(p.fmt + "(" + v1.fmt + ", " + v2.fmt + ", " + v3.fmt + ").")
+
+    if (map3.nonEmpty) {
+      val t = new AsciiTable()
+        .mkCol("Predicate").mkCol("Key1").mkCol("Key2").mkCol("Value").mkRows(map3.toSeq.map {
+        case (p, v1, v2, v3) => List(p.fmt, v1.fmt, v2.fmt, v3.fmt)
+      })
+      println(t.output)
     }
-    for ((p, v1, v2, v3, v4) <- map4) {
-      println(p.fmt + "(" + v1.fmt + ", " + v2.fmt + ", " + v3.fmt + ", " + v4.fmt + ").")
+
+    if (map4.nonEmpty) {
+      val t = new AsciiTable()
+        .mkCol("Predicate").mkCol("Key1").mkCol("Key2").mkCol("Key3").mkCol("Value")
+        .mkRows(map4.toSeq.map {
+        case (p, v1, v2, v3, v4) => List(p.fmt, v1.fmt, v2.fmt, v3.fmt, v4.fmt)
+      })
+      println(t.output)
     }
-    for ((p, v1, v2, v3, v4, v5) <- map5) {
-      println(p.fmt + "(" + v1.fmt + ", " + v2.fmt + ", " + v3.fmt + ", " + v4.fmt + ", " + v5.fmt + ").")
+
+    if (map5.nonEmpty) {
+      val t = new AsciiTable()
+        .mkCol("Predicate").mkCol("Key1").mkCol("Key2").mkCol("Key3").mkCol("Key4").mkCol("Value")
+        .mkRows(map5.toSeq.map {
+        case (p, v1, v2, v3, v4, v5) => List(p.fmt, v1.fmt, v2.fmt, v3.fmt, v4.fmt, v5.fmt)
+      })
+      println(t.output)
     }
   }
 }
