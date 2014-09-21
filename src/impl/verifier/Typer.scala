@@ -27,7 +27,7 @@ object Typer {
 
     // type check all constraints
     for (constraint <- p.constraints) {
-      typecheck(constraint)
+      //typecheck(constraint)
     }
   }
 
@@ -62,16 +62,6 @@ object Typer {
     }
     visit(p.terms)
   }
-
-//  def typechecker(t: Term, typenv0: Map[VSym, Type]): (Type, Map[VSym, Type]) = t match {
-//    case Term.Unit => (Type.Unit, typenv0)
-//    case Term.IfThenElse(t1, t2, t3) =>
-//      unify(t1, Type.Bool)
-//      unify(typeOf(t2), typeOf(t3),)
-//
-//  }
-
-
 
   /**
    * Returns the type of the given term `t` under the empty typing enviroment.
