@@ -1,7 +1,7 @@
 import java.io.File
 
 import impl.ast.{Compiler, Parser}
-import impl.runtime.Solver
+import impl.runtime.{Simplify, Propagation, Options, Solver}
 import impl.verifier.{Typer, Verifier}
 
 object Main {
@@ -22,8 +22,11 @@ object Main {
     Typer.typecheck(program)
     Verifier.verify(program)
 
+    // options
+    val options = Options(propagation = Propagation.Diff, simplify = Simplify.Enable)
+
     // compute fixpoint
-    val solver = new Solver(program)
+    val solver = new Solver(program, options)
     solver.solve()
 
     // print solution

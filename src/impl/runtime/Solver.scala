@@ -8,7 +8,7 @@ import util.collection.mutable
 /**
  * A semi-naive solver.
  */
-class Solver(program: Program) {
+class Solver(program: Program, options: Options) {
 
   // TODO: Need to implement filter. E.g. Foo(x, y), Bar(x, z), x != y.
 //  One thing that I definitely do need, however, and soon, is predicates
@@ -45,11 +45,6 @@ class Solver(program: Program) {
    * A run-time performance monitor.
    */
   val monitor = new Monitor()
-
-  // TODO: Add timeout
-
-  // TODO: Fix output
-
 
   /**
    * The fixpoint computation.
@@ -106,7 +101,10 @@ class Solver(program: Program) {
     if (newFact) {
       val np = Predicate.GroundPredicate(p.name, p.values.init ::: lubValue :: Nil, p.typ)
       datastore.store(np)
-      propagateFact(np)
+      options.propagation match {
+        case Propagation.Diff => propagateFact(p)
+        case Propagation.Full => propagateFact(np)
+      }
     }
   }
 
@@ -117,7 +115,10 @@ class Solver(program: Program) {
     for (h <- dependencies.get(p.name)) {
       for (p2 <- h.body) {
         for (env0 <- Unification.unifyPredicate(p, p2)) {
-          queue.enqueue((h.simplify(p2), env0))
+          options.simplify match {
+            case Simplify.Enable => queue.enqueue((h, env0))
+            case Simplify.Disable => queue.enqueue((h.simplify(p2), env0))
+          }
         }
       }
     }

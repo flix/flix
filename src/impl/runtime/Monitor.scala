@@ -112,9 +112,6 @@ class Monitor {
    * Prints a summary of information to standard out.
    */
   def output(): Unit = {
-    println(s"Init: ${_init.ms}ms, Iterate: ${_fixpoint.ms}ms, Total: ${_init.ms + _fixpoint.ms}ms")
-    println()
-
     val cons = new AsciiTable()
       .mkCol("Constraint", Align.Left)
       .mkCol("Hitcount", Align.Right)
@@ -151,7 +148,8 @@ class Monitor {
     })
     println(lub.output)
 
-
+    println(s"Init: ${_init.ms}ms, Iterate: ${_fixpoint.ms}ms, Total: ${_init.ms + _fixpoint.ms}ms")
+    println()
   }
 
 }
