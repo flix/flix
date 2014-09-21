@@ -88,7 +88,7 @@ object Typer {
         Type.Set(assertEqual(types.toSeq))
       }
 
-    case Term.Var(s) => typenv.getOrElse(s, Type.Var(s)) // TODO: We are not required to check that all types are closed.
+    case Term.Var(s) => typenv.getOrElse(s, Type.Var(s)) // TODO: We are now required to check that all types are closed.
     case Term.Abs(s, typ1, t1) =>
       val typ2 = typecheck(t1, typenv + (s -> typ1))
       Type.Function(typ1, typ2)
