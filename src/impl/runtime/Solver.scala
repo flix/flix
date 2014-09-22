@@ -11,17 +11,17 @@ import util.collection.mutable
 class Solver(program: Program, options: Options) {
 
   // TODO: Need to implement filter. E.g. Foo(x, y), Bar(x, z), x != y.
-//  One thing that I definitely do need, however, and soon, is predicates
-//    that are functions evaluated top-down. For example:
-//    (rule (KillEmpty l) ((Store <l p q>) (Pt p {a b}) (!= a b)))
-//  (rule (KillNot l {a}) ((Store <l p q>) (Pt p {b}) (AllObjects {a}) (!= a b)))
-//  The != at the end should be implemented as a filter on the environment
-//    resulting from the (usual bottom-up) evaluation of the other predicates.
-//  For now, I think I only need !=, but in general, one would want to
-//    allow arbitrary filter functions that take a number of parameters and
-//  return a boolean. And even more generally, functions that compute a
-//    (non-boolean) result and bind it to some variable to be used in
-//    subsequent predicates.
+  //  One thing that I definitely do need, however, and soon, is predicates
+  //    that are functions evaluated top-down. For example:
+  //    (rule (KillEmpty l) ((Store <l p q>) (Pt p {a b}) (!= a b)))
+  //  (rule (KillNot l {a}) ((Store <l p q>) (Pt p {b}) (AllObjects {a}) (!= a b)))
+  //  The != at the end should be implemented as a filter on the environment
+  //    resulting from the (usual bottom-up) evaluation of the other predicates.
+  //  For now, I think I only need !=, but in general, one would want to
+  //    allow arbitrary filter functions that take a number of parameters and
+  //  return a boolean. And even more generally, functions that compute a
+  //    (non-boolean) result and bind it to some variable to be used in
+  //    subsequent predicates.
 
 
   /**
@@ -129,10 +129,10 @@ class Solver(program: Program, options: Options) {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Returns a list of models for the given horn clause `h` under the given environment `env0`.
+   * Returns a list of satisfying environments for the given constraint `c` under the initial environment `env0`.
    */
-  def satisfy(h: Constraint, env0: Map[VSym, Value]): List[Map[VSym, Value]] = monitor.constraint(h) {
-    val predicates = h.body
+  def satisfy(c: Constraint, env0: Map[VSym, Value]): List[Map[VSym, Value]] = monitor.constraint(c) {
+    val predicates = c.body
 
     // Fold each predicate over the initial environment.
     val init = List(env0)
@@ -140,11 +140,11 @@ class Solver(program: Program, options: Options) {
       case (envs, p) => envs.flatMap(env => satisfy(p, env))
     }
 
-    filterAll(h, result)
+    filter(c, result)
   }
 
   /**
-   * Returns a list of environments for the given predicate `p` with interpretation `i` under the given environment `env`.
+   * Returns a list of satisfying environments for the given predicate `p` under the environment `env`.
    */
   def satisfy(p: Predicate, env: Map[VSym, Value]): List[Map[VSym, Value]] = monitor.predicate[List[Map[VSym, Value]]](p) {
     datastore.query(p) flatMap {
@@ -153,25 +153,15 @@ class Solver(program: Program, options: Options) {
   }
 
   /**
-   * Returns the subset of given environments `envs` which satisfy the propositional formula of the given constraint `c`.
+   * Returns a (smaller) list of environments which satifies the propositional formula of the given constraint `c`.
    */
-  def filterAll(h: Constraint, envs: List[Map[VSym, Value]]): List[Map[VSym, Value]] = h.proposition match {
-    case None => envs
-    case Some(f) => envs.flatMap {
-      case env => filter(f, env)
+  def filter(c: Constraint, envs: List[Map[VSym, Value]]): List[Map[VSym, Value]] = {
+    val prop = c.proposition.getOrElse(Proposition.True)
+
+    envs.filter {
+      case env => Interpreter.satisfiable(prop, env)
     }
   }
-
-  // TODO> Use filter on list.
-
-  /**
-   * Optionally returns the given environment `env` if it satisfies the given propositional formula.
-   */
-  def filter(f: Proposition, env: Map[VSym, Value]): Option[Map[VSym, Value]] =
-    if (Interpreter.satisfiable(f, env))
-      Some(env)
-    else
-      None
 
   /////////////////////////////////////////////////////////////////////////////
   // Lattice Operations                                                      //

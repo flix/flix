@@ -174,6 +174,8 @@ object Interpreter {
       throw new RuntimeException(s"The propositional formula ${p.fmt} is not closed under the environment ${env.keySet.mkString(", ")}")
     }
     p match {
+      case Proposition.True => true
+      case Proposition.False => false
       case Proposition.Not(p1) => !satisfiable(p1, env)
       case Proposition.Conj(ps) => ps.forall(p1 => satisfiable(p1, env))
       case Proposition.Disj(ps) => ps.exists(p1 => satisfiable(p1, env))

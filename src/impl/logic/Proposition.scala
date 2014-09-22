@@ -22,6 +22,8 @@ sealed trait Proposition {
    * Returns the set of free variables in the proposition.
    */
   def freeVars: Set[Symbol.VariableSymbol] = this match {
+    case Proposition.True => Set.empty
+    case Proposition.False => Set.empty
     case Proposition.Not(p) => p.freeVars
     case Proposition.Conj(ps) => ps.flatMap(_.freeVars).toSet
     case Proposition.Disj(ps) => ps.flatMap(_.freeVars).toSet
@@ -32,6 +34,16 @@ sealed trait Proposition {
 }
 
 object Proposition {
+
+  /**
+   * A proposition which is trivially true.
+   */
+  case object True extends Proposition
+
+  /**
+   * A proposition which is trivially false.
+   */
+  case object False extends Proposition
 
   /**
    * The negation of the proposition `p`.

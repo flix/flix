@@ -13,6 +13,8 @@ object Propositions {
    */
   implicit class RichProposition(f: Proposition) {
     def fmt: String = f match {
+      case Proposition.True => "true"
+      case Proposition.False => "false"
       case Proposition.Not(p) => "(not " + p.fmt + ")"
       case Proposition.Conj(ps) => "(and " + ps.map(_.fmt).mkString(" ") + ")"
       case Proposition.Disj(ps) => "(or " + ps.map(_.fmt).mkString(" ") + ")"
