@@ -2,6 +2,7 @@ package impl.runtime
 
 import impl.logic.Symbol.{VariableSymbol => VSym}
 import impl.logic._
+import syntax.Propositions.RichProposition
 import syntax.Values.RichValue
 
 import scala.util.Try
@@ -162,4 +163,23 @@ object Interpreter {
     case BinaryOperator.Union => Value.Set(v1.toSet ++ v2.toSet)
     case BinaryOperator.Subset => Value.Bool(v1.toSet subsetOf v2.toSet)
   }
+
+  /**
+   * Returns `true` iff the given proposition `p` is satisfied under the given environment `env`.
+   *
+   * Throws an exception if a variable in `p` is not bound by the environment `env`.
+   */
+  def satisfiable(p: Proposition, env: Map[VSym, Value]): Boolean = {
+    if (!p.isClosed(env)) {
+      throw new RuntimeException(s"The propositional formula ${p.fmt} is not closed under the environment ${env.keySet.mkString(", ")}")
+    }
+    p match {
+      case Proposition.Not(p1) => !satisfiable(p1, env)
+      case Proposition.Conj(ps) => ps.forall(p1 => satisfiable(p1, env))
+      case Proposition.Disj(ps) => ps.exists(p1 => satisfiable(p1, env))
+      case Proposition.Eq(x, y) => x.substitute(env) == y.substitute(env)
+      case Proposition.NotEq(x, y) => x.substitute(env) != y.substitute(env)
+    }
+  }
+
 }

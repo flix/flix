@@ -136,9 +136,11 @@ class Solver(program: Program, options: Options) {
 
     // Fold each predicate over the initial environment.
     val init = List(env0)
-    (init /: predicates) {
+    val result = (init /: predicates) {
       case (envs, p) => envs.flatMap(env => satisfy(p, env))
     }
+
+    filterAll(h, result)
   }
 
   /**
@@ -149,6 +151,27 @@ class Solver(program: Program, options: Options) {
       case values => Unification.unifyValues(p.terms, values, env)
     }
   }
+
+  /**
+   * Returns the subset of given environments `envs` which satisfy the propositional formula of the given constraint `c`.
+   */
+  def filterAll(h: Constraint, envs: List[Map[VSym, Value]]): List[Map[VSym, Value]] = h.proposition match {
+    case None => envs
+    case Some(f) => envs.flatMap {
+      case env => filter(f, env)
+    }
+  }
+
+  // TODO> Use filter on list.
+
+  /**
+   * Optionally returns the given environment `env` if it satisfies the given propositional formula.
+   */
+  def filter(f: Proposition, env: Map[VSym, Value]): Option[Map[VSym, Value]] =
+    if (Interpreter.satisfiable(f, env))
+      Some(env)
+    else
+      None
 
   /////////////////////////////////////////////////////////////////////////////
   // Lattice Operations                                                      //

@@ -48,6 +48,32 @@ sealed trait Term {
   def substitute(env: Map[Symbol.VariableSymbol, Value]): Term = env.foldLeft(this) {
     case (t, (x, v)) => t.substitute(x, v.toTerm)
   }
+
+  /**
+   * Returns the set of free variables in the term.
+   */
+  def freeVariables: Set[Symbol.VariableSymbol] = this match {
+    case Term.Unit =>     Set.empty
+    case Term.Bool(b) =>  Set.empty
+    case Term.Int(i) =>   Set.empty
+    case Term.Str(s) =>   Set.empty
+    case Term.Set(xs) =>  xs flatMap (_.freeVariables)
+
+    case Term.Var(s) => Set(s)
+    case Term.Abs(x, typ, t) =>               t.freeVariables - x
+    case Term.App(t1, t2) =>                  t1.freeVariables ++ t2.freeVariables
+
+    case Term.UnaryOp(op, t) =>               t.freeVariables
+    case Term.BinaryOp(op, t1, t2) =>         t1.freeVariables ++ t2.freeVariables
+    case Term.IfThenElse(t1, t2, t3) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
+    case Term.Match(t, rules) =>              t.freeVariables -- rules.flatMap(_._1.freeVars)
+
+    case Term.Tag(s, t, typ) =>               t.freeVariables
+    case Term.Tuple2(t1, t2) =>               t1.freeVariables ++ t2.freeVariables
+    case Term.Tuple3(t1, t2, t3) =>           t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
+    case Term.Tuple4(t1, t2, t3, t4) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables
+    case Term.Tuple5(t1, t2, t3, t4, t5) =>   t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables ++ t5.freeVariables
+  }
 }
 
 object Term {

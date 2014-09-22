@@ -68,7 +68,10 @@ object Compiler {
           constraints += Constraint.Fact(compilePredicate(head).asInstanceOf[Predicate.GroundPredicate])
 
         case SExp.Lst(List(SExp.Keyword("rule"), head, SExp.Lst(body))) =>
-          constraints += Constraint.Rule(compilePredicate(head), body map compilePredicate)
+          constraints += Constraint.Rule(compilePredicate(head), body map compilePredicate, None)
+
+        case SExp.Lst(List(SExp.Keyword("rule"), head, SExp.Lst(body), proposition)) =>
+          constraints += Constraint.Rule(compilePredicate(head), body map compilePredicate, Some(compileProposition(proposition)))
       }
     }
     Program(declarations.toList, constraints.toList)
@@ -162,6 +165,18 @@ object Compiler {
     case SExp.Lst(List(SExp.Keyword("vec"), e1, e2, e3, e4)) => Pattern.Tuple4(compilePattern(e1), compilePattern(e2), compilePattern(e3), compilePattern(e4))
     case SExp.Lst(List(SExp.Keyword("vec"), e1, e2, e3, e4, e5)) => Pattern.Tuple5(compilePattern(e1), compilePattern(e2), compilePattern(e3), compilePattern(e4), compilePattern(e5))
     case _ => throw Error.ParseError(e)
+  }
+
+  /**
+   * Compiles the given s-expression `e` to a proposition.
+   */
+  def compileProposition(e: SExp): Proposition = e match {
+    case SExp.Lst(List(SExp.Operator("not"), e1)) => Proposition.Not(compileProposition(e1))
+    case SExp.Lst(SExp.Operator("and") :: xs) => Proposition.Conj(xs.map(compileProposition))
+    case SExp.Lst(SExp.Operator("or") :: xs) => Proposition.Disj(xs.map(compileProposition))
+    case SExp.Lst(List(SExp.Operator("=="), e1, e2)) => Proposition.Eq(compileTerm(e1), compileTerm(e2))
+    case SExp.Lst(List(SExp.Operator("!="), e1, e2)) => Proposition.NotEq(compileTerm(e1), compileTerm(e2))
+    case _ => throw new RuntimeException(s"Unsupported proposition: $e")
   }
 
   /**
