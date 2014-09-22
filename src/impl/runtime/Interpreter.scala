@@ -179,8 +179,8 @@ object Interpreter {
       case Proposition.Not(p1) => !satisfiable(p1, env)
       case Proposition.Conj(ps) => ps.forall(p1 => satisfiable(p1, env))
       case Proposition.Disj(ps) => ps.exists(p1 => satisfiable(p1, env))
-      case Proposition.Eq(x, y) => x.substitute(env) == y.substitute(env)
-      case Proposition.NotEq(x, y) => x.substitute(env) != y.substitute(env)
+      case Proposition.Eq(x, y) => x.substitute(env) == y.substitute(env) // TODO: Careful w.r.t. monotonicity
+      case Proposition.NotEq(x, y) => x.substitute(env) != y.substitute(env) // TODO: Careful w.r.t. monotonicity
     }
   }
 
