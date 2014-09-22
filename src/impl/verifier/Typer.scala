@@ -1,11 +1,11 @@
 package impl.verifier
 
-import impl.logic.Constraint.Fact
 import impl.logic.Symbol.{VariableSymbol => VSym}
 import impl.logic._
 import impl.runtime.{Error, Unification}
 import syntax.Constraints.RichConstraint
 import syntax.Predicates.RichPredicate
+import syntax.Propositions.RichProposition
 import syntax.Types.RichType
 
 object Typer {
@@ -28,6 +28,10 @@ object Typer {
     // type check all constraints
     for (constraint <- p.constraints) {
       //typecheck(constraint)
+
+      if (constraint.proposition.nonEmpty) {
+        typecheck(constraint.proposition.get)
+      }
     }
   }
 
@@ -192,6 +196,24 @@ object Typer {
       val typ4 = typecheck(t4, typenv)
       val typ5 = typecheck(t5, typenv)
       Type.Tuple5(typ1, typ2, typ3, typ4, typ5)
+  }
+
+  /**
+   * Returns the type of the given proposition.
+   */
+  def typecheck(p: Proposition): Type = p match {
+    case Proposition.True => Type.Bool
+    case Proposition.False => Type.Bool
+    case Proposition.Not(p1) => 
+      val t1 = typecheck(p1)
+      if (t1 == Type.Bool)
+        Type.Bool
+      else
+        throw new RuntimeException(s"Type Error in proposition: ${p1.fmt}. Expected Bool, but got: ${t1.fmt}")
+    case Proposition.Conj(ps) => assertEqual(Type.Bool :: ps.map(typecheck))
+    case Proposition.Disj(ps) => assertEqual(Type.Bool :: ps.map(typecheck))
+    case Proposition.Eq(x, y) => Type.Bool    // TODO: We need a type environment, and then to check that x and y are of the same type.
+    case Proposition.NotEq(x, y) => Type.Bool // TODO: We need a type environment, and then to check that x and y are of the same type.
   }
 
   /**
