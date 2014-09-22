@@ -88,7 +88,7 @@ class Solver(program: Program, options: Options) {
       val np = Predicate.GroundPredicate(p.name, p.values.init ::: lubValue :: Nil, p.typ)
       datastore.store(np)
       options.propagation match {
-        case Propagation.Diff => propagateFact(p)
+        case Propagation.Diff => propagateFact(p) // TODO: Careful with distributivity.
         case Propagation.Full => propagateFact(np)
       }
     }

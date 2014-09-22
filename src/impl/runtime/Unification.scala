@@ -36,12 +36,19 @@ object Unification {
     case (Term.Int(i1), Value.Int(i2)) if i1 == i2 => List(env0)
     case (Term.Str(s1), Value.Str(s2)) if s1 == s2 => List(env0)
 
-    case (Term.Set(xs), Value.Set(ys)) =>
-      val xss = xs.toList.permutations
-      val yss = ys.toList.permutations
-      xss.flatMap(xs =>
-        yss.flatMap(ys =>
-          unifyValues(xs, ys, env0))).toList
+    case (Term.Set(ts), Value.Set(vs)) =>
+      // Returns all permutations of the given vector `ls` of length up to `k`.
+      def visit(k: Int, ls: Vector[Value]): Vector[List[Value]] =
+        if (k <= 0 || ls.isEmpty)
+          Vector(Nil)
+        else
+          for ((v, i) <- ls.zipWithIndex;
+               p <- visit(k - 1, ls.slice(0, i) ++ ls.slice(i + 1, ls.length)))
+          yield v :: p
+
+      val xs = ts.toList
+      val yss = visit(ts.size, vs.toVector).toList
+      yss.flatMap(ys => unifyValues(xs, ys, env0))
 
     case (Term.Var(s), v2) => env0.get(s) match {
       case None => List(env0 + (s -> v2))
