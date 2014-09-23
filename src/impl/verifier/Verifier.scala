@@ -118,7 +118,6 @@ object Verifier {
     val body = compileTerm(findBody(t), k)
 
     val r = Lst(List(Lit("define-fun"), SmtExp.Lst(args), Lit("Bool"), body))
-    println(r.fmt(0))
 
     r
   }
