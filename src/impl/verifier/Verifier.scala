@@ -110,7 +110,7 @@ object Verifier {
       case Term.Abs(x, typ, t1) =>
         enumerate(typ).toList.flatMap(a => iterate(evaluate(Term.App(t, a)), a :: history))
 
-      case x => ???
+      case x => println(x) ; ???
       //          if (isNormalForm(x))
       //            genVc(x)
       //          else ???

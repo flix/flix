@@ -21,6 +21,12 @@
         (case <(Cst n1) (Cst n2)>  (if (== n1 n2) (Cst n1) Top))
         (case _         Top)))
 
+(def-height Number (e Number)
+    (match e
+        (case Top      1)
+        (case (Cst n)  2)
+        (case Bot      3)))
+
 (def-fun sum (e1 Number e2 Number)
     (match <e1 e2>
         (case <Bot _>   Bot)
