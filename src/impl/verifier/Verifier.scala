@@ -33,13 +33,17 @@ object Verifier {
    * Verifies that the given lattie satisfies all required lattice properties.
    */
   def verify(l: Lattice): Unit = {
-    println("Reflexivity:")
+    println("Verifying Reflexivity:")
     val cases1 = tautology(Property.reflexivity(l.leq))
-    cases1.foreach(xs => println("  " + xs.map(_.fmt).mkString(", ") + ", tested OK"))
+    cases1.foreach(xs => println("  " + xs.map(_.fmt).mkString(", ") + ", proven."))
+    println("Reflexivity proved.")
+    println()
 
-    println("Anti-symmetry:")
+    println("Verifying Anti-symmetry:")
     val cases2 = tautology(Property.antiSymmetri(l.leq))
-    cases2.foreach(xs => println("  " + xs.map(_.fmt).mkString(", ") + ", tested OK"))
+    cases2.foreach(xs => println("  " + xs.map(_.fmt).mkString(", ") + ", proven."))
+    println("Anti-symmetry proved.")
+    println()
 
     tautology(Property.transitivity(l.leq))
     tautology(Property.upperBound(l.leq, l.lub))
