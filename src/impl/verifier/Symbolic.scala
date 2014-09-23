@@ -60,15 +60,34 @@ object Symbolic {
    * Least Element: ∀x. ⊥ ⊑ x.
    */
   def leastElement(bot: Value, leq: Term.Abs): Unit = {
-    val f = Interpreter.evaluate(Term.App(leq, bot.toTerm)).toTerm
+    val t = Term.App(leq, bot.toTerm)
+    val f = Interpreter.evaluate(t).toTerm // TODO: Need to simplify
     tautology(f.asInstanceOf[Term.Abs])
   }
 
+  /**
+   * Reflexivity: ∀x. x ⊑ x
+   */
+  def reflexivity(leq: Term.Abs): Unit = {
+    val x = Term.Var(Symbol.VariableSymbol("x"))
+    val t = Term.App(Term.App(leq, x), x) // TODO: Use abs instead?
+    val f = Interpreter.evaluate(t).toTerm // TODO: Need to simplify
+    tautology(f.asInstanceOf[Term.Abs])
+  }
 
+  /**
+   * Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
+   */
+  def antiSymmetri(typ: String, leq: String): String = ???
+
+  /**
+   * Verifies whether the given term `t1` evaluates to `true` for all inputs.
+   */
   def tautology(t1: Term.Abs): Unit = {
+    // TODO: Change type to term
     for (t2 <- enumerate(t1.typ)) {
       println(t2.fmt)
-      val r = interpret(Term.App(t1, t2))
+      val r = evaluate(Term.App(t1, t2))
 
       // TODO: It actually returns a set of constraints.
       r match {
@@ -86,8 +105,57 @@ object Symbolic {
   /**
    * Returns the partial evaluation of the given term `t`.
    */
-  def interpret(t: Term): Term = ???
+  def evaluate(t: Term): Term = t match {
+    case Term.Unit => Term.Unit
+    case Term.Bool(b) => Term.Bool(b)
+    case Term.Int(i) => Term.Int(i)
+    case Term.Str(s) => Term.Str(s)
+    case Term.Set(xs) => Term.Set(xs.map(evaluate))
 
+    //    case Term.Var
+    //    case Term.Abs
+    //    case Term.App
+    //    case Term.IfThenElse
+    //    case Term.Match
+
+    case Term.UnaryOp(op, t1) =>
+      val r1 = evaluate(t1)
+      asValue(r1) match {
+        case None => Term.UnaryOp(op, r1)
+        case Some(v1) => Interpreter.apply(op, v1).toTerm
+      }
+    case Term.BinaryOp(op, t1, t2) =>
+      val r1 = evaluate(t1)
+      val r2 = evaluate(t2)
+      (asValue(r1), asValue(r2)) match {
+        case (Some(v1), Some(v2)) => Interpreter.apply(op, v1, v2).toTerm
+        case _ => Term.BinaryOp(op, r1, r2)
+      }
+    case Term.Tuple2(t1, t2) =>
+      val r1 = evaluate(t1)
+      val r2 = evaluate(t2)
+      Term.Tuple2(r1, r2)
+    case Term.Tuple3(t1, t2, t3) =>
+      val r1 = evaluate(t1)
+      val r2 = evaluate(t2)
+      val r3 = evaluate(t3)
+      Term.Tuple3(r1, r2, r3)
+    case Term.Tuple4(t1, t2, t3, t4) =>
+      val r1 = evaluate(t1)
+      val r2 = evaluate(t2)
+      val r3 = evaluate(t3)
+      val r4 = evaluate(t4)
+      Term.Tuple4(r1, r2, r3, r4)
+    case Term.Tuple5(t1, t2, t3, t4, t5) =>
+      val r1 = evaluate(t1)
+      val r2 = evaluate(t2)
+      val r3 = evaluate(t3)
+      val r4 = evaluate(t4)
+      val r5 = evaluate(t5)
+      Term.Tuple5(r1, r2, r3, r4, r5)
+  }
+
+  def asValue(t: Term): Option[Value] = ???
 
   /**
    * Returns *all* terms which inhabit the given type `typ`.
@@ -99,6 +167,7 @@ object Symbolic {
     case Type.Str => throw new UnsupportedOperationException()
     case Type.Sum(ts) => ts.flatMap(x => enumerate(x, Some(Type.Sum(ts)))).toSet
     case Type.Tag(n, typ2) => enumerate(typ2).map(x => Term.Tag(n, x, sum.get))
+
   }
 
 
@@ -125,6 +194,7 @@ object Symbolic {
       case _: Term.Tuple5 => false
     }
   }
+
 
   def genVc(t: Term): Constraint = t match {
     case Term.BinaryOp(op, t2, t3) => ???
