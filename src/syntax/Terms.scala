@@ -18,12 +18,16 @@ object Terms {
 
     def ===(t2: Term): Term = Term.BinaryOp(BinaryOperator.Equal, t, t2)
 
+    def !==(t2: Term): Term = Term.BinaryOp(BinaryOperator.NotEqual, t, t2)
+
     def &&(t2: Term): Term = Term.BinaryOp(BinaryOperator.And, t, t2)
 
     def ==>(t2: Term): Term = Term.BinaryOp(
       BinaryOperator.Or,
       Term.UnaryOp(UnaryOperator.Not, t),
       t2)
+
+    def call(x: Term): Term = Term.App(t, x)
 
     def call(x: Term, y: Term): Term = Term.App(Term.App(t, x), y)
 

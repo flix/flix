@@ -6,7 +6,7 @@ import syntax.Symbols._
 import syntax.Terms._
 import syntax.Terms.RichTerm
 
-object Symbolic {
+object Verifier {
 
   /**
    * Constraints over integers.
@@ -51,68 +51,22 @@ object Symbolic {
       declaration match {
         case Declaration.DeclareBot(t, typ) =>
           val leq = program.lookupLeq(typ).get
-          leastElement(t, leq)
+          tautology("leastelm", Property.leastElement(leq, t))
 
         case Declaration.DeclareLeq(leq, typ) =>
           tautology("refl", Property.reflexivity(leq))
-          antiSymmetri(leq)
-          transitivity(leq)
+          tautology("antisymm", Property.antiSymmetri(leq))
+          tautology("trans", Property.transitivity(leq))
 
         case Declaration.DeclareLub(lub, typ) =>
           val baseType = typ.resultType
           val leq = program.lookupLeq(baseType).get
-          upperBound(leq, lub)
+          //upperBound(leq, lub)
 
         case Declaration.DeclareHeight(t, typ) =>
       }
     }
   }
-
-
-  /**
-   * Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
-   */
-  def antiSymmetri(leq: Term.Abs): Unit = {
-    val f = Term.Abs('x, leq.typ, Term.Abs('y, leq.typ,
-      (leq.call('x, 'y) && leq.call('y, 'x)) ==> (Term.Var('x) === Term.Var('y))))
-
-    tautology("Anti-Symmetri", f)
-  }
-
-  /**
-   * Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
-   */
-  def transitivity(leq: Term.Abs): Unit = {
-    val f = Term.Abs('x, leq.typ, Term.Abs('y, leq.typ, Term.Abs('z, leq.typ,
-      (leq.call('x, 'y) && leq.call('y, 'z)) ==> leq.call('x, 'z))))
-
-    tautology("Transitivity", f)
-  }
-
-  /**
-   * Least Element: ∀x. ⊥ ⊑ x.
-   */
-  def leastElement(bot: Value, leq: Term.Abs): Unit = {
-    val f = Term.App(leq, bot.toTerm)
-    tautology("Least Element", f)
-  }
-
-  /**
-   * Upper Bound: ∀x, y, z. x ⊑ (x ⨆ y) ∧ y ⊑ (x ⨆ y).
-   */
-  def upperBound(leq: Term.Abs, lub: Term.Abs): Unit = {
-    //    val f = Term.Abs(x, typ, Term.Abs(y, typ, Term.Abs(z, typ,
-    //      leq.call(x, lub.call(x, y))
-    //    )))
-
-    //tautology("Upper Bound", f)
-  }
-
-
-  /**
-   * Least Upper Bound: ∀x, y, z. x ⊑ z ∧ y ⊑ z ⇒ x ⨆ y ⊑ z.
-   */
-  def leastUpperBound(leq: Term.Abs, lub: Term.Abs): String = ???
 
 
   /**
