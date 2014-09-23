@@ -2,7 +2,7 @@ import java.io.File
 
 import impl.ast.{Compiler, Parser}
 import impl.runtime.{Simplify, Propagation, Options, Solver}
-import impl.verifier.{Typer, Verifier}
+import impl.verifier.{Symbolic, Typer, Verifier}
 
 object Main {
   def main(args: Array[String]): Unit = {
@@ -20,6 +20,7 @@ object Main {
 
     // verify
     Typer.typecheck(program)
+    Symbolic.verify(program)
     Verifier.verify(program)
 
     // options
