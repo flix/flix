@@ -51,10 +51,48 @@ object Symbolic {
           leastElement(t, leq)
 
         case Declaration.DeclareLeq(t, typ) =>
+          reflexivity(t)
+          antiSymmetri(t)
+
         case Declaration.DeclareLub(t, typ) =>
         case Declaration.DeclareHeight(t, typ) =>
       }
     }
+  }
+
+
+  sealed trait Property
+
+  object Property {
+
+    case object LeastElement extends Property
+
+  }
+
+  /**
+   * Reflexivity: ∀x. x ⊑ x
+   */
+  def reflexivity(leq: Term.Abs): Unit = {
+    val x = Symbol.freshVariableSymbol("x")
+    val f = Term.Abs(x, leq.typ, Term.App(Term.App(leq, Term.Var(x)), Term.Var(x)))
+    tautology("Reflexivity", f)
+  }
+
+  /**
+   * Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
+   */
+  def antiSymmetri(leq: Term.Abs): Unit = {
+    val x = Symbol.freshVariableSymbol("x")
+    val y = Symbol.freshVariableSymbol("y")
+    val f = Term.Abs(x, leq.typ,
+      Term.Abs(y, leq.typ,
+        Term.BinaryOp(BinaryOperator.Or,
+          Term.UnaryOp(UnaryOperator.Not,
+            Term.BinaryOp(BinaryOperator.And,
+              Term.App(Term.App(leq, Term.Var(x)), Term.Var(y)),
+              Term.App(Term.App(leq, Term.Var(y)), Term.Var(x)))),
+          Term.BinaryOp(BinaryOperator.Equal, Term.Var(x), Term.Var(y)))))
+    tautology("Anti-Symmetri", f)
   }
 
   /**
@@ -65,20 +103,6 @@ object Symbolic {
     tautology("Least Element", f)
   }
 
-  /**
-   * Reflexivity: ∀x. x ⊑ x
-   */
-  def reflexivity(leq: Term.Abs): Unit = {
-    //    val x = Term.Var(Symbol.VariableSymbol("x"))
-    //    val t = Term.App(Term.App(leq, x), x) // TODO: Use abs instead?
-    //    val f = Interpreter.evaluate(t).toTerm // TODO: Need to simplify
-    //    tautology(f.asInstanceOf[Term.Abs])
-  }
-
-  /**
-   * Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
-   */
-  def antiSymmetri(typ: String, leq: String): String = ???
 
   /**
    * Verifies whether the given term `t1` evaluates to `true` for all inputs.
@@ -88,7 +112,7 @@ object Symbolic {
       val abs = evaluate(t)
       abs match {
         case Term.Bool(true) => println("OK")
-        case Term.Bool(false) => ???
+        case Term.Bool(false) => println("NOTOK"); ??? // TODO: Need ADT
 
         case x: Term.Abs =>
           for (a <- enumerate(x.typ)) {
@@ -144,7 +168,7 @@ object Symbolic {
       val r2 = evaluate(t2)
       val r3 = evaluate(t3)
 
-      asValue(r1) match {
+      r1.asValue match {
         case None => Term.IfThenElse(r1, r2, r3)
         case Some(v) => if (v.toBool) r2 else r3
       }
@@ -153,14 +177,14 @@ object Symbolic {
 
     case Term.UnaryOp(op, t1) =>
       val r1 = evaluate(t1)
-      asValue(r1) match {
+      r1.asValue match {
         case None => Term.UnaryOp(op, r1)
         case Some(v1) => Interpreter.apply(op, v1).toTerm
       }
     case Term.BinaryOp(op, t1, t2) =>
       val r1 = evaluate(t1)
       val r2 = evaluate(t2)
-      (asValue(r1), asValue(r2)) match {
+      (r1.asValue, r2.asValue) match {
         case (Some(v1), Some(v2)) => Interpreter.apply(op, v1, v2).toTerm
         case _ => Term.BinaryOp(op, r1, r2)
       }
@@ -236,13 +260,6 @@ object Symbolic {
 
     case _ => None
   }
-
-  /**
-   * Optionally returns the term as a value.
-   *
-   * NB: *Does not* perform any computation to reduce the term to a value.
-   */
-  def asValue(t: Term): Option[Value] = ???
 
   /**
    * Returns *all* terms which inhabit the given type `typ`.

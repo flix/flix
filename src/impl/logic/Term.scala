@@ -82,6 +82,52 @@ sealed trait Term {
     case Term.Tuple4(t1, t2, t3, t4) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables
     case Term.Tuple5(t1, t2, t3, t4, t5) =>   t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables ++ t5.freeVariables
   }
+
+  /**
+   * Optionally returns the term as a value.
+   *
+   * NB: *Does not* perform any computation to reduce the term to a value.
+   */
+  def asValue: Option[Value] = this match {
+    case Term.Unit => Some(Value.Unit)
+    case Term.Bool(b) => Some(Value.Bool(b))
+    case Term.Int(i) => Some(Value.Int(i))
+    case Term.Str(s) => Some(Value.Str(s))
+    case Term.Set(xs) =>
+      if (xs.isEmpty)
+        Some(Value.Set(Set.empty))
+      else
+        xs.map(_.asValue).foldLeft(Option(Set.empty[Value])) {
+          case (Some(ys), Some(z)) => Some(ys + z)
+          case _ => None
+        }.map(Value.Set)
+    case Term.Abs(s, typ, t) => Some(Value.Abs(s, typ, t))
+    case Term.Tag(n, t, typ) => t.asValue.map(Value.Tag(n, _, typ))
+    case Term.Tuple2(t1, t2) =>
+      for (v1 <- t1.asValue;
+           v2 <- t2.asValue)
+      yield Value.Tuple2(v1, v2)
+    case Term.Tuple3(t1, t2, t3) =>
+      for (v1 <- t1.asValue;
+           v2 <- t2.asValue;
+           v3 <- t3.asValue)
+      yield Value.Tuple3(v1, v2, v3)
+    case Term.Tuple4(t1, t2, t3, t4) =>
+      for (v1 <- t1.asValue;
+           v2 <- t2.asValue;
+           v3 <- t3.asValue;
+           v4 <- t4.asValue)
+      yield Value.Tuple4(v1, v2, v3, v4)
+    case Term.Tuple5(t1, t2, t3, t4, t5) =>
+      for (v1 <- t1.asValue;
+           v2 <- t2.asValue;
+           v3 <- t3.asValue;
+           v4 <- t4.asValue;
+           v5 <- t5.asValue)
+      yield Value.Tuple5(v1, v2, v3, v4, v5)
+
+    case _ => None
+  }
 }
 
 object Term {
@@ -170,4 +216,5 @@ object Term {
    * A 5-tuple term.
    */
   case class Tuple5(t1: Term, t2: Term, t3: Term, t4: Term, t5: Term) extends Term
+
 }
