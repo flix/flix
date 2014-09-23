@@ -53,6 +53,7 @@ object Symbolic {
         case Declaration.DeclareLeq(t, typ) =>
           reflexivity(t)
           antiSymmetri(t)
+          transitivity(t)
 
         case Declaration.DeclareLub(t, typ) =>
         case Declaration.DeclareHeight(t, typ) =>
@@ -95,7 +96,14 @@ object Symbolic {
    * Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
    */
   def transitivity(leq: Term.Abs): Unit = {
+    val x = Symbol.freshVariableSymbol("x")
+    val y = Symbol.freshVariableSymbol("y")
+    val z = Symbol.freshVariableSymbol("z")
 
+    val f = Term.Abs(x, leq.typ, Term.Abs(y, leq.typ, Term.Abs(z, leq.typ,
+      (leq.call(x, y) && leq.call(y, z)) ==> leq.call(x, z))))
+
+    tautology("Transitivity", f)
   }
 
   /**
@@ -105,12 +113,6 @@ object Symbolic {
     val f = Term.App(leq, bot.toTerm)
     tautology("Least Element", f)
   }
-
-  /**
-   * A helper function for constructing terms with less-than equal.
-   */
-  def ⊑(leq: Term.Abs, x: Symbol.VariableSymbol, y: Symbol.VariableSymbol): Term =
-    Term.App(Term.App(leq, Term.Var(x)), Term.Var(y))
 
   /**
    * Verifies whether the given term `t1` evaluates to `true` for all inputs.
