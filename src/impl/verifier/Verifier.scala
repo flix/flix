@@ -33,8 +33,14 @@ object Verifier {
    * Verifies that the given lattie satisfies all required lattice properties.
    */
   def verify(l: Lattice): Unit = {
-    tautology(Property.reflexivity(l.leq))
-    tautology(Property.antiSymmetri(l.leq))
+    println("Reflexivity:")
+    val cases1 = tautology(Property.reflexivity(l.leq))
+    cases1.foreach(xs => println("  " + xs.map(_.fmt).mkString(", ") + ", tested OK"))
+
+    println("Anti-symmetry:")
+    val cases2 = tautology(Property.antiSymmetri(l.leq))
+    cases2.foreach(xs => println("  " + xs.map(_.fmt).mkString(", ") + ", tested OK"))
+
     tautology(Property.transitivity(l.leq))
     tautology(Property.upperBound(l.leq, l.lub))
     tautology(Property.leastUpperBound(l.leq, l.lub))
@@ -43,7 +49,7 @@ object Verifier {
   /**
    * Verifies whether the given term `t1` evaluates to `true` for all inputs.
    */
-  def tautology(t0: Term): Unit = {
+  def tautology(t0: Term): List[List[Term]] = {
 
     def iterate(t: Term, history: List[Term]): List[List[Term]] = {
       val abs = evaluate(t)
@@ -64,11 +70,8 @@ object Verifier {
         //          else ???
       }
     }
-    val results = iterate(t0, Nil)
+    iterate(t0, Nil)
 
-    for (result <- results) {
-      println(result.map(_.fmt).mkString(", "))
-    }
   }
 
   /**
