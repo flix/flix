@@ -33,28 +33,29 @@ object Verifier {
    * Verifies that the given lattie satisfies all required lattice properties.
    */
   def verify(l: Lattice): Unit = {
-    tautology("refl", Property.reflexivity(l.leq))
-    tautology("antisymmetri", Property.antiSymmetri(l.leq))
-    tautology("trans", Property.transitivity(l.leq))
-    tautology("upperbound", Property.upperBound(l.leq, l.lub))
-    tautology("least upper", Property.leastUpperBound(l.leq, l.lub))
+    tautology(Property.reflexivity(l.leq))
+    tautology(Property.antiSymmetri(l.leq))
+    tautology(Property.transitivity(l.leq))
+    tautology(Property.upperBound(l.leq, l.lub))
+    tautology(Property.leastUpperBound(l.leq, l.lub))
   }
 
   /**
    * Verifies whether the given term `t1` evaluates to `true` for all inputs.
    */
-  def tautology(name: String, t0: Term): Unit = {
-    def iterate(t: Term): Unit = {
+  def tautology(t0: Term): Unit = {
+
+    def iterate(t: Term, history: List[Term]): List[List[Term]] = {
       val abs = evaluate(t)
       abs match {
-        case Term.Bool(true) => println("OK")
+        case Term.Bool(true) => List(history)
         case Term.Bool(false) => println("NOTOK"); ??? // TODO: Need ADT
 
         case x: Term.Abs =>
-          for (a <- enumerate(x.typ)) {
-            print("  Elm: " + a.fmt + " ")
-            val r = evaluate(Term.App(x, a))
-            iterate(r)
+          enumerate(x.typ).toList.flatMap {
+            case a =>
+              val r = evaluate(Term.App(x, a))
+              iterate(r, a :: history)
           }
 
         case x => ???
@@ -63,8 +64,11 @@ object Verifier {
         //          else ???
       }
     }
-    println(name)
-    iterate(t0)
+    val results = iterate(t0, Nil)
+
+    for (result <- results) {
+      println(result.map(_.fmt).mkString(", "))
+    }
   }
 
   /**
