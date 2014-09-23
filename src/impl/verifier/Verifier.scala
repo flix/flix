@@ -3,6 +3,7 @@ package impl.verifier
 import java.io.{File, PrintWriter}
 
 import impl.logic._
+import SmtExp._
 
 import scala.collection.mutable
 
@@ -10,11 +11,37 @@ object Verifier {
 
   val Z3 = System.getProperty("Z3", "C:\\Program Files\\Microsoft Z3\\z3-4.3.0-x64\\bin\\z3.exe")
 
+  class TypeCache {
+    var counter = 0
+    val cache = mutable.Map.empty[Type, String]
+
+    def getName(t: Type): String = cache.get(t) match {
+      case Some(s) => s
+      case None =>
+        counter += 1
+        cache += (t -> ("t" + counter))
+        "t" + counter
+    }
+  }
+
+  val types = new TypeCache
+
   /**
    * Verifies that the program is safe.
    */
   def verify(program: Program): Unit = {
+    for (declaration <- program.declarations) {
+      declaration match {
+        case Declaration.DeclareBot(t, typ) =>
+        case Declaration.DeclareLeq(t, typ) => compileFunction(t)
+        case Declaration.DeclareLub(t, typ) =>
+        case Declaration.DeclareHeight(t, typ) =>
+      }
+    }
 
+    for (constraint <- program.constraints) {
+      // TODO: Find functions...
+    }
   }
 
   //     * Verification conditions for the lattice ordering: Leq.
@@ -67,36 +94,84 @@ object Verifier {
     }
   }
 
+  /**
+   * Returns the given term `t` as an SMT-LIB function expression.
+   */
+  def compileFunction(t: Term.Abs): SmtExp = {
+    def findArgs(t: Term): List[(Symbol.VariableSymbol, Type)] = t match {
+      case Term.Abs(x, typ, t1) => (x, typ) :: findArgs(t1)
+      case _ => Nil
+    }
+    def findBody(t: Term): Term = t match {
+      case Term.Abs(_, _, t1) => findBody(t1)
+      case _ => t
+    }
 
-//  def compileTerm(t: Term): SmtExp = t match {
-//    case Term.Unit => SmtExp.Literal("unit")
-//    case Term.Bool(b) => SmtExp.Literal(b.toString)
-//    case Term.Int(i) => SmtExp.Literal(i.toString)
-//
-//    case Term.Tag(x, t1, _) => SmtExp.Lst(List(SmtExp.Literal(x.s), compileTerm(t1)))
-//    case Term.Tuple2(t1, t2) => SmtExp.Lst(List(SmtExp.Literal("Tuple2"), compileTerm(t1), compileTerm(t2)))
-//    case Term.Tuple3(t1, t2, t3) => SmtExp.Lst(List(SmtExp.Literal("Tuple3"), compileTerm(t1), compileTerm(t2), compileTerm(t3)))
-//    case Term.Tuple4(t1, t2, t3, t4) => SmtExp.Lst(List(SmtExp.Literal("Tuple4"), compileTerm(t1), compileTerm(t2), compileTerm(t3), compileTerm(t4)))
-//    case Term.Tuple5(t1, t2, t3, t4, t5) => SmtExp.Lst(List(SmtExp.Literal("Tuple5"), compileTerm(t1), compileTerm(t2), compileTerm(t3), compileTerm(t4), compileTerm(t5)))
-//
-//  }
+    // Append a result variable and its type.
+    val result = (Symbol.freshVariableSymbol("r"), t.typ.resultType)
 
+    val args = (findArgs(t) ::: result :: Nil).map {
+      case (x, typ) => Lst(List(Lit(x.s), Lit(types.getName(typ))))
+    }
+    val body = compile(findBody(t))
 
-  private var Counter: Int = 0
+    val r = Lst(List(Lit("define-fun"), SmtExp.Lst(args), Lit("Bool"), body))
+    println(r.fmt(0))
 
-  private def freshTypeName: String = {
-    Counter += 1
-    "t" + Counter
+    r
   }
 
-//  (declare-datatypes (T1 T2) ((Pair (mk-pair (first T1) (second T2)))))
-//  (declare-datatypes (T1) ((Tag (mk-tag (first T1)))))
-//  (define-fun f ((x (Pair Int Int))) Int (first x))
-//  (declare-const p1 (Pair Int (Pair Bool Bool)))
-//  (declare-const p2 (Pair Int (Pair Bool Bool)))
-//  (assert (not (= p1 p2)))
-//  (check-sat)
-//  (get-model)
+  /**
+   * Returns the given term `t` as an SMT-LIB expression.
+   */
+  def compile(t: Term): SmtExp = t match {
+    case Term.Unit => Lit("unit")
+    case Term.Bool(b) => Lit(b.toString)
+    case Term.Int(i) => Lit(i.toString)
+
+    case Term.Var(x) => Lit(x.s)
+
+    case Term.Match(t1, rules) => Lst(Lit("or") :: compileRules(t1, rules))
+
+    case Term.Tag(x, t1, _) => Lst(List(Lit(x.s), compile(t1)))
+    case Term.Tuple2(t1, t2) => Lst(List(Lit("Tuple2"), compile(t1), compile(t2)))
+    case Term.Tuple3(t1, t2, t3) => Lst(List(Lit("Tuple3"), compile(t1), compile(t2), compile(t3)))
+    case Term.Tuple4(t1, t2, t3, t4) => Lst(List(Lit("Tuple4"), compile(t1), compile(t2), compile(t3), compile(t4)))
+    case Term.Tuple5(t1, t2, t3, t4, t5) => Lst(List(Lit("Tuple5"), compile(t1), compile(t2), compile(t3), compile(t4), compile(t5)))
+  }
+
+  /**
+   * Returns the given rules `rs` as an SMT-LIB expression.
+   */
+  def compileRules(mt: Term, rs: List[(Pattern, Term)]): List[SmtExp] =
+    rs.map {
+      case (p, t) => compileRule(mt, p, t)
+    }
+
+  /**
+   * Return an SMT-LIB expression for the given match value `mt` on pattern `p` and rule body `t`.
+   */
+  def compileRule(mt: Term, p: Pattern, t: Term): SmtExp =
+      Lst(List(Lit("="), compile(mt), compilePattern(p)))
+
+  def compilePattern(p: Pattern): SmtExp = p match {
+    case Pattern.Wildcard => Lit(Symbol.freshVariableSymbol("_").s)
+    case Pattern.Unit => Lit("unit")
+
+    case Pattern.Tag(n, p1) => Lst(List(Lit(n.s), compilePattern(p1)))
+
+    case Pattern.Tuple2(p1, p2) => Lst(List(Lit("Tuple2"), compilePattern(p1), compilePattern(p2)))
+  }
+
+
+  //  (declare-datatypes (T1 T2) ((Pair (mk-pair (first T1) (second T2)))))
+  //  (declare-datatypes (T1) ((Tag (mk-tag (first T1)))))
+  //  (define-fun f ((x (Pair Int Int))) Int (first x))
+  //  (declare-const p1 (Pair Int (Pair Bool Bool)))
+  //  (declare-const p2 (Pair Int (Pair Bool Bool)))
+  //  (assert (not (= p1 p2)))
+  //  (check-sat)
+  //  (get-model)
 
   //  (declare-datatypes () ((Tuple2_Sort (Tuple2 (x Int) (y Int)))))
   //  (declare-const z Tuple2_Sort)
@@ -104,43 +179,43 @@ object Verifier {
   //  (check-sat)
   //  (get-model)
 
-//  (declare-datatypes () ((Pair (mk-pair (first Int) (second Int)))))
-//  (declare-datatypes () ((Flaf (mk-flaf (fst Pair)))))
-//  (declare-const p1 Flaf)
-//  (declare-const p2 Flaf)
-//  (assert (not (= p1 p2)))
-//  (check-sat)
-//  (get-model)
+  //  (declare-datatypes () ((Pair (mk-pair (first Int) (second Int)))))
+  //  (declare-datatypes () ((Flaf (mk-flaf (fst Pair)))))
+  //  (declare-const p1 Flaf)
+  //  (declare-const p2 Flaf)
+  //  (assert (not (= p1 p2)))
+  //  (check-sat)
+  //  (get-model)
 
   // (declare-datatypes () ((SortName (ConstructorName (FieldName Type)))))
 
-//  def foo(typ: Type): List[SmtExp] = {
-//    val types = mutable.Map.empty[Type, String]
-//    val result = mutable.ListBuffer.empty[SmtExp]
-//    def visit(typ: Type): String = typ match {
-//      case Type.Unit => "unit"
-//      case Type.Bool => "bool"
-//      case Type.Int => "int"
-//      case Type.Str => "str"
-//
-//      case Type.Tuple2(typ1, typ2) =>
-//        val (sortName, fieldSort1, fieldSort2) = (freshTypeName, visit(typ1), visit(typ2))
-//        types += typ -> sortName
-//        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"),  SmtExp.Lst(Nil), SmtExp.Literal(sortName),
-//          SmtExp.Lst(List(SmtExp.Literal(freshTypeName), SmtExp.Literal(fieldSort1))),
-//          SmtExp.Lst(List(SmtExp.Literal(freshTypeName), SmtExp.Literal(fieldSort2)))))
-//        sortName
-//      case Type.Tuple3(typ1, typ2, typ3) =>
-//        val (sortName, fieldSort1, fieldSort2, fieldSort3) =  (freshTypeName, visit(typ1), visit(typ2), visit(typ3))
-//        types += typ -> sortName
-//        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"), SmtExp.Lst(Nil), SmtExp.Literal(sortName), SmtExp.Literal(fieldSort1), SmtExp.Literal(fieldSort2), SmtExp.Literal(fieldSort3)))
-//        sortName
-//
-//    }
-//    visit(typ)
-//
-//    result.toList
-//  }
+  //  def foo(typ: Type): List[SmtExp] = {
+  //    val types = mutable.Map.empty[Type, String]
+  //    val result = mutable.ListBuffer.empty[SmtExp]
+  //    def visit(typ: Type): String = typ match {
+  //      case Type.Unit => "unit"
+  //      case Type.Bool => "bool"
+  //      case Type.Int => "int"
+  //      case Type.Str => "str"
+  //
+  //      case Type.Tuple2(typ1, typ2) =>
+  //        val (sortName, fieldSort1, fieldSort2) = (freshTypeName, visit(typ1), visit(typ2))
+  //        types += typ -> sortName
+  //        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"),  SmtExp.Lst(Nil), SmtExp.Literal(sortName),
+  //          SmtExp.Lst(List(SmtExp.Literal(freshTypeName), SmtExp.Literal(fieldSort1))),
+  //          SmtExp.Lst(List(SmtExp.Literal(freshTypeName), SmtExp.Literal(fieldSort2)))))
+  //        sortName
+  //      case Type.Tuple3(typ1, typ2, typ3) =>
+  //        val (sortName, fieldSort1, fieldSort2, fieldSort3) =  (freshTypeName, visit(typ1), visit(typ2), visit(typ3))
+  //        types += typ -> sortName
+  //        result += SmtExp.Lst(List(SmtExp.Literal("declare-type"), SmtExp.Lst(Nil), SmtExp.Literal(sortName), SmtExp.Literal(fieldSort1), SmtExp.Literal(fieldSort2), SmtExp.Literal(fieldSort3)))
+  //        sortName
+  //
+  //    }
+  //    visit(typ)
+  //
+  //    result.toList
+  //  }
 
 
 }

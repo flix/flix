@@ -4,14 +4,17 @@ package impl.verifier
  * An SMT-LIB formula.
  */
 sealed trait SmtExp {
-  def fmt(): String = ???
+  def fmt(indent: Int): String = this match {
+    case SmtExp.Lit(s) => s
+    case SmtExp.Lst(xs) => "\n" + " " * indent + "(" + xs.map(_.fmt(indent + 2)).mkString(" ") + ")"
+  }
 }
 
 object SmtExp {
   /**
    * An atom.
    */
-  case class Literal(a: String) extends SmtExp
+  case class Lit(a: String) extends SmtExp
 
   /**
    * A s-expression list.
