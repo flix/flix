@@ -65,6 +65,7 @@ object Symbolic {
 
   object Property {
 
+    // TODO: Trivial...
     case object LeastElement extends Property
 
   }
@@ -89,10 +90,18 @@ object Symbolic {
         Term.BinaryOp(BinaryOperator.Or,
           Term.UnaryOp(UnaryOperator.Not,
             Term.BinaryOp(BinaryOperator.And,
-              Term.App(Term.App(leq, Term.Var(x)), Term.Var(y)),
-              Term.App(Term.App(leq, Term.Var(y)), Term.Var(x)))),
+              ⊑(leq, x, y),
+              ⊑(leq, y, x))
+          ),
           Term.BinaryOp(BinaryOperator.Equal, Term.Var(x), Term.Var(y)))))
     tautology("Anti-Symmetri", f)
+  }
+
+  /**
+   * Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
+   */
+  def transitivity(leq: Term.Abs): Unit = {
+
   }
 
   /**
@@ -102,7 +111,15 @@ object Symbolic {
     val f = Term.App(leq, bot.toTerm)
     tautology("Least Element", f)
   }
-
+  
+  def &&(t1: Term, t2: Term): Term =
+    Term.BinaryOp(BinaryOperator.And, t1, t2)
+  
+  /**
+   * A helper function for constructing terms with less-than equal.
+   */
+  def ⊑(leq: Term.Abs, x: Symbol.VariableSymbol, y: Symbol.VariableSymbol): Term =
+    Term.App(Term.App(leq, Term.Var(x)), Term.Var(y))
 
   /**
    * Verifies whether the given term `t1` evaluates to `true` for all inputs.
@@ -311,6 +328,7 @@ object Symbolic {
 
     case Term.BinaryOp(BinaryOperator.Equal, t1, t2) => ???
   }
+
 
 
 }
