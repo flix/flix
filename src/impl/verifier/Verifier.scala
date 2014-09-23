@@ -83,8 +83,13 @@ object Verifier {
      * Repeatedly ...
      */
     def iterate(t: Term, history: List[Term]): List[List[Term]] = evaluate(t) match {
-      case Term.Bool(true) => List(history)
-      case Term.Bool(false) => println("NOTOK"); ??? // TODO: Need ADT
+      case Term.Bool(b) =>
+        if (b)
+        // The property has been proven to hold.
+          List(history)
+        else
+        // The property does not hold!
+          throw new RuntimeException("Violation for input: " + history.map(_.fmt).mkString(", "))
 
       case x: Term.Abs =>
         enumerate(x.typ).toList.flatMap {
