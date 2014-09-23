@@ -1,6 +1,6 @@
 package syntax
 
-import impl.logic.Term
+import impl.logic.{Symbol, UnaryOperator, BinaryOperator, Term}
 import syntax.Operators._
 import syntax.Symbols._
 
@@ -13,6 +13,18 @@ object Terms {
    * Rich Terms
    */
   implicit class RichTerm(t: Term) {
+
+    def ===(t2: Term): Term = Term.BinaryOp(BinaryOperator.Equal, t, t2)
+
+    def &&(t2: Term): Term = Term.BinaryOp(BinaryOperator.And, t, t2)
+
+    def ==>(t2: Term): Term = Term.BinaryOp(
+      BinaryOperator.Or,
+      Term.UnaryOp(UnaryOperator.Not, t),
+      t2)
+
+    def call(x: Symbol.VariableSymbol, y: Symbol.VariableSymbol): Term = Term.App(Term.App(t, Term.Var(x)), Term.Var(y))
+
     def fmt: String = t match {
       case Term.Unit => "unit"
       case Term.Bool(b) => b.toString

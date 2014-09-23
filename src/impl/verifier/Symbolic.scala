@@ -75,7 +75,7 @@ object Symbolic {
    */
   def reflexivity(leq: Term.Abs): Unit = {
     val x = Symbol.freshVariableSymbol("x")
-    val f = Term.Abs(x, leq.typ, Term.App(Term.App(leq, Term.Var(x)), Term.Var(x)))
+    val f = Term.Abs(x, leq.typ, leq.call(x, x))
     tautology("Reflexivity", f)
   }
 
@@ -85,15 +85,9 @@ object Symbolic {
   def antiSymmetri(leq: Term.Abs): Unit = {
     val x = Symbol.freshVariableSymbol("x")
     val y = Symbol.freshVariableSymbol("y")
-    val f = Term.Abs(x, leq.typ,
-      Term.Abs(y, leq.typ,
-        Term.BinaryOp(BinaryOperator.Or,
-          Term.UnaryOp(UnaryOperator.Not,
-            Term.BinaryOp(BinaryOperator.And,
-              ⊑(leq, x, y),
-              ⊑(leq, y, x))
-          ),
-          Term.BinaryOp(BinaryOperator.Equal, Term.Var(x), Term.Var(y)))))
+    val f = Term.Abs(x, leq.typ, Term.Abs(y, leq.typ,
+      (leq.call(x, y) && leq.call(y, x)) ==> (Term.Var(x) === Term.Var(y))))
+
     tautology("Anti-Symmetri", f)
   }
 
@@ -111,10 +105,7 @@ object Symbolic {
     val f = Term.App(leq, bot.toTerm)
     tautology("Least Element", f)
   }
-  
-  def &&(t1: Term, t2: Term): Term =
-    Term.BinaryOp(BinaryOperator.And, t1, t2)
-  
+
   /**
    * A helper function for constructing terms with less-than equal.
    */
@@ -328,7 +319,6 @@ object Symbolic {
 
     case Term.BinaryOp(BinaryOperator.Equal, t1, t2) => ???
   }
-
 
 
 }
