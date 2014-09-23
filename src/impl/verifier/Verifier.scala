@@ -72,6 +72,22 @@ object Verifier {
       println("Least-Upperbound proved.")
       println()
     }
+
+    {
+      println("Verifying Non-Negative-Height:")
+      val cases = tautology(Property.nonNegative(l.height))
+      cases.foreach(xs => println("  " + xs.map(_.fmt).mkString(", ") + ", proven."))
+      println("Non-Negative-Height: proved.")
+      println()
+    }
+
+    {
+      println("Verifying Strictly-Decreasing:")
+      val cases = tautology(Property.strictlyDecreasing(l.height, l.leq))
+      cases.foreach(xs => println("  " + xs.map(_.fmt).mkString(", ") + ", proven."))
+      println("Strictly-Decreasing: proved.")
+      println()
+    }
   }
 
   /**
@@ -101,7 +117,6 @@ object Verifier {
     }
 
     iterate(t0, Nil)
-
   }
 
   /**

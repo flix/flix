@@ -51,19 +51,19 @@ object Property {
 
 
   /**
+   * Non-Negative: ∀x. f(x) > 0.
+   */
+  def nonNegative(h: Term.Abs): Term.Abs =
+    Term.Abs('x, h.typ,
+      Term.BinaryOp(BinaryOperator.Greater, h.call('x), Term.Int(0)))
+
+  /**
    * Stricly-Decreasing: ∀x, y. x ⊑ y ∧ x != y ⇒ f(x) > f(y).
    */
   def strictlyDecreasing(h: Term.Abs, leq: Term.Abs): Term.Abs =
     Term.Abs('x, h.typ, Term.Abs('y, h.typ,
       (leq.call('x, 'y) && (Term.Var('x) !== Term.Var('y))) ==>
         Term.BinaryOp(BinaryOperator.Greater, h.call('x), h.call('y))))
-
-  /**
-   * Non-Negative: ∀x. f(x) > 0.
-   */
-  def nonNegative(h: Term.Abs): Term.Abs =
-    Term.Abs('x, h.typ,
-      Term.BinaryOp(BinaryOperator.Greater, h.call('x), Term.Int(0)))
 
 
   /**
