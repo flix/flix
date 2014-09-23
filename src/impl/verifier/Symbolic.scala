@@ -54,7 +54,7 @@ object Symbolic {
           leastElement(t, leq)
 
         case Declaration.DeclareLeq(leq, typ) =>
-          reflexivity(leq)
+          tautology("refl", Property.reflexivity(leq))
           antiSymmetri(leq)
           transitivity(leq)
 
@@ -68,23 +68,6 @@ object Symbolic {
     }
   }
 
-
-  sealed trait Property
-
-  object Property {
-
-    // TODO: Trivial...
-    case object LeastElement extends Property
-
-  }
-
-  /**
-   * Reflexivity: ∀x. x ⊑ x
-   */
-  def reflexivity(leq: Term.Abs): Unit = {
-    val f = Term.Abs('x, leq.typ, leq.call('x, 'x))
-    tautology("Reflexivity", f)
-  }
 
   /**
    * Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
@@ -118,19 +101,18 @@ object Symbolic {
    * Upper Bound: ∀x, y, z. x ⊑ (x ⨆ y) ∧ y ⊑ (x ⨆ y).
    */
   def upperBound(leq: Term.Abs, lub: Term.Abs): Unit = {
-//    val f = Term.Abs(x, typ, Term.Abs(y, typ, Term.Abs(z, typ,
-//      leq.call(x, lub.call(x, y))
-//    )))
+    //    val f = Term.Abs(x, typ, Term.Abs(y, typ, Term.Abs(z, typ,
+    //      leq.call(x, lub.call(x, y))
+    //    )))
 
     //tautology("Upper Bound", f)
   }
 
 
-    /**
+  /**
    * Least Upper Bound: ∀x, y, z. x ⊑ z ∧ y ⊑ z ⇒ x ⨆ y ⊑ z.
    */
   def leastUpperBound(leq: Term.Abs, lub: Term.Abs): String = ???
-
 
 
   /**
@@ -150,10 +132,10 @@ object Symbolic {
             iterate(r)
           }
 
-        case x =>
-          if (isNormalForm(x))
-            genVc(x)
-          else ???
+        case x => ???
+        //          if (isNormalForm(x))
+        //            genVc(x)
+        //          else ???
       }
     }
     println(name)
@@ -292,54 +274,84 @@ object Symbolic {
 
   /**
    * Returns *all* terms which inhabit the given type `typ`.
+   *
+   * If the type is finite then a closed term is returned.
+   * Otherwise an open term is returned (i.e. a term with variables).
    */
   def enumerate(typ: Type, sum: Option[Type.Sum] = None): Set[Term] = typ match {
     case Type.Unit => Set(Term.Unit)
     case Type.Bool => Set(Term.Bool(true), Term.Bool(false))
     case Type.Int => Set(Term.Var(Symbol.freshVariableSymbol("i")))
-    case Type.Str => throw new UnsupportedOperationException()
-    case Type.Sum(ts) => ts.flatMap(x => enumerate(x, Some(Type.Sum(ts)))).toSet
+
     case Type.Tag(n, typ2) => enumerate(typ2).map(x => Term.Tag(n, x, sum.get))
+    case Type.Sum(ts) => ts.flatMap(x => enumerate(x, Some(Type.Sum(ts)))).toSet
 
+    case Type.Tuple2(typ1, typ2) =>
+      for (t1 <- enumerate(typ1);
+           t2 <- enumerate(typ2))
+      yield Term.Tuple2(t1, t2)
+    case Type.Tuple3(typ1, typ2, typ3) =>
+      for (t1 <- enumerate(typ1);
+           t2 <- enumerate(typ2);
+           t3 <- enumerate(typ3))
+      yield Term.Tuple3(t1, t2, t3)
+    case Type.Tuple4(typ1, typ2, typ3, typ4) =>
+      for (t1 <- enumerate(typ1);
+           t2 <- enumerate(typ2);
+           t3 <- enumerate(typ3);
+           t4 <- enumerate(typ4))
+      yield Term.Tuple4(t1, t2, t3, t4)
+    case Type.Tuple5(typ1, typ2, typ3, typ4, typ5) =>
+      for (t1 <- enumerate(typ1);
+           t2 <- enumerate(typ2);
+           t3 <- enumerate(typ3);
+           t4 <- enumerate(typ4);
+           t5 <- enumerate(typ5))
+      yield Term.Tuple5(t1, t2, t3, t4, t5)
+
+    case Type.Set(xs) => throw new UnsupportedOperationException("Unexpected type.")
+    case Type.Var(x) => throw new UnsupportedOperationException("Unexpected type.")
+    case Type.Function(a, b) => throw new UnsupportedOperationException("Impossible to enumerate functions.")
+    case Type.Str => throw new UnsupportedOperationException("Impossible to enumerate strings.")
   }
 
 
-  /**
-   * Returns `true` iff the given term `t` is in normal form.
-   */
-  def isNormalForm(t: Term): Boolean = {
-    def isInt(t: Term): Boolean = t match {
-      case Term.Int(i) => true
-
-    }
-
-    t match {
-      case Term.Unit => false
-      case Term.Bool(b) => true
-      case Term.Int(i) => false
-      case Term.Str(s) => false
-
-
-      case _: Term.Tag => false
-      case _: Term.Tuple2 => false
-      case _: Term.Tuple3 => false
-      case _: Term.Tuple4 => false
-      case _: Term.Tuple5 => false
-    }
-  }
-
-
-  def genVc(t: Term): Constraint = t match {
-    case Term.BinaryOp(op, t2, t3) => ???
-
-    case Term.IfThenElse(t1, t2, t3) =>
-      val c1 = genVc(t1)
-      val c2 = genVc(t2)
-      val c3 = genVc(t3)
-      Or(And(c1, c2), And(Not(c1), c3))
-
-    case Term.BinaryOp(BinaryOperator.Equal, t1, t2) => ???
-  }
+  //  /**
+  //   * Returns `true` iff the given term `t` is in normal form.
+  //   */
+  //  def isNormalForm(t: Term): Boolean = {
+  //    def isInt(t: Term): Boolean = t match {
+  //      case Term.Int(i) => true
+  //
+  //    }
+  //
+  //    t match {
+  //      case Term.Unit => false
+  //      case Term.Bool(b) => true
+  //      case Term.Int(i) => false
+  //      case Term.Str(s) => false
+  //
+  //
+  //      case _: Term.Tag => false
+  //      case _: Term.Tuple2 => false
+  //      case _: Term.Tuple3 => false
+  //      case _: Term.Tuple4 => false
+  //      case _: Term.Tuple5 => false
+  //    }
+  //  }
+  //
+  //
+  //  def genVc(t: Term): Constraint = t match {
+  //    case Term.BinaryOp(op, t2, t3) => ???
+  //
+  //    case Term.IfThenElse(t1, t2, t3) =>
+  //      val c1 = genVc(t1)
+  //      val c2 = genVc(t2)
+  //      val c3 = genVc(t3)
+  //      Or(And(c1, c2), And(Not(c1), c3))
+  //
+  //    case Term.BinaryOp(BinaryOperator.Equal, t1, t2) => ???
+  //  }
 
 
 }

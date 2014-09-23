@@ -4,6 +4,8 @@ import impl.logic.{Symbol, UnaryOperator, BinaryOperator, Term}
 import syntax.Operators._
 import syntax.Symbols._
 
+import scala.language.implicitConversions
+
 /**
  * Embedded DSL syntax for terms.
  */
