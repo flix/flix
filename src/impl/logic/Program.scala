@@ -51,7 +51,7 @@ case class Program(declarations: List[Declaration], constraints: List[Constraint
    * Optionally returns the height function associated with the given `baseType`.
    */
   def lookupHeight(baseType: Type): Option[Term.Abs] = {
-    val targetType = Type.Function(baseType, Type.Function(baseType, Type.Int))
+    val targetType = Type.Function(baseType, Type.Int)
 
     declarations.collectFirst {
       case Declaration.DeclareHeight(abs, actualType) if actualType == targetType => abs
