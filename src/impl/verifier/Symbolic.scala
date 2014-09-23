@@ -115,7 +115,17 @@ object Symbolic {
     //    case Term.Var
     //    case Term.Abs
     //    case Term.App
-    //    case Term.IfThenElse
+
+    case Term.IfThenElse(t1, t2, t3) =>
+      val r1 = evaluate(t1)
+      val r2 = evaluate(t2)
+      val r3 = evaluate(t3)
+
+      asValue(r1) match {
+        case None => Term.IfThenElse(r1, r2, r3)
+        case Some(v) => if (v.toBool) r2 else r3
+      }
+
     //    case Term.Match
 
     case Term.UnaryOp(op, t1) =>
@@ -155,6 +165,11 @@ object Symbolic {
       Term.Tuple5(r1, r2, r3, r4, r5)
   }
 
+  /**
+   * Optionally returns the term as a value.
+   *
+   * NB: *Does not* perform any computation to reduce the term to a value.
+   */
   def asValue(t: Term): Option[Value] = ???
 
   /**
