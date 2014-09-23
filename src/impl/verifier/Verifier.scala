@@ -14,7 +14,7 @@ object Verifier {
     val lattices = mutable.Set.empty[Lattice]
     for (declaration <- program.declarations) {
       declaration match {
-        case Declaration.DeclareBot(bot, typ) =>
+        case Declaration.DeclareBot(bot, typ) if !typ.isInstanceOf[Type.Set] =>
           val leq = program.lookupLeq(typ).get
           val lub = program.lookupLub(typ).get
           val height = program.lookupHeight(typ).get

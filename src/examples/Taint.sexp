@@ -16,6 +16,11 @@
         (case <Secret Secret>   Secret)
         (case _                 NotSecret)))
 
+(def-height Taint (e Taint)
+    (match e
+        (case NotSecret  1)
+        (case Secret     2)))
+
 (fact (Var "b" NotSecret))
 
 (fact (Edge "a" {"b"}))
