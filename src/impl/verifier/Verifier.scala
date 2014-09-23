@@ -129,7 +129,7 @@ object Verifier {
    * Returns the given term `t` as an SMT-LIB expression.
    */
   def compileTerm(t: Term, k: SmtExp => SmtExp): SmtExp = t match {
-    case Term.Unit => k(Lit("unit"))
+    case Term.Unit => k(Lit("mk-unit"))
     case Term.Bool(b) => k(Lit(b.toString))
     case Term.Int(i) => k(Lit(i.toString))
 
@@ -137,7 +137,7 @@ object Verifier {
 
     case Term.Match(t1, rules) => Lst(Lit("or") :: compileRules(t1, rules, k))
 
-    case Term.Tag(x, t1, _) => Lst(List(Lit(x.s), compileTerm(t1, id)))
+    case Term.Tag(x, t1, _) => Lst(List(Lit("mk-" + x.s), compileTerm(t1, id)))
     case Term.Tuple2(t1, t2) => Lst(List(Lit("mk2"), compileTerm(t1, id), compileTerm(t2, id)))
     case Term.Tuple3(t1, t2, t3) => Lst(List(Lit("mk3"), compileTerm(t1, id), compileTerm(t2, id), compileTerm(t3, id)))
     case Term.Tuple4(t1, t2, t3, t4) => Lst(List(Lit("mk4"), compileTerm(t1, id), compileTerm(t2, id), compileTerm(t3, id), compileTerm(t4, id)))
