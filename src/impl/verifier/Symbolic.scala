@@ -1,7 +1,8 @@
 package impl.verifier
 
+import impl.logic.Symbol.VariableSymbol
 import impl.logic._
-import impl.runtime.Interpreter
+import impl.runtime.{Unification, Interpreter}
 import syntax.Terms.RichTerm
 
 object Symbolic {
@@ -69,10 +70,10 @@ object Symbolic {
    * Reflexivity: ∀x. x ⊑ x
    */
   def reflexivity(leq: Term.Abs): Unit = {
-    val x = Term.Var(Symbol.VariableSymbol("x"))
-    val t = Term.App(Term.App(leq, x), x) // TODO: Use abs instead?
-    val f = Interpreter.evaluate(t).toTerm // TODO: Need to simplify
-    tautology(f.asInstanceOf[Term.Abs])
+    //    val x = Term.Var(Symbol.VariableSymbol("x"))
+    //    val t = Term.App(Term.App(leq, x), x) // TODO: Use abs instead?
+    //    val f = Interpreter.evaluate(t).toTerm // TODO: Need to simplify
+    //    tautology(f.asInstanceOf[Term.Abs])
   }
 
   /**
@@ -112,9 +113,27 @@ object Symbolic {
     case Term.Str(s) => Term.Str(s)
     case Term.Set(xs) => Term.Set(xs.map(evaluate))
 
-    //    case Term.Var
-    //    case Term.Abs
-    //    case Term.App
+    case Term.Var(x) => Term.Var(x)
+    case Term.Abs(s, typ, t1) => Term.Abs(s, typ, t1)
+
+    case Term.App(t1, t2) =>
+      val r1 = evaluate(t1)
+      val r2 = evaluate(t2)
+
+      r1 match {
+        case Term.Abs(x, _, tb) =>
+          val y = Symbol.freshVariableSymbol(x)
+          val r = tb.rename(x, y).substitute(y, r2)
+          evaluate(r)
+        case _ => throw new RuntimeException()
+      }
+
+    case Term.Match(t1, rules) =>
+      val r1 = evaluate(t1)
+      matchRule(rules, r1) match {
+        case None => throw new RuntimeException(s"Unmatched value ${r1.fmt}")
+        case Some((t2, env)) => evaluate(t2.substitute2(env))
+      }
 
     case Term.IfThenElse(t1, t2, t3) =>
       val r1 = evaluate(t1)
@@ -141,6 +160,7 @@ object Symbolic {
         case (Some(v1), Some(v2)) => Interpreter.apply(op, v1, v2).toTerm
         case _ => Term.BinaryOp(op, r1, r2)
       }
+    case Term.Tag(n, t1, typ) => Term.Tag(n, evaluate(t1), typ)
     case Term.Tuple2(t1, t2) =>
       val r1 = evaluate(t1)
       val r2 = evaluate(t2)
@@ -163,6 +183,54 @@ object Symbolic {
       val r4 = evaluate(t4)
       val r5 = evaluate(t5)
       Term.Tuple5(r1, r2, r3, r4, r5)
+  }
+
+  /**
+   * Optionally returns a pair of a term and environment for which one of the given `rules` match the given value `v`.
+   */
+  private def matchRule(rules: List[(Pattern, Term)], t: Term): Option[(Term, Map[Symbol.VariableSymbol, Term])] = rules match {
+    case Nil => None
+    case (p, t1) :: rest => unify(p, t) match {
+      case None => matchRule(rest, t)
+      case Some(env) => Some((t1, env))
+    }
+  }
+
+  private def unify(p: Pattern, t: Term): Option[Map[Symbol.VariableSymbol, Term]] = (p, t) match {
+    case (Pattern.Wildcard, _) => Some(Map.empty)
+    case (Pattern.Var(x), _) => Some(Map(x -> t))
+
+    case (Pattern.Unit, Term.Unit) => Some(Map.empty)
+    case (Pattern.Bool(b1), Term.Bool(b2)) if b1 == b2 => Some(Map.empty)
+    case (Pattern.Int(i1), Term.Int(i2)) if i1 == i2 => Some(Map.empty)
+    case (Pattern.Str(s1), Term.Str(s2)) if s1 == s2 => Some(Map.empty)
+
+    case (Pattern.Tag(s1, p1), Term.Tag(s2, t1, _)) if s1 == s2 => unify(p1, t1)
+
+    case (Pattern.Tuple2(p1, p2), Term.Tuple2(t1, t2)) =>
+      for (ent1 <- unify(p1, t1);
+           ent2 <- unify(p2, t2))
+      yield ent1 ++ ent2
+    case (Pattern.Tuple3(p1, p2, p3), Term.Tuple3(t1, t2, t3)) =>
+      for (ent1 <- unify(p1, t1);
+           ent2 <- unify(p2, t2);
+           ent3 <- unify(p3, t3))
+      yield ent1 ++ ent2 ++ ent3
+    case (Pattern.Tuple4(p1, p2, p3, p4), Term.Tuple4(t1, t2, t3, t4)) =>
+      for (ent1 <- unify(p1, t1);
+           ent2 <- unify(p2, t2);
+           ent3 <- unify(p3, t3);
+           ent4 <- unify(p4, t4))
+      yield ent1 ++ ent2 ++ ent3 ++ ent4
+    case (Pattern.Tuple5(p1, p2, p3, p4, p5), Term.Tuple5(t1, t2, t3, t4, t5)) =>
+      for (ent1 <- unify(p1, t1);
+           ent2 <- unify(p2, t2);
+           ent3 <- unify(p3, t3);
+           ent4 <- unify(p4, t4);
+           ent5 <- unify(p5, t5))
+      yield ent1 ++ ent2 ++ ent3 ++ ent4 ++ ent5
+
+    case _ => None
   }
 
   /**

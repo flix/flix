@@ -50,6 +50,14 @@ sealed trait Term {
   }
 
   /**
+   * Returns `this` term where all occurences of variables in the given
+   * environment `env` have been replaced by their respective values.
+   */
+  def substitute2(env: Map[Symbol.VariableSymbol, Term]): Term = env.foldLeft(this) {
+    case (t, (x, v)) => t.substitute(x, v)
+  }
+
+  /**
    * Returns the set of free variables in the term.
    */
   def freeVariables: Set[Symbol.VariableSymbol] = this match {
