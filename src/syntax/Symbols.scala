@@ -42,4 +42,9 @@ object Symbols {
    */
   implicit def string2variable(s: String): VariableSymbol = VariableSymbol(s)
 
+  /**
+   * Implicitely converts a scala symbol to a variable symbol.
+   */
+  implicit def symbol2variable(s: scala.Symbol): VariableSymbol = VariableSymbol(s.name)
+
 }

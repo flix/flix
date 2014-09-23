@@ -1,8 +1,9 @@
 package impl.verifier
 
-import impl.logic.Symbol.VariableSymbol
 import impl.logic._
-import impl.runtime.{Unification, Interpreter}
+import impl.runtime.Interpreter
+import syntax.Symbols._
+import syntax.Terms._
 import syntax.Terms.RichTerm
 
 object Symbolic {
@@ -44,18 +45,24 @@ object Symbolic {
 
 
   def verify(program: Program): Unit = {
+    // TODO: Need a notion of lattices. ..
+
     for (declaration <- program.declarations) {
       declaration match {
         case Declaration.DeclareBot(t, typ) =>
           val leq = program.lookupLeq(typ).get
           leastElement(t, leq)
 
-        case Declaration.DeclareLeq(t, typ) =>
-          reflexivity(t)
-          antiSymmetri(t)
-          transitivity(t)
+        case Declaration.DeclareLeq(leq, typ) =>
+          reflexivity(leq)
+          antiSymmetri(leq)
+          transitivity(leq)
 
-        case Declaration.DeclareLub(t, typ) =>
+        case Declaration.DeclareLub(lub, typ) =>
+          val baseType = typ.resultType
+          val leq = program.lookupLeq(baseType).get
+          upperBound(leq, lub)
+
         case Declaration.DeclareHeight(t, typ) =>
       }
     }
@@ -75,8 +82,7 @@ object Symbolic {
    * Reflexivity: ∀x. x ⊑ x
    */
   def reflexivity(leq: Term.Abs): Unit = {
-    val x = Symbol.freshVariableSymbol("x")
-    val f = Term.Abs(x, leq.typ, leq.call(x, x))
+    val f = Term.Abs('x, leq.typ, leq.call('x, 'x))
     tautology("Reflexivity", f)
   }
 
@@ -84,10 +90,8 @@ object Symbolic {
    * Anti-symmetri: ∀x, y. x ⊑ y ∧ x ⊒ y ⇒ x = y
    */
   def antiSymmetri(leq: Term.Abs): Unit = {
-    val x = Symbol.freshVariableSymbol("x")
-    val y = Symbol.freshVariableSymbol("y")
-    val f = Term.Abs(x, leq.typ, Term.Abs(y, leq.typ,
-      (leq.call(x, y) && leq.call(y, x)) ==> (Term.Var(x) === Term.Var(y))))
+    val f = Term.Abs('x, leq.typ, Term.Abs('y, leq.typ,
+      (leq.call('x, 'y) && leq.call('y, 'x)) ==> (Term.Var('x) === Term.Var('y))))
 
     tautology("Anti-Symmetri", f)
   }
@@ -96,12 +100,8 @@ object Symbolic {
    * Transitivity: ∀x, y, z. x ⊑ y ∧ y ⊑ z ⇒ x ⊑ z.
    */
   def transitivity(leq: Term.Abs): Unit = {
-    val x = Symbol.freshVariableSymbol("x")
-    val y = Symbol.freshVariableSymbol("y")
-    val z = Symbol.freshVariableSymbol("z")
-
-    val f = Term.Abs(x, leq.typ, Term.Abs(y, leq.typ, Term.Abs(z, leq.typ,
-      (leq.call(x, y) && leq.call(y, z)) ==> leq.call(x, z))))
+    val f = Term.Abs('x, leq.typ, Term.Abs('y, leq.typ, Term.Abs('z, leq.typ,
+      (leq.call('x, 'y) && leq.call('y, 'z)) ==> leq.call('x, 'z))))
 
     tautology("Transitivity", f)
   }
@@ -113,6 +113,25 @@ object Symbolic {
     val f = Term.App(leq, bot.toTerm)
     tautology("Least Element", f)
   }
+
+  /**
+   * Upper Bound: ∀x, y, z. x ⊑ (x ⨆ y) ∧ y ⊑ (x ⨆ y).
+   */
+  def upperBound(leq: Term.Abs, lub: Term.Abs): Unit = {
+//    val f = Term.Abs(x, typ, Term.Abs(y, typ, Term.Abs(z, typ,
+//      leq.call(x, lub.call(x, y))
+//    )))
+
+    //tautology("Upper Bound", f)
+  }
+
+
+    /**
+   * Least Upper Bound: ∀x, y, z. x ⊑ z ∧ y ⊑ z ⇒ x ⨆ y ⊑ z.
+   */
+  def leastUpperBound(leq: Term.Abs, lub: Term.Abs): String = ???
+
+
 
   /**
    * Verifies whether the given term `t1` evaluates to `true` for all inputs.

@@ -23,7 +23,7 @@ object Terms {
       Term.UnaryOp(UnaryOperator.Not, t),
       t2)
 
-    def call(x: Symbol.VariableSymbol, y: Symbol.VariableSymbol): Term = Term.App(Term.App(t, Term.Var(x)), Term.Var(y))
+    def call(x: Term, y: Term): Term = Term.App(Term.App(t, x), y)
 
     def fmt: String = t match {
       case Term.Unit => "unit"
@@ -52,5 +52,10 @@ object Terms {
       case Term.Tuple5(t1, t2, t3, t4, t5) =>  "(" + t1.fmt + "," + t2.fmt + "," + t3.fmt + "," + t4.fmt + "," + t5.fmt + ")"
     }
   }
+
+  /**
+   * Implicition conversion from a scala symbol to a term.
+   */
+  implicit def symbol2varterm(s: scala.Symbol): Term = Term.Var(Symbol.VariableSymbol(s.name))
 
 }
