@@ -61,9 +61,8 @@ object Symbolic {
    * Least Element: ∀x. ⊥ ⊑ x.
    */
   def leastElement(bot: Value, leq: Term.Abs): Unit = {
-    val t = Term.App(leq, bot.toTerm)
-    val f = evaluate(t)
-    tautology(f.asInstanceOf[Term.Abs])
+    val f = Term.App(leq, bot.toTerm)
+    tautology("Least Element", f)
   }
 
   /**
@@ -84,24 +83,28 @@ object Symbolic {
   /**
    * Verifies whether the given term `t1` evaluates to `true` for all inputs.
    */
-  def tautology(t0: Term): Unit = {
-    val abs = evaluate(t0)
-    abs match {
-      case Term.Bool(true) => println("OK")
-      case Term.Bool(false) => ???
+  def tautology(name: String, t0: Term): Unit = {
+    def iterate(t: Term): Unit = {
+      val abs = evaluate(t)
+      abs match {
+        case Term.Bool(true) => println("OK")
+        case Term.Bool(false) => ???
 
-      case x: Term.Abs =>
-        for (a <- enumerate(x.typ)) {
-          print("Test: " + a.fmt + " ")
-          val r = evaluate(Term.App(x, a))
-          tautology(r)
-        }
+        case x: Term.Abs =>
+          for (a <- enumerate(x.typ)) {
+            print("  Elm: " + a.fmt + " ")
+            val r = evaluate(Term.App(x, a))
+            iterate(r)
+          }
 
-      case x =>
-        if (isNormalForm(x))
-          genVc(x)
-        else ???
+        case x =>
+          if (isNormalForm(x))
+            genVc(x)
+          else ???
+      }
     }
+    println(name)
+    iterate(t0)
   }
 
   /**
