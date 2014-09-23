@@ -91,12 +91,8 @@ object Verifier {
         // The property does not hold!
           throw new RuntimeException("Violation for input: " + history.map(_.fmt).mkString(", "))
 
-      case x: Term.Abs =>
-        enumerate(x.typ).toList.flatMap {
-          case a =>
-            val r = evaluate(Term.App(x, a))
-            iterate(r, a :: history)
-        }
+      case Term.Abs(x, typ, t1) =>
+        enumerate(typ).toList.flatMap(a => iterate(evaluate(Term.App(t, a)), a :: history))
 
       case x => ???
       //          if (isNormalForm(x))
