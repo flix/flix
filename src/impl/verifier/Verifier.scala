@@ -33,21 +33,45 @@ object Verifier {
    * Verifies that the given lattie satisfies all required lattice properties.
    */
   def verify(l: Lattice): Unit = {
-    println("Verifying Reflexivity:")
-    val cases1 = tautology(Property.reflexivity(l.leq))
-    cases1.foreach(xs => println("  " + xs.map(_.fmt).mkString(", ") + ", proven."))
-    println("Reflexivity proved.")
-    println()
+    {
+      println("Verifying Reflexivity:")
+      val cases = tautology(Property.reflexivity(l.leq))
+      cases.foreach(xs => println("  " + xs.map(_.fmt).mkString(", ") + ", proven."))
+      println("Reflexivity proved.")
+      println()
+    }
 
-    println("Verifying Anti-symmetry:")
-    val cases2 = tautology(Property.antiSymmetri(l.leq))
-    cases2.foreach(xs => println("  " + xs.map(_.fmt).mkString(", ") + ", proven."))
-    println("Anti-symmetry proved.")
-    println()
+    {
+      println("Verifying Anti-symmetry:")
+      val cases = tautology(Property.antiSymmetri(l.leq))
+      cases.foreach(xs => println("  " + xs.map(_.fmt).mkString(", ") + ", proven."))
+      println("Anti-symmetry proved.")
+      println()
+    }
 
-    tautology(Property.transitivity(l.leq))
-    tautology(Property.upperBound(l.leq, l.lub))
-    tautology(Property.leastUpperBound(l.leq, l.lub))
+    {
+      println("Verifying Transitivity:")
+      val cases = tautology(Property.transitivity(l.leq))
+      cases.foreach(xs => println("  " + xs.map(_.fmt).mkString(", ") + ", proven."))
+      println("Transitivity proved.")
+      println()
+    }
+
+    {
+      println("Verifying Upperbound:")
+      val cases = tautology(Property.upperBound(l.leq, l.lub))
+      cases.foreach(xs => println("  " + xs.map(_.fmt).mkString(", ") + ", proven."))
+      println("Upperbound proved.")
+      println()
+    }
+
+    {
+      println("Verifying Least-Upperbound:")
+      val cases = tautology(Property.leastUpperBound(l.leq, l.lub))
+      cases.foreach(xs => println("  " + xs.map(_.fmt).mkString(", ") + ", proven."))
+      println("Least-Upperbound proved.")
+      println()
+    }
   }
 
   /**
@@ -55,25 +79,26 @@ object Verifier {
    */
   def tautology(t0: Term): List[List[Term]] = {
 
-    def iterate(t: Term, history: List[Term]): List[List[Term]] = {
-      val abs = evaluate(t)
-      abs match {
-        case Term.Bool(true) => List(history)
-        case Term.Bool(false) => println("NOTOK"); ??? // TODO: Need ADT
+    /**
+     * Repeatedly ...
+     */
+    def iterate(t: Term, history: List[Term]): List[List[Term]] = evaluate(t) match {
+      case Term.Bool(true) => List(history)
+      case Term.Bool(false) => println("NOTOK"); ??? // TODO: Need ADT
 
-        case x: Term.Abs =>
-          enumerate(x.typ).toList.flatMap {
-            case a =>
-              val r = evaluate(Term.App(x, a))
-              iterate(r, a :: history)
-          }
+      case x: Term.Abs =>
+        enumerate(x.typ).toList.flatMap {
+          case a =>
+            val r = evaluate(Term.App(x, a))
+            iterate(r, a :: history)
+        }
 
-        case x => ???
-        //          if (isNormalForm(x))
-        //            genVc(x)
-        //          else ???
-      }
+      case x => ???
+      //          if (isNormalForm(x))
+      //            genVc(x)
+      //          else ???
     }
+
     iterate(t0, Nil)
 
   }
