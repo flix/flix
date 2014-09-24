@@ -36,11 +36,11 @@ object Property {
 
 
   /**
-   * Upper Bound: ∀x, y, z. x ⊑ (x ⨆ y) ∧ y ⊑ (x ⨆ y).
+   * Upper Bound: ∀x, y. x ⊑ (x ⨆ y) ∧ y ⊑ (x ⨆ y).
    */
   def upperBound(leq: Term.Abs, lub: Term.Abs): Term.Abs =
-    Term.Abs('x, leq.typ, Term.Abs('y, leq.typ, Term.Abs('z, leq.typ,
-      leq.call('x, lub.call('x, 'y)) && leq.call('y, lub.call('x, 'y)))))
+    Term.Abs('x, leq.typ, Term.Abs('y, leq.typ,
+      leq.call('x, lub.call('x, 'y)) && leq.call('y, lub.call('x, 'y))))
 
   /**
    * Least Upper Bound: ∀x, y, z. x ⊑ z ∧ y ⊑ z ⇒ x ⨆ y ⊑ z.
