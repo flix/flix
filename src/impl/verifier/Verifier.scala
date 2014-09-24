@@ -247,8 +247,6 @@ object Verifier {
         Term.Bool(false)
       else
         peel(x, y, f)
-
-    case (Term.Tuple2(x1, x2), Term.Tuple2(y1, y2)) => ???
     case _ =>  f(t1, t2)
   }
 

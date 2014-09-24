@@ -161,27 +161,27 @@ object Unification {
     case (Pattern.Tag(s1, p1), Term.Tag(s2, t1, _)) if s1 == s2 => unify(p1, t1)
 
     case (Pattern.Tuple2(p1, p2), Term.Tuple2(t1, t2)) =>
-      for (ent1 <- unify(p1, t1);
-           ent2 <- unify(p2, t2))
-      yield ent1 ++ ent2
+      for (env1 <- unify(p1, t1);
+           env2 <- unify(p2, t2))
+      yield env1 ++ env2
     case (Pattern.Tuple3(p1, p2, p3), Term.Tuple3(t1, t2, t3)) =>
-      for (ent1 <- unify(p1, t1);
-           ent2 <- unify(p2, t2);
-           ent3 <- unify(p3, t3))
-      yield ent1 ++ ent2 ++ ent3
+      for (env1 <- unify(p1, t1);
+           env2 <- unify(p2, t2);
+           env3 <- unify(p3, t3))
+      yield env1 ++ env2 ++ env3
     case (Pattern.Tuple4(p1, p2, p3, p4), Term.Tuple4(t1, t2, t3, t4)) =>
-      for (ent1 <- unify(p1, t1);
-           ent2 <- unify(p2, t2);
-           ent3 <- unify(p3, t3);
-           ent4 <- unify(p4, t4))
-      yield ent1 ++ ent2 ++ ent3 ++ ent4
+      for (env1 <- unify(p1, t1);
+           env2 <- unify(p2, t2);
+           env3 <- unify(p3, t3);
+           env4 <- unify(p4, t4))
+      yield env1 ++ env2 ++ env3 ++ env4
     case (Pattern.Tuple5(p1, p2, p3, p4, p5), Term.Tuple5(t1, t2, t3, t4, t5)) =>
-      for (ent1 <- unify(p1, t1);
-           ent2 <- unify(p2, t2);
-           ent3 <- unify(p3, t3);
-           ent4 <- unify(p4, t4);
-           ent5 <- unify(p5, t5))
-      yield ent1 ++ ent2 ++ ent3 ++ ent4 ++ ent5
+      for (env1 <- unify(p1, t1);
+           env2 <- unify(p2, t2);
+           env3 <- unify(p3, t3);
+           env4 <- unify(p4, t4);
+           env5 <- unify(p5, t5))
+      yield env1 ++ env2 ++ env3 ++ env4 ++ env5
 
     case _ => None
   }
