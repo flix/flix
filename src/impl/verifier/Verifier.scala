@@ -164,21 +164,10 @@ object Verifier {
         case Some(v) => if (v.toBool) r2 else r3
       }
 
-    //    case Term.Match
-
     case Term.UnaryOp(op, t1) =>
-      val r1 = evaluate(t1)
-      r1.asValue match {
-        case None => Term.UnaryOp(op, r1)
-        case Some(v1) => Interpreter.apply(op, v1).toTerm
-      }
+      apply(op, evaluate(t1))
     case Term.BinaryOp(op, t1, t2) =>
-      val r1 = evaluate(t1)
-      val r2 = evaluate(t2)
-      (r1.asValue, r2.asValue) match {
-        case (Some(v1), Some(v2)) => Interpreter.apply(op, v1, v2).toTerm
-        case _ => Term.BinaryOp(op, r1, r2)
-      }
+      apply(op, evaluate(t1), evaluate(t2))
     case Term.Tag(n, t1, typ) => Term.Tag(n, evaluate(t1), typ)
     case Term.Tuple2(t1, t2) =>
       val r1 = evaluate(t1)
@@ -213,6 +202,54 @@ object Verifier {
       case None => matchRule(rest, t)
       case Some(env) => Some((t1, env))
     }
+  }
+
+  /**
+   * Returns the result of (partially) applying the unary operator `op` to the given term `t`.
+   */
+  private def apply(op: UnaryOperator, t: Term): Term = t.asValue match {
+    case None => Term.UnaryOp(op, t)
+    case Some(v) => op match {
+      case UnaryOperator.Not => Term.Bool(!v.toBool)
+      case UnaryOperator.UnaryPlus => Term.Int(v.toInt)
+      case UnaryOperator.UnaryMinus => Term.Int(-v.toInt)
+    }
+  }
+
+  /**
+   * Returns the result of (partially) applying the binary operator `op` to the given terms `t1` and `t2`.
+   */
+  private def apply(op: BinaryOperator, t1: Term, t2: Term): Term = op match {
+    case BinaryOperator.Or => (t1.asValue, t2.asValue) match {
+      case (Some(v1), Some(v2)) => Term.Bool(v1.toBool || v2.toBool)
+      case (Some(v1), None) if v1.toBool => Term.Bool(true)
+      case (None, Some(v2)) if v2.toBool => Term.Bool(true)
+      case _ => Term.BinaryOp(op, t1, t2)
+    }
+    case BinaryOperator.And => (t1.asValue, t2.asValue) match {
+      case (Some(v1), Some(v2)) => Term.Bool(v1.toBool && v2.toBool)
+      case (Some(v1), None) if !v1.toBool => Term.Bool(false)
+      case (None, Some(v2)) if !v2.toBool => Term.Bool(false)
+      case _ => Term.BinaryOp(op, t1, t2)
+    }
+    case BinaryOperator.Equal => (t1.asValue, t2.asValue) match {
+      case (Some(v1), Some(v2)) => Term.Bool(v1 == v2)
+      case _ => peel(t1, t2, (x: Term, y: Term) => Term.BinaryOp(BinaryOperator.Equal, x, y))
+    }
+  }
+
+  /**
+   * TODO: Should this have f or not?
+   */
+  private def peel(t1: Term, t2: Term, f: (Term, Term) => Term): Term = (t1, t2) match {
+    case (Term.Tag(n1, x, _), Term.Tag(n2, y, _)) =>
+      if (n1 != n2)
+        Term.Bool(false)
+      else
+        peel(x, y, f)
+
+    case (Term.Tuple2(x1, x2), Term.Tuple2(y1, y2)) => ???
+    case _ =>  f(t1, t2)
   }
 
 

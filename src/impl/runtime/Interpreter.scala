@@ -136,7 +136,7 @@ object Interpreter {
   /**
    * Returns the result of applying the unary operator `op` to the given value `v`.
    */
-  def apply(op: UnaryOperator, v: Value): Value = op match {
+  private def apply(op: UnaryOperator, v: Value): Value = op match {
     case UnaryOperator.Not => Value.Bool(!v.toBool)
     case UnaryOperator.UnaryPlus => Value.Int(v.toInt)
     case UnaryOperator.UnaryMinus => Value.Int(-v.toInt)
@@ -145,7 +145,7 @@ object Interpreter {
   /**
    * Returns the result of applying the binary operator `op` to the given values `v1` and `v2`.
    */
-  def apply(op: BinaryOperator, v1: Value, v2: Value): Value = op match {
+  private def apply(op: BinaryOperator, v1: Value, v2: Value): Value = op match {
     case BinaryOperator.Plus => Value.Int(v1.toInt + v2.toInt)
     case BinaryOperator.Minus => Value.Int(v1.toInt - v2.toInt)
     case BinaryOperator.Times => Value.Int(v1.toInt * v2.toInt)
