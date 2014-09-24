@@ -12,6 +12,8 @@ object UnaryOperator {
 
 sealed trait BinaryOperator extends Operator
 
+sealed trait ComparisonOperator extends BinaryOperator
+
 object BinaryOperator {
   /**
    * Returns the binary operator corresponding with the given string `s`.
@@ -42,13 +44,13 @@ object BinaryOperator {
   case object Divide extends BinaryOperator
   case object Modulo extends BinaryOperator
 
-  case object Less extends BinaryOperator
-  case object LessEqual extends BinaryOperator
-  case object Greater extends BinaryOperator
-  case object GreaterEqual extends BinaryOperator
+  case object Less extends ComparisonOperator
+  case object LessEqual extends ComparisonOperator
+  case object Greater extends ComparisonOperator
+  case object GreaterEqual extends ComparisonOperator
 
-  case object Equal extends BinaryOperator
-  case object NotEqual extends BinaryOperator
+  case object Equal extends ComparisonOperator
+  case object NotEqual extends ComparisonOperator
 
   case object And extends BinaryOperator
   case object Or extends BinaryOperator

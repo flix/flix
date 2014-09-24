@@ -114,7 +114,7 @@ object Verifier {
         // Case 3: The term cannot be evaluated further.
         // What remains is residual of constraints.
         // Translate the term into a constraint system.
-        val constraint = compileBool(r)
+        val constraint = BoolExp.compile(r)
         println(constraint.fmt)
         List(history)
     }
@@ -262,86 +262,15 @@ object Verifier {
   /** *******************************************/
 
   /**
-   * Returns `true` iff the term corresponds to a set of integer constraints.
+   * ...
    */
-  def isNormalForm(t: Term): Boolean = t match {
-    case Term.Var(x) => true
-    case Term.Int(i) => true
-    case Term.UnaryOp(op, t1) => isNormalForm(t1)
-    case Term.BinaryOp(op, t1, t2) => isNormalForm(t1) && isNormalForm(t2)
-    case Term.IfThenElse(t1, t2, t3) => isNormalForm(t1) && isNormalForm(t2) && isNormalForm(t3)
-    case _ => false
-  }
-
-  def compileBool(t: Term): BoolExp = t match {
-    case Term.BinaryOp(op, t1, t2) =>
-      val e1 = compileInt(t1)
-      val e2 = compileInt(t2)
-      op match {
-        case BinaryOperator.Equal => BoolExp.Eq(e1, e2)
-        case BinaryOperator.NotEqual => BoolExp.Not(BoolExp.Eq(e1, e2))
-        case BinaryOperator.GreaterEqual => BoolExp.NonNeg(IntExp.Minus(e1, e2))
-      }
-  }
-
-  def compileInt(t: Term): IntExp = t match {
-    case Term.Var(x) => IntExp.Var(x)
-    case Term.Int(i) => IntExp.Int(i)
-  }
-
-
-  trait Exp {
-    def fmt: String = {
-      def visit(c: Exp, indent: Int): String = c.toString
-
-      visit(this, 0)
-    }
-  }
-
-  sealed trait BoolExp extends Exp
-
-  object BoolExp {
-
-    case object True extends BoolExp
-
-    case object False extends BoolExp
-
-    case class Not(e1: BoolExp) extends BoolExp
-
-    case class Or(e1: BoolExp, e2: BoolExp) extends BoolExp
-
-    case class And(e1: BoolExp, e2: BoolExp) extends BoolExp
-
-    case class Ite(e1: BoolExp, e2: BoolExp, e3: BoolExp) extends BoolExp
-
-    case class Eq(e1: IntExp, e2: IntExp) extends BoolExp
-
-    case class NonNeg(e1: IntExp) extends BoolExp
-
-  }
-
-  sealed trait IntExp extends Exp
-
-  object IntExp {
-
-    case class Var(x: Symbol.VariableSymbol) extends IntExp
-
-    case class Int(i: scala.Int) extends IntExp
-
-    case class Plus(e1: IntExp, e2: IntExp) extends IntExp
-
-    case class Minus(e1: IntExp, e2: IntExp) extends IntExp
-
-    case class Times(e1: IntExp, e2: IntExp) extends IntExp
-
-    case class Divide(e1: IntExp, e2: IntExp) extends IntExp
-
-  }
-
-  def cnf(b: BoolExp): BoolExp = ???
-
   def simplify(b: BoolExp): BoolExp = b match {
     case BoolExp.Eq(IntExp.Int(i1), IntExp.Int(i2)) if i1 == i2 => BoolExp.True
   }
+
+  /**
+   * Returns the conjunctive normal form of the given boolean expression.
+   */
+  def cnf(b: BoolExp): BoolExp = ???
 
 }
