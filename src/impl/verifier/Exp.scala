@@ -12,7 +12,18 @@ trait Exp
  * A common type for boolean expressions.
  */
 sealed trait BoolExp extends Exp {
-  def fmt: String = this.toString
+  /**
+   * Returns a string representation of the expression in the SMT-LIB format.
+   */
+  def fmt: String = this match {
+    case BoolExp.True => "true"
+    case BoolExp.False => "false"
+    case BoolExp.Not(e1) => "(not " + e1.fmt + ")"
+    case BoolExp.Or(e1, e2) => "(or " + e1.fmt + " " + e2.fmt + ")"
+    case BoolExp.And(e1, e2) => "(and " + e1.fmt + " " + e2.fmt + ")"
+    case BoolExp.Eq(e1, e2) => "(= " + e1.fmt + " " + e2.fmt + ")"
+    case BoolExp.NonNeg(e1) => "(>= " + e1.fmt + " 0)"
+  }
 }
 
 object BoolExp {
@@ -48,7 +59,11 @@ object BoolExp {
         case _ => throw new RuntimeException(s"Unsupported binary operator $op.")
 
       }
-    case Term.IfThenElse(t1, t2, t3) => ???
+    case Term.IfThenElse(t1, t2, t3) =>
+      val e1 = compile(t1)
+      val e2 = compile(t2)
+      val e3 = compile(t3)
+      Or(And(e1, e2), And(Not(e1), e3))
     case _ => throw new RuntimeException(s"Unable to compile ${t.fmt} to an boolean expression.")
   }
 
