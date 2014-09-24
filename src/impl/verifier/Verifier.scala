@@ -143,12 +143,17 @@ object Verifier {
         case Term.Abs(x, _, tb) =>
           val y = Symbol.freshVariableSymbol(x)
           val r = tb.rename(x, y).substitute(y, r2)
+          println(r.fmt)
+          println(r2.freeVariables)
           evaluate(r)
         case _ => throw new RuntimeException()
       }
 
     case Term.Match(t1, rules) =>
       val r1 = evaluate(t1)
+
+      // TODO: We need to apply the match partially.
+
       matchRule(rules, r1) match {
         case None => throw new RuntimeException(s"Unmatched value ${r1.fmt}")
         case Some((t2, env)) => evaluate(t2.substitute2(env))

@@ -46,7 +46,7 @@ object Terms {
       case Term.BinaryOp(op, t1, t2) => t1.fmt + " " + op.fmt + " " + t2.fmt
 
       case Term.IfThenElse(t1, t2, t3) => "if (" + t1.fmt + ") then " + t2.fmt + " else " + t3.fmt
-      case Term.Match(t1, rules) => t1.fmt + " " + rules.map {
+      case Term.Match(t1, rules) => "match (" + t1.fmt + ") with " + rules.map {
         case (p, t2) => "case (" + p + ") => " + t2.fmt
       }.mkString(" | ")
 
