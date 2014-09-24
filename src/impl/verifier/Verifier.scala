@@ -259,18 +259,4 @@ object Verifier {
     case Type.Str => throw new UnsupportedOperationException("Impossible to enumerate strings.")
   }
 
-  /** *******************************************/
-
-  /**
-   * ...
-   */
-  def simplify(b: BoolExp): BoolExp = b match {
-    case BoolExp.Eq(IntExp.Int(i1), IntExp.Int(i2)) if i1 == i2 => BoolExp.True
-  }
-
-  /**
-   * Returns the conjunctive normal form of the given boolean expression.
-   */
-  def cnf(b: BoolExp): BoolExp = ???
-
 }

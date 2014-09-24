@@ -1,7 +1,6 @@
 package impl.verifier
 
-import impl.logic.Term.BinaryOp
-import impl.logic.{BinaryOperator, UnaryOperator, Symbol, Term}
+import impl.logic._
 import syntax.Terms.RichTerm
 
 /**
@@ -22,33 +21,65 @@ object BoolExp {
    * Returns the given term `t` as a boolean expression.
    */
   def compile(t: Term): BoolExp = t match {
-
-
+    case Term.Bool(true) => True
+    case Term.Bool(false) => False
+    case Term.UnaryOp(op, t1) => op match {
+      case UnaryOperator.Not => Not(compile(t1))
+      case _ => throw new RuntimeException(s"Unsupported unary operator $op.")
+    }
     case Term.BinaryOp(op, t1, t2) =>
-      import impl.logic.{BinaryOperator => Op}
       op match {
-        case Op.Or => BoolExp.Or(compile(t1), compile(t2))
-        case Op.And => BoolExp.And(compile(t1), compile(t2))
+        case BinaryOperator.Or => BoolExp.Or(compile(t1), compile(t2))
+        case BinaryOperator.And => BoolExp.And(compile(t1), compile(t2))
 
+        case BinaryOperator.GreaterEqual => ???
+        case BinaryOperator.Greater => ???
+        case BinaryOperator.LessEqual => ???
+        case BinaryOperator.Less => ???
+
+        case BinaryOperator.Minimum => ???
+        case BinaryOperator.Maximum => ???
+
+        case _ => throw new RuntimeException(s"Unsupported binary operator $op.")
 
       }
+    case Term.IfThenElse(t1, t2, t3) => ???
+    case _ => throw new RuntimeException(s"Unable to compile ${t.fmt} to an boolean expression.")
   }
 
-
+  /**
+   * A true boolean.
+   */
   case object True extends BoolExp
 
+  /**
+   * A false boolean.
+   */
   case object False extends BoolExp
 
+  /**
+   * A negation of an expression.
+   */
   case class Not(e1: BoolExp) extends BoolExp
 
+  /**
+   * A disjunction of two expressions.
+   */
   case class Or(e1: BoolExp, e2: BoolExp) extends BoolExp
 
+  /**
+   * A conjunction of two expressions.
+   */
   case class And(e1: BoolExp, e2: BoolExp) extends BoolExp
 
-  case class Ite(e1: BoolExp, e2: BoolExp, e3: BoolExp) extends BoolExp
-
+  /**
+   * A equality of two integer expressions.
+   */
   case class Eq(e1: IntExp, e2: IntExp) extends BoolExp
 
+  /**
+   * A non-negative integer expression.
+   */
   case class NonNeg(e1: IntExp) extends BoolExp
 
 }
