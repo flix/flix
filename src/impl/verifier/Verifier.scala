@@ -259,6 +259,7 @@ object Verifier {
     case Type.Str => throw new UnsupportedOperationException("Impossible to enumerate strings.")
   }
 
+  /** *******************************************/
 
   /**
    * Returns `true` iff the term corresponds to a set of integer constraints.
@@ -273,9 +274,16 @@ object Verifier {
   }
 
   def compileBool(t: Term): BoolExp = t match {
-    case Term.BinaryOp(BinaryOperator.Equal, t1, t2) => BoolExp.Eq(compileInt(t1), compileInt(t2))
+    case Term.BinaryOp(op, t1, t2) =>
+      val e1 = compileInt(t1)
+      val e2 = compileInt(t2)
+      op match {
+        case BinaryOperator.Equal => BoolExp.Eq(e1, e2)
+        case BinaryOperator.NotEqual => BoolExp.Not(BoolExp.Eq(e1, e2))
+        case BinaryOperator.GreaterEqual => BoolExp.NonNeg(IntExp.Minus(e1, e2))
+      }
   }
-  
+
   def compileInt(t: Term): IntExp = t match {
     case Term.Var(x) => IntExp.Var(x)
     case Term.Int(i) => IntExp.Int(i)
@@ -293,28 +301,44 @@ object Verifier {
   sealed trait BoolExp extends Exp
 
   object BoolExp {
+
     case object True extends BoolExp
+
     case object False extends BoolExp
+
     case class Not(e1: BoolExp) extends BoolExp
+
     case class Or(e1: BoolExp, e2: BoolExp) extends BoolExp
+
     case class And(e1: BoolExp, e2: BoolExp) extends BoolExp
+
     case class Ite(e1: BoolExp, e2: BoolExp, e3: BoolExp) extends BoolExp
+
     case class Eq(e1: IntExp, e2: IntExp) extends BoolExp
+
+    case class NonNeg(e1: IntExp) extends BoolExp
+
   }
 
   sealed trait IntExp extends Exp
 
   object IntExp {
+
     case class Var(x: Symbol.VariableSymbol) extends IntExp
+
     case class Int(i: scala.Int) extends IntExp
 
     case class Plus(e1: IntExp, e2: IntExp) extends IntExp
+
     case class Minus(e1: IntExp, e2: IntExp) extends IntExp
+
     case class Times(e1: IntExp, e2: IntExp) extends IntExp
+
     case class Divide(e1: IntExp, e2: IntExp) extends IntExp
+
   }
 
-  def cnf(b: BoolExp) : BoolExp = ???
+  def cnf(b: BoolExp): BoolExp = ???
 
   def simplify(b: BoolExp): BoolExp = b match {
     case BoolExp.Eq(IntExp.Int(i1), IntExp.Int(i2)) if i1 == i2 => BoolExp.True
