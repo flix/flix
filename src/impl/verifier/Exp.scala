@@ -29,16 +29,21 @@ object BoolExp {
     }
     case Term.BinaryOp(op, t1, t2) =>
       op match {
-        case BinaryOperator.Or => BoolExp.Or(compile(t1), compile(t2))
-        case BinaryOperator.And => BoolExp.And(compile(t1), compile(t2))
+        case BinaryOperator.Or => Or(compile(t1), compile(t2))
+        case BinaryOperator.And => And(compile(t1), compile(t2))
 
-        case BinaryOperator.GreaterEqual => ???
-        case BinaryOperator.Greater => ???
-        case BinaryOperator.LessEqual => ???
-        case BinaryOperator.Less => ???
+        case BinaryOperator.Equal => Eq(IntExp.compile(t1), IntExp.compile(t2))
+        case BinaryOperator.NotEqual => Not(Eq(IntExp.compile(t1), IntExp.compile(t2)))
 
-        case BinaryOperator.Minimum => ???
-        case BinaryOperator.Maximum => ???
+        case BinaryOperator.GreaterEqual => NonNeg(IntExp.Minus(IntExp.compile(t1), IntExp.compile(t1)))
+        case BinaryOperator.Greater => NonNeg(IntExp.Minus(IntExp.Minus(IntExp.compile(t1), IntExp.compile(t2)), IntExp.Int(1)))
+        case BinaryOperator.LessEqual => NonNeg(IntExp.Minus(IntExp.compile(t2), IntExp.compile(t1)))
+        case BinaryOperator.Less => NonNeg(IntExp.Minus(IntExp.Minus(IntExp.compile(t2), IntExp.compile(t1)), IntExp.Int(1)))
+
+        case BinaryOperator.Minimum =>
+          compile(Term.IfThenElse(Term.BinaryOp(BinaryOperator.LessEqual, t1, t2), t1, t2))
+        case BinaryOperator.Maximum =>
+          compile(Term.IfThenElse(Term.BinaryOp(BinaryOperator.GreaterEqual, t1, t2), t1, t2))
 
         case _ => throw new RuntimeException(s"Unsupported binary operator $op.")
 
