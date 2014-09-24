@@ -36,6 +36,8 @@ object Unification {
     case (Term.Int(i1), Value.Int(i2)) if i1 == i2 => List(env0)
     case (Term.Str(s1), Value.Str(s2)) if s1 == s2 => List(env0)
 
+    // TODO: We should think more careful about this.
+    // Probably what we want is both a Set term and a Set membership.
     case (Term.Set(ts), Value.Set(vs)) =>
       // if vs has too few elements then unification always fails.
       if (ts.size > vs.size)

@@ -90,16 +90,14 @@ object Verifier {
     }
   }
 
+
   /**
    * Verifies whether the given term `t1` evaluates to `true` for all inputs.
    */
   def tautology(t0: Term): List[List[Term]] = {
-
-    /**
-     * Repeatedly ...
-     */
     def iterate(t: Term, history: List[Term]): List[List[Term]] = evaluate(t) match {
       case Term.Bool(b) =>
+        // Case 1: The term has been fully evaluated to a boolean.
         if (b)
         // The property has been proven to hold.
           List(history)
@@ -108,12 +106,17 @@ object Verifier {
           throw new RuntimeException("Violation for input: " + history.map(_.fmt).mkString(", "))
 
       case Term.Abs(x, typ, t1) =>
+        // Case 2: Term has not yet been fully applied. 
+        // Enumerate all terms of the argument and evaluate the term.
         enumerate(typ).toList.flatMap(a => iterate(evaluate(Term.App(t, a)), a :: history))
 
-      case x => println(x) ; ???
-      //          if (isNormalForm(x))
-      //            genVc(x)
-      //          else ???
+      case r =>
+        // Case 3: The term cannot be evaluated further.
+        // What remains is residual of constraints.
+        // Translate the term into a constraint system.
+        val constraint = compileBool(r)
+        println(constraint.fmt)
+        List(history)
     }
 
     iterate(t0, Nil)
@@ -254,6 +257,67 @@ object Verifier {
     case Type.Var(x) => throw new UnsupportedOperationException("Unexpected type.")
     case Type.Function(a, b) => throw new UnsupportedOperationException("Impossible to enumerate functions.")
     case Type.Str => throw new UnsupportedOperationException("Impossible to enumerate strings.")
+  }
+
+
+  /**
+   * Returns `true` iff the term corresponds to a set of integer constraints.
+   */
+  def isNormalForm(t: Term): Boolean = t match {
+    case Term.Var(x) => true
+    case Term.Int(i) => true
+    case Term.UnaryOp(op, t1) => isNormalForm(t1)
+    case Term.BinaryOp(op, t1, t2) => isNormalForm(t1) && isNormalForm(t2)
+    case Term.IfThenElse(t1, t2, t3) => isNormalForm(t1) && isNormalForm(t2) && isNormalForm(t3)
+    case _ => false
+  }
+
+  def compileBool(t: Term): BoolExp = t match {
+    case Term.BinaryOp(BinaryOperator.Equal, t1, t2) => BoolExp.Eq(compileInt(t1), compileInt(t2))
+  }
+  
+  def compileInt(t: Term): IntExp = t match {
+    case Term.Var(x) => IntExp.Var(x)
+    case Term.Int(i) => IntExp.Int(i)
+  }
+
+
+  trait Exp {
+    def fmt: String = {
+      def visit(c: Exp, indent: Int): String = c.toString
+
+      visit(this, 0)
+    }
+  }
+
+  sealed trait BoolExp extends Exp
+
+  object BoolExp {
+    case object True extends BoolExp
+    case object False extends BoolExp
+    case class Not(e1: BoolExp) extends BoolExp
+    case class Or(e1: BoolExp, e2: BoolExp) extends BoolExp
+    case class And(e1: BoolExp, e2: BoolExp) extends BoolExp
+    case class Ite(e1: BoolExp, e2: BoolExp, e3: BoolExp) extends BoolExp
+    case class Eq(e1: IntExp, e2: IntExp) extends BoolExp
+  }
+
+  sealed trait IntExp extends Exp
+
+  object IntExp {
+    case class Var(x: Symbol.VariableSymbol) extends IntExp
+    case class Int(i: scala.Int) extends IntExp
+
+    case class Plus(e1: IntExp, e2: IntExp) extends IntExp
+    case class Minus(e1: IntExp, e2: IntExp) extends IntExp
+    case class Times(e1: IntExp, e2: IntExp) extends IntExp
+    case class Divide(e1: IntExp, e2: IntExp) extends IntExp
+  }
+
+  def cnf(b: BoolExp) : BoolExp = ???
+
+  def simplify(b: BoolExp): BoolExp = b match {
+    case BoolExp.Eq(IntExp.Int(i1), IntExp.Int(i2)) if i1 == i2 => BoolExp.True
   }
 
 }
