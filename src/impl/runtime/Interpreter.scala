@@ -3,6 +3,7 @@ package impl.runtime
 import impl.logic.Symbol.{VariableSymbol => VSym}
 import impl.logic._
 import syntax.Propositions.RichProposition
+import syntax.Symbols.RichSymbol
 import syntax.Values.RichValue
 
 import scala.util.Try
@@ -171,7 +172,7 @@ object Interpreter {
    */
   def satisfiable(p: Proposition, env: Map[VSym, Value]): Boolean = {
     if (!p.isClosed(env)) {
-      throw new RuntimeException(s"The propositional formula ${p.fmt} is not closed under the environment ${env.keySet.mkString(", ")}")
+      throw new RuntimeException(s"The propositional formula ${p.fmt} is not closed under the environment ${env.keySet.map(_.fmt).mkString(", ")}")
     }
     p match {
       case Proposition.True => true
@@ -179,8 +180,8 @@ object Interpreter {
       case Proposition.Not(p1) => !satisfiable(p1, env)
       case Proposition.Conj(ps) => ps.forall(p1 => satisfiable(p1, env))
       case Proposition.Disj(ps) => ps.exists(p1 => satisfiable(p1, env))
-      case Proposition.Eq(x, y) => x.substitute(env) == y.substitute(env) // TODO: Careful w.r.t. monotonicity
-      case Proposition.NotEq(x, y) => x.substitute(env) != y.substitute(env) // TODO: Careful w.r.t. monotonicity
+      case Proposition.Eq(x, y) => x.substitute(env) == y.substitute(env)
+      case Proposition.NotEq(x, y) => x.substitute(env) != y.substitute(env)
     }
   }
 

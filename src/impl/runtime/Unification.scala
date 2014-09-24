@@ -37,7 +37,11 @@ object Unification {
     case (Term.Str(s1), Value.Str(s2)) if s1 == s2 => List(env0)
 
     case (Term.Set(ts), Value.Set(vs)) =>
-      // Returns all permutations of the given vector `ls` of length up to `k`.
+      // if vs has too few elements then unification always fails.
+      if (ts.size > vs.size)
+        return List.empty
+
+      // returns all permutations of the given vector `ls` of length up to `k`.
       def visit(k: Int, ls: Vector[Value]): Vector[List[Value]] =
         if (k <= 0 || ls.isEmpty)
           Vector(Nil)

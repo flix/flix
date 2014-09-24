@@ -158,42 +158,28 @@ class TestUnification extends FunSuite {
     assertResult(List.empty)(r)
   }
 
-  test("Unification.Failure.09") {
-    val t = Term.Set(Set.empty)
-    val v = Value.Set(Set(Value.Int(42)))
-    val r = Unification.unify(t, v)
-    assertResult(List.empty)(r)
-  }
-
-  test("Unification.Failure.10") {
+  test("Unification.Failure.08") {
     val t = Term.Set(Set(Term.Int(42)))
     val v = Value.Set(Set.empty)
     val r = Unification.unify(t, v)
     assertResult(List.empty)(r)
   }
 
-  test("Unification.Failure.11") {
+  test("Unification.Failure.09") {
     val t = Term.Set(Set(Term.Unit))
     val v = Value.Set(Set(Value.Int(42)))
     val r = Unification.unify(t, v)
     assertResult(List.empty)(r)
   }
 
-  test("Unification.Failure.12") {
-    val t = Term.Set(Set(Term.Unit))
-    val v = Value.Set(Set(Value.Unit, Value.Int(42)))
-    val r = Unification.unify(t, v)
-    assertResult(List.empty)(r)
-  }
-
-  test("Unification.Failure.13") {
+  test("Unification.Failure.10") {
     val t = Term.Set(Set(Term.Unit, Term.Int(42)))
     val v = Value.Set(Set(Value.Unit))
     val r = Unification.unify(t, v)
     assertResult(List.empty)(r)
   }
 
-  test("Unification.Failure.14") {
+  test("Unification.Failure.11") {
     val t = Term.Set(Set(Term.Int(1), Term.Int(2), Term.Int(3)))
     val v = Value.Set(Set(Value.Int(1)))
     val r = Unification.unify(t, v)
