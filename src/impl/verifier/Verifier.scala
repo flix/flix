@@ -162,6 +162,7 @@ object Verifier {
 
     case Term.Match(t1, rules) =>
       val r1 = evaluate(t1)
+      asPatternValue(r1)
       println(r1)
       // TODO: We need to apply the match partially.
       // TODO: Introduce asPatternValue and only allow unification on this.
@@ -212,6 +213,11 @@ object Verifier {
   }
 
   /**
+   *
+   */
+  private def asPatternValue(t: Term): Option[Term] = ???
+
+  /**
    * Optionally returns a pair of a term and environment for which one of the given `rules` match the given value `v`.
    */
   private def matchRule(rules: List[(Pattern, Term)], t: Term): Option[(Term, Map[Symbol.VariableSymbol, Term])] = rules match {
@@ -224,6 +230,8 @@ object Verifier {
 
   /**
    * Lifts if-then-else expressions higher in the term given term `t`.
+   *
+   * Does not necessarily apply all possible liftings, but applies at least one.
    */
   private def lift(t: Term): Term = t match {
     case Term.Unit => Term.Unit
@@ -252,6 +260,13 @@ object Verifier {
 
     case Term.Tuple2(Term.IfThenElse(x, y, z), t2) => Term.IfThenElse(x, Term.Tuple2(y, t2), Term.Tuple2(z, t2))
     case Term.Tuple2(t1, Term.IfThenElse(x, y, z)) => Term.IfThenElse(x, Term.Tuple2(t1, y), Term.Tuple2(t1, z))
+
+    case Term.Tuple3(Term.IfThenElse(x, y, z), t2, t3) => Term.IfThenElse(x, Term.Tuple3(y, t2, t3), Term.Tuple3(z, t2, t3))
+    case Term.Tuple3(t1, Term.IfThenElse(x, y, z), t3) => Term.IfThenElse(x, Term.Tuple3(t1, y, t3), Term.Tuple3(t1, z, t3))
+    case Term.Tuple3(t1, t2, Term.IfThenElse(x, y, z)) => Term.IfThenElse(x, Term.Tuple3(t1, t2, y), Term.Tuple3(t1, t2, z))
+
+    case Term.Tuple4(t1, t2, t3, t4) => throw new RuntimeException("Not implemented yet.")
+    case Term.Tuple5(t1, t2, t3, t4, t5) => throw new RuntimeException("Not implemented yet.")
 
     case _ => t
   }
