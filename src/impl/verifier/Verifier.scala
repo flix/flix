@@ -108,7 +108,7 @@ object Verifier {
       case Term.Abs(x, typ, t1) =>
         // Case 2: Term has not yet been fully applied. 
         // Enumerate all terms of the argument and evaluate the term.
-        enumerate(typ).toList.flatMap(a => iterate(evaluate(Term.App(t, a)), a :: history))
+        enumerate(typ).toList.flatMap(a => iterate(fixpoint(Term.App(t, a)), a :: history))
 
       case r =>
         // Case 3: The term cannot be evaluated further.
@@ -162,7 +162,7 @@ object Verifier {
 
     case Term.Match(t1, rules) =>
       val r1 = evaluate(t1)
-      asPatternValue(r1)
+      asValueTerm(r1)
       println(r1)
       // TODO: We need to apply the match partially.
       // TODO: Introduce asPatternValue and only allow unification on this.
@@ -213,9 +213,41 @@ object Verifier {
   }
 
   /**
-   *
+   * Optionally returns the given term `t` if is a value term with a hole.
    */
-  private def asPatternValue(t: Term): Option[Term] = ???
+  private def asValueTerm(t: Term): Option[Term] = t match {
+    case Term.Var(x) => Some(Term.Var(x))
+    case Term.Unit => Some(Term.Unit)
+    case Term.Bool(b) => Some(Term.Bool(b))
+    case Term.Int(i) => Some(Term.Int(i))
+    case Term.Str(s) => Some(Term.Str(s))
+    case Term.Tag(n, t1, typ) => Some(Term.Tag(n, t1, typ))
+
+    case Term.Tuple2(t1, t2) =>
+      for (v1 <- asValueTerm(t1);
+           v2 <- asValueTerm(t2))
+      yield Term.Tuple2(v1, v2)
+    case Term.Tuple3(t1, t2, t3) =>
+      for (v1 <- asValueTerm(t1);
+           v2 <- asValueTerm(t2);
+           v3 <- asValueTerm(t3))
+      yield Term.Tuple3(v1, v2, v3)
+    case Term.Tuple4(t1, t2, t3, t4) =>
+      for (v1 <- asValueTerm(t1);
+           v2 <- asValueTerm(t2);
+           v3 <- asValueTerm(t3);
+           v4 <- asValueTerm(t4))
+      yield Term.Tuple4(v1, v2, v3, v4)
+    case Term.Tuple5(t1, t2, t3, t4, t5) =>
+      for (v1 <- asValueTerm(t1);
+           v2 <- asValueTerm(t2);
+           v3 <- asValueTerm(t3);
+           v4 <- asValueTerm(t4);
+           v5 <- asValueTerm(t5))
+      yield Term.Tuple5(v1, v2, v3, v4, v5)
+
+    case _ => None
+  }
 
   /**
    * Optionally returns a pair of a term and environment for which one of the given `rules` match the given value `v`.
@@ -301,20 +333,39 @@ object Verifier {
     }
     case BinaryOperator.Equal => (t1.asValue, t2.asValue) match {
       case (Some(v1), Some(v2)) => Term.Bool(v1 == v2)
-      case _ => peel(t1, t2, (x: Term, y: Term) => Term.BinaryOp(BinaryOperator.Equal, x, y))
+      case _ => eq(t1, t2)
+    }
+    case BinaryOperator.NotEqual => (t1.asValue, t2.asValue) match {
+      case (Some(v1), Some(v2)) => Term.Bool(v1 != v2)
+      case _ => Term.UnaryOp(UnaryOperator.Not, eq(t1, t2))
+    }
+
+    case BinaryOperator.GreaterEqual => (t1.asValue, t2.asValue) match {
+      case (Some(v1), Some(v2)) => Term.Bool(v1.toInt >= v2.toInt)
+      case _ => Term.BinaryOp(op, t1, t2)
+    }
+    case BinaryOperator.Greater => (t1.asValue, t2.asValue) match {
+      case (Some(v1), Some(v2)) => Term.Bool(v1.toInt > v2.toInt)
+      case _ => Term.BinaryOp(op, t1, t2)
+    }
+    case BinaryOperator.LessEqual => (t1.asValue, t2.asValue) match {
+      case (Some(v1), Some(v2)) => Term.Bool(v1.toInt <= v2.toInt)
+      case _ => Term.BinaryOp(op, t1, t2)
+    }
+    case BinaryOperator.Less => (t1.asValue, t2.asValue) match {
+      case (Some(v1), Some(v2)) => Term.Bool(v1.toInt < v2.toInt)
+      case _ => Term.BinaryOp(op, t1, t2)
     }
   }
 
   /**
-   * TODO: Should this have f or not?
+   * Reduces equality between the two terms `t1` and `t2`.
    */
-  private def peel(t1: Term, t2: Term, f: (Term, Term) => Term): Term = (t1, t2) match {
-    case (Term.Tag(n1, x, _), Term.Tag(n2, y, _)) =>
-      if (n1 != n2)
-        Term.Bool(false)
-      else
-        peel(x, y, f)
-    case _ => f(t1, t2)
+  private def eq(t1: Term, t2: Term): Term = (t1, t2) match {
+    // TODO: Add more cases.
+    case (Term.Tag(n1, x, _), Term.Tag(n2, y, _)) if n1 != n2 => Term.Bool(false)
+    case (Term.Tag(n1, x, _), Term.Tag(n2, y, _)) => eq(x, y)
+    case _ => Term.BinaryOp(BinaryOperator.Equal, t1, t2)
   }
 
 
