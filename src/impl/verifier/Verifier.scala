@@ -123,6 +123,19 @@ object Verifier {
   }
 
   /**
+   * Computes the fixpoint of the given term `t0` by iteratively evaluating the term and lifting it.
+   */
+  def fixpoint(t0: Term): Term = {
+    var last = t0
+    var current = lift(evaluate(t0))
+    while (current != last) {
+      last = current
+      current = lift(evaluate(current))
+    }
+    current
+  }
+
+  /**
    * Returns the partial evaluation of the given term `t`.
    */
   def evaluate(t: Term): Term = t match {
@@ -143,16 +156,16 @@ object Verifier {
         case Term.Abs(x, _, tb) =>
           val y = Symbol.freshVariableSymbol(x)
           val r = tb.rename(x, y).substitute(y, r2)
-          println(r.fmt)
-          println(r2.freeVariables)
           evaluate(r)
         case _ => throw new RuntimeException()
       }
 
     case Term.Match(t1, rules) =>
       val r1 = evaluate(t1)
-
+      println(r1)
       // TODO: We need to apply the match partially.
+      // TODO: Introduce asPatternValue and only allow unification on this.
+      // THen introduce rewrite rules which are used in a fixpoint.
 
       matchRule(rules, r1) match {
         case None => throw new RuntimeException(s"Unmatched value ${r1.fmt}")
@@ -210,6 +223,40 @@ object Verifier {
   }
 
   /**
+   * Lifts if-then-else expressions higher in the term given term `t`.
+   */
+  private def lift(t: Term): Term = t match {
+    case Term.Unit => Term.Unit
+    case Term.Bool(b) => Term.Bool(b)
+    case Term.Int(i) => Term.Int(i)
+    case Term.Str(s) => Term.Str(s)
+    case Term.Set(xs) => Term.Set(xs.map(lift))
+
+    case Term.Var(x) => Term.Var(x)
+    case Term.Abs(s, typ, t1) => Term.Abs(s, typ, lift(t1))
+    case Term.App(t1, t2) => Term.App(lift(t1), lift(t2))
+
+    case Term.Match(t1, rules) => lift(t1) match {
+      case Term.IfThenElse(x, y, z) => Term.IfThenElse(x, Term.Match(y, rules), Term.Match(z, rules))
+      case t2 => Term.Match(t2, rules)
+    }
+    case Term.IfThenElse(t1, t2, t3) => Term.IfThenElse(lift(t1), lift(t2), lift(t3))
+
+    case Term.UnaryOp(op, t1) => Term.UnaryOp(op, lift(t1))
+    case Term.BinaryOp(op, t1, t2) => Term.BinaryOp(op, lift(t1), lift(t2))
+
+    case Term.Tag(n, t1, typ) => lift(t1) match {
+      case Term.IfThenElse(x, y, z) => Term.IfThenElse(x, Term.Tag(n, y, typ), Term.Tag(n, z, typ))
+      case t2 => Term.Tag(n, t2, typ)
+    }
+
+    case Term.Tuple2(Term.IfThenElse(x, y, z), t2) => Term.IfThenElse(x, Term.Tuple2(y, t2), Term.Tuple2(z, t2))
+    case Term.Tuple2(t1, Term.IfThenElse(x, y, z)) => Term.IfThenElse(x, Term.Tuple2(t1, y), Term.Tuple2(t1, z))
+
+    case _ => t
+  }
+
+  /**
    * Returns the result of (partially) applying the unary operator `op` to the given term `t`.
    */
   private def apply(op: UnaryOperator, t: Term): Term = t.asValue match {
@@ -252,7 +299,7 @@ object Verifier {
         Term.Bool(false)
       else
         peel(x, y, f)
-    case _ =>  f(t1, t2)
+    case _ => f(t1, t2)
   }
 
 
