@@ -162,15 +162,13 @@ object Verifier {
 
     case Term.Match(t1, rules) =>
       val r1 = evaluate(t1)
-      asValueTerm(r1)
-      println(r1)
-      // TODO: We need to apply the match partially.
-      // TODO: Introduce asPatternValue and only allow unification on this.
-      // THen introduce rewrite rules which are used in a fixpoint.
-
-      matchRule(rules, r1) match {
-        case None => throw new RuntimeException(s"Unmatched value ${r1.fmt}")
-        case Some((t2, env)) => evaluate(t2.substitute2(env))
+      asValueTerm(r1) match {
+        case None => Term.Match(r1, rules)
+        case Some(v1) =>
+          matchRule(rules, r1) match {
+            case None => throw new RuntimeException(s"Unmatched value ${r1.fmt}")
+            case Some((t2, env)) => evaluate(t2.substitute2(env))
+          }
       }
 
     case Term.IfThenElse(t1, t2, t3) =>
