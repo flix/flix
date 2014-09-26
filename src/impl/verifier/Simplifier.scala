@@ -10,31 +10,28 @@ object Simplifier {
     def eval(b: BoolExp): BoolExp = b match {
       case BoolExp.Eq(e1, e2) if e1 == e2 => BoolExp.True
       case BoolExp.Not(e1) =>
-        val r1 = eval(e1)
-        r1 match {
+        eval(e1) match {
           case BoolExp.True => BoolExp.False
           case BoolExp.False => BoolExp.True
-          case _ => BoolExp.Not(r1)
+          case r1 => BoolExp.Not(r1)
         }
-
       case BoolExp.Or(e1, e2) =>
-        val r1 = eval(e1)
-        val r2 = eval(e2)
-        if (r1 == BoolExp.True || r2 == BoolExp.True)
-          BoolExp.True
-        else
-          BoolExp.Or(r1, r2)
+        (eval(e1), eval(e2)) match {
+          case (BoolExp.True, _) => BoolExp.True
+          case (_, BoolExp.True) => BoolExp.True
+          case (BoolExp.False, r2) => r2
+          case (r1, BoolExp.False) => r1
+          case (r1, r2) => BoolExp.Or(r1, r2)
+        }
       case BoolExp.And(e1, e2) =>
-        val r1 = eval(e1)
-        val r2 = eval(e2)
-        if (r1 == BoolExp.True && r2 == BoolExp.True)
-          BoolExp.True
-        else if (r1 == BoolExp.True)
-          r2
-        else if (r2 == BoolExp.True)
-          r1
-        else
-          BoolExp.And(r1, r2)
+        (eval(e1), eval(e2)) match {
+          case (BoolExp.True, BoolExp.True) => BoolExp.True
+          case (BoolExp.True, r2) => r2
+          case (r1, BoolExp.True) => r1
+          case (BoolExp.False, _) => BoolExp.False
+          case (_, BoolExp.False) => BoolExp.False
+          case (r1, r2) => BoolExp.And(r1, r2)
+        }
 
       case _ => b
     }
