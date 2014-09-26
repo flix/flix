@@ -20,10 +20,10 @@ object Main {
 
     // verify
     Typer.typecheck(program)
-    Verifier.verify(program)
+    //Verifier.verify(program)
 
     // options
-    val options = Options(propagation = Propagation.Diff, simplify = Simplify.Enable)
+    val options = Options(propagation = Propagation.Full, simplify = Simplify.Enable)
 
     // compute fixpoint
     val solver = new Solver(program, options)
