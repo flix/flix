@@ -115,7 +115,7 @@ object Verifier {
         // What remains is residual of constraints.
         // Translate the term into a constraint system.
         val constraint = BoolExp.compile(r)
-        println(constraint.fmt)
+        println(Simplifier.simplify(constraint).fmt)
         List(history)
     }
 

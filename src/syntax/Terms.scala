@@ -2,6 +2,7 @@ package syntax
 
 import impl.logic.{Symbol, UnaryOperator, BinaryOperator, Term}
 import syntax.Operators._
+import syntax.Patterns.RichPattern
 import syntax.Symbols._
 
 import scala.language.implicitConversions
@@ -47,7 +48,7 @@ object Terms {
 
       case Term.IfThenElse(t1, t2, t3) => "if (" + t1.fmt + ") then " + t2.fmt + " else " + t3.fmt
       case Term.Match(t1, rules) => "match (" + t1.fmt + ") with " + rules.map {
-        case (p, t2) => "case (" + p + ") => " + t2.fmt
+        case (p, t2) => "case (" + p.fmt + ") => " + t2.fmt
       }.mkString(" | ")
 
       case Term.Tag(s, Term.Unit, _) => s.fmt
