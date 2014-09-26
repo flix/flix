@@ -96,7 +96,7 @@ object Parser {
     // inspect the result
     parseResult match {
       case InternalParser.Success(ast, next) => ast
-      case InternalParser.Failure(msg, next) => throw new RuntimeException(s"Parsing Failed!: $msg")
+      case InternalParser.Failure(msg, next) => throw new RuntimeException(s"Parsing Failed!: $msg\nline ${next.pos.line} column ${next.pos.column}")
       case InternalParser.Error(msg, next) => throw new RuntimeException(s"Parsing Failed!: $msg")
     }
   }
