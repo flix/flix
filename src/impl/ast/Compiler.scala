@@ -128,7 +128,7 @@ object Compiler {
     case SExp.Lst(List(SExp.Name(s), es)) => Term.Tag(Symbol.NamedSymbol(s), compileTerm(es), labels(s))
 
     case SExp.Lst(SExp.Var(x) :: args) => args.reverse.foldLeft(funcs(x)) {
-      case (t, a: SExp.Var) => Term.App(t, Term.Var(Symbol.VariableSymbol(a.token)))
+      case (t1, t2) => Term.App(t1, compileTerm(t2))
     }
 
     case SExp.Lst(List(SExp.Keyword("vec"), e1, e2)) => Term.Tuple2(compileTerm(e1), compileTerm(e2))
