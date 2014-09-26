@@ -65,11 +65,18 @@ object Property {
       (leq.call('x, 'y) && (Term.Var('x) !== Term.Var('y))) ==>
         Term.BinaryOp(BinaryOperator.Greater, h.call('x), h.call('y))))
 
+  /**
+   * Monotone: ∀x1, x2. x1 ⊑ x2 ⇒ f(x1) ⊑ f(x2).
+   */
+  def monotone1(f: Term.Abs, leq: Term.Abs): Term.Abs =
+    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ,
+      leq.call('x1, 'x2) ==> leq.call(f.call('x1), f.call('x2))))
 
   /**
    * Monotone: ∀x1, x2, y1, y2. x1 ⊑ x2 ∧ y1 ⊑ y2 ⇒ f(x1, y1) ⊑ f(x2, y2).
    */
-  def monotone(typ: String, fn: String, leq: String): Term.Abs =
-    ???
+  def monotone2(f: Term.Abs, leq: Term.Abs): Term.Abs =
+    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ, Term.Abs('y1, leq.typ, Term.Abs('y2, leq.typ,
+      (leq.call('x1, 'x2) && leq.call('y1, 'y2)) ==> leq.call(f.call('x1, 'y1), f.call('x2, 'y2))))))
 
 }
