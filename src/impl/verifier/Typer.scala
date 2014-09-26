@@ -117,7 +117,7 @@ object Typer {
       // type check the match value
       val typ1 = typecheck(t1, typenv)
       // type check the rules
-      val types = typecheck(typ1, rules)
+      val types = typecheck(typ1, rules, typenv)
       assertEqual(types)
 
     case Term.UnaryOp(op, t1) =>
@@ -221,8 +221,8 @@ object Typer {
    *
    * Returns a list of types of each rule.
    */
-  private def typecheck(typ: Type, rules: List[(Pattern, Term)]): List[Type] = rules.map {
-    case (p, t) => typecheck(t, Unification.unify(p, typ))
+  private def typecheck(typ: Type, rules: List[(Pattern, Term)], env: Map[VSym, Type]): List[Type] = rules.map {
+    case (p, t) => typecheck(t, env ++ Unification.unify(p, typ))
   }
 
   /**
