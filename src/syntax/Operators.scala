@@ -16,7 +16,11 @@ object Operators {
       case BinaryOperator.Plus => "+"
       case BinaryOperator.Equal => "=="
       case BinaryOperator.Or => "||"
-      case BinaryOperator.And => "&&"
+      case BinaryOperator.Times => "*"
+      case BinaryOperator.Divide => "/"
+      case BinaryOperator.Modulo => "%"
+      case BinaryOperator.Plus => "+"
+      case BinaryOperator.Minus => "-"
     }
   }
 

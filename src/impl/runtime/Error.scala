@@ -3,23 +3,26 @@ package impl.runtime
 import impl.ast.SExp
 import impl.logic._
 import syntax.Types.RichType
+import syntax.Terms.RichTerm
+import syntax.Symbols.RichSymbol
+import syntax.Values.RichValue
 
 object Error {
 
   /**
    * An exception thrown to indicate that the variable `x` was expected to be bound, but is actually unbound.
    */
-  case class UnboundVariableError(x: Symbol.VariableSymbol) extends RuntimeException(s"Expected the variable '$x' to be bound.")
+  case class UnboundVariableError(x: Symbol.VariableSymbol) extends RuntimeException(s"Expected the variable ${x.fmt} to be bound.")
 
   /**
    * An exception thrown to indicate a run-time type error.
    */
-  case class RuntimeTypeError(expected: Type, actual: Value) extends RuntimeException(s"Expected a value of type '$expected' but got '$actual'.")
+  case class RuntimeTypeError(expected: Type, actual: Value) extends RuntimeException(s"Expected a value of type ${expected.fmt} but got ${actual.fmt}.")
 
   /**
    * An exception thrown to indicate a static type error.
    */
-  case class StaticTypeError(expected: Type, actual: Type, t: Term) extends RuntimeException(s"Expected the term '$t' to have type '$expected' but it has type '$actual'.")
+  case class StaticTypeError(expected: Type, actual: Type, t: Term) extends RuntimeException(s"Expected the term ${t.fmt} to have type ${expected.fmt} but it has type ${actual.fmt}.")
 
   /**
    * An exception thrown to indicate that the bottom value for `typ` is missing.
