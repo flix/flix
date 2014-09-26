@@ -23,7 +23,7 @@ object Parser {
      * Operators
      */
     def operator: Parser[SExp.Operator] =
-      ("==" | "!=" | "<=" | ">=" | "+" | "-" | "*" | "/" | "and" | "lte" | "gte" | "min" | "max") ^^ SExp.Operator
+      ("==" | "!=" | "<=" | ">=" | "+" | "-" | "*" | "/" | "%" | "and" | "lte" | "gte" | "min" | "max") ^^ SExp.Operator
 
     /**
      * Values.
