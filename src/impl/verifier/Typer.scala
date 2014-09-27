@@ -247,4 +247,10 @@ object Typer {
     case (typ1, typ2) if typ1 != typ2 => throw new RuntimeException(s"Expected equal types, but got: ${typ1.fmt} and ${typ2.fmt}")
   }
 
+  // TODO: New type checker
+
+
+
+
+
 }

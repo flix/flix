@@ -225,6 +225,9 @@ object Unification {
   /////////////////////////////////////////////////////////////////////////////
   // Type Unification                                                        //
   /////////////////////////////////////////////////////////////////////////////
+  /**
+   * Unifies the two given types `typ1` and `typ2` under the given type environment `typenv`.
+   */
   def unify(typ1: Type, typ2: Type, typenv0: Map[VSym, Type]): Option[Map[VSym, Type]] = (typ1, typ2) match {
     case (Type.Var(x), _) => typenv0.get(x) match {
       case None => Some(typenv0 + (x -> typ2))
@@ -278,5 +281,10 @@ object Unification {
 
     case _ => None
   }
+
+  /**
+   * Unifies the given `types` under the given type environment `typenv`.
+   */
+  def unify(types: Traversable[Type], typenv: Map[VSym, Type]): Type = ???
 
 }
