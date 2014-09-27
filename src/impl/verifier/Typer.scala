@@ -79,6 +79,7 @@ object Typer {
    *
    * Throws an exception if the term cannot be typed.
    */
+  // TODO: Make unification based.
   def typecheck(t: Term, typenv: Map[VSym, Type]): Type = t match {
     case Term.Unit => Type.Unit
     case Term.Bool(b) => Type.Bool
@@ -107,6 +108,9 @@ object Typer {
       }
 
     case Term.IfThenElse(t1, t2, t3) =>
+      // TODO: In unification this becomes:
+      // Unify (typ1, bool) (this might bind a variable to be of type boolean.)
+      // return Unify (typ, typ2)
       val typ1 = typecheck(t1, typenv)
       val typ2 = typecheck(t2, typenv)
       val typ3 = typecheck(t3, typenv)
