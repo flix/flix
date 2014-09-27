@@ -127,7 +127,7 @@ object Compiler {
     case SExp.Name(s) => Term.Tag(Symbol.NamedSymbol(s), Term.Unit, labels(s))
     case SExp.Lst(List(SExp.Name(s), es)) => Term.Tag(Symbol.NamedSymbol(s), compileTerm(es), labels(s))
 
-    case SExp.Lst(SExp.Var(x) :: args) => args.reverse.foldLeft(funcs(x)) {
+    case SExp.Lst(SExp.Var(x) :: args) => args.foldLeft(funcs(x)) {
       case (t1, t2) => Term.App(t1, compileTerm(t2))
     }
 
