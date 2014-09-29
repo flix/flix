@@ -39,7 +39,7 @@ object Typer {
     val env = predicates.foldLeft(Map.empty[VSym, Type]) {
       case (typenv0, p) =>
         val typ = typecheck(p, c, typenv0)
-        environment(p, typ)
+        Map.empty
     }
 
     if (c.proposition.nonEmpty) {
@@ -55,8 +55,8 @@ object Typer {
   def typecheck(p: Predicate, c: Constraint, typenv: Map[VSym, Type]): Type = {
     def visit(ts: List[Term]): Type = ts match {
       case Nil => throw new RuntimeException(s"Unable to type zero-arity predicate: ${p.fmt}.")
-      case x :: Nil => typer(x, typenv)
-      case x :: xs => Type.Function(typer(x, typenv), visit(xs))
+      case x :: Nil => typecheck(x, typenv)
+      case x :: xs => Type.Function(typecheck(x, typenv), visit(xs))
     }
     val actual = visit(p.terms)
     val declared = p.typ
@@ -72,14 +72,14 @@ object Typer {
    *
    * Throws a static type error if the term cannot be typed.
    */
-  def typecheck(t: Term): Type = typer(t, Map.empty[VSym, Type])
+  def typecheck(t: Term): Type = typecheck(t, Map.empty[VSym, Type])
 
   /**
    * Returns the type of the given term `t` under the given typing enviroment `typenv`.
    *
    * Throws a static type error if the term cannot be typed.
    */
-  def typer(t: Term, typenv: Map[VSym, Type]): Type = t match {
+  def typecheck(t: Term, typenv: Map[VSym, Type]): Type = t match {
     case Term.Unit => Type.Unit
     case Term.Bool(b) => Type.Bool
     case Term.Int(i) => Type.Int
@@ -88,38 +88,38 @@ object Typer {
       if (xs.isEmpty)
         Type.Set(Type.Var(Symbol.freshVariableSymbol("t")))
       else {
-        val types = xs.map(x => typer(x, typenv))
+        val types = xs.map(x => typecheck(x, typenv))
         Type.Set(unify(types, typenv, t))
       }
 
     case Term.Var(x) => typenv.getOrElse(x, Type.Var(x))
     case Term.Abs(s, typ1, t1) =>
-      val typ2 = typer(t1, typenv + (s -> typ1))
+      val typ2 = typecheck(t1, typenv + (s -> typ1))
       Type.Function(typ1, typ2)
     case Term.App(t1, t2) =>
-      val typ1 = typer(t1, typenv)
-      val typ2 = typer(t2, typenv)
+      val typ1 = typecheck(t1, typenv)
+      val typ2 = typecheck(t2, typenv)
       val abs = Type.Function(typ2, Type.Var(Symbol.VariableSymbol("t0")))
       val Type.Function(_, b) = unify(abs, typ1, typenv, t)
       b
 
     case Term.IfThenElse(t1, t2, t3) =>
-      val typ1 = typer(t1, typenv)
-      val typ2 = typer(t2, typenv)
-      val typ3 = typer(t3, typenv)
+      val typ1 = typecheck(t1, typenv)
+      val typ2 = typecheck(t2, typenv)
+      val typ3 = typecheck(t3, typenv)
       unify(Type.Bool, typ1, typenv, t)
       unify(typ2, typ3, typenv, t)
 
     case Term.Match(t1, rules) =>
       // type check the match value
-      val typ1 = typer(t1, typenv)
+      val typ1 = typecheck(t1, typenv)
       // type check the rules
       val types = typecheck(typ1, rules, typenv)
       unify(types, typenv, t)
 
     case Term.UnaryOp(op, t1) =>
       import UnaryOperator._
-      val typ1 = typer(t1, typenv)
+      val typ1 = typecheck(t1, typenv)
       op match {
         case Not => unify(Type.Bool, typ1, typenv, t)
         case UnaryPlus => unify(Type.Int, typ1, typenv, t)
@@ -128,8 +128,8 @@ object Typer {
 
     case Term.BinaryOp(op, t1, t2) =>
       import BinaryOperator._
-      val typ1 = typer(t1, typenv)
-      val typ2 = typer(t2, typenv)
+      val typ1 = typecheck(t1, typenv)
+      val typ2 = typecheck(t2, typenv)
       op match {
         case Plus | Minus | Times | Divide | Modulo | Minimum | Maximum =>
           unify(Type.Int, typ1, typenv, t)
@@ -159,17 +159,17 @@ object Typer {
       }
 
     case Term.Tag(n, t1, typ) =>
-      val typ1 = typer(t1, typenv)
+      val typ1 = typecheck(t1, typenv)
 
       if (typ.ts.contains(typ1))
         throw new RuntimeException()
       else
         typ
 
-    case Term.Tuple2(t1, t2) => Type.Tuple2(typer(t1, typenv), typer(t2, typenv))
-    case Term.Tuple3(t1, t2, t3) => Type.Tuple3(typer(t1, typenv), typer(t2, typenv), typer(t3, typenv))
-    case Term.Tuple4(t1, t2, t3, t4) => Type.Tuple4(typer(t1, typenv), typer(t2, typenv), typer(t3, typenv), typer(t4, typenv))
-    case Term.Tuple5(t1, t2, t3, t4, t5) => Type.Tuple5(typer(t1, typenv), typer(t2, typenv), typer(t3, typenv), typer(t4, typenv), typer(t5, typenv))
+    case Term.Tuple2(t1, t2) => Type.Tuple2(typecheck(t1, typenv), typecheck(t2, typenv))
+    case Term.Tuple3(t1, t2, t3) => Type.Tuple3(typecheck(t1, typenv), typecheck(t2, typenv), typecheck(t3, typenv))
+    case Term.Tuple4(t1, t2, t3, t4) => Type.Tuple4(typecheck(t1, typenv), typecheck(t2, typenv), typecheck(t3, typenv), typecheck(t4, typenv))
+    case Term.Tuple5(t1, t2, t3, t4, t5) => Type.Tuple5(typecheck(t1, typenv), typecheck(t2, typenv), typecheck(t3, typenv), typecheck(t4, typenv), typecheck(t5, typenv))
   }
 
   /**
@@ -178,7 +178,7 @@ object Typer {
    * Returns a list of types of each rule.
    */
   private def typecheck(typ: Type, rules: List[(Pattern, Term)], env: Map[VSym, Type]): List[Type] = rules.map {
-    case (p, t) => typer(t, env ++ Unification.unify(p, typ))
+    case (p, t) => typecheck(t, env ++ Unification.unify(p, typ))
   }
 
   /**
@@ -202,73 +202,50 @@ object Typer {
       unify(Type.Bool :: types, typenv, p)
 
     case Proposition.Eq(t1, t2) =>
-      val typ1 = typer(t1, typenv)
-      val typ2 = typer(t2, typenv)
+      val typ1 = typecheck(t1, typenv)
+      val typ2 = typecheck(t2, typenv)
       unify(typ1, typ2, typenv, p)
       Type.Bool
 
     case Proposition.NotEq(t1, t2) =>
-      val typ1 = typer(t1, typenv)
-      val typ2 = typer(t2, typenv)
+      val typ1 = typecheck(t1, typenv)
+      val typ2 = typecheck(t2, typenv)
       unify(typ1, typ2, typenv, p)
       Type.Bool
   }
 
-
   /**
-   * Returns a typing environment where every free variable in the given predicate `p`
-   * is mapped to its appropriate type according to the given type `typ`.
-   *
-   * Assumes/Requires that the type of `t` is `typ`.
+   * TODO
    */
-  private def environment(p: Predicate, typ0: Type): Map[VSym, Type] = {
-    (p.terms zip typ0.unfold).foldLeft(Map.empty[VSym, Type]) {
-      case (env, (typ, term)) => env ++ environment(typ, term)
+  private def environment(p: Predicate): Map[VSym, Type] = {
+    p.terms.foldLeft(Map.empty[VSym, Type]) {
+      case (env, t) => merge(environment(t), env)
     }
   }
 
   /**
-   * Returns a typing environment where every free variable in the given term `t`
-   * is mapped to its appropriate type according to the given type `typ`.
-   *
-   * Assumes/Requires that the type of `t` is `typ`.
+   * TODO
    */
-  // TODO: Rewrite to work "up to abs"
-  private def environment(t: Term, typ: Type): Map[VSym, Type] = (t, typ) match {
-    case (Term.Unit, Type.Unit) => Map.empty
-    case (Term.Bool(b), Type.Bool) => Map.empty
-    case (Term.Int(i), Type.Int) => Map.empty
-    case (Term.Str(s), Type.Str) => Map.empty
-    case (Term.Set(xs), Type.Set(typ1)) => xs.map(x => environment(x, typ1)).reduce(_ ++ _)
+  private def environment(t: Term): Map[VSym, Type] = t match {
+    case Term.Unit => Map.empty
+    case Term.Bool(b) => Map.empty
+    case Term.Int(i) => Map.empty
+    case Term.Str(s) => Map.empty
+    case Term.Set(xs) => xs.map(environment).reduce(_ ++ _)
 
-    case (Term.Var(x), _) => Map(x -> typ)
-    case (Term.Abs(x, _, t1), Type.Function(a, b)) => Map.empty
+    case Term.App(t1, t2) => ???
 
-    case (Term.App(t1, t2), _) =>
-      val typ2 = Type.Var(Symbol.freshVariableSymbol("t"))
-      val typ1 = Type.Function(typ2, typ)
-      environment(t1, typ1) ++ environment(t2, typ2)
+    case Term.Tag(n, t1, typ1) => environment(t1)
+    case Term.Tuple2(t1, t2) => merge(environment(t1), environment(t2))
+    case Term.Tuple3(t1, t2, t3) => merge(environment(t1), environment(t2), environment(t3))
+    case Term.Tuple4(t1, t2, t3, t4) => merge(environment(t1), environment(t2), environment(t3), environment(t4))
+    case Term.Tuple5(t1, t2, t3, t4, t5) => merge(environment(t1), environment(t2), environment(t3), environment(t4), environment(t5))
 
-    case (Term.IfThenElse(t1, t2, t3), _) => ???
-    case (Term.Match(t1, rules), _) => ???
-    case (Term.UnaryOp(op, t1), _) => ???
-    case (Term.BinaryOp(op, t1, t2), _) => ???
+    case _ => throw new RuntimeException(s"Unexpected term: ${t.fmt}")
+  }
 
-    case (Term.Tag(n, t1, typ1), _) =>
-      val typ2 = typ1.ts.collectFirst {
-        case Type.Tag(m, typ3) if n == m => typ3
-      }
-      environment(t1, typ2.get)
-    case (Term.Tuple2(t1, t2), Type.Tuple2(typ1, typ2)) =>
-      environment(t1, typ1) ++ environment(t2, typ2)
-    case (Term.Tuple3(t1, t2, t3), Type.Tuple3(typ1, typ2, typ3)) =>
-      environment(t1, typ1) ++ environment(t2, typ2) ++ environment(t3, typ3)
-    case (Term.Tuple4(t1, t2, t3, t4), Type.Tuple4(typ1, typ2, typ3, typ4)) =>
-      environment(t1, typ1) ++ environment(t2, typ2) ++ environment(t3, typ3) ++ environment(t4, typ4)
-    case (Term.Tuple5(t1, t2, t3, t4, t5), Type.Tuple5(typ1, typ2, typ3, typ4, typ5)) =>
-      environment(t1, typ1) ++ environment(t2, typ2) ++ environment(t3, typ3) ++ environment(t4, typ4) ++ environment(t5, typ5)
-
-    case _ => throw new RuntimeException(s"Internal Error: Term: ${t.fmt} should be typable with the given type: ${typ.fmt}")
+  private def merge(xs: Map[VSym, Type]*): Map[VSym, Type] = {
+    ???
   }
 
   /**
