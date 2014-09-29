@@ -35,7 +35,7 @@ object Parser {
     def bool: Parser[SExp.Bool] = ("true" | "false") ^^ SExp.Bool
 
     // integer literal
-    def int: Parser[SExp.Int] = """[0-9]+""".r ^^ SExp.Int
+    def int: Parser[SExp.Int] = """-?[0-9]+""".r ^^ SExp.Int
 
     // string literal
     def str: Parser[SExp.Str] = ("\"" ~> """[^\"]+""".r <~ "\"") ^^ SExp.Str
@@ -56,7 +56,7 @@ object Parser {
     /**
      * S-expression body.
      */
-    def body: Parser[SExp] = keyword | operator | value | variable | name | sexp
+    def body: Parser[SExp] = keyword | value | operator | variable | name | sexp
 
     /**
      * A set-expression.
