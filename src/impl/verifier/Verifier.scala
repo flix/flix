@@ -1,7 +1,7 @@
 package impl.verifier
 
 import impl.logic._
-import impl.runtime.{Unification, Interpreter}
+import impl.runtime.{Error, Unification}
 import syntax.Terms.RichTerm
 
 import scala.collection.mutable
@@ -15,9 +15,9 @@ object Verifier {
     for (declaration <- program.declarations) {
       declaration match {
         case Declaration.DeclareBot(bot, typ) if !typ.isInstanceOf[Type.Set] =>
-          val leq = program.lookupLeq(typ).get
-          val lub = program.lookupLub(typ).get
-          val height = program.lookupHeight(typ).get
+          val leq = program.lookupLeq(typ).getOrElse(throw Error.MissingLeq(typ))
+          val lub = program.lookupLub(typ).getOrElse(throw Error.MissingLub(typ))
+          val height = program.lookupHeight(typ).getOrElse(throw Error.MissingHeight(typ))
           lattices += Lattice(typ, bot, leq, lub, height)
 
         case _ => // nop
@@ -125,6 +125,7 @@ object Verifier {
   /**
    * Computes the fixpoint of the given term `t0` by iteratively evaluating the term and lifting it.
    */
+  // TODO: Consider using continuations.
   def fixpoint(t0: Term): Term = {
     var last = t0
     var current = lift(evaluate(t0))

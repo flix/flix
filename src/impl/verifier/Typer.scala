@@ -3,15 +3,14 @@ package impl.verifier
 import impl.logic.Symbol.{VariableSymbol => VSym}
 import impl.logic._
 import impl.runtime.{Error, Unification}
-import syntax.Constraints.RichConstraint
 import syntax.Predicates.RichPredicate
-import syntax.Propositions.RichProposition
+import syntax.Terms.RichTerm
 import syntax.Types.RichType
 
 object Typer {
 
   /**
-   * Typechecks the given logic program `p`.
+   * Typechecks the given program `p`.
    */
   def typecheck(p: Program): Unit = {
     // finds all types in the program
@@ -27,11 +26,7 @@ object Typer {
 
     // type check all constraints
     for (constraint <- p.constraints) {
-      //typecheck(constraint)
-
-      if (constraint.proposition.nonEmpty) {
-        typecheck(constraint.proposition.get)
-      }
+      typecheck(constraint)
     }
   }
 
@@ -41,46 +36,50 @@ object Typer {
   def typecheck(c: Constraint): Unit = {
     val predicates = c.head :: c.body
 
-    predicates.foldLeft(Map.empty[VSym, Type]) {
+    val env = predicates.foldLeft(Map.empty[VSym, Type]) {
       case (typenv0, p) =>
-        val actual = typecheck(p, typenv0)
-        val declared = p.typ
+        val typ = typecheck(p, c, typenv0)
+        environment(p, typ)
+    }
 
-        Unification.unify(actual, declared, typenv0) match {
-          case None => throw new RuntimeException(s"Type Error in Constraint: '${c.fmt}'. Unable to unify actual type '${actual.fmt}' with declared type ${declared.fmt}.")
-          case Some(typenv1) => typenv1
-        }
+    if (c.proposition.nonEmpty) {
+      typecheck(c.proposition.get, env)
     }
   }
 
   /**
    * Returns the type of the given predicate `p` under the given typing environment `typenv`.
    *
-   * Throws an exception if the term cannot be typed.
+   * Throws a static type error if the predicate cannot be typed.
    */
-  def typecheck(p: Predicate, typenv: Map[VSym, Type] = Map.empty): Type = {
+  def typecheck(p: Predicate, c: Constraint, typenv: Map[VSym, Type]): Type = {
     def visit(ts: List[Term]): Type = ts match {
       case Nil => throw new RuntimeException(s"Unable to type zero-arity predicate: ${p.fmt}.")
-      case x :: Nil => typecheck(x, typenv)
-      case x :: xs => Type.Function(typecheck(x, typenv), visit(xs))
+      case x :: Nil => typer(x, typenv)
+      case x :: xs => Type.Function(typer(x, typenv), visit(xs))
     }
-    visit(p.terms)
+    val actual = visit(p.terms)
+    val declared = p.typ
+
+    Unification.unify(actual, declared, typenv) match {
+      case None => throw Error.PredicateTypeError(List(actual, declared), p, c)
+      case Some(r) => r
+    }
   }
 
   /**
-   * Returns the type of the given term `t` under the empty typing enviroment.
+   * Returns the type of the given term `t` under the empty typing environment.
    *
-   * Throws an exception if the term cannot be typed.
+   * Throws a static type error if the term cannot be typed.
    */
-  def typecheck(t: Term): Type = typecheck(t, Map.empty[VSym, Type])
+  def typecheck(t: Term): Type = typer(t, Map.empty[VSym, Type])
 
   /**
    * Returns the type of the given term `t` under the given typing enviroment `typenv`.
    *
-   * Throws an exception if the term cannot be typed.
+   * Throws a static type error if the term cannot be typed.
    */
-  // TODO: Make unification based.
-  def typecheck(t: Term, typenv: Map[VSym, Type]): Type = t match {
+  def typer(t: Term, typenv: Map[VSym, Type]): Type = t match {
     case Term.Unit => Type.Unit
     case Term.Bool(b) => Type.Bool
     case Term.Int(i) => Type.Int
@@ -89,135 +88,88 @@ object Typer {
       if (xs.isEmpty)
         Type.Set(Type.Var(Symbol.freshVariableSymbol("t")))
       else {
-        val types = xs.map(x => typecheck(x, typenv))
-        Type.Set(assertEqual(types.toSeq))
+        val types = xs.map(x => typer(x, typenv))
+        Type.Set(unify(types, typenv, t))
       }
 
-    case Term.Var(s) => typenv.getOrElse(s, Type.Var(s)) // TODO: We are now required to check that all types are closed.
+    case Term.Var(x) => typenv.getOrElse(x, Type.Var(x))
     case Term.Abs(s, typ1, t1) =>
-      val typ2 = typecheck(t1, typenv + (s -> typ1))
+      val typ2 = typer(t1, typenv + (s -> typ1))
       Type.Function(typ1, typ2)
     case Term.App(t1, t2) =>
-      val typ1 = typecheck(t1, typenv)
-      val typ2 = typecheck(t2, typenv)
-      typ1 match {
-        case Type.Function(a, b) if a == typ2 => b
-        case Type.Function(a, b) if typ2.isInstanceOf[Type.Var] => b // TODO: Hack until we get unification for terms.
-        case Type.Function(a, b) => throw Error.StaticTypeError(a, typ2, t)
-        case _ => throw Error.StaticTypeError(Type.Function(Type.Var(Symbol.VariableSymbol("t0")), Type.Var(Symbol.VariableSymbol("t0"))), typ1, t)
-      }
+      val typ1 = typer(t1, typenv)
+      val typ2 = typer(t2, typenv)
+      val abs = Type.Function(typ2, Type.Var(Symbol.VariableSymbol("t0")))
+      val Type.Function(_, b) = unify(abs, typ1, typenv, t)
+      b
 
     case Term.IfThenElse(t1, t2, t3) =>
-      // TODO: In unification this becomes:
-      // Unify (typ1, bool) (this might bind a variable to be of type boolean.)
-      // return Unify (typ, typ2)
-      val typ1 = typecheck(t1, typenv)
-      val typ2 = typecheck(t2, typenv)
-      val typ3 = typecheck(t3, typenv)
-      assertType(Type.Bool, typ1, t1)
-      assertEqual(List(typ2, typ3))
+      val typ1 = typer(t1, typenv)
+      val typ2 = typer(t2, typenv)
+      val typ3 = typer(t3, typenv)
+      unify(Type.Bool, typ1, typenv, t)
+      unify(typ2, typ3, typenv, t)
 
     case Term.Match(t1, rules) =>
       // type check the match value
-      val typ1 = typecheck(t1, typenv)
+      val typ1 = typer(t1, typenv)
       // type check the rules
       val types = typecheck(typ1, rules, typenv)
-      assertEqual(types)
+      unify(types, typenv, t)
 
     case Term.UnaryOp(op, t1) =>
-      val typ1 = typecheck(t1, typenv)
+      import UnaryOperator._
+      val typ1 = typer(t1, typenv)
       op match {
-        case UnaryOperator.Not => assertType(Type.Bool, typ1, t1)
-        case UnaryOperator.UnaryPlus => assertType(Type.Int, typ1, t1)
-        case UnaryOperator.UnaryMinus => assertType(Type.Int, typ1, t1)
+        case Not => unify(Type.Bool, typ1, typenv, t)
+        case UnaryPlus => unify(Type.Int, typ1, typenv, t)
+        case UnaryMinus => unify(Type.Int, typ1, typenv, t)
       }
 
     case Term.BinaryOp(op, t1, t2) =>
-      val typ1 = typecheck(t1, typenv)
-      val typ2 = typecheck(t2, typenv)
+      import BinaryOperator._
+      val typ1 = typer(t1, typenv)
+      val typ2 = typer(t2, typenv)
       op match {
-        case BinaryOperator.Plus | BinaryOperator.Minus | BinaryOperator.Times | BinaryOperator.Divide | BinaryOperator.Modulo =>
-          assertType(Type.Int, typ1, t1)
-          assertType(Type.Int, typ2, t2)
+        case Plus | Minus | Times | Divide | Modulo | Minimum | Maximum =>
+          unify(Type.Int, typ1, typenv, t)
+          unify(Type.Int, typ2, typenv, t)
           Type.Int
 
-        case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual | BinaryOperator.GreaterEqual =>
-          assertType(Type.Int, typ1, t1)
-          assertType(Type.Int, typ2, t2)
+        case Less | LessEqual | Greater | GreaterEqual =>
+          unify(Type.Int, typ1, typenv, t)
+          unify(Type.Int, typ2, typenv, t)
           Type.Bool
 
-        case BinaryOperator.Equal | BinaryOperator.NotEqual =>
-          assertType(typ1, typ2, t)
+        case Equal | NotEqual =>
+          unify(typ1, typ2, typenv, t)
           Type.Bool
 
         case BinaryOperator.And | BinaryOperator.Or =>
-          assertType(Type.Bool, typ1, t1)
-          assertType(Type.Bool, typ2, t2)
+          unify(Type.Bool, typ1, typenv, t)
+          unify(Type.Bool, typ2, typenv, t)
           Type.Bool
 
-        case BinaryOperator.Minimum | BinaryOperator.Maximum =>
-          assertType(Type.Int, typ1, t1)
-          assertType(Type.Int, typ2, t2)
-          Type.Int
-
         case BinaryOperator.Union =>
-          assertType(typ1, typ2, t)
+          unify(typ1, typ2, typenv, t)
 
         case BinaryOperator.Subset =>
-          assertType(typ1, typ2, t)
+          unify(typ1, typ2, typenv, t)
           Type.Bool
       }
 
-    case Term.Tag(s, t1, typ) =>
-      val typ1 = typecheck(t1, typenv)
-      if (typ.ts contains Type.Tag(s, typ1))
+    case Term.Tag(n, t1, typ) =>
+      val typ1 = typer(t1, typenv)
+
+      if (typ.ts.contains(typ1))
+        throw new RuntimeException()
+      else
         typ
-      else
-        throw Error.StaticTypeError(typ1, typ, t)
 
-    case Term.Tuple2(t1, t2) =>
-      val typ1 = typecheck(t1, typenv)
-      val typ2 = typecheck(t2, typenv)
-      Type.Tuple2(typ1, typ2)
-
-    case Term.Tuple3(t1, t2, t3) =>
-      val typ1 = typecheck(t1, typenv)
-      val typ2 = typecheck(t2, typenv)
-      val typ3 = typecheck(t3, typenv)
-      Type.Tuple3(typ1, typ2, typ3)
-
-    case Term.Tuple4(t1, t2, t3, t4) =>
-      val typ1 = typecheck(t1, typenv)
-      val typ2 = typecheck(t2, typenv)
-      val typ3 = typecheck(t3, typenv)
-      val typ4 = typecheck(t4, typenv)
-      Type.Tuple4(typ1, typ2, typ3, typ4)
-
-    case Term.Tuple5(t1, t2, t3, t4, t5) =>
-      val typ1 = typecheck(t1, typenv)
-      val typ2 = typecheck(t2, typenv)
-      val typ3 = typecheck(t3, typenv)
-      val typ4 = typecheck(t4, typenv)
-      val typ5 = typecheck(t5, typenv)
-      Type.Tuple5(typ1, typ2, typ3, typ4, typ5)
-  }
-
-  /**
-   * Returns the type of the given proposition.
-   */
-  def typecheck(p: Proposition): Type = p match {
-    case Proposition.True => Type.Bool
-    case Proposition.False => Type.Bool
-    case Proposition.Not(p1) => 
-      val t1 = typecheck(p1)
-      if (t1 == Type.Bool)
-        Type.Bool
-      else
-        throw new RuntimeException(s"Type Error in proposition: ${p1.fmt}. Expected Bool, but got: ${t1.fmt}")
-    case Proposition.Conj(ps) => assertEqual(Type.Bool :: ps.map(typecheck))
-    case Proposition.Disj(ps) => assertEqual(Type.Bool :: ps.map(typecheck))
-    case Proposition.Eq(x, y) => Type.Bool    // TODO: We need a type environment, and then to check that x and y are of the same type.
-    case Proposition.NotEq(x, y) => Type.Bool // TODO: We need a type environment, and then to check that x and y are of the same type.
+    case Term.Tuple2(t1, t2) => Type.Tuple2(typer(t1, typenv), typer(t2, typenv))
+    case Term.Tuple3(t1, t2, t3) => Type.Tuple3(typer(t1, typenv), typer(t2, typenv), typer(t3, typenv))
+    case Term.Tuple4(t1, t2, t3, t4) => Type.Tuple4(typer(t1, typenv), typer(t2, typenv), typer(t3, typenv), typer(t4, typenv))
+    case Term.Tuple5(t1, t2, t3, t4, t5) => Type.Tuple5(typer(t1, typenv), typer(t2, typenv), typer(t3, typenv), typer(t4, typenv), typer(t5, typenv))
   }
 
   /**
@@ -226,31 +178,136 @@ object Typer {
    * Returns a list of types of each rule.
    */
   private def typecheck(typ: Type, rules: List[(Pattern, Term)], env: Map[VSym, Type]): List[Type] = rules.map {
-    case (p, t) => typecheck(t, env ++ Unification.unify(p, typ))
+    case (p, t) => typer(t, env ++ Unification.unify(p, typ))
   }
 
   /**
-   * Asserts that the given `expected` type is equal to the `actual` type for the given term `t`.
-   * Otherwise, throws an exception.
+   * Returns the type of the given proposition under the given typing environment.
+   *
+   * Throws a static type error if the proposition cannot be typed.
    */
-  private def assertType(expected: Type, actual: Type, t: Term): Type =
-    if (expected == actual)
-      actual
-    else
-      throw Error.StaticTypeError(expected, actual, t)
+  private def typecheck(p: Proposition, typenv: Map[VSym, Type]): Type = p match {
+    case Proposition.True => Type.Bool
+    case Proposition.False => Type.Bool
+    case Proposition.Not(p1) =>
+      val typ1 = typecheck(p1, typenv)
+      unify(Type.Bool, typ1, typenv, p)
 
-  /**
-   * Asserts that given sequence of types are actually the same types.
-   */
-  private def assertEqual(types: Seq[Type]): Type = types.reduce[Type] {
-    case (typ1, typ2) if typ1 == typ2 => typ1
-    case (typ1, typ2) if typ1 != typ2 => throw new RuntimeException(s"Expected equal types, but got: ${typ1.fmt} and ${typ2.fmt}")
+    case Proposition.Conj(ps) =>
+      val types = ps.map(p => typecheck(p, typenv))
+      unify(Type.Bool :: types, typenv, p)
+
+    case Proposition.Disj(ps) =>
+      val types = ps.map(p => typecheck(p, typenv))
+      unify(Type.Bool :: types, typenv, p)
+
+    case Proposition.Eq(t1, t2) =>
+      val typ1 = typer(t1, typenv)
+      val typ2 = typer(t2, typenv)
+      unify(typ1, typ2, typenv, p)
+      Type.Bool
+
+    case Proposition.NotEq(t1, t2) =>
+      val typ1 = typer(t1, typenv)
+      val typ2 = typer(t2, typenv)
+      unify(typ1, typ2, typenv, p)
+      Type.Bool
   }
 
-  // TODO: New type checker
 
+  /**
+   * Returns a typing environment where every free variable in the given predicate `p`
+   * is mapped to its appropriate type according to the given type `typ`.
+   *
+   * Assumes/Requires that the type of `t` is `typ`.
+   */
+  private def environment(p: Predicate, typ0: Type): Map[VSym, Type] = {
+    (p.terms zip typ0.unfold).foldLeft(Map.empty[VSym, Type]) {
+      case (env, (typ, term)) => env ++ environment(typ, term)
+    }
+  }
 
+  /**
+   * Returns a typing environment where every free variable in the given term `t`
+   * is mapped to its appropriate type according to the given type `typ`.
+   *
+   * Assumes/Requires that the type of `t` is `typ`.
+   */
+  // TODO: Rewrite to work "up to abs"
+  private def environment(t: Term, typ: Type): Map[VSym, Type] = (t, typ) match {
+    case (Term.Unit, Type.Unit) => Map.empty
+    case (Term.Bool(b), Type.Bool) => Map.empty
+    case (Term.Int(i), Type.Int) => Map.empty
+    case (Term.Str(s), Type.Str) => Map.empty
+    case (Term.Set(xs), Type.Set(typ1)) => xs.map(x => environment(x, typ1)).reduce(_ ++ _)
 
+    case (Term.Var(x), _) => Map(x -> typ)
+    case (Term.Abs(x, _, t1), Type.Function(a, b)) => Map.empty
 
+    case (Term.App(t1, t2), _) =>
+      val typ2 = Type.Var(Symbol.freshVariableSymbol("t"))
+      val typ1 = Type.Function(typ2, typ)
+      environment(t1, typ1) ++ environment(t2, typ2)
 
+    case (Term.IfThenElse(t1, t2, t3), _) => ???
+    case (Term.Match(t1, rules), _) => ???
+    case (Term.UnaryOp(op, t1), _) => ???
+    case (Term.BinaryOp(op, t1, t2), _) => ???
+
+    case (Term.Tag(n, t1, typ1), _) =>
+      val typ2 = typ1.ts.collectFirst {
+        case Type.Tag(m, typ3) if n == m => typ3
+      }
+      environment(t1, typ2.get)
+    case (Term.Tuple2(t1, t2), Type.Tuple2(typ1, typ2)) =>
+      environment(t1, typ1) ++ environment(t2, typ2)
+    case (Term.Tuple3(t1, t2, t3), Type.Tuple3(typ1, typ2, typ3)) =>
+      environment(t1, typ1) ++ environment(t2, typ2) ++ environment(t3, typ3)
+    case (Term.Tuple4(t1, t2, t3, t4), Type.Tuple4(typ1, typ2, typ3, typ4)) =>
+      environment(t1, typ1) ++ environment(t2, typ2) ++ environment(t3, typ3) ++ environment(t4, typ4)
+    case (Term.Tuple5(t1, t2, t3, t4, t5), Type.Tuple5(typ1, typ2, typ3, typ4, typ5)) =>
+      environment(t1, typ1) ++ environment(t2, typ2) ++ environment(t3, typ3) ++ environment(t4, typ4) ++ environment(t5, typ5)
+
+    case _ => throw new RuntimeException(s"Internal Error: Term: ${t.fmt} should be typable with the given type: ${typ.fmt}")
+  }
+
+  /**
+   * Returns the result of unifying the given types `typ1` and `typ2` under the given type environment `typenv` for the given term `t`.
+   *
+   * Throws a static type error if unification is not possible.
+   */
+  private def unify(typ1: Type, typ2: Type, typenv: Map[VSym, Type], t: Term): Type = Unification.unify(typ1, typ2, typenv) match {
+    case None => throw Error.TermTypeError(List(Type.Int, typ1), t)
+    case Some(r) => r
+  }
+
+  /**
+   * Returns the result of unifying the given types `types` under the given type environment `typenv` for the given term `t`.
+   *
+   * Throws a static type error if unification is not possible.
+   */
+  private def unify(types: Traversable[Type], typenv: Map[VSym, Type], t: Term): Type = Unification.unify(types.toList, typenv) match {
+    case None => throw Error.TermTypeError(types.toList, t)
+    case Some(r) => r
+  }
+
+  /**
+   * Returns the result of unifying the given types `typ1` and `typ2` under the given type environment `typenv` for the given proposition `p`.
+   *
+   * Throws a static type error if unification is not possible.
+   */
+  private def unify(typ1: Type, typ2: Type, typenv: Map[VSym, Type], p: Proposition): Type = Unification.unify(typ1, typ2, typenv) match {
+    case None => throw Error.PropositionTypeError(List(Type.Int, typ1), p)
+    case Some(r) => r
+  }
+
+  /**
+   * Returns the result of unifying the given types `types` under the given type environment `typenv` for the given proposition `p`.
+   *
+   * Throws a static type error if unification is not possible.
+   */
+  private def unify(types: Traversable[Type], typenv: Map[VSym, Type], p: Proposition): Type = Unification.unify(types.toList, typenv) match {
+    case None => throw Error.PropositionTypeError(types.toList, p)
+    case Some(r) => r
+  }
 }
