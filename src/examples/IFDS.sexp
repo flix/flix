@@ -6,7 +6,7 @@
 
 // Inputs
 // ===========
-(def-type EshIntra (-> <Node Fact> (Set Fact))) // TODO: how to represent this input as an external native function?
+(def-type EshIntra (-> <Node Fact> (Set Fact)))
 (def-type EshCallStart (-> <<Node Fact> Proc> (Set Fact)))
 (def-type EshEndReturn (-> <Proc Fact Node> (Set Fact)))
 // Call-to-Return edges should be included above in EshIntra
