@@ -20,7 +20,7 @@ object Main {
 
     // verify
     Typer.typecheck(program)
-    Verifier.verify(program)
+    //Verifier.verify(program)
 
     // options
     val options = Options(propagation = Propagation.Full, simplify = Simplify.Enable)
