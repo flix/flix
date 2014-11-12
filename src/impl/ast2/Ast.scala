@@ -7,6 +7,7 @@ import org.parboiled2.ParseError
 
 import scala.io.Source
 import scala.util.{Failure, Success}
+import scala.collection.immutable.Seq
 
 object Foo {
   def main(args: Array[String]): Unit = {
@@ -27,15 +28,18 @@ sealed trait Ast
 object Ast {
 
   sealed trait Node
+
   case class Root(namespaces: Seq[NameSpace])
+
   case class SimpleName(name: String) extends Node
+
   case class NameSpace(name: String) extends Node
 
   import org.parboiled2._
 
   class Calculator(val input: ParserInput) extends Parser {
-    def TopLevel = rule {
-      capture(oneOrMore(NameSpaceDeclaration)) ~ EOI
+    def TopLevel: Rule1[Root] = rule {
+      oneOrMore(NameSpaceDeclaration) ~ EOI ~> Root
     }
 
     def NameSpaceDeclaration: Rule1[Ast.NameSpace] = rule {
@@ -83,7 +87,7 @@ object Ast {
     }
 
     def MatchExpression: Rule0 = rule {
-     "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ MatchBody ~ WhiteSpace ~ "}"
+      "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ MatchBody ~ WhiteSpace ~ "}"
     }
 
     def MatchBody = rule {
