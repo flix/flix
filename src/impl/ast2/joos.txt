@@ -1,0 +1,1183 @@
+Package dovs;
+
+
+/*******************************************************************
+ * Helpers                                                         *
+ *******************************************************************/
+Helpers
+
+    latin1_input_character = [0..0xff];
+    ht  = 0x09;
+    lf  = 0x0a;
+    ff  = 0x0c;
+    cr  = 0x0d;
+    sp  = ' ';
+
+    line_terminator = lf | cr | cr lf;
+    input_character = [latin1_input_character - [cr + lf]];
+
+    not_star =    [input_character - '*'] | line_terminator;
+    not_star_not_slash = [input_character - ['*' + '/']] | line_terminator;
+
+    digit = ['0'..'9'];
+    non_zero_digit = ['1'..'9'];
+    octal_digit = ['0'..'7'];
+    zero_to_three = ['0'..'3'];
+
+    decimal_numeral = '0' | non_zero_digit digit*;
+
+    latin1_letter =
+        [0x41..0x5a] | [0x61..0x7a] | [0xaa..0xaa] | [0xb5..0xb5] |
+        [0xba..0xba] | [0xc0..0xd6] | [0xd8..0xf6] | [0xf8..0xff];
+
+    java_letter = latin1_letter | '$' | '_';
+    java_letter_or_digit = latin1_letter | digit | '$' | '_';
+
+    octal_escape = '\' (octal_digit octal_digit? | zero_to_three octal_digit octal_digit);
+    escape_sequence = '\b' | '\t' | '\n' | '\f' | '\r' | '\"' | '\' ''' | '\\' | octal_escape;
+    single_character = [input_character - [''' + '\']] | escape_sequence;
+    string_character = [input_character - ['"' + '\']] | escape_sequence;
+
+
+/*******************************************************************
+ * Tokens                                                          *
+ *******************************************************************/
+Tokens
+
+// Whitespace
+
+    white_space = (sp | ht | ff | line_terminator)*;
+
+    traditional_comment = '/*' not_star+ '*'+ (not_star_not_slash not_star* '*'+)* '/';
+    documentation_comment =    '/**' '*'* (not_star_not_slash not_star* '*'+)* '/';
+
+    end_of_line_comment = '//' input_character* line_terminator?;
+
+// Keywords
+
+    abstract = 'abstract';
+    boolean = 'boolean';
+    break = 'break';
+    byte = 'byte';
+    case = 'case';
+    catch = 'catch';
+    char = 'char';
+    class = 'class';
+    const = 'const';
+    continue = 'continue';
+    default = 'default';
+    do = 'do';
+    double = 'double';
+    else = 'else';
+    extends = 'extends';
+    final = 'final';
+    finally = 'finally';
+    float = 'float';
+    for = 'for';
+    goto = 'goto';
+    if = 'if';
+    implements = 'implements';
+    import = 'import';
+    instanceof = 'instanceof';
+    int = 'int';
+    interface = 'interface';
+    long = 'long';
+    native = 'native';
+    new = 'new';
+    package = 'package';
+    private = 'private';
+    protected = 'protected';
+    public = 'public';
+    return = 'return';
+    short = 'short';
+    static = 'static';
+    strictfp = 'strictfp';
+    super = 'super';
+    switch = 'switch';
+    synchronized = 'synchronized';
+    this = 'this';
+    throw = 'throw';
+    throws = 'throws';
+    transient = 'transient';
+    try = 'try';
+    void = 'void';
+    volatile = 'volatile';
+    while = 'while';
+
+    true = 'true';
+    false = 'false';
+    null = 'null';
+
+// Delimiters
+
+    l_parenthese = '(';
+    r_parenthese = ')';
+    l_brace = '{';
+    r_brace = '}';
+    l_bracket = '[';
+    r_bracket = ']';
+    semicolon = ';';
+    comma = ',';
+    dot = '.';
+
+// Assignment and logic
+
+    assign = '=';
+    complement = '!';
+    and_and = '&&';
+    or_or = '||';
+
+// Comparison
+
+    lt = '<';
+    gt = '>';
+    eq = '==';
+    lteq = '<=';
+    gteq ='>=';
+    neq = '!=';
+
+// Arithmetic
+
+    plus = '+';
+    minus = '-';
+    star = '*';
+    div = '/';
+    and = '&';
+    or = '|';
+    xor = '^';
+    mod = '%';
+    plus_plus = '++';
+    minus_minus = '--';
+
+// Literals and identifiers
+
+    integer_literal = decimal_numeral;
+    char_literal = ''' single_character ''';
+    string_literal = '"' string_character* '"';
+    identifier = java_letter java_letter_or_digit*;
+
+
+/*******************************************************************
+ * Ignored Tokens                                                  *
+ *******************************************************************/
+Ignored Tokens
+
+	white_space,
+	traditional_comment,
+	documentation_comment,
+	end_of_line_comment;
+
+
+/*******************************************************************
+ * Productions                                                     *
+ *******************************************************************/
+Productions
+
+// The parsing goal is a source file.
+// A source file just contains a class declaration
+
+goal {-> source_file}
+	=	package_declaration? import_declaration* type_declaration
+		{-> New source_file(package_declaration.package_decl,
+			[import_declaration.import_decl],
+			type_declaration.type_decl)}
+	;
+
+
+// ********** Package and imports ***********
+
+package_declaration {-> package_decl}
+	=	package name semicolon
+		{-> New package_decl(name.name)}
+	;
+
+import_declaration {-> import_decl}
+	=	import name dot star semicolon
+		{-> New import_decl.on_demand(name.name)}
+	|	import name dot identifier semicolon
+		{-> New import_decl.single(name.name, identifier)}
+	;
+
+
+// ********** Type declarations ***********
+
+class_extends_decl {-> type?}
+	=
+		{-> Null}
+	|	extends name
+		{-> New type.named(name.name)}
+	;
+
+implements_decl {-> type*}
+	=
+		{-> []}
+	|	implements typename_list
+		{-> [typename_list.type]}
+	;
+
+typename_list {-> type*}
+	=	name
+		{-> [New type.named(name.name)]}
+	|	typename_list comma name
+		{-> [typename_list.type, New type.named(name.name)]}
+	;
+
+type_declaration {-> type_decl}
+	=	class_declaration
+		{-> class_declaration.type_decl}
+	//Added: Interface
+    |   interface_declaration
+        {-> interface_declaration.type_decl}
+	;
+
+class_declaration {-> type_decl}
+	=	public final? abstract? [t_class]:class identifier
+			class_extends_decl implements_decl class_body
+		{-> New type_decl.class(final,
+				abstract,
+				identifier,
+				class_extends_decl.type,
+				[implements_decl.type],
+				[class_body.decl])}
+	;
+
+class_body {-> decl*}
+	=	l_brace member_declaration* r_brace
+		{-> [member_declaration.decl]}
+	;
+
+member_declaration {-> decl}
+	=	method_declaration
+		{-> method_declaration.decl}
+	|	constructor_declaration
+		{-> constructor_declaration.decl}
+	// Added: Fields
+	|	field_declaration
+		{-> field_declaration.decl}
+	;
+
+// Added: Interface
+interface_declaration {-> type_decl}
+	=	public interface identifier interface_extends_decl interface_body
+		{-> New type_decl.interface(identifier, [interface_extends_decl.type], [interface_body.decl])}
+	;
+
+interface_body {-> decl*}
+	=	l_brace interface_member_declaration* r_brace
+		{-> [interface_member_declaration.decl]}
+	;
+
+interface_member_declaration {-> decl}
+	=	interface_method_declaration
+		{-> interface_method_declaration.decl}
+	;
+
+interface_extends_decl {-> type*}
+	=
+		{-> []}
+	|	extends typename_list
+		{-> [typename_list.type]}
+	;
+
+access {-> access}
+	=	public
+		{-> New access.public()}
+	|	protected
+		{-> New access.protected()}
+	;
+
+
+// ********** Method declarations **********
+
+method_declaration {-> decl}
+	=	access static? final? abstract? type identifier
+			method_params throws_clause optional_method_body
+		{-> New decl.method(access,
+				static,
+				final,
+				abstract,
+				type.type, identifier,
+				[method_params.local_decl],
+				[throws_clause.type],
+				optional_method_body.body)}
+	;
+
+interface_method_declaration {-> decl}
+	=	access? static? final? abstract? type identifier
+			method_params throws_clause optional_method_body
+		{-> New decl.method(access,
+				static,
+				final,
+				abstract,
+				type.type, identifier,
+				[method_params.local_decl],
+				[throws_clause.type],
+				optional_method_body.body)}
+	;
+
+method_params {-> local_decl*}
+	=	l_parenthese formal_parameter_list r_parenthese
+		{-> [formal_parameter_list.local_decl]}
+	;
+
+formal_parameter_list {-> local_decl*}
+	=
+		{-> []}
+	|	formal_parameter_list_nonempty
+		{-> [formal_parameter_list_nonempty.local_decl]}
+	;
+
+formal_parameter_list_nonempty {-> local_decl*}
+	=	formal_parameter
+		{-> [formal_parameter.local_decl]}
+	|	formal_parameter_list comma formal_parameter
+		{-> [formal_parameter_list.local_decl, formal_parameter.local_decl]}
+	;
+
+formal_parameter {-> local_decl}
+	=	type identifier
+		{-> New local_decl(type.type, identifier, Null)}
+	;
+
+throws_clause {-> type*}
+	=
+		{-> []}
+	|	throws typename_list
+		{-> [typename_list.type]}
+	;
+
+method_body {-> body}
+	=	block
+		{-> New body(block.block)}
+	;
+
+optional_method_body {-> body?}
+	=	method_body
+		{-> method_body.body}
+	|	semicolon
+		{-> Null}
+	;
+
+
+// ********** Constructor declarations **********
+
+constructor_declaration {-> decl}
+	=	access identifier method_params throws_clause constructor_body
+		{-> New decl.constructor(access, identifier,
+				[method_params.local_decl],
+				[throws_clause.type],
+				constructor_body.body)}
+	;
+
+constructor_body {-> body}
+	// Added: extra block/production to support super() and this() calls
+	=	constructor_block
+		{-> New body(constructor_block.block)}
+	;
+
+
+// ********** Field declarations **********
+
+// Added: Field declarations
+field_declaration {-> decl}
+	=	access static? final? type identifier variable_initializer? semicolon
+		{-> New decl.field(access, static, final, type, identifier, variable_initializer.exp)}
+	|	access final? static? type identifier variable_initializer? semicolon
+		{-> New decl.field(access, static, final, type, identifier, variable_initializer.exp)}
+	;
+
+
+// ********** Types **********
+
+type {-> type}
+	=	void
+		{-> New type.void(void)}
+	|	primitive_type
+		{-> primitive_type.type}
+	|	reference_type
+		{-> reference_type.type}
+	|	array_type
+		{-> array_type.type}
+	;
+
+element_type {-> type}
+	=	primitive_type
+		{-> primitive_type.type}
+	|	reference_type
+		{-> reference_type.type}
+	;
+
+array_type {-> type}
+	=	element_type l_bracket r_bracket
+		{-> New type.array(l_bracket, element_type.type)}
+	|	array_type l_bracket r_bracket
+		{-> New type.array(l_bracket, array_type.type)}
+	;
+
+reference_type {-> type}
+	=	name
+		{-> New type.named(name.name)}
+	;
+
+primitive_type {-> type}
+	=	boolean
+		{-> New type.boolean(boolean)}
+	|	byte
+		{-> New type.byte(byte)}
+	|	short
+		{-> New type.short(short)}
+	|	char
+		{-> New type.char(char)}
+	|	int
+		{-> New type.int(int)}
+	;
+
+
+// ********** Blocks and statements **********
+
+// Added: explicit super() statement
+super_statement {-> stm}
+	=	super l_parenthese argument_list r_parenthese semicolon
+		{-> New stm.super(super, [argument_list.exp])}
+	;
+
+// Added: explicit this() statement
+this_statement {-> stm}
+	=	this l_parenthese argument_list r_parenthese semicolon
+		{-> New stm.this(this, [argument_list.exp])}
+	;
+
+// Added: throw statement
+throw_statement {-> stm}
+	=	throw expression semicolon
+		{-> New stm.throw(throw, expression.exp)}
+	;
+
+block {-> block l_brace}
+	=	l_brace statement_or_declaration* r_brace
+		{-> New block([statement_or_declaration.stm]) l_brace}
+	;
+
+// Added: Constructor block with optional explicit super() or this()
+constructor_block {-> block l_brace}
+	=	l_brace statement_or_declaration* r_brace
+		{-> New block([statement_or_declaration.stm]) l_brace}
+	|	l_brace super_statement? statement_or_declaration* r_brace
+		{-> New block([super_statement.stm,statement_or_declaration.stm]) l_brace}
+	|	l_brace this_statement? statement_or_declaration* r_brace
+		{-> New block([this_statement.stm,statement_or_declaration.stm]) l_brace}
+	;
+
+local_variable_declaration {-> local_decl}
+	=	type identifier variable_initializer?
+		{-> New local_decl(type.type,
+				identifier,
+				variable_initializer.exp)}
+	;
+
+variable_initializer {-> exp}
+	=	assign expression
+		{-> expression.exp}
+	;
+
+statement_or_declaration {-> stm}
+	=	statement
+		{-> statement.stm}
+	|	local_variable_declaration_statement
+		{-> local_variable_declaration_statement.stm}
+	;
+
+statement {-> stm}
+	=	statement_without_trailing_substatement
+		{-> statement_without_trailing_substatement.stm}
+	|	if_then_statement
+		{-> if_then_statement.stm}
+	|	if_then_else_statement
+		{-> if_then_else_statement.stm}
+	|	while_statement
+		{-> while_statement.stm}
+	// Added: For statement
+	|	for_statement
+		{-> for_statement.stm}
+	;
+
+statement_no_short_if {-> stm}
+	=	statement_without_trailing_substatement
+		{-> statement_without_trailing_substatement.stm}
+	|	if_then_else_statement_no_short_if
+		{-> if_then_else_statement_no_short_if.stm}
+	|	while_statement_no_short_if
+		{-> while_statement_no_short_if.stm}
+	// Added: For statement
+    |   for_statement_no_short_if
+        {-> for_statement_no_short_if.stm}
+	;
+
+statement_without_trailing_substatement {-> stm}
+	=	block
+		{-> New stm.block(block.l_brace, block.block)}
+	|	empty_statement
+		{-> empty_statement.stm}
+	|	expression_statement
+		{-> expression_statement.stm}
+	|	return_statement
+		{-> return_statement.stm}
+	// Added: Throw statement
+	|	throw_statement
+		{-> throw_statement.stm}
+	;
+
+local_variable_declaration_statement {-> stm}
+	=	local_variable_declaration semicolon
+		{-> New stm.local_decl(semicolon, local_variable_declaration.local_decl)}
+	;
+
+return_statement {-> stm}
+	=	return semicolon
+		{-> New stm.void_return(return)}
+	|	return expression semicolon
+		{-> New stm.value_return(return, expression.exp)}
+	;
+
+empty_statement {-> stm}
+	=	semicolon
+		{-> New stm.empty(semicolon)}
+	;
+
+expression_statement {-> stm}
+	=	statement_expression semicolon
+		{-> New stm.exp(semicolon, statement_expression.exp)}
+	;
+
+if_then_statement {-> stm}
+	=	if l_parenthese expression r_parenthese statement
+		{-> New stm.if_then(l_parenthese, expression.exp, statement.stm)}
+	;
+
+if_then_else_statement {-> stm}
+	=	if l_parenthese expression r_parenthese
+			[true_statement]:statement_no_short_if
+			else [false_statement]:statement
+		{-> New stm.if_then_else(l_parenthese, expression.exp, true_statement.stm, false_statement.stm)}
+	;
+
+if_then_else_statement_no_short_if {-> stm}
+	=	if l_parenthese expression r_parenthese
+			[true_statement]:statement_no_short_if
+			else [false_statement]:statement_no_short_if
+		{-> New stm.if_then_else(l_parenthese, expression.exp, true_statement.stm, false_statement.stm)}
+	;
+
+while_statement {-> stm}
+	=	while l_parenthese expression r_parenthese [body]:statement
+		{-> New stm.while(l_parenthese, expression.exp, body.stm)}
+	;
+
+while_statement_no_short_if {-> stm}
+	=	while l_parenthese expression r_parenthese [body]:statement_no_short_if
+		{-> New stm.while(l_parenthese, expression.exp, body.stm)}
+	;
+
+
+// Added: For statement
+for_statement {-> stm}
+	=	for l_parenthese for_init for_condition semicolon for_update r_parenthese statement
+		{-> New stm.for(l_parenthese, for_init.stm, for_condition.exp, for_update.exp, statement.stm)}
+	;
+
+// Added: For statement (no short if statement)
+for_statement_no_short_if {-> stm}
+	=	for l_parenthese for_init for_condition semicolon for_update r_parenthese statement_no_short_if
+		{-> New stm.for(l_parenthese, for_init.stm, for_condition.exp, for_update.exp, statement_no_short_if.stm)}
+    ;
+
+// Added: For statement (initializer)
+for_init {-> stm}
+	=	local_variable_declaration_statement
+		{-> local_variable_declaration_statement.stm}
+	|	statement_expression semicolon
+		{-> New stm.exp(semicolon, statement_expression.exp)}
+	|	semicolon
+		{-> New stm.empty(semicolon)}
+	;
+
+// Added: For statement (condition)
+for_condition {-> exp?}
+	=	expression
+		{-> expression.exp}
+	|
+		{-> Null}
+	;
+
+// Added: For statement (update)
+for_update {-> exp?}
+	=	statement_expression
+		{-> statement_expression.exp}
+	|
+		{-> Null}
+	;
+
+
+// ********** Literals and names **********
+
+literal {-> exp}
+	=	integer_literal
+		{-> New exp.int_const(integer_literal)}
+	|	char_literal
+		{-> New exp.char_const(char_literal)}
+	|	boolean_literal
+		{-> New exp.boolean_const(boolean_literal.bool)}
+	|	string_literal
+		{-> New exp.string_const(string_literal)}
+	|	null
+		{-> New exp.null()}
+	;
+
+boolean_literal {-> bool}
+	=	true
+		{-> New bool.true()}
+	|	false
+		{-> New bool.false()}
+	;
+
+name {-> name}
+	=	identifier
+		{-> New name.simple(identifier)}
+	|	identifier_dot_list
+		{-> New name.qualified([identifier_dot_list.identifier])}
+	;
+
+identifier_dot_list {-> identifier*}
+	=	[id1]:identifier dot [id2]:identifier
+		{-> [id1, id2]}
+	|	identifier_dot_list dot identifier
+		{-> [identifier_dot_list.identifier, identifier]}
+	;
+
+
+// ********** Expressions **********
+
+statement_expression {-> exp}
+	=	assignment
+		{-> assignment.exp}
+	|	method_invocation
+		{-> method_invocation.exp}
+	|	class_instance_creation_expression
+		{-> class_instance_creation_expression.exp}
+		// Added: increment/decrement support
+	|	prefix_increment_decrement
+		{-> prefix_increment_decrement.exp}
+	|	postfix_increment_decrement
+		{-> postfix_increment_decrement.exp}
+	;
+
+primary {-> exp}
+	=	literal
+		{-> literal.exp}
+	|	this
+		{-> New exp.this(this)}
+	|	left_hand_side
+		{-> New exp.lvalue(left_hand_side.lvalue)}
+	|	l_parenthese expression r_parenthese
+	// Added: parenthesized expressions.
+	// Weeded on entering the node.
+		{-> New exp.par(l_parenthese, expression.exp, r_parenthese)}
+	|	class_instance_creation_expression
+		{-> class_instance_creation_expression.exp}
+	|	array_creation_expression
+		{-> array_creation_expression.exp}
+	|	method_invocation
+		{-> method_invocation.exp}
+	;
+
+primary_not_name {-> exp}
+	=	literal
+		{-> literal.exp}
+	|	this
+		{-> New exp.this(this)}
+	|	left_hand_side_not_name
+		{-> New exp.lvalue(left_hand_side_not_name.lvalue)}
+	|	l_parenthese expression r_parenthese
+	// Added: parenthesized expressions.
+	// Weeded on entering the node.
+		{-> New exp.par(l_parenthese, expression.exp, r_parenthese)}
+	|	class_instance_creation_expression
+		{-> class_instance_creation_expression.exp}
+	|	array_creation_expression
+		{-> array_creation_expression.exp}
+	|	method_invocation
+		{-> method_invocation.exp}
+	;
+
+	// Added: array access expressions
+primary_array_access {-> exp}
+	=	literal
+		{-> literal.exp}
+	|	left_hand_side
+		{-> New exp.lvalue(left_hand_side.lvalue)}
+	|	l_parenthese expression r_parenthese
+		{-> expression.exp}
+	|	class_instance_creation_expression
+		{-> class_instance_creation_expression.exp}
+	|	method_invocation
+		{-> method_invocation.exp}
+	;
+
+class_instance_creation_expression {-> exp}
+	=	new name l_parenthese argument_list r_parenthese
+		{-> New exp.new(new, New type.named(name.name), [argument_list.exp])}
+	;
+
+array_creation_expression {-> exp}
+	=	new array_dimension_expression
+		{-> New exp.new_array(new, array_dimension_expression.type, [array_dimension_expression.exp])}
+	|	new array_dimension_expression_dim
+		{-> New exp.new_array(new, array_dimension_expression_dim.type, [array_dimension_expression_dim.exp])}
+	;
+
+array_dimension_expression {-> type exp*}
+	=	element_type l_bracket expression r_bracket
+		{-> New type.array(l_bracket, element_type.type) [expression.exp]}
+	|	array_dimension_expression l_bracket expression r_bracket
+		{-> New type.array(l_bracket, array_dimension_expression.type) [array_dimension_expression.exp, expression.exp]}
+	;
+
+array_dimension_expression_dim {-> type exp*}
+	=	array_dimension_expression l_bracket r_bracket
+		{-> New type.array(l_bracket, array_dimension_expression.type) [array_dimension_expression.exp]}
+	|	array_dimension_expression_dim l_bracket r_bracket
+		{-> New type.array(l_bracket, array_dimension_expression_dim.type) [array_dimension_expression_dim.exp]}
+	;
+
+argument_list {-> exp*}
+	=
+		{-> []}
+	|	argument_list_nonempty
+		{-> [argument_list_nonempty.exp]}
+	;
+
+argument_list_nonempty {-> exp*}
+	=	expression
+		{-> [expression.exp]}
+	|	argument_list comma expression
+		{-> [argument_list.exp, expression.exp]}
+	;
+
+method_invocation {-> exp}
+	=	primary_not_name dot identifier l_parenthese argument_list r_parenthese
+		{-> New exp.nonstatic_invoke(primary_not_name.exp, identifier, [argument_list.exp])}
+	|	name dot identifier l_parenthese argument_list r_parenthese
+		{-> New exp.ambiguous_invoke(name.name, identifier, [argument_list.exp])}
+	|	identifier l_parenthese argument_list r_parenthese
+		{-> New exp.simple_invoke(identifier, [argument_list.exp])}
+	;
+
+// Added: Prefix increment/decrement support
+prefix_increment_decrement {-> exp}
+	=	plus_plus left_hand_side
+		{-> New exp.inc_dec(left_hand_side.lvalue, New inc_dec_op.pre_inc(plus_plus))}
+	|	minus_minus left_hand_side
+		{-> New exp.inc_dec(left_hand_side.lvalue, New inc_dec_op.pre_dec(minus_minus))}
+	;
+
+// Added: Postfix increment/decrement support
+postfix_increment_decrement {-> exp}
+	=	left_hand_side plus_plus
+		{-> New exp.inc_dec(left_hand_side.lvalue, New inc_dec_op.post_inc(plus_plus))}
+	|	left_hand_side minus_minus
+		{-> New exp.inc_dec(left_hand_side.lvalue, New inc_dec_op.post_dec(minus_minus))}
+	;
+
+// Added: Postfix increment/decrement support
+postfix_expression {-> exp}
+	=	postfix_increment_decrement
+		{-> postfix_increment_decrement.exp}
+	;
+
+unary_expression {-> exp}
+	=	primary
+		{-> primary.exp}
+	// Added: Prefix increment/decrement support
+	|	prefix_increment_decrement
+		{-> prefix_increment_decrement.exp}
+	|	minus unary_expression
+		{-> New exp.unop(New unop.negate(minus), unary_expression.exp)}
+	// Added: Unary expressions that don't include plus/minus
+	|	unary_expression_notplusminus
+		{-> unary_expression_notplusminus.exp}
+	;
+
+// Added: Unary expression not-plusminus to support cast/inc_dec
+unary_expression_notplusminus {-> exp}
+	=	primary
+		{-> primary.exp}
+	|	complement unary_expression
+		{-> New exp.unop(New unop.complement(complement), unary_expression.exp)}
+	// Added: Cast expression
+	|	cast_expression
+		{-> cast_expression.exp}
+	// Added: Postfix increment/decrement support
+	|	postfix_expression
+		{-> postfix_expression.exp}
+	;
+
+// Added: Cast expression
+cast_expression {-> exp}
+	=	l_parenthese primitive_type r_parenthese unary_expression
+		{-> New exp.cast(l_parenthese, primitive_type.type, unary_expression.exp)}
+	|	l_parenthese array_type r_parenthese unary_expression
+		{-> New exp.cast(l_parenthese, array_type.type, unary_expression.exp)}
+	// Added: Ambiguous cast expression
+	// Weeded
+	|	l_parenthese expression r_parenthese unary_expression_notplusminus
+		{-> New exp.ambiguous_cast(l_parenthese, expression.exp, r_parenthese, unary_expression_notplusminus.exp)}
+	;
+
+multiplicative_expression {-> exp}
+	=	unary_expression
+		{-> unary_expression.exp}
+	|	multiplicative_expression star unary_expression
+		{-> New exp.binop(multiplicative_expression.exp,
+				New binop.times(star),
+				unary_expression.exp)}
+	|	multiplicative_expression div unary_expression
+		{-> New exp.binop(multiplicative_expression.exp,
+				New binop.divide(div),
+				unary_expression.exp)}
+	|	multiplicative_expression mod unary_expression
+		{-> New exp.binop(multiplicative_expression.exp,
+				New binop.modulo(mod),
+				unary_expression.exp)}
+	;
+
+additive_expression {-> exp}
+	=	multiplicative_expression
+		{-> multiplicative_expression.exp}
+	|	additive_expression plus multiplicative_expression
+		{-> New exp.binop(additive_expression.exp,
+				New binop.plus(plus),
+				multiplicative_expression.exp)}
+	|	additive_expression minus multiplicative_expression
+		{-> New exp.binop(additive_expression.exp,
+				New binop.minus(minus),
+				multiplicative_expression.exp)}
+	;
+
+relational_expression {-> exp}
+	=	additive_expression
+		{-> additive_expression.exp}
+	|	relational_expression lt additive_expression
+		{-> New exp.binop(relational_expression.exp,
+				New binop.lt(lt),
+				additive_expression.exp)}
+	|	relational_expression gt additive_expression
+		{-> New exp.binop(relational_expression.exp,
+				New binop.gt(gt),
+				additive_expression.exp)}
+	|	relational_expression lteq additive_expression
+		{-> New exp.binop(relational_expression.exp,
+				New binop.le(lteq),
+				additive_expression.exp)}
+	|	relational_expression gteq additive_expression
+		{-> New exp.binop(relational_expression.exp,
+				New binop.ge(gteq),
+				additive_expression.exp)}
+	// Added: Instanceof expression for reference type
+	|	relational_expression instanceof reference_type
+		{-> New exp.instanceof(instanceof,
+			reference_type.type,
+			relational_expression.exp)}
+	// Added: Instanceof expression for array type
+	|	relational_expression instanceof array_type
+		{-> New exp.instanceof(instanceof,
+			array_type.type,
+			relational_expression.exp)}
+	;
+
+equality_expression {-> exp}
+	=	relational_expression
+		{-> relational_expression.exp}
+	|	equality_expression eq relational_expression
+		{-> New exp.binop(equality_expression.exp,
+				New binop.eq(eq),
+				relational_expression.exp)}
+	|	equality_expression neq relational_expression
+		{-> New exp.binop(equality_expression.exp,
+				New binop.ne(neq),
+				relational_expression.exp)}
+	;
+
+and_expression {-> exp}
+	=	equality_expression
+		{-> equality_expression.exp}
+	|	and_expression and equality_expression
+		{-> New exp.binop(and_expression.exp,
+				New binop.and(and),
+				equality_expression.exp)}
+	;
+
+exclusive_or_expression {-> exp}
+	=	and_expression
+		{-> and_expression.exp}
+	|	exclusive_or_expression xor and_expression
+		{-> New exp.binop(exclusive_or_expression.exp,
+				New binop.xor(xor),
+				and_expression.exp)}
+	;
+
+inclusive_or_expression {-> exp}
+	=	exclusive_or_expression
+		{-> exclusive_or_expression.exp}
+	|	inclusive_or_expression or exclusive_or_expression
+		{-> New exp.binop(inclusive_or_expression.exp,
+				New binop.or(or),
+				exclusive_or_expression.exp)}
+	;
+
+lazy_and_expression {-> exp}
+	=	inclusive_or_expression
+		{-> inclusive_or_expression.exp}
+	|	lazy_and_expression and_and inclusive_or_expression
+		{-> New exp.binop(lazy_and_expression.exp,
+				New binop.lazy_and(and_and),
+				inclusive_or_expression.exp)}
+	;
+
+lazy_or_expression {-> exp}
+	=	lazy_and_expression
+		{-> lazy_and_expression.exp}
+	|	lazy_or_expression or_or lazy_and_expression
+		{-> New exp.binop(lazy_or_expression.exp,
+				New binop.lazy_or(or_or),
+				lazy_and_expression.exp)}
+	;
+
+expression {-> exp}
+	=	lazy_or_expression
+		{-> lazy_or_expression.exp}
+	|	assignment
+		{-> assignment.exp}
+	;
+
+assignment {-> exp}
+	=	left_hand_side assign expression
+		{-> New exp.assignment(assign,
+				left_hand_side.lvalue,
+				expression.exp)}
+	;
+
+left_hand_side {-> lvalue}
+	=	name
+		{-> New lvalue.ambiguous_name(name.name)}
+	|	primary_not_name dot identifier
+		{-> New lvalue.nonstatic_field(primary_not_name.exp, identifier)}
+	// Added: Array acces lvalues
+	|	left_hand_side_array_access
+		{-> left_hand_side_array_access.lvalue}
+	;
+
+left_hand_side_not_name {-> lvalue}
+	=	primary_not_name dot identifier
+		{-> New lvalue.nonstatic_field(primary_not_name.exp, identifier)}
+	// Added: Array access lvalues
+	|	left_hand_side_array_access
+		{-> left_hand_side_array_access.lvalue}
+	;
+
+// Added: Array access lvalues
+left_hand_side_array_access {-> lvalue}
+	=	[base]:primary_array_access l_bracket [index]:expression r_bracket
+		{-> New lvalue.array(l_bracket, base.exp, index.exp)}
+	;
+
+/*******************************************************************
+ * Abstract Syntax Tree                                            *
+ *******************************************************************/
+Abstract Syntax Tree
+
+source_file
+	=	[package]:package_decl? [imports]:import_decl* [type_decl]:=type_decl
+	;
+
+program
+	=	[source_files]:source_file*
+	;
+
+name
+	=	{simple} identifier
+	|	{qualified} [identifiers]:identifier*
+	;
+
+access
+	=	{public}
+	|	{protected}
+	;
+
+package_decl
+	=	name
+	;
+
+import_decl
+	=	{on_demand} name
+	|	{single} name identifier
+	;
+
+type_decl
+	=	{class} final? abstract?
+		[name]:identifier
+		[super]:type?
+		[interfaces]:type*
+		[members]:decl*
+	|	{interface}
+		[name]:identifier
+		[supers]:type.named*
+		[members]:=decl*
+	;
+
+decl
+	=	{field} access static? final? type
+		[name]:identifier
+		[init]:exp?
+	|	{method} access? static? final? abstract?
+		[return_type]:type
+		[name]:identifier
+		[formals]:local_decl*
+		[throws]:type*
+		body?
+	|	{constructor} access
+		[name]:identifier
+		[formals]:local_decl*
+		[throws]:type*
+		body
+	;
+
+local_decl
+	=	type [name]:identifier [init]:exp?
+	;
+
+
+type
+	=	{void} [token]:void
+	|	{byte} [token]:byte
+	|	{short} [token]:short
+	|	{int} [token]:int
+	|	{long} [token]:long
+	|	{char} [token]:char
+	|	{float} [token]:float
+	|	{double} [token]:double
+	|	{boolean} [token]:boolean
+	|	{array} [token]:l_bracket type
+	|	{named} name
+	|	{null} // Not created by grammar
+	;
+
+body
+	=	block
+	;
+
+
+block
+	=	[statements]:stm*
+	;
+
+
+stm
+	=	{exp} [token]:semicolon exp
+	|	{if_then} [token]:l_parenthese [condition]:exp [body]:stm
+	|	{if_then_else} [token]:l_parenthese [condition]:exp [then_body]:stm [else_body]:stm
+	|	{while} [token]:l_parenthese [condition]:exp [body]:stm
+	|	{empty} [token]:semicolon
+	|	{block} [token]:l_brace block
+	|	{void_return} [token]:return
+	|	{value_return} [token]:return exp
+	|	{local_decl} [token]:semicolon local_decl
+	|	{throw} [token]:throw exp
+	|	{super} [token]:super [args]:exp*
+	|	{this} [token]:this [args]:exp*
+	// Added: For statement node
+	// Weeded to while
+	|	{for} [token]:l_parenthese [init]:stm [condition]:exp? [update]:exp? [body]:stm
+	;
+
+exp
+	=	{binop} [left]:exp binop [right]:exp
+	|	{unop} unop exp
+	|	{int_const} integer_literal
+	|	{char_const} char_literal
+	|	{string_const} string_literal
+	|	{boolean_const} bool
+	|	{null}
+	|	{this} [token]:this
+	|	{static_invoke} type [name]:identifier [args]:exp*
+	|	{nonstatic_invoke} [receiver]:exp [name]:identifier [args]:exp*
+	|	{simple_invoke} [name]:identifier [args]:exp*
+	|	{ambiguous_invoke} [ambiguous]:name [name]:identifier [args]:exp*
+	|	{new} [token]:new type [args]:exp*
+	|	{new_array} [token]:new type [sizes]:exp*
+	|	{lvalue} lvalue
+	|	{assignment} [token]:assign lvalue exp
+	|	{inc_dec} lvalue inc_dec_op
+	|	{cast} [token]:l_parenthese type exp
+	|	{instanceof} [token]:instanceof type exp
+	|	{array_length} exp // Not created by grammar
+	|	{array_clone} exp // Not created by grammar
+	// Added: ambiguous cast expression node
+	// Weeded to cast expression
+	|	{ambiguous_cast} l_parenthese [target_type]:exp r_parenthese [target]:exp
+	// Added: Parenthesized expression node
+	// Weeded to expression
+	|	{par} [lpar]:l_parenthese [exp]:exp [rpar]:r_parenthese
+	;
+
+lvalue
+	=	{local} [name]:identifier // Not created by grammar
+	|	{static_field} type [name]:identifier // Not created by grammar
+	|	{nonstatic_field} exp [name]:identifier
+	|	{array} [token]:l_bracket [base]:exp [index]:exp
+	|	{ambiguous_name} [ambiguous]:name
+	;
+
+bool
+	=	{true}
+	|	{false}
+	;
+
+binop
+	=	{plus} [token]:plus
+	|	{minus} [token]:minus
+	|	{times} [token]:star
+	|	{divide} [token]:div
+	|	{modulo} [token]:mod
+	|	{eq} [token]:eq
+	|	{ne} [token]:neq
+	|	{lt} [token]:lt
+	|	{le} [token]:lteq
+	|	{gt} [token]:gt
+	|	{ge} [token]:gteq
+	|	{and} [token]:and
+	|	{or} [token]:or
+	|	{xor} [token]:xor
+	|	{lazy_and} [token]:and_and
+	|	{lazy_or} [token]:or_or
+	|	{aeq} [token]:eq // Not created by grammar
+	|	{ane} [token]:neq // Not created by grammar
+	|	{concat} [token]:plus // Not created by grammar
+	;
+
+unop
+	=	{negate} [token]:minus
+	|	{complement} [token]:complement
+	|	{boolean_to_string} // Not created by grammar
+	|	{byte_to_string} // Not created by grammar
+	|	{short_to_string} // Not created by grammar
+	|	{int_to_string} // Not created by grammar
+	|	{char_to_string} // Not created by grammar
+	|	{object_to_string} // Not created by grammar
+	;
+
+inc_dec_op
+	=	{pre_inc} [token]:plus_plus
+	|	{pre_dec} [token]:minus_minus
+	|	{post_inc} [token]:plus_plus
+	|	{post_dec} [token]:minus_minus
+	;

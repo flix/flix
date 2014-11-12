@@ -2,7 +2,6 @@ package impl.ast2
 
 import java.io.File
 
-import impl.ast2.Ast.Calculator
 import org.parboiled2.ParseError
 
 import scala.io.Source
@@ -42,92 +41,93 @@ object Ast {
 
   case class NameSpace(name: String) extends Node
 
-  import org.parboiled2._
+}
 
-  class Calculator(val input: ParserInput) extends Parser {
-    def TopLevel: Rule1[Root] = rule {
-      oneOrMore(NameSpaceDeclaration) ~ EOI ~> Root
-    }
+import org.parboiled2._
 
-    def NameSpaceDeclaration: Rule1[Ast.NameSpace] = rule {
-      "namespace" ~ WhiteSpace ~ capture(Name) ~ '{' ~ WhiteSpace ~ Declaration ~ '}' ~> Ast.NameSpace
-    }
+class Calculator(val input: ParserInput) extends Parser {
+  def TopLevel: Rule1[Ast.Root] = rule {
+    oneOrMore(NameSpaceDeclaration) ~ EOI ~> Ast.Root
+  }
 
-    def Declaration = rule {
-      zeroOrMore(TypeDeclaration | ValueDeclaration | FunctionDeclaration)
-    }
+  def NameSpaceDeclaration: Rule1[Ast.NameSpace] = rule {
+    "namespace" ~ WhiteSpace ~ capture(Name) ~ '{' ~ WhiteSpace ~ Declaration ~ '}' ~> Ast.NameSpace
+  }
 
-    def TypeDeclaration = rule {
-      "type" ~ WhiteSpace ~ Identifier ~ WhiteSpace ~ "=" ~ WhiteSpace ~ zeroOrMore(Identifier | "|" | WhiteSpace) ~ ";" ~ WhiteSpace
-    }
+  def Declaration = rule {
+    zeroOrMore(TypeDeclaration | ValueDeclaration | FunctionDeclaration)
+  }
 
-    def ValueDeclaration = rule {
-      "val" ~ Identifier ~ optional(WhiteSpace) ~ ":" ~ WhiteSpace ~ Identifier ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Identifier ~ ";" ~ WhiteSpace
-    }
+  def TypeDeclaration = rule {
+    "type" ~ WhiteSpace ~ Identifier ~ WhiteSpace ~ "=" ~ WhiteSpace ~ zeroOrMore(Identifier | "|" | WhiteSpace) ~ ";" ~ WhiteSpace
+  }
 
-    def FunctionDeclaration = rule {
-      "def" ~ WhiteSpace ~ Identifier ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Identifier ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression
-    }
+  def ValueDeclaration = rule {
+    "val" ~ Identifier ~ optional(WhiteSpace) ~ ":" ~ WhiteSpace ~ Identifier ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Identifier ~ ";" ~ WhiteSpace
+  }
 
-    def ArgumentList = rule {
-      zeroOrMore((Argument ~ "," ~ WhiteSpace) | Argument)
-    }
+  def FunctionDeclaration = rule {
+    "def" ~ WhiteSpace ~ Identifier ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Identifier ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression
+  }
 
-    def Argument = rule {
-      Identifier ~ ":" ~ WhiteSpace ~ Identifier
-    }
+  def ArgumentList = rule {
+    zeroOrMore((Argument ~ "," ~ WhiteSpace) | Argument)
+  }
 
-    def Name: Rule0 = rule {
-      QualifiedName ~ WhiteSpace
-    }
+  def Argument = rule {
+    Identifier ~ ":" ~ WhiteSpace ~ Identifier
+  }
 
-    def SimpleName = rule {
-      Identifier
-    }
+  def Name: Rule0 = rule {
+    QualifiedName ~ WhiteSpace
+  }
 
-    def QualifiedName: Rule0 = rule {
-      SimpleName ~ zeroOrMore(QualifiedName)
-    }
+  def SimpleName = rule {
+    Identifier
+  }
 
-    def Expression: Rule0 = rule {
-      MatchExpression | TupleExp | LocalVariable
-    }
+  def QualifiedName: Rule0 = rule {
+    SimpleName ~ zeroOrMore(QualifiedName)
+  }
 
-    def MatchExpression: Rule0 = rule {
-      "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ MatchBody ~ WhiteSpace ~ "}"
-    }
+  def Expression: Rule0 = rule {
+    MatchExpression | TupleExp | LocalVariable
+  }
 
-    def MatchBody = rule {
-      "case" ~ WhiteSpace ~ Pattern
-    }
+  def MatchExpression: Rule0 = rule {
+    "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ MatchBody ~ WhiteSpace ~ "}"
+  }
 
-    def Pattern = rule {
-      "("
-    }
+  def MatchBody = rule {
+    "case" ~ WhiteSpace ~ Pattern
+  }
 
-    def TupleExp = rule {
-      "(" ~ Expression ~ ", " ~ Expression ~ ")"
-    }
+  def Pattern = rule {
+    "("
+  }
 
-    def LocalVariable = rule {
-      Identifier
-    }
+  def TupleExp = rule {
+    "(" ~ Expression ~ ", " ~ Expression ~ ")"
+  }
 
-    def Identifier = rule {
-      CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum)
-    }
+  def LocalVariable = rule {
+    Identifier
+  }
 
-    def Digits = rule {
-      oneOrMore(CharPredicate.Digit)
-    }
+  def Identifier = rule {
+    CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum)
+  }
 
-    /**
-     * Whitespace is one or more spaces, tabs or newlines.
-     */
-    def WhiteSpace = rule {
-      oneOrMore(" " | "\t" | "\n")
-    }
+  def Digits = rule {
+    oneOrMore(CharPredicate.Digit)
+  }
 
+  /**
+   * Whitespace is one or more spaces, tabs or newlines.
+   */
+  def WhiteSpace = rule {
+    oneOrMore(" " | "\t" | "\n")
   }
 
 }
+
