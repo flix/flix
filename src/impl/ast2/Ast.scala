@@ -27,9 +27,16 @@ sealed trait Ast
 
 object Ast {
 
+  /**
+   * The type of all Ast nodes.
+   */
   sealed trait Node
 
+  /**
+   * The root the Ast. A root consists of a sequence of namespace declarations.
+   */
   case class Root(namespaces: Seq[NameSpace])
+
 
   case class SimpleName(name: String) extends Node
 
@@ -55,7 +62,7 @@ object Ast {
     }
 
     def ValueDeclaration = rule {
-      Keywords.Val ~ Identifier ~ optional(WhiteSpace) ~ ":" ~ WhiteSpace ~ Identifier ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Identifier ~ ";" ~ WhiteSpace
+      "val" ~ Identifier ~ optional(WhiteSpace) ~ ":" ~ WhiteSpace ~ Identifier ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Identifier ~ ";" ~ WhiteSpace
     }
 
     def FunctionDeclaration = rule {
@@ -114,14 +121,11 @@ object Ast {
       oneOrMore(CharPredicate.Digit)
     }
 
+    /**
+     * Whitespace is one or more spaces, tabs or newlines.
+     */
     def WhiteSpace = rule {
       oneOrMore(" " | "\t" | "\n")
-    }
-
-    object Keywords {
-      def Val = rule {
-        "val" ~ WhiteSpace
-      }
     }
 
   }
