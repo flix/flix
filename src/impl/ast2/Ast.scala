@@ -47,11 +47,11 @@ import org.parboiled2._
 
 class Calculator(val input: ParserInput) extends Parser {
   def TopLevel: Rule1[Ast.Root] = rule {
-    oneOrMore(NameSpaceDeclaration) ~ EOI ~> Ast.Root
+    oneOrMore(NameSpace) ~ EOI ~> Ast.Root
   }
 
-  def NameSpaceDeclaration: Rule1[Ast.NameSpace] = rule {
-    "namespace" ~ WhiteSpace ~ capture(Name) ~ '{' ~ WhiteSpace ~ Declaration ~ '}' ~> Ast.NameSpace
+  def NameSpace: Rule1[Ast.NameSpace] = rule {
+    "namespace" ~ WhiteSpace ~ capture(Name) ~ WhiteSpace ~ '{' ~ Declaration ~ '}' ~> Ast.NameSpace
   }
 
   def Declaration = rule {
@@ -79,7 +79,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def Name: Rule0 = rule {
-    QualifiedName ~ WhiteSpace
+    QualifiedName
   }
 
   def SimpleName = rule {
