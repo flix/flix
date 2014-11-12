@@ -51,11 +51,15 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def NameSpace: Rule1[Ast.NameSpace] = rule {
-    "namespace" ~ WhiteSpace ~ capture(Name) ~ WhiteSpace ~ '{' ~ Declaration ~ '}' ~> Ast.NameSpace
+    "namespace" ~ WhiteSpace ~ capture(Name) ~ WhiteSpace ~ '{' ~ WhiteSpace ~ NameSpaceBody ~ WhiteSpace ~ '}' ~> Ast.NameSpace
+  }
+
+  def NameSpaceBody = rule {
+    zeroOrMore(Declaration)
   }
 
   def Declaration = rule {
-    zeroOrMore(TypeDeclaration | ValueDeclaration | FunctionDeclaration)
+    TypeDeclaration | ValueDeclaration | FunctionDeclaration
   }
 
   def TypeDeclaration = rule {
