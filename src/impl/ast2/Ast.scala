@@ -56,7 +56,7 @@ object Ast {
 
   case class TypeVariant(xs: Seq[Type])
 
-  case class Argument(name: String) extends Node
+  case class Argument(name: String, typ: Type) extends Node
 
 }
 
@@ -89,7 +89,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def FunctionDeclaration: Rule1[Ast.FunctionDeclaration] = rule {
-    "def" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "(" ~ ArgumentList ~ ")" ~> Ast.FunctionDeclaration
+    "def" ~ WhiteSpace ~ capture(Identifier) ~ "(" ~ ArgumentList ~ ")" ~> Ast.FunctionDeclaration
   }
 
   def ArgumentList: Rule1[Seq[Ast.Argument]] = rule {
@@ -97,7 +97,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def Argument: Rule1[Ast.Argument] = rule {
-    capture(Identifier) ~> Ast.Argument
+    capture(Identifier) ~ ":" ~ WhiteSpace ~ Type ~> Ast.Argument
   }
 
   def Type: Rule1[Ast.TypeTag] = rule {
