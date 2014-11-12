@@ -43,10 +43,13 @@ object Ast {
 
   sealed trait Declaration extends Node
 
-  case class TypeDecl(x: String) extends Declaration
+  case class TypeDeclaration(x: String, t: Type) extends Declaration
 
-  case class TypeDeclaration(x: String) extends Declaration
+  sealed trait Type extends Node
 
+  case class TypeTag(x: String) extends Type
+
+  case class TypeVariant(xs: Seq[Type])
 }
 
 import org.parboiled2._
@@ -66,15 +69,19 @@ class Calculator(val input: ParserInput) extends Parser {
 
   def Declaration: Rule1[Ast.Declaration] = rule {
     //TypeDeclaration | ValueDeclaration | FunctionDeclaration
-    capture(str("a")) ~> Ast.TypeDecl
+    TypeDeclaration
   }
 
   def TypeDeclaration: Rule1[Ast.TypeDeclaration] = rule {
-    "type" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~> Ast.TypeDeclaration
+    "type" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Type ~ WhiteSpace ~> Ast.TypeDeclaration
   }
 
-  def Type = rule {
-    zeroOrMore(Identifier | "|" | WhiteSpace) ~ ";" ~ WhiteSpace
+  def Type: Rule1[Ast.TypeTag] = rule {
+    capture(Identifier) ~> Ast.TypeTag
+  }
+
+  def TypeVariant: Rule1[Ast.TypeVariant] = rule {
+    oneOrMore(Type) ~> Ast.TypeVariant
   }
 
   def ValueDeclaration = rule {
