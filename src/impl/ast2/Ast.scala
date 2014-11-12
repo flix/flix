@@ -93,7 +93,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def ArgumentList: Rule1[Seq[Ast.Argument]] = rule {
-    zeroOrMore(Argument)
+    zeroOrMore(Argument).separatedBy("," ~ optional(WhiteSpace))
   }
 
   def Argument: Rule1[Ast.Argument] = rule {
@@ -111,6 +111,8 @@ class Calculator(val input: ParserInput) extends Parser {
   def Name: Rule1[Ast.Name] = rule {
     QualifiedName | SimpleName
   }
+
+  // TODO: Use separated by.
 
   def SimpleName: Rule1[Ast.SimpleName] = rule {
     capture(Identifier) ~> Ast.SimpleName
