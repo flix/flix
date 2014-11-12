@@ -48,7 +48,7 @@ object Ast {
 
   case class TypeDeclaration(x: String, t: Type) extends Declaration
 
-  case class FunctionDeclaration(x: String) extends Declaration
+  case class FunctionDeclaration(x: String, arguments: Seq[Argument]) extends Declaration
 
   sealed trait Type extends Node
 
@@ -56,6 +56,7 @@ object Ast {
 
   case class TypeVariant(xs: Seq[Type])
 
+  case class Argument(name: String) extends Node
 
 }
 
@@ -88,15 +89,15 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def FunctionDeclaration: Rule1[Ast.FunctionDeclaration] = rule {
-    "def" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~> Ast.FunctionDeclaration
+    "def" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "(" ~ ArgumentList ~ ")" ~> Ast.FunctionDeclaration
   }
 
-  def ArgumentList = rule {
-    zeroOrMore((Argument ~ "," ~ WhiteSpace) | Argument)
+  def ArgumentList: Rule1[Seq[Ast.Argument]] = rule {
+    zeroOrMore(Argument)
   }
 
-  def Argument = rule {
-    Identifier ~ ":" ~ WhiteSpace ~ Identifier
+  def Argument: Rule1[Ast.Argument] = rule {
+    capture(Identifier) ~> Ast.Argument
   }
 
   def Type: Rule1[Ast.TypeTag] = rule {
