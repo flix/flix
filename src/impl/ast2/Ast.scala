@@ -36,10 +36,13 @@ object Ast {
    */
   case class Root(namespaces: Seq[NameSpace])
 
+  sealed trait Name
 
-  case class SimpleName(name: String) extends Node
+  case class SimpleName(name: String) extends Name
 
-  case class NameSpace(name: String, body: Seq[Ast.Declaration]) extends Node
+  case class QualifiedName(prefix: String, rest: Name) extends Name
+
+  case class NameSpace(name: Name, body: Seq[Ast.Declaration]) extends Node
 
   sealed trait Declaration extends Node
 
@@ -52,6 +55,8 @@ object Ast {
   case class TypeTag(x: String) extends Type
 
   case class TypeVariant(xs: Seq[Type])
+
+
 }
 
 import org.parboiled2._
@@ -62,7 +67,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def NameSpace: Rule1[Ast.NameSpace] = rule {
-    "namespace" ~ WhiteSpace ~ capture(Name) ~ WhiteSpace ~ '{' ~ WhiteSpace ~ NameSpaceBody ~ WhiteSpace ~ '}' ~> Ast.NameSpace
+    "namespace" ~ WhiteSpace ~ Name ~ WhiteSpace ~ '{' ~ WhiteSpace ~ NameSpaceBody ~ WhiteSpace ~ '}' ~> Ast.NameSpace
   }
 
   def NameSpaceBody: Rule1[Seq[Ast.Declaration]] = rule {
@@ -102,16 +107,16 @@ class Calculator(val input: ParserInput) extends Parser {
     oneOrMore(Type) ~> Ast.TypeVariant
   }
 
-  def Name: Rule0 = rule {
-    QualifiedName
+  def Name: Rule1[Ast.Name] = rule {
+    QualifiedName | SimpleName
   }
 
-  def SimpleName = rule {
-    Identifier
+  def SimpleName: Rule1[Ast.SimpleName] = rule {
+    capture(Identifier) ~> Ast.SimpleName
   }
 
-  def QualifiedName: Rule0 = rule {
-    SimpleName ~ zeroOrMore(QualifiedName)
+  def QualifiedName: Rule1[Ast.QualifiedName] = rule {
+    capture(Identifier) ~ "." ~ Name ~> Ast.QualifiedName
   }
 
   def Expression: Rule0 = rule {
