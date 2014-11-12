@@ -39,7 +39,11 @@ object Ast {
 
   case class SimpleName(name: String) extends Node
 
-  case class NameSpace(name: String, xs: Seq[String]) extends Node
+  case class NameSpace(name: String, body: Seq[Ast.Declaration]) extends Node
+
+  sealed trait Declaration extends Node
+
+  case class TypeDecl(x: String) extends Declaration
 
 }
 
@@ -54,13 +58,13 @@ class Calculator(val input: ParserInput) extends Parser {
     "namespace" ~ WhiteSpace ~ capture(Name) ~ WhiteSpace ~ '{' ~ WhiteSpace ~ NameSpaceBody ~ WhiteSpace ~ '}' ~> Ast.NameSpace
   }
 
-  def NameSpaceBody: Rule1[Seq[String]] = rule {
+  def NameSpaceBody: Rule1[Seq[Ast.Declaration]] = rule {
     zeroOrMore(Declaration)
   }
 
-  def Declaration: Rule1[String] = rule {
+  def Declaration: Rule1[Ast.Declaration] = rule {
     //TypeDeclaration | ValueDeclaration | FunctionDeclaration
-    capture(str("a"))
+    capture(str("a")) ~> Ast.TypeDecl
   }
 
   def TypeDeclaration = rule {
