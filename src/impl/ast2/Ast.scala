@@ -78,21 +78,12 @@ class Calculator(val input: ParserInput) extends Parser {
     "type" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Type ~ WhiteSpace ~> Ast.TypeDeclaration
   }
 
-  def Type: Rule1[Ast.TypeTag] = rule {
-    capture(Identifier) ~> Ast.TypeTag
-  }
-
-  def TypeVariant: Rule1[Ast.TypeVariant] = rule {
-    oneOrMore(Type) ~> Ast.TypeVariant
-  }
-
   def ValueDeclaration = rule {
     "val" ~ Identifier ~ optional(WhiteSpace) ~ ":" ~ WhiteSpace ~ Identifier ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Identifier ~ ";" ~ WhiteSpace
   }
 
   def FunctionDeclaration: Rule1[Ast.FunctionDeclaration] = rule {
     "def" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~> Ast.FunctionDeclaration
-    //"def" ~ WhiteSpace ~ Identifier ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Identifier ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression
   }
 
   def ArgumentList = rule {
@@ -101,6 +92,14 @@ class Calculator(val input: ParserInput) extends Parser {
 
   def Argument = rule {
     Identifier ~ ":" ~ WhiteSpace ~ Identifier
+  }
+
+  def Type: Rule1[Ast.TypeTag] = rule {
+    capture(Identifier) ~> Ast.TypeTag
+  }
+
+  def TypeVariant: Rule1[Ast.TypeVariant] = rule {
+    oneOrMore(Type) ~> Ast.TypeVariant
   }
 
   def Name: Rule0 = rule {
