@@ -45,6 +45,8 @@ object Ast {
 
   case class TypeDecl(x: String) extends Declaration
 
+  case class TypeDeclaration(x: String) extends Declaration
+
 }
 
 import org.parboiled2._
@@ -67,8 +69,12 @@ class Calculator(val input: ParserInput) extends Parser {
     capture(str("a")) ~> Ast.TypeDecl
   }
 
-  def TypeDeclaration = rule {
-    "type" ~ WhiteSpace ~ Identifier ~ WhiteSpace ~ "=" ~ WhiteSpace ~ zeroOrMore(Identifier | "|" | WhiteSpace) ~ ";" ~ WhiteSpace
+  def TypeDeclaration: Rule1[Ast.TypeDeclaration] = rule {
+    "type" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~> Ast.TypeDeclaration
+  }
+
+  def Type = rule {
+    zeroOrMore(Identifier | "|" | WhiteSpace) ~ ";" ~ WhiteSpace
   }
 
   def ValueDeclaration = rule {
