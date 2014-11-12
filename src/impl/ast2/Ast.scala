@@ -45,6 +45,8 @@ object Ast {
 
   case class TypeDeclaration(x: String, t: Type) extends Declaration
 
+  case class FunctionDeclaration(x: String) extends Declaration
+
   sealed trait Type extends Node
 
   case class TypeTag(x: String) extends Type
@@ -68,8 +70,8 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def Declaration: Rule1[Ast.Declaration] = rule {
-    //TypeDeclaration | ValueDeclaration | FunctionDeclaration
-    TypeDeclaration
+    //TypeDeclaration | ValueDeclaration
+    TypeDeclaration | FunctionDeclaration
   }
 
   def TypeDeclaration: Rule1[Ast.TypeDeclaration] = rule {
@@ -88,8 +90,9 @@ class Calculator(val input: ParserInput) extends Parser {
     "val" ~ Identifier ~ optional(WhiteSpace) ~ ":" ~ WhiteSpace ~ Identifier ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Identifier ~ ";" ~ WhiteSpace
   }
 
-  def FunctionDeclaration = rule {
-    "def" ~ WhiteSpace ~ Identifier ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Identifier ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression
+  def FunctionDeclaration: Rule1[Ast.FunctionDeclaration] = rule {
+    "def" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~> Ast.FunctionDeclaration
+    //"def" ~ WhiteSpace ~ Identifier ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Identifier ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression
   }
 
   def ArgumentList = rule {
