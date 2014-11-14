@@ -46,7 +46,9 @@ object Ast {
 
   sealed trait Declaration extends Node
 
-  case class TypeDeclaration(x: String, t: Type) extends Declaration
+  case class TypeDeclaration(name: String, t: Type) extends Declaration
+
+  case class ValueDeclaration(name: String, t: Type) extends Declaration
 
   case class FunctionDeclaration(x: String, arguments: Seq[Argument]) extends Declaration
 
@@ -76,16 +78,15 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def Declaration: Rule1[Ast.Declaration] = rule {
-    //TypeDeclaration | ValueDeclaration
-    TypeDeclaration | FunctionDeclaration
+    TypeDeclaration |  ValueDeclaration | FunctionDeclaration
   }
 
   def TypeDeclaration: Rule1[Ast.TypeDeclaration] = rule {
     "type" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Type ~ WhiteSpace ~> Ast.TypeDeclaration
   }
 
-  def ValueDeclaration = rule {
-    "val" ~ Identifier ~ optional(WhiteSpace) ~ ":" ~ WhiteSpace ~ Identifier ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Identifier ~ ";" ~ WhiteSpace
+  def ValueDeclaration: Rule1[Ast.ValueDeclaration] = rule {
+    "val" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Type ~ WhiteSpace ~> Ast.ValueDeclaration
   }
 
   def FunctionDeclaration: Rule1[Ast.FunctionDeclaration] = rule {
@@ -157,7 +158,7 @@ class Calculator(val input: ParserInput) extends Parser {
   /**
    * Whitespace is one or more spaces, tabs or newlines.
    */
-  def WhiteSpace = rule {
+  def WhiteSpace: Rule0 = rule {
     oneOrMore(" " | "\t" | "\n")
   }
 
