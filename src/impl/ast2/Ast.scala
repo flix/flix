@@ -67,17 +67,29 @@ object Ast {
 
 
   sealed trait Expression extends Node
+
   object Expression {
+
     case class Variable(name: Name) extends Expression
+
     case class Match(matchValue: Expression, rules: Seq[Ast.MatchRule]) extends Expression
+
     case class Tuple(xs: Seq[Expression]) extends Expression
+
   }
 
   sealed trait Pattern extends Node
+
   object Pattern {
+
+    case class Wildcard() extends Pattern
+
     case class Var(name: Name) extends Pattern
+
     case class Tuple(ps: Seq[Pattern]) extends Pattern
+
   }
+
 }
 
 import org.parboiled2._
@@ -96,7 +108,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def Declaration: Rule1[Ast.Declaration] = rule {
-    TypeDeclaration |  ValueDeclaration | FunctionDeclaration
+    TypeDeclaration | ValueDeclaration | FunctionDeclaration
   }
 
   def TypeDeclaration: Rule1[Ast.TypeDeclaration] = rule {
@@ -145,8 +157,8 @@ class Calculator(val input: ParserInput) extends Parser {
     MatchExpression | TupleExpression | VariableExpression
   }
 
-  def MatchExpression: Rule1[Ast.Expression.Match] =  rule {
-    "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ oneOrMore(MatchRule) ~ WhiteSpace ~ "}" ~> Ast.Expression.Match
+  def MatchExpression: Rule1[Ast.Expression.Match] = rule {
+    "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ oneOrMore(MatchRule) ~ "}" ~ ";" ~> Ast.Expression.Match
   }
 
   def MatchRule: Rule1[Ast.MatchRule] = rule {
@@ -154,21 +166,25 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def Pattern: Rule1[Ast.Pattern] = rule {
-    VariablePattern | TuplePattern
+    WildcardPattern | VariablePattern | TuplePattern
   }
 
   def VariablePattern: Rule1[Ast.Pattern.Var] = rule {
     Name ~> Ast.Pattern.Var
   }
 
+  def WildcardPattern: Rule1[Ast.Pattern.Wildcard] = rule {
+   str("_") ~> Ast.Pattern.Wildcard
+  }
+
   def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {
-    "(" ~ oneOrMore(Pattern).separatedBy("," ~ optional(WhiteSpace)) ~")" ~> Ast.Pattern.Tuple
+    "(" ~ oneOrMore(Pattern).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Pattern.Tuple
   }
 
   def TupleExpression: Rule1[Ast.Expression.Tuple] = rule {
     "(" ~ oneOrMore(Expression).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Expression.Tuple
   }
-  
+
   def VariableExpression: Rule1[Ast.Expression.Variable] = rule {
     Name ~> Ast.Expression.Variable
   }

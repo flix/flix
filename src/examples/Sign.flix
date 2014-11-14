@@ -5,7 +5,7 @@ namespace Sign {
         case (Neg, Neg) => true;
         case (Zer, Zer) => true;
         case (Zer, Zer) => true;
-        case (_ Top)    => true;
+        case (_, Top)    => true;
         case _          => false;
     };
 
