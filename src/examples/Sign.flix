@@ -25,20 +25,13 @@ namespace Sign {
 
     def glb(e1: Sign, e2: Sign): Sign = ???;
 
-    preset (Sign, leq);
-    parset (Sign, leq, norm)
-
-    lattice Sign1 = Lattice(bot = bot, leq = leq, lub = lub);
-    lattice Sign2 = Lattice(bot, leq, lub, meet, top);
-
     def height(e: Sign): Int = match e with {
         case Bot => 3;
         case Neg => 2;
         case Zer => 2;
         case Pos => 2;
         case Top => 1;
-    }
-
+    };
 
     def lift(i: Int): Sign = if (i % 2 == 0) Even else Odd;
 
@@ -67,3 +60,9 @@ namespace Sign {
         [1 -> y]    <- B,
                r    <- sum(x, y);
 };
+
+        preset (Sign, leq);
+        parset (Sign, leq, norm)
+
+        lattice Sign1 = Lattice(bot = bot, leq = leq, lub = lub);
+        lattice Sign2 = Lattice(bot, leq, lub, meet, top);

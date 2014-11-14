@@ -81,6 +81,8 @@ object Ast {
 
   object Expression {
 
+    case class Literal(s: String) extends Expression
+
     case class Variable(name: Name) extends Expression
 
     case class Match(matchValue: Expression, rules: Seq[Ast.MatchRule]) extends Expression
@@ -183,7 +185,11 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def Expression: Rule1[Ast.Expression] = rule {
-    MatchExpression | TupleExpression | VariableExpression | NotImplementedExpression
+    LiteralExpression | MatchExpression | TupleExpression | VariableExpression | NotImplementedExpression
+  }
+
+  def LiteralExpression: Rule1[Ast.Expression.Literal] = rule {
+    capture(Digits) ~> Ast.Expression.Literal
   }
 
   def MatchExpression: Rule1[Ast.Expression.Match] = rule {
