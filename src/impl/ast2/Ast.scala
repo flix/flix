@@ -56,9 +56,20 @@ object Ast {
 
   sealed trait Type extends Node
 
-  case class TypeTag(x: String) extends Type
+  object Type {
 
-  case class TypeVariant(xs: Seq[Type])
+    case class Bool() extends Type
+
+    case class Int() extends Type
+
+    case class Str() extends Type
+
+    case class Tag(x: String) extends Type
+
+    case class Sum(xs: Seq[Type]) extends Type
+
+  }
+
 
   case class Argument(name: String, typ: Type) extends Node
 
@@ -114,7 +125,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def TypeDeclaration: Rule1[Ast.TypeDeclaration] = rule {
-    "type" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Type ~ WhiteSpace ~> Ast.TypeDeclaration
+    "type" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Type ~ ";" ~ WhiteSpace ~> Ast.TypeDeclaration
   }
 
   def ValueDeclaration: Rule1[Ast.ValueDeclaration] = rule {
@@ -133,12 +144,28 @@ class Calculator(val input: ParserInput) extends Parser {
     capture(Identifier) ~ ":" ~ WhiteSpace ~ Type ~> Ast.Argument
   }
 
-  def Type: Rule1[Ast.TypeTag] = rule {
-    capture(Identifier) ~> Ast.TypeTag
+  def Type: Rule1[Ast.Type] = rule {
+    BoolType | IntType | StrType | SumType | TagType
   }
 
-  def TypeVariant: Rule1[Ast.TypeVariant] = rule {
-    oneOrMore(Type) ~> Ast.TypeVariant
+  def BoolType: Rule1[Ast.Type.Bool] = rule {
+    str("Bool") ~> Ast.Type.Bool
+  }
+
+  def IntType: Rule1[Ast.Type.Int] = rule {
+    str("Int") ~> Ast.Type.Int
+  }
+
+  def StrType: Rule1[Ast.Type.Str] = rule {
+    str("Str") ~> Ast.Type.Str
+  }
+
+  def TagType: Rule1[Ast.Type.Tag] = rule {
+    capture(Identifier) ~> Ast.Type.Tag
+  }
+
+  def SumType: Rule1[Ast.Type.Sum] = rule {
+    oneOrMore(TagType).separatedBy(optional(WhiteSpace) ~ "|" ~ optional(WhiteSpace)) ~> Ast.Type.Sum
   }
 
   def Name: Rule1[Ast.Name] = rule {
@@ -180,7 +207,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def WildcardPattern: Rule1[Ast.Pattern.Wildcard] = rule {
-   str("_") ~> Ast.Pattern.Wildcard
+    str("_") ~> Ast.Pattern.Wildcard
   }
 
   def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {
