@@ -63,7 +63,7 @@ object Ast {
   case class Argument(name: String, typ: Type) extends Node
 
 
-  case class MatchRule(e: Expression) extends Node
+  case class MatchRule(p: Pattern, e: Expression) extends Node
 
 
   sealed trait Expression extends Node
@@ -73,6 +73,11 @@ object Ast {
     case class Tuple(xs: Seq[Expression]) extends Expression
   }
 
+  sealed trait Pattern extends Node
+  object Pattern {
+    case class Var(name: Name) extends Pattern
+    case class Tuple(ps: Seq[Pattern]) extends Pattern
+  }
 }
 
 import org.parboiled2._
@@ -145,11 +150,19 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def MatchRule: Rule1[Ast.MatchRule] = rule {
-    "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ ";" ~> Ast.MatchRule
+    "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> Ast.MatchRule
   }
 
-  def Pattern: Rule0 = rule {
-    str("Bot")
+  def Pattern: Rule1[Ast.Pattern] = rule {
+    VariablePattern | TuplePattern
+  }
+
+  def VariablePattern: Rule1[Ast.Pattern.Var] = rule {
+    Name ~> Ast.Pattern.Var
+  }
+
+  def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {
+    "(" ~ oneOrMore(Pattern).separatedBy("," ~ optional(WhiteSpace)) ~")" ~> Ast.Pattern.Tuple
   }
 
   def TupleExpression: Rule1[Ast.Expression.Tuple] = rule {
