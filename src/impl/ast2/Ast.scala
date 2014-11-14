@@ -76,6 +76,8 @@ object Ast {
 
     case class Tuple(xs: Seq[Expression]) extends Expression
 
+    case class NotImplemented() extends Expression
+
   }
 
   sealed trait Pattern extends Node
@@ -154,7 +156,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def Expression: Rule1[Ast.Expression] = rule {
-    MatchExpression | TupleExpression | VariableExpression
+    MatchExpression | TupleExpression | VariableExpression | NotImplementedExpression
   }
 
   def MatchExpression: Rule1[Ast.Expression.Match] = rule {
@@ -163,6 +165,10 @@ class Calculator(val input: ParserInput) extends Parser {
 
   def MatchRule: Rule1[Ast.MatchRule] = rule {
     "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> Ast.MatchRule
+  }
+
+  def NotImplementedExpression: Rule1[Ast.Expression.NotImplemented] = rule {
+    str("???") ~> Ast.Expression.NotImplemented
   }
 
   def Pattern: Rule1[Ast.Pattern] = rule {
