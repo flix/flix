@@ -85,6 +85,8 @@ object Ast {
 
     case class Variable(name: Name) extends Expression
 
+    case class IfThenElse(cond: Expression, e2: Expression, e3: Expression) extends Expression
+
     case class Match(matchValue: Expression, rules: Seq[Ast.MatchRule]) extends Expression
 
     case class Tuple(xs: Seq[Expression]) extends Expression
@@ -185,11 +187,15 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def Expression: Rule1[Ast.Expression] = rule {
-    LiteralExpression | MatchExpression | TupleExpression | VariableExpression | NotImplementedExpression
+    LiteralExpression | IfThenElseExp | MatchExpression | TupleExpression | VariableExpression | NotImplementedExpression
   }
 
   def LiteralExpression: Rule1[Ast.Expression.Literal] = rule {
     capture(Digits) ~> Ast.Expression.Literal
+  }
+
+  def IfThenElseExp: Rule1[Ast.Expression.IfThenElse] = rule {
+    "if" ~ WhiteSpace ~ "(" ~ Expression ~ ")" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "else" ~ WhiteSpace ~ Expression ~> Ast.Expression.IfThenElse
   }
 
   def MatchExpression: Rule1[Ast.Expression.Match] = rule {
