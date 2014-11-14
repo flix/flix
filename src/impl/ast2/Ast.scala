@@ -62,10 +62,14 @@ object Ast {
 
   case class Argument(name: String, typ: Type) extends Node
 
+
+  case class MatchRule(e: Expression) extends Node
+
+
   sealed trait Expression extends Node
   object Expression {
     case class Variable(name: Name) extends Expression
-    case class Match(matchValue: Expression) extends Expression
+    case class Match(matchValue: Expression, rules: Seq[Ast.MatchRule]) extends Expression
     case class Tuple(xs: Seq[Expression]) extends Expression
   }
 
@@ -137,7 +141,15 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def MatchExpression: Rule1[Ast.Expression.Match] =  rule {
-    "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ WhiteSpace ~> Ast.Expression.Match
+    "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ oneOrMore(MatchRule) ~ WhiteSpace ~ "}" ~> Ast.Expression.Match
+  }
+
+  def MatchRule: Rule1[Ast.MatchRule] = rule {
+    "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ ";" ~> Ast.MatchRule
+  }
+
+  def Pattern: Rule0 = rule {
+    str("Bot")
   }
 
   def TupleExpression: Rule1[Ast.Expression.Tuple] = rule {
