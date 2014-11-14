@@ -50,7 +50,7 @@ object Ast {
 
   case class TypeDeclaration(name: String, t: Type) extends Declaration
 
-  case class ValueDeclaration(name: String, t: Type) extends Declaration
+  case class ValueDeclaration(name: String, t: Type, exp: Expression) extends Declaration
 
   case class FunctionDeclaration(x: String, arguments: Seq[Argument], returnType: Type, exp: Expression) extends Declaration
 
@@ -116,11 +116,11 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def ValueDeclaration: Rule1[Ast.ValueDeclaration] = rule {
-    "val" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Type ~ WhiteSpace ~> Ast.ValueDeclaration
+    "val" ~ WhiteSpace ~ capture(Identifier) ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> Ast.ValueDeclaration
   }
 
   def FunctionDeclaration: Rule1[Ast.FunctionDeclaration] = rule {
-    "def" ~ WhiteSpace ~ capture(Identifier) ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~> Ast.FunctionDeclaration
+    "def" ~ WhiteSpace ~ capture(Identifier) ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> Ast.FunctionDeclaration
   }
 
   def ArgumentList: Rule1[Seq[Ast.Argument]] = rule {
@@ -158,7 +158,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def MatchExpression: Rule1[Ast.Expression.Match] = rule {
-    "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ oneOrMore(MatchRule) ~ "}" ~ ";" ~> Ast.Expression.Match
+    "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ oneOrMore(MatchRule) ~ "}" ~> Ast.Expression.Match
   }
 
   def MatchRule: Rule1[Ast.MatchRule] = rule {
