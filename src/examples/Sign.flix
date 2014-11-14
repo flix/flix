@@ -10,7 +10,7 @@ namespace Sign {
         case (Neg, Neg) => true;
         case (Zer, Zer) => true;
         case (Zer, Zer) => true;
-        case (_, Top)    => true;
+        case (_, Top)   => true;
         case _          => false;
     };
 
@@ -66,3 +66,5 @@ namespace Sign {
 
         lattice Sign1 = Lattice(bot = bot, leq = leq, lub = lub);
         lattice Sign2 = Lattice(bot, leq, lub, meet, top);
+
+            // TODO: Consider enum style from Swift?
