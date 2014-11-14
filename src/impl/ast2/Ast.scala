@@ -3,6 +3,7 @@ package impl.ast2
 import java.beans.Expression
 import java.io.File
 
+import impl.ast2.Ast
 import org.parboiled2.ParseError
 
 import scala.io.Source
@@ -51,7 +52,7 @@ object Ast {
 
   case class ValueDeclaration(name: String, t: Type) extends Declaration
 
-  case class FunctionDeclaration(x: String, arguments: Seq[Argument], returnType: Type) extends Declaration
+  case class FunctionDeclaration(x: String, arguments: Seq[Argument], returnType: Type, exp: Expression) extends Declaration
 
   sealed trait Type extends Node
 
@@ -60,6 +61,13 @@ object Ast {
   case class TypeVariant(xs: Seq[Type])
 
   case class Argument(name: String, typ: Type) extends Node
+
+  sealed trait Expression extends Node
+  object Expression {
+    case class Variable(name: Name) extends Expression
+    case class Match(matchValue: Expression) extends Expression
+    case class Tuple() extends Expression
+  }
 
 }
 
@@ -124,28 +132,20 @@ class Calculator(val input: ParserInput) extends Parser {
     capture(Identifier) ~ "." ~ Name ~> Ast.QualifiedName
   }
 
-  def Expression: Rule0 = rule {
-    MatchExpression | TupleExp | LocalVariable
+  def Expression: Rule1[Ast.Expression] = rule {
+    MatchExpression | TupleExpression | VariableExpression
   }
 
-  def MatchExpression: Rule0 = rule {
-    "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ MatchBody ~ WhiteSpace ~ "}"
+  def MatchExpression: Rule1[Ast.Expression.Match] =  rule {
+    "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ WhiteSpace ~> Ast.Expression.Match
   }
 
-  def MatchBody = rule {
-    "case" ~ WhiteSpace ~ Pattern
+  def TupleExpression: Rule1[Ast.Expression.Tuple] = rule {
+    "(" ~ WhiteSpace ~ ")" ~> Ast.Expression.Tuple
   }
-
-  def Pattern = rule {
-    "("
-  }
-
-  def TupleExp = rule {
-    "(" ~ Expression ~ ", " ~ Expression ~ ")"
-  }
-
-  def LocalVariable = rule {
-    Identifier
+  
+  def VariableExpression: Rule1[Ast.Expression.Variable] = rule {
+    Name ~> Ast.Expression.Variable
   }
 
   def Identifier = rule {
