@@ -20,7 +20,7 @@ namespace Sign {
         case (Neg, Neg) => Neg;
         case (Zer, Zer) => Zer;
         case (Pos, Pos) => Pos;
-        case _           => Top;
+        case _          => Top;
     };
 
     def glb(e1: Sign, e2: Sign): Sign = ???;
@@ -49,7 +49,7 @@ namespace Sign {
 
     var NumberOne:  Sign;
     var NumberTwo:  Sign;
-    var Result:     Int -> Sign;
+    var Result:     Sign;
 
     fact Fact-One = NumberOne <- lift(1);
     fact Fact-Two = NumberTwo <- lift(2);

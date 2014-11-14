@@ -52,6 +52,8 @@ object Ast {
 
   case class ValueDeclaration(name: String, t: Type, exp: Expression) extends Declaration
 
+  case class VariableDeclaration(name: String, t: Type) extends Declaration
+
   case class FunctionDeclaration(an: Seq[Annotation], x: String, arguments: Seq[Argument], returnType: Type, exp: Expression) extends Declaration
 
   sealed trait Type extends Node
@@ -68,6 +70,7 @@ object Ast {
 
     case class Sum(xs: Seq[Type]) extends Type
 
+    case class Function(t1: Type, t2: Type) extends Type
   }
 
 
@@ -126,7 +129,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def Declaration: Rule1[Ast.Declaration] = rule {
-    TypeDeclaration | ValueDeclaration | FunctionDeclaration
+    TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration
   }
 
   def TypeDeclaration: Rule1[Ast.TypeDeclaration] = rule {
@@ -135,6 +138,10 @@ class Calculator(val input: ParserInput) extends Parser {
 
   def ValueDeclaration: Rule1[Ast.ValueDeclaration] = rule {
     "val" ~ WhiteSpace ~ capture(Identifier) ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> Ast.ValueDeclaration
+  }
+
+  def VariableDeclaration: Rule1[Ast.VariableDeclaration] = rule {
+    "var" ~ WhiteSpace ~ capture(Identifier) ~ ":" ~ WhiteSpace ~ Type ~ ";" ~ WhiteSpace ~> Ast.VariableDeclaration
   }
 
   def FunctionDeclaration: Rule1[Ast.FunctionDeclaration] = rule {
@@ -154,7 +161,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def Type: Rule1[Ast.Type] = rule {
-    BoolType | IntType | StrType | SumType | TagType
+    BoolType | IntType | StrType | SumType | TagType | FunctionType
   }
 
   def BoolType: Rule1[Ast.Type.Bool] = rule {
@@ -175,6 +182,10 @@ class Calculator(val input: ParserInput) extends Parser {
 
   def SumType: Rule1[Ast.Type.Sum] = rule {
     oneOrMore(TagType).separatedBy(optional(WhiteSpace) ~ "|" ~ optional(WhiteSpace)) ~> Ast.Type.Sum
+  }
+
+  def FunctionType: Rule1[Ast.Type.Function] = rule {
+    Type ~ WhiteSpace ~ "->" ~ WhiteSpace ~ Type ~ WhiteSpace ~> Ast.Type.Function
   }
 
   def Name: Rule1[Ast.Name] = rule {
