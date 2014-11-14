@@ -42,7 +42,7 @@ namespace Sign {
         case (Neg, Neg) => Neg;
         case (Neg, Zer) => Neg;
         case (Neg, Pos) => Top;
-    }
+    };
 };
 
 namespace Sign {

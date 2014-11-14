@@ -52,7 +52,7 @@ object Ast {
 
   case class ValueDeclaration(name: String, t: Type, exp: Expression) extends Declaration
 
-  case class FunctionDeclaration(x: String, arguments: Seq[Argument], returnType: Type, exp: Expression) extends Declaration
+  case class FunctionDeclaration(an: Seq[Annotation], x: String, arguments: Seq[Argument], returnType: Type, exp: Expression) extends Declaration
 
   sealed trait Type extends Node
 
@@ -76,6 +76,7 @@ object Ast {
 
   case class MatchRule(p: Pattern, e: Expression) extends Node
 
+  case class Annotation(s: String) extends Node
 
   sealed trait Expression extends Node
 
@@ -117,7 +118,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def NameSpace: Rule1[Ast.NameSpace] = rule {
-    "namespace" ~ WhiteSpace ~ Name ~ WhiteSpace ~ '{' ~ WhiteSpace ~ NameSpaceBody ~ WhiteSpace ~ '}' ~> Ast.NameSpace
+    "namespace" ~ WhiteSpace ~ Name ~ WhiteSpace ~ '{' ~ optional(WhiteSpace) ~ NameSpaceBody ~ optional(WhiteSpace) ~ '}' ~ ";" ~ WhiteSpace ~> Ast.NameSpace
   }
 
   def NameSpaceBody: Rule1[Seq[Ast.Declaration]] = rule {
@@ -137,7 +138,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def FunctionDeclaration: Rule1[Ast.FunctionDeclaration] = rule {
-    "def" ~ WhiteSpace ~ capture(Identifier) ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> Ast.FunctionDeclaration
+    zeroOrMore(Annotation) ~ "def" ~ WhiteSpace ~ capture(Identifier) ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> Ast.FunctionDeclaration
   }
 
   def ArgumentList: Rule1[Seq[Ast.Argument]] = rule {
@@ -146,6 +147,10 @@ class Calculator(val input: ParserInput) extends Parser {
 
   def Argument: Rule1[Ast.Argument] = rule {
     capture(Identifier) ~ ":" ~ WhiteSpace ~ Type ~> Ast.Argument
+  }
+
+  def Annotation: Rule1[Ast.Annotation] = rule {
+    "@" ~ capture(Identifier) ~ WhiteSpace ~> Ast.Annotation
   }
 
   def Type: Rule1[Ast.Type] = rule {
