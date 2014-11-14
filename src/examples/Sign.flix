@@ -1,5 +1,7 @@
 namespace Sign {
 
+    type Sign = Top | Neg | Zer | Pos | Bot;
+
     val bot: Sign = Bot;
     val top: Sign = Top;
 
@@ -23,16 +25,11 @@ namespace Sign {
 
     def glb(e1: Sign, e2: Sign): Sign = ???;
 
-       // TODO preset, posset,
     preset (Sign, leq);
     parset (Sign, leq, norm)
 
     lattice Sign1 = Lattice(bot = bot, leq = leq, lub = lub);
     lattice Sign2 = Lattice(bot, leq, lub, meet, top);
-
-    // join-lattice
-    // meet-lattice
-    // lattice
 
     def height(e: Sign): Int = match e with {
         case Bot => 3;
@@ -42,24 +39,6 @@ namespace Sign {
         case Top => 1;
     }
 
-    type Sign = Top | Neg | Zer | Pos | Bot;
-
-
-    /** Comment
-
-    **/
-    def transitive(xs: Set[Int]) = fixpoint {
-      // nested contraints
-      var Result: Set[Int];
-
-      rule Input = Result <- (i, i) if
-        i <- xs.
-
-      rule Reflexivity1 = Result <- (x, x) if
-        (x, _) <- Result.
-      rule Reflexivity2 = Result <- (x, x) if
-        (_, x) <- Result.
-    }
 
     def lift(i: Int): Sign = if (i % 2 == 0) Even else Odd;
 
