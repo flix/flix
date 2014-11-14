@@ -1,5 +1,6 @@
 package impl.ast2
 
+import java.beans.Expression
 import java.io.File
 
 import org.parboiled2.ParseError
@@ -50,7 +51,7 @@ object Ast {
 
   case class ValueDeclaration(name: String, t: Type) extends Declaration
 
-  case class FunctionDeclaration(x: String, arguments: Seq[Argument]) extends Declaration
+  case class FunctionDeclaration(x: String, arguments: Seq[Argument], returnType: Type) extends Declaration
 
   sealed trait Type extends Node
 
@@ -90,7 +91,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def FunctionDeclaration: Rule1[Ast.FunctionDeclaration] = rule {
-    "def" ~ WhiteSpace ~ capture(Identifier) ~ "(" ~ ArgumentList ~ ")" ~> Ast.FunctionDeclaration
+    "def" ~ WhiteSpace ~ capture(Identifier) ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~> Ast.FunctionDeclaration
   }
 
   def ArgumentList: Rule1[Seq[Ast.Argument]] = rule {

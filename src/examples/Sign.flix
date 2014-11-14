@@ -1,8 +1,5 @@
 namespace Sign {
 
-    val bot: Sign = Bot;
-    val top: Sign = Top;
-
     def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) with {
         case (Bot, x)   => true;
         case (Neg, Neg) => true;
@@ -11,6 +8,11 @@ namespace Sign {
         case (_ Top)    => true;
         case _          => false;
     };
+
+    val bot: Sign = Bot;
+    val top: Sign = Top;
+
+
 
     type Sign = Top | Neg | Zer | Pos | Bot;
 
