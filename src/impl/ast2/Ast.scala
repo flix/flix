@@ -66,7 +66,7 @@ object Ast {
   object Expression {
     case class Variable(name: Name) extends Expression
     case class Match(matchValue: Expression) extends Expression
-    case class Tuple() extends Expression
+    case class Tuple(xs: Seq[Expression]) extends Expression
   }
 
 }
@@ -141,7 +141,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def TupleExpression: Rule1[Ast.Expression.Tuple] = rule {
-    "(" ~ WhiteSpace ~ ")" ~> Ast.Expression.Tuple
+    "(" ~ oneOrMore(Expression).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Expression.Tuple
   }
   
   def VariableExpression: Rule1[Ast.Expression.Variable] = rule {
