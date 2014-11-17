@@ -36,6 +36,7 @@ object Ast {
   /**
    * The root the Ast. A root consists of a sequence of namespace declarations.
    */
+  // TODO: seq af decl.
   case class Root(namespaces: Seq[NameSpace])
 
   sealed trait Name
@@ -68,7 +69,10 @@ object Ast {
 
     case class Tag(x: String) extends Type
 
-    case class Sum(xs: Seq[Type]) extends Type
+    // TODO: Use the NameRef naming scheme....
+    case class NameRef(x: String) extends Type
+
+    case class Enum(xs: Seq[Type]) extends Type
 
     case class Function(t1: Type, t2: Type) extends Type
   }
@@ -161,7 +165,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def Type: Rule1[Ast.Type] = rule {
-    BoolType | IntType | StrType | SumType | TagType | FunctionType
+    BoolType | IntType | StrType | EnumType | NamedType
   }
 
   def BoolType: Rule1[Ast.Type.Bool] = rule {
@@ -176,12 +180,16 @@ class Calculator(val input: ParserInput) extends Parser {
     str("Str") ~> Ast.Type.Str
   }
 
-  def TagType: Rule1[Ast.Type.Tag] = rule {
-    capture(Identifier) ~> Ast.Type.Tag
+  def EnumType: Rule1[Ast.Type.Enum] = rule {
+    "enum" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ EnumBody ~ WhiteSpace ~ "}" ~> Ast.Type.Enum
+  }
+  
+  def EnumBody: Rule1[Seq[Ast.Type]] = rule {
+    oneOrMore("case" ~ WhiteSpace ~ capture(Identifier) ~> Ast.Type.Tag).separatedBy("," ~ WhiteSpace)
   }
 
-  def SumType: Rule1[Ast.Type.Sum] = rule {
-    oneOrMore(TagType).separatedBy(optional(WhiteSpace) ~ "|" ~ optional(WhiteSpace)) ~> Ast.Type.Sum
+  def NamedType: Rule1[Ast.Type.NameRef] = rule {
+    capture(Identifier) ~> Ast.Type.NameRef
   }
 
   def FunctionType: Rule1[Ast.Type.Function] = rule {
