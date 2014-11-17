@@ -1,6 +1,12 @@
 namespace Sign {
 
-    type Sign = Top | Neg | Zer | Pos | Bot;
+    type Sign = enum {
+        case Top,
+        case Neg,
+        case Zer,
+        case Pos,
+        case Top
+    };
 
     val bot: Sign = Bot;
     val top: Sign = Top;
