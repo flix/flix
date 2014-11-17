@@ -79,7 +79,7 @@ object Ast {
     case object Int extends Type
 
     /**
-     * An ASt node which represents the string type.
+     * An AST node which represents the string type.
      */
     case object Str extends Type
 
@@ -91,6 +91,8 @@ object Ast {
 
     /**
      * A reference to a named type.
+     *
+     * Indirect references (and as a consequence circular references) are not allowed.
      */
     case class NameRef(name: Name) extends Type
 

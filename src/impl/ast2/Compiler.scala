@@ -12,8 +12,13 @@ class Compiler {
   }
 
 
-
   // linking
+
+  def link(ast: Ast.Type, typenv: Map[Ast.Name, Ast.Type]): Ast.Type = ast match {
+    case Ast.Type.Bool => Ast.Type.Bool
+    // ...
+    case Ast.Type.NameRef(name) => typenv.getOrElse(name, ???)
+  }
 
   // TODO: Need map.
   // TODO: Need fold.
