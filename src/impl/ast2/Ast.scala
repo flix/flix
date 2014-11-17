@@ -73,18 +73,26 @@ object Ast {
      */
     case object Bool extends Type
 
-    case class Int() extends Type
+    /**
+     * An AST node which represents the int type.
+     */
+    case object Int extends Type
 
-    case class Str() extends Type
+    /**
+     * An ASt node which represents the string type.
+     */
+    case object Str extends Type
 
     case class Tag(x: String) extends Type
-
-    // TODO: Use the NameRef naming scheme....
-    case class NameRef(x: String) extends Type
 
     case class Enum(xs: Seq[Type]) extends Type
 
     case class Function(t1: Type, t2: Type) extends Type
+
+    /**
+     * A reference to a named type.
+     */
+    case class NameRef(name: Name) extends Type
 
   }
 
@@ -211,11 +219,11 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def IntType: Rule1[Ast.Type] = rule {
-    str("Int") ~> Ast.Type.Int
+    str("Int") ~> (() => Ast.Type.Int)
   }
 
   def StrType: Rule1[Ast.Type] = rule {
-    str("Str") ~> Ast.Type.Str
+    str("Str") ~> (() => Ast.Type.Str)
   }
 
   def EnumType: Rule1[Ast.Type.Enum] = rule {
@@ -227,7 +235,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def NamedType: Rule1[Ast.Type.NameRef] = rule {
-    capture(Identifier) ~> Ast.Type.NameRef
+    Name ~> Ast.Type.NameRef
   }
 
   def FunctionType: Rule1[Ast.Type.Function] = rule {
