@@ -60,7 +60,7 @@ namespace Sign {
     fact FactOne = NumberOne <- lift(1);
     fact FactTwo = NumberTwo <- lift(2);
 
-    rule TheSum = Result(42) <- r if
+    rule TheSum = Result <- r if
                x    <- A(0),
         [1 -> y]    <- B,
                r    <- sum(x, y);

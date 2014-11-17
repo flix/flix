@@ -57,7 +57,7 @@ object Ast {
 
   case class FunctionDeclaration(an: Seq[Annotation], x: String, arguments: Seq[Argument], returnType: Type, exp: Expression) extends Declaration
 
-  case class FactDeclaration(name: String) extends Declaration
+  case class FactDeclaration(name: String, p: Predicate) extends Declaration
 
   case class RuleDeclaration(name: String) extends Declaration
 
@@ -120,6 +120,12 @@ object Ast {
 
   }
 
+  case class Predicate(t1: Term, t2: Term) extends Pattern
+
+  sealed trait Term extends Node
+  object Term {
+    case class NameRef(n: Name) extends Term
+  }
 }
 
 import org.parboiled2._
@@ -159,11 +165,19 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def FactDeclaration: Rule1[Ast.FactDeclaration] = rule {
-    "fact" ~ WhiteSpace ~ capture(Identifier) ~> Ast.FactDeclaration
+    "fact" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Predicate ~> Ast.FactDeclaration
   }
 
   def RuleDeclaraction: Rule1[Ast.RuleDeclaration] = rule {
     "rule" ~ WhiteSpace ~ capture(Identifier) ~> Ast.RuleDeclaration
+  }
+
+  def Predicate: Rule1[Ast.Predicate] = rule {
+    Term ~ WhiteSpace ~ "<-" ~ WhiteSpace ~ Term ~ ";" ~> Ast.Predicate
+  }
+
+  def Term: Rule1[Ast.Term] = rule {
+    Name ~> Ast.Term.NameRef
   }
 
   def ArgumentList: Rule1[Seq[Ast.Argument]] = rule {
