@@ -57,8 +57,8 @@ namespace Sign {
     var NumberTwo:  Sign;
     var Result:     Sign;
 
-    fact Fact-One = NumberOne <- lift(1);
-    fact Fact-Two = NumberTwo <- lift(2);
+    fact FactOne = NumberOne <- lift(1);
+    fact FactTwo = NumberTwo <- lift(2);
 
     rule TheSum = Result(42) <- r if
                x    <- A(0),
@@ -67,10 +67,8 @@ namespace Sign {
 };
 
 
-        preset (Sign, leq);
-        parset (Sign, leq, norm)
+preset (Sign, leq);
+parset (Sign, leq, norm)
 
-        lattice Sign1 = Lattice(bot = bot, leq = leq, lub = lub);
-        lattice Sign2 = Lattice(bot, leq, lub, meet, top);
-
-            // TODO: Consider enum style from Swift?
+lattice Sign1 = Lattice(bot = bot, leq = leq, lub = lub);
+lattice Sign2 = Lattice(bot, leq, lub, meet, top);

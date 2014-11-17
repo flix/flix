@@ -57,6 +57,8 @@ object Ast {
 
   case class FunctionDeclaration(an: Seq[Annotation], x: String, arguments: Seq[Argument], returnType: Type, exp: Expression) extends Declaration
 
+  case class FactDeclaration(name: String) extends Declaration
+
   sealed trait Type extends Node
 
   object Type {
@@ -133,7 +135,8 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def Declaration: Rule1[Ast.Declaration] = rule {
-    TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration
+    // TODO: Namespace decl. and should be top-level.
+    TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | FactDeclaration
   }
 
   def TypeDeclaration: Rule1[Ast.TypeDeclaration] = rule {
@@ -150,6 +153,10 @@ class Calculator(val input: ParserInput) extends Parser {
 
   def FunctionDeclaration: Rule1[Ast.FunctionDeclaration] = rule {
     zeroOrMore(Annotation) ~ "def" ~ WhiteSpace ~ capture(Identifier) ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> Ast.FunctionDeclaration
+  }
+
+  def FactDeclaration: Rule1[Ast.FactDeclaration] = rule {
+    "fact" ~ WhiteSpace ~ capture(Identifier) ~> Ast.FactDeclaration
   }
 
   def ArgumentList: Rule1[Seq[Ast.Argument]] = rule {
