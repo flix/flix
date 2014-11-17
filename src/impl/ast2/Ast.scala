@@ -61,12 +61,17 @@ object Ast {
 
   case class RuleDeclaration(name: String) extends Declaration
 
-
+  /**
+   * AST nodes which represents types.
+   */
   sealed trait Type extends Node
 
   object Type {
 
-    case class Bool() extends Type
+    /**
+     * An AST node which represents the boolean type.
+     */
+    case object Bool extends Type
 
     case class Int() extends Type
 
@@ -80,6 +85,7 @@ object Ast {
     case class Enum(xs: Seq[Type]) extends Type
 
     case class Function(t1: Type, t2: Type) extends Type
+
   }
 
 
@@ -123,9 +129,13 @@ object Ast {
   case class Predicate(t1: Term, t2: Term) extends Pattern
 
   sealed trait Term extends Node
+
   object Term {
+
     case class NameRef(n: Name) extends Term
+
   }
+
 }
 
 import org.parboiled2._
@@ -196,22 +206,22 @@ class Calculator(val input: ParserInput) extends Parser {
     BoolType | IntType | StrType | EnumType | NamedType
   }
 
-  def BoolType: Rule1[Ast.Type.Bool] = rule {
-    str("Bool") ~> Ast.Type.Bool
+  def BoolType: Rule1[Ast.Type] = rule {
+    str("Bool") ~> (() => Ast.Type.Bool)
   }
 
-  def IntType: Rule1[Ast.Type.Int] = rule {
+  def IntType: Rule1[Ast.Type] = rule {
     str("Int") ~> Ast.Type.Int
   }
 
-  def StrType: Rule1[Ast.Type.Str] = rule {
+  def StrType: Rule1[Ast.Type] = rule {
     str("Str") ~> Ast.Type.Str
   }
 
   def EnumType: Rule1[Ast.Type.Enum] = rule {
     "enum" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ EnumBody ~ WhiteSpace ~ "}" ~> Ast.Type.Enum
   }
-  
+
   def EnumBody: Rule1[Seq[Ast.Type]] = rule {
     oneOrMore("case" ~ WhiteSpace ~ capture(Identifier) ~> Ast.Type.Tag).separatedBy("," ~ WhiteSpace)
   }
