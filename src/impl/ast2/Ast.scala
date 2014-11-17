@@ -59,6 +59,9 @@ object Ast {
 
   case class FactDeclaration(name: String) extends Declaration
 
+  case class RuleDeclaration(name: String) extends Declaration
+
+
   sealed trait Type extends Node
 
   object Type {
@@ -157,6 +160,10 @@ class Calculator(val input: ParserInput) extends Parser {
 
   def FactDeclaration: Rule1[Ast.FactDeclaration] = rule {
     "fact" ~ WhiteSpace ~ capture(Identifier) ~> Ast.FactDeclaration
+  }
+
+  def RuleDeclaraction: Rule1[Ast.RuleDeclaration] = rule {
+    "rule" ~ WhiteSpace ~ capture(Identifier) ~> Ast.RuleDeclaration
   }
 
   def ArgumentList: Rule1[Seq[Ast.Argument]] = rule {
