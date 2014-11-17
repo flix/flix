@@ -118,6 +118,11 @@ object Ast {
   object Type {
 
     /**
+     * An AST node which represents the unit type.
+     */
+    case object Unit extends Type
+
+    /**
      * An AST node which represents the boolean type.
      */
     case object Bool extends Type
@@ -302,6 +307,10 @@ class Calculator(val input: ParserInput) extends Parser {
   /** *************************************************************************/
   def Type: Rule1[Ast.Type] = rule {
     BoolType | IntType | StrType | EnumType | NamedType
+  }
+
+  def UnitType: Rule1[Ast.Type] = rule {
+    str("()") ~> (() => Ast.Type.Unit)
   }
 
   def BoolType: Rule1[Ast.Type] = rule {
