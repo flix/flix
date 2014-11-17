@@ -1,5 +1,7 @@
 package impl.ast2
 
+import impl.logic.Type
+
 class Compiler {
 
   // environments
@@ -23,5 +25,14 @@ class Compiler {
   // TODO: Need map.
   // TODO: Need fold.
   def visit[A](f: Ast.Node => A): A = ???
+
+
+  /**
+   * Compiles an AST type node to an internal type.
+   */
+  private def compile(typ: Ast.Type): Type = typ match {
+    case Ast.Type.Bool => Type.Bool
+
+  }
 
 }

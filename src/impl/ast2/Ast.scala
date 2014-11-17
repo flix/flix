@@ -61,43 +61,6 @@ object Ast {
 
   case class RuleDeclaration(name: String) extends Declaration
 
-  /**
-   * AST nodes which represents types.
-   */
-  sealed trait Type extends Node
-
-  object Type {
-
-    /**
-     * An AST node which represents the boolean type.
-     */
-    case object Bool extends Type
-
-    /**
-     * An AST node which represents the int type.
-     */
-    case object Int extends Type
-
-    /**
-     * An AST node which represents the string type.
-     */
-    case object Str extends Type
-
-    case class Tag(x: String) extends Type
-
-    case class Enum(xs: Seq[Type]) extends Type
-
-    case class Function(t1: Type, t2: Type) extends Type
-
-    /**
-     * A reference to a named type.
-     *
-     * Indirect references (and as a consequence circular references) are not allowed.
-     */
-    case class NameRef(name: Name) extends Type
-
-  }
-
 
   case class Argument(name: String, typ: Type) extends Node
 
@@ -143,6 +106,51 @@ object Ast {
   object Term {
 
     case class NameRef(n: Name) extends Term
+
+  }
+
+
+  /**
+   * AST nodes which represents types.
+   */
+  sealed trait Type extends Node
+
+  object Type {
+
+    /**
+     * An AST node which represents the boolean type.
+     */
+    case object Bool extends Type
+
+    /**
+     * An AST node which represents the int type.
+     */
+    case object Int extends Type
+
+    /**
+     * An AST node which represents the string type.
+     */
+    case object Str extends Type
+
+    /**
+     * An AST node which represents a tagged type.
+     */
+    case class Tag(name: String) extends Type
+
+    /**
+     * An AST node which represents an enumeration type.
+     */
+    case class Enum(tags: Seq[Type.Tag]) extends Type
+
+    /**
+     * A function type from type `t1` to `t2`.
+     */
+    case class Function(t1: Type, t2: Type) extends Type
+
+    /**
+     * A reference to a named type.
+     */
+    case class NameRef(name: Name) extends Type
 
   }
 
@@ -210,38 +218,6 @@ class Calculator(val input: ParserInput) extends Parser {
 
   def Annotation: Rule1[Ast.Annotation] = rule {
     "@" ~ capture(Identifier) ~ WhiteSpace ~> Ast.Annotation
-  }
-
-  def Type: Rule1[Ast.Type] = rule {
-    BoolType | IntType | StrType | EnumType | NamedType
-  }
-
-  def BoolType: Rule1[Ast.Type] = rule {
-    str("Bool") ~> (() => Ast.Type.Bool)
-  }
-
-  def IntType: Rule1[Ast.Type] = rule {
-    str("Int") ~> (() => Ast.Type.Int)
-  }
-
-  def StrType: Rule1[Ast.Type] = rule {
-    str("Str") ~> (() => Ast.Type.Str)
-  }
-
-  def EnumType: Rule1[Ast.Type.Enum] = rule {
-    "enum" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ EnumBody ~ WhiteSpace ~ "}" ~> Ast.Type.Enum
-  }
-
-  def EnumBody: Rule1[Seq[Ast.Type]] = rule {
-    oneOrMore("case" ~ WhiteSpace ~ capture(Identifier) ~> Ast.Type.Tag).separatedBy("," ~ WhiteSpace)
-  }
-
-  def NamedType: Rule1[Ast.Type.NameRef] = rule {
-    Name ~> Ast.Type.NameRef
-  }
-
-  def FunctionType: Rule1[Ast.Type.Function] = rule {
-    Type ~ WhiteSpace ~ "->" ~ WhiteSpace ~ Type ~ WhiteSpace ~> Ast.Type.Function
   }
 
   def Name: Rule1[Ast.Name] = rule {
@@ -319,6 +295,42 @@ class Calculator(val input: ParserInput) extends Parser {
    */
   def WhiteSpace: Rule0 = rule {
     oneOrMore(" " | "\t" | "\n")
+  }
+
+  /** *************************************************************************/
+  /** Types                                                                 ***/
+  /** *************************************************************************/
+  def Type: Rule1[Ast.Type] = rule {
+    BoolType | IntType | StrType | EnumType | NamedType
+  }
+
+  def BoolType: Rule1[Ast.Type] = rule {
+    str("Bool") ~> (() => Ast.Type.Bool)
+  }
+
+  def IntType: Rule1[Ast.Type] = rule {
+    str("Int") ~> (() => Ast.Type.Int)
+  }
+
+  def StrType: Rule1[Ast.Type] = rule {
+    str("Str") ~> (() => Ast.Type.Str)
+  }
+
+  def EnumType: Rule1[Ast.Type.Enum] = rule {
+    "enum" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ EnumBody ~ WhiteSpace ~ "}" ~> Ast.Type.Enum
+  }
+
+  def EnumBody: Rule1[Seq[Ast.Type.Tag]] = rule {
+    oneOrMore("case" ~ WhiteSpace ~ capture(Identifier) ~> Ast.Type.Tag).separatedBy("," ~ WhiteSpace)
+  }
+
+  // TODO: FunctionType
+  def FunctionType: Rule1[Ast.Type.Function] = rule {
+    Type ~ WhiteSpace ~ "->" ~ WhiteSpace ~ Type ~ WhiteSpace ~> Ast.Type.Function
+  }
+
+  def NamedType: Rule1[Ast.Type.NameRef] = rule {
+    Name ~> Ast.Type.NameRef
   }
 
 }
