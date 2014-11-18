@@ -5,7 +5,7 @@ import api.Flix
 object Graph01 extends App {
   val flix = new Flix
 
-  flix("""
+  flix += """
     (def-type Edge (-> Str (Set Str)))
     (def-type Reachable (-> Str (Set Str)))
     (def-type Cycle (Set Str))
@@ -17,7 +17,7 @@ object Graph01 extends App {
     (rule (Reachable x {z}) ((Reachable x {y}) (Reachable y {z})))
 
     (rule (Cycle {x}) ((Reachable x {x})))
-  """)
+  """
 
   flix.solve()
   flix.print()
