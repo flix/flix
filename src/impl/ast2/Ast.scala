@@ -323,7 +323,7 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
   def UnitType: Rule1[Ast.Type] = rule {
-    str("()") ~> (() => Ast.Type.Unit)
+    str("Unit") ~> (() => Ast.Type.Unit)
   }
 
   def BoolType: Rule1[Ast.Type] = rule {
