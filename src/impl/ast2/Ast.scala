@@ -143,9 +143,24 @@ object Ast {
     case class Tag(name: String) extends Type
 
     /**
+     * An AST node which represents a tuple type.
+     */
+    case class Tuple(elms: Seq[Type]) extends Type
+
+    /**
+     * An AST node which represents a set type.
+     */
+    case class Set(elms: Type) extends Type
+
+    /**
+     * An AST node which represents a map type.
+     */
+    case class Map(keys: Type, values: Type) extends Type
+
+    /**
      * An AST node which represents an enumeration type.
      */
-    case class Enum(tags: Seq[Type.Tag]) extends Type
+    case class Enum(elms: Seq[Type.Tag]) extends Type
 
     /**
      * A function type from type `t1` to `t2`.
@@ -306,7 +321,7 @@ class Calculator(val input: ParserInput) extends Parser {
   /** Types                                                                 ***/
   /** *************************************************************************/
   def Type: Rule1[Ast.Type] = rule {
-    BoolType | IntType | StrType | EnumType | NamedType
+    BoolType | IntType | StrType | EnumType | SetType | MapType | NamedType
   }
 
   def UnitType: Rule1[Ast.Type] = rule {
@@ -331,6 +346,16 @@ class Calculator(val input: ParserInput) extends Parser {
 
   def EnumBody: Rule1[Seq[Ast.Type.Tag]] = rule {
     oneOrMore("case" ~ WhiteSpace ~ capture(Identifier) ~> Ast.Type.Tag).separatedBy("," ~ WhiteSpace)
+  }
+
+  //def TupleType:
+
+  def SetType: Rule1[Ast.Type.Set] = rule {
+    "Set" ~ "[" ~ Type ~ "]" ~> Ast.Type.Set
+  }
+
+  def MapType: Rule1[Ast.Type.Map] = rule {
+    "Map" ~ "[" ~ Type ~ ", " ~ Type ~ "]" ~> Ast.Type.Map
   }
 
   // TODO: FunctionType

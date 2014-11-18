@@ -53,7 +53,7 @@ namespace Sign {
 
 namespace Sign {
 
-    var NumberOne:  Sign;
+    var NumberOne:  Map[Str, Sign];
     var NumberTwo:  Sign;
     var Result:     Sign;
 
