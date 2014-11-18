@@ -161,12 +161,17 @@ object Ast {
     case class Enum(elms: Seq[Type.Tag]) extends Type
 
     /**
-     * A function type from type `t1` to `t2`.
+     * An AST node which represents a function type.
+     *
+     * A function type is a sequence of types t1 -> t2 -> ... -> tn
+     * to avoid left-recursion in the grammar.
      */
-    case class Function(t1: Type, t2: Type) extends Type
+    case class Function(elms: Seq[Type]) extends Type
 
     /**
-     * A reference to a named type.
+     * An AST node which represents a reference to a named type.
+     *
+     * The compilation replaces all named refs by their actual types.
      */
     case class NameRef(name: Name) extends Type
 
@@ -319,6 +324,10 @@ class Calculator(val input: ParserInput) extends Parser {
   /** Types                                                                 ***/
   /** *************************************************************************/
   def Type: Rule1[Ast.Type] = rule {
+    FunctionType | SimpleType
+  }
+
+  def SimpleType: Rule1[Ast.Type] = rule {
     UnitType | BoolType | IntType | StrType | TupleType | SetType | MapType | EnumType | NamedType
   }
 
@@ -358,9 +367,8 @@ class Calculator(val input: ParserInput) extends Parser {
     oneOrMore("case" ~ WhiteSpace ~ capture(Identifier) ~> Ast.Type.Tag).separatedBy("," ~ WhiteSpace)
   }
 
-  // TODO: FunctionType
   def FunctionType: Rule1[Ast.Type.Function] = rule {
-    Type ~ WhiteSpace ~ "->" ~ WhiteSpace ~ Type ~ WhiteSpace ~> Ast.Type.Function
+    oneOrMore(SimpleType).separatedBy(WhiteSpace ~ "->" ~ WhiteSpace) ~> Ast.Type.Function
   }
 
   def NamedType: Rule1[Ast.Type.NameRef] = rule {

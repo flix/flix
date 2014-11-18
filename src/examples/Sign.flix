@@ -53,7 +53,7 @@ namespace Sign {
 
 namespace Sign {
 
-    var NumberOne:  (Int, Int, Str);
+    var NumberOne:  Int -> (Int, Int, Str) -> Int;
     var NumberTwo:  Sign;
     var Result:     Sign;
 
