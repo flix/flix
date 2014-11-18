@@ -1,9 +1,7 @@
 package impl.ast2
 
-import java.beans.Expression
 import java.io.File
 
-import impl.ast2.Ast
 import org.parboiled2.ParseError
 
 import scala.io.Source
@@ -321,7 +319,7 @@ class Calculator(val input: ParserInput) extends Parser {
   /** Types                                                                 ***/
   /** *************************************************************************/
   def Type: Rule1[Ast.Type] = rule {
-    BoolType | IntType | StrType | EnumType | SetType | MapType | NamedType
+    UnitType | BoolType | IntType | StrType | TupleType | SetType | MapType | EnumType | NamedType
   }
 
   def UnitType: Rule1[Ast.Type] = rule {
@@ -340,22 +338,24 @@ class Calculator(val input: ParserInput) extends Parser {
     str("Str") ~> (() => Ast.Type.Str)
   }
 
-  def EnumType: Rule1[Ast.Type.Enum] = rule {
-    "enum" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ EnumBody ~ WhiteSpace ~ "}" ~> Ast.Type.Enum
+  def TupleType: Rule1[Ast.Type.Tuple] = rule {
+    "(" ~ oneOrMore(Type).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Type.Tuple
   }
-
-  def EnumBody: Rule1[Seq[Ast.Type.Tag]] = rule {
-    oneOrMore("case" ~ WhiteSpace ~ capture(Identifier) ~> Ast.Type.Tag).separatedBy("," ~ WhiteSpace)
-  }
-
-  //def TupleType:
 
   def SetType: Rule1[Ast.Type.Set] = rule {
     "Set" ~ "[" ~ Type ~ "]" ~> Ast.Type.Set
   }
 
   def MapType: Rule1[Ast.Type.Map] = rule {
-    "Map" ~ "[" ~ Type ~ ", " ~ Type ~ "]" ~> Ast.Type.Map
+    "Map" ~ "[" ~ Type ~ WhiteSpace ~ "," ~ WhiteSpace ~ Type ~ "]" ~> Ast.Type.Map
+  }
+
+  def EnumType: Rule1[Ast.Type.Enum] = rule {
+    "enum" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ EnumBody ~ WhiteSpace ~ "}" ~> Ast.Type.Enum
+  }
+
+  def EnumBody: Rule1[Seq[Ast.Type.Tag]] = rule {
+    oneOrMore("case" ~ WhiteSpace ~ capture(Identifier) ~> Ast.Type.Tag).separatedBy("," ~ WhiteSpace)
   }
 
   // TODO: FunctionType
