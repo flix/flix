@@ -36,6 +36,9 @@ class Compiler {
     Program(declarations.toList, constraints.toList)
   }
 
+  def addScalaFunction(name: String, fn: Value=>Value) =
+    funcs += (name -> Term.ScalaFunction(fn))
+
   def compileDeclaration(e: SExp): Unit = {
     e match {
       case SExp.Lst(List(SExp.Keyword("def-type"), SExp.Name(n), e1)) =>
