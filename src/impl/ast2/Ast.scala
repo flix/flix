@@ -376,4 +376,3 @@ class Calculator(val input: ParserInput) extends Parser {
   }
 
 }
-

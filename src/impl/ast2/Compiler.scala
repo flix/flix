@@ -31,7 +31,11 @@ class Compiler {
    * Compiles an AST type node to an internal type.
    */
   private def compile(typ: Ast.Type): Type = typ match {
+    case Ast.Type.Unit => Type.Unit
     case Ast.Type.Bool => Type.Bool
+    case Ast.Type.Int => Type.Int
+    case Ast.Type.Str => Type.Str
+    case Ast.Type.Set(typ1) => Type.Set(compile(typ1))
 
   }
 
