@@ -89,6 +89,10 @@ object Parser {
   def parse(f: File): List[SExp] = {
     // read all lines into a single string.
     val source = Source.fromFile(f).getLines().mkString("\n")
+    parse(source)
+  }
+
+  def parse(source: String): List[SExp] = {
     // remove comments
     val uncommented = source.replaceAll("//[^\n]*", "")
     // parse the entire file
