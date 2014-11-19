@@ -149,7 +149,11 @@ object Ast {
 
     // TODO: Introduce let.
 
-    case class Tuple(xs: Seq[Expression]) extends Expression
+
+    /**
+     * An AST node which represents a tuple expression.
+     */
+    case class Tuple(elms: Seq[Expression]) extends Expression
 
 
     // TODO: Could be a let or lambda bound thing, or a reference to a global thing.
