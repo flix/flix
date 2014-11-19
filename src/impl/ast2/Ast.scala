@@ -145,17 +145,34 @@ object Ast {
     case class Tuple(xs: Seq[Expression]) extends Expression
 
 
-
-
     // TODO: Could be a let or lambda bound thing, or a reference to a global thing.
     // Elimintated by the compiler.
     case class UnresolvedName(name: Name) extends Expression
 
     // Introduced by the compiler.
 
+    /**
+     * An AST node which represents a "missing" (i.e. not-yet-implemented) expression.
+     *
+     * Evaluating a missing expression always results in a runtime error.
+     *
+     * The semantic difference between missing and impossible is that missing represents
+     * some missing code whereas impossible represent a situation which is guaranteed,
+     * by the programmer, not to occur.
+     */
     case object Missing extends Expression
 
+    /**
+     * An AST node which represents an "impossible" (i.e. unreachable code) expression.
+     *
+     * Evaluating an impossible expression always results in a runtime error.
+     *
+     * The semantic difference between missing and impossible is that missing represents
+     * some missing code whereas impossible represent a situation which is guaranteed,
+     * by the programmer, not to occur.
+     */
     case object Impossible extends Expression
+
   }
 
   /**
