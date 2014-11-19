@@ -2,14 +2,22 @@ package impl.ast2
 
 import impl.logic.Type
 
-class Compiler {
+class Compiler(ast: Ast.Root) {
+
+  def run(): Unit = {
+
+  }
 
   // environments
   // Typ Env
   // ValEnv
   // FunEnv
   // etc. etc.
-  def typenv(root: Ast.Root): Map[String, Ast.Declaration] = ???
+
+  /**
+   * Returns a map from (fully qualified) names to types.
+   */
+  def typenv(root: Ast.Root): Map[Ast.Name, Ast.Type] = ???
 
 
   // linking
