@@ -94,13 +94,28 @@ object Ast {
 
   }
 
+  /**
+   * A common super-type for AST nodes which represent expressions.
+   */
   sealed trait Expression extends Node
 
   object Expression {
 
-    case class Literal(s: String) extends Expression
+    /**
+     * An AST node which represents a boolean literal.
+     */
+    case class Bool(literal: Boolean) extends Expression
 
-    case class Variable(name: Name) extends Expression
+    /**
+     * An AST node which represents an integer literal.
+     */
+    case class Int(literal: Int) extends Expression
+
+    /**
+     * An AST node which represents a string literal.
+     */
+    case class Str(literal: String) extends Expression
+
 
     case class IfThenElse(cond: Expression, e2: Expression, e3: Expression) extends Expression
 
@@ -109,6 +124,9 @@ object Ast {
     case class Tuple(xs: Seq[Expression]) extends Expression
 
     case class NotImplemented() extends Expression
+
+    // TODO: Could be a let or lambda bound thing, or a reference to a global thing.
+    case class UnresolvedVar(name: Name) extends Expression
 
   }
 

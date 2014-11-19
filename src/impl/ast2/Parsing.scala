@@ -102,11 +102,15 @@ class Parsing(val input: ParserInput) extends Parser {
   }
 
   def Expression: Rule1[Ast.Expression] = rule {
-    LiteralExpression | IfThenElseExp | MatchExpression | TupleExpression | VariableExpression | NotImplementedExpression
+    LiteralExp | IfThenElseExp | MatchExpression | TupleExpression | VariableExpression | NotImplementedExpression
   }
 
-  def LiteralExpression: Rule1[Ast.Expression.Literal] = rule {
-    Digits ~> Ast.Expression.Literal
+  def LiteralExp: Rule1[Ast.Expression] = rule {
+    BoolLiteralExp
+  }
+
+  def BoolLiteralExp: Rule1[Ast.Expression.Bool] = rule {
+    str("true") ~> (() => Ast.Expression.Bool(true)) | str("false") ~> (() => Ast.Expression.Bool(false))
   }
 
   def IfThenElseExp: Rule1[Ast.Expression.IfThenElse] = rule {
@@ -145,8 +149,8 @@ class Parsing(val input: ParserInput) extends Parser {
     "(" ~ oneOrMore(Expression).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Expression.Tuple
   }
 
-  def VariableExpression: Rule1[Ast.Expression.Variable] = rule {
-    Name ~> Ast.Expression.Variable
+  def VariableExpression: Rule1[Ast.Expression.UnresolvedVar] = rule {
+    Name ~> Ast.Expression.UnresolvedVar
   }
 
   def Identifier = rule {
