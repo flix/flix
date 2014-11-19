@@ -65,7 +65,7 @@ object Ast {
     /**
      * An AST node which represent a rule declaration.
      */
-    case class Rule(name: String, head: Predicate /*, body: Predicate*/) extends Declaration
+    case class Rule(name: String, head: Predicate, body: Seq[Predicate]) extends Declaration
 
   }
 
@@ -117,8 +117,11 @@ object Ast {
   sealed trait Term extends Node
 
   object Term {
+
     case class Call(n: Name, args: Seq[Term]) extends Term
+
     case class Int(i: String) extends Term
+
     case class NameRef(n: Name) extends Term
 
   }

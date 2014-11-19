@@ -24,7 +24,7 @@ class Parsing(val input: ParserInput) extends Parser {
   }
 
   def Declaration: Rule1[Ast.Declaration] = rule {
-    NameSpace | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | FactDeclaration
+    NameSpace | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | FactDeclaration | RuleDeclaraction
   }
 
   def NameSpace: Rule1[Ast.Declaration.NameSpace] = rule {
@@ -56,7 +56,11 @@ class Parsing(val input: ParserInput) extends Parser {
   }
 
   def RuleDeclaraction: Rule1[Ast.Declaration.Rule] = rule {
-    "rule" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Predicate ~> Ast.Declaration.Rule
+    "rule" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Predicate ~ WhiteSpace ~ "if" ~ WhiteSpace ~ RuleBody ~ ";" ~ WhiteSpace ~> Ast.Declaration.Rule
+  }
+
+  def RuleBody: Rule1[Seq[Ast.Predicate]] = rule {
+    oneOrMore(Predicate).separatedBy("," ~ WhiteSpace)
   }
 
   def Predicate: Rule1[Ast.Predicate] = rule {
