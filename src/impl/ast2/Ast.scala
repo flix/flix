@@ -14,7 +14,7 @@ object Foo {
     val line = Source.fromFile(new File("src/examples/Sign.flix")).getLines().mkString("\n")
 
     val parser = new Parsing(line)
-    parser.TopLevel.run() match {
+    parser.Root.run() match {
       case Success(exprAst) => println("Result: " + exprAst)
       case Failure(e: ParseError) => println("Expression is not valid: " + parser.formatError(e))
       case Failure(e) => println("Unexpected error during parsing run: " + e)
@@ -32,11 +32,11 @@ object Ast {
   sealed trait Node
 
   /**
-   * The root the Ast. A root consists of a sequence of namespace declarations.
+   * The Ast root node.
+   *
+   * At the highest level an Ast is a sequence of declarations.
    */
-  // TODO: seq af decl.
-  case class Root(namespaces: Seq[NameSpace])
-
+  case class Root(decls: Seq[Declaration]) extends Node
 
   /**
    * AST nodes which represent declarations.
@@ -53,14 +53,7 @@ object Ast {
 
   }
 
-
-  sealed trait Name
-
-  case class SimpleName(name: String) extends Name
-
-  case class QualifiedName(prefix: String, rest: Name) extends Name
-
-  case class NameSpace(name: Name, body: Seq[Ast.Declaration]) extends Node
+  case class NameSpace(name: Name, body: Seq[Ast.Declaration]) extends Declaration
 
 
   case class ValueDeclaration(name: String, t: Type, exp: Expression) extends Declaration
@@ -120,6 +113,12 @@ object Ast {
     case class NameRef(n: Name) extends Term
 
   }
+
+  sealed trait Name
+
+  case class SimpleName(name: String) extends Name
+
+  case class QualifiedName(prefix: String, rest: Name) extends Name
 
 
   /**

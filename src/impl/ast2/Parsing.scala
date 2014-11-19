@@ -8,7 +8,7 @@ object Parsing {
 
   def parse(s: String): Ast.Root = {
     val parser = new Parsing(s)
-    parser.TopLevel.run() match {
+    parser.Root.run() match {
       case Success(ast) => ast
       case Failure(e: ParseError) => throw new RuntimeException("Expression is not valid: " + parser.formatError(e))
       case Failure(e) => throw new RuntimeException("Unexpected error during parsing run: " + e)
@@ -17,8 +17,12 @@ object Parsing {
 }
 
 class Parsing(val input: ParserInput) extends Parser {
-  def TopLevel: Rule1[Ast.Root] = rule {
-    oneOrMore(NameSpace) ~ EOI ~> Ast.Root
+  def Root: Rule1[Ast.Root] = rule {
+    oneOrMore(Declaration) ~ EOI ~> Ast.Root
+  }
+
+  def Declaration: Rule1[Ast.Declaration] = rule {
+    NameSpace | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | FactDeclaration
   }
 
   def NameSpace: Rule1[Ast.NameSpace] = rule {
@@ -27,11 +31,6 @@ class Parsing(val input: ParserInput) extends Parser {
 
   def NameSpaceBody: Rule1[Seq[Ast.Declaration]] = rule {
     zeroOrMore(Declaration)
-  }
-
-  def Declaration: Rule1[Ast.Declaration] = rule {
-    // TODO: Namespace decl. and should be top-level.
-    TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | FactDeclaration
   }
 
   def TypeDeclaration: Rule1[Ast.Declaration.TypeDecl] = rule {
