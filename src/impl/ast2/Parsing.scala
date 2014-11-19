@@ -1,6 +1,6 @@
 package impl.ast2
 
-import impl.logic.UnaryOperator
+import impl.logic.{BinaryOperator, UnaryOperator}
 import org.parboiled2._
 import scala.collection.immutable.Seq
 import scala.util.{Failure, Success}
@@ -181,7 +181,13 @@ class Parsing(val input: ParserInput) extends Parser {
   /** Operators                                                             ***/
   /** *************************************************************************/
   def UnaryOp: Rule1[UnaryOperator] = rule {
-    ch('+') ~> (() => UnaryOperator.UnaryPlus)
+    ch('!') ~> (() => UnaryOperator.Not) |
+      ch('+') ~> (() => UnaryOperator.UnaryPlus) |
+      ch('-') ~> (() => UnaryOperator.UnaryMinus)
+  }
+
+  def BinaryOp: Rule1[BinaryOperator] = rule {
+    ch('+') ~> (() => BinaryOperator.Plus)
   }
 
 
