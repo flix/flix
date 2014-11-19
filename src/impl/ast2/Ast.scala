@@ -46,14 +46,28 @@ object Ast {
   object Declaration {
 
     /**
-     * A type declaration.
+     * An AST node which represents a namespace declaration.
+     */
+    case class NameSpace(name: Name, body: Seq[Ast.Declaration]) extends Declaration
+
+
+    /**
+     * An AST node which represents a type declaration.
      */
     // TODO: Naming issue? Why can't this be called type?
     case class TypeDecl(name: String, typ: Type) extends Declaration
 
-  }
+    /**
+     * An AST node which represents a fact declaration.
+     */
+    case class Fact(name: String, predicate: Predicate) extends Declaration
 
-  case class NameSpace(name: Name, body: Seq[Ast.Declaration]) extends Declaration
+    /**
+     * An AST node which represent a rule declaration.
+     */
+    case class Rule(name: String) extends Declaration
+
+  }
 
 
   case class ValueDeclaration(name: String, t: Type, exp: Expression) extends Declaration
@@ -62,13 +76,7 @@ object Ast {
 
   case class FunctionDeclaration(an: Seq[Annotation], x: String, arguments: Seq[Argument], returnType: Type, exp: Expression) extends Declaration
 
-  case class FactDeclaration(name: String, p: Predicate) extends Declaration
-
-  case class RuleDeclaration(name: String) extends Declaration
-
-
   case class Argument(name: String, typ: Type) extends Node
-
 
   case class MatchRule(p: Pattern, e: Expression) extends Node
 

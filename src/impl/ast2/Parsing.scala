@@ -25,8 +25,8 @@ class Parsing(val input: ParserInput) extends Parser {
     NameSpace | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | FactDeclaration
   }
 
-  def NameSpace: Rule1[Ast.NameSpace] = rule {
-    "namespace" ~ WhiteSpace ~ Name ~ WhiteSpace ~ '{' ~ optional(WhiteSpace) ~ NameSpaceBody ~ optional(WhiteSpace) ~ '}' ~ ";" ~ optional(WhiteSpace) ~> Ast.NameSpace
+  def NameSpace: Rule1[Ast.Declaration.NameSpace] = rule {
+    "namespace" ~ WhiteSpace ~ Name ~ WhiteSpace ~ '{' ~ optional(WhiteSpace) ~ NameSpaceBody ~ optional(WhiteSpace) ~ '}' ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.NameSpace
   }
 
   def NameSpaceBody: Rule1[Seq[Ast.Declaration]] = rule {
@@ -49,12 +49,12 @@ class Parsing(val input: ParserInput) extends Parser {
     zeroOrMore(Annotation) ~ "def" ~ WhiteSpace ~ capture(Identifier) ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> Ast.FunctionDeclaration
   }
 
-  def FactDeclaration: Rule1[Ast.FactDeclaration] = rule {
-    "fact" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Predicate ~> Ast.FactDeclaration
+  def FactDeclaration: Rule1[Ast.Declaration.Fact] = rule {
+    "fact" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Predicate ~> Ast.Declaration.Fact
   }
 
-  def RuleDeclaraction: Rule1[Ast.RuleDeclaration] = rule {
-    "rule" ~ WhiteSpace ~ capture(Identifier) ~> Ast.RuleDeclaration
+  def RuleDeclaraction: Rule1[Ast.Declaration.Rule] = rule {
+    "rule" ~ WhiteSpace ~ capture(Identifier) ~> Ast.Declaration.Rule
   }
 
   def Predicate: Rule1[Ast.Predicate] = rule {
