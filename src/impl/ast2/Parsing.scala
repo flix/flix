@@ -126,9 +126,9 @@ class Parsing(val input: ParserInput) extends Parser {
     UnaryOp ~ optional(WhiteSpace) ~ Expression ~> Ast.Expression.Unary
   }
 
-//  def BinaryExp: Rule1[Ast.Expression.Binary] = rule {
-//    TODO
-//  }
+  //  def BinaryExp: Rule1[Ast.Expression.Binary] = rule {
+  //    TODO
+  //  }
 
   def InfixExp: Rule1[Ast.Expression.Infix] = rule {
     UnaryExp ~ WhiteSpace ~ "`" ~ Name ~ "`" ~ WhiteSpace ~ UnaryExp ~> Ast.Expression.Infix
@@ -198,29 +198,6 @@ class Parsing(val input: ParserInput) extends Parser {
     oneOrMore(" " | "\t" | "\n")
   }
 
-  /** *************************************************************************/
-  /** Operators                                                             ***/
-  /** *************************************************************************/
-  def UnaryOp: Rule1[UnaryOperator] = rule {
-    str("!") ~> (() => UnaryOperator.Not) |
-      str("+") ~> (() => UnaryOperator.UnaryPlus) |
-      str("-") ~> (() => UnaryOperator.UnaryMinus)
-  }
-
-  def BinaryOp: Rule1[BinaryOperator] = rule {
-    str("+") ~> (() => BinaryOperator.Plus) |
-      str("-") ~> (() => BinaryOperator.Minus) |
-      str("*") ~> (() => BinaryOperator.Times) |
-      str("/") ~> (() => BinaryOperator.Divide) |
-      str("<=") ~> (() => BinaryOperator.LessEqual) |
-      str(">=") ~> (() => BinaryOperator.GreaterEqual) |
-      str("<") ~> (() => BinaryOperator.Less) |
-      str(">") ~> (() => BinaryOperator.Greater) |
-      str("==") ~> (() => BinaryOperator.Equal) |
-      str("!=") ~> (() => BinaryOperator.NotEqual) |
-      str("&&") ~> (() => BinaryOperator.And) |
-      str("||") ~> (() => BinaryOperator.Or)
-  }
 
   /** *************************************************************************/
   /** Types                                                                 ***/
@@ -275,6 +252,30 @@ class Parsing(val input: ParserInput) extends Parser {
 
   def NamedType: Rule1[Ast.Type.NameRef] = rule {
     Name ~> Ast.Type.NameRef
+  }
+
+  /** *************************************************************************/
+  /** Operators                                                             ***/
+  /** *************************************************************************/
+  def UnaryOp: Rule1[UnaryOperator] = rule {
+    str("!") ~> (() => UnaryOperator.Not) |
+      str("+") ~> (() => UnaryOperator.UnaryPlus) |
+      str("-") ~> (() => UnaryOperator.UnaryMinus)
+  }
+
+  def BinaryOp: Rule1[BinaryOperator] = rule {
+    str("+") ~> (() => BinaryOperator.Plus) |
+      str("-") ~> (() => BinaryOperator.Minus) |
+      str("*") ~> (() => BinaryOperator.Times) |
+      str("/") ~> (() => BinaryOperator.Divide) |
+      str("<=") ~> (() => BinaryOperator.LessEqual) |
+      str(">=") ~> (() => BinaryOperator.GreaterEqual) |
+      str("<") ~> (() => BinaryOperator.Less) |
+      str(">") ~> (() => BinaryOperator.Greater) |
+      str("==") ~> (() => BinaryOperator.Equal) |
+      str("!=") ~> (() => BinaryOperator.NotEqual) |
+      str("&&") ~> (() => BinaryOperator.And) |
+      str("||") ~> (() => BinaryOperator.Or)
   }
 
 }
