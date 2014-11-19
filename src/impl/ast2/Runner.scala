@@ -12,7 +12,7 @@ object Runner {
 
     val line = Source.fromFile(new File("src/examples/Sign.flix")).getLines().mkString("\n")
 
-    val parser = new Parsing(line)
+    val parser = new Parser(line)
     parser.Root.run() match {
       case Success(ast) => {
         println("Result: " + ast)

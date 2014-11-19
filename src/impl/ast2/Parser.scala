@@ -5,10 +5,10 @@ import org.parboiled2._
 import scala.collection.immutable.Seq
 import scala.util.{Failure, Success}
 
-object Parsing {
+object Parser {
 
   def parse(s: String): Ast.Root = {
-    val parser = new Parsing(s)
+    val parser = new Parser(s)
     parser.Root.run() match {
       case Success(ast) => ast
       case Failure(e: ParseError) => throw new RuntimeException("Expression is not valid: " + parser.formatError(e))
@@ -19,7 +19,7 @@ object Parsing {
 
 // TODO: Sort everything.
 
-class Parsing(val input: ParserInput) extends Parser {
+class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   def Root: Rule1[Ast.Root] = rule {
     oneOrMore(Declaration) ~ EOI ~> Ast.Root
   }
