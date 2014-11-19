@@ -37,7 +37,7 @@ class Parsing(val input: ParserInput) extends Parser {
   }
 
   def TypeDeclaration: Rule1[Ast.Declaration.TypeDecl] = rule {
-    "type" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Type ~ ";" ~ WhiteSpace ~> Ast.Declaration.TypeDecl
+    "type" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Type ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.TypeDecl
   }
 
   def ValueDeclaration: Rule1[Ast.Declaration.Val] = rule {
@@ -203,7 +203,7 @@ class Parsing(val input: ParserInput) extends Parser {
   /** Types                                                                 ***/
   /** *************************************************************************/
   def Type: Rule1[Ast.Type] = rule {
-    FunctionType | SimpleType
+    SimpleType
   }
 
   def SimpleType: Rule1[Ast.Type] = rule {
@@ -246,6 +246,7 @@ class Parsing(val input: ParserInput) extends Parser {
     oneOrMore("case" ~ WhiteSpace ~ capture(Identifier) ~> Ast.Type.Tag).separatedBy("," ~ WhiteSpace)
   }
 
+  // TODO: Currently broken.
   def FunctionType: Rule1[Ast.Type.Function] = rule {
     oneOrMore(SimpleType).separatedBy(WhiteSpace ~ "->" ~ WhiteSpace) ~> Ast.Type.Function
   }
