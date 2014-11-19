@@ -140,7 +140,10 @@ object Ast {
     case class NotImplemented() extends Expression
 
     // TODO: Could be a let or lambda bound thing, or a reference to a global thing.
+    // Elimintated by the compiler.
     case class UnresolvedVar(name: Name) extends Expression
+
+    // Introduced by the compiler.
 
   }
 
@@ -228,7 +231,7 @@ object Ast {
     /**
      * An AST node which represents a reference to a named type.
      *
-     * The compilation replaces all named refs by their actual types.
+     * Eliminated by the compiler.
      */
     case class NameRef(name: Name) extends Type
 
