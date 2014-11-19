@@ -72,11 +72,11 @@ object Ast {
 
   object Pattern {
 
-    case class Wildcard() extends Pattern
+    case object Wildcard extends Pattern
 
     case class Var(name: Name) extends Pattern
 
-    case class Tuple(ps: Seq[Pattern]) extends Pattern
+    case class Tuple(elms: Seq[Pattern]) extends Pattern
 
   }
 

@@ -133,8 +133,8 @@ class Parsing(val input: ParserInput) extends Parser {
     Name ~> Ast.Pattern.Var
   }
 
-  def WildcardPattern: Rule1[Ast.Pattern.Wildcard] = rule {
-    str("_") ~> Ast.Pattern.Wildcard
+  def WildcardPattern: Rule1[Ast.Pattern] = rule {
+    str("_") ~> (() => Ast.Pattern.Wildcard)
   }
 
   def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {

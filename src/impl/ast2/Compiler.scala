@@ -5,7 +5,7 @@ import impl.logic.Type
 class Compiler(ast: Ast.Root) {
 
   def run(): Unit = {
-    println(typenv(ast))
+    //println(typenv(ast))
   }
 
   // environments
