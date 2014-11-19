@@ -1,6 +1,7 @@
 package impl.ast
 
 import impl.logic.Declaration.{DeclareBot, DeclareLeq, DeclareLub}
+import impl.logic.Predicate.GroundPredicate
 import impl.logic._
 import impl.runtime.{Error, Interpreter}
 import impl.verifier.Typer
@@ -8,11 +9,13 @@ import impl.verifier.Typer
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-object Compiler {
+class Compiler {
 
   val types = mutable.Map.empty[String, Type]
   val labels = mutable.Map.empty[String, Type.Sum]
   val funcs = mutable.Map.empty[String, Term]
+  val declarations = ListBuffer.empty[Declaration]
+  val constraints = ListBuffer.empty[Constraint]
 
   def lookupType(name: String): Type = types.get(name) match {
     case None => throw new RuntimeException(s"No type defined for name: $name")
@@ -23,58 +26,67 @@ object Compiler {
    * Compiles a list of top-level declarations to a logic program.
    */
   def compile(es: List[SExp]): Program = {
-    val declarations = ListBuffer.empty[Declaration]
-    val constraints = ListBuffer.empty[Constraint]
     for (e <- es) {
-      e match {
-        case SExp.Lst(List(SExp.Keyword("def-type"), SExp.Name(n), e1)) =>
-          val typ = compileType(e1)
-          types += (n -> typ)
-          typ.resultType match {
-            case x: Type.Set =>
-              declarations += synthesizeBot(x)
-              declarations += synthesizeLeq(x)
-              declarations += synthesizeLub(x)
-            case _ => // nop
-          }
-
-        case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Var(n), SExp.Lst(args), body)) =>
-          val t = compileAbs(args, body)
-          val typ = Typer.typecheck(t)
-          funcs += (n -> t)
-
-        case SExp.Lst(List(SExp.Keyword("def-bot"), SExp.Name(n), exp)) =>
-          val t = compileTerm(exp)
-          val typ = Typer.typecheck(t)
-          val v = Interpreter.evaluate(t)
-          declarations += Declaration.DeclareBot(v, typ)
-
-        case SExp.Lst(List(SExp.Keyword("def-leq"), SExp.Name(n), SExp.Lst(args), body)) =>
-          val t = compileAbs(args, body)
-          val typ = Typer.typecheck(t)
-          declarations += Declaration.DeclareLeq(t, typ)
-
-        case SExp.Lst(List(SExp.Keyword("def-lub"), SExp.Name(n), SExp.Lst(args), body)) =>
-          val t = compileAbs(args, body)
-          val typ = Typer.typecheck(t)
-          declarations += Declaration.DeclareLub(t, typ)
-
-        case SExp.Lst(List(SExp.Keyword("def-height"), SExp.Name(n), SExp.Lst(args), body)) =>
-          val t = compileAbs(args, body)
-          val typ = Typer.typecheck(t)
-          declarations += Declaration.DeclareHeight(t, typ)
-
-        case SExp.Lst(List(SExp.Keyword("fact"), head)) =>
-          constraints += Constraint.Fact(compilePredicate(head).asInstanceOf[Predicate.GroundPredicate])
-
-        case SExp.Lst(List(SExp.Keyword("rule"), head, SExp.Lst(body))) =>
-          constraints += Constraint.Rule(compilePredicate(head), body map compilePredicate, None)
-
-        case SExp.Lst(List(SExp.Keyword("rule"), head, SExp.Lst(body), proposition)) =>
-          constraints += Constraint.Rule(compilePredicate(head), body map compilePredicate, Some(compileProposition(proposition)))
-      }
+      compileDeclaration(e)
     }
+    outputProgram
+  }
+
+  def outputProgram: Program = {
     Program(declarations.toList, constraints.toList)
+  }
+
+  def addScalaFunction(name: String, fn: Value=>Value) =
+    funcs += (name -> Term.ScalaFunction(fn))
+
+  def compileDeclaration(e: SExp): Unit = {
+    e match {
+      case SExp.Lst(List(SExp.Keyword("def-type"), SExp.Name(n), e1)) =>
+        val typ = compileType(e1)
+        types += (n -> typ)
+        typ.resultType match {
+          case x: Type.Set =>
+            declarations += synthesizeBot(x)
+            declarations += synthesizeLeq(x)
+            declarations += synthesizeLub(x)
+          case _ => // nop
+        }
+
+      case SExp.Lst(List(SExp.Keyword("def-fun"), SExp.Var(n), SExp.Lst(args), body)) =>
+        val t = compileAbs(args, body)
+        val typ = Typer.typecheck(t)
+        funcs += (n -> t)
+
+      case SExp.Lst(List(SExp.Keyword("def-bot"), SExp.Name(n), exp)) =>
+        val t = compileTerm(exp)
+        val typ = Typer.typecheck(t)
+        val v = Interpreter.evaluate(t)
+        declarations += Declaration.DeclareBot(v, typ)
+
+      case SExp.Lst(List(SExp.Keyword("def-leq"), SExp.Name(n), SExp.Lst(args), body)) =>
+        val t = compileAbs(args, body)
+        val typ = Typer.typecheck(t)
+        declarations += Declaration.DeclareLeq(t, typ)
+
+      case SExp.Lst(List(SExp.Keyword("def-lub"), SExp.Name(n), SExp.Lst(args), body)) =>
+        val t = compileAbs(args, body)
+        val typ = Typer.typecheck(t)
+        declarations += Declaration.DeclareLub(t, typ)
+
+      case SExp.Lst(List(SExp.Keyword("def-height"), SExp.Name(n), SExp.Lst(args), body)) =>
+        val t = compileAbs(args, body)
+        val typ = Typer.typecheck(t)
+        declarations += Declaration.DeclareHeight(t, typ)
+
+      case SExp.Lst(List(SExp.Keyword("fact"), head)) =>
+        constraints += Constraint.Fact(compilePredicate(head).asInstanceOf[GroundPredicate])
+
+      case SExp.Lst(List(SExp.Keyword("rule"), head, SExp.Lst(body))) =>
+        constraints += Constraint.Rule(compilePredicate(head), body map compilePredicate, None)
+
+      case SExp.Lst(List(SExp.Keyword("rule"), head, SExp.Lst(body), proposition)) =>
+        constraints += Constraint.Rule(compilePredicate(head), body map compilePredicate, Some(compileProposition(proposition)))
+    }
   }
 
   /**

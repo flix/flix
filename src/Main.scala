@@ -16,7 +16,7 @@ object Main {
     val ast = Parser.parse(file)
 
     // logic program
-    val program = Compiler.compile(ast)
+    val program = (new Compiler).compile(ast)
 
     // verify
     Typer.typecheck(program)
