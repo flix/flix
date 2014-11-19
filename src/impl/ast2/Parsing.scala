@@ -39,12 +39,12 @@ class Parsing(val input: ParserInput) extends Parser {
     "type" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Type ~ ";" ~ WhiteSpace ~> Ast.Declaration.TypeDecl
   }
 
-  def ValueDeclaration: Rule1[Ast.ValueDeclaration] = rule {
-    "val" ~ WhiteSpace ~ capture(Identifier) ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> Ast.ValueDeclaration
+  def ValueDeclaration: Rule1[Ast.Declaration.Val] = rule {
+    "val" ~ WhiteSpace ~ capture(Identifier) ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> Ast.Declaration.Val
   }
 
-  def VariableDeclaration: Rule1[Ast.VariableDeclaration] = rule {
-    "var" ~ WhiteSpace ~ capture(Identifier) ~ ":" ~ WhiteSpace ~ Type ~ ";" ~ WhiteSpace ~> Ast.VariableDeclaration
+  def VariableDeclaration: Rule1[Ast.Declaration.Var] = rule {
+    "var" ~ WhiteSpace ~ capture(Identifier) ~ ":" ~ WhiteSpace ~ Type ~ ";" ~ WhiteSpace ~> Ast.Declaration.Var
   }
 
   def FunctionDeclaration: Rule1[Ast.FunctionDeclaration] = rule {
@@ -62,6 +62,8 @@ class Parsing(val input: ParserInput) extends Parser {
   def RuleBody: Rule1[Seq[Ast.Predicate]] = rule {
     oneOrMore(Predicate).separatedBy("," ~ WhiteSpace)
   }
+
+  // TODO: Lattice Decls, etc.
 
   def Predicate: Rule1[Ast.Predicate] = rule {
     Term ~ WhiteSpace ~ "<-" ~ WhiteSpace ~ Term ~> Ast.Predicate
