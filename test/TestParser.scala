@@ -21,7 +21,7 @@ class TestParser extends FunSuite {
 
   test("Parser.Type01") {
     val s = """type t = Bool;"""
-    val a = Ast.TypeDeclaration("t", Ast.Type.Bool)
+    val a = Ast.Declaration.TypeDecl("t", Ast.Type.Bool)
 
     assertResult(a)(Parsing.parse(s))
   }

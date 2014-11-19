@@ -9,9 +9,7 @@ class Compiler {
   // ValEnv
   // FunEnv
   // etc. etc.
-  def typenv(root: Ast.Root): Map[String, Ast.Declaration] = visit {
-    case Ast.TypeDeclaration(name, typ) => ???
-  }
+  def typenv(root: Ast.Root): Map[String, Ast.Declaration] = ???
 
 
   // linking

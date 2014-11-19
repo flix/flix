@@ -34,8 +34,8 @@ class Parsing(val input: ParserInput) extends Parser {
     TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | FactDeclaration
   }
 
-  def TypeDeclaration: Rule1[Ast.TypeDeclaration] = rule {
-    "type" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Type ~ ";" ~ WhiteSpace ~> Ast.TypeDeclaration
+  def TypeDeclaration: Rule1[Ast.Declaration.TypeDecl] = rule {
+    "type" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Type ~ ";" ~ WhiteSpace ~> Ast.Declaration.TypeDecl
   }
 
   def ValueDeclaration: Rule1[Ast.ValueDeclaration] = rule {

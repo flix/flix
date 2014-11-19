@@ -37,6 +37,23 @@ object Ast {
   // TODO: seq af decl.
   case class Root(namespaces: Seq[NameSpace])
 
+
+  /**
+   * AST nodes which represent declarations.
+   */
+  sealed trait Declaration extends Node
+
+  object Declaration {
+
+    /**
+     * A type declaration.
+     */
+    // TODO: Naming issue? Why can't this be called type?
+    case class TypeDecl(name: String, typ: Type) extends Declaration
+
+  }
+
+
   sealed trait Name
 
   case class SimpleName(name: String) extends Name
@@ -45,9 +62,6 @@ object Ast {
 
   case class NameSpace(name: Name, body: Seq[Ast.Declaration]) extends Node
 
-  sealed trait Declaration extends Node
-
-  case class TypeDeclaration(name: String, t: Type) extends Declaration
 
   case class ValueDeclaration(name: String, t: Type, exp: Expression) extends Declaration
 
