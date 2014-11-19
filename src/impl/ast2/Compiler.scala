@@ -20,7 +20,7 @@ class Compiler(ast: Ast.Root) {
   def typenv(root: Ast.Root): Map[Ast.Name, Ast.Type] = {
 
 
-    def visit(name: Ast.Name, node: Ast.Node): Map[Ast.Name, Ast.Type] = ???
+    def visit(name: Ast.Name, node: Ast): Map[Ast.Name, Ast.Type] = ???
 
     ???
   }
@@ -38,7 +38,7 @@ class Compiler(ast: Ast.Root) {
 
   // TODO: Need map.
   // TODO: Need fold.
-  def visit[A](f: Ast.Node => A): A = ???
+  def visit[A](f: Ast => A): A = ???
 
 
   /**

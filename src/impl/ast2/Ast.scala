@@ -5,26 +5,24 @@ import impl.logic.UnaryOperator
 
 import scala.collection.immutable.Seq
 
+/**
+ * The type of all Ast nodes.
+ */
 sealed trait Ast
 
 object Ast {
-
-  /**
-   * The type of all Ast nodes.
-   */
-  sealed trait Node
 
   /**
    * The Ast root node.
    *
    * At the highest level an Ast is a sequence of declarations.
    */
-  case class Root(decls: Seq[Declaration]) extends Node
+  case class Root(decls: Seq[Declaration]) extends Ast
 
   /**
    * A common super-type for AST nodes which represent declarations.
    */
-  sealed trait Declaration extends Node
+  sealed trait Declaration extends Ast
 
   object Declaration {
 
@@ -64,14 +62,14 @@ object Ast {
 
   case class FunctionDeclaration(an: Seq[Annotation], x: String, arguments: Seq[Argument], returnType: Type, exp: Expression) extends Declaration
 
-  case class Argument(name: String, typ: Type) extends Node
+  case class Argument(name: String, typ: Type) extends Ast
 
-  case class MatchRule(p: Pattern, e: Expression) extends Node
+  case class MatchRule(p: Pattern, e: Expression) extends Ast
 
-  case class Annotation(s: String) extends Node
+  case class Annotation(s: String) extends Ast
 
 
-  sealed trait Pattern extends Node
+  sealed trait Pattern extends Ast
 
   object Pattern {
 
@@ -85,7 +83,7 @@ object Ast {
 
   case class Predicate(t1: Term, t2: Term) extends Pattern
 
-  sealed trait Term extends Node
+  sealed trait Term extends Ast
 
   object Term {
 
@@ -100,7 +98,7 @@ object Ast {
   /**
    * A common super-type for AST nodes which represent expressions.
    */
-  sealed trait Expression extends Node
+  sealed trait Expression extends Ast
 
   object Expression {
 
@@ -210,7 +208,7 @@ object Ast {
   /**
    * A common super-type for AST nodes which represents types.
    */
-  sealed trait Type extends Node
+  sealed trait Type extends Ast
 
   object Type {
 
