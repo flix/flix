@@ -60,12 +60,12 @@ object Ast {
     /**
      * An AST node which represents a fact declaration.
      */
-    case class Fact(name: String, predicate: Predicate) extends Declaration
+    case class Fact(name: String, head: Predicate) extends Declaration
 
     /**
      * An AST node which represent a rule declaration.
      */
-    case class Rule(name: String) extends Declaration
+    case class Rule(name: String, head: Predicate /*, body: Predicate*/) extends Declaration
 
   }
 
@@ -117,7 +117,8 @@ object Ast {
   sealed trait Term extends Node
 
   object Term {
-
+    case class Call(n: Name, args: Seq[Term]) extends Term
+    case class Int(i: String) extends Term
     case class NameRef(n: Name) extends Term
 
   }

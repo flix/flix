@@ -16,6 +16,8 @@ object Parsing {
   }
 }
 
+// TODO: Sort everything.
+
 class Parsing(val input: ParserInput) extends Parser {
   def Root: Rule1[Ast.Root] = rule {
     oneOrMore(Declaration) ~ EOI ~> Ast.Root
@@ -50,19 +52,21 @@ class Parsing(val input: ParserInput) extends Parser {
   }
 
   def FactDeclaration: Rule1[Ast.Declaration.Fact] = rule {
-    "fact" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Predicate ~> Ast.Declaration.Fact
+    "fact" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Predicate ~ ";" ~ WhiteSpace ~> Ast.Declaration.Fact
   }
 
   def RuleDeclaraction: Rule1[Ast.Declaration.Rule] = rule {
-    "rule" ~ WhiteSpace ~ capture(Identifier) ~> Ast.Declaration.Rule
+    "rule" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Predicate ~> Ast.Declaration.Rule
   }
 
   def Predicate: Rule1[Ast.Predicate] = rule {
-    Term ~ WhiteSpace ~ "<-" ~ WhiteSpace ~ Term ~ ";" ~> Ast.Predicate
+    Term ~ WhiteSpace ~ "<-" ~ WhiteSpace ~ Term ~> Ast.Predicate
   }
 
   def Term: Rule1[Ast.Term] = rule {
-    Name ~> Ast.Term.NameRef
+    Name ~ "(" ~ oneOrMore(Term).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Term.Call |
+      Name ~> Ast.Term.NameRef |
+      Digits ~> Ast.Term.Int
   }
 
   def ArgumentList: Rule1[Seq[Ast.Argument]] = rule {
@@ -96,7 +100,7 @@ class Parsing(val input: ParserInput) extends Parser {
   }
 
   def LiteralExpression: Rule1[Ast.Expression.Literal] = rule {
-    capture(Digits) ~> Ast.Expression.Literal
+    Digits ~> Ast.Expression.Literal
   }
 
   def IfThenElseExp: Rule1[Ast.Expression.IfThenElse] = rule {
@@ -143,8 +147,8 @@ class Parsing(val input: ParserInput) extends Parser {
     CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum)
   }
 
-  def Digits = rule {
-    oneOrMore(CharPredicate.Digit)
+  def Digits: Rule1[String] = rule {
+    capture(oneOrMore(CharPredicate.Digit))
   }
 
   /**
