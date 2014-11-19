@@ -22,7 +22,7 @@ class Parsing(val input: ParserInput) extends Parser {
   }
 
   def NameSpace: Rule1[Ast.NameSpace] = rule {
-    "namespace" ~ WhiteSpace ~ Name ~ WhiteSpace ~ '{' ~ optional(WhiteSpace) ~ NameSpaceBody ~ optional(WhiteSpace) ~ '}' ~ ";" ~ WhiteSpace ~> Ast.NameSpace
+    "namespace" ~ WhiteSpace ~ Name ~ WhiteSpace ~ '{' ~ optional(WhiteSpace) ~ NameSpaceBody ~ optional(WhiteSpace) ~ '}' ~ ";" ~ optional(WhiteSpace) ~> Ast.NameSpace
   }
 
   def NameSpaceBody: Rule1[Seq[Ast.Declaration]] = rule {
