@@ -1,7 +1,7 @@
 package impl.ast2
 
-import impl.ast.SExp.Operator
-import impl.logic.Term.{BinaryOp, UnaryOp}
+import impl.logic.BinaryOperator
+import impl.logic.UnaryOperator
 
 import scala.collection.immutable.Seq
 
@@ -123,12 +123,12 @@ object Ast {
      * An AST node which represents unary expressions.
      */
     // TODO: Avoid dependencies on other packages?
-    case class Unary(op: UnaryOp, e: Expression) extends Expression
+    case class Unary(op: UnaryOperator, e: Expression) extends Expression
 
     /**
      * An AST node which represents binary expressions.
      */
-    case class Binary(op: BinaryOp, e1: Expression, e2: Expression) extends Expression
+    case class Binary(op: BinaryOperator, e1: Expression, e2: Expression) extends Expression
 
 
     case class IfThenElse(cond: Expression, e2: Expression, e3: Expression) extends Expression

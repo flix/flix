@@ -122,6 +122,14 @@ class Parsing(val input: ParserInput) extends Parser {
     "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~> Ast.Expression.StrLit
   }
 
+  def UnaryExp: Rule1[Ast.Expression.Unary] = rule {
+    UnaryOp ~ optional(WhiteSpace) ~ Expression ~> Ast.Expression.Unary
+  }
+
+  //def BinaryExp: Rule1[Ast.Expression.Binary] = rule {
+ //   ???
+  //}
+
   def IfThenElseExp: Rule1[Ast.Expression.IfThenElse] = rule {
     "if" ~ WhiteSpace ~ "(" ~ Expression ~ ")" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "else" ~ WhiteSpace ~ Expression ~> Ast.Expression.IfThenElse
   }
