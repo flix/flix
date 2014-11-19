@@ -106,12 +106,18 @@ class Parsing(val input: ParserInput) extends Parser {
   }
 
   def LiteralExp: Rule1[Ast.Expression] = rule {
-    BoolLiteralExp
+    BoolLitExp | IntLitExp
   }
 
-  def BoolLiteralExp: Rule1[Ast.Expression.Bool] = rule {
-    str("true") ~> (() => Ast.Expression.Bool(true)) | str("false") ~> (() => Ast.Expression.Bool(false))
+  def BoolLitExp: Rule1[Ast.Expression.BoolLit] = rule {
+    str("true") ~> (() => Ast.Expression.BoolLit(true)) | str("false") ~> (() => Ast.Expression.BoolLit(false))
   }
+
+  def IntLitExp: Rule1[Ast.Expression.IntLit] = rule {
+    Digits ~> ((x: String) => Ast.Expression.IntLit(x.toInt))
+  }
+
+
 
   def IfThenElseExp: Rule1[Ast.Expression.IfThenElse] = rule {
     "if" ~ WhiteSpace ~ "(" ~ Expression ~ ")" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "else" ~ WhiteSpace ~ Expression ~> Ast.Expression.IfThenElse

@@ -104,17 +104,18 @@ object Ast {
     /**
      * An AST node which represents a boolean literal.
      */
-    case class Bool(literal: Boolean) extends Expression
+    case class BoolLit(literal: Boolean) extends Expression
 
     /**
      * An AST node which represents an integer literal.
      */
-    case class Int(literal: Int) extends Expression
+    case class IntLit(literal: Int) extends Expression
 
     /**
      * An AST node which represents a string literal.
      */
-    case class Str(literal: String) extends Expression
+    case class StrLit(literal: String) extends Expression
+
 
 
     case class IfThenElse(cond: Expression, e2: Expression, e3: Expression) extends Expression
