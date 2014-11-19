@@ -93,12 +93,12 @@ class Parsing(val input: ParserInput) extends Parser {
 
   // TODO: Use separated by.
 
-  def SimpleName: Rule1[Ast.SimpleName] = rule {
-    capture(Identifier) ~> Ast.SimpleName
+  def SimpleName: Rule1[Ast.Name.Simple] = rule {
+    capture(Identifier) ~> Ast.Name.Simple
   }
 
-  def QualifiedName: Rule1[Ast.QualifiedName] = rule {
-    capture(Identifier) ~ "." ~ Name ~> Ast.QualifiedName
+  def QualifiedName: Rule1[Ast.Name.Qualified] = rule {
+    capture(Identifier) ~ "." ~ Name ~> Ast.Name.Qualified
   }
 
   def Expression: Rule1[Ast.Expression] = rule {

@@ -39,7 +39,7 @@ object Ast {
   case class Root(decls: Seq[Declaration]) extends Node
 
   /**
-   * AST nodes which represent declarations.
+   * A common super-type for AST nodes which represent declarations.
    */
   sealed trait Declaration extends Node
 
@@ -131,15 +131,29 @@ object Ast {
 
   }
 
+  /**
+   * A common super-type for AST nodes which represent names.
+   */
   sealed trait Name
 
-  case class SimpleName(name: String) extends Name
+  object Name {
 
-  case class QualifiedName(prefix: String, rest: Name) extends Name
+    /**
+     * An AST node which represents a simple name, i.e. an identifier.
+     */
+    case class Simple(name: String) extends Name
 
+    /**
+     * An AST node which represents a qualified name.
+     *
+     * A name such as a.b.c is represented as Qual(a, Qual(b, Simple(c)).
+     */
+    case class Qualified(prefix: String, rest: Name) extends Name
+
+  }
 
   /**
-   * AST nodes which represents types.
+   * A common super-type for AST nodes which represents types.
    */
   sealed trait Type extends Node
 
