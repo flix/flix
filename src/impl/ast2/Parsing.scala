@@ -103,7 +103,7 @@ class Parsing(val input: ParserInput) extends Parser {
   }
 
   def Expression: Rule1[Ast.Expression] = rule {
-    LiteralExp | IfThenElseExp | MatchExpression | TupleExpression | VariableExpression | NotImplementedExpression
+    LiteralExp | IfThenElseExp | MatchExpression | TupleExpression | VariableExpression | ParenthesisExp | NotImplementedExpression
   }
 
   def LiteralExp: Rule1[Ast.Expression] = rule {
@@ -140,6 +140,10 @@ class Parsing(val input: ParserInput) extends Parser {
 
   def MatchRule: Rule1[Ast.MatchRule] = rule {
     "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> Ast.MatchRule
+  }
+
+  def ParenthesisExp: Rule1[Ast.Expression] = rule {
+    "(" ~ optional(WhiteSpace) ~ Expression ~ optional(WhiteSpace) ~ "}"
   }
 
   def NotImplementedExpression: Rule1[Ast.Expression.NotImplemented] = rule {
