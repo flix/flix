@@ -130,6 +130,13 @@ object Ast {
     case class Binary(op: BinaryOperator, e1: Expression, e2: Expression) extends Expression
 
     /**
+     * An AST node which represents an infix expression.
+     *
+     * Translated to a call by the compiler.
+     */
+    case class Infix(e1: Expression, name: Name, e2: Expression) extends Expression
+
+    /**
      * An AST node which represents an if-then-else expression.
      */
     case class IfThenElse(e1: Expression, e2: Expression, e3: Expression) extends Expression

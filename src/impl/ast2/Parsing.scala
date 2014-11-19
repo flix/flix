@@ -122,15 +122,17 @@ class Parsing(val input: ParserInput) extends Parser {
     "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~> Ast.Expression.StrLit
   }
 
-  // TODO: Parse precedens correctly.
-  // TODO: Add support for infix operators.
   def UnaryExp: Rule1[Ast.Expression.Unary] = rule {
     UnaryOp ~ optional(WhiteSpace) ~ Expression ~> Ast.Expression.Unary
   }
 
-  //def BinaryExp: Rule1[Ast.Expression.Binary] = rule {
-  //   ??? unary exp..
-  //}
+//  def BinaryExp: Rule1[Ast.Expression.Binary] = rule {
+//    TODO
+//  }
+
+  def InfixExp: Rule1[Ast.Expression.Infix] = rule {
+    UnaryExp ~ WhiteSpace ~ "`" ~ Name ~ "`" ~ WhiteSpace ~ UnaryExp ~> Ast.Expression.Infix
+  }
 
   // TODO: Consider if with then?
   def IfThenElseExp: Rule1[Ast.Expression.IfThenElse] = rule {
