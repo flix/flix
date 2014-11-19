@@ -2,6 +2,8 @@ package impl.logic
 
 trait Operator
 
+// TODO: probably move this into Ast.
+
 sealed trait UnaryOperator extends Operator
 
 object UnaryOperator {
@@ -33,10 +35,11 @@ object BinaryOperator {
     case "and" => And
     case "or" => Or
     case "lte" => LessEqual
-    case "gte" => GreaterEqual
+    case "gte" => GreaterEqual // TODO: Let us gid rid of these.
     case "min" => Minimum
     case "max" => Maximum
   }
+  // TODO: The IR language should have fewer instructions which are easier to reason about.
 
   case object Plus extends BinaryOperator
   case object Minus extends BinaryOperator
