@@ -61,14 +61,7 @@ namespace Sign {
     fact FactTwo = NumberTwo <- lift(2);
 
     rule TheSum = Result(42) <- r if
-               x    <- A(0),
-        [1 -> y]    <- B,
-               r    <- sum(x, y);
+        x    <- A(0),
+        y    <- B(1),
+        r    <- sum(x, y);
 };
-
-
-preset (Sign, leq);
-parset (Sign, leq, norm)
-
-lattice Sign1 = Lattice(bot = bot, leq = leq, lub = lub);
-lattice Sign2 = Lattice(bot, leq, lub, meet, top);
