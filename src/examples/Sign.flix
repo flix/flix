@@ -39,7 +39,8 @@ namespace Sign {
         case Top => 1;
     };
 
-    def lift(i: Int): Sign = if (0) Even else Odd;
+    def lift(i: Int): Sign =
+        if (true) Even else Odd;
 
     @monotone @strict
     def sum(e1: Sign, e2: Sign): Sign = match (e1, e2) with {

@@ -122,7 +122,6 @@ object Ast {
     /**
      * An AST node which represents unary expressions.
      */
-    // TODO: Avoid dependencies on other packages?
     case class Unary(op: UnaryOperator, e: Expression) extends Expression
 
     /**
@@ -130,8 +129,10 @@ object Ast {
      */
     case class Binary(op: BinaryOperator, e1: Expression, e2: Expression) extends Expression
 
-
-    case class IfThenElse(cond: Expression, e2: Expression, e3: Expression) extends Expression
+    /**
+     * An AST node which represents an if-then-else expression.
+     */
+    case class IfThenElse(e1: Expression, e2: Expression, e3: Expression) extends Expression
 
     case class Match(matchValue: Expression, rules: Seq[Ast.MatchRule]) extends Expression
 
@@ -141,7 +142,7 @@ object Ast {
 
     // TODO: Could be a let or lambda bound thing, or a reference to a global thing.
     // Elimintated by the compiler.
-    case class UnresolvedVar(name: Name) extends Expression
+    case class UnresolvedName(name: Name) extends Expression
 
     // Introduced by the compiler.
 
