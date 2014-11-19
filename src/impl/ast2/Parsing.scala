@@ -1,5 +1,6 @@
 package impl.ast2
 
+import impl.logic.UnaryOperator
 import org.parboiled2._
 import scala.collection.immutable.Seq
 import scala.util.{Failure, Success}
@@ -118,7 +119,7 @@ class Parsing(val input: ParserInput) extends Parser {
   }
 
   def StrLitExp: Rule1[Ast.Expression.StrLit] = rule {
-    "\"" ~ capture(zeroOrMore(! "\"" ~ CharPredicate.Printable)) ~ "\"" ~> Ast.Expression.StrLit
+    "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~> Ast.Expression.StrLit
   }
 
   def IfThenElseExp: Rule1[Ast.Expression.IfThenElse] = rule {
@@ -175,6 +176,14 @@ class Parsing(val input: ParserInput) extends Parser {
   def WhiteSpace: Rule0 = rule {
     oneOrMore(" " | "\t" | "\n")
   }
+
+  /** *************************************************************************/
+  /** Operators                                                             ***/
+  /** *************************************************************************/
+  def UnaryOp: Rule1[UnaryOperator] = rule {
+    ch('+') ~> (() => UnaryOperator.UnaryPlus)
+  }
+
 
   /** *************************************************************************/
   /** Types                                                                 ***/
