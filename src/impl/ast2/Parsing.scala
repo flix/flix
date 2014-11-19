@@ -103,7 +103,7 @@ class Parsing(val input: ParserInput) extends Parser {
   }
 
   def Expression: Rule1[Ast.Expression] = rule {
-    LiteralExp | IfThenElseExp | MatchExpression | TupleExpression | VariableExpression | ParenthesisExp | NotImplementedExpression
+    LiteralExp | IfThenElseExp | MatchExpression | TupleExpression | VariableExpression | ParenthesisExp | MissingExp | ImpossibleExp
   }
 
   def LiteralExp: Rule1[Ast.Expression] = rule {
@@ -132,6 +132,7 @@ class Parsing(val input: ParserInput) extends Parser {
   //   ??? unary exp..
   //}
 
+  // TODO: Consider if with then?
   def IfThenElseExp: Rule1[Ast.Expression.IfThenElse] = rule {
     "if" ~ WhiteSpace ~ "(" ~ Expression ~ ")" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "else" ~ WhiteSpace ~ Expression ~> Ast.Expression.IfThenElse
   }
@@ -148,8 +149,12 @@ class Parsing(val input: ParserInput) extends Parser {
     "(" ~ optional(WhiteSpace) ~ Expression ~ optional(WhiteSpace) ~ "}"
   }
 
-  def NotImplementedExpression: Rule1[Ast.Expression.NotImplemented] = rule {
-    str("???") ~> Ast.Expression.NotImplemented
+  def MissingExp: Rule1[Ast.Expression] = rule {
+    str("???") ~> (() => Ast.Expression.Missing)
+  }
+
+  def ImpossibleExp: Rule1[Ast.Expression] = rule {
+    str("!!!") ~> (() => Ast.Expression.Impossible)
   }
 
   def Pattern: Rule1[Ast.Pattern] = rule {

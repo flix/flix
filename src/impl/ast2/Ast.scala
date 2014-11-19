@@ -134,11 +134,18 @@ object Ast {
      */
     case class IfThenElse(e1: Expression, e2: Expression, e3: Expression) extends Expression
 
-    case class Match(matchValue: Expression, rules: Seq[Ast.MatchRule]) extends Expression
+    /**
+     * An AST node which represents a match expression.
+     */
+    case class Match(values: Expression, rules: Seq[Ast.MatchRule]) extends Expression
+
+
+    // TODO: Introduce let.
 
     case class Tuple(xs: Seq[Expression]) extends Expression
 
-    case class NotImplemented() extends Expression
+
+
 
     // TODO: Could be a let or lambda bound thing, or a reference to a global thing.
     // Elimintated by the compiler.
@@ -146,6 +153,9 @@ object Ast {
 
     // Introduced by the compiler.
 
+    case object Missing extends Expression
+
+    case object Impossible extends Expression
   }
 
   /**

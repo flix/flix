@@ -31,6 +31,8 @@ namespace Sign {
 
     def glb(e1: Sign, e2: Sign): Sign = ???;
 
+    def ga2(e1: Sign, e2: Sign): Sign = !!!;
+
     def height(e: Sign): Int = match e with {
         case Bot => 3;
         case Neg => 2;
