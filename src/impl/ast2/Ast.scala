@@ -87,23 +87,8 @@ object Ast {
 
   case class Annotation(s: String) extends Node
 
-  sealed trait Expression extends Node
 
-  object Expression {
 
-    case class Literal(s: String) extends Expression
-
-    case class Variable(name: Name) extends Expression
-
-    case class IfThenElse(cond: Expression, e2: Expression, e3: Expression) extends Expression
-
-    case class Match(matchValue: Expression, rules: Seq[Ast.MatchRule]) extends Expression
-
-    case class Tuple(xs: Seq[Expression]) extends Expression
-
-    case class NotImplemented() extends Expression
-
-  }
 
   sealed trait Pattern extends Node
 
@@ -131,6 +116,24 @@ object Ast {
 
   }
 
+  sealed trait Expression extends Node
+
+  object Expression {
+
+    case class Literal(s: String) extends Expression
+
+    case class Variable(name: Name) extends Expression
+
+    case class IfThenElse(cond: Expression, e2: Expression, e3: Expression) extends Expression
+
+    case class Match(matchValue: Expression, rules: Seq[Ast.MatchRule]) extends Expression
+
+    case class Tuple(xs: Seq[Expression]) extends Expression
+
+    case class NotImplemented() extends Expression
+
+  }
+
   /**
    * A common super-type for AST nodes which represent names.
    */
@@ -148,7 +151,7 @@ object Ast {
      *
      * A name such as a.b.c is represented as Qual(a, Qual(b, Simple(c)).
      */
-    case class Qualified(prefix: String, rest: Name) extends Name
+    case class Qualified(prefix: String, suffix: Name) extends Name
 
   }
 
