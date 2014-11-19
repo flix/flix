@@ -5,7 +5,7 @@ import impl.logic.Type
 class Compiler(ast: Ast.Root) {
 
   def run(): Unit = {
-
+    println(typenv(ast))
   }
 
   // environments
@@ -17,7 +17,15 @@ class Compiler(ast: Ast.Root) {
   /**
    * Returns a map from (fully qualified) names to types.
    */
-  def typenv(root: Ast.Root): Map[Ast.Name, Ast.Type] = ???
+  def typenv(root: Ast.Root): Map[Ast.Name, Ast.Type] = {
+
+
+    def visit(name: Ast.Name, node: Ast.Node): Map[Ast.Name, Ast.Type] = ???
+
+    ???
+  }
+
+  // TODO: Deal with ambiquity
 
 
   // linking
