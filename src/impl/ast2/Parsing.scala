@@ -181,15 +181,25 @@ class Parsing(val input: ParserInput) extends Parser {
   /** Operators                                                             ***/
   /** *************************************************************************/
   def UnaryOp: Rule1[UnaryOperator] = rule {
-    ch('!') ~> (() => UnaryOperator.Not) |
-      ch('+') ~> (() => UnaryOperator.UnaryPlus) |
-      ch('-') ~> (() => UnaryOperator.UnaryMinus)
+    str("!") ~> (() => UnaryOperator.Not) |
+      str("+") ~> (() => UnaryOperator.UnaryPlus) |
+      str("-") ~> (() => UnaryOperator.UnaryMinus)
   }
 
   def BinaryOp: Rule1[BinaryOperator] = rule {
-    ch('+') ~> (() => BinaryOperator.Plus)
+    str("+") ~> (() => BinaryOperator.Plus) |
+      str("-") ~> (() => BinaryOperator.Minus) |
+      str("*") ~> (() => BinaryOperator.Times) |
+      str("/") ~> (() => BinaryOperator.Divide) |
+      str("<=") ~> (() => BinaryOperator.LessEqual) |
+      str(">=") ~> (() => BinaryOperator.GreaterEqual) |
+      str("<") ~> (() => BinaryOperator.Less) |
+      str(">") ~> (() => BinaryOperator.Greater) |
+      str("==") ~> (() => BinaryOperator.Equal) |
+      str("!=") ~> (() => BinaryOperator.NotEqual) |
+      str("&&") ~> (() => BinaryOperator.And) |
+      str("||") ~> (() => BinaryOperator.Or)
   }
-
 
   /** *************************************************************************/
   /** Types                                                                 ***/
