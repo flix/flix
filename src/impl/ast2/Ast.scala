@@ -149,10 +149,6 @@ object Ast {
      */
     case class Match(values: Expression, rules: Seq[Ast.MatchRule]) extends Expression
 
-
-    // TODO: Introduce let.
-
-
     /**
      * An AST node which represents a tuple expression.
      */

@@ -95,7 +95,6 @@ class TestParser extends FunSuite {
     assertResult(t)(getType(Parser.parse(s)))
   }
 
-
   test("Parser.Type.Map01") {
     val s = """type t = Map[Bool, Bool];"""
     val t = Ast.Type.Map(Ast.Type.Bool, Ast.Type.Bool)
@@ -126,6 +125,20 @@ class TestParser extends FunSuite {
 
   test("Parser.Type.Map05") {
     val s = """type t = Map[Map[Bool, Int], Map[Int, Bool]];"""
+    val t = Ast.Type.Map(
+      Ast.Type.Map(Ast.Type.Bool, Ast.Type.Int),
+      Ast.Type.Map(Ast.Type.Int, Ast.Type.Bool))
+
+    assertResult(t)(getType(Parser.parse(s)))
+  }
+
+  test("Parser.Type.Enum01") {
+    val s =
+      """type t = enum {
+        |case A,
+        |case B,
+        |case C
+        |};""".stripMargin
     val t = Ast.Type.Map(Ast.Type.Bool, Ast.Type.Map(Ast.Type.Int, Ast.Type.Str))
 
     assertResult(t)(getType(Parser.parse(s)))
