@@ -238,11 +238,6 @@ object Ast {
     case object Str extends Type
 
     /**
-     * An AST node which represents a tagged type.
-     */
-    case class Tag(name: String) extends Type
-
-    /**
      * An AST node which represents a tuple type.
      */
     case class Tuple(elms: Seq[Type]) extends Type
@@ -256,6 +251,11 @@ object Ast {
      * An AST node which represents a map type.
      */
     case class Map(keys: Type, values: Type) extends Type
+
+    /**
+     * An AST node which represents a tagged type.
+     */
+    case class Tag(name: String) extends Type
 
     /**
      * An AST node which represents an enumeration type.

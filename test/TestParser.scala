@@ -6,30 +6,70 @@ class TestParser extends FunSuite {
 
   test("Parser.Type01") {
     val s = """type t = Unit;"""
-    val a = Ast.Root(Seq(Ast.Declaration.TypeDecl("t", Ast.Type.Unit)))
+    val a = Ast.Type.Unit
 
-    assertResult(a)(Parser.parse(s))
+    assertResult(a)(getType(Parser.parse(s)))
   }
 
   test("Parser.Type02") {
     val s = """type t = Bool;"""
-    val a = Ast.Root(Seq(Ast.Declaration.TypeDecl("t", Ast.Type.Bool)))
+    val t = Ast.Type.Bool
 
-    assertResult(a)(Parser.parse(s))
+    assertResult(t)(getType(Parser.parse(s)))
   }
 
   test("Parser.Type03") {
     val s = """type t = Int;"""
-    val a = Ast.Root(Seq(Ast.Declaration.TypeDecl("t", Ast.Type.Int)))
+    val t = Ast.Type.Int
 
-    assertResult(a)(Parser.parse(s))
+    assertResult(t)(getType(Parser.parse(s)))
   }
 
   test("Parser.Type04") {
     val s = """type t = Str;"""
-    val a = Ast.Root(Seq(Ast.Declaration.TypeDecl("t", Ast.Type.Str)))
+    val t = Ast.Type.Str
 
-    assertResult(a)(Parser.parse(s))
+    assertResult(t)(getType(Parser.parse(s)))
+  }
+
+  test("Parser.Type05") {
+    val s = """type t = (Bool, Bool);"""
+    val t = Ast.Type.Tuple(Seq(Ast.Type.Bool, Ast.Type.Bool))
+
+    assertResult(t)(getType(Parser.parse(s)))
+  }
+
+  test("Parser.Type06") {
+    val s = """type t = (Bool, Bool, Bool);"""
+    val t = Ast.Type.Tuple(Seq(Ast.Type.Bool, Ast.Type.Bool, Ast.Type.Bool))
+
+    assertResult(t)(getType(Parser.parse(s)))
+  }
+
+  test("Parser.Type07") {
+    val s = """type t = (Bool, Int, Str);"""
+    val t = Ast.Type.Tuple(Seq(Ast.Type.Bool, Ast.Type.Int, Ast.Type.Str))
+
+    assertResult(t)(getType(Parser.parse(s)))
+  }
+
+  test("Parser.Type08") {
+    val s = """type t = (Unit, Bool, Int, Str, Unit, Bool, Int, Str);"""
+    val t = Ast.Type.Tuple(Seq(Ast.Type.Unit, Ast.Type.Bool, Ast.Type.Int, Ast.Type.Str, Ast.Type.Unit, Ast.Type.Bool, Ast.Type.Int, Ast.Type.Str))
+
+    assertResult(t)(getType(Parser.parse(s)))
+  }
+
+  test("Parser.Type09") {
+    val s = """type t = (Unit);"""
+    val t = Ast.Type.Tuple(Seq(Ast.Type.Unit))
+
+    assertResult(t)(getType(Parser.parse(s)))
+  }
+
+  private def getType(root: Ast.Root): Ast.Type = root match {
+    case Ast.Root(Seq(Ast.Declaration.TypeDecl(_, typ))) => typ
+    case _ => throw new RuntimeException()
   }
 
 }
