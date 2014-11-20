@@ -142,6 +142,17 @@ class TestParser extends FunSuite {
     assertResult(t)(getType(Parser.parse(s)))
   }
 
+  test("Parser.Type.Enum02") {
+    val s =
+      """type t = enum {
+        |case A,
+        |case B
+        |};""".stripMargin
+    val t = Ast.Type.Enum(Seq(Ast.Type.Tag("A"), Ast.Type.Tag("B")))
+
+    assertResult(t)(getType(Parser.parse(s)))
+  }
+
   private def getType(root: Ast.Root): Ast.Type = root match {
     case Ast.Root(Seq(Ast.Declaration.TypeDecl(_, typ))) => typ
     case _ => throw new RuntimeException()
