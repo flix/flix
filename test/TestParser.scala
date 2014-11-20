@@ -103,8 +103,15 @@ class TestParser extends FunSuite {
   }
 
   test("Parser.Type.Map01") {
+    val s = """type t = Map[Bool, Bool];"""
+    val t = Ast.Type.Map(Ast.Type.Bool, Ast.Type.Bool)
+
+    assertResult(t)(getType(Parser.parse(s)))
+  }
+
+  test("Parser.Type.Map02") {
     val s = """type t = Map[Int, Int];"""
-    val t = Ast.Type.Set(Ast.Type.Unit)
+    val t = Ast.Type.Map(Ast.Type.Int, Ast.Type.Int)
 
     assertResult(t)(getType(Parser.parse(s)))
   }

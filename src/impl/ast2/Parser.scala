@@ -240,7 +240,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def MapType: Rule1[Ast.Type.Map] = rule {
-    "Map" ~ "[" ~ Type ~ WhiteSpace ~ "," ~ WhiteSpace ~ Type ~ "]" ~> Ast.Type.Map
+    "Map" ~ "[" ~ Type ~ "," ~ WhiteSpace ~ Type ~ "]" ~> Ast.Type.Map
   }
 
   def EnumType: Rule1[Ast.Type.Enum] = rule {
