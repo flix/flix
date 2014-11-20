@@ -41,6 +41,11 @@ namespace Sign {
         case Top => 1;
     };
 
+    def foo(x: Int, y: Int): Int =
+        let a = 1 in
+        let b = 2 in
+            b;
+
     def lift(i: Int): Sign =
         if (true) Even else Odd;
 

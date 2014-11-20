@@ -103,7 +103,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def Expression: Rule1[Ast.Expression] = rule {
-    LiteralExp | IfThenElseExp | MatchExpression | TupleExpression | VariableExpression | ParenthesisExp | MissingExp | ImpossibleExp
+    LiteralExp | LetExp | IfThenElseExp | MatchExpression | TupleExpression | VariableExpression | ParenthesisExp | MissingExp | ImpossibleExp
   }
 
   def LiteralExp: Rule1[Ast.Expression] = rule {
@@ -132,6 +132,10 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def InfixExp: Rule1[Ast.Expression.Infix] = rule {
     UnaryExp ~ WhiteSpace ~ "`" ~ Name ~ "`" ~ WhiteSpace ~ UnaryExp ~> Ast.Expression.Infix
+  }
+
+  def LetExp: Rule1[Ast.Expression.Let] = rule {
+    "let" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "in" ~ WhiteSpace ~ Expression ~> Ast.Expression.Let
   }
 
   // TODO: Consider if with then?
@@ -183,6 +187,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     Name ~> Ast.Expression.UnresolvedName
   }
 
+  // TOOD: Use capture
   def Identifier = rule {
     CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum)
   }

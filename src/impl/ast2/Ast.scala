@@ -135,6 +135,11 @@ object Ast {
     case class Infix(e1: Expression, name: Name, e2: Expression) extends Expression
 
     /**
+     * An AST node which represents a let-binding.
+     */
+    case class Let(name: String, value: Expression, body: Expression) extends Expression
+
+    /**
      * An AST node which represents an if-then-else expression.
      */
     case class IfThenElse(e1: Expression, e2: Expression, e3: Expression) extends Expression
