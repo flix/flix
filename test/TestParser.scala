@@ -135,11 +135,9 @@ class TestParser extends FunSuite {
   test("Parser.Type.Enum01") {
     val s =
       """type t = enum {
-        |case A,
-        |case B,
-        |case C
+        |case A
         |};""".stripMargin
-    val t = Ast.Type.Map(Ast.Type.Bool, Ast.Type.Map(Ast.Type.Int, Ast.Type.Str))
+    val t = Ast.Type.Enum(Seq(Ast.Type.Tag("A")))
 
     assertResult(t)(getType(Parser.parse(s)))
   }

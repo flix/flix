@@ -196,13 +196,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     capture(oneOrMore(CharPredicate.Digit))
   }
 
-  /**
-   * Whitespace is one or more spaces, tabs or newlines.
-   */
-  def WhiteSpace: Rule0 = rule {
-    oneOrMore(" " | "\t" | "\n")
-  }
-
 
   /** *************************************************************************/
   /** Types                                                                 ***/
@@ -282,6 +275,13 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
       str("!=") ~> (() => BinaryOperator.NotEqual) |
       str("&&") ~> (() => BinaryOperator.And) |
       str("||") ~> (() => BinaryOperator.Or)
+  }
+
+  /** *************************************************************************/
+  /** WhiteSpace                                                            ***/
+  /** *************************************************************************/
+  def WhiteSpace: Rule0 = rule {
+    oneOrMore(" " | "\t" | "\n" | "\r")
   }
 
 }
