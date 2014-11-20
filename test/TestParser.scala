@@ -88,6 +88,26 @@ class TestParser extends FunSuite {
     assertResult(t)(getType(Parser.parse(s)))
   }
 
+  test("Parser.Type.Set04") {
+    val s = """type t = Set[Set[Int]];"""
+    val t = Ast.Type.Set(Ast.Type.Set(Ast.Type.Int))
+
+    assertResult(t)(getType(Parser.parse(s)))
+  }
+
+  test("Parser.Type.Set05") {
+    val s = """type t = Set[Set[Set[Int]]];"""
+    val t = Ast.Type.Set(Ast.Type.Set(Ast.Type.Set(Ast.Type.Int)))
+
+    assertResult(t)(getType(Parser.parse(s)))
+  }
+
+  test("Parser.Type.Map01") {
+    val s = """type t = Map[Int, Int];"""
+    val t = Ast.Type.Set(Ast.Type.Unit)
+
+    assertResult(t)(getType(Parser.parse(s)))
+  }
 
 
   private def getType(root: Ast.Root): Ast.Type = root match {
