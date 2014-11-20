@@ -153,6 +153,38 @@ class TestParser extends FunSuite {
     assertResult(t)(getType(Parser.parse(s)))
   }
 
+  test("Parser.Type.Function01") {
+    val s = """type t = Unit -> Unit;"""
+    val t = Ast.Type.Function(Ast.Type.Unit, Ast.Type.Unit)
+
+    assertResult(t)(getType(Parser.parse(s)))
+  }
+
+  test("Parser.Type.Function02") {
+    val s = """type t = Unit -> Unit -> Unit;"""
+    val t = Ast.Type.Function(Ast.Type.Unit,
+      Ast.Type.Function(Ast.Type.Unit, Ast.Type.Unit))
+
+    assertResult(t)(getType(Parser.parse(s)))
+  }
+
+  test("Parser.Type.Function03") {
+    val s = """type t = Unit -> Bool -> Int -> Str;"""
+    val t = Ast.Type.Function(Ast.Type.Unit,
+      Ast.Type.Function(Ast.Type.Bool, Ast.
+        Type.Function(Ast.Type.Int, Ast.Type.Str)))
+
+    assertResult(t)(getType(Parser.parse(s)))
+  }
+
+  test("Parser.Type.Function04") {
+    val s = """type t = Set[Bool] -> Map[Int, Str];"""
+    val t = Ast.Type.Function(Ast.Type.Set(Ast.Type.Bool),
+      Ast.Type.Map(Ast.Type.Int, Ast.Type.Str))
+
+    assertResult(t)(getType(Parser.parse(s)))
+  }
+
   private def getType(root: Ast.Root): Ast.Type = root match {
     case Ast.Root(Seq(Ast.Declaration.TypeDecl(_, typ))) => typ
     case _ => throw new RuntimeException()

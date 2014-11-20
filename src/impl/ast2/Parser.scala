@@ -201,7 +201,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   /** Types                                                                 ***/
   /** *************************************************************************/
   def Type: Rule1[Ast.Type] = rule {
-    SimpleType
+    FunctionType | SimpleType
   }
 
   def SimpleType: Rule1[Ast.Type] = rule {
@@ -244,9 +244,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     oneOrMore("case" ~ WhiteSpace ~ capture(Identifier) ~> Ast.Type.Tag).separatedBy("," ~ WhiteSpace)
   }
 
-  // TODO: Currently broken.
   def FunctionType: Rule1[Ast.Type.Function] = rule {
-    oneOrMore(SimpleType).separatedBy(WhiteSpace ~ "->" ~ WhiteSpace) ~> Ast.Type.Function
+    SimpleType ~ WhiteSpace ~ "->" ~ WhiteSpace ~ Type ~> Ast.Type.Function
   }
 
   def NamedType: Rule1[Ast.Type.NameRef] = rule {

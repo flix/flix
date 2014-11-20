@@ -260,11 +260,8 @@ object Ast {
 
     /**
      * An AST node which represents a function type.
-     *
-     * A function type is a sequence of types t1 -> t2 -> ... -> tn
-     * to avoid left-recursion in the grammar.
      */
-    case class Function(elms: Seq[Type]) extends Type
+    case class Function(t1: Type, t2: Type) extends Type
 
     /**
      * An AST node which represents a reference to a named type.

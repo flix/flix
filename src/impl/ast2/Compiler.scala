@@ -52,13 +52,7 @@ class Compiler(ast: Ast.Root) {
     // case Ast.Type.Tag(name) => Type.Tag(), TODO
     case Ast.Type.Set(typ1) => Type.Set(compile(typ1))
     case Ast.Type.Map(keys, values) => throw new UnsupportedOperationException()
-    case Ast.Type.Function(elms) => {
-      def visit(xs: Seq[Ast.Type]): Type = xs match {
-        case y :: Nil => compile(y)
-        case y :: ys => Type.Function(compile(y), visit(ys))
-      }
-      visit(elms)
-    }
+
     case Ast.Type.NameRef(name) => throw new RuntimeException()
   }
 
