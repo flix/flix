@@ -4,63 +4,63 @@ import scala.collection.immutable.Seq
 
 class TestParser extends FunSuite {
 
-  test("Parser.Type01") {
+  test("Parser.Type.Unit") {
     val s = """type t = Unit;"""
     val a = Ast.Type.Unit
 
     assertResult(a)(getType(Parser.parse(s)))
   }
 
-  test("Parser.Type02") {
+  test("Parser.Type.Bool") {
     val s = """type t = Bool;"""
     val t = Ast.Type.Bool
 
     assertResult(t)(getType(Parser.parse(s)))
   }
 
-  test("Parser.Type03") {
+  test("Parser.Type.Int") {
     val s = """type t = Int;"""
     val t = Ast.Type.Int
 
     assertResult(t)(getType(Parser.parse(s)))
   }
 
-  test("Parser.Type04") {
+  test("Parser.Type.Str") {
     val s = """type t = Str;"""
     val t = Ast.Type.Str
 
     assertResult(t)(getType(Parser.parse(s)))
   }
 
-  test("Parser.Type05") {
+  test("Parser.Type.Tuple01") {
     val s = """type t = (Bool, Bool);"""
     val t = Ast.Type.Tuple(Seq(Ast.Type.Bool, Ast.Type.Bool))
 
     assertResult(t)(getType(Parser.parse(s)))
   }
 
-  test("Parser.Type06") {
+  test("Parser.Type.Tuple02") {
     val s = """type t = (Bool, Bool, Bool);"""
     val t = Ast.Type.Tuple(Seq(Ast.Type.Bool, Ast.Type.Bool, Ast.Type.Bool))
 
     assertResult(t)(getType(Parser.parse(s)))
   }
 
-  test("Parser.Type07") {
+  test("Parser.Type.Tuple03") {
     val s = """type t = (Bool, Int, Str);"""
     val t = Ast.Type.Tuple(Seq(Ast.Type.Bool, Ast.Type.Int, Ast.Type.Str))
 
     assertResult(t)(getType(Parser.parse(s)))
   }
 
-  test("Parser.Type08") {
+  test("Parser.Type.Tuple04") {
     val s = """type t = (Unit, Bool, Int, Str, Unit, Bool, Int, Str);"""
     val t = Ast.Type.Tuple(Seq(Ast.Type.Unit, Ast.Type.Bool, Ast.Type.Int, Ast.Type.Str, Ast.Type.Unit, Ast.Type.Bool, Ast.Type.Int, Ast.Type.Str))
 
     assertResult(t)(getType(Parser.parse(s)))
   }
 
-  test("Parser.Type09") {
+  test("Parser.Type.Tuple05") {
     val s = """type t = (Unit);"""
     val t = Ast.Type.Tuple(Seq(Ast.Type.Unit))
 
