@@ -220,6 +220,13 @@ class TestParser extends FunSuite {
     assertResult(a)(Parser.parse(s))
   }
 
+  test("Parser.Missing01") {
+    val s = """val e: Bool = ???;"""
+    val a = Ast.Root(Seq(Ast.Declaration.Val("e", Ast.Type.Bool, Ast.Expression.Missing)))
+
+    assertResult(a)(Parser.parse(s))
+  }
+
   private def getType(root: Ast.Root): Ast.Type = root match {
     case Ast.Root(Seq(Ast.Declaration.TypeDecl(_, typ))) => typ
     case _ => throw new RuntimeException()
