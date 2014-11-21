@@ -168,6 +168,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     str("!!!") ~> (() => Ast.Expression.Impossible)
   }
 
+
   /** *************************************************************************/
   /** Patterns                                                              ***/
   /** *************************************************************************/
@@ -269,6 +270,12 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   def QualifiedName: Rule1[Ast.Name.Qualified] = rule {
     Ident ~ "." ~ Name ~> Ast.Name.Qualified
   }
+
+  /** *************************************************************************/
+  /** Literals                                                              ***/
+  /** *************************************************************************/
+           // TODO ...
+
 
   /** *************************************************************************/
   /** Operators                                                             ***/
