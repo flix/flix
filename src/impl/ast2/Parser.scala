@@ -37,27 +37,27 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def TypeDeclaration: Rule1[Ast.Declaration.TypeDecl] = rule {
-    "type" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Type ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.TypeDecl
+    "type" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Type ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.TypeDecl
   }
 
   def ValueDeclaration: Rule1[Ast.Declaration.Val] = rule {
-    "val" ~ WhiteSpace ~ capture(Identifier) ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Val
+    "val" ~ WhiteSpace ~ Ident ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Val
   }
 
   def VariableDeclaration: Rule1[Ast.Declaration.Var] = rule {
-    "var" ~ WhiteSpace ~ capture(Identifier) ~ ":" ~ WhiteSpace ~ Type ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Var
+    "var" ~ WhiteSpace ~ Ident ~ ":" ~ WhiteSpace ~ Type ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Var
   }
 
   def FunctionDeclaration: Rule1[Ast.Declaration.Function] = rule {
-    zeroOrMore(Annotation) ~ "def" ~ WhiteSpace ~ capture(Identifier) ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Function
+    zeroOrMore(Annotation) ~ "def" ~ WhiteSpace ~ Ident ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Function
   }
 
   def FactDeclaration: Rule1[Ast.Declaration.Fact] = rule {
-    "fact" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Predicate ~ ";" ~ WhiteSpace ~> Ast.Declaration.Fact
+    "fact" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Predicate ~ ";" ~ WhiteSpace ~> Ast.Declaration.Fact
   }
 
   def RuleDeclaraction: Rule1[Ast.Declaration.Rule] = rule {
-    "rule" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Predicate ~ WhiteSpace ~ "if" ~ WhiteSpace ~ RuleBody ~ ";" ~ WhiteSpace ~> Ast.Declaration.Rule
+    "rule" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Predicate ~ WhiteSpace ~ "if" ~ WhiteSpace ~ RuleBody ~ ";" ~ WhiteSpace ~> Ast.Declaration.Rule
   }
 
   def RuleBody: Rule1[Seq[Ast.Predicate]] = rule {
@@ -69,7 +69,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def Argument: Rule1[(String, Ast.Type)] = rule {
-    capture(Identifier) ~ ":" ~ WhiteSpace ~ Type ~> ((name: String, typ: Ast.Type) => (name, typ))
+    Ident ~ ":" ~ WhiteSpace ~ Type ~> ((name: String, typ: Ast.Type) => (name, typ))
   }
 
   // TODO: Lattice Decls, etc.
@@ -86,7 +86,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
 
   def Annotation: Rule1[Ast.Annotation] = rule {
-    "@" ~ capture(Identifier) ~ WhiteSpace ~> Ast.Annotation
+    "@" ~ Ident ~ WhiteSpace ~> Ast.Annotation
   }
 
 
@@ -102,7 +102,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def BoolLitExp: Rule1[Ast.Expression.BoolLit] = rule {
-    str("true") ~> (() => Ast.Expression.BoolLit(true)) | str("false") ~> (() => Ast.Expression.BoolLit(false))
+    str("true") ~> (() => Ast.Expression.BoolLit(literal = true)) | str("false") ~> (() => Ast.Expression.BoolLit(literal = false))
   }
 
   def IntLitExp: Rule1[Ast.Expression.IntLit] = rule {
@@ -126,7 +126,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def LetExp: Rule1[Ast.Expression.Let] = rule {
-    "let" ~ WhiteSpace ~ capture(Identifier) ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "in" ~ WhiteSpace ~ Expression ~> Ast.Expression.Let
+    "let" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "in" ~ WhiteSpace ~ Expression ~> Ast.Expression.Let
   }
 
   // TODO: Consider if with then?
@@ -181,11 +181,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def VariableExpression: Rule1[Ast.Expression.UnresolvedName] = rule {
     Name ~> Ast.Expression.UnresolvedName
-  }
-
-  // TOOD: Use capture
-  def Identifier = rule {
-    CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum)
   }
 
   def Digits: Rule1[String] = rule {
@@ -256,7 +251,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def EnumBody: Rule1[Seq[Ast.Type.Tag]] = rule {
-    oneOrMore("case" ~ WhiteSpace ~ capture(Identifier) ~> Ast.Type.Tag).separatedBy("," ~ WhiteSpace)
+    oneOrMore("case" ~ WhiteSpace ~ Ident ~> Ast.Type.Tag).separatedBy("," ~ WhiteSpace)
   }
 
   def FunctionType: Rule1[Ast.Type.Function] = rule {
