@@ -85,10 +85,43 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
 
+  def Pattern: Rule1[Ast.Pattern] = rule {
+    WildcardPattern | VariablePattern | TuplePattern
+  }
+
+  def VariablePattern: Rule1[Ast.Pattern.Var] = rule {
+    Name ~> Ast.Pattern.Var
+  }
+
+  def WildcardPattern: Rule1[Ast.Pattern] = rule {
+    str("_") ~> (() => Ast.Pattern.Wildcard)
+  }
+
+  def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {
+    "(" ~ oneOrMore(Pattern).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Pattern.Tuple
+  }
+
+  def TupleExp: Rule1[Ast.Expression.Tuple] = rule {
+    "(" ~ oneOrMore(Expression).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Expression.Tuple
+  }
+
+  def VariableExp: Rule1[Ast.Expression.UnresolvedName] = rule {
+    Name ~> Ast.Expression.UnresolvedName
+  }
+
+  // TODO: Elimnate or move
+  def Digits: Rule1[String] = rule {
+    capture(oneOrMore(CharPredicate.Digit))
+  }
+
   def Annotation: Rule1[Ast.Annotation] = rule {
     "@" ~ Ident ~ WhiteSpace ~> Ast.Annotation
   }
 
+
+  /** *************************************************************************/
+  /** Expressions                                                           ***/
+  /** *************************************************************************/
   def Expression: Rule1[Ast.Expression] = rule {
     LiteralExp | LetExp | IfThenElseExp | MatchExp | TupleExp | VariableExp | ParenthesisExp | MissingExp | ImpossibleExp
   }
@@ -155,34 +188,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     str("!!!") ~> (() => Ast.Expression.Impossible)
   }
 
-  def Pattern: Rule1[Ast.Pattern] = rule {
-    WildcardPattern | VariablePattern | TuplePattern
-  }
-
-  def VariablePattern: Rule1[Ast.Pattern.Var] = rule {
-    Name ~> Ast.Pattern.Var
-  }
-
-  def WildcardPattern: Rule1[Ast.Pattern] = rule {
-    str("_") ~> (() => Ast.Pattern.Wildcard)
-  }
-
-  def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {
-    "(" ~ oneOrMore(Pattern).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Pattern.Tuple
-  }
-
-  def TupleExp: Rule1[Ast.Expression.Tuple] = rule {
-    "(" ~ oneOrMore(Expression).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Expression.Tuple
-  }
-
-  def VariableExp: Rule1[Ast.Expression.UnresolvedName] = rule {
-    Name ~> Ast.Expression.UnresolvedName
-  }
-
-  // TODO: Elimnate or move
-  def Digits: Rule1[String] = rule {
-    capture(oneOrMore(CharPredicate.Digit))
-  }
 
   /** *************************************************************************/
   /** Identifiers and Names                                                 ***/
