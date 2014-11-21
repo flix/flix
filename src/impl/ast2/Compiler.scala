@@ -1,6 +1,6 @@
 package impl.ast2
 
-import impl.logic.{Symbol, Pattern, Type}
+import impl.logic._
 
 class Compiler(ast: Ast.Root) {
 
@@ -53,6 +53,16 @@ class Compiler(ast: Ast.Root) {
 
   object TranslationPhase {
 
+    def compile(exp: Ast.Expression): Term = exp match {
+      case Ast.Expression.Binary(op, e1, e2) =>
+        val t1 = compile(e1)
+        val t2 = compile(e2)
+        op match {
+        case BinaryOperator.Plus => Term.BinaryOp(op, t1, t2)
+        case BinaryOperator.Minus => Term.BinaryOp(op, t1, t2)
+      }
+    }
+
     /**
      * Compiles an ast pattern to a core pattern.
      */
@@ -69,6 +79,7 @@ class Compiler(ast: Ast.Root) {
       case Ast.Pattern.Tuple(Seq(p1, p2, p3, p4, p5)) => Pattern.Tuple5(compile(p1), compile(p2), compile(p3), compile(p4), compile(p5))
       case Ast.Pattern.Tuple(elms) => throw new CompilerException("Tuples with more than 5 elements are not yet supported.")
     }
+
 
     /**
      * Compiles an ast type to a core type.

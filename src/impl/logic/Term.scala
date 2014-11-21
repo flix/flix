@@ -199,6 +199,8 @@ object Term {
    */
   case class BinaryOp(op: BinaryOperator, t1: Term, t2: Term) extends Term
 
+  // TODO: Consider introducing "typed" nodes
+
   /**
    * A tagged term.
    */
