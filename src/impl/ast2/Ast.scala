@@ -71,18 +71,6 @@ object Ast {
   case class Annotation(s: String) extends Ast
 
 
-  sealed trait Pattern extends Ast
-
-  object Pattern {
-
-    case object Wildcard extends Pattern
-
-    case class Var(name: Name) extends Pattern
-
-    case class Tuple(elms: Seq[Pattern]) extends Pattern
-
-  }
-
   case class Predicate(t1: Term, t2: Term) extends Pattern
 
   sealed trait Term extends Ast
@@ -208,6 +196,35 @@ object Ast {
      * by the programmer, not to occur.
      */
     case object Impossible extends Expression
+
+  }
+
+  /**
+   * A common super-type for AST nodes which represent patterns.
+   */
+  sealed trait Pattern extends Ast
+
+  object Pattern {
+
+    /**
+     * An AST node which represents a wildcard (the underscore _) pattern.
+     */
+    case object Wildcard extends Pattern
+
+    /**
+     * An AST node which represents a variable pattern.
+     */
+    case class Var(name: String) extends Pattern
+
+    /**
+     * An AST node which represents a tagged pattern.
+     */
+    case class Tag(name: Name, pattern: Pattern) extends Pattern
+
+    /**
+     * An AST node which represents a tuples pattern.
+     */
+    case class Tuple(elms: Seq[Pattern]) extends Pattern
 
   }
 

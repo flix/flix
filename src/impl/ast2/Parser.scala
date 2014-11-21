@@ -179,12 +179,12 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     WildcardPattern | VariablePattern | TuplePattern
   }
 
-  def VariablePattern: Rule1[Ast.Pattern.Var] = rule {
-    Name ~> Ast.Pattern.Var
-  }
-
   def WildcardPattern: Rule1[Ast.Pattern] = rule {
     str("_") ~> (() => Ast.Pattern.Wildcard)
+  }
+
+  def VariablePattern: Rule1[Ast.Pattern.Var] = rule {
+    Ident ~> Ast.Pattern.Var
   }
 
   def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {
