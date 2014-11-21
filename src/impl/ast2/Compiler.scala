@@ -29,6 +29,12 @@ class Compiler(ast: Ast.Root) {
     ???
   }
 
+  // TODO: Check
+  // -unresolved references
+  // -ambigious decls
+  // -patterns with the same variable
+  // -recursive types, calls, etc.
+
   // TODO: Deal with ambiquity
 
 
