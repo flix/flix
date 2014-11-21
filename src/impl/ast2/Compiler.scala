@@ -1,6 +1,6 @@
 package impl.ast2
 
-import impl.logic.{Pattern, Type}
+import impl.logic.{Symbol, Pattern, Type}
 
 class Compiler(ast: Ast.Root) {
 
@@ -47,8 +47,14 @@ class Compiler(ast: Ast.Root) {
 
   object TranslationPhase {
 
+    /**
+     * Compiles an ast pattern to a core pattern.
+     */
     private def compile(pattern: Ast.Pattern): Pattern = pattern match {
       case Ast.Pattern.Wildcard => Pattern.Wildcard
+      case Ast.Pattern.Var(name) => Pattern.Var(Symbol.VariableSymbol(name))
+      //case Ast.Pattern.Tag() =>
+      //case Ast.Pattern.Tuple(elms) => ???
     }
 
     /**
