@@ -54,13 +54,22 @@ class Compiler(ast: Ast.Root) {
   object TranslationPhase {
 
     def compile(exp: Ast.Expression): Term = exp match {
+      case Ast.Expression.Unary(op, e1) =>
+        // Eliminates unary plus and minus.
+        val t1 = compile(e1)
+        op match {
+          case UnaryOperator.Not => Term.UnaryOp(UnaryOperator.Not, t1)
+          case UnaryOperator.UnaryPlus => t1
+          case UnaryOperator.UnaryMinus => Term.BinaryOp(BinaryOperator.Minus, Term.Int(0), t1)
+        }
+
       case Ast.Expression.Binary(op, e1, e2) =>
         val t1 = compile(e1)
         val t2 = compile(e2)
         op match {
-        case BinaryOperator.Plus => Term.BinaryOp(op, t1, t2)
-        case BinaryOperator.Minus => Term.BinaryOp(op, t1, t2)
-      }
+          case BinaryOperator.Plus => Term.BinaryOp(op, t1, t2)
+          case BinaryOperator.Minus => Term.BinaryOp(op, t1, t2)
+        }
     }
 
     /**
