@@ -89,12 +89,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "@" ~ Ident ~ WhiteSpace ~> Ast.Annotation
   }
 
-
-  // TODO: Use separated by.
-
-
   def Expression: Rule1[Ast.Expression] = rule {
-    LiteralExp | LetExp | IfThenElseExp | MatchExpression | TupleExpression | VariableExpression | ParenthesisExp | MissingExp | ImpossibleExp
+    LiteralExp | LetExp | IfThenElseExp | MatchExp | TupleExp | VariableExp | ParenthesisExp | MissingExp | ImpossibleExp
   }
 
   def LiteralExp: Rule1[Ast.Expression] = rule {
@@ -106,7 +102,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def IntLitExp: Rule1[Ast.Expression.IntLit] = rule {
-    Digits ~> ((x: String) => Ast.Expression.IntLit(x.toInt))
+    capture(oneOrMore(CharPredicate.Digit)) ~> ((x: String) => Ast.Expression.IntLit(x.toInt))
   }
 
   def StrLitExp: Rule1[Ast.Expression.StrLit] = rule {
@@ -134,7 +130,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "if" ~ WhiteSpace ~ "(" ~ Expression ~ ")" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "else" ~ WhiteSpace ~ Expression ~> Ast.Expression.IfThenElse
   }
 
-  def MatchExpression: Rule1[Ast.Expression.Match] = rule {
+  def MatchExp: Rule1[Ast.Expression.Match] = rule {
     "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ oneOrMore(MatchRule) ~ "}" ~> Ast.Expression.Match
   }
 
@@ -175,14 +171,15 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "(" ~ oneOrMore(Pattern).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Pattern.Tuple
   }
 
-  def TupleExpression: Rule1[Ast.Expression.Tuple] = rule {
+  def TupleExp: Rule1[Ast.Expression.Tuple] = rule {
     "(" ~ oneOrMore(Expression).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Expression.Tuple
   }
 
-  def VariableExpression: Rule1[Ast.Expression.UnresolvedName] = rule {
+  def VariableExp: Rule1[Ast.Expression.UnresolvedName] = rule {
     Name ~> Ast.Expression.UnresolvedName
   }
 
+  // TODO: Elimnate or move
   def Digits: Rule1[String] = rule {
     capture(oneOrMore(CharPredicate.Digit))
   }
@@ -195,7 +192,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def Name: Rule1[Ast.Name] = rule {
-    // NB: QualifiedName must preceede SimpleName to avoid left-recursion.
+    // Note: QualifiedName must preceede SimpleName to avoid left-recursion.
     QualifiedName | SimpleName
   }
 
