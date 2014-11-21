@@ -160,12 +160,15 @@ object Ast {
      */
     case class Match(values: Expression, rules: Seq[Ast.MatchRule]) extends Expression
 
-    // TODO: Tag
-
     /**
      * An AST node which represents a function call.
      */
     case class Call(function: Expression, arguments: Seq[Expression]) extends Expression
+
+    /**
+     * An AST node which represents a tagged expression.
+     */
+    case class Tag(name: String, e: Expression) extends Expression
 
     /**
      * An AST node which represents a tuple expression.
