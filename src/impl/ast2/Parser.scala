@@ -85,24 +85,13 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
 
-
   def Annotation: Rule1[Ast.Annotation] = rule {
     "@" ~ capture(Identifier) ~ WhiteSpace ~> Ast.Annotation
   }
 
-  def Name: Rule1[Ast.Name] = rule {
-    QualifiedName | SimpleName
-  }
 
   // TODO: Use separated by.
 
-  def SimpleName: Rule1[Ast.Name.Simple] = rule {
-    capture(Identifier) ~> Ast.Name.Simple
-  }
-
-  def QualifiedName: Rule1[Ast.Name.Qualified] = rule {
-    capture(Identifier) ~ "." ~ Name ~> Ast.Name.Qualified
-  }
 
   def Expression: Rule1[Ast.Expression] = rule {
     LiteralExp | LetExp | IfThenElseExp | MatchExpression | TupleExpression | VariableExpression | ParenthesisExp | MissingExp | ImpossibleExp
@@ -203,6 +192,25 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     capture(oneOrMore(CharPredicate.Digit))
   }
 
+  /** *************************************************************************/
+  /** Identifiers and Names                                                 ***/
+  /** *************************************************************************/
+  def Ident: Rule1[String] = rule {
+    capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum))
+  }
+
+  def Name: Rule1[Ast.Name] = rule {
+    // NB: QualifiedName must preceede SimpleName to avoid left-recursion.
+    QualifiedName | SimpleName
+  }
+
+  def SimpleName: Rule1[Ast.Name.Simple] = rule {
+    Ident ~> Ast.Name.Simple
+  }
+
+  def QualifiedName: Rule1[Ast.Name.Qualified] = rule {
+    Ident ~ "." ~ Name ~> Ast.Name.Qualified
+  }
 
   /** *************************************************************************/
   /** Types                                                                 ***/
