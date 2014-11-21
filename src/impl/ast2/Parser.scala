@@ -175,6 +175,9 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   /** *************************************************************************/
   /** Patterns                                                              ***/
   /** *************************************************************************/
+  // TODO: Literal.
+
+
   def Pattern: Rule1[Ast.Pattern] = rule {
     // Note: TaggedPattern must preceede VariablePattern to avoid left-recursion.
     WildcardPattern | TaggedPattern | TuplePattern | VariablePattern
