@@ -29,11 +29,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def NameSpace: Rule1[Ast.Declaration.NameSpace] = rule {
-    "namespace" ~ WhiteSpace ~ Name ~ WhiteSpace ~ '{' ~ optional(WhiteSpace) ~ NameSpaceBody ~ optional(WhiteSpace) ~ '}' ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.NameSpace
-  }
-
-  def NameSpaceBody: Rule1[Seq[Ast.Declaration]] = rule {
-    zeroOrMore(Declaration)
+    "namespace" ~ WhiteSpace ~ Name ~ WhiteSpace ~ '{' ~ optional(WhiteSpace) ~ zeroOrMore(Declaration) ~ optional(WhiteSpace) ~ '}' ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.NameSpace
   }
 
   def TypeDeclaration: Rule1[Ast.Declaration.TypeDecl] = rule {
