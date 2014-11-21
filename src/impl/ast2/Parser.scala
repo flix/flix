@@ -85,30 +85,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
 
-  def Pattern: Rule1[Ast.Pattern] = rule {
-    WildcardPattern | VariablePattern | TuplePattern
-  }
-
-  def VariablePattern: Rule1[Ast.Pattern.Var] = rule {
-    Name ~> Ast.Pattern.Var
-  }
-
-  def WildcardPattern: Rule1[Ast.Pattern] = rule {
-    str("_") ~> (() => Ast.Pattern.Wildcard)
-  }
-
-  def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {
-    "(" ~ oneOrMore(Pattern).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Pattern.Tuple
-  }
-
-  def TupleExp: Rule1[Ast.Expression.Tuple] = rule {
-    "(" ~ oneOrMore(Expression).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Expression.Tuple
-  }
-
-  def VariableExp: Rule1[Ast.Expression.UnresolvedName] = rule {
-    Name ~> Ast.Expression.UnresolvedName
-  }
-
   // TODO: Elimnate or move
   def Digits: Rule1[String] = rule {
     capture(oneOrMore(CharPredicate.Digit))
@@ -180,6 +156,14 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "(" ~ optional(WhiteSpace) ~ Expression ~ optional(WhiteSpace) ~ "}"
   }
 
+  def TupleExp: Rule1[Ast.Expression.Tuple] = rule {
+    "(" ~ oneOrMore(Expression).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Expression.Tuple
+  }
+
+  def VariableExp: Rule1[Ast.Expression.UnresolvedName] = rule {
+    Name ~> Ast.Expression.UnresolvedName
+  }
+
   def MissingExp: Rule1[Ast.Expression] = rule {
     str("???") ~> (() => Ast.Expression.Missing)
   }
@@ -188,25 +172,23 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     str("!!!") ~> (() => Ast.Expression.Impossible)
   }
 
-
   /** *************************************************************************/
-  /** Identifiers and Names                                                 ***/
+  /** Patterns                                                              ***/
   /** *************************************************************************/
-  def Ident: Rule1[String] = rule {
-    capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum))
+  def Pattern: Rule1[Ast.Pattern] = rule {
+    WildcardPattern | VariablePattern | TuplePattern
   }
 
-  def Name: Rule1[Ast.Name] = rule {
-    // Note: QualifiedName must preceede SimpleName to avoid left-recursion.
-    QualifiedName | SimpleName
+  def VariablePattern: Rule1[Ast.Pattern.Var] = rule {
+    Name ~> Ast.Pattern.Var
   }
 
-  def SimpleName: Rule1[Ast.Name.Simple] = rule {
-    Ident ~> Ast.Name.Simple
+  def WildcardPattern: Rule1[Ast.Pattern] = rule {
+    str("_") ~> (() => Ast.Pattern.Wildcard)
   }
 
-  def QualifiedName: Rule1[Ast.Name.Qualified] = rule {
-    Ident ~ "." ~ Name ~> Ast.Name.Qualified
+  def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {
+    "(" ~ oneOrMore(Pattern).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Pattern.Tuple
   }
 
   /** *************************************************************************/
@@ -262,6 +244,26 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def NamedType: Rule1[Ast.Type.NameRef] = rule {
     Name ~> Ast.Type.NameRef
+  }
+
+  /** *************************************************************************/
+  /** Identifiers and Names                                                 ***/
+  /** *************************************************************************/
+  def Ident: Rule1[String] = rule {
+    capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum))
+  }
+
+  def Name: Rule1[Ast.Name] = rule {
+    // Note: QualifiedName must preceede SimpleName to avoid left-recursion.
+    QualifiedName | SimpleName
+  }
+
+  def SimpleName: Rule1[Ast.Name.Simple] = rule {
+    Ident ~> Ast.Name.Simple
+  }
+
+  def QualifiedName: Rule1[Ast.Name.Qualified] = rule {
+    Ident ~ "." ~ Name ~> Ast.Name.Qualified
   }
 
   /** *************************************************************************/
