@@ -53,8 +53,12 @@ class Compiler(ast: Ast.Root) {
     private def compile(pattern: Ast.Pattern): Pattern = pattern match {
       case Ast.Pattern.Wildcard => Pattern.Wildcard
       case Ast.Pattern.Var(name) => Pattern.Var(Symbol.VariableSymbol(name))
-      //case Ast.Pattern.Tag() =>
-      //case Ast.Pattern.Tuple(elms) => ???
+      case Ast.Pattern.Tag(name, p1) => Pattern.Tag(compile(name), compile(p1))
+      case Ast.Pattern.Tuple(Seq(p1, p2)) => Pattern.Tuple2(compile(p1), compile(p2))
+      case Ast.Pattern.Tuple(Seq(p1, p2, p3)) => Pattern.Tuple3(compile(p1), compile(p2), compile(p3))
+      case Ast.Pattern.Tuple(Seq(p1, p2, p3, p4)) => Pattern.Tuple4(compile(p1), compile(p2), compile(p3), compile(p4))
+      case Ast.Pattern.Tuple(Seq(p1, p2, p3, p4, p5)) => Pattern.Tuple5(compile(p1), compile(p2), compile(p3), compile(p4), compile(p5))
+      case Ast.Pattern.Tuple(elms) => throw new CompilerException("Tuples with more than 5 elements are not yet supported.")
     }
 
     /**
@@ -70,6 +74,11 @@ class Compiler(ast: Ast.Root) {
       case Ast.Type.Map(keys, values) => throw CompilerException("Map types are currently not supported.")
       case Ast.Type.NameRef(name) => throw CompilerException(s"Unresolved named type: $name.")
     }
+
+    /**
+     * Compiles an ast name into a named symbol.
+     */
+    private def compile(name: Ast.Name): Symbol.NamedSymbol = ???
   }
 
 
