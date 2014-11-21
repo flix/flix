@@ -217,6 +217,21 @@ object Ast {
     case class Var(name: String) extends Pattern
 
     /**
+     * An AST node which represents a literal boolean pattern.
+     */
+    case class Bool(literal: scala.Boolean) extends Pattern
+
+    /**
+     * An AST node which represents a literal integer pattern.
+     */
+    case class Int(literal: scala.Int) extends Pattern
+
+    /**
+     * An AST node which represents a literal string pattern.
+     */
+    case class Str(literal: String) extends Pattern
+
+    /**
      * An AST node which represents a tagged pattern.
      */
     case class Tag(name: Name, pattern: Pattern) extends Pattern
