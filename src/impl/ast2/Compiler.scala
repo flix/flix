@@ -74,6 +74,11 @@ class Compiler(ast: Ast.Root) {
 
           case BinaryOperator.Equal => Term.BinaryOp(op, t1, t2)
           case BinaryOperator.NotEqual => Term.UnaryOp(UnaryOperator.Not, Term.BinaryOp(BinaryOperator.Equal, t1, t2))
+
+          case BinaryOperator.Greater => Term.BinaryOp(op, t1, t2)
+          //case BinaryOperator.GreaterEqual => Term.BinaryOp
+          case BinaryOperator.Less => Term.BinaryOp(BinaryOperator.Greater, t2, t1)
+
         }
     }
 
