@@ -64,6 +64,14 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     oneOrMore(Predicate).separatedBy("," ~ WhiteSpace)
   }
 
+  def ArgumentList: Rule1[Seq[(String, Ast.Type)]] = rule {
+    zeroOrMore(Argument).separatedBy("," ~ optional(WhiteSpace))
+  }
+
+  def Argument: Rule1[(String, Ast.Type)] = rule {
+    capture(Identifier) ~ ":" ~ WhiteSpace ~ Type ~> ((name: String, typ: Ast.Type) => (name, typ))
+  }
+
   // TODO: Lattice Decls, etc.
 
   def Predicate: Rule1[Ast.Predicate] = rule {
@@ -76,13 +84,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
       Digits ~> Ast.Term.Int
   }
 
-  def ArgumentList: Rule1[Seq[Ast.Argument]] = rule {
-    zeroOrMore(Argument).separatedBy("," ~ optional(WhiteSpace))
-  }
 
-  def Argument: Rule1[Ast.Argument] = rule {
-    capture(Identifier) ~ ":" ~ WhiteSpace ~ Type ~> Ast.Argument
-  }
 
   def Annotation: Rule1[Ast.Annotation] = rule {
     "@" ~ capture(Identifier) ~ WhiteSpace ~> Ast.Annotation

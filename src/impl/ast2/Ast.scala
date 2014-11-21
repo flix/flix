@@ -61,10 +61,7 @@ object Ast {
   }
 
 
-  case class FunctionDeclaration(an: Seq[Annotation], x: String, arguments: Seq[Argument], returnType: Type, exp: Expression) extends Declaration
-
-  // TODO: Replace by list
-  case class Argument(name: String, typ: Type) extends Ast
+  case class FunctionDeclaration(an: Seq[Annotation], x: String, arguments: Seq[(String, Type)], returnType: Type, exp: Expression) extends Declaration
 
   case class MatchRule(p: Pattern, e: Expression) extends Ast
 
