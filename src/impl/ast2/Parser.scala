@@ -48,8 +48,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "var" ~ WhiteSpace ~ capture(Identifier) ~ ":" ~ WhiteSpace ~ Type ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Var
   }
 
-  def FunctionDeclaration: Rule1[Ast.FunctionDeclaration] = rule {
-    zeroOrMore(Annotation) ~ "def" ~ WhiteSpace ~ capture(Identifier) ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ optional(WhiteSpace) ~> Ast.FunctionDeclaration
+  def FunctionDeclaration: Rule1[Ast.Declaration.Function] = rule {
+    zeroOrMore(Annotation) ~ "def" ~ WhiteSpace ~ capture(Identifier) ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Function
   }
 
   def FactDeclaration: Rule1[Ast.Declaration.Fact] = rule {

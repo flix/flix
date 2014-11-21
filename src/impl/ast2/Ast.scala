@@ -49,6 +49,11 @@ object Ast {
     case class Var(name: String, typ: Type) extends Declaration
 
     /**
+     * An AST node which represents a function declaration.
+     */
+    case class Function(annotations: Seq[Annotation], name: String, arguments: Seq[(String, Type)], typ: Type, body: Expression) extends Declaration
+
+    /**
      * An AST node which represents a fact declaration.
      */
     case class Fact(name: String, head: Predicate) extends Declaration
@@ -60,8 +65,6 @@ object Ast {
 
   }
 
-
-  case class FunctionDeclaration(an: Seq[Annotation], x: String, arguments: Seq[(String, Type)], returnType: Type, exp: Expression) extends Declaration
 
   case class MatchRule(p: Pattern, e: Expression) extends Ast
 
