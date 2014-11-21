@@ -185,6 +185,27 @@ class TestParser extends FunSuite {
     assertResult(t)(getType(Parser.parse(s)))
   }
 
+  test("Parser.NameSpace01") {
+    val s = """namespace a {};"""
+    val a = Ast.Root(Seq(Ast.Declaration.NameSpace(Ast.Name.Simple("a"), Seq.empty)))
+
+    assertResult(a)(Parser.parse(s))
+  }
+
+  test("Parser.NameSpace02") {
+    val s = """namespace a.b {};"""
+    val a = Ast.Root(Seq(Ast.Declaration.NameSpace(Ast.Name.Qualified("a", Ast.Name.Simple("b")), Seq.empty)))
+
+    assertResult(a)(Parser.parse(s))
+  }
+
+  test("Parser.NameSpace03") {
+    val s = """namespace a.b.b.a {};"""
+    val a = Ast.Root(Seq(Ast.Declaration.NameSpace(Ast.Name.Qualified("a", Ast.Name.Qualified("b", Ast.Name.Qualified("b", Ast.Name.Simple("a")))), Seq.empty)))
+
+    assertResult(a)(Parser.parse(s))
+  }
+
   private def getType(root: Ast.Root): Ast.Type = root match {
     case Ast.Root(Seq(Ast.Declaration.TypeDecl(_, typ))) => typ
     case _ => throw new RuntimeException()
