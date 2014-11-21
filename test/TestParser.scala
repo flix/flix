@@ -234,6 +234,30 @@ class TestParser extends FunSuite {
     assertResult(a)(Parser.parse(s))
   }
 
+  ignore("Parser.Call01") {
+    val s = """val e: Bool = f(1);"""
+    val a = Ast.Root(Seq(Ast.Declaration.Val("e", Ast.Type.Bool,
+      Ast.Expression.Call(Ast.Expression.UnresolvedName(Ast.Name.Simple("f")), Seq(Ast.Expression.IntLit(1))))))
+
+    assertResult(a)(Parser.parse(s))
+  }
+
+  ignore("Parser.Call02") {
+    val s = """val e: Bool = f(1, 2, 3);"""
+    val a = Ast.Root(Seq(Ast.Declaration.Val("e", Ast.Type.Bool,
+      Ast.Expression.Call(Ast.Expression.UnresolvedName(Ast.Name.Simple("f")), Seq(Ast.Expression.IntLit(1))))))
+
+    assertResult(a)(Parser.parse(s))
+  }
+
+  ignore("Parser.Call03") {
+    val s = """val e: Bool = f(g(h(x, y, z);"""
+    val a = Ast.Root(Seq(Ast.Declaration.Val("e", Ast.Type.Bool,
+      Ast.Expression.Call(Ast.Expression.UnresolvedName(Ast.Name.Simple("f")), Seq(Ast.Expression.IntLit(1))))))
+
+    assertResult(a)(Parser.parse(s))
+  }
+
   private def getType(root: Ast.Root): Ast.Type = root match {
     case Ast.Root(Seq(Ast.Declaration.TypeDecl(_, typ))) => typ
     case _ => throw new RuntimeException()

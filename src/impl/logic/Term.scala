@@ -137,6 +137,7 @@ sealed trait Term {
 object Term {
 
   // TODO: Remove Bool and Str. (and their operations)
+  // TODO: Try to simplify this language as much as possible.
 
   /**
    * The Unit term.

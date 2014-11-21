@@ -63,6 +63,7 @@ object Ast {
 
   case class FunctionDeclaration(an: Seq[Annotation], x: String, arguments: Seq[Argument], returnType: Type, exp: Expression) extends Declaration
 
+  // TODO: Replace by list
   case class Argument(name: String, typ: Type) extends Ast
 
   case class MatchRule(p: Pattern, e: Expression) extends Ast
@@ -158,6 +159,13 @@ object Ast {
      * An AST node which represents a match expression.
      */
     case class Match(values: Expression, rules: Seq[Ast.MatchRule]) extends Expression
+
+    // TODO: Tag
+
+    /**
+     * An AST node which represents a function call.
+     */
+    case class Call(function: Expression, arguments: Seq[Expression]) extends Expression
 
     /**
      * An AST node which represents a tuple expression.

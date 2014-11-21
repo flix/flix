@@ -151,6 +151,11 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> Ast.MatchRule
   }
 
+  def CallExp: Rule1[Ast.Expression.Call] = rule {
+    // TODO: Left recursive...
+    Expression ~ "(" ~ zeroOrMore(Expression).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Expression.Call
+  }
+
   def ParenthesisExp: Rule1[Ast.Expression] = rule {
     "(" ~ optional(WhiteSpace) ~ Expression ~ optional(WhiteSpace) ~ "}"
   }
