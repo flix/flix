@@ -176,7 +176,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   /** Patterns                                                              ***/
   /** *************************************************************************/
   def Pattern: Rule1[Ast.Pattern] = rule {
-    WildcardPattern | VariablePattern | TuplePattern
+    // Note: TaggedPattern must preceede VariablePattern to avoid left-recursion.
+    WildcardPattern | TaggedPattern | TuplePattern | VariablePattern
   }
 
   def WildcardPattern: Rule1[Ast.Pattern] = rule {
@@ -185,6 +186,10 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def VariablePattern: Rule1[Ast.Pattern.Var] = rule {
     Ident ~> Ast.Pattern.Var
+  }
+
+  def TaggedPattern: Rule1[Ast.Pattern.Tag] = rule {
+    Name ~ WhiteSpace ~ Pattern ~> Ast.Pattern.Tag
   }
 
   def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {
