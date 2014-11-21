@@ -69,6 +69,11 @@ class Compiler(ast: Ast.Root) {
         op match {
           case BinaryOperator.Plus => Term.BinaryOp(op, t1, t2)
           case BinaryOperator.Minus => Term.BinaryOp(op, t1, t2)
+          case BinaryOperator.Times => Term.BinaryOp(op, t1, t2)
+          case BinaryOperator.Divide => Term.BinaryOp(op, t1, t2)
+
+          case BinaryOperator.Equal => Term.BinaryOp(op, t1, t2)
+          case BinaryOperator.NotEqual => Term.UnaryOp(UnaryOperator.Not, Term.BinaryOp(BinaryOperator.Equal, t1, t2))
         }
     }
 
