@@ -165,6 +165,9 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
 
+
+
+
   def InfixExp: Rule1[Ast.Expression] = rule {
     LogicalExp ~ optional(WhiteSpace ~ "`" ~ Name ~ "`" ~ WhiteSpace ~ LogicalExp ~> Ast.Expression.Infix)
   }
@@ -178,6 +181,10 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def MultiplicativeExp: Rule1[Ast.Expression] = rule {
+    AdditiveExp ~ zeroOrMore(WhiteSpace ~ AdditiveOp ~ WhiteSpace ~ AdditiveExp ~> Ast.Expression.Binary)
+  }
+
+  def AdditiveExp: Rule1[Ast.Expression] = rule {
     LiteralExp | VariableExp
   }
 
