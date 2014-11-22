@@ -66,8 +66,6 @@ object Ast {
   }
 
 
-  case class MatchRule(p: Pattern, e: Expression) extends Ast
-
   case class Annotation(s: String) extends Ast
 
 
@@ -146,7 +144,7 @@ object Ast {
     /**
      * An AST node which represents a match expression.
      */
-    case class Match(values: Expression, rules: Seq[Ast.MatchRule]) extends Expression
+    case class Match(values: Expression, rules: Seq[(Pattern, Expression)]) extends Expression
 
     /**
      * An AST node which represents a function call.

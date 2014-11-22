@@ -1,5 +1,6 @@
 package impl.ast2
 
+import impl.ast2.Ast.Expression
 import impl.logic.{BinaryOperator, UnaryOperator}
 import org.parboiled2._
 import scala.collection.immutable.Seq
@@ -139,8 +140,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ oneOrMore(MatchRule) ~ "}" ~> Ast.Expression.Match
   }
 
-  def MatchRule: Rule1[Ast.MatchRule] = rule {
-    "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> Ast.MatchRule
+  def MatchRule: Rule1[(Ast.Pattern, Ast.Expression)] = rule {
+    "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> ((p: Ast.Pattern, e: Ast.Expression) => (p, e))
   }
 
   def CallExp: Rule1[Ast.Expression.Call] = rule {
