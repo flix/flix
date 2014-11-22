@@ -1,6 +1,5 @@
 package impl.ast2
 
-import impl.ast2.Ast.Expression
 import impl.logic.{BinaryOperator, UnaryOperator}
 import org.parboiled2._
 import scala.collection.immutable.Seq
