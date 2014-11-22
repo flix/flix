@@ -5,11 +5,7 @@ import impl.logic._
 class Compiler(ast: Ast.Root) {
 
   def run(): Unit = {
-    //println(typenv(ast))
-    // phases: 1 desugar
-    // phase2: environments
-    // phase3: linking
-    // phase4: translate
+
   }
 
   // environments
@@ -24,7 +20,27 @@ class Compiler(ast: Ast.Root) {
   // -patterns with the same variable
   // -recursive types, calls, etc.
 
-  object TranslationPhase {
+
+  object Desugaring {
+
+  }
+
+  object Environments {
+
+    def typenv(name: Ast.Name, node: Ast): Map[Ast.Name, Ast.Declaration.TypeDecl] = ???
+
+    // step 1: Check the FQN. Step 2. Check if the name is an extension.
+    def lookupType: Unit = ???
+
+    def merge: Unit = ???
+
+  }
+
+  object Linking {
+
+  }
+
+  object Translation {
 
     def compile(decl: Ast.Declaration) = ???
 
@@ -104,7 +120,7 @@ class Compiler(ast: Ast.Root) {
      */
     // TODO: Need internal visitor.
     private def compile(name: Ast.Name): Symbol.NamedSymbol = name match {
-//      case Ast.Name.Simple(x) => Symbol.VariableSymbol(x)
+      //      case Ast.Name.Simple(x) => Symbol.VariableSymbol(x)
       case Ast.Name.Qualified(prefix, suffix) => ???
     }
   }
