@@ -121,7 +121,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   def SimpleExpression: Rule1[Ast.Expression] = rule {
     LiteralExp | MissingExp | ImpossibleExp | LetExp | IfThenElseExp
 
-    /** | IfThenElseExp | MatchExp | TupleExp | VariableExp | ParenthesisExp | MissingExp | ImpossibleExp  **/
+    /**  | MatchExp | TupleExp | VariableExp   **/
   }
 
   def LiteralExp: Rule1[Ast.Expression] = rule {
@@ -156,8 +156,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "if" ~ WhiteSpace ~ "(" ~ Expression ~ ")" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "else" ~ WhiteSpace ~ Expression ~> Ast.Expression.IfThenElse
   }
 
-
-
   def MatchExp: Rule1[Ast.Expression.Match] = rule {
     "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ oneOrMore(MatchRule) ~ "}" ~> Ast.Expression.Match
   }
@@ -166,14 +164,14 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> ((p: Ast.Pattern, e: Ast.Expression) => (p, e))
   }
 
+
+
   def CallExp: Rule1[Ast.Expression.Call] = rule {
     // TODO: Left recursive...
     Expression ~ "(" ~ zeroOrMore(Expression).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Expression.Call
   }
 
-  def ParenthesisExp: Rule1[Ast.Expression] = rule {
-    "(" ~ optional(WhiteSpace) ~ Expression ~ optional(WhiteSpace) ~ "}"
-  }
+  // TODO: Tag Exp
 
   def TupleExp: Rule1[Ast.Expression.Tuple] = rule {
     "(" ~ oneOrMore(Expression).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Expression.Tuple
