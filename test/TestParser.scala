@@ -75,6 +75,13 @@ class TestParser extends FunSuite {
     assertResult(a)(getExp(Parser.parse(s)))
   }
 
+  test("Parser.IfThenElseExp01") {
+    val s = """val e: Int = if (a) b else c;"""
+    val a = Ast.Expression.IfThenElse("a", "b", "c")
+
+    assertResult(a)(getExp(Parser.parse(s)))
+  }
+
   test("Parser.LetExp02") {
     val s =
       """val e: Int =

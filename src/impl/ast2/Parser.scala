@@ -119,7 +119,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def SimpleExpression: Rule1[Ast.Expression] = rule {
-    LiteralExp | LetExp
+    LiteralExp | MissingExp | ImpossibleExp | LetExp | IfThenElseExp
 
     /** | IfThenElseExp | MatchExp | TupleExp | VariableExp | ParenthesisExp | MissingExp | ImpossibleExp  **/
   }
@@ -140,14 +140,22 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~> Ast.Expression.StrLit
   }
 
+  def MissingExp: Rule1[Ast.Expression] = rule {
+    str("???") ~> (() => Ast.Expression.Missing)
+  }
+
+  def ImpossibleExp: Rule1[Ast.Expression] = rule {
+    str("!!!") ~> (() => Ast.Expression.Impossible)
+  }
+
   def LetExp: Rule1[Ast.Expression.Let] = rule {
     "let" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "in" ~ WhiteSpace ~ Expression ~> Ast.Expression.Let
   }
 
-  // TODO: Consider if with then?
   def IfThenElseExp: Rule1[Ast.Expression.IfThenElse] = rule {
     "if" ~ WhiteSpace ~ "(" ~ Expression ~ ")" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "else" ~ WhiteSpace ~ Expression ~> Ast.Expression.IfThenElse
   }
+
 
 
   def MatchExp: Rule1[Ast.Expression.Match] = rule {
@@ -175,13 +183,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     Name ~> Ast.Expression.UnresolvedName
   }
 
-  def MissingExp: Rule1[Ast.Expression] = rule {
-    str("???") ~> (() => Ast.Expression.Missing)
-  }
-
-  def ImpossibleExp: Rule1[Ast.Expression] = rule {
-    str("!!!") ~> (() => Ast.Expression.Impossible)
-  }
 
 
   /** *************************************************************************/
