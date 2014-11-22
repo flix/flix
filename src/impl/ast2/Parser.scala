@@ -298,15 +298,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     str("+") ~> (() => BinaryOperator.Plus) |
       str("-") ~> (() => BinaryOperator.Minus) |
       str("*") ~> (() => BinaryOperator.Times) |
-      str("/") ~> (() => BinaryOperator.Divide) |
-      str("<=") ~> (() => BinaryOperator.LessEqual) |
-      str(">=") ~> (() => BinaryOperator.GreaterEqual) |
-      str("<") ~> (() => BinaryOperator.Less) |
-      str(">") ~> (() => BinaryOperator.Greater) |
-      str("==") ~> (() => BinaryOperator.Equal) |
-      str("!=") ~> (() => BinaryOperator.NotEqual) |
-      str("&&") ~> (() => BinaryOperator.And) |
-      str("||") ~> (() => BinaryOperator.Or)
+      str("/") ~> (() => BinaryOperator.Divide)
   }
 
   def LogicalOp: Rule1[BinaryOperator] = rule {
@@ -314,7 +306,19 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
       str("||") ~> (() => BinaryOperator.Or)
   }
 
+  def ComparisonOp: Rule1[BinaryOperator] = rule {
+    str("<=") ~> (() => BinaryOperator.LessEqual) |
+      str(">=") ~> (() => BinaryOperator.GreaterEqual) |
+      str("<") ~> (() => BinaryOperator.Less) |
+      str(">") ~> (() => BinaryOperator.Greater) |
+      str("==") ~> (() => BinaryOperator.Equal) |
+      str("!=") ~> (() => BinaryOperator.NotEqual)
+  }
 
+  def MultiplicativeOp: Rule1[BinaryOperator] = rule {
+    str("*") ~> (() => BinaryOperator.Times) |
+      str("/") ~> (() => BinaryOperator.Divide)
+  }
 
   /** *************************************************************************/
   /** WhiteSpace                                                            ***/
