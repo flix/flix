@@ -68,6 +68,24 @@ class TestParser extends FunSuite {
     assertResult(a)(getExp(Parser.parse(s)))
   }
 
+  test("Parser.LetExp01") {
+    val s = """val e: Int = let x = 1 in 2;"""
+    val a = Ast.Expression.Let("x", Ast.Expression.IntLit(1), Ast.Expression.IntLit(2))
+
+    assertResult(a)(getExp(Parser.parse(s)))
+  }
+
+  test("Parser.LetExp02") {
+    val s =
+      """val e: Int =
+        |  let x = 1 in
+        |  let y = 2 in
+        |    3;""".stripMargin
+    val a = Ast.Expression.Let("x", Ast.Expression.IntLit(1), Ast.Expression.Let("y", Ast.Expression.IntLit(2), Ast.Expression.IntLit(3)))
+
+    assertResult(a)(getExp(Parser.parse(s)))
+  }
+
   test("Parser.Type.Unit") {
     val s = """type t = Unit;"""
     val a = Ast.Type.Unit
