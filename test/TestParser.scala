@@ -4,6 +4,35 @@ import scala.collection.immutable.Seq
 
 class TestParser extends FunSuite {
 
+  test("Parser.LiteralExp01") {
+    val s = """val e: Bool = true;"""
+    val a = Ast.Expression.BoolLit(literal = true)
+
+    assertResult(a)(getExp(Parser.parse(s)))
+  }
+
+  test("Parser.LiteralExp02") {
+    val s = """val e: Bool = false;"""
+    val a = Ast.Expression.BoolLit(literal = false)
+
+    assertResult(a)(getExp(Parser.parse(s)))
+  }
+
+  test("Parser.LiteralExp03") {
+    val s = """val e: Int = 42;"""
+    val a = Ast.Expression.IntLit(42)
+
+    assertResult(a)(getExp(Parser.parse(s)))
+  }
+
+  test("Parser.LiteralExp04") {
+    val s = """val e: Str = "abc";"""
+    val a = Ast.Expression.StrLit("abc")
+
+    assertResult(a)(getExp(Parser.parse(s)))
+  }
+
+
   test("Parser.Type.Unit") {
     val s = """type t = Unit;"""
     val a = Ast.Type.Unit
@@ -258,9 +287,14 @@ class TestParser extends FunSuite {
     assertResult(a)(Parser.parse(s))
   }
 
+  private def getExp(root: Ast.Root): Ast.Expression = root match {
+    case Ast.Root(Seq(Ast.Declaration.Val(_, _, e))) => e
+  }
+
   private def getType(root: Ast.Root): Ast.Type = root match {
     case Ast.Root(Seq(Ast.Declaration.TypeDecl(_, typ))) => typ
     case _ => throw new RuntimeException()
   }
+
 
 }
