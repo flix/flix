@@ -35,10 +35,7 @@ class TestParser extends FunSuite {
 
   test("Parser.LogicalExp01") {
     val s = """val e: Bool = a && b;"""
-    val a = Ast.Expression.Binary(
-      Ast.Expression.UnresolvedName(Ast.Name.Simple("a")),
-      BinaryOperator.And,
-      Ast.Expression.UnresolvedName(Ast.Name.Simple("b")))
+    val a = Ast.Expression.Binary("a", BinaryOperator.And, "b")
 
     assertResult(a)(getExp(Parser.parse(s)))
   }
@@ -46,12 +43,27 @@ class TestParser extends FunSuite {
   test("Parser.LogicalExp02") {
     val s = """val e: Bool = a && b && c;"""
     val a = Ast.Expression.Binary(
-      Ast.Expression.Binary(
-        Ast.Expression.UnresolvedName(Ast.Name.Simple("a")),
-        BinaryOperator.And,
-        Ast.Expression.UnresolvedName(Ast.Name.Simple("b"))),
+      Ast.Expression.Binary("a", BinaryOperator.And, "b"),
       BinaryOperator.And,
-      Ast.Expression.UnresolvedName(Ast.Name.Simple("c")))
+      "c")
+
+    assertResult(a)(getExp(Parser.parse(s)))
+  }
+
+  test("Parser.ComparisonExp01") {
+    val s = """val e: Bool = a == b;"""
+    val a = Ast.Expression.Binary("a", BinaryOperator.Equal, "b")
+
+    assertResult(a)(getExp(Parser.parse(s)))
+  }
+
+  test("Parser.BinaryExp01") {
+    val s = """val e: Bool = a == b || c == d;"""
+    val a = Ast.Expression.Binary(
+      Ast.Expression.Binary("a", BinaryOperator.Equal, "b"),
+      BinaryOperator.Or,
+      Ast.Expression.Binary("c", BinaryOperator.Equal, "d")
+    )
 
     assertResult(a)(getExp(Parser.parse(s)))
   }
@@ -319,5 +331,7 @@ class TestParser extends FunSuite {
     case _ => throw new RuntimeException()
   }
 
+  private implicit def string2nameexp(s: String): Ast.Expression.UnresolvedName =
+    Ast.Expression.UnresolvedName(Ast.Name.Simple(s))
 
 }

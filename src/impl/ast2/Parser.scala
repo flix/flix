@@ -177,7 +177,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def ComparisonExp: Rule1[Ast.Expression] = rule {
-    MultiplicativeExp ~ zeroOrMore(WhiteSpace ~ ComparisonOp ~ WhiteSpace ~ MultiplicativeExp ~> Ast.Expression.Binary)
+    MultiplicativeExp ~ optional(WhiteSpace ~ ComparisonOp ~ WhiteSpace ~ MultiplicativeExp ~> Ast.Expression.Binary)
   }
 
   def MultiplicativeExp: Rule1[Ast.Expression] = rule {
