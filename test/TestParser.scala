@@ -1,4 +1,5 @@
 import impl.ast2.{Ast, Parser}
+import impl.logic.BinaryOperator
 import org.scalatest.FunSuite
 import scala.collection.immutable.Seq
 
@@ -32,6 +33,28 @@ class TestParser extends FunSuite {
     assertResult(a)(getExp(Parser.parse(s)))
   }
 
+  test("Parser.LogicalExp01") {
+    val s = """val e: Bool = a && b;"""
+    val a = Ast.Expression.Binary(
+      Ast.Expression.UnresolvedName(Ast.Name.Simple("a")),
+      BinaryOperator.And,
+      Ast.Expression.UnresolvedName(Ast.Name.Simple("b")))
+
+    assertResult(a)(getExp(Parser.parse(s)))
+  }
+
+  test("Parser.LogicalExp02") {
+    val s = """val e: Bool = a && b && c;"""
+    val a = Ast.Expression.Binary(
+      Ast.Expression.Binary(
+        Ast.Expression.UnresolvedName(Ast.Name.Simple("a")),
+        BinaryOperator.And,
+        Ast.Expression.UnresolvedName(Ast.Name.Simple("b"))),
+      BinaryOperator.And,
+      Ast.Expression.UnresolvedName(Ast.Name.Simple("c")))
+
+    assertResult(a)(getExp(Parser.parse(s)))
+  }
 
   test("Parser.Type.Unit") {
     val s = """type t = Unit;"""

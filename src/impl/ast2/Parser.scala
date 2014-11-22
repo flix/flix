@@ -95,7 +95,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   /** Expressions                                                           ***/
   /** *************************************************************************/
   def Expression: Rule1[Ast.Expression] = rule {
-    LiteralExp | LetExp | IfThenElseExp | MatchExp | TupleExp | VariableExp | ParenthesisExp | MissingExp | ImpossibleExp
+    LogicalExp | LiteralExp | LetExp | IfThenElseExp | MatchExp | TupleExp | VariableExp | ParenthesisExp | MissingExp | ImpossibleExp
   }
 
   def LiteralExp: Rule1[Ast.Expression] = rule {
@@ -168,12 +168,15 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     str("!!!") ~> (() => Ast.Expression.Impossible)
   }
 
+
+
+
   def LogicalExp: Rule1[Ast.Expression] = rule {
-    ComparisonExp ~ zeroOrMore(LogicalOp ~ ComparisonExp ~> Ast.Expression.Binary)
+    ComparisonExp ~ zeroOrMore(optional(WhiteSpace) ~ LogicalOp ~ optional(WhiteSpace) ~ ComparisonExp ~> Ast.Expression.Binary)
   }
 
   def ComparisonExp: Rule1[Ast.Expression] = rule {
-    TupleExp
+    LiteralExp | VariableExp
   }
 
   /** *************************************************************************/
