@@ -168,6 +168,13 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     str("!!!") ~> (() => Ast.Expression.Impossible)
   }
 
+  def LogicalExp: Rule1[Ast.Expression] = rule {
+    ComparisonExp ~ zeroOrMore(LogicalOp ~ ComparisonExp ~> Ast.Expression.Binary)
+  }
+
+  def ComparisonExp: Rule1[Ast.Expression] = rule {
+    TupleExp
+  }
 
   /** *************************************************************************/
   /** Patterns                                                              ***/
@@ -274,7 +281,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   /** *************************************************************************/
   /** Literals                                                              ***/
   /** *************************************************************************/
-           // TODO ...
+  // TODO ...
 
 
   /** *************************************************************************/
@@ -298,6 +305,11 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
       str("==") ~> (() => BinaryOperator.Equal) |
       str("!=") ~> (() => BinaryOperator.NotEqual) |
       str("&&") ~> (() => BinaryOperator.And) |
+      str("||") ~> (() => BinaryOperator.Or)
+  }
+
+  def LogicalOp: Rule1[BinaryOperator] = rule {
+    str("&&") ~> (() => BinaryOperator.And) |
       str("||") ~> (() => BinaryOperator.Or)
   }
 

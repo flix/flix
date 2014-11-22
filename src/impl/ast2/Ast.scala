@@ -121,7 +121,7 @@ object Ast {
     /**
      * An AST node which represents binary expressions.
      */
-    case class Binary(op: BinaryOperator, e1: Expression, e2: Expression) extends Expression
+    case class Binary(e1: Expression, op: BinaryOperator, e2: Expression) extends Expression
 
     /**
      * An AST node which represents an infix expression.
