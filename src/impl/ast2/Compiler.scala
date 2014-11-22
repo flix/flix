@@ -18,38 +18,11 @@ class Compiler(ast: Ast.Root) {
   // FunEnv
   // etc. etc.
 
-  /**
-   * Returns a map from (fully qualified) names to types.
-   */
-  def typenv(root: Ast.Root): Map[Ast.Name, Ast.Type] = {
-
-
-    def visit(name: Ast.Name, node: Ast): Map[Ast.Name, Ast.Type] = ???
-
-    ???
-  }
-
   // TODO: Check
   // -unresolved references
   // -ambigious decls
   // -patterns with the same variable
   // -recursive types, calls, etc.
-
-  // TODO: Deal with ambiquity
-
-
-  // linking
-
-  def link(ast: Ast.Type, typenv: Map[Ast.Name, Ast.Type]): Ast.Type = ast match {
-    case Ast.Type.Bool => Ast.Type.Bool
-    // ...
-    case Ast.Type.NameRef(name) => typenv.getOrElse(name, ???)
-  }
-
-  // TODO: Need map.
-  // TODO: Need fold.
-  def visit[A](f: Ast => A): A = ???
-
 
   object TranslationPhase {
 
