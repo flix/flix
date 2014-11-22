@@ -36,17 +36,17 @@ object Ast {
      * An AST node which represents a type declaration.
      */
     // TODO: Naming issue? Why can't this be called type?
-    case class TypeDecl(name: String, typ: Type) extends Declaration
+    case class TypeDecl(name: String, typ: Ast.Type) extends Declaration
 
     /**
      * An AST node which represents a value declaration.
      */
-    case class Val(name: String, t: Type, exp: Expression) extends Declaration
+    case class Val(name: String, t: Ast.Type, exp: Expression) extends Declaration
 
     /**
      * An AST node which represents a variable declaration.
      */
-    case class Var(name: String, typ: Type) extends Declaration
+    case class Var(name: String, typ: Ast.Type) extends Declaration
 
     /**
      * An AST node which represents a function declaration.

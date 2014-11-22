@@ -95,7 +95,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   /** Expressions                                                           ***/
   /** *************************************************************************/
   def Expression: Rule1[Ast.Expression] = rule {
-    LogicalExp | LiteralExp | LetExp | IfThenElseExp | MatchExp | TupleExp | VariableExp | ParenthesisExp | MissingExp | ImpossibleExp
+    InfixExp | LiteralExp | LetExp | IfThenElseExp | MatchExp | TupleExp | VariableExp | ParenthesisExp | MissingExp | ImpossibleExp
   }
 
   def LiteralExp: Rule1[Ast.Expression] = rule {
@@ -121,10 +121,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   //  def BinaryExp: Rule1[Ast.Expression.Binary] = rule {
   //    TODO
   //  }
-
-  def InfixExp: Rule1[Ast.Expression.Infix] = rule {
-    UnaryExp ~ WhiteSpace ~ "`" ~ Name ~ "`" ~ WhiteSpace ~ UnaryExp ~> Ast.Expression.Infix
-  }
 
   def LetExp: Rule1[Ast.Expression.Let] = rule {
     "let" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "in" ~ WhiteSpace ~ Expression ~> Ast.Expression.Let
@@ -168,6 +164,10 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     str("!!!") ~> (() => Ast.Expression.Impossible)
   }
 
+
+  def InfixExp: Rule1[Ast.Expression] = rule {
+    LogicalExp ~ optional(WhiteSpace ~ "`" ~ Name ~ "`" ~ WhiteSpace ~ LogicalExp ~> Ast.Expression.Infix)
+  }
 
   def LogicalExp: Rule1[Ast.Expression] = rule {
     ComparisonExp ~ zeroOrMore(WhiteSpaceOpt ~ LogicalOp ~ WhiteSpaceOpt ~ ComparisonExp ~> Ast.Expression.Binary)
