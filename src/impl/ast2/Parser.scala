@@ -170,10 +170,14 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def LogicalExp: Rule1[Ast.Expression] = rule {
-    ComparisonExp ~ zeroOrMore(WhiteSpaceOpt ~ LogicalOp ~ WhiteSpaceOpt ~ ComparisonExp ~> Ast.Expression.Binary)
+    ComparisonExp ~ zeroOrMore(WhiteSpace ~ LogicalOp ~ WhiteSpace ~ ComparisonExp ~> Ast.Expression.Binary)
   }
 
   def ComparisonExp: Rule1[Ast.Expression] = rule {
+    MultiplicativeExp ~ zeroOrMore(WhiteSpace ~ ComparisonOp ~ WhiteSpace ~ MultiplicativeExp ~> Ast.Expression.Binary)
+  }
+
+  def MultiplicativeExp: Rule1[Ast.Expression] = rule {
     LiteralExp | VariableExp
   }
 
@@ -294,13 +298,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
       str("-") ~> (() => UnaryOperator.UnaryMinus)
   }
 
-  def BinaryOp: Rule1[BinaryOperator] = rule {
-    str("+") ~> (() => BinaryOperator.Plus) |
-      str("-") ~> (() => BinaryOperator.Minus) |
-      str("*") ~> (() => BinaryOperator.Times) |
-      str("/") ~> (() => BinaryOperator.Divide)
-  }
-
   def LogicalOp: Rule1[BinaryOperator] = rule {
     str("&&") ~> (() => BinaryOperator.And) |
       str("||") ~> (() => BinaryOperator.Or)
@@ -318,6 +315,11 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   def MultiplicativeOp: Rule1[BinaryOperator] = rule {
     str("*") ~> (() => BinaryOperator.Times) |
       str("/") ~> (() => BinaryOperator.Divide)
+  }
+
+  def AdditiveOp: Rule1[BinaryOperator] = rule {
+    str("+") ~> (() => BinaryOperator.Plus) |
+      str("-") ~> (() => BinaryOperator.Minus)
   }
 
   /** *************************************************************************/
