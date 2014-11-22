@@ -169,10 +169,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
 
-
-
   def LogicalExp: Rule1[Ast.Expression] = rule {
-    ComparisonExp ~ zeroOrMore(optional(WhiteSpace) ~ LogicalOp ~ optional(WhiteSpace) ~ ComparisonExp ~> Ast.Expression.Binary)
+    ComparisonExp ~ zeroOrMore(WhiteSpaceOpt ~ LogicalOp ~ WhiteSpaceOpt ~ ComparisonExp ~> Ast.Expression.Binary)
   }
 
   def ComparisonExp: Rule1[Ast.Expression] = rule {
@@ -316,11 +314,17 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
       str("||") ~> (() => BinaryOperator.Or)
   }
 
+
+
   /** *************************************************************************/
   /** WhiteSpace                                                            ***/
   /** *************************************************************************/
   def WhiteSpace: Rule0 = rule {
     oneOrMore(" " | "\t" | "\n" | "\r")
+  }
+
+  def WhiteSpaceOpt: Rule0 = rule {
+    optional(WhiteSpace)
   }
 
 }
