@@ -53,7 +53,19 @@ class Compiler(ast: Ast.Root) {
 
   object TranslationPhase {
 
+    def compile(decl: Ast.Declaration) = ???
+
     def compile(exp: Ast.Expression): Term = exp match {
+      case Ast.Expression.Var(x) => Term.Var(Symbol.VariableSymbol(x))
+
+      case Ast.Expression.BoolLit(literal) => Term.Bool(literal)
+      case Ast.Expression.IntLit(literal) => Term.Int(literal)
+      case Ast.Expression.StrLit(literal) => Term.Str(literal)
+
+      case Ast.Expression.IfThenElse(e1, e2, e3) => ???
+
+      case Ast.Expression.Match(e, rules) => ???
+
       case Ast.Expression.Unary(op, e1) =>
         // Eliminates unary plus and minus.
         val t1 = compile(e1)
@@ -117,7 +129,11 @@ class Compiler(ast: Ast.Root) {
     /**
      * Compiles an ast name into a named symbol.
      */
-    private def compile(name: Ast.Name): Symbol.NamedSymbol = ???
+    // TODO: Need internal visitor.
+    private def compile(name: Ast.Name): Symbol.NamedSymbol = name match {
+//      case Ast.Name.Simple(x) => Symbol.VariableSymbol(x)
+      case Ast.Name.Qualified(prefix, suffix) => ???
+    }
   }
 
 
