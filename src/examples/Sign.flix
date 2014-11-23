@@ -49,6 +49,10 @@ namespace Sign {
     def lift(i: Int): Sign =
         if (true) Even else Odd;
 
+    def foo(): Set[Int] = Set(1, 2, 3);
+
+    def bar(): Map[Int, Int] = Map((1 -> 2), (2 -> 3));
+
     @monotone @strict
     def sum(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot;
@@ -63,10 +67,15 @@ namespace Sign {
 
     var NumberOne:  Int -> (Int, Int, Str) -> Int;
     var NumberTwo:  Sign;
+    var NumberTree: Set[Int];
     var Result:     Sign;
 
     fact FactOne = NumberOne <- lift(1);
     fact FactTwo = NumberTwo <- lift(2);
+    fact FactTree = NumberTree <- Set(1, 2, 3);
+
+    rule TheSum = Result <- r if
+        Set(x) <- FactTree;
 
     rule TheSum = Result(42) <- r if
         x    <- A(0),

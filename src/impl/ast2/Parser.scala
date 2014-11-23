@@ -119,9 +119,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def SimpleExpression: Rule1[Ast.Expression] = rule {
-    LiteralExp | MissingExp | ImpossibleExp | LetExp | IfThenElseExp
-
-    /**  | MatchExp | TupleExp | VariableExp   **/
+    LiteralExp | MissingExp | ImpossibleExp | LetExp | IfThenElseExp | MatchExp | TupleExp | VariableExp
   }
 
   def LiteralExp: Rule1[Ast.Expression] = rule {

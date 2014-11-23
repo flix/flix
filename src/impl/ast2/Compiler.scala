@@ -64,7 +64,7 @@ class Compiler(ast: Ast.Root) {
           case UnaryOperator.UnaryMinus => Term.BinaryOp(BinaryOperator.Minus, Term.Int(0), t1)
         }
 
-      case Ast.Expression.Binary(op, e1, e2) =>
+      case Ast.Expression.Binary(e1, op, e2) =>
         val t1 = compile(e1)
         val t2 = compile(e2)
         op match {
