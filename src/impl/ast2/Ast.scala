@@ -157,6 +157,11 @@ object Ast {
     case class Tag(name: String, e: Expression) extends Expression
 
     /**
+     * An AST node which represents a set expression.
+     */
+    case class Set(elms: Seq[Expression]) extends Expression
+
+    /**
      * An AST node which represents a tuple expression.
      */
     case class Tuple(elms: Seq[Expression]) extends Expression

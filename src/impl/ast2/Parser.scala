@@ -119,7 +119,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def SimpleExpression: Rule1[Ast.Expression] = rule {
-    LiteralExp | MissingExp | ImpossibleExp | LetExp | IfThenElseExp | MatchExp | TupleExp | VariableExp
+    LiteralExp | MissingExp | ImpossibleExp | LetExp | IfThenElseExp | MatchExp | TupleExp | SetExp | VariableExp
   }
 
   def LiteralExp: Rule1[Ast.Expression] = rule {
@@ -136,6 +136,10 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def StrLitExp: Rule1[Ast.Expression.StrLit] = rule {
     "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~> Ast.Expression.StrLit
+  }
+
+  def SetExp: Rule1[Ast.Expression.Set] = rule {
+    "Set" ~ "(" ~ oneOrMore(Expression).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Expression.Set
   }
 
   def MissingExp: Rule1[Ast.Expression] = rule {
@@ -163,7 +167,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
 
-
   def CallExp: Rule1[Ast.Expression.Call] = rule {
     // TODO: Left recursive...
     Expression ~ "(" ~ zeroOrMore(Expression).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Expression.Call
@@ -178,7 +181,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   def VariableExp: Rule1[Ast.Expression.UnresolvedName] = rule {
     Name ~> Ast.Expression.UnresolvedName
   }
-
 
 
   /** *************************************************************************/
@@ -329,7 +331,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     oneOrMore(" " | "\t" | "\n" | "\r")
   }
 
-  def WhiteSpaceOpt: Rule0 = rule {
+  def optWhiteSpace: Rule0 = rule {
     optional(WhiteSpace)
   }
 
