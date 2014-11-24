@@ -66,9 +66,11 @@ object Ast {
   }
 
 
+  // TODO: Where to put annotation?
   case class Annotation(s: String) extends Ast
 
 
+  // TODO: Parse Predicates!
   case class Predicate(t1: Term, t2: Term) extends Pattern
 
   sealed trait Term extends Ast
