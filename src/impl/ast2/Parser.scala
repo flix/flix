@@ -340,11 +340,30 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   /** WhiteSpace                                                            ***/
   /** *************************************************************************/
   def WhiteSpace: Rule0 = rule {
-    oneOrMore(" " | "\t" | "\n" | "\r")
+    oneOrMore(" " | "\t" | NewLine | SingleLinecomment | MultiLineComment)
   }
 
   def optWhiteSpace: Rule0 = rule {
     optional(WhiteSpace)
+  }
+
+  def NewLine: Rule0 = rule {
+    "\n" | "\r\n"
+  }
+
+  /** *************************************************************************/
+  /** Comments                                                              ***/
+  /** *************************************************************************/
+  // Note: We must use ANY to match (consume) whatever character which is not a newline.
+  // Otherwise the parser makes no progress and loops.
+  def SingleLinecomment: Rule0 = rule {
+    "//" ~ zeroOrMore(!NewLine ~ ANY) ~ NewLine
+  }
+
+  // Note: We must use ANY to match (consume) whatever character which is not a "*/".
+  // Otherwise the parser makes no progress and loops.
+  def MultiLineComment: Rule0 = rule {
+    "/*" ~ zeroOrMore(!"*/" ~ ANY) ~ "*/"
   }
 
 }

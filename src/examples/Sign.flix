@@ -1,5 +1,14 @@
 namespace Sign {
 
+    /**
+     * A
+     * multi-line
+     * comment.
+    */
+
+    // A single-line comment
+    // uh, one more :)
+
     type Sign = enum {
         case Top,
         case Neg,
