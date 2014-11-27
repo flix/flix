@@ -61,24 +61,25 @@ namespace Sign {
     };
 };
 
-namespace Sign {
+namespace Example {
 
-    var NumberOne:  Int -> (Int, Int, Str) -> Int;
-    var NumberTwo:  Sign;
-    var NumberTree: Set[Int];
-    var Result:     Sign;
+    var Constant:   Str ** Int;
+    var PlusOp:     Str ** Str ** Str;
+    var Value:      Str -> Sign.Sign;
 
-    fact FactOne = NumberOne <- lift(1);
-    fact FactTwo = NumberTwo <- lift(2);
-    fact FactTree = NumberTree <- Set(1, 2, 3);
+    fact Fact1 = Constant <- ("x", 17);
+    fact Fact2 = Constant <- ("y", 21);
+    fact Fact3 = Constant <- ("z", 42);
 
-    rule TheSum = Result <- r if
-        Set(x) <- FactTree;
+    rule Lift = Value <- (x, v) if
+        (x, n) <- Constant,
+        v = Sign.lift(n);
 
-    rule TheSum = Result(42) <- r if
-        x    <- A(0),
-        y    <- B(1),
-        r    <- sum(x, y);
+    rule Sum = Value <- (r, v) if
+        (r, x, y) <- PlusOp,
+        (x, v1) <- Value,
+        (y, v2) <- Value,
+        v = Sign.sum(v1, v2);
 
     def foo(): Set[Int] = Set(1, 2, 3);
 
