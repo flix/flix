@@ -54,6 +54,11 @@ object Ast {
     case class Function(annotations: Seq[Annotation], name: String, arguments: Seq[(String, Type)], typ: Type, body: Expression) extends Declaration
 
     /**
+     * An AST node which represents a lattice declaration.
+     */
+    case class Lattice(name: String, record: Expression.Record) extends Declaration
+
+    /**
      * An AST node which represents a fact declaration.
      */
     case class Fact(name: String, head: Predicate) extends Declaration
@@ -167,6 +172,11 @@ object Ast {
      * An AST node which represents a tuple expression.
      */
     case class Tuple(elms: Seq[Expression]) extends Expression
+
+    /**
+     * An AST node which represents a record expression.
+     */
+    case class Record(elms: Seq[(String, Expression)]) extends Expression
 
     /**
      * An AST node which represents an unresolved name.

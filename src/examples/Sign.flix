@@ -49,9 +49,7 @@ namespace Sign {
     def lift(i: Int): Sign =
         if (true) Even else Odd;
 
-    def foo(): Set[Int] = Set(1, 2, 3);
-
-    def bar(): Map[Int, Int] = Map((1 -> 2), (2 -> 3));
+    lat Sign = lattice { bot = Sign.Bot, leq = Sign.leq, lub = Sign.lub };
 
     @monotone @strict
     def sum(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
@@ -81,4 +79,8 @@ namespace Sign {
         x    <- A(0),
         y    <- B(1),
         r    <- sum(x, y);
+
+    def foo(): Set[Int] = Set(1, 2, 3);
+
+    def bar(): Map[Int, Int] = Map((1 -> 2), (2 -> 3));
 };

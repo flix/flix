@@ -25,7 +25,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def Declaration: Rule1[Ast.Declaration] = rule {
-    NameSpace | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | FactDeclaration | RuleDeclaraction
+    NameSpace | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | LatticeDeclaration | FactDeclaration | RuleDeclaraction
   }
 
   def NameSpace: Rule1[Ast.Declaration.NameSpace] = rule {
@@ -46,6 +46,10 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def FunctionDeclaration: Rule1[Ast.Declaration.Function] = rule {
     zeroOrMore(Annotation) ~ "def" ~ WhiteSpace ~ Ident ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Function
+  }
+
+  def LatticeDeclaration: Rule1[Ast.Declaration.Lattice] = rule {
+    "lat" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ "lattice" ~ WhiteSpace ~ RecordExp ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Lattice
   }
 
   def FactDeclaration: Rule1[Ast.Declaration.Fact] = rule {
@@ -176,6 +180,14 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def TupleExp: Rule1[Ast.Expression.Tuple] = rule {
     "(" ~ oneOrMore(Expression).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Expression.Tuple
+  }
+
+  def RecordExp: Rule1[Ast.Expression.Record] = rule {
+    "{" ~ optWhiteSpace ~ zeroOrMore(KeyValue).separatedBy("," ~ optWhiteSpace) ~ optWhiteSpace ~ "}" ~> Ast.Expression.Record
+  }
+
+  private def KeyValue: Rule1[(String, Ast.Expression)] = rule {
+    Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~> ((k: String, v: Ast.Expression) => (k, v))
   }
 
   def VariableExp: Rule1[Ast.Expression.UnresolvedName] = rule {
