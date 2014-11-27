@@ -27,16 +27,16 @@ class Compiler(ast: Ast.Root) {
      * Returns a map from fully qualified names to types.
      */
     def typenv(context: Ast.Name, node: Ast): Map[Ast.Name, Ast.Type] = {
-      node match {
-        case Ast.Declaration.NameSpace(name, decl) => {
-          // recurse
-          // merge maps
-          // add prefix to each entry in the map
-        }
-        case Ast.Declaration.TypeDecl(name, typ) => Map(Ast.Name.Simple(name) -> typ)
-      }
+      //      node match {
+      //        case Ast.Declaration.NameSpace(name, decl) => {
+      //          // recurse
+      //          // merge maps
+      //          // add prefix to each entry in the map
+      //        }
+      //        case Ast.Declaration.TypeDecl(name, typ) => Map(Ast.Name.Simple(name) -> typ)
+      //      }
 
-
+      ???
     }
 
     /**
