@@ -8,11 +8,6 @@ class Compiler(ast: Ast.Root) {
 
   }
 
-  // environments
-  // Typ Env
-  // ValEnv
-  // FunEnv
-  // etc. etc.
 
   // TODO: Check
   // -unresolved references
@@ -25,18 +20,36 @@ class Compiler(ast: Ast.Root) {
 
   }
 
-  object Environments {
-
-    def typenv(name: Ast.Name, node: Ast): Map[Ast.Name, Ast.Declaration.TypeDecl] = ???
-
-    // step 1: Check the FQN. Step 2. Check if the name is an extension.
-    def lookupType: Unit = ???
-
-    def merge: Unit = ???
-
-  }
-
   object Linking {
+
+
+    /**
+     * Returns a map from fully qualified names to types.
+     */
+    def typenv(context: Ast.Name, node: Ast): Map[Ast.Name, Ast.Type] = {
+      node match {
+        case Ast.Declaration.NameSpace(name, decl) => {
+          // recurse
+          // merge maps
+          // add prefix to each entry in the map
+        }
+        case Ast.Declaration.TypeDecl(name, typ) => Map(Ast.Name.Simple(name) -> typ)
+      }
+
+
+    }
+
+    /**
+     *
+     */
+    //def resolvesTypestypes
+
+
+    // environments
+    // Typ Env
+    // ValEnv
+    // FunEnv
+    // etc. etc.
 
   }
 

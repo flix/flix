@@ -284,6 +284,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum))
   }
 
+  // TODO: Consider separatedBy and zeroOrMore...
   def Name: Rule1[Ast.Name] = rule {
     // Note: QualifiedName must preceede SimpleName to avoid left-recursion.
     QualifiedName | SimpleName
