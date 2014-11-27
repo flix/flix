@@ -14,11 +14,17 @@
          alt="Fork me on GitHub">
 </a>
 
+<script type="application/javascript">
+    function show(page) {
+        $("#home").hide();
+    }
+</script>
+
 <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
     <div class="container">
         <div id="navbar" class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
-                <li class="active"><a href="#">Home</a></li>
+                <li class="active" onclick="show('');"><a href="#">Home</a></li>
                 <li><a href="#">Features</a></li>
                 <li><a href="#">Examples</a></li>
                 <li><a href="#">Documentation</a></li>
@@ -30,86 +36,93 @@
     </div>
 </nav>
 
-<div class="jumbotron">
-    <div class="container">
-        <h1>Flix: Programming with Fixpoints</h1>
+<div id="home">
 
-        <p class="text-justify">
-            Flix (<i>a backronym for FIXpoint Language</i>) is a
-            <a href="http://en.wikipedia.org/wiki/Declarative_programming">declarative</a>,
-            <a href="http://en.wikipedia.org/wiki/Functional_programming">purely functional</a>,
-            <a href="http://en.wikipedia.org/wiki/Strong_and_weak_typing">strongly typed</a>, and
-            <a href="http://en.wikipedia.org/wiki/Normalization_property_(abstract_rewriting)">strongly normalizing</a>
-            programming language for
-            <a href="http://en.wikipedia.org/wiki/Fixed-point_iteration">fixpoint algorithms</a>.
-            The aim of Flix is to provide a domain specific language for modeling fixpoint problems
-            and providing efficient solvers for such problems.
-            Flix was originally conceived for declarative specification of <a
-                href="http://en.wikipedia.org/wiki/Static_analysis">static analyzers</a>
-            and is heavily inspired by <a href="http://en.wikipedia.org/wiki/Datalog">Datalog</a>.
-        </p>
+    <div class="jumbotron">
+        <div class="container">
+            <h1>Flix: Programming with Fixpoints</h1>
 
-        <p class="pull-right">
-            <a class="btn btn-primary btn-lg" href="#" role="button">
-                <span class="glyphicon glyphicon-book"></span>
-                Examples
-            </a>
-            <a class="btn btn-success btn-lg" href="#" role="button">
-                <span class="glyphicon glyphicon-download-alt"></span>
-                Download
-            </a>
-        </p>
+            <p class="text-justify">
+                Flix (<i>a backronym for FIXpoint Language</i>) is a
+                <a href="http://en.wikipedia.org/wiki/Declarative_programming">declarative</a>,
+                <a href="http://en.wikipedia.org/wiki/Functional_programming">purely functional</a>,
+                <a href="http://en.wikipedia.org/wiki/Strong_and_weak_typing">strongly typed</a>, and
+                <a href="http://en.wikipedia.org/wiki/Normalization_property_(abstract_rewriting)">strongly
+                    normalizing</a>
+                programming language for
+                <a href="http://en.wikipedia.org/wiki/Fixed-point_iteration">fixpoint algorithms</a>.
+                The aim of Flix is to provide a domain specific language for modeling fixpoint problems
+                and providing efficient solvers for such problems.
+                Flix was originally conceived for declarative specification of <a
+                    href="http://en.wikipedia.org/wiki/Static_analysis">static analyzers</a>
+                and is heavily inspired by <a href="http://en.wikipedia.org/wiki/Datalog">Datalog</a>.
+            </p>
 
+            <p class="pull-right">
+                <a class="btn btn-primary btn-lg" href="#" role="button">
+                    <span class="glyphicon glyphicon-book"></span>
+                    Examples
+                </a>
+                <a class="btn btn-success btn-lg" href="#" role="button">
+                    <span class="glyphicon glyphicon-download-alt"></span>
+                    Download
+                </a>
+            </p>
+
+        </div>
     </div>
-</div>
 
-<div class="container theme-showcase" role="main">
+    <div class="container theme-showcase" role="main">
 
-    <div class="container">
-        <div class="row">
-            <div class="col-md-4">
-                <h2>Fully Featured</h2>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h2>Fully Featured</h2>
 
-                <ul class="list-unstyled">
-                    <li><span class="glyphicon glyphicon-ok text-success"></span> Declarative (rule-based)</li>
-                    <li><span class="glyphicon glyphicon-ok text-success"></span> Purely functional</li>
-                    <li><span class="glyphicon glyphicon-ok text-success"></span> Algebraic Datatypes</li>
-                    <li><span class="glyphicon glyphicon-ok text-success"></span> Pattern Matching</li>
-                    <li><span class="glyphicon glyphicon-ok text-success"></span> Statically Typed</li>
+                    <ul class="list-unstyled">
+                        <li><span class="glyphicon glyphicon-ok text-success"></span> Declarative (rule-based)</li>
+                        <li><span class="glyphicon glyphicon-ok text-success"></span> Purely functional</li>
+                        <li><span class="glyphicon glyphicon-ok text-success"></span> Algebraic Datatypes</li>
+                        <li><span class="glyphicon glyphicon-ok text-success"></span> Pattern Matching</li>
+                        <li><span class="glyphicon glyphicon-ok text-success"></span> Statically Typed</li>
 
-                </ul>
+                    </ul>
 
-                <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor
-                    mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna
-                    mollis euismod. Donec sed odio dui. </p>
+                    <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor
+                        mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada
+                        magna
+                        mollis euismod. Donec sed odio dui. </p>
 
-                <p><a class="btn btn-default" href="#" role="button">View all features &raquo;</a></p>
+                    <p><a class="btn btn-default" href="#" role="button">View all features &raquo;</a></p>
+                </div>
+                <div class="col-md-4">
+                    <h2>Safe &amp; Scalable</h2>
+
+                    <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor
+                        mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada
+                        magna
+                        mollis euismod. Donec sed odio dui. </p>
+
+                    <p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>
+                </div>
+                <div class="col-md-4">
+                    <h2>Multi-Platform</h2>
+
+                    <p>Available as a stand-alone executable JAR-file or as a library for the the Scala programming
+                        language.</p>
+
+                    <p>
+                        Implemented in the Scala programming language and runs on the Java Virtual Machine.
+                    </p>
+
+                    <p>
+                        All source code available as open source under the MIT license and hosted on GitHub.
+                    </p>
+
+                    <p><a class="btn btn-default" href="#" role="button">View documentation &raquo;</a></p>
+                </div>
             </div>
-            <div class="col-md-4">
-                <h2>Safe &amp; Scalable</h2>
 
-                <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor
-                    mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna
-                    mollis euismod. Donec sed odio dui. </p>
-
-                <p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>
-            </div>
-            <div class="col-md-4">
-                <h2>Multi-Platform</h2>
-
-                <p>Available as a stand-alone executable JAR-file or as a library for the the Scala programming
-                    language.</p>
-
-                <p>
-                    Implemented in the Scala programming language and runs on the Java Virtual Machine.
-                </p>
-
-                <p>
-                    All source code available as open source under the MIT license and hosted on GitHub.
-                </p>
-
-                <p><a class="btn btn-default" href="#" role="button">View documentation &raquo;</a></p>
-            </div>
         </div>
 
     </div>
