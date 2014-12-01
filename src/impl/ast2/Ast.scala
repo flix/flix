@@ -30,7 +30,7 @@ object Ast {
     /**
      * An AST node which represents a namespace declaration.
      */
-    case class NameSpace(name: Name, body: Seq[Ast.Declaration]) extends Declaration
+    case class NameSpace(name: Seq[String], body: Seq[Ast.Declaration]) extends Declaration
 
     /**
      * An AST node which represents a type declaration.
@@ -119,7 +119,7 @@ object Ast {
      * Translated to a call by the compiler.
      */
     @Eliminated
-    case class Infix(e1: Expression, name: Name, e2: Expression) extends Expression
+    case class Infix(e1: Expression, name: Seq[String], e2: Expression) extends Expression
 
     /**
      * An AST node which represents a let-binding.
@@ -169,7 +169,7 @@ object Ast {
      * Eliminated by the compiler.
      */
     @Eliminated
-    case class UnresolvedName(name: Name) extends Expression
+    case class UnresolvedName(name: Seq[String]) extends Expression
 
     // TODO: look for better names for missing and impossible
 
@@ -232,7 +232,7 @@ object Ast {
     /**
      * An AST node which represents a tagged pattern.
      */
-    case class Tag(name: Name, pattern: Pattern) extends Pattern
+    case class Tag(name: Seq[String], pattern: Pattern) extends Pattern
 
     /**
      * An AST node which represents a tuples pattern.
@@ -241,28 +241,6 @@ object Ast {
 
   }
 
-  /**
-   * A common super-type for AST nodes which represent names.
-   */
-  sealed trait Name
-
-  object Name {
-
-    /**
-     * An AST node which represents a simple name, i.e. an identifier.
-     */
-    case class Simple(name: String) extends Name
-
-    /**
-     * An AST node which represents a qualified name.
-     *
-     * A name such as a.b.c is represented as Qual(a, Qual(b, Simple(c)).
-     */
-    case class Qualified(prefix: String, suffix: Name) extends Name
-
-  }
-
-
   // TODO: Parse Predicates!
   case class Predicate(t1: Term, t2: Term) extends Pattern
 
@@ -270,11 +248,11 @@ object Ast {
 
   object Term {
 
-    case class Call(n: Name, args: Seq[Term]) extends Term
+    case class Call(n: Seq[String], args: Seq[Term]) extends Term
 
     case class Int(i: String) extends Term
 
-    case class NameRef(n: Name) extends Term
+    case class NameRef(n: Seq[String]) extends Term
 
   }
 
@@ -341,7 +319,7 @@ object Ast {
      * Eliminated by the compiler.
      */
     @Eliminated
-    case class NameRef(name: Name) extends Type
+    case class NameRef(name: Seq[String]) extends Type
 
   }
 

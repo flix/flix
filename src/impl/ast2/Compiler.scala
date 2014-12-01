@@ -26,7 +26,7 @@ class Compiler(ast: Ast.Root) {
     /**
      * Returns a map from fully qualified names to types.
      */
-    def typenv(context: Ast.Name, node: Ast): Map[Ast.Name, Ast.Type] = {
+    //def typenv(context: Ast.Name, node: Ast): Unit = {
       //      node match {
       //        case Ast.Declaration.NameSpace(name, decl) => {
       //          // recurse
@@ -36,8 +36,8 @@ class Compiler(ast: Ast.Root) {
       //        case Ast.Declaration.TypeDecl(name, typ) => Map(Ast.Name.Simple(name) -> typ)
       //      }
 
-      ???
-    }
+   //   ???
+   // }
 
     /**
      *
@@ -105,7 +105,7 @@ class Compiler(ast: Ast.Root) {
       case Ast.Pattern.Bool(literal) => Pattern.Bool(literal)
       case Ast.Pattern.Int(literal) => Pattern.Int(literal)
       case Ast.Pattern.Str(literal) => Pattern.Str(literal)
-      case Ast.Pattern.Tag(name, p1) => Pattern.Tag(compile(name), compile(p1))
+      //case Ast.Pattern.Tag(name, p1) => Pattern.Tag(compile(name), compile(p1))
       case Ast.Pattern.Tuple(Seq(p1, p2)) => Pattern.Tuple2(compile(p1), compile(p2))
       case Ast.Pattern.Tuple(Seq(p1, p2, p3)) => Pattern.Tuple3(compile(p1), compile(p2), compile(p3))
       case Ast.Pattern.Tuple(Seq(p1, p2, p3, p4)) => Pattern.Tuple4(compile(p1), compile(p2), compile(p3), compile(p4))
@@ -131,11 +131,6 @@ class Compiler(ast: Ast.Root) {
     /**
      * Compiles an ast name into a named symbol.
      */
-    // TODO: Need internal visitor.
-    private def compile(name: Ast.Name): Symbol.NamedSymbol = name match {
-      //      case Ast.Name.Simple(x) => Symbol.VariableSymbol(x)
-      case Ast.Name.Qualified(prefix, suffix) => ???
-    }
   }
 
 

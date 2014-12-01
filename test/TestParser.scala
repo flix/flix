@@ -276,21 +276,21 @@ class TestParser extends FunSuite {
 
   test("Parser.NameSpace01") {
     val s = """namespace a {};"""
-    val a = Ast.Root(Seq(Ast.Declaration.NameSpace(Ast.Name.Simple("a"), Seq.empty)))
+    val a = Ast.Root(Seq(Ast.Declaration.NameSpace(Seq("a"), Seq.empty)))
 
     assertResult(a)(Parser.parse(s))
   }
 
   test("Parser.NameSpace02") {
     val s = """namespace a.b {};"""
-    val a = Ast.Root(Seq(Ast.Declaration.NameSpace(Ast.Name.Qualified("a", Ast.Name.Simple("b")), Seq.empty)))
+    val a = Ast.Root(Seq(Ast.Declaration.NameSpace(Seq("a", "b"), Seq.empty)))
 
     assertResult(a)(Parser.parse(s))
   }
 
   test("Parser.NameSpace03") {
     val s = """namespace a.b.b.a {};"""
-    val a = Ast.Root(Seq(Ast.Declaration.NameSpace(Ast.Name.Qualified("a", Ast.Name.Qualified("b", Ast.Name.Qualified("b", Ast.Name.Simple("a")))), Seq.empty)))
+    val a = Ast.Root(Seq(Ast.Declaration.NameSpace(Seq("a", "b", "b", "a"), Seq.empty)))
 
     assertResult(a)(Parser.parse(s))
   }
@@ -301,9 +301,9 @@ class TestParser extends FunSuite {
         |  namespace b {};
         |  namespace c {};
         |};""".stripMargin
-    val a = Ast.Root(Seq(Ast.Declaration.NameSpace(Ast.Name.Simple("a"), Seq(
-      Ast.Declaration.NameSpace(Ast.Name.Simple("b"), Seq.empty),
-      Ast.Declaration.NameSpace(Ast.Name.Simple("c"), Seq.empty)
+    val a = Ast.Root(Seq(Ast.Declaration.NameSpace(Seq("a"), Seq(
+      Ast.Declaration.NameSpace(Seq("b"), Seq.empty),
+      Ast.Declaration.NameSpace(Seq("c"), Seq.empty)
     ))))
 
     assertResult(a)(Parser.parse(s))
@@ -326,7 +326,7 @@ class TestParser extends FunSuite {
   ignore("Parser.Call01") {
     val s = """val e: Bool = f(1);"""
     val a = Ast.Root(Seq(Ast.Declaration.Val("e", Ast.Type.Bool,
-      Ast.Expression.Call(Ast.Expression.UnresolvedName(Ast.Name.Simple("f")), Seq(Ast.Expression.IntLit(1))))))
+      Ast.Expression.Call(Ast.Expression.UnresolvedName(Seq("f")), Seq(Ast.Expression.IntLit(1))))))
 
     assertResult(a)(Parser.parse(s))
   }
@@ -334,7 +334,7 @@ class TestParser extends FunSuite {
   ignore("Parser.Call02") {
     val s = """val e: Bool = f(1, 2, 3);"""
     val a = Ast.Root(Seq(Ast.Declaration.Val("e", Ast.Type.Bool,
-      Ast.Expression.Call(Ast.Expression.UnresolvedName(Ast.Name.Simple("f")), Seq(Ast.Expression.IntLit(1))))))
+      Ast.Expression.Call(Ast.Expression.UnresolvedName(Seq("f")), Seq(Ast.Expression.IntLit(1))))))
 
     assertResult(a)(Parser.parse(s))
   }
@@ -342,7 +342,7 @@ class TestParser extends FunSuite {
   ignore("Parser.Call03") {
     val s = """val e: Bool = f(g(h(x, y, z);"""
     val a = Ast.Root(Seq(Ast.Declaration.Val("e", Ast.Type.Bool,
-      Ast.Expression.Call(Ast.Expression.UnresolvedName(Ast.Name.Simple("f")), Seq(Ast.Expression.IntLit(1))))))
+      Ast.Expression.Call(Ast.Expression.UnresolvedName(Seq("f")), Seq(Ast.Expression.IntLit(1))))))
 
     assertResult(a)(Parser.parse(s))
   }
@@ -357,6 +357,6 @@ class TestParser extends FunSuite {
   }
 
   private implicit def string2nameexp(s: String): Ast.Expression.UnresolvedName =
-    Ast.Expression.UnresolvedName(Ast.Name.Simple(s))
+    Ast.Expression.UnresolvedName(Seq(s))
 
 }

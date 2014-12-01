@@ -282,18 +282,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum))
   }
 
-  // TODO: Consider separatedBy and zeroOrMore...
-  def Name: Rule1[Ast.Name] = rule {
-    // Note: QualifiedName must preceede SimpleName to avoid left-recursion.
-    QualifiedName | SimpleName
-  }
-
-  def SimpleName: Rule1[Ast.Name.Simple] = rule {
-    Ident ~> Ast.Name.Simple
-  }
-
-  def QualifiedName: Rule1[Ast.Name.Qualified] = rule {
-    Ident ~ "." ~ Name ~> Ast.Name.Qualified
+  def Name: Rule1[Seq[String]] = rule {
+    oneOrMore(Ident).separatedBy(".")
   }
 
   /** *************************************************************************/
