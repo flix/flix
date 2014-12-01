@@ -51,7 +51,7 @@ object Ast {
     /**
      * An AST node which represents a function declaration.
      */
-    case class Function(annotations: Seq[Annotation], name: String, arguments: Seq[(String, Type)], typ: Type, body: Expression) extends Declaration
+    case class Function(annotations: Seq[String], name: String, arguments: Seq[(String, Type)], typ: Type, body: Expression) extends Declaration
 
     /**
      * An AST node which represents a lattice declaration.
@@ -71,24 +71,7 @@ object Ast {
   }
 
 
-  // TODO: Where to put annotation?
-  case class Annotation(s: String) extends Ast
 
-
-  // TODO: Parse Predicates!
-  case class Predicate(t1: Term, t2: Term) extends Pattern
-
-  sealed trait Term extends Ast
-
-  object Term {
-
-    case class Call(n: Name, args: Seq[Term]) extends Term
-
-    case class Int(i: String) extends Term
-
-    case class NameRef(n: Name) extends Term
-
-  }
 
   /**
    * A common super-type for AST nodes which represent expressions.
@@ -276,6 +259,22 @@ object Ast {
      * A name such as a.b.c is represented as Qual(a, Qual(b, Simple(c)).
      */
     case class Qualified(prefix: String, suffix: Name) extends Name
+
+  }
+
+
+  // TODO: Parse Predicates!
+  case class Predicate(t1: Term, t2: Term) extends Pattern
+
+  sealed trait Term extends Ast
+
+  object Term {
+
+    case class Call(n: Name, args: Seq[Term]) extends Term
+
+    case class Int(i: String) extends Term
+
+    case class NameRef(n: Name) extends Term
 
   }
 

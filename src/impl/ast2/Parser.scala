@@ -49,7 +49,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def LatticeDeclaration: Rule1[Ast.Declaration.Lattice] = rule {
-    "lat" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ "lattice" ~ WhiteSpace ~ RecordExp ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Lattice
+    "lat" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ RecordExp ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Lattice
   }
 
   def FactDeclaration: Rule1[Ast.Declaration.Fact] = rule {
@@ -72,8 +72,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     Ident ~ ":" ~ WhiteSpace ~ Type ~> ((name: String, typ: Ast.Type) => (name, typ))
   }
 
-  // TODO: Lattice Decls, etc.
-
   def Predicate: Rule1[Ast.Predicate] = rule {
     Term ~ WhiteSpace ~ "<-" ~ WhiteSpace ~ Term ~> Ast.Predicate
   }
@@ -90,8 +88,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     capture(oneOrMore(CharPredicate.Digit))
   }
 
-  def Annotation: Rule1[Ast.Annotation] = rule {
-    "@" ~ Ident ~ WhiteSpace ~> Ast.Annotation
+  def Annotation: Rule1[String] = rule {
+    "@" ~ Ident ~ WhiteSpace
   }
 
 
@@ -183,7 +181,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def RecordExp: Rule1[Ast.Expression.Record] = rule {
-    "{" ~ optWhiteSpace ~ zeroOrMore(KeyValue).separatedBy("," ~ optWhiteSpace) ~ optWhiteSpace ~ "}" ~> Ast.Expression.Record
+    "record" ~ WhiteSpace ~ "{" ~ optWhiteSpace ~ zeroOrMore(KeyValue).separatedBy("," ~ optWhiteSpace) ~ optWhiteSpace ~ "}" ~> Ast.Expression.Record
   }
 
   private def KeyValue: Rule1[(String, Ast.Expression)] = rule {

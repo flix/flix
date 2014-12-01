@@ -58,7 +58,7 @@ namespace Sign {
     def lift(i: Int): Sign =
         if (true) Even else Odd;
 
-    lat Sign = lattice { bot = Sign.Bot, leq = Sign.leq, lub = Sign.lub };
+    lat Sign = record { bot = Sign.Bot, leq = Sign.leq, lub = Sign.lub };
 
     @monotone @strict
     def sum(e1: Sign, e2: Sign): Sign = match (e1, e2) with {

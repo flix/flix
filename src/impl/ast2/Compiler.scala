@@ -17,7 +17,7 @@ class Compiler(ast: Ast.Root) {
 
 
   object Desugaring {
-
+    // Infix
   }
 
   object Linking {
