@@ -296,6 +296,7 @@ object Ast {
     /**
      * An AST node which represents a relation type.
      */
+    @Eliminated
     case class Rel(elms: Seq[Type]) extends Type
 
     /**

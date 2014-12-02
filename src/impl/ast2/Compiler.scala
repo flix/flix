@@ -18,6 +18,7 @@ class Compiler(ast: Ast.Root) {
 
   object Desugaring {
     // Infix
+    // RelType
   }
 
   object Linking {
@@ -124,7 +125,7 @@ class Compiler(ast: Ast.Root) {
       case Ast.Type.Str => Type.Str
       // case Ast.Type.Tag(name) => Type.Tag(), TODO
       case Ast.Type.Set(typ1) => Type.Set(compile(typ1))
-      case Ast.Type.Map(keys, values) => throw CompilerException("Map types are currently not supported.")
+      //case Ast.Type.Map(keys, values) => throw CompilerException("Map types are currently not supported.")
       case Ast.Type.NameRef(name) => throw CompilerException(s"Unresolved named type: $name.")
     }
 
