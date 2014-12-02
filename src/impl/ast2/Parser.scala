@@ -64,7 +64,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def RuleDeclaraction: Rule1[Ast.Declaration.Rule] = rule {
-    "rule" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Predicate ~ WhiteSpace ~ "if" ~ WhiteSpace ~ RuleBody ~ ";" ~ WhiteSpace ~> Ast.Declaration.Rule
+    "rule" ~ WhiteSpace ~ Predicate ~ WhiteSpace ~ "if" ~ WhiteSpace ~ RuleBody ~ ";" ~ WhiteSpace ~> Ast.Declaration.Rule
   }
 
   def RuleBody: Rule1[Seq[Ast.Predicate]] = rule {
@@ -79,6 +79,10 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     Ident ~ ":" ~ WhiteSpace ~ Type ~> ((name: String, typ: Ast.Type) => (name, typ))
   }
 
+
+  // --------------------------------------------------------------------
+
+
   def Predicate: Rule1[Ast.Predicate] = rule {
     Ident ~ "(" ~ Term ~ ")" ~> Ast.Predicate
   }
@@ -91,13 +95,23 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def MapTerm: Rule1[Ast.Term] = rule {
-    SimpleTerm ~ zeroOrMore(WhiteSpace ~ "->" ~ WhiteSpace ~ SimpleTerm ~> Ast.Term.Map)
+    TupleTerm ~ zeroOrMore(WhiteSpace ~ "->" ~ WhiteSpace ~ TupleTerm ~> Ast.Term.Map)
+  }
 
-    //oneOrMore(SimpleTerm).separatedBy(WhiteSpace ~ "->" ~ WhiteSpace) ~> Ast.Term.Map
+  def TupleTerm: Rule1[Ast.Term] = rule {
+    SimpleTerm ~ zeroOrMore("," ~ WhiteSpace ~ SimpleTerm ~> Ast.Term.Tuple)
   }
 
   def SimpleTerm: Rule1[Ast.Term] = rule {
-    LiteralTerm
+    LiteralTerm | CallTerm | VarTerm
+  }
+
+  def VarTerm: Rule1[Ast.Term] = rule {
+    Ident ~> Ast.Term.Var
+  }
+
+  def CallTerm: Rule1[Ast.Term.Call] = rule {
+    Name ~ "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Term.Call
   }
 
   def LiteralTerm: Rule1[Ast.Term] = rule {
@@ -115,6 +129,11 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   def StrLitTerm: Rule1[Ast.Term.StrLit] = rule {
     "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~> Ast.Term.StrLit
   }
+
+
+  // --------------------------------------------------------------------
+
+
 
 
 

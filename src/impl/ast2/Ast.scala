@@ -66,7 +66,7 @@ object Ast {
     /**
      * An AST node which represent a rule declaration.
      */
-    case class Rule(name: String, head: Predicate, body: Seq[Predicate]) extends Declaration
+    case class Rule(head: Predicate, body: Seq[Predicate]) extends Declaration
 
   }
 
@@ -254,9 +254,13 @@ object Ast {
 
     case class StrLit(s: String) extends Term
 
-    case class Map(key: Term, value: Term) extends Term
+    case class Map(t1: Term, t2: Term) extends Term // TODO: Refactor?
 
-    case class Call(n: Seq[String], args: Seq[Term]) extends Term
+    case class Tuple(t1: Term, t2: Term) extends Term // TODO: Refactor?
+
+    case class Var(name: String) extends Term
+
+    case class Call(name: Seq[String], arguments: Seq[Term]) extends Term
 
     case class Int(i: String) extends Term
 
