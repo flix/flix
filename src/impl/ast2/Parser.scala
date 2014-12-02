@@ -8,6 +8,7 @@ import scala.util.{Failure, Success}
 object Parser {
 
   def parse(s: String): Ast.Root = {
+    // todo: deal with error handling
     val parser = new Parser(s)
     parser.Root.run() match {
       case Success(ast) => ast
@@ -18,6 +19,7 @@ object Parser {
 }
 
 // TODO: Sort everything.
+// TODO: Deal properly with optional white space.
 
 class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   def Root: Rule1[Ast.Root] = rule {
@@ -228,7 +230,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def SimpleType: Rule1[Ast.Type] = rule {
-    UnitType | BoolType | IntType | StrType | TupleType | SetType | MapType | EnumType | NamedType
+    UnitType | BoolType | IntType | StrType | TupleType | SetType | RelType | MapType | EnumType | NamedType
   }
 
   def UnitType: Rule1[Ast.Type] = rule {
@@ -253,6 +255,10 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def SetType: Rule1[Ast.Type.Set] = rule {
     "Set" ~ "[" ~ Type ~ "]" ~> Ast.Type.Set
+  }
+
+  def RelType: Rule1[Ast.Type.Rel] = rule {
+    "Rel" ~ "[" ~ oneOrMore(Type).separatedBy("," ~ optWhiteSpace) ~ "]" ~> Ast.Type.Rel
   }
 
   def MapType: Rule1[Ast.Type.Map] = rule {

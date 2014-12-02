@@ -293,7 +293,10 @@ object Ast {
      */
     case class Set(elms: Type) extends Type
 
-    // TODO: Add relation
+    /**
+     * An AST node which represents a relation type.
+     */
+    case class Rel(elms: Seq[Type]) extends Type
 
     /**
      * An AST node which represents a map type.

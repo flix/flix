@@ -72,7 +72,9 @@ namespace Sign {
 
 namespace Example {
 
+    // TODO: Read about sub-typing and figure this out.
     var Constant:   Set[(Str, Str)];
+    var foo:        Rel[Str, Str];
     var PlusOp:     Map[Str, Str, Sign.Sign];
     var Value:      Map[Str, Sign.Sign];
 
@@ -80,17 +82,13 @@ namespace Example {
     fact Fact2 = Constant <- ("y", 21);
     fact Fact3 = Constant <- ("z", 42);
 
-    rule Lift = Value <- (x, v) if
-        (x, n) <- Constant,
+    rule Lift = Value with [x -> v] if
+        n <- Constant(x),
         v = Sign.lift(n);
 
-    rule Sum = Value <- (r, v) if
+    rule Sum = Value with [r -> v] if
         (r, x, y) <- PlusOp,
         (x, v1) <- Value,
         (y, v2) <- Value,
         v = Sign.sum(v1, v2);
-
-    def foo(): Set[Int] = Set(1, 2, 3);
-
-    def bar(): Map[Int, Int] = Map((1 -> 2), (2 -> 3));
 };
