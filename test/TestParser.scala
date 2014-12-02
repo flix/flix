@@ -186,37 +186,21 @@ class TestParser extends FunSuite {
 
   test("Parser.Type.Map01") {
     val s = """type t = Map[Bool, Bool];"""
-    val t = Ast.Type.Map(Ast.Type.Bool, Ast.Type.Bool)
+    val t = Ast.Type.Map(Seq(Ast.Type.Bool, Ast.Type.Bool))
 
     assertResult(t)(getType(Parser.parse(s)))
   }
 
   test("Parser.Type.Map02") {
     val s = """type t = Map[Int, Int];"""
-    val t = Ast.Type.Map(Ast.Type.Int, Ast.Type.Int)
+    val t = Ast.Type.Map(Seq(Ast.Type.Int, Ast.Type.Int))
 
     assertResult(t)(getType(Parser.parse(s)))
   }
 
   test("Parser.Type.Map03") {
-    val s = """type t = Map[Int, Map[Int, Int]];"""
-    val t = Ast.Type.Map(Ast.Type.Int, Ast.Type.Map(Ast.Type.Int, Ast.Type.Int))
-
-    assertResult(t)(getType(Parser.parse(s)))
-  }
-
-  test("Parser.Type.Map04") {
-    val s = """type t = Map[Bool, Map[Int, Str]];"""
-    val t = Ast.Type.Map(Ast.Type.Bool, Ast.Type.Map(Ast.Type.Int, Ast.Type.Str))
-
-    assertResult(t)(getType(Parser.parse(s)))
-  }
-
-  test("Parser.Type.Map05") {
-    val s = """type t = Map[Map[Bool, Int], Map[Int, Bool]];"""
-    val t = Ast.Type.Map(
-      Ast.Type.Map(Ast.Type.Bool, Ast.Type.Int),
-      Ast.Type.Map(Ast.Type.Int, Ast.Type.Bool))
+    val s = """type t = Map[Bool, Int, Str];"""
+    val t = Ast.Type.Map(Seq(Ast.Type.Bool, Ast.Type.Int, Ast.Type.Str))
 
     assertResult(t)(getType(Parser.parse(s)))
   }
@@ -262,14 +246,6 @@ class TestParser extends FunSuite {
     val t = Ast.Type.Function(Ast.Type.Unit,
       Ast.Type.Function(Ast.Type.Bool, Ast.
         Type.Function(Ast.Type.Int, Ast.Type.Str)))
-
-    assertResult(t)(getType(Parser.parse(s)))
-  }
-
-  test("Parser.Type.Function04") {
-    val s = """type t = Set[Bool] -> Map[Int, Str];"""
-    val t = Ast.Type.Function(Ast.Type.Set(Ast.Type.Bool),
-      Ast.Type.Map(Ast.Type.Int, Ast.Type.Str))
 
     assertResult(t)(getType(Parser.parse(s)))
   }

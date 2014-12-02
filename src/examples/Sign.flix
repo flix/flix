@@ -72,9 +72,9 @@ namespace Sign {
 
 namespace Example {
 
-    var Constant:   Str ** Int;
-    var PlusOp:     Str ** Str ** Str;
-    var Value:      Str -> Sign.Sign;
+    var Constant:   Set[(Str, Str)];
+    var PlusOp:     Map[Str, Str, Sign.Sign];
+    var Value:      Map[Str, Sign.Sign];
 
     fact Fact1 = Constant <- ("x", 17);
     fact Fact2 = Constant <- ("y", 21);
