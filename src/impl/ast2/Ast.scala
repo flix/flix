@@ -70,6 +70,31 @@ object Ast {
 
   }
 
+  /**
+   * A common super-type for AST node which represents literals.
+   */
+  sealed trait Literal
+
+  object Literal {
+
+    /**
+     * An AST node which represents a boolean literal.
+     */
+    case class Bool(literal: scala.Boolean) extends Literal
+
+    /**
+     * An AST node which represents an integer literal.
+     */
+    case class Int(literal: scala.Int) extends Literal
+
+    /**
+     * An AST node which represents a string literal.
+     */
+    case class Str(literal: java.lang.String) extends Literal
+
+  }
+
+  // TODO: Introduce name class?
 
   /**
    * A common super-type for AST nodes which represent expressions.
@@ -79,19 +104,9 @@ object Ast {
   object Expression {
 
     /**
-     * An AST node which represents a boolean literal.
+     * An AST node which represents a literal.
      */
-    case class BoolLit(literal: Boolean) extends Expression
-
-    /**
-     * An AST node which represents an integer literal.
-     */
-    case class IntLit(literal: Int) extends Expression
-
-    /**
-     * An AST node which represents a string literal.
-     */
-    case class StrLit(literal: String) extends Expression
+    case class Literal(literal: Ast.Literal) extends Expression
 
     /**
      * An AST node which represents a reference to a variable.
@@ -247,16 +262,15 @@ object Ast {
 
   object Term {
 
-    // TODO: Eliminate these.
-    case class BoolLit(b: Boolean) extends Term
+    case class Literal(literal: Ast.Literal) extends Term
 
-    case class IntLit(i: scala.Int) extends Term
+    case class Map(t1: Term, t2: Term) extends Term
 
-    case class StrLit(s: String) extends Term
+    // TODO: Refactor?
 
-    case class Map(t1: Term, t2: Term) extends Term // TODO: Refactor?
+    case class Tuple(t1: Term, t2: Term) extends Term
 
-    case class Tuple(t1: Term, t2: Term) extends Term // TODO: Refactor?
+    // TODO: Refactor?
 
     case class Var(name: String) extends Term
 
@@ -268,11 +282,6 @@ object Ast {
 
   }
 
-  sealed trait Literal
-
-  object Literal {
-    // TODO
-  }
 
   /**
    * A common super-type for AST nodes which represents types.

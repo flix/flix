@@ -7,28 +7,28 @@ class TestParser extends FunSuite {
 
   test("Parser.LiteralExp01") {
     val s = """val e: Bool = true;"""
-    val a = Ast.Expression.BoolLit(literal = true)
+    val a = Ast.Expression.Literal(Ast.Literal.Bool(true))
 
     assertResult(a)(getExp(Parser.parse(s)))
   }
 
   test("Parser.LiteralExp02") {
     val s = """val e: Bool = false;"""
-    val a = Ast.Expression.BoolLit(literal = false)
+    val a = Ast.Expression.Literal(Ast.Literal.Bool(false))
 
     assertResult(a)(getExp(Parser.parse(s)))
   }
 
   test("Parser.LiteralExp03") {
     val s = """val e: Int = 42;"""
-    val a = Ast.Expression.IntLit(42)
+    val a = Ast.Expression.Literal(Ast.Literal.Int(42))
 
     assertResult(a)(getExp(Parser.parse(s)))
   }
 
   test("Parser.LiteralExp04") {
     val s = """val e: Str = "abc";"""
-    val a = Ast.Expression.StrLit("abc")
+    val a = Ast.Expression.Literal(Ast.Literal.Str("abc"))
 
     assertResult(a)(getExp(Parser.parse(s)))
   }
@@ -70,7 +70,7 @@ class TestParser extends FunSuite {
 
   test("Parser.LetExp01") {
     val s = """val e: Int = let x = 1 in 2;"""
-    val a = Ast.Expression.Let("x", Ast.Expression.IntLit(1), Ast.Expression.IntLit(2))
+    val a = Ast.Expression.Let("x", Ast.Expression.Literal(Ast.Literal.Int(1)), Ast.Expression.Literal(Ast.Literal.Int(2)))
 
     assertResult(a)(getExp(Parser.parse(s)))
   }
@@ -88,7 +88,11 @@ class TestParser extends FunSuite {
         |  let x = 1 in
         |  let y = 2 in
         |    3;""".stripMargin
-    val a = Ast.Expression.Let("x", Ast.Expression.IntLit(1), Ast.Expression.Let("y", Ast.Expression.IntLit(2), Ast.Expression.IntLit(3)))
+    val a = Ast.Expression.Let("x", Ast.Expression.Literal(
+      Ast.Literal.Int(1)),
+      Ast.Expression.Let("y",
+        Ast.Expression.Literal(Ast.Literal.Int(2)),
+        Ast.Expression.Literal(Ast.Literal.Int(3))))
 
     assertResult(a)(getExp(Parser.parse(s)))
   }
@@ -302,7 +306,7 @@ class TestParser extends FunSuite {
   ignore("Parser.Call01") {
     val s = """val e: Bool = f(1);"""
     val a = Ast.Root(Seq(Ast.Declaration.Val("e", Ast.Type.Bool,
-      Ast.Expression.Call(Ast.Expression.UnresolvedName(Seq("f")), Seq(Ast.Expression.IntLit(1))))))
+      Ast.Expression.Call(Ast.Expression.UnresolvedName(Seq("f")), Seq(Ast.Expression.Literal(Ast.Literal.Int(1)))))))
 
     assertResult(a)(Parser.parse(s))
   }
@@ -310,7 +314,7 @@ class TestParser extends FunSuite {
   ignore("Parser.Call02") {
     val s = """val e: Bool = f(1, 2, 3);"""
     val a = Ast.Root(Seq(Ast.Declaration.Val("e", Ast.Type.Bool,
-      Ast.Expression.Call(Ast.Expression.UnresolvedName(Seq("f")), Seq(Ast.Expression.IntLit(1))))))
+      Ast.Expression.Call(Ast.Expression.UnresolvedName(Seq("f")), Seq(Ast.Expression.Literal(Ast.Literal.Int(1)))))))
 
     assertResult(a)(Parser.parse(s))
   }
@@ -318,7 +322,7 @@ class TestParser extends FunSuite {
   ignore("Parser.Call03") {
     val s = """val e: Bool = f(g(h(x, y, z);"""
     val a = Ast.Root(Seq(Ast.Declaration.Val("e", Ast.Type.Bool,
-      Ast.Expression.Call(Ast.Expression.UnresolvedName(Seq("f")), Seq(Ast.Expression.IntLit(1))))))
+      Ast.Expression.Call(Ast.Expression.UnresolvedName(Seq("f")), Seq(Ast.Expression.Literal(Ast.Literal.Int((1))))))))
 
     assertResult(a)(Parser.parse(s))
   }

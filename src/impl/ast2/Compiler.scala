@@ -61,10 +61,6 @@ class Compiler(ast: Ast.Root) {
     def compile(exp: Ast.Expression): Term = exp match {
       case Ast.Expression.Var(x) => Term.Var(Symbol.VariableSymbol(x))
 
-      case Ast.Expression.BoolLit(literal) => Term.Bool(literal)
-      case Ast.Expression.IntLit(literal) => Term.Int(literal)
-      case Ast.Expression.StrLit(literal) => Term.Str(literal)
-
       case Ast.Expression.IfThenElse(e1, e2, e3) => ???
 
       case Ast.Expression.Match(e, rules) => ???

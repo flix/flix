@@ -91,7 +91,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   // TODO: Avoid duplication of literals.
   // TODO: Figure out precedens of map, tuples, etc.
   def Term: Rule1[Ast.Term] = rule {
-     MapTerm
+    MapTerm
   }
 
   def MapTerm: Rule1[Ast.Term] = rule {
@@ -114,27 +114,11 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     Name ~ "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Term.Call
   }
 
-  def LiteralTerm: Rule1[Ast.Term] = rule {
-    BoolLitTerm | IntLitTerm | StrLitTerm
+  def LiteralTerm: Rule1[Ast.Term.Literal] = rule {
+    Literal ~> Ast.Term.Literal
   }
-
-  def BoolLitTerm: Rule1[Ast.Term.BoolLit] = rule {
-    str("true") ~> (() => Ast.Term.BoolLit(true)) | str("false") ~> (() => Ast.Term.BoolLit(false))
-  }
-
-  def IntLitTerm: Rule1[Ast.Term.IntLit] = rule {
-    capture(oneOrMore(CharPredicate.Digit)) ~> ((x: String) => Ast.Term.IntLit(x.toInt))
-  }
-
-  def StrLitTerm: Rule1[Ast.Term.StrLit] = rule {
-    "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~> Ast.Term.StrLit
-  }
-
 
   // --------------------------------------------------------------------
-
-
-
 
 
   // TODO: Remove?
@@ -173,20 +157,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     LiteralExp | MissingExp | ImpossibleExp | LetExp | IfThenElseExp | MatchExp | TupleExp | SetExp | VariableExp
   }
 
-  def LiteralExp: Rule1[Ast.Expression] = rule {
-    BoolLitExp | IntLitExp | StrLitExp
-  }
-
-  def BoolLitExp: Rule1[Ast.Expression.BoolLit] = rule {
-    str("true") ~> (() => Ast.Expression.BoolLit(literal = true)) | str("false") ~> (() => Ast.Expression.BoolLit(literal = false))
-  }
-
-  def IntLitExp: Rule1[Ast.Expression.IntLit] = rule {
-    capture(oneOrMore(CharPredicate.Digit)) ~> ((x: String) => Ast.Expression.IntLit(x.toInt))
-  }
-
-  def StrLitExp: Rule1[Ast.Expression.StrLit] = rule {
-    "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~> Ast.Expression.StrLit
+  def LiteralExp: Rule1[Ast.Expression.Literal] = rule {
+    Literal ~> Ast.Expression.Literal
   }
 
   def SetExp: Rule1[Ast.Expression.Set] = rule {
@@ -342,8 +314,21 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   /** *************************************************************************/
   /** Literals                                                              ***/
   /** *************************************************************************/
-  // TODO ...
+  def Literal: Rule1[Ast.Literal] = rule {
+    BoolLiteral | IntLiteral | StrLiteral
+  }
 
+  def BoolLiteral: Rule1[Ast.Literal.Bool] = rule {
+    str("true") ~> (() => Ast.Literal.Bool(literal = true)) | str("false") ~> (() => Ast.Literal.Bool(literal = false))
+  }
+
+  def IntLiteral: Rule1[Ast.Literal.Int] = rule {
+    capture(oneOrMore(CharPredicate.Digit)) ~> ((x: String) => Ast.Literal.Int(x.toInt))
+  }
+
+  def StrLiteral: Rule1[Ast.Literal.Str] = rule {
+    "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~> Ast.Literal.Str
+  }
 
   /** *************************************************************************/
   /** Operators                                                             ***/
