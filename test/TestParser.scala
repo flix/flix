@@ -289,16 +289,9 @@ class TestParser extends FunSuite {
     assertResult(a)(Parser.parse(s))
   }
 
-  test("Parser.Missing01") {
+  test("Parser.Error01") {
     val s = """val e: Bool = ???;"""
-    val a = Ast.Root(Seq(Ast.Declaration.Val("e", Ast.Type.Bool, Ast.Expression.Missing)))
-
-    assertResult(a)(Parser.parse(s))
-  }
-
-  test("Parser.Impossible01") {
-    val s = """val e: Bool = !!!;"""
-    val a = Ast.Root(Seq(Ast.Declaration.Val("e", Ast.Type.Bool, Ast.Expression.Impossible)))
+    val a = Ast.Root(Seq(Ast.Declaration.Val("e", Ast.Type.Bool, Ast.Expression.Error)))
 
     assertResult(a)(Parser.parse(s))
   }

@@ -94,8 +94,6 @@ object Ast {
 
   }
 
-  // TODO: Introduce name class?
-
   /**
    * A common super-type for AST nodes which represent expressions.
    */
@@ -184,29 +182,12 @@ object Ast {
     @Eliminated
     case class UnresolvedName(name: Seq[String]) extends Expression
 
-    // TODO: look for better names for missing and impossible
-
     /**
-     * An AST node which represents a "missing" (i.e. not-yet-implemented) expression.
+     * An AST node which represents an error expression.
      *
-     * Evaluating a missing expression always results in a runtime error.
-     *
-     * The semantic difference between missing and impossible is that missing represents
-     * some missing code whereas impossible represent a situation which is guaranteed,
-     * by the programmer, not to occur.
+     * Evaluating an error expression always results in a runtime error.
      */
-    case object Missing extends Expression
-
-    /**
-     * An AST node which represents an "impossible" (i.e. unreachable code) expression.
-     *
-     * Evaluating an impossible expression always results in a runtime error.
-     *
-     * The semantic difference between missing and impossible is that missing represents
-     * some missing code whereas impossible represent a situation which is guaranteed,
-     * by the programmer, not to occur.
-     */
-    case object Impossible extends Expression
+    case object Error extends Expression
 
   }
 
@@ -258,6 +239,8 @@ object Ast {
   // TODO: Parse Predicates!
   case class Predicate(name: String, t2: Term) extends Pattern
 
+  // TODO: Refactor?
+
   sealed trait Term extends Ast
 
   object Term {
@@ -266,19 +249,11 @@ object Ast {
 
     case class Map(t1: Term, t2: Term) extends Term
 
-    // TODO: Refactor?
-
     case class Tuple(t1: Term, t2: Term) extends Term
-
-    // TODO: Refactor?
 
     case class Var(name: String) extends Term
 
     case class Call(name: Seq[String], arguments: Seq[Term]) extends Term
-
-    case class Int(i: String) extends Term
-
-    case class NameRef(n: Seq[String]) extends Term
 
   }
 

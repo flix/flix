@@ -4,8 +4,8 @@ import impl.logic._
 
 class Compiler(ast: Ast.Root) {
 
-  def run(): Unit = {
-
+  def compile(a: Ast): Ast = {
+    ???
   }
 
 
@@ -15,21 +15,11 @@ class Compiler(ast: Ast.Root) {
   // -patterns with the same variable
   // -recursive types, calls, etc.
 
-  /**
-   * Applies the partial function `f` recursive to the given ast `ast`.
-   */
-  def map(ast: Ast)(f: PartialFunction[Ast, Ast]): Ast = ast match {
-    case a@Ast.Declaration.NameSpace(name, body) => if (f.isDefinedAt(a))
-      f(a)
-    else
-      ???
-  }
-
   object Desugaring {
 
-    def desugar(ast: Ast): Ast = map(ast) {
-      case Ast.Expression.Infix(e1, name, e2) => ???
-    }
+    //def desugar(ast: Ast): Ast = ast.map {
+    //  case Ast.Expression.Infix(e1, name, e2) => ???
+    //}
 
     // Infix
     // RelType

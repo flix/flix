@@ -154,7 +154,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def SimpleExpression: Rule1[Ast.Expression] = rule {
-    LiteralExp | MissingExp | ImpossibleExp | LetExp | IfThenElseExp | MatchExp | TupleExp | SetExp | VariableExp
+    LiteralExp | LetExp | IfThenElseExp | MatchExp | TupleExp | SetExp | VariableExp | ErrorExp
   }
 
   def LiteralExp: Rule1[Ast.Expression.Literal] = rule {
@@ -165,12 +165,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "Set" ~ "(" ~ oneOrMore(Expression).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Expression.Set
   }
 
-  def MissingExp: Rule1[Ast.Expression] = rule {
-    str("???") ~> (() => Ast.Expression.Missing)
-  }
-
-  def ImpossibleExp: Rule1[Ast.Expression] = rule {
-    str("!!!") ~> (() => Ast.Expression.Impossible)
+  def ErrorExp: Rule1[Ast.Expression] = rule {
+    str("???") ~> (() => Ast.Expression.Error)
   }
 
   def LetExp: Rule1[Ast.Expression.Let] = rule {
