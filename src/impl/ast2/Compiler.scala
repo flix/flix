@@ -15,8 +15,22 @@ class Compiler(ast: Ast.Root) {
   // -patterns with the same variable
   // -recursive types, calls, etc.
 
+  /**
+   * Applies the partial function `f` recursive to the given ast `ast`.
+   */
+  def map(ast: Ast)(f: PartialFunction[Ast, Ast]): Ast = ast match {
+    case a@Ast.Declaration.NameSpace(name, body) => if (f.isDefinedAt(a))
+      f(a)
+    else
+      ???
+  }
 
   object Desugaring {
+
+    def desugar(ast: Ast): Ast = map(ast) {
+      case Ast.Expression.Infix(e1, name, e2) => ???
+    }
+
     // Infix
     // RelType
   }
@@ -28,17 +42,17 @@ class Compiler(ast: Ast.Root) {
      * Returns a map from fully qualified names to types.
      */
     //def typenv(context: Ast.Name, node: Ast): Unit = {
-      //      node match {
-      //        case Ast.Declaration.NameSpace(name, decl) => {
-      //          // recurse
-      //          // merge maps
-      //          // add prefix to each entry in the map
-      //        }
-      //        case Ast.Declaration.TypeDecl(name, typ) => Map(Ast.Name.Simple(name) -> typ)
-      //      }
+    //      node match {
+    //        case Ast.Declaration.NameSpace(name, decl) => {
+    //          // recurse
+    //          // merge maps
+    //          // add prefix to each entry in the map
+    //        }
+    //        case Ast.Declaration.TypeDecl(name, typ) => Map(Ast.Name.Simple(name) -> typ)
+    //      }
 
-   //   ???
-   // }
+    //   ???
+    // }
 
     /**
      *
