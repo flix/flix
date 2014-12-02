@@ -50,12 +50,17 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     zeroOrMore(Annotation) ~ "def" ~ WhiteSpace ~ Ident ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Function
   }
 
+  // TODO: Remove
+  def Annotation: Rule1[String] = rule {
+    "@" ~ Ident ~ WhiteSpace
+  }
+
   def LatticeDeclaration: Rule1[Ast.Declaration.Lattice] = rule {
     "lat" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ RecordExp ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Lattice
   }
 
   def FactDeclaration: Rule1[Ast.Declaration.Fact] = rule {
-    "fact" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Predicate ~ ";" ~ WhiteSpace ~> Ast.Declaration.Fact
+    "fact" ~ WhiteSpace ~ Predicate ~ ";" ~ WhiteSpace ~> Ast.Declaration.Fact
   }
 
   def RuleDeclaraction: Rule1[Ast.Declaration.Rule] = rule {
@@ -75,25 +80,48 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def Predicate: Rule1[Ast.Predicate] = rule {
-    Term ~ WhiteSpace ~ "<-" ~ WhiteSpace ~ Term ~> Ast.Predicate
+    Ident ~ "(" ~ Term ~ ")" ~> Ast.Predicate
   }
 
+  // TODO: Allow expressions here? Probably no...
+  // TODO: Avoid duplication of literals.
+  // TODO: Figure out precedens of map, tuples, etc.
   def Term: Rule1[Ast.Term] = rule {
-    Name ~ "(" ~ oneOrMore(Term).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Term.Call |
-      Name ~> Ast.Term.NameRef |
-      Digits ~> Ast.Term.Int
+     MapTerm
+  }
+
+  def MapTerm: Rule1[Ast.Term] = rule {
+    SimpleTerm ~ zeroOrMore(WhiteSpace ~ "->" ~ WhiteSpace ~ SimpleTerm ~> Ast.Term.Map)
+
+    //oneOrMore(SimpleTerm).separatedBy(WhiteSpace ~ "->" ~ WhiteSpace) ~> Ast.Term.Map
+  }
+
+  def SimpleTerm: Rule1[Ast.Term] = rule {
+    LiteralTerm
+  }
+
+  def LiteralTerm: Rule1[Ast.Term] = rule {
+    BoolLitTerm | IntLitTerm | StrLitTerm
+  }
+
+  def BoolLitTerm: Rule1[Ast.Term.BoolLit] = rule {
+    str("true") ~> (() => Ast.Term.BoolLit(true)) | str("false") ~> (() => Ast.Term.BoolLit(false))
+  }
+
+  def IntLitTerm: Rule1[Ast.Term.IntLit] = rule {
+    capture(oneOrMore(CharPredicate.Digit)) ~> ((x: String) => Ast.Term.IntLit(x.toInt))
+  }
+
+  def StrLitTerm: Rule1[Ast.Term.StrLit] = rule {
+    "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~> Ast.Term.StrLit
   }
 
 
-  // TODO: Elimnate or move
+
+  // TODO: Remove?
   def Digits: Rule1[String] = rule {
     capture(oneOrMore(CharPredicate.Digit))
   }
-
-  def Annotation: Rule1[String] = rule {
-    "@" ~ Ident ~ WhiteSpace
-  }
-
 
   /** *************************************************************************/
   /** Expressions                                                           ***/
@@ -344,6 +372,14 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def NewLine: Rule0 = rule {
     "\n" | "\r\n"
+  }
+
+  /** *************************************************************************/
+  /** Source Location                                                       ***/
+  /** *************************************************************************/
+  def Loc = rule {
+    // TODO: Need to track line and column.
+    push(cursor)
   }
 
   /** *************************************************************************/

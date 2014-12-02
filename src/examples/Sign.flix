@@ -70,30 +70,26 @@ namespace Sign {
     };
 };
 
-namespace Example {
+namespace Sign {
 
-    var Constant: Map[Str, Int];
-
-    fact VarX = Constant("x" -> 17);
-    fact VarY = Constant("y" -> 21);
-    fact VarZ = Constant("z" -> 42);
-
-    var PlusOp: Rel[Str, Str, Str];
-
-    fact FPlus = PlusOp("a", "x", "y");
-
-    var Value:      Map[Str, Sign.Sign];
-
-    rule Lift = Value(x -> v) if
-        Constant(x -> v),
-        v = Sign.lift(n);
-
-    rule Sum = Value(r -> v) if
-        PlusOp(r, x, y),
-        (x, v1) <- Value,
-        (y, v2) <- Value,
-        v = Sign.sum(v1, v2),
-        x less f(x);
+    type Var = Str;
 
     // TODO: Read about sub-typing and figure this out.
+    var Const:      Map[Var, Int];
+    var Plus:       Rel[Var, Var, Var];
+    var Value:      Map[Var, Sign];
+
+    fact Constant("x" -> 21);
+    fact Constant("y" -> 42);
+
+    fact Plus("z", "x", "y");
+
+    rule Value(x -> lift(v)) if
+        Const(x -> v);
+
+    rule Value(r -> sum(v1, v2)) if
+        Plus(r, x, y),
+        Value(x -> v1),
+        Value(y -> v2);
+
 };

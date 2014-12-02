@@ -61,7 +61,7 @@ object Ast {
     /**
      * An AST node which represents a fact declaration.
      */
-    case class Fact(name: String, head: Predicate) extends Declaration
+    case class Fact(head: Predicate) extends Declaration
 
     /**
      * An AST node which represent a rule declaration.
@@ -69,8 +69,6 @@ object Ast {
     case class Rule(name: String, head: Predicate, body: Seq[Predicate]) extends Declaration
 
   }
-
-
 
 
   /**
@@ -241,12 +239,22 @@ object Ast {
 
   }
 
+
   // TODO: Parse Predicates!
-  case class Predicate(t1: Term, t2: Term) extends Pattern
+  case class Predicate(name: String, t2: Term) extends Pattern
 
   sealed trait Term extends Ast
 
   object Term {
+
+    // TODO: Eliminate these.
+    case class BoolLit(b: Boolean) extends Term
+
+    case class IntLit(i: scala.Int) extends Term
+
+    case class StrLit(s: String) extends Term
+
+    case class Map(key: Term, value: Term) extends Term
 
     case class Call(n: Seq[String], args: Seq[Term]) extends Term
 
@@ -254,6 +262,12 @@ object Ast {
 
     case class NameRef(n: Seq[String]) extends Term
 
+  }
+
+  sealed trait Literal
+
+  object Literal {
+    // TODO
   }
 
   /**
