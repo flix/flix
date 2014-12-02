@@ -114,8 +114,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     Name ~ "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Term.Call
   }
 
-  def LiteralTerm: Rule1[Ast.Term.Literal] = rule {
-    Literal ~> Ast.Term.Literal
+  def LiteralTerm: Rule1[Ast.Term.Lit] = rule {
+    Literal ~> Ast.Term.Lit
   }
 
   // --------------------------------------------------------------------
@@ -157,8 +157,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     LiteralExp | LetExp | IfThenElseExp | MatchExp | TupleExp | SetExp | VariableExp | ErrorExp
   }
 
-  def LiteralExp: Rule1[Ast.Expression.Literal] = rule {
-    Literal ~> Ast.Expression.Literal
+  def LiteralExp: Rule1[Ast.Expression.Lit] = rule {
+    Literal ~> Ast.Expression.Lit
   }
 
   def SetExp: Rule1[Ast.Expression.Set] = rule {
@@ -205,8 +205,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~> ((k: String, v: Ast.Expression) => (k, v))
   }
 
-  def VariableExp: Rule1[Ast.Expression.UnresolvedName] = rule {
-    Name ~> Ast.Expression.UnresolvedName
+  def VariableExp: Rule1[Ast.Expression.VarOrNameRef] = rule {
+    Name ~> Ast.Expression.VarOrNameRef
   }
 
 
@@ -351,7 +351,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def MultiplicativeOp: Rule1[BinaryOperator] = rule {
     str("*") ~> (() => BinaryOperator.Times) |
-      str("/") ~> (() => BinaryOperator.Divide)
+      str("/") ~> (() => BinaryOperator.Divide) |
+      str("%") ~> (() => BinaryOperator.Modulo)
   }
 
   def AdditiveOp: Rule1[BinaryOperator] = rule {

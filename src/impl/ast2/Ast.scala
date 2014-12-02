@@ -30,23 +30,23 @@ object Ast {
     /**
      * An AST node which represents a namespace declaration.
      */
-    case class NameSpace(name: Seq[String], body: Seq[Ast.Declaration]) extends Declaration
+    case class NameSpace(name: Seq[String], body: Seq[Declaration]) extends Declaration
 
     /**
      * An AST node which represents a type declaration.
      */
     // TODO: Naming issue? Why can't this be called type?
-    case class TypeDecl(name: String, typ: Ast.Type) extends Declaration
+    case class TypeDecl(name: String, typ: Type) extends Declaration
 
     /**
      * An AST node which represents a value declaration.
      */
-    case class Val(name: String, t: Ast.Type, exp: Expression) extends Declaration
+    case class Val(name: String, t: Type, exp: Expression) extends Declaration
 
     /**
      * An AST node which represents a variable declaration.
      */
-    case class Var(name: String, typ: Ast.Type) extends Declaration
+    case class Var(name: String, typ: Type) extends Declaration
 
     /**
      * An AST node which represents a function declaration.
@@ -104,7 +104,7 @@ object Ast {
     /**
      * An AST node which represents a literal.
      */
-    case class Literal(literal: Ast.Literal) extends Expression
+    case class Lit(literal: Literal) extends Expression
 
     /**
      * An AST node which represents a reference to a variable.
@@ -173,14 +173,12 @@ object Ast {
     case class Record(elms: Seq[(String, Expression)]) extends Expression
 
     /**
-     * An AST node which represents an unresolved name.
-     *
-     * Either a reference to a bound variable or to a global name.
+     * An AST node which represents a variable or name reference.
      *
      * Eliminated by the compiler.
      */
     @Eliminated
-    case class UnresolvedName(name: Seq[String]) extends Expression
+    case class VarOrNameRef(name: Seq[String]) extends Expression
 
     /**
      * An AST node which represents an error expression.
@@ -245,7 +243,7 @@ object Ast {
 
   object Term {
 
-    case class Literal(literal: Ast.Literal) extends Term
+    case class Lit(literal: Literal) extends Term
 
     case class Map(t1: Term, t2: Term) extends Term
 

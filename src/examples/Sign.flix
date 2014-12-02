@@ -56,7 +56,7 @@ namespace Sign {
             b;
 
     def lift(i: Int): Sign =
-        if (true) Even else Odd;
+        if (i % 2 == 0) Even else Odd;
 
     lat Sign = record { bot = Sign.Bot, leq = Sign.leq, lub = Sign.lub };
 
