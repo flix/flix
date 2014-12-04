@@ -2,9 +2,20 @@ namespace Bool {
 
     type Belnap = enum {
         case Top,
-        case True, case False,
+        case True,
+        case False,
         case Bot
     };
+
+
+    def leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) with {
+        case (Bot, _)       => true;
+        case (True, True)   => true;
+        case (False, False) => true;
+        case (_, Top)       => true;
+        case _              => false;
+    };
+
 
 }
 
