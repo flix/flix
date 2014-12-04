@@ -22,8 +22,9 @@ object Parser {
 // TODO: Deal properly with optional white space.
 
 class Parser(val input: ParserInput) extends org.parboiled2.Parser {
+
   def Root: Rule1[Ast.Root] = rule {
-    oneOrMore(Declaration) ~ EOI ~> Ast.Root
+    optWhiteSpace ~ zeroOrMore(Declaration) ~ optWhiteSpace ~ EOI ~> Ast.Root
   }
 
   def Declaration: Rule1[Ast.Declaration] = rule {
@@ -373,7 +374,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   // Note: We must use ANY to match (consume) whatever character which is not a newline.
   // Otherwise the parser makes no progress and loops.
   def SingleLinecomment: Rule0 = rule {
-    "//" ~ zeroOrMore(!NewLine ~ ANY) ~ NewLine
+    "//" ~ zeroOrMore(!NewLine ~ ANY) ~ (NewLine | EOI)
   }
 
   // Note: We must use ANY to match (consume) whatever character which is not a "*/".
