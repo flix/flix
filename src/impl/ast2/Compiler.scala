@@ -11,6 +11,7 @@ class Compiler(ast: Ast.Root) {
   }
 
 
+
   // TODO: Check
   // -unresolved references
   // -ambigious decls
@@ -19,22 +20,35 @@ class Compiler(ast: Ast.Root) {
 
   object Desugaring {
 
-//    def desugar[A <: Ast](ast: A): A = ast match {
-//      case Ast.Expression.Binary(e1, op, e2) => ???
-//
-//      // Desugar infix expression.
-//      case Ast.Expression.Infix(e1, name, e2) =>
-//        val es1 = desugar(e1)
-//        val es2 = desugar(e2)
-//        Ast.Expression.Call(Ast.Expression.VarOrNameRef(name), immutable.Seq(es1, es2))
-//
-//
-//      // Desugar relational type.
-//      case Ast.Type.Rel(elms) =>
-//        val elms2 = elms.map(desugar)
-//        Ast.Type.Set(Ast.Type.Tuple(elms2))
-//    }
+    //    def desugar[A <: Ast](ast: A): A = ast match {
+    //      case Ast.Expression.Binary(e1, op, e2) => ???
+    //
+    //      // Desugar infix expression.
+    //      case Ast.Expression.Infix(e1, name, e2) =>
+    //        val es1 = desugar(e1)
+    //        val es2 = desugar(e2)
+    //        Ast.Expression.Call(Ast.Expression.VarOrNameRef(name), immutable.Seq(es1, es2))
+    //
+    //
+    //      // Desugar relational type.
+    //      case Ast.Type.Rel(elms) =>
+    //        val elms2 = elms.map(desugar)
+    //        Ast.Type.Set(Ast.Type.Tuple(elms2))
+    //    }
 
+    def desugar(a: Ast.Expression): Ast.Expression = a match {
+
+
+      case Ast.Expression.Error => a
+    }
+
+    def desugar(a: Ast.Type): Ast.Type = a match {
+      case Ast.Type.Bool => a
+
+      case Ast.Type.Rel(elms) =>
+        val elms2 = elms.map(desugar)
+        Ast.Type.Set(Ast.Type.Tuple(elms2))
+    }
 
   }
 

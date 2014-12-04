@@ -10,7 +10,7 @@ import scala.util.{Failure, Success}
 object Runner {
   def main(args: Array[String]): Unit = {
 
-    val line = Source.fromFile(new File("src/examples/Sign.flix")).getLines().mkString("\n")
+    val line = Source.fromFile(new File(args(0))).getLines().mkString("\n")
 
     val parser = new Parser(line)
     parser.Root.run() match {

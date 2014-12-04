@@ -68,7 +68,7 @@ namespace Sign {
         case (Neg, Zer) => Neg;
         case (Neg, Pos) => Top;
     };
-};
+}
 
 namespace Sign {
 
@@ -92,4 +92,4 @@ namespace Sign {
         Value(x -> v1),
         Value(y -> v2);
 
-};
+}
