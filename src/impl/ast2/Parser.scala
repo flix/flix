@@ -103,11 +103,11 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def SimpleTerm: Rule1[Ast.Term] = rule {
-    LiteralTerm | CallTerm | VarTerm
+    LiteralTerm | CallTerm | VarOrNameTerm
   }
 
-  def VarTerm: Rule1[Ast.Term] = rule {
-    Ident ~> Ast.Term.Var
+  def VarOrNameTerm: Rule1[Ast.Term] = rule {
+    Name ~> Ast.Term.VarOrName
   }
 
   def CallTerm: Rule1[Ast.Term.Call] = rule {

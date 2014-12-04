@@ -249,7 +249,7 @@ object Ast {
 
     case class Tuple(t1: Term, t2: Term) extends Term
 
-    case class Var(name: String) extends Term
+    case class VarOrName(name: Seq[String]) extends Term
 
     case class Call(name: Seq[String], arguments: Seq[Term]) extends Term
 
