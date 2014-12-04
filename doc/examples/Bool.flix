@@ -1,14 +1,13 @@
-namespace Bool {
+namespace MyBool {
 
-    type Belnap = enum {
+    type Elm = enum {
         case Top,
         case True,
         case False,
         case Bot
     };
 
-
-    def leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) with {
+    def leq(e1: Elm, e2: Elm): Bool = match (e1, e2) with {
         case (Bot, _)       => true;
         case (True, True)   => true;
         case (False, False) => true;
@@ -16,43 +15,39 @@ namespace Bool {
         case _              => false;
     };
 
+    def lub(e1: Elm, e2: Elm): Elm = match (e1, e2) with {
+        case (Bot, x)       => x;
+        case (x, Bot)       => x;
+        case (True, True)   => True;
+        case (False, False) => False;
+        case _              => Top;
+    };
 
-}
+    @monotone @strict @associative
+    def and(e1: Elm, e2: Elm): Elm = match (e1, e2) with {
+        case (Bot, _)       => Bot;
 
-//(def-type Boolean (variant ((Top) (True) (False) (Bot))))
-//
-//(def-type A Boolean)
-//(def-type B Boolean)
-//(def-type R Boolean)
-//
-//(def-bot Boolean Bot)
-//
-//(def-leq Boolean (e1 Boolean e2 Boolean)
-//    (match <e1 e2>
-//        (case <Bot _>         true)
-//        (case <True True>     true)
-//        (case <False False>   true)
-//        (case <_ Top>         true)
-//        (case _               false)))
-//
-//(def-lub Boolean (e1 Boolean e2 Boolean)
-//    (match <e1 e2>
-//        (case <Bot x>         x)
-//        (case <x Bot>         x)
-//        (case <True True>     True)
-//        (case <False False>   False)
-//        (case _               Top)))
-//
-//(def-height Boolean (e Boolean)
-//    (match e
-//        (case Top      1)
-//        (case True     2)
-//        (case False    2)
-//        (case Bot      3)))
-//
-//(fact (A True))
-//(fact (B False))
-//
-//(rule (R x) ((A x)))
-//(rule (R x) ((B x)))
+    };
+
+    lat Lattice = record {
+        bot = Bot,
+        leq = leq,
+        lub = lub
+    };
+
+};
+
+namespace Example {
+
+    var A: MyBool.Lattice;
+    var B: MyBool.Lattice;
+    var R: MyBool.Lattice;
+
+    fact A(MyBool.True);
+    fact A(MyBool.False);
+
+    rule R(x) if A(x);
+    rule R(x) if B(x);
+
+};
 
