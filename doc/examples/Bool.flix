@@ -29,7 +29,7 @@ namespace MyBool {
 
     };
 
-    lat Lattice = record {
+    lat Lat = record {
         bot = Bot,
         leq = leq,
         lub = lub
@@ -39,9 +39,9 @@ namespace MyBool {
 
 namespace Example {
 
-    var A: MyBool.Lattice;
-    var B: MyBool.Lattice;
-    var R: MyBool.Lattice;
+    var A: MyBool.Lat;
+    var B: MyBool.Lat;
+    var R: MyBool.Lat;
 
     fact A(MyBool.True);
     fact A(MyBool.False);
