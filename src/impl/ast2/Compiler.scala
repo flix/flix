@@ -11,7 +11,6 @@ class Compiler(ast: Ast.Root) {
   }
 
 
-
   // TODO: Check
   // -unresolved references
   // -ambigious decls
@@ -43,8 +42,7 @@ class Compiler(ast: Ast.Root) {
     }
 
     def desugar(a: Ast.Type): Ast.Type = a match {
-      case Ast.Type.Bool => a
-
+      case Ast.Type.NameRef(Seq("Bool")) => Ast.Type.Bool // TODO Needs to happen during environments.
       case Ast.Type.Rel(elms) =>
         val elms2 = elms.map(desugar)
         Ast.Type.Set(Ast.Type.Tuple(elms2))
@@ -146,10 +144,6 @@ class Compiler(ast: Ast.Root) {
      * Compiles an ast type to a core type.
      */
     private def compile(typ: Ast.Type): Type = typ match {
-      case Ast.Type.Unit => Type.Unit
-      case Ast.Type.Bool => Type.Bool
-      case Ast.Type.Int => Type.Int
-      case Ast.Type.Str => Type.Str
       // case Ast.Type.Tag(name) => Type.Tag(), TODO
       case Ast.Type.Set(typ1) => Type.Set(compile(typ1))
       //case Ast.Type.Map(keys, values) => throw CompilerException("Map types are currently not supported.")

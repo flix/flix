@@ -107,7 +107,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def VarOrNameTerm: Rule1[Ast.Term] = rule {
-    Name ~> Ast.Term.VarOrName
+    Name ~> Ast.Term.VarOrNameRef
   }
 
   def CallTerm: Rule1[Ast.Term.Call] = rule {
@@ -245,24 +245,11 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def SimpleType: Rule1[Ast.Type] = rule {
-    UnitType | BoolType | IntType | StrType | TupleType | SetType | RelType | MapType | EnumType | NamedType
+    TupleType | SetType | RelType | MapType | EnumType | NameRefType
   }
 
-  // TODO: Consider whether these should be part of the grammar?
-  def UnitType: Rule1[Ast.Type] = rule {
-    str("Unit") ~> (() => Ast.Type.Unit)
-  }
-
-  def BoolType: Rule1[Ast.Type] = rule {
-    str("Bool") ~> (() => Ast.Type.Bool)
-  }
-
-  def IntType: Rule1[Ast.Type] = rule {
-    str("Int") ~> (() => Ast.Type.Int)
-  }
-
-  def StrType: Rule1[Ast.Type] = rule {
-    str("Str") ~> (() => Ast.Type.Str)
+  def NameRefType: Rule1[Ast.Type.NameRef] = rule {
+    Name ~> Ast.Type.NameRef
   }
 
   def TupleType: Rule1[Ast.Type.Tuple] = rule {
@@ -291,10 +278,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def FunctionType: Rule1[Ast.Type.Function] = rule {
     SimpleType ~ WhiteSpace ~ "->" ~ WhiteSpace ~ Type ~> Ast.Type.Function
-  }
-
-  def NamedType: Rule1[Ast.Type.NameRef] = rule {
-    Name ~> Ast.Type.NameRef
   }
 
   /** *************************************************************************/

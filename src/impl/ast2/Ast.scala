@@ -249,7 +249,7 @@ object Ast {
 
     case class Tuple(t1: Term, t2: Term) extends Term
 
-    case class VarOrName(name: Seq[String]) extends Term
+    case class VarOrNameRef(name: Seq[String]) extends Term
 
     case class Call(name: Seq[String], arguments: Seq[Term]) extends Term
 
@@ -264,23 +264,35 @@ object Ast {
   object Type {
 
     /**
+     * An AST node which represents a reference to a named type.
+     *
+     * Eliminated by the compiler.
+     */
+    @Eliminated
+    case class NameRef(name: Seq[String]) extends Type
+
+    /**
      * An AST node which represents the unit type.
      */
+    @Introduced
     case object Unit extends Type
 
     /**
      * An AST node which represents the boolean type.
      */
+    @Introduced
     case object Bool extends Type
 
     /**
      * An AST node which represents the int type.
      */
+    @Introduced
     case object Int extends Type
 
     /**
      * An AST node which represents the string type.
      */
+    @Introduced
     case object Str extends Type
 
     /**
@@ -318,14 +330,6 @@ object Ast {
      * An AST node which represents a function type.
      */
     case class Function(t1: Type, t2: Type) extends Type
-
-    /**
-     * An AST node which represents a reference to a named type.
-     *
-     * Eliminated by the compiler.
-     */
-    @Eliminated
-    case class NameRef(name: Seq[String]) extends Type
 
   }
 
