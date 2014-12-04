@@ -245,6 +245,8 @@ object Ast {
 
     case class Lit(literal: Literal) extends Term
 
+    case class Set(elms: Seq[Term]) extends Term
+
     case class Map(t1: Term, t2: Term) extends Term
 
     case class Tuple(t1: Term, t2: Term) extends Term

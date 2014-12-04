@@ -99,12 +99,17 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     TupleTerm ~ zeroOrMore(WhiteSpace ~ "->" ~ WhiteSpace ~ TupleTerm ~> Ast.Term.Map)
   }
 
+  // TODO: This is not a good idea!
   def TupleTerm: Rule1[Ast.Term] = rule {
     SimpleTerm ~ zeroOrMore("," ~ WhiteSpace ~ SimpleTerm ~> Ast.Term.Tuple)
   }
 
   def SimpleTerm: Rule1[Ast.Term] = rule {
-    LiteralTerm | CallTerm | VarOrNameTerm
+    LiteralTerm | SetTerm | CallTerm | VarOrNameTerm
+  }
+
+  def SetTerm: Rule1[Ast.Term] = rule {
+    "{" ~ zeroOrMore(Term).separatedBy("," ~ WhiteSpace) ~ "}" ~> Ast.Term.Set
   }
 
   def VarOrNameTerm: Rule1[Ast.Term] = rule {
