@@ -71,7 +71,7 @@ object Ast {
   }
 
   /**
-   * A common super-type for AST node which represents literals.
+   * A common super-type for AST node which represent literals.
    */
   sealed trait Literal
 
@@ -259,7 +259,7 @@ object Ast {
 
 
   /**
-   * A common super-type for AST nodes which represents types.
+   * A common super-type for AST nodes which represent types.
    */
   sealed trait Type extends Ast
 
@@ -332,6 +332,26 @@ object Ast {
      * An AST node which represents a function type.
      */
     case class Function(t1: Type, t2: Type) extends Type
+
+    /**
+     * A common super-type for AST nodes which represent types.
+     */
+    sealed trait LatticeType extends Type
+
+    /**
+     * An AST node which represents a set lattice type.
+     */
+    case class SetLattice(elms: Type) extends LatticeType
+
+    /**
+     * An AST node which represents a product lattice type.
+     */
+    case class ProductLattice(t1: Type, t2: Type) extends LatticeType
+
+    /**
+     * An AST node which represents a map lattice type.
+     */
+    case class MapLattice(t1: Type, t2: Type) extends LatticeType
 
   }
 

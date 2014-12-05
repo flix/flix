@@ -44,7 +44,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def VariableDeclaration: Rule1[Ast.Declaration.Var] = rule {
-    "var" ~ WhiteSpace ~ Ident ~ ":" ~ WhiteSpace ~ Type ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Var
+    "var" ~ WhiteSpace ~ Ident ~ ":" ~ WhiteSpace ~ LatticeType ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Var
   }
 
   def FunctionDeclaration: Rule1[Ast.Declaration.Function] = rule {
@@ -246,6 +246,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   /** *************************************************************************/
   /** Types                                                                 ***/
   /** *************************************************************************/
+  // TODO: Cleanup...
   def Type: Rule1[Ast.Type] = rule {
     FunctionType | SimpleType
   }
@@ -284,6 +285,22 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def FunctionType: Rule1[Ast.Type.Function] = rule {
     SimpleType ~ WhiteSpace ~ "->" ~ WhiteSpace ~ Type ~> Ast.Type.Function
+  }
+
+  def LatticeType: Rule1[Ast.Type] = rule {
+    MapLatticeType
+  }
+
+  def MapLatticeType: Rule1[Ast.Type] = rule {
+    ProductLatticeType ~ zeroOrMore(WhiteSpace ~ "->" ~ WhiteSpace ~ ProductLatticeType ~> Ast.Type.MapLattice)
+  }
+
+  def ProductLatticeType: Rule1[Ast.Type] = rule {
+    SetLatticeType ~ zeroOrMore(WhiteSpace ~ "**" ~ WhiteSpace ~ SetLatticeType ~> Ast.Type.ProductLattice)
+  }
+
+  def SetLatticeType: Rule1[Ast.Type] = rule {
+    NameRefType | ("{" ~ optWhiteSpace ~ LatticeType ~ optWhiteSpace ~ "}" ~> Ast.Type.SetLattice)
   }
 
   /** *************************************************************************/

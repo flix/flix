@@ -74,10 +74,9 @@ namespace Sign {
 
     type Var = Str;
 
-    // TODO: Read about sub-typing and figure this out.
-    var Const:      Map[Var, Int];
-    var Plus:       Rel[Var, Var, Var];
-    var Value:      Map[Var, Sign];
+    var Const:      Var -> Int;
+    //var Plus:       {(Var, Var, Var)}; // TODO
+    var Value:      Var -> Sign;
 
     fact Constant("x" -> 21);
     fact Constant("y" -> 42);

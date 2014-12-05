@@ -1,9 +1,11 @@
 namespace FamilyTree {
 
-    var Parent:     Map[Str, Set[Str]]; // Str -> {Str}
-    var Male:       Set[Str];           // {Str}
-    var Female:     Set[Str];           // {Str}
-    var MGP:        Map[Str, Set[Str]]; // Str -> {Str}
+    type Person = Str;
+
+    var Parent:     Person -> {Person};
+    var Male:       {Person};
+    var Female:     {Person};
+    var MGP:        Person -> {Person};
 
     // TODO: paren free syntax:
     // fact Parent "Caroline" -> {"FritsT"};
