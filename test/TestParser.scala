@@ -320,6 +320,15 @@ class TestParser extends FunSuite {
     assertResult(a)(Parser.parse(s))
   }
 
+
+  test("Parser.Lattice01") {
+    val s = """var e: {Int};"""
+    //val a = Ast.Root(Seq(Ast.Declaration.Var("e", ???);
+
+    //assertResult(a)(Parser.parse(s))
+  }
+
+
   private def getExp(root: Ast.Root): Ast.Expression = root match {
     case Ast.Root(Seq(Ast.Declaration.Val(_, _, e))) => e
   }
