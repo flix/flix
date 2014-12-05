@@ -7,7 +7,8 @@ import scala.collection.immutable
 object Compiler {
 
   def compile(ast: Ast.Root): Ast.Root = {
-    Desugaring.desugar(ast)
+    val ast2 = Desugaring.desugar(ast)
+    Linking.link(ast2)
   }
 
   object Desugaring {
@@ -57,34 +58,23 @@ object Compiler {
 
   object Linking {
 
-
-    /**
-     * Returns a map from fully qualified names to types.
-     */
-    //def typenv(context: Ast.Name, node: Ast): Unit = {
-    //      node match {
-    //        case Ast.Declaration.NameSpace(name, decl) => {
-    //          // recurse
-    //          // merge maps
-    //          // add prefix to each entry in the map
-    //        }
-    //        case Ast.Declaration.TypeDecl(name, typ) => Map(Ast.Name.Simple(name) -> typ)
-    //      }
-
-    //   ???
-    // }
-
-    /**
-     *
-     */
-    //def resolvesTypestypes
+    def link(ast: Ast.Root): Ast.Root = {
+      ???
+    }
 
 
-    // environments
-    // Typ Env
-    // ValEnv
-    // FunEnv
-    // etc. etc.
+    def visit(ast: Ast.Root): Map[List[String], Ast.Type] = ast match {
+      case Ast.Root(decls) => merge(decls map (d => visit(Nil, d)))
+    }
+
+    def visit(namespace: List[String], ast: Ast.Declaration): Map[List[String], Ast.Type] = ast match {
+      case Ast.Declaration.TypeDecl(name, typ) => Map((namespace ::: List(name)) -> typ)
+    }
+
+    def merge(xs: Seq[Map[List[String], Ast.Type]]): Map[List[String], Ast.Type] = ???
+
+    def merge(m1: Map[List[String], Ast.Type], m2: Map[List[String], Ast.Type]): Map[List[String], Ast.Type] = ???
+
 
   }
 
