@@ -4,10 +4,47 @@ import impl.logic._
 
 import scala.collection.immutable
 
-class Compiler(ast: Ast.Root) {
+object Compiler {
 
-  def compile(a: Ast): Ast = {
-    ???
+  def compile(ast: Ast.Root): Ast.Root = {
+    Desugaring.desugar(ast)
+  }
+
+  object Desugaring {
+
+    /**
+     * Desugars the entire ast.
+     */
+    def desugar(ast: Ast.Root): Ast.Root = ast match {
+      case Ast.Root(decls) => Ast.Root(decls map desugar)
+    }
+
+    /**
+     * Desugars the given ast declaration.
+     */
+    def desugar(ast: Ast.Declaration): Ast.Declaration = ast match {
+      case Ast.Declaration.TypeDecl(name, typ) => Ast.Declaration.TypeDecl(name, desugar(typ))
+      case _ => ast; // TODO
+    }
+
+    /**
+     * Desugars the given ast type.
+     */
+    def desugar(ast: Ast.Type): Ast.Type = ast match {
+      case Ast.Type.NameRef(Seq("Unit")) => Ast.Type.Unit
+      case Ast.Type.NameRef(Seq("Bool")) => Ast.Type.Bool
+      case Ast.Type.NameRef(Seq("Int")) => Ast.Type.Int
+      case Ast.Type.NameRef(Seq("Str")) => Ast.Type.Str
+
+      case Ast.Type.Tuple(elms) => Ast.Type.Tuple(elms map desugar)
+      case Ast.Type.Set(elms) => Ast.Type.Set(desugar(elms))
+      case Ast.Type.Rel(elms) => ???
+      case Ast.Type.Map(elms) => Ast.Type.Map(elms map desugar)
+
+      case Ast.Type.Function(typ1, typ2) => Ast.Type.Function(desugar(typ1), desugar(typ2))
+
+      case _ => ast // TODO
+    }
   }
 
 
@@ -17,38 +54,6 @@ class Compiler(ast: Ast.Root) {
   // -patterns with the same variable
   // -recursive types, calls, etc.
 
-  object Desugaring {
-
-    //    def desugar[A <: Ast](ast: A): A = ast match {
-    //      case Ast.Expression.Binary(e1, op, e2) => ???
-    //
-    //      // Desugar infix expression.
-    //      case Ast.Expression.Infix(e1, name, e2) =>
-    //        val es1 = desugar(e1)
-    //        val es2 = desugar(e2)
-    //        Ast.Expression.Call(Ast.Expression.VarOrNameRef(name), immutable.Seq(es1, es2))
-    //
-    //
-    //      // Desugar relational type.
-    //      case Ast.Type.Rel(elms) =>
-    //        val elms2 = elms.map(desugar)
-    //        Ast.Type.Set(Ast.Type.Tuple(elms2))
-    //    }
-
-    def desugar(a: Ast.Expression): Ast.Expression = a match {
-
-
-      case Ast.Expression.Error => a
-    }
-
-    def desugar(a: Ast.Type): Ast.Type = a match {
-      case Ast.Type.NameRef(Seq("Bool")) => Ast.Type.Bool // TODO Needs to happen during environments.
-      case Ast.Type.Rel(elms) =>
-        val elms2 = elms.map(desugar)
-        Ast.Type.Set(Ast.Type.Tuple(elms2))
-    }
-
-  }
 
   object Linking {
 

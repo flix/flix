@@ -1,4 +1,4 @@
-import impl.ast2.{Ast, Parser}
+import impl.ast2.{Compiler, Ast, Parser}
 import impl.logic.BinaryOperator
 import org.scalatest.FunSuite
 import scala.collection.immutable.Seq
@@ -315,7 +315,7 @@ class TestParser extends FunSuite {
   ignore("Parser.Call03") {
     val s = """val e: Bool = f(g(h(x, y, z);"""
     val a = Ast.Root(Seq(Ast.Declaration.Val("e", Ast.Type.Bool,
-      Ast.Expression.Call(Ast.Expression.VarOrNameRef(Seq("f")), Seq(Ast.Expression.Lit(Ast.Literal.Int((1))))))))
+      Ast.Expression.Call(Ast.Expression.VarOrNameRef(Seq("f")), Seq(Ast.Expression.Lit(Ast.Literal.Int(1)))))))
 
     assertResult(a)(Parser.parse(s))
   }
@@ -324,7 +324,7 @@ class TestParser extends FunSuite {
     case Ast.Root(Seq(Ast.Declaration.Val(_, _, e))) => e
   }
 
-  private def getType(root: Ast.Root): Ast.Type = root match {
+  private def getType(root: Ast.Root): Ast.Type = Compiler.compile(root) match {
     case Ast.Root(Seq(Ast.Declaration.TypeDecl(_, typ))) => typ
     case _ => throw new RuntimeException()
   }

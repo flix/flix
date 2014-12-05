@@ -16,9 +16,6 @@ object Runner {
     parser.Root.run() match {
       case Success(ast) => {
         println("Result: " + ast)
-
-        val c = new Compiler(ast)
-
       }
       case Failure(e: ParseError) => println("Expression is not valid: " + parser.formatError(e))
       case Failure(e) => println("Unexpected error during parsing run: " + e)

@@ -1,12 +1,17 @@
 namespace FamilyTree {
 
-    var Parent:     Map[Str, Set[Str]];
-    var Male:       Set[Str];
-    var Female:     Set[Str];
-    var MGP:        Map[Str, Set[Str]]; // MaleGrandParent
+    var Parent:     Map[Str, Set[Str]]; // Str -> {Str}
+    var Male:       Set[Str];           // {Str}
+    var Female:     Set[Str];           // {Str}
+    var MGP:        Map[Str, Set[Str]]; // Str -> {Str}
 
     // TODO: paren free syntax:
     // fact Parent "Caroline" -> {"FritsT"};
+
+//    rule MGP x -> {z} if
+//        Parent x -> {y},
+//        Parent y -> {z},
+//        Male {z};
 
     fact Parent("Caroline"  -> {"IngerM"});
     fact Parent("Caroline"  -> {"FritsT"});
