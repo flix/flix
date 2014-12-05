@@ -12,6 +12,6 @@ namespace Graph {
     rule Reachable x -> {y} if Edge x -> {y};
     rule Reachable x -> {z} if Reachable x -> {y}, Reachable y -> {z};
 
-    rule Cycle {x} if Reachble x -> {x};
+    rule Cycle {x} if Reachable x -> {x};
 
 };
