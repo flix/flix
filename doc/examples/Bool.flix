@@ -43,11 +43,11 @@ namespace Example {
     var B: MyBool.Lat;
     var R: MyBool.Lat;
 
-    fact A(MyBool.True);
-    fact A(MyBool.False);
+    fact A MyBool.True;
+    fact A MyBool.False;
 
-    rule R(x) if A(x);
-    rule R(x) if B(x);
+    rule R x if A x;
+    rule R x if B x;
 
 };
 

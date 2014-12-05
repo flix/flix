@@ -245,15 +245,15 @@ object Ast {
 
     case class Lit(literal: Literal) extends Term
 
+    case class Apply(name: Seq[String], arguments: Seq[Term]) extends Term
+
+    case class Name(name: Seq[String]) extends Term
+
+    case class Tuple(elms: Seq[Term]) extends Term
+
     case class Set(elms: Seq[Term]) extends Term
 
-    case class Map(t1: Term, t2: Term) extends Term
-
-    case class Tuple(t1: Term, t2: Term) extends Term
-
-    case class VarOrNameRef(name: Seq[String]) extends Term
-
-    case class Call(name: Seq[String], arguments: Seq[Term]) extends Term
+    case class Map(key: Term, value: Term) extends Term
 
   }
 
@@ -346,6 +346,7 @@ object Ast {
     /**
      * An AST node which represents a product lattice type.
      */
+    // TODO: Do we actually need this? We have tuples!
     case class ProductLattice(t1: Type, t2: Type) extends LatticeType
 
     /**

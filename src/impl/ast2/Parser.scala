@@ -28,7 +28,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def Declaration: Rule1[Ast.Declaration] = rule {
-    NameSpace | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | LatticeDeclaration | FactDeclaration | RuleDeclaraction
+    NameSpace | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | LatticeDeclaration | RuleDeclaraction | FactDeclaration
   }
 
   def NameSpace: Rule1[Ast.Declaration.NameSpace] = rule {
@@ -83,45 +83,36 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   // --------------------------------------------------------------------
 
-
   def Predicate: Rule1[Ast.Predicate] = rule {
-    Ident ~ "(" ~ Term ~ ")" ~> Ast.Predicate
+    Ident ~ WhiteSpace ~ Term ~> Ast.Predicate
   }
 
-  // TODO: Allow expressions here? Probably no...
-  // TODO: Avoid duplication of literals.
-  // TODO: Figure out precedens of map, tuples, etc.
   def Term: Rule1[Ast.Term] = rule {
-    MapTerm
-  }
-
-  def MapTerm: Rule1[Ast.Term] = rule {
-    TupleTerm ~ zeroOrMore(WhiteSpace ~ "->" ~ WhiteSpace ~ TupleTerm ~> Ast.Term.Map)
-  }
-
-  // TODO: This is not a good idea!
-  def TupleTerm: Rule1[Ast.Term] = rule {
-    SimpleTerm ~ zeroOrMore("," ~ WhiteSpace ~ SimpleTerm ~> Ast.Term.Tuple)
+    SimpleTerm ~ zeroOrMore(WhiteSpace ~ "->" ~ WhiteSpace ~ SimpleTerm ~> Ast.Term.Map)
   }
 
   def SimpleTerm: Rule1[Ast.Term] = rule {
-    LiteralTerm | SetTerm | CallTerm | VarOrNameTerm
-  }
-
-  def SetTerm: Rule1[Ast.Term] = rule {
-    "{" ~ zeroOrMore(Term).separatedBy("," ~ WhiteSpace) ~ "}" ~> Ast.Term.Set
-  }
-
-  def VarOrNameTerm: Rule1[Ast.Term] = rule {
-    Name ~> Ast.Term.VarOrNameRef
-  }
-
-  def CallTerm: Rule1[Ast.Term.Call] = rule {
-    Name ~ "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Term.Call
+    LiteralTerm | ApplyTerm | NameTerm | TupleTerm | SetTerm
   }
 
   def LiteralTerm: Rule1[Ast.Term.Lit] = rule {
     Literal ~> Ast.Term.Lit
+  }
+
+  def ApplyTerm: Rule1[Ast.Term.Apply] = rule {
+    Name ~ "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Term.Apply
+  }
+
+  def NameTerm: Rule1[Ast.Term.Name] = rule {
+    Name ~> Ast.Term.Name
+  }
+
+  def TupleTerm: Rule1[Ast.Term.Tuple] = rule {
+    "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Term.Tuple
+  }
+
+  def SetTerm: Rule1[Ast.Term.Set] = rule {
+    "{" ~ oneOrMore(SimpleTerm).separatedBy("," ~ WhiteSpace) ~ "}" ~> Ast.Term.Set
   }
 
   // --------------------------------------------------------------------

@@ -78,18 +78,18 @@ namespace Sign {
     //var Plus:       {(Var, Var, Var)}; // TODO
     var Value:      Var -> Sign;
 
-    fact Constant("x" -> 21);
-    fact Constant("y" -> 42);
+    fact Constant "x" -> 21;
+    fact Constant "y" -> 42;
 
-    fact Plus("z", "x", "y");
+    fact Plus ("z", "x", "y");
 
-    rule Value(x -> lift(v)) if
-        Const(x -> v);
+    rule Value x -> lift(v) if
+        Const x -> v;
 
-    rule Value(r -> sum(v1, v2)) if
-        Plus(r, x, y),
-        Value(x -> v1),
-        Value(y -> v2);
+    rule Value r -> sum(v1, v2) if
+        Plus (r, x, y),
+        Value x -> v1,
+        Value y -> v2;
 
 };
 
