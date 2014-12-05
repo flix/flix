@@ -1,8 +1,10 @@
 namespace Graph {
 
-    var Edge:           Str -> {Str};
-    var Reachable:      Str -> {Str};
-    var Cycle:          {Str};
+    type Vertex = Str;
+
+    var Edge:           Vertex -> {Vertex};
+    var Reachable:      Vertex -> {Vertex};
+    var Cycle:          {Vertex};
 
     fact Edge "a" -> {"b"};
     fact Edge "b" -> {"a"};
