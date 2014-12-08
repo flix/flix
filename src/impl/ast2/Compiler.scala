@@ -151,10 +151,17 @@ object Compiler {
     def visit(ast: Ast.Expression, env: Environment): Ast.Expression = ast match {
       //case Ast.Expression.VarOrNameRef(name) => lookupVal(namespace, name, env)
 
+      case e: Ast.Expression.Var => ??? // introduced
+
+      case e: Ast.Expression.Lit => e
+      case Ast.Expression.Unary(op, e) => Ast.Expression.Unary(op, visit(e, env))
+      case Ast.Expression.Binary(e1, op, e2) => ???
+
       case Ast.Expression.Record(elms) => Ast.Expression.Record(elms map {
         case (name, e) => (name, visit(e, env))
       })
     }
+
 
     // TODO: Messy. Rewrite.
     def lookupVal(namespace: Name, name: Name, env: Environment): Ast.Expression = {
@@ -173,21 +180,6 @@ object Compiler {
         else throw new RuntimeException("Ambigious name")
       }
     }
-
-    //
-    //
-    //
-    //    def link(ast: Ast.Root, env: MultiMap[List[String], Ast.Declaration]): Ast.Root = ???
-    //
-    //    def link(ast: Ast.Expression, env: MultiMap[List[String], Ast.Declaration], bound: Set[String]): Ast.Expression = ast match {
-    //      case Ast.Expression.VarOrNameRef(name) => ??? // todo lookup
-    //    }
-    //
-    //    def link(ast: Ast.Type, namespace: List[String], env: Map[List[String], Ast.Declaration]): Ast.Type = ast match {
-    //      case Ast.Type.NameRef(name) => ???
-    //    }
-    //
-    //    def lookupType(name: List[String], namespace: List[String], env: MultiMap[List[String], Ast.Declaration]): Ast.Type = ???
 
   }
 
