@@ -56,7 +56,7 @@ object Ast {
     /**
      * An AST node which represents a lattice declaration.
      */
-    case class Lattice(name: String, record: Expression.Record) extends Declaration
+    case class Lattice(name: String, record: Expression) extends Declaration
 
     /**
      * An AST node which represents a fact declaration.

@@ -8,8 +8,8 @@ object Compiler {
 
   def compile(ast: Ast.Root): Ast.Root = {
     val ast2 = Desugaring.desugar(ast)
-    val env = Environments.visit(ast);
-
+    val env = Environments.visit(ast)
+    val ast3 = Linking.visit(ast, env)
     println(env)
 
     ast
@@ -55,12 +55,6 @@ object Compiler {
     }
   }
 
-
-  // TODO: Check
-  // -unresolved references
-  // -ambigious decls
-  // -patterns with the same variable
-  // -recursive types, calls, etc.
 
   /**
    * A compiler-phases which constructs environments (i.e. the symbol table).
@@ -128,22 +122,53 @@ object Compiler {
     def withSuffix(name: Name, suffix: Seq[String]): Name = name ::: suffix.toList
   }
 
+  // TODO: Check
+  // -unresolved references
+  // -ambigious decls
+  // -patterns with the same variable
+  // -recursive types, calls, etc.
+  /**
+   * A compiler-phase which replaces name references by their actuals.
+   */
   object Linking {
     // replaces all names by their actuals.
 
-    def link(ast: Ast.Root, env: MultiMap[List[String], Ast.Declaration]): Ast.Root = ???
+    import Environments._
 
-    def link(ast: Ast.Expression, env: MultiMap[List[String], Ast.Declaration], bound: Set[String]): Ast.Expression = ast match {
-      case Ast.Expression.VarOrNameRef(name) => ??? // todo lookup
+    def visit(ast: Ast.Root, env: Environment): Ast.Root = Ast.Root(ast.decls map {
+      case decl => visit(decl, env)
+    })
+
+    def visit(ast: Ast.Declaration, env: Environment): Ast.Declaration = ast match {
+      case Ast.Declaration.NameSpace(name, body) => Ast.Declaration.NameSpace(name, body map {
+        case decl => visit(decl, env)
+      })
+      case decl: Ast.Declaration.Lattice => decl.copy(record = visit(decl.record, env))
+
+      case _ => ast
     }
 
-    def link(ast: Ast.Type, namespace: List[String], env: Map[List[String], Ast.Declaration]): Ast.Type = ast match {
-      case Ast.Type.NameRef(name) => ???
+    def visit(ast: Ast.Expression, env: Environment): Ast.Expression = ast match {
+      case Ast.Expression.Record(elms) => ???
     }
 
-    def lookupType(name: List[String], namespace: List[String], env: MultiMap[List[String], Ast.Declaration]): Ast.Type = ???
+    //
+    //
+    //
+    //    def link(ast: Ast.Root, env: MultiMap[List[String], Ast.Declaration]): Ast.Root = ???
+    //
+    //    def link(ast: Ast.Expression, env: MultiMap[List[String], Ast.Declaration], bound: Set[String]): Ast.Expression = ast match {
+    //      case Ast.Expression.VarOrNameRef(name) => ??? // todo lookup
+    //    }
+    //
+    //    def link(ast: Ast.Type, namespace: List[String], env: Map[List[String], Ast.Declaration]): Ast.Type = ast match {
+    //      case Ast.Type.NameRef(name) => ???
+    //    }
+    //
+    //    def lookupType(name: List[String], namespace: List[String], env: MultiMap[List[String], Ast.Declaration]): Ast.Type = ???
 
   }
+
 
   // TODO: Move somewhere appropiate.
   object MultiMap {
