@@ -8,9 +8,14 @@ object Compiler {
 
   def compile(ast: Ast.Root): Ast.Root = {
     val ast2 = Desugaring.desugar(ast)
-    Linking.link(ast2)
+    val env = Environments.visit(ast);
+
+    ast
   }
 
+  /**
+   * An environment which performs desugaring.
+   */
   object Desugaring {
 
     /**
@@ -55,27 +60,82 @@ object Compiler {
   // -patterns with the same variable
   // -recursive types, calls, etc.
 
+  /**
+   * A compiler-phases which constructs environments (i.e. the symbol table).
+   */
+  object Environments {
+
+    /**
+     * A (fully qualified) name is a list of strings.
+     */
+    type Name = List[String]
+
+    /**
+     * An environment is map from names to ast declaractions.
+     *
+     * An environment may contain multiple declaractions for the same names:
+     *
+     * (1) Names may be overloaded for values, types, etc.
+     * (2) Names may be ambiguous.
+     */
+    type Environment = MultiMap[Name, Ast.Declaration]
+
+    /**
+     * The empty environment.
+     */
+    val Empty = MultiMap.empty[Name, Ast.Declaration]
+
+    /**
+     * Returns an environment with the given mapping.
+     */
+    def environmentOf(kv: (Name, Ast.Declaration)): Environment = ???
+
+    /**
+     * Returns a map from fully qualified names to ast declarations.
+     */
+    def visit(ast: Ast.Root): Environment = ast match {
+      case Ast.Root(decls) => (decls foldLeft Empty) {
+        case (env, decl) => env ++ visit(Nil, decl)
+      }
+    }
+
+    /**
+     * Returns a map from fully qualified names to ast declaractions assuming the declarations reside under the given namespace.
+     */
+    def visit(namespace: Name, ast: Ast.Declaration): Environment = ast match {
+      case Ast.Declaration.TypeDecl(name, typ) => ???
+      case decl: Ast.Declaration.Val => environmentOf(namespace -> decl)
+      case decl: Ast.Declaration.Function => ???
+    }
+
+
+  }
 
   object Linking {
+    // replaces all names by their actuals.
 
-    def link(ast: Ast.Root): Ast.Root = {
-      ???
+    def link(ast: Ast.Root, env: MultiMap[List[String], Ast.Declaration]): Ast.Root = ???
+
+    def link(ast: Ast.Expression, env: MultiMap[List[String], Ast.Declaration], bound: Set[String]): Ast.Expression = ast match {
+      case Ast.Expression.VarOrNameRef(name) => ??? // todo lookup
     }
 
-
-    def visit(ast: Ast.Root): Map[List[String], Ast.Type] = ast match {
-      case Ast.Root(decls) => merge(decls map (d => visit(Nil, d)))
+    def link(ast: Ast.Type, namespace: List[String], env: Map[List[String], Ast.Declaration]): Ast.Type = ast match {
+      case Ast.Type.NameRef(name) => ???
     }
 
-    def visit(namespace: List[String], ast: Ast.Declaration): Map[List[String], Ast.Type] = ast match {
-      case Ast.Declaration.TypeDecl(name, typ) => Map((namespace ::: List(name)) -> typ)
-    }
+    def lookupType(name: List[String], namespace: List[String], env: MultiMap[List[String], Ast.Declaration]): Ast.Type = ???
 
-    def merge(xs: Seq[Map[List[String], Ast.Type]]): Map[List[String], Ast.Type] = ???
+  }
 
-    def merge(m1: Map[List[String], Ast.Type], m2: Map[List[String], Ast.Type]): Map[List[String], Ast.Type] = ???
+  object MultiMap {
+    def empty[K, V]: MultiMap[K, V] = ???
 
+    def apply[K, V](x: (K, V)): MultiMap[K, V] = ???
+  }
 
+  class MultiMap[K, V](m: Map[K, Set[V]]) {
+    def ++(that: MultiMap[K, V]): MultiMap[K, V] = ???
   }
 
   object Translation {
