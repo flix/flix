@@ -169,7 +169,7 @@ object Compiler {
         val values2 = env.get(name).collect {
           case d: Ast.Declaration.Val => d
         }
-        if (values.size == 1) return values.head.exp
+        if (values2.size == 1) return values.head.exp
         else throw new RuntimeException("Ambigious name")
       }
     }
