@@ -47,8 +47,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "var" ~ WhiteSpace ~ Ident ~ ":" ~ WhiteSpace ~ LatticeType ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Var
   }
 
-  def FunctionDeclaration: Rule1[Ast.Declaration.Function] = rule {
-    zeroOrMore(Annotation) ~ "def" ~ WhiteSpace ~ Ident ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Function
+  def FunctionDeclaration: Rule1[Ast.Declaration.Fun] = rule {
+    zeroOrMore(Annotation) ~ "def" ~ WhiteSpace ~ Ident ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Fun
   }
 
   // TODO: Remove

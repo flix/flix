@@ -10,6 +10,8 @@ object Compiler {
     val ast2 = Desugaring.desugar(ast)
     val env = Environments.visit(ast);
 
+    println(env)
+
     ast
   }
 
@@ -88,7 +90,7 @@ object Compiler {
     /**
      * Returns an environment with the given mapping.
      */
-    def environmentOf(kv: (Name, Ast.Declaration)): Environment = ???
+    def environmentOf(kv: (Name, Ast.Declaration)): Environment = MultiMap(kv)
 
     /**
      * Returns a map from fully qualified names to ast declarations.
@@ -103,12 +105,27 @@ object Compiler {
      * Returns a map from fully qualified names to ast declaractions assuming the declarations reside under the given namespace.
      */
     def visit(namespace: Name, ast: Ast.Declaration): Environment = ast match {
-      case Ast.Declaration.TypeDecl(name, typ) => ???
-      case decl: Ast.Declaration.Val => environmentOf(namespace -> decl)
-      case decl: Ast.Declaration.Function => ???
+      case Ast.Declaration.NameSpace(name, body) => (body foldLeft Empty) {
+        case (env, decl) => env ++ visit(withSuffix(namespace, name), decl)
+      }
+      case decl: Ast.Declaration.TypeDecl => environmentOf(withSuffix(namespace, decl.name) -> decl)
+      case decl: Ast.Declaration.Val => environmentOf(withSuffix(namespace, decl.name) -> decl)
+      case decl: Ast.Declaration.Var => environmentOf(withSuffix(namespace, decl.name) -> decl)
+      case decl: Ast.Declaration.Fun => environmentOf(withSuffix(namespace, decl.name) -> decl)
+      case decl: Ast.Declaration.Lattice => Empty
+      case decl: Ast.Declaration.Fact => Empty
+      case decl: Ast.Declaration.Rule => Empty
     }
 
+    /**
+     * Returns `name` . `suffix`.
+     */
+    def withSuffix(name: Name, suffix: String): Name = name ::: List(suffix)
 
+    /**
+     * Returns `name` . `suffix`.
+     */
+    def withSuffix(name: Name, suffix: Seq[String]): Name = name ::: suffix.toList
   }
 
   object Linking {
@@ -128,14 +145,23 @@ object Compiler {
 
   }
 
+  // TODO: Move somewhere appropiate.
   object MultiMap {
-    def empty[K, V]: MultiMap[K, V] = ???
+    def empty[K, V]: MultiMap[K, V] = new MultiMap[K, V](Map.empty[K, Set[V]])
 
-    def apply[K, V](x: (K, V)): MultiMap[K, V] = ???
+    def apply[K, V](kv: (K, V)): MultiMap[K, V] = new MultiMap[K, V](Map[K, Set[V]](kv._1 -> Set(kv._2)))
   }
 
-  class MultiMap[K, V](m: Map[K, Set[V]]) {
-    def ++(that: MultiMap[K, V]): MultiMap[K, V] = ???
+  class MultiMap[K, V](val m: Map[K, Set[V]]) {
+    def ++(that: MultiMap[K, V]): MultiMap[K, V] = new MultiMap(
+      (that.m foldLeft this.m) {
+        case (acc, (thatKey, thatValues)) =>
+          val thisValues = acc.getOrElse(thatKey, Set.empty)
+          acc + (thatKey -> (thisValues ++ thatValues))
+      }
+    )
+
+    override def toString: String = m.toString()
   }
 
   object Translation {

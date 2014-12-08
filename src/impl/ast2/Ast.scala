@@ -51,7 +51,7 @@ object Ast {
     /**
      * An AST node which represents a function declaration.
      */
-    case class Function(annotations: Seq[String], name: String, arguments: Seq[(String, Type)], typ: Type, body: Expression) extends Declaration
+    case class Fun(annotations: Seq[String], name: String, arguments: Seq[(String, Type)], typ: Type, body: Expression) extends Declaration
 
     /**
      * An AST node which represents a lattice declaration.
