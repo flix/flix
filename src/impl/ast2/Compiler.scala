@@ -149,7 +149,29 @@ object Compiler {
     }
 
     def visit(ast: Ast.Expression, env: Environment): Ast.Expression = ast match {
-      case Ast.Expression.Record(elms) => ???
+      //case Ast.Expression.VarOrNameRef(name) => lookupVal(namespace, name, env)
+
+      case Ast.Expression.Record(elms) => Ast.Expression.Record(elms map {
+        case (name, e) => (name, visit(e, env))
+      })
+    }
+
+    // TODO: Messy. Rewrite.
+    def lookupVal(namespace: Name, name: Name, env: Environment): Ast.Expression = {
+      // Case 1: lookup in the current namespace, i.e. namespace . name
+      val values = env.get(namespace ::: name).collect {
+        case d: Ast.Declaration.Val => d
+      }
+
+      if (values.size > 1) throw new RuntimeException("Ambigious name")
+      else {
+        // try global namespace: name
+        val values2 = env.get(name).collect {
+          case d: Ast.Declaration.Val => d
+        }
+        if (values.size == 1) return values.head.exp
+        else throw new RuntimeException("Ambigious name")
+      }
     }
 
     //
@@ -178,6 +200,8 @@ object Compiler {
   }
 
   class MultiMap[K, V](val m: Map[K, Set[V]]) {
+    def get(k: K): Set[V] = m.getOrElse(k, Set.empty[V])
+
     def ++(that: MultiMap[K, V]): MultiMap[K, V] = new MultiMap(
       (that.m foldLeft this.m) {
         case (acc, (thatKey, thatValues)) =>
