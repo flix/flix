@@ -67,6 +67,11 @@ object Ast {
      */
     case class Rule(head: Predicate, body: Seq[Predicate]) extends Declaration
 
+    /**
+     * An AST node which represents a tag declaration.
+     */
+    @Introduced
+    case class Tag(name: String, tag: Type.Tag, enum: Type.Enum) extends Declaration
   }
 
   /**

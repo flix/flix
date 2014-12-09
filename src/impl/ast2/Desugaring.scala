@@ -24,7 +24,7 @@ object Desugaring {
 
     case _ => ast; // TODO
 
-      // TODO: Introduce synthetic Tag declaraction? Declaraction.Tag(name, tpe, tpe)
+    // TODO: Introduce synthetic Tag declaraction? Declaraction.Tag(name, tpe, tpe)
   }
 
   /**
@@ -49,6 +49,10 @@ object Desugaring {
   /**
    * returns the tags...
    */
+  def tagsOf(tpe: Type): Set[Declaration] = tpe match {
+    case x@Type.Enum(tags) => (tags map (t => Declaration.Tag(t.name, t, x))).toSet
+    case _ => Set.empty // TODO should recurse
+  }
 
 }
 
