@@ -102,9 +102,12 @@ object Ast {
   object Expression {
 
     /**
-     * An AST node which represents a literal.
+     * An AST node which represents a variable or name reference.
+     *
+     * Eliminated by the compiler.
      */
-    case class Lit(literal: Literal) extends Expression
+    @Eliminated
+    case class VarOrNameRef(name: Seq[String]) extends Expression
 
     /**
      * An AST node which represents a reference to a variable.
@@ -113,6 +116,11 @@ object Ast {
      */
     @Introduced
     case class Var(name: String) extends Expression
+
+    /**
+     * An AST node which represents a literal.
+     */
+    case class Lit(literal: Literal) extends Expression
 
     /**
      * An AST node which represents unary expressions.
@@ -126,10 +134,7 @@ object Ast {
 
     /**
      * An AST node which represents an infix expression.
-     *
-     * Translated to a call by the compiler.
      */
-    @Eliminated
     case class Infix(e1: Expression, name: Seq[String], e2: Expression) extends Expression
 
     /**
@@ -171,14 +176,6 @@ object Ast {
      * An AST node which represents a record expression.
      */
     case class Record(elms: Seq[(String, Expression)]) extends Expression
-
-    /**
-     * An AST node which represents a variable or name reference.
-     *
-     * Eliminated by the compiler.
-     */
-    @Eliminated
-    case class VarOrNameRef(name: Seq[String]) extends Expression
 
     /**
      * An AST node which represents an error expression.

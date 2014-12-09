@@ -227,4 +227,15 @@ object Term {
   case class Tuple5(t1: Term, t2: Term, t3: Term, t4: Term, t5: Term) extends Term
 
   case class ScalaFunction(fn: (Value => Value)) extends Term
+
+
+  /**
+   * TODO: Introduce new terms starting here.
+   */
+  // case class BNot(t: Term) extends Term
+  // case class BAnd(t: Term) extends Term
+  // case class IAdd
+  // case class Apply
+  // etc.
+
 }
