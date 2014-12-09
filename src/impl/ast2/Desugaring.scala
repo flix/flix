@@ -23,6 +23,8 @@ object Desugaring {
     case Declaration.Val(name, tpe, exp) => ???
 
     case _ => ast; // TODO
+
+      // TODO: Introduce synthetic Tag declaraction? Declaraction.Tag(name, tpe, tpe)
   }
 
   /**
@@ -43,5 +45,10 @@ object Desugaring {
 
     case _ => ast // TODO
   }
+
+  /**
+   * returns the tags...
+   */
+
 }
 
