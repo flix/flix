@@ -20,6 +20,8 @@ object Compiler {
    */
   object Desugaring {
 
+    // TODO: Is there any need to actual do desugaring????
+
     /**
      * Desugars the entire ast.
      */
@@ -143,22 +145,28 @@ object Compiler {
       case Ast.Declaration.NameSpace(name, body) => Ast.Declaration.NameSpace(name, body map {
         case decl => visit(decl, env)
       })
-      case decl: Ast.Declaration.Lattice => decl.copy(record = visit(decl.record, env))
+      case decl: Ast.Declaration.Lattice => decl.copy(record = disambiguate(Nil, decl.record, env, Set.empty))
 
       case _ => ast
     }
 
-    def visit(ast: Ast.Expression, env: Environment): Ast.Expression = ast match {
-      //case Ast.Expression.VarOrNameRef(name) => lookupVal(namespace, name, env)
+    /**
+     * Replaces all ambiguous names in the given expression.
+     */
+    def disambiguate(namespace: Name, ast: Ast.Expression, env: Environment, bound: Set[String]): Ast.Expression = ast match {
+
+      case Ast.Expression.VarOrNameRef(name) => lookupVal(namespace, name.toList, env)
 
       case e: Ast.Expression.Var => ??? // introduced
 
       case e: Ast.Expression.Lit => e
-      case Ast.Expression.Unary(op, e) => Ast.Expression.Unary(op, visit(e, env))
-      case Ast.Expression.Binary(e1, op, e2) => ???
+
+      case Ast.Expression.Unary(op, e) => Ast.Expression.Unary(op, disambiguate(namespace, e, env, bound))
+      case Ast.Expression.Binary(e1, op, e2) => Ast.Expression.Binary(disambiguate(namespace, e1, env, bound), op, disambiguate(namespace, e2, env, bound))
+
 
       case Ast.Expression.Record(elms) => Ast.Expression.Record(elms map {
-        case (name, e) => (name, visit(e, env))
+        case (name, e) => (name, disambiguate(namespace, e, env, bound))
       })
     }
 
@@ -177,33 +185,13 @@ object Compiler {
           case d: Ast.Declaration.Val => d
         }
         if (values2.size == 1) return values.head.exp
-        else throw new RuntimeException("Ambigious name")
+        else if (values2.isEmpty) throw new RuntimeException("Name not found: " + name)
+        else throw new RuntimeException("Ambigious name: " + values2)
       }
     }
 
   }
 
-
-  // TODO: Move somewhere appropiate.
-  object MultiMap {
-    def empty[K, V]: MultiMap[K, V] = new MultiMap[K, V](Map.empty[K, Set[V]])
-
-    def apply[K, V](kv: (K, V)): MultiMap[K, V] = new MultiMap[K, V](Map[K, Set[V]](kv._1 -> Set(kv._2)))
-  }
-
-  class MultiMap[K, V](val m: Map[K, Set[V]]) {
-    def get(k: K): Set[V] = m.getOrElse(k, Set.empty[V])
-
-    def ++(that: MultiMap[K, V]): MultiMap[K, V] = new MultiMap(
-      (that.m foldLeft this.m) {
-        case (acc, (thatKey, thatValues)) =>
-          val thisValues = acc.getOrElse(thatKey, Set.empty)
-          acc + (thatKey -> (thisValues ++ thatValues))
-      }
-    )
-
-    override def toString: String = m.toString()
-  }
 
   object Translation {
 
@@ -272,12 +260,31 @@ object Compiler {
       case Ast.Type.NameRef(name) => throw CompilerException(s"Unresolved named type: $name.")
     }
 
-    /**
-     * Compiles an ast name into a named symbol.
-     */
   }
 
 
   case class CompilerException(msg: String) extends RuntimeException(msg)
+
+
+  // TODO: Move somewhere appropiate.
+  object MultiMap {
+    def empty[K, V]: MultiMap[K, V] = new MultiMap[K, V](Map.empty[K, Set[V]])
+
+    def apply[K, V](kv: (K, V)): MultiMap[K, V] = new MultiMap[K, V](Map[K, Set[V]](kv._1 -> Set(kv._2)))
+  }
+
+  class MultiMap[K, V](val m: Map[K, Set[V]]) {
+    def get(k: K): Set[V] = m.getOrElse(k, Set.empty[V])
+
+    def ++(that: MultiMap[K, V]): MultiMap[K, V] = new MultiMap(
+      (that.m foldLeft this.m) {
+        case (acc, (thatKey, thatValues)) =>
+          val thisValues = acc.getOrElse(thatKey, Set.empty)
+          acc + (thatKey -> (thisValues ++ thatValues))
+      }
+    )
+
+    override def toString: String = m.toString()
+  }
 
 }
