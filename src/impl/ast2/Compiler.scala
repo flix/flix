@@ -16,11 +16,9 @@ object Compiler {
   }
 
   /**
-   * An environment which performs desugaring.
+   * A compiler-phase which performs desugaring.
    */
   object Desugaring {
-
-    // TODO: Is there any need to actual do desugaring????
 
     /**
      * Desugars the entire ast.
@@ -33,7 +31,10 @@ object Compiler {
      * Desugars the given ast declaration.
      */
     def desugar(ast: Ast.Declaration): Ast.Declaration = ast match {
+      case Ast.Declaration.NameSpace(name, decls) => Ast.Declaration.NameSpace(name, decls map desugar)
       case Ast.Declaration.TypeDecl(name, typ) => Ast.Declaration.TypeDecl(name, desugar(typ))
+
+
       case _ => ast; // TODO
     }
 
