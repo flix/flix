@@ -8,8 +8,8 @@ object Compiler {
 
   def compile(ast: Ast.Root): Ast.Root = {
     val ast2 = Desugaring.desugar(ast)
-    val env = Environments.visit(ast)
-    val ast3 = Linking.visit(ast, env)
+    val env = Symbols.visit(ast)
+    val ast3 = Disambiguation.visit(ast, env)
     println(env)
 
     ast
@@ -62,7 +62,7 @@ object Compiler {
   /**
    * A compiler-phases which constructs environments (i.e. the symbol table).
    */
-  object Environments {
+  object Symbols {
 
     /**
      * A (fully qualified) name is a list of strings.
@@ -133,10 +133,10 @@ object Compiler {
   /**
    * A compiler-phase which replaces name references by their actuals.
    */
-  object Linking {
+  object Disambiguation {
     // replaces all names by their actuals.
 
-    import Environments._
+    import Symbols._
 
     def visit(ast: Ast.Root, env: Environment): Ast.Root = Ast.Root(ast.decls map {
       case decl => visit(decl, env)
@@ -186,7 +186,8 @@ object Compiler {
           case d: Ast.Declaration.Val => d
         }
         if (values2.size == 1) return values.head.exp
-        else if (values2.isEmpty) throw new RuntimeException("Name not found: " + name)
+        else if (values2.isEmpty)
+          throw new RuntimeException("Name not found: " + name)
         else throw new RuntimeException("Ambigious name: " + values2)
       }
     }
