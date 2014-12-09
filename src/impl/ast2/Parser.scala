@@ -35,8 +35,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "namespace" ~ WhiteSpace ~ Name ~ WhiteSpace ~ '{' ~ optional(WhiteSpace) ~ zeroOrMore(Declaration) ~ optional(WhiteSpace) ~ '}' ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.NameSpace
   }
 
-  def TypeDeclaration: Rule1[Ast.Declaration.TypeDecl] = rule {
-    "type" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Type ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.TypeDecl
+  def TypeDeclaration: Rule1[Ast.Declaration.Tpe] = rule {
+    "type" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Type ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Tpe
   }
 
   def ValueDeclaration: Rule1[Ast.Declaration.Val] = rule {
@@ -202,8 +202,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~> ((k: String, v: Ast.Expression) => (k, v))
   }
 
-  def VariableExp: Rule1[Ast.Expression.VarOrNameRef] = rule {
-    Name ~> Ast.Expression.VarOrNameRef
+  def VariableExp: Rule1[Ast.Expression.AmbiguousName] = rule {
+    Name ~> Ast.Expression.AmbiguousName
   }
 
 
@@ -246,8 +246,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     TupleType | SetType | RelType | MapType | EnumType | NameRefType
   }
 
-  def NameRefType: Rule1[Ast.Type.NameRef] = rule {
-    Name ~> Ast.Type.NameRef
+  def NameRefType: Rule1[Ast.Type.AmbiguousName] = rule {
+    Name ~> Ast.Type.AmbiguousName
   }
 
   def TupleType: Rule1[Ast.Type.Tuple] = rule {

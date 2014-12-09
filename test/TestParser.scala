@@ -299,7 +299,7 @@ class TestParser extends FunSuite {
   ignore("Parser.Call01") {
     val s = """val e: Bool = f(1);"""
     val a = Ast.Root(Seq(Ast.Declaration.Val("e", Ast.Type.Bool,
-      Ast.Expression.Call(Ast.Expression.VarOrNameRef(Seq("f")), Seq(Ast.Expression.Lit(Ast.Literal.Int(1)))))))
+      Ast.Expression.Call(Ast.Expression.AmbiguousName(Seq("f")), Seq(Ast.Expression.Lit(Ast.Literal.Int(1)))))))
 
     assertResult(a)(Parser.parse(s))
   }
@@ -307,7 +307,7 @@ class TestParser extends FunSuite {
   ignore("Parser.Call02") {
     val s = """val e: Bool = f(1, 2, 3);"""
     val a = Ast.Root(Seq(Ast.Declaration.Val("e", Ast.Type.Bool,
-      Ast.Expression.Call(Ast.Expression.VarOrNameRef(Seq("f")), Seq(Ast.Expression.Lit(Ast.Literal.Int(1)))))))
+      Ast.Expression.Call(Ast.Expression.AmbiguousName(Seq("f")), Seq(Ast.Expression.Lit(Ast.Literal.Int(1)))))))
 
     assertResult(a)(Parser.parse(s))
   }
@@ -315,7 +315,7 @@ class TestParser extends FunSuite {
   ignore("Parser.Call03") {
     val s = """val e: Bool = f(g(h(x, y, z);"""
     val a = Ast.Root(Seq(Ast.Declaration.Val("e", Ast.Type.Bool,
-      Ast.Expression.Call(Ast.Expression.VarOrNameRef(Seq("f")), Seq(Ast.Expression.Lit(Ast.Literal.Int(1)))))))
+      Ast.Expression.Call(Ast.Expression.AmbiguousName(Seq("f")), Seq(Ast.Expression.Lit(Ast.Literal.Int(1)))))))
 
     assertResult(a)(Parser.parse(s))
   }
@@ -334,11 +334,11 @@ class TestParser extends FunSuite {
   }
 
   private def getType(root: Ast.Root): Ast.Type = Compiler.compile(root) match {
-    case Ast.Root(Seq(Ast.Declaration.TypeDecl(_, typ))) => typ
+    case Ast.Root(Seq(Ast.Declaration.Tpe(_, typ))) => typ
     case _ => throw new RuntimeException()
   }
 
-  private implicit def string2nameexp(s: String): Ast.Expression.VarOrNameRef =
-    Ast.Expression.VarOrNameRef(Seq(s))
+  private implicit def string2nameexp(s: String): Ast.Expression.AmbiguousName =
+    Ast.Expression.AmbiguousName(Seq(s))
 
 }

@@ -19,7 +19,7 @@ object Desugaring {
    */
   def desugar(ast: Declaration): Declaration = ast match {
     case Declaration.NameSpace(name, decls) => Declaration.NameSpace(name, decls map desugar)
-    case Declaration.TypeDecl(name, tpe) => Declaration.TypeDecl(name, desugar(tpe))
+    case Declaration.Tpe(name, tpe) => Declaration.Tpe(name, desugar(tpe))
     case Declaration.Val(name, tpe, exp) => ???
 
     case _ => ast; // TODO
@@ -31,10 +31,10 @@ object Desugaring {
    * Desugars the given ast type.
    */
   def desugar(ast: Type): Type = ast match {
-    case Type.NameRef(Seq("Unit")) => Type.Unit
-    case Type.NameRef(Seq("Bool")) => Type.Bool
-    case Type.NameRef(Seq("Int")) => Type.Int
-    case Type.NameRef(Seq("Str")) => Type.Str
+    case Type.AmbiguousName(Seq("Unit")) => Type.Unit
+    case Type.AmbiguousName(Seq("Bool")) => Type.Bool
+    case Type.AmbiguousName(Seq("Int")) => Type.Int
+    case Type.AmbiguousName(Seq("Str")) => Type.Str
 
     case Type.Tuple(elms) => Type.Tuple(elms map desugar)
     case Type.Set(elms) => Type.Set(desugar(elms))

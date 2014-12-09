@@ -35,8 +35,7 @@ object Ast {
     /**
      * An AST node which represents a type declaration.
      */
-    // TODO: Naming issue? Why can't this be called type?
-    case class TypeDecl(name: String, typ: Type) extends Declaration
+    case class Tpe(name: String, typ: Type) extends Declaration
 
     /**
      * An AST node which represents a value declaration.
@@ -102,12 +101,10 @@ object Ast {
   object Expression {
 
     /**
-     * An AST node which represents a variable or name reference.
-     *
-     * Eliminated by the compiler.
+     * An AST node which represents either a variable or a reference to a named value.
      */
     @Eliminated
-    case class VarOrNameRef(name: Seq[String]) extends Expression
+    case class AmbiguousName(name: Seq[String]) extends Expression
 
     /**
      * An AST node which represents a reference to a variable.
@@ -268,7 +265,7 @@ object Ast {
      * Eliminated by the compiler.
      */
     @Eliminated
-    case class NameRef(name: Seq[String]) extends Type
+    case class AmbiguousName(name: Seq[String]) extends Type
 
     /**
      * An AST node which represents the unit type.
