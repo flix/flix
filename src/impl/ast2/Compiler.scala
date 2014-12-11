@@ -176,8 +176,10 @@ object Compiler {
      * Disambiguates the given type `ast`.
      */
     def disambiguate(ast: Ast.Type, namespace: Name, env: Environment): Ast.Type = ast match {
+      case Type.AmbiguousName(Seq("Unit")) => Type.Unit
       case Type.AmbiguousName(Seq("Bool")) => Type.Bool
-
+      case Type.AmbiguousName(Seq("Int")) => Type.Int
+      case Type.AmbiguousName(Seq("Str")) => Type.Str
       case Type.Unit => Type.Unit
       case Type.Bool => Type.Bool
       case Type.Int => Type.Int
