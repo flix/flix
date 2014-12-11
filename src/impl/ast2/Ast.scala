@@ -82,6 +82,11 @@ object Ast {
   object Literal {
 
     /**
+     * An AST node which represents the unit literal.
+     */
+    case object Unit extends Literal
+
+    /**
      * An AST node which represents a boolean literal.
      */
     case class Bool(literal: scala.Boolean) extends Literal
@@ -118,12 +123,6 @@ object Ast {
      */
     @Introduced
     case class Var(name: String) extends Expression
-
-    /**
-     * An AST node which represents the unit value. // TODO: Should be literal?
-     */
-    @Introduced
-    case object Unit extends Expression
 
     /**
      * An AST node which represents a literal.

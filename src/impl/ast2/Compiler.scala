@@ -113,9 +113,14 @@ object Compiler {
       case Ast.Declaration.NameSpace(name, body) => Ast.Declaration.NameSpace(name, body map {
         case decl => disambiguate(withSuffix(namespace, name), decl, env)
       })
+      case decl: Ast.Declaration.Tpe => ???
+      case decl: Ast.Declaration.Enum => ???
+      case decl: Ast.Declaration.Val => ???
+      case decl: Ast.Declaration.Var => ???
       case decl: Ast.Declaration.Fun => decl.copy(body = disambiguate(namespace, decl.body, env, Set.empty)) // TODO.. Bound
       case decl: Ast.Declaration.Lattice => decl.copy(record = disambiguate(namespace, decl.record, env, Set.empty))
-      case _ => ast
+      case decl: Ast.Declaration.Fact => ???
+      case decl: Ast.Declaration.Rule => ???
     }
 
     /**
@@ -123,9 +128,26 @@ object Compiler {
      */
     def disambiguate(namespace: Name, ast: Ast.Expression, env: Environment, bound: Set[String]): Ast.Expression = ast match {
       case Ast.Expression.AmbiguousName(name) => lookupExp(namespace, name.toList, env)
-      case e: Ast.Expression.Lit => e
+      case Ast.Expression.Var(name) => ???
+      case Ast.Expression.Lit(literal) => ast
       case Ast.Expression.Unary(op, e) => Ast.Expression.Unary(op, disambiguate(namespace, e, env, bound))
       case Ast.Expression.Binary(e1, op, e2) => Ast.Expression.Binary(disambiguate(namespace, e1, env, bound), op, disambiguate(namespace, e2, env, bound))
+      case Ast.Expression.Infix(e1, name, e2) => ???
+      case Ast.Expression.Let(name, value, body) => ???
+      case Ast.Expression.IfThenElse(e1, e2, e3) => ???
+      case Ast.Expression.Match(exp, rules) =>
+        val dexp = disambiguate(namespace, exp, env, bound)
+        val drules = rules map {
+          case (p, e) => (p, disambiguate(namespace, e, env, bound)) // TODO: Variables bound by pattern.
+        }
+        Ast.Expression.Match(dexp, drules)
+
+      case Ast.Expression.Call(f, args) => ???
+
+      case Ast.Expression.Tag(name, e) => ???
+
+      case Ast.Expression.Set(elms) => ???
+
       case Ast.Expression.Tuple(elms) =>
         val delms = elms map (e => disambiguate(namespace, e, env, bound))
         Ast.Expression.Tuple(delms)
@@ -136,12 +158,7 @@ object Compiler {
         }
         Ast.Expression.Record(delms)
 
-      case Ast.Expression.Match(exp, rules) =>
-        val dexp = disambiguate(namespace, exp, env, bound)
-        val drules = rules map {
-          case (p, e) => (p, disambiguate(namespace, e, env, bound)) // TODO: Variables bound by pattern.
-        }
-        Ast.Expression.Match(dexp, drules)
+      case Ast.Expression.Error => Ast.Expression.Error
     }
 
 
@@ -155,7 +172,7 @@ object Compiler {
       val candidates = env.get(name).collect {
         case d: Ast.Declaration.Val => d.exp
         case d: Ast.Declaration.Fun => d.body
-        case d: Ast.Declaration.Enum => d.tpe.elms.find(tag => tag.name == name.last).map(tag => Ast.Expression.Tag(tag.name, Ast.Expression.Unit)).get
+        case d: Ast.Declaration.Enum => d.tpe.elms.find(tag => tag.name == name.last).map(tag => Ast.Expression.Tag(tag.name, Ast.Expression.Lit(Ast.Literal.Unit))).get
       }
       if (candidates.size > 1) {
         throw new CompilerException(s"Ambiguous name: $name")
