@@ -1,11 +1,8 @@
 package impl.ast2
 
-import impl.logic._
-
 object Compiler {
 
   def compile(ast: Ast.Root): Ast.Root = {
-    val ast2 = Desugaring.desugar(ast)
     val env = Symbols.visit(ast)
     val ast3 = Disambiguation.disambiguate(ast, env)
     //println(env)
@@ -113,8 +110,11 @@ object Compiler {
       case Ast.Declaration.NameSpace(name, body) => Ast.Declaration.NameSpace(name, body map {
         case decl => disambiguate(withSuffix(namespace, name), decl, env)
       })
-      case decl: Ast.Declaration.Tpe => ???
-      case decl: Ast.Declaration.Enum => ???
+      case Ast.Declaration.Tpe(name, tpe) =>
+        Ast.Declaration.Tpe(name, disambiguate(namespace, tpe, env))
+
+      case Ast.Declaration.Enum(name, tpe) => ast // TODO
+
       case decl: Ast.Declaration.Val => ???
       case decl: Ast.Declaration.Var => ???
       case decl: Ast.Declaration.Fun => decl.copy(body = disambiguate(namespace, decl.body, env, Set.empty)) // TODO.. Bound
@@ -124,7 +124,7 @@ object Compiler {
     }
 
     /**
-     * Replaces all ambiguous names in the given expression.
+     * Disambiguates the given expression `ast`.
      */
     def disambiguate(namespace: Name, ast: Ast.Expression, env: Environment, bound: Set[String]): Ast.Expression = ast match {
       case Ast.Expression.AmbiguousName(name) => lookupExp(namespace, name.toList, env)
@@ -161,6 +161,10 @@ object Compiler {
       case Ast.Expression.Error => Ast.Expression.Error
     }
 
+    /**
+     * Disambiguates the given type `ast`.
+     */
+    def disambiguate(namespace: Name, ast: Ast.Type, env: Environment): Ast.Type = ???
 
     // TODO: Messy. Rewrite.
     def lookupExp(namespace: Name, name: Name, env: Environment): Ast.Expression = {
