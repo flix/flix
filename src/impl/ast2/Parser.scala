@@ -51,7 +51,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     zeroOrMore(Annotation) ~ "def" ~ WhiteSpace ~ Ident ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Fun
   }
 
-  // TODO: Remove
+  // TODO: Enable annotations on every declaraction?
   def Annotation: Rule1[String] = rule {
     "@" ~ Ident ~ WhiteSpace
   }
@@ -193,6 +193,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   // TODO: Tag Exp
+
+  // TODO: UnitExp
 
   def TupleExp: Rule1[Ast.Expression.Tuple] = rule {
     "(" ~ oneOrMore(Expression).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Expression.Tuple

@@ -72,7 +72,7 @@ namespace SignAnalysis {
     type Var = Str;
 
     var Const:      Var -> Int;
-    //var Plus:       {(Var, Var, Var)}; // TODO
+    var Plus:       Var -> (Var, Var);
     var Value:      Var -> Sign;
 
     fact Constant "x" -> 21;
