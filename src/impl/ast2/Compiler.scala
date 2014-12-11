@@ -8,9 +8,9 @@ object Compiler {
     val ast2 = Desugaring.desugar(ast)
     val env = Symbols.visit(ast)
     val ast3 = Disambiguation.disambiguate(ast, env)
-    println(env)
+    //println(env)
 
-    ast
+    ast3
   }
 
   /**
@@ -65,7 +65,11 @@ object Compiler {
       case decl: Ast.Declaration.Val => environmentOf(withSuffix(namespace, decl.name) -> decl)
       case decl: Ast.Declaration.Var => environmentOf(withSuffix(namespace, decl.name) -> decl)
       case decl: Ast.Declaration.Fun => environmentOf(withSuffix(namespace, decl.name) -> decl)
-      case decl: Ast.Declaration.Enum => Empty // TODO
+      case decl: Ast.Declaration.Enum =>
+        val init = environmentOf(withSuffix(namespace, decl.name) -> decl)
+        decl.tpe.elms.foldLeft(init) {
+          case (env, tag) => env ++ environmentOf(withSuffix(namespace, tag.name) -> decl)
+        }
       case decl: Ast.Declaration.Lattice => Empty
       case decl: Ast.Declaration.Fact => Empty
       case decl: Ast.Declaration.Rule => Empty
@@ -92,25 +96,24 @@ object Compiler {
    * A compiler-phase which replaces name references by their actuals.
    */
   object Disambiguation {
-    // replaces all names by their actuals.
 
     import Symbols._
 
     /**
-     *
+     * Disambiguates the given `ast` using the given environment `env`.
      */
     def disambiguate(ast: Ast.Root, env: Environment): Ast.Root = Ast.Root(ast.decls map {
-      case decl => disambiguate(decl, env)
+      case decl => disambiguate(Nil, decl, env)
     })
 
     /**
-      */
-    def disambiguate(ast: Ast.Declaration, env: Environment): Ast.Declaration = ast match {
+     * Disambiguates the given `ast` under the current `namespace` using the given `environment`.
+     */
+    def disambiguate(namespace: Name, ast: Ast.Declaration, env: Environment): Ast.Declaration = ast match {
       case Ast.Declaration.NameSpace(name, body) => Ast.Declaration.NameSpace(name, body map {
-        case decl => disambiguate(decl, env)
+        case decl => disambiguate(withSuffix(namespace, name), decl, env)
       })
-      case decl: Ast.Declaration.Lattice => decl.copy(record = disambiguate(Nil, decl.record, env, Set.empty))
-
+      case decl: Ast.Declaration.Lattice => decl.copy(record = disambiguate(namespace, decl.record, env, Set.empty))
       case _ => ast
     }
 
@@ -118,17 +121,10 @@ object Compiler {
      * Replaces all ambiguous names in the given expression.
      */
     def disambiguate(namespace: Name, ast: Ast.Expression, env: Environment, bound: Set[String]): Ast.Expression = ast match {
-
       case Ast.Expression.AmbiguousName(name) => lookupVal(namespace, name.toList, env)
-
-      case e: Ast.Expression.Var => ??? // introduced
-
       case e: Ast.Expression.Lit => e
-
       case Ast.Expression.Unary(op, e) => Ast.Expression.Unary(op, disambiguate(namespace, e, env, bound))
       case Ast.Expression.Binary(e1, op, e2) => Ast.Expression.Binary(disambiguate(namespace, e1, env, bound), op, disambiguate(namespace, e2, env, bound))
-
-
       case Ast.Expression.Record(elms) => Ast.Expression.Record(elms map {
         case (name, e) => (name, disambiguate(namespace, e, env, bound))
       })
@@ -137,28 +133,23 @@ object Compiler {
 
     // TODO: Messy. Rewrite.
     def lookupVal(namespace: Name, name: Name, env: Environment): Ast.Expression = {
-      // Case 1: lookup in the current namespace, i.e. namespace . name
-      val values = env.get(namespace ::: name).collect {
-        case d: Ast.Declaration.Val => d
-      }
+      lookup(namespace ::: name, env).
+        orElse(lookup(name, env)).getOrElse(throw new CompilerException(s"Name not found $name"))
+    }
 
-      if (values.size > 1) throw new RuntimeException("Ambigious name")
-      else {
-        // try global namespace: name
-        val values2 = env.get(name).collect {
-          case d: Ast.Declaration.Val => d
-        }
-        if (values2.size == 1) return values.head.exp
-        else if (values2.isEmpty)
-          throw new RuntimeException("Name not found: " + name)
-        else throw new RuntimeException("Ambigious name: " + values2)
+    def lookup(name: Name, env: Environment): Option[Ast.Expression] = {
+      val candidates = env.get(name).collect {
+        case d: Ast.Declaration.Val => d.exp
+        case d: Ast.Declaration.Fun => d.body
+        case d: Ast.Declaration.Enum => d.tpe.elms.find(tag => tag.name == name.last).map(tag => Ast.Expression.Tag(tag.name, Ast.Expression.Unit)).get
       }
+      if (candidates.size > 1) {
+        throw new CompilerException(s"Ambiguous name: $name")
+      }
+      candidates.headOption
     }
 
   }
-
-
-
 
 
   case class CompilerException(msg: String) extends RuntimeException(msg)
