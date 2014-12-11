@@ -113,6 +113,7 @@ object Compiler {
       case Ast.Declaration.NameSpace(name, body) => Ast.Declaration.NameSpace(name, body map {
         case decl => disambiguate(withSuffix(namespace, name), decl, env)
       })
+      case decl: Ast.Declaration.Fun => decl.copy(body = disambiguate(namespace, decl.body, env, Set.empty)) // TODO.. Bound
       case decl: Ast.Declaration.Lattice => decl.copy(record = disambiguate(namespace, decl.record, env, Set.empty))
       case _ => ast
     }
@@ -125,9 +126,22 @@ object Compiler {
       case e: Ast.Expression.Lit => e
       case Ast.Expression.Unary(op, e) => Ast.Expression.Unary(op, disambiguate(namespace, e, env, bound))
       case Ast.Expression.Binary(e1, op, e2) => Ast.Expression.Binary(disambiguate(namespace, e1, env, bound), op, disambiguate(namespace, e2, env, bound))
-      case Ast.Expression.Record(elms) => Ast.Expression.Record(elms map {
-        case (name, e) => (name, disambiguate(namespace, e, env, bound))
-      })
+      case Ast.Expression.Tuple(elms) =>
+        val delms = elms map (e => disambiguate(namespace, e, env, bound))
+        Ast.Expression.Tuple(delms)
+
+      case Ast.Expression.Record(elms) =>
+        val delms = elms map {
+          case (name, e) => (name, disambiguate(namespace, e, env, bound))
+        }
+        Ast.Expression.Record(delms)
+
+      case Ast.Expression.Match(exp, rules) =>
+        val dexp = disambiguate(namespace, exp, env, bound)
+        val drules = rules map {
+          case (p, e) => (p, disambiguate(namespace, e, env, bound)) // TODO: Variables bound by pattern.
+        }
+        Ast.Expression.Match(dexp, drules)
     }
 
 

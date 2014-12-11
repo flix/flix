@@ -158,7 +158,7 @@ object Ast {
     /**
      * An AST node which represents a match expression.
      */
-    case class Match(values: Expression, rules: Seq[(Pattern, Expression)]) extends Expression
+    case class Match(exp: Expression, rules: Seq[(Pattern, Expression)]) extends Expression
 
     /**
      * An AST node which represents a function call.
