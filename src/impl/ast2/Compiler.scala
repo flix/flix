@@ -117,14 +117,14 @@ object Compiler {
       case Ast.Declaration.Enum(name, tpe) => ast // TODO
 
       case decl: Ast.Declaration.Val => ???
-      case decl: Ast.Declaration.Var => ???
+      case decl: Ast.Declaration.Var => ast // TODO
       case Ast.Declaration.Fun(annotations, name, arguments, tpe, exp) =>
         val bound = arguments.map(_._1).toSet
         Ast.Declaration.Fun(annotations, name, arguments, disambiguate(tpe, namespace, env), disambiguate(namespace, exp, env, bound))
 
       case decl: Ast.Declaration.Lattice => decl.copy(record = disambiguate(namespace, decl.record, env, Set.empty))
-      case decl: Ast.Declaration.Fact => ???
-      case decl: Ast.Declaration.Rule => ???
+      case decl: Ast.Declaration.Fact => ast // TODO
+      case decl: Ast.Declaration.Rule => ast // TODO
     }
 
     /**
