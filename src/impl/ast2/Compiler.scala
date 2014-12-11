@@ -65,6 +65,7 @@ object Compiler {
       case decl: Ast.Declaration.Val => environmentOf(withSuffix(namespace, decl.name) -> decl)
       case decl: Ast.Declaration.Var => environmentOf(withSuffix(namespace, decl.name) -> decl)
       case decl: Ast.Declaration.Fun => environmentOf(withSuffix(namespace, decl.name) -> decl)
+      case decl: Ast.Declaration.Enum => Empty // TODO
       case decl: Ast.Declaration.Lattice => Empty
       case decl: Ast.Declaration.Fact => Empty
       case decl: Ast.Declaration.Rule => Empty

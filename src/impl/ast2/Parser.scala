@@ -28,7 +28,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def Declaration: Rule1[Ast.Declaration] = rule {
-    NameSpace | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | LatticeDeclaration | RuleDeclaraction | FactDeclaration
+    NameSpace | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | EnumDeclaraction | LatticeDeclaration | RuleDeclaraction | FactDeclaration
   }
 
   def NameSpace: Rule1[Ast.Declaration.NameSpace] = rule {
@@ -54,6 +54,10 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   // TODO: Remove
   def Annotation: Rule1[String] = rule {
     "@" ~ Ident ~ WhiteSpace
+  }
+
+  def EnumDeclaraction: Rule1[Ast.Declaration.Enum] = rule {
+    "enum" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ EnumType ~ ";" ~ WhiteSpace ~> Ast.Declaration.Enum
   }
 
   def LatticeDeclaration: Rule1[Ast.Declaration.Lattice] = rule {
@@ -267,7 +271,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def EnumType: Rule1[Ast.Type.Enum] = rule {
-    "enum" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ EnumBody ~ WhiteSpace ~ "}" ~> Ast.Type.Enum
+    "{" ~ WhiteSpace ~ EnumBody ~ WhiteSpace ~ "}" ~> Ast.Type.Enum
   }
 
   def EnumBody: Rule1[Seq[Ast.Type.Tag]] = rule {

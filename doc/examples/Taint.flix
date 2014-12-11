@@ -1,6 +1,6 @@
 namespace Taint {
 
-    type Taint = enum {
+    enum Taint {
         case Secret,
         case NotSecret
     };
