@@ -38,6 +38,11 @@ object Ast {
     case class Tpe(name: String, typ: Type) extends Declaration
 
     /**
+     * An AST node which represents a enum declaration.
+     */
+    case class Enum(name: String, tpe: Type.Enum) extends Declaration
+
+    /**
      * An AST node which represents a value declaration.
      */
     case class Val(name: String, t: Type, exp: Expression) extends Declaration
@@ -66,11 +71,6 @@ object Ast {
      * An AST node which represent a rule declaration.
      */
     case class Rule(head: Predicate, body: Seq[Predicate]) extends Declaration
-
-    /**
-     * An AST node which represents a enum declaration.
-     */
-    case class Enum(name: String, tpe: Type.Enum) extends Declaration
   }
 
   /**
