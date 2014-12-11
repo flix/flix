@@ -121,7 +121,7 @@ object Compiler {
      * Replaces all ambiguous names in the given expression.
      */
     def disambiguate(namespace: Name, ast: Ast.Expression, env: Environment, bound: Set[String]): Ast.Expression = ast match {
-      case Ast.Expression.AmbiguousName(name) => lookupVal(namespace, name.toList, env)
+      case Ast.Expression.AmbiguousName(name) => lookupExp(namespace, name.toList, env)
       case e: Ast.Expression.Lit => e
       case Ast.Expression.Unary(op, e) => Ast.Expression.Unary(op, disambiguate(namespace, e, env, bound))
       case Ast.Expression.Binary(e1, op, e2) => Ast.Expression.Binary(disambiguate(namespace, e1, env, bound), op, disambiguate(namespace, e2, env, bound))
@@ -132,12 +132,12 @@ object Compiler {
 
 
     // TODO: Messy. Rewrite.
-    def lookupVal(namespace: Name, name: Name, env: Environment): Ast.Expression = {
-      lookup(namespace ::: name, env).
-        orElse(lookup(name, env)).getOrElse(throw new CompilerException(s"Name not found $name"))
+    def lookupExp(namespace: Name, name: Name, env: Environment): Ast.Expression = {
+      lookupExp(namespace ::: name, env).
+        orElse(lookupExp(name, env)).getOrElse(throw new CompilerException(s"Name not found $name"))
     }
 
-    def lookup(name: Name, env: Environment): Option[Ast.Expression] = {
+    def lookupExp(name: Name, env: Environment): Option[Ast.Expression] = {
       val candidates = env.get(name).collect {
         case d: Ast.Declaration.Val => d.exp
         case d: Ast.Declaration.Fun => d.body
