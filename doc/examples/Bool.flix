@@ -1,6 +1,6 @@
 namespace MyBool {
 
-    type Elm = enum {
+    enum Elm {
         case Top,
         case True,
         case False,

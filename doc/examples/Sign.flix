@@ -1,4 +1,4 @@
-namespace Sign {
+namespace SignAnalysis {
 
     /**
      * A
@@ -9,16 +9,13 @@ namespace Sign {
     // A single-line comment
     // uh, one more :)
 
-    type Sign = enum {
+   enum Sign {
         case Top,
         case Neg,
         case Zer,
         case Pos,
         case Top
     };
-
-    val bot: Sign = Bot;
-    val top: Sign = Top;
 
     def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) with {
         case (Bot, x)   => true;
@@ -60,7 +57,7 @@ namespace Sign {
 
     lat Sign = record { bot = Sign.Bot, leq = Sign.leq, lub = Sign.lub };
 
-    @monotone @strict
+    @monotone @strict @associative
     def sum(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot;
         case (_, Bot)   => Bot;
@@ -70,7 +67,7 @@ namespace Sign {
     };
 };
 
-namespace Sign {
+namespace SignAnalysis {
 
     type Var = Str;
 
