@@ -106,18 +106,22 @@ object Compiler {
     /**
      * Disambiguates the given `ast` under the current `namespace` using the given `environment`.
      */
+    // TODO: Change order of arguments
     def disambiguate(namespace: Name, ast: Ast.Declaration, env: Environment): Ast.Declaration = ast match {
       case Ast.Declaration.NameSpace(name, body) => Ast.Declaration.NameSpace(name, body map {
         case decl => disambiguate(withSuffix(namespace, name), decl, env)
       })
       case Ast.Declaration.Tpe(name, tpe) =>
-        Ast.Declaration.Tpe(name, disambiguate(namespace, tpe, env))
+        Ast.Declaration.Tpe(name, disambiguate(tpe, namespace, env))
 
       case Ast.Declaration.Enum(name, tpe) => ast // TODO
 
       case decl: Ast.Declaration.Val => ???
       case decl: Ast.Declaration.Var => ???
-      case decl: Ast.Declaration.Fun => decl.copy(body = disambiguate(namespace, decl.body, env, Set.empty)) // TODO.. Bound
+      case Ast.Declaration.Fun(annotations, name, arguments, tpe, exp) =>
+        val bound = arguments.map(_._1).toSet
+        Ast.Declaration.Fun(annotations, name, arguments, disambiguate(tpe, namespace, env), disambiguate(namespace, exp, env, bound))
+
       case decl: Ast.Declaration.Lattice => decl.copy(record = disambiguate(namespace, decl.record, env, Set.empty))
       case decl: Ast.Declaration.Fact => ???
       case decl: Ast.Declaration.Rule => ???
@@ -126,8 +130,13 @@ object Compiler {
     /**
      * Disambiguates the given expression `ast`.
      */
+    // TODO: Change order of arguments
     def disambiguate(namespace: Name, ast: Ast.Expression, env: Environment, bound: Set[String]): Ast.Expression = ast match {
-      case Ast.Expression.AmbiguousName(name) => lookupExp(namespace, name.toList, env)
+      case Ast.Expression.AmbiguousName(name) => name match {
+        case Seq(simple) if bound contains simple => Ast.Expression.Var(simple)
+        case _ => lookupExp(namespace, name.toList, env)
+      }
+
       case Ast.Expression.Var(name) => ???
       case Ast.Expression.Lit(literal) => ast
       case Ast.Expression.Unary(op, e) => Ast.Expression.Unary(op, disambiguate(namespace, e, env, bound))
@@ -161,10 +170,31 @@ object Compiler {
       case Ast.Expression.Error => Ast.Expression.Error
     }
 
+    import Ast._
+
     /**
      * Disambiguates the given type `ast`.
      */
-    def disambiguate(namespace: Name, ast: Ast.Type, env: Environment): Ast.Type = ???
+    def disambiguate(ast: Ast.Type, namespace: Name, env: Environment): Ast.Type = ast match {
+      case Type.AmbiguousName(Seq("Bool")) => Type.Bool
+
+      case Type.Unit => Type.Unit
+      case Type.Bool => Type.Bool
+      case Type.Int => Type.Int
+      case Type.Str => Type.Str
+      case Type.Tuple(elms) => Type.Tuple(elms map (e => disambiguate(e, namespace, env)))
+
+      //
+      //        AmbiguousName
+      //        Set
+      //        Rel
+      //        Map
+      //        Tag
+      //        Enum
+      //
+      //        Function
+      //
+    }
 
     // TODO: Messy. Rewrite.
     def lookupExp(namespace: Name, name: Name, env: Environment): Ast.Expression = {
