@@ -76,6 +76,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     oneOrMore(Predicate).separatedBy("," ~ WhiteSpace)
   }
 
+  // TODO: Move to helpers.
   def ArgumentList: Rule1[Seq[(String, Ast.Type)]] = rule {
     zeroOrMore(Argument).separatedBy("," ~ optional(WhiteSpace))
   }
@@ -155,7 +156,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def SimpleExpression: Rule1[Ast.Expression] = rule {
-    LiteralExp | LetExp | IfThenElseExp | MatchExp | TupleExp | MapExp | SetExp | VariableExp | ErrorExp
+    LiteralExp | LetExp | IfThenElseExp | MatchExp | TupleExp | MapExp | SetExp | LambdaExp | VariableExp | ErrorExp
   }
 
   def LiteralExp: Rule1[Ast.Expression.Lit] = rule {
@@ -220,6 +221,10 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     Name ~> Ast.Expression.AmbiguousName
   }
 
+  def LambdaExp: Rule1[Ast.Expression.Lambda] = rule {
+    "fn" ~ optWhiteSpace ~ "(" ~ ArgumentList ~ "):" ~ optWhiteSpace ~ Type ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Expression ~> Ast.Expression.Lambda
+  }
+
 
   /** *************************************************************************/
   /** Patterns                                                              ***/
@@ -253,7 +258,11 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   /** *************************************************************************/
   // TODO: Cleanup...
   def Type: Rule1[Ast.Type] = rule {
-    SimpleType
+    FunctionType | SimpleType
+  }
+
+  def FunctionType: Rule1[Ast.Type] = rule {
+    SimpleType ~ optWhiteSpace ~ "=>" ~ optWhiteSpace ~ Type ~> Ast.Type.Function
   }
 
   def SimpleType: Rule1[Ast.Type] = rule {

@@ -130,6 +130,11 @@ object Ast {
     case class Lit(literal: Literal) extends Expression
 
     /**
+     * An AST node which represents a (generalized) lambda expression.
+     */
+    case class Lambda(formals: Seq[(String, Type)], tpe: Ast.Type, e: Expression) extends Expression
+
+    /**
      * An AST node which represents unary expressions.
      */
     case class Unary(op: UnaryOperator, e: Expression) extends Expression
