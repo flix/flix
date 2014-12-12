@@ -35,3 +35,7 @@ namespace TheName {
 
 };
 
+// We can add elements to existing namespaces:
+namespace TheName.AnotherName {
+    // ...
+};
