@@ -13,6 +13,8 @@ sealed trait Ast
 
 object Ast {
 
+  // TODO: Introduce "Name".
+
   /**
    * The Ast root node.
    *
@@ -145,11 +147,6 @@ object Ast {
     case class Binary(e1: Expression, op: BinaryOperator, e2: Expression) extends Expression
 
     /**
-     * An AST node which represents an infix expression.
-     */
-    case class Infix(e1: Expression, name: Seq[String], e2: Expression) extends Expression
-
-    /**
      * An AST node which represents a let-binding.
      */
     case class Let(name: String, value: Expression, body: Expression) extends Expression
@@ -168,6 +165,11 @@ object Ast {
      * An AST node which represents a function call.
      */
     case class Call(function: Expression, arguments: Seq[Expression]) extends Expression
+
+    /**
+     * An AST node which represents an infix function call expression.
+     */
+    case class Infix(e1: Expression, name: Seq[String], e2: Expression) extends Expression
 
     /**
      * An AST node which represents a tagged expression.
@@ -211,7 +213,7 @@ object Ast {
   object MatchPattern {
 
     /**
-     * An AST node which represents a wildcard (the underscore _) pattern.
+     * An AST node which represents a wildcard pattern.
      */
     case object Wildcard extends MatchPattern
 
@@ -219,6 +221,8 @@ object Ast {
      * An AST node which represents a variable pattern.
      */
     case class Var(name: String) extends MatchPattern
+
+    // TODO: Literal.
 
     /**
      * An AST node which represents a literal boolean pattern.
@@ -281,8 +285,6 @@ object Ast {
 
     /**
      * An AST node which represents a reference to a named type.
-     *
-     * Eliminated by the compiler.
      */
     @Eliminated
     case class AmbiguousName(name: Seq[String]) extends Type
@@ -312,6 +314,16 @@ object Ast {
     case object Str extends Type
 
     /**
+     * An AST node which represents a tagged type.
+     */
+    case class Tag(name: String) extends Type
+
+    /**
+     * An AST node which represents an enumeration type.
+     */
+    case class Enum(elms: Seq[Type.Tag]) extends Type
+
+    /**
      * An AST node which represents a tuple type.
      */
     case class Tuple(elms: Seq[Type]) extends Type
@@ -325,16 +337,6 @@ object Ast {
      * An AST node which represents a map type.
      */
     case class Map(elms: Seq[Type]) extends Type
-
-    /**
-     * An AST node which represents a tagged type.
-     */
-    case class Tag(name: String) extends Type
-
-    /**
-     * An AST node which represents an enumeration type.
-     */
-    case class Enum(elms: Seq[Type.Tag]) extends Type
 
     /**
      * An AST node which represents a function type.
@@ -371,6 +373,13 @@ object Ast {
     case class Product(elms: Seq[Lattice]) extends Lattice
 
   }
+
+  /**
+   * An AST node which represents a source location.
+   *
+   * Currently not used.
+   */
+  case class SourceLocation(file: String, line: Int, column: Int) extends Ast
 
   /**
    * An AST node annotation which documents that the AST node is introduced by the compiler.
