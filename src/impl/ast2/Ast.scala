@@ -175,6 +175,11 @@ object Ast {
     case class Set(elms: Seq[Expression]) extends Expression
 
     /**
+     * An AST node which represents a map expression.
+     */
+    case class Map(elms: Seq[(Expression, Expression)]) extends Expression
+
+    /**
      * An AST node which represents a tuple expression.
      */
     case class Tuple(elms: Seq[Expression]) extends Expression

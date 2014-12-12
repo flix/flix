@@ -155,7 +155,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def SimpleExpression: Rule1[Ast.Expression] = rule {
-    LiteralExp | LetExp | IfThenElseExp | MatchExp | TupleExp | SetExp | VariableExp | ErrorExp
+    LiteralExp | LetExp | IfThenElseExp | MatchExp | TupleExp | MapExp | SetExp | VariableExp | ErrorExp
   }
 
   def LiteralExp: Rule1[Ast.Expression.Lit] = rule {
@@ -163,7 +163,15 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def SetExp: Rule1[Ast.Expression.Set] = rule {
-    "Set" ~ "(" ~ oneOrMore(Expression).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Expression.Set
+    "{" ~ optWhiteSpace ~ oneOrMore(Expression).separatedBy("," ~ optWhiteSpace) ~ optWhiteSpace ~ "}" ~> Ast.Expression.Set
+  }
+
+  def MapExp: Rule1[Ast.Expression.Map] = rule {
+    "{" ~ optWhiteSpace ~ oneOrMore(MapKeyValue).separatedBy("," ~ optWhiteSpace) ~ optWhiteSpace ~ "}" ~> Ast.Expression.Map
+  }
+
+  private def MapKeyValue: Rule1[(Ast.Expression, Ast.Expression)] = rule {
+    Expression ~ optWhiteSpace ~ "->" ~ optWhiteSpace ~ Expression ~> ((e1: Ast.Expression, e2: Ast.Expression) => (e1, e2))
   }
 
   def ErrorExp: Rule1[Ast.Expression] = rule {
@@ -201,10 +209,10 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def RecordExp: Rule1[Ast.Expression.Record] = rule {
-    "record" ~ WhiteSpace ~ "{" ~ optWhiteSpace ~ zeroOrMore(KeyValue).separatedBy("," ~ optWhiteSpace) ~ optWhiteSpace ~ "}" ~> Ast.Expression.Record
+    "record" ~ WhiteSpace ~ "{" ~ optWhiteSpace ~ zeroOrMore(RecordKeyValue).separatedBy("," ~ optWhiteSpace) ~ optWhiteSpace ~ "}" ~> Ast.Expression.Record
   }
 
-  private def KeyValue: Rule1[(String, Ast.Expression)] = rule {
+  private def RecordKeyValue: Rule1[(String, Ast.Expression)] = rule {
     Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~> ((k: String, v: Ast.Expression) => (k, v))
   }
 
