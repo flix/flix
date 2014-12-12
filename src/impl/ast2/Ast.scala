@@ -162,7 +162,7 @@ object Ast {
     /**
      * An AST node which represents a match expression.
      */
-    case class Match(exp: Expression, rules: Seq[(Pattern, Expression)]) extends Expression
+    case class Match(exp: Expression, rules: Seq[(MatchPattern, Expression)]) extends Expression
 
     /**
      * An AST node which represents a function call.
@@ -204,52 +204,52 @@ object Ast {
   }
 
   /**
-   * A common super-type for AST nodes which represent patterns.
+   * A common super-type for AST nodes which represent match patterns.
    */
-  sealed trait Pattern extends Ast
+  sealed trait MatchPattern extends Ast
 
-  object Pattern {
+  object MatchPattern {
 
     /**
      * An AST node which represents a wildcard (the underscore _) pattern.
      */
-    case object Wildcard extends Pattern
+    case object Wildcard extends MatchPattern
 
     /**
      * An AST node which represents a variable pattern.
      */
-    case class Var(name: String) extends Pattern
+    case class Var(name: String) extends MatchPattern
 
     /**
      * An AST node which represents a literal boolean pattern.
      */
-    case class Bool(literal: scala.Boolean) extends Pattern
+    case class Bool(literal: scala.Boolean) extends MatchPattern
 
     /**
      * An AST node which represents a literal integer pattern.
      */
-    case class Int(literal: scala.Int) extends Pattern
+    case class Int(literal: scala.Int) extends MatchPattern
 
     /**
      * An AST node which represents a literal string pattern.
      */
-    case class Str(literal: String) extends Pattern
+    case class Str(literal: String) extends MatchPattern
 
     /**
      * An AST node which represents a tagged pattern.
      */
-    case class Tag(name: Seq[String], pattern: Pattern) extends Pattern
+    case class Tag(name: Seq[String], pattern: MatchPattern) extends MatchPattern
 
     /**
      * An AST node which represents a tuples pattern.
      */
-    case class Tuple(elms: Seq[Pattern]) extends Pattern
+    case class Tuple(elms: Seq[MatchPattern]) extends MatchPattern
 
   }
 
 
   // TODO: Parse Predicates!
-  case class Predicate(name: String, t2: Term) extends Pattern
+  case class Predicate(name: String, t2: Term) extends MatchPattern
 
   // TODO: Refactor?
 

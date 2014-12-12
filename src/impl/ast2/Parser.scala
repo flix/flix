@@ -191,8 +191,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ oneOrMore(MatchRule) ~ "}" ~> Ast.Expression.Match
   }
 
-  def MatchRule: Rule1[(Ast.Pattern, Ast.Expression)] = rule {
-    "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> ((p: Ast.Pattern, e: Ast.Expression) => (p, e))
+  def MatchRule: Rule1[(Ast.MatchPattern, Ast.Expression)] = rule {
+    "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> ((p: Ast.MatchPattern, e: Ast.Expression) => (p, e))
   }
 
 
@@ -232,25 +232,25 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   // TODO: Literal.
 
 
-  def Pattern: Rule1[Ast.Pattern] = rule {
+  def Pattern: Rule1[Ast.MatchPattern] = rule {
     // Note: TaggedPattern must preceede VariablePattern to avoid left-recursion.
     WildcardPattern | TaggedPattern | TuplePattern | VariablePattern
   }
 
-  def WildcardPattern: Rule1[Ast.Pattern] = rule {
-    str("_") ~> (() => Ast.Pattern.Wildcard)
+  def WildcardPattern: Rule1[Ast.MatchPattern] = rule {
+    str("_") ~> (() => Ast.MatchPattern.Wildcard)
   }
 
-  def VariablePattern: Rule1[Ast.Pattern.Var] = rule {
-    Ident ~> Ast.Pattern.Var
+  def VariablePattern: Rule1[Ast.MatchPattern.Var] = rule {
+    Ident ~> Ast.MatchPattern.Var
   }
 
-  def TaggedPattern: Rule1[Ast.Pattern.Tag] = rule {
-    Name ~ WhiteSpace ~ Pattern ~> Ast.Pattern.Tag
+  def TaggedPattern: Rule1[Ast.MatchPattern.Tag] = rule {
+    Name ~ WhiteSpace ~ Pattern ~> Ast.MatchPattern.Tag
   }
 
-  def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {
-    "(" ~ oneOrMore(Pattern).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Pattern.Tuple
+  def TuplePattern: Rule1[Ast.MatchPattern.Tuple] = rule {
+    "(" ~ oneOrMore(Pattern).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.MatchPattern.Tuple
   }
 
   /** *************************************************************************/
