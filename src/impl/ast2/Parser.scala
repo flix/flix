@@ -44,7 +44,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def VariableDeclaration: Rule1[Ast.Declaration.Var] = rule {
-    "var" ~ WhiteSpace ~ Ident ~ ":" ~ WhiteSpace ~ LatticeType ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Var
+    "var" ~ WhiteSpace ~ Ident ~ ":" ~ WhiteSpace ~ Lattice ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Var
   }
 
   def FunctionDeclaration: Rule1[Ast.Declaration.Fun] = rule {
@@ -245,7 +245,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   /** *************************************************************************/
   // TODO: Cleanup...
   def Type: Rule1[Ast.Type] = rule {
-    FunctionType | SimpleType
+    SimpleType
   }
 
   def SimpleType: Rule1[Ast.Type] = rule {
@@ -280,24 +280,27 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     oneOrMore("case" ~ WhiteSpace ~ Ident ~> Ast.Type.Tag).separatedBy("," ~ WhiteSpace)
   }
 
-  def FunctionType: Rule1[Ast.Type.Function] = rule {
-    SimpleType ~ WhiteSpace ~ "->" ~ WhiteSpace ~ Type ~> Ast.Type.Function
+  /** *************************************************************************/
+  /** Lattices                                                              ***/
+  /** *************************************************************************/
+  def Lattice: Rule1[Ast.Lattice] = rule {
+    MapLattice | NameLattice | SetLattice | ProductLattice
   }
 
-  def LatticeType: Rule1[Ast.Type] = rule {
-    MapLatticeType
+  def NameLattice: Rule1[Ast.Lattice.Name] = rule {
+    Name ~> Ast.Lattice.Name
   }
 
-  def MapLatticeType: Rule1[Ast.Type] = rule {
-    ProductLatticeType ~ zeroOrMore(WhiteSpace ~ "->" ~ WhiteSpace ~ ProductLatticeType ~> Ast.Type.MapLattice)
+  def MapLattice: Rule1[Ast.Lattice.Map] = rule {
+    oneOrMore(Type).separatedBy(WhiteSpace ~ "->" ~ WhiteSpace) ~ WhiteSpace ~ Lattice ~> Ast.Lattice.Map
   }
 
-  def ProductLatticeType: Rule1[Ast.Type] = rule {
-    SetLatticeType ~ zeroOrMore(WhiteSpace ~ "**" ~ WhiteSpace ~ SetLatticeType ~> Ast.Type.ProductLattice)
+  def SetLattice: Rule1[Ast.Lattice.Set] = rule {
+    "{" ~ optWhiteSpace ~ Type ~ optWhiteSpace ~ "}" ~> Ast.Lattice.Set
   }
 
-  def SetLatticeType: Rule1[Ast.Type] = rule {
-    NameRefType | ("{" ~ optWhiteSpace ~ LatticeType ~ optWhiteSpace ~ "}" ~> Ast.Type.SetLattice)
+  def ProductLattice: Rule1[Ast.Lattice.Product] = rule {
+    "(" ~ optWhiteSpace ~ oneOrMore(Lattice).separatedBy("," ~ optWhiteSpace) ~ optWhiteSpace ~ ")" ~> Ast.Lattice.Product
   }
 
   /** *************************************************************************/
