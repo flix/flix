@@ -116,7 +116,7 @@ object Compiler {
 
       case Ast.Declaration.Enum(name, tpe) => ast // TODO
 
-      case decl: Ast.Declaration.Val => ???
+      case decl: Ast.Declaration.Val => ast // TODO
       case decl: Ast.Declaration.Var => ast // TODO
       case Ast.Declaration.Fun(annotations, name, arguments, tpe, exp) =>
         val bound = arguments.map(_._1).toSet

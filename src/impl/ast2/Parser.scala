@@ -249,8 +249,10 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def SimpleType: Rule1[Ast.Type] = rule {
-    TupleType | SetType | RelType | MapType | EnumType | NameRefType
+    TupleType | SetType | MapType | EnumType | NameRefType
   }
+
+  // TODO: Function Types?
 
   def NameRefType: Rule1[Ast.Type.AmbiguousName] = rule {
     Name ~> Ast.Type.AmbiguousName
@@ -264,14 +266,11 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "Set" ~ "[" ~ Type ~ "]" ~> Ast.Type.Set
   }
 
-  def RelType: Rule1[Ast.Type.Rel] = rule {
-    "Rel" ~ "[" ~ oneOrMore(Type).separatedBy("," ~ optWhiteSpace) ~ "]" ~> Ast.Type.Rel
-  }
-
   def MapType: Rule1[Ast.Type.Map] = rule {
     "Map" ~ "[" ~ oneOrMore(Type).separatedBy("," ~ WhiteSpace) ~ "]" ~> Ast.Type.Map
   }
 
+  // TODO: Howto embed these into the language?
   def EnumType: Rule1[Ast.Type.Enum] = rule {
     "{" ~ WhiteSpace ~ EnumBody ~ WhiteSpace ~ "}" ~> Ast.Type.Enum
   }
