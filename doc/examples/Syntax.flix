@@ -29,10 +29,24 @@ namespace TheName {
     // A function.
     val v5: (Int, Int) => Int = fn(x: Int, y: Int): Int = x + y;
 
-    // Or
+    // or better:
     def sum(x: Int, y: Int): Int = x + y;
 
-    // TODO: Add fn syntax and function type syntax and map, set, syntax.
+    // we can use things before they are declared:
+    val a: Int = b + c;
+    val b: Int = 1;
+    val c: Int = 2;
+
+    // TODO: Enum
+
+    /**
+     * Global Variables.
+     */
+
+
+    /**
+      * Facts and Rules.
+      */
 
 //    var foo: x -> y -> z;
 //    var foo: x -> y -> {z}; // should parse as Map (x, Map, Set(y), Set(z))

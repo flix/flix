@@ -175,16 +175,6 @@ object Ast {
     case class Tag(name: String, e: Expression) extends Expression
 
     /**
-     * An AST node which represents a set expression.
-     */
-    case class Set(elms: Seq[Expression]) extends Expression
-
-    /**
-     * An AST node which represents a map expression.
-     */
-    case class Map(elms: Seq[(Expression, Expression)]) extends Expression
-
-    /**
      * An AST node which represents a tuple expression.
      */
     case class Tuple(elms: Seq[Expression]) extends Expression
@@ -193,6 +183,16 @@ object Ast {
      * An AST node which represents a record expression.
      */
     case class Record(elms: Seq[(String, Expression)]) extends Expression
+
+    /**
+     * An AST node which represents a set expression.
+     */
+    case class Set(elms: Seq[Expression]) extends Expression
+
+    /**
+     * An AST node which represents a map expression.
+     */
+    case class Map(elms: Seq[(Expression, Expression)]) extends Expression
 
     /**
      * An AST node which represents an error expression.
