@@ -334,7 +334,11 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   /** Literals                                                              ***/
   /** *************************************************************************/
   def Literal: Rule1[Ast.Literal] = rule {
-    BoolLiteral | IntLiteral | StrLiteral
+    UnitLiteral | BoolLiteral | IntLiteral | StrLiteral
+  }
+
+  def UnitLiteral: Rule1[Ast.Literal.Unit.type] = rule {
+    str("()") ~> (() => Ast.Literal.Unit)
   }
 
   def BoolLiteral: Rule1[Ast.Literal.Bool] = rule {
@@ -349,6 +353,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~> Ast.Literal.Str
   }
 
+  // TODO: Comment blocks.
   /** *************************************************************************/
   /** Operators                                                             ***/
   /** *************************************************************************/
