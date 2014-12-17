@@ -6,9 +6,10 @@ namespace ParityAnalysis {
 
     // the parity lattice consists of just four elements:
     enum Parity {
-                 case Top,
-        case Odd,         case Even,
-                 case Bot
+        case Top,
+        case Odd,
+        case Even,
+        case Bot
     };
 
     // the partial order is easily defined using pattern matching:
@@ -29,6 +30,11 @@ namespace ParityAnalysis {
         case _              => Top;
     };
 
+    // the lattice is defined as a record:
+    lat Parity = record {
+        bot = Bot, leq = leq, lub = lub
+    };
 
 
+    //
 };
