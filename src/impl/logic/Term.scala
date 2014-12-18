@@ -137,6 +137,9 @@ sealed trait Term {
 
 object Term {
 
+  // TODO: Remove Bool and Str. (and their operations)
+  // TODO: Try to simplify this language as much as possible.
+
   /**
    * The Unit term.
    */
@@ -197,6 +200,8 @@ object Term {
    */
   case class BinaryOp(op: BinaryOperator, t1: Term, t2: Term) extends Term
 
+  // TODO: Consider introducing "typed" nodes
+
   /**
    * A tagged term.
    */
@@ -221,6 +226,18 @@ object Term {
    * A 5-tuple term.
    */
   case class Tuple5(t1: Term, t2: Term, t3: Term, t4: Term, t5: Term) extends Term
+
+  case class ScalaFunction(fn: (Value => Value)) extends Term
+
+
+  /**
+   * TODO: Introduce new terms starting here.
+   */
+  // case class BNot(t: Term) extends Term
+  // case class BAnd(t: Term) extends Term
+  // case class IAdd
+  // case class Apply
+  // etc.
 
   /**
    * A native Scala/Java object.
