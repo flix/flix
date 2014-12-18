@@ -28,6 +28,7 @@ object Values {
       case Value.Tuple3(v1, v2, v3) =>          "(" + v1.fmt + "," + v2.fmt + "," + v3.fmt + ")"
       case Value.Tuple4(v1, v2, v3, v4) =>      "(" + v1.fmt + "," + v2.fmt + "," + v3.fmt + "," + v4.fmt + ")"
       case Value.Tuple5(v1, v2, v3, v4, v5) =>  "(" + v1.fmt + "," + v2.fmt + "," + v3.fmt + "," + v4.fmt + "," + v5.fmt + ")"
+      case Value.Native(o) => o.toString
     }
   }
 

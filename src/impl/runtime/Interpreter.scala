@@ -26,6 +26,9 @@ object Interpreter {
 
     case Term.Var(s) => throw Error.UnboundVariableError(s)
     case Term.Abs(s, typ, t1) => Value.Abs(s, typ, t1)
+    case Term.App(Term.ScalaFunction(fn), t2) =>
+      val v2 = evaluate(t2)
+      fn(v2)
     case Term.App(t1, t2) =>
       val v1 = evaluate(t1).toAbs
       val v2 = evaluate(t2)
@@ -86,6 +89,8 @@ object Interpreter {
       val v4 = evaluate(t4)
       val v5 = evaluate(t5)
       Value.Tuple5(v1, v2, v3, v4, v5)
+
+    case Term.Native(o) => Value.Native(o)
   }
 
   /**

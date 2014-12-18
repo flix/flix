@@ -39,6 +39,9 @@ sealed trait Term {
     case Term.Tuple3(t1, t2, t3) =>         Term.Tuple3(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
     case Term.Tuple4(t1, t2, t3, t4) =>     Term.Tuple4(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t))
     case Term.Tuple5(t1, t2, t3, t4, t5) => Term.Tuple5(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t), t5.substitute(x, t))
+
+    case Term.ScalaFunction(_) => this
+    case Term.Native(_) => this
   }
 
   /**
@@ -81,6 +84,8 @@ sealed trait Term {
     case Term.Tuple3(t1, t2, t3) =>           t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
     case Term.Tuple4(t1, t2, t3, t4) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables
     case Term.Tuple5(t1, t2, t3, t4, t5) =>   t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables ++ t5.freeVariables
+
+    case Term.ScalaFunction(_) => Set.empty
   }
 
   /**
@@ -217,4 +222,13 @@ object Term {
    */
   case class Tuple5(t1: Term, t2: Term, t3: Term, t4: Term, t5: Term) extends Term
 
+  /**
+   * A native Scala/Java object.
+   */
+  case class Native(obj: Any) extends Term
+
+  /**
+   * A native Scala function.
+   */
+  case class ScalaFunction(fn: (Value => Value)) extends Term
 }

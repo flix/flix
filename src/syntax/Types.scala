@@ -29,6 +29,8 @@ object Types {
       case Type.Tuple3(typ1, typ2, typ3) => s"(${typ1.fmt}, ${typ2.fmt}, ${typ3.fmt})"
       case Type.Tuple4(typ1, typ2, typ3, typ4) => s"(${typ1.fmt}, ${typ2.fmt}, ${typ3.fmt}, ${typ4.fmt})"
       case Type.Tuple5(typ1, typ2, typ3, typ4, typ5) => s"(${typ1.fmt}, ${typ2.fmt}, ${typ3.fmt}, ${typ4.fmt}, ${typ5.fmt})"
+
+      case Type.Native => "Native"
     }
   }
 

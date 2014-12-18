@@ -1,16 +1,21 @@
 package examples.scala
 
 import api.Flix
+import api.FlixImplicits._
+import impl.logic.Value
 
 object Graph01 extends App {
   val flix = new Flix
 
+  def id(v: Value): Value = "foo"
+
+  flix += ("id" -> id _)
   flix += """
     (def-type Edge (-> Str (Set Str)))
     (def-type Reachable (-> Str (Set Str)))
     (def-type Cycle (Set Str))
 
-    (fact (Edge "a" {"b"}))
+    (fact (Edge "a" {(id "b")}))
     (fact (Edge "b" {"a"}))
 
     (rule (Reachable x {y}) ((Edge x {y})))
