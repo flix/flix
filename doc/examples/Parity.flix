@@ -2,7 +2,7 @@
  * A parity analysis is a simple numeric analysis which
  * determines whether a number is even or odd.
  */
-namespace ParityAnalysis {
+namespace Parity {
 
     // the parity lattice consists of just four elements:
     enum Parity {
@@ -114,5 +114,15 @@ namespace ParityAnalysis {
 
     // we can abstract integers into the parity domain:
     def lift(i: Int): Parity = if (i % 2 == 0) Even else Odd;
+
+    // let's define some constants.
+    val One: Parity = lift(1);
+    val Two: Parity = lift(2);
+    val Six: Parity = Even;
+
+    // we are now ready to define a simple analysis:
+
+
+
 
 };
