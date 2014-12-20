@@ -52,16 +52,33 @@ namespace ParityAnalysis {
     };
 
     // and substraction:
+    @strict @monotone
     def minus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Bot)       => Bot;
-
+        case (Bot, _)       => Bot;
+        case (Odd, Odd)     => Even;
+        case (Odd, Even)    => Odd;
+        case (Even, Odd)    => Odd;
+        case (Even, Even)   => Even;
+        case _              => Top;
     };
 
     // and multiplication:
+    @strict @monotone
+    def times(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+        case (_, Bot)       => Bot;
+        case (Bot, _)       => Bot;
+    };
+
+    // and whether the number may posible be zero.
+    def isMaybeZero(e: Parity): Bool = match e with {
+        case Bot    => false;
+        case Odd    => false;
+        case Even   => true;
+        case Top    => true;
+    };
 
     // we can abstract integers into the parity domain:
     def lift(i: Int): Parity = ???;
-
-
 
 };
