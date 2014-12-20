@@ -68,9 +68,18 @@ namespace ParityAnalysis {
     def times(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Bot)       => Bot;
         case (Bot, _)       => Bot;
+        case (Odd, Odd)     => Odd;
+        case (Odd, Even)    => Even;
+        case (Even, Odd)    => Even;
+        case (Even, Even)   => Even;
+        // ...
     };
 
+    // and division:
+
+
     // and whether the number may posible be zero.
+    @strict @monotone
     def isMaybeZero(e: Parity): Bool = match e with {
         case Bot    => false;
         case Odd    => false;
@@ -79,6 +88,6 @@ namespace ParityAnalysis {
     };
 
     // we can abstract integers into the parity domain:
-    def lift(i: Int): Parity = ???;
+    def lift(i: Int): Parity = if (i % 2 == 0) Even else Odd;
 
 };
