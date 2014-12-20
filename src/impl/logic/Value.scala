@@ -18,6 +18,7 @@ sealed trait Value {
     case Value.Tuple3(v1, v2, v3) => Term.Tuple3(v1.toTerm, v2.toTerm, v3.toTerm)
     case Value.Tuple4(v1, v2, v3, v4) => Term.Tuple4(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm)
     case Value.Tuple5(v1, v2, v3, v4, v5) => Term.Tuple5(v1.toTerm, v2.toTerm, v3.toTerm, v4.toTerm, v5.toTerm)
+    case Value.Native(obj) => Term.Native(obj)
   }
 
   /**
@@ -120,4 +121,8 @@ object Value {
    */
   case class Tuple5(v1: Value, v2: Value, v3: Value, v4: Value, v5: Value) extends Value
 
+  /**
+   * A native Scala/Java object.
+   */
+  case class Native(obj: Any) extends Value
 }

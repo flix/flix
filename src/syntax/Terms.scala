@@ -57,6 +57,8 @@ object Terms {
       case Term.Tuple3(t1, t2, t3) =>          "(" + t1.fmt + "," + t2.fmt + "," + t3.fmt + ")"
       case Term.Tuple4(t1, t2, t3, t4) =>      "(" + t1.fmt + "," + t2.fmt + "," + t3.fmt + "," + t4.fmt + ")"
       case Term.Tuple5(t1, t2, t3, t4, t5) =>  "(" + t1.fmt + "," + t2.fmt + "," + t3.fmt + "," + t4.fmt + "," + t5.fmt + ")"
+
+      case Term.ScalaFunction(fn) => "native"
     }
   }
 

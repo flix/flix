@@ -73,6 +73,10 @@ object Type {
    * The type of strings.
    */
   case object Str extends Type
+  /**
+   * The type of native Scala objects.
+   */
+  case object Native extends Type
 
   /**
    * The type of sets.

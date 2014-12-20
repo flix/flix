@@ -1,5 +1,6 @@
 package impl.datastore
 
+import impl.logic.Symbol.PredicateSymbol
 import impl.logic.{Predicate, Symbol, Value}
 import impl.runtime.Interpreter
 import syntax.Symbols._
@@ -53,6 +54,10 @@ class IndexedStore extends DataStore {
     case List(_, _, _, _, _) =>                               map5.get(p.name).map({case (v1, v2, v3, v4, v5) => List(v1, v2, v3, v4, v5)}).toList
 
     case _ => throw new UnsupportedOperationException()
+  }
+
+  def dumpPred(predName: String) = map1.get(PredicateSymbol(predName)).get match {
+    case Value.Set(set) => set.toList
   }
 
   def output(): Unit = {

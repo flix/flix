@@ -35,6 +35,7 @@ object Unification {
     case (Term.Bool(b1), Value.Bool(b2)) if b1 == b2 => List(env0)
     case (Term.Int(i1), Value.Int(i2)) if i1 == i2 => List(env0)
     case (Term.Str(s1), Value.Str(s2)) if s1 == s2 => List(env0)
+    case (Term.Native(o1), Value.Native(o2)) if o1 == o2 => List(env0)
 
     // TODO: We should think more careful about this.
     // Probably what we want is both a Set term and a Set membership.

@@ -17,6 +17,8 @@ class Flix {
 
   def print() = solver.print
 
+  def relation(name: String): List[Value] = solver.datastore.dumpPred(name)
+
   private val compiler = new Compiler
   private var solver: Solver = null
 }

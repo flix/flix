@@ -44,6 +44,8 @@ class SimpleStore extends DataStore {
     case _ => throw new UnsupportedOperationException()
   }
 
+  def dumpPred(predName: String) = map1.toList.collect({case (s, v1) if predName == s.s => v1})
+
   def output(): Unit = {
     for ((p, v1) <- map1) {
       println(p.fmt + "(" + v1.fmt + ").")

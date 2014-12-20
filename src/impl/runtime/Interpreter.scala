@@ -89,6 +89,8 @@ object Interpreter {
       val v4 = evaluate(t4)
       val v5 = evaluate(t5)
       Value.Tuple5(v1, v2, v3, v4, v5)
+
+    case Term.Native(o) => Value.Native(o)
   }
 
   /**

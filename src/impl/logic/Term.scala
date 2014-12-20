@@ -41,6 +41,7 @@ sealed trait Term {
     case Term.Tuple5(t1, t2, t3, t4, t5) => Term.Tuple5(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t), t5.substitute(x, t))
 
     case Term.ScalaFunction(_) => this
+    case Term.Native(_) => this
   }
 
   /**
@@ -238,4 +239,13 @@ object Term {
   // case class Apply
   // etc.
 
+  /**
+   * A native Scala/Java object.
+   */
+  case class Native(obj: Any) extends Term
+
+  /**
+   * A native Scala function.
+   */
+  case class ScalaFunction(fn: (Value => Value)) extends Term
 }

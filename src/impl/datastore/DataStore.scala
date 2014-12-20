@@ -24,4 +24,8 @@ trait DataStore {
    */
   def output(): Unit
 
+  /**
+   * Outputs a list of values of the unary predicate with name predName.
+   */
+  def dumpPred(predName: String): List[Value]
 }

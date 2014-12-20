@@ -198,6 +198,7 @@ class Compiler {
     case SExp.Name("Bool") => Type.Bool
     case SExp.Name("Int") => Type.Int
     case SExp.Name("Str") => Type.Str
+    case SExp.Name("Native") => Type.Native
     case SExp.Name(s) => types(s)
     case SExp.Lst(List(SExp.Name("Set"), e1)) => Type.Set(compileType(e1))
     case SExp.Lst(List(SExp.Keyword("->"), e1, e2)) => Type.Function(compileType(e1), compileType(e2))
