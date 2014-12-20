@@ -78,12 +78,21 @@ namespace ParityAnalysis {
     // and division:
 
 
-    // and whether the number may posible be zero.
+    // and whether a number may be zero.
     @strict @monotone
     def isMaybeZero(e: Parity): Bool = match e with {
         case Bot    => false;
         case Odd    => false;
         case Even   => true;
+        case Top    => true;
+    };
+
+    // or may be odd.
+    @strict @monotone
+    def isMaybeOdd(e: Parity): Bool = match e with {
+        case Bot    => false;
+        case Odd    => true;
+        case Even   => false;
         case Top    => true;
     };
 
