@@ -72,13 +72,29 @@ namespace ParityAnalysis {
         case (Odd, Even)    => Even;
         case (Even, Odd)    => Even;
         case (Even, Even)   => Even;
-        // ...
+        case _              => Top;
     };
 
     // and division:
+     @strict @monotone
+     def divide(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+        case (_, Bot)       => Bot;
+        case (Bot, _)       => Bot;
+        case (Odd, Odd)     => ???;
+        case (Odd, Even)    => ???;
+        case (Even, Odd)    => ???;
+        case (Even, Even)   => ???;
+        case _              => Top;
+     };
 
+    // and minimum:
+    def minimum(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+        case (_, Bot)   => Bot;
+        case (Bot, _)   => Bot;
+        case _          => Top;
+    };
 
-    // and whether a number may be zero.
+    // tests whether a number may be zero.
     @strict @monotone
     def isMaybeZero(e: Parity): Bool = match e with {
         case Bot    => false;
@@ -87,7 +103,7 @@ namespace ParityAnalysis {
         case Top    => true;
     };
 
-    // or may be odd.
+    // tests whether a number may be odd.
     @strict @monotone
     def isMaybeOdd(e: Parity): Bool = match e with {
         case Bot    => false;
