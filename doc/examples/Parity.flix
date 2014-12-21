@@ -122,6 +122,9 @@ namespace Parity {
 
     // we are now ready to define a simple analysis:
 
+    // let's compute the sum of one and two:
+    var SumOneTwo: Parity;
+    fact SumOneTwo sum(One, Two);
 
 
 

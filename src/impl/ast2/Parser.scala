@@ -5,10 +5,13 @@ import org.parboiled2._
 import scala.collection.immutable.Seq
 import scala.util.{Failure, Success}
 
+// TODO: deal with error handling
+// TODO: Sort everything.
+// TODO: Deal properly with optional white space.
+
 object Parser {
 
   def parse(s: String): Ast.Root = {
-    // todo: deal with error handling
     val parser = new Parser(s)
     parser.Root.run() match {
       case Success(ast) => ast
@@ -17,9 +20,6 @@ object Parser {
     }
   }
 }
-
-// TODO: Sort everything.
-// TODO: Deal properly with optional white space.
 
 class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
@@ -85,8 +85,9 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     Ident ~ ":" ~ WhiteSpace ~ Type ~> ((name: String, typ: Ast.Type) => (name, typ))
   }
 
-
-  // --------------------------------------------------------------------
+  /** *************************************************************************/
+  /** Predicates                                                            ***/
+  /** *************************************************************************/
 
   def Predicate: Rule1[Ast.Predicate] = rule {
     Ident ~ WhiteSpace ~ Term ~> Ast.Predicate
@@ -118,14 +119,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def SetTerm: Rule1[Ast.Term.Set] = rule {
     "{" ~ oneOrMore(SimpleTerm).separatedBy("," ~ WhiteSpace) ~ "}" ~> Ast.Term.Set
-  }
-
-  // --------------------------------------------------------------------
-
-
-  // TODO: Remove?
-  def Digits: Rule1[String] = rule {
-    capture(oneOrMore(CharPredicate.Digit))
   }
 
   /** *************************************************************************/
@@ -199,8 +192,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     Name ~ "(" ~ zeroOrMore(Expression).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Expression.Call
   }
 
-  // TODO: Tag Exp
-
   def TupleExp: Rule1[Ast.Expression.Tuple] = rule {
     "(" ~ oneOrMore(Expression).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Expression.Tuple
   }
@@ -221,13 +212,9 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "fn" ~ optWhiteSpace ~ "(" ~ ArgumentList ~ "):" ~ optWhiteSpace ~ Type ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Expression ~> Ast.Expression.Lambda
   }
 
-
   /** *************************************************************************/
   /** Patterns                                                              ***/
   /** *************************************************************************/
-  // TODO: Literal.
-
-
   def Pattern: Rule1[Ast.MatchPattern] = rule {
     // Note: TaggedPattern must preceede VariablePattern to avoid left-recursion.
     WildcardPattern | LiteralPattern | TaggedPattern | TuplePattern | VariablePattern
@@ -268,8 +255,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   def SimpleType: Rule1[Ast.Type] = rule {
     TupleType | SetType | MapType | EnumType | NameRefType
   }
-
-  // TODO: Function Types?
 
   def NameRefType: Rule1[Ast.Type.AmbiguousName] = rule {
     Name ~> Ast.Type.AmbiguousName
