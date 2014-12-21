@@ -115,7 +115,11 @@ object Compiler {
       case Ast.Declaration.Enum(name, tpe) =>
         Ast.Declaration.Enum(name, disambiguate(tpe, namespace, env).asInstanceOf[Ast.Type.Enum])
 
-      case decl: Ast.Declaration.Val => ast // TODO
+      case Ast.Declaration.Val(name, tpe, exp) =>
+        val tpe2 = disambiguate(tpe, namespace, env)
+        val exp2 = disambiguate(namespace, exp, env, Set.empty)
+        Ast.Declaration.Val(name, tpe2, exp2)
+
       case decl: Ast.Declaration.Var => ast // TODO
       case Ast.Declaration.Fun(annotations, name, arguments, tpe, exp) =>
         val bound = arguments.map(_._1).toSet
@@ -155,7 +159,9 @@ object Compiler {
         }
         Ast.Expression.Match(dexp, drules)
 
-      case Ast.Expression.Call(f, args) => ???
+      case Ast.Expression.Call(name, args) =>
+        val args2 = args map (a => disambiguate(namespace, a, env, bound))
+        Ast.Expression.Call(name, args2)
 
       case Ast.Expression.Tag(name, e) => ???
 

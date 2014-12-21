@@ -47,7 +47,7 @@ object Ast {
     /**
      * An AST node which represents a value declaration.
      */
-    case class Val(name: String, t: Type, exp: Expression) extends Declaration
+    case class Val(name: String, tpe: Type, exp: Expression) extends Declaration
 
     /**
      * An AST node which represents a variable declaration.
