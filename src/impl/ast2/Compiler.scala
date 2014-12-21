@@ -1,5 +1,7 @@
 package impl.ast2
 
+import impl.ast2.Ast.Lattice
+
 object Compiler {
 
   def compile(ast: Ast.Root): Ast.Root = {
@@ -101,6 +103,7 @@ object Compiler {
       case decl => disambiguate(decl, Nil, env)
     })
 
+
     /**
      * Disambiguates the given `ast` declaraction in the `namespace` using the given environment `env`.
      */
@@ -120,7 +123,7 @@ object Compiler {
         val exp2 = disambiguate(namespace, exp, env, Set.empty)
         Ast.Declaration.Val(name, tpe2, exp2)
 
-      case Ast.Declaration.Var(name, lat) => ast // TODO
+      case Ast.Declaration.Var(name, lat) => Ast.Declaration.Var(name, disambiguate(lat, namespace, env))
 
       case Ast.Declaration.Fun(annotations, name, args, tpe, exp) =>
         val args2 = args.map {
@@ -133,9 +136,9 @@ object Compiler {
 
       case decl: Ast.Declaration.Lattice => decl.copy(record = disambiguate(namespace, decl.record, env, Set.empty))
 
-      case decl: Ast.Declaration.Fact => ast // TODO
+      case Ast.Declaration.Fact(head) => ast // TODO
 
-      case decl: Ast.Declaration.Rule => ast // TODO
+      case Ast.Declaration.Rule(head, body) => ast // TODO
     }
 
     /**
@@ -217,6 +220,8 @@ object Compiler {
 
       case Type.Function(t1, t2) => ???
     }
+
+    def disambiguate(lat: Lattice, name: Name, env: Environment): Lattice = lat // TODO
 
     def lookupType(namespace: Name, name: Name, env: Environment): Ast.Type = {
       lookupType(namespace ::: name, env).

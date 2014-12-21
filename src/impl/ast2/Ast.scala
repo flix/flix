@@ -219,7 +219,7 @@ object Ast {
 
     /**
      * An AST node which represents a variable pattern.
-     */
+     */ // TODO: Ambigious
     case class Var(name: String) extends MatchPattern
 
     /**
