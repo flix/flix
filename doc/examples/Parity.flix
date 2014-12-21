@@ -2,7 +2,7 @@
  * A parity analysis is a simple numeric analysis which
  * determines whether a number is even or odd.
  */
-namespace Parity {
+namespace ParityAnalysis {
 
     // the parity lattice consists of just four elements:
     enum Parity {

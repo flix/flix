@@ -1,21 +1,17 @@
+/**
+ * A sign analysis is a numerical analysis which over-approxinates the sign of a number.
+ */
 namespace SignAnalysis {
 
-    /**
-     * A
-     * multi-line
-     * comment.
-    */
+    // the sign lattice consists of five elements:
+    enum Sign {
+                  case Top,
 
-    // A single-line comment
-    // uh, one more :)
+        case Neg, case Zer, case Pos,
 
-   enum Sign {
-        case Top,
-        case Neg,
-        case Zer,
-        case Pos,
-        case Top
+                  case Top
     };
+
 
     def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) with {
         case (Bot, x)   => true;
@@ -68,7 +64,7 @@ namespace SignAnalysis {
 };
 
 namespace SignAnalysis {
-
+/*
     type Var = Str;
 
     var Const:      Var -> Int;
@@ -87,7 +83,7 @@ namespace SignAnalysis {
         Plus (r, x, y),
         Value x -> v1,
         Value y -> v2;
-
+*/
 };
 
 
