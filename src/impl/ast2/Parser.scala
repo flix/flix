@@ -1,5 +1,8 @@
 package impl.ast2
 
+import java.io.InputStream
+import java.nio.file.Path
+
 import impl.logic.{BinaryOperator, UnaryOperator}
 import org.parboiled2._
 import scala.collection.immutable.Seq
@@ -11,8 +14,16 @@ import scala.util.{Failure, Success}
 
 object Parser {
 
-  def parse(s: String): Ast.Root = {
-    val parser = new Parser(s)
+  // TODO: Add variants for parsing
+
+  def parse(paths: Traversable[Path]): Ast.Root = ???
+
+  def parse(path: Path): Ast.Root = ???
+
+  def parse(input: InputStream): Ast.Root = ???
+
+  def parse(input: String): Ast.Root = {
+    val parser = new Parser(input)
     parser.Root.run() match {
       case Success(ast) => ast
       case Failure(e: ParseError) => throw new RuntimeException("Expression is not valid: " + parser.formatError(e))
