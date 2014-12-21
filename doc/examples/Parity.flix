@@ -94,7 +94,7 @@ namespace Parity {
         case _          => Top;
     };
 
-    // tests whether a number may be zero.
+    // we can test whether a number may be zero:
     @strict @monotone
     def isMaybeZero(e: Parity): Bool = match e with {
         case Bot    => false;
@@ -103,7 +103,7 @@ namespace Parity {
         case Top    => true;
     };
 
-    // tests whether a number may be odd.
+    // or may be odd:
     @strict @monotone
     def isMaybeOdd(e: Parity): Bool = match e with {
         case Bot    => false;
@@ -112,10 +112,10 @@ namespace Parity {
         case Top    => true;
     };
 
-    // we can abstract integers into the parity domain:
+    // we abstract integers into the parity domain by using modulo.
     def lift(i: Int): Parity = if (i % 2 == 0) Even else Odd;
 
-    // let's define some constants.
+    // let's define some constants:
     val One: Parity = lift(1);
     val Two: Parity = lift(2);
     val Six: Parity = Even;
