@@ -35,11 +35,10 @@ object BinaryOperator {
     case "and" => And
     case "or" => Or
     case "lte" => LessEqual
-    case "gte" => GreaterEqual // TODO: Let us gid rid of these.
+    case "gte" => GreaterEqual
     case "min" => Minimum
     case "max" => Maximum
   }
-  // TODO: The IR language should have fewer instructions which are easier to reason about.
 
   case object Plus extends BinaryOperator
   case object Minus extends BinaryOperator
