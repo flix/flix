@@ -12,11 +12,11 @@ sealed trait Term {
    * of the given variable `x` has been replaced by the term `t`.
    */
   def substitute(x: Symbol.VariableSymbol, t: Term): Term = this match {
-    case Term.Unit =>     Term.Unit
-    case Term.Bool(b) =>  Term.Bool(b)
-    case Term.Int(i) =>   Term.Int(i)
-    case Term.Str(s) =>   Term.Str(s)
-    case Term.Set(xs) =>  Term.Set(xs map (_.substitute(x, t)))
+    case Term.Unit => Term.Unit
+    case Term.Bool(b) => Term.Bool(b)
+    case Term.Int(i) => Term.Int(i)
+    case Term.Str(s) => Term.Str(s)
+    case Term.Set(xs) => Term.Set(xs map (_.substitute(x, t)))
 
     case Term.Var(s) if s == x => t
     case Term.Var(s) => Term.Var(s)
@@ -34,10 +34,10 @@ sealed trait Term {
     case Term.UnaryOp(op, t1) => Term.UnaryOp(op, t1.substitute(x, t))
     case Term.BinaryOp(op, t1, t2) => Term.BinaryOp(op, t1.substitute(x, t), t2.substitute(x, t))
 
-    case Term.Tag(s, t1, typ) =>            Term.Tag(s, t1.substitute(x, t), typ)
-    case Term.Tuple2(t1, t2) =>             Term.Tuple2(t1.substitute(x, t), t2.substitute(x, t))
-    case Term.Tuple3(t1, t2, t3) =>         Term.Tuple3(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
-    case Term.Tuple4(t1, t2, t3, t4) =>     Term.Tuple4(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t))
+    case Term.Tag(s, t1, typ) => Term.Tag(s, t1.substitute(x, t), typ)
+    case Term.Tuple2(t1, t2) => Term.Tuple2(t1.substitute(x, t), t2.substitute(x, t))
+    case Term.Tuple3(t1, t2, t3) => Term.Tuple3(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t))
+    case Term.Tuple4(t1, t2, t3, t4) => Term.Tuple4(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t))
     case Term.Tuple5(t1, t2, t3, t4, t5) => Term.Tuple5(t1.substitute(x, t), t2.substitute(x, t), t3.substitute(x, t), t4.substitute(x, t), t5.substitute(x, t))
 
     case Term.ScalaFunction(_) => this
@@ -64,26 +64,26 @@ sealed trait Term {
    * Returns the set of free variables in the term.
    */
   def freeVariables: Set[Symbol.VariableSymbol] = this match {
-    case Term.Unit =>     Set.empty
-    case Term.Bool(b) =>  Set.empty
-    case Term.Int(i) =>   Set.empty
-    case Term.Str(s) =>   Set.empty
-    case Term.Set(xs) =>  xs flatMap (_.freeVariables)
+    case Term.Unit => Set.empty
+    case Term.Bool(b) => Set.empty
+    case Term.Int(i) => Set.empty
+    case Term.Str(s) => Set.empty
+    case Term.Set(xs) => xs flatMap (_.freeVariables)
 
     case Term.Var(s) => Set(s)
-    case Term.Abs(x, typ, t) =>               t.freeVariables - x
-    case Term.App(t1, t2) =>                  t1.freeVariables ++ t2.freeVariables
+    case Term.Abs(x, typ, t) => t.freeVariables - x
+    case Term.App(t1, t2) => t1.freeVariables ++ t2.freeVariables
 
-    case Term.UnaryOp(op, t) =>               t.freeVariables
-    case Term.BinaryOp(op, t1, t2) =>         t1.freeVariables ++ t2.freeVariables
-    case Term.IfThenElse(t1, t2, t3) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
-    case Term.Match(t, rules) =>              t.freeVariables -- rules.flatMap(_._1.freeVars)
+    case Term.UnaryOp(op, t) => t.freeVariables
+    case Term.BinaryOp(op, t1, t2) => t1.freeVariables ++ t2.freeVariables
+    case Term.IfThenElse(t1, t2, t3) => t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
+    case Term.Match(t, rules) => t.freeVariables -- rules.flatMap(_._1.freeVars)
 
-    case Term.Tag(s, t, typ) =>               t.freeVariables
-    case Term.Tuple2(t1, t2) =>               t1.freeVariables ++ t2.freeVariables
-    case Term.Tuple3(t1, t2, t3) =>           t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
-    case Term.Tuple4(t1, t2, t3, t4) =>       t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables
-    case Term.Tuple5(t1, t2, t3, t4, t5) =>   t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables ++ t5.freeVariables
+    case Term.Tag(s, t, typ) => t.freeVariables
+    case Term.Tuple2(t1, t2) => t1.freeVariables ++ t2.freeVariables
+    case Term.Tuple3(t1, t2, t3) => t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables
+    case Term.Tuple4(t1, t2, t3, t4) => t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables
+    case Term.Tuple5(t1, t2, t3, t4, t5) => t1.freeVariables ++ t2.freeVariables ++ t3.freeVariables ++ t4.freeVariables ++ t5.freeVariables
 
     case Term.ScalaFunction(_) => Set.empty
   }
@@ -230,11 +230,18 @@ object Term {
   /**
    * TODO: Introduce new terms starting here.
    */
-  // case class BNot(t: Term) extends Term
-  // case class BAnd(t: Term) extends Term
-  // case class IAdd
-  // case class Apply
-  // etc.
+  case class BNot(t: Term) extends Term
+
+  case class BOr(t: Term) extends Term
+
+  case class BAnd(t1: Term, t2: Term) extends Term
+
+  case class IAdd(t1: Term, t2: Term) extends Term
+
+  case class ISub(t1: Term, t2: Term) extends Term
+
+
+
 
   /**
    * A native Scala/Java object.
@@ -245,4 +252,5 @@ object Term {
    * A native Scala function.
    */
   case class ScalaFunction(fn: (Value => Value)) extends Term
+
 }

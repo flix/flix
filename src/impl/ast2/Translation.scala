@@ -14,10 +14,9 @@ object Translation {
     case Ast.Expression.Match(e, rules) => ???
 
     case Ast.Expression.Unary(op, e1) =>
-      // Eliminates unary plus and minus.
       val t1 = compile(e1)
       op match {
-        case UnaryOperator.Not => Term.UnaryOp(UnaryOperator.Not, t1)
+        case UnaryOperator.Not => Term.BNot(t1)
         case UnaryOperator.UnaryPlus => t1
         case UnaryOperator.UnaryMinus => Term.BinaryOp(BinaryOperator.Minus, Term.Int(0), t1)
       }

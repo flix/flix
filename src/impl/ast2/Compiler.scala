@@ -180,16 +180,15 @@ object Compiler {
       case Type.AmbiguousName(Seq("Bool")) => Type.Bool
       case Type.AmbiguousName(Seq("Int")) => Type.Int
       case Type.AmbiguousName(Seq("Str")) => Type.Str
+      case Type.AmbiguousName(name) => ???
+
       case Type.Unit => Type.Unit
       case Type.Bool => Type.Bool
       case Type.Int => Type.Int
       case Type.Str => Type.Str
       case Type.Tuple(elms) => Type.Tuple(elms map (e => disambiguate(e, namespace, env)))
+      case Type.Set(elms) => Type.Set(disambiguate(elms, namespace, env))
 
-      //
-      //        AmbiguousName
-      //        Set
-      //        Rel
       //        Map
       //        Tag
       //        Enum

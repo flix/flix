@@ -12,7 +12,7 @@ namespace SignAnalysis {
                   case Top
     };
 
-
+    //
     def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) with {
         case (Bot, x)   => true;
         case (Neg, Neg) => true;
