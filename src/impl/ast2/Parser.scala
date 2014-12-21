@@ -230,11 +230,15 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def Pattern: Rule1[Ast.MatchPattern] = rule {
     // Note: TaggedPattern must preceede VariablePattern to avoid left-recursion.
-    WildcardPattern | TaggedPattern | TuplePattern | VariablePattern
+    WildcardPattern | LiteralPattern | TaggedPattern | TuplePattern | VariablePattern
   }
 
   def WildcardPattern: Rule1[Ast.MatchPattern] = rule {
     str("_") ~> (() => Ast.MatchPattern.Wildcard)
+  }
+
+  def LiteralPattern: Rule1[Ast.MatchPattern] = rule {
+    Literal ~> Ast.MatchPattern.Lit
   }
 
   def VariablePattern: Rule1[Ast.MatchPattern.Var] = rule {
@@ -349,7 +353,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~> Ast.Literal.Str
   }
 
-  // TODO: Comment blocks.
   /** *************************************************************************/
   /** Operators                                                             ***/
   /** *************************************************************************/
@@ -403,7 +406,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   /** Source Location                                                       ***/
   /** *************************************************************************/
   def Loc = rule {
-    // TODO: Need to track line and column.
+    // TODO: Implement source locations.
     push(cursor)
   }
 
