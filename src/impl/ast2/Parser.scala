@@ -228,8 +228,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     Literal ~> Ast.MatchPattern.Lit
   }
 
-  def VariablePattern: Rule1[Ast.MatchPattern.Var] = rule {
-    Ident ~> Ast.MatchPattern.Var
+  def VariablePattern: Rule1[Ast.MatchPattern.AmbigiousName] = rule {
+    Ident ~> Ast.MatchPattern.AmbigiousName
   }
 
   def TaggedPattern: Rule1[Ast.MatchPattern.Tag] = rule {

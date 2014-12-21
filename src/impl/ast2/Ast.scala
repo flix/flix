@@ -219,8 +219,9 @@ object Ast {
 
     /**
      * An AST node which represents a variable pattern.
-     */ // TODO: Ambigious
-    case class Var(name: String) extends MatchPattern
+     */
+    @Eliminated
+    case class AmbigiousName(name: String) extends MatchPattern
 
     /**
      * An AST node which represents a pattern match literal
@@ -241,7 +242,7 @@ object Ast {
 
 
   // TODO: Parse Predicates!
-  case class Predicate(name: String, t2: Term) extends MatchPattern
+  case class Predicate(name: String, t: Term) extends MatchPattern
 
   // TODO: Refactor?
 

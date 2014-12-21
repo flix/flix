@@ -1,7 +1,5 @@
 package impl.ast2
 
-import impl.ast2.Ast.Lattice
-
 object Compiler {
 
   def compile(ast: Ast.Root): Ast.Root = {
@@ -260,6 +258,7 @@ object Compiler {
 
   }
 
+  // TODO: Introduce bound methods for pattern and function.
 
   case class CompilerException(msg: String) extends RuntimeException(msg)
 
