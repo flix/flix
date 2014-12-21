@@ -4,10 +4,8 @@ object Compiler {
 
   def compile(ast: Ast.Root): Ast.Root = {
     val env = Symbols.visit(ast)
-    val ast3 = Disambiguation.disambiguate(ast, env)
-    //println(env)
+    Disambiguation.disambiguate(ast, env)
 
-    ast3
   }
 
   /**
@@ -114,7 +112,8 @@ object Compiler {
       case Ast.Declaration.Tpe(name, tpe) =>
         Ast.Declaration.Tpe(name, disambiguate(tpe, namespace, env))
 
-      case Ast.Declaration.Enum(name, tpe) => ast // TODO
+      case Ast.Declaration.Enum(name, tpe) =>
+        Ast.Declaration.Enum(name, disambiguate(tpe, namespace, env).asInstanceOf[Ast.Type.Enum])
 
       case decl: Ast.Declaration.Val => ast // TODO
       case decl: Ast.Declaration.Var => ast // TODO
@@ -143,7 +142,12 @@ object Compiler {
       case Ast.Expression.Binary(e1, op, e2) => Ast.Expression.Binary(disambiguate(namespace, e1, env, bound), op, disambiguate(namespace, e2, env, bound))
       case Ast.Expression.Infix(e1, name, e2) => ???
       case Ast.Expression.Let(name, value, body) => ???
-      case Ast.Expression.IfThenElse(e1, e2, e3) => ???
+      case Ast.Expression.IfThenElse(e1, e2, e3) =>
+        val a1 = disambiguate(namespace, e1, env, bound)
+        val a2 = disambiguate(namespace, e2, env, bound)
+        val a3 = disambiguate(namespace, e3, env, bound)
+        Ast.Expression.IfThenElse(a1, a2, a3)
+
       case Ast.Expression.Match(exp, rules) =>
         val dexp = disambiguate(namespace, exp, env, bound)
         val drules = rules map {
@@ -176,26 +180,46 @@ object Compiler {
      * Disambiguates the given type `ast`.
      */
     def disambiguate(ast: Ast.Type, namespace: Name, env: Environment): Ast.Type = ast match {
-      case Type.AmbiguousName(Seq("Unit")) => Type.Unit
-      case Type.AmbiguousName(Seq("Bool")) => Type.Bool
-      case Type.AmbiguousName(Seq("Int")) => Type.Int
-      case Type.AmbiguousName(Seq("Str")) => Type.Str
-      case Type.AmbiguousName(name) => ???
-
+      // Primitives
       case Type.Unit => Type.Unit
       case Type.Bool => Type.Bool
       case Type.Int => Type.Int
       case Type.Str => Type.Str
+      // Ambiguous
+      case Type.AmbiguousName(Seq("Unit")) => Type.Unit
+      case Type.AmbiguousName(Seq("Bool")) => Type.Bool
+      case Type.AmbiguousName(Seq("Int")) => Type.Int
+      case Type.AmbiguousName(Seq("Str")) => Type.Str
+      case Type.AmbiguousName(name) => lookupType(namespace, name.toList, env)
+
+      // Compound
+      case Type.Tag(name) => Type.Tag(name)
       case Type.Tuple(elms) => Type.Tuple(elms map (e => disambiguate(e, namespace, env)))
       case Type.Set(elms) => Type.Set(disambiguate(elms, namespace, env))
+      case Type.Map(elms) => ???
+      case Type.Enum(elms) =>
+        val elms2 = elms map (e => disambiguate(e, namespace, env).asInstanceOf[Ast.Type.Tag])
+        Type.Enum(elms2)
 
-      //        Map
-      //        Tag
-      //        Enum
-      //
-      //        Function
-      //
+      case Type.Function(t1, t2) => ???
     }
+
+    def lookupType(namespace: Name, name: Name, env: Environment): Ast.Type = {
+      lookupType(namespace ::: name, env).
+        orElse(lookupType(name, env)).getOrElse(throw new CompilerException(s"Name not found $name"))
+    }
+
+    def lookupType(name: Name, env: Environment): Option[Ast.Type] = {
+      val candidates = env.get(name).collect {
+        case d: Ast.Declaration.Tpe => d.typ
+        case d: Ast.Declaration.Enum => d.tpe
+      }
+      if (candidates.size > 1) {
+        throw new CompilerException(s"Ambiguous name: $name")
+      }
+      candidates.headOption
+    }
+
 
     // TODO: Messy. Rewrite.
     def lookupExp(namespace: Name, name: Name, env: Environment): Ast.Expression = {

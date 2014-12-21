@@ -87,13 +87,6 @@ namespace ParityAnalysis {
         case _              => Top;
      };
 
-    // and minimum:
-    def minimum(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        case (_, Bot)   => Bot;
-        case (Bot, _)   => Bot;
-        case _          => Top;
-    };
-
     // we can test whether a number may be zero:
     @strict @monotone
     def isMaybeZero(e: Parity): Bool = match e with {
@@ -125,7 +118,5 @@ namespace ParityAnalysis {
     // let's compute the sum of one and two:
     var SumOneTwo: Parity;
     fact SumOneTwo sum(One, Two);
-
-
 
 };
