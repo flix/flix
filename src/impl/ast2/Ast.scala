@@ -242,6 +242,7 @@ object Ast {
 
 
   // TODO: Parse Predicates!
+  // todo: Should be seq String
   case class Predicate(name: String, t: Term) extends MatchPattern
 
   // TODO: Refactor?
@@ -250,11 +251,17 @@ object Ast {
 
   object Term {
 
+    // TODO: Var
+
+    // TODO: Ambigious name
+    case class Name(name: Seq[String]) extends Term
+
     case class Lit(literal: Literal) extends Term
 
+    // TODO: Rename to Call
     case class Apply(name: Seq[String], arguments: Seq[Term]) extends Term
 
-    case class Name(name: Seq[String]) extends Term
+    // TODO: Tag?
 
     case class Tuple(elms: Seq[Term]) extends Term
 
