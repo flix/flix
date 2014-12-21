@@ -1,5 +1,7 @@
 package impl.ast2
 
+import impl.ast2.Ast.Predicate
+
 object Compiler {
 
   def compile(ast: Ast.Root): Ast.Root = {
@@ -134,7 +136,7 @@ object Compiler {
 
       case decl: Ast.Declaration.Lattice => decl.copy(record = disambiguate(namespace, decl.record, env, Set.empty))
 
-      case Ast.Declaration.Fact(head) => ast // TODO
+      case Ast.Declaration.Fact(head) => Ast.Declaration.Fact(disambiguate(head, namespace, env))
 
       case Ast.Declaration.Rule(head, body) => ast // TODO
     }
@@ -220,6 +222,13 @@ object Compiler {
     }
 
     def disambiguate(lat: Lattice, name: Name, env: Environment): Lattice = lat // TODO
+
+
+    def disambiguate(predicate: Predicate, name: Name, env: Environment): Predicate =
+      ???
+
+
+
 
     def lookupType(namespace: Name, name: Name, env: Environment): Ast.Type = {
       lookupType(namespace ::: name, env).

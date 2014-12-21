@@ -117,6 +117,6 @@ namespace ParityAnalysis {
 
     // let's compute the sum of one and two:
     var SumOneTwo: Parity;
-    fact SumOneTwo sum(One, Two);
+    fact SumOneTwo plus(One, Two);
 
 };
