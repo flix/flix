@@ -164,7 +164,7 @@ object Ast {
     /**
      * An AST node which represents a function call.
      */
-    case class Call(function: Expression, arguments: Seq[Expression]) extends Expression
+    case class Call(name: Seq[String], arguments: Seq[Expression]) extends Expression
 
     /**
      * An AST node which represents an infix function call expression.

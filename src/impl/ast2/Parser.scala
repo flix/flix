@@ -156,7 +156,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def SimpleExpression: Rule1[Ast.Expression] = rule {
-    LiteralExp | LetExp | IfThenElseExp | MatchExp | CallExp | TupleExp | MapExp | SetExp | LambdaExp | VariableExp | ErrorExp
+    LiteralExp | LetExp | IfThenElseExp | MatchExp | TupleExp | MapExp | SetExp | LambdaExp | CallExp | VariableExp | ErrorExp
   }
 
   def LiteralExp: Rule1[Ast.Expression.Lit] = rule {
@@ -195,15 +195,11 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> ((p: Ast.MatchPattern, e: Ast.Expression) => (p, e))
   }
 
-
   def CallExp: Rule1[Ast.Expression.Call] = rule {
-    // TODO: Left recursive...
-    Expression ~ "(" ~ zeroOrMore(Expression).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Expression.Call
+    Name ~ "(" ~ zeroOrMore(Expression).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Expression.Call
   }
 
   // TODO: Tag Exp
-
-  // TODO: UnitExp
 
   def TupleExp: Rule1[Ast.Expression.Tuple] = rule {
     "(" ~ oneOrMore(Expression).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Expression.Tuple

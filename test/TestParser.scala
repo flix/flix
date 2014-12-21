@@ -295,6 +295,7 @@ class TestParser extends FunSuite {
 
     assertResult(a)(Parser.parse(s))
   }
+/*
 
   ignore("Parser.Call01") {
     val s = """val e: Bool = f(1);"""
@@ -319,6 +320,7 @@ class TestParser extends FunSuite {
 
     assertResult(a)(Parser.parse(s))
   }
+*/
 
 
   test("Parser.Lattice01") {
