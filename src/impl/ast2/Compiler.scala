@@ -98,17 +98,17 @@ object Compiler {
      * Disambiguates the given `ast` using the given environment `env`.
      */
     def disambiguate(ast: Ast.Root, env: Environment): Ast.Root = Ast.Root(ast.decls map {
-      case decl => disambiguate(Nil, decl, env)
+      case decl => disambiguate(decl, Nil, env)
     })
 
     /**
-     * Disambiguates the given `ast` under the current `namespace` using the given `environment`.
+     * Disambiguates the given `ast` declaraction in the `namespace` using the given environment `env`.
      */
-    // TODO: Change order of arguments
-    def disambiguate(namespace: Name, ast: Ast.Declaration, env: Environment): Ast.Declaration = ast match {
+    def disambiguate(ast: Ast.Declaration, namespace: Name, env: Environment): Ast.Declaration = ast match {
       case Ast.Declaration.NameSpace(name, body) => Ast.Declaration.NameSpace(name, body map {
-        case decl => disambiguate(withSuffix(namespace, name), decl, env)
+        case decl => disambiguate(decl, withSuffix(namespace, name), env)
       })
+
       case Ast.Declaration.Tpe(name, tpe) =>
         Ast.Declaration.Tpe(name, disambiguate(tpe, namespace, env))
 
@@ -120,13 +120,21 @@ object Compiler {
         val exp2 = disambiguate(namespace, exp, env, Set.empty)
         Ast.Declaration.Val(name, tpe2, exp2)
 
-      case decl: Ast.Declaration.Var => ast // TODO
-      case Ast.Declaration.Fun(annotations, name, arguments, tpe, exp) =>
-        val bound = arguments.map(_._1).toSet
-        Ast.Declaration.Fun(annotations, name, arguments, disambiguate(tpe, namespace, env), disambiguate(namespace, exp, env, bound))
+      case Ast.Declaration.Var(name, lat) => ast // TODO
+
+      case Ast.Declaration.Fun(annotations, name, args, tpe, exp) =>
+        val args2 = args.map {
+          case (argName, argType) => (argName, disambiguate(argType, namespace, env))
+        }
+        val bound = args.map(_._1).toSet
+        val returnTpe = disambiguate(tpe, namespace, env)
+        val bodyExp = disambiguate(namespace, exp, env, bound)
+        Ast.Declaration.Fun(annotations, name, args2, returnTpe, bodyExp)
 
       case decl: Ast.Declaration.Lattice => decl.copy(record = disambiguate(namespace, decl.record, env, Set.empty))
+
       case decl: Ast.Declaration.Fact => ast // TODO
+
       case decl: Ast.Declaration.Rule => ast // TODO
     }
 
