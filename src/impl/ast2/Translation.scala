@@ -47,9 +47,6 @@ object Translation {
   private def compile(pattern: Ast.MatchPattern): Pattern = pattern match {
     case Ast.MatchPattern.Wildcard => Pattern.Wildcard
     case Ast.MatchPattern.Var(name) => Pattern.Var(Symbol.VariableSymbol(name))
-    case Ast.MatchPattern.Bool(literal) => Pattern.Bool(literal)
-    case Ast.MatchPattern.Int(literal) => Pattern.Int(literal)
-    case Ast.MatchPattern.Str(literal) => Pattern.Str(literal)
     //case Ast.Pattern.Tag(name, p1) => Pattern.Tag(compile(name), compile(p1))
     case Ast.MatchPattern.Tuple(Seq(p1, p2)) => Pattern.Tuple2(compile(p1), compile(p2))
     case Ast.MatchPattern.Tuple(Seq(p1, p2, p3)) => Pattern.Tuple3(compile(p1), compile(p2), compile(p3))

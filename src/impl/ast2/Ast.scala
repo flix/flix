@@ -222,22 +222,10 @@ object Ast {
      */
     case class Var(name: String) extends MatchPattern
 
-    // TODO: Literal.
-
     /**
-     * An AST node which represents a literal boolean pattern.
+     * An AST node which represents a pattern match literal
      */
-    case class Bool(literal: scala.Boolean) extends MatchPattern
-
-    /**
-     * An AST node which represents a literal integer pattern.
-     */
-    case class Int(literal: scala.Int) extends MatchPattern
-
-    /**
-     * An AST node which represents a literal string pattern.
-     */
-    case class Str(literal: String) extends MatchPattern
+    case class Lit(literal: Literal) extends MatchPattern
 
     /**
      * An AST node which represents a tagged pattern.
