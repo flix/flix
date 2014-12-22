@@ -80,11 +80,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     zeroOrMore(Annotation) ~ "def" ~ WhiteSpace ~ Ident ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ optWhiteSpace ~ Type ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Expression ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Fun
   }
 
-  // TODO: Enable annotations on every declaraction?
-  def Annotation: Rule1[String] = rule {
-    "@" ~ Ident ~ WhiteSpace
-  }
-
   def EnumDeclaraction: Rule1[Ast.Declaration.Enum] = rule {
     "enum" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ EnumType ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Enum
   }
@@ -103,15 +98,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def RuleBody: Rule1[Seq[Ast.Predicate]] = rule {
     oneOrMore(Predicate).separatedBy("," ~ optWhiteSpace)
-  }
-
-  // TODO: Move to helpers.
-  def ArgumentList: Rule1[Seq[(String, Ast.Type)]] = rule {
-    zeroOrMore(Argument).separatedBy("," ~ optWhiteSpace)
-  }
-
-  def Argument: Rule1[(String, Ast.Type)] = rule {
-    Ident ~ ":" ~ optWhiteSpace ~ Type ~> ((name: String, typ: Ast.Type) => (name, typ))
   }
 
   /** *************************************************************************/
@@ -301,13 +287,12 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "Map" ~ "[" ~ oneOrMore(Type).separatedBy("," ~ optWhiteSpace) ~ "]" ~> Ast.Type.Map
   }
 
-  // TODO: Howto embed these into the language?
   def EnumType: Rule1[Ast.Type.Enum] = rule {
     "{" ~ WhiteSpace ~ EnumBody ~ WhiteSpace ~ "}" ~> Ast.Type.Enum
   }
 
   def EnumBody: Rule1[Seq[Ast.Type.Tag]] = rule {
-    oneOrMore("case" ~ WhiteSpace ~ Ident ~> Ast.Type.Tag).separatedBy("," ~ WhiteSpace)
+    oneOrMore("case" ~ WhiteSpace ~ Ident ~> Ast.Type.Tag).separatedBy("," ~ optWhiteSpace)
   }
 
   /** *************************************************************************/
@@ -331,6 +316,21 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def ProductLattice: Rule1[Ast.Lattice.Product] = rule {
     "(" ~ optWhiteSpace ~ oneOrMore(Lattice).separatedBy("," ~ optWhiteSpace) ~ optWhiteSpace ~ ")" ~> Ast.Lattice.Product
+  }
+
+  /** *************************************************************************/
+  /** Helpers                                                               ***/
+  /** *************************************************************************/
+  def ArgumentList: Rule1[Seq[(String, Ast.Type)]] = rule {
+    zeroOrMore(Argument).separatedBy("," ~ optWhiteSpace)
+  }
+
+  def Argument: Rule1[(String, Ast.Type)] = rule {
+    Ident ~ ":" ~ optWhiteSpace ~ Type ~> ((name: String, typ: Ast.Type) => (name, typ))
+  }
+
+  def Annotation: Rule1[String] = rule {
+    "@" ~ Ident ~ WhiteSpace
   }
 
   /** *************************************************************************/
@@ -414,14 +414,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def NewLine: Rule0 = rule {
     "\n" | "\r\n"
-  }
-
-  /** *************************************************************************/
-  /** Source Location                                                       ***/
-  /** *************************************************************************/
-  def Loc = rule {
-    // TODO: Implement source locations.
-    push(cursor)
   }
 
   /** *************************************************************************/
