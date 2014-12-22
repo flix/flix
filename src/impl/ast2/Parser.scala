@@ -1,37 +1,57 @@
 package impl.ast2
 
-import java.io.InputStream
-import java.nio.file.Path
-
 import impl.logic.{BinaryOperator, UnaryOperator}
 import org.parboiled2._
+
 import scala.collection.immutable.Seq
+import scala.io.Source
 import scala.util.{Failure, Success}
 
-// TODO: deal with error handling
-// TODO: Sort everything.
+import java.nio.file.{Files, Path}
+
 // TODO: Deal properly with optional white space.
 
 object Parser {
 
-  // TODO: Add variants for parsing
+  /**
+   * Returns the abstract syntax tree of the given `paths`.
+   */
+  def parse(paths: Traversable[Path]): Ast.Root = {
+    val asts = paths map parse
+    asts.reduce[Ast.Root] {
+      case (ast1, ast2) => Ast.Root(ast1.decls ++ ast2.decls)
+    }
+  }
 
-  def parse(paths: Traversable[Path]): Ast.Root = ???
+  /**
+   * Returns the abstract syntax tree of the given `path`.
+   */
+  def parse(path: Path): Ast.Root =
+    if (!Files.exists(path))
+      throw new RuntimeException(s"Path '$path' does not exist.")
+    else if (!Files.isReadable(path))
+      throw new RuntimeException(s"Path '$path' is not readable.")
+    else if (!Files.isRegularFile(path))
+      throw new RuntimeException(s"Path '$path' is not a regular file.")
+    else
+      parse(Source.fromFile(path.toFile).getLines().mkString("\n"))
 
-  def parse(path: Path): Ast.Root = ???
-
-  def parse(input: InputStream): Ast.Root = ???
-
+  /**
+   * Returns the abstract syntax tree of the given string `input`.
+   */
   def parse(input: String): Ast.Root = {
     val parser = new Parser(input)
     parser.Root.run() match {
       case Success(ast) => ast
-      case Failure(e: ParseError) => throw new RuntimeException("Expression is not valid: " + parser.formatError(e))
+      case Failure(e: ParseError) => throw new RuntimeException(parser.formatError(e))
       case Failure(e) => throw new RuntimeException("Unexpected error during parsing run: " + e)
     }
   }
 }
 
+/**
+ * A PEG parser for the Flix programming language.
+ */
 class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   def Root: Rule1[Ast.Root] = rule {
@@ -43,23 +63,23 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def NameSpace: Rule1[Ast.Declaration.NameSpace] = rule {
-    "namespace" ~ WhiteSpace ~ Name ~ WhiteSpace ~ '{' ~ optional(WhiteSpace) ~ zeroOrMore(Declaration) ~ optional(WhiteSpace) ~ '}' ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.NameSpace
+    "namespace" ~ WhiteSpace ~ Name ~ optWhiteSpace ~ '{' ~ optWhiteSpace ~ zeroOrMore(Declaration) ~ optWhiteSpace ~ '}' ~ ";" ~ optWhiteSpace ~> Ast.Declaration.NameSpace
   }
 
   def TypeDeclaration: Rule1[Ast.Declaration.Tpe] = rule {
-    "type" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Type ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Tpe
+    "type" ~ WhiteSpace ~ Ident ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Type ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Tpe
   }
 
   def ValueDeclaration: Rule1[Ast.Declaration.Val] = rule {
-    "val" ~ WhiteSpace ~ Ident ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Val
+    "val" ~ WhiteSpace ~ Ident ~ ":" ~ optWhiteSpace ~ Type ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Expression ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Val
   }
 
   def VariableDeclaration: Rule1[Ast.Declaration.Var] = rule {
-    "var" ~ WhiteSpace ~ Ident ~ ":" ~ WhiteSpace ~ Lattice ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Var
+    "var" ~ WhiteSpace ~ Ident ~ ":" ~ optWhiteSpace ~ Lattice ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Var
   }
 
   def FunctionDeclaration: Rule1[Ast.Declaration.Fun] = rule {
-    zeroOrMore(Annotation) ~ "def" ~ WhiteSpace ~ Ident ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ WhiteSpace ~ Type ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ ";" ~ optional(WhiteSpace) ~> Ast.Declaration.Fun
+    zeroOrMore(Annotation) ~ "def" ~ WhiteSpace ~ Ident ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ optWhiteSpace ~ Type ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Expression ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Fun
   }
 
   // TODO: Enable annotations on every declaraction?
@@ -68,11 +88,11 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def EnumDeclaraction: Rule1[Ast.Declaration.Enum] = rule {
-    "enum" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ EnumType ~ ";" ~ WhiteSpace ~> Ast.Declaration.Enum
+    "enum" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ EnumType ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Enum
   }
 
   def LatticeDeclaration: Rule1[Ast.Declaration.Lattice] = rule {
-    "lat" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ RecordExp ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Lattice
+    "lat" ~ WhiteSpace ~ Ident ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ RecordExp ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Lattice
   }
 
   def FactDeclaration: Rule1[Ast.Declaration.Fact] = rule {
@@ -89,7 +109,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
   // TODO: Move to helpers.
   def ArgumentList: Rule1[Seq[(String, Ast.Type)]] = rule {
-    zeroOrMore(Argument).separatedBy("," ~ optional(WhiteSpace))
+    zeroOrMore(Argument).separatedBy("," ~ optWhiteSpace)
   }
 
   def Argument: Rule1[(String, Ast.Type)] = rule {
@@ -204,7 +224,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def TupleExp: Rule1[Ast.Expression.Tuple] = rule {
-    "(" ~ oneOrMore(Expression).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.Expression.Tuple
+    "(" ~ oneOrMore(Expression).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Expression.Tuple
   }
 
   def RecordExp: Rule1[Ast.Expression.Record] = rule {
@@ -248,7 +268,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def TuplePattern: Rule1[Ast.MatchPattern.Tuple] = rule {
-    "(" ~ oneOrMore(Pattern).separatedBy("," ~ optional(WhiteSpace)) ~ ")" ~> Ast.MatchPattern.Tuple
+    "(" ~ oneOrMore(Pattern).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.MatchPattern.Tuple
   }
 
   /** *************************************************************************/
