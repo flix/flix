@@ -116,7 +116,7 @@ object Ast {
      * An AST node which represents either a variable or a reference to a named value.
      */
     @Eliminated
-    case class AmbiguousName(name: Seq[String]) extends Expression
+    case class Ambiguous(name: Seq[String]) extends Expression
 
     /**
      * An AST node which represents a reference to a variable.
@@ -223,10 +223,15 @@ object Ast {
     case class Lit(literal: Literal) extends Pattern
 
     /**
-     * An AST node which represents a variable or Tag.
+     * An AST node which represents a variable or tagged pattern.
      */
     @Eliminated
-    case class AmbigiousName(name: Seq[String], pattern: Option[Pattern]) extends Pattern
+    case class Ambiguous(name: Seq[String], pattern: Option[Pattern]) extends Pattern
+
+    /**
+     * An AST node which represents a tuples pattern.
+     */
+    case class Tuple(elms: Seq[Pattern]) extends Pattern
 
     /**
      * An AST node which represents a variable pattern.
@@ -237,14 +242,8 @@ object Ast {
     /**
      * An AST node which represents a tagged pattern.
      */
+    @Introduced
     case class Tag(name: Seq[String], pattern: Pattern) extends Pattern
-
-
-    /**
-     * An AST node which represents a tuples pattern.
-     */
-    case class Tuple(elms: Seq[Pattern]) extends Pattern
-
   }
 
 
@@ -290,7 +289,7 @@ object Ast {
      * An AST node which represents a reference to a named type.
      */
     @Eliminated
-    case class AmbiguousName(name: Seq[String]) extends Type
+    case class Ambiguous(name: Seq[String]) extends Type
 
     /**
      * An AST node which represents the unit type.

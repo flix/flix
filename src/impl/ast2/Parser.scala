@@ -219,8 +219,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     Ident ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Expression ~> ((k: String, v: Ast.Expression) => (k, v))
   }
 
-  def VariableExp: Rule1[Ast.Expression.AmbiguousName] = rule {
-    Name ~> Ast.Expression.AmbiguousName
+  def VariableExp: Rule1[Ast.Expression.Ambiguous] = rule {
+    Name ~> Ast.Expression.Ambiguous
   }
 
   def LambdaExp: Rule1[Ast.Expression.Lambda] = rule {
@@ -242,8 +242,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     Literal ~> Ast.Pattern.Lit
   }
 
-  def AmbigiousPattern: Rule1[Ast.Pattern.AmbigiousName] = rule {
-    Name ~ optional(WhiteSpace ~ Pattern) ~> Ast.Pattern.AmbigiousName
+  def AmbigiousPattern: Rule1[Ast.Pattern.Ambiguous] = rule {
+    Name ~ optional(WhiteSpace ~ Pattern) ~> Ast.Pattern.Ambiguous
   }
 
   def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {
@@ -266,8 +266,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     TupleType | SetType | MapType | EnumType | NameRefType
   }
 
-  def NameRefType: Rule1[Ast.Type.AmbiguousName] = rule {
-    Name ~> Ast.Type.AmbiguousName
+  def NameRefType: Rule1[Ast.Type.Ambiguous] = rule {
+    Name ~> Ast.Type.Ambiguous
   }
 
   def TupleType: Rule1[Ast.Type.Tuple] = rule {
