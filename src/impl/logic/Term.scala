@@ -230,16 +230,16 @@ object Term {
   /**
    * TODO: Introduce new terms starting here.
    */
-  case class BNot(t: Term) extends Term
-
-  case class BOr(t: Term) extends Term
-
-  case class BAnd(t1: Term, t2: Term) extends Term
-
-  case class IAdd(t1: Term, t2: Term) extends Term
-
-  case class ISub(t1: Term, t2: Term) extends Term
-
+//  case class BNot(t: Term) extends Term
+//
+//  case class BOr(t: Term) extends Term
+//
+//  case class BAnd(t1: Term, t2: Term) extends Term
+//
+//  case class IAdd(t1: Term, t2: Term) extends Term
+//
+//  case class ISub(t1: Term, t2: Term) extends Term
+//
 
 
 

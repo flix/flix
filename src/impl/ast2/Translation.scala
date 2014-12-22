@@ -16,7 +16,7 @@ object Translation {
     case Ast.Expression.Unary(op, e1) =>
       val t1 = compile(e1)
       op match {
-        case UnaryOperator.Not => Term.BNot(t1)
+        //case UnaryOperator.Not => Term.BNot(t1)
         case UnaryOperator.UnaryPlus => t1
         case UnaryOperator.UnaryMinus => Term.BinaryOp(BinaryOperator.Minus, Term.Int(0), t1)
       }
