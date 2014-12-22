@@ -248,6 +248,21 @@ object Ast {
 
   }
 
+  // or use Expr?
+  sealed trait Proposition
+
+  object Proposition {
+
+    // TODO: Var
+    // TODO: Call
+
+    case class Eq(n1: Seq[String], n2: Seq[String]) extends Proposition
+
+    case class NotEq(n1: Seq[String], n2: Seq[String]) extends Proposition
+  }
+
+  // TODO: Introduce constraint.
+
   // todo: Should be seq String
   case class Predicate(name: String, t: Term) extends Pattern
 
@@ -351,6 +366,7 @@ object Ast {
   /**
    * A common super-type for AST nodes which represent lattices.
    */
+  // TODO: This is still broken :(
   sealed trait Lattice
 
   object Lattice {
