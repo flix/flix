@@ -9,8 +9,6 @@ import scala.util.{Failure, Success}
 
 import java.nio.file.{Files, Path}
 
-// TODO: Deal properly with optional white space.
-
 object Parser {
 
   /**
@@ -96,15 +94,15 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def FactDeclaration: Rule1[Ast.Declaration.Fact] = rule {
-    "fact" ~ WhiteSpace ~ Predicate ~ ";" ~ WhiteSpace ~> Ast.Declaration.Fact
+    "fact" ~ WhiteSpace ~ Predicate ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Fact
   }
 
   def RuleDeclaraction: Rule1[Ast.Declaration.Rule] = rule {
-    "rule" ~ WhiteSpace ~ Predicate ~ WhiteSpace ~ "if" ~ WhiteSpace ~ RuleBody ~ ";" ~ WhiteSpace ~> Ast.Declaration.Rule
+    "rule" ~ WhiteSpace ~ Predicate ~ WhiteSpace ~ "if" ~ WhiteSpace ~ RuleBody ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Rule
   }
 
   def RuleBody: Rule1[Seq[Ast.Predicate]] = rule {
-    oneOrMore(Predicate).separatedBy("," ~ WhiteSpace)
+    oneOrMore(Predicate).separatedBy("," ~ optWhiteSpace)
   }
 
   // TODO: Move to helpers.
@@ -113,7 +111,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def Argument: Rule1[(String, Ast.Type)] = rule {
-    Ident ~ ":" ~ WhiteSpace ~ Type ~> ((name: String, typ: Ast.Type) => (name, typ))
+    Ident ~ ":" ~ optWhiteSpace ~ Type ~> ((name: String, typ: Ast.Type) => (name, typ))
   }
 
   /** *************************************************************************/
@@ -125,7 +123,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def Term: Rule1[Ast.Term] = rule {
-    SimpleTerm ~ zeroOrMore(WhiteSpace ~ "->" ~ WhiteSpace ~ SimpleTerm ~> Ast.Term.Map)
+    SimpleTerm ~ zeroOrMore(WhiteSpace ~ "->" ~ optWhiteSpace ~ SimpleTerm ~> Ast.Term.Map)
   }
 
   def SimpleTerm: Rule1[Ast.Term] = rule {
@@ -137,7 +135,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def ApplyTerm: Rule1[Ast.Term.Apply] = rule {
-    Name ~ "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Term.Apply
+    Name ~ "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Term.Apply
   }
 
   def NameTerm: Rule1[Ast.Term.Name] = rule {
@@ -145,11 +143,11 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def TupleTerm: Rule1[Ast.Term.Tuple] = rule {
-    "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Term.Tuple
+    "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Term.Tuple
   }
 
   def SetTerm: Rule1[Ast.Term.Set] = rule {
-    "{" ~ oneOrMore(SimpleTerm).separatedBy("," ~ WhiteSpace) ~ "}" ~> Ast.Term.Set
+    "{" ~ oneOrMore(SimpleTerm).separatedBy("," ~ optWhiteSpace) ~ "}" ~> Ast.Term.Set
   }
 
   /** *************************************************************************/
@@ -160,23 +158,23 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def InfixExp: Rule1[Ast.Expression] = rule {
-    LogicalExp ~ optional(WhiteSpace ~ "`" ~ Name ~ "`" ~ WhiteSpace ~ LogicalExp ~> Ast.Expression.Infix)
+    LogicalExp ~ optional(optWhiteSpace ~ "`" ~ Name ~ "`" ~ optWhiteSpace ~ LogicalExp ~> Ast.Expression.Infix)
   }
 
   def LogicalExp: Rule1[Ast.Expression] = rule {
-    ComparisonExp ~ zeroOrMore(WhiteSpace ~ LogicalOp ~ WhiteSpace ~ ComparisonExp ~> Ast.Expression.Binary)
+    ComparisonExp ~ zeroOrMore(optWhiteSpace ~ LogicalOp ~ optWhiteSpace ~ ComparisonExp ~> Ast.Expression.Binary)
   }
 
   def ComparisonExp: Rule1[Ast.Expression] = rule {
-    MultiplicativeExp ~ optional(WhiteSpace ~ ComparisonOp ~ WhiteSpace ~ MultiplicativeExp ~> Ast.Expression.Binary)
+    MultiplicativeExp ~ optional(optWhiteSpace ~ ComparisonOp ~ optWhiteSpace ~ MultiplicativeExp ~> Ast.Expression.Binary)
   }
 
   def MultiplicativeExp: Rule1[Ast.Expression] = rule {
-    AdditiveExp ~ zeroOrMore(WhiteSpace ~ MultiplicativeOp ~ WhiteSpace ~ AdditiveExp ~> Ast.Expression.Binary)
+    AdditiveExp ~ zeroOrMore(optWhiteSpace ~ MultiplicativeOp ~ optWhiteSpace ~ AdditiveExp ~> Ast.Expression.Binary)
   }
 
   def AdditiveExp: Rule1[Ast.Expression] = rule {
-    SimpleExpression ~ zeroOrMore(WhiteSpace ~ AdditiveOp ~ WhiteSpace ~ SimpleExpression ~> Ast.Expression.Binary)
+    SimpleExpression ~ zeroOrMore(optWhiteSpace ~ AdditiveOp ~ optWhiteSpace ~ SimpleExpression ~> Ast.Expression.Binary)
   }
 
   def SimpleExpression: Rule1[Ast.Expression] = rule {
@@ -204,23 +202,23 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def LetExp: Rule1[Ast.Expression.Let] = rule {
-    "let" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "in" ~ WhiteSpace ~ Expression ~> Ast.Expression.Let
+    "let" ~ WhiteSpace ~ Ident ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Expression ~ WhiteSpace ~ "in" ~ WhiteSpace ~ Expression ~> Ast.Expression.Let
   }
 
   def IfThenElseExp: Rule1[Ast.Expression.IfThenElse] = rule {
-    "if" ~ WhiteSpace ~ "(" ~ Expression ~ ")" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "else" ~ WhiteSpace ~ Expression ~> Ast.Expression.IfThenElse
+    "if" ~ optWhiteSpace ~ "(" ~ Expression ~ ")" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "else" ~ WhiteSpace ~ Expression ~> Ast.Expression.IfThenElse
   }
 
   def MatchExp: Rule1[Ast.Expression.Match] = rule {
-    "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ WhiteSpace ~ "{" ~ WhiteSpace ~ oneOrMore(MatchRule) ~ "}" ~> Ast.Expression.Match
+    "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ optWhiteSpace ~ "{" ~ WhiteSpace ~ oneOrMore(MatchRule) ~ "}" ~> Ast.Expression.Match
   }
 
   def MatchRule: Rule1[(Ast.MatchPattern, Ast.Expression)] = rule {
-    "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ ";" ~ WhiteSpace ~> ((p: Ast.MatchPattern, e: Ast.Expression) => (p, e))
+    "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ ";" ~ optWhiteSpace ~> ((p: Ast.MatchPattern, e: Ast.Expression) => (p, e))
   }
 
   def CallExp: Rule1[Ast.Expression.Call] = rule {
-    Name ~ "(" ~ zeroOrMore(Expression).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Expression.Call
+    Name ~ "(" ~ zeroOrMore(Expression).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Expression.Call
   }
 
   def TupleExp: Rule1[Ast.Expression.Tuple] = rule {
@@ -232,7 +230,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   private def RecordKeyValue: Rule1[(String, Ast.Expression)] = rule {
-    Ident ~ WhiteSpace ~ "=" ~ WhiteSpace ~ Expression ~> ((k: String, v: Ast.Expression) => (k, v))
+    Ident ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Expression ~> ((k: String, v: Ast.Expression) => (k, v))
   }
 
   def VariableExp: Rule1[Ast.Expression.AmbiguousName] = rule {
@@ -292,7 +290,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def TupleType: Rule1[Ast.Type.Tuple] = rule {
-    "(" ~ oneOrMore(Type).separatedBy("," ~ WhiteSpace) ~ ")" ~> Ast.Type.Tuple
+    "(" ~ oneOrMore(Type).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Type.Tuple
   }
 
   def SetType: Rule1[Ast.Type.Set] = rule {
@@ -300,7 +298,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def MapType: Rule1[Ast.Type.Map] = rule {
-    "Map" ~ "[" ~ oneOrMore(Type).separatedBy("," ~ WhiteSpace) ~ "]" ~> Ast.Type.Map
+    "Map" ~ "[" ~ oneOrMore(Type).separatedBy("," ~ optWhiteSpace) ~ "]" ~> Ast.Type.Map
   }
 
   // TODO: Howto embed these into the language?
@@ -324,7 +322,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def MapLattice: Rule1[Ast.Lattice.Map] = rule {
-    oneOrMore(Type).separatedBy(WhiteSpace ~ "->" ~ WhiteSpace) ~ WhiteSpace ~ Lattice ~> Ast.Lattice.Map
+    oneOrMore(Type).separatedBy(WhiteSpace ~ "->" ~ optWhiteSpace) ~ WhiteSpace ~ Lattice ~> Ast.Lattice.Map
   }
 
   def SetLattice: Rule1[Ast.Lattice.Set] = rule {
