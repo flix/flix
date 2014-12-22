@@ -116,7 +116,13 @@ object Ast {
      * An AST node which represents either a variable or a reference to a named value.
      */
     @Eliminated
-    case class Ambiguous(name: Seq[String]) extends Expression
+    case class AmbiguousName(name: Seq[String]) extends Expression
+
+    /**
+     * An AST node which represents an ambiguous function call.
+     */
+    @Eliminated
+    case class AmbiguousCall(name: Seq[String], arguments: Seq[Expression]) extends Expression
 
     /**
      * An AST node which represents a reference to a variable.
@@ -160,11 +166,6 @@ object Ast {
      * An AST node which represents a match expression.
      */
     case class Match(exp: Expression, rules: Seq[(Pattern, Expression)]) extends Expression
-
-    /**
-     * An AST node which represents a function call.
-     */
-    case class Call(name: Seq[String], arguments: Seq[Expression]) extends Expression
 
     /**
      * An AST node which represents an infix function call expression.
@@ -217,7 +218,6 @@ object Ast {
      */
     @Eliminated
     case class Ambiguous(name: Seq[String], pattern: Option[Pattern]) extends Pattern
-    // TODO: Spelling of Ambiguous...
 
     /**
      * An AST node which represents a wildcard pattern.
@@ -248,8 +248,6 @@ object Ast {
 
   }
 
-
-  // TODO: Parse Predicates!
   // todo: Should be seq String
   case class Predicate(name: String, t: Term) extends Pattern
 
@@ -259,17 +257,16 @@ object Ast {
 
   object Term {
 
-    // TODO: Var
+    @Introduced
+    case class Var(name: String) extends Term
 
-    // TODO: Ambigious name
-    case class Name(name: Seq[String]) extends Term
+    @Eliminated
+    case class AmbiguousName(name: Seq[String]) extends Term
+
+    @Eliminated
+    case class AmbiguousCall(name: Seq[String], arguments: Seq[Term]) extends Term
 
     case class Lit(literal: Literal) extends Term
-
-    // TODO: Rename to Call
-    case class Apply(name: Seq[String], arguments: Seq[Term]) extends Term
-
-    // TODO: Tag?
 
     case class Tuple(elms: Seq[Term]) extends Term
 
@@ -291,7 +288,7 @@ object Ast {
      * An AST node which represents a reference to a named type.
      */
     @Eliminated
-    case class Ambiguous(name: Seq[String]) extends Type
+    case class AmbiguousName(name: Seq[String]) extends Type
 
     /**
      * An AST node which represents the unit type.

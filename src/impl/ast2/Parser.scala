@@ -120,12 +120,12 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     Literal ~> Ast.Term.Lit
   }
 
-  def ApplyTerm: Rule1[Ast.Term.Apply] = rule {
-    Name ~ "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Term.Apply
+  def ApplyTerm: Rule1[Ast.Term.AmbiguousCall] = rule {
+    Name ~ "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Term.AmbiguousCall
   }
 
-  def NameTerm: Rule1[Ast.Term.Name] = rule {
-    Name ~> Ast.Term.Name
+  def NameTerm: Rule1[Ast.Term.AmbiguousName] = rule {
+    Name ~> Ast.Term.AmbiguousName
   }
 
   def TupleTerm: Rule1[Ast.Term.Tuple] = rule {
@@ -203,8 +203,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ ";" ~ optWhiteSpace ~> ((p: Ast.Pattern, e: Ast.Expression) => (p, e))
   }
 
-  def CallExp: Rule1[Ast.Expression.Call] = rule {
-    Name ~ "(" ~ zeroOrMore(Expression).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Expression.Call
+  def CallExp: Rule1[Ast.Expression.AmbiguousCall] = rule {
+    Name ~ "(" ~ zeroOrMore(Expression).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Expression.AmbiguousCall
   }
 
   def TupleExp: Rule1[Ast.Expression.Tuple] = rule {
@@ -219,8 +219,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     Ident ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Expression ~> ((k: String, v: Ast.Expression) => (k, v))
   }
 
-  def VariableExp: Rule1[Ast.Expression.Ambiguous] = rule {
-    Name ~> Ast.Expression.Ambiguous
+  def VariableExp: Rule1[Ast.Expression.AmbiguousName] = rule {
+    Name ~> Ast.Expression.AmbiguousName
   }
 
   def LambdaExp: Rule1[Ast.Expression.Lambda] = rule {
@@ -266,8 +266,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     TupleType | SetType | MapType | EnumType | NameRefType
   }
 
-  def NameRefType: Rule1[Ast.Type.Ambiguous] = rule {
-    Name ~> Ast.Type.Ambiguous
+  def NameRefType: Rule1[Ast.Type.AmbiguousName] = rule {
+    Name ~> Ast.Type.AmbiguousName
   }
 
   def TupleType: Rule1[Ast.Type.Tuple] = rule {

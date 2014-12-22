@@ -61,7 +61,7 @@ object Translation {
     // case Ast.Type.Tag(name) => Type.Tag(), TODO
     case Ast.Type.Set(typ1) => Type.Set(compile(typ1))
     //case Ast.Type.Map(keys, values) => throw CompilerException("Map types are currently not supported.")
-    case Ast.Type.Ambiguous(name) => throw new RuntimeException(s"Unresolved named type: $name.")
+    case Ast.Type.AmbiguousName(name) => throw new RuntimeException(s"Unresolved named type: $name.")
   }
 
 }

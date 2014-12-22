@@ -340,7 +340,7 @@ class TestParser extends FunSuite {
     case _ => throw new RuntimeException()
   }
 
-  private implicit def string2nameexp(s: String): Ast.Expression.Ambiguous =
-    Ast.Expression.Ambiguous(Seq(s))
+  private implicit def string2nameexp(s: String): Ast.Expression.AmbiguousName =
+    Ast.Expression.AmbiguousName(Seq(s))
 
 }

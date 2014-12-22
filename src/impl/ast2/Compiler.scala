@@ -146,7 +146,7 @@ object Compiler {
      */
     // TODO: Change order of arguments
     def disambiguate(namespace: Name, ast: Ast.Expression, env: Environment, bound: Set[String]): Ast.Expression = ast match {
-      case Ast.Expression.Ambiguous(name) => name match {
+      case Ast.Expression.AmbiguousName(name) => name match {
         case Seq(simple) if bound contains simple => Ast.Expression.Var(simple)
         case _ => lookupExp(namespace, name.toList, env)
       }
@@ -170,9 +170,9 @@ object Compiler {
         }
         Ast.Expression.Match(dexp, drules)
 
-      case Ast.Expression.Call(name, args) =>
+      case Ast.Expression.AmbiguousCall(name, args) =>
         val args2 = args map (a => disambiguate(namespace, a, env, bound))
-        Ast.Expression.Call(name, args2)
+        Ast.Expression.AmbiguousCall(name, args2)
 
       case Ast.Expression.Tag(name, e) => ???
 
@@ -203,11 +203,11 @@ object Compiler {
       case Type.Int => Type.Int
       case Type.Str => Type.Str
       // Ambiguous
-      case Type.Ambiguous(Seq("Unit")) => Type.Unit
-      case Type.Ambiguous(Seq("Bool")) => Type.Bool
-      case Type.Ambiguous(Seq("Int")) => Type.Int
-      case Type.Ambiguous(Seq("Str")) => Type.Str
-      case Type.Ambiguous(name) => lookupType(namespace, name.toList, env)
+      case Type.AmbiguousName(Seq("Unit")) => Type.Unit
+      case Type.AmbiguousName(Seq("Bool")) => Type.Bool
+      case Type.AmbiguousName(Seq("Int")) => Type.Int
+      case Type.AmbiguousName(Seq("Str")) => Type.Str
+      case Type.AmbiguousName(name) => lookupType(namespace, name.toList, env)
 
       // Compound
       case Type.Tag(name) => Type.Tag(name)
