@@ -213,25 +213,16 @@ object Ast {
   object Pattern {
 
     /**
-     * An AST node which represents a wildcard pattern.
-     */
-    case object Wildcard extends Pattern
-
-    /**
-     * An AST node which represents a pattern match literal
-     */
-    case class Lit(literal: Literal) extends Pattern
-
-    /**
      * An AST node which represents a variable or tagged pattern.
      */
     @Eliminated
     case class Ambiguous(name: Seq[String], pattern: Option[Pattern]) extends Pattern
+    // TODO: Spelling of Ambiguous...
 
     /**
-     * An AST node which represents a tuples pattern.
+     * An AST node which represents a wildcard pattern.
      */
-    case class Tuple(elms: Seq[Pattern]) extends Pattern
+    case object Wildcard extends Pattern
 
     /**
      * An AST node which represents a variable pattern.
@@ -244,6 +235,17 @@ object Ast {
      */
     @Introduced
     case class Tag(name: Seq[String], pattern: Pattern) extends Pattern
+
+    /**
+     * An AST node which represents a pattern match literal
+     */
+    case class Lit(literal: Literal) extends Pattern
+
+    /**
+     * An AST node which represents a tuples pattern.
+     */
+    case class Tuple(elms: Seq[Pattern]) extends Pattern
+
   }
 
 
