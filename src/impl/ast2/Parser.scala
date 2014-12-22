@@ -263,10 +263,10 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def SimpleType: Rule1[Ast.Type] = rule {
-    TupleType | SetType | MapType | EnumType | NameRefType
+    TupleType | SetType | MapType | EnumType | AmbiguousNameType
   }
 
-  def NameRefType: Rule1[Ast.Type.AmbiguousName] = rule {
+  def AmbiguousNameType: Rule1[Ast.Type.AmbiguousName] = rule {
     Name ~> Ast.Type.AmbiguousName
   }
 
@@ -294,7 +294,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   /** Lattices                                                              ***/
   /** *************************************************************************/
   def Lattice: Rule1[Ast.Lattice] = rule {
-    MapLattice | NameLattice | SetLattice | ProductLattice
+    MapLattice | SetLattice | ProductLattice | NameLattice
   }
 
   def NameLattice: Rule1[Ast.Lattice.Name] = rule {

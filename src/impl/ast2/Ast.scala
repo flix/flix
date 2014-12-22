@@ -257,6 +257,8 @@ object Ast {
 
   object Term {
 
+    // TODO: Need wildcard.
+
     @Introduced
     case class Var(name: String) extends Term
 
