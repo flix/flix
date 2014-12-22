@@ -159,7 +159,7 @@ object Ast {
     /**
      * An AST node which represents a match expression.
      */
-    case class Match(exp: Expression, rules: Seq[(MatchPattern, Expression)]) extends Expression
+    case class Match(exp: Expression, rules: Seq[(Pattern, Expression)]) extends Expression
 
     /**
      * An AST node which represents a function call.
@@ -206,44 +206,51 @@ object Ast {
   }
 
   /**
-   * A common super-type for AST nodes which represent match patterns.
+   * A common super-type for AST nodes which represent patterns.
    */
-  sealed trait MatchPattern extends Ast
+  sealed trait Pattern extends Ast
 
-  object MatchPattern {
+  object Pattern {
 
     /**
      * An AST node which represents a wildcard pattern.
      */
-    case object Wildcard extends MatchPattern
-
-    /**
-     * An AST node which represents a variable pattern.
-     */
-    @Eliminated
-    case class AmbigiousName(name: String) extends MatchPattern
+    case object Wildcard extends Pattern
 
     /**
      * An AST node which represents a pattern match literal
      */
-    case class Lit(literal: Literal) extends MatchPattern
+    case class Lit(literal: Literal) extends Pattern
+
+    /**
+     * An AST node which represents a variable or Tag.
+     */
+    @Eliminated
+    case class AmbigiousName(name: Seq[String], pattern: Option[Pattern]) extends Pattern
+
+    /**
+     * An AST node which represents a variable pattern.
+     */
+    @Introduced
+    case class Var(name: String) extends Pattern
 
     /**
      * An AST node which represents a tagged pattern.
      */
-    case class Tag(name: Seq[String], pattern: MatchPattern) extends MatchPattern
+    case class Tag(name: Seq[String], pattern: Pattern) extends Pattern
+
 
     /**
      * An AST node which represents a tuples pattern.
      */
-    case class Tuple(elms: Seq[MatchPattern]) extends MatchPattern
+    case class Tuple(elms: Seq[Pattern]) extends Pattern
 
   }
 
 
   // TODO: Parse Predicates!
   // todo: Should be seq String
-  case class Predicate(name: String, t: Term) extends MatchPattern
+  case class Predicate(name: String, t: Term) extends Pattern
 
   // TODO: Refactor?
 

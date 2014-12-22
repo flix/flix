@@ -199,8 +199,8 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ optWhiteSpace ~ "{" ~ WhiteSpace ~ oneOrMore(MatchRule) ~ "}" ~> Ast.Expression.Match
   }
 
-  def MatchRule: Rule1[(Ast.MatchPattern, Ast.Expression)] = rule {
-    "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ ";" ~ optWhiteSpace ~> ((p: Ast.MatchPattern, e: Ast.Expression) => (p, e))
+  def MatchRule: Rule1[(Ast.Pattern, Ast.Expression)] = rule {
+    "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ ";" ~ optWhiteSpace ~> ((p: Ast.Pattern, e: Ast.Expression) => (p, e))
   }
 
   def CallExp: Rule1[Ast.Expression.Call] = rule {
@@ -230,29 +230,24 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   /** *************************************************************************/
   /** Patterns                                                              ***/
   /** *************************************************************************/
-  def Pattern: Rule1[Ast.MatchPattern] = rule {
-    // Note: TaggedPattern must preceede VariablePattern to avoid left-recursion.
-    WildcardPattern | LiteralPattern | TaggedPattern | TuplePattern | VariablePattern
+  def Pattern: Rule1[Ast.Pattern] = rule {
+    WildcardPattern | LiteralPattern | AmbigiousPattern | TuplePattern
   }
 
-  def WildcardPattern: Rule1[Ast.MatchPattern] = rule {
-    str("_") ~> (() => Ast.MatchPattern.Wildcard)
+  def WildcardPattern: Rule1[Ast.Pattern] = rule {
+    str("_") ~> (() => Ast.Pattern.Wildcard)
   }
 
-  def LiteralPattern: Rule1[Ast.MatchPattern] = rule {
-    Literal ~> Ast.MatchPattern.Lit
+  def LiteralPattern: Rule1[Ast.Pattern] = rule {
+    Literal ~> Ast.Pattern.Lit
   }
 
-  def VariablePattern: Rule1[Ast.MatchPattern.AmbigiousName] = rule {
-    Ident ~> Ast.MatchPattern.AmbigiousName
+  def AmbigiousPattern: Rule1[Ast.Pattern.AmbigiousName] = rule {
+    Name ~ optional(WhiteSpace ~ Pattern) ~> Ast.Pattern.AmbigiousName
   }
 
-  def TaggedPattern: Rule1[Ast.MatchPattern.Tag] = rule {
-    Name ~ WhiteSpace ~ Pattern ~> Ast.MatchPattern.Tag
-  }
-
-  def TuplePattern: Rule1[Ast.MatchPattern.Tuple] = rule {
-    "(" ~ oneOrMore(Pattern).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.MatchPattern.Tuple
+  def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {
+    "(" ~ oneOrMore(Pattern).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Pattern.Tuple
   }
 
   /** *************************************************************************/
