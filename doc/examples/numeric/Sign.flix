@@ -1,4 +1,4 @@
-namespace SignAnalysis {
+namespace SignDomain {
 
     enum Sign {
                   case Top,
