@@ -39,6 +39,19 @@ namespace Sign {
     };
 
     /**
+     *  Returns the great lower bound of `e1` and `e2`
+     *  according to the partial order of Sign.
+     */
+    def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+        case (Top, _)   => e2;
+        case (_, Top)   => e1;
+        case (Neg, Neg) => Neg;
+        case (Zer, Zer) => Zer;
+        case (Pos, Pos) => Pos;
+        case _          => Bot;
+    };
+
+    /**
      * Defines the Sign lattice.
      */
     lat Sign = record { bot = Bot, leq = leq, lub = lub };
