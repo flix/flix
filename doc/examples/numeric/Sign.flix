@@ -82,6 +82,12 @@ namespace Sign {
     };
 
     /**
+     * Returns the inverted sign of `e`.
+     */
+    @monotone
+    def invert(e: Sign): Sign = times(Neg, e);
+
+    /**
      * Returns `true` if `e` may be zero.
      */
     @monotone
