@@ -108,15 +108,4 @@ namespace ParityAnalysis {
     // we abstract integers into the parity domain by using modulo.
     def lift(i: Int): Parity = if (i % 2 == 0) Even else Odd;
 
-    // let's define some constants:
-    val One: Parity = lift(1);
-    val Two: Parity = lift(2);
-    val Six: Parity = Even;
-
-    // we are now ready to define a simple analysis:
-
-    // let's compute the sum of one and two:
-    var SumOneTwo: Parity;
-    fact SumOneTwo plus(One, Two);
-
 };

@@ -1,5 +1,9 @@
-namespace SignDomain {
+namespace Sign {
 
+    /**
+     * The Sign domain is a simple numeric domain for determining
+     * whether a number is negative, zero or positive.
+     */
     enum Sign {
                   case Top,
 
@@ -8,6 +12,10 @@ namespace SignDomain {
                   case Bot
     };
 
+    /**
+     *  Returns `true` iff `e1` is less than or equal to `e2`
+     *  according to the partial order of Sign.
+     */
     def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) with {
         case (Bot, x)   => true;
         case (Neg, Neg) => true;
@@ -17,6 +25,10 @@ namespace SignDomain {
         case _          => false;
     };
 
+    /**
+     * Returns the least upper bound of `e1` and `e2`
+     * according to the partial order of Sign.
+     */
     def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => e2;
         case (_, Bot)   => e1;
@@ -26,8 +38,14 @@ namespace SignDomain {
         case _          => Top;
     };
 
+    /**
+     * Defines the Sign lattice.
+     */
     lat Sign = record { bot = Bot, leq = leq, lub = lub };
 
+    /**
+     * Returns the sum of `e1` and `e2`.
+     */
     @monotone @strict
     def plus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot;
@@ -35,7 +53,40 @@ namespace SignDomain {
         case (Neg, Neg) => Neg;
         case (Neg, Zer) => Neg;
         case (Neg, Pos) => Top;
+        case (Zer, Neg) => Neg;
+        case (Zer, Zer) => Zer;
+        case (Zer, Pos) => Pos;
+        case (Pos, Neg) => Top;
+        case (Pos, Zer) => Pos;
+        case (Pos, Pos) => Pos;
+        case _          => Top;
     };
+
+    /**
+     * Returns the product of `e1` and `e2`.
+     */
+    @monotone @strict
+    def times(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+        case (Bot, _)   => Bot;
+        case (_, Bot)   => Bot;
+        case (Neg, Neg) => Pos;
+        case (Neg, Zer) => Zer;
+        case (Neg, Pos) => Neg;
+        case (Zer, Neg) => Zer;
+        case (Zer, Zer) => Zer;
+        case (Zer, Pos) => Zer;
+        case (Pos, Neg) => Neg;
+        case (Pos, Zer) => Zer;
+        case (Pos, Pos) => Pos;
+        case _          => Top;
+    };
+
+    //@monotone
+    //def isZero
+
+    //@monotone
+    //def isNonZero
+
 };
 
 
