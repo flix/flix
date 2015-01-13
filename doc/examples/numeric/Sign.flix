@@ -81,11 +81,26 @@ namespace Sign {
         case _          => Top;
     };
 
-    //@monotone
-    //def isZero
+    /**
+     * Returns `true` if `e` may be zero.
+     */
+    @monotone
+    def isZero(e: Sign): Bool = match e with {
+        case Zer => true;
+        case Top => true;
+        case _   => false;
+    };
 
-    //@monotone
-    //def isNonZero
+    /**
+     * Returns `true` if `e` maybe non-zero.
+     */
+    @monotone
+    def isNonZero(e: Sign): Bool = match e with {
+        case Neg => true;
+        case Pos => true;
+        case Top => true;
+        case _   => false;
+    };
 
 };
 
