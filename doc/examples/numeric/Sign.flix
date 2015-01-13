@@ -101,6 +101,20 @@ namespace Sign {
     def invert(e: Sign): Sign = times(Neg, e);
 
     /**
+     * Returns a Fuzzy boolean representing whether `e1` may equal `e2`.
+     */
+     def eq(e1: Sign, e2: Sign): Fuzzy = match (e1, e2) with {
+        case (Bot, _)   => Fuzzy.Bot;
+        case (_, Bot)   => Fuzzy.Bot;
+        case (Zer, Zer) => Fuzzy.True;
+        case (Pos, Zer) => Fuzzy.False;
+        case (Neg, Zer) => Fuzzy.False;
+        case (Zer, Pos) => Fuzzy.False;
+        case (Zer, Neg) => Fuzzy.False;
+        case _          => Fuzzy.Top;
+     };
+
+    /**
      * Returns `true` if `e` may be zero.
      */
     @monotone @strict
