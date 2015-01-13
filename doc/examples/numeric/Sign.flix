@@ -84,13 +84,13 @@ namespace Sign {
     /**
      * Returns the inverted sign of `e`.
      */
-    @monotone
+    @monotone @strict
     def invert(e: Sign): Sign = times(Neg, e);
 
     /**
      * Returns `true` if `e` may be zero.
      */
-    @monotone
+    @monotone @strict
     def isZero(e: Sign): Bool = match e with {
         case Zer => true;
         case Top => true;
@@ -100,7 +100,7 @@ namespace Sign {
     /**
      * Returns `true` if `e` maybe non-zero.
      */
-    @monotone
+    @monotone @strict
     def isNonZero(e: Sign): Bool = match e with {
         case Neg => true;
         case Pos => true;
