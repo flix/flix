@@ -87,6 +87,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   def EnumBody: Rule1[Seq[Ast.Type.Tag]] = rule {
     oneOrMore("case" ~ WhiteSpace ~ Ident ~> Ast.Type.Tag).separatedBy("," ~ optWhiteSpace)
   }
+
   // TODO: Use separate thing for tags.
 
   def LatticeDeclaration: Rule1[Ast.Declaration.Lattice] = rule {
@@ -262,12 +263,12 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     FunctionType
   }
 
-  // TODO: Right associative, maybe change to Seq?
+  // NB: Associates to the right, but parsed as left-associative.
   def FunctionType: Rule1[Ast.Type] = rule {
     MapArrowType ~ zeroOrMore(optWhiteSpace ~ "=>" ~ optWhiteSpace ~ MapArrowType ~> Ast.Type.Function)
   }
 
-  // TODO: Right associative, maybe change to Seq?
+  // NB: Associates to the right, but parsed as left-associative.
   def MapArrowType: Rule1[Ast.Type] = rule {
     SimpleType ~ zeroOrMore(optWhiteSpace ~ "->" ~ optWhiteSpace ~ SimpleType ~> Ast.Type.Map)
   }
@@ -288,7 +289,6 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "List" ~ "[" ~ Type ~ "]" ~> Ast.Type.List
   }
 
-  // TODO: Introduce some short hand? Perhaps #{}?
   def SetType: Rule1[Ast.Type.Set] = rule {
     "Set" ~ "[" ~ Type ~ "]" ~> Ast.Type.Set
   }

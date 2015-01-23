@@ -363,11 +363,13 @@ object Ast {
     /**
      * An AST node which represents a map type.
      */
+    @Right2Left
     case class Map(t1: Type, t2: Type) extends Type
 
     /**
      * An AST node which represents a function type.
      */
+    @Right2Left
     case class Function(t1: Type, t2: Type) extends Type
 
   }
@@ -386,6 +388,10 @@ object Ast {
    */
   final class Eliminated extends StaticAnnotation
 
-  // TODO: Left-to=right
+  /**
+   * An AST node annotation which documents that the children of the AST node were parsed
+   * from right-to-left, but they should be interpreted from left-to-right.
+   */
+  final class Right2Left extends StaticAnnotation
 
 }
