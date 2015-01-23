@@ -259,6 +259,7 @@ object Ast {
     case class Eq(n1: Seq[String], n2: Seq[String]) extends Proposition
 
     case class NotEq(n1: Seq[String], n2: Seq[String]) extends Proposition
+
   }
 
   // TODO: Introduce constraint.
@@ -347,6 +348,11 @@ object Ast {
     case class Tuple(elms: Seq[Type]) extends Type
 
     /**
+     * An AST node which represents a list type.
+     */
+    case class List(elms: Type) extends Type
+
+    /**
      * An AST node which represents a set type.
      */
     case class Set(elms: Type) extends Type
@@ -354,7 +360,7 @@ object Ast {
     /**
      * An AST node which represents a map type.
      */
-    case class Map(elms: Seq[Type]) extends Type
+    case class Map(t1: Type, t2: Type) extends Type
 
     /**
      * An AST node which represents a function type.

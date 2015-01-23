@@ -84,6 +84,17 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "enum" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ EnumType ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Enum
   }
 
+
+  // TODO: Perhaps this needs to go into a special enum declaration
+  def EnumType: Rule1[Ast.Type.Enum] = rule {
+    "{" ~ WhiteSpace ~ EnumBody ~ WhiteSpace ~ "}" ~> Ast.Type.Enum
+  }
+
+  def EnumBody: Rule1[Seq[Ast.Type.Tag]] = rule {
+    oneOrMore("case" ~ WhiteSpace ~ Ident ~> Ast.Type.Tag).separatedBy("," ~ optWhiteSpace)
+  }
+
+
   def LatticeDeclaration: Rule1[Ast.Declaration.Lattice] = rule {
     "lat" ~ WhiteSpace ~ Ident ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ RecordExp ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Lattice
   }
@@ -253,17 +264,22 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   /** *************************************************************************/
   /** Types                                                                 ***/
   /** *************************************************************************/
-  // TODO: Cleanup...
   def Type: Rule1[Ast.Type] = rule {
-    FunctionType | SimpleType
+    FunctionType
   }
 
+  // TODO: Right associative, maybe change to Seq?
   def FunctionType: Rule1[Ast.Type] = rule {
-    SimpleType ~ optWhiteSpace ~ "=>" ~ optWhiteSpace ~ Type ~> Ast.Type.Function
+    MapArrowType ~ zeroOrMore(optWhiteSpace ~ "=>" ~ optWhiteSpace ~ MapArrowType ~> Ast.Type.Function)
+  }
+
+  // TODO: Right associative, maybe change to Seq?
+  def MapArrowType: Rule1[Ast.Type] = rule {
+    SimpleType ~ zeroOrMore(optWhiteSpace ~ "->" ~ optWhiteSpace ~ SimpleType ~> Ast.Type.Map)
   }
 
   def SimpleType: Rule1[Ast.Type] = rule {
-    TupleType | SetType | MapType | EnumType | AmbiguousNameType
+    TupleType | ListType | SetType | MapType | AmbiguousNameType
   }
 
   def AmbiguousNameType: Rule1[Ast.Type.AmbiguousName] = rule {
@@ -274,25 +290,27 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
     "(" ~ oneOrMore(Type).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Type.Tuple
   }
 
+  // TODO: Introduce []?
+  def ListType: Rule1[Ast.Type.List] = rule {
+    "List" ~ "[" ~ Type ~ "]" ~> Ast.Type.List
+  }
+
+  // TODO: Introduce some short hand?
   def SetType: Rule1[Ast.Type.Set] = rule {
     "Set" ~ "[" ~ Type ~ "]" ~> Ast.Type.Set
   }
 
   def MapType: Rule1[Ast.Type.Map] = rule {
-    "Map" ~ "[" ~ oneOrMore(Type).separatedBy("," ~ optWhiteSpace) ~ "]" ~> Ast.Type.Map
+    "Map" ~ "[" ~ Type ~ "," ~ optWhiteSpace ~ Type ~ "]" ~> Ast.Type.Map
   }
 
-  def EnumType: Rule1[Ast.Type.Enum] = rule {
-    "{" ~ WhiteSpace ~ EnumBody ~ WhiteSpace ~ "}" ~> Ast.Type.Enum
-  }
+  // TODO: Introduce Function?
 
-  def EnumBody: Rule1[Seq[Ast.Type.Tag]] = rule {
-    oneOrMore("case" ~ WhiteSpace ~ Ident ~> Ast.Type.Tag).separatedBy("," ~ optWhiteSpace)
-  }
 
   /** *************************************************************************/
   /** Lattices                                                              ***/
   /** *************************************************************************/
+  // TODO: All these should be removed... and just rely on types
   def Lattice: Rule1[Ast.Lattice] = rule {
     MapLattice | SetLattice | ProductLattice | NameLattice
   }

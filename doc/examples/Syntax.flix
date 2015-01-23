@@ -39,6 +39,17 @@ namespace TheName {
 
     // TODO: Enum
 
+    val a: x -> y = ???;
+    val a: x -> y -> z = ???;
+
+    val b: x => y = ???;
+    val b: x => y -> z = ???;
+
+    val c: x -> y => y -> z = ???;
+
+    val d: x -> y -> (Set[z], Set[z]) = ???;
+
+
     /**
      * Global Variables.
      */

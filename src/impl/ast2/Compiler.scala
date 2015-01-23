@@ -5,6 +5,7 @@ import impl.ast2.Ast.Predicate
 object Compiler {
 
   def compile(ast: Ast.Root): Ast.Root = {
+    println(ast)
     val env = Symbols.visit(ast)
     Disambiguation.disambiguate(ast, env)
 
@@ -213,7 +214,7 @@ object Compiler {
       case Type.Tag(name) => Type.Tag(name)
       case Type.Tuple(elms) => Type.Tuple(elms map (e => disambiguate(e, namespace, env)))
       case Type.Set(elms) => Type.Set(disambiguate(elms, namespace, env))
-      case Type.Map(elms) => ???
+      //case Type.Map(elms) => ???
       case Type.Enum(elms) =>
         val elms2 = elms map (e => disambiguate(e, namespace, env).asInstanceOf[Ast.Type.Tag])
         Type.Enum(elms2)

@@ -188,26 +188,26 @@ class TestParser extends FunSuite {
     assertResult(t)(getType(Parser.parse(s)))
   }
 
-  test("Parser.Type.Map01") {
-    val s = """type t = Map[Bool, Bool];"""
-    val t = Ast.Type.Map(Seq(Ast.Type.Bool, Ast.Type.Bool))
-
-    assertResult(t)(getType(Parser.parse(s)))
-  }
-
-  test("Parser.Type.Map02") {
-    val s = """type t = Map[Int, Int];"""
-    val t = Ast.Type.Map(Seq(Ast.Type.Int, Ast.Type.Int))
-
-    assertResult(t)(getType(Parser.parse(s)))
-  }
-
-  test("Parser.Type.Map03") {
-    val s = """type t = Map[Bool, Int, Str];"""
-    val t = Ast.Type.Map(Seq(Ast.Type.Bool, Ast.Type.Int, Ast.Type.Str))
-
-    assertResult(t)(getType(Parser.parse(s)))
-  }
+//  test("Parser.Type.Map01") {
+//    val s = """type t = Map[Bool, Bool];"""
+//    val t = Ast.Type.Map(Seq(Ast.Type.Bool, Ast.Type.Bool))
+//
+//    assertResult(t)(getType(Parser.parse(s)))
+//  }
+//
+//  test("Parser.Type.Map02") {
+//    val s = """type t = Map[Int, Int];"""
+//    val t = Ast.Type.Map(Seq(Ast.Type.Int, Ast.Type.Int))
+//
+//    assertResult(t)(getType(Parser.parse(s)))
+//  }
+//
+//  test("Parser.Type.Map03") {
+//    val s = """type t = Map[Bool, Int, Str];"""
+//    val t = Ast.Type.Map(Seq(Ast.Type.Bool, Ast.Type.Int, Ast.Type.Str))
+//
+//    assertResult(t)(getType(Parser.parse(s)))
+//  }
 
   test("Parser.Type.Enum01") {
     val s =
