@@ -87,6 +87,7 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   def EnumBody: Rule1[Seq[Ast.Type.Tag]] = rule {
     oneOrMore("case" ~ WhiteSpace ~ Ident ~> Ast.Type.Tag).separatedBy("," ~ optWhiteSpace)
   }
+  // TODO: Use separate thing for tags.
 
   def LatticeDeclaration: Rule1[Ast.Declaration.Lattice] = rule {
     "lat" ~ WhiteSpace ~ Ident ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ RecordExp ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Lattice
