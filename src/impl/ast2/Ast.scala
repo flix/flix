@@ -52,7 +52,7 @@ object Ast {
     /**
      * An AST node which represents a variable declaration.
      */
-    case class Var(name: String, lat: Ast.Lattice) extends Declaration
+    case class Var(name: String, lat: Ast.Type) extends Declaration
 
     /**
      * An AST node which represents a function declaration.
@@ -366,36 +366,6 @@ object Ast {
      * An AST node which represents a function type.
      */
     case class Function(t1: Type, t2: Type) extends Type
-
-  }
-
-  /**
-   * A common super-type for AST nodes which represent lattices.
-   */
-  // TODO: This is still broken :(
-  sealed trait Lattice
-
-  object Lattice {
-
-    /**
-     * An AST node which represents a reference to a lattice.
-     */
-    case class Name(name: Seq[String]) extends Lattice
-
-    /**
-     * An AST node which represents a set lattice.
-     */
-    case class Set(elms: Type) extends Lattice
-
-    /**
-     * An AST node which represents a map lattice.
-     */
-    case class Map(keys: Seq[Type], value: Lattice) extends Lattice
-
-    /**
-     * An AST node which represents a product lattice.
-     */
-    case class Product(elms: Seq[Lattice]) extends Lattice
 
   }
 

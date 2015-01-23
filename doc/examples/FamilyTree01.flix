@@ -2,10 +2,10 @@ namespace FamilyTree {
 
     type Person = Str;
 
-    var Parent:     Person -> {Person};
-    var Male:       {Person};
-    var Female:     {Person};
-    var MGP:        Person -> {Person};
+    var Parent:     Person -> #{Person};
+    var Male:       #{Person};
+    var Female:     #{Person};
+    var MGP:        Person -> #{Person};
 
     fact Parent "Caroline" -> {"IngerM"};
     fact Parent "Caroline" -> {"FritsT"};

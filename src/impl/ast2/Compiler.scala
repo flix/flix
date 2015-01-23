@@ -222,9 +222,6 @@ object Compiler {
       case Type.Function(t1, t2) => ???
     }
 
-    def disambiguate(lat: Lattice, name: Name, env: Environment): Lattice = lat // TODO
-
-
     def disambiguate(predicate: Predicate, name: Name, env: Environment): Predicate =
       ???
 
