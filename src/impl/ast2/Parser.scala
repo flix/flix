@@ -81,18 +81,12 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   }
 
   def EnumDeclaraction: Rule1[Ast.Declaration.Enum] = rule {
-    "enum" ~ WhiteSpace ~ Ident ~ WhiteSpace ~ EnumType ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Enum
-  }
-
-  // TODO: Perhaps this needs to go into a special enum declaration. Move out of type.
-  def EnumType: Rule1[Ast.Type.Enum] = rule {
-    "{" ~ WhiteSpace ~ EnumBody ~ WhiteSpace ~ "}" ~> Ast.Type.Enum
+    "enum" ~ WhiteSpace ~ Ident ~ optWhiteSpace ~ "{" ~ optWhiteSpace ~ EnumBody ~ optWhiteSpace ~ "}" ~ optWhiteSpace ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Enum
   }
 
   def EnumBody: Rule1[Seq[Ast.Type.Tag]] = rule {
     oneOrMore("case" ~ WhiteSpace ~ Ident ~> Ast.Type.Tag).separatedBy("," ~ optWhiteSpace)
   }
-
 
   def LatticeDeclaration: Rule1[Ast.Declaration.Lattice] = rule {
     "lat" ~ WhiteSpace ~ Ident ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ RecordExp ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Lattice

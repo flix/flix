@@ -63,11 +63,7 @@ object Compiler {
       case decl: Ast.Declaration.Val => environmentOf(withSuffix(namespace, decl.name) -> decl)
       case decl: Ast.Declaration.Var => environmentOf(withSuffix(namespace, decl.name) -> decl)
       case decl: Ast.Declaration.Fun => environmentOf(withSuffix(namespace, decl.name) -> decl)
-      case decl: Ast.Declaration.Enum =>
-        val init = environmentOf(withSuffix(namespace, decl.name) -> decl)
-        decl.tpe.elms.foldLeft(init) {
-          case (env, tag) => env ++ environmentOf(withSuffix(namespace, tag.name) -> decl)
-        }
+      case decl: Ast.Declaration.Enum => ???
       case decl: Ast.Declaration.Lattice => Empty
       case decl: Ast.Declaration.Fact => Empty
       case decl: Ast.Declaration.Rule => Empty
@@ -117,7 +113,7 @@ object Compiler {
         Ast.Declaration.Tpe(name, disambiguate(tpe, namespace, env))
 
       case Ast.Declaration.Enum(name, tpe) =>
-        Ast.Declaration.Enum(name, disambiguate(tpe, namespace, env).asInstanceOf[Ast.Type.Enum])
+        ???
 
       case Ast.Declaration.Val(name, tpe, exp) =>
         val tpe2 = disambiguate(tpe, namespace, env)
@@ -236,7 +232,7 @@ object Compiler {
     def lookupType(name: Name, env: Environment): Option[Ast.Type] = {
       val candidates = env.get(name).collect {
         case d: Ast.Declaration.Tpe => d.typ
-        case d: Ast.Declaration.Enum => d.tpe
+        case d: Ast.Declaration.Enum => ???
       }
       if (candidates.size > 1) {
         throw new CompilerException(s"Ambiguous name: $name")
@@ -255,7 +251,7 @@ object Compiler {
       val candidates = env.get(name).collect {
         case d: Ast.Declaration.Val => d.exp
         case d: Ast.Declaration.Fun => d.body
-        case d: Ast.Declaration.Enum => d.tpe.elms.find(tag => tag.name == name.last).map(tag => Ast.Expression.Tag(tag.name, Ast.Expression.Lit(Ast.Literal.Unit))).get
+        case d: Ast.Declaration.Enum => ???
       }
       if (candidates.size > 1) {
         throw new CompilerException(s"Ambiguous name: $name")

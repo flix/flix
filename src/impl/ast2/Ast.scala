@@ -42,7 +42,7 @@ object Ast {
     /**
      * An AST node which represents a enum declaration.
      */
-    case class Enum(name: String, tpe: Type.Enum) extends Declaration
+    case class Enum(name: String, body: Seq[Ast.Type.Tag]) extends Declaration
 
     /**
      * An AST node which represents a value declaration.
@@ -52,7 +52,7 @@ object Ast {
     /**
      * An AST node which represents a variable declaration.
      */
-    case class Var(name: String, lat: Ast.Type) extends Declaration
+    case class Var(name: String, tpe: Ast.Type) extends Declaration
 
     /**
      * An AST node which represents a function declaration.
