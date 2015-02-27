@@ -4,6 +4,10 @@ import impl.ast2.Parser
 
 object Shell {
 
+  // TODO: Experiment with other shells to discver what works
+
+  // TODO: Define grammar.
+
   def main(args: Array[String]): Unit = {
 
     val version = "v1.0.0"
