@@ -49,39 +49,46 @@
 (rule (Result n {d2}) ((PathEdge {<_ <n d2> >})))
 
 // Example (uninitialized variables) from IFDS paper
-(fact (CFG {
-  <"smain" "n1">
-  <"n1" "n2">
-  <"n2" "n3">
-  <"n3" "emain">
-}))
+(fact (CFG {<"smain" "n1">}))
+(fact (CFG {<"n1" "n2">}))
+(fact (CFG {<"n2" "n3">}))
+(fact (CFG {<"n3" "emain">}))
 
-(fact (CFG {
-  <"sp" "n4">
-  <"n4" "n5"> <"n4" "ep">
-  <"n5" "n6">
-  <"n6" "n7">
-  <"n7" "n8">
-  <"n8" "n9">
-  <"n9" "ep">
+(fact (CFG {<"sp" "n4">}))
+(fact (CFG {<"n4" "n5">}))
+(fact (CFG {<"n4" "ep">}))
+(fact (CFG {<"n5" "n6">}))
+(fact (CFG {<"n6" "n7">}))
+(fact (CFG {<"n7" "n8">}))
+(fact (CFG {<"n8" "n9">}))
+(fact (CFG {<"n9" "ep">}))
 
-}))
+(fact (StartNode {<"main" "smain">}))
+(fact (StartNode {<"p" "sp">}))
+(fact (EndNode   {<"main" "emain">}))
+(fact (EndNode   {<"p" "ep">}))
 
-(fact (StartNode {<"main" "smain"> <"p" "sp">}))
-(fact (EndNode   {<"main" "emain"> <"p" "ep">}))
-
-(fact (CallGraph {<"n2" "p"> <"n7" "p">}))
+(fact (CallGraph {<"n2" "p">}))
+(fact (CallGraph {<"n7" "p">}))
 
 (def-type Facts (Set Fact))
-(fact (Facts {"x" "g" "a"}))
+(fact (Facts {"x"}))
+(fact (Facts {"g"}))
+(fact (Facts {"a"}))
 
 (rule (EshIntra <n "zero"> {"zero"}) ((CFG {<n _>})))
 
-(fact (EshIntra <"smain" "zero"> {"x" "g"}))
+(fact (EshIntra <"smain" "zero"> {"x"}))
+(fact (EshIntra <"smain" "zero"> {"g"}))
 (fact (EshIntra <"n1" "g"> {"g"}))
 (fact (EshIntra <"n2" "x"> {"x"}))
 (def-type Identity (Set Node))
-(fact (Identity {"n3" "sp" "n4" "n6" "n8" "n9"}))
+(fact (Identity {"n3"}))
+(fact (Identity {"sp"}))
+(fact (Identity {"n4"}))
+(fact (Identity {"n6"}))
+(fact (Identity {"n8"}))
+(fact (Identity {"n9"}))
 (rule (EshIntra <idnode f> {f}) ((Facts {f}) (Identity {idnode})))
 (fact (EshIntra <"n5" "a"> {"a"}))
 (fact (EshIntra <"n6" "g"> {"a"}))
