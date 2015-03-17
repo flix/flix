@@ -52,6 +52,8 @@ object Parser {
  */
 class Parser(val input: ParserInput) extends org.parboiled2.Parser {
 
+  // TODO: Use atomic keyword
+
   def Root: Rule1[Ast.Root] = rule {
     optWhiteSpace ~ zeroOrMore(Declaration) ~ optWhiteSpace ~ EOI ~> Ast.Root
   }

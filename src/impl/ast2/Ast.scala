@@ -1,7 +1,6 @@
 package impl.ast2
 
-import impl.logic.BinaryOperator
-import impl.logic.UnaryOperator
+import impl.logic.{BinaryOperator, UnaryOperator}
 
 import scala.annotation.StaticAnnotation
 import scala.collection.immutable.Seq
@@ -13,14 +12,18 @@ sealed trait Ast
 
 object Ast {
 
-  // TODO: Introduce "Name".
-
   /**
    * The Ast root node.
    *
    * At the highest level an Ast is a sequence of declarations.
    */
   case class Root(decls: Seq[Declaration]) extends Ast
+
+  // TODO: Introduce "Name".
+  /**
+   * A name (unqualified or qualified) is a sequence of strings.
+   */
+  type Name = Seq[String]
 
   /**
    * A common super-type for AST nodes which represent declarations.
@@ -32,7 +35,7 @@ object Ast {
     /**
      * An AST node which represents a namespace declaration.
      */
-    case class NameSpace(name: Seq[String], body: Seq[Declaration]) extends Declaration
+    case class NameSpace(name: Name, body: Seq[Declaration]) extends Declaration
 
     /**
      * An AST node which represents a type declaration.
@@ -116,7 +119,7 @@ object Ast {
      * An AST node which represents either a variable or a reference to a named value.
      */
     @Eliminated
-    case class AmbiguousName(name: Seq[String]) extends Expression
+    case class AmbiguousName(name: Name) extends Expression
 
     /**
      * An AST node which represents an ambiguous function call.
