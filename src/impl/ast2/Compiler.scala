@@ -188,7 +188,7 @@ object Compiler {
       case Ast.Expression.Error => Ast.Expression.Error
     }
 
-    import Ast._
+    import Ast.Type
 
     /**
      * Disambiguates the given type `ast`.
