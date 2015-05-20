@@ -1,7 +1,9 @@
 import sbt._
-import Keys._
 
 object build extends Build {
-  lazy val flix = Project("flix", file(".")) dependsOn(macroSub)
-  lazy val macroSub = Project("macro", file("macro"))
+  // Ensures that both `main` and `macro` subprojects are built and tested
+  lazy val root = Project("flix", file(".")).aggregate(flixMain, macroSub)
+
+  lazy val flixMain = Project("main", file("main"))
+  lazy val macroSub = Project("macro", file("macro")).dependsOn(flixMain)
 }
