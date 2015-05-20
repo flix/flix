@@ -4,21 +4,6 @@ import scala.reflect.macros.whitebox
 import impl.logic.Value
 
 object Macros {
-
-  def demo(n: Int): Int => Int = macro demoImpl
-
-  def demoImpl(c: whitebox.Context)(n: c.Expr[Int]): c.Expr[Int => Int] = {
-    import c.universe._
-
-    println("Hello from macro implementation.")
-
-    c.Expr[Int => Int] {
-      q"""
-          (m: Int) => m + $n
-       """
-    }
-  }
-
   /*
    * Macro for creating functions that unwrap and wrap Values.
    * The function provided to the macro must be partially applied,
@@ -37,7 +22,7 @@ object Macros {
    *      Value.B(ret)
    *    }
    */
-  def m(f: => Any): Value => Value = macro impl
+  def valueWrapperFunc(f: => Any): Value => Value = macro valueWrapperFuncImpl
 
   /*
    * Macro implementation
@@ -49,7 +34,8 @@ object Macros {
    *
    * If Value ever changes, this implementation will need to be updated.
    */
-  def impl(c: whitebox.Context)(f: c.Tree): c.Expr[Value => Value] = {
+  //TODO(mhyee): Value.Abs, Value.Tag?
+  def valueWrapperFuncImpl(c: whitebox.Context)(f: c.Tree): c.Expr[Value => Value] = {
     import c.universe._
 
     /*
@@ -72,7 +58,6 @@ object Macros {
      * identifiers.
      */
     def unwrapValue(types: List[Type], valName: TermName): (c.Tree, List[c.Tree]) = {
-
       /*
        * Unwrap a non-tuple Value. The special cases are handled here, with
        * unwrapOthers handling the easy cases.
@@ -161,7 +146,6 @@ object Macros {
      * the first element of x, rather than an identifier.
      */
     def wrapValue(exprToWrap: Tree, typeToWrap: Type): c.Tree = {
-
       /*
        * A set must be wrapped as a Value.Set, and its elements must also be
        * recursively wrapped. For example, if st is a Set[Int], we wrap it as
@@ -230,5 +214,4 @@ object Macros {
       q"($valName: Value) => { ..$unwrapper; ..$call; ..$wrapper }"
     }
   }
-
 }
