@@ -2,8 +2,6 @@ scalaSource in Compile := baseDirectory.value / "src"
 
 scalaSource in Test := baseDirectory.value / "test"
 
-scalaVersion := "2.11.6"
-
 scalacOptions += "-deprecation"
 
 scalacOptions += "-feature"
