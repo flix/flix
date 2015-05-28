@@ -5,9 +5,7 @@ import Macros._
 
 class TestMacros extends FunSuite {
 
-  class Foo(nc: Int) {
-    val n = nc
-
+  class Foo(val n: Int) {
     def canEqual(other: Any): Boolean = other.isInstanceOf[Foo]
 
     override def equals(other: Any): Boolean = other match {

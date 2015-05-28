@@ -9,7 +9,7 @@ object build extends Build {
   )
 
   // Ensures that both subprojects are built and tested
-  lazy val root = Project("root", file("."))
+  lazy val root = Project("flix-root", file("."))
     .aggregate(flixMain, macroSub)
     .settings(commonSettings: _*)
     .settings(
