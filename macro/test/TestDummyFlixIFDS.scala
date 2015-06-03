@@ -5,12 +5,12 @@ import impl.logic.Value
 import Macros._
 
 class TestDummyFlixIFDS extends FunSuite {
-  // Dummy trait implementations
-  trait MLabel
-  trait Itm
-  trait Method
-
   test("Dummy FlixIFDS") {
+    // Dummy trait implementations
+    trait MLabel
+    trait Itm
+    trait Method
+
     val flix = new Flix
 
     flix += ("fneshintra" -> valueWrapperFunc(eshIntra _))
