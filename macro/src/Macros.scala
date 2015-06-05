@@ -57,12 +57,12 @@ object Macros {
      * call the function with expressions (as above), not just a list of
      * identifiers.
      */
-    def unwrapValue(types: List[Type], valName: TermName): (c.Tree, List[c.Tree]) = {
+    def unwrapValue(types: List[c.Type], valName: c.TermName): (c.Tree, List[c.Tree]) = {
       /*
        * Unwrap a non-tuple Value. The special cases are handled here, with
        * unwrapOthers handling the easy cases.
        */
-      def unwrapSingleton(t: Type): (c.Tree, List[c.Tree]) = t match {
+      def unwrapSingleton(t: c.Type): (c.Tree, List[c.Tree]) = t match {
         case ty if ty =:= typeOf[scala.Unit] =>
           // The function actually takes a value of scala.Unit, so we need to
           // call it with an actual Unit, ().
@@ -86,7 +86,7 @@ object Macros {
        * we might have the following unwrap code:
        * Value.Tuple2(Value.Bool(a1: Boolean), Value.Int(a2: Int)).
        */
-      def unwrapTuple(ts: List[Type]): (c.Tree, List[c.Tree]) = {
+      def unwrapTuple(ts: List[c.Type]): (c.Tree, List[c.Tree]) = {
         val tuple = TermName("Tuple" + ts.size)
         val (inner, args) = ts.map(x => unwrapSingleton(x)).unzip
         (pq"Value.$tuple(..$inner)", args.flatten)
@@ -99,7 +99,7 @@ object Macros {
        * Then we unwrap the elements of ss, and call the function with:
        * ss.map((x: Value) => { val Value.Int(a: Int) = x; a }).
        */
-      def unwrapSet(t: Type): (c.Tree, List[c.Tree]) = {
+      def unwrapSet(t: c.Type): (c.Tree, List[c.Tree]) = {
         // Unwrap the set
         val argName = TermName(c.freshName("arg"))
         val pattern = pq"Value.Set($argName: Set[Value])"
@@ -115,7 +115,7 @@ object Macros {
       /*
        * Handle the easy cases here.
        */
-      def unwrapOthers(t: Type): (c.Tree, List[c.Tree]) = {
+      def unwrapOthers(t: c.Type): (c.Tree, List[c.Tree]) = {
         val argName = TermName(c.freshName("arg"))
         val pattern = t match {
           case ty if ty =:= typeOf[scala.Boolean] => pq"Value.Bool($argName: $t)"
@@ -145,13 +145,13 @@ object Macros {
      * it needs to be able to wrap tuple elements. x._1 should be treated as
      * the first element of x, rather than an identifier.
      */
-    def wrapValue(exprToWrap: Tree, typeToWrap: Type): c.Tree = {
+    def wrapValue(exprToWrap: c.Tree, typeToWrap: c.Type): c.Tree = {
       /*
        * A set must be wrapped as a Value.Set, and its elements must also be
        * recursively wrapped. For example, if st is a Set[Int], we wrap it as
        * Value.Set(st.map({ (x: Int) => Value.Int(x) }).
        */
-      def wrapSet(t: Type): c.Tree = {
+      def wrapSet(t: c.Type): c.Tree = {
         val x = TermName(c.freshName("x"))
         val inner = q"{ ($x: $t) => ${wrapValue(q"$x", t)} }"
         q"Value.Set($exprToWrap.map($inner))"
@@ -163,7 +163,7 @@ object Macros {
        * Boolean and Int, we wrap it with:
        * Value.Tuple2(Value.Bool(t._1), Value.Int(t._2)).
        */
-      def wrapTuple(types: List[Type]): c.Tree = {
+      def wrapTuple(types: List[c.Type]): c.Tree = {
         val tuple = TermName("Tuple" + types.size)
         val inner = types.zipWithIndex.map { case (t, i) =>
           val elt = TermName("_" + (i+1))
