@@ -1,7 +1,9 @@
-import scala.language.experimental.macros
-import scala.reflect.macros.whitebox
+package flix
 
 import impl.logic.Value
+
+import scala.language.experimental.macros
+import scala.reflect.macros.whitebox
 
 object Macros {
   /*

@@ -1,3 +1,4 @@
+import flix.Macros
 import org.scalatest.FunSuite
 
 import api.Flix
