@@ -36,7 +36,6 @@ object Macros {
    *
    * If Value ever changes, this implementation will need to be updated.
    */
-  //TODO(mhyee): Value.Abs, Value.Tag?
   def valueWrapperFuncImpl(c: whitebox.Context)(f: c.Tree): c.Expr[Value => Value] = {
     import c.universe._
 
@@ -59,7 +58,7 @@ object Macros {
      * call the function with expressions (as above), not just a list of
      * identifiers.
      */
-    def unwrapValue(types: List[c.Type], valName: c.TermName): (c.Tree, List[c.Tree]) = {
+    def unwrapValue(valName: c.TermName, types: List[c.Type]): (c.Tree, List[c.Tree]) = {
       /*
        * Unwrap a non-tuple Value. The special cases are handled here, with
        * unwrapOthers handling the easy cases.
@@ -114,18 +113,25 @@ object Macros {
         (pattern, List(arg))
       }
 
+      // TODO(mhyee): Implement this
+      def unwrapTagOrNative(t: c.Type): (c.Tree, List[c.Tree]) = {
+        val argName = TermName(c.freshName("arg"))
+        val args = List(q"$argName")
+        (pq"Value.Native($argName: $t)", args)
+      }
+
       /*
        * Handle the easy cases here.
        */
       def unwrapOthers(t: c.Type): (c.Tree, List[c.Tree]) = {
         val argName = TermName(c.freshName("arg"))
-        val pattern = t match {
-          case ty if ty =:= typeOf[scala.Boolean] => pq"Value.Bool($argName: $t)"
-          case ty if ty =:= typeOf[scala.Int] => pq"Value.Int($argName: $t)"
-          case ty if ty =:= typeOf[java.lang.String] => pq"Value.Str($argName: $t)"
-          case _ => pq"Value.Native($argName: $t)"
+        val args = List(q"$argName")
+        t match {
+          case ty if ty =:= typeOf[scala.Boolean] => (pq"Value.Bool($argName: $t)", args)
+          case ty if ty =:= typeOf[scala.Int] => (pq"Value.Int($argName: $t)", args)
+          case ty if ty =:= typeOf[java.lang.String] => (pq"Value.Str($argName: $t)", args)
+          case ty => unwrapTagOrNative(ty)
         }
-        (pattern, List(q"$argName"))
       }
 
       val (pattern, args) = types match {
@@ -153,10 +159,10 @@ object Macros {
        * recursively wrapped. For example, if st is a Set[Int], we wrap it as
        * Value.Set(st.map({ (x: Int) => Value.Int(x) }).
        */
-      def wrapSet(t: c.Type): c.Tree = {
+      def wrapSet(setToWrap: c.Tree, t: c.Type): c.Tree = {
         val x = TermName(c.freshName("x"))
         val inner = q"{ ($x: $t) => ${wrapValue(q"$x", t)} }"
-        q"Value.Set($exprToWrap.map($inner))"
+        q"Value.Set($setToWrap.map($inner))"
       }
 
       /*
@@ -165,13 +171,18 @@ object Macros {
        * Boolean and Int, we wrap it with:
        * Value.Tuple2(Value.Bool(t._1), Value.Int(t._2)).
        */
-      def wrapTuple(types: List[c.Type]): c.Tree = {
+      def wrapTuple(tupleToWrap: c.Tree, types: List[c.Type]): c.Tree = {
         val tuple = TermName("Tuple" + types.size)
         val inner = types.zipWithIndex.map { case (t, i) =>
           val elt = TermName("_" + (i+1))
-          wrapValue(q"$exprToWrap.$elt", t)
+          wrapValue(q"$tupleToWrap.$elt", t)
         }
         q"Value.$tuple(..$inner)"
+      }
+
+      // TODO(mhyee): Implement this
+      def wrapTagOrNative(expr: c.Tree, t: c.Type): c.Tree = {
+        q"Value.Native($expr)"
       }
 
       typeToWrap match {
@@ -184,12 +195,12 @@ object Macros {
           if (ty.typeArgs.isEmpty)
             q"Value.Set(Set.empty)"
           else
-            wrapSet(ty.typeArgs.head)
+            wrapSet(exprToWrap, ty.typeArgs.head)
         case ty if ty.typeSymbol.fullName.startsWith("scala.Tuple") =>
           // ty is a tuple (of some arity), so typeArgs gives us the types
           // that make up the tuple.
-          wrapTuple(ty.typeArgs)
-        case _ => q"Value.Native($exprToWrap)"
+          wrapTuple(exprToWrap, ty.typeArgs)
+        case ty => wrapTagOrNative(exprToWrap, ty)
       }
     }
 
@@ -208,7 +219,7 @@ object Macros {
     val valName = TermName(c.freshName("v"))
     val retName = TermName(c.freshName("ret"))
 
-    val (unwrapper, args) = unwrapValue(paramTypes, valName)
+    val (unwrapper, args) = unwrapValue(valName, paramTypes)
     val call = q"val $retName = $func(..$args)"
     val wrapper = wrapValue(q"$retName", retType)
 

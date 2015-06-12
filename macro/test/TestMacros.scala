@@ -83,8 +83,6 @@ class TestMacros extends FunSuite {
     assertResult(r1)(r2)
   }
 
-  //TODO(mhyee): Abs, Tag
-
   test("(Tuple2[String, String], Int) => Tuple2[Int, Int]") {
     def f(t: (String, String), n: Int) =
       (t._1.length + n, t._2.length + n)
