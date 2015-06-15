@@ -1,11 +1,9 @@
-import flix.Macros
+import flix.Macros._
 import org.scalatest.FunSuite
 
-import impl.logic.Value
-import Macros._
+import impl.logic.{Symbol, Type, Value}
 
-class TestMacros extends FunSuite {
-
+object Definitions {
   class Foo(val n: Int) {
     def canEqual(other: Any): Boolean = other.isInstanceOf[Foo]
 
@@ -20,6 +18,23 @@ class TestMacros extends FunSuite {
     }
   }
 
+  // Represents the Flix type:
+  // (def-type FooTag (variant ((FZero) (FOne Int) (FTwo Int Str))))
+  sealed trait FooTag
+  case object FZero extends FooTag
+  case class FOne(n: Int) extends FooTag
+  case class FTwo(m: Int, n: String) extends FooTag
+
+  // Internal Flix representation of FooTag
+  val fooTagTyp = Type.Sum(List(
+    Type.Tag(Symbol.NamedSymbol("FOne"), Type.Int),
+    Type.Tag(Symbol.NamedSymbol("FTwo"), Type.Tuple2(Type.Int, Type.Str)),
+    Type.Tag(Symbol.NamedSymbol("FZero"), Type.Unit)))
+}
+
+class TestMacros extends FunSuite {
+  import Definitions._
+
   test("void => ()") {
     def f() = ()
     val r1 = Value.Unit
@@ -28,7 +43,7 @@ class TestMacros extends FunSuite {
   }
 
   test("() => ()") {
-    def f(u: Unit) = u
+    def f(u: Unit) = ()
     val r1 = Value.Unit
     val r2 = valueWrapperFunc(f _)(Value.Unit)
     assertResult(r1)(r2)
@@ -214,5 +229,50 @@ class TestMacros extends FunSuite {
       Value.Set(Set("qwertyuiop", "asdfasdf", "a").map(Value.Str))))
     def r2 = valueWrapperFunc(f _)(Value.Unit)
     assertResult(r1)(r2)
+  }
+
+  // TODO(mhyee): More unwrapping tests.
+
+  test("Tag: FZero => Int") {
+    def f(v: FZero.type) = 42
+    val r1 = Value.Int(42)
+    val r2 = valueWrapperFunc(f _)(Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp))
+    assertResult(r1)(r2)
+  }
+
+  test("Tag: FOne => Int") {
+    def f(v: FOne) = { val FOne(n: Int) = v; -n }
+    val r1 = Value.Int(-5)
+    val r2 = valueWrapperFunc(f _)(Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(5), fooTagTyp))
+    assertResult(r1)(r2)
+  }
+
+  test("Tag: FTwo => Int") {
+    def f(v: FTwo) = { val FTwo(n: Int, s: String) = v; n + s.length }
+    val r1 = Value.Int(5)
+    val r2 = valueWrapperFunc(f _)(Value.Tag(Symbol.NamedSymbol("Dbl"),
+      Value.Tuple2(Value.Int(2), Value.Str("abc")), fooTagTyp))
+    assertResult(r1)(r2)
+  }
+
+  test("Tag: FooTag => Int") {
+    def f(v: FooTag) = v match {
+      case FOne(n: Int) => n
+      case FTwo(n: Int, s: String) => n + s.length
+      case _ => 42
+    }
+
+    val r01 = Value.Int(-1)
+    val r02 = valueWrapperFunc(f _)(Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(-1), fooTagTyp))
+    assertResult(r01)(r02)
+
+    val r11 = Value.Int(5)
+    val r12 = valueWrapperFunc(f _)(Value.Tag(Symbol.NamedSymbol("FTwo"),
+      Value.Tuple2(Value.Int(2), Value.Str("abc")), fooTagTyp))
+    assertResult(r11)(r12)
+
+    val r21 = Value.Int(42)
+    val r22 = valueWrapperFunc(f _)(Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp))
+    assertResult(r21)(r22)
   }
 }

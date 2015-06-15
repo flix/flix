@@ -1,9 +1,8 @@
-import flix.Macros
+import flix.Macros._
 import org.scalatest.FunSuite
 
 import api.Flix
 import impl.logic.Value
-import Macros._
 
 class TestDummyFlixIFDS extends FunSuite {
   test("Dummy FlixIFDS") {

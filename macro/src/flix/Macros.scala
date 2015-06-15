@@ -8,8 +8,8 @@ import scala.reflect.macros.whitebox
 object Macros {
   /*
    * Macro for creating functions that unwrap and wrap Values.
-   * The function provided to the macro must be partially applied,
-   * e.g. m(func _)
+   * The function provided to the macro must be partially applied, e.g.
+   *    valueWrapperFunc(func _)
    *
    * Given function func: A => B, generate the wrapper:
    *    (v: Value) => {
@@ -34,7 +34,7 @@ object Macros {
    * which are pretty complicated. Unfortunately, they need to be nested
    * inside impl(), because of the import c.universe._.
    *
-   * If Value ever changes, this implementation will need to be updated.
+   * NOTE: If Value ever changes, this implementation will need to be updated.
    */
   def valueWrapperFuncImpl(c: whitebox.Context)(f: c.Tree): c.Expr[Value => Value] = {
     import c.universe._
@@ -47,11 +47,10 @@ object Macros {
      *
      * For example, if v is a Value representing the argument types
      * ((Int, Bool), String), we unwrap v with:
-     * val Value.Tuple2(
-     *   Value.Tuple2(Value.Int(a: Int), Value.Bool(b: Boolean),
-     *   Value.Str(c: String)) = v
-     * We construct the arguments as:
-     * (a, b), c
+     *    val Value.Tuple2(
+     *      Value.Tuple2(Value.Int(a: Int), Value.Bool(b: Boolean),
+     *      Value.Str(c: String)) = v
+     * We construct the arguments as: (a, b), c
      * So the function call would look like: func((a, b), c)
      *
      * We return a list of expressions (as syntax trees), since we need to
@@ -85,7 +84,7 @@ object Macros {
        * which are represented by a Value.TupleN. Besides unwrapping the
        * tuple, we also recursively unwrap the tuple elements. For example,
        * we might have the following unwrap code:
-       * Value.Tuple2(Value.Bool(a1: Boolean), Value.Int(a2: Int)).
+       *    Value.Tuple2(Value.Bool(a1: Boolean), Value.Int(a2: Int)).
        */
       def unwrapTuple(ts: List[c.Type]): (c.Tree, List[c.Tree]) = {
         val tuple = TermName("Tuple" + ts.size)
@@ -96,9 +95,9 @@ object Macros {
       /*
        * Unwrapping the set is straightforward, but the set elements need to
        * be recursively unwrapped. For example, we first unwrap the set:
-       * val Value.Set(ss: Set[Value]) = v.
+       *    val Value.Set(ss: Set[Value]) = v.
        * Then we unwrap the elements of ss, and call the function with:
-       * ss.map((x: Value) => { val Value.Int(a: Int) = x; a }).
+       *    ss.map((x: Value) => { val Value.Int(a: Int) = x; a }).
        */
       def unwrapSet(t: c.Type): (c.Tree, List[c.Tree]) = {
         // Unwrap the set
@@ -113,11 +112,87 @@ object Macros {
         (pattern, List(arg))
       }
 
-      // TODO(mhyee): Implement this
+      /*
+       * Unwrap a user-defined type. We either use Value.Tag or Value.Native.
+       * Value.Tag has two further subcases. Consider the Flix type:
+       *    (def-type FooTag (variant ((FZero) (FOne Int) (FTwo Int Str))))
+       * and corresponding Scala type:
+       *    sealed trait FooTag
+       *    case object FZero extends FooTag
+       *    case class FOne(n: Int) extends FooTag
+       *    case class FTwo(m: Int, n: String) extends FooTag
+       * We could be unwrapping one of the subclasses (FZero, FOne, or FTwo),
+       * or the base trait (or abstract class), FooTag.
+       *
+       * NOTE: The base trait/class (e.g. FooTag) must be sealed.
+       */
       def unwrapTagOrNative(t: c.Type): (c.Tree, List[c.Tree]) = {
-        val argName = TermName(c.freshName("arg"))
-        val args = List(q"$argName")
-        (pq"Value.Native($argName: $t)", args)
+        val classSym = t.typeSymbol.asClass
+        // knownDirectSubclasses requires classSym to represent a sealed class.
+        // Furthermore, it returns a set. To ensure the order is deterministic
+        // and predictable, we use a sorted list.
+        val subclasses = classSym.knownDirectSubclasses.toList.sortBy(_.fullName)
+
+        if (classSym.isCaseClass) {
+          // We have a subclass of the tag, e.g. FZero, FOne, or FTwo. We can
+          // directly unwrap with something like:
+          //    val Value.Tag(Symbol.NamedSymbol(_), Value.Int(n: Int), _) = v
+          // When we call the function, we have to instantiate the case class:
+          //    val ret = f(FOne(n))
+
+          val className = TermName(classSym.name.toString)
+
+          // Does the class constructor take 0, 1, or multiple parameters?
+          val (inner, arg) = classSym.primaryConstructor.asMethod.paramLists.head match {
+            case Nil => (q"Value.Unit", q"$className")
+            case List(ty) =>
+              val (pattern, args) = unwrapSingleton(ty.typeSignature)
+              (pattern, q"$className(..$args)")
+            case tys =>
+              val (pattern, args) = unwrapTuple(tys.map(_.typeSignature))
+              (pattern, q"$className(..$args)")
+          }
+          (pq"Value.Tag(Symbol.NamedSymbol(_), $inner, _)", List(arg))
+
+        } else if (subclasses.nonEmpty && subclasses.forall(_.asClass.isCaseClass)) {
+          // To determine if the trait is used for case classes, we check that
+          // all known subclasses are case classes (and that there actually are
+          // subclasses, since forall returns true for an empty list).
+
+          // We have a trait (or abstract class), e.g. FooTag.
+          //    val Value.Tag(Symbol.NamedSymbol(s), tagVal, _) = v
+          // However, we don't know the type of tagVal, so we match on s:
+          //    s match {
+          //      case "FOne" => val Value.Int(n: Int) = tagVal; FOne(n)
+          //      case "FTwo" => ...
+          //      case "FZero" => FZero
+          //    }
+          // We then call f with the match expression.
+          val tagVal = TermName(c.freshName("tagVal"))
+          val cases = subclasses.map(sc => {
+            val subclassName = TermName(sc.name.toString)
+
+            // Does the class constructor take 0, 1, or multiple parameters?
+            val body = sc.asClass.primaryConstructor.asMethod.paramLists.head match {
+              case Nil => q"$subclassName"
+              case List(ty) =>
+                val (pattern, args) = unwrapSingleton(ty.typeSignature)
+                q"val $pattern = $tagVal; $subclassName(..$args)"
+              case tys =>
+                val (pattern, args) = unwrapTuple(tys.map(_.typeSignature))
+                q"val $pattern = $tagVal; $subclassName(..$args)"
+            }
+            cq"${sc.name.toString} => $body"
+          })
+          val sName = TermName(c.freshName("s"))
+          val arg = q"$sName match { case ..$cases }"
+          (pq"Value.Tag(Symbol.NamedSymbol($sName), $tagVal, _)", List(arg))
+
+        } else {
+          // Not a tag, so use Value.Native.
+          val argName = TermName(c.freshName("arg"))
+          (pq"Value.Native($argName: $t)", List(q"$argName"))
+        }
       }
 
       /*
@@ -157,7 +232,7 @@ object Macros {
       /*
        * A set must be wrapped as a Value.Set, and its elements must also be
        * recursively wrapped. For example, if st is a Set[Int], we wrap it as
-       * Value.Set(st.map({ (x: Int) => Value.Int(x) }).
+       *    Value.Set(st.map({ (x: Int) => Value.Int(x) }).
        */
       def wrapSet(setToWrap: c.Tree, t: c.Type): c.Tree = {
         val x = TermName(c.freshName("x"))
@@ -169,7 +244,7 @@ object Macros {
        * A tuple must be wrapped as a Value.TupleN of Values. So we have to
        * recursively wrap the tuple elements. For example, if t is a pair of
        * Boolean and Int, we wrap it with:
-       * Value.Tuple2(Value.Bool(t._1), Value.Int(t._2)).
+       *    Value.Tuple2(Value.Bool(t._1), Value.Int(t._2)).
        */
       def wrapTuple(tupleToWrap: c.Tree, types: List[c.Type]): c.Tree = {
         val tuple = TermName("Tuple" + types.size)
@@ -213,7 +288,7 @@ object Macros {
     val retType = f.tpe.typeArgs.last
 
     // Extract the name of the function. f looks something like:
-    // { ((a1: A1, a2: A2) => func(a1, a2)) }.
+    //    { ((a1: A1, a2: A2) => func(a1, a2)) }.
     val q"{ ((..${_}) => $func(..${_})) }" = f
 
     val valName = TermName(c.freshName("v"))
