@@ -231,7 +231,68 @@ class TestMacros extends FunSuite {
     assertResult(r1)(r2)
   }
 
-  // TODO(mhyee): More unwrapping tests.
+  // TODO(mhyee): More wrapping/unwrapping tests.
+
+  test("Tag: () => FZero") {
+    def f(): FZero.type = FZero
+    val r1 = Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp)
+    val r2 = valueWrapperFunc(f _)(Value.Unit)
+    assertResult(r1)(r2)
+  }
+
+  test("Tag: Int => FOne") {
+    def f(n: Int): FOne = FOne(n)
+    val r1 = Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(42), fooTagTyp)
+    val r2 = valueWrapperFunc(f _)(Value.Int(42))
+    assertResult(r1)(r2)
+  }
+
+  test("Tag: (Int, String) => FTwo") {
+    def f(n: Int, s: String): FTwo = FTwo(n, s)
+    val r1 = Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(5), Value.Str("hi")), fooTagTyp)
+    val r2 = valueWrapperFunc(f _)(Value.Tuple2(Value.Int(5), Value.Str("hi")))
+    assertResult(r1)(r2)
+  }
+
+  test("Tag: (Int, String) => FooTag (ascribed)") {
+    def f(n: Int, s: String): FooTag = n match {
+      case 0 => FZero
+      case 1 => FOne(s.length)
+      case 2 => FTwo(n, s)
+    }
+
+    val r01 = Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp)
+    val r02 = valueWrapperFunc(f _)(Value.Tuple2(Value.Int(0), Value.Str("abc")))
+    assertResult(r01)(r02)
+
+    val r11 = Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(3), fooTagTyp)
+    val r12 = valueWrapperFunc(f _)(Value.Tuple2(Value.Int(1), Value.Str("abc")))
+    assertResult(r11)(r12)
+
+    val r21 = Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(2), Value.Str("abc")), fooTagTyp)
+    val r22 = valueWrapperFunc(f _)(Value.Tuple2(Value.Int(2), Value.Str("abc")))
+    assertResult(r21)(r22)
+  }
+
+  test("Tag: (Int, String) => FooTag (inferred)") {
+    def f(n: Int, s: String) = n match {
+      case 0 => FZero
+      case 1 => FOne(s.length)
+      case 2 => FTwo(n, s)
+    }
+
+    val r01 = Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp)
+    val r02 = valueWrapperFunc(f _)(Value.Tuple2(Value.Int(0), Value.Str("abc")))
+    assertResult(r01)(r02)
+
+    val r11 = Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(3), fooTagTyp)
+    val r12 = valueWrapperFunc(f _)(Value.Tuple2(Value.Int(1), Value.Str("abc")))
+    assertResult(r11)(r12)
+
+    val r21 = Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(2), Value.Str("abc")), fooTagTyp)
+    val r22 = valueWrapperFunc(f _)(Value.Tuple2(Value.Int(2), Value.Str("abc")))
+    assertResult(r21)(r22)
+  }
 
   test("Tag: FZero => Int") {
     def f(v: FZero.type) = 42

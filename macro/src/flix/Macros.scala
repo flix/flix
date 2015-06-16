@@ -116,7 +116,7 @@ object Macros {
        * Unwrap a user-defined type. We either use Value.Tag or Value.Native.
        * Value.Tag has two further subcases. Consider the Flix type:
        *    (def-type FooTag (variant ((FZero) (FOne Int) (FTwo Int Str))))
-       * and corresponding Scala type:
+       * and corresponding Scala types:
        *    sealed trait FooTag
        *    case object FZero extends FooTag
        *    case class FOne(n: Int) extends FooTag
@@ -255,9 +255,156 @@ object Macros {
         q"Value.$tuple(..$inner)"
       }
 
-      // TODO(mhyee): Implement this
+      /*
+       * Wrap a user-defined type. We either use Value.Tag or Value.Native.
+       * Comments will be referring to the following Flix type and
+       * corresponding Scala types:
+       *
+       *    (def-type FooTag (variant ((FZero) (FOne Int) (FTwo Int Str))))
+       *
+       *    sealed trait FooTag
+       *    case object FZero extends FooTag
+       *    case class FOne(n: Int) extends FooTag
+       *    case class FTwo(m: Int, n: String) extends FooTag
+       *
+       * NOTE: The base trait/class (e.g. FooTag) must be sealed.
+       */
       def wrapTagOrNative(expr: c.Tree, t: c.Type): c.Tree = {
-        q"Value.Native($expr)"
+        /*
+         * Given a (non-tuple) Scala type, return the corresponding Flix type.
+         */
+        def getSingletonType(tt: c.Type): c.Tree = tt match {
+          case ty if ty =:= typeOf[scala.Boolean] => q"Type.Bool"
+          case ty if ty =:= typeOf[scala.Int] => q"Type.Int"
+          case ty if ty =:= typeOf[java.lang.String] => q"Type.Str"
+          case ty if ty <:< weakTypeOf[scala.collection.immutable.Set[_]] => q"Type.Set"
+          case ty if ty.typeSymbol.fullName.startsWith("scala.Tuple") => getTupleType(ty.typeArgs)
+        }
+
+        /*
+         * Given a list of Scala types, return the corresponding Flix (tuple)
+         * type.
+         */
+        def getTupleType(tts: List[c.Type]): c.Tree = {
+          val tuple = TermName("Tuple" + tts.size)
+          val inner = tts.map(tt => getSingletonType(tt))
+          q"Type.$tuple(..$inner)"
+        }
+
+        /*
+         * Takes the symbol of the tag type we are wrapping, and a list of
+         * symbols (representing the other tag variants). Generates a match
+         * expression to properly wrap the return type. For example:
+         *    val ret = f(...)
+         *    ret match {
+         *      case FOne(n: Int) => ...
+         *      case FTwo(m: Int, s: String) => ...
+         *      case FZero => ...
+         *    }
+         */
+        def wrapTag(classSym: c.Symbol, variants: List[c.Symbol]): c.Tree = {
+          // Construct the Flix representation of the tag type. For example,
+          // FooTag would be represented as:
+          //    Type.Sum(List(
+          //      Type.Tag(Symbol.NamedSymbol("FOne"), Type.Int),
+          //      Type.Tag(Symbol.NamedSymbol("FTwo"), Type.Tuple2(Type.Int, Type.Str)),
+          //      Type.Tag(Symbol.NamedSymbol("FZero"), Type.Unit)))
+          val tags = variants.map(v => {
+            val flixType = v.asClass.primaryConstructor.asMethod.paramLists.head match {
+              case Nil => q"Type.Unit"
+              case List(ty) => getSingletonType(ty.typeSignature)
+              case tys => getTupleType(tys.map(_.typeSignature))
+            }
+            q"Type.Tag(Symbol.NamedSymbol(${v.name.toString}), $flixType)"
+          })
+          val tagType = q"Type.Sum(List(..$tags))"
+
+          // If the type we are wrapping is a case class (e.g. FZero, FOne,
+          // FTwo), we can wrap it directly and only need a single case in
+          // the match expression. Otherwise, we have something like FooTag
+          // and need to consider all the variants.
+          val variantsToWrap = if (classSym.asClass.isCaseClass) {
+            List(classSym)
+          } else {
+            variants
+          }
+
+          val cases = variantsToWrap.map(v => {
+            val variantName = v.name.toString
+            val (pattern, tmpUnwrapper, innerWrapper) = v.asClass.primaryConstructor.asMethod.paramLists.head match {
+              case Nil =>
+                // Generated case looks like:
+                //    case FZero => Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, tagType)
+                (pq"_: $v", q"", q"Value.Unit")
+              case List(ty) =>
+                // Generated case looks like:
+                //    case FOne(n: Int) => Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(n), tagType)
+                val xName = TermName(c.freshName("x"))
+                (pq"${TermName(variantName)}($xName: ${ty.typeSignature})", q"", wrapValue(q"$xName", ty.typeSignature))
+              case tys =>
+                // Constructor takes multiple arguments, so the generated case looks like:
+                //    case FTwo(m: Int, s: String) =>
+                //      val t = (m, s)
+                //      Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(t._1), Value.Str(t._2)), tagType)
+                // Note that we use pattern matching to construct a tuple, and
+                // then use the tuple elements to construct the tag value.
+                val tupleName = TermName(c.freshName("tpl"))
+                val (inner, args) = tys.map(ty => {
+                  val xName = TermName(c.freshName("x"))
+                  (pq"$xName: ${ty.typeSignature}", xName)
+                }).unzip
+                (pq"${TermName(variantName)}(..$inner)", q"val $tupleName = (..$args)",
+                  wrapTuple(q"$tupleName", tys.map(_.typeSignature)))
+            }
+            cq"$pattern => $tmpUnwrapper; Value.Tag(Symbol.NamedSymbol($variantName), $innerWrapper, $tagType)"
+          })
+
+          q"$expr match { case ..$cases }"
+        }
+
+        // Figure out all the "related" variants for the given tag type. For
+        // example, if we have FooTag or FZero, we need to get FZero, FOne,
+        // and FTwo. There are three cases to consider:
+        //    1. base trait (or abstract class), e.g. FooTag
+        //    2. case class that extends base trait, e.g. FZero
+        //    3. inferred type, e.g. FooTag with Product with Serializable
+        //
+        // Fortunately, we can handle all three cases with common code. We
+        // go up the inheritance hierarchy, considering all base classes.
+        // We select the first one whose direct subclasses are all case
+        // classes. Then, assuming such a base class was found, we obtain
+        // its known direct subclasses.
+        //
+        // knownDirectSubclasses requires classSym to represent a sealed class.
+        // Furthermore, it returns a set. To ensure the order is deterministic
+        // and predictable, we use a sorted list.
+        //
+        // For example, if we have FooTag, its base classes include FooTag and
+        // Any. But FooTag is the first class whose direct subclasses (FZero,
+        // FOne, and FTwo) are all case classes.
+        // If we have FZero, its base classes include FZero and FooTag, and
+        // FooTag meets our condition.
+        // If we have FooTag with Product with Serializable, its base classes
+        // include FooTag, Product, and Serializable. Again, FooTag meets our
+        // condition.
+        //
+        // NOTE: We assume the user code is valid. There are different ways of
+        // writing case classes that could break this code.
+        val classSym = t.typeSymbol.asClass
+        val variants = classSym.baseClasses.map(_.asClass).find(bc => {
+          val scs = bc.knownDirectSubclasses
+          scs.nonEmpty && scs.forall(_.asClass.isCaseClass)
+        }).map(_.knownDirectSubclasses.toList.sortBy(_.fullName))
+
+        // In the code above, find returns an Option type, and we apply map to
+        // the result. So at this point, variants is either None or Some(List).
+        // Some(List) means we have a list of variants. Otherwise, we are not
+        // wrapping a tag, so we use Value.Native.
+        if (variants.isDefined) {
+          wrapTag(classSym, variants.get)
+        } else {
+          q"Value.Native($expr)"
+        }
       }
 
       typeToWrap match {
