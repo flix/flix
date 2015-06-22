@@ -114,13 +114,16 @@ object Macros {
 
       /*
        * Unwrap a user-defined type. We either use Value.Tag or Value.Native.
-       * Value.Tag has two further subcases. Consider the Flix type:
+       * Value.Tag has two further subcases. Consider the Flix type and
+       * corresponding Scala types:
+       *
        *    (def-type FooTag (variant ((FZero) (FOne Int) (FTwo Int Str))))
-       * and corresponding Scala types:
+       *
        *    sealed trait FooTag
        *    case object FZero extends FooTag
        *    case class FOne(n: Int) extends FooTag
        *    case class FTwo(m: Int, n: String) extends FooTag
+       *
        * We could be unwrapping one of the subclasses (FZero, FOne, or FTwo),
        * or the base trait (or abstract class), FooTag.
        *

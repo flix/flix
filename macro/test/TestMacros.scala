@@ -231,8 +231,6 @@ class TestMacros extends FunSuite {
     assertResult(r1)(r2)
   }
 
-  // TODO(mhyee): More wrapping/unwrapping tests.
-
   test("Tag: () => FZero") {
     def f(): FZero.type = FZero
     val r1 = Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp)
@@ -254,7 +252,7 @@ class TestMacros extends FunSuite {
     assertResult(r1)(r2)
   }
 
-  test("Tag: (Int, String) => FooTag (ascribed)") {
+  test("Tag (ascribed): (Int, String) => FooTag") {
     def f(n: Int, s: String): FooTag = n match {
       case 0 => FZero
       case 1 => FOne(s.length)
@@ -274,7 +272,7 @@ class TestMacros extends FunSuite {
     assertResult(r21)(r22)
   }
 
-  test("Tag: (Int, String) => FooTag (inferred)") {
+  test("Tag (inferred): (Int, String) => FooTag") {
     def f(n: Int, s: String) = n match {
       case 0 => FZero
       case 1 => FOne(s.length)
@@ -292,6 +290,111 @@ class TestMacros extends FunSuite {
     val r21 = Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(2), Value.Str("abc")), fooTagTyp)
     val r22 = valueWrapperFunc(f _)(Value.Tuple2(Value.Int(2), Value.Str("abc")))
     assertResult(r21)(r22)
+  }
+
+  test("Tag: (Int, String) => (FOne, FTwo)") {
+    def f(n: Int, s: String) = (FOne(n + s.length), FTwo(n, s))
+
+    val r1 = Value.Tuple2(Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(43), fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(40), Value.Str("abc")), fooTagTyp))
+    val r2 = valueWrapperFunc(f _)(Value.Tuple2(Value.Int(40), Value.Str("abc")))
+    assertResult(r1)(r2)
+  }
+
+  test("Tag (inferred): Int => (FZero, FooTag)") {
+    def f(n: Int) = n match {
+      case 0 => (FZero, FZero)
+      case 1 => (FZero, FOne(n))
+      case 2 => (FZero, FTwo(n, "hello"))
+    }
+
+    val r01 = Value.Tuple2(Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp))
+    val r02 = valueWrapperFunc(f _)(Value.Int(0))
+    assertResult(r01)(r02)
+
+    val r11 = Value.Tuple2(Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(1), fooTagTyp))
+    val r12 = valueWrapperFunc(f _)(Value.Int(1))
+    assertResult(r11)(r12)
+
+    val r21 = Value.Tuple2(Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(2), Value.Str("hello")), fooTagTyp))
+    val r22 = valueWrapperFunc(f _)(Value.Int(2))
+    assertResult(r21)(r22)
+  }
+
+  test("Tag (ascribed): Int => (FZero, FooTag)") {
+    def f(n: Int): (FZero.type, FooTag) = n match {
+      case 0 => (FZero, FZero)
+      case 1 => (FZero, FOne(n))
+      case 2 => (FZero, FTwo(n, "hello"))
+    }
+
+    val r01 = Value.Tuple2(Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp))
+    val r02 = valueWrapperFunc(f _)(Value.Int(0))
+    assertResult(r01)(r02)
+
+    val r11 = Value.Tuple2(Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(1), fooTagTyp))
+    val r12 = valueWrapperFunc(f _)(Value.Int(1))
+    assertResult(r11)(r12)
+
+    val r21 = Value.Tuple2(Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(2), Value.Str("hello")), fooTagTyp))
+    val r22 = valueWrapperFunc(f _)(Value.Int(2))
+    assertResult(r21)(r22)
+  }
+
+  test("Tag: Int => Set[FOne]") {
+    def f(n: Int) = {
+      var s = Set(FOne(0))
+      for (i <- 1 until n) s += FOne(i)
+      s
+    }
+
+    val r1 = Value.Set(Set(0, 1, 2).map(x => Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(x), fooTagTyp)))
+    val r2 = valueWrapperFunc(f _)(Value.Int(3))
+    assertResult(r1)(r2)
+  }
+
+  test("Tag (inferred): Int => Set[FooTag]") {
+    def f(n: Int) = {
+      var s = Set(FZero, FOne(1), FTwo(2, "two"))
+      n % 3 match {
+        case 0 => s += FZero
+        case 1 => s += FOne(1)
+        case 2 => s += FTwo(2, "two")
+      }
+      s
+    }
+
+    val r1 = Value.Set(Set(Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(1), fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(2), Value.Str("two")), fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(1), fooTagTyp)))
+    val r2 = valueWrapperFunc(f _)(Value.Int(3))
+    assertResult(r1)(r2)
+  }
+
+  test("Tag (ascribed): Int => Set[FooTag]") {
+    def f(n: Int): Set[FooTag] = {
+      var s: Set[FooTag] = Set(FZero, FOne(1), FTwo(2, "two"))
+      n % 3 match {
+        case 0 => s += FZero
+        case 1 => s += FOne(1)
+        case 2 => s += FTwo(2, "two")
+      }
+      s
+    }
+
+    val r1 = Value.Set(Set(Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(1), fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(2), Value.Str("two")), fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(1), fooTagTyp)))
+    val r2 = valueWrapperFunc(f _)(Value.Int(3))
+    assertResult(r1)(r2)
   }
 
   test("Tag: FZero => Int") {
@@ -335,5 +438,70 @@ class TestMacros extends FunSuite {
     val r21 = Value.Int(42)
     val r22 = valueWrapperFunc(f _)(Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp))
     assertResult(r21)(r22)
+  }
+
+  test("Tag: (FOne, FTwo) => (Int, Int, String)") {
+    def f(a: FOne, b: FTwo) = {
+      val FOne(n: Int) = a
+      val FTwo(m: Int, s: String) = b
+      (n, m, s)
+    }
+
+    val r1 = Value.Tuple3(Value.Int(4), Value.Int(0), Value.Str("hello world"))
+    val r2 = valueWrapperFunc(f _)(Value.Tuple2(Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(4), fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(0), Value.Str("hello world")), fooTagTyp)))
+    assertResult(r1)(r2)
+  }
+
+  test("Tag: (FZero, FooTag) => Int") {
+    def f(a: FZero.type, b: FooTag) = b match {
+      case FZero => 0
+      case FOne(n: Int) => 1 + n * 10
+      case FTwo(m: Int, s: String) => 2 + m * 100 + s.length * 10
+    }
+
+    val r01 = Value.Int(0)
+    val r02 = valueWrapperFunc(f _)(Value.Tuple2(Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp)))
+    assertResult(r01)(r02)
+
+    val r11 = Value.Int(421)
+    val r12 = valueWrapperFunc(f _)(Value.Tuple2(Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(42), fooTagTyp)))
+    assertResult(r11)(r12)
+
+    val r21 = Value.Int(332)
+    val r22 = valueWrapperFunc(f _)(Value.Tuple2(Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(3), Value.Str("abc")), fooTagTyp)))
+    assertResult(r21)(r22)
+  }
+
+  test("Tag: Set[FOne] => Set[Int]") {
+    def f(s: Set[FOne]) = s.map(x => { val FOne(n: Int) = x; n })
+
+    val r1 = Value.Set(Set(1, 2, 3).map(Value.Int))
+    val r2 = valueWrapperFunc(f _)(Value.Set(Set(Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(1), fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(2), fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(3), fooTagTyp))))
+    assertResult(r1)(r2)
+  }
+
+  test("Tag: Set[FooTag] => (Int, Int, Int)") {
+    def f(s: Set[FooTag]) = {
+      s.toList.map({
+        case FZero => (1, 0, 0)
+        case FOne(_) => (0, 1, 0)
+        case FTwo(_, _) => (0, 0, 1)
+      }).fold(0,0,0)((t1, t2) => (t1._1 + t2._1, t1._2 + t2._2, t1._3 + t2._3))
+    }
+
+    val a = Value.Set(Set(Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(1), fooTagTyp),
+      Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(3), fooTagTyp)
+    ))
+
+    val r1 = Value.Tuple3(Value.Int(1), Value.Int(2), Value.Int(0))
+    val r2 = valueWrapperFunc(f _)(a)
+    assertResult(r1)(r2)
   }
 }
