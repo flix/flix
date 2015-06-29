@@ -7,6 +7,14 @@ import scala.reflect.macros.whitebox
 
 object Macros {
   /*
+   * Macro that converts a Scala value to a Flix value.
+   * For example, scala2flix(42) is transformed to Value.Int(42).
+   */
+  def scala2flix[T](v: T): Value = macro scala2flixImpl[T]
+
+  def flix2scala[T](v: Value): T = macro flix2scalaImpl[T]
+
+  /*
    * Macro for creating functions that unwrap and wrap Values.
    * The function provided to the macro must be partially applied, e.g.
    *    valueWrapperFunc(func _)
@@ -62,11 +70,12 @@ object Macros {
      */
     def wrapTuple(tupleToWrap: c.Tree, types: List[c.Type]): c.Tree = {
       val tuple = TermName("Tuple" + types.size)
+      val tmpTuple = TermName(c.freshName("t"))
       val inner = types.zipWithIndex.map { case (t, i) =>
         val elt = TermName("_" + (i+1))
-        wrapValue(q"$tupleToWrap.$elt", t)
+        wrapValue(q"$tmpTuple.$elt", t)
       }
-      q"Value.$tuple(..$inner)"
+      q"val $tmpTuple = $tupleToWrap; Value.$tuple(..$inner)"
     }
 
     /*
@@ -260,7 +269,7 @@ object Macros {
    *
    * NOTE: If Value ever changes, this implementation will need to be updated.
    */
-  def unwrapValueImpl(c: whitebox.Context)(valName: c.TermName, types: List[c.Type]): (c.Tree, List[c.Tree]) = {
+  def unwrapValueImpl(c: whitebox.Context)(exprToUnwrap: c.Tree, types: List[c.Type]): (c.Tree, List[c.Tree]) = {
     import c.universe._
 
     /*
@@ -423,7 +432,29 @@ object Macros {
       case _ => unwrapTuple(types)
     }
 
-    (q"val $pattern = $valName", args)
+    (q"val $pattern = $exprToUnwrap", args)
+  }
+
+  /*
+   * Simply redirect to wrapValueImpl, passing the desired type.
+   */
+  def scala2flixImpl[T: c.WeakTypeTag](c: whitebox.Context)(v: c.Tree) = {
+    wrapValueImpl(c)(v, c.weakTypeOf[T])
+  }
+
+  def flix2scalaImpl[T: c.WeakTypeTag](c: whitebox.Context)(v: c.Tree) = {
+    import c.universe._
+
+    // Two kinds of error. We explicitly pass in Value.Str to flix2scala[Int]. Code expands to something like
+    //    val Value.Int(n: Int) = Value.Str("foo")
+    // And typechecking fails. Can't put in a compile-time check because it's too late.
+    // But if typechecking passes (e.g. passing in a Value), compilation passes, but we get a runtime MatchError.
+    // TODO(mhyee): Put a run-time check so we get a better error message?
+
+    val (unwrapper, args) = unwrapValueImpl(c)(v, List(weakTypeOf[T]))
+    val code = q"..$unwrapper; ..$args"
+    println(code)
+    code
   }
 
   /*
@@ -446,7 +477,7 @@ object Macros {
     val valName = TermName(c.freshName("v"))
     val retName = TermName(c.freshName("ret"))
 
-    val (unwrapper, args) = unwrapValueImpl(c)(valName, paramTypes)
+    val (unwrapper, args) = unwrapValueImpl(c)(q"$valName", paramTypes)
     val call = q"val $retName = $func(..$args)"
     val wrapper = wrapValueImpl(c)(q"$retName", retType)
 

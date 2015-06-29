@@ -504,4 +504,216 @@ class TestMacros extends FunSuite {
     val r2 = valueWrapperFunc(f _)(a)
     assertResult(r1)(r2)
   }
+
+  test("scala2flix: Unit") {
+    def f() = ()
+    val v = ()
+
+    assertResult(Value.Unit)(scala2flix(f()))
+    assertResult(Value.Unit)(scala2flix(v))
+    assertResult(Value.Unit)(scala2flix(()))
+  }
+
+  test("scala2flix: Boolean") {
+    def f(b: Boolean) = !b
+    val v = false
+
+    assertResult(Value.Bool(true))(scala2flix(f(false)))
+    assertResult(Value.Bool(false))(scala2flix(v))
+    assertResult(Value.Bool(true))(scala2flix(true))
+  }
+
+  test("scala2flix: Int") {
+    def f(n: Int) = -n
+    val v = 42
+
+    assertResult(Value.Int(-56))(scala2flix(f(56)))
+    assertResult(Value.Int(42))(scala2flix(v))
+    assertResult(Value.Int(3))(scala2flix(3))
+  }
+
+  test("scala2flix: Str") {
+    def f(s: String) = "Hello " + s
+    val v = "World"
+
+    assertResult(Value.Str("Hello World!"))(scala2flix(f("World!")))
+    assertResult(Value.Str("World"))(scala2flix(v))
+    assertResult(Value.Str("abc"))(scala2flix("abc"))
+  }
+
+  test("scala2flix: Set[Int]") {
+    def f(ss: Set[String]) = ss.map(_.length)
+    val v = Set(4, 3, 5, 1)
+
+    assertResult(Value.Set(Set(3, 2, 1).map(Value.Int)))(scala2flix(f(Set("abc", "de", "f"))))
+    assertResult(Value.Set(Set(4, 3, 5, 1).map(Value.Int)))(scala2flix(v))
+    assertResult(Value.Set(Set(4, 2).map(Value.Int)))(scala2flix(Set(4, 2)))
+  }
+
+  test("scala2flix: (Int, Set[String])") {
+    def f(ss: Set[Int]) = (ss.size, ss.map(_.toString))
+    val v = (1, Set("a", "c"))
+
+    val r01 = Value.Tuple2(Value.Int(3), Value.Set(Set("1", "2", "3").map(Value.Str)))
+    val r02 = scala2flix(f(Set(1, 2, 3)))
+    val r11 = Value.Tuple2(Value.Int(1), Value.Set(Set("a", "c").map(Value.Str)))
+    val r12 = scala2flix(v)
+    val r21 = Value.Tuple2(Value.Int(-3), Value.Set(Set("f", "r").map(Value.Str)))
+    val r22 = scala2flix(-3, Set("f", "r"))
+
+    assertResult(r01)(r02)
+    assertResult(r11)(r12)
+    assertResult(r21)(r22)
+  }
+
+  test("scala2flix: Set[(Int, Int, Int)]") {
+    def f(ss: Set[Int]) = ss.map(x => (x, x * 2, x * 3))
+    val v = Set((1, 2, 3), (4, 5, 6))
+
+    val r01 = Value.Set(Set((1, 2, 3), (2, 4, 6), (3, 6, 9)).map(
+      x => Value.Tuple3(Value.Int(x._1), Value.Int(x._2), Value.Int(x._3))))
+    val r02 = scala2flix(f(Set(1, 2, 3)))
+    val r11 = Value.Set(Set(Value.Tuple3(Value.Int(1), Value.Int(2), Value.Int(3)),
+      Value.Tuple3(Value.Int(4), Value.Int(5), Value.Int(6))))
+    val r12 = scala2flix(v)
+    val r21 = Value.Set(Set(Value.Tuple3(Value.Int(42), Value.Int(56), Value.Int(100))))
+    val r22 = scala2flix(Set((42, 56, 100)))
+
+    assertResult(r01)(r02)
+    assertResult(r11)(r12)
+    assertResult(r21)(r22)
+  }
+
+  test("scala2flix: (Int, String, Boolean, Boolean)") {
+    def f(n: Int) = (n, n.toString, n > 10, n > 100)
+    val v = (5, "hi", true, true)
+
+    val r01 = Value.Tuple4(Value.Int(14), Value.Str("14"), Value.Bool(true), Value.Bool(false))
+    val r02 = scala2flix(f(14))
+    val r11 = Value.Tuple4(Value.Int(5), Value.Str("hi"), Value.Bool(true), Value.Bool(true))
+    val r12 = scala2flix(v)
+    val r21 = Value.Tuple4(Value.Int(2), Value.Str("abc"), Value.Bool(false), Value.Bool(true))
+    val r22 = scala2flix((2, "abc", false, true))
+
+    assertResult(r01)(r02)
+    assertResult(r11)(r12)
+    assertResult(r21)(r22)
+  }
+
+  test("scala2flix: (Int, Int, Int, Int, Int)") {
+    def f(n: Int) = (n, n + 1, n + 2, n + 3, n + 4)
+    val v = (5, 98, 232, -41, 0)
+
+    val r01 = Value.Tuple5(Value.Int(4), Value.Int(5), Value.Int(6), Value.Int(7), Value.Int(8))
+    val r02 = scala2flix(f(4))
+    val r11 = Value.Tuple5(Value.Int(5), Value.Int(98), Value.Int(232), Value.Int(-41), Value.Int(0))
+    val r12 = scala2flix(v)
+    val r21 = Value.Tuple5(Value.Int(0), Value.Int(1), Value.Int(-1), Value.Int(2), Value.Int(-2))
+    val r22 = scala2flix((0, 1, -1, 2, -2))
+
+    assertResult(r01)(r02)
+    assertResult(r11)(r12)
+    assertResult(r21)(r22)
+  }
+
+  test("scala2flix: Foo") {
+    def f(n: Int) = new Foo(n)
+    val v = new Foo(42)
+
+    assertResult(Value.Native(new Foo(4)))(scala2flix(f(4)))
+    assertResult(Value.Native(new Foo(42)))(scala2flix(v))
+    assertResult(Value.Native(new Foo(111)))(scala2flix(new Foo(111)))
+  }
+
+  test("scala2flix (tag): FZero") {
+    def f() = FZero
+    val v = FZero
+
+    val r = Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp)
+
+    assertResult(r)(scala2flix(f()))
+    assertResult(r)(scala2flix(v))
+    assertResult(r)(scala2flix(FZero))
+  }
+
+  test("scala2flix (tag): FOne") {
+    def f(n: Int) = FOne(n)
+    val v = FOne(3)
+
+    val r01 = Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(4), fooTagTyp)
+    val r02 = scala2flix(f(4))
+    val r11 = Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(3), fooTagTyp)
+    val r12 = scala2flix(v)
+    val r21 = Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(42), fooTagTyp)
+    val r22 = scala2flix(FOne(42))
+
+    assertResult(r01)(r02)
+    assertResult(r11)(r12)
+    assertResult(r21)(r22)
+  }
+
+  test("scala2flix (tag): FTwo") {
+    def f(n: Int, s: String) = FTwo(n, s)
+    val v = FTwo(8, "hi")
+
+    val r01 = Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(4), Value.Str("abc")), fooTagTyp)
+    val r02 = scala2flix(f(4, "abc"))
+    val r11 = Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(8), Value.Str("hi")), fooTagTyp)
+    val r12 = scala2flix(v)
+    val r21 = Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(42), Value.Str("42")), fooTagTyp)
+    val r22 = scala2flix(FTwo(42, "42"))
+
+    assertResult(r01)(r02)
+    assertResult(r11)(r12)
+    assertResult(r21)(r22)
+  }
+
+  test("scala2flix (tag, ascribed): FooTag") {
+    def f(n: Int, s: String): FooTag = n match {
+      case 0 => FZero
+      case 1 => FOne(s.length)
+      case 2 => FTwo(n, s)
+    }
+    val v1: FooTag = FZero
+    val v2: FooTag = FOne(5)
+    val v3: FooTag = FTwo(2, "xyz")
+
+    val r1 = Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp)
+    val r2 = Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(5), fooTagTyp)
+    val r3 = Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(2), Value.Str("xyz")), fooTagTyp)
+
+    assertResult(r1)(scala2flix(f(0, "foo")))
+    assertResult(r1)(scala2flix(v1))
+    assertResult(r2)(scala2flix(f(1, "hello")))
+    assertResult(r2)(scala2flix(v2))
+    assertResult(r3)(scala2flix(f(2, "xyz")))
+    assertResult(r3)(scala2flix(v3))
+  }
+
+  test("scala2flix (tag, inferred): FooTag") {
+    def f(n: Int, s: String) = n match {
+      case 0 => FZero
+      case 1 => FOne(s.length)
+      case 2 => FTwo(n, s)
+    }
+
+    val r1 = Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp)
+    val r2 = Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(5), fooTagTyp)
+    val r3 = Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(2), Value.Str("xyz")), fooTagTyp)
+
+    assertResult(r1)(scala2flix(f(0, "foo")))
+    assertResult(r2)(scala2flix(f(1, "hello")))
+    assertResult(r3)(scala2flix(f(2, "xyz")))
+  }
+
+  test("flix2scala") {
+    def f(n: Int) = if (false) Value.Int(n) else Value.Str(n.toString)
+    val v1 = Value.Str("4")
+    val v2: Value = Value.Str("5")
+
+    assertResult(3)(flix2scala[Int](Value.Int(3)))
+//    assertResult(4)(flix2scala[Int](v1))
+    assertResult(5)(flix2scala[Int](v2))
+//    assertResult(412)(flix2scala[Int](f(412)))
+  }
 }
