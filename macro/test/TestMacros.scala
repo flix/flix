@@ -935,4 +935,45 @@ class TestMacros extends FunSuite {
     assertResult(r2)(flix2scala[FooTag](f(Value.Int(1), Value.Str("hello"))))
     assertResult(r3)(flix2scala[FooTag](f(Value.Int(2), Value.Str("xyz"))))
   }
+
+  test("flix2scala negative tests") {
+    val v1 = Value.Unit
+    assertTypeError("flix2scala[Int](v1)")
+    intercept[MatchError](flix2scala[Int](v1.asInstanceOf[Value]))
+
+    val v2 = Value.Int(42)
+    assertTypeError("flix2scala[String](v2)")
+    intercept[MatchError](flix2scala[String](v2.asInstanceOf[Value]))
+
+    val v3 = Value.Str("Hi")
+    assertTypeError("flix2scala[Foo](v3)")
+    intercept[MatchError](flix2scala[Foo](v3.asInstanceOf[Value]))
+
+    val v4 = Value.Native(new Foo(100))
+    assertTypeError("flix2scala[FooTag](v4)")
+    intercept[MatchError](flix2scala[FooTag](v4.asInstanceOf[Value]))
+    intercept[MatchError](flix2scala[FOne](v4.asInstanceOf[Value]))
+
+    val v5 = Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp)
+    assertTypeError("flix2scala[Boolean](v5)")
+    intercept[MatchError](flix2scala[Boolean](v5.asInstanceOf[Value]))
+    intercept[MatchError](flix2scala[Foo](v5.asInstanceOf[Value]))
+    intercept[MatchError](flix2scala[FOne](v5.asInstanceOf[Value]))
+
+    val v6 = Value.Bool(false)
+    assertTypeError("flix2scala[(Int, Int)](v6)")
+    intercept[MatchError](flix2scala[(Int, Int)](v6.asInstanceOf[Value]))
+
+    val v7 = Value.Tuple2(Value.Int(1), Value.Int(2))
+    assertTypeError("flix2scala[Set[Int]](v7)")
+    intercept[MatchError](flix2scala[(Int, Int, Int)](v7.asInstanceOf[Value]))
+    intercept[MatchError](flix2scala[(Int, String)](v7.asInstanceOf[Value]))
+    intercept[MatchError](flix2scala[Set[Int]](v7.asInstanceOf[Value]))
+
+    val v8 = Value.Set(Set(4, 3, 1).map(Value.Int))
+    assertTypeError("flix2scala[Unit.type](v8)")
+    intercept[MatchError](flix2scala[Unit.type](v8.asInstanceOf[Value]))
+    intercept[MatchError](flix2scala[Set[String]](v8.asInstanceOf[Value]))
+    intercept[MatchError](flix2scala[(Int, Int)](v8.asInstanceOf[Value]))
+  }
 }

@@ -17,6 +17,9 @@ object Macros {
    * For example, flix2scala[Int](Value.Int(42)) is transformed to 42.
    *
    * Note that the resulting Scala type must be passed as a type argument.
+   * If the type argument and Flix type do not match, there will either be a
+   * compile-time error (from the typechecker), or a run-time MatchError (from
+   * the generated match expression).
    */
   def flix2scala[T](v: Value): T = macro flix2scalaImpl[T]
 
