@@ -12,6 +12,12 @@ object Macros {
    */
   def scala2flix[T](v: T): Value = macro scala2flixImpl[T]
 
+  /*
+   * Macro that converts a Flix value to a Scala value.
+   * For example, flix2scala[Int](Value.Int(42)) is transformed to 42.
+   *
+   * Note that the resulting Scala type must be passed as a type argument.
+   */
   def flix2scala[T](v: Value): T = macro flix2scalaImpl[T]
 
   /*
@@ -442,19 +448,15 @@ object Macros {
     wrapValueImpl(c)(v, c.weakTypeOf[T])
   }
 
+  /*
+   * Redirect to unwrapValueImpl, passing the desired type.
+   * Then we need to piece together the unwrapper code and unwrapped values
+   */
   def flix2scalaImpl[T: c.WeakTypeTag](c: whitebox.Context)(v: c.Tree) = {
     import c.universe._
 
-    // Two kinds of error. We explicitly pass in Value.Str to flix2scala[Int]. Code expands to something like
-    //    val Value.Int(n: Int) = Value.Str("foo")
-    // And typechecking fails. Can't put in a compile-time check because it's too late.
-    // But if typechecking passes (e.g. passing in a Value), compilation passes, but we get a runtime MatchError.
-    // TODO(mhyee): Put a run-time check so we get a better error message?
-
-    val (unwrapper, args) = unwrapValueImpl(c)(v, List(weakTypeOf[T]))
-    val code = q"..$unwrapper; ..$args"
-    println(code)
-    code
+    val (unwrapper, unwrappedVal) = unwrapValueImpl(c)(v, List(weakTypeOf[T]))
+    q"..$unwrapper; ..$unwrappedVal"
   }
 
   /*

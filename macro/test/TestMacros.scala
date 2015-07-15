@@ -706,14 +706,233 @@ class TestMacros extends FunSuite {
     assertResult(r3)(scala2flix(f(2, "xyz")))
   }
 
-  test("flix2scala") {
-    def f(n: Int) = if (false) Value.Int(n) else Value.Str(n.toString)
-    val v1 = Value.Str("4")
-    val v2: Value = Value.Str("5")
 
+
+
+  test("flix2scala: Unit") {
+    def f() = Value.Unit
+    val v = Value.Unit
+
+    assertResult(())(flix2scala[Unit](f()))
+    assertResult(())(flix2scala[Unit](v))
+    assertResult(())(flix2scala[Unit](Value.Unit))
+  }
+
+  test("flix2scala: Boolean") {
+    def f(v: Value) = {
+      val Value.Bool(b) = v
+      Value.Bool(!b)
+    }
+    val v = Value.Bool(false)
+
+    assertResult(true)(flix2scala[Boolean](f(Value.Bool(false))))
+    assertResult(false)(flix2scala[Boolean](v))
+    assertResult(true)(flix2scala[Boolean](Value.Bool(true)))
+  }
+
+  test("flix2scala: Int") {
+    def f(v: Value) = {
+      val Value.Int(n) = v
+      Value.Int(-n)
+    }
+    val v = Value.Int(42)
+
+    assertResult(-56)(flix2scala[Int](f(Value.Int(56))))
+    assertResult(42)(flix2scala[Int](v))
     assertResult(3)(flix2scala[Int](Value.Int(3)))
-//    assertResult(4)(flix2scala[Int](v1))
-    assertResult(5)(flix2scala[Int](v2))
-//    assertResult(412)(flix2scala[Int](f(412)))
+  }
+
+  test("flix2scala: Str") {
+    def f(v: Value) = {
+      val Value.Str(s) = v
+      Value.Str("Hello " + s)
+    }
+    val v = Value.Str("World")
+
+    assertResult("Hello World!")(flix2scala[String](f(Value.Str("World!"))))
+    assertResult("World")(flix2scala[String](v))
+    assertResult("abc")(flix2scala[String](Value.Str("abc")))
+  }
+
+  test("flix2scala: Set[Int]") {
+    def f(v: Value) = {
+      val Value.Set(ss) = v
+      Value.Set(ss.map { v =>
+        val Value.Str(s) = v
+        Value.Int(s.length)
+      })
+    }
+    val v = Value.Set(Set(4, 3, 5, 1).map(Value.Int))
+
+    assertResult(Set(3, 2, 1))(flix2scala[Set[Int]](f(Value.Set(Set("abc", "de", "f").map(Value.Str)))))
+    assertResult(Set(4, 3, 5, 1))(flix2scala[Set[Int]](v))
+    assertResult(Set(4, 2))(flix2scala[Set[Int]](Value.Set(Set(4, 2).map(Value.Int))))
+  }
+
+  test("flix2scala: (Int, Set[String])") {
+    def f(v: Value) = {
+      val Value.Set(ss) = v
+      val fst = Value.Int(ss.size)
+      val snd: Set[Value] = ss.map { v =>
+        val Value.Int(n) = v
+        Value.Str(n.toString)
+      }
+      Value.Tuple2(fst, Value.Set(snd))
+    }
+    val v = Value.Tuple2(Value.Int(1), Value.Set(Set("a", "c").map(Value.Str)))
+
+    val r01 = (3, Set("1", "2", "3"))
+    val r02 = flix2scala[(Int, Set[String])](f(Value.Set(Set(1, 2, 3).map(Value.Int))))
+    val r11 = (1, Set("a", "c"))
+    val r12 = flix2scala[(Int, Set[String])](v)
+    val r21 = (-3, Set("f", "r"))
+    val r22 = flix2scala[(Int, Set[String])](Value.Tuple2(Value.Int(-3), Value.Set(Set("f", "r").map(Value.Str))))
+
+    assertResult(r01)(r02)
+    assertResult(r11)(r12)
+    assertResult(r21)(r22)
+  }
+
+  test("flix2scala: Set[(Int, Int, Int)]") {
+    def f(v: Value) = {
+      val Value.Set(ss) = v
+      Value.Set(ss.map{ v =>
+        val Value.Int(n) = v
+        Value.Tuple3(Value.Int(n), Value.Int(n * 2), Value.Int(n * 3))
+      })
+    }
+    val v = Value.Set(Set((1, 2, 3), (4, 5, 6)).map(
+      x => Value.Tuple3(Value.Int(x._1), Value.Int(x._2), Value.Int(x._3))
+    ))
+
+    val r01 = Set((1, 2, 3), (2, 4, 6), (3, 6, 9))
+    val r02 = flix2scala[Set[(Int, Int, Int)]](f(Value.Set(Set(1, 2, 3).map(Value.Int))))
+    val r11 = Set((1, 2, 3), (4, 5, 6))
+    val r12 = flix2scala[Set[(Int, Int, Int)]](v)
+    val r21 = Set((42, 56, 100))
+    val r22 = flix2scala[Set[(Int, Int, Int)]](Value.Set(Set(
+      Value.Tuple3(Value.Int(42), Value.Int(56), Value.Int(100)))
+    ))
+
+    assertResult(r01)(r02)
+    assertResult(r11)(r12)
+    assertResult(r21)(r22)
+  }
+
+  test("flix2scala: (Int, String, Boolean, Boolean)") {
+    def f(v: Value) = {
+      val Value.Int(n) = v
+      Value.Tuple4(Value.Int(n), Value.Str(n.toString), Value.Bool(n > 10), Value.Bool(n > 100))
+    }
+    val v = Value.Tuple4(Value.Int(5), Value.Str("hi"), Value.Bool(true), Value.Bool(true))
+
+    val r01 = (14, "14", true, false)
+    val r02 = flix2scala[(Int, String, Boolean, Boolean)](f(Value.Int(14)))
+    val r11 = (5, "hi", true, true)
+    val r12 = flix2scala[(Int, String, Boolean, Boolean)](v)
+    val r21 = (2, "abc", false, true)
+    val r22 = flix2scala[(Int, String, Boolean, Boolean)](Value.Tuple4(
+      Value.Int(2), Value.Str("abc"), Value.Bool(false), Value.Bool(true)
+    ))
+
+    assertResult(r01)(r02)
+    assertResult(r11)(r12)
+    assertResult(r21)(r22)
+  }
+
+  test("flix2scala: (Int, Int, Int, Int, Int)") {
+    def f(v: Value) = {
+      val Value.Int(n) = v
+      Value.Tuple5(Value.Int(n), Value.Int(n + 1), Value.Int(n + 2), Value.Int(n + 3), Value.Int(n + 4))
+    }
+    val v = Value.Tuple5(Value.Int(5), Value.Int(98), Value.Int(232), Value.Int(-41), Value.Int(0))
+
+    val r01 = (4, 5, 6, 7, 8)
+    val r02 = flix2scala[(Int, Int, Int, Int, Int)](f(Value.Int(4)))
+    val r11 = (5, 98, 232, -41, 0)
+    val r12 = flix2scala[(Int, Int, Int, Int, Int)](v)
+    val r21 = (0, 1, -1, 2, -2)
+    val r22 = flix2scala[(Int, Int, Int, Int, Int)](Value.Tuple5(
+      Value.Int(0), Value.Int(1), Value.Int(-1), Value.Int(2), Value.Int(-2)
+    ))
+
+    assertResult(r01)(r02)
+    assertResult(r11)(r12)
+    assertResult(r21)(r22)
+  }
+
+  test("flix2scala: Foo") {
+    def f(v: Value) = {
+      val Value.Int(n) = v
+      Value.Native(new Foo(n))
+    }
+    val v = Value.Native(new Foo(42))
+
+    assertResult(new Foo(4))(flix2scala[Foo](f(Value.Int(4))))
+    assertResult(new Foo(42))(flix2scala[Foo](v))
+    assertResult(new Foo(111))(flix2scala[Foo](Value.Native(new Foo(111))))
+  }
+
+  test("flix2scala (tag): FZero") {
+    def f() = Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp)
+    val v = Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp)
+
+    assertResult(FZero)(flix2scala[FZero.type](f()))
+    assertResult(FZero)(flix2scala[FZero.type](v))
+    assertResult(FZero)(flix2scala[FZero.type](Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp)))
+  }
+
+  test("flix2scala (tag): FOne") {
+    def f(v: Value) = Value.Tag(Symbol.NamedSymbol("FOne"), v, fooTagTyp)
+    val v = Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(3), fooTagTyp)
+
+    val r01 = FOne(4)
+    val r02 = flix2scala[FOne](f(Value.Int(4)))
+    val r11 = FOne(3)
+    val r12 = flix2scala[FOne](v)
+    val r21 = FOne(42)
+    val r22 = flix2scala[FOne](Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(42), fooTagTyp))
+
+    assertResult(r01)(r02)
+    assertResult(r11)(r12)
+    assertResult(r21)(r22)
+  }
+
+  test("flix2scala (tag): FTwo") {
+    def f(v1: Value, v2: Value) = Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(v1, v2), fooTagTyp)
+    val v = Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(8), Value.Str("hi")), fooTagTyp)
+
+    val r01 = FTwo(4, "abc")
+    val r02 = flix2scala[FTwo](f(Value.Int(4), Value.Str("abc")))
+    val r11 = FTwo(8, "hi")
+    val r12 = flix2scala[FTwo](v)
+    val r21 = FTwo(42, "42")
+    val r22 = flix2scala[FTwo](Value.Tag(
+      Symbol.NamedSymbol("FTwo"), Value.Tuple2(Value.Int(42), Value.Str("42")), fooTagTyp
+    ))
+
+    assertResult(r01)(r02)
+    assertResult(r11)(r12)
+    assertResult(r21)(r22)
+  }
+
+  test("flix2scala (tag): FooTag") {
+    def f(v1: Value, v2: Value) = {
+      val Value.Int(n) = v1
+      val Value.Str(s) = v2
+      n match {
+        case 0 => Value.Tag(Symbol.NamedSymbol("FZero"), Value.Unit, fooTagTyp)
+        case 1 => Value.Tag(Symbol.NamedSymbol("FOne"), Value.Int(s.length), fooTagTyp)
+        case 2 => Value.Tag(Symbol.NamedSymbol("FTwo"), Value.Tuple2(v1, v2), fooTagTyp)
+      }
+    }
+
+    val r1 = FZero
+    val r2 = FOne(5)
+    val r3 = FTwo(2, "xyz")
+
+    assertResult(r1)(flix2scala[FooTag](f(Value.Int(0), Value.Str("foo"))))
+    assertResult(r2)(flix2scala[FooTag](f(Value.Int(1), Value.Str("hello"))))
+    assertResult(r3)(flix2scala[FooTag](f(Value.Int(2), Value.Str("xyz"))))
   }
 }
