@@ -1,14 +1,19 @@
-# Questions and Answers #
-The purpose of this document is to provide succinct answers to some of the
-questions about the Flix programming language.
+# Frequently Asked Questions #
+This document aims to answer some of the commonly asked questions about Flix.
 
 ### What is Flix? ###
-Flix is logic and functional programming languages for fixpoint programming.
+Flix is declarative programming language which combines aspects of logic and 
+functional programming for expressing fixed point algorithms. Flix is by 
+design *not* a general-purpose programming language. As such, Flix is *not* 
+Turing-complete.
 
-Flix is by design *not* a general-purpose programming language.
-Flix is *not* Turing-complete.
-
-() Why (when) should I use Flix?
+### Why Flix? ###
+Flix was created from the observation that Datalog (a logic programming 
+language for relations) has been successfully in the implementation of static
+analysis tools. Specifically, points-to analysis. Yet, Datalog has many
+limitations which hinders it use for a broader class of static analysis 
+algorithms. The purpose of Flix is to extend Datalog to remedy some of its
+shortcomings.
 
 ### What is a Flix program? ###
 A Flix program is a
@@ -16,7 +21,7 @@ A Flix program is a
 
 
 
-(2) What are the components of a Flix program?
+### What are the components of a Flix program? ##
 
 
 
@@ -46,10 +51,14 @@ A Flix program is a
 
 () Does Flix support modules, data abstraction, polymorphism, ...?
 
-() How does Flix prove safety properties?
+### What are the safety properties required by Flix? ###
+Flix aims to guarantee that every legal Flix program has a unique least fixed point which can be computed in a finite
+number of steps. 
+
+### How does Flix prove safety properties? ###
 
 
-## Comparison to Other Languages and Tools #
+## Comparison to Related Languages and Tools #
 
 ### What is the relationship between Flix and SQL? ###
 SQL -- *structured query language* -- is, as the name implies, a language
@@ -80,15 +89,7 @@ operators.
 
 ### What is the relationship between Flix and SAT/SMT solvers? ###
 
-
-## More Information ##
-
-### Where can I get more information? ###
-
+## Other Questions ##
 
 ### Where can I report a bug? ###
-Flix is hosted on GitHub and uses the associated bug tracker.
-
-## Additional Information ##
-Detailed information about the design and development of Flix is available in
-the `DesignChoices.md` document.
+Flix is hosted on GitHub and uses the associated issue tracker.
