@@ -1,6 +1,9 @@
-import ca.uwaterloo.flix.lang.ast.{Compiler, Ast, Parser}
+package ca.uwaterloo.flix.lang
+
+import ca.uwaterloo.flix.lang.ast.{Ast, Compiler}
 import impl.logic.BinaryOperator
 import org.scalatest.FunSuite
+
 import scala.collection.immutable.Seq
 
 class TestParser extends FunSuite {

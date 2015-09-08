@@ -1,13 +1,14 @@
-package ca.uwaterloo.flix.lang.ast
+package ca.uwaterloo.flix.lang
 
+import java.nio.file.{Files, Path}
+
+import ca.uwaterloo.flix.lang.ast.Ast
 import impl.logic.{BinaryOperator, UnaryOperator}
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
 import scala.io.Source
 import scala.util.{Failure, Success}
-
-import java.nio.file.{Files, Path}
 
 object Parser {
 
