@@ -147,7 +147,41 @@ class TestParser extends FunSuite {
     assertResult(BinaryOperator.Or)(result)
   }
 
+  test("Parser.ComparisonOp <") {
+    val input = "<"
+    val result = new Parser(None, input).ComparisonOp.run().get
+    assertResult(BinaryOperator.Less)(result)
+  }
 
+  test("Parser.ComparisonOp <=") {
+    val input = "<="
+    val result = new Parser(None, input).ComparisonOp.run().get
+    assertResult(BinaryOperator.LessEqual)(result)
+  }
+
+  test("Parser.ComparisonOp >") {
+    val input = ">"
+    val result = new Parser(None, input).ComparisonOp.run().get
+    assertResult(BinaryOperator.Greater)(result)
+  }
+
+  test("Parser.ComparisonOp >=") {
+    val input = ">="
+    val result = new Parser(None, input).ComparisonOp.run().get
+    assertResult(BinaryOperator.GreaterEqual)(result)
+  }
+
+  test("Parser.ComparisonOp ==") {
+    val input = "=="
+    val result = new Parser(None, input).ComparisonOp.run().get
+    assertResult(BinaryOperator.Equal)(result)
+  }
+
+  test("Parser.ComparisonOp !=") {
+    val input = "!="
+    val result = new Parser(None, input).ComparisonOp.run().get
+    assertResult(BinaryOperator.NotEqual)(result)
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //
