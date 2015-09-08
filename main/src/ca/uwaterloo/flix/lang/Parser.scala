@@ -361,9 +361,9 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~> Ast.Literal.Str
   }
 
-  /** *************************************************************************/
-  /** Operators                                                             ***/
-  /** *************************************************************************/
+  /////////////////////////////////////////////////////////////////////////////
+  // Operators                                                               //
+  /////////////////////////////////////////////////////////////////////////////
   def UnaryOp: Rule1[UnaryOperator] = rule {
     str("!") ~> (() => UnaryOperator.Not) |
       str("+") ~> (() => UnaryOperator.UnaryPlus) |

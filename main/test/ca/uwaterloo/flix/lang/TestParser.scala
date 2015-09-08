@@ -183,6 +183,36 @@ class TestParser extends FunSuite {
     assertResult(BinaryOperator.NotEqual)(result)
   }
 
+  test("Parser.MultiplicativeOp *") {
+    val input = "*"
+    val result = new Parser(None, input).MultiplicativeOp.run().get
+    assertResult(BinaryOperator.Times)(result)
+  }
+
+  test("Parser.MultiplicativeOp /") {
+    val input = "/"
+    val result = new Parser(None, input).MultiplicativeOp.run().get
+    assertResult(BinaryOperator.Divide)(result)
+  }
+
+  test("Parser.MultiplicativeOp %") {
+    val input = "%"
+    val result = new Parser(None, input).MultiplicativeOp.run().get
+    assertResult(BinaryOperator.Modulo)(result)
+  }
+
+  test("Parser.AdditiveOp +") {
+    val input = "+"
+    val result = new Parser(None, input).AdditiveOp.run().get
+    assertResult(BinaryOperator.Plus)(result)
+  }
+
+  test("Parser.AdditiveOp -") {
+    val input = "-"
+    val result = new Parser(None, input).AdditiveOp.run().get
+    assertResult(BinaryOperator.Minus)(result)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //
   /////////////////////////////////////////////////////////////////////////////
