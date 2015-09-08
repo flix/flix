@@ -410,9 +410,9 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     "\n" | "\r\n"
   }
 
-  /** *************************************************************************/
-  /** Comments                                                              ***/
-  /** *************************************************************************/
+  /////////////////////////////////////////////////////////////////////////////
+  // Comments                                                                //
+  /////////////////////////////////////////////////////////////////////////////
   // Note: We must use ANY to match (consume) whatever character which is not a newline.
   // Otherwise the parser makes no progress and loops.
   def SingleLineComment: Rule0 = rule {

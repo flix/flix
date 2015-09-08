@@ -114,6 +114,45 @@ class TestParser extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Whitespace                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Parser.WhiteSpace (1)") {
+    val input = " "
+    val result = new Parser(None, input).WhiteSpace.run()
+    assert(result.isSuccess)
+  }
+
+  test("Parser.WhiteSpace (2)") {
+    val input = "    "
+    val result = new Parser(None, input).WhiteSpace.run()
+    assert(result.isSuccess)
+  }
+
+  test("Parser.WhiteSpace (3)") {
+    val input = "\t"
+    val result = new Parser(None, input).WhiteSpace.run()
+    assert(result.isSuccess)
+  }
+
+  test("Parser.WhiteSpace (4)") {
+    val input = "\n\r"
+    val result = new Parser(None, input).WhiteSpace.run()
+    assert(result.isSuccess)
+  }
+
+  test("Parser.WhiteSpace (5)") {
+    val input = " // comments are also whitespace "
+    val result = new Parser(None, input).WhiteSpace.run()
+    assert(result.isSuccess)
+  }
+
+  test("Parser.WhiteSpace (6)") {
+    val input = " /* comments are also whitespace */ "
+    val result = new Parser(None, input).WhiteSpace.run()
+    assert(result.isSuccess)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Comments                                                                //
   /////////////////////////////////////////////////////////////////////////////
   test("Parser.SingleLineComment (1)") {
