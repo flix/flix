@@ -46,7 +46,13 @@ class TestParser extends FunSuite {
   test("Parser.Ident07") {
     val input = "foo_bar"
     val result = new Parser(None, input).Ident2.run().get
-    assertResult("foo_bar_baz")(result.name)
+    assertResult("foo_bar")(result.name)
+  }
+
+  test("Parser.Ident08") {
+    val input = "f00_BAR'''"
+    val result = new Parser(None, input).Ident2.run().get
+    assertResult("f00_BAR'''")(result.name)
   }
 
 }

@@ -332,7 +332,8 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   // Identifiers                                                             //
   /////////////////////////////////////////////////////////////////////////////
   def Ident2: Rule1[Ast.Ident] = rule {
-    SourceLocation ~ capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum | "'")) ~> ((location: lang.SourceLocation, name: String) => Ast.Ident(name, location))
+    SourceLocation ~ capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum | "_") ~ zeroOrMore("'")) ~>
+      ((location: lang.SourceLocation, name: String) => Ast.Ident(name, location))
   }
 
   /////////////////////////////////////////////////////////////////////////////
