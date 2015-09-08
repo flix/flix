@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.lang
 
-import ca.uwaterloo.flix.lang.ast.{UnaryOperator, Ast}
+import ca.uwaterloo.flix.lang.ast.{BinaryOperator, UnaryOperator, Ast}
 import impl.logic.Term.UnaryOp
 import org.scalatest.FunSuite
 
@@ -134,6 +134,20 @@ class TestParser extends FunSuite {
     val result = new Parser(None, input).UnaryOp.run().get
     assertResult(UnaryOperator.UnaryMinus)(result)
   }
+
+  test("Parser.LogicalOp &&") {
+    val input = "&&"
+    val result = new Parser(None, input).LogicalOp.run().get
+    assertResult(BinaryOperator.And)(result)
+  }
+
+  test("Parser.LogicalOp ||") {
+    val input = "||"
+    val result = new Parser(None, input).LogicalOp.run().get
+    assertResult(BinaryOperator.Or)(result)
+  }
+
+
 
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //
