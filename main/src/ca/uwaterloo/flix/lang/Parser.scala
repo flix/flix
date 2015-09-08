@@ -2,7 +2,9 @@ package ca.uwaterloo.flix.lang
 
 import java.nio.file.{Files, Path}
 
+import ca.uwaterloo.flix.lang
 import ca.uwaterloo.flix.lang.ast.Ast
+import ca.uwaterloo.flix.util.misc.Unoptimized
 import impl.logic.{BinaryOperator, UnaryOperator}
 import org.parboiled2._
 
@@ -39,7 +41,7 @@ object Parser {
    * Returns the abstract syntax tree of the given string `input`.
    */
   def parse(input: String): Ast.Root = {
-    val parser = new Parser(input)
+    val parser = new Parser(None, input)
     parser.Root.run() match {
       case Success(ast) => ast
       case Failure(e: ParseError) => throw new RuntimeException(parser.formatError(e))
@@ -51,7 +53,7 @@ object Parser {
 /**
  * A PEG parser for the Flix programming language.
  */
-class Parser(val input: ParserInput) extends org.parboiled2.Parser {
+class Parser(val path: Option[Path], val input: ParserInput) extends org.parboiled2.Parser {
 
   // TODO: Use atomic keyword
 
@@ -325,6 +327,25 @@ class Parser(val input: ParserInput) extends org.parboiled2.Parser {
   def Name: Rule1[Seq[String]] = rule {
     oneOrMore(Ident).separatedBy(".")
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Identifiers                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  def Ident2: Rule1[Ast.Ident] = rule {
+    SourceLocation ~ capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum | "'")) ~> ((location: lang.SourceLocation, name: String) => Ast.Ident(name, location))
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Source Location                                                         //
+  /////////////////////////////////////////////////////////////////////////////
+  @Unoptimized
+  def SourceLocation: Rule1[lang.SourceLocation] = {
+    val position = Position(cursor, input)
+    rule {
+      push(lang.SourceLocation(path, position.line, position.column))
+    }
+  }
+
 
   /** *************************************************************************/
   /** Literals                                                              ***/

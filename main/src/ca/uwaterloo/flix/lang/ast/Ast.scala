@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.lang.ast
 
+import ca.uwaterloo.flix.lang.SourceLocation
 import impl.logic.{BinaryOperator, UnaryOperator}
 
 import scala.annotation.StaticAnnotation
@@ -24,6 +25,14 @@ object Ast {
    * A name (unqualified or qualified) is a sequence of strings.
    */
   type Name = Seq[String]
+
+  /**
+   * An AST node that represent an identifier.
+   *
+   * @param name the identifier.
+   * @param location the source location of the identifier.
+   */
+  case class Ident(name: String, location: SourceLocation) extends Ast
 
   /**
    * A common super-type for AST nodes which represent declarations.
