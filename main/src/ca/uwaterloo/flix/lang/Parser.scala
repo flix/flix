@@ -337,17 +337,6 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
       ((location: lang.SourceLocation, name: String) => Ast.Ident(name, location))
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Source Location                                                         //
-  /////////////////////////////////////////////////////////////////////////////
-  @Unoptimized
-  def SourceLocation: Rule1[lang.SourceLocation] = {
-    val position = Position(cursor, input)
-    rule {
-      push(lang.SourceLocation(path, position.line, position.column))
-    }
-  }
-
 
   /** *************************************************************************/
   /** Literals                                                              ***/
@@ -434,6 +423,17 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   // Otherwise the parser makes no progress and loops.
   def MultiLineComment: Rule0 = rule {
     "/*" ~ zeroOrMore(!"*/" ~ ANY) ~ "*/"
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Source Location                                                         //
+  /////////////////////////////////////////////////////////////////////////////
+  @Unoptimized
+  def SourceLocation: Rule1[lang.SourceLocation] = {
+    val position = Position(cursor, input)
+    rule {
+      push(lang.SourceLocation(path, position.line, position.column))
+    }
   }
 
 }
