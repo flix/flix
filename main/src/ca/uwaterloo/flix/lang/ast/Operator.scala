@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.lang.ast
 
+// TODO: Cleanup this file
+
 trait Operator
 
 sealed trait UnaryOperator extends Operator

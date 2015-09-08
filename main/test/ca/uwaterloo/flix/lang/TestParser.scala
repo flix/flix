@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.lang
 
+import ca.uwaterloo.flix.lang.ast.Ast
 import org.scalatest.FunSuite
 
 class TestParser extends FunSuite {
@@ -71,6 +72,39 @@ class TestParser extends FunSuite {
     val input = "_"
     val result = new Parser(None, input).Ident.run().isFailure
     assert(result)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Literals                                                                //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Parser.Literal (Unit)") {
+    val input = "()"
+    val result = new Parser(None, input).Literal.run().get
+    assertResult(result)(Ast.Literal.Unit)
+  }
+
+  test("Parser.Literal (true)") {
+    val input = "true"
+    val result = new Parser(None, input).Literal.run().get
+    assertResult(result)(Ast.Literal.Bool(literal = true))
+  }
+
+  test("Parser.Literal (false)") {
+    val input = "false"
+    val result = new Parser(None, input).Literal.run().get
+    assertResult(result)(Ast.Literal.Bool(literal = false))
+  }
+
+  test("Parser.Literal (123)") {
+    val input = "123"
+    val result = new Parser(None, input).Literal.run().get
+    assertResult(result)(Ast.Literal.Int(literal = 123))
+  }
+
+  test("Parser.Literal (\"foo\")") {
+    val input = "\"foo\""
+    val result = new Parser(None, input).Literal.run().get
+    assertResult(result)(Ast.Literal.Str(literal = "foo"))
   }
 
   /////////////////////////////////////////////////////////////////////////////
