@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.lang
 
-import ca.uwaterloo.flix.lang.ast.Ast
+import ca.uwaterloo.flix.lang.ast.{UnaryOperator, Ast}
+import impl.logic.Term.UnaryOp
 import org.scalatest.FunSuite
 
 class TestParser extends FunSuite {
@@ -114,7 +115,28 @@ class TestParser extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Whitespace                                                             //
+  // Operators                                                               //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Parser.UnaryOp !") {
+    val input = "!"
+    val result = new Parser(None, input).UnaryOp.run().get
+    assertResult(UnaryOperator.Not)(result)
+  }
+
+  test("Parser.UnaryOp +") {
+    val input = "+"
+    val result = new Parser(None, input).UnaryOp.run().get
+    assertResult(UnaryOperator.UnaryPlus)(result)
+  }
+
+  test("Parser.UnaryOp -") {
+    val input = "-"
+    val result = new Parser(None, input).UnaryOp.run().get
+    assertResult(UnaryOperator.UnaryMinus)(result)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Whitespace                                                              //
   /////////////////////////////////////////////////////////////////////////////
   test("Parser.WhiteSpace (1)") {
     val input = " "
@@ -172,7 +194,7 @@ class TestParser extends FunSuite {
   }
 
   test("Parser.MultiLineComment (1)") {
-   val input = "/* a comment */"
+    val input = "/* a comment */"
     val result = new Parser(None, input).MultiLineComment.run()
     assert(result.isSuccess)
   }

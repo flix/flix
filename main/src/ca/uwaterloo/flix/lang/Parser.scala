@@ -395,9 +395,9 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
       str("-") ~> (() => BinaryOperator.Minus)
   }
 
-  /** *************************************************************************/
-  /** WhiteSpace                                                            ***/
-  /** *************************************************************************/
+  /////////////////////////////////////////////////////////////////////////////
+  // Whitespace                                                              //
+  /////////////////////////////////////////////////////////////////////////////
   def WhiteSpace: Rule0 = rule {
     oneOrMore(" " | "\t" | NewLine | SingleLineComment | MultiLineComment)
   }
