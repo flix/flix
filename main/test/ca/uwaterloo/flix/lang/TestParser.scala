@@ -7,6 +7,17 @@ import org.scalatest.FunSuite
 class TestParser extends FunSuite {
 
   /////////////////////////////////////////////////////////////////////////////
+  // Constraints                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Parser.ConstraintDeclaration01") {
+    //val input = "P(42)."
+    //val result = new Parser(None, input).ConstraintDeclaration.run().get
+   // assertResult("x")(result.name)
+  }
+
+
+
+  /////////////////////////////////////////////////////////////////////////////
   // Identifiers & Names                                                     //
   /////////////////////////////////////////////////////////////////////////////
   test("Parser.Ident01") {

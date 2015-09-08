@@ -100,57 +100,6 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
 
   /** *************************************************************************/
-  /** Rules                                                                 ***/
-  /** *************************************************************************/
-  def FactDeclaration: Rule1[Ast.Declaration.Fact] = rule {
-    "fact" ~ WhiteSpace ~ Predicate ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Fact
-  }
-
-  def RuleDeclaraction: Rule1[Ast.Declaration.Rule] = rule {
-    "rule" ~ WhiteSpace ~ Predicate ~ WhiteSpace ~ "if" ~ WhiteSpace ~ RuleBody ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Rule
-  }
-
-  def RuleBody: Rule1[Seq[Ast.Predicate]] = rule {
-    oneOrMore(Predicate).separatedBy("," ~ optWhiteSpace)
-  }
-
-  /** *************************************************************************/
-  /** Predicates                                                            ***/
-  /** *************************************************************************/
-
-  def Predicate: Rule1[Ast.Predicate] = rule {
-    Ident ~ WhiteSpace ~ Term ~> Ast.Predicate
-  }
-
-  def Term: Rule1[Ast.Term] = rule {
-    SimpleTerm ~ zeroOrMore(WhiteSpace ~ "->" ~ optWhiteSpace ~ SimpleTerm ~> Ast.Term.Map)
-  }
-
-  def SimpleTerm: Rule1[Ast.Term] = rule {
-    LiteralTerm | ApplyTerm | NameTerm | TupleTerm | SetTerm
-  }
-
-  def LiteralTerm: Rule1[Ast.Term.Lit] = rule {
-    Literal ~> Ast.Term.Lit
-  }
-
-  def ApplyTerm: Rule1[Ast.Term.AmbiguousCall] = rule {
-    QName ~ "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Term.AmbiguousCall
-  }
-
-  def NameTerm: Rule1[Ast.Term.AmbiguousName] = rule {
-    QName ~> Ast.Term.AmbiguousName
-  }
-
-  def TupleTerm: Rule1[Ast.Term.Tuple] = rule {
-    "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Term.Tuple
-  }
-
-  def SetTerm: Rule1[Ast.Term.Set] = rule {
-    "{" ~ oneOrMore(SimpleTerm).separatedBy("," ~ optWhiteSpace) ~ "}" ~> Ast.Term.Set
-  }
-
-  /** *************************************************************************/
   /** Expressions                                                           ***/
   /** *************************************************************************/
   def Expression: Rule1[Ast.Expression] = rule {
@@ -263,6 +212,46 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {
     "(" ~ oneOrMore(Pattern).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Pattern.Tuple
   }
+
+
+  /** *************************************************************************/
+  /** Rules                                                                 ***/
+  /** *************************************************************************/
+
+
+
+  def FactDeclaration: Rule1[Ast.Declaration.Fact] = rule {
+    "fact" ~ WhiteSpace ~ Predicate ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Fact
+  }
+
+  def RuleDeclaraction: Rule1[Ast.Declaration.Rule] = rule {
+    "rule" ~ WhiteSpace ~ Predicate ~ WhiteSpace ~ "if" ~ WhiteSpace ~ RuleBody ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Rule
+  }
+
+  def RuleBody: Rule1[Seq[Ast.Predicate]] = rule {
+    oneOrMore(Predicate).separatedBy("," ~ optWhiteSpace)
+  }
+
+  def Predicate: Rule1[Ast.Predicate] = rule {
+    Ident ~ WhiteSpace ~ Term ~> Ast.Predicate
+  }
+
+  def Term: Rule1[Ast.Term] = rule {
+    SimpleTerm ~ zeroOrMore(WhiteSpace ~ "->" ~ optWhiteSpace ~ SimpleTerm ~> Ast.Term.Map)
+  }
+
+  def SimpleTerm: Rule1[Ast.Term] = rule {
+    LiteralTerm | ApplyTerm
+  }
+
+  def LiteralTerm: Rule1[Ast.Term.Lit] = rule {
+    Literal ~> Ast.Term.Lit
+  }
+
+  def ApplyTerm: Rule1[Ast.Term.AmbiguousCall] = rule {
+    QName ~ "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Term.AmbiguousCall
+  }
+
 
   /** *************************************************************************/
   /** Types                                                                 ***/
