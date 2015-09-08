@@ -1,4 +1,4 @@
-import impl.ast2.{Compiler, Ast, Parser}
+import ca.uwaterloo.flix.lang.ast.{Compiler, Ast, Parser}
 import impl.logic.BinaryOperator
 import org.scalatest.FunSuite
 import scala.collection.immutable.Seq

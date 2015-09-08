@@ -1,4 +1,4 @@
-# The Flix Programming #
+# Flix: Programming with Fixpoints #
 
-## Quick Introduction ##
+## Introduction ##
 

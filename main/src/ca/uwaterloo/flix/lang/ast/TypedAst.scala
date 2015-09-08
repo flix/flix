@@ -1,4 +1,4 @@
-package impl.ast2
+package ca.uwaterloo.flix.lang.ast
 
 import impl.logic.{BinaryOperator, UnaryOperator}
 

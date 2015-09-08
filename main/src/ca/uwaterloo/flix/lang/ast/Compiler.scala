@@ -1,6 +1,6 @@
-package impl.ast2
+package ca.uwaterloo.flix.lang.ast
 
-import impl.ast2.Ast.Predicate
+import ca.uwaterloo.flix.lang.ast.Ast.Predicate
 
 object Compiler {
 
