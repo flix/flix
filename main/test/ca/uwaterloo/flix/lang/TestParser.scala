@@ -1,13 +1,13 @@
 package ca.uwaterloo.flix.lang
 
-import ca.uwaterloo.flix.lang.ast.{BinaryOperator, UnaryOperator, Ast}
-import impl.logic.Term.UnaryOp
+import ca.uwaterloo.flix.lang.ast.{Ast, BinaryOperator, UnaryOperator}
+
 import org.scalatest.FunSuite
 
 class TestParser extends FunSuite {
 
   /////////////////////////////////////////////////////////////////////////////
-  // Identifiers                                                             //
+  // Identifiers & Names                                                     //
   /////////////////////////////////////////////////////////////////////////////
   test("Parser.Ident01") {
     val input = "x"
@@ -73,6 +73,30 @@ class TestParser extends FunSuite {
     val input = "_"
     val result = new Parser(None, input).Ident.run()
     assert(result.isFailure)
+  }
+
+  test("Parser.QName01") {
+    val input = "x"
+    val result = new Parser(None, input).QName.run().get
+    assertResult(Seq("x"))(result.parts)
+  }
+
+  test("Parser.QName02") {
+    val input = "x::y"
+    val result = new Parser(None, input).QName.run().get
+    assertResult(Seq("x", "y"))(result.parts)
+  }
+
+  test("Parser.QName03") {
+    val input = "x::y::z"
+    val result = new Parser(None, input).QName.run().get
+    assertResult(Seq("x", "y", "z"))(result.parts)
+  }
+
+  test("Parser.QName04") {
+    val input = "abc::def::hij"
+    val result = new Parser(None, input).QName.run().get
+    assertResult(Seq("abc", "def", "hij"))(result.parts)
   }
 
   /////////////////////////////////////////////////////////////////////////////

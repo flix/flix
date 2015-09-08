@@ -330,13 +330,21 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Identifiers                                                             //
+  // Identifiers & Names                                                     //
   /////////////////////////////////////////////////////////////////////////////
+  def LegalIdentifier: Rule1[String] = rule {
+    capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum | "_") ~ zeroOrMore("'"))
+  }
+
   def Ident: Rule1[Ast.Ident] = rule {
-    SourceLocation ~ capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum | "_") ~ zeroOrMore("'")) ~>
+    SourceLocation ~ LegalIdentifier  ~>
       ((location: lang.SourceLocation, name: String) => Ast.Ident(name, location))
   }
 
+  def QName: Rule1[Ast.QName] = rule {
+    SourceLocation ~ oneOrMore(LegalIdentifier).separatedBy(atomic("::")) ~>
+      ((location: lang.SourceLocation, parts: Seq[String]) => Ast.QName(parts, location))
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Literals                                                                //

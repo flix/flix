@@ -23,7 +23,7 @@ object Ast {
   /**
    * A name (unqualified or qualified) is a sequence of strings.
    */
-  type Name = Seq[String]
+  type Name2 = Seq[String]
 
   /**
    * An AST node that represent an identifier.
@@ -32,6 +32,14 @@ object Ast {
    * @param location the source location of the identifier.
    */
   case class Ident(name: String, location: SourceLocation) extends Ast
+
+  /**
+   * An AST node that represents a qualified name.
+   *
+   * @param parts the name parts.
+   * @param location the source location of the first name part.
+   */
+  case class QName(parts: Seq[String], location: SourceLocation) extends Ast
 
   /**
    * A common super-type for AST nodes which represent declarations.
@@ -43,7 +51,7 @@ object Ast {
     /**
      * An AST node which represents a namespace declaration.
      */
-    case class NameSpace(name: Name, body: Seq[Declaration]) extends Declaration
+    case class NameSpace(name: Name2, body: Seq[Declaration]) extends Declaration
 
     /**
      * An AST node which represents a type declaration.
@@ -127,7 +135,7 @@ object Ast {
      * An AST node which represents either a variable or a reference to a named value.
      */
     @Eliminated
-    case class AmbiguousName(name: Name) extends Expression
+    case class AmbiguousName(name: Name2) extends Expression
 
     /**
      * An AST node which represents an ambiguous function call.
