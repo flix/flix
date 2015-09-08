@@ -58,20 +58,20 @@ class TestParser extends FunSuite {
 
   test("Parser.Ident09") {
     val input = "1"
-    val result = new Parser(None, input).Ident.run().isFailure
-    assert(result)
+    val result = new Parser(None, input).Ident.run()
+    assert(result.isFailure)
   }
 
   test("Parser.Ident10") {
     val input = "'"
-    val result = new Parser(None, input).Ident.run().isFailure
-    assert(result)
+    val result = new Parser(None, input).Ident.run()
+    assert(result.isFailure)
   }
 
   test("Parser.Ident11") {
     val input = "_"
-    val result = new Parser(None, input).Ident.run().isFailure
-    assert(result)
+    val result = new Parser(None, input).Ident.run()
+    assert(result.isFailure)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -111,6 +111,40 @@ class TestParser extends FunSuite {
     val input = "\"foo\""
     val result = new Parser(None, input).Literal.run().get
     assertResult(result)(Ast.Literal.Str(literal = "foo"))
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Comments                                                                //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Parser.SingleLineComment (1)") {
+    val input = "// a comment"
+    val result = new Parser(None, input).SingleLineComment.run()
+    assert(result.isSuccess)
+  }
+
+  test("Parser.SingleLineComment (2)") {
+    val input =
+      """// a comment
+        |// another comment
+        |// and yet another
+      """.stripMargin
+    val result = new Parser(None, input).SingleLineComment.run()
+    assert(result.isSuccess)
+  }
+
+  test("Parser.MultiLineComment (1)") {
+   val input = "/* a comment */"
+    val result = new Parser(None, input).MultiLineComment.run()
+    assert(result.isSuccess)
+  }
+
+  test("Parser.MultiLineComment (2)") {
+    val input =
+      """/*
+        |a comment
+        |*/""".stripMargin
+    val result = new Parser(None, input).MultiLineComment.run()
+    assert(result.isSuccess)
   }
 
   /////////////////////////////////////////////////////////////////////////////

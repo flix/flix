@@ -399,7 +399,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /** WhiteSpace                                                            ***/
   /** *************************************************************************/
   def WhiteSpace: Rule0 = rule {
-    oneOrMore(" " | "\t" | NewLine | SingleLinecomment | MultiLineComment)
+    oneOrMore(" " | "\t" | NewLine | SingleLineComment | MultiLineComment)
   }
 
   def optWhiteSpace: Rule0 = rule {
@@ -415,7 +415,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /** *************************************************************************/
   // Note: We must use ANY to match (consume) whatever character which is not a newline.
   // Otherwise the parser makes no progress and loops.
-  def SingleLinecomment: Rule0 = rule {
+  def SingleLineComment: Rule0 = rule {
     "//" ~ zeroOrMore(!NewLine ~ ANY) ~ (NewLine | EOI)
   }
 
