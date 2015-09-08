@@ -98,6 +98,10 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     "lat" ~ WhiteSpace ~ Ident ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ RecordExp ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Lattice
   }
 
+
+  /** *************************************************************************/
+  /** Rules                                                                 ***/
+  /** *************************************************************************/
   def FactDeclaration: Rule1[Ast.Declaration.Fact] = rule {
     "fact" ~ WhiteSpace ~ Predicate ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Fact
   }
@@ -328,6 +332,10 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     SourceLocation ~ LegalIdentifier  ~>
       ((location: lang.SourceLocation, name: String) => Ast.Ident(name, location))
   }
+
+  // TODO: Probably need to introduce SName so we can handle names like foo and Foo.bar for tags.
+  // TODO: But a function parameter should not be allowed to be a SName...
+  // TODO: Another option is to simple parse (QName) . Foo as a special expression and pattern?
 
   def QName: Rule1[Ast.QName] = rule {
     SourceLocation ~ oneOrMore(LegalIdentifier).separatedBy(atomic("::")) ~>
