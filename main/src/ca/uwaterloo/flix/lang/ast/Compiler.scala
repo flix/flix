@@ -60,9 +60,9 @@ object Compiler {
         case (env, decl) => env ++ visit(withSuffix(namespace, name), decl)
       }
       case decl: Ast.Declaration.Tpe => ???
-      case decl: Ast.Declaration.Val => environmentOf(withSuffix(namespace, decl.name) -> decl)
-      case decl: Ast.Declaration.Var => environmentOf(withSuffix(namespace, decl.name) -> decl)
-      case decl: Ast.Declaration.Fun => environmentOf(withSuffix(namespace, decl.name) -> decl)
+      case decl: Ast.Declaration.Val => ???
+      case decl: Ast.Declaration.Var => ???
+      case decl: Ast.Declaration.Fun => ???
       case decl: Ast.Declaration.Enum => ???
       case decl: Ast.Declaration.Lattice => Empty
       case decl: Ast.Declaration.Fact => Empty
@@ -123,13 +123,7 @@ object Compiler {
       case Ast.Declaration.Var(name, lat) => Ast.Declaration.Var(name, disambiguate(lat, namespace, env))
 
       case Ast.Declaration.Fun(annotations, name, args, tpe, exp) =>
-        val args2 = args.map {
-          case (argName, argType) => (argName, disambiguate(argType, namespace, env))
-        }
-        val bound = args.map(_._1).toSet
-        val returnTpe = disambiguate(tpe, namespace, env)
-        val bodyExp = disambiguate(namespace, exp, env, bound)
-        Ast.Declaration.Fun(annotations, name, args2, returnTpe, bodyExp)
+        ???
 
       case decl: Ast.Declaration.Lattice => decl.copy(record = disambiguate(namespace, decl.record, env, Set.empty))
 

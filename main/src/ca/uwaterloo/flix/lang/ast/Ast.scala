@@ -54,27 +54,27 @@ object Ast {
     /**
      * An AST node which represents a enum declaration.
      */
-    case class Enum(name: String, body: Seq[Ast.Type.Tag]) extends Declaration
+    case class Enum(ident: Ast.Ident, body: Seq[Ast.Type.Tag]) extends Declaration
 
     /**
      * An AST node which represents a value declaration.
      */
-    case class Val(name: String, tpe: Type, exp: Expression) extends Declaration
+    case class Val(ident: Ast.Ident, tpe: Type, exp: Expression) extends Declaration
 
     /**
      * An AST node which represents a variable declaration.
      */
-    case class Var(name: String, tpe: Ast.Type) extends Declaration
+    case class Var(ident: Ast.Ident, tpe: Ast.Type) extends Declaration
 
     /**
      * An AST node which represents a function declaration.
      */
-    case class Fun(annotations: Seq[String], name: String, arguments: Seq[(String, Type)], typ: Type, body: Expression) extends Declaration
+    case class Fun(annotations: Seq[Ast.Ident], ident: Ast.Ident, arguments: Seq[(Ast.Ident, Type)], typ: Type, body: Expression) extends Declaration
 
     /**
      * An AST node which represents a lattice declaration.
      */
-    case class Lattice(name: String, record: Expression) extends Declaration
+    case class Lattice(ident: Ast.Ident, record: Expression) extends Declaration
 
     /**
      * An AST node which represents a fact declaration.
@@ -152,7 +152,7 @@ object Ast {
     /**
      * An AST node which represents a (generalized) lambda expression.
      */
-    case class Lambda(formals: Seq[(String, Type)], tpe: Ast.Type, e: Expression) extends Expression
+    case class Lambda(formals: Seq[(Ast.Ident, Type)], tpe: Ast.Type, e: Expression) extends Expression
 
     /**
      * An AST node which represents unary expressions.
@@ -167,7 +167,7 @@ object Ast {
     /**
      * An AST node which represents a let-binding.
      */
-    case class Let(name: String, value: Expression, body: Expression) extends Expression
+    case class Let(ident: Ast.Ident, value: Expression, body: Expression) extends Expression
 
     /**
      * An AST node which represents an if-then-else expression.
@@ -187,7 +187,7 @@ object Ast {
     /**
      * An AST node which represents a tagged expression.
      */
-    case class Tag(name: String, e: Expression) extends Expression
+    case class Tag(ident: Ast.Ident, e: Expression) extends Expression
 
     /**
      * An AST node which represents a tuple expression.
@@ -197,7 +197,7 @@ object Ast {
     /**
      * An AST node which represents a record expression.
      */
-    case class Record(elms: Seq[(String, Expression)]) extends Expression
+    case class Record(elms: Seq[(Ast.Ident, Expression)]) extends Expression
 
     /**
      * An AST node which represents a set expression.
@@ -278,7 +278,7 @@ object Ast {
   // TODO: Introduce constraint.
 
   // todo: Should be seq String
-  case class Predicate(name: String, t: Term) extends Pattern
+  case class Predicate(ident: Ast.Ident, t: Term) extends Pattern
 
   // TODO: Refactor?
 
@@ -349,7 +349,7 @@ object Ast {
      * An AST node which represents a tagged type.
      */
     @Introduced
-    case class Tag(name: String) extends Type
+    case class Tag(ident: Ast.Ident) extends Type
 
     /**
      * An AST node which represents an enumeration type.
