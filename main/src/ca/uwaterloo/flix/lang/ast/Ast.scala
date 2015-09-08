@@ -49,7 +49,7 @@ object Ast {
     /**
      * An AST node which represents a type declaration.
      */
-    case class Tpe(name: String, typ: Type) extends Declaration
+    case class Tpe(ident: Ast.Ident, typ: Type) extends Declaration
 
     /**
      * An AST node which represents a enum declaration.

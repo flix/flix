@@ -70,7 +70,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def TypeDeclaration: Rule1[Ast.Declaration.Tpe] = rule {
-    "type" ~ WhiteSpace ~ Ident ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Type ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Tpe
+    "type" ~ WhiteSpace ~ Ident2 ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Type ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Tpe
   }
 
   def ValueDeclaration: Rule1[Ast.Declaration.Val] = rule {

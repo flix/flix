@@ -59,7 +59,7 @@ object Compiler {
       case Ast.Declaration.NameSpace(name, body) => (body foldLeft Empty) {
         case (env, decl) => env ++ visit(withSuffix(namespace, name), decl)
       }
-      case decl: Ast.Declaration.Tpe => environmentOf(withSuffix(namespace, decl.name) -> decl)
+      case decl: Ast.Declaration.Tpe => ???
       case decl: Ast.Declaration.Val => environmentOf(withSuffix(namespace, decl.name) -> decl)
       case decl: Ast.Declaration.Var => environmentOf(withSuffix(namespace, decl.name) -> decl)
       case decl: Ast.Declaration.Fun => environmentOf(withSuffix(namespace, decl.name) -> decl)
