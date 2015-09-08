@@ -1,6 +1,6 @@
 package syntax
 
-import impl.logic.{UnaryOperator, BinaryOperator, Operator}
+import ca.uwaterloo.flix.lang.ast.{BinaryOperator, UnaryOperator, Operator}
 
 /**
  * Embedded DSL syntax for symbols.

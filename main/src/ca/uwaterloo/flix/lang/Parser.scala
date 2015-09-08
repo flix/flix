@@ -3,9 +3,9 @@ package ca.uwaterloo.flix.lang
 import java.nio.file.{Files, Path}
 
 import ca.uwaterloo.flix.lang
-import ca.uwaterloo.flix.lang.ast.Ast
+import ca.uwaterloo.flix.lang.ast.{BinaryOperator, UnaryOperator, Ast}
 import ca.uwaterloo.flix.util.misc.Unoptimized
-import impl.logic.{BinaryOperator, UnaryOperator}
+
 import org.parboiled2._
 
 import scala.collection.immutable.Seq

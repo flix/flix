@@ -1,5 +1,7 @@
 package impl.logic
 
+import ca.uwaterloo.flix.lang.ast.{BinaryOperator, UnaryOperator}
+
 sealed trait Term {
   /**
    * Returns `this` term where all occurences (up to lambda- and let terms)

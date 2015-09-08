@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.lang.ast
 
 import ca.uwaterloo.flix.lang.SourceLocation
-import impl.logic.{BinaryOperator, UnaryOperator}
 
 import scala.annotation.StaticAnnotation
 import scala.collection.immutable.Seq

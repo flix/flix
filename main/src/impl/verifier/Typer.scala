@@ -1,5 +1,6 @@
 package impl.verifier
 
+import ca.uwaterloo.flix.lang.ast.{BinaryOperator, UnaryOperator}
 import impl.logic.Symbol.{VariableSymbol => VSym}
 import impl.logic._
 import impl.runtime.{Error, Unification}

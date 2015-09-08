@@ -1,5 +1,6 @@
 package impl.verifier
 
+import ca.uwaterloo.flix.lang.ast.{BinaryOperator, UnaryOperator}
 import impl.logic._
 import syntax.Terms.RichTerm
 

@@ -1,5 +1,6 @@
 package impl.verifier
 
+import ca.uwaterloo.flix.lang.ast.BinaryOperator
 import impl.logic._
 import syntax.Symbols._
 import syntax.Terms._

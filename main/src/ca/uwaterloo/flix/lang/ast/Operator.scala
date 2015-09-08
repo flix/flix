@@ -1,8 +1,6 @@
-package impl.logic
+package ca.uwaterloo.flix.lang.ast
 
 trait Operator
-
-// TODO: probably move this into Ast.
 
 sealed trait UnaryOperator extends Operator
 

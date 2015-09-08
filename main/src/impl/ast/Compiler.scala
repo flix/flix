@@ -1,5 +1,6 @@
 package impl.ast
 
+import ca.uwaterloo.flix.lang.ast.BinaryOperator
 import impl.logic.Declaration.{DeclareBot, DeclareLeq, DeclareLub}
 import impl.logic.Predicate.GroundPredicate
 import impl.logic._

@@ -1,6 +1,7 @@
 package syntax
 
-import impl.logic.{Symbol, UnaryOperator, BinaryOperator, Term}
+import ca.uwaterloo.flix.lang.ast.{BinaryOperator, UnaryOperator}
+import impl.logic.{Symbol, Term}
 import syntax.Operators._
 import syntax.Patterns.RichPattern
 import syntax.Symbols._
