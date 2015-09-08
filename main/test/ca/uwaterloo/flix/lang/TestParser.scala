@@ -101,6 +101,12 @@ class TestParser extends FunSuite {
     assertResult(result)(Ast.Literal.Int(literal = 123))
   }
 
+  test("Parser.Literal (\"\")") {
+    val input = "\"\""
+    val result = new Parser(None, input).Literal.run().get
+    assertResult(result)(Ast.Literal.Str(literal = ""))
+  }
+
   test("Parser.Literal (\"foo\")") {
     val input = "\"foo\""
     val result = new Parser(None, input).Literal.run().get

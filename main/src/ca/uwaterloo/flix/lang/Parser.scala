@@ -346,11 +346,11 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def UnitLiteral: Rule1[Ast.Literal.Unit.type] = rule {
-    str("()") ~> (() => Ast.Literal.Unit)
+    atomic("()") ~> (() => Ast.Literal.Unit)
   }
 
   def BoolLiteral: Rule1[Ast.Literal.Bool] = rule {
-    str("true") ~> (() => Ast.Literal.Bool(literal = true)) | str("false") ~> (() => Ast.Literal.Bool(literal = false))
+    atomic("true") ~> (() => Ast.Literal.Bool(literal = true)) | atomic("false") ~> (() => Ast.Literal.Bool(literal = false))
   }
 
   def IntLiteral: Rule1[Ast.Literal.Int] = rule {
