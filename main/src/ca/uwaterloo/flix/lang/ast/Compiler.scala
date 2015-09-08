@@ -56,8 +56,8 @@ object Compiler {
      * Returns a map from fully qualified names to ast declaractions assuming the declarations reside under the given namespace.
      */
     def visit(namespace: Name, ast: Ast.Declaration): Environment = ast match {
-      case Ast.Declaration.NameSpace(name, body) => (body foldLeft Empty) {
-        case (env, decl) => env ++ visit(withSuffix(namespace, name), decl)
+      case Ast.Declaration.Namespace(name, body) => (body foldLeft Empty) {
+        case (env, decl) => ???
       }
       case decl: Ast.Declaration.Tpe => ???
       case decl: Ast.Declaration.Val => ???
@@ -105,8 +105,8 @@ object Compiler {
      * Disambiguates the given `ast` declaraction in the `namespace` using the given environment `env`.
      */
     def disambiguate(ast: Ast.Declaration, namespace: Name, env: Environment): Ast.Declaration = ast match {
-      case Ast.Declaration.NameSpace(name, body) => Ast.Declaration.NameSpace(name, body map {
-        case decl => disambiguate(decl, withSuffix(namespace, name), env)
+      case Ast.Declaration.Namespace(name, body) => Ast.Declaration.Namespace(name, body map {
+        case decl => ???
       })
 
       case Ast.Declaration.Tpe(name, tpe) =>
@@ -137,10 +137,7 @@ object Compiler {
      */
     // TODO: Change order of arguments
     def disambiguate(namespace: Name, ast: Ast.Expression, env: Environment, bound: Set[String]): Ast.Expression = ast match {
-      case Ast.Expression.AmbiguousName(name) => name match {
-        case Seq(simple) if bound contains simple => Ast.Expression.Var(simple)
-        case _ => lookupExp(namespace, name.toList, env)
-      }
+      case Ast.Expression.AmbiguousName(name) => ???
 
       case Ast.Expression.Var(name) => ???
       case Ast.Expression.Lit(literal) => ast
@@ -198,7 +195,7 @@ object Compiler {
       case Type.AmbiguousName(Seq("Bool")) => Type.Bool
       case Type.AmbiguousName(Seq("Int")) => Type.Int
       case Type.AmbiguousName(Seq("Str")) => Type.Str
-      case Type.AmbiguousName(name) => lookupType(namespace, name.toList, env)
+      case Type.AmbiguousName(name) => lookupType(namespace, ???, env)
 
       // Compound
       case Type.Tag(name) => Type.Tag(name)

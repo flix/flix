@@ -64,8 +64,8 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     NameSpace | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | EnumDeclaraction | LatticeDeclaration | RuleDeclaraction | FactDeclaration
   }
 
-  def NameSpace: Rule1[Ast.Declaration.NameSpace] = rule {
-    "namespace" ~ WhiteSpace ~ Name ~ optWhiteSpace ~ '{' ~ optWhiteSpace ~ zeroOrMore(Declaration) ~ optWhiteSpace ~ '}' ~ ";" ~ optWhiteSpace ~> Ast.Declaration.NameSpace
+  def NameSpace: Rule1[Ast.Declaration.Namespace] = rule {
+    "namespace" ~ WhiteSpace ~ QName ~ optWhiteSpace ~ '{' ~ optWhiteSpace ~ zeroOrMore(Declaration) ~ optWhiteSpace ~ '}' ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Namespace
   }
 
   def TypeDeclaration: Rule1[Ast.Declaration.Tpe] = rule {
@@ -131,11 +131,11 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def ApplyTerm: Rule1[Ast.Term.AmbiguousCall] = rule {
-    Name ~ "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Term.AmbiguousCall
+    QName ~ "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Term.AmbiguousCall
   }
 
   def NameTerm: Rule1[Ast.Term.AmbiguousName] = rule {
-    Name ~> Ast.Term.AmbiguousName
+    QName ~> Ast.Term.AmbiguousName
   }
 
   def TupleTerm: Rule1[Ast.Term.Tuple] = rule {
@@ -154,7 +154,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def InfixExp: Rule1[Ast.Expression] = rule {
-    LogicalExp ~ optional(optWhiteSpace ~ "`" ~ Name ~ "`" ~ optWhiteSpace ~ LogicalExp ~> Ast.Expression.Infix)
+    LogicalExp ~ optional(optWhiteSpace ~ "`" ~ QName ~ "`" ~ optWhiteSpace ~ LogicalExp ~> Ast.Expression.Infix)
   }
 
   def LogicalExp: Rule1[Ast.Expression] = rule {
@@ -214,7 +214,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def CallExp: Rule1[Ast.Expression.AmbiguousCall] = rule {
-    Name ~ "(" ~ zeroOrMore(Expression).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Expression.AmbiguousCall
+    QName ~ "(" ~ zeroOrMore(Expression).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Expression.AmbiguousCall
   }
 
   def TupleExp: Rule1[Ast.Expression.Tuple] = rule {
@@ -230,7 +230,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def VariableExp: Rule1[Ast.Expression.AmbiguousName] = rule {
-    Name ~> Ast.Expression.AmbiguousName
+    QName ~> Ast.Expression.AmbiguousName
   }
 
   def LambdaExp: Rule1[Ast.Expression.Lambda] = rule {
@@ -253,7 +253,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def AmbigiousPattern: Rule1[Ast.Pattern.Ambiguous] = rule {
-    Name ~ optional(WhiteSpace ~ Pattern) ~> Ast.Pattern.Ambiguous
+    QName ~ optional(WhiteSpace ~ Pattern) ~> Ast.Pattern.Ambiguous
   }
 
   def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {
@@ -282,7 +282,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def AmbiguousNameType: Rule1[Ast.Type.AmbiguousName] = rule {
-    Name ~> Ast.Type.AmbiguousName
+    QName ~> Ast.Type.AmbiguousName
   }
 
   def TupleType: Rule1[Ast.Type.Tuple] = rule {
@@ -316,18 +316,6 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     "@" ~ Ident ~ WhiteSpace
   }
 
-  /** *************************************************************************/
-  /** Identifiers and Names                                                 ***/
-  /** *************************************************************************/
-  // TODO: Deprecated
-  def Name: Rule1[Seq[String]] = {
-    def Ident: Rule1[String] = rule {
-      capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum))
-    }
-    rule {
-      oneOrMore(Ident).separatedBy(".")
-    }
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Identifiers & Names                                                     //
