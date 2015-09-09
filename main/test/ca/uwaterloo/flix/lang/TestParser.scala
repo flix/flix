@@ -7,12 +7,40 @@ import org.scalatest.FunSuite
 class TestParser extends FunSuite {
 
   /////////////////////////////////////////////////////////////////////////////
-  // Constraints                                                             //
+  // Declarations                                                            //
   /////////////////////////////////////////////////////////////////////////////
-  test("Parser.ConstraintDeclaration01") {
-    //val input = "P(42)."
-    //val result = new Parser(None, input).ConstraintDeclaration.run().get
-    // assertResult("x")(result.name)
+  test("Parser.Namespace01") {
+    val input =
+      """namespace foo {
+        |  // a comment
+        |}
+      """.stripMargin
+    val result = new Parser(None, input).NamespaceDeclaration.run().get
+    assertResult(Seq("foo"))(result.name.parts)
+  }
+
+  test("Parser.Namespace02") {
+    val input =
+      """namespace foo::bar::baz {
+        |  // a comment
+        |}
+      """.stripMargin
+    val result = new Parser(None, input).NamespaceDeclaration.run().get
+    assertResult(Seq("foo", "bar", "baz"))(result.name.parts)
+  }
+
+  test("Parser.Namespace03") {
+    val input =
+      """namespace foo {
+        |  namespace bar {
+        |    namespace baz {
+        |      // a comment
+        |    }
+        |  }
+        |}
+      """.stripMargin
+    val result = new Parser(None, input).NamespaceDeclaration.run()
+    assert(result.isSuccess)
   }
 
   /////////////////////////////////////////////////////////////////////////////

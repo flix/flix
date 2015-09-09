@@ -64,11 +64,11 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   // NB: RuleDeclaration must be parsed before FactDeclaration.
   def Declaration: Rule1[Ast.Declaration] = rule {
-    NameSpace | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | EnumDeclaration | LatticeDeclaration | RuleDeclaration | FactDeclaration
+    NamespaceDeclaration | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | EnumDeclaration | LatticeDeclaration | RuleDeclaration | FactDeclaration
   }
 
-  def NameSpace: Rule1[Ast.Declaration.Namespace] = rule {
-    "namespace" ~ WS ~ QName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration) ~ optWS ~ '}' ~ ";" ~ optWS ~> Ast.Declaration.Namespace
+  def NamespaceDeclaration: Rule1[Ast.Declaration.Namespace] = rule {
+    atomic("namespace") ~ WS ~ QName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration) ~ optWS ~ '}' ~ optSC ~> Ast.Declaration.Namespace
   }
 
   def TypeDeclaration: Rule1[Ast.Declaration.Tpe] = rule {
@@ -259,6 +259,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /** *************************************************************************/
   /** Types                                                                 ***/
   /** *************************************************************************/
+  // TODO
   def Type: Rule1[Ast.Type] = rule {
     FunctionType
   }
