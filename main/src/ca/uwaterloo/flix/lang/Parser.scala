@@ -19,7 +19,7 @@ object Parser {
   def parse(paths: Traversable[Path]): Ast.Root = {
     val asts = paths map parse
     asts.reduce[Ast.Root] {
-      case (ast1, ast2) => Ast.Root(ast1.decls ++ ast2.decls)
+      case (ast1, ast2) => Ast.Root(ast1.declarations ++ ast2.declarations)
     }
   }
 

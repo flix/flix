@@ -96,7 +96,7 @@ object Compiler {
     /**
      * Disambiguates the given `ast` using the given environment `env`.
      */
-    def disambiguate(ast: Ast.Root, env: Environment): Ast.Root = Ast.Root(ast.decls map {
+    def disambiguate(ast: Ast.Root, env: Environment): Ast.Root = Ast.Root(ast.declarations map {
       case decl => disambiguate(decl, Nil, env)
     })
 
