@@ -260,13 +260,14 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /** *************************************************************************/
   /** Types                                                                 ***/
   /** *************************************************************************/
+  // TODO: Allow functions like (A -> B) -> C
   // NB: Associates to the right, but parsed as left-associative.
   def Type: Rule1[Ast.Type] = rule {
     SimpleType ~ zeroOrMore(optWS ~ "->" ~ optWS ~ SimpleType ~> Ast.Type.Function)
   }
 
   def SimpleType: Rule1[Ast.Type] = rule {
-    TupleType | ListType | SetType | MapType | AmbiguousType
+    TupleType | ParametricType | AmbiguousType
   }
 
   def AmbiguousType: Rule1[Ast.Type.Ambiguous] = rule {
@@ -277,19 +278,8 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~> Ast.Type.Tuple
   }
 
-  // TODO: Allow functions like (A -> B) -> C
-
-  // TODO: These should probably not be built-in.
-  def ListType: Rule1[Ast.Type.List] = rule {
-    atomic("List") ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optWS ~> Ast.Type.List
-  }
-
-  def SetType: Rule1[Ast.Type.Set] = rule {
-    atomic("Set") ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optWS ~> Ast.Type.Set
-  }
-
-  def MapType: Rule1[Ast.Type.Map] = rule {
-    atomic("Map") ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "," ~ optWS ~ Type ~ optWS ~ "]" ~ optWS ~> Ast.Type.Map
+  def ParametricType: Rule1[Ast.Type.Parametric] = rule {
+    QName ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ optWS ~> Ast.Type.Parametric
   }
 
   /** *************************************************************************/

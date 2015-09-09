@@ -160,47 +160,25 @@ class TestParser extends FunSuite {
     assertResult(3)(result.get.asInstanceOf[Ast.Type.Tuple].elms.length)
   }
 
-  test("Parser.Type.List01") {
-    val input = "List[A]"
-    val result = new Parser(None, input).Type.run().get.asInstanceOf[Ast.Type.List]
-    assertResult(Seq("A"))(result.elms.asInstanceOf[Ast.Type.Ambiguous].name.parts)
-  }
-
-  test("Parser.Type.List02") {
-    val input = "List[List[A]]"
+  test("Parser.Type.Parametric01") {
+    val input = "A[B]"
     val result = new Parser(None, input).Type.run()
     assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Type.Parametric])
   }
 
-  test("Parser.Type.Set01") {
-    val input = "Set[A]"
-    val result = new Parser(None, input).Type.run().get.asInstanceOf[Ast.Type.Set]
-    assertResult(Seq("A"))(result.elms.asInstanceOf[Ast.Type.Ambiguous].name.parts)
-  }
-
-  test("Parser.Type.Set02") {
-    val input = "Set[Set[A]]"
+  test("Parser.Type.Parametric02") {
+    val input = "A[B, C]"
     val result = new Parser(None, input).Type.run()
     assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Type.Parametric])
   }
 
-  test("Parser.Type.Map01") {
-    val input = "Map[A, B]"
-    val result = new Parser(None, input).Type.run().get.asInstanceOf[Ast.Type.Map]
-    assertResult(Seq("A"))(result.t1.asInstanceOf[Ast.Type.Ambiguous].name.parts)
-    assertResult(Seq("B"))(result.t2.asInstanceOf[Ast.Type.Ambiguous].name.parts)
-  }
-
-  test("Parser.Type.Map02") {
-    val input = "Map[Map[A, B], Map[C, D]]"
+  test("Parser.Type.Parametric03") {
+    val input = "A[B, C[D, E]]"
     val result = new Parser(None, input).Type.run()
     assert(result.isSuccess)
-  }
-
-  test("Parser.Type List[Set[Map[A, B]]") {
-    val input = "List[Set[Map[A, B]]]"
-    val result = new Parser(None, input).Type.run()
-    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Type.Parametric])
   }
 
   /////////////////////////////////////////////////////////////////////////////

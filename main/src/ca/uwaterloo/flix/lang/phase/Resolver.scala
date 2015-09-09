@@ -1,7 +1,9 @@
-package ca.uwaterloo.flix.lang
+package ca.uwaterloo.flix.lang.phase
 
-object Resolution {
+object Resolver {
 
+  // TODO
+  
   /**
    *
    * TODO:

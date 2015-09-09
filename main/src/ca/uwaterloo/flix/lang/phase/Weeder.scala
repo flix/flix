@@ -1,6 +1,6 @@
-package ca.uwaterloo.flix.lang
+package ca.uwaterloo.flix.lang.phase
 
-object Weeding {
+object Weeder {
 
   // TODO:
   // - Disallow Ast.Term.Apply in body of rules.

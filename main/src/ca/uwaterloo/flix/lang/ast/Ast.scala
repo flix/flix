@@ -293,83 +293,41 @@ object Ast {
 
   }
 
-
   /**
-   * A common super-type for AST nodes which represent types.
+   * A common super-type for AST nodes that represent types.
    */
   sealed trait Type extends Ast
 
   object Type {
 
     /**
-     * An AST node which represents a reference to a named type.
+     * An AST node that represent a reference to a type.
      */
-    @Eliminated
-    case class Ambiguous(name: QName) extends Type
+    case class Ambiguous(name: Ast.QName) extends Ast.Type
 
     /**
-     * An AST node which represents the unit type.
+     * An AST node that represent a function type.
      */
-    @Introduced
-    case object Unit extends Type
+    case class Function(t1: Ast.Type, t2: Ast.Type) extends Ast.Type
 
     /**
-     * An AST node which represents the boolean type.
+     * An AST node that represent a tuple type.
      */
-    @Introduced
-    case object Bool extends Type
+    case class Tuple(elms: Seq[Ast.Type]) extends Ast.Type
 
     /**
-     * An AST node which represents the int type.
+     * An AST node that represent a parametric type.
      */
-    @Introduced
-    case object Int extends Type
+    case class Parametric(name: Ast.QName, elms: Seq[Ast.Type]) extends Ast.Type
 
-    /**
-     * An AST node which represents the string type.
-     */
-    @Introduced
-    case object Str extends Type
+
+
 
     /**
      * An AST node which represents a tagged type.
      */
-    @Introduced
-    case class Tag(ident: Ast.Ident) extends Type
-
-    /**
-     * An AST node which represents an enumeration type.
-     */
-    @Introduced
-    case class Enum(elms: Seq[Type.Tag]) extends Type
-
-    /**
-     * An AST node which represents a tuple type.
-     */
-    case class Tuple(elms: Seq[Type]) extends Type
-
-    /**
-     * An AST node which represents a list type.
-     */
-    case class List(elms: Type) extends Type
-
-    /**
-     * An AST node which represents a set type.
-     */
-    case class Set(elms: Type) extends Type
-
-    /**
-     * An AST node which represents a map type.
-     */
-    @Right2Left
-    case class Map(t1: Type, t2: Type) extends Type
-
-    /**
-     * An AST node which represents a function type.
-     */
-    @Right2Left
-    case class Function(t1: Type, t2: Type) extends Type
-
+    // TODO: Needed in this phase?
+    case class Tag(ident: Ast.Ident) extends Ast.Type
   }
 
   /**
