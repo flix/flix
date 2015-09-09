@@ -260,15 +260,18 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /** *************************************************************************/
   /** Types                                                                 ***/
   /** *************************************************************************/
-  // TODO: Allow functions like (A -> B) -> C
-  // NB: Associates to the right, but parsed as left-associative.
+  // NB: The parser works left-to-right, but the inline code ensures that the
+  // function types are right-associative.
   def Type: Rule1[Ast.Type] = rule {
-    SimpleType ~ zeroOrMore(optWS ~ "->" ~ optWS ~ SimpleType ~> Ast.Type.Function)
+    oneOrMore(SimpleType).separatedBy(optWS ~ "->" ~ optWS) ~> ((types: Seq[Ast.Type]) => types match {
+      case xs if xs.size == 1 => xs.head
+      case xs => xs.reduceRight[Ast.Type](Ast.Type.Function)
+    })
   }
 
   // NB: ParametricType must be parsed before AmbiguousType.
   def SimpleType: Rule1[Ast.Type] = rule {
-    ParametricType | TupleType | AmbiguousType
+    ParametricType | AmbiguousType | TupleType
   }
 
   def AmbiguousType: Rule1[Ast.Type.Ambiguous] = rule {
