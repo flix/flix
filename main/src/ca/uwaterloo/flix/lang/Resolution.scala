@@ -1,5 +1,15 @@
 package ca.uwaterloo.flix.lang
 
-class Resolution {
+object Resolution {
+
+  /**
+   *
+   * TODO:
+   *
+   *
+   * - Resolve proposition vs predicate.
+   *
+   *
+   */
 
 }

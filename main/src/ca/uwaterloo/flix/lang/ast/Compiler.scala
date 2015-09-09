@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.lang.ast
 
-import ca.uwaterloo.flix.lang.ast.Ast.Predicate
+import ca.uwaterloo.flix.lang.ast.Ast.AmbiguousPredicate
 
 object Compiler {
 
@@ -209,7 +209,7 @@ object Compiler {
       case Type.Function(t1, t2) => ???
     }
 
-    def disambiguate(predicate: Predicate, name: Name, env: Environment): Predicate =
+    def disambiguate(predicate: AmbiguousPredicate, name: Name, env: Environment): AmbiguousPredicate =
       ???
 
 

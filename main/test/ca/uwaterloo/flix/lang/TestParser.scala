@@ -16,10 +16,46 @@ class TestParser extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Constraints                                                             //
+  // Facts and Rules                                                         //
   /////////////////////////////////////////////////////////////////////////////
+  test("Parser.FactDeclaration01") {
+    val input = "P(42)."
+    val result = new Parser(None, input).FactDeclaration.run()
+    assert(result.isSuccess)
+  }
 
+  test("Parser.FactDeclaration02") {
+    val input = "P(\"foo\")."
+    val result = new Parser(None, input).FactDeclaration.run()
+    assert(result.isSuccess)
+  }
 
+  test("Parser.FactDeclaration03") {
+    val input = "P(f(1, 2, 3))."
+    val result = new Parser(None, input).FactDeclaration.run()
+    assert(result.isSuccess)
+  }
+
+  test("Parser.RuleDeclaration01") {
+    val input = "P(x) :- A(x)."
+    val result = new Parser(None, input).RuleDeclaration.run()
+    assert(result.isSuccess)
+    assertResult(1)(result.get.body.size)
+  }
+
+  test("Parser.RuleDeclaration02") {
+    val input = "P(x, y, z) :- A(x), B(y), C(z)."
+    val result = new Parser(None, input).RuleDeclaration.run()
+    assert(result.isSuccess)
+    assertResult(3)(result.get.body.size)
+  }
+
+  test("Parser.RuleDeclaration03") {
+    val input = "P(f(x), g(y, z)) :- isFoo(x, y), isBar(y, z), A(x), B(y), C(z)."
+    val result = new Parser(None, input).RuleDeclaration.run()
+    assert(result.isSuccess)
+    assertResult(5)(result.get.body.size)
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Terms                                                                   //

@@ -49,6 +49,8 @@ object Parser {
   }
 }
 
+// TODO: Ensure that seperatedBy allows for optWS "," optWS
+
 /**
  * A PEG parser for the Flix programming language.
  */
@@ -60,8 +62,9 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     optWS ~ zeroOrMore(Declaration) ~ optWS ~ EOI ~> Ast.Root
   }
 
+  // NB: RuleDeclaration must be parsed before FactDeclaration.
   def Declaration: Rule1[Ast.Declaration] = rule {
-    NameSpace | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | EnumDeclaraction | LatticeDeclaration | RuleDeclaraction | FactDeclaration
+    NameSpace | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | EnumDeclaraction | LatticeDeclaration | RuleDeclaration | FactDeclaration
   }
 
   def NameSpace: Rule1[Ast.Declaration.Namespace] = rule {
@@ -214,36 +217,21 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
 
-  /** *************************************************************************/
-  /** Rules                                                                 ***/
-  /** *************************************************************************/
-
-  def ConstraintDeclaration: Rule1[Ast.Declaration.Constraint] = rule {
-    "rule" ~ WS ~ Predicate ~ WS ~ "if" ~ WS ~ RuleBody ~ ";" ~ optWS ~> Ast.Declaration.Constraint
-  }
-
-
-
-
-// TODO
-
+  /////////////////////////////////////////////////////////////////////////////
+  // Facts and Rules                                                         //
+  /////////////////////////////////////////////////////////////////////////////
   def FactDeclaration: Rule1[Ast.Declaration.Fact] = rule {
-    "fact" ~ WS ~ Predicate ~ ";" ~ optWS ~> Ast.Declaration.Fact
+    AmbiguousPredicate ~ optWS ~ "." ~ optWS ~> Ast.Declaration.Fact
   }
 
-  def RuleDeclaraction: Rule1[Ast.Declaration.Rule] = rule {
-    "rule" ~ WS ~ Predicate ~ WS ~ "if" ~ WS ~ RuleBody ~ ";" ~ optWS ~> Ast.Declaration.Rule
+  def RuleDeclaration: Rule1[Ast.Declaration.Rule] = rule {
+    AmbiguousPredicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(AmbiguousPredicate).separatedBy(optWS ~ "," ~ optWS) ~ "." ~ optWS ~> Ast.Declaration.Rule
   }
 
-  def RuleBody: Rule1[Seq[Ast.Predicate]] = rule {
-    oneOrMore(Predicate).separatedBy("," ~ optWS)
+  def AmbiguousPredicate: Rule1[Ast.AmbiguousPredicate] = rule {
+    QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~> Ast.AmbiguousPredicate
   }
-
-  def Predicate: Rule1[Ast.Predicate] = rule {
-    Ident ~ WS ~ Term ~> Ast.Predicate
-  }
-
-
+  
   /////////////////////////////////////////////////////////////////////////////
   // Terms                                                                   //
   /////////////////////////////////////////////////////////////////////////////
@@ -333,7 +321,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def Ident: Rule1[Ast.Ident] = rule {
-    SourceLocation ~ LegalIdentifier  ~>
+    SourceLocation ~ LegalIdentifier ~>
       ((location: lang.SourceLocation, name: String) => Ast.Ident(name, location))
   }
 

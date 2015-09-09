@@ -11,6 +11,7 @@ import scala.collection.immutable.Seq
 sealed trait Ast
 
 // TODO: Consider renaming to ParsedAst
+// TODO: Ensure that every reference is prefixed with ParsedAst.XYZ
 
 object Ast {
 
@@ -80,21 +81,14 @@ object Ast {
     case class Lattice(ident: Ast.Ident, record: Expression) extends Declaration
 
     /**
-     * An AST node which represents a fact declaration.
+     * An AST node that represents a fact declaration.
      */
-    @deprecated
-    case class Fact(head: Predicate) extends Declaration
+    case class Fact(head: AmbiguousPredicate) extends Declaration
 
     /**
-     * An AST node which represent a rule declaration.
+     * An AST node that represent a rule declaration.
      */
-    @deprecated
-    case class Rule(head: Predicate, body: Seq[Predicate]) extends Declaration
-
-    /**
-     * An AST node that represent a constraint declaration.
-     */
-    case class Constraint(head: Predicate, body: Seq[Predicate]) extends Ast.Declaration
+    case class Rule(head: AmbiguousPredicate, body: Seq[AmbiguousPredicate]) extends Declaration
   }
 
   /**
@@ -284,11 +278,10 @@ object Ast {
 
   }
 
-  // TODO: Introduce constraint.
-
-  // todo: Should be seq String
-  case class Predicate(ident: Ast.Ident, t: Term) extends Pattern
-
+  /**
+   * An AST node that represent either a proposition or a predicate.
+   */
+  case class AmbiguousPredicate(name: Ast.QName, terms: Seq[Ast.Term]) extends Pattern
 
   /**
    * A common super-type for AST that represent terms.
