@@ -260,13 +260,8 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /** *************************************************************************/
   /** Types                                                                 ***/
   /** *************************************************************************/
-  // TODO
-  def Type: Rule1[Ast.Type] = rule {
-    FunctionType
-  }
-
   // NB: Associates to the right, but parsed as left-associative.
-  def FunctionType: Rule1[Ast.Type] = rule {
+  def Type: Rule1[Ast.Type] = rule {
     SimpleType ~ zeroOrMore(optWS ~ "->" ~ optWS ~ SimpleType ~> Ast.Type.Function)
   }
 
@@ -279,9 +274,12 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def TupleType: Rule1[Ast.Type.Tuple] = rule {
-    "(" ~ optWS ~oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~> Ast.Type.Tuple
+    "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~> Ast.Type.Tuple
   }
 
+  // TODO: Allow functions like (A -> B) -> C
+
+  // TODO: These should probably not be built-in.
   def ListType: Rule1[Ast.Type.List] = rule {
     atomic("List") ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optWS ~> Ast.Type.List
   }

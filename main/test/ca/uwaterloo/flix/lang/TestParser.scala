@@ -122,8 +122,22 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
+  test("Parser.Type.Function01") {
+    val input = "A -> B"
+    val result = new Parser(None, input).Type.run().get.asInstanceOf[Ast.Type.Function]
+    assertResult(Seq("A"))(result.t1.asInstanceOf[Ast.Type.Ambiguous].name.parts)
+    assertResult(Seq("B"))(result.t2.asInstanceOf[Ast.Type.Ambiguous].name.parts)
+  }
+
+  test("Parser.Type.Function02") {
+    val input = "A -> B -> C"
+    val result = new Parser(None, input).Type.run().get.asInstanceOf[Ast.Type.Function]
+    assertResult(Seq("A"))(result.t1.asInstanceOf[Ast.Type.Ambiguous].name.parts)
+    assert(result.t2.isInstanceOf[Ast.Type.Function])
+  }
+
   test("Parser.Type.Tuple01") {
-    val input = "(Int)"
+    val input = "(A)"
     val result = new Parser(None, input).Type.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[Ast.Type.Tuple])
@@ -131,7 +145,7 @@ class TestParser extends FunSuite {
   }
 
   test("Parser.Type.Tuple02") {
-    val input = "(Bool, Int)"
+    val input = "(A, B)"
     val result = new Parser(None, input).Type.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[Ast.Type.Tuple])
@@ -139,7 +153,7 @@ class TestParser extends FunSuite {
   }
 
   test("Parser.Type.Tuple03") {
-    val input = "(Bool, Int, Str)"
+    val input = "(A, B, C)"
     val result = new Parser(None, input).Type.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[Ast.Type.Tuple])
