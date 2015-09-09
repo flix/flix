@@ -240,12 +240,6 @@ object Ast {
     case object Wildcard extends Ast.Pattern
 
     /**
-     * An AST node which represents a variable pattern.
-     */
-    @Introduced
-    case class Var(name: String) extends Ast.Pattern
-
-    /**
      * An AST node which represents a tagged pattern.
      */
     @Introduced
@@ -260,21 +254,6 @@ object Ast {
      * An AST node which represents a tuples pattern.
      */
     case class Tuple(elms: Seq[Ast.Pattern]) extends Ast.Pattern
-
-  }
-
-  // TODO: Use callexpr? what about x != y.. or disjunctions??
-  // TODO: What about assignment?
-  sealed trait Proposition
-
-  object Proposition {
-
-    // TODO: Var
-    // TODO: Call
-
-    case class Eq(n1: Seq[String], n2: Seq[String]) extends Proposition
-
-    case class NotEq(n1: Seq[String], n2: Seq[String]) extends Proposition
 
   }
 
