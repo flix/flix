@@ -257,9 +257,9 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy("," ~ optWS) ~ ")" ~> Ast.Term.Apply
   }
 
-  /** *************************************************************************/
-  /** Types                                                                 ***/
-  /** *************************************************************************/
+  /////////////////////////////////////////////////////////////////////////////
+  // Types                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
   // NB: The parser works left-to-right, but the inline code ensures that the
   // function types are right-associative.
   def Type: Rule1[Ast.Type] = rule {
