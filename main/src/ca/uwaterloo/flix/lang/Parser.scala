@@ -218,7 +218,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /** Rules                                                                 ***/
   /** *************************************************************************/
 
-
+// TODO
 
   def FactDeclaration: Rule1[Ast.Declaration.Fact] = rule {
     "fact" ~ WhiteSpace ~ Predicate ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Fact
@@ -236,22 +236,30 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     Ident ~ WhiteSpace ~ Term ~> Ast.Predicate
   }
 
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Terms                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+  // NB: ApplyTerm must be parsed before VariableTerm.
   def Term: Rule1[Ast.Term] = rule {
-    SimpleTerm ~ zeroOrMore(WhiteSpace ~ "->" ~ optWhiteSpace ~ SimpleTerm ~> Ast.Term.Map)
+    ApplyTerm | WildcardTerm | VariableTerm | LiteralTerm
   }
 
-  def SimpleTerm: Rule1[Ast.Term] = rule {
-    LiteralTerm | ApplyTerm
+  def WildcardTerm: Rule1[Ast.Term] = rule {
+    SourceLocation ~ atomic("_") ~> Ast.Term.Wildcard
+  }
+
+  def VariableTerm: Rule1[Ast.Term.Var] = rule {
+    Ident ~> Ast.Term.Var
   }
 
   def LiteralTerm: Rule1[Ast.Term.Lit] = rule {
     Literal ~> Ast.Term.Lit
   }
 
-  def ApplyTerm: Rule1[Ast.Term.AmbiguousCall] = rule {
-    QName ~ "(" ~ oneOrMore(SimpleTerm).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Term.AmbiguousCall
+  def ApplyTerm: Rule1[Ast.Term.Apply] = rule {
+    QName ~ optWhiteSpace ~ "(" ~ oneOrMore(Term).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Term.Apply
   }
-
 
   /** *************************************************************************/
   /** Types                                                                 ***/

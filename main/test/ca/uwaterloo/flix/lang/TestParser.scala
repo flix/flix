@@ -12,10 +12,42 @@ class TestParser extends FunSuite {
   test("Parser.ConstraintDeclaration01") {
     //val input = "P(42)."
     //val result = new Parser(None, input).ConstraintDeclaration.run().get
-   // assertResult("x")(result.name)
+    // assertResult("x")(result.name)
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Terms                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Parser.Term01") {
+    val input = "_"
+    val result = new Parser(None, input).Term.run().get
+    assert(result.isInstanceOf[Ast.Term.Wildcard])
+  }
 
+  test("Parser.Term02") {
+    val input = "x"
+    val result = new Parser(None, input).Term.run().get.asInstanceOf[Ast.Term.Var]
+    assertResult("x")(result.ident.name)
+  }
+
+  test("Parser.Term03") {
+    val input = "42"
+    val result = new Parser(None, input).Term.run().get.asInstanceOf[Ast.Term.Lit]
+    assertResult(42)(result.literal.asInstanceOf[Ast.Literal.Int].literal)
+  }
+
+  test("Parser.Term04") {
+    val input = "foo(x)"
+    val result = new Parser(None, input).Term.run().get.asInstanceOf[Ast.Term.Apply]
+    assertResult(Seq("foo"))(result.name.parts)
+  }
+
+  test("Parser.Term05") {
+    val input = "foo::bar(x, y, z)"
+    val result = new Parser(None, input).Term.run().get.asInstanceOf[Ast.Term.Apply]
+    assertResult(Seq("foo", "bar"))(result.name.parts)
+    assertResult(Seq("x", "y", "z"))(result.arguments.map(_.asInstanceOf[Ast.Term.Var].ident.name))
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Identifiers & Names                                                     //
