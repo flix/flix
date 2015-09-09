@@ -64,7 +64,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   // NB: RuleDeclaration must be parsed before FactDeclaration.
   def Declaration: Rule1[Ast.Declaration] = rule {
-    NameSpace | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | EnumDeclaraction | LatticeDeclaration | RuleDeclaration | FactDeclaration
+    NameSpace | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | EnumDeclaration | LatticeDeclaration | RuleDeclaration | FactDeclaration
   }
 
   def NameSpace: Rule1[Ast.Declaration.Namespace] = rule {
@@ -87,7 +87,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     zeroOrMore(Annotation) ~ "def" ~ WS ~ Ident ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ ";" ~ optWS ~> Ast.Declaration.Fun
   }
 
-  def EnumDeclaraction: Rule1[Ast.Declaration.Enum] = rule {
+  def EnumDeclaration: Rule1[Ast.Declaration.Enum] = rule {
     "enum" ~ WS ~ Ident ~ optWS ~ "{" ~ optWS ~ EnumBody ~ optWS ~ "}" ~ optWS ~ ";" ~ optWS ~> Ast.Declaration.Enum
   }
 
@@ -197,7 +197,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /** Patterns                                                              ***/
   /** *************************************************************************/
   def Pattern: Rule1[Ast.Pattern] = rule {
-    WildcardPattern | LiteralPattern | AmbigiousPattern | TuplePattern
+    WildcardPattern | LiteralPattern | AmbiguousPattern | TuplePattern
   }
 
   def WildcardPattern: Rule1[Ast.Pattern] = rule {
@@ -208,7 +208,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     Literal ~> Ast.Pattern.Lit
   }
 
-  def AmbigiousPattern: Rule1[Ast.Pattern.Ambiguous] = rule {
+  def AmbiguousPattern: Rule1[Ast.Pattern.Ambiguous] = rule {
     QName ~ optional(WS ~ Pattern) ~> Ast.Pattern.Ambiguous
   }
 
