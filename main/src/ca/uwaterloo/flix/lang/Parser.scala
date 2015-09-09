@@ -57,7 +57,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   // TODO: Use atomic keyword
 
   def Root: Rule1[Ast.Root] = rule {
-    optWhiteSpace ~ zeroOrMore(Declaration) ~ optWhiteSpace ~ EOI ~> Ast.Root
+    optWS ~ zeroOrMore(Declaration) ~ optWS ~ EOI ~> Ast.Root
   }
 
   def Declaration: Rule1[Ast.Declaration] = rule {
@@ -65,37 +65,37 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def NameSpace: Rule1[Ast.Declaration.Namespace] = rule {
-    "namespace" ~ WhiteSpace ~ QName ~ optWhiteSpace ~ '{' ~ optWhiteSpace ~ zeroOrMore(Declaration) ~ optWhiteSpace ~ '}' ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Namespace
+    "namespace" ~ WS ~ QName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration) ~ optWS ~ '}' ~ ";" ~ optWS ~> Ast.Declaration.Namespace
   }
 
   def TypeDeclaration: Rule1[Ast.Declaration.Tpe] = rule {
-    "type" ~ WhiteSpace ~ Ident ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Type ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Tpe
+    "type" ~ WS ~ Ident ~ optWS ~ "=" ~ optWS ~ Type ~ ";" ~ optWS ~> Ast.Declaration.Tpe
   }
 
   def ValueDeclaration: Rule1[Ast.Declaration.Val] = rule {
-    "val" ~ WhiteSpace ~ Ident ~ ":" ~ optWhiteSpace ~ Type ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Expression ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Val
+    "val" ~ WS ~ Ident ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ ";" ~ optWS ~> Ast.Declaration.Val
   }
 
   def VariableDeclaration: Rule1[Ast.Declaration.Var] = rule {
-    "var" ~ WhiteSpace ~ Ident ~ ":" ~ optWhiteSpace ~ Type ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Var
+    "var" ~ WS ~ Ident ~ ":" ~ optWS ~ Type ~ ";" ~ optWS ~> Ast.Declaration.Var
   }
 
   def FunctionDeclaration: Rule1[Ast.Declaration.Fun] = rule {
-    zeroOrMore(Annotation) ~ "def" ~ WhiteSpace ~ Ident ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ optWhiteSpace ~ Type ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Expression ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Fun
+    zeroOrMore(Annotation) ~ "def" ~ WS ~ Ident ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ ";" ~ optWS ~> Ast.Declaration.Fun
   }
 
   def EnumDeclaraction: Rule1[Ast.Declaration.Enum] = rule {
-    "enum" ~ WhiteSpace ~ Ident ~ optWhiteSpace ~ "{" ~ optWhiteSpace ~ EnumBody ~ optWhiteSpace ~ "}" ~ optWhiteSpace ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Enum
+    "enum" ~ WS ~ Ident ~ optWS ~ "{" ~ optWS ~ EnumBody ~ optWS ~ "}" ~ optWS ~ ";" ~ optWS ~> Ast.Declaration.Enum
   }
 
   def EnumBody: Rule1[Seq[Ast.Type.Tag]] = rule {
-    oneOrMore("case" ~ WhiteSpace ~ Ident ~> Ast.Type.Tag).separatedBy("," ~ optWhiteSpace)
+    oneOrMore("case" ~ WS ~ Ident ~> Ast.Type.Tag).separatedBy("," ~ optWS)
   }
 
   // TODO: Use separate thing for tags.
 
   def LatticeDeclaration: Rule1[Ast.Declaration.Lattice] = rule {
-    "lat" ~ WhiteSpace ~ Ident ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ RecordExp ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Lattice
+    "lat" ~ WS ~ Ident ~ optWS ~ "=" ~ optWS ~ RecordExp ~ ";" ~ optWS ~> Ast.Declaration.Lattice
   }
 
 
@@ -107,23 +107,23 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def InfixExp: Rule1[Ast.Expression] = rule {
-    LogicalExp ~ optional(optWhiteSpace ~ "`" ~ QName ~ "`" ~ optWhiteSpace ~ LogicalExp ~> Ast.Expression.Infix)
+    LogicalExp ~ optional(optWS ~ "`" ~ QName ~ "`" ~ optWS ~ LogicalExp ~> Ast.Expression.Infix)
   }
 
   def LogicalExp: Rule1[Ast.Expression] = rule {
-    ComparisonExp ~ zeroOrMore(optWhiteSpace ~ LogicalOp ~ optWhiteSpace ~ ComparisonExp ~> Ast.Expression.Binary)
+    ComparisonExp ~ zeroOrMore(optWS ~ LogicalOp ~ optWS ~ ComparisonExp ~> Ast.Expression.Binary)
   }
 
   def ComparisonExp: Rule1[Ast.Expression] = rule {
-    MultiplicativeExp ~ optional(optWhiteSpace ~ ComparisonOp ~ optWhiteSpace ~ MultiplicativeExp ~> Ast.Expression.Binary)
+    MultiplicativeExp ~ optional(optWS ~ ComparisonOp ~ optWS ~ MultiplicativeExp ~> Ast.Expression.Binary)
   }
 
   def MultiplicativeExp: Rule1[Ast.Expression] = rule {
-    AdditiveExp ~ zeroOrMore(optWhiteSpace ~ MultiplicativeOp ~ optWhiteSpace ~ AdditiveExp ~> Ast.Expression.Binary)
+    AdditiveExp ~ zeroOrMore(optWS ~ MultiplicativeOp ~ optWS ~ AdditiveExp ~> Ast.Expression.Binary)
   }
 
   def AdditiveExp: Rule1[Ast.Expression] = rule {
-    SimpleExpression ~ zeroOrMore(optWhiteSpace ~ AdditiveOp ~ optWhiteSpace ~ SimpleExpression ~> Ast.Expression.Binary)
+    SimpleExpression ~ zeroOrMore(optWS ~ AdditiveOp ~ optWS ~ SimpleExpression ~> Ast.Expression.Binary)
   }
 
   def SimpleExpression: Rule1[Ast.Expression] = rule {
@@ -135,15 +135,15 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def SetExp: Rule1[Ast.Expression.Set] = rule {
-    "{" ~ optWhiteSpace ~ oneOrMore(Expression).separatedBy("," ~ optWhiteSpace) ~ optWhiteSpace ~ "}" ~> Ast.Expression.Set
+    "{" ~ optWS ~ oneOrMore(Expression).separatedBy("," ~ optWS) ~ optWS ~ "}" ~> Ast.Expression.Set
   }
 
   def MapExp: Rule1[Ast.Expression.Map] = rule {
-    "{" ~ optWhiteSpace ~ oneOrMore(MapKeyValue).separatedBy("," ~ optWhiteSpace) ~ optWhiteSpace ~ "}" ~> Ast.Expression.Map
+    "{" ~ optWS ~ oneOrMore(MapKeyValue).separatedBy("," ~ optWS) ~ optWS ~ "}" ~> Ast.Expression.Map
   }
 
   private def MapKeyValue: Rule1[(Ast.Expression, Ast.Expression)] = rule {
-    Expression ~ optWhiteSpace ~ "->" ~ optWhiteSpace ~ Expression ~> ((e1: Ast.Expression, e2: Ast.Expression) => (e1, e2))
+    Expression ~ optWS ~ "->" ~ optWS ~ Expression ~> ((e1: Ast.Expression, e2: Ast.Expression) => (e1, e2))
   }
 
   def ErrorExp: Rule1[Ast.Expression] = rule {
@@ -151,35 +151,35 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def LetExp: Rule1[Ast.Expression.Let] = rule {
-    "let" ~ WhiteSpace ~ Ident ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Expression ~ WhiteSpace ~ "in" ~ WhiteSpace ~ Expression ~> Ast.Expression.Let
+    "let" ~ WS ~ Ident ~ optWS ~ "=" ~ optWS ~ Expression ~ WS ~ "in" ~ WS ~ Expression ~> Ast.Expression.Let
   }
 
   def IfThenElseExp: Rule1[Ast.Expression.IfThenElse] = rule {
-    "if" ~ optWhiteSpace ~ "(" ~ Expression ~ ")" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "else" ~ WhiteSpace ~ Expression ~> Ast.Expression.IfThenElse
+    "if" ~ optWS ~ "(" ~ Expression ~ ")" ~ WS ~ Expression ~ WS ~ "else" ~ WS ~ Expression ~> Ast.Expression.IfThenElse
   }
 
   def MatchExp: Rule1[Ast.Expression.Match] = rule {
-    "match" ~ WhiteSpace ~ Expression ~ WhiteSpace ~ "with" ~ optWhiteSpace ~ "{" ~ WhiteSpace ~ oneOrMore(MatchRule) ~ "}" ~> Ast.Expression.Match
+    "match" ~ WS ~ Expression ~ WS ~ "with" ~ optWS ~ "{" ~ WS ~ oneOrMore(MatchRule) ~ "}" ~> Ast.Expression.Match
   }
 
   def MatchRule: Rule1[(Ast.Pattern, Ast.Expression)] = rule {
-    "case" ~ WhiteSpace ~ Pattern ~ WhiteSpace ~ "=>" ~ WhiteSpace ~ Expression ~ ";" ~ optWhiteSpace ~> ((p: Ast.Pattern, e: Ast.Expression) => (p, e))
+    "case" ~ WS ~ Pattern ~ WS ~ "=>" ~ WS ~ Expression ~ ";" ~ optWS ~> ((p: Ast.Pattern, e: Ast.Expression) => (p, e))
   }
 
   def CallExp: Rule1[Ast.Expression.AmbiguousCall] = rule {
-    QName ~ "(" ~ zeroOrMore(Expression).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Expression.AmbiguousCall
+    QName ~ "(" ~ zeroOrMore(Expression).separatedBy("," ~ optWS) ~ ")" ~> Ast.Expression.AmbiguousCall
   }
 
   def TupleExp: Rule1[Ast.Expression.Tuple] = rule {
-    "(" ~ oneOrMore(Expression).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Expression.Tuple
+    "(" ~ oneOrMore(Expression).separatedBy("," ~ optWS) ~ ")" ~> Ast.Expression.Tuple
   }
 
   def RecordExp: Rule1[Ast.Expression.Record] = rule {
-    "record" ~ WhiteSpace ~ "{" ~ optWhiteSpace ~ zeroOrMore(RecordKeyValue).separatedBy("," ~ optWhiteSpace) ~ optWhiteSpace ~ "}" ~> Ast.Expression.Record
+    "record" ~ WS ~ "{" ~ optWS ~ zeroOrMore(RecordKeyValue).separatedBy("," ~ optWS) ~ optWS ~ "}" ~> Ast.Expression.Record
   }
 
   private def RecordKeyValue: Rule1[(Ast.Ident, Ast.Expression)] = rule {
-    Ident ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Expression ~> ((k: Ast.Ident, v: Ast.Expression) => (k, v))
+    Ident ~ optWS ~ "=" ~ optWS ~ Expression ~> ((k: Ast.Ident, v: Ast.Expression) => (k, v))
   }
 
   def VariableExp: Rule1[Ast.Expression.AmbiguousName] = rule {
@@ -187,7 +187,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def LambdaExp: Rule1[Ast.Expression.Lambda] = rule {
-    "fn" ~ optWhiteSpace ~ "(" ~ ArgumentList ~ "):" ~ optWhiteSpace ~ Type ~ optWhiteSpace ~ "=" ~ optWhiteSpace ~ Expression ~> Ast.Expression.Lambda
+    "fn" ~ optWS ~ "(" ~ ArgumentList ~ "):" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~> Ast.Expression.Lambda
   }
 
   /** *************************************************************************/
@@ -206,11 +206,11 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def AmbigiousPattern: Rule1[Ast.Pattern.Ambiguous] = rule {
-    QName ~ optional(WhiteSpace ~ Pattern) ~> Ast.Pattern.Ambiguous
+    QName ~ optional(WS ~ Pattern) ~> Ast.Pattern.Ambiguous
   }
 
   def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {
-    "(" ~ oneOrMore(Pattern).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Pattern.Tuple
+    "(" ~ oneOrMore(Pattern).separatedBy("," ~ optWS) ~ ")" ~> Ast.Pattern.Tuple
   }
 
 
@@ -218,22 +218,29 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /** Rules                                                                 ***/
   /** *************************************************************************/
 
+  def ConstraintDeclaration: Rule1[Ast.Declaration.Constraint] = rule {
+    "rule" ~ WS ~ Predicate ~ WS ~ "if" ~ WS ~ RuleBody ~ ";" ~ optWS ~> Ast.Declaration.Constraint
+  }
+
+
+
+
 // TODO
 
   def FactDeclaration: Rule1[Ast.Declaration.Fact] = rule {
-    "fact" ~ WhiteSpace ~ Predicate ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Fact
+    "fact" ~ WS ~ Predicate ~ ";" ~ optWS ~> Ast.Declaration.Fact
   }
 
   def RuleDeclaraction: Rule1[Ast.Declaration.Rule] = rule {
-    "rule" ~ WhiteSpace ~ Predicate ~ WhiteSpace ~ "if" ~ WhiteSpace ~ RuleBody ~ ";" ~ optWhiteSpace ~> Ast.Declaration.Rule
+    "rule" ~ WS ~ Predicate ~ WS ~ "if" ~ WS ~ RuleBody ~ ";" ~ optWS ~> Ast.Declaration.Rule
   }
 
   def RuleBody: Rule1[Seq[Ast.Predicate]] = rule {
-    oneOrMore(Predicate).separatedBy("," ~ optWhiteSpace)
+    oneOrMore(Predicate).separatedBy("," ~ optWS)
   }
 
   def Predicate: Rule1[Ast.Predicate] = rule {
-    Ident ~ WhiteSpace ~ Term ~> Ast.Predicate
+    Ident ~ WS ~ Term ~> Ast.Predicate
   }
 
 
@@ -258,7 +265,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def ApplyTerm: Rule1[Ast.Term.Apply] = rule {
-    QName ~ optWhiteSpace ~ "(" ~ oneOrMore(Term).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Term.Apply
+    QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy("," ~ optWS) ~ ")" ~> Ast.Term.Apply
   }
 
   /** *************************************************************************/
@@ -270,12 +277,12 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   // NB: Associates to the right, but parsed as left-associative.
   def FunctionType: Rule1[Ast.Type] = rule {
-    MapArrowType ~ zeroOrMore(optWhiteSpace ~ "=>" ~ optWhiteSpace ~ MapArrowType ~> Ast.Type.Function)
+    MapArrowType ~ zeroOrMore(optWS ~ "=>" ~ optWS ~ MapArrowType ~> Ast.Type.Function)
   }
 
   // NB: Associates to the right, but parsed as left-associative.
   def MapArrowType: Rule1[Ast.Type] = rule {
-    SimpleType ~ zeroOrMore(optWhiteSpace ~ "->" ~ optWhiteSpace ~ SimpleType ~> Ast.Type.Map)
+    SimpleType ~ zeroOrMore(optWS ~ "->" ~ optWS ~ SimpleType ~> Ast.Type.Map)
   }
 
   def SimpleType: Rule1[Ast.Type] = rule {
@@ -287,7 +294,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def TupleType: Rule1[Ast.Type.Tuple] = rule {
-    "(" ~ oneOrMore(Type).separatedBy("," ~ optWhiteSpace) ~ ")" ~> Ast.Type.Tuple
+    "(" ~ oneOrMore(Type).separatedBy("," ~ optWS) ~ ")" ~> Ast.Type.Tuple
   }
 
   def ListType: Rule1[Ast.Type.List] = rule {
@@ -299,22 +306,22 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def MapType: Rule1[Ast.Type.Map] = rule {
-    "Map" ~ "[" ~ Type ~ "," ~ optWhiteSpace ~ Type ~ "]" ~> Ast.Type.Map
+    "Map" ~ "[" ~ Type ~ "," ~ optWS ~ Type ~ "]" ~> Ast.Type.Map
   }
 
   /** *************************************************************************/
   /** Helpers                                                               ***/
   /** *************************************************************************/
   def ArgumentList: Rule1[Seq[(Ast.Ident, Ast.Type)]] = rule {
-    zeroOrMore(Argument).separatedBy("," ~ optWhiteSpace)
+    zeroOrMore(Argument).separatedBy("," ~ optWS)
   }
 
   def Argument: Rule1[(Ast.Ident, Ast.Type)] = rule {
-    Ident ~ ":" ~ optWhiteSpace ~ Type ~> ((name: Ast.Ident, typ: Ast.Type) => (name, typ))
+    Ident ~ ":" ~ optWS ~ Type ~> ((name: Ast.Ident, typ: Ast.Type) => (name, typ))
   }
 
   def Annotation: Rule1[Ast.Ident] = rule {
-    "@" ~ Ident ~ WhiteSpace
+    "@" ~ Ident ~ WS
   }
 
 
@@ -399,12 +406,16 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //
   /////////////////////////////////////////////////////////////////////////////
-  def WhiteSpace: Rule0 = rule {
+  def WS: Rule0 = rule {
     oneOrMore(" " | "\t" | NewLine | SingleLineComment | MultiLineComment)
   }
 
-  def optWhiteSpace: Rule0 = rule {
-    optional(WhiteSpace)
+  def optWS: Rule0 = rule {
+    optional(WS)
+  }
+
+  def optSC: Rule0 = rule {
+    optWS ~ optional(";") ~ optWS
   }
 
   def NewLine: Rule0 = rule {

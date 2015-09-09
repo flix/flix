@@ -16,6 +16,12 @@ class TestParser extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Constraints                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+
+
+
+  /////////////////////////////////////////////////////////////////////////////
   // Terms                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   test("Parser.Term01") {
@@ -285,37 +291,37 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("Parser.WhiteSpace (1)") {
     val input = " "
-    val result = new Parser(None, input).WhiteSpace.run()
+    val result = new Parser(None, input).WS.run()
     assert(result.isSuccess)
   }
 
   test("Parser.WhiteSpace (2)") {
     val input = "    "
-    val result = new Parser(None, input).WhiteSpace.run()
+    val result = new Parser(None, input).WS.run()
     assert(result.isSuccess)
   }
 
   test("Parser.WhiteSpace (3)") {
     val input = "\t"
-    val result = new Parser(None, input).WhiteSpace.run()
+    val result = new Parser(None, input).WS.run()
     assert(result.isSuccess)
   }
 
   test("Parser.WhiteSpace (4)") {
     val input = "\n\r"
-    val result = new Parser(None, input).WhiteSpace.run()
+    val result = new Parser(None, input).WS.run()
     assert(result.isSuccess)
   }
 
   test("Parser.WhiteSpace (5)") {
     val input = " // comments are also whitespace "
-    val result = new Parser(None, input).WhiteSpace.run()
+    val result = new Parser(None, input).WS.run()
     assert(result.isSuccess)
   }
 
   test("Parser.WhiteSpace (6)") {
     val input = " /* comments are also whitespace */ "
-    val result = new Parser(None, input).WhiteSpace.run()
+    val result = new Parser(None, input).WS.run()
     assert(result.isSuccess)
   }
 
