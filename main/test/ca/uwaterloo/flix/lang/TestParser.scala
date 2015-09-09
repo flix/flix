@@ -122,6 +122,30 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
+  test("Parser.Type.Tuple01") {
+    val input = "(Int)"
+    val result = new Parser(None, input).Type.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Type.Tuple])
+    assertResult(1)(result.get.asInstanceOf[Ast.Type.Tuple].elms.length)
+  }
+
+  test("Parser.Type.Tuple02") {
+    val input = "(Bool, Int)"
+    val result = new Parser(None, input).Type.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Type.Tuple])
+    assertResult(2)(result.get.asInstanceOf[Ast.Type.Tuple].elms.length)
+  }
+
+  test("Parser.Type.Tuple03") {
+    val input = "(Bool, Int, Str)"
+    val result = new Parser(None, input).Type.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Type.Tuple])
+    assertResult(3)(result.get.asInstanceOf[Ast.Type.Tuple].elms.length)
+  }
+
   test("Parser.Type.List01") {
     val input = "List[A]"
     val result = new Parser(None, input).Type.run().get.asInstanceOf[Ast.Type.List]

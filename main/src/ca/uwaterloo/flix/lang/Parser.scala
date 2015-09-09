@@ -232,7 +232,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   def AmbiguousPredicate: Rule1[Ast.AmbiguousPredicate] = rule {
     QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~> Ast.AmbiguousPredicate
   }
-  
+
   /////////////////////////////////////////////////////////////////////////////
   // Terms                                                                   //
   /////////////////////////////////////////////////////////////////////////////
@@ -279,19 +279,19 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def TupleType: Rule1[Ast.Type.Tuple] = rule {
-    "(" ~ oneOrMore(Type).separatedBy("," ~ optWS) ~ ")" ~> Ast.Type.Tuple
+    "(" ~ optWS ~oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~> Ast.Type.Tuple
   }
 
   def ListType: Rule1[Ast.Type.List] = rule {
-    "List" ~ "[" ~ Type ~ "]" ~> Ast.Type.List
+    atomic("List") ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optWS ~> Ast.Type.List
   }
 
   def SetType: Rule1[Ast.Type.Set] = rule {
-    "Set" ~ "[" ~ Type ~ "]" ~> Ast.Type.Set
+    atomic("Set") ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optWS ~> Ast.Type.Set
   }
 
   def MapType: Rule1[Ast.Type.Map] = rule {
-    "Map" ~ "[" ~ Type ~ "," ~ optWS ~ Type ~ "]" ~> Ast.Type.Map
+    atomic("Map") ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "," ~ optWS ~ Type ~ optWS ~ "]" ~ optWS ~> Ast.Type.Map
   }
 
   /** *************************************************************************/

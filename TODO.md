@@ -10,3 +10,5 @@ fiverr
 
 Draw your photo
 fiver
+
+- Decide which generic type should be built-in. (E.g. List, Set, ...)
