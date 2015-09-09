@@ -266,20 +266,35 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     SimpleType ~ zeroOrMore(optWS ~ "->" ~ optWS ~ SimpleType ~> Ast.Type.Function)
   }
 
+  // NB: ParametricType must be parsed before AmbiguousType.
   def SimpleType: Rule1[Ast.Type] = rule {
-    TupleType | ParametricType | AmbiguousType
+    ParametricType | TupleType | AmbiguousType
   }
 
   def AmbiguousType: Rule1[Ast.Type.Ambiguous] = rule {
     QName ~> Ast.Type.Ambiguous
   }
 
-  def TupleType: Rule1[Ast.Type.Tuple] = rule {
-    "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~> Ast.Type.Tuple
-  }
-
   def ParametricType: Rule1[Ast.Type.Parametric] = rule {
     QName ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ optWS ~> Ast.Type.Parametric
+  }
+
+  def TupleType: Rule1[Ast.Type] = {
+    def Unit: Rule1[Ast.Type] = rule {
+      "()" ~ optWS ~> (() => Ast.Type.Unit)
+    }
+
+    def Singleton: Rule1[Ast.Type] = rule {
+      "(" ~ optWS ~ Type ~ optWS ~ ")" ~ optWS
+    }
+
+    def Tuple: Rule1[Ast.Type] = rule {
+      "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~> Ast.Type.Tuple
+    }
+
+    rule {
+      Unit | Singleton | Tuple
+    }
   }
 
   /** *************************************************************************/

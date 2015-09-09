@@ -301,6 +301,11 @@ object Ast {
   object Type {
 
     /**
+     * An AST node that represent the unit type.
+     */
+    case object Unit extends Ast.Type
+
+    /**
      * An AST node that represent a reference to a type.
      */
     case class Ambiguous(name: Ast.QName) extends Ast.Type
