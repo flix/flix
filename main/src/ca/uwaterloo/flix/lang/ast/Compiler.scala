@@ -191,11 +191,11 @@ object Compiler {
       case Type.Int => Type.Int
       case Type.Str => Type.Str
       // Ambiguous
-      case Type.AmbiguousName(Seq("Unit")) => Type.Unit
-      case Type.AmbiguousName(Seq("Bool")) => Type.Bool
-      case Type.AmbiguousName(Seq("Int")) => Type.Int
-      case Type.AmbiguousName(Seq("Str")) => Type.Str
-      case Type.AmbiguousName(name) => lookupType(namespace, ???, env)
+      case Type.Ambiguous(Seq("Unit")) => Type.Unit
+      case Type.Ambiguous(Seq("Bool")) => Type.Bool
+      case Type.Ambiguous(Seq("Int")) => Type.Int
+      case Type.Ambiguous(Seq("Str")) => Type.Str
+      case Type.Ambiguous(name) => lookupType(namespace, ???, env)
 
       // Compound
       case Type.Tag(name) => Type.Tag(name)

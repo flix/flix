@@ -79,6 +79,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     "val" ~ WS ~ Ident ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ ";" ~ optWS ~> Ast.Declaration.Val
   }
 
+  // TODO
   def VariableDeclaration: Rule1[Ast.Declaration.Var] = rule {
     "var" ~ WS ~ Ident ~ ":" ~ optWS ~ Type ~ ";" ~ optWS ~> Ast.Declaration.Var
   }
@@ -266,20 +267,15 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   // NB: Associates to the right, but parsed as left-associative.
   def FunctionType: Rule1[Ast.Type] = rule {
-    MapArrowType ~ zeroOrMore(optWS ~ "=>" ~ optWS ~ MapArrowType ~> Ast.Type.Function)
-  }
-
-  // NB: Associates to the right, but parsed as left-associative.
-  def MapArrowType: Rule1[Ast.Type] = rule {
-    SimpleType ~ zeroOrMore(optWS ~ "->" ~ optWS ~ SimpleType ~> Ast.Type.Map)
+    SimpleType ~ zeroOrMore(optWS ~ "->" ~ optWS ~ SimpleType ~> Ast.Type.Function)
   }
 
   def SimpleType: Rule1[Ast.Type] = rule {
-    TupleType | ListType | SetType | MapType | AmbiguousNameType
+    TupleType | ListType | SetType | MapType | AmbiguousType
   }
 
-  def AmbiguousNameType: Rule1[Ast.Type.AmbiguousName] = rule {
-    QName ~> Ast.Type.AmbiguousName
+  def AmbiguousType: Rule1[Ast.Type.Ambiguous] = rule {
+    QName ~> Ast.Type.Ambiguous
   }
 
   def TupleType: Rule1[Ast.Type.Tuple] = rule {
@@ -301,6 +297,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /** *************************************************************************/
   /** Helpers                                                               ***/
   /** *************************************************************************/
+  // TODO: Can we get rid of these?
   def ArgumentList: Rule1[Seq[(Ast.Ident, Ast.Type)]] = rule {
     zeroOrMore(Argument).separatedBy("," ~ optWS)
   }

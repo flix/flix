@@ -326,7 +326,7 @@ object Ast {
      * An AST node which represents a reference to a named type.
      */
     @Eliminated
-    case class AmbiguousName(name: QName) extends Type
+    case class Ambiguous(name: QName) extends Type
 
     /**
      * An AST node which represents the unit type.

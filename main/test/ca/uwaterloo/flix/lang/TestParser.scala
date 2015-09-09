@@ -120,6 +120,28 @@ class TestParser extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Types                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Parser.Type.List01") {
+    val input = "List[A]"
+    val result = new Parser(None, input).Type.run().get.asInstanceOf[Ast.Type.List]
+    assertResult(Seq("A"))(result.elms.asInstanceOf[Ast.Type.Ambiguous].name.parts)
+  }
+
+  test("Parser.Type.Set01") {
+    val input = "Set[A]"
+    val result = new Parser(None, input).Type.run().get.asInstanceOf[Ast.Type.Set]
+    assertResult(Seq("A"))(result.elms.asInstanceOf[Ast.Type.Ambiguous].name.parts)
+  }
+
+  test("Parser.Type.Map01") {
+    val input = "Map[A, B]"
+    val result = new Parser(None, input).Type.run().get.asInstanceOf[Ast.Type.Map]
+    assertResult(Seq("A"))(result.t1.asInstanceOf[Ast.Type.Ambiguous].name.parts)
+    assertResult(Seq("B"))(result.t2.asInstanceOf[Ast.Type.Ambiguous].name.parts)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Identifiers & Names                                                     //
   /////////////////////////////////////////////////////////////////////////////
   test("Parser.Ident01") {
