@@ -8,6 +8,7 @@ object Resolution {
    *
    *
    * - Resolve proposition vs predicate.
+   * - Resolve named types
    *
    *
    */
