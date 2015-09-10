@@ -216,7 +216,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {
-    "(" ~ oneOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~> Ast.Pattern.Tuple
+    "(" ~ oneOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~> Ast.Pattern.Tuple
   }
 
   /////////////////////////////////////////////////////////////////////////////
