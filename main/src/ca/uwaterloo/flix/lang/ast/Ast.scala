@@ -14,7 +14,7 @@ sealed trait Ast
 // TODO: Ensure that every reference is prefixed with ParsedAst.XYZ
 // TODO: that vs. which
 // TODO: Ensure that @param is documented.
-
+// TODO: Every where QName appears, should it be call ambigi?
 
 object Ast {
 
