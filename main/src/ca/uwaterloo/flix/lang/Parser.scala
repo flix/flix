@@ -107,6 +107,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /** *************************************************************************/
   /** Expressions                                                           ***/
   /** *************************************************************************/
+  // TODO: Rename Exp -> Expression
   def Expression: Rule1[Ast.Expression] = rule {
     InfixExp
   }
