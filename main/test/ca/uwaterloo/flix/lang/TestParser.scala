@@ -62,6 +62,44 @@ class TestParser extends FunSuite {
     assertResult(Seq("foo", "bar", "baz", "plus"))(result.name.parts)
   }
 
+  test("Parser.Expression.AdditiveExp01") {
+    val input = "1 + 2"
+    val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Binary]
+    assertResult(BinaryOperator.Plus)(result.op)
+    assert(result.e1.isInstanceOf[Ast.Expression.Lit])
+    assert(result.e2.isInstanceOf[Ast.Expression.Lit])
+  }
+
+  test("Parser.Expression.AdditiveExp02") {
+    val input = "1 + 2 + 3"
+    val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Binary]
+    assertResult(BinaryOperator.Plus)(result.op)
+    val e1 = result.e1.asInstanceOf[Ast.Expression.Binary]
+    assertResult(BinaryOperator.Plus)(e1.op)
+    assert(e1.e1.isInstanceOf[Ast.Expression.Lit])
+    assert(e1.e2.isInstanceOf[Ast.Expression.Lit])
+    assert(result.e2.isInstanceOf[Ast.Expression.Lit])
+  }
+
+  test("Parser.Expression.AdditiveExp03") {
+    val input = "1 - 2"
+    val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Binary]
+    assertResult(BinaryOperator.Minus)(result.op)
+    assert(result.e1.isInstanceOf[Ast.Expression.Lit])
+    assert(result.e2.isInstanceOf[Ast.Expression.Lit])
+  }
+
+  test("Parser.Expression.AdditiveExp04") {
+    val input = "1 - 2 - 3"
+    val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Binary]
+    assertResult(BinaryOperator.Minus)(result.op)
+    val e1 = result.e1.asInstanceOf[Ast.Expression.Binary]
+    assertResult(BinaryOperator.Minus)(e1.op)
+    assert(e1.e1.isInstanceOf[Ast.Expression.Lit])
+    assert(e1.e2.isInstanceOf[Ast.Expression.Lit])
+    assert(result.e2.isInstanceOf[Ast.Expression.Lit])
+  }
+
   test("Parser.Expression.LiteralExp01") {
     val input = "true"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Lit]
