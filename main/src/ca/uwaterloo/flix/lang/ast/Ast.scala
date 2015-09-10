@@ -202,7 +202,9 @@ object Ast {
     case class Tag(ident: Ast.Ident, e: Ast.Expression) extends Ast.Expression
 
     /**
-     * An AST node which represents a tuple expression.
+     * An AST node that represents a tuple expression.
+     *
+     * @param elms the elements of the tuple.
      */
     case class Tuple(elms: Seq[Ast.Expression]) extends Ast.Expression
 

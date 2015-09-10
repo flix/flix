@@ -58,6 +58,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   // TODO: Use atomic keyword
   // TODO: Tags
+  // TODO: Some issues with when whitespace is consumed...
 
   def Root: Rule1[Ast.Root] = rule {
     optWS ~ zeroOrMore(Declaration) ~ optWS ~ EOI ~> Ast.Root
@@ -160,14 +161,30 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     QName ~ "(" ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~> Ast.Expression.AmbiguousApply
   }
 
-  def TupleExp: Rule1[Ast.Expression.Tuple] = rule {
-    "(" ~ oneOrMore(Expression).separatedBy("," ~ optWS) ~ ")" ~> Ast.Expression.Tuple
+  def TupleExp: Rule1[Ast.Expression] = {
+    def Unit: Rule1[Ast.Expression] = rule {
+      atomic("()") ~> (() => Ast.Expression.Lit(Ast.Literal.Unit))
+    }
+
+    def Singleton: Rule1[Ast.Expression] = rule {
+      "(" ~ optWS ~ Expression ~ optWS ~ ")"
+    }
+
+    def Tuple: Rule1[Ast.Expression] = rule {
+      "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~> Ast.Expression.Tuple
+    }
+
+    rule {
+      Unit | Singleton | Tuple
+    }
   }
 
+  // TODO: Do we need this???
   def RecordExp: Rule1[Ast.Expression.Record] = rule {
     "record" ~ WS ~ "{" ~ optWS ~ zeroOrMore(RecordKeyValue).separatedBy("," ~ optWS) ~ optWS ~ "}" ~> Ast.Expression.Record
   }
 
+  // TODO: Do we need this???
   private def RecordKeyValue: Rule1[(Ast.Ident, Ast.Expression)] = rule {
     Ident ~ optWS ~ "=" ~ optWS ~ Expression ~> ((k: Ast.Ident, v: Ast.Expression) => (k, v))
   }
@@ -274,7 +291,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   def TupleType: Rule1[Ast.Type] = {
     def Unit: Rule1[Ast.Type] = rule {
-      "()" ~ optWS ~> (() => Ast.Type.Unit)
+      atomic("()") ~ optWS ~> (() => Ast.Type.Unit)
     }
 
     def Singleton: Rule1[Ast.Type] = rule {
