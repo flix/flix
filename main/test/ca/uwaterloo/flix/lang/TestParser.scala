@@ -166,6 +166,34 @@ class TestParser extends FunSuite {
     assertResult(3)(l.literal.asInstanceOf[Ast.Literal.Int].literal)
   }
 
+  test("Parser.Expression.CallExp01") {
+    val input = "f()"
+    val result = new Parser(None, input).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Expression.AmbiguousApply])
+  }
+
+  test("Parser.Expression.CallExp02") {
+    val input = "f(1, 2, 3)"
+    val result = new Parser(None, input).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Expression.AmbiguousApply])
+  }
+
+  test("Parser.Expression.CallExp03") {
+    val input = "f(f(1), f(f(2)))"
+    val result = new Parser(None, input).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Expression.AmbiguousApply])
+  }
+
+  test("Parser.Expression.CallExp04") {
+    val input = "foo::bar::baz::f(1, 2, 3)"
+    val result = new Parser(None, input).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Expression.AmbiguousApply])
+  }
+
   test("Parser.Expression.ErrorExp01") {
     val input = "???"
     val result = new Parser(None, input).Expression.run()

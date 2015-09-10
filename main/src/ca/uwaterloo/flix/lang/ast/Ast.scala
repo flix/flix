@@ -138,18 +138,12 @@ object Ast {
     case class AmbiguousName(name: Ast.QName) extends Ast.Expression
 
     /**
-     * An AST node which represents an ambiguous function call.
-     */
-    @Eliminated
-    case class AmbiguousCall(name: Ast.QName, arguments: Seq[Ast.Expression]) extends Ast.Expression
-
-    /**
-     * An AST node which represents a reference to a variable.
+     * An AST node that represents a function call.
      *
-     * Introduced by the compiler.
+     * @param name the ambiguous name of the function.
+     * @param arguments the arguments to the function.
      */
-    @Introduced
-    case class Var(name: String) extends Ast.Expression
+    case class AmbiguousApply(name: Ast.QName, arguments: Seq[Ast.Expression]) extends Ast.Expression
 
     /**
      * An AST node which represents a literal.

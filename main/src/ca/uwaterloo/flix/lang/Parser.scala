@@ -133,7 +133,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def SimpleExpression: Rule1[Ast.Expression] = rule {
-    LiteralExp | LetExp | IfThenElseExp | MatchExp | TupleExp | LambdaExp | CallExp | VariableExp | ErrorExp
+    LiteralExp | LetExp | IfThenElseExp | MatchExp | TupleExp | LambdaExp | ApplyExp | VariableExp | ErrorExp
   }
 
   def LiteralExp: Rule1[Ast.Expression.Lit] = rule {
@@ -156,8 +156,8 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     atomic("case") ~ WS ~ Pattern ~ WS ~ atomic("=>") ~ WS ~ Expression ~ optSC ~> ((p: Ast.Pattern, e: Ast.Expression) => (p, e))
   }
 
-  def CallExp: Rule1[Ast.Expression.AmbiguousCall] = rule {
-    QName ~ "(" ~ zeroOrMore(Expression).separatedBy("," ~ optWS) ~ ")" ~> Ast.Expression.AmbiguousCall
+  def ApplyExp: Rule1[Ast.Expression.AmbiguousApply] = rule {
+    QName ~ "(" ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~> Ast.Expression.AmbiguousApply
   }
 
   def TupleExp: Rule1[Ast.Expression.Tuple] = rule {
