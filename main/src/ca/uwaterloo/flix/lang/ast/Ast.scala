@@ -173,6 +173,10 @@ object Ast {
 
     /**
      * An AST node which represents a let-binding.
+     *
+     * @param ident the identifier to be bound.
+     * @param value the expression whose value the identifier should be bound to.
+     * @param body the expression in which the bound variable is visible.
      */
     case class Let(ident: Ast.Ident, value: Ast.Expression, body: Ast.Expression) extends Ast.Expression
 

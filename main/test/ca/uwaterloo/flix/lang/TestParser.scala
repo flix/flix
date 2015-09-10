@@ -64,6 +64,32 @@ class TestParser extends FunSuite {
     assertResult("foo")(result.literal.asInstanceOf[Ast.Literal.Str].literal)
   }
 
+  test("Parser.Expression.LetExp01") {
+    val input = "let x = 42 in x"
+    val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Let]
+    assertResult("x")(result.ident.name)
+  }
+
+  test("Parser.Expression.LetExp02") {
+    val input = "let x' = f(1, 2, 3) in g(4, 5, 6)"
+    val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Let]
+    assertResult("x'")(result.ident.name)
+  }
+
+  test("Parser.Expression.LetExp03") {
+    val input =
+      """let x = 1 in
+        |let y = 2 in
+        |let z = 3 in
+        |  42""".stripMargin
+    val result = new Parser(None, input).Expression.run()
+    assert(result.isSuccess)
+    val l1 = result.get.asInstanceOf[Ast.Expression.Let]
+    val l2 = l1.body.asInstanceOf[Ast.Expression.Let]
+    val l3 = l2.body.asInstanceOf[Ast.Expression.Let]
+    assertResult("z")(l3.ident.name)
+  }
+
   test("Parser.Expression.ErrorExp01") {
     val input = "???"
     val result = new Parser(None, input).Expression.run()

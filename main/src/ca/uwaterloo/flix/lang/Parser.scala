@@ -140,7 +140,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def LetExp: Rule1[Ast.Expression.Let] = rule {
-    "let" ~ WS ~ Ident ~ optWS ~ "=" ~ optWS ~ Expression ~ WS ~ "in" ~ WS ~ Expression ~> Ast.Expression.Let
+    atomic("let") ~ WS ~ Ident ~ optWS ~ "=" ~ optWS ~ Expression ~ WS ~ atomic("in") ~ WS ~ Expression ~> Ast.Expression.Let
   }
 
   def IfThenElseExp: Rule1[Ast.Expression.IfThenElse] = rule {

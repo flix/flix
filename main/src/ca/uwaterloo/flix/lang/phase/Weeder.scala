@@ -18,6 +18,7 @@ object Weeder {
 
     // - Disallow Ast.Term.Apply in body of rules.
 
+    // TODO: Shadowing?
   }
 
 
