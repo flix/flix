@@ -13,6 +13,8 @@ sealed trait Ast
 // TODO: Consider renaming to ParsedAst
 // TODO: Ensure that every reference is prefixed with ParsedAst.XYZ
 // TODO: that vs. which
+// TODO: Ensure that @param is documented.
+
 
 object Ast {
 
@@ -302,21 +304,31 @@ object Ast {
 
     /**
      * An AST node that represent a reference to a type.
+     *
+     * @param name the ambiguous name.
      */
     case class Ambiguous(name: Ast.QName) extends Ast.Type
 
     /**
      * An AST node that represent a function type.
+     *
+     * @param t1 the type of the domain.
+     * @param t2 the type of the range.
      */
     case class Function(t1: Ast.Type, t2: Ast.Type) extends Ast.Type
 
     /**
      * An AST node that represent a tuple type.
+     *
+     * @param elms the type of the individual elements.
      */
     case class Tuple(elms: Seq[Ast.Type]) extends Ast.Type
 
     /**
      * An AST node that represent a parametric type.
+     *
+     * @param name the ambiguous name.
+     * @param elms the type of the type parameters.
      */
     case class Parametric(name: Ast.QName, elms: Seq[Ast.Type]) extends Ast.Type
 
@@ -344,12 +356,5 @@ object Ast {
    */
   // TODO: Do we really need this?
   final class Eliminated extends StaticAnnotation
-
-  /**
-   * An AST node annotation which documents that the children of the AST node were parsed
-   * from right-to-left, but they should be interpreted from left-to-right.
-   */
-  // TODO: Do we really need this?
-  final class Right2Left extends StaticAnnotation
 
 }
