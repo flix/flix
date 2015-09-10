@@ -46,6 +46,22 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
+  test("Parser.Expression.InfixCall01") {
+    val input = "1 `plus` 2"
+    val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Infix]
+    assert(result.e1.isInstanceOf[Ast.Expression.Lit])
+    assert(result.e2.isInstanceOf[Ast.Expression.Lit])
+    assertResult(Seq("plus"))(result.name.parts)
+  }
+
+  test("Parser.Expression.InfixCall02") {
+    val input = "1 `foo::bar::baz::plus` 2"
+    val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Infix]
+    assert(result.e1.isInstanceOf[Ast.Expression.Lit])
+    assert(result.e2.isInstanceOf[Ast.Expression.Lit])
+    assertResult(Seq("foo", "bar", "baz", "plus"))(result.name.parts)
+  }
+
   test("Parser.Expression.LiteralExp01") {
     val input = "true"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Lit]
@@ -223,6 +239,22 @@ class TestParser extends FunSuite {
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Tuple]
     assertResult(2)(result.elms.size)
   }
+
+  test("Parser.Expression.Var01") {
+    val input = "x"
+    val result = new Parser(None, input).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Expression.AmbiguousVar])
+  }
+
+  test("Parser.Expression.Var02") {
+    val input = "foo::bar::baz::x_y_z''"
+    val result = new Parser(None, input).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Expression.AmbiguousVar])
+  }
+
+  // TODO: Lambda
 
   test("Parser.Expression.ErrorExp01") {
     val input = "???"

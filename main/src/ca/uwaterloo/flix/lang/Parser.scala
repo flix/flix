@@ -113,6 +113,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     InfixExp
   }
 
+  // TODO: What kind of associativity?
   def InfixExp: Rule1[Ast.Expression] = rule {
     LogicalExp ~ optional(optWS ~ "`" ~ QName ~ "`" ~ optWS ~ LogicalExp ~> Ast.Expression.Infix)
   }
@@ -189,12 +190,16 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     Ident ~ optWS ~ "=" ~ optWS ~ Expression ~> ((k: Ast.Ident, v: Ast.Expression) => (k, v))
   }
 
-  def VariableExp: Rule1[Ast.Expression.AmbiguousName] = rule {
-    QName ~> Ast.Expression.AmbiguousName
+  def VariableExp: Rule1[Ast.Expression.AmbiguousVar] = rule {
+    QName ~> Ast.Expression.AmbiguousVar
   }
 
-  def LambdaExp: Rule1[Ast.Expression.Lambda] = rule {
-    "fn" ~ optWS ~ "(" ~ ArgumentList ~ "):" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~> Ast.Expression.Lambda
+  def LambdaExp: Rule1[Ast.Expression.Lambda] = {
+
+
+    rule {
+      "fn" ~ optWS ~ "(" ~ ArgumentList ~ "):" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~> Ast.Expression.Lambda
+    }
   }
 
   def ErrorExp: Rule1[Ast.Expression] = rule {
