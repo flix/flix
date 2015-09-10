@@ -112,7 +112,58 @@ class TestParser extends FunSuite {
   }
 
   test("Parser.Expression.MatchExp01") {
-    // TODO
+    val input =
+      """match 1 with {
+        |  case 2 => 3
+        |}
+      """.stripMargin
+    val result = new Parser(None, input).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Expression.Match])
+  }
+
+  test("Parser.Expression.MatchExp02") {
+    val input =
+      """match 1 with {
+        |  case 2 => 3
+        |  case 4 => 5
+        |}
+      """.stripMargin
+    val result = new Parser(None, input).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Expression.Match])
+  }
+
+  test("Parser.Expression.MatchExp03") {
+    val input =
+      """match 1 with {
+        |  case 2 => match 3 with {
+        |    case 4 => 5
+        |  }
+        |  case 6 => 7
+        |}
+      """.stripMargin
+    val result = new Parser(None, input).Expression.run().get
+    val m1 = result.asInstanceOf[Ast.Expression.Match]
+    val m2 = m1.rules.head._2.asInstanceOf[Ast.Expression.Match]
+    val l = m2.rules.head._2.asInstanceOf[Ast.Expression.Lit]
+    assertResult(5)(l.literal.asInstanceOf[Ast.Literal.Int].literal)
+  }
+
+  test("Parser.Expression.MatchExp04") {
+    val input =
+      """match
+        |  match 1 with {
+        |    case 2 => 3
+        |  } with {
+        |    case 4 => 5
+        |}
+      """.stripMargin
+    val result = new Parser(None, input).Expression.run().get
+    val m1 = result.asInstanceOf[Ast.Expression.Match]
+    val m2 = m1.exp.asInstanceOf[Ast.Expression.Match]
+    val l = m2.rules.head._2.asInstanceOf[Ast.Expression.Lit]
+    assertResult(3)(l.literal.asInstanceOf[Ast.Literal.Int].literal)
   }
 
   test("Parser.Expression.ErrorExp01") {

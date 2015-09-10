@@ -181,12 +181,19 @@ object Ast {
     case class Let(ident: Ast.Ident, value: Ast.Expression, body: Ast.Expression) extends Ast.Expression
 
     /**
-     * An AST node which represents an if-then-else expression.
+     * An AST node that represents an if-then-else expression.
+     *
+     * @param e1 the conditional expression.
+     * @param e2 the consequence expression.
+     * @param e3 the alternative expression.
      */
     case class IfThenElse(e1: Ast.Expression, e2: Ast.Expression, e3: Ast.Expression) extends Ast.Expression
 
     /**
-     * An AST node which represents a match expression.
+     * An AST node that represents a match expression.
+     *
+     * @param exp the match expression.
+     * @param rules the match rules and their bodies.
      */
     case class Match(exp: Ast.Expression, rules: Seq[(Ast.Pattern, Ast.Expression)]) extends Ast.Expression
 
