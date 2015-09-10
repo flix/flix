@@ -90,6 +90,27 @@ class TestParser extends FunSuite {
     assertResult("z")(l3.ident.name)
   }
 
+  test("Parser.Expression.IfThenElseExp01") {
+    val input = "if (1) 2 else 3"
+    val result = new Parser(None, input).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Expression.IfThenElse])
+  }
+
+  test("Parser.Expression.IfThenElseExp02") {
+    val input = "if (f(1, 2, 3)) g(4, 5, 6) else h(7, 8, 9)"
+    val result = new Parser(None, input).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Expression.IfThenElse])
+  }
+
+  test("Parser.Expression.IfThenElseExp03") {
+    val input = "if ((1)) (2) else (3)"
+    val result = new Parser(None, input).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Expression.IfThenElse])
+  }
+
   test("Parser.Expression.ErrorExp01") {
     val input = "???"
     val result = new Parser(None, input).Expression.run()

@@ -144,7 +144,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def IfThenElseExp: Rule1[Ast.Expression.IfThenElse] = rule {
-    "if" ~ optWS ~ "(" ~ Expression ~ ")" ~ WS ~ Expression ~ WS ~ "else" ~ WS ~ Expression ~> Ast.Expression.IfThenElse
+    atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ WS ~ Expression ~ WS ~ atomic("else") ~ WS ~ Expression ~> Ast.Expression.IfThenElse
   }
 
   def MatchExp: Rule1[Ast.Expression.Match] = rule {
