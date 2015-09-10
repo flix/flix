@@ -12,6 +12,7 @@ sealed trait Ast
 
 // TODO: Consider renaming to ParsedAst
 // TODO: Ensure that every reference is prefixed with ParsedAst.XYZ
+// TODO: that vs. which
 
 object Ast {
 
@@ -89,6 +90,7 @@ object Ast {
      * An AST node that represent a rule declaration.
      */
     case class Rule(head: Ast.AmbiguousPredicate, body: Seq[Ast.AmbiguousPredicate]) extends Ast.Declaration
+
   }
 
   /**
@@ -229,29 +231,22 @@ object Ast {
   object Pattern {
 
     /**
-     * An AST node which represents a variable or tagged pattern.
+     * An AST node that represents a wildcard pattern.
      */
-    @Eliminated
-    case class Ambiguous(name: Ast.QName, pattern: Option[Pattern]) extends Ast.Pattern
+    case class Wildcard(location: SourceLocation) extends Ast.Pattern
 
     /**
-     * An AST node which represents a wildcard pattern.
+     * An AST node that represents a variable pattern.
      */
-    case object Wildcard extends Ast.Pattern
+    case class Var(ident: Ast.Ident) extends Ast.Pattern
 
     /**
-     * An AST node which represents a tagged pattern.
-     */
-    @Introduced
-    case class Tag(name: Seq[String], pattern: Ast.Pattern) extends Ast.Pattern
-
-    /**
-     * An AST node which represents a pattern match literal
+     * An AST node that represents a literal pattern.
      */
     case class Lit(literal: Ast.Literal) extends Ast.Pattern
 
     /**
-     * An AST node which represents a tuples pattern.
+     * An AST node that represents a tuple pattern.
      */
     case class Tuple(elms: Seq[Ast.Pattern]) extends Ast.Pattern
 
@@ -326,13 +321,12 @@ object Ast {
     case class Parametric(name: Ast.QName, elms: Seq[Ast.Type]) extends Ast.Type
 
 
-
-
     /**
      * An AST node which represents a tagged type.
      */
     // TODO: Needed in this phase?
     case class Tag(ident: Ast.Ident) extends Ast.Type
+
   }
 
   /**

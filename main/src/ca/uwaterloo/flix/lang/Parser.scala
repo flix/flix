@@ -57,6 +57,7 @@ object Parser {
 class Parser(val path: Option[Path], val input: ParserInput) extends org.parboiled2.Parser {
 
   // TODO: Use atomic keyword
+  // TODO: Tags
 
   def Root: Rule1[Ast.Root] = rule {
     optWS ~ zeroOrMore(Declaration) ~ optWS ~ EOI ~> Ast.Root
@@ -194,29 +195,29 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     "fn" ~ optWS ~ "(" ~ ArgumentList ~ "):" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~> Ast.Expression.Lambda
   }
 
-  /** *************************************************************************/
-  /** Patterns                                                              ***/
-  /** *************************************************************************/
+  /////////////////////////////////////////////////////////////////////////////
+  // Patterns                                                                //
+  /////////////////////////////////////////////////////////////////////////////
+  // NB: LiteralPattern must be parsed before VariablePattern.
   def Pattern: Rule1[Ast.Pattern] = rule {
-    WildcardPattern | LiteralPattern | AmbiguousPattern | TuplePattern
+    WildcardPattern | LiteralPattern | VariablePattern | TuplePattern
   }
 
-  def WildcardPattern: Rule1[Ast.Pattern] = rule {
-    str("_") ~> (() => Ast.Pattern.Wildcard)
+  def WildcardPattern: Rule1[Ast.Pattern.Wildcard] = rule {
+    SourceLocation ~ atomic("_") ~> Ast.Pattern.Wildcard
   }
 
-  def LiteralPattern: Rule1[Ast.Pattern] = rule {
+  def VariablePattern: Rule1[Ast.Pattern.Var] = rule {
+    Ident ~> Ast.Pattern.Var
+  }
+
+  def LiteralPattern: Rule1[Ast.Pattern.Lit] = rule {
     Literal ~> Ast.Pattern.Lit
   }
 
-  def AmbiguousPattern: Rule1[Ast.Pattern.Ambiguous] = rule {
-    QName ~ optional(WS ~ Pattern) ~> Ast.Pattern.Ambiguous
-  }
-
   def TuplePattern: Rule1[Ast.Pattern.Tuple] = rule {
-    "(" ~ oneOrMore(Pattern).separatedBy("," ~ optWS) ~ ")" ~> Ast.Pattern.Tuple
+    "(" ~ oneOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~> Ast.Pattern.Tuple
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Facts and Rules                                                         //
