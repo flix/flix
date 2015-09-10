@@ -149,11 +149,11 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def MatchExp: Rule1[Ast.Expression.Match] = rule {
-    "match" ~ WS ~ Expression ~ WS ~ "with" ~ optWS ~ "{" ~ WS ~ oneOrMore(MatchRule) ~ "}" ~> Ast.Expression.Match
+    atomic("match") ~ WS ~ Expression ~ WS ~ atomic("with") ~ optWS ~ "{" ~ WS ~ oneOrMore(MatchRule) ~ "}" ~> Ast.Expression.Match
   }
 
   def MatchRule: Rule1[(Ast.Pattern, Ast.Expression)] = rule {
-    "case" ~ WS ~ Pattern ~ WS ~ "=>" ~ WS ~ Expression ~ optSC ~> ((p: Ast.Pattern, e: Ast.Expression) => (p, e))
+    atomic("case") ~ WS ~ Pattern ~ WS ~ atomic("=>") ~ WS ~ Expression ~ optSC ~> ((p: Ast.Pattern, e: Ast.Expression) => (p, e))
   }
 
   def CallExp: Rule1[Ast.Expression.AmbiguousCall] = rule {
