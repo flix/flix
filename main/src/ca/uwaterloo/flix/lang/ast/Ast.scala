@@ -204,24 +204,15 @@ object Ast {
     /**
      * An AST node which represents a record expression.
      */
+    // TODO: Needed?
     case class Record(elms: Seq[(Ast.Ident, Ast.Expression)]) extends Ast.Expression
 
     /**
-     * An AST node which represents a set expression.
-     */
-    case class Set(elms: Seq[Ast.Expression]) extends Ast.Expression
-
-    /**
-     * An AST node which represents a map expression.
-     */
-    case class Map(elms: Seq[(Ast.Expression, Ast.Expression)]) extends Ast.Expression
-
-    /**
-     * An AST node which represents an error expression.
+     * An AST node that represents an error expression.
      *
-     * Evaluating an error expression always results in a runtime error.
+     * @param location the source location where the error expression occurs.
      */
-    case object Error extends Ast.Expression
+    case class Error(location: SourceLocation) extends Ast.Expression
 
   }
 

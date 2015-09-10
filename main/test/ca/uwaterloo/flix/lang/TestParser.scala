@@ -44,6 +44,34 @@ class TestParser extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Expressions                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Parser.Expression.LiteralExp01") {
+    val input = "true"
+    val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Lit]
+    assertResult(true)(result.literal.asInstanceOf[Ast.Literal.Bool].literal)
+  }
+
+  test("Parser.Expression.LiteralExp02") {
+    val input = "42"
+    val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Lit]
+    assertResult(42)(result.literal.asInstanceOf[Ast.Literal.Int].literal)
+  }
+
+  test("Parser.Expression.LiteralExp03") {
+    val input = "\"foo\""
+    val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Lit]
+    assertResult("foo")(result.literal.asInstanceOf[Ast.Literal.Str].literal)
+  }
+
+  test("Parser.Expression.ErrorExp01") {
+    val input = "???"
+    val result = new Parser(None, input).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[Ast.Expression.Error])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
   /////////////////////////////////////////////////////////////////////////////
   test("Parser.Pattern01") {

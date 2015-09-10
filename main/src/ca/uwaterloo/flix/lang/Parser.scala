@@ -132,27 +132,11 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def SimpleExpression: Rule1[Ast.Expression] = rule {
-    LiteralExp | LetExp | IfThenElseExp | MatchExp | TupleExp | MapExp | SetExp | LambdaExp | CallExp | VariableExp | ErrorExp
+    LiteralExp | LetExp | IfThenElseExp | MatchExp | TupleExp | LambdaExp | CallExp | VariableExp | ErrorExp
   }
 
   def LiteralExp: Rule1[Ast.Expression.Lit] = rule {
     Literal ~> Ast.Expression.Lit
-  }
-
-  def SetExp: Rule1[Ast.Expression.Set] = rule {
-    "{" ~ optWS ~ oneOrMore(Expression).separatedBy("," ~ optWS) ~ optWS ~ "}" ~> Ast.Expression.Set
-  }
-
-  def MapExp: Rule1[Ast.Expression.Map] = rule {
-    "{" ~ optWS ~ oneOrMore(MapKeyValue).separatedBy("," ~ optWS) ~ optWS ~ "}" ~> Ast.Expression.Map
-  }
-
-  private def MapKeyValue: Rule1[(Ast.Expression, Ast.Expression)] = rule {
-    Expression ~ optWS ~ "->" ~ optWS ~ Expression ~> ((e1: Ast.Expression, e2: Ast.Expression) => (e1, e2))
-  }
-
-  def ErrorExp: Rule1[Ast.Expression] = rule {
-    str("???") ~> (() => Ast.Expression.Error)
   }
 
   def LetExp: Rule1[Ast.Expression.Let] = rule {
@@ -193,6 +177,10 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   def LambdaExp: Rule1[Ast.Expression.Lambda] = rule {
     "fn" ~ optWS ~ "(" ~ ArgumentList ~ "):" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~> Ast.Expression.Lambda
+  }
+
+  def ErrorExp: Rule1[Ast.Expression] = rule {
+    SourceLocation ~ atomic("???") ~> Ast.Expression.Error
   }
 
   /////////////////////////////////////////////////////////////////////////////
