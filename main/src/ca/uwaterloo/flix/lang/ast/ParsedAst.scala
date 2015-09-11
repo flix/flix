@@ -1,30 +1,25 @@
 package ca.uwaterloo.flix.lang.ast
 
-import ca.uwaterloo.flix.lang.SourceLocation
-
-import scala.annotation.StaticAnnotation
 import scala.collection.immutable.Seq
 
 /**
  * The type of all Ast nodes.
  */
-sealed trait Ast
+sealed trait ParsedAst
 
-// TODO: Consider renaming to ParsedAst
-// TODO: Ensure that every reference is prefixed with ParsedAst.XYZ
 // TODO: that vs. which
 // TODO: Ensure that @param is documented.
 // TODO: Every where QName appears, should it be call ambigi?
 // TODO: Consider order
 
-object Ast {
+object ParsedAst {
 
   /**
    * The Ast root node.
    *
    * At the highest level an Ast is a sequence of declarations.
    */
-  case class Root(declarations: Seq[Ast.Declaration]) extends Ast
+  case class Root(declarations: Seq[ParsedAst.Declaration]) extends ParsedAst
 
   /**
    * An AST node that represent an identifier.
@@ -32,7 +27,7 @@ object Ast {
    * @param name the identifier.
    * @param location the source location of the identifier.
    */
-  case class Ident(name: String, location: SourceLocation) extends Ast
+  case class Ident(name: String, location: SourceLocation) extends ParsedAst
 
   /**
    * An AST node that represents a qualified name.
@@ -40,59 +35,59 @@ object Ast {
    * @param parts the name parts.
    * @param location the source location of the first name part.
    */
-  case class QName(parts: Seq[String], location: SourceLocation) extends Ast
+  case class QName(parts: Seq[String], location: SourceLocation) extends ParsedAst
 
   /**
    * A common super-type for AST nodes which represent declarations.
    */
-  sealed trait Declaration extends Ast
+  sealed trait Declaration extends ParsedAst
 
   object Declaration {
 
     /**
      * An AST node which represents a namespace declaration.
      */
-    case class Namespace(name: QName, body: Seq[Ast.Declaration]) extends Ast.Declaration
+    case class Namespace(name: QName, body: Seq[ParsedAst.Declaration]) extends ParsedAst.Declaration
 
     /**
      * An AST node which represents a type declaration.
      */
-    case class Tpe(ident: Ast.Ident, typ: Type) extends Ast.Declaration
+    case class Tpe(ident: ParsedAst.Ident, typ: Type) extends ParsedAst.Declaration
 
     /**
      * An AST node which represents a enum declaration.
      */
-    case class Enum(ident: Ast.Ident, body: Seq[Ast.Type.Tag]) extends Ast.Declaration
+    case class Enum(ident: ParsedAst.Ident, body: Seq[ParsedAst.Type.Tag]) extends ParsedAst.Declaration
 
     /**
      * An AST node which represents a value declaration.
      */
-    case class Val(ident: Ast.Ident, tpe: Ast.Type, exp: Ast.Expression) extends Ast.Declaration
+    case class Val(ident: ParsedAst.Ident, tpe: ParsedAst.Type, exp: ParsedAst.Expression) extends ParsedAst.Declaration
 
     /**
      * An AST node which represents a variable declaration.
      */
-    case class Var(ident: Ast.Ident, tpe: Ast.Type) extends Ast.Declaration
+    case class Var(ident: ParsedAst.Ident, tpe: ParsedAst.Type) extends ParsedAst.Declaration
 
     /**
      * An AST node which represents a function declaration.
      */
-    case class Fun(annotations: Seq[Ast.Ident], ident: Ast.Ident, arguments: Seq[(Ast.Ident, Ast.Type)], typ: Ast.Type, body: Ast.Expression) extends Ast.Declaration
+    case class Fun(annotations: Seq[ParsedAst.Ident], ident: ParsedAst.Ident, arguments: Seq[(ParsedAst.Ident, ParsedAst.Type)], typ: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Declaration
 
     /**
      * An AST node which represents a lattice declaration.
      */
-    case class Lattice(ident: Ast.Ident, record: Ast.Expression) extends Ast.Declaration
+    case class Lattice(ident: ParsedAst.Ident, record: ParsedAst.Expression) extends ParsedAst.Declaration
 
     /**
      * An AST node that represents a fact declaration.
      */
-    case class Fact(head: Ast.AmbiguousPredicate) extends Ast.Declaration
+    case class Fact(head: ParsedAst.AmbiguousPredicate) extends ParsedAst.Declaration
 
     /**
      * An AST node that represent a rule declaration.
      */
-    case class Rule(head: Ast.AmbiguousPredicate, body: Seq[Ast.AmbiguousPredicate]) extends Ast.Declaration
+    case class Rule(head: ParsedAst.AmbiguousPredicate, body: Seq[ParsedAst.AmbiguousPredicate]) extends ParsedAst.Declaration
 
   }
 
@@ -106,29 +101,29 @@ object Ast {
     /**
      * An AST node which represents the unit literal.
      */
-    case object Unit extends Ast.Literal
+    case object Unit extends ParsedAst.Literal
 
     /**
      * An AST node which represents a boolean literal.
      */
-    case class Bool(literal: scala.Boolean) extends Ast.Literal
+    case class Bool(literal: scala.Boolean) extends ParsedAst.Literal
 
     /**
      * An AST node which represents an integer literal.
      */
-    case class Int(literal: scala.Int) extends Ast.Literal
+    case class Int(literal: scala.Int) extends ParsedAst.Literal
 
     /**
      * An AST node which represents a string literal.
      */
-    case class Str(literal: java.lang.String) extends Ast.Literal
+    case class Str(literal: java.lang.String) extends ParsedAst.Literal
 
   }
 
   /**
    * AST nodes for expressions.
    */
-  sealed trait Expression extends Ast
+  sealed trait Expression extends ParsedAst
 
   object Expression {
 
@@ -137,7 +132,7 @@ object Ast {
      *
      * @param name the ambiguous name.
      */
-    case class AmbiguousVar(name: Ast.QName) extends Ast.Expression
+    case class AmbiguousVar(name: ParsedAst.QName) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a function application.
@@ -145,14 +140,14 @@ object Ast {
      * @param name the unresolved name of the function.
      * @param arguments the arguments to the function.
      */
-    case class AmbiguousApply(name: Ast.QName, arguments: Seq[Ast.Expression]) extends Ast.Expression
+    case class AmbiguousApply(name: ParsedAst.QName, arguments: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a literal.
      *
      * @param literal the literal.
      */
-    case class Lit(literal: Ast.Literal) extends Ast.Expression
+    case class Lit(literal: ParsedAst.Literal) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a lambda expression.
@@ -161,7 +156,7 @@ object Ast {
      * @param tpe the return type.
      * @param body the body expression of the lambda.
      */
-    case class Lambda(formals: Seq[(Ast.Ident, Type)], tpe: Ast.Type, body: Ast.Expression) extends Ast.Expression
+    case class Lambda(formals: Seq[(ParsedAst.Ident, Type)], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents unary expressions.
@@ -169,7 +164,7 @@ object Ast {
      * @param op the unary operator.
      * @param e the expression.   
      */
-    case class Unary(op: UnaryOperator, e: Ast.Expression) extends Ast.Expression
+    case class Unary(op: UnaryOperator, e: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents binary expressions.
@@ -178,7 +173,7 @@ object Ast {
      * @param op the binary operator.
      * @param e2 the right expression.
      */
-    case class Binary(e1: Ast.Expression, op: BinaryOperator, e2: Ast.Expression) extends Ast.Expression
+    case class Binary(e1: ParsedAst.Expression, op: BinaryOperator, e2: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a let-binding.
@@ -187,7 +182,7 @@ object Ast {
      * @param value the expression whose value the identifier should be bound to.
      * @param body the expression in which the bound variable is visible.
      */
-    case class Let(ident: Ast.Ident, value: Ast.Expression, body: Ast.Expression) extends Ast.Expression
+    case class Let(ident: ParsedAst.Ident, value: ParsedAst.Expression, body: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents an if-then-else expression.
@@ -196,7 +191,7 @@ object Ast {
      * @param e2 the consequence expression.
      * @param e3 the alternative expression.
      */
-    case class IfThenElse(e1: Ast.Expression, e2: Ast.Expression, e3: Ast.Expression) extends Ast.Expression
+    case class IfThenElse(e1: ParsedAst.Expression, e2: ParsedAst.Expression, e3: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a match expression.
@@ -204,7 +199,7 @@ object Ast {
      * @param exp the match expression.
      * @param rules the match rules and their bodies.
      */
-    case class Match(exp: Ast.Expression, rules: Seq[(Ast.Pattern, Ast.Expression)]) extends Ast.Expression
+    case class Match(exp: ParsedAst.Expression, rules: Seq[(ParsedAst.Pattern, ParsedAst.Expression)]) extends ParsedAst.Expression
 
     /**
      * An AST node that represents an infix function call.
@@ -213,7 +208,7 @@ object Ast {
      * @param name the ambiguous name of the function.
      * @param e2 the second argument expression.
      */
-    case class Infix(e1: Ast.Expression, name: Ast.QName, e2: Ast.Expression) extends Ast.Expression
+    case class Infix(e1: ParsedAst.Expression, name: ParsedAst.QName, e2: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a tagged expression.
@@ -221,14 +216,14 @@ object Ast {
      * @param name the unresolved name of the tag.
      * @param e the nested expression.
      */
-    case class Tag(name: Ast.QName, e: Ast.Expression) extends Ast.Expression
+    case class Tag(name: ParsedAst.QName, e: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a tuple expression.
      *
      * @param elms the elements of the tuple.
      */
-    case class Tuple(elms: Seq[Ast.Expression]) extends Ast.Expression
+    case class Tuple(elms: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
 
     /**
      * An AST node that ascribe a type to an expression.
@@ -236,100 +231,100 @@ object Ast {
      * @param e the expression.
      * @param tpe the ascribed type.
      */
-    case class Ascribe(e: Ast.Expression, tpe: Ast.Type) extends Ast.Expression
+    case class Ascribe(e: ParsedAst.Expression, tpe: ParsedAst.Type) extends ParsedAst.Expression
 
     /**
      * An AST node that represents an error expression.
      *
      * @param location the source location where the error expression occurs.
      */
-    case class Error(location: SourceLocation) extends Ast.Expression
+    case class Error(location: SourceLocation) extends ParsedAst.Expression
 
   }
 
   /**
    * A common super-type for AST nodes which represent patterns.
    */
-  sealed trait Pattern extends Ast
+  sealed trait Pattern extends ParsedAst
 
   object Pattern {
 
     /**
      * An AST node that represents a wildcard pattern.
      */
-    case class Wildcard(location: SourceLocation) extends Ast.Pattern
+    case class Wildcard(location: SourceLocation) extends ParsedAst.Pattern
 
     /**
      * An AST node that represents a variable pattern.
      */
-    case class Var(ident: Ast.Ident) extends Ast.Pattern
+    case class Var(ident: ParsedAst.Ident) extends ParsedAst.Pattern
 
     /**
      * An AST node that represents a literal pattern.
      */
-    case class Lit(literal: Ast.Literal) extends Ast.Pattern
+    case class Lit(literal: ParsedAst.Literal) extends ParsedAst.Pattern
 
     /**
      * An AST node that represents a tuple pattern.
      */
-    case class Tuple(elms: Seq[Ast.Pattern]) extends Ast.Pattern
+    case class Tuple(elms: Seq[ParsedAst.Pattern]) extends ParsedAst.Pattern
 
   }
 
   /**
    * An AST node that represent either a proposition or a predicate.
    */
-  case class AmbiguousPredicate(name: Ast.QName, terms: Seq[Ast.Term]) extends Pattern
+  case class AmbiguousPredicate(name: ParsedAst.QName, terms: Seq[ParsedAst.Term]) extends Pattern
 
   /**
    * A common super-type for AST that represent terms.
    *
    * A term is either a wildcard, variable, literal or a function call.
    */
-  sealed trait Term extends Ast
+  sealed trait Term extends ParsedAst
 
   object Term {
 
     /**
      * An AST node that represent a wildcard variable term.
      */
-    case class Wildcard(location: SourceLocation) extends Ast.Term
+    case class Wildcard(location: SourceLocation) extends ParsedAst.Term
 
     /**
      * An AST node that represent a variable term.
      */
-    case class Var(ident: Ast.Ident) extends Ast.Term
+    case class Var(ident: ParsedAst.Ident) extends ParsedAst.Term
 
     /**
      * An AST node that represent a literal term.
      */
-    case class Lit(literal: Ast.Literal) extends Ast.Term
+    case class Lit(literal: ParsedAst.Literal) extends ParsedAst.Term
 
     /**
      * An AST node that represent a function call term.
      */
-    case class Apply(name: QName, arguments: Seq[Ast.Term]) extends Ast.Term
+    case class Apply(name: QName, arguments: Seq[ParsedAst.Term]) extends ParsedAst.Term
 
   }
 
   /**
    * A common super-type for AST nodes that represent types.
    */
-  sealed trait Type extends Ast
+  sealed trait Type extends ParsedAst
 
   object Type {
 
     /**
      * An AST node that represent the unit type.
      */
-    case object Unit extends Ast.Type
+    case object Unit extends ParsedAst.Type
 
     /**
      * An AST node that represent a reference to a type.
      *
      * @param name the ambiguous name.
      */
-    case class Ambiguous(name: Ast.QName) extends Ast.Type
+    case class Ambiguous(name: ParsedAst.QName) extends ParsedAst.Type
 
     /**
      * An AST node that represent a function type.
@@ -337,14 +332,14 @@ object Ast {
      * @param t1 the type of the domain.
      * @param t2 the type of the range.
      */
-    case class Function(t1: Ast.Type, t2: Ast.Type) extends Ast.Type
+    case class Function(t1: ParsedAst.Type, t2: ParsedAst.Type) extends ParsedAst.Type
 
     /**
      * An AST node that represent a tuple type.
      *
      * @param elms the type of the individual elements.
      */
-    case class Tuple(elms: Seq[Ast.Type]) extends Ast.Type
+    case class Tuple(elms: Seq[ParsedAst.Type]) extends ParsedAst.Type
 
     /**
      * An AST node that represent a parametric type.
@@ -352,14 +347,14 @@ object Ast {
      * @param name the ambiguous name.
      * @param elms the type of the type parameters.
      */
-    case class Parametric(name: Ast.QName, elms: Seq[Ast.Type]) extends Ast.Type
+    case class Parametric(name: ParsedAst.QName, elms: Seq[ParsedAst.Type]) extends ParsedAst.Type
 
 
     /**
      * An AST node which represents a tagged type.
      */
     // TODO: Needed in this phase?
-    case class Tag(ident: Ast.Ident) extends Ast.Type
+    case class Tag(ident: ParsedAst.Ident) extends ParsedAst.Type
 
   }
 

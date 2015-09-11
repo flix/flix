@@ -30,9 +30,9 @@ namespace ParityAnalysis {
     };
 
     // the lattice is defined as a record:
-    lat Parity = record {
-        bot = Bot, leq = leq, lub = lub
-    };
+//    lat Parity = record {
+//        bot = Bot, leq = leq, lub = lub
+//    };
 
     // NB: Notice that the "Parity" name is overloaded;
     // it is used both as the name of the type of the enum

@@ -1,6 +1,13 @@
-package ca.uwaterloo.flix.lang
+package ca.uwaterloo.flix.lang.ast
 
 import java.nio.file.Path
+
+/**
+ * Companion object for the [[SourceLocation]] class.
+ */
+object SourceLocation {
+
+}
 
 /**
  * Represents a physical location in a source.
