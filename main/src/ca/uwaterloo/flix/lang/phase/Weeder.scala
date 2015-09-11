@@ -15,6 +15,8 @@ object Weeder {
     // - Duplicate variable in pattern.
     // - Duplicate variable in function argument. lambda/def
     // - Duplicate tag in enum
+    // - duplicate name in relation
+
 
     // - Disallow Ast.Term.Apply in body of rules.
   }

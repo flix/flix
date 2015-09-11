@@ -12,7 +12,7 @@ import scala.collection.immutable.Seq
 // TODO: Ensure that seperatedBy allows for optWS "," optWS
 
 /**
- * A PEG parser for the Flix programming language.
+ * A parser for the Flix language.
  */
 class Parser(val path: Option[Path], val input: ParserInput) extends org.parboiled2.Parser {
 
@@ -25,7 +25,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   // NB: RuleDeclaration must be parsed before FactDeclaration.
   def Declaration: Rule1[ParsedAst.Declaration] = rule {
-    NamespaceDeclaration | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | EnumDeclaration | RuleDeclaration | FactDeclaration
+    NamespaceDeclaration | TypeDeclaration | RelationDeclaration | ValueDeclaration | FunctionDeclaration | EnumDeclaration | RuleDeclaration | FactDeclaration
   }
 
   def NamespaceDeclaration: Rule1[ParsedAst.Declaration.Namespace] = rule {
@@ -63,13 +63,24 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     }
   }
 
+  // TODO
   //def LatticeDeclaration: Rule1[Ast.Declaration.Lattice] = rule {
   //   "lat" ~ WS ~ Ident ~ optWS ~ "=" ~ optWS ~ RecordExp ~ ";" ~ optWS ~> Ast.Declaration.Lattice
   // }
 
-  // TODO
-  def VariableDeclaration: Rule1[ParsedAst.Declaration.Var] = rule {
-    "var" ~ WS ~ Ident ~ ":" ~ optWS ~ Type ~ ";" ~ optWS ~> ParsedAst.Declaration.Var
+
+  def RelationDeclaration: Rule1[ParsedAst.Declaration.Relation] = {
+    def Attribute: Rule1[(ParsedAst.Ident, ParsedAst.Type)] = rule {
+      Ident ~ optWS ~ ":" ~ optWS ~ Type ~> ((ident: ParsedAst.Ident, tpe: ParsedAst.Type) => (ident, tpe))
+    }
+
+    def Attributes: Rule1[Seq[(ParsedAst.Ident, ParsedAst.Type)]] = rule {
+      oneOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
+    }
+
+    rule {
+      atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ optSC ~> ParsedAst.Declaration.Relation
+    }
   }
 
   /** *************************************************************************/

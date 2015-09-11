@@ -102,4 +102,6 @@ namespace ParityAnalysis {
     // we abstract integers into the parity domain by using modulo.
     def lift(i: Int): Parity = if (i % 2 == 0) Even else Odd;
 
+    rel VarPointsTo(variable: Int, value: Parity);
+
 };

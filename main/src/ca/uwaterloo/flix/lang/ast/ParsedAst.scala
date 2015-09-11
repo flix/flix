@@ -10,6 +10,7 @@ sealed trait ParsedAst
 // TODO: that vs. which
 // TODO: Ensure that @param is documented.
 // TODO: Consider order
+// TODO: Long or short names?
 
 object ParsedAst {
 
@@ -88,9 +89,12 @@ object ParsedAst {
     case class Enum(ident: ParsedAst.Ident, body: Seq[ParsedAst.Type.Tag]) extends ParsedAst.Declaration
 
     /**
-     * An AST node which represents a variable declaration.
+     * An AST that represent a relation declaration.
+     *
+     * @param ident the name of the relation.
+     * @param attributes the name and type of the attributes.
      */
-    case class Var(ident: ParsedAst.Ident, tpe: ParsedAst.Type) extends ParsedAst.Declaration
+    case class Relation(ident: ParsedAst.Ident, attributes: Seq[(ParsedAst.Ident, ParsedAst.Type)]) extends ParsedAst.Declaration
 
     /**
      * An AST node which represents a lattice declaration.

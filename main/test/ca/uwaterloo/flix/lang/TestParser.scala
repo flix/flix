@@ -113,9 +113,23 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Declaration.Enum])
   }
 
+  test("Parser.Declaration.Relation01") {
+    val input = "rel A(b: B)"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Relation])
+  }
+
+  test("Parser.Declaration.Relation02") {
+    val input = "rel A(b: B, c: C, d: D)"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Relation])
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
+  // TODO: Check up on associativity.
+
   test("Parser.Expression.LogicalExp01") {
     val input = "true && false"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
