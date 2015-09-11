@@ -135,7 +135,11 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def UnaryExp: Rule1[Ast.Expression] = rule {
-    (UnaryOp ~ optWS ~ UnaryExp ~> Ast.Expression.Unary) | SimpleExpression
+    (UnaryOp ~ optWS ~ UnaryExp ~> Ast.Expression.Unary) | AscribeExp
+  }
+
+  def AscribeExp: Rule1[Ast.Expression] = rule {
+    SimpleExpression ~ optWS ~ ":" ~ optWS ~ Type ~> Ast.Expression.Ascribe | SimpleExpression
   }
 
   def SimpleExpression: Rule1[Ast.Expression] = rule {

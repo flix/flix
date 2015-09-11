@@ -222,6 +222,14 @@ object Ast {
     case class Record(elms: Seq[(Ast.Ident, Ast.Expression)]) extends Ast.Expression
 
     /**
+     * An AST node that ascribe a type to an expression.
+     *
+     * @param e the expression.
+     * @param tpe the ascribed type.
+     */
+    case class Ascribe(e: Ast.Expression, tpe: Ast.Type) extends Ast.Expression
+
+    /**
      * An AST node that represents an error expression.
      *
      * @param location the source location where the error expression occurs.

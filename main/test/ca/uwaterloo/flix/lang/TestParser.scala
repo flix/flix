@@ -188,6 +188,18 @@ class TestParser extends FunSuite {
     assertResult(UnaryOperator.Not)(result.op)
   }
 
+  test("Parser.Expression.Ascribe01") {
+    val input = "true: Bool"
+    val result = new Parser(None, input).Expression.run().get
+    assert(result.isInstanceOf[Ast.Expression.Ascribe])
+  }
+
+  test("Parser.Expression.Ascribe02") {
+    val input = "x: Bool -> Int"
+    val result = new Parser(None, input).Expression.run().get
+    assert(result.isInstanceOf[Ast.Expression.Ascribe])
+  }
+
   test("Parser.Expression.LiteralExp01") {
     val input = "true"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Lit]
