@@ -33,11 +33,11 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def TypeDeclaration: Rule1[ParsedAst.Declaration.Tpe] = rule {
-    "type" ~ WS ~ Ident ~ optWS ~ "=" ~ optWS ~ Type ~ ";" ~ optWS ~> ParsedAst.Declaration.Tpe
+    atomic("type") ~ WS ~ Ident ~ optWS ~ "=" ~ optWS ~ Type ~ optSC ~> ParsedAst.Declaration.Tpe
   }
 
   def ValueDeclaration: Rule1[ParsedAst.Declaration.Val] = rule {
-    "val" ~ WS ~ Ident ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ ";" ~ optWS ~> ParsedAst.Declaration.Val
+    atomic("val") ~ WS ~ Ident ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Declaration.Val
   }
 
   // TODO
@@ -46,18 +46,18 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def FunctionDeclaration: Rule1[ParsedAst.Declaration.Fun] = rule {
-    zeroOrMore(Annotation) ~ "def" ~ WS ~ Ident ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ ";" ~ optWS ~> ParsedAst.Declaration.Fun
+    "def" ~ WS ~ Ident ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ ";" ~ optWS ~> ParsedAst.Declaration.Fun
   }
 
-  def EnumDeclaration: Rule1[ParsedAst.Declaration.Enum] = rule {
-    "enum" ~ WS ~ Ident ~ optWS ~ "{" ~ optWS ~ EnumBody ~ optWS ~ "}" ~ optWS ~ ";" ~ optWS ~> ParsedAst.Declaration.Enum
-  }
+  def EnumDeclaration: Rule1[ParsedAst.Declaration.Enum] = {
+    def EnumBody: Rule1[Seq[ParsedAst.Type.Tag]] = rule {
+      oneOrMore("case" ~ WS ~ Ident ~> ParsedAst.Type.Tag).separatedBy("," ~ optWS)
+    }
 
-  def EnumBody: Rule1[Seq[ParsedAst.Type.Tag]] = rule {
-    oneOrMore("case" ~ WS ~ Ident ~> ParsedAst.Type.Tag).separatedBy("," ~ optWS)
+    rule {
+      "enum" ~ WS ~ Ident ~ optWS ~ "{" ~ optWS ~ EnumBody ~ optWS ~ "}" ~ optWS ~ ";" ~ optWS ~> ParsedAst.Declaration.Enum
+    }
   }
-
-  // TODO: Use separate thing for tags.
 
   //def LatticeDeclaration: Rule1[Ast.Declaration.Lattice] = rule {
   //   "lat" ~ WS ~ Ident ~ optWS ~ "=" ~ optWS ~ RecordExp ~ ";" ~ optWS ~> Ast.Declaration.Lattice
@@ -276,11 +276,6 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   def Argument: Rule1[(ParsedAst.Ident, ParsedAst.Type)] = rule {
     Ident ~ ":" ~ optWS ~ Type ~> ((name: ParsedAst.Ident, typ: ParsedAst.Type) => (name, typ))
   }
-
-  def Annotation: Rule1[ParsedAst.Ident] = rule {
-    "@" ~ Ident ~ WS
-  }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Identifiers & Names                                                     //

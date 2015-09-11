@@ -44,24 +44,35 @@ object ParsedAst {
   object Declaration {
 
     /**
-     * An AST node which represents a namespace declaration.
+     * An AST node that represents a namespace declaration.
+     *
+     * @param name the name of the namespace.
+     * @param body the nested declarations.
      */
     case class Namespace(name: ParsedAst.QName, body: Seq[ParsedAst.Declaration]) extends ParsedAst.Declaration
 
     /**
-     * An AST node which represents a type declaration.
+     * An AST node that represent a type alias.
+     *
+     * @param ident the name of the alias.
+     * @param tpe the type of the alias.
      */
-    case class Tpe(ident: ParsedAst.Ident, typ: Type) extends ParsedAst.Declaration
+    // NB: This class is called `Tpe` since the name `Type` causes problems with the Scala compiler/shapeless.
+    case class Tpe(ident: ParsedAst.Ident, tpe: ParsedAst.Type) extends ParsedAst.Declaration
+
+    /**
+     * An AST node that represents a (constant) value declaration.
+     *
+     * @param ident the name of the value.
+     * @param tpe the declared type of the value.
+     * @param e the expression.
+     */
+    case class Val(ident: ParsedAst.Ident, tpe: ParsedAst.Type, e: ParsedAst.Expression) extends ParsedAst.Declaration
 
     /**
      * An AST node which represents a enum declaration.
      */
     case class Enum(ident: ParsedAst.Ident, body: Seq[ParsedAst.Type.Tag]) extends ParsedAst.Declaration
-
-    /**
-     * An AST node which represents a value declaration.
-     */
-    case class Val(ident: ParsedAst.Ident, tpe: ParsedAst.Type, exp: ParsedAst.Expression) extends ParsedAst.Declaration
 
     /**
      * An AST node which represents a variable declaration.
@@ -71,7 +82,7 @@ object ParsedAst {
     /**
      * An AST node which represents a function declaration.
      */
-    case class Fun(annotations: Seq[ParsedAst.Ident], ident: ParsedAst.Ident, args: Seq[(ParsedAst.Ident, ParsedAst.Type)], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Declaration
+    case class Fun(ident: ParsedAst.Ident, args: Seq[(ParsedAst.Ident, ParsedAst.Type)], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Declaration
 
     /**
      * An AST node which represents a lattice declaration.
@@ -80,11 +91,16 @@ object ParsedAst {
 
     /**
      * An AST node that represents a fact declaration.
+     *
+     * @param head the head predicate.
      */
     case class Fact(head: ParsedAst.AmbiguousPredicate) extends ParsedAst.Declaration
 
     /**
      * An AST node that represent a rule declaration.
+     *
+     * @param head the head predicate.
+     * @param body the body predicates.
      */
     case class Rule(head: ParsedAst.AmbiguousPredicate, body: Seq[ParsedAst.AmbiguousPredicate]) extends ParsedAst.Declaration
 

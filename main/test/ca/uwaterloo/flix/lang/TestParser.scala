@@ -4,12 +4,14 @@ import ca.uwaterloo.flix.lang.ast._
 
 import org.scalatest.FunSuite
 
+// TODO: Cleanup names.
+
 class TestParser extends FunSuite {
 
   /////////////////////////////////////////////////////////////////////////////
   // Declarations                                                            //
   /////////////////////////////////////////////////////////////////////////////
-  test("Parser.Namespace01") {
+  test("Parser.Declaration.Namespace01") {
     val input =
       """namespace foo {
         |  // a comment
@@ -19,7 +21,7 @@ class TestParser extends FunSuite {
     assertResult(Seq("foo"))(result.name.parts)
   }
 
-  test("Parser.Namespace02") {
+  test("Parser.Declaration.Namespace02") {
     val input =
       """namespace foo::bar::baz {
         |  // a comment
@@ -29,7 +31,7 @@ class TestParser extends FunSuite {
     assertResult(Seq("foo", "bar", "baz"))(result.name.parts)
   }
 
-  test("Parser.Namespace03") {
+  test("Parser.Declaration.Namespace03") {
     val input =
       """namespace foo {
         |  namespace bar {
@@ -41,6 +43,30 @@ class TestParser extends FunSuite {
       """.stripMargin
     val result = new Parser(None, input).NamespaceDeclaration.run()
     assert(result.isSuccess)
+  }
+
+  test("Parser.Declaration.Type01") {
+    val input = "type t = Bool;"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Tpe])
+  }
+
+  test("Parser.Declaration.Type02") {
+    val input = "type t = A[B];"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Tpe])
+  }
+
+  test("Parser.Declaration.Val01") {
+    val input = "val v: Int = 42;"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Val])
+  }
+
+  test("Parser.Declaration.Val02") {
+    val input = "val v: Int = 1 + 1;"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Val])
   }
 
   /////////////////////////////////////////////////////////////////////////////
