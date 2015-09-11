@@ -17,7 +17,6 @@ sealed trait Ast
 // TODO: Every where QName appears, should it be call ambigi?
 // TODO: Consider order
 
-
 object Ast {
 
   /**
@@ -127,49 +126,62 @@ object Ast {
   }
 
   /**
-   * A common super-type for AST nodes which represent expressions.
+   * AST nodes for expressions.
    */
   sealed trait Expression extends Ast
 
   object Expression {
 
     /**
-     * An AST node that represents an ambiguous variable.
+     * An AST node that represents an unresolved variable.
      *
      * @param name the ambiguous name.
      */
     case class AmbiguousVar(name: Ast.QName) extends Ast.Expression
 
     /**
-     * An AST node that represents a function call.
+     * An AST node that represents a function application.
      *
-     * @param name the ambiguous name of the function.
+     * @param name the unresolved name of the function.
      * @param arguments the arguments to the function.
      */
     case class AmbiguousApply(name: Ast.QName, arguments: Seq[Ast.Expression]) extends Ast.Expression
 
     /**
-     * An AST node which represents a literal.
+     * An AST node that represents a literal.
+     *
+     * @param literal the literal.
      */
     case class Lit(literal: Ast.Literal) extends Ast.Expression
 
     /**
-     * An AST node which represents a (generalized) lambda expression.
+     * An AST node that represents a lambda expression.
+     *
+     * @param formals the formals (i.e. parameters and their types).
+     * @param tpe the return type.
+     * @param body the body expression of the lambda.
      */
-    case class Lambda(formals: Seq[(Ast.Ident, Type)], tpe: Ast.Type, e: Ast.Expression) extends Ast.Expression
+    case class Lambda(formals: Seq[(Ast.Ident, Type)], tpe: Ast.Type, body: Ast.Expression) extends Ast.Expression
 
     /**
-     * An AST node which represents unary expressions.
+     * An AST node that represents unary expressions.
+     *
+     * @param op the unary operator.
+     * @param e the expression.   
      */
     case class Unary(op: UnaryOperator, e: Ast.Expression) extends Ast.Expression
 
     /**
-     * An AST node which represents binary expressions.
+     * An AST node that represents binary expressions.
+     *
+     * @param e1 the left expression.
+     * @param op the binary operator.
+     * @param e2 the right expression.
      */
     case class Binary(e1: Ast.Expression, op: BinaryOperator, e2: Ast.Expression) extends Ast.Expression
 
     /**
-     * An AST node which represents a let-binding.
+     * An AST node that represents a let-binding.
      *
      * @param ident the identifier to be bound.
      * @param value the expression whose value the identifier should be bound to.
@@ -204,9 +216,12 @@ object Ast {
     case class Infix(e1: Ast.Expression, name: Ast.QName, e2: Ast.Expression) extends Ast.Expression
 
     /**
-     * An AST node which represents a tagged expression.
+     * An AST node that represents a tagged expression.
+     *
+     * @param name the unresolved name of the tag.
+     * @param e the nested expression.
      */
-    case class Tag(ident: Ast.Ident, e: Ast.Expression) extends Ast.Expression
+    case class Tag(name: Ast.QName, e: Ast.Expression) extends Ast.Expression
 
     /**
      * An AST node that represents a tuple expression.
@@ -214,12 +229,6 @@ object Ast {
      * @param elms the elements of the tuple.
      */
     case class Tuple(elms: Seq[Ast.Expression]) extends Ast.Expression
-
-    /**
-     * An AST node which represents a record expression.
-     */
-    // TODO: Needed?
-    case class Record(elms: Seq[(Ast.Ident, Ast.Expression)]) extends Ast.Expression
 
     /**
      * An AST node that ascribe a type to an expression.

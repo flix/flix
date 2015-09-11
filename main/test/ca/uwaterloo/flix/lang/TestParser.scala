@@ -395,13 +395,13 @@ class TestParser extends FunSuite {
   test("Parser.Expression.Lambda01") {
     val input = "fn(x: Int): Int = 42"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Lambda]
-    assert(result.e.isInstanceOf[Ast.Expression.Lit])
+    assert(result.body.isInstanceOf[Ast.Expression.Lit])
   }
 
   test("Parser.Expression.Lambda02") {
     val input = "fn(x: Bool, y: Int, z: Str): Str = x + y + z"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Lambda]
-    assert(result.e.isInstanceOf[Ast.Expression.Binary])
+    assert(result.body.isInstanceOf[Ast.Expression.Binary])
   }
 
   test("Parser.Expression.ErrorExp01") {

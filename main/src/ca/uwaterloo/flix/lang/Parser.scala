@@ -66,7 +66,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   // NB: RuleDeclaration must be parsed before FactDeclaration.
   def Declaration: Rule1[Ast.Declaration] = rule {
-    NamespaceDeclaration | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | EnumDeclaration | LatticeDeclaration | RuleDeclaration | FactDeclaration
+    NamespaceDeclaration | TypeDeclaration | VariableDeclaration | ValueDeclaration | FunctionDeclaration | EnumDeclaration | RuleDeclaration | FactDeclaration
   }
 
   def NamespaceDeclaration: Rule1[Ast.Declaration.Namespace] = rule {
@@ -100,16 +100,15 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   // TODO: Use separate thing for tags.
 
-  def LatticeDeclaration: Rule1[Ast.Declaration.Lattice] = rule {
-    "lat" ~ WS ~ Ident ~ optWS ~ "=" ~ optWS ~ RecordExp ~ ";" ~ optWS ~> Ast.Declaration.Lattice
-  }
+  //def LatticeDeclaration: Rule1[Ast.Declaration.Lattice] = rule {
+ //   "lat" ~ WS ~ Ident ~ optWS ~ "=" ~ optWS ~ RecordExp ~ ";" ~ optWS ~> Ast.Declaration.Lattice
+ // }
 
 
   /** *************************************************************************/
   /** Expressions                                                           ***/
   /** *************************************************************************/
   // TODO: Rename Exp -> Expression
-  // TODO: type ascription: Exp : Type
   def Expression: Rule1[Ast.Expression] = rule {
     LogicalExp
   }
@@ -186,16 +185,6 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     rule {
       Unit | Singleton | Tuple
     }
-  }
-
-  // TODO: Do we need this???
-  def RecordExp: Rule1[Ast.Expression.Record] = rule {
-    "record" ~ WS ~ "{" ~ optWS ~ zeroOrMore(RecordKeyValue).separatedBy("," ~ optWS) ~ optWS ~ "}" ~> Ast.Expression.Record
-  }
-
-  // TODO: Do we need this???
-  private def RecordKeyValue: Rule1[(Ast.Ident, Ast.Expression)] = rule {
-    Ident ~ optWS ~ "=" ~ optWS ~ Expression ~> ((k: Ast.Ident, v: Ast.Expression) => (k, v))
   }
 
   def VariableExp: Rule1[Ast.Expression.AmbiguousVar] = rule {
