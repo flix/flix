@@ -9,7 +9,6 @@ sealed trait ParsedAst
 
 // TODO: that vs. which
 // TODO: Ensure that @param is documented.
-// TODO: Every where QName appears, should it be call ambigi?
 // TODO: Consider order
 
 object ParsedAst {

@@ -18,7 +18,6 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   // TODO: Use atomic keyword
   // TODO: Tags
-  // TODO: Some issues with when whitespace is consumed...
 
   def Root: Rule1[ParsedAst.Root] = rule {
     optWS ~ zeroOrMore(Declaration) ~ optWS ~ EOI ~> ParsedAst.Root

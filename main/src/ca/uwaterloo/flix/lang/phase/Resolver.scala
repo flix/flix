@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.lang.phase
 
 object Resolver {
 
-  // TODO
+  // TODO: Which AST nodes should be called ambigious?
   
   /**
    *
