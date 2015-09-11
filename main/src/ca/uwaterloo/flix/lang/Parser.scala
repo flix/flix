@@ -109,7 +109,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /** Expressions                                                           ***/
   /** *************************************************************************/
   // TODO: Rename Exp -> Expression
-  // TODO: UnaryExp???
+  // TODO: type ascription: Exp : Type
   def Expression: Rule1[Ast.Expression] = rule {
     LogicalExp
   }
@@ -199,7 +199,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def LambdaExp: Rule1[Ast.Expression.Lambda] = rule {
-      "fn" ~ optWS ~ "(" ~ ArgumentList ~ "):" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~> Ast.Expression.Lambda
+      atomic("fn") ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~> Ast.Expression.Lambda
     }
 
   def ErrorExp: Rule1[Ast.Expression] = rule {
