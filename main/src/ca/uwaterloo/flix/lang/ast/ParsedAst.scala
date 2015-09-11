@@ -47,7 +47,7 @@ object ParsedAst {
     /**
      * An AST node which represents a namespace declaration.
      */
-    case class Namespace(name: QName, body: Seq[ParsedAst.Declaration]) extends ParsedAst.Declaration
+    case class Namespace(name: ParsedAst.QName, body: Seq[ParsedAst.Declaration]) extends ParsedAst.Declaration
 
     /**
      * An AST node which represents a type declaration.
@@ -72,7 +72,7 @@ object ParsedAst {
     /**
      * An AST node which represents a function declaration.
      */
-    case class Fun(annotations: Seq[ParsedAst.Ident], ident: ParsedAst.Ident, arguments: Seq[(ParsedAst.Ident, ParsedAst.Type)], typ: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Declaration
+    case class Fun(annotations: Seq[ParsedAst.Ident], ident: ParsedAst.Ident, args: Seq[(ParsedAst.Ident, ParsedAst.Type)], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Declaration
 
     /**
      * An AST node which represents a lattice declaration.
@@ -92,29 +92,35 @@ object ParsedAst {
   }
 
   /**
-   * A common super-type for AST node which represent literals.
+   * AST nodes for Literals.
    */
   sealed trait Literal
 
   object Literal {
 
     /**
-     * An AST node which represents the unit literal.
+     * An AST node that represents the Unit literal.
      */
     case object Unit extends ParsedAst.Literal
 
     /**
-     * An AST node which represents a boolean literal.
+     * An AST node that represents a boolean literal.
+     *
+     * @param literal the boolean literal.
      */
     case class Bool(literal: scala.Boolean) extends ParsedAst.Literal
 
     /**
-     * An AST node which represents an integer literal.
+     * An AST node that represents an integer literal.
+     *
+     * @param literal the integer literal.
      */
     case class Int(literal: scala.Int) extends ParsedAst.Literal
 
     /**
-     * An AST node which represents a string literal.
+     * An AST node that represents a string literal.
+     *
+     * @param literal the string literal.
      */
     case class Str(literal: java.lang.String) extends ParsedAst.Literal
 
@@ -243,7 +249,7 @@ object ParsedAst {
   }
 
   /**
-   * A common super-type for AST nodes which represent patterns.
+   * AST nodes for Patterns.
    */
   sealed trait Pattern extends ParsedAst
 
@@ -251,35 +257,44 @@ object ParsedAst {
 
     /**
      * An AST node that represents a wildcard pattern.
+     *
+     * @param location the source location of the wildcard.
      */
     case class Wildcard(location: SourceLocation) extends ParsedAst.Pattern
 
     /**
      * An AST node that represents a variable pattern.
+     *
+     * @param ident the variable identifier.
      */
     case class Var(ident: ParsedAst.Ident) extends ParsedAst.Pattern
 
     /**
      * An AST node that represents a literal pattern.
+     *
+     * @param literal the literal.
      */
     case class Lit(literal: ParsedAst.Literal) extends ParsedAst.Pattern
 
     /**
      * An AST node that represents a tuple pattern.
+     *
+     * @param elms the elements of the tuple.
      */
     case class Tuple(elms: Seq[ParsedAst.Pattern]) extends ParsedAst.Pattern
 
   }
 
   /**
-   * An AST node that represent either a proposition or a predicate.
+   * An AST node that represent an unresolved predicate.
+   *
+   * @param name the unresolved name of the predicate.
+   * @param terms the terms of the predicate.
    */
   case class AmbiguousPredicate(name: ParsedAst.QName, terms: Seq[ParsedAst.Term]) extends Pattern
 
   /**
-   * A common super-type for AST that represent terms.
-   *
-   * A term is either a wildcard, variable, literal or a function call.
+   * AST nodes for Terms.
    */
   sealed trait Term extends ParsedAst
 
@@ -287,28 +302,37 @@ object ParsedAst {
 
     /**
      * An AST node that represent a wildcard variable term.
+     *
+     * @param location the source location of the wildcard.
      */
     case class Wildcard(location: SourceLocation) extends ParsedAst.Term
 
     /**
      * An AST node that represent a variable term.
+     *
+     * @param ident the variable identifier.
      */
     case class Var(ident: ParsedAst.Ident) extends ParsedAst.Term
 
     /**
      * An AST node that represent a literal term.
+     *
+     * @param literal the literal.
      */
     case class Lit(literal: ParsedAst.Literal) extends ParsedAst.Term
 
     /**
-     * An AST node that represent a function call term.
+     * An AST node that represent a function application term
+     *
+     * @param name the unresolved name of the function.
+     * @param args the arguments to the function.
      */
-    case class Apply(name: QName, arguments: Seq[ParsedAst.Term]) extends ParsedAst.Term
+    case class Apply(name: ParsedAst.QName, args: Seq[ParsedAst.Term]) extends ParsedAst.Term
 
   }
 
   /**
-   * A common super-type for AST nodes that represent types.
+   * AST node for Types.
    */
   sealed trait Type extends ParsedAst
 

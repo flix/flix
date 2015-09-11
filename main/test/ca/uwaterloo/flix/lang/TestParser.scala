@@ -531,7 +531,7 @@ class TestParser extends FunSuite {
     val input = "foo::bar(x, y, z)"
     val result = new Parser(None, input).Term.run().get.asInstanceOf[ParsedAst.Term.Apply]
     assertResult(Seq("foo", "bar"))(result.name.parts)
-    assertResult(Seq("x", "y", "z"))(result.arguments.map(_.asInstanceOf[ParsedAst.Term.Var].ident.name))
+    assertResult(Seq("x", "y", "z"))(result.args.map(_.asInstanceOf[ParsedAst.Term.Var].ident.name))
   }
 
   /////////////////////////////////////////////////////////////////////////////
