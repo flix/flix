@@ -111,14 +111,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   // TODO: Rename Exp -> Expression
   // TODO: UnaryExp???
   def Expression: Rule1[Ast.Expression] = rule {
-    InfixExp
-  }
-
-  // TODO: All these seem reversed.
-
-  // TODO: What kind of associativity?
-  def InfixExp: Rule1[Ast.Expression] = rule {
-    LogicalExp ~ optional(optWS ~ "`" ~ QName ~ "`" ~ optWS ~ LogicalExp ~> Ast.Expression.Infix)
+    LogicalExp
   }
 
   def LogicalExp: Rule1[Ast.Expression] = rule {
@@ -134,7 +127,11 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def MultiplicativeExp: Rule1[Ast.Expression] = rule {
-    SimpleExpression ~ zeroOrMore(optWS ~ MultiplicativeOp ~ optWS ~ SimpleExpression ~> Ast.Expression.Binary)
+    InfixExp ~ zeroOrMore(optWS ~ MultiplicativeOp ~ optWS ~ InfixExp ~> Ast.Expression.Binary)
+  }
+
+  def InfixExp: Rule1[Ast.Expression] = rule {
+    SimpleExpression ~ optional(optWS ~ "`" ~ QName ~ "`" ~ optWS ~ SimpleExpression ~> Ast.Expression.Infix)
   }
 
   def SimpleExpression: Rule1[Ast.Expression] = rule {
