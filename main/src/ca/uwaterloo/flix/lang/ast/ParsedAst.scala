@@ -70,6 +70,16 @@ object ParsedAst {
     case class Val(ident: ParsedAst.Ident, tpe: ParsedAst.Type, e: ParsedAst.Expression) extends ParsedAst.Declaration
 
     /**
+     * An AST node that represents a function declaration.
+     *
+     * @param ident the name of the function.
+     * @param formals the formals (i.e. parameters and their types).
+     * @param tpe the return type.
+     * @param body the body expression of the function.
+     */
+    case class Fun(ident: ParsedAst.Ident, formals: Seq[(ParsedAst.Ident, ParsedAst.Type)], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Declaration
+
+    /**
      * An AST node which represents a enum declaration.
      */
     case class Enum(ident: ParsedAst.Ident, body: Seq[ParsedAst.Type.Tag]) extends ParsedAst.Declaration
@@ -78,11 +88,6 @@ object ParsedAst {
      * An AST node which represents a variable declaration.
      */
     case class Var(ident: ParsedAst.Ident, tpe: ParsedAst.Type) extends ParsedAst.Declaration
-
-    /**
-     * An AST node which represents a function declaration.
-     */
-    case class Fun(ident: ParsedAst.Ident, args: Seq[(ParsedAst.Ident, ParsedAst.Type)], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Declaration
 
     /**
      * An AST node which represents a lattice declaration.

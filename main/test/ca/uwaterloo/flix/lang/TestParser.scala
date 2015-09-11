@@ -69,6 +69,18 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Declaration.Val])
   }
 
+  test("Parser.Declaration.Function01") {
+    val input = "def foo(x: Int): Int = 42"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Fun])
+  }
+
+  test("Parser.Declaration.Function02") {
+    val input = "def foo(x: Int, y: Int, z: Int): Int = x + y + z"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Fun])
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////

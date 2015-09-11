@@ -40,14 +40,10 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     atomic("val") ~ WS ~ Ident ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Declaration.Val
   }
 
-  // TODO
-  def VariableDeclaration: Rule1[ParsedAst.Declaration.Var] = rule {
-    "var" ~ WS ~ Ident ~ ":" ~ optWS ~ Type ~ ";" ~ optWS ~> ParsedAst.Declaration.Var
+  def FunctionDeclaration: Rule1[ParsedAst.Declaration.Fun] = rule {
+    atomic("def") ~ WS ~ Ident ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Declaration.Fun
   }
 
-  def FunctionDeclaration: Rule1[ParsedAst.Declaration.Fun] = rule {
-    "def" ~ WS ~ Ident ~ "(" ~ ArgumentList ~ ")" ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ ";" ~ optWS ~> ParsedAst.Declaration.Fun
-  }
 
   def EnumDeclaration: Rule1[ParsedAst.Declaration.Enum] = {
     def EnumBody: Rule1[Seq[ParsedAst.Type.Tag]] = rule {
@@ -63,6 +59,10 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   //   "lat" ~ WS ~ Ident ~ optWS ~ "=" ~ optWS ~ RecordExp ~ ";" ~ optWS ~> Ast.Declaration.Lattice
   // }
 
+  // TODO
+  def VariableDeclaration: Rule1[ParsedAst.Declaration.Var] = rule {
+    "var" ~ WS ~ Ident ~ ":" ~ optWS ~ Type ~ ";" ~ optWS ~> ParsedAst.Declaration.Var
+  }
 
   /** *************************************************************************/
   /** Expressions                                                           ***/
