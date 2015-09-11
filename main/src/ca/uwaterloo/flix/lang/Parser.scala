@@ -115,7 +115,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def LogicalExp: Rule1[Ast.Expression] = rule {
-    ComparisonExp ~ zeroOrMore(optWS ~ LogicalOp ~ optWS ~ ComparisonExp ~> Ast.Expression.Binary)
+    ComparisonExp ~ optional(optWS ~ LogicalOp ~ optWS ~ ComparisonExp ~> Ast.Expression.Binary)
   }
 
   def ComparisonExp: Rule1[Ast.Expression] = rule {

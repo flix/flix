@@ -53,9 +53,9 @@ class TestParser extends FunSuite {
   }
 
   test("Parser.Expression.LogicalExp02") {
-    val input = "true && true || false"
+    val input = "true || false"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Binary]
-    assertResult(BinaryOperator.And)(result.op)
+    assertResult(BinaryOperator.Or)(result.op)
   }
 
   test("Parser.Expression.LogicalExp03") {
