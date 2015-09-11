@@ -163,7 +163,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def ApplyExp: Rule1[Ast.Expression.AmbiguousApply] = rule {
-    QName ~ "(" ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~> Ast.Expression.AmbiguousApply
+    QName ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> Ast.Expression.AmbiguousApply
   }
 
   def TupleExp: Rule1[Ast.Expression] = {
@@ -198,13 +198,9 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     QName ~> Ast.Expression.AmbiguousVar
   }
 
-  def LambdaExp: Rule1[Ast.Expression.Lambda] = {
-
-
-    rule {
+  def LambdaExp: Rule1[Ast.Expression.Lambda] = rule {
       "fn" ~ optWS ~ "(" ~ ArgumentList ~ "):" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~> Ast.Expression.Lambda
     }
-  }
 
   def ErrorExp: Rule1[Ast.Expression] = rule {
     SourceLocation ~ atomic("???") ~> Ast.Expression.Error
