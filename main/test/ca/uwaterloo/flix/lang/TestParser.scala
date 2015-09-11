@@ -163,6 +163,31 @@ class TestParser extends FunSuite {
     assertResult(Seq("foo", "bar", "baz", "plus"))(result.name.parts)
   }
 
+  test("Parser.Expression.Infix03") {
+    val input = "+1 `plus` -1"
+    val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Infix]
+    assert(result.e1.isInstanceOf[Ast.Expression.Unary])
+    assert(result.e2.isInstanceOf[Ast.Expression.Unary])
+  }
+
+  test("Parser.Expression.UnaryExp01") {
+    val input = "+ 1"
+    val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Unary]
+    assertResult(UnaryOperator.UnaryPlus)(result.op)
+  }
+
+  test("Parser.Expression.UnaryExp02") {
+    val input = "- 1"
+    val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Unary]
+    assertResult(UnaryOperator.UnaryMinus)(result.op)
+  }
+
+  test("Parser.Expression.UnaryExp03") {
+    val input = "!! true"
+    val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Unary]
+    assertResult(UnaryOperator.Not)(result.op)
+  }
+
   test("Parser.Expression.LiteralExp01") {
     val input = "true"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[Ast.Expression.Lit]
