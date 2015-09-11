@@ -40,7 +40,6 @@ namespace ParityAnalysis {
     // different namespaces and thus there is no ambiguity.
 
     // we can define monotone operations on lattice elements. Here is addition:
-    @strict @monotone
     def plus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Bot)       => Bot;
         case (Bot, _)       => Bot;
@@ -52,7 +51,6 @@ namespace ParityAnalysis {
     };
 
     // and substraction:
-    @strict @monotone
     def minus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Bot)       => Bot;
         case (Bot, _)       => Bot;
@@ -64,7 +62,6 @@ namespace ParityAnalysis {
     };
 
     // and multiplication:
-    @strict @monotone
     def times(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Bot)       => Bot;
         case (Bot, _)       => Bot;
@@ -76,7 +73,6 @@ namespace ParityAnalysis {
     };
 
     // and division:
-     @strict @monotone
      def divide(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Bot)       => Bot;
         case (Bot, _)       => Bot;
@@ -88,7 +84,6 @@ namespace ParityAnalysis {
      };
 
     // we can test whether a number may be zero:
-    @strict @monotone
     def isMaybeZero(e: Parity): Bool = match e with {
         case Bot    => false;
         case Odd    => false;
@@ -97,7 +92,6 @@ namespace ParityAnalysis {
     };
 
     // or may be odd:
-    @strict @monotone
     def isMaybeOdd(e: Parity): Bool = match e with {
         case Bot    => false;
         case Odd    => true;

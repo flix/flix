@@ -13,12 +13,10 @@ object Weeder {
   object WeedingErrors {
     // TODO:
     // - Duplicate variable in pattern.
-    // - Duplicate variable in function argument.
-    // - Duplicate ???
+    // - Duplicate variable in function argument. lambda/def
+    // - Duplicate tag in enum
 
     // - Disallow Ast.Term.Apply in body of rules.
-
-    // TODO: Shadowing?
   }
 
 

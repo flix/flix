@@ -80,7 +80,10 @@ object ParsedAst {
     case class Fun(ident: ParsedAst.Ident, formals: Seq[(ParsedAst.Ident, ParsedAst.Type)], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Declaration
 
     /**
-     * An AST node which represents a enum declaration.
+     * An AST node that represents a enum declaration.
+     *
+     * @param ident the name of the enum.
+     * @param body the variants of the enum.
      */
     case class Enum(ident: ParsedAst.Ident, body: Seq[ParsedAst.Type.Tag]) extends ParsedAst.Declaration
 
@@ -386,19 +389,20 @@ object ParsedAst {
     case class Tuple(elms: Seq[ParsedAst.Type]) extends ParsedAst.Type
 
     /**
+     * An AST node that represents a tagged type.
+     *
+     * @param ident the tag name.
+     * @param tpe the type of nested components.
+     */
+    case class Tag(ident: ParsedAst.Ident, tpe: ParsedAst.Type) extends ParsedAst.Type
+
+    /**
      * An AST node that represent a parametric type.
      *
      * @param name the ambiguous name.
      * @param elms the type of the type parameters.
      */
     case class Parametric(name: ParsedAst.QName, elms: Seq[ParsedAst.Type]) extends ParsedAst.Type
-
-
-    /**
-     * An AST node which represents a tagged type.
-     */
-    // TODO: Needed in this phase?
-    case class Tag(ident: ParsedAst.Ident) extends ParsedAst.Type
 
   }
 

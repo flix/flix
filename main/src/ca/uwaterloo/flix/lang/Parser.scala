@@ -44,14 +44,22 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     atomic("def") ~ WS ~ Ident ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Declaration.Fun
   }
 
-
   def EnumDeclaration: Rule1[ParsedAst.Declaration.Enum] = {
-    def EnumBody: Rule1[Seq[ParsedAst.Type.Tag]] = rule {
-      oneOrMore("case" ~ WS ~ Ident ~> ParsedAst.Type.Tag).separatedBy("," ~ optWS)
+    def UnitCase: Rule1[ParsedAst.Type.Tag] = rule {
+      atomic("case") ~ WS ~ Ident ~> ((ident: ParsedAst.Ident) => ParsedAst.Type.Tag(ident, ParsedAst.Type.Unit))
+    }
+
+    def NestedCase: Rule1[ParsedAst.Type.Tag] = rule {
+      atomic("case") ~ WS ~ Ident ~ Type ~> ParsedAst.Type.Tag
+    }
+
+    def Cases: Rule1[Seq[ParsedAst.Type.Tag]] = rule {
+      // NB: NestedCase must be parsed before UnitCase.
+      oneOrMore(NestedCase | UnitCase).separatedBy(optWS ~ "," ~ optWS)
     }
 
     rule {
-      "enum" ~ WS ~ Ident ~ optWS ~ "{" ~ optWS ~ EnumBody ~ optWS ~ "}" ~ optWS ~ ";" ~ optWS ~> ParsedAst.Declaration.Enum
+      atomic("enum") ~ WS ~ Ident ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ optSC ~> ParsedAst.Declaration.Enum
     }
   }
 

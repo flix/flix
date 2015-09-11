@@ -81,6 +81,38 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Declaration.Fun])
   }
 
+  test("Parser.Declaration.Enum01") {
+    val input =
+      """enum A {
+        |  case B
+        |}
+      """.stripMargin
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Enum])
+  }
+
+  test("Parser.Declaration.Enum02") {
+    val input =
+      """enum A {
+        |  case B(Int)
+        |}
+      """.stripMargin
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Enum])
+  }
+
+  test("Parser.Declaration.Enum03") {
+    val input =
+      """enum A {
+        |  case B,
+        |  case C(Int),
+        |  case D(Bool, Int, Str)
+        |}
+      """.stripMargin
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Enum])
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
