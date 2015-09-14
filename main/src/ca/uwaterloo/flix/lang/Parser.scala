@@ -11,16 +11,14 @@ import scala.collection.immutable.Seq
 
 // TODO: Dealing with whitespace is hard. Figure out a good way.
 
-// TODO: Ensure that seperatedBy allows for optWS "," optWS
-
 /**
  * A parser for the Flix language.
  */
 class Parser(val path: Option[Path], val input: ParserInput) extends org.parboiled2.Parser {
 
-  // TODO: Use atomic keyword
-  // TODO: Tags
-
+  /////////////////////////////////////////////////////////////////////////////
+  // Root                                                                    //
+  /////////////////////////////////////////////////////////////////////////////
   def Root: Rule1[ParsedAst.Root] = rule {
     optWS ~ zeroOrMore(Declaration) ~ optWS ~ EOI ~> ParsedAst.Root
   }
@@ -324,7 +322,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /** *************************************************************************/
   // TODO: Can we get rid of these?
   def ArgumentList: Rule1[Seq[(ParsedAst.Ident, ParsedAst.Type)]] = rule {
-    zeroOrMore(Argument).separatedBy("," ~ optWS)
+    zeroOrMore(Argument).separatedBy(optWS ~ "," ~ optWS)
   }
 
   def Argument: Rule1[(ParsedAst.Ident, ParsedAst.Type)] = rule {
@@ -342,10 +340,6 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     SourceLocation ~ LegalIdentifier ~>
       ((location: SourceLocation, name: String) => ParsedAst.Ident(name, location))
   }
-
-  // TODO: Probably need to introduce SName so we can handle names like foo and Foo.bar for tags.
-  // TODO: But a function parameter should not be allowed to be a SName...
-  // TODO: Another option is to simple parse (QName) . Foo as a special expression and pattern?
 
   def QName: Rule1[ParsedAst.QName] = rule {
     SourceLocation ~ oneOrMore(LegalIdentifier).separatedBy(atomic("::")) ~>
