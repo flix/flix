@@ -100,4 +100,6 @@ namespace ParityAnalysis {
 
     rel VarPointsTo(localVal: Int, value: <Parity>);
 
+    VarPointsTo(t1, plus(v2, v3)) :- Sum(t1, t2, t3), VarPointsTo(t2, v2), VarPointsTo(t3, v3).
+
 };
