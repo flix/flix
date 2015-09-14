@@ -22,6 +22,8 @@ object Weeder {
     // TODO: valid "Traits"
     // TODO: Allow nested lattice types? <<foo>> ?
 
+    // rewrite all functions to lambdas of one argument?
+
     // - Disallow Ast.Term.Apply in body of rules.
   }
 

@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.lang
 import java.nio.file.{Files, Path}
 
 import ca.uwaterloo.flix.lang.ast.ParsedAst
-import org.parboiled2.ParseError
+import org.parboiled2.{ErrorFormatter, ParseError}
 
 import scala.io.Source
 import scala.util.{Failure, Success}
@@ -39,9 +39,15 @@ object Compiler {
    */
   def parse(input: String): ParsedAst.Root = {
     val parser = new Parser(None, input)
+    val formatter = new ErrorFormatter(
+      showExpected = true,
+      showPosition = true,
+      showLine = true,
+      showTraces = true
+    )
     parser.Root.run() match {
       case Success(ast) => ast
-      case Failure(e: ParseError) => throw new RuntimeException(parser.formatError(e))
+      case Failure(e: ParseError) => throw new RuntimeException(parser.formatError(e, formatter))
       case Failure(e) => throw new RuntimeException("Unexpected error during parsing run: " + e)
     }
   }

@@ -9,6 +9,8 @@ import org.parboiled2._
 
 import scala.collection.immutable.Seq
 
+// TODO: Dealing with whitespace is hard. Figure out a good way.
+
 // TODO: Ensure that seperatedBy allows for optWS "," optWS
 
 /**
@@ -148,7 +150,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   def MatchExpression: Rule1[ParsedAst.Expression.Match] = {
     def MatchRule: Rule1[(ParsedAst.Pattern, ParsedAst.Expression)] = rule {
-      atomic("case") ~ WS ~ Pattern ~ WS ~ atomic("=>") ~ WS ~ Expression ~ optSC ~> ((p: ParsedAst.Pattern, e: ParsedAst.Expression) => (p, e))
+      atomic("case") ~ WS ~ Pattern ~ optWS ~ atomic("=>") ~ WS ~ Expression ~ optSC ~> ((p: ParsedAst.Pattern, e: ParsedAst.Expression) => (p, e))
     }
 
     rule {
@@ -212,10 +214,10 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def TagPattern: Rule1[ParsedAst.Pattern.Tag] = rule {
-    QName ~ "." ~ Ident ~ optWS ~ optional(Expression) ~>
-      ((name: ParsedAst.QName, ident: ParsedAst.Ident, exp: Option[ParsedAst.Expression]) => exp match {
-        case None =>  ParsedAst.Pattern.Tag(name, ident, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit))
-        case Some(e) =>  ParsedAst.Pattern.Tag(name, ident, e)
+    QName ~ "." ~ Ident ~ optWS ~ optional(Pattern) ~>
+      ((name: ParsedAst.QName, ident: ParsedAst.Ident, pattern: Option[ParsedAst.Pattern]) => pattern match {
+        case None =>  ParsedAst.Pattern.Tag(name, ident, ParsedAst.Pattern.Lit(ParsedAst.Literal.Unit))
+        case Some(p) =>  ParsedAst.Pattern.Tag(name, ident, p)
       })
   }
 

@@ -318,11 +318,11 @@ object ParsedAst {
     /**
      * An AST node that represents a tag pattern.
      *
-     * @param name the namespace the tag belongs to.
-     * @param ident the name of the tag.
-     * @param e the tagged expression.
+     * @param name the namespace of the enum.
+     * @param ident the tag name.
+     * @param p the nested pattern.
      */
-    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, e: Expression) extends ParsedAst.Pattern
+    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, p: ParsedAst.Pattern) extends ParsedAst.Pattern
 
     /**
      * An AST node that represents a tuple pattern.

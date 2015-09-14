@@ -13,90 +13,80 @@ namespace ParityAnalysis {
 
     // the partial order is easily defined using pattern matching:
     def leq(e1: Parity, e2: Parity): Bool = match (e1, e2) with {
-        case (Bot, _)       => true;
-        case (Odd, Odd)     => true;
-        case (Even, Even)   => true;
-        case (_, Top)       => true;
-        case _              => false;
+        case (Parity.Bot, _)              => true;
+        case (Parity.Odd, Parity.Odd)     => true;
+        case (Parity.Even, Parity.Even)   => true;
+        case (_, Parity.Top)              => true;
+        case _                            => false;
     };
 
     // and similarly for the least upper bound:
     def lub(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        case (Bot, _)       => e2;
-        case (_, Bot)       => e1;
-        case (Odd, Odd)     => Odd;
-        case (Even, Even)   => Even;
-        case _              => Top;
+        case (Parity.Bot, _)              => e2;
+        case (_, Parity.Bot)              => e1;
+        case (Parity.Odd, Parity.Odd)     => Odd;
+        case (Parity.Even, Parity.Even)   => Even;
+        case _                            => Top;
     };
-
-    // the lattice is defined as a record:
-//    lat Parity = record {
-//        bot = Bot, leq = leq, lub = lub
-//    };
-
-    // NB: Notice that the "Parity" name is overloaded;
-    // it is used both as the name of the type of the enum
-    // and as a lattice declaraction. However, these live in two
-    // different namespaces and thus there is no ambiguity.
 
     // we can define monotone operations on lattice elements. Here is addition:
     def plus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        case (_, Bot)       => Bot;
-        case (Bot, _)       => Bot;
-        case (Odd, Odd)     => Even;
-        case (Odd, Even)    => Odd;
-        case (Even, Odd)    => Odd;
-        case (Even, Even)   => Even;
-        case _              => Top;
+        case (_, Parity.Bot)              => Bot;
+        case (Parity.Bot, _)              => Bot;
+        case (Parity.Odd, Parity.Odd)     => Even;
+        case (Parity.Odd, Parity.Even)    => Odd;
+        case (Parity.Even, Parity.Odd)    => Odd;
+        case (Parity.Even, Parity.Even)   => Even;
+        case _                            => Top;
     };
 
-    // and substraction:
+    // and subtraction:
     def minus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        case (_, Bot)       => Bot;
-        case (Bot, _)       => Bot;
-        case (Odd, Odd)     => Even;
-        case (Odd, Even)    => Odd;
-        case (Even, Odd)    => Odd;
-        case (Even, Even)   => Even;
-        case _              => Top;
+        case (_, Parity.Bot)              => Bot;
+        case (Parity.Bot, _)              => Bot;
+        case (Parity.Odd, Parity.Odd)     => Even;
+        case (Parity.Odd, Parity.Even)    => Odd;
+        case (Parity.Even, Parity.Odd)    => Odd;
+        case (Parity.Even, Parity.Even)   => Even;
+        case _                            => Top;
     };
 
     // and multiplication:
     def times(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        case (_, Bot)       => Bot;
-        case (Bot, _)       => Bot;
-        case (Odd, Odd)     => Odd;
-        case (Odd, Even)    => Even;
-        case (Even, Odd)    => Even;
-        case (Even, Even)   => Even;
-        case _              => Top;
+        case (_, Parity.Bot)              => Bot;
+        case (Parity.Bot, _)              => Bot;
+        case (Parity.Odd, Parity.Odd)     => Odd;
+        case (Parity.Odd, Parity.Even)    => Even;
+        case (Parity.Even, Parity.Odd)    => Even;
+        case (Parity.Even, Parity.Even)   => Even;
+        case _                            => Top;
     };
 
     // and division:
      def divide(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        case (_, Bot)       => Bot;
-        case (Bot, _)       => Bot;
-        case (Odd, Odd)     => ???;
-        case (Odd, Even)    => ???;
-        case (Even, Odd)    => ???;
-        case (Even, Even)   => ???;
-        case _              => Top;
+        case (_, Parity.Bot)              => Bot;
+        case (Parity.Bot, _)              => Bot;
+        case (Parity.Odd, Parity.Odd)     => ???;
+        case (Parity.Odd, Parity.Even)    => ???;
+        case (Parity.Even, Parity.Odd)    => ???;
+        case (Parity.Even, Parity.Even)   => ???;
+        case _                            => Top;
      };
 
     // we can test whether a number may be zero:
     def isMaybeZero(e: Parity): Bool = match e with {
-        case Bot    => false;
-        case Odd    => false;
-        case Even   => true;
-        case Top    => true;
+        case Parity.Bot    => false;
+        case Parity.Odd    => false;
+        case Parity.Even   => true;
+        case Parity.Top    => true;
     };
 
     // or may be odd:
     def isMaybeOdd(e: Parity): Bool = match e with {
-        case Bot    => false;
-        case Odd    => true;
-        case Even   => false;
-        case Top    => true;
+        case Parity.Bot    => false;
+        case Parity.Odd    => true;
+        case Parity.Even   => false;
+        case Parity.Top    => true;
     };
 
     // we abstract integers into the parity domain by using modulo.
