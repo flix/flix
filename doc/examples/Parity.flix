@@ -25,52 +25,52 @@ namespace ParityAnalysis {
         case (Parity.Bot, _)              => e2;
         case (_, Parity.Bot)              => e1;
         case (Parity.Odd, Parity.Odd)     => Odd;
-        case (Parity.Even, Parity.Even)   => Even;
-        case _                            => Top;
+        case (Parity.Even, Parity.Even)   => Parity.Even;
+        case _                            => Parity.Top;
     };
 
     // we can define monotone operations on lattice elements. Here is addition:
     def plus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        case (_, Parity.Bot)              => Bot;
-        case (Parity.Bot, _)              => Bot;
-        case (Parity.Odd, Parity.Odd)     => Even;
-        case (Parity.Odd, Parity.Even)    => Odd;
-        case (Parity.Even, Parity.Odd)    => Odd;
-        case (Parity.Even, Parity.Even)   => Even;
-        case _                            => Top;
+        case (_, Parity.Bot)              => Parity.Bot;
+        case (Parity.Bot, _)              => Parity.Bot;
+        case (Parity.Odd, Parity.Odd)     => Parity.Even;
+        case (Parity.Odd, Parity.Even)    => Parity.Odd;
+        case (Parity.Even, Parity.Odd)    => Parity.Odd;
+        case (Parity.Even, Parity.Even)   => Parity.Even;
+        case _                            => Parity.Top;
     };
 
     // and subtraction:
     def minus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        case (_, Parity.Bot)              => Bot;
-        case (Parity.Bot, _)              => Bot;
-        case (Parity.Odd, Parity.Odd)     => Even;
-        case (Parity.Odd, Parity.Even)    => Odd;
-        case (Parity.Even, Parity.Odd)    => Odd;
-        case (Parity.Even, Parity.Even)   => Even;
-        case _                            => Top;
+        case (_, Parity.Bot)              => Parity.Bot;
+        case (Parity.Bot, _)              => Parity.Bot;
+        case (Parity.Odd, Parity.Odd)     => Parity.Even;
+        case (Parity.Odd, Parity.Even)    => Parity.Odd;
+        case (Parity.Even, Parity.Odd)    => Parity.Odd;
+        case (Parity.Even, Parity.Even)   => Parity.Even;
+        case _                            => Parity.Top;
     };
 
     // and multiplication:
     def times(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        case (_, Parity.Bot)              => Bot;
-        case (Parity.Bot, _)              => Bot;
+        case (_, Parity.Bot)              => Parity.Bot;
+        case (Parity.Bot, _)              => Parity.Bot;
         case (Parity.Odd, Parity.Odd)     => Odd;
-        case (Parity.Odd, Parity.Even)    => Even;
-        case (Parity.Even, Parity.Odd)    => Even;
-        case (Parity.Even, Parity.Even)   => Even;
-        case _                            => Top;
+        case (Parity.Odd, Parity.Even)    => Parity.Even;
+        case (Parity.Even, Parity.Odd)    => Parity.Even;
+        case (Parity.Even, Parity.Even)   => Parity.Even;
+        case _                            => Parity.Top;
     };
 
     // and division:
      def divide(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        case (_, Parity.Bot)              => Bot;
-        case (Parity.Bot, _)              => Bot;
+        case (_, Parity.Bot)              => Parity.Bot;
+        case (Parity.Bot, _)              => Parity.Bot;
         case (Parity.Odd, Parity.Odd)     => ???;
         case (Parity.Odd, Parity.Even)    => ???;
         case (Parity.Even, Parity.Odd)    => ???;
         case (Parity.Even, Parity.Even)   => ???;
-        case _                            => Top;
+        case _                            => Parity.Top;
      };
 
     // we can test whether a number may be zero:
