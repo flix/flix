@@ -108,6 +108,6 @@ namespace ParityAnalysis {
 
     lat <Parity> (Bot, Top, leq, lub, glb) with Norm(x) with Widen(foo);
 
-    //rel VarPointsTo(variable: Int, value: <Parity>);
+    rel VarPointsTo(localVal: Int, value: <Parity>);
 
 };

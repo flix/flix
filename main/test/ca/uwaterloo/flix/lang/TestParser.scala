@@ -753,6 +753,20 @@ class TestParser extends FunSuite {
     assert(result.get.isInstanceOf[ParsedAst.Type.Parametric])
   }
 
+  test("Parser.Type.Lattice01") {
+    val input = "<Sign>"
+    val result = new Parser(None, input).Type.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Type.Lattice])
+  }
+
+  test("Parser.Type.Lattice02") {
+    val input = "<foo::bar::Sign>"
+    val result = new Parser(None, input).Type.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Type.Lattice])
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Identifiers & Names                                                     //
   /////////////////////////////////////////////////////////////////////////////

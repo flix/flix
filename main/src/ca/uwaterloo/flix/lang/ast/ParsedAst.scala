@@ -420,6 +420,13 @@ object ParsedAst {
      */
     case class Parametric(name: ParsedAst.QName, elms: Seq[ParsedAst.Type]) extends ParsedAst.Type
 
+    /**
+     * An AST node that represent a lattice type (i.e. a type equipped with lattice operators).
+     *
+     * @param tpe the enriched type.
+     */
+    case class Lattice(tpe: ParsedAst.Type) extends ParsedAst.Type
+
   }
 
 }

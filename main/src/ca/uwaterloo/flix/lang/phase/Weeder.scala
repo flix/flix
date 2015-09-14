@@ -20,6 +20,7 @@ object Weeder {
     // TODO: JoinSemiLattice vs. CompleteLattice.
 
     // TODO: valid "Traits"
+    // TODO: Allow nested lattice types? <<foo>> ?
 
     // - Disallow Ast.Term.Apply in body of rules.
   }
