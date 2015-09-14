@@ -178,6 +178,7 @@ object ParsedAst {
      * @param elms the elements of the tuple.
      */
     case class Tuple(elms: Seq[ParsedAst.Literal]) extends ParsedAst.Literal
+
   }
 
   /**
@@ -271,6 +272,15 @@ object ParsedAst {
     case class Infix(e1: ParsedAst.Expression, name: ParsedAst.QName, e2: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
+     * An AST node that represents a tagged expression.
+     *
+     * @param name the namespace of the enum.
+     * @param ident the tag name.
+     * @param e the nested expression.
+     */
+    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, e: ParsedAst.Expression) extends ParsedAst.Expression
+
+    /**
      * An AST node that represents a tuple expression.
      *
      * @param elms the elements of the tuple.
@@ -325,7 +335,7 @@ object ParsedAst {
     case class Lit(literal: ParsedAst.Literal) extends ParsedAst.Pattern
 
     /**
-     * An AST node that represents a tag pattern.
+     * An AST node that represents a tagged pattern.
      *
      * @param name the namespace of the enum.
      * @param ident the tag name.

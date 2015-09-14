@@ -133,7 +133,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def SimpleExpression: Rule1[ParsedAst.Expression] = rule {
-    LiteralExpression | LetExpression | IfThenElseExpression | MatchExpression | TupleExpression | LambdaExpression | ApplyExpression | VariableExpression | ErrorExpression
+    LetExpression | IfThenElseExpression | MatchExpression | TagExpression | TupleExpression | LiteralExpression | LambdaExpression | ApplyExpression | VariableExpression | ErrorExpression
   }
 
   def LiteralExpression: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -160,6 +160,14 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   def ApplyExpression: Rule1[ParsedAst.Expression.AmbiguousApply] = rule {
     QName ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Expression.AmbiguousApply
+  }
+
+  def TagExpression: Rule1[ParsedAst.Expression.Tag] = rule {
+    QName ~ "." ~ Ident ~ optWS ~ optional(Expression) ~>
+      ((name: ParsedAst.QName, ident: ParsedAst.Ident, exp: Option[ParsedAst.Expression]) => exp match {
+        case None => ParsedAst.Expression.Tag(name, ident, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit))
+        case Some(e) => ParsedAst.Expression.Tag(name, ident, e)
+      })
   }
 
   def TupleExpression: Rule1[ParsedAst.Expression] = {
