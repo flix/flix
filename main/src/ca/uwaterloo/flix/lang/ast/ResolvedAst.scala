@@ -20,7 +20,15 @@ object ResolvedAst {
 
   }
 
-  case class Predicate(name: ParsedAst.QName /*, terms: Seq[ParsedAst.Term]*/ , decl: ResolvedAst.Ref) extends ResolvedAst
+  sealed trait Predicate
+
+  object Predicate {
+
+    case class Relational(/* todo: what */) extends ResolvedAst.Predicate
+
+    case class Functional(/*  todo: what */) extends ResolvedAst.Predicate
+
+  }
 
   sealed trait Ref
 
