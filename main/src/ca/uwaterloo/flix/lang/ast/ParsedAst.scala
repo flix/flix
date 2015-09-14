@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.lang.ast
 import scala.collection.immutable.Seq
 
 /**
- * The type of all Ast nodes.
+ * A common-super type for all Parsed AST nodes.
  */
 sealed trait ParsedAst
 

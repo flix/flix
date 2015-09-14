@@ -12,14 +12,36 @@ class TestWeeder extends FunSuite {
 
   val Ident = ParsedAst.Ident("x", SourceLocation.Unknown)
 
-  test("DuplicateTagName01") {
+  test("ParsedAst.Declaration.Enum01") {
+    val past = ParsedAst.Declaration.Enum(Ident, Seq(
+      ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
+      ParsedAst.Type.Tag(ParsedAst.Ident("y", SourceLocation.Unknown), ParsedAst.Type.Unit)
+    ))
+
+    val result = Weeder.compile(past)
+    assert(result.isSuccess)
+  }
+
+  test("DuplicateTag01") {
     val past = ParsedAst.Declaration.Enum(Ident, Seq(
       ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ))
 
     val result = Weeder.compile(past)
-    assert(result.hasAlternatives)
+    assert(result.hasErrors)
+  }
+
+  test("DuplicateTag02") {
+    val past = ParsedAst.Declaration.Enum(Ident, Seq(
+      ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
+      ParsedAst.Type.Tag(ParsedAst.Ident("y", SourceLocation.Unknown), ParsedAst.Type.Unit),
+      ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
+      ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
+    ))
+
+    val result = Weeder.compile(past)
+    assertResult(2)(result.errors.size)
   }
 
 
