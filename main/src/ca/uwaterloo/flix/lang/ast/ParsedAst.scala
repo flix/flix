@@ -358,7 +358,7 @@ object ParsedAst {
    * @param name the unresolved name of the predicate.
    * @param terms the terms of the predicate.
    */
-  case class AmbiguousPredicate(name: ParsedAst.QName, terms: Seq[ParsedAst.Term]) extends Pattern
+  case class AmbiguousPredicate(name: ParsedAst.QName, terms: Seq[ParsedAst.Term]) extends ParsedAst
 
   /**
    * AST nodes for Terms.
