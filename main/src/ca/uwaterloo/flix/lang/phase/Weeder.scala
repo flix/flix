@@ -37,20 +37,25 @@ object Weeder {
           s"  Second declaration was here: ${location2.format}. This one will be ignored.\n"
     }
 
-    // TODO:
-    // - Duplicate variable in pattern.
-    // - Duplicate variable in function argument. lambda/def
-    // - Duplicate tag in enum
-    // - duplicate name in relation
+
+
+
+    case class DuplicateVariableInPattern()
+
+    case class DuplicatedFormalArgument()
+
+    case class DuplicatedAttributeInRelation()
 
     // TODO: JoinSemiLattice vs. CompleteLattice.
-
     // TODO: valid "Traits"
     // TODO: Allow nested lattice types? <<foo>> ?
 
     // rewrite all functions to lambdas of one argument?
 
-    // - Disallow Ast.Term.Apply in body of rules.
+
+    case class IllegalApplyInTerm() extends WeederError {
+      val format = ???
+    }
 
   }
 
@@ -80,5 +85,12 @@ object Weeder {
     } map {
       case m => WeededAst.Declaration.Enum(d.ident, m)
     }
+
+  /**
+   * Compiles the given predicate `p`.
+   */
+  def compile(p: ParsedAst.AmbiguousPredicate) = {
+    ???
+  }
 
 }
