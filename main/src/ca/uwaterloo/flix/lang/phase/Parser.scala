@@ -1,7 +1,8 @@
-package ca.uwaterloo.flix.lang
+package ca.uwaterloo.flix.lang.phase
 
 import java.nio.file.Path
 
+import ca.uwaterloo.flix.lang.ast
 import ca.uwaterloo.flix.lang.ast._
 import ca.uwaterloo.flix.util.misc.Unoptimized
 

@@ -1,12 +1,32 @@
 package ca.uwaterloo.flix.lang
 
 import ca.uwaterloo.flix.lang.ast._
+import ca.uwaterloo.flix.lang.phase.Parser
 
 import org.scalatest.FunSuite
 
 // TODO: Cleanup names.
 
 class TestParser extends FunSuite {
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Root                                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Parser.Root01") {
+    val input = ""
+    val result = new Parser(None, input).Root.run()
+    assert(result.isSuccess)
+  }
+
+  test("Parser.Root02") {
+    val input =
+      """namespace a {
+        |  // a comment
+        |}
+      """.stripMargin
+    val result = new Parser(None, input).Root.run()
+    assert(result.isSuccess)
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Declarations                                                            //
