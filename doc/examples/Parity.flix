@@ -98,10 +98,10 @@ namespace ParityAnalysis {
 
     lat <Parity> (Bot, Top, leq, lub, glb) with Norm(x) with Widen(foo);
 
-    rel Sum(result: Int, left: Int, right: Int);
+    rel VarSum(result: Int, left: Int, right: Int);
     rel VarPointsTo(localVal: Int, value: <Parity>);
 
-    Sum(3, 1, 2).
+    VarSum(3, 1, 2).
     VarPointsTo(1, Parity.Odd).
     VarPointsTo(2, Parity.Even).
 
