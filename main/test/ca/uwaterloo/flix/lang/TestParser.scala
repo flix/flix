@@ -505,19 +505,19 @@ class TestParser extends FunSuite {
   }
 
   test("Parser.Expression.Tuple03") {
-    val input = "(1, 2)"
+    val input = "(1, x)"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Tuple]
     assertResult(2)(result.elms.size)
   }
 
   test("Parser.Expression.Tuple04") {
-    val input = "(1, 2, 3, 4, 5, 6)"
+    val input = "(1, 2, x, 4, 5, 6)"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Tuple]
     assertResult(6)(result.elms.size)
   }
 
   test("Parser.Expression.Tuple05") {
-    val input = "((1, 2), (3, (4, 5)))"
+    val input = "((1, 2), (x, (4, 5)))"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Tuple]
     assertResult(2)(result.elms.size)
   }
@@ -972,6 +972,29 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Literal.Tag])
   }
 
+  test("Parser.Literal.Tuple01") {
+    val input = "()"
+    val result = new Parser(None, input).Literal.run().get
+    assertResult(ParsedAst.Literal.Unit)(result)
+  }
+
+  test("Parser.Literal.Tuple02") {
+    val input = "(1)"
+    val result = new Parser(None, input).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Int])
+  }
+
+  test("Parser.Literal.Tuple03") {
+    val input = "(1, 2, 3)"
+    val result = new Parser(None, input).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Tuple])
+  }
+
+  test("Parser.Literal.Tuple04") {
+    val input = "(true, 42, \"foo\")"
+    val result = new Parser(None, input).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Tuple])
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Operators                                                               //

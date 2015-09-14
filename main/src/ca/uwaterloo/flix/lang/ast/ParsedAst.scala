@@ -172,6 +172,12 @@ object ParsedAst {
      */
     case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, literal: ParsedAst.Literal) extends ParsedAst.Literal
 
+    /**
+     * An AST node that represents a tuple literal.
+     *
+     * @param elms the elements of the tuple.
+     */
+    case class Tuple(elms: Seq[ParsedAst.Literal]) extends ParsedAst.Literal
   }
 
   /**
@@ -290,6 +296,8 @@ object ParsedAst {
 
   /**
    * AST nodes for Patterns.
+   *
+   * A pattern is like a literal except it may contain variables and wildcards.
    */
   sealed trait Pattern extends ParsedAst
 

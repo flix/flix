@@ -348,7 +348,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    UnitLiteral | BoolLiteral | IntLiteral | StrLiteral | TagLiteral
+    UnitLiteral | BoolLiteral | IntLiteral | StrLiteral | TagLiteral | TupleLiteral
   }
 
   def UnitLiteral: Rule1[ParsedAst.Literal.Unit.type] = rule {
@@ -373,6 +373,20 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
         case None => ParsedAst.Literal.Tag(name, ident, ParsedAst.Literal.Unit)
         case Some(lit) => ParsedAst.Literal.Tag(name, ident, lit)
       })
+  }
+
+  def TupleLiteral: Rule1[ParsedAst.Literal] = {
+    def Singleton: Rule1[ParsedAst.Literal] = rule {
+      "(" ~ optWS ~ Literal ~ optWS ~ ")"
+    }
+
+    def Tuple: Rule1[ParsedAst.Literal] = rule {
+      "(" ~ optWS ~ oneOrMore(Literal).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Literal.Tuple
+    }
+
+    rule {
+      Singleton | Tuple
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
