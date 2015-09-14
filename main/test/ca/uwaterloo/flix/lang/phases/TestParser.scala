@@ -1,11 +1,11 @@
-package ca.uwaterloo.flix.lang
+package ca.uwaterloo.flix.lang.phases
 
 import ca.uwaterloo.flix.lang.ast._
 import ca.uwaterloo.flix.lang.phase.Parser
 
 import org.scalatest.FunSuite
 
-// TODO: Cleanup names.
+// TODO: Cleanup names. Numbering and remove the Parser. prefix.
 
 class TestParser extends FunSuite {
 

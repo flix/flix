@@ -1,5 +1,9 @@
 package ca.uwaterloo.flix.lang.phase
 
+import ca.uwaterloo.flix.lang.ast.ParsedAst
+
+import util.Validation
+
 /**
  * The Weeder phase is responsible for:
  *
@@ -8,9 +12,15 @@ package ca.uwaterloo.flix.lang.phase
  */
 object Weeder {
 
-  sealed trait WeedingErrors
+  sealed trait WeederError
 
-  object WeedingErrors {
+  object WeederError {
+
+    /**
+     *
+     */
+    case class DuplicateTag() extends WeederError
+
     // TODO:
     // - Duplicate variable in pattern.
     // - Duplicate variable in function argument. lambda/def
@@ -29,5 +39,8 @@ object Weeder {
 
   }
 
+
+  def compile(past: ParsedAst.Declaration.Enum): Validation[ParsedAst.Declaration.Enum, WeederError] =
+    ???
 
 }
