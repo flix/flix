@@ -92,11 +92,7 @@ namespace ParityAnalysis {
     // we abstract integers into the parity domain by using modulo.
     def lift(i: Int): Parity = if (i % 2 == 0) Even else Odd;
 
-    lat <a> (bot, foo::leq, lub) with Norm(b) with Widen(c);
-
-    lat <Parity> (Bot, leq, lub) with Norm(x) with Widen(foo);
-
-    lat <Parity> (Bot, Top, leq, lub, glb) with Norm(x) with Widen(foo);
+    lat <Parity> (Bot, leq, ParityAnalysis::lub);
 
     rel VarSum(result: Int, left: Int, right: Int);
     rel VarPointsTo(localVal: Int, value: <Parity>);
