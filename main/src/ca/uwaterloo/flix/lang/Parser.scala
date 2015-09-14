@@ -196,9 +196,9 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   // Patterns                                                                //
   /////////////////////////////////////////////////////////////////////////////
   // NB: LiteralPattern must be parsed before VariablePattern.
-  // NB: TagPattern must be parsed before VariablePattern.
+  // NB: TagPattern must be before LiteralPattern and VariablePattern.
   def Pattern: Rule1[ParsedAst.Pattern] = rule {
-    WildcardPattern | LiteralPattern | TagPattern | VariablePattern | TuplePattern
+    TagPattern | LiteralPattern | TuplePattern | WildcardPattern | VariablePattern
   }
 
   def WildcardPattern: Rule1[ParsedAst.Pattern.Wildcard] = rule {
@@ -216,8 +216,8 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   def TagPattern: Rule1[ParsedAst.Pattern.Tag] = rule {
     QName ~ "." ~ Ident ~ optWS ~ optional(Pattern) ~>
       ((name: ParsedAst.QName, ident: ParsedAst.Ident, pattern: Option[ParsedAst.Pattern]) => pattern match {
-        case None =>  ParsedAst.Pattern.Tag(name, ident, ParsedAst.Pattern.Lit(ParsedAst.Literal.Unit))
-        case Some(p) =>  ParsedAst.Pattern.Tag(name, ident, p)
+        case None => ParsedAst.Pattern.Tag(name, ident, ParsedAst.Pattern.Lit(ParsedAst.Literal.Unit))
+        case Some(p) => ParsedAst.Pattern.Tag(name, ident, p)
       })
   }
 
@@ -243,9 +243,9 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /////////////////////////////////////////////////////////////////////////////
   // Terms                                                                   //
   /////////////////////////////////////////////////////////////////////////////
-  // NB: ApplyTerm must be parsed before VariableTerm.
+  // NB: ApplyTerm must be parsed before LiteralTerm which must be parsed before VariableTerm.
   def Term: Rule1[ParsedAst.Term] = rule {
-    ApplyTerm | WildcardTerm | VariableTerm | LiteralTerm
+    ApplyTerm | LiteralTerm | WildcardTerm | VariableTerm
   }
 
   def WildcardTerm: Rule1[ParsedAst.Term] = rule {
@@ -348,7 +348,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    UnitLiteral | BoolLiteral | IntLiteral | StrLiteral
+    UnitLiteral | BoolLiteral | IntLiteral | StrLiteral | TagLiteral
   }
 
   def UnitLiteral: Rule1[ParsedAst.Literal.Unit.type] = rule {
@@ -365,6 +365,14 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   def StrLiteral: Rule1[ParsedAst.Literal.Str] = rule {
     "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~> ParsedAst.Literal.Str
+  }
+
+  def TagLiteral: Rule1[ParsedAst.Literal.Tag] = rule {
+    QName ~ "." ~ Ident ~ optWS ~ optional(Literal) ~>
+      ((name: ParsedAst.QName, ident: ParsedAst.Ident, literal: Option[ParsedAst.Literal]) => literal match {
+        case None => ParsedAst.Literal.Tag(name, ident, ParsedAst.Literal.Unit)
+        case Some(lit) => ParsedAst.Literal.Tag(name, ident, lit)
+      })
   }
 
   /////////////////////////////////////////////////////////////////////////////

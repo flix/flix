@@ -163,6 +163,15 @@ object ParsedAst {
      */
     case class Str(literal: java.lang.String) extends ParsedAst.Literal
 
+    /**
+     * An AST node that represents a tagged literal.
+     *
+     * @param name the namespace of the enum.
+     * @param ident the name of the tag.
+     * @param literal the nested literal.
+     */
+    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, literal: ParsedAst.Literal) extends ParsedAst.Literal
+
   }
 
   /**
@@ -254,14 +263,6 @@ object ParsedAst {
      * @param e2 the second argument expression.
      */
     case class Infix(e1: ParsedAst.Expression, name: ParsedAst.QName, e2: ParsedAst.Expression) extends ParsedAst.Expression
-
-    /**
-     * An AST node that represents a tagged expression.
-     *
-     * @param name the unresolved name of the tag.
-     * @param e the nested expression.
-     */
-    case class Tag(name: ParsedAst.QName, e: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a tuple expression.

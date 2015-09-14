@@ -25,6 +25,8 @@ object Weeder {
     // rewrite all functions to lambdas of one argument?
 
     // - Disallow Ast.Term.Apply in body of rules.
+    // TODO Disallow Term.Tag in body of rules. Is this always monotone? does it depend on the arguments??? hmm...
+
   }
 
 

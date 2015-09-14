@@ -39,15 +39,15 @@ object Compiler {
    */
   def parse(input: String): ParsedAst.Root = {
     val parser = new Parser(None, input)
-    val formatter = new ErrorFormatter(
-      showExpected = true,
-      showPosition = true,
-      showLine = true,
-      showTraces = true
-    )
+//    val formatter = new ErrorFormatter(
+//      showExpected = true,
+//      showPosition = true,
+//      showLine = true,
+//      showTraces = true
+//    )
     parser.Root.run() match {
       case Success(ast) => ast
-      case Failure(e: ParseError) => throw new RuntimeException(parser.formatError(e, formatter))
+      case Failure(e: ParseError) => throw new RuntimeException(parser.formatError(e))
       case Failure(e) => throw new RuntimeException("Unexpected error during parsing run: " + e)
     }
   }

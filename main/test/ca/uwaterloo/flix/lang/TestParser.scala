@@ -610,6 +610,13 @@ class TestParser extends FunSuite {
   }
 
   test("Parser.Pattern.Tag03") {
+    val input = "Foo.Bar (x, _, z)"
+    val result = new Parser(None, input).Pattern.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Pattern.Tag])
+  }
+
+  test("Parser.Pattern.Tag04") {
     val input = "foo::bar::baz.Foo(x, y, z)"
     val result = new Parser(None, input).Pattern.run()
     assert(result.isSuccess)
@@ -696,6 +703,24 @@ class TestParser extends FunSuite {
     val result = new Parser(None, input).Term.run().get.asInstanceOf[ParsedAst.Term.Apply]
     assertResult(Seq("foo", "bar"))(result.name.parts)
     assertResult(Seq("x", "y", "z"))(result.args.map(_.asInstanceOf[ParsedAst.Term.Var].ident.name))
+  }
+
+  test("Parser.Term.Tag01") {
+    val input = "Foo.Bar"
+    val result = new Parser(None, input).Term.run().get.asInstanceOf[ParsedAst.Term.Lit]
+    assert(result.literal.isInstanceOf[ParsedAst.Literal.Tag])
+  }
+
+  test("Parser.Term.Tag02") {
+    val input = "Foo.Bar(1)"
+    val result = new Parser(None, input).Term.run().get.asInstanceOf[ParsedAst.Term.Lit]
+    assert(result.literal.isInstanceOf[ParsedAst.Literal.Tag])
+  }
+
+  test("Parser.Term.Tag03") {
+    val input = "foo::bar::Baz.Bar(1, 2, 3)"
+    val result = new Parser(None, input).Term.run().get.asInstanceOf[ParsedAst.Term.Lit]
+    assert(result.literal.isInstanceOf[ParsedAst.Literal.Tag])
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -883,6 +908,10 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
+  // TODO: Should literals also include tuples???
+  // TODO: The parser could be simplified by allowing expressions everywhere and
+  // then simply checking whether such an expression is a literal.
+
   test("Parser.Literal (Unit)") {
     val input = "()"
     val result = new Parser(None, input).Literal.run().get
@@ -918,6 +947,31 @@ class TestParser extends FunSuite {
     val result = new Parser(None, input).Literal.run().get
     assertResult(result)(ParsedAst.Literal.Str(literal = "foo"))
   }
+
+  test("Parser.Literal.Tag01") {
+    val input = "Foo.Bar"
+    val result = new Parser(None, input).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Tag])
+  }
+
+  test("Parser.Literal.Tag02") {
+    val input = "Foo.Bar()"
+    val result = new Parser(None, input).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Tag])
+  }
+
+  test("Parser.Literal.Tag03") {
+    val input = "Foo.Bar Baz.Quux"
+    val result = new Parser(None, input).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Tag])
+  }
+
+  test("Parser.Literal.Tag04") {
+    val input = "quux::Foo.Bar(true, 42, \"foo\")"
+    val result = new Parser(None, input).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Tag])
+  }
+
 
   /////////////////////////////////////////////////////////////////////////////
   // Operators                                                               //
