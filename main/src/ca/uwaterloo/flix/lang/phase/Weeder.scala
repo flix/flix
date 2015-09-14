@@ -54,15 +54,26 @@ object Weeder {
 
   }
 
+  def weed(ast: ParsedAst.Root): Unit = {
+    ast.declarations.map(compile)
+  }
+  
+  def compile(d: ParsedAst.Declaration): Unit = d match {
+    case ParsedAst.Declaration.Namespace(name, body) => body map compile
+    case d: ParsedAst.Declaration.Enum =>
+      val r = compile(d)
+      println(r)
+    case _ =>
+  }
 
-  def compile(pAst: ParsedAst.Declaration.Enum): Validation[WeededAst.Declaration.Enum, WeederError] =
-    Validation.fold[ParsedAst.Type.Tag, Map[String, ParsedAst.Type.Tag], WeederError](pAst.body, Map.empty) {
+  def compile(d: ParsedAst.Declaration.Enum): Validation[WeededAst.Declaration.Enum, WeederError] =
+    Validation.fold[ParsedAst.Type.Tag, Map[String, ParsedAst.Type.Tag], WeederError](d.body, Map.empty) {
       case (macc, tag@ParsedAst.Type.Tag(ParsedAst.Ident(name, location2), _)) => macc.get(name) match {
         case None => (macc + (name -> tag)).toSuccess
         case Some(otherTag) => DuplicateTag(name, otherTag.ident.location, location2).toFailure
       }
     } map {
-      case m => WeededAst.Declaration.Enum(pAst.ident, m)
+      case m => WeededAst.Declaration.Enum(d.ident, m)
     }
 
 }

@@ -11,12 +11,10 @@ object Main {
 
     implicit val options = Options()
 
-    val asts = Compiler.parse(args.map(arg => Paths.get(arg)))
+    val asts = Compiler.compile(args.map(arg => Paths.get(arg)))
 
-    println(asts)
-
-    val shell = new Shell()
-    shell.startAndAwait()
+//    val shell = new Shell()
+//    shell.startAndAwait()
 
   }
 
