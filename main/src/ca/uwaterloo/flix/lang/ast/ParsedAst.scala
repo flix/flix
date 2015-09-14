@@ -7,10 +7,9 @@ import scala.collection.immutable.Seq
  */
 sealed trait ParsedAst
 
-// TODO: that vs. which
-// TODO: Ensure that @param is documented.
 // TODO: Consider order
 // TODO: Long or short names?
+// TODO: Use the word "ref".
 
 object ParsedAst {
 
@@ -97,9 +96,13 @@ object ParsedAst {
     case class Relation(ident: ParsedAst.Ident, attributes: Seq[(ParsedAst.Ident, ParsedAst.Type)]) extends ParsedAst.Declaration
 
     /**
-     * An AST node which represents a lattice declaration.
+     * An AST node that represents a lattice declaration.
+     *
+     * @param ident the name of the lattice.
+     * @param elms the components of the lattice (e.g. bot, leq, lub).
+     * @param traits the traits of the lattice (e.g. Norm and Widening).
      */
-    case class Lattice(ident: ParsedAst.Ident, record: ParsedAst.Expression) extends ParsedAst.Declaration
+    case class Lattice(ident: ParsedAst.Ident, elms: Seq[ParsedAst.QName], traits: Seq[ParsedAst.Declaration.Trait]) extends ParsedAst.Declaration
 
     /**
      * An AST node that represents a fact declaration.
@@ -115,6 +118,15 @@ object ParsedAst {
      * @param body the body predicates.
      */
     case class Rule(head: ParsedAst.AmbiguousPredicate, body: Seq[ParsedAst.AmbiguousPredicate]) extends ParsedAst.Declaration
+
+    /**
+     * An AST node that represent a trait. Used by lattice declarations.
+     *
+     * @param ident the name of the trait.
+     * @param name the value passed to the trait.
+     */
+    // TODO: Find a better name.
+    case class Trait(ident: ParsedAst.Ident, name: QName) extends ParsedAst.Declaration
 
   }
 

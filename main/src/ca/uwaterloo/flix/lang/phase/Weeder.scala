@@ -17,6 +17,9 @@ object Weeder {
     // - Duplicate tag in enum
     // - duplicate name in relation
 
+    // TODO: JoinSemiLattice vs. CompleteLattice.
+
+    // TODO: valid "Traits"
 
     // - Disallow Ast.Term.Apply in body of rules.
   }

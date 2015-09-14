@@ -113,6 +113,66 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Declaration.Enum])
   }
 
+  test("Parser.Declaration.JoinSemiLattice01") {
+    val input = "lat <a> (bot, foo::leq, lub)"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+  }
+
+  test("Parser.Declaration.JoinSemiLattice02") {
+    val input = "lat <a> (bot, foo::leq, lub) with Norm(b)"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+  }
+
+  test("Parser.Declaration.JoinSemiLattice03") {
+    val input = "lat <a> (bot, foo::leq, lub) with Widen(b)"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+  }
+
+  test("Parser.Declaration.JoinSemiLattice04") {
+    val input = "lat <a> (bot, foo::leq, lub) with Norm(b) with Widen(c)"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+  }
+
+  test("Parser.Declaration.JoinSemiLattice05") {
+    val input = "lat <a> (bot, foo::leq, lub) with Norm(foo::b) with Widen(foo::c)"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+  }
+
+  test("Parser.Declaration.CompleteLattice01") {
+    val input = "lat <a> (bot, top, foo::leq, lub, glb)"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+  }
+
+  test("Parser.Declaration.CompleteLattice02") {
+    val input = "lat <a> (bot, top, foo::leq, lub, glb) with Norm(b)"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+  }
+
+  test("Parser.Declaration.CompleteLattice03") {
+    val input = "lat <a> (bot, top, foo::leq, lub, glb) with Widen(b)"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+  }
+
+  test("Parser.Declaration.CompleteLattice04") {
+    val input = "lat <a> (bot, top, foo::leq, lub, glb) with Norm(b) with Widen(c)"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+  }
+
+  test("Parser.Declaration.CompleteLattice05") {
+    val input = "lat <a> (bot, top, foo::leq, lub, glb) with Norm(foo::b) with Widen(foo::c)"
+    val result = new Parser(None, input).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+  }
+
   test("Parser.Declaration.Relation01") {
     val input = "rel A(b: B)"
     val result = new Parser(None, input).Declaration.run().get

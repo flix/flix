@@ -25,7 +25,8 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   // NB: RuleDeclaration must be parsed before FactDeclaration.
   def Declaration: Rule1[ParsedAst.Declaration] = rule {
-    NamespaceDeclaration | TypeDeclaration | RelationDeclaration | ValueDeclaration | FunctionDeclaration | EnumDeclaration | RuleDeclaration | FactDeclaration
+    NamespaceDeclaration | TypeDeclaration | ValueDeclaration | FunctionDeclaration | EnumDeclaration |
+      LatticeDeclaration | RelationDeclaration | RuleDeclaration | FactDeclaration
   }
 
   def NamespaceDeclaration: Rule1[ParsedAst.Declaration.Namespace] = rule {
@@ -63,11 +64,19 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     }
   }
 
-  // TODO
-  //def LatticeDeclaration: Rule1[Ast.Declaration.Lattice] = rule {
-  //   "lat" ~ WS ~ Ident ~ optWS ~ "=" ~ optWS ~ RecordExp ~ ";" ~ optWS ~> Ast.Declaration.Lattice
-  // }
+  def LatticeDeclaration: Rule1[ParsedAst.Declaration] = {
+    def Elms: Rule1[Seq[ParsedAst.QName]] = rule {
+      oneOrMore(QName).separatedBy(optWS ~ "," ~ optWS)
+    }
 
+    def Traits: Rule1[Seq[ParsedAst.Declaration.Trait]] = rule {
+      zeroOrMore(atomic("with") ~ WS ~ Ident ~ optWS ~ "(" ~ QName ~ ")" ~ optWS ~> ParsedAst.Declaration.Trait)
+    }
+
+    rule {
+      atomic("lat") ~ optWS ~ "<" ~ Ident ~ ">" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ optWS ~ Traits ~ optSC ~> ParsedAst.Declaration.Lattice
+    }
+  }
 
   def RelationDeclaration: Rule1[ParsedAst.Declaration.Relation] = {
     def Attribute: Rule1[(ParsedAst.Ident, ParsedAst.Type)] = rule {
