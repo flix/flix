@@ -23,6 +23,9 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     optWS ~ zeroOrMore(Declaration) ~ optWS ~ EOI ~> ParsedAst.Root
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Declarations                                                            //
+  /////////////////////////////////////////////////////////////////////////////
   // NB: RuleDeclaration must be parsed before FactDeclaration.
   def Declaration: Rule1[ParsedAst.Declaration] = rule {
     NamespaceDeclaration | TypeDeclaration | ValueDeclaration | FunctionDeclaration | EnumDeclaration |
@@ -92,9 +95,9 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     }
   }
 
-  /** *************************************************************************/
-  /** Expressions                                                           ***/
-  /** *************************************************************************/
+  /////////////////////////////////////////////////////////////////////////////
+  // Expressions                                                             //
+  /////////////////////////////////////////////////////////////////////////////
   def Expression: Rule1[ParsedAst.Expression] = rule {
     LogicalExpression
   }
@@ -191,8 +194,9 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   // Patterns                                                                //
   /////////////////////////////////////////////////////////////////////////////
   // NB: LiteralPattern must be parsed before VariablePattern.
+  // NB: TagPattern must be parsed before VariablePattern.
   def Pattern: Rule1[ParsedAst.Pattern] = rule {
-    WildcardPattern | LiteralPattern | VariablePattern | TuplePattern
+    WildcardPattern | LiteralPattern | TagPattern | VariablePattern | TuplePattern
   }
 
   def WildcardPattern: Rule1[ParsedAst.Pattern.Wildcard] = rule {
@@ -205,6 +209,14 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   def LiteralPattern: Rule1[ParsedAst.Pattern.Lit] = rule {
     Literal ~> ParsedAst.Pattern.Lit
+  }
+
+  def TagPattern: Rule1[ParsedAst.Pattern.Tag] = rule {
+    QName ~ "." ~ Ident ~ optWS ~ optional(Expression) ~>
+      ((name: ParsedAst.QName, ident: ParsedAst.Ident, exp: Option[ParsedAst.Expression]) => exp match {
+        case None =>  ParsedAst.Pattern.Tag(name, ident, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit))
+        case Some(e) =>  ParsedAst.Pattern.Tag(name, ident, e)
+      })
   }
 
   def TuplePattern: Rule1[ParsedAst.Pattern.Tuple] = rule {

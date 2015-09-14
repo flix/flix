@@ -316,6 +316,15 @@ object ParsedAst {
     case class Lit(literal: ParsedAst.Literal) extends ParsedAst.Pattern
 
     /**
+     * An AST node that represents a tag pattern.
+     *
+     * @param name the namespace the tag belongs to.
+     * @param ident the name of the tag.
+     * @param e the tagged expression.
+     */
+    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, e: Expression) extends ParsedAst.Pattern
+
+    /**
      * An AST node that represents a tuple pattern.
      *
      * @param elms the elements of the tuple.

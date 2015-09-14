@@ -558,49 +558,69 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
   /////////////////////////////////////////////////////////////////////////////
-  test("Parser.Pattern01") {
+  test("Parser.Pattern.Wildcard") {
     val input = "_"
     val result = new Parser(None, input).Pattern.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Pattern.Wildcard])
   }
 
-  test("Parser.Pattern02") {
+  test("Parser.Pattern.Var01") {
     val input = "x"
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Var]
     assertResult("x")(result.ident.name)
   }
 
-  test("Parser.Pattern03") {
+  test("Parser.Pattern.Var02") {
     val input = "foo_Bar'"
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Var]
     assertResult("foo_Bar'")(result.ident.name)
   }
 
-  test("Parser.Pattern04") {
+  test("Parser.Pattern.Literal01") {
     val input = "true"
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
     assertResult(ParsedAst.Literal.Bool(true))(result.literal)
   }
 
-  test("Parser.Pattern05") {
+  test("Parser.Pattern.Literal02") {
     val input = "42"
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
     assertResult(ParsedAst.Literal.Int(42))(result.literal)
   }
 
-  test("Parser.Pattern06") {
+  test("Parser.Pattern.Literal03") {
     val input = "\"foo\""
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
     assertResult(ParsedAst.Literal.Str("foo"))(result.literal)
   }
 
-  test("Parser.Pattern07") {
+  test("Parser.Pattern.Tag01") {
+    val input = "Const.Bot"
+    val result = new Parser(None, input).Pattern.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Pattern.Tag])
+  }
+
+  test("Parser.Pattern.Tag02") {
+    val input = "Const.Cst(5)"
+    val result = new Parser(None, input).Pattern.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Pattern.Tag])
+  }
+
+  test("Parser.Pattern.Tag03") {
+    val input = "foo::bar::baz.Foo(x, y, z)"
+    val result = new Parser(None, input).Pattern.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Pattern.Tag])
+  }
+
+  test("Parser.Pattern.Tuple01") {
     val input = "(x, y, true)"
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Tuple]
     assertResult(3)(result.elms.size)
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Facts and Rules                                                         //
