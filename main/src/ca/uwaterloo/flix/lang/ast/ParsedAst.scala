@@ -89,14 +89,6 @@ object ParsedAst {
     case class Enum(ident: ParsedAst.Ident, cases: Seq[ParsedAst.Type.Tag]) extends ParsedAst.Declaration
 
     /**
-     * An AST that represent a relation declaration.
-     *
-     * @param ident the name of the relation.
-     * @param attributes the name and type of the attributes.
-     */
-    case class Relation(ident: ParsedAst.Ident, attributes: Seq[(ParsedAst.Ident, ParsedAst.Type)]) extends ParsedAst.Declaration
-
-    /**
      * An AST node that represents a lattice declaration.
      *
      * @param ident the name of the lattice.
@@ -104,6 +96,14 @@ object ParsedAst {
      * @param traits the traits of the lattice (e.g. Norm and Widening).
      */
     case class Lattice(ident: ParsedAst.Ident, elms: Seq[ParsedAst.QName], traits: Seq[ParsedAst.Declaration.Trait]) extends ParsedAst.Declaration
+
+    /**
+     * An AST that represent a relation declaration.
+     *
+     * @param ident the name of the relation.
+     * @param attributes the name and type of the attributes.
+     */
+    case class Relation(ident: ParsedAst.Ident, attributes: Seq[(ParsedAst.Ident, ParsedAst.Type)]) extends ParsedAst.Declaration
 
     /**
      * An AST node that represents a fact declaration.

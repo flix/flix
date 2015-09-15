@@ -94,8 +94,11 @@ object Weeder {
   def compileDeclaration(d: ParsedAst.Declaration): Validation[WeededAst.Declaration, WeederError] = d match {
     case d: ParsedAst.Declaration.Namespace => compileNamespace(d)
     case d: ParsedAst.Declaration.Tpe => compileType(d) // TODO: Naming, call TypeAlias?
+    case d: ParsedAst.Declaration.Fun => compileFun(d)
     case d: ParsedAst.Declaration.Val => compileVal(d)
     case d: ParsedAst.Declaration.Enum => compileEnum(d)
+    case d: ParsedAst.Declaration.Lattice => compileLattice(d)
+    case d: ParsedAst.Declaration.Relation => compileRelation(d)
     case d: ParsedAst.Declaration.Fact => compileFact(d)
     case d: ParsedAst.Declaration.Rule => compileRule(d)
   }
@@ -111,6 +114,21 @@ object Weeder {
    */
   def compileType(d: ParsedAst.Declaration.Tpe): Validation[WeededAst.Declaration.Tpe, WeederError] =
     compileType(d.tpe) map (t => WeededAst.Declaration.Tpe(d.ident, t))
+
+  /**
+   * Compiles the given parsed function declaration `d` to a weeded function declaration.
+   */
+  def compileFun(d: ParsedAst.Declaration.Fun): Validation[WeededAst.Declaration.Fun, WeederError] = {
+    val formals2 = d.formals.map {
+      case (ident, tpe) => compileType(tpe) map (t => (ident, t))
+    }
+    val returnTpeVal = compileType(d.tpe)
+    val bodyVal = compileExpression(d.body)
+    // TODO: Naming
+    @@(@@(formals2), returnTpeVal, bodyVal) map {
+      case (wformals, wreturnTpe, wbody) => WeededAst.Declaration.Fun(d.ident, wformals, wreturnTpe, wbody)
+    }
+  }
 
   /**
    * Compiles the given parsed value declaration `d` to a weeded declaration.
@@ -138,7 +156,25 @@ object Weeder {
     }
 
   /**
-   * Compiles the parsed fact `d` to a weeded fact.
+   * Compiles the given parsed lattice `d` to a weeded lattice.
+   */
+  def compileLattice(d: ParsedAst.Declaration.Lattice): Validation[WeededAst.Declaration.Lattice, WeederError] =
+    WeededAst.Declaration.Lattice(d.ident, d.elms, d.traits).toSuccess
+
+  /**
+   * Compiles the given parsed relation `d` to a weeded relation.
+   */
+  def compileRelation(d: ParsedAst.Declaration.Relation): Validation[WeededAst.Declaration.Relation, WeederError] = {
+    val attributes = d.attributes.map {
+      case (ident, tpe) => compileType(tpe) map (t => (ident, t))
+    }
+    @@(attributes) map {
+      case wattr => WeededAst.Declaration.Relation(d.ident, wattr)
+    }
+  }
+
+  /**
+   * Compiles the given parsed fact `d` to a weeded fact.
    */
   def compileFact(d: ParsedAst.Declaration.Fact): Validation[WeededAst.Declaration.Fact, WeederError] =
     compilePredicateWithApply(d.head) map {
@@ -185,6 +221,7 @@ object Weeder {
       val formals2 = formals map {
         case (ident, formalType) => compileType(formalType) map (t => (ident, t))
       }
+      // TODO: Naming
       @@(@@(formals2), compileType(tpe), compileExpression(body)) map {
         case (wformals, wtpe, wbody) => WeededAst.Expression.Lambda(wformals, wtpe, wbody)
       }
