@@ -6,15 +6,38 @@ trait WeededAst
 
 object WeededAst {
 
+  case class Root(declarations: Seq[WeededAst.Declaration]) extends WeededAst
+
+
   sealed trait Declaration
 
   object Declaration {
+
+    case class Namespace(name: ParsedAst.QName, body: Seq[WeededAst.Declaration]) extends WeededAst.Declaration
 
     case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends WeededAst.Declaration
 
     case class Fact(head: WeededAst.PredicateWithApply) extends WeededAst.Declaration
 
     case class Rule(head: WeededAst.PredicateWithApply, body: Seq[WeededAst.PredicateNoApply]) extends WeededAst.Declaration
+
+  }
+
+  sealed trait Literal
+
+  object Literal {
+
+    case object Unit extends WeededAst.Literal
+
+    case class Bool(literal: scala.Boolean) extends WeededAst.Literal
+
+    case class Int(literal: scala.Int) extends WeededAst.Literal
+
+    case class Str(literal: java.lang.String) extends WeededAst.Literal
+
+    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, literal: WeededAst.Literal) extends WeededAst.Literal
+
+    case class Tuple(elms: Seq[WeededAst.Literal]) extends WeededAst.Literal
 
   }
 
@@ -26,7 +49,7 @@ object WeededAst {
 
     case class Var(ident: ParsedAst.Ident) extends WeededAst.Pattern
 
-    case class Lit(literal: ParsedAst.Literal) extends WeededAst.Pattern
+    case class Lit(literal: WeededAst.Literal) extends WeededAst.Pattern
 
     case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, p: WeededAst.Pattern) extends WeededAst.Pattern
 
@@ -46,7 +69,7 @@ object WeededAst {
 
     case class Var(ident: ParsedAst.Ident) extends WeededAst.TermNoApply
 
-    case class Lit(literal: ParsedAst.Literal) extends WeededAst.TermNoApply
+    case class Lit(literal: WeededAst.Literal) extends WeededAst.TermNoApply
 
   }
 
@@ -58,7 +81,7 @@ object WeededAst {
 
     case class Var(ident: ParsedAst.Ident) extends WeededAst.TermWithApply
 
-    case class Lit(literal: ParsedAst.Literal) extends WeededAst.TermWithApply
+    case class Lit(literal: WeededAst.Literal) extends WeededAst.TermWithApply
 
     case class Apply(name: ParsedAst.QName, args: Seq[WeededAst.TermWithApply]) extends WeededAst.TermWithApply
 

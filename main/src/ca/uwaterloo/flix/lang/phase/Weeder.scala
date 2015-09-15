@@ -83,30 +83,35 @@ object Weeder {
   }
 
   /**
-   * TODO DOC
+   * Compiles the given parsed `ast` to a weeded ast.
    */
-  def weed(ast: ParsedAst.Root): Unit = {
-    ast.declarations.map(compile)
+  def weed(ast: ParsedAst.Root): Validation[WeededAst.Root, WeederError] = {
+    @@(ast.declarations.map(compileDeclaration)) map WeededAst.Root
   }
 
-  def compile(d: ParsedAst.Declaration): Unit = d match {
-    case ParsedAst.Declaration.Namespace(name, body) => body map compile
-    case d: ParsedAst.Declaration.Enum =>
-      val r = compile(d)
-      println(r)
-    case d: ParsedAst.Declaration.Fact =>
-      val r = compileFact(d)
-      println(r)
-    case d: ParsedAst.Declaration.Rule =>
-      val r = compileRule(d)
-      println(r)
-    case _ =>
+
+  /**
+   * Compiles the given parsed declaration `d` to a weeded declaration.
+   */
+  def compileDeclaration(d: ParsedAst.Declaration): Validation[WeededAst.Declaration, WeederError] = d match {
+    case d: ParsedAst.Declaration.Namespace => compileNamespace(d)
+    case d: ParsedAst.Declaration.Enum => compileEnum(d)
+    case d: ParsedAst.Declaration.Fact => compileFact(d)
+    case d: ParsedAst.Declaration.Rule => compileRule(d)
   }
 
   /**
-   * Compiles the given enum declaration `d`.
+   * Compiles the given parsed namespace `d` to a weeded namespace.
    */
-  def compile(d: ParsedAst.Declaration.Enum): Validation[WeededAst.Declaration.Enum, WeederError] =
+  def compileNamespace(d: ParsedAst.Declaration.Namespace): Validation[WeededAst.Declaration.Namespace, WeederError] =
+    @@(d.body.map(compileDeclaration)) map (ds => WeededAst.Declaration.Namespace(d.name, ds))
+
+  /**
+   * Compiles the given parsed enum `d` to a weeded enum.
+   *
+   * Fails if the same tag name is occurs twice.
+   */
+  def compileEnum(d: ParsedAst.Declaration.Enum): Validation[WeededAst.Declaration.Enum, WeederError] =
     Validation.fold[ParsedAst.Type.Tag, Map[String, ParsedAst.Type.Tag], WeederError](d.body, Map.empty) {
       // loop through each tag declaration
       case (macc, tag@ParsedAst.Type.Tag(ParsedAst.Ident(name, location2), _)) => macc.get(name) match {
@@ -131,12 +136,17 @@ object Weeder {
    */
   def compileRule(d: ParsedAst.Declaration.Rule): Validation[WeededAst.Declaration.Rule, WeederError] = {
     val headVal = compilePredicateWithApply(d.head)
-    val bodyVal = flatten(d.body.map(compilePredicateNoApply))
+    val bodyVal = @@(d.body.map(compilePredicateNoApply))
 
     @@(headVal, bodyVal) map {
       case (head, body) => WeededAst.Declaration.Rule(head, body)
     }
   }
+
+  /**
+   * Compiles the parsed literal `l` to a weeded literal.
+   */
+  def compileLiteral(l: ParsedAst.Literal): Validation[WeededAst.Literal, WeederError] = ???
 
   /**
    * Compiles the parsed pattern `p` to a weeded pattern.
@@ -154,11 +164,11 @@ object Weeder {
           WeededAst.Pattern.Var(ident).toSuccess
         case Some(otherIdent) => NonLinearPattern(name, otherIdent.location, location).toFailure
       }
-      case ParsedAst.Pattern.Lit(literal) => WeededAst.Pattern.Lit(literal).toSuccess
+      case ParsedAst.Pattern.Lit(literal) => compileLiteral(literal) map WeededAst.Pattern.Lit
       case ParsedAst.Pattern.Tag(name, ident, p2) => visit(p2) map {
         case wp => WeededAst.Pattern.Tag(name, ident, wp)
       }
-      case ParsedAst.Pattern.Tuple(elms) => flatten(elms map visit) map {
+      case ParsedAst.Pattern.Tuple(elms) => @@(elms map visit) map {
         case welms => WeededAst.Pattern.Tuple(welms)
       }
     }
@@ -172,7 +182,7 @@ object Weeder {
    * Fails if the parsed predicate contains a function call.
    */
   def compilePredicateNoApply(p: ParsedAst.AmbiguousPredicate): Validation[WeededAst.PredicateNoApply, WeederError] =
-    flatten(p.terms.map(compileTermNoApply)) map {
+    @@(p.terms.map(compileTermNoApply)) map {
       case wterms => WeededAst.PredicateNoApply(p.name, wterms)
     }
 
@@ -180,7 +190,7 @@ object Weeder {
    * Compiles the given parsed predicate `p` to a weeded predicate.
    */
   def compilePredicateWithApply(p: ParsedAst.AmbiguousPredicate): Validation[WeededAst.PredicateWithApply, WeederError] =
-    flatten(p.terms.map(compileTermWithApply)) map {
+    @@(p.terms.map(compileTermWithApply)) map {
       case wterms => WeededAst.PredicateWithApply(p.name, wterms)
     }
 
@@ -192,7 +202,7 @@ object Weeder {
   def compileTermNoApply(t: ParsedAst.Term): Validation[WeededAst.TermNoApply, WeederError] = t match {
     case ParsedAst.Term.Wildcard(location) => WeededAst.TermNoApply.Wildcard(location).toSuccess
     case ParsedAst.Term.Var(ident) => WeededAst.TermNoApply.Var(ident).toSuccess
-    case ParsedAst.Term.Lit(literal) => WeededAst.TermNoApply.Lit(literal).toSuccess
+    case ParsedAst.Term.Lit(literal) => compileLiteral(literal) map WeededAst.TermNoApply.Lit
     case ParsedAst.Term.Apply(name, args) => ApplyNotAllowInBody(name.location).toFailure
   }
 
@@ -202,8 +212,8 @@ object Weeder {
   def compileTermWithApply(t: ParsedAst.Term): Validation[WeededAst.TermWithApply, WeederError] = t match {
     case ParsedAst.Term.Wildcard(location) => WeededAst.TermWithApply.Wildcard(location).toSuccess
     case ParsedAst.Term.Var(ident) => WeededAst.TermWithApply.Var(ident).toSuccess
-    case ParsedAst.Term.Lit(literal) => WeededAst.TermWithApply.Lit(literal).toSuccess
-    case ParsedAst.Term.Apply(name, args) => flatten(args map compileTermWithApply) map {
+    case ParsedAst.Term.Lit(literal) => compileLiteral(literal) map WeededAst.TermWithApply.Lit
+    case ParsedAst.Term.Apply(name, args) => @@(args map compileTermWithApply) map {
       case wargs => WeededAst.TermWithApply.Apply(name, wargs)
     }
   }
@@ -211,23 +221,23 @@ object Weeder {
   /**
    * Compiles the given parsed type `t` to a weeded type.
    */
-  def compile(t: ParsedAst.Type): Validation[WeededAst.Type, WeederError] = t match {
+  def compileType(t: ParsedAst.Type): Validation[WeededAst.Type, WeederError] = t match {
     case ParsedAst.Type.Unit => WeededAst.Type.Unit.toSuccess
     case ParsedAst.Type.Ambiguous(name) => WeededAst.Type.Ambiguous(name).toSuccess
     case ParsedAst.Type.Function(t1, t2) =>
-      @@(compile(t1), compile(t2)) map {
+      @@(compileType(t1), compileType(t2)) map {
         case (tpe1, tpe2) => WeededAst.Type.Function(tpe1, tpe2)
       }
-    case ParsedAst.Type.Tag(ident, tpe) => compile(tpe) map {
+    case ParsedAst.Type.Tag(ident, tpe) => compileType(tpe) map {
       case t1 => WeededAst.Type.Tag(ident, t1)
     }
-    case ParsedAst.Type.Tuple(elms) => flatten(elms map compile) map {
+    case ParsedAst.Type.Tuple(elms) => @@(elms map compileType) map {
       case ts => WeededAst.Type.Tuple(ts)
     }
-    case ParsedAst.Type.Parametric(name, elms) => flatten(elms map compile) map {
+    case ParsedAst.Type.Parametric(name, elms) => @@(elms map compileType) map {
       case ts => WeededAst.Type.Parametric(name, ts)
     }
-    case ParsedAst.Type.Lattice(tpe) => compile(tpe) map {
+    case ParsedAst.Type.Lattice(tpe) => compileType(tpe) map {
       case t1 => WeededAst.Type.Lattice(t1)
     }
   }

@@ -17,7 +17,7 @@ class TestWeeder extends FunSuite {
       ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ))
 
-    val result = Weeder.compile(past)
+    val result = Weeder.compileEnum(past)
     assert(result.hasErrors)
   }
 
@@ -29,7 +29,7 @@ class TestWeeder extends FunSuite {
       ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ))
 
-    val result = Weeder.compile(past)
+    val result = Weeder.compileEnum(past)
     assertResult(2)(result.errors.size)
   }
 
@@ -45,7 +45,6 @@ class TestWeeder extends FunSuite {
     val input = "(x, (y, (z, x, y)))"
     val past = new Parser(None, input).Pattern.run().get
     val result = Weeder.compilePattern(past)
-    println(result)
     assert(result.isFailure)
     assertResult(2)(result.errors.size)
   }
@@ -80,7 +79,7 @@ class TestWeeder extends FunSuite {
 
   test("Compile.Type.Unit") {
     val past = ParsedAst.Type.Unit
-    val result = Weeder.compile(past)
+    val result = Weeder.compileType(past)
 
     assert(result.isSuccess)
     assertResult(WeededAst.Type.Unit)(result.get)
@@ -88,7 +87,7 @@ class TestWeeder extends FunSuite {
 
   test("Compile.Type.Tag") {
     val past = ParsedAst.Type.Tag(Ident, ParsedAst.Type.Unit)
-    val result = Weeder.compile(past)
+    val result = Weeder.compileType(past)
 
     assert(result.isSuccess)
     assertResult(WeededAst.Type.Tag(Ident, WeededAst.Type.Unit))(result.get)

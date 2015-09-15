@@ -112,7 +112,7 @@ object Validation {
    */
   // TODO: rename to @@?
   @inline
-  def flatten[Value, Alternative](xs: Seq[Validation[Value, Alternative]]): Validation[Seq[Value], Alternative] = {
+  def @@[Value, Alternative](xs: Seq[Validation[Value, Alternative]]): Validation[Seq[Value], Alternative] = {
     val zero = Success(List.empty[Value], List.empty[Alternative]): Validation[List[Value], Alternative]
     xs.foldLeft(zero) {
       case (Success(value, errors), Success(otherValue, otherAlternatives)) =>
