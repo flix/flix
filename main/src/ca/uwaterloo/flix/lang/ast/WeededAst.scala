@@ -12,6 +12,8 @@ object WeededAst {
 
     case class Fact(head: WeededAst.PredicateWithApply) extends WeededAst.Declaration
 
+    case class Rule(head: WeededAst.PredicateWithApply, body: Seq[WeededAst.PredicateNoApply]) extends WeededAst.Declaration
+
   }
 
   case class PredicateNoApply(name: ParsedAst.QName, terms: Seq[WeededAst.TermNoApply]) extends WeededAst

@@ -83,6 +83,9 @@ object Weeder {
     case d: ParsedAst.Declaration.Fact =>
       val r = compileFact(d)
       println(r)
+    case d: ParsedAst.Declaration.Rule =>
+      val r = compileRule(d)
+      println(r)
     case _ =>
   }
 
@@ -109,7 +112,17 @@ object Weeder {
       case p => WeededAst.Declaration.Fact(p)
     }
 
+  /**
+   * Compiles the parsed rule `d` to a weeded rule.
+   */
+  def compileRule(d: ParsedAst.Declaration.Rule): Validation[WeededAst.Declaration.Rule, WeederError] = {
+    val headVal = compilePredicateWithApply(d.head)
+    val bodyVal = flatten(d.body.map(compilePredicateNoApply))
 
+    @@(headVal, bodyVal) map {
+      case (head, body) => WeededAst.Declaration.Rule(head, body)
+    }
+  }
 
   /**
    * Compiles the given parsed predicate `p` to a weeded predicate.

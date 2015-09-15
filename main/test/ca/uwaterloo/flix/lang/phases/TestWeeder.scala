@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.lang.phases
 
 import ca.uwaterloo.flix.lang.ast.{WeededAst, ParsedAst, SourceLocation}
-import ca.uwaterloo.flix.lang.phase.Weeder
+import ca.uwaterloo.flix.lang.phase.{Parser, Weeder}
 
 import scala.collection.immutable.Seq
 
@@ -33,7 +33,21 @@ class TestWeeder extends FunSuite {
     assertResult(2)(result.errors.size)
   }
 
+  test("ApplyNotAllowInBody01") {
+    val input = "A(x) :- B(f(x))."
+    val past = new Parser(None, input).RuleDeclaration.run().get
+    val result = Weeder.compileRule(past)
+    assert(result.isFailure)
+    assertResult(1)(result.errors.size)
+  }
 
+  test("ApplyNotAllowInBody02") {
+    val input = "A(x) :- B(x), C(f(x)), D(g(x))."
+    val past = new Parser(None, input).RuleDeclaration.run().get
+    val result = Weeder.compileRule(past)
+    assert(result.isFailure)
+    assertResult(2)(result.errors.size)
+  }
 
   test("Compile.TermNoApply") {
     val past = ParsedAst.Term.Apply(ParsedAst.QName(Seq("foo"), SourceLocation.Unknown), Seq.empty)
