@@ -11,7 +11,7 @@ import scala.util.{Failure, Success}
 
 object Compiler {
   // TODO: Here all the phases will be applied one-by-one.
-// TODO: Rename package to lang=>language
+  // TODO: Rename package to lang=>language
   /**
    * Returns the abstract syntax tree of the given `paths`.
    */
@@ -54,16 +54,17 @@ object Compiler {
   }
 
   def compile(paths: Traversable[Path]): Unit = {
-    val ast = parse(paths)
-    println(ast)
+    Console.print("Parsing: ")
+    val past = parse(paths)
+    Console.println("Success!")
 
-    println()
-    println("----------------------")
-    println()
-
-    val wAst = Weeder.weed(ast)
-
-    println(wAst)
+    Console.print("Weeding: ")
+    val wast = Weeder.weed(past)
+    if (wast.isFailure) {
+      wast.errors.foreach(e => println(e.format))
+      return
+    }
+    Console.println("Success!")
   }
 
 }
