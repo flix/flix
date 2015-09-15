@@ -238,15 +238,6 @@ object ParsedAst {
     case class Binary(e1: ParsedAst.Expression, op: BinaryOperator, e2: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
-     * An AST node that represents a let-binding.
-     *
-     * @param ident the identifier to be bound.
-     * @param value the expression whose value the identifier should be bound to.
-     * @param body the expression in which the bound variable is visible.
-     */
-    case class Let(ident: ParsedAst.Ident, value: ParsedAst.Expression, body: ParsedAst.Expression) extends ParsedAst.Expression
-
-    /**
      * An AST node that represents an if-then-else expression.
      *
      * @param e1 the conditional expression.
@@ -254,6 +245,15 @@ object ParsedAst {
      * @param e3 the alternative expression.
      */
     case class IfThenElse(e1: ParsedAst.Expression, e2: ParsedAst.Expression, e3: ParsedAst.Expression) extends ParsedAst.Expression
+
+    /**
+     * An AST node that represents a let-binding.
+     *
+     * @param ident the identifier to be bound.
+     * @param value the expression whose value the identifier should be bound to.
+     * @param body the expression in which the bound variable is visible.
+     */
+    case class Let(ident: ParsedAst.Ident, value: ParsedAst.Expression, body: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a match expression.
