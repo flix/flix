@@ -110,6 +110,7 @@ object ParsedAst {
      *
      * @param head the head predicate.
      */
+    // TODO: This is not a declaration! (It has no name!)
     case class Fact(head: ParsedAst.AmbiguousPredicate) extends ParsedAst.Declaration
 
     /**
@@ -118,6 +119,7 @@ object ParsedAst {
      * @param head the head predicate.
      * @param body the body predicates.
      */
+    // TODO: This is not a declaration! (It has no name!)
     case class Rule(head: ParsedAst.AmbiguousPredicate, body: Seq[ParsedAst.AmbiguousPredicate]) extends ParsedAst.Declaration
 
     /**
@@ -127,7 +129,7 @@ object ParsedAst {
      * @param name the value passed to the trait.
      */
     // TODO: Find a better name.
-    // TODO: Move somewhere else?
+    // TODO: This is not a declaration! (It has no name!)
     case class Trait(ident: ParsedAst.Ident, name: QName) extends ParsedAst.Declaration
 
   }
