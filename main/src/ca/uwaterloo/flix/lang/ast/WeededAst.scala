@@ -41,6 +41,40 @@ object WeededAst {
 
   }
 
+  sealed trait Expression extends WeededAst
+
+  object Expression {
+
+    case class AmbiguousVar(name: ParsedAst.QName) extends WeededAst.Expression
+
+    case class AmbiguousApply(name: ParsedAst.QName, arguments: Seq[WeededAst.Expression]) extends WeededAst.Expression
+
+    case class Lit(literal: WeededAst.Literal) extends WeededAst.Expression
+
+    case class Lambda(formals: Seq[(ParsedAst.Ident, WeededAst.Type)], tpe: WeededAst.Type, body: WeededAst.Expression) extends WeededAst.Expression
+
+    case class Unary(op: UnaryOperator, e: WeededAst.Expression) extends WeededAst.Expression
+
+    case class Binary(e1: WeededAst.Expression, op: BinaryOperator, e2: WeededAst.Expression) extends WeededAst.Expression
+
+    case class Let(ident: ParsedAst.Ident, value: WeededAst.Expression, body: WeededAst.Expression) extends WeededAst.Expression
+
+    case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression) extends WeededAst.Expression
+
+    case class Match(e: WeededAst.Expression, rules: Seq[(WeededAst.Pattern, WeededAst.Expression)]) extends WeededAst.Expression
+
+    case class Infix(e1: WeededAst.Expression, name: ParsedAst.QName, e2: WeededAst.Expression) extends WeededAst.Expression
+
+    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, e: WeededAst.Expression) extends WeededAst.Expression
+
+    case class Tuple(elms: Seq[WeededAst.Expression]) extends WeededAst.Expression
+
+    case class Ascribe(e: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Expression
+
+    case class Error(location: SourceLocation) extends WeededAst.Expression
+
+  }
+
   sealed trait Pattern extends WeededAst
 
   object Pattern {

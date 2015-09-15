@@ -84,9 +84,9 @@ object ParsedAst {
      * An AST node that represents a enum declaration.
      *
      * @param ident the name of the enum.
-     * @param body the variants of the enum.
+     * @param cases the variants of the enum.
      */
-    case class Enum(ident: ParsedAst.Ident, body: Seq[ParsedAst.Type.Tag]) extends ParsedAst.Declaration
+    case class Enum(ident: ParsedAst.Ident, cases: Seq[ParsedAst.Type.Tag]) extends ParsedAst.Declaration
 
     /**
      * An AST that represent a relation declaration.
@@ -218,7 +218,7 @@ object ParsedAst {
      * @param tpe the return type.
      * @param body the body expression of the lambda.
      */
-    case class Lambda(formals: Seq[(ParsedAst.Ident, Type)], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Lambda(formals: Seq[(ParsedAst.Ident, ParsedAst.Type)], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents unary expressions.
@@ -258,10 +258,10 @@ object ParsedAst {
     /**
      * An AST node that represents a match expression.
      *
-     * @param exp the match expression.
+     * @param e the match expression.
      * @param rules the match rules and their bodies.
      */
-    case class Match(exp: ParsedAst.Expression, rules: Seq[(ParsedAst.Pattern, ParsedAst.Expression)]) extends ParsedAst.Expression
+    case class Match(e: ParsedAst.Expression, rules: Seq[(ParsedAst.Pattern, ParsedAst.Expression)]) extends ParsedAst.Expression
 
     /**
      * An AST node that represents an infix function call.

@@ -479,7 +479,7 @@ class TestParser extends FunSuite {
       """.stripMargin
     val result = new Parser(None, input).Expression.run().get
     val m1 = result.asInstanceOf[ParsedAst.Expression.Match]
-    val m2 = m1.exp.asInstanceOf[ParsedAst.Expression.Match]
+    val m2 = m1.e.asInstanceOf[ParsedAst.Expression.Match]
     val l = m2.rules.head._2.asInstanceOf[ParsedAst.Expression.Lit]
     assertResult(3)(l.literal.asInstanceOf[ParsedAst.Literal.Int].literal)
   }

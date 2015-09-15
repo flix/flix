@@ -16,10 +16,8 @@ import scala.collection.mutable
 
 // TODO: JoinSemiLattice vs. CompleteLattice.
 // TODO: valid "Traits"
-// TODO: Allow nested lattice types? <<foo>> ?
 // TODO: rewrite all functions to lambdas of one argument?
 // TODO: The weeder could be responsible for dealing with Single tuple expressions and literal/expression conversion.
-// TODO: Name these compile or compileXYZ?
 object Weeder {
 
   import WeederError._
@@ -112,7 +110,7 @@ object Weeder {
    * Fails if the same tag name is occurs twice.
    */
   def compileEnum(d: ParsedAst.Declaration.Enum): Validation[WeededAst.Declaration.Enum, WeederError] =
-    Validation.fold[ParsedAst.Type.Tag, Map[String, ParsedAst.Type.Tag], WeederError](d.body, Map.empty) {
+    Validation.fold[ParsedAst.Type.Tag, Map[String, ParsedAst.Type.Tag], WeederError](d.cases, Map.empty) {
       // loop through each tag declaration
       case (macc, tag@ParsedAst.Type.Tag(ParsedAst.Ident(name, location2), _)) => macc.get(name) match {
         // check if the tag was already declared
@@ -153,6 +151,21 @@ object Weeder {
     case ParsedAst.Literal.Str(s) => WeededAst.Literal.Str(s).toSuccess
     case ParsedAst.Literal.Tag(name, ident, literal) => compileLiteral(literal) map (l => WeededAst.Literal.Tag(name, ident, l))
     case ParsedAst.Literal.Tuple(elms) => @@(elms map compileLiteral) map WeededAst.Literal.Tuple
+  }
+
+  /**
+   * Compiles the parsed expression `e` to a weeded expression.
+   */
+  def compileExpression(e: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = e match {
+
+    case ParsedAst.Expression.Tuple(elms) => @@(elms map compileExpression) map {
+      case welms => WeededAst.Expression.Tuple(welms)
+    }
+    case ParsedAst.Expression.Ascribe(e1, tpe) =>
+      @@(compileExpression(e), compileType(tpe)) map {
+        case (we1, wtpe) => WeededAst.Expression.Ascribe(we1, wtpe)
+      }
+    case ParsedAst.Expression.Error(location) => WeededAst.Expression.Error(location).toSuccess
   }
 
   /**
@@ -244,6 +257,7 @@ object Weeder {
     case ParsedAst.Type.Parametric(name, elms) => @@(elms map compileType) map {
       case ts => WeededAst.Type.Parametric(name, ts)
     }
+    // TODO: What about nested lattice types, e.g. <<foo>> or even <(Int, <Foo>)>
     case ParsedAst.Type.Lattice(tpe) => compileType(tpe) map {
       case t1 => WeededAst.Type.Lattice(t1)
     }
