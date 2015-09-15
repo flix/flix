@@ -26,7 +26,7 @@ object WeededAst {
 
     case class Parametric(name: ParsedAst.QName, elms: Seq[WeededAst.Type]) extends WeededAst.Type
 
-    case class Lattice(tpe: ParsedAst.Type) extends WeededAst.Type
+    case class Lattice(tpe: WeededAst.Type) extends WeededAst.Type
 
   }
 

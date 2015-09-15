@@ -109,9 +109,15 @@ object Weeder {
     case ParsedAst.Type.Tag(ident, tpe) => compile(tpe) map {
       case t1 => WeededAst.Type.Tag(ident, t1)
     }
-    case ParsedAst.Type.Tuple(elms) => ???
-    case ParsedAst.Type.Parametric(name, elms) => ???
-    case ParsedAst.Type.Lattice(tpe) => ???
+    case ParsedAst.Type.Tuple(elms) => flatten(elms map compile) map {
+      case ts => WeededAst.Type.Tuple(ts)
+    }
+    case ParsedAst.Type.Parametric(name, elms) => flatten(elms map compile) map {
+      case ts => WeededAst.Type.Parametric(name, ts)
+    }
+    case ParsedAst.Type.Lattice(tpe) => compile(tpe) map {
+      case t1 => WeededAst.Type.Lattice(t1)
+    }
   }
 
 }
