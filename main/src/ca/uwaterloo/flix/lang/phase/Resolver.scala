@@ -21,7 +21,7 @@ object Resolver {
    * - Resolve named types
    */
 
-  def buildSymbols(ast: ParsedAst.Root): Map[ParsedAst.QName, ParsedAst] = ???
+  def symbols(ast: ParsedAst.Root): Map[ParsedAst.QName, ParsedAst] = ???
 
   def link(p: ParsedAst.AmbiguousPredicate, symbols: Map[ParsedAst.QName, ParsedAst]): ResolvedAst.Predicate =
     symbols.get(p.name) match {

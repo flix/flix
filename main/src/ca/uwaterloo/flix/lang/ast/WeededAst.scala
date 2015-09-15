@@ -4,11 +4,46 @@ trait WeededAst
 
 object WeededAst {
 
+  sealed trait Declaration
+
   object Declaration {
 
-    case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag])
+    case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends WeededAst.Declaration
+
+    case class Fact(head: WeededAst.PredicateWithApply) extends WeededAst.Declaration
 
   }
+
+  case class PredicateNoApply(name: ParsedAst.QName, terms: Seq[WeededAst.TermNoApply]) extends WeededAst
+
+  case class PredicateWithApply(name: ParsedAst.QName, terms: Seq[WeededAst.TermWithApply]) extends WeededAst
+
+  sealed trait TermNoApply extends WeededAst
+
+  object TermNoApply {
+
+    case class Wildcard(location: SourceLocation) extends WeededAst.TermNoApply
+
+    case class Var(ident: ParsedAst.Ident) extends WeededAst.TermNoApply
+
+    case class Lit(literal: ParsedAst.Literal) extends WeededAst.TermNoApply
+
+  }
+
+  sealed trait TermWithApply extends WeededAst
+
+  object TermWithApply {
+
+    case class Wildcard(location: SourceLocation) extends WeededAst.TermWithApply
+
+    case class Var(ident: ParsedAst.Ident) extends WeededAst.TermWithApply
+
+    case class Lit(literal: ParsedAst.Literal) extends WeededAst.TermWithApply
+
+    case class Apply(name: ParsedAst.QName, args: Seq[WeededAst.TermWithApply]) extends WeededAst.TermWithApply
+
+  }
+
 
   sealed trait Type
 

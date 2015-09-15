@@ -33,6 +33,20 @@ class TestWeeder extends FunSuite {
     assertResult(2)(result.errors.size)
   }
 
+
+
+  test("Compile.TermNoApply") {
+    val past = ParsedAst.Term.Apply(ParsedAst.QName(Seq("foo"), SourceLocation.Unknown), Seq.empty)
+    val result = Weeder.compileTermNoApply(past)
+    assert(result.isFailure)
+  }
+
+  test("Compile.TermWithApply") {
+    val past = ParsedAst.Term.Apply(ParsedAst.QName(Seq("foo"), SourceLocation.Unknown), Seq.empty)
+    val result = Weeder.compileTermWithApply(past)
+    assert(result.isSuccess)
+  }
+
   test("Compile.Type.Unit") {
     val past = ParsedAst.Type.Unit
     val result = Weeder.compile(past)

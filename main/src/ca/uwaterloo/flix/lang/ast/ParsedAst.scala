@@ -10,6 +10,7 @@ sealed trait ParsedAst
 // TODO: Consider order. Maybe just do it be alpabet?
 // TODO: Long or short names?
 // TODO: Use the word "ref".
+// TODO: Inconsistent where source locations are used.
 
 object ParsedAst {
 

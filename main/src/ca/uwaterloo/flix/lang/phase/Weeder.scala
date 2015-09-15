@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.lang.phase
 
 import ca.uwaterloo.flix.lang.ast.{WeededAst, SourceLocation, ParsedAst}
-import ca.uwaterloo.flix.lang.phase.Weeder.WeederError.DuplicateTag
 
 import util.Validation
 import util.Validation._
@@ -12,7 +11,16 @@ import util.Validation._
  * (1) reporting basic syntactic problems, and
  * (2) performing basic syntactic rewritings.
  */
+
+// TODO: JoinSemiLattice vs. CompleteLattice.
+// TODO: valid "Traits"
+// TODO: Allow nested lattice types? <<foo>> ?
+// TODO: rewrite all functions to lambdas of one argument?
+// TODO: The weeder could be responsible for dealing with Single tuple expressions and literal/expression conversion.
+// TODO: Name these compile or compileXYZ?
 object Weeder {
+
+  import WeederError._
 
   /**
    * A common super-type for weeding errors.
@@ -35,7 +43,7 @@ object Weeder {
      */
     case class DuplicateTag(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
       val format =
-        s"Error: Duplicate  tag name $name.\n" +
+        s"Error: Duplicate tag name $name.\n" +
           s"  First declaration was here: ${location1.format}. This one will be used.\n" +
           s"  Second declaration was here: ${location2.format}. This one will be ignored.\n"
     }
@@ -47,21 +55,22 @@ object Weeder {
 
     case class DuplicatedAttributeInRelation()
 
-    case class IllegalApplyInTerm() extends WeederError {
-      val format = ???
+    /**
+     * An error raised to indicate that an apply occurs in the body of a rule.
+     *
+     * @param location the location where the apply occurs.
+     */
+    case class ApplyNotAllowInBody(location: SourceLocation) extends WeederError {
+      val format =
+        s"Error: Function calls are not allowed in a term appearing in the body of a rule.\n" +
+          s"  Call was here: ${location.format}\n"
     }
 
   }
 
-
-  // TODO: JoinSemiLattice vs. CompleteLattice.
-  // TODO: valid "Traits"
-  // TODO: Allow nested lattice types? <<foo>> ?
-
-  // rewrite all functions to lambdas of one argument?
-
-  // TODO: The weeder could be responsible for dealing with Single tuple expressions and literal/expression conversion.
-
+  /**
+   * TODO DOC
+   */
   def weed(ast: ParsedAst.Root): Unit = {
     ast.declarations.map(compile)
   }
@@ -70,6 +79,9 @@ object Weeder {
     case ParsedAst.Declaration.Namespace(name, body) => body map compile
     case d: ParsedAst.Declaration.Enum =>
       val r = compile(d)
+      println(r)
+    case d: ParsedAst.Declaration.Fact =>
+      val r = compileFact(d)
       println(r)
     case _ =>
   }
@@ -90,14 +102,59 @@ object Weeder {
     }
 
   /**
-   * Compiles the given predicate `p`.
+   * Compiles the parsed fact `d` to a weeded fact.
    */
-  def compile(p: ParsedAst.AmbiguousPredicate) = {
-    ???
+  def compileFact(d: ParsedAst.Declaration.Fact): Validation[WeededAst.Declaration.Fact, WeederError] =
+    compilePredicateWithApply(d.head) map {
+      case p => WeededAst.Declaration.Fact(p)
+    }
+
+
+
+  /**
+   * Compiles the given parsed predicate `p` to a weeded predicate.
+   *
+   * Fails if the parsed predicate contains a function call.
+   */
+  def compilePredicateNoApply(p: ParsedAst.AmbiguousPredicate): Validation[WeededAst.PredicateNoApply, WeederError] =
+    flatten(p.terms.map(compileTermNoApply)) map {
+      case wterms => WeededAst.PredicateNoApply(p.name, wterms)
+    }
+
+  /**
+   * Compiles the given parsed predicate `p` to a weeded predicate.
+   */
+  def compilePredicateWithApply(p: ParsedAst.AmbiguousPredicate): Validation[WeededAst.PredicateWithApply, WeederError] =
+    flatten(p.terms.map(compileTermWithApply)) map {
+      case wterms => WeededAst.PredicateWithApply(p.name, wterms)
+    }
+
+  /**
+   * Compiles the given parsed term `t` to a weeded term.
+   *
+   * Fails if the parsed term contains a function call.
+   */
+  def compileTermNoApply(t: ParsedAst.Term): Validation[WeededAst.TermNoApply, WeederError] = t match {
+    case ParsedAst.Term.Wildcard(location) => WeededAst.TermNoApply.Wildcard(location).toSuccess
+    case ParsedAst.Term.Var(ident) => WeededAst.TermNoApply.Var(ident).toSuccess
+    case ParsedAst.Term.Lit(literal) => WeededAst.TermNoApply.Lit(literal).toSuccess
+    case ParsedAst.Term.Apply(name, args) => ApplyNotAllowInBody(name.location).toFailure
   }
 
   /**
-   * Compiles the given type `t`.
+   * Compiles the given parsed term `t` to a weeded term.
+   */
+  def compileTermWithApply(t: ParsedAst.Term): Validation[WeededAst.TermWithApply, WeederError] = t match {
+    case ParsedAst.Term.Wildcard(location) => WeededAst.TermWithApply.Wildcard(location).toSuccess
+    case ParsedAst.Term.Var(ident) => WeededAst.TermWithApply.Var(ident).toSuccess
+    case ParsedAst.Term.Lit(literal) => WeededAst.TermWithApply.Lit(literal).toSuccess
+    case ParsedAst.Term.Apply(name, args) => flatten(args map compileTermWithApply) map {
+      case wargs => WeededAst.TermWithApply.Apply(name, wargs)
+    }
+  }
+
+  /**
+   * Compiles the given parsed type `t` to a weeded type.
    */
   def compile(t: ParsedAst.Type): Validation[WeededAst.Type, WeederError] = t match {
     case ParsedAst.Type.Unit => WeededAst.Type.Unit.toSuccess
