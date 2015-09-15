@@ -93,19 +93,35 @@ object Weeder {
    */
   def compileDeclaration(d: ParsedAst.Declaration): Validation[WeededAst.Declaration, WeederError] = d match {
     case d: ParsedAst.Declaration.Namespace => compileNamespace(d)
+    case d: ParsedAst.Declaration.Tpe => compileType(d) // TODO: Naming, call TypeAlias?
+    case d: ParsedAst.Declaration.Val => compileVal(d)
     case d: ParsedAst.Declaration.Enum => compileEnum(d)
     case d: ParsedAst.Declaration.Fact => compileFact(d)
     case d: ParsedAst.Declaration.Rule => compileRule(d)
   }
 
   /**
-   * Compiles the given parsed namespace `d` to a weeded namespace.
+   * Compiles the given parsed namespace declaration `d` to a weeded namespace declaration.
    */
   def compileNamespace(d: ParsedAst.Declaration.Namespace): Validation[WeededAst.Declaration.Namespace, WeederError] =
     @@(d.body.map(compileDeclaration)) map (ds => WeededAst.Declaration.Namespace(d.name, ds))
 
   /**
-   * Compiles the given parsed enum `d` to a weeded enum.
+   * Compiles the given parsed type declaration `d` to a weeded type declaration.
+   */
+  def compileType(d: ParsedAst.Declaration.Tpe): Validation[WeededAst.Declaration.Tpe, WeederError] =
+    compileType(d.tpe) map (t => WeededAst.Declaration.Tpe(d.ident, t))
+
+  /**
+   * Compiles the given parsed value declaration `d` to a weeded declaration.
+   */
+  def compileVal(d: ParsedAst.Declaration.Val): Validation[WeededAst.Declaration.Val, WeederError] =
+    @@(compileType(d.tpe), compileExpression(d.e)) map {
+      case (wtpe, we) => WeededAst.Declaration.Val(d.ident, wtpe, we)
+    }
+
+  /**
+   * Compiles the given parsed enum declaration `d` to a weeded enum declaration.
    *
    * Fails if the same tag name is occurs twice.
    */
@@ -157,8 +173,21 @@ object Weeder {
    * Compiles the parsed expression `e` to a weeded expression.
    */
   def compileExpression(e: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = e match {
-    // TODO: Rest
-
+    case ParsedAst.Expression.AmbiguousVar(name) =>
+      WeededAst.Expression.AmbiguousVar(name).toSuccess
+    case ParsedAst.Expression.AmbiguousApply(name, args) =>
+      @@(args map compileExpression) map {
+        case wargs => WeededAst.Expression.AmbiguousApply(name, wargs)
+      }
+    case ParsedAst.Expression.Lit(literal) =>
+      compileLiteral(literal) map WeededAst.Expression.Lit
+    case ParsedAst.Expression.Lambda(formals, tpe, body) =>
+      val formals2 = formals map {
+        case (ident, formalType) => compileType(formalType) map (t => (ident, t))
+      }
+      @@(@@(formals2), compileType(tpe), compileExpression(body)) map {
+        case (wformals, wtpe, wbody) => WeededAst.Expression.Lambda(wformals, wtpe, wbody)
+      }
     case ParsedAst.Expression.Unary(op, e1) =>
       compileExpression(e) map {
         case we1 => WeededAst.Expression.Unary(op, we1)

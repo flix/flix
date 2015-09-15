@@ -8,12 +8,15 @@ object WeededAst {
 
   case class Root(declarations: Seq[WeededAst.Declaration]) extends WeededAst
 
-
   sealed trait Declaration
 
   object Declaration {
 
     case class Namespace(name: ParsedAst.QName, body: Seq[WeededAst.Declaration]) extends WeededAst.Declaration
+
+    case class Tpe(ident: ParsedAst.Ident, tpe: WeededAst.Type) extends WeededAst.Declaration
+
+    case class Val(ident: ParsedAst.Ident, tpe: WeededAst.Type, e: WeededAst.Expression) extends WeededAst.Declaration
 
     case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends WeededAst.Declaration
 
