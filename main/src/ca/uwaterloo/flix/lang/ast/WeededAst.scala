@@ -63,8 +63,6 @@ object WeededAst {
 
     case class Match(e: WeededAst.Expression, rules: Seq[(WeededAst.Pattern, WeededAst.Expression)]) extends WeededAst.Expression
 
-    case class Infix(e1: WeededAst.Expression, name: ParsedAst.QName, e2: WeededAst.Expression) extends WeededAst.Expression
-
     case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, e: WeededAst.Expression) extends WeededAst.Expression
 
     case class Tuple(elms: Seq[WeededAst.Expression]) extends WeededAst.Expression

@@ -157,7 +157,14 @@ object Weeder {
    * Compiles the parsed expression `e` to a weeded expression.
    */
   def compileExpression(e: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = e match {
+    case ParsedAst.Expression.Match(e1, rules) => ???
 
+    case ParsedAst.Expression.Infix(e1, name, e2) => @@(compileExpression(e1), compileExpression(e2)) map {
+      case (we1, we2) => WeededAst.Expression.AmbiguousApply(name, Seq(we1, we2))
+    }
+    case ParsedAst.Expression.Tag(name, ident, e1) => compileExpression(e1) map {
+      case we1 => WeededAst.Expression.Tag(name, ident, we1)
+    }
     case ParsedAst.Expression.Tuple(elms) => @@(elms map compileExpression) map {
       case welms => WeededAst.Expression.Tuple(welms)
     }
