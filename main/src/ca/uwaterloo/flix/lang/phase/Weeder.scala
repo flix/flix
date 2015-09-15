@@ -14,6 +14,9 @@ import util.Validation._
  */
 object Weeder {
 
+  /**
+   * A common super-type for weeding errors.
+   */
   sealed trait WeederError {
     /**
      * Returns human readable error message.
@@ -38,26 +41,26 @@ object Weeder {
     }
 
 
-
-
     case class DuplicateVariableInPattern()
 
     case class DuplicatedFormalArgument()
 
     case class DuplicatedAttributeInRelation()
 
-    // TODO: JoinSemiLattice vs. CompleteLattice.
-    // TODO: valid "Traits"
-    // TODO: Allow nested lattice types? <<foo>> ?
-
-    // rewrite all functions to lambdas of one argument?
-
-
     case class IllegalApplyInTerm() extends WeederError {
       val format = ???
     }
 
   }
+
+
+  // TODO: JoinSemiLattice vs. CompleteLattice.
+  // TODO: valid "Traits"
+  // TODO: Allow nested lattice types? <<foo>> ?
+
+  // rewrite all functions to lambdas of one argument?
+
+  // TODO: The weeder could be responsible for dealing with Single tuple expressions and literal/expression conversion.
 
   def weed(ast: ParsedAst.Root): Unit = {
     ast.declarations.map(compile)
@@ -91,6 +94,24 @@ object Weeder {
    */
   def compile(p: ParsedAst.AmbiguousPredicate) = {
     ???
+  }
+
+  /**
+   * Compiles the given type `t`.
+   */
+  def compile(t: ParsedAst.Type): Validation[WeededAst.Type, WeederError] = t match {
+    case ParsedAst.Type.Unit => WeededAst.Type.Unit.toSuccess
+    case ParsedAst.Type.Ambiguous(name) => WeededAst.Type.Ambiguous(name).toSuccess
+    case ParsedAst.Type.Function(t1, t2) =>
+      @@(compile(t1), compile(t2)) map {
+        case (tpe1, tpe2) => WeededAst.Type.Function(tpe1, tpe2)
+      }
+    case ParsedAst.Type.Tag(ident, tpe) => compile(tpe) map {
+      case t1 => WeededAst.Type.Tag(ident, t1)
+    }
+    case ParsedAst.Type.Tuple(elms) => ???
+    case ParsedAst.Type.Parametric(name, elms) => ???
+    case ParsedAst.Type.Lattice(tpe) => ???
   }
 
 }

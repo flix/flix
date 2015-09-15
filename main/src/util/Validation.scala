@@ -25,6 +25,13 @@ sealed trait Validation[+Value, Error] {
   // TODO: DOC
   def isFailure: Boolean = !isSuccess
 
+  // TODO: DOC
+  def get: Value = this match {
+    case Success(value, errors) => value
+    case Failure(errors) => throw new RuntimeException()
+  }
+
+
   /**
    * Returns a [[Success]] containing the result of applying `f` to the value in this validation (if it exists).
    *

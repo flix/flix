@@ -7,7 +7,7 @@ import scala.collection.immutable.Seq
  */
 sealed trait ParsedAst
 
-// TODO: Consider order
+// TODO: Consider order. Maybe just do it be alpabet?
 // TODO: Long or short names?
 // TODO: Use the word "ref".
 
@@ -426,19 +426,19 @@ object ParsedAst {
     case class Function(t1: ParsedAst.Type, t2: ParsedAst.Type) extends ParsedAst.Type
 
     /**
-     * An AST node that represent a tuple type.
-     *
-     * @param elms the type of the individual elements.
-     */
-    case class Tuple(elms: Seq[ParsedAst.Type]) extends ParsedAst.Type
-
-    /**
      * An AST node that represents a tagged type.
      *
      * @param ident the tag name.
      * @param tpe the type of nested components.
      */
     case class Tag(ident: ParsedAst.Ident, tpe: ParsedAst.Type) extends ParsedAst.Type
+
+    /**
+     * An AST node that represent a tuple type.
+     *
+     * @param elms the type of the individual elements.
+     */
+    case class Tuple(elms: Seq[ParsedAst.Type]) extends ParsedAst.Type
 
     /**
      * An AST node that represent a parametric type.

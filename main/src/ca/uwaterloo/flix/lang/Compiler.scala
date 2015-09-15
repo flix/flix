@@ -11,7 +11,7 @@ import scala.util.{Failure, Success}
 
 object Compiler {
   // TODO: Here all the phases will be applied one-by-one.
-
+// TODO: Rename package to lang=>language
   /**
    * Returns the abstract syntax tree of the given `paths`.
    */

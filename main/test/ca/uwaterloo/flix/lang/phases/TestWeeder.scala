@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.lang.phases
 
-import ca.uwaterloo.flix.lang.ast.ParsedAst
-import ca.uwaterloo.flix.lang.ast.SourceLocation
+import ca.uwaterloo.flix.lang.ast.{WeededAst, ParsedAst, SourceLocation}
 import ca.uwaterloo.flix.lang.phase.Weeder
 
 import scala.collection.immutable.Seq
@@ -34,5 +33,20 @@ class TestWeeder extends FunSuite {
     assertResult(2)(result.errors.size)
   }
 
+  test("Compile.Type.Unit") {
+    val past = ParsedAst.Type.Unit
+    val result = Weeder.compile(past)
+
+    assert(result.isSuccess)
+    assertResult(WeededAst.Type.Unit)(result.get)
+  }
+
+  test("Compile.Type.Tag") {
+    val past = ParsedAst.Type.Tag(Ident, ParsedAst.Type.Unit)
+    val result = Weeder.compile(past)
+
+    assert(result.isSuccess)
+    assertResult(WeededAst.Type.Tag(Ident, WeededAst.Type.Unit))(result.get)
+  }
 
 }
