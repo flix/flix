@@ -5,6 +5,8 @@ import ca.uwaterloo.flix.lang.ast.{WeededAst, SourceLocation, ParsedAst}
 import util.Validation
 import util.Validation._
 
+import scala.collection.mutable
+
 /**
  * The Weeder phase is responsible for:
  *
@@ -43,13 +45,25 @@ object Weeder {
      */
     case class DuplicateTag(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
       val format =
-        s"Error: Duplicate tag name $name.\n" +
+        s"Error: Duplicate tag name '$name'.\n" +
           s"  First declaration was here: ${location1.format}. This one will be used.\n" +
           s"  Second declaration was here: ${location2.format}. This one will be ignored.\n"
     }
 
-
-    case class DuplicateVariableInPattern()
+    /**
+     * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
+     *
+     * @param name the name of the variable.
+     *
+     * @param location1 the location of the first use of the variable.
+     * @param location2 the location of the second use of the variable.
+     */
+    case class NonLinearPattern(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
+      val format =
+        s"Error: Non-linear pattern: The variable '$name' occurs twice.\n" +
+          s"  First occurrence was here: ${location1.format}\n" +
+          s"  Second occurrence was here: ${location2.format}\n"
+    }
 
     case class DuplicatedFormalArgument()
 
@@ -122,6 +136,34 @@ object Weeder {
     @@(headVal, bodyVal) map {
       case (head, body) => WeededAst.Declaration.Rule(head, body)
     }
+  }
+
+  /**
+   * Compiles the parsed pattern `p` to a weeded pattern.
+   *
+   * Fails if the pattern is non-linear, i.e. if the same variable occurs twice.
+   */
+  def compilePattern(p: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = {
+    val seen = mutable.Map.empty[String, ParsedAst.Ident]
+
+    def visit(p: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = p match {
+      case ParsedAst.Pattern.Wildcard(location) => WeededAst.Pattern.Wildcard(location).toSuccess
+      case ParsedAst.Pattern.Var(ident@ParsedAst.Ident(name, location)) => seen.get(name) match {
+        case None =>
+          seen += (name -> ident)
+          WeededAst.Pattern.Var(ident).toSuccess
+        case Some(otherIdent) => NonLinearPattern(name, otherIdent.location, location).toFailure
+      }
+      case ParsedAst.Pattern.Lit(literal) => WeededAst.Pattern.Lit(literal).toSuccess
+      case ParsedAst.Pattern.Tag(name, ident, p2) => visit(p2) map {
+        case wp => WeededAst.Pattern.Tag(name, ident, wp)
+      }
+      case ParsedAst.Pattern.Tuple(elms) => flatten(elms map visit) map {
+        case welms => WeededAst.Pattern.Tuple(welms)
+      }
+    }
+
+    visit(p)
   }
 
   /**

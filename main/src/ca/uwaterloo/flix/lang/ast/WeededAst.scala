@@ -2,6 +2,8 @@ package ca.uwaterloo.flix.lang.ast
 
 trait WeededAst
 
+// TODO: Ensure that there is no reference to "ParsedAst.X"
+
 object WeededAst {
 
   sealed trait Declaration
@@ -13,6 +15,22 @@ object WeededAst {
     case class Fact(head: WeededAst.PredicateWithApply) extends WeededAst.Declaration
 
     case class Rule(head: WeededAst.PredicateWithApply, body: Seq[WeededAst.PredicateNoApply]) extends WeededAst.Declaration
+
+  }
+
+  sealed trait Pattern extends WeededAst
+
+  object Pattern {
+
+    case class Wildcard(location: SourceLocation) extends WeededAst.Pattern
+
+    case class Var(ident: ParsedAst.Ident) extends WeededAst.Pattern
+
+    case class Lit(literal: ParsedAst.Literal) extends WeededAst.Pattern
+
+    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, p: WeededAst.Pattern) extends WeededAst.Pattern
+
+    case class Tuple(elms: Seq[WeededAst.Pattern]) extends WeededAst.Pattern
 
   }
 

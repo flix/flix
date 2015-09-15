@@ -33,6 +33,23 @@ class TestWeeder extends FunSuite {
     assertResult(2)(result.errors.size)
   }
 
+  test("NonLinearPattern01") {
+    val input = "(x, x)"
+    val past = new Parser(None, input).Pattern.run().get
+    val result = Weeder.compilePattern(past)
+    assert(result.isFailure)
+    assertResult(1)(result.errors.size)
+  }
+
+  test("NonLinearPattern02") {
+    val input = "(x, (y, (z, x, y)))"
+    val past = new Parser(None, input).Pattern.run().get
+    val result = Weeder.compilePattern(past)
+    println(result)
+    assert(result.isFailure)
+    assertResult(2)(result.errors.size)
+  }
+
   test("ApplyNotAllowInBody01") {
     val input = "A(x) :- B(f(x))."
     val past = new Parser(None, input).RuleDeclaration.run().get
