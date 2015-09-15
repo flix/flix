@@ -18,7 +18,13 @@ object WeededAst {
 
     case class Val(ident: ParsedAst.Ident, tpe: WeededAst.Type, e: WeededAst.Expression) extends WeededAst.Declaration
 
-    case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends WeededAst.Declaration
+    case class Fun(ident: ParsedAst.Ident, formals: Seq[(ParsedAst.Ident, WeededAst.Type)], tpe: WeededAst.Type, body: WeededAst.Expression) extends WeededAst.Declaration
+
+    case class Relation(ident: ParsedAst.Ident, attributes: Seq[(ParsedAst.Ident, WeededAst.Type)]) extends WeededAst.Declaration
+
+    case class Lattice(ident: ParsedAst.Ident, elms: Seq[ParsedAst.QName], traits: Seq[ParsedAst.Declaration.Trait]) extends WeededAst.Declaration
+
+    case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends WeededAst.Declaration // TODO: Reference to ParsedAst.
 
     case class Fact(head: WeededAst.PredicateWithApply) extends WeededAst.Declaration
 

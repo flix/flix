@@ -127,6 +127,7 @@ object ParsedAst {
      * @param name the value passed to the trait.
      */
     // TODO: Find a better name.
+    // TODO: Move somewhere else?
     case class Trait(ident: ParsedAst.Ident, name: QName) extends ParsedAst.Declaration
 
   }
