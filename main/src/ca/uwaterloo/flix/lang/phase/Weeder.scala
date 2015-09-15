@@ -146,7 +146,14 @@ object Weeder {
   /**
    * Compiles the parsed literal `l` to a weeded literal.
    */
-  def compileLiteral(l: ParsedAst.Literal): Validation[WeededAst.Literal, WeederError] = ???
+  def compileLiteral(l: ParsedAst.Literal): Validation[WeededAst.Literal, WeederError] = l match {
+    case ParsedAst.Literal.Unit => WeededAst.Literal.Unit.toSuccess
+    case ParsedAst.Literal.Bool(b) => WeededAst.Literal.Bool(b).toSuccess
+    case ParsedAst.Literal.Int(i) => WeededAst.Literal.Int(i).toSuccess
+    case ParsedAst.Literal.Str(s) => WeededAst.Literal.Str(s).toSuccess
+    case ParsedAst.Literal.Tag(name, ident, literal) => compileLiteral(literal) map (l => WeededAst.Literal.Tag(name, ident, l))
+    case ParsedAst.Literal.Tuple(elms) => @@(elms map compileLiteral) map WeededAst.Literal.Tuple
+  }
 
   /**
    * Compiles the parsed pattern `p` to a weeded pattern.
