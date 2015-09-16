@@ -63,8 +63,10 @@ object Weeder {
           s"  Second occurrence was here: ${location2.format}\n"
     }
 
+    // TODO
     case class DuplicatedFormalArgument()
 
+    // TODO
     case class DuplicatedAttributeInRelation()
 
     /**
