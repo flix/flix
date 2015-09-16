@@ -26,7 +26,7 @@ object ResolvedAst {
 
   object Expression {
 
-    case class LocalVar(name: String, location: SourceLocation) extends ResolvedAst.Expression
+    case class LocalVar(name: String, declaration: ResolvedAst, location: SourceLocation) extends ResolvedAst.Expression
 
     case class GlobalVar(ref: Ref, location: SourceLocation) extends ResolvedAst.Expression
 
