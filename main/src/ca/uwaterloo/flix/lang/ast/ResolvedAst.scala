@@ -30,6 +30,8 @@ object ResolvedAst {
 
     case class GlobalVar(ref: Ref, location: SourceLocation) extends ResolvedAst.Expression
 
+    case class IfThenElse(e1: ResolvedAst.Expression, e2: ResolvedAst.Expression, e3: ResolvedAst.Expression) extends ResolvedAst.Expression
+
   }
 
   sealed trait Predicate

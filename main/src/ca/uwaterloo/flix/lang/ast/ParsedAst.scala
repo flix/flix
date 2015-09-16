@@ -41,6 +41,7 @@ object ParsedAst {
   /**
    * A common super-type for AST nodes which represent declarations.
    */
+  // TODO: Need alternative for these members to seperate them from actual declarations (which are things that affect scope)?
   sealed trait Declaration extends ParsedAst
 
   object Declaration {

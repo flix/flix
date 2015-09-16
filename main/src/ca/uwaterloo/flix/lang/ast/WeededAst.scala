@@ -6,6 +6,8 @@ trait WeededAst
 
 object WeededAst {
 
+  // consider naming things pe for parsed expression, instead of we for weeded exp.
+
   case class Root(declarations: Seq[WeededAst.Declaration]) extends WeededAst
 
   sealed trait Declaration
