@@ -104,7 +104,7 @@ object ParsedAst {
      * @param ident the name of the relation.
      * @param attributes the name and type of the attributes.
      */
-    case class Relation(ident: ParsedAst.Ident, attributes: Seq[(ParsedAst.Ident, ParsedAst.Type)]) extends ParsedAst.Declaration
+    case class Relation(ident: ParsedAst.Ident, attributes: Seq[ParsedAst.Attribute]) extends ParsedAst.Declaration
 
     /**
      * An AST node that represents a fact declaration.
@@ -461,5 +461,13 @@ object ParsedAst {
     case class Lattice(tpe: ParsedAst.Type) extends ParsedAst.Type
 
   }
+
+  /**
+   * An AST node that represents an attribute.
+   *
+   * @param ident the name of the attribute.
+   * @param tpe the type of the attribute.
+   */
+  case class Attribute(ident: ParsedAst.Ident, tpe: ParsedAst.Type) extends ParsedAst
 
 }

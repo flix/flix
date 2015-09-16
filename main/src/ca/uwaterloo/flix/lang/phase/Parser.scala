@@ -83,11 +83,11 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def RelationDeclaration: Rule1[ParsedAst.Declaration.Relation] = {
-    def Attribute: Rule1[(ParsedAst.Ident, ParsedAst.Type)] = rule {
-      Ident ~ optWS ~ ":" ~ optWS ~ Type ~> ((ident: ParsedAst.Ident, tpe: ParsedAst.Type) => (ident, tpe))
+    def Attribute: Rule1[ParsedAst.Attribute] = rule {
+      Ident ~ optWS ~ ":" ~ optWS ~ Type ~> ParsedAst.Attribute
     }
 
-    def Attributes: Rule1[Seq[(ParsedAst.Ident, ParsedAst.Type)]] = rule {
+    def Attributes: Rule1[Seq[ParsedAst.Attribute]] = rule {
       oneOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
     }
 

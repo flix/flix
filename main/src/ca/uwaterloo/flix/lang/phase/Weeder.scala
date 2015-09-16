@@ -35,6 +35,20 @@ object Weeder {
   object WeederError {
 
     /**
+     * An error raised to indicate that an apply occurs in the body of a rule.
+     *
+     * @param location the location where the apply occurs.
+     */
+    case class ApplyInBody(location: SourceLocation) extends WeederError {
+      val format =
+        s"Error: Function calls are not allowed in a term appearing in the body of a rule.\n" +
+          s"  Call was here: ${location.format}\n"
+    }
+
+    // TODO
+    case class DuplicateAttribute()
+
+    /**
      * An error raised to indicate that the tag `name` was declared multiple times.
      *
      * @param name the name of the tag.
@@ -47,6 +61,9 @@ object Weeder {
           s"  First declaration was here: ${location1.format}. This one will be used.\n" +
           s"  Second declaration was here: ${location2.format}. This one will be ignored.\n"
     }
+
+    // TODO
+    case class DuplicatedFormalArgument()
 
     /**
      * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
@@ -61,23 +78,6 @@ object Weeder {
         s"Error: Non-linear pattern: The variable '$name' occurs twice.\n" +
           s"  First occurrence was here: ${location1.format}\n" +
           s"  Second occurrence was here: ${location2.format}\n"
-    }
-
-    // TODO
-    case class DuplicatedFormalArgument()
-
-    // TODO
-    case class DuplicatedAttributeInRelation()
-
-    /**
-     * An error raised to indicate that an apply occurs in the body of a rule.
-     *
-     * @param location the location where the apply occurs.
-     */
-    case class ApplyNotAllowInBody(location: SourceLocation) extends WeederError {
-      val format =
-        s"Error: Function calls are not allowed in a term appearing in the body of a rule.\n" +
-          s"  Call was here: ${location.format}\n"
     }
 
   }
@@ -168,7 +168,7 @@ object Weeder {
    */
   def compileRelation(d: ParsedAst.Declaration.Relation): Validation[WeededAst.Declaration.Relation, WeederError] = {
     val attributes = d.attributes.map {
-      case (ident, tpe) => compileType(tpe) map (t => (ident, t))
+      case ParsedAst.Attribute(ident, tpe) => compileType(tpe) map (wtpe => WeededAst.Attribute(ident, wtpe))
     }
     @@(attributes) map {
       case wattr => WeededAst.Declaration.Relation(d.ident, wattr)
@@ -322,7 +322,7 @@ object Weeder {
     case ParsedAst.Term.Wildcard(location) => WeededAst.TermNoApply.Wildcard(location).toSuccess
     case ParsedAst.Term.Var(ident) => WeededAst.TermNoApply.Var(ident).toSuccess
     case ParsedAst.Term.Lit(literal) => compileLiteral(literal) map WeededAst.TermNoApply.Lit
-    case ParsedAst.Term.Apply(name, args) => ApplyNotAllowInBody(name.location).toFailure
+    case ParsedAst.Term.Apply(name, args) => ApplyInBody(name.location).toFailure
   }
 
   /**
