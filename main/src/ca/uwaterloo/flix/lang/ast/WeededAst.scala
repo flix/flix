@@ -45,6 +45,7 @@ object WeededAst {
                                norm: Option[ParsedAst.QName],
                                widen: Option[ParsedAst.QName])
 
+    // TODO: Change signature of attributes.
     case class Relation(ident: ParsedAst.Ident, attributes: Seq[(ParsedAst.Ident, WeededAst.Type)]) extends WeededAst.Declaration
 
     case class Fact(head: WeededAst.PredicateWithApply) extends WeededAst.Declaration
