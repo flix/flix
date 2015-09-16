@@ -11,6 +11,7 @@ sealed trait ParsedAst
 // TODO: Long or short names?
 // TODO: Use the word "ref".
 // TODO: Inconsistent where source locations are used.
+// TODO: List of missing features: annotations? output to files? debugging information? col indexes?
 
 object ParsedAst {
 

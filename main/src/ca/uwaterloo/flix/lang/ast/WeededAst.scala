@@ -25,6 +25,9 @@ object WeededAst {
     // TODO: Improve? or at least do something with traits?
     case class Lattice(ident: ParsedAst.Ident, elms: Seq[ParsedAst.QName], traits: Seq[ParsedAst.Declaration.Trait]) extends WeededAst.Declaration
 
+    // TODO
+    case class JoinSemiLattice(ident: ParsedAst.Ident, bot: ParsedAst.QName, leq: ParsedAst.QName, lub: ParsedAst.QName, norm: Option[ParsedAst.QName], widen: Option[ParsedAst.QName])
+
     case class Relation(ident: ParsedAst.Ident, attributes: Seq[(ParsedAst.Ident, WeededAst.Type)]) extends WeededAst.Declaration
 
     case class Fact(head: WeededAst.PredicateWithApply) extends WeededAst.Declaration
