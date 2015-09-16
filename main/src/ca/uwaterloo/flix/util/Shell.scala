@@ -29,6 +29,12 @@ class Shell(implicit options: Options) {
     }
   }
 
+  // TODO. Ideas for commands:
+  // :show
+  // :reload
+  // :stop (if fixpoint engine is running)
+
+
   private def printWelcomeBanner(): Unit = {
     println(s"Welcome to Flix ${Version.currentVersion}!  Type 'help' for more information.")
     println(s"Enter a command and hit return. Type 'exit' or press ctrl+d to quit.")
