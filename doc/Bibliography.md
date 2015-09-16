@@ -3,13 +3,11 @@
 ## Design Philosophy ##
 
 - **Out of the Tar Pit**, 
-  Ben Moseley and Peter Marks, 
-  in _Software Practice Advancement 2006._ 
+  Ben Moseley and Peter Marks.
   [Paper.](http://www.shaffner.us/cs/papers/tarpit.pdf)
 
 - **What You Always Wanted to Know About Datalog (and Never Dared to Ask)**, 
-  Stefano Ceri, Georg Gottlob and Letizia Tanca, 
-  in _IEEE Knowledge and Data Engineering 1989._
+  Stefano Ceri, Georg Gottlob and Letizia Tanca.
   [Paper.](http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=43410)
 
 ## Related Languages ##
@@ -32,3 +30,12 @@
 - **CodeQuest: Scalable Source Code Queries with Datalog**,
   Elnar Hajiyev, Mathieu Verbaere and Oege de Moor.
   [Paper.](http://link.springer.com/chapter/10.1007/11785477_2)
+
+- **PAG – An Efficient Program Analyzer Generator**,
+  Florian Martin.
+  [Paper.](http://link.springer.com/article/10.1007/s100090050017)
+
+- **Hoopl: A Modular, Reusable Library for Dataflow Analysis and Transformation**,
+  Norman Ramsey, Joao Dias and Simon Peyton Jones.
+  [Paper.](http://dl.acm.org/citation.cfm?id=1863539)
+
