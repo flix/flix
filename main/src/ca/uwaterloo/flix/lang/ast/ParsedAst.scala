@@ -205,6 +205,7 @@ object ParsedAst {
      * @param name the unresolved name of the function.
      * @param arguments the arguments to the function.
      */
+    // TODO: Should the base not be parsed as an expression??
     case class AmbiguousApply(name: ParsedAst.QName, arguments: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
 
     /**

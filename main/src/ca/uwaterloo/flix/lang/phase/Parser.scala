@@ -157,6 +157,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     }
   }
 
+  // TODO: This needs to allow the function to be an expression.
   def ApplyExpression: Rule1[ParsedAst.Expression.AmbiguousApply] = rule {
     QName ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Expression.AmbiguousApply
   }

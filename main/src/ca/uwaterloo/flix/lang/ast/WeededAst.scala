@@ -54,7 +54,7 @@ object WeededAst {
 
   }
 
-  sealed trait Literal
+  sealed trait Literal extends WeededAst
 
   object Literal {
 

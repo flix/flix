@@ -20,6 +20,18 @@ object ResolvedAst {
 
   }
 
+  sealed trait Literal
+
+  sealed trait Expression extends WeededAst
+
+  object Expression {
+
+    case class LocalVar(name: String, location: SourceLocation) extends ResolvedAst.Expression
+
+    case class GlobalVar(ref: Ref, location: SourceLocation) extends ResolvedAst.Expression
+
+  }
+
   sealed trait Predicate
 
   object Predicate {
