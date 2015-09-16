@@ -96,7 +96,7 @@ object ParsedAst {
      * @param elms the components of the lattice (e.g. bot, leq, lub).
      * @param traits the traits of the lattice (e.g. Norm and Widening).
      */
-    case class Lattice(ident: ParsedAst.Ident, elms: Seq[ParsedAst.QName], traits: Seq[ParsedAst.Declaration.Trait]) extends ParsedAst.Declaration
+    case class Lattice(ident: ParsedAst.Ident, elms: Seq[ParsedAst.QName], traits: Seq[ParsedAst.Trait]) extends ParsedAst.Declaration
 
     /**
      * An AST that represent a relation declaration.
@@ -123,17 +123,16 @@ object ParsedAst {
     // TODO: This is not a declaration! (It has no name!)
     case class Rule(head: ParsedAst.AmbiguousPredicate, body: Seq[ParsedAst.AmbiguousPredicate]) extends ParsedAst.Declaration
 
-    /**
-     * An AST node that represent a trait. Used by lattice declarations.
-     *
-     * @param ident the name of the trait.
-     * @param name the value passed to the trait.
-     */
-    // TODO: Find a better name.
-    // TODO: This is not a declaration! (It has no name!)
-    case class Trait(ident: ParsedAst.Ident, name: QName) extends ParsedAst.Declaration
-
   }
+
+  /**
+   * An AST node that represent a trait. Used by lattice declarations.
+   *
+   * @param ident the name of the trait.
+   * @param name the value passed to the trait.
+   */
+  // TODO: Find a better name or eliminate entirely...
+  case class Trait(ident: ParsedAst.Ident, name: QName) extends ParsedAst
 
   /**
    * AST nodes for Literals.

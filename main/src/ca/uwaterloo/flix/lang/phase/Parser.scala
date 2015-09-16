@@ -73,8 +73,8 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
       oneOrMore(QName).separatedBy(optWS ~ "," ~ optWS)
     }
 
-    def Traits: Rule1[Seq[ParsedAst.Declaration.Trait]] = rule {
-      zeroOrMore(atomic("with") ~ WS ~ Ident ~ optWS ~ "(" ~ QName ~ ")" ~ optWS ~> ParsedAst.Declaration.Trait)
+    def Traits: Rule1[Seq[ParsedAst.Trait]] = rule {
+      zeroOrMore(atomic("with") ~ WS ~ Ident ~ optWS ~ "(" ~ QName ~ ")" ~ optWS ~> ParsedAst.Trait)
     }
 
     rule {
