@@ -6,11 +6,7 @@ trait WeededAst
 
 object WeededAst {
 
-  // consider naming things pe for parsed expression, instead of we for weeded exp.
-
   case class Root(declarations: Seq[WeededAst.Declaration]) extends WeededAst
-
-  // TODO: Can we give every declaration a tpe? Doesnt work for: Namespace, Fact and Rule.
 
   sealed trait Declaration
 
@@ -18,18 +14,30 @@ object WeededAst {
 
     case class Namespace(name: ParsedAst.QName, body: Seq[WeededAst.Declaration]) extends WeededAst.Declaration
 
-    case class Tpe(ident: ParsedAst.Ident, tpe: WeededAst.Type) extends WeededAst.Declaration
+    case class Fact(head: WeededAst.PredicateWithApply) extends WeededAst.Declaration
 
-    case class Val(ident: ParsedAst.Ident, tpe: WeededAst.Type, e: WeededAst.Expression) extends WeededAst.Declaration
+    case class Rule(head: WeededAst.PredicateWithApply, body: Seq[WeededAst.PredicateNoApply]) extends WeededAst.Declaration
 
-    case class Fun(ident: ParsedAst.Ident, formals: Seq[(ParsedAst.Ident, WeededAst.Type)], tpe: WeededAst.Type, body: WeededAst.Expression) extends WeededAst.Declaration
+  }
 
-    case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends WeededAst.Declaration
+  sealed trait Definition extends WeededAst.Declaration {
+    // TODO: require all these to have a tpe?
+  }
+
+  object Definition {
+
+    case class TypeAlias(ident: ParsedAst.Ident, tpe: WeededAst.Type) extends WeededAst.Definition
+
+    case class Value(ident: ParsedAst.Ident, tpe: WeededAst.Type, e: WeededAst.Expression) extends WeededAst.Definition
+
+    case class Function(ident: ParsedAst.Ident, formals: Seq[(ParsedAst.Ident, WeededAst.Type)], tpe: WeededAst.Type, body: WeededAst.Expression) extends WeededAst.Definition
+
+    case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends WeededAst.Definition
 
     // TODO: Reference to ParsedAst.
 
     // TODO: Improve? or at least do something with traits?
-    case class Lattice(ident: ParsedAst.Ident, elms: Seq[ParsedAst.QName], traits: Seq[ParsedAst.Trait]) extends WeededAst.Declaration
+    case class Lattice(ident: ParsedAst.Ident, elms: Seq[ParsedAst.QName], traits: Seq[ParsedAst.Trait]) extends WeededAst.Definition
 
     // TODO
     case class JoinSemiLattice(ident: ParsedAst.Ident,
@@ -37,7 +45,7 @@ object WeededAst {
                                leq: ParsedAst.QName,
                                lub: ParsedAst.QName,
                                norm: Option[ParsedAst.QName],
-                               widen: Option[ParsedAst.QName]) extends WeededAst.Declaration
+                               widen: Option[ParsedAst.QName]) extends WeededAst.Definition
 
     // TODO
     case class CompleteLattice(ident: ParsedAst.Ident,
@@ -50,11 +58,7 @@ object WeededAst {
                                widen: Option[ParsedAst.QName])
 
     // TODO: Change signature of attributes.
-    case class Relation(ident: ParsedAst.Ident, attributes: Seq[WeededAst.Attribute]) extends WeededAst.Declaration
-
-    case class Fact(head: WeededAst.PredicateWithApply) extends WeededAst.Declaration
-
-    case class Rule(head: WeededAst.PredicateWithApply, body: Seq[WeededAst.PredicateNoApply]) extends WeededAst.Declaration
+    case class Relation(ident: ParsedAst.Ident, attributes: Seq[WeededAst.Attribute]) extends WeededAst.Definition
 
   }
 
@@ -177,4 +181,5 @@ object WeededAst {
 
 
   case class Attribute(ident: ParsedAst.Ident, tpe: WeededAst.Type) extends WeededAst
+
 }

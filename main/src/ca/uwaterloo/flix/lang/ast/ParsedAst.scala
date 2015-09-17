@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.lang.ast
 import scala.collection.immutable.Seq
 
 /**
- * A common-super type for all Parsed AST nodes.
+ * A common-super type for all parsed AST nodes.
  */
 sealed trait ParsedAst
 
@@ -16,9 +16,7 @@ sealed trait ParsedAst
 object ParsedAst {
 
   /**
-   * The Ast root node.
-   *
-   * At the highest level an Ast is a sequence of declarations.
+   * The Ast root node. 
    */
   case class Root(declarations: Seq[ParsedAst.Declaration]) extends ParsedAst
 
@@ -39,9 +37,8 @@ object ParsedAst {
   case class QName(parts: Seq[String], location: SourceLocation) extends ParsedAst
 
   /**
-   * A common super-type for AST nodes which represent declarations.
+   * A common super-type for AST nodes that represent declarations.
    */
-  // TODO: Need alternative for these members to seperate them from actual declarations (which are things that affect scope)?
   sealed trait Declaration extends ParsedAst
 
   object Declaration {
@@ -52,68 +49,14 @@ object ParsedAst {
      * @param name the name of the namespace.
      * @param body the nested declarations.
      */
-    case class Namespace(name: ParsedAst.QName, body: Seq[ParsedAst.Declaration]) extends ParsedAst.Declaration
-
-    /**
-     * An AST node that represent a type alias.
-     *
-     * @param ident the name of the alias.
-     * @param tpe the type of the alias.
-     */
-    // NB: This class is called `Tpe` since the name `Type` causes problems with the Scala compiler/shapeless.
-    case class Tpe(ident: ParsedAst.Ident, tpe: ParsedAst.Type) extends ParsedAst.Declaration
-
-    /**
-     * An AST node that represents a (constant) value declaration.
-     *
-     * @param ident the name of the value.
-     * @param tpe the declared type of the value.
-     * @param e the expression.
-     */
-    case class Val(ident: ParsedAst.Ident, tpe: ParsedAst.Type, e: ParsedAst.Expression) extends ParsedAst.Declaration
-
-    /**
-     * An AST node that represents a function declaration.
-     *
-     * @param ident the name of the function.
-     * @param formals the formals (i.e. parameters and their types).
-     * @param tpe the return type.
-     * @param body the body expression of the function.
-     */
-    case class Fun(ident: ParsedAst.Ident, formals: Seq[(ParsedAst.Ident, ParsedAst.Type)], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Declaration
-
-    /**
-     * An AST node that represents a enum declaration.
-     *
-     * @param ident the name of the enum.
-     * @param cases the variants of the enum.
-     */
-    case class Enum(ident: ParsedAst.Ident, cases: Seq[ParsedAst.Type.Tag]) extends ParsedAst.Declaration
-
-    /**
-     * An AST node that represents a lattice declaration.
-     *
-     * @param ident the name of the lattice.
-     * @param elms the components of the lattice (e.g. bot, leq, lub).
-     * @param traits the traits of the lattice (e.g. Norm and Widening).
-     */
-    case class Lattice(ident: ParsedAst.Ident, elms: Seq[ParsedAst.QName], traits: Seq[ParsedAst.Trait]) extends ParsedAst.Declaration
-
-    /**
-     * An AST that represent a relation declaration.
-     *
-     * @param ident the name of the relation.
-     * @param attributes the name and type of the attributes.
-     */
-    case class Relation(ident: ParsedAst.Ident, attributes: Seq[ParsedAst.Attribute]) extends ParsedAst.Declaration
+    case class Namespace(name: ParsedAst.QName, body: Seq[ParsedAst.Declaration]) extends ParsedAst.Definition
 
     /**
      * An AST node that represents a fact declaration.
      *
      * @param head the head predicate.
      */
-    // TODO: This is not a declaration! (It has no name!)
-    case class Fact(head: ParsedAst.AmbiguousPredicate) extends ParsedAst.Declaration
+    case class Fact(head: ParsedAst.Predicate) extends ParsedAst.Definition
 
     /**
      * An AST node that represent a rule declaration.
@@ -121,13 +64,74 @@ object ParsedAst {
      * @param head the head predicate.
      * @param body the body predicates.
      */
-    // TODO: This is not a declaration! (It has no name!)
-    case class Rule(head: ParsedAst.AmbiguousPredicate, body: Seq[ParsedAst.AmbiguousPredicate]) extends ParsedAst.Declaration
+    case class Rule(head: ParsedAst.Predicate, body: Seq[ParsedAst.Predicate]) extends ParsedAst.Definition
 
   }
 
   /**
-   * An AST node that represent a trait. Used by lattice declarations.
+   * A common super-type for AST nodes that represent definitions.
+   */
+  sealed trait Definition extends Declaration
+
+  object Definition {
+
+    /**
+     * An AST node that represent a type alias definition.
+     *
+     * @param ident the name of the alias.
+     * @param tpe the type of the alias.
+     */
+    case class TypeAlias(ident: ParsedAst.Ident, tpe: ParsedAst.Type) extends ParsedAst.Definition
+
+    /**
+     * An AST node that represents a value definition.
+     *
+     * @param ident the name of the value.
+     * @param tpe the declared type of the value.
+     * @param e the expression.
+     */
+    // TODO: Maybe this should be called literal or some such?
+    case class Value(ident: ParsedAst.Ident, tpe: ParsedAst.Type, e: ParsedAst.Expression) extends ParsedAst.Definition
+
+    /**
+     * An AST node that represents a function definition.
+     *
+     * @param ident the name of the function.
+     * @param formals the formals (i.e. parameters and their types).
+     * @param tpe the return type.
+     * @param body the body expression of the function.
+     */
+    case class Function(ident: ParsedAst.Ident, formals: Seq[(ParsedAst.Ident, ParsedAst.Type)], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Definition
+
+    /**
+     * An AST node that represents a enum definition.
+     *
+     * @param ident the name of the enum.
+     * @param cases the variants of the enum.
+     */
+    case class Enum(ident: ParsedAst.Ident, cases: Seq[ParsedAst.Type.Tag]) extends ParsedAst.Definition
+
+    /**
+     * An AST node that represents a lattice definition.
+     *
+     * @param ident the name of the lattice.
+     * @param elms the components of the lattice (e.g. bot, leq, lub).
+     * @param traits the traits of the lattice (e.g. Norm and Widening).
+     */
+    case class Lattice(ident: ParsedAst.Ident, elms: Seq[ParsedAst.QName], traits: Seq[ParsedAst.Trait]) extends ParsedAst.Definition
+
+    /**
+     * An AST that represent a relation definition.
+     *
+     * @param ident the name of the relation.
+     * @param attributes the name and type of the attributes.
+     */
+    case class Relation(ident: ParsedAst.Ident, attributes: Seq[ParsedAst.Attribute]) extends ParsedAst.Definition
+
+  }
+
+  /**
+   * An AST node that represent a trait.
    *
    * @param ident the name of the trait.
    * @param name the value passed to the trait.
@@ -364,7 +368,7 @@ object ParsedAst {
    * @param name the unresolved name of the predicate.
    * @param terms the terms of the predicate.
    */
-  case class AmbiguousPredicate(name: ParsedAst.QName, terms: Seq[ParsedAst.Term]) extends ParsedAst
+  case class Predicate(name: ParsedAst.QName, terms: Seq[ParsedAst.Term]) extends ParsedAst
 
   /**
    * AST nodes for Terms.

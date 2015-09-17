@@ -6,6 +6,7 @@ import ca.uwaterloo.flix.lang.phase.Parser
 import org.scalatest.FunSuite
 
 // TODO: Cleanup names. Numbering and remove the Parser. prefix.
+// TODO: Write custom assert which will actually print the parse error...
 
 class TestParser extends FunSuite {
 
@@ -14,8 +15,8 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("Parser.Root01") {
     val input = ""
-    val result = new Parser(None, input).Root.run()
-    assert(result.isSuccess)
+    val result = new Parser(None, input).Root.run().get
+    assert(result.isInstanceOf[ParsedAst.Root])
   }
 
   test("Parser.Root02") {
@@ -24,12 +25,12 @@ class TestParser extends FunSuite {
         |  // a comment
         |}
       """.stripMargin
-    val result = new Parser(None, input).Root.run()
-    assert(result.isSuccess)
+    val result = new Parser(None, input).Root.run().get
+    assert(result.isInstanceOf[ParsedAst.Root])
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Declarations                                                            //
+  // Declarations and Definitions                                            //
   /////////////////////////////////////////////////////////////////////////////
   test("Parser.Declaration.Namespace01") {
     val input =
@@ -65,63 +66,63 @@ class TestParser extends FunSuite {
     assert(result.isSuccess)
   }
 
-  test("Parser.Declaration.Type01") {
+  test("Parser.Definition.TypeAlias01") {
     val input = "type t = Bool;"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Tpe])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.TypeAlias])
   }
 
-  test("Parser.Declaration.Type02") {
+  test("Parser.Definition.TypeAlias02") {
     val input = "type t = A[B];"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Tpe])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.TypeAlias])
   }
 
-  test("Parser.Declaration.Val01") {
+  test("Parser.Definition.Value01") {
     val input = "val v: Int = 42;"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Val])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Value])
   }
 
-  test("Parser.Declaration.Val02") {
+  test("Parser.Definition.Value02") {
     val input = "val v: Int = 1 + 1;"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Val])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Value])
   }
 
-  test("Parser.Declaration.Function01") {
+  test("Parser.Definition.Function01") {
     val input = "def foo(x: Int): Int = 42"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Fun])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Function])
   }
 
-  test("Parser.Declaration.Function02") {
+  test("Parser.Definition.Function02") {
     val input = "def foo(x: Int, y: Int, z: Int): Int = x + y + z"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Fun])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Function])
   }
 
-  test("Parser.Declaration.Enum01") {
+  test("Parser.Definition.Enum01") {
     val input =
       """enum A {
         |  case B
         |}
       """.stripMargin
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Enum])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Enum])
   }
 
-  test("Parser.Declaration.Enum02") {
+  test("Parser.Definition.Enum02") {
     val input =
       """enum A {
         |  case B(Int)
         |}
       """.stripMargin
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Enum])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Enum])
   }
 
-  test("Parser.Declaration.Enum03") {
+  test("Parser.Definition.Enum03") {
     val input =
       """enum A {
         |  case B,
@@ -129,80 +130,80 @@ class TestParser extends FunSuite {
         |  case D(Bool, Int, Str)
         |}
       """.stripMargin
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Enum])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Enum])
   }
 
-  test("Parser.Declaration.JoinSemiLattice01") {
+  test("Parser.Definition.JoinSemiLattice01") {
     val input = "lat <a> (bot, foo::leq, lub)"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  test("Parser.Declaration.JoinSemiLattice02") {
+  test("Parser.Definition.JoinSemiLattice02") {
     val input = "lat <a> (bot, foo::leq, lub) with Norm(b)"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  test("Parser.Declaration.JoinSemiLattice03") {
+  test("Parser.Definition.JoinSemiLattice03") {
     val input = "lat <a> (bot, foo::leq, lub) with Widen(b)"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  test("Parser.Declaration.JoinSemiLattice04") {
+  test("Parser.Definition.JoinSemiLattice04") {
     val input = "lat <a> (bot, foo::leq, lub) with Norm(b) with Widen(c)"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  test("Parser.Declaration.JoinSemiLattice05") {
+  test("Parser.Definition.JoinSemiLattice05") {
     val input = "lat <a> (bot, foo::leq, lub) with Norm(foo::b) with Widen(foo::c)"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  test("Parser.Declaration.CompleteLattice01") {
+  test("Parser.Definition.CompleteLattice01") {
     val input = "lat <a> (bot, top, foo::leq, lub, glb)"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  test("Parser.Declaration.CompleteLattice02") {
+  test("Parser.Definition.CompleteLattice02") {
     val input = "lat <a> (bot, top, foo::leq, lub, glb) with Norm(b)"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  test("Parser.Declaration.CompleteLattice03") {
+  test("Parser.Definition.CompleteLattice03") {
     val input = "lat <a> (bot, top, foo::leq, lub, glb) with Widen(b)"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  test("Parser.Declaration.CompleteLattice04") {
+  test("Parser.Definition.CompleteLattice04") {
     val input = "lat <a> (bot, top, foo::leq, lub, glb) with Norm(b) with Widen(c)"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  test("Parser.Declaration.CompleteLattice05") {
+  test("Parser.Definition.CompleteLattice05") {
     val input = "lat <a> (bot, top, foo::leq, lub, glb) with Norm(foo::b) with Widen(foo::c)"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Lattice])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  test("Parser.Declaration.Relation01") {
+  test("Parser.Definition.Relation01") {
     val input = "rel A(b: B)"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Relation])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Relation])
   }
 
-  test("Parser.Declaration.Relation02") {
+  test("Parser.Definition.Relation02") {
     val input = "rel A(b: B, c: C, d: D)"
-    val result = new Parser(None, input).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Declaration.Relation])
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Relation])
   }
 
   /////////////////////////////////////////////////////////////////////////////

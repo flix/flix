@@ -17,7 +17,9 @@ import scala.collection.mutable
 // TODO: JoinSemiLattice vs. CompleteLattice.
 // TODO: valid "Traits"
 // TODO: rewrite all functions to lambdas of one argument?
-// TODO: The weeder could be responsible for dealing with Single tuple expressions and literal/expression conversion.
+// TODO: consider naming things pe for parsed expression, instead of we for weeded exp.
+// TODO: Should the phases be structure in a hierarchy namespace too?
+
 object Weeder {
 
   import WeederError._
@@ -89,20 +91,26 @@ object Weeder {
     @@(ast.declarations.map(compileDeclaration)) map WeededAst.Root
   }
 
-
   /**
    * Compiles the given parsed declaration `d` to a weeded declaration.
    */
   def compileDeclaration(d: ParsedAst.Declaration): Validation[WeededAst.Declaration, WeederError] = d match {
     case d: ParsedAst.Declaration.Namespace => compileNamespace(d)
-    case d: ParsedAst.Declaration.Tpe => compileType(d) // TODO: Naming, call TypeAlias?
-    case d: ParsedAst.Declaration.Fun => compileFun(d)
-    case d: ParsedAst.Declaration.Val => compileVal(d)
-    case d: ParsedAst.Declaration.Enum => compileEnum(d)
-    case d: ParsedAst.Declaration.Lattice => compileLattice(d)
-    case d: ParsedAst.Declaration.Relation => compileRelation(d)
     case d: ParsedAst.Declaration.Fact => compileFact(d)
     case d: ParsedAst.Declaration.Rule => compileRule(d)
+    case dd: ParsedAst.Definition => compileDefinition(dd)
+  }
+
+  /**
+   * Compiles the given parsed definition `d` to a weeded definition.
+   */
+  def compileDefinition(d: ParsedAst.Definition): Validation[WeededAst.Declaration, WeederError] = d match {
+    case d: ParsedAst.Definition.TypeAlias => compileTypeAlias(d)
+    case d: ParsedAst.Definition.Function => compileFunction(d)
+    case d: ParsedAst.Definition.Value => compileValue(d)
+    case d: ParsedAst.Definition.Enum => compileEnum(d)
+    case d: ParsedAst.Definition.Lattice => compileLattice(d)
+    case d: ParsedAst.Definition.Relation => compileRelation(d)
   }
 
   /**
@@ -114,13 +122,13 @@ object Weeder {
   /**
    * Compiles the given parsed type declaration `d` to a weeded type declaration.
    */
-  def compileType(d: ParsedAst.Declaration.Tpe): Validation[WeededAst.Declaration.Tpe, WeederError] =
-    compileType(d.tpe) map (t => WeededAst.Declaration.Tpe(d.ident, t))
+  def compileTypeAlias(d: ParsedAst.Definition.TypeAlias): Validation[WeededAst.Definition.TypeAlias, WeederError] =
+    compileType(d.tpe) map (t => WeededAst.Definition.TypeAlias(d.ident, t))
 
   /**
    * Compiles the given parsed function declaration `d` to a weeded function declaration.
    */
-  def compileFun(d: ParsedAst.Declaration.Fun): Validation[WeededAst.Declaration.Fun, WeederError] = {
+  def compileFunction(d: ParsedAst.Definition.Function): Validation[WeededAst.Definition.Function, WeederError] = {
     val formals2 = d.formals.map {
       case (ident, tpe) => compileType(tpe) map (t => (ident, t))
     }
@@ -128,16 +136,16 @@ object Weeder {
     val bodyVal = compileExpression(d.body)
     // TODO: Naming
     @@(@@(formals2), returnTpeVal, bodyVal) map {
-      case (wformals, wreturnTpe, wbody) => WeededAst.Declaration.Fun(d.ident, wformals, wreturnTpe, wbody)
+      case (wformals, wreturnTpe, wbody) => WeededAst.Definition.Function(d.ident, wformals, wreturnTpe, wbody)
     }
   }
 
   /**
    * Compiles the given parsed value declaration `d` to a weeded declaration.
    */
-  def compileVal(d: ParsedAst.Declaration.Val): Validation[WeededAst.Declaration.Val, WeederError] =
+  def compileValue(d: ParsedAst.Definition.Value): Validation[WeededAst.Definition.Value, WeederError] =
     @@(compileType(d.tpe), compileExpression(d.e)) map {
-      case (wtpe, we) => WeededAst.Declaration.Val(d.ident, wtpe, we)
+      case (wtpe, we) => WeededAst.Definition.Value(d.ident, wtpe, we)
     }
 
   /**
@@ -145,7 +153,7 @@ object Weeder {
    *
    * Fails if the same tag name is occurs twice.
    */
-  def compileEnum(d: ParsedAst.Declaration.Enum): Validation[WeededAst.Declaration.Enum, WeederError] =
+  def compileEnum(d: ParsedAst.Definition.Enum): Validation[WeededAst.Definition.Enum, WeederError] =
     Validation.fold[ParsedAst.Type.Tag, Map[String, ParsedAst.Type.Tag], WeederError](d.cases, Map.empty) {
       // loop through each tag declaration
       case (macc, tag@ParsedAst.Type.Tag(ParsedAst.Ident(name, location2), _)) => macc.get(name) match {
@@ -154,24 +162,24 @@ object Weeder {
         case Some(otherTag) => DuplicateTag(name, otherTag.ident.location, location2).toFailure
       }
     } map {
-      case m => WeededAst.Declaration.Enum(d.ident, m)
+      case m => WeededAst.Definition.Enum(d.ident, m)
     }
 
   /**
    * Compiles the given parsed lattice `d` to a weeded lattice.
    */
-  def compileLattice(d: ParsedAst.Declaration.Lattice): Validation[WeededAst.Declaration.Lattice, WeederError] =
-    WeededAst.Declaration.Lattice(d.ident, d.elms, d.traits).toSuccess
+  def compileLattice(d: ParsedAst.Definition.Lattice): Validation[WeededAst.Definition.Lattice, WeederError] =
+    WeededAst.Definition.Lattice(d.ident, d.elms, d.traits).toSuccess
 
   /**
    * Compiles the given parsed relation `d` to a weeded relation.
    */
-  def compileRelation(d: ParsedAst.Declaration.Relation): Validation[WeededAst.Declaration.Relation, WeederError] = {
+  def compileRelation(d: ParsedAst.Definition.Relation): Validation[WeededAst.Definition.Relation, WeederError] = {
     val attributes = d.attributes.map {
       case ParsedAst.Attribute(ident, tpe) => compileType(tpe) map (wtpe => WeededAst.Attribute(ident, wtpe))
     }
     @@(attributes) map {
-      case wattr => WeededAst.Declaration.Relation(d.ident, wattr)
+      case wattr => WeededAst.Definition.Relation(d.ident, wattr)
     }
   }
 
@@ -300,7 +308,7 @@ object Weeder {
    *
    * Fails if the parsed predicate contains a function call.
    */
-  def compilePredicateNoApply(p: ParsedAst.AmbiguousPredicate): Validation[WeededAst.PredicateNoApply, WeederError] =
+  def compilePredicateNoApply(p: ParsedAst.Predicate): Validation[WeededAst.PredicateNoApply, WeederError] =
     @@(p.terms.map(compileTermNoApply)) map {
       case wterms => WeededAst.PredicateNoApply(p.name, wterms)
     }
@@ -308,7 +316,7 @@ object Weeder {
   /**
    * Compiles the given parsed predicate `p` to a weeded predicate.
    */
-  def compilePredicateWithApply(p: ParsedAst.AmbiguousPredicate): Validation[WeededAst.PredicateWithApply, WeederError] =
+  def compilePredicateWithApply(p: ParsedAst.Predicate): Validation[WeededAst.PredicateWithApply, WeederError] =
     @@(p.terms.map(compileTermWithApply)) map {
       case wterms => WeededAst.PredicateWithApply(p.name, wterms)
     }

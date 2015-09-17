@@ -12,7 +12,7 @@ class TestWeeder extends FunSuite {
   val Ident = ParsedAst.Ident("x", SourceLocation.Unknown)
 
   test("DuplicateTag01") {
-    val past = ParsedAst.Declaration.Enum(Ident, Seq(
+    val past = ParsedAst.Definition.Enum(Ident, Seq(
       ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ))
@@ -22,7 +22,7 @@ class TestWeeder extends FunSuite {
   }
 
   test("DuplicateTag02") {
-    val past = ParsedAst.Declaration.Enum(Ident, Seq(
+    val past = ParsedAst.Definition.Enum(Ident, Seq(
       ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Type.Tag(ParsedAst.Ident("y", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),

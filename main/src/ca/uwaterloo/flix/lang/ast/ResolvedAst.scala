@@ -4,25 +4,25 @@ trait ResolvedAst
 
 object ResolvedAst {
 
-  // TODO: Split these up or not?
-  case class SymbolTable(
-                          m: Map[Ref, ResolvedAst.Declaration],
-                          relations: Map[Ref, ResolvedAst.Declaration.Relation]
-                          )
-
-  sealed trait Declaration
+  sealed trait Declaration extends ResolvedAst
 
   object Declaration {
 
     case class Fact(head: ResolvedAst.Predicate) extends Declaration
 
-    case class Relation() extends Declaration
 
+
+  }
+
+  sealed trait Definition extends ResolvedAst.Declaration
+
+  object Definition {
+    case class Relation() extends ResolvedAst.Definition
   }
 
   sealed trait Literal
 
-  sealed trait Expression extends WeededAst
+  sealed trait Expression extends Definition
 
   object Expression {
 
@@ -30,9 +30,19 @@ object ResolvedAst {
 
     case class Ref(name: ParsedAst.QName, decl: WeededAst.Declaration) extends ResolvedAst.Expression
 
+    // TODO
+    case class Apply(ident: ParsedAst.Ident) extends ResolvedAst.Expression
+
+    // TODO
+    case class ApplyRef(ident: ParsedAst.Ident) extends ResolvedAst.Expression
+
+
     case class IfThenElse(e1: ResolvedAst.Expression, e2: ResolvedAst.Expression, e3: ResolvedAst.Expression) extends ResolvedAst.Expression
 
     case class Let(ident: ParsedAst.Ident, value: ResolvedAst.Expression, body: ResolvedAst.Expression) extends ResolvedAst.Expression
+
+
+    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, e: ResolvedAst.Expression, decl: WeededAst.Definition.Enum) extends ResolvedAst.Expression
 
   }
 

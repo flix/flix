@@ -25,31 +25,34 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Declarations                                                            //
+  // Declarations and Definition                                             //
   /////////////////////////////////////////////////////////////////////////////
   // NB: RuleDeclaration must be parsed before FactDeclaration.
   def Declaration: Rule1[ParsedAst.Declaration] = rule {
-    NamespaceDeclaration | TypeDeclaration | ValueDeclaration | FunctionDeclaration | EnumDeclaration |
-      LatticeDeclaration | RelationDeclaration | RuleDeclaration | FactDeclaration
+    NamespaceDeclaration | RuleDeclaration | FactDeclaration | Definition
   }
 
   def NamespaceDeclaration: Rule1[ParsedAst.Declaration.Namespace] = rule {
     atomic("namespace") ~ WS ~ QName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration) ~ optWS ~ '}' ~ optSC ~> ParsedAst.Declaration.Namespace
   }
 
-  def TypeDeclaration: Rule1[ParsedAst.Declaration.Tpe] = rule {
-    atomic("type") ~ WS ~ Ident ~ optWS ~ "=" ~ optWS ~ Type ~ optSC ~> ParsedAst.Declaration.Tpe
+  def Definition: Rule1[ParsedAst.Definition] = rule {
+    TypeAliasDefinition | ValueDefinition | FunctionDefinition | EnumDefinition | LatticeDefinition | RelationDefinition
   }
 
-  def ValueDeclaration: Rule1[ParsedAst.Declaration.Val] = rule {
-    atomic("val") ~ WS ~ Ident ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Declaration.Val
+  def TypeAliasDefinition: Rule1[ParsedAst.Definition.TypeAlias] = rule {
+    atomic("type") ~ WS ~ Ident ~ optWS ~ "=" ~ optWS ~ Type ~ optSC ~> ParsedAst.Definition.TypeAlias
   }
 
-  def FunctionDeclaration: Rule1[ParsedAst.Declaration.Fun] = rule {
-    atomic("def") ~ WS ~ Ident ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Declaration.Fun
+  def ValueDefinition: Rule1[ParsedAst.Definition.Value] = rule {
+    atomic("val") ~ WS ~ Ident ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Definition.Value
   }
 
-  def EnumDeclaration: Rule1[ParsedAst.Declaration.Enum] = {
+  def FunctionDefinition: Rule1[ParsedAst.Definition.Function] = rule {
+    atomic("def") ~ WS ~ Ident ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Definition.Function
+  }
+
+  def EnumDefinition: Rule1[ParsedAst.Definition.Enum] = {
     def UnitCase: Rule1[ParsedAst.Type.Tag] = rule {
       atomic("case") ~ WS ~ Ident ~> ((ident: ParsedAst.Ident) => ParsedAst.Type.Tag(ident, ParsedAst.Type.Unit))
     }
@@ -64,11 +67,11 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     }
 
     rule {
-      atomic("enum") ~ WS ~ Ident ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ optSC ~> ParsedAst.Declaration.Enum
+      atomic("enum") ~ WS ~ Ident ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ optSC ~> ParsedAst.Definition.Enum
     }
   }
 
-  def LatticeDeclaration: Rule1[ParsedAst.Declaration] = {
+  def LatticeDefinition: Rule1[ParsedAst.Definition] = {
     def Elms: Rule1[Seq[ParsedAst.QName]] = rule {
       oneOrMore(QName).separatedBy(optWS ~ "," ~ optWS)
     }
@@ -78,11 +81,11 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     }
 
     rule {
-      atomic("lat") ~ optWS ~ "<" ~ Ident ~ ">" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ optWS ~ Traits ~ optSC ~> ParsedAst.Declaration.Lattice
+      atomic("lat") ~ optWS ~ "<" ~ Ident ~ ">" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ optWS ~ Traits ~ optSC ~> ParsedAst.Definition.Lattice
     }
   }
 
-  def RelationDeclaration: Rule1[ParsedAst.Declaration.Relation] = {
+  def RelationDefinition: Rule1[ParsedAst.Definition.Relation] = {
     def Attribute: Rule1[ParsedAst.Attribute] = rule {
       Ident ~ optWS ~ ":" ~ optWS ~ Type ~> ParsedAst.Attribute
     }
@@ -92,7 +95,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     }
 
     rule {
-      atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ optSC ~> ParsedAst.Declaration.Relation
+      atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ optSC ~> ParsedAst.Definition.Relation
     }
   }
 
@@ -237,15 +240,15 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   // Facts and Rules                                                         //
   /////////////////////////////////////////////////////////////////////////////
   def FactDeclaration: Rule1[ParsedAst.Declaration.Fact] = rule {
-    AmbiguousPredicate ~ optWS ~ "." ~ optWS ~> ParsedAst.Declaration.Fact
+    Predicate ~ optWS ~ "." ~ optWS ~> ParsedAst.Declaration.Fact
   }
 
   def RuleDeclaration: Rule1[ParsedAst.Declaration.Rule] = rule {
-    AmbiguousPredicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(AmbiguousPredicate).separatedBy(optWS ~ "," ~ optWS) ~ "." ~ optWS ~> ParsedAst.Declaration.Rule
+    Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ "." ~ optWS ~> ParsedAst.Declaration.Rule
   }
 
-  def AmbiguousPredicate: Rule1[ParsedAst.AmbiguousPredicate] = rule {
-    QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~> ParsedAst.AmbiguousPredicate
+  def Predicate: Rule1[ParsedAst.Predicate] = rule {
+    QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~> ParsedAst.Predicate
   }
 
   /////////////////////////////////////////////////////////////////////////////
