@@ -47,14 +47,34 @@ object Weeder {
           s"  Call was here: ${location.format}\n"
     }
 
-    // TODO
-    case class DuplicateAttribute(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
-      val format = ???
+    /**
+     * An error raised to indicate that the attribute `name` was declared multiple times.
+     *
+     * @param name the name of the attribute.
+     * @param tpe type of the attribute.
+     * @param location1 the location of the first declaration.
+     * @param location2 the location of the second declaration.
+     */
+    case class DuplicateAttribute(name: String, tpe: ParsedAst.Type, location1: SourceLocation, location2: SourceLocation) extends WeederError {
+      val format =
+        s"Error: Duplicate attribute name: '$name' (of type $tpe).\n" +
+          s"  First declaration was here: ${location1.format}.\n" +
+          s"  Second declaration was here: ${location2.format}\n"
     }
 
-    // TODO
-    case class DuplicateFormal(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
-      val format = ???
+    /**
+     * An error raised to indicate that the formal argument `name` was declared multiple times.
+     *
+     * @param name the name of the argument.
+     * @param tpe the type of the argument.
+     * @param location1 the location of the first declaration.
+     * @param location2 the location of the second declaration.
+     */
+    case class DuplicateFormal(name: String, tpe: ParsedAst.Type, location1: SourceLocation, location2: SourceLocation) extends WeederError {
+      val format =
+        s"Error: Duplicate formal argument: '$name' (of type $tpe).\n" +
+          s"  First declaration was here ${location1.format}\n" +
+          s"  Second declaration was here: ${location2.format}\n"
     }
 
     /**
@@ -66,7 +86,7 @@ object Weeder {
      */
     case class DuplicateTag(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
       val format =
-        s"Error: Duplicate tag name '$name'.\n" +
+        s"Error: Duplicate tag name: '$name'.\n" +
           s"  First declaration was here: ${location1.format}. This one will be used.\n" +
           s"  Second declaration was here: ${location2.format}. This one will be ignored.\n"
     }
@@ -81,7 +101,7 @@ object Weeder {
      */
     case class NonLinearPattern(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
       val format =
-        s"Error: Non-linear pattern: The variable '$name' occurs twice.\n" +
+        s"Error: Non-linear pattern: The variable: '$name' occurs twice.\n" +
           s"  First occurrence was here: ${location1.format}\n" +
           s"  Second occurrence was here: ${location2.format}\n"
     }
