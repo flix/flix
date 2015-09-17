@@ -34,8 +34,6 @@ object WeededAst {
 
     case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends WeededAst.Definition
 
-    // TODO: Reference to ParsedAst.
-
     // TODO: Improve? or at least do something with traits?
     case class Lattice(ident: ParsedAst.Ident, elms: Seq[ParsedAst.QName], traits: Seq[ParsedAst.Trait]) extends WeededAst.Definition
 

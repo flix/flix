@@ -19,7 +19,13 @@ object Typer {
   def typecheck(rast: ResolvedAst) = ???
 
   object Literal {
-    // def typer()
+    def typer(rliteral: ResolvedAst.Literal): Validation[TypedAst.Literal, TypeError] = rliteral match {
+      case ResolvedAst.Literal.Unit => TypedAst.Literal.Unit.toSuccess
+      case ResolvedAst.Literal.Bool(b) => TypedAst.Literal.Bool(b).toSuccess
+      case ResolvedAst.Literal.Int(i) => TypedAst.Literal.Int(i).toSuccess
+      case ResolvedAst.Literal.Str(s) => TypedAst.Literal.Str(s).toSuccess
+
+    }
   }
 
   object Expression {

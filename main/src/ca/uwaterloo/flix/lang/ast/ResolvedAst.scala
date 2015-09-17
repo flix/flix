@@ -11,16 +11,33 @@ object ResolvedAst {
     case class Fact(head: ResolvedAst.Predicate) extends Declaration
 
 
-
   }
 
   sealed trait Definition extends ResolvedAst.Declaration
 
   object Definition {
+
     case class Relation() extends ResolvedAst.Definition
+
   }
 
   sealed trait Literal
+
+  object Literal {
+
+    case object Unit extends ResolvedAst.Literal
+
+    case class Bool(literal: scala.Boolean) extends ResolvedAst.Literal
+
+    case class Int(literal: scala.Int) extends ResolvedAst.Literal
+
+    case class Str(literal: java.lang.String) extends ResolvedAst.Literal
+
+    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, literal: WeededAst.Literal) extends ResolvedAst.Literal
+
+    case class Tuple(elms: Seq[WeededAst.Literal]) extends ResolvedAst.Literal
+
+  }
 
   sealed trait Expression extends Definition
 
