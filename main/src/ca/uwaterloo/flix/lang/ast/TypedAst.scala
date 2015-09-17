@@ -35,14 +35,41 @@ object TypedAst {
   }
 
   sealed trait Expression extends TypedAst {
+    /**
+     * The type of the expression.
+     */
     def tpe: Type
   }
 
   object Expression {
 
+    case class Var(name: String, tpe: TypedAst.Type) extends TypedAst.Expression
+
+    case class Ref(name: ResolvedAst.RName, decl: WeededAst.Definition, tpe: TypedAst.Type) extends TypedAst.Expression
+
+    case class Apply(name: ResolvedAst.RName, arguments: Seq[TypedAst.Expression], tpe: TypedAst.Type) extends TypedAst.Expression
+
+    case class Lit(literal: TypedAst.Literal, tpe: TypedAst.Type) extends TypedAst.Expression
+
+    case class Lambda(formals: Seq[(ParsedAst.Ident, TypedAst.Type)], returnType: TypedAst.Type, body: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
+
+    case class Unary(op: UnaryOperator, e: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
+
+    case class Binary(e1: TypedAst.Expression, op: BinaryOperator, e2: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
+
     case class IfThenElse(e1: TypedAst.Expression, e2: TypedAst.Expression, e3: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
 
     case class Let(ident: ParsedAst.Ident, value: TypedAst.Expression, body: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
+
+    case class Match(e: TypedAst.Expression, rules: Seq[(TypedAst.Pattern, TypedAst.Expression)], tpe: TypedAst.Type) extends TypedAst.Expression
+
+    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, e: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
+
+    case class Tuple(elms: Seq[TypedAst.Expression], tpe: TypedAst.Type) extends TypedAst.Expression
+
+    case class Ascribe(e: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
+
+    case class Error(location: SourceLocation, tpe: TypedAst.Type) extends TypedAst.Expression
 
   }
 

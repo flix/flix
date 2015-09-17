@@ -36,8 +36,7 @@ object ResolvedAst {
 
     case class Str(literal: java.lang.String) extends ResolvedAst.Literal
 
-    // TODO: Need access to the enum declaration.
-    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, literal: ResolvedAst.Literal, defn: WeededAst.Definition.Enum) extends ResolvedAst.Literal
+    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, literal: ResolvedAst.Literal, defn: WeededAst.Definition.Enum) extends ResolvedAst.Literal
 
     case class Tuple(elms: Seq[ResolvedAst.Literal]) extends ResolvedAst.Literal
 
@@ -49,21 +48,31 @@ object ResolvedAst {
 
     case class Var(ident: ParsedAst.Ident) extends ResolvedAst.Expression
 
-    case class Ref(name: ParsedAst.QName, decl: WeededAst.Definition) extends ResolvedAst.Expression
+    case class Ref(name: ResolvedAst.RName, defn: WeededAst.Definition) extends ResolvedAst.Expression
 
-    // TODO
-    case class Apply(ident: ParsedAst.Ident) extends ResolvedAst.Expression
+    case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Expression
 
-    // TODO
-    case class ApplyRef(ident: ParsedAst.Ident) extends ResolvedAst.Expression
+    case class Lambda(formals: Seq[(ParsedAst.Ident, ResolvedAst.Type)], returnType: ResolvedAst.Type, body: ResolvedAst.Expression) extends ResolvedAst.Expression
 
+    case class Apply(lambda: ResolvedAst.Expression, args: Seq[ResolvedAst.Expression]) extends ResolvedAst.Expression
+
+    case class Unary(op: UnaryOperator, e: ResolvedAst.Expression) extends ResolvedAst.Expression
+
+    case class Binary(e1: ResolvedAst.Expression, op: BinaryOperator, e2: ResolvedAst.Expression) extends ResolvedAst.Expression
 
     case class IfThenElse(e1: ResolvedAst.Expression, e2: ResolvedAst.Expression, e3: ResolvedAst.Expression) extends ResolvedAst.Expression
 
     case class Let(ident: ParsedAst.Ident, value: ResolvedAst.Expression, body: ResolvedAst.Expression) extends ResolvedAst.Expression
 
+    case class Match(e: ResolvedAst.Expression, rules: Seq[(ResolvedAst.Pattern, ResolvedAst.Expression)]) extends ResolvedAst.Expression
 
-    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, e: ResolvedAst.Expression, decl: WeededAst.Definition.Enum) extends ResolvedAst.Expression
+    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, e: ResolvedAst.Expression, defn: WeededAst.Definition.Enum) extends ResolvedAst.Expression
+
+    case class Tuple(elms: Seq[ResolvedAst.Expression]) extends ResolvedAst.Expression
+
+    case class Ascribe(e: ResolvedAst.Expression) extends ResolvedAst.Expression
+
+    case class Error(location: SourceLocation) extends ResolvedAst.Expression
 
   }
 
@@ -103,7 +112,6 @@ object ResolvedAst {
   }
 
   sealed trait Type extends ResolvedAst
-
 
 
 }
