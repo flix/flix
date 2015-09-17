@@ -33,6 +33,29 @@ class TestWeeder extends FunSuite {
     assertResult(2)(result.errors.size)
   }
 
+  test("DuplicateArgument01") {
+    val past = ParsedAst.Definition.Function(Ident, Seq(
+      (ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
+      (ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
+    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit))
+
+    val result = Weeder.compileDefinition(past)
+    assert(result.hasErrors)
+  }
+
+  test("DuplicateArgument02") {
+    val past = ParsedAst.Definition.Function(Ident, Seq(
+      (ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
+      (ParsedAst.Ident("y", SourceLocation.Unknown), ParsedAst.Type.Unit),
+      (ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
+      (ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
+    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit))
+
+    val result = Weeder.compileDefinition(past)
+    assertResult(2)(result.errors.size)
+  }
+
+
   test("DuplicateTag01") {
     val past = ParsedAst.Definition.Enum(Ident, Seq(
       ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),

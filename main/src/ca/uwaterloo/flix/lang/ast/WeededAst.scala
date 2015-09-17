@@ -166,11 +166,11 @@ object WeededAst {
 
     case class Ambiguous(name: ParsedAst.QName) extends WeededAst.Type
 
-    case class Function(t1: WeededAst.Type, t2: WeededAst.Type) extends WeededAst.Type
-
     case class Tag(ident: ParsedAst.Ident, tpe: WeededAst.Type) extends WeededAst.Type
 
     case class Tuple(elms: Seq[WeededAst.Type]) extends WeededAst.Type
+
+    case class Function(t1: WeededAst.Type, t2: WeededAst.Type) extends WeededAst.Type
 
     case class Parametric(name: ParsedAst.QName, elms: Seq[WeededAst.Type]) extends WeededAst.Type
 

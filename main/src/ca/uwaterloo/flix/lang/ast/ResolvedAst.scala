@@ -106,6 +106,18 @@ object ResolvedAst {
 
   object Type {
 
+    case object Unit extends ResolvedAst.Type
+
+    case class Tag(ident: ParsedAst.Ident, tpe: ResolvedAst.Type) extends ResolvedAst.Type
+
+    case class Tuple(elms: Seq[ResolvedAst.Type]) extends ResolvedAst.Type
+
+    case class Function(t1: ResolvedAst.Type, t2: ResolvedAst.Type) extends ResolvedAst.Type
+
+    case class Parametric(name: ResolvedAst.RName, elms: Seq[ResolvedAst.Type]) extends ResolvedAst.Type
+
+    case class Lattice(tpe: ResolvedAst.Type) extends ResolvedAst.Type
+
   }
 
 }

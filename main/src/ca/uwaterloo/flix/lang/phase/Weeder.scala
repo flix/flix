@@ -50,6 +50,9 @@ object Weeder {
     // TODO
     case class DuplicateAttribute()
 
+    // TODO
+    case class DuplicateArgument()
+
     /**
      * An error raised to indicate that the tag `name` was declared multiple times.
      *
@@ -63,9 +66,6 @@ object Weeder {
           s"  First declaration was here: ${location1.format}. This one will be used.\n" +
           s"  Second declaration was here: ${location2.format}. This one will be ignored.\n"
     }
-
-    // TODO
-    case class DuplicatedFormalArgument()
 
     /**
      * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
