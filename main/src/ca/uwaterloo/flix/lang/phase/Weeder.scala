@@ -123,16 +123,16 @@ object Weeder {
    * Compiles the given parsed type declaration `d` to a weeded type declaration.
    */
   def compileTypeAlias(d: ParsedAst.Definition.TypeAlias): Validation[WeededAst.Definition.TypeAlias, WeederError] =
-    compileType(d.tpe) map (t => WeededAst.Definition.TypeAlias(d.ident, t))
+    Type.weed(d.tpe) map (t => WeededAst.Definition.TypeAlias(d.ident, t))
 
   /**
    * Compiles the given parsed function declaration `d` to a weeded function declaration.
    */
   def compileFunction(d: ParsedAst.Definition.Function): Validation[WeededAst.Definition.Function, WeederError] = {
     val formals2 = d.formals.map {
-      case (ident, tpe) => compileType(tpe) map (t => (ident, t))
+      case (ident, tpe) => Type.weed(tpe) map (t => (ident, t))
     }
-    val returnTpeVal = compileType(d.tpe)
+    val returnTpeVal = Type.weed(d.tpe)
     val bodyVal = compileExpression(d.body)
     // TODO: Naming
     @@(@@(formals2), returnTpeVal, bodyVal) map {
@@ -144,7 +144,7 @@ object Weeder {
    * Compiles the given parsed value declaration `d` to a weeded declaration.
    */
   def compileValue(d: ParsedAst.Definition.Value): Validation[WeededAst.Definition.Value, WeederError] =
-    @@(compileType(d.tpe), compileExpression(d.e)) map {
+    @@(Type.weed(d.tpe), compileExpression(d.e)) map {
       case (wtpe, we) => WeededAst.Definition.Value(d.ident, wtpe, we)
     }
 
@@ -176,7 +176,7 @@ object Weeder {
    */
   def compileRelation(d: ParsedAst.Definition.Relation): Validation[WeededAst.Definition.Relation, WeederError] = {
     val attributes = d.attributes.map {
-      case ParsedAst.Attribute(ident, tpe) => compileType(tpe) map (wtpe => WeededAst.Attribute(ident, wtpe))
+      case ParsedAst.Attribute(ident, tpe) => Type.weed(tpe) map (wtpe => WeededAst.Attribute(ident, wtpe))
     }
     @@(attributes) map {
       case wattr => WeededAst.Definition.Relation(d.ident, wattr)
@@ -229,10 +229,10 @@ object Weeder {
       compileLiteral(literal) map WeededAst.Expression.Lit
     case ParsedAst.Expression.Lambda(formals, tpe, body) =>
       val formals2 = formals map {
-        case (ident, formalType) => compileType(formalType) map (t => (ident, t))
+        case (ident, formalType) => Type.weed(formalType) map (t => (ident, t))
       }
       // TODO: Naming
-      @@(@@(formals2), compileType(tpe), compileExpression(body)) map {
+      @@(@@(formals2), Type.weed(tpe), compileExpression(body)) map {
         case (wformals, wtpe, wbody) => WeededAst.Expression.Lambda(wformals, wtpe, wbody)
       }
     case ParsedAst.Expression.Unary(op, e1) =>
@@ -269,7 +269,7 @@ object Weeder {
       case welms => WeededAst.Expression.Tuple(welms)
     }
     case ParsedAst.Expression.Ascribe(e1, tpe) =>
-      @@(compileExpression(e), compileType(tpe)) map {
+      @@(compileExpression(e), Type.weed(tpe)) map {
         case (we1, wtpe) => WeededAst.Expression.Ascribe(we1, wtpe)
       }
     case ParsedAst.Expression.Error(location) => WeededAst.Expression.Error(location).toSuccess
@@ -345,29 +345,32 @@ object Weeder {
     }
   }
 
-  /**
-   * Compiles the given parsed type `t` to a weeded type.
-   */
-  def compileType(t: ParsedAst.Type): Validation[WeededAst.Type, WeederError] = t match {
-    case ParsedAst.Type.Unit => WeededAst.Type.Unit.toSuccess
-    case ParsedAst.Type.Ambiguous(name) => WeededAst.Type.Ambiguous(name).toSuccess
-    case ParsedAst.Type.Function(t1, t2) =>
-      @@(compileType(t1), compileType(t2)) map {
-        case (tpe1, tpe2) => WeededAst.Type.Function(tpe1, tpe2)
+  object Type {
+    /**
+     * Weeds the given parsed type `past`.
+     */
+    def weed(past: ParsedAst.Type): Validation[WeededAst.Type, WeederError] = past match {
+      case ParsedAst.Type.Unit => WeededAst.Type.Unit.toSuccess
+      case ParsedAst.Type.Ambiguous(name) => WeededAst.Type.Ambiguous(name).toSuccess
+      case ParsedAst.Type.Function(ptype1, ptype2) =>
+        @@(weed(ptype1), weed(ptype2)) map {
+          case (tpe1, tpe2) => WeededAst.Type.Function(tpe1, tpe2)
+        }
+      case ParsedAst.Type.Tag(ident, ptype) => weed(ptype) map {
+        case tpe => WeededAst.Type.Tag(ident, tpe)
       }
-    case ParsedAst.Type.Tag(ident, tpe) => compileType(tpe) map {
-      case t1 => WeededAst.Type.Tag(ident, t1)
-    }
-    case ParsedAst.Type.Tuple(elms) => @@(elms map compileType) map {
-      case ts => WeededAst.Type.Tuple(ts)
-    }
-    case ParsedAst.Type.Parametric(name, elms) => @@(elms map compileType) map {
-      case ts => WeededAst.Type.Parametric(name, ts)
-    }
-    // TODO: What about nested lattice types, e.g. <<foo>> or even <(Int, <Foo>)>
-    case ParsedAst.Type.Lattice(tpe) => compileType(tpe) map {
-      case t1 => WeededAst.Type.Lattice(t1)
+      case ParsedAst.Type.Tuple(pelms) => @@(pelms map weed) map {
+        case elms => WeededAst.Type.Tuple(elms)
+      }
+      case ParsedAst.Type.Parametric(name, pelms) => @@(pelms map weed) map {
+        case elms => WeededAst.Type.Parametric(name, elms)
+      }
+      // TODO: What about nested lattice types, e.g. <<foo>> or even <(Int, <Foo>)>
+      case ParsedAst.Type.Lattice(ptype) => weed(ptype) map {
+        case tpe => WeededAst.Type.Lattice(tpe)
+      }
     }
   }
+
 
 }

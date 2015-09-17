@@ -32,6 +32,7 @@ object WeededAst {
 
     case class Function(ident: ParsedAst.Ident, formals: Seq[(ParsedAst.Ident, WeededAst.Type)], tpe: WeededAst.Type, body: WeededAst.Expression) extends WeededAst.Definition
 
+    // TODO: Decorate with the full type....
     case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends WeededAst.Definition
 
     // TODO: Improve? or at least do something with traits?

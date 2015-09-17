@@ -11,6 +11,28 @@ class TestWeeder extends FunSuite {
 
   val Ident = ParsedAst.Ident("x", SourceLocation.Unknown)
 
+  test("DuplicateAttribute01") {
+    val past = ParsedAst.Definition.Relation(Ident, Seq(
+      ParsedAst.Attribute(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
+      ParsedAst.Attribute(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
+    ))
+
+    val result = Weeder.compileDefinition(past)
+    assert(result.hasErrors)
+  }
+
+  test("DuplicateAttribute02") {
+    val past = ParsedAst.Definition.Relation(Ident, Seq(
+      ParsedAst.Attribute(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
+      ParsedAst.Attribute(ParsedAst.Ident("y", SourceLocation.Unknown), ParsedAst.Type.Unit),
+      ParsedAst.Attribute(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
+      ParsedAst.Attribute(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
+    ))
+
+    val result = Weeder.compileDefinition(past)
+    assertResult(2)(result.errors.size)
+  }
+
   test("DuplicateTag01") {
     val past = ParsedAst.Definition.Enum(Ident, Seq(
       ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
@@ -77,19 +99,17 @@ class TestWeeder extends FunSuite {
     assert(result.isSuccess)
   }
 
-  test("Compile.Type.Unit") {
+  test("Type.Unit") {
     val past = ParsedAst.Type.Unit
-    val result = Weeder.compileType(past)
+    val result = Weeder.Type.weed(past)
 
-    assert(result.isSuccess)
     assertResult(WeededAst.Type.Unit)(result.get)
   }
 
-  test("Compile.Type.Tag") {
+  test("Type.Tag") {
     val past = ParsedAst.Type.Tag(Ident, ParsedAst.Type.Unit)
-    val result = Weeder.compileType(past)
+    val result = Weeder.Type.weed(past)
 
-    assert(result.isSuccess)
     assertResult(WeededAst.Type.Tag(Ident, WeededAst.Type.Unit))(result.get)
   }
 
