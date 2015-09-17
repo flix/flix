@@ -29,7 +29,7 @@ object Weeder {
    */
   sealed trait WeederError {
     /**
-     * Returns human readable error message.
+     * Returns a human readable error message as a string.
      */
     def format: String
   }
@@ -51,13 +51,12 @@ object Weeder {
      * An error raised to indicate that the attribute `name` was declared multiple times.
      *
      * @param name the name of the attribute.
-     * @param tpe type of the attribute.
      * @param location1 the location of the first declaration.
      * @param location2 the location of the second declaration.
      */
-    case class DuplicateAttribute(name: String, tpe: ParsedAst.Type, location1: SourceLocation, location2: SourceLocation) extends WeederError {
+    case class DuplicateAttribute(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
       val format =
-        s"Error: Duplicate attribute name: '$name' (of type $tpe).\n" +
+        s"Error: Duplicate attribute name: '$name'.\n" +
           s"  First declaration was here: ${location1.format}.\n" +
           s"  Second declaration was here: ${location2.format}\n"
     }
@@ -66,13 +65,12 @@ object Weeder {
      * An error raised to indicate that the formal argument `name` was declared multiple times.
      *
      * @param name the name of the argument.
-     * @param tpe the type of the argument.
      * @param location1 the location of the first declaration.
      * @param location2 the location of the second declaration.
      */
-    case class DuplicateFormal(name: String, tpe: ParsedAst.Type, location1: SourceLocation, location2: SourceLocation) extends WeederError {
+    case class DuplicateFormal(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
       val format =
-        s"Error: Duplicate formal argument: '$name' (of type $tpe).\n" +
+        s"Error: Duplicate formal argument: '$name'.\n" +
           s"  First declaration was here ${location1.format}\n" +
           s"  Second declaration was here: ${location2.format}\n"
     }
@@ -199,11 +197,20 @@ object Weeder {
    * Compiles the given parsed relation `d` to a weeded relation.
    */
   def compileRelation(d: ParsedAst.Definition.Relation): Validation[WeededAst.Definition.Relation, WeederError] = {
-    val attributes = d.attributes.map {
-      case ParsedAst.Attribute(ident, tpe) => Type.weed(tpe) map (wtpe => WeededAst.Attribute(ident, wtpe))
+    val seen = mutable.Map.empty[String, ParsedAst.Ident]
+
+    val pattributes = d.attributes.map {
+      case ParsedAst.Attribute(ident, ptype) => seen.get(ident.name) match {
+        case None =>
+          seen += (ident.name -> ident)
+          Type.weed(ptype) map (tpe => WeededAst.Attribute(ident, tpe))
+        case Some(otherIdent) =>
+          (DuplicateAttribute(ident.name, otherIdent.location, ident.location): WeederError).toFailure
+      }
     }
-    @@(attributes) map {
-      case wattr => WeededAst.Definition.Relation(d.ident, wattr)
+
+    @@(pattributes) map {
+      case attributes => WeededAst.Definition.Relation(d.ident, attributes)
     }
   }
 
