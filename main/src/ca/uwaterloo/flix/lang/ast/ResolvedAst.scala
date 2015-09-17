@@ -48,7 +48,7 @@ object ResolvedAst {
 
     case class Var(ident: ParsedAst.Ident) extends ResolvedAst.Expression
 
-    case class Ref(name: ParsedAst.QName, decl: WeededAst.Declaration) extends ResolvedAst.Expression
+    case class Ref(name: ParsedAst.QName, decl: WeededAst.Definition) extends ResolvedAst.Expression
 
     // TODO
     case class Apply(ident: ParsedAst.Ident) extends ResolvedAst.Expression
@@ -84,6 +84,9 @@ object ResolvedAst {
     case class FormalArg(location: SourceLocation)
 
   }
+
+  sealed trait Type extends ResolvedAst
+
 
 
 }
