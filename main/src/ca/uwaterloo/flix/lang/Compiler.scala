@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.lang
 import java.nio.file.{Files, Path}
 
 import ca.uwaterloo.flix.lang.ast.{ResolvedAst, ParsedAst}
-import ca.uwaterloo.flix.lang.phase.{Resolver, Weeder, Parser}
+import ca.uwaterloo.flix.lang.phase.{Typer, Resolver, Weeder, Parser}
 import org.parboiled2.{ErrorFormatter, ParseError}
 
 import scala.io.Source
@@ -66,8 +66,22 @@ object Compiler {
     }
     Console.println("Success!")
 
-    // TODO
-    //val rast = Resolver.resolve(wast.get)
+    Console.print("Resolution: ")
+    val rast = Resolver.resolve(wast.get)
+    if (rast.isFailure) {
+      wast.errors.foreach(e => println(e.format))
+      return
+    }
+    Console.println("Success!")
+
+    Console.print("Typechecking: ")
+    val tast = Typer.typecheck(rast.get)
+    if (rast.isFailure) {
+      wast.errors.foreach(e => println(e.format))
+      return
+    }
+    Console.println("Success!")
+
 
   }
 

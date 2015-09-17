@@ -4,6 +4,8 @@ trait ResolvedAst
 
 object ResolvedAst {
 
+  case class Root(declarations: Seq[ResolvedAst.Declaration]) extends ResolvedAst
+
   // TODO Replace QName by RName.
   case class RName() extends ResolvedAst
 
