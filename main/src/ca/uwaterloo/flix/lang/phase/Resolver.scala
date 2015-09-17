@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.lang.phase
 
-import ca.uwaterloo.flix.lang.ast.{ResolvedAst, ParsedAst}
+import ca.uwaterloo.flix.lang.ast.{WeededAst, ResolvedAst, ParsedAst}
 
 object Resolver {
 
@@ -31,7 +31,7 @@ object Resolver {
       case Some(otherDecl) => ??? // IllegalReference("Relation", otherDecl)
     }
 
-  def resolve(ast: ParsedAst.Root): ResolvedAst = ???
+  def resolve(ast: WeededAst.Root): ResolvedAst = ???
 
 
 }

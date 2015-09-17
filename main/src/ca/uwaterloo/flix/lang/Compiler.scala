@@ -2,8 +2,8 @@ package ca.uwaterloo.flix.lang
 
 import java.nio.file.{Files, Path}
 
-import ca.uwaterloo.flix.lang.ast.ParsedAst
-import ca.uwaterloo.flix.lang.phase.{Weeder, Parser}
+import ca.uwaterloo.flix.lang.ast.{ResolvedAst, ParsedAst}
+import ca.uwaterloo.flix.lang.phase.{Resolver, Weeder, Parser}
 import org.parboiled2.{ErrorFormatter, ParseError}
 
 import scala.io.Source
@@ -65,6 +65,10 @@ object Compiler {
       return
     }
     Console.println("Success!")
+
+    // TODO
+    //val rast = Resolver.resolve(wast.get)
+
   }
 
 }

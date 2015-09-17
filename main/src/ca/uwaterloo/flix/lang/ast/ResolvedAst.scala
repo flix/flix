@@ -102,16 +102,10 @@ object ResolvedAst {
 
   }
 
-  sealed trait Ref
-
-  object Ref {
-
-    // TODO: Need this or not?
-    case class FormalArg(location: SourceLocation)
-
-  }
-
   sealed trait Type extends ResolvedAst
 
+  object Type {
+
+  }
 
 }
