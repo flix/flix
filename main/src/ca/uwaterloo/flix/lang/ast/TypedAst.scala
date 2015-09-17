@@ -28,9 +28,9 @@ object TypedAst {
       final val tpe = TypedAst.Type.Str
     }
 
-    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, literal: WeededAst.Literal, tpe: TypedAst.Type) extends TypedAst.Literal
+    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, literal: TypedAst.Literal, tpe: TypedAst.Type) extends TypedAst.Literal
 
-    case class Tuple(elms: Seq[WeededAst.Literal], tpe: TypedAst.Type) extends TypedAst.Literal
+    case class Tuple(elms: Seq[TypedAst.Literal], tpe: TypedAst.Type) extends TypedAst.Literal
 
   }
 
@@ -56,6 +56,8 @@ object TypedAst {
     case object Int extends TypedAst.Type
 
     case object Str extends TypedAst.Type
+
+    case class Tuple(elms: Seq[TypedAst.Type]) extends TypedAst.Type
 
   }
 

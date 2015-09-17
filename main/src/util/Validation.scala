@@ -1,6 +1,8 @@
 package util
 
 // TODO: Improve naming
+// TODO Incorporate back into uMonitor.
+// TODO: Write test cases
 sealed trait Validation[+Value, Error] {
 
   import Validation._
@@ -111,12 +113,14 @@ object Validation {
    * Returns [[Success]] if every element in `xs` is a [[Success]].
    */
   // TODO: rename to @@?
+  // TODO: Order is wrong
   @inline
   def @@[Value, Alternative](xs: Seq[Validation[Value, Alternative]]): Validation[Seq[Value], Alternative] = {
+    // TODO: Optimize
     val zero = Success(List.empty[Value], List.empty[Alternative]): Validation[List[Value], Alternative]
     xs.foldLeft(zero) {
       case (Success(value, errors), Success(otherValue, otherAlternatives)) =>
-        Success(otherValue :: value, otherAlternatives ::: errors)
+        Success(value ::: otherValue :: Nil, otherAlternatives ::: errors)
       case (Success(value, errors), Failure(otherAlternatives)) =>
         Failure(otherAlternatives ::: errors)
       case (Failure(errors), Success(otherValue, otherAlternatives)) =>

@@ -4,6 +4,8 @@ trait ResolvedAst
 
 object ResolvedAst {
 
+  // TODO Replace QName by RName.
+
   sealed trait Declaration extends ResolvedAst
 
   object Declaration {
@@ -33,9 +35,10 @@ object ResolvedAst {
 
     case class Str(literal: java.lang.String) extends ResolvedAst.Literal
 
-    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, literal: WeededAst.Literal) extends ResolvedAst.Literal
+    // TODO: Need access to the enum declaration.
+    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, literal: ResolvedAst.Literal, defn: WeededAst.Definition.Enum) extends ResolvedAst.Literal
 
-    case class Tuple(elms: Seq[WeededAst.Literal]) extends ResolvedAst.Literal
+    case class Tuple(elms: Seq[ResolvedAst.Literal]) extends ResolvedAst.Literal
 
   }
 
