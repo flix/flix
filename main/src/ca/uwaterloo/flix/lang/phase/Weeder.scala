@@ -110,18 +110,53 @@ object Weeder {
    * Compiles the given parsed `ast` to a weeded ast.
    */
   def weed(ast: ParsedAst.Root): Validation[WeededAst.Root, WeederError] = {
-    @@(ast.declarations.map(compileDeclaration)) map WeededAst.Root
+    @@(ast.declarations.map(Declaration.weed)) map WeededAst.Root
   }
 
-  /**
-   * Compiles the given parsed declaration `d` to a weeded declaration.
-   */
-  def compileDeclaration(d: ParsedAst.Declaration): Validation[WeededAst.Declaration, WeederError] = d match {
-    case d: ParsedAst.Declaration.Namespace => compileNamespace(d)
-    case d: ParsedAst.Declaration.Fact => compileFact(d)
-    case d: ParsedAst.Declaration.Rule => compileRule(d)
-    case dd: ParsedAst.Definition => compileDefinition(dd)
+  object Declaration {
+
+    /**
+     * Compiles the given parsed declaration `d` to a weeded declaration.
+     */
+    def weed(d: ParsedAst.Declaration): Validation[WeededAst.Declaration, WeederError] = d match {
+      case d: ParsedAst.Declaration.Namespace => weed(d)
+      case d: ParsedAst.Declaration.Fact => weed(d)
+      case d: ParsedAst.Declaration.Rule => weed(d)
+      case dd: ParsedAst.Definition => compileDefinition(dd)
+    }
+
+    /**
+     * Compiles the given parsed namespace declaration `d` to a weeded namespace declaration.
+     */
+    def weed(d: ParsedAst.Declaration.Namespace): Validation[WeededAst.Declaration.Namespace, WeederError] =
+      @@(d.body.map(weed)) map (ds => WeededAst.Declaration.Namespace(d.name, ds))
+
+    /**
+     * Compiles the given parsed fact `d` to a weeded fact.
+     */
+    def weed(d: ParsedAst.Declaration.Fact): Validation[WeededAst.Declaration.Fact, WeederError] =
+      compilePredicateWithApply(d.head) map {
+        case p => WeededAst.Declaration.Fact(p)
+      }
+
+    /**
+     * Compiles the parsed rule `d` to a weeded rule.
+     */
+    def weed(d: ParsedAst.Declaration.Rule): Validation[WeededAst.Declaration.Rule, WeederError] = {
+      val headVal = compilePredicateWithApply(d.head)
+      val bodyVal = @@(d.body.map(compilePredicateNoApply))
+
+      @@(headVal, bodyVal) map {
+        case (head, body) => WeededAst.Declaration.Rule(head, body)
+      }
+    }
+
   }
+
+  object Definition {
+
+  }
+
 
   /**
    * Compiles the given parsed definition `d` to a weeded definition.
@@ -134,12 +169,6 @@ object Weeder {
     case d: ParsedAst.Definition.Lattice => compileLattice(d)
     case d: ParsedAst.Definition.Relation => compileRelation(d)
   }
-
-  /**
-   * Compiles the given parsed namespace declaration `d` to a weeded namespace declaration.
-   */
-  def compileNamespace(d: ParsedAst.Declaration.Namespace): Validation[WeededAst.Declaration.Namespace, WeederError] =
-    @@(d.body.map(compileDeclaration)) map (ds => WeededAst.Declaration.Namespace(d.name, ds))
 
   /**
    * Compiles the given parsed type declaration `d` to a weeded type declaration.
@@ -211,26 +240,6 @@ object Weeder {
 
     @@(pattributes) map {
       case attributes => WeededAst.Definition.Relation(d.ident, attributes)
-    }
-  }
-
-  /**
-   * Compiles the given parsed fact `d` to a weeded fact.
-   */
-  def compileFact(d: ParsedAst.Declaration.Fact): Validation[WeededAst.Declaration.Fact, WeederError] =
-    compilePredicateWithApply(d.head) map {
-      case p => WeededAst.Declaration.Fact(p)
-    }
-
-  /**
-   * Compiles the parsed rule `d` to a weeded rule.
-   */
-  def compileRule(d: ParsedAst.Declaration.Rule): Validation[WeededAst.Declaration.Rule, WeederError] = {
-    val headVal = compilePredicateWithApply(d.head)
-    val bodyVal = @@(d.body.map(compilePredicateNoApply))
-
-    @@(headVal, bodyVal) map {
-      case (head, body) => WeededAst.Declaration.Rule(head, body)
     }
   }
 
