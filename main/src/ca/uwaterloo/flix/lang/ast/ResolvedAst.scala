@@ -26,11 +26,13 @@ object ResolvedAst {
 
   object Expression {
 
-    case class LocalVar(name: String, declaration: ResolvedAst, location: SourceLocation) extends ResolvedAst.Expression
+    case class Var(ident: ParsedAst.Ident) extends ResolvedAst.Expression
 
-    case class GlobalVar(ref: Ref, location: SourceLocation) extends ResolvedAst.Expression
+    case class Ref(name: ParsedAst.QName, decl: WeededAst.Declaration) extends ResolvedAst.Expression
 
     case class IfThenElse(e1: ResolvedAst.Expression, e2: ResolvedAst.Expression, e3: ResolvedAst.Expression) extends ResolvedAst.Expression
+
+    case class Let(ident: ParsedAst.Ident, value: ResolvedAst.Expression, body: ResolvedAst.Expression) extends ResolvedAst.Expression
 
   }
 

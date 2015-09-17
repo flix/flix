@@ -10,6 +10,8 @@ object WeededAst {
 
   case class Root(declarations: Seq[WeededAst.Declaration]) extends WeededAst
 
+  // TODO: Can we give every declaration a tpe? Doesnt work for: Namespace, Fact and Rule.
+
   sealed trait Declaration
 
   object Declaration {

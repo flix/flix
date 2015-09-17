@@ -6,14 +6,13 @@ import util.Validation
 import util.Validation._
 
 object Typer {
-  // TODO
 
   import TypeError._
 
   sealed trait TypeError
 
   object TypeError {
-
+    // TODO
   }
 
 
@@ -21,7 +20,15 @@ object Typer {
 
   // TODO: locals: Map[String, TypedAst.Type], globals: Map[???, TypedAst.Type]
   def typeExpression(rast: ResolvedAst.Expression): Validation[TypedAst.Expression, TypeError] = rast match {
-    case ResolvedAst.Expression.LocalVar(name, declaration, location) => ???
+    case ResolvedAst.Expression.Var(ident) => ??? // pull type out of map.
+
+    case ResolvedAst.Expression.Ref(name, decl) => ??? // todo then the declaration must have a type...
+
+    case ResolvedAst.Expression.Let(ident, value, body) =>
+      typeExpression(value) map {
+        case valueTpe => typeExpression(body) // pass ident.name -> valueTpe
+      }
+      ???
 
     case ResolvedAst.Expression.IfThenElse(re1, re2, re3) =>
       @@(typeExpression(re1), typeExpression(re2), typeExpression(re3)) flatMap {
