@@ -48,10 +48,14 @@ object Weeder {
     }
 
     // TODO
-    case class DuplicateAttribute()
+    case class DuplicateAttribute(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
+      val format = ???
+    }
 
     // TODO
-    case class DuplicateArgument()
+    case class DuplicateFormal(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
+      val format = ???
+    }
 
     /**
      * An error raised to indicate that the tag `name` was declared multiple times.

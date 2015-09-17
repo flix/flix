@@ -33,7 +33,7 @@ class TestWeeder extends FunSuite {
     assertResult(2)(result.errors.size)
   }
 
-  test("DuplicateArgument01") {
+  test("DuplicateFormal01") {
     val past = ParsedAst.Definition.Function(Ident, Seq(
       (ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       (ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
@@ -43,7 +43,7 @@ class TestWeeder extends FunSuite {
     assert(result.hasErrors)
   }
 
-  test("DuplicateArgument02") {
+  test("DuplicateFormal02") {
     val past = ParsedAst.Definition.Function(Ident, Seq(
       (ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       (ParsedAst.Ident("y", SourceLocation.Unknown), ParsedAst.Type.Unit),
