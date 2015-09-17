@@ -5,6 +5,7 @@ trait ResolvedAst
 object ResolvedAst {
 
   // TODO Replace QName by RName.
+  case class RName() extends ResolvedAst
 
   sealed trait Declaration extends ResolvedAst
 
@@ -63,6 +64,22 @@ object ResolvedAst {
 
 
     case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, e: ResolvedAst.Expression, decl: WeededAst.Definition.Enum) extends ResolvedAst.Expression
+
+  }
+
+  sealed trait Pattern extends ResolvedAst
+
+  object Pattern {
+
+    case class Wildcard(location: SourceLocation) extends ResolvedAst.Pattern
+
+    case class Var(ident: ParsedAst.Ident) extends ResolvedAst.Pattern
+
+    case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Pattern
+
+    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, p: ResolvedAst.Pattern) extends ResolvedAst.Pattern
+
+    case class Tuple(elms: Seq[ResolvedAst.Pattern]) extends ResolvedAst.Pattern
 
   }
 

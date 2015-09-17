@@ -46,6 +46,21 @@ object TypedAst {
 
   }
 
+  sealed trait Pattern extends TypedAst
+
+  object Pattern {
+
+    case class Wildcard(location: SourceLocation) extends TypedAst.Pattern
+
+    case class Var(ident: ParsedAst.Ident) extends TypedAst.Pattern
+
+    case class Lit(literal: ResolvedAst.Literal) extends TypedAst.Pattern
+
+    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, p: TypedAst.Pattern) extends TypedAst.Pattern
+
+    case class Tuple(elms: Seq[TypedAst.Pattern]) extends TypedAst.Pattern
+
+  }
 
   sealed trait Type extends TypedAst
 
@@ -59,7 +74,14 @@ object TypedAst {
 
     case object Str extends TypedAst.Type
 
+    case class Tag(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Type
+
+    case class Enum(variants: Map[String, TypedAst.Type.Tag]) extends TypedAst.Type
+
     case class Tuple(elms: Seq[TypedAst.Type]) extends TypedAst.Type
+
+    case class Parametric(name: ResolvedAst.RName, elms: Seq[TypedAst.Type]) extends TypedAst.Type
+
 
   }
 
