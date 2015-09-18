@@ -111,6 +111,12 @@ object ResolvedAst {
 
     case object Unit extends ResolvedAst.Type
 
+    case object Bool extends ResolvedAst.Type
+
+    case object Int extends ResolvedAst.Type
+
+    case object Str extends ResolvedAst.Type
+
     case class Tag(ident: ParsedAst.Ident, tpe: ResolvedAst.Type) extends ResolvedAst.Type
 
     case class Tuple(elms: Seq[ResolvedAst.Type]) extends ResolvedAst.Type

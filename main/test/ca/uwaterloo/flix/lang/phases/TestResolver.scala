@@ -21,7 +21,7 @@ class TestResolver extends FunSuite {
       ResolvedAst.RName(List("SomeName", "OtherName")) -> WeededAst.Definition.Enum(Ident, Map.empty)
     )
 
-    val result = Resolver.Literal.link(wast, namespace, globals)
+    val result = Resolver.Literal.resolve(wast, namespace, globals)
     assert(result.get.isInstanceOf[ResolvedAst.Literal.Tag])
   }
 
@@ -36,7 +36,7 @@ class TestResolver extends FunSuite {
       ResolvedAst.RName(List("A", "B", "C", "D")) -> WeededAst.Definition.Enum(Ident, Map.empty)
     )
 
-    val result = Resolver.Literal.link(wast, namespace, globals)
+    val result = Resolver.Literal.resolve(wast, namespace, globals)
     assert(result.get.isInstanceOf[ResolvedAst.Literal.Tag])
   }
 }

@@ -74,18 +74,18 @@ object Resolver {
 
   object Literal {
 
-    def link(wast: WeededAst.Literal, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.Literal, ResolverError] = wast match {
+    def resolve(wast: WeededAst.Literal, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.Literal, ResolverError] = wast match {
       case WeededAst.Literal.Unit => ResolvedAst.Literal.Unit.toSuccess
       case WeededAst.Literal.Bool(b) => ResolvedAst.Literal.Bool(b).toSuccess
       case WeededAst.Literal.Int(i) => ResolvedAst.Literal.Int(i).toSuccess
       case WeededAst.Literal.Str(s) => ResolvedAst.Literal.Str(s).toSuccess
       case WeededAst.Literal.Tag(name, ident, literal) => lookupDef(name, namespace, globals) match {
         case None => UnresolvedReference(name, namespace).toFailure
-        case Some((rname, defn)) => link(literal, namespace, globals) map {
+        case Some((rname, defn)) => resolve(literal, namespace, globals) map {
           case l => ResolvedAst.Literal.Tag(rname, ident, l, defn)
         }
       }
-      case WeededAst.Literal.Tuple(welms) => @@(welms map (l => link(l, namespace, globals))) map {
+      case WeededAst.Literal.Tuple(welms) => @@(welms map (l => resolve(l, namespace, globals))) map {
         case elms => ResolvedAst.Literal.Tuple(elms)
       }
     }
@@ -122,17 +122,36 @@ object Resolver {
 
   object Pattern {
 
-    def link(wast: WeededAst.Pattern, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.Pattern, ResolverError] = wast match {
+    def resolve(wast: WeededAst.Pattern, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.Pattern, ResolverError] = wast match {
       case WeededAst.Pattern.Wildcard(location) => ResolvedAst.Pattern.Wildcard(location).toSuccess
       case WeededAst.Pattern.Var(ident) => ResolvedAst.Pattern.Var(ident).toSuccess
-      case WeededAst.Pattern.Lit(literal) => Literal.link(literal, namespace, globals) map ResolvedAst.Pattern.Lit
+      case WeededAst.Pattern.Lit(literal) => Literal.resolve(literal, namespace, globals) map ResolvedAst.Pattern.Lit
       case WeededAst.Pattern.Tag(name, ident, wpat) => lookupDef(name, namespace, globals) match {
         case None => UnresolvedReference(name, namespace).toFailure
-        case Some((rname, defn)) => link(wpat, namespace, globals) map {
+        case Some((rname, defn)) => resolve(wpat, namespace, globals) map {
           case pat => ResolvedAst.Pattern.Tag(rname, ident, pat, defn)
         }
       }
-      case WeededAst.Pattern.Tuple(welms) => @@(welms map (e => link(e, namespace, globals))) map ResolvedAst.Pattern.Tuple
+      case WeededAst.Pattern.Tuple(welms) => @@(welms map (e => resolve(e, namespace, globals))) map ResolvedAst.Pattern.Tuple
+    }
+  }
+
+  object Type {
+
+    def resolve(wast: WeededAst.Type, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.Type, ResolverError] = wast match {
+      case WeededAst.Type.Unit => ResolvedAst.Type.Unit.toSuccess
+      case WeededAst.Type.Ambiguous(name) => name.parts match {
+        case Seq("Bool") => ResolvedAst.Type.Bool.toSuccess
+
+      }
+      case WeededAst.Type.Tag(ident, tpe) => ??? // TODO: Shouldn't a tag include a namespace? E.g. there is a difference between foo.Foo.Tag and bar.Foo.Tag?
+      case WeededAst.Type.Tuple(welms) => @@(welms map (e => resolve(e, namespace, globals))) map ResolvedAst.Type.Tuple
+      case WeededAst.Type.Function(wtype1, wtype2) =>
+        @@(resolve(wtype1, namespace, globals), resolve(wtype2, namespace, globals)) map {
+          case (tpe1, tpe2) => ResolvedAst.Type.Function(tpe1, tpe2)
+        }
+      case WeededAst.Type.Parametric(name, elms) => ???
+      case WeededAst.Type.Lattice(tpe) => ???
     }
   }
 
