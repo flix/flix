@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.lang.phase
 
 import ca.uwaterloo.flix.lang.Compiler
-import ca.uwaterloo.flix.lang.ast.{SourceLocation, WeededAst, ResolvedAst, ParsedAst}
+import ca.uwaterloo.flix.lang.ast._
 
 import util.Validation
 import util.Validation._
@@ -15,6 +15,9 @@ object Resolver {
   }
 
   object ResolverError {
+
+    // TODO
+    case class DuplicateDefinition()
 
     /**
      * An error raised to indicate that the given `name` in the given `namespace` was not found.
@@ -76,23 +79,19 @@ object Resolver {
       case WeededAst.Literal.Bool(b) => ResolvedAst.Literal.Bool(b).toSuccess
       case WeededAst.Literal.Int(i) => ResolvedAst.Literal.Int(i).toSuccess
       case WeededAst.Literal.Str(s) => ResolvedAst.Literal.Str(s).toSuccess
-      case WeededAst.Literal.Tag(name, ident, literal) =>
-        // find the enum definition.
-        lookupDef(name, namespace, globals) match {
-          case None => UnresolvedReference(name, namespace).toFailure
-          case Some((rname, defn)) => link(literal, namespace, globals) map {
-            case l => ResolvedAst.Literal.Tag(rname, ident, l, defn)
-          }
+      case WeededAst.Literal.Tag(name, ident, literal) => lookupDef(name, namespace, globals) match {
+        case None => UnresolvedReference(name, namespace).toFailure
+        case Some((rname, defn)) => link(literal, namespace, globals) map {
+          case l => ResolvedAst.Literal.Tag(rname, ident, l, defn)
         }
+      }
       case WeededAst.Literal.Tuple(welms) => @@(welms map (l => link(l, namespace, globals))) map {
         case elms => ResolvedAst.Literal.Tuple(elms)
       }
     }
   }
 
-
   object Expression {
-
 
     def link(wast: WeededAst.Expression, globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.Expression, ResolverError] = wast match {
       case WeededAst.Expression.AmbiguousVar(name) => ???
