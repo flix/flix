@@ -31,7 +31,7 @@
   Elnar Hajiyev, Mathieu Verbaere and Oege de Moor.
   [Paper.](http://link.springer.com/chapter/10.1007/11785477_2)
 
-- **PAG – An Efficient Program Analyzer Generator**,
+- **PAG - An Efficient Program Analyzer Generator**,
   Florian Martin.
   [Paper.](http://link.springer.com/article/10.1007/s100090050017)
 
