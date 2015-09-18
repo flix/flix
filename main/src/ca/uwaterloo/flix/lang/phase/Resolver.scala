@@ -125,18 +125,14 @@ object Resolver {
     def link(wast: WeededAst.Pattern, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.Pattern, ResolverError] = wast match {
       case WeededAst.Pattern.Wildcard(location) => ResolvedAst.Pattern.Wildcard(location).toSuccess
       case WeededAst.Pattern.Var(ident) => ResolvedAst.Pattern.Var(ident).toSuccess
+      case WeededAst.Pattern.Lit(literal) => Literal.link(literal, namespace, globals) map ResolvedAst.Pattern.Lit
 
     }
 
-//    case class Wildcard(location: SourceLocation) extends WeededAst.Pattern
-//
-//    case class Var(ident: ParsedAst.Ident) extends WeededAst.Pattern
-//
-//    case class Lit(literal: WeededAst.Literal) extends WeededAst.Pattern
-//
-//    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, p: WeededAst.Pattern) extends WeededAst.Pattern
-//
-//    case class Tuple(elms: Seq[WeededAst.Pattern]) extends WeededAst.Pattern
+    //
+    //    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, p: WeededAst.Pattern) extends WeededAst.Pattern
+    //
+    //    case class Tuple(elms: Seq[WeededAst.Pattern]) extends WeededAst.Pattern
   }
 
 
