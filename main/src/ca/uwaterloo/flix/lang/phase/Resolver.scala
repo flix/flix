@@ -70,12 +70,13 @@ object Resolver {
 
   object Literal {
 
-    def link(wl: WeededAst.Literal, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.Literal, ResolverError] = wl match {
+    def link(wast: WeededAst.Literal, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.Literal, ResolverError] = wast match {
       case WeededAst.Literal.Unit => ResolvedAst.Literal.Unit.toSuccess
       case WeededAst.Literal.Bool(b) => ResolvedAst.Literal.Bool(b).toSuccess
       case WeededAst.Literal.Int(i) => ResolvedAst.Literal.Int(i).toSuccess
       case WeededAst.Literal.Str(s) => ResolvedAst.Literal.Str(s).toSuccess
       case WeededAst.Literal.Tag(name, ident, literal) =>
+        // find the enum definition.
         lookupDef(name, namespace, globals) match {
           case None => UnresolvedReference(name, namespace).toFailure
           case Some((rname, defn)) => link(literal, namespace, globals) map {
@@ -86,14 +87,13 @@ object Resolver {
         case elms => ResolvedAst.Literal.Tuple(elms)
       }
     }
-
   }
 
 
   object Expression {
 
 
-    def link(we: WeededAst.Expression, globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.Expression, ResolverError] = we match {
+    def link(wast: WeededAst.Expression, globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.Expression, ResolverError] = wast match {
       case WeededAst.Expression.AmbiguousVar(name) => ???
       case WeededAst.Expression.AmbiguousApply(name, args) => ???
       case WeededAst.Expression.Lit(wlit) => ???
@@ -118,6 +118,25 @@ object Resolver {
       //      case class Error(location: SourceLocation) extends WeededAst.Expression
     }
 
+  }
+
+  object Pattern {
+
+    def link(wast: WeededAst.Pattern, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.Pattern, ResolverError] = wast match {
+      case WeededAst.Pattern.Wildcard(location) => ResolvedAst.Pattern.Wildcard(location).toSuccess
+      case WeededAst.Pattern.Var(ident) => ResolvedAst.Pattern.Var(ident).toSuccess
+
+    }
+
+//    case class Wildcard(location: SourceLocation) extends WeededAst.Pattern
+//
+//    case class Var(ident: ParsedAst.Ident) extends WeededAst.Pattern
+//
+//    case class Lit(literal: WeededAst.Literal) extends WeededAst.Pattern
+//
+//    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, p: WeededAst.Pattern) extends WeededAst.Pattern
+//
+//    case class Tuple(elms: Seq[WeededAst.Pattern]) extends WeededAst.Pattern
   }
 
 
