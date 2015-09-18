@@ -29,7 +29,7 @@ object Typer {
   }
 
 
-  def typecheck(rast: ResolvedAst.Root) = ???
+  def typecheck(rast: ResolvedAst.Root): Validation[TypedAst.Root, TypeError] = ???
 
   object Literal {
 

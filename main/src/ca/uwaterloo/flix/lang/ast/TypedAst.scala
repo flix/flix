@@ -6,6 +6,8 @@ object TypedAst {
 
   // TODO
 
+  case class Root()
+
   sealed trait Literal extends TypedAst {
     def tpe: TypedAst.Type
   }

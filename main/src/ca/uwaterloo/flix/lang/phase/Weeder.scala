@@ -153,6 +153,7 @@ object Weeder {
 
   }
 
+  // TODO: Make use of these namespaces.
   object Definition {
 
   }
