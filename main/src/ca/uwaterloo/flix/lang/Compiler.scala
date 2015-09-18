@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.lang
 
 import java.nio.file.{Files, Path}
 
-import ca.uwaterloo.flix.lang.ast.{ResolvedAst, ParsedAst}
+import ca.uwaterloo.flix.lang.ast.{SourceLocation, ResolvedAst, ParsedAst}
 import ca.uwaterloo.flix.lang.phase._
 import org.parboiled2.{ErrorFormatter, ParseError}
 
@@ -10,6 +10,9 @@ import scala.io.Source
 import scala.util.{Failure, Success}
 
 object Compiler {
+
+  case class InternalCompilerError(message: String, location: SourceLocation) extends RuntimeException(message + " near " + location.format)
+
   // TODO: Here all the phases will be applied one-by-one.
   // TODO: Rename package to lang=>language
   /**

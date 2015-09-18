@@ -7,7 +7,7 @@ object ResolvedAst {
   case class Root(declarations: Seq[ResolvedAst.Declaration]) extends ResolvedAst
 
   // TODO Replace QName by RName.
-  case class RName() extends ResolvedAst
+  case class RName(parts: List[String]) extends ResolvedAst
 
   sealed trait Declaration extends ResolvedAst
 

@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.lang.phase
 
+import ca.uwaterloo.flix.lang.Compiler
 import ca.uwaterloo.flix.lang.ast.{SourceLocation, WeededAst, ResolvedAst, ParsedAst}
 import util.Validation
 import util.Validation._
@@ -88,8 +89,6 @@ object Resolver {
 
   }
 
-  def lookupDef(name: ParsedAst.QName, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Option[(ResolvedAst.RName, WeededAst.Definition)] =
-    ???
 
   object Expression {
 
@@ -121,5 +120,20 @@ object Resolver {
 
   }
 
+
+  def lookupDef(name: ParsedAst.QName, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Option[(ResolvedAst.RName, WeededAst.Definition)] =
+    name.parts.toList match {
+      case Nil => throw Compiler.InternalCompilerError("Unexpected emtpy name.", name.location)
+      case simple :: Nil =>
+        val rname = ResolvedAst.RName(namespace ::: simple :: Nil)
+        globals.get(rname) map {
+          case d => (rname, d)
+        }
+      case fqn =>
+        val rname = ResolvedAst.RName(fqn)
+        globals.get(rname) map {
+          case d => (rname, d)
+        }
+    }
 
 }
