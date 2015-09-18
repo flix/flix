@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.lang.ast
 trait WeededAst
 
 // TODO: Ensure that there is no reference to "ParsedAst.X"
+// TODO: Convert everything into lists?
 
 object WeededAst {
 

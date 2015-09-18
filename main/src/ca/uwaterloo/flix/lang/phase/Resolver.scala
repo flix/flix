@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.lang.phase
 
-import ca.uwaterloo.flix.lang.ast.{WeededAst, ResolvedAst, ParsedAst}
+import ca.uwaterloo.flix.lang.ast.{SourceLocation, WeededAst, ResolvedAst, ParsedAst}
 import util.Validation
 import util.Validation._
 
@@ -8,13 +8,21 @@ object Resolver {
 
   import ResolverError._
 
-  sealed trait ResolverError
+  sealed trait ResolverError {
+    def format: String
+  }
 
   object ResolverError {
 
-    //case class UnknownPredicate(name: ParsedAst.QName) extends ResolverError
-
-    //case class IllegalReference(expect: String, actual: String) extends ResolverError
+    /**
+     * An error raised to indicate that the given `name` in the given `namespace` was not found.
+     *
+     * @param name the unresolved name.
+     * @param namespace the current namespace.
+     */
+    case class UnresolvedReference(name: ParsedAst.QName, namespace: List[String]) extends ResolverError {
+      val format = s"Error: Unresolved reference $name in $namespace at ${name.location}\n"
+    }
 
   }
 
@@ -61,18 +69,27 @@ object Resolver {
 
   object Literal {
 
-    def link(wl: WeededAst.Literal): Validation[ResolvedAst.Literal, ResolverError] = wl match {
+    def link(wl: WeededAst.Literal, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.Literal, ResolverError] = wl match {
       case WeededAst.Literal.Unit => ResolvedAst.Literal.Unit.toSuccess
       case WeededAst.Literal.Bool(b) => ResolvedAst.Literal.Bool(b).toSuccess
       case WeededAst.Literal.Int(i) => ResolvedAst.Literal.Int(i).toSuccess
       case WeededAst.Literal.Str(s) => ResolvedAst.Literal.Str(s).toSuccess
-      case WeededAst.Literal.Tag(name, ident, literal) => ??? // TODO: Need access to defn
-      case WeededAst.Literal.Tuple(welms) => @@(welms map link) map {
+      case WeededAst.Literal.Tag(name, ident, literal) =>
+        lookupDef(name, namespace, globals) match {
+          case None => UnresolvedReference(name, namespace).toFailure
+          case Some((rname, defn)) => link(literal, namespace, globals) map {
+            case l => ResolvedAst.Literal.Tag(rname, ident, l, defn)
+          }
+        }
+      case WeededAst.Literal.Tuple(welms) => @@(welms map (l => link(l, namespace, globals))) map {
         case elms => ResolvedAst.Literal.Tuple(elms)
       }
     }
 
   }
+
+  def lookupDef(name: ParsedAst.QName, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Option[(ResolvedAst.RName, WeededAst.Definition)] =
+    ???
 
   object Expression {
 
