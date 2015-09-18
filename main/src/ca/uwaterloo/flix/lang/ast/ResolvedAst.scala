@@ -105,6 +105,32 @@ object ResolvedAst {
 
   }
 
+  sealed trait TermNoApply
+
+  object TermNoApply {
+
+    case class Wildcard(location: SourceLocation) extends ResolvedAst.TermNoApply
+
+    case class Var(ident: ParsedAst.Ident) extends ResolvedAst.TermNoApply
+
+    case class Lit(literal: WeededAst.Literal) extends ResolvedAst.TermNoApply
+
+  }
+
+  sealed trait TermWithApply extends WeededAst
+
+  object TermWithApply {
+
+    case class Wildcard(location: SourceLocation) extends ResolvedAst.TermWithApply
+
+    case class Var(ident: ParsedAst.Ident) extends ResolvedAst.TermWithApply
+
+    case class Lit(literal: WeededAst.Literal) extends ResolvedAst.TermWithApply
+
+    case class Apply(name: ParsedAst.QName, args: Seq[WeededAst.TermWithApply]) extends ResolvedAst.TermWithApply
+
+  }
+
   sealed trait Type extends ResolvedAst
 
   object Type {

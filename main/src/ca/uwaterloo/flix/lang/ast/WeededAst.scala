@@ -4,6 +4,7 @@ trait WeededAst
 
 // TODO: Ensure that there is no reference to "ParsedAst.X"
 // TODO: Convert everything into lists?
+// TODO: Summary changes made by this phase.
 
 object WeededAst {
 
