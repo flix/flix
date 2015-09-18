@@ -89,7 +89,7 @@ object ResolvedAst {
 
     case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Pattern
 
-    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, p: ResolvedAst.Pattern) extends ResolvedAst.Pattern
+    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, pat: ResolvedAst.Pattern, defn: WeededAst.Definition) extends ResolvedAst.Pattern
 
     case class Tuple(elms: Seq[ResolvedAst.Pattern]) extends ResolvedAst.Pattern
 

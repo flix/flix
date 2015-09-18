@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.lang.phase
 
 import ca.uwaterloo.flix.lang.Compiler
 import ca.uwaterloo.flix.lang.ast.{SourceLocation, WeededAst, ResolvedAst, ParsedAst}
+
 import util.Validation
 import util.Validation._
 
@@ -126,13 +127,14 @@ object Resolver {
       case WeededAst.Pattern.Wildcard(location) => ResolvedAst.Pattern.Wildcard(location).toSuccess
       case WeededAst.Pattern.Var(ident) => ResolvedAst.Pattern.Var(ident).toSuccess
       case WeededAst.Pattern.Lit(literal) => Literal.link(literal, namespace, globals) map ResolvedAst.Pattern.Lit
-
+      case WeededAst.Pattern.Tag(name, ident, wpat) => lookupDef(name, namespace, globals) match {
+        case None => UnresolvedReference(name, namespace).toFailure
+        case Some((rname, defn)) => link(wpat, namespace, globals) map {
+          case pat => ResolvedAst.Pattern.Tag(rname, ident, pat, defn)
+        }
+      }
+      case WeededAst.Pattern.Tuple(welms) => @@(welms map (e => link(e, namespace, globals))) map ResolvedAst.Pattern.Tuple
     }
-
-    //
-    //    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, p: WeededAst.Pattern) extends WeededAst.Pattern
-    //
-    //    case class Tuple(elms: Seq[WeededAst.Pattern]) extends WeededAst.Pattern
   }
 
 
