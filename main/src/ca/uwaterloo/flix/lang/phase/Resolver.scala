@@ -171,4 +171,7 @@ object Resolver {
         }
     }
 
+  // TODO
+  def isReserved(name: ParsedAst.QName): Boolean = ???
+
 }
