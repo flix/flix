@@ -135,29 +135,56 @@ object TypedAst {
 
   }
 
+  /**
+   * A typed AST node representing a literal.
+   */
   sealed trait Literal extends TypedAst {
+    /**
+     * The type of the literal.
+     */
     def tpe: TypedAst.Type
   }
 
   object Literal {
 
+    /**
+     * A typed AST node representing the unit literal.
+     */
     case object Unit extends TypedAst.Literal {
       final val tpe = TypedAst.Type.Unit
     }
 
+    /**
+     * A typed AST node representing a boolean literal.
+     */
     case class Bool(literal: scala.Boolean) extends TypedAst.Literal {
       final val tpe = TypedAst.Type.Bool
     }
 
+    /**
+     * A typed AST node representing an integer literal.
+     */
     case class Int(literal: scala.Int) extends TypedAst.Literal {
       final val tpe = TypedAst.Type.Int
     }
 
+    /**
+     * A typed AST node representing a string literal.
+     */
     case class Str(literal: java.lang.String) extends TypedAst.Literal {
       final val tpe = TypedAst.Type.Str
     }
 
-    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, literal: TypedAst.Literal, tpe: TypedAst.Type) extends TypedAst.Literal
+    /**
+     * A typed AST node representing a tagged literal.
+     *
+     * @param ident the tag name.
+     * @param literal the nested literal.
+     * @param tpe the type of the tag.
+     * @param defn the definition of the enum.
+     */
+    case class Tag(ident: ParsedAst.Ident, literal: TypedAst.Literal, tpe: TypedAst.Type.Enum, defn: WeededAst.Definition.Enum) extends TypedAst.Literal
+
 
     case class Tuple(elms: Seq[TypedAst.Literal], tpe: TypedAst.Type) extends TypedAst.Literal
 
