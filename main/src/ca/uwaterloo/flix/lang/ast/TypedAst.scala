@@ -1,9 +1,13 @@
 package ca.uwaterloo.flix.lang.ast
 
+import ca.uwaterloo.flix.lang.Compiler
+
 /**
  * A common super-type for typed AST nodes.
  */
 sealed trait TypedAst
+
+// TODO: if there is going to be an optimized IR then all these helper methods such be moved to that IR.
 
 object TypedAst {
 
@@ -53,7 +57,7 @@ object TypedAst {
   }
 
   /**
-   * A common super-type for typed AST declarations.
+   * A common super-type for typed declarations.
    */
   sealed trait Declaration extends TypedAst
 
@@ -84,14 +88,52 @@ object TypedAst {
 
   }
 
+  /**
+   * A common super-type for typed definitions.
+   *
+   * A definition is a kind-of declaration.
+   */
   sealed trait Definition extends TypedAst.Declaration
 
   object Definition {
 
-    case class Relation()
+    //
+    //    case class TypeAlias(ident: ParsedAst.Ident, tpe: WeededAst.Type) extends TypedAst.Definition
+    //
+    //    case class Value(ident: ParsedAst.Ident, tpe: WeededAst.Type, e: WeededAst.Expression) extends TypedAst.Definition
+    //
+    //    case class Function(ident: ParsedAst.Ident, formals: List[(ParsedAst.Ident, WeededAst.Type)], tpe: WeededAst.Type, body: WeededAst.Expression) extends TypedAst.Definition
+    //
+    //    case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends TypedAst.Definition
+    //
+    //    case class Lattice(ident: ParsedAst.Ident, elms: List[ParsedAst.QName], traits: List[ParsedAst.Trait]) extends TypedAst.Definition
+    //
+    //    case class JoinSemiLattice(ident: ParsedAst.Ident,
+    //                               bot: ParsedAst.QName,
+    //                               leq: ParsedAst.QName,
+    //                               lub: ParsedAst.QName,
+    //                               norm: Option[ParsedAst.QName],
+    //                               widen: Option[ParsedAst.QName]) extends TypedAst.Definition
+    //
+
+    /**
+     * A typed AST node representing a relation definition.
+     *
+     * @param ident the name of the relation.
+     * @param attributes the attributes (columns) of the relation.
+     */
+    case class Relation(ident: ParsedAst.Ident, attributes: List[TypedAst.Attribute]) extends TypedAst.Definition {
+      /**
+       * Returns the attribute with the given `name`.
+       */
+      def attribute(name: String): TypedAst.Attribute = attributes find {
+        case TypedAst.Attribute(attributeIdent) => attributeIdent.name == name
+      } getOrElse {
+        throw Compiler.InternalCompilerError(s"Attribute '$name' does not exist.", ident.location)
+      }
+    }
 
   }
-
 
   sealed trait Literal extends TypedAst {
     def tpe: TypedAst.Type
@@ -209,5 +251,9 @@ object TypedAst {
 
   }
 
+  /**
+   * A typed AST node representing an attribute in a relation.
+   */
+  case class Attribute(ident: ParsedAst.Ident) extends TypedAst
 
 }
