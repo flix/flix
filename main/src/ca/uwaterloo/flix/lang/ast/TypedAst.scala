@@ -2,12 +2,12 @@ package ca.uwaterloo.flix.lang.ast
 
 import ca.uwaterloo.flix.lang.Compiler
 
+// TODO: if there is going to be an optimized IR then all these helper methods such be moved to that IR.
+
 /**
  * A common super-type for typed AST nodes.
  */
 sealed trait TypedAst
-
-// TODO: if there is going to be an optimized IR then all these helper methods such be moved to that IR.
 
 object TypedAst {
 
@@ -185,8 +185,12 @@ object TypedAst {
      */
     case class Tag(ident: ParsedAst.Ident, literal: TypedAst.Literal, tpe: TypedAst.Type.Enum, defn: WeededAst.Definition.Enum) extends TypedAst.Literal
 
-
-    case class Tuple(elms: Seq[TypedAst.Literal], tpe: TypedAst.Type) extends TypedAst.Literal
+    /**
+     * A typed AST node representing a tuple literal.
+     * @param elms the elements of the tuple.
+     * @param tpe the typed of the tuple.
+     */
+    case class Tuple(elms: List[TypedAst.Literal], tpe: TypedAst.Type.Tuple) extends TypedAst.Literal
 
   }
 
