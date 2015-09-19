@@ -287,6 +287,9 @@ object TypedAst {
 
   }
 
+  /**
+   *
+   */
   sealed trait Predicate
 
   object Predicate {
@@ -297,22 +300,49 @@ object TypedAst {
 
   }
 
+  sealed trait Term {
+
+  }
+
+
+  /**
+   * A common super-type for types.
+   */
   sealed trait Type extends TypedAst
 
   object Type {
 
+    /**
+     * An AST node that represents the Unit type.
+     */
     case object Unit extends TypedAst.Type
 
+    /**
+     * An AST node that represents the Boolean type.
+     */
     case object Bool extends TypedAst.Type
 
+    /**
+     * An AST node that represents the Integer type.
+     */
     case object Int extends TypedAst.Type
 
+    /**
+     * An AST node that represents the String type.
+     */
     case object Str extends TypedAst.Type
+
 
     case class Tag(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Type
 
+
     case class Enum(variants: Map[String, TypedAst.Type.Tag]) extends TypedAst.Type
 
+    /**
+     * An AST node that represents a tuple type.
+     *
+     * @param elms the types of the elements.
+     */
     case class Tuple(elms: Seq[TypedAst.Type]) extends TypedAst.Type
 
     case class Parametric(name: ResolvedAst.RName, elms: Seq[TypedAst.Type]) extends TypedAst.Type
