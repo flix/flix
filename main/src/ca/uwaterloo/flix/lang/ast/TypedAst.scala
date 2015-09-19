@@ -54,6 +54,8 @@ object TypedAst {
       declarations flatMap visit
     }
 
+    // TODO: Need this?
+    // def lookup(name: ResolvedAst.RName): TypedAst.Definition = ???
   }
 
   /**
@@ -136,7 +138,7 @@ object TypedAst {
   }
 
   /**
-   * A typed AST node representing a literal.
+   * A common super-type for typed literals.
    */
   sealed trait Literal extends TypedAst {
     /**
@@ -233,11 +235,17 @@ object TypedAst {
 
   }
 
+  /**
+   * A common-super type for typed patterns.
+   */
   sealed trait Pattern extends TypedAst
 
   object Pattern {
 
-    case class Wildcard(location: SourceLocation) extends TypedAst.Pattern
+    /**
+     *
+     */
+    case class Wildcard(tpe: TypedAst) extends TypedAst.Pattern
 
     case class Var(ident: ParsedAst.Ident) extends TypedAst.Pattern
 
@@ -245,7 +253,7 @@ object TypedAst {
 
     case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, p: TypedAst.Pattern) extends TypedAst.Pattern
 
-    case class Tuple(elms: Seq[TypedAst.Pattern]) extends TypedAst.Pattern
+    case class Tuple(elms: List[TypedAst.Pattern]) extends TypedAst.Pattern
 
   }
 
@@ -278,7 +286,6 @@ object TypedAst {
     case class Tuple(elms: Seq[TypedAst.Type]) extends TypedAst.Type
 
     case class Parametric(name: ResolvedAst.RName, elms: Seq[TypedAst.Type]) extends TypedAst.Type
-
 
   }
 
