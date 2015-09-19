@@ -147,7 +147,7 @@ object Resolver {
     }
 
     def resolve(wast: WeededAst.TermWithApply, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.TermWithApply, ResolverError] = wast match {
-      case WeededAst.TermNoApply.Wildcard(location) => ResolvedAst.TermWithApply.Wildcard(location).toSuccess
+      case WeededAst.TermWithApply.Wildcard(location) => ResolvedAst.TermWithApply.Wildcard(location).toSuccess
     }
 
   }
@@ -160,7 +160,7 @@ object Resolver {
         case Seq("Bool") => ResolvedAst.Type.Bool.toSuccess
         case Seq("Int") => ResolvedAst.Type.Int.toSuccess
         case Seq("Str") => ResolvedAst.Type.Str.toSuccess
-        case xs: Seq => ??? // TODO: Lookup def.
+        case xs => ??? // TODO: Lookup def.
       }
       case WeededAst.Type.Tag(ident, tpe) => ??? // TODO: Shouldn't a tag include a namespace? E.g. there is a difference between foo.Foo.Tag and bar.Foo.Tag?
       case WeededAst.Type.Tuple(welms) => @@(welms map (e => resolve(e, namespace, globals))) map ResolvedAst.Type.Tuple

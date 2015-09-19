@@ -1,12 +1,72 @@
 package ca.uwaterloo.flix.lang.ast
 
+/**
+ * A common super-type for typed AST nodes.
+ */
 sealed trait TypedAst
 
 object TypedAst {
 
-  // TODO
+  /**
+   * A typed AST node representing the root of the entire AST.
+   *
+   * @param declarations the top-level declarations.
+   */
+  case class Root(declarations: List[TypedAst.Declaration]) extends TypedAst {
 
-  case class Root()
+    /**
+     * Returns all facts declared anywhere in the AST.
+     */
+    def facts: List[TypedAst.Declaration.Fact] = {
+      def visit(d: TypedAst.Declaration): List[TypedAst.Declaration.Fact] = d match {
+        case TypedAst.Declaration.Namespace(_, body) => body flatMap visit
+        case f: TypedAst.Declaration.Fact => List(f)
+        case _ => List.empty
+      }
+
+      declarations flatMap visit
+    }
+
+  }
+
+  /**
+   * A common super-type for typed AST declarations.
+   */
+  sealed trait Declaration extends TypedAst
+
+  object Declaration {
+
+    /**
+     * A typed AST node representing a namespace declaration.
+     *
+     * @param name the name of the namespace.
+     * @param body the nested declarations.
+     */
+    case class Namespace(name: ResolvedAst.RName, body: List[TypedAst.Declaration]) extends TypedAst.Definition
+
+    /**
+     * A typed AST node representing a fact declaration.
+     *
+     * @param head the head predicate.
+     */
+    case class Fact(head: TypedAst.Predicate.WithApply) extends TypedAst.Declaration
+
+    /**
+     * A typed AST node representing a rule declaration.
+     *
+     * @param head the head predicate.
+     * @param body the body predicates.
+     */
+    case class Rule(head: TypedAst.Predicate.WithApply, body: List[WeededAst.PredicateNoApply]) extends TypedAst.Declaration
+
+  }
+
+  sealed trait Definition extends TypedAst.Declaration
+
+  object Definition {
+
+  }
+
 
   sealed trait Literal extends TypedAst {
     def tpe: TypedAst.Type
@@ -88,6 +148,16 @@ object TypedAst {
     case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, p: TypedAst.Pattern) extends TypedAst.Pattern
 
     case class Tuple(elms: Seq[TypedAst.Pattern]) extends TypedAst.Pattern
+
+  }
+
+  sealed trait Predicate
+
+  object Predicate {
+
+    case class NoApply()
+
+    case class WithApply()
 
   }
 
