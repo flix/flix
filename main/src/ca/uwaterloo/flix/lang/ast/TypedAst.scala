@@ -17,13 +17,36 @@ object TypedAst {
     /**
      * Returns all facts declared anywhere in the AST.
      */
-    def facts: List[TypedAst.Declaration.Fact] = {
+    lazy val facts: List[TypedAst.Declaration.Fact] = {
       def visit(d: TypedAst.Declaration): List[TypedAst.Declaration.Fact] = d match {
         case TypedAst.Declaration.Namespace(_, body) => body flatMap visit
         case f: TypedAst.Declaration.Fact => List(f)
         case _ => List.empty
       }
+      declarations flatMap visit
+    }
 
+    /**
+     * Returns all rules declared anywhere in the AST.
+     */
+    lazy val rules: List[TypedAst.Declaration.Rule] = {
+      def visit(d: TypedAst.Declaration): List[TypedAst.Declaration.Rule] = d match {
+        case TypedAst.Declaration.Namespace(_, body) => body flatMap visit
+        case r: TypedAst.Declaration.Rule => List(r)
+        case _ => List.empty
+      }
+      declarations flatMap visit
+    }
+
+    /**
+     * Returns all relations declared anywhere in the AST.
+     */
+    lazy val relations: List[TypedAst.Definition.Relation] = {
+      def visit(d: TypedAst.Declaration): List[TypedAst.Definition.Relation] = d match {
+        case TypedAst.Declaration.Namespace(_, body) => body flatMap visit
+        case r: TypedAst.Definition.Relation => List(r)
+        case _ => List.empty
+      }
       declarations flatMap visit
     }
 
@@ -64,6 +87,8 @@ object TypedAst {
   sealed trait Definition extends TypedAst.Declaration
 
   object Definition {
+
+    case class Relation()
 
   }
 
