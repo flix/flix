@@ -55,6 +55,8 @@ object TypedAst {
     }
 
     // TODO: Need this?
+    // TODO: Build mutable symbol table upon construction of the root?
+    // and then pass the root around?
     // def lookup(name: ResolvedAst.RName): TypedAst.Definition = ???
   }
 
@@ -243,17 +245,45 @@ object TypedAst {
   object Pattern {
 
     /**
+     * A typed AST node representing a wildcard pattern.
      *
+     * @param tpe the type of the wildcard variable.
      */
-    case class Wildcard(tpe: TypedAst) extends TypedAst.Pattern
+    case class Wildcard(tpe: TypedAst.Type) extends TypedAst.Pattern
 
-    case class Var(ident: ParsedAst.Ident) extends TypedAst.Pattern
+    /**
+     * A typed AST node representing a variable pattern.
+     *
+     * @param ident the name of the variable.
+     * @param tpe the type of the variable.
+     */
+    case class Var(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Pattern
 
-    case class Lit(literal: ResolvedAst.Literal) extends TypedAst.Pattern
+    /**
+     * A typed AST node representing a literal pattern.
+     *
+     * @param lit the literal.
+     * @param tpe the type of the literal.
+     */
+    case class Lit(lit: ResolvedAst.Literal, tpe: TypedAst.Type) extends TypedAst.Pattern
 
-    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, p: TypedAst.Pattern) extends TypedAst.Pattern
+    /**
+     * A typed AST node representing a tagged pattern.
+     *
+     * @param name the resolved name of the enum.
+     * @param ident the tag name.
+     * @param pat the nested pattern.
+     * @param tpe the type of the tag.
+     */
+    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, pat: TypedAst.Pattern, tpe: TypedAst.Type.Tag) extends TypedAst.Pattern
 
-    case class Tuple(elms: List[TypedAst.Pattern]) extends TypedAst.Pattern
+    /**
+     * A typed AST node representing a tuple pattern.
+     *
+     * @param elms the elements of the tuple.
+     * @param tpe the type of the tuple.
+     */
+    case class Tuple(elms: List[TypedAst.Pattern], tpe: TypedAst.Type.Tuple) extends TypedAst.Pattern
 
   }
 

@@ -81,13 +81,13 @@ object Typer {
   }
 
 
-  def unify(pattern: TypedAst.Pattern, tpe: TypedAst.Type): Validation[Map[String, TypedAst.Type], TypeError] =
-    (pattern, tpe) match {
-      case (TypedAst.Pattern.Wildcard(_), _) => Map.empty[String, TypedAst.Type].toSuccess
-      case (TypedAst.Pattern.Var(ident), t) => Map(ident.name -> t).toSuccess
-      case (TypedAst.Pattern.Lit(literal), t) => ??? // TODO: Get type of the literal and then we are good?
-        // TODO: remaining cases.
-    }
+//  def unify(pattern: TypedAst.Pattern, tpe: TypedAst.Type): Validation[Map[String, TypedAst.Type], TypeError] =
+//    (pattern, tpe) match {
+//      case (TypedAst.Pattern.Wildcard(_), _) => Map.empty[String, TypedAst.Type].toSuccess
+//      case (TypedAst.Pattern.Var(ident), t) => Map(ident.name -> t).toSuccess
+//      case (TypedAst.Pattern.Lit(literal), t) => ??? // TODO: Get type of the literal and then we are good?
+//        // TODO: remaining cases.
+//    }
 
   def expect(tpe1: TypedAst.Type)(tpe2: TypedAst.Type): Validation[TypedAst.Type, TypeError] = ???
 

@@ -13,6 +13,9 @@ object Compiler {
 
   case class InternalCompilerError(message: String, location: SourceLocation) extends RuntimeException(message + " near " + location.format)
 
+  // TODO: Add a high level every Ast node should implement SmartHash... (i.e. hash and eq)
+
+
   // TODO: Here all the phases will be applied one-by-one.
   // TODO: Rename package to lang=>language
   /**
