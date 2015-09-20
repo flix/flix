@@ -12,6 +12,7 @@ object Optimizer {
   // -
   // - Bit encodings?
   // - High-level optimizations?
+  // TODO: An IR could allow a match where the pattern is ONLY a tag. and then someway to index tuples.
 
   def optimize(tast: TypedAst.Root): TypedAst.Root = ???
 }

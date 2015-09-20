@@ -171,14 +171,52 @@ object TypedAst {
 
     case class Lambda(formals: Seq[(ParsedAst.Ident, TypedAst.Type)], returnType: TypedAst.Type, body: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
 
-    case class Unary(op: UnaryOperator, e: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
+    /**
+     * A typed AST node representing a unary expression.
+     *
+     * @param op the unary operator.
+     * @param exp the expression.
+     * @param tpe the type
+     */
+    case class Unary(op: UnaryOperator, exp: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
 
-    case class Binary(e1: TypedAst.Expression, op: BinaryOperator, e2: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
+    /**
+     * A typed AST node representing a binary expression.
+     *
+     * @param op the binary operator.
+     * @param e1 the lhs expression.
+     * @param e2 the rhs expression.
+     * @param tpe the type of the expression.
+     */
+    case class Binary(op: BinaryOperator, e1: TypedAst.Expression, e2: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
 
+    /**
+     * A typed AST node representing an if-then-else expression.
+     *
+     * @param e1 the conditional expression.
+     * @param e2 the consequent expression.
+     * @param e3 the alternative expression.
+     * @param tpe the type of the consequent and alternative expressions.
+     */
     case class IfThenElse(e1: TypedAst.Expression, e2: TypedAst.Expression, e3: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
 
+    /**
+     * A typed AST node representing a let expression.
+     *
+     * @param ident the name of the bound variable.
+     * @param value the value of the bound variable.
+     * @param body the body expression in which the bound variable is visible.
+     * @param tpe the type of the expression (which is equivalent to the type of the body expression).
+     */
     case class Let(ident: ParsedAst.Ident, value: TypedAst.Expression, body: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
 
+    /**
+     * A typed AST node representing a match expression.
+     *
+     * @param e the match expression.
+     * @param rules the match rules.
+     * @param tpe the type of the match expression (which is equivalent to the type of each rule).
+     */
     case class Match(e: TypedAst.Expression, rules: Seq[(TypedAst.Pattern, TypedAst.Expression)], tpe: TypedAst.Type) extends TypedAst.Expression
 
     /**
@@ -220,7 +258,12 @@ object TypedAst {
   /**
    * A common-super type for typed patterns.
    */
-  sealed trait Pattern extends TypedAst
+  sealed trait Pattern extends TypedAst {
+    /**
+     * The type of the pattern.
+     */
+    def tpe: TypedAst.Type
+  }
 
   object Pattern {
 
