@@ -32,13 +32,25 @@ object TypedAst {
 
   object Definition {
 
-    // TODO: Which of these to inline?
-    //
-    //    case class TypeAlias(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Definition
-    //
-    //    case class Value(ident: ParsedAst.Ident, tpe: TypedAst.Type, e: TypedAst.Expression) extends TypedAst.Definition
-    //
-    //    case class Function(ident: ParsedAst.Ident, formals: List[(ParsedAst.Ident, TypedAst.Type)], tpe: TypedAst.Type, body: TypedAst.Expression) extends TypedAst.Definition
+    /**
+     * A typed AST node representing a constant definition.
+     *
+     * @param name the name of the constant.
+     * @param exp the constant expression.
+     * @param tpe the type of the constant.
+     */
+    case class Constant(name: ResolvedAst.RName, exp: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Definition
+
+    /**
+     * A typed AST node representing a function definition.
+     *
+     * @param name the name of the function.
+     * @param formals the formal arguments of the function.
+     * @param retTpe the return type of the function.
+     * @param body the body expression of the function.
+     */
+    case class Function(name: ResolvedAst.RName, formals: List[TypedAst.FormalArg], retTpe: TypedAst.Type, body: TypedAst.Expression) extends TypedAst.Definition
+
     //
     //    case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends TypedAst.Definition
     //
@@ -56,14 +68,14 @@ object TypedAst {
      * @param ident the name of the relation.
      * @param attributes the attributes (columns) of the relation.
      */
-    case class Relation(ident: ParsedAst.Ident, attributes: List[TypedAst.Attribute]) extends TypedAst.Definition {
+    case class Relation(ident: ResolvedAst.RName, attributes: List[TypedAst.Attribute]) extends TypedAst.Definition {
       /**
        * Returns the attribute with the given `name`.
        */
       def attribute(name: String): TypedAst.Attribute = attributes find {
-        case TypedAst.Attribute(attributeIdent) => attributeIdent.name == name
+        case TypedAst.Attribute(attributeIdent, tpe) => attributeIdent.name == name
       } getOrElse {
-        throw Compiler.InternalCompilerError(s"Attribute '$name' does not exist.", ident.location)
+        throw Compiler.InternalCompilerError(s"Attribute '$name' does not exist.", ???) // TODO: Need location
       }
     }
 
@@ -188,11 +200,11 @@ object TypedAst {
      * A typed AST node representing a lambda abstraction.
      *
      * @param formals the formal arguments.
-     * @param returnTpe the declared return type.
+     * @param retTpe the declared return type.
      * @param body the body expression of the lambda.
      * @param tpe the type of the entire function.
      */
-    case class Lambda(formals: List[TypedAst.FormalArg], returnTpe: TypedAst.Type, body: TypedAst.Expression, tpe: TypedAst.Type.Function) extends TypedAst.Expression
+    case class Lambda(formals: List[TypedAst.FormalArg], retTpe: TypedAst.Type, body: TypedAst.Expression, tpe: TypedAst.Type.Function) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a function call.
@@ -348,8 +360,10 @@ object TypedAst {
   sealed trait Predicate extends TypedAst
 
   object Predicate {
+
     // TODO
     case class NoApply(name: ResolvedAst.RName, terms: List[TypedAst.Term], tpe: TypedAst.Type) extends TypedAst.Predicate
+
     // TODO
     case class WithApply(name: ResolvedAst.RName, terms: List[TypedAst.Term], tpe: TypedAst.Type) extends TypedAst.Predicate
 
@@ -358,7 +372,7 @@ object TypedAst {
   sealed trait Term
 
   object Term {
-// TODO
+    // TODO
   }
 
 
@@ -412,9 +426,13 @@ object TypedAst {
      */
     case class Tuple(elms: List[TypedAst.Type]) extends TypedAst.Type
 
-
-    // TODO: ... this should prob
-    case class Function() extends TypedAst.Type
+    /**
+     * An AST node representing a function type.
+     *
+     * @param args the type of the arguments.
+     * @param retTpe the type of the return type.
+     */
+    case class Function(args: List[TypedAst.Type], retTpe: TypedAst.Type) extends TypedAst.Type
 
   }
 

@@ -82,6 +82,7 @@ object ParsedAst {
      * @param ident the name of the alias.
      * @param tpe the type of the alias.
      */
+    // TODO: Do we really want this?
     case class TypeAlias(ident: ParsedAst.Ident, tpe: ParsedAst.Type) extends ParsedAst.Definition
 
     /**
@@ -92,6 +93,7 @@ object ParsedAst {
      * @param e the expression.
      */
     // TODO: Maybe this should be called literal or some such?
+    // TODO: Lets call thus constant and use "const"?
     case class Value(ident: ParsedAst.Ident, tpe: ParsedAst.Type, e: ParsedAst.Expression) extends ParsedAst.Definition
 
     /**
