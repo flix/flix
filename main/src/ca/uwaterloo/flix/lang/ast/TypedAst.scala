@@ -14,99 +14,29 @@ object TypedAst {
   /**
    * A typed AST node representing the root of the entire AST.
    *
-   * @param declarations the top-level declarations.
+   * @param defns a map from resolved names to definitions.
+   * @param facts a list of facts.
+   * @param rules a list of rules.
    */
-  case class Root(declarations: List[TypedAst.Declaration]) extends TypedAst {
-
-    /**
-     * Returns all facts declared anywhere in the AST.
-     */
-    lazy val facts: List[TypedAst.Declaration.Fact] = {
-      def visit(d: TypedAst.Declaration): List[TypedAst.Declaration.Fact] = d match {
-        case TypedAst.Declaration.Namespace(_, body) => body flatMap visit
-        case f: TypedAst.Declaration.Fact => List(f)
-        case _ => List.empty
-      }
-      declarations flatMap visit
-    }
-
-    /**
-     * Returns all rules declared anywhere in the AST.
-     */
-    lazy val rules: List[TypedAst.Declaration.Rule] = {
-      def visit(d: TypedAst.Declaration): List[TypedAst.Declaration.Rule] = d match {
-        case TypedAst.Declaration.Namespace(_, body) => body flatMap visit
-        case r: TypedAst.Declaration.Rule => List(r)
-        case _ => List.empty
-      }
-      declarations flatMap visit
-    }
-
-    /**
-     * Returns all relations declared anywhere in the AST.
-     */
-    lazy val relations: List[TypedAst.Definition.Relation] = {
-      def visit(d: TypedAst.Declaration): List[TypedAst.Definition.Relation] = d match {
-        case TypedAst.Declaration.Namespace(_, body) => body flatMap visit
-        case r: TypedAst.Definition.Relation => List(r)
-        case _ => List.empty
-      }
-      declarations flatMap visit
-    }
-
-    // TODO: Need this?
-    // TODO: Build mutable symbol table upon construction of the root?
-    // and then pass the root around?
-    // def lookup(name: ResolvedAst.RName): TypedAst.Definition = ???
-  }
-
-  /**
-   * A common super-type for typed declarations.
-   */
-  sealed trait Declaration extends TypedAst
-
-  object Declaration {
-
-    /**
-     * A typed AST node representing a namespace declaration.
-     *
-     * @param name the name of the namespace.
-     * @param body the nested declarations.
-     */
-    case class Namespace(name: ResolvedAst.RName, body: List[TypedAst.Declaration]) extends TypedAst.Definition
-
-    /**
-     * A typed AST node representing a fact declaration.
-     *
-     * @param head the head predicate.
-     */
-    case class Fact(head: TypedAst.Predicate.WithApply) extends TypedAst.Declaration
-
-    /**
-     * A typed AST node representing a rule declaration.
-     *
-     * @param head the head predicate.
-     * @param body the body predicates.
-     */
-    case class Rule(head: TypedAst.Predicate.WithApply, body: List[WeededAst.PredicateNoApply]) extends TypedAst.Declaration
-
+  case class Root(defns: Map[ResolvedAst.RName, TypedAst.Definition],
+                  facts: List[TypedAst.Constraint.Fact],
+                  rules: List[TypedAst.Constraint.Rule]) extends TypedAst {
   }
 
   /**
    * A common super-type for typed definitions.
-   *
-   * A definition is a kind-of declaration.
    */
-  sealed trait Definition extends TypedAst.Declaration
+  sealed trait Definition
 
   object Definition {
 
+    // TODO: Which of these to inline?
     //
-    //    case class TypeAlias(ident: ParsedAst.Ident, tpe: WeededAst.Type) extends TypedAst.Definition
+    //    case class TypeAlias(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Definition
     //
-    //    case class Value(ident: ParsedAst.Ident, tpe: WeededAst.Type, e: WeededAst.Expression) extends TypedAst.Definition
+    //    case class Value(ident: ParsedAst.Ident, tpe: TypedAst.Type, e: TypedAst.Expression) extends TypedAst.Definition
     //
-    //    case class Function(ident: ParsedAst.Ident, formals: List[(ParsedAst.Ident, WeededAst.Type)], tpe: WeededAst.Type, body: WeededAst.Expression) extends TypedAst.Definition
+    //    case class Function(ident: ParsedAst.Ident, formals: List[(ParsedAst.Ident, TypedAst.Type)], tpe: TypedAst.Type, body: TypedAst.Expression) extends TypedAst.Definition
     //
     //    case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends TypedAst.Definition
     //
@@ -136,6 +66,30 @@ object TypedAst {
         throw Compiler.InternalCompilerError(s"Attribute '$name' does not exist.", ident.location)
       }
     }
+
+  }
+
+  /**
+   * A common super-type for typed facts and rules.
+   */
+  sealed trait Constraint extends TypedAst
+
+  object Constraint {
+
+    /**
+     * A typed AST node representing a fact declaration.
+     *
+     * @param head the head predicate.
+     */
+    case class Fact(head: TypedAst.Predicate.WithApply) extends TypedAst.Constraint
+
+    /**
+     * A typed AST node representing a rule declaration.
+     *
+     * @param head the head predicate.
+     * @param body the body predicates.
+     */
+    case class Rule(head: TypedAst.Predicate.WithApply, body: List[TypedAst.Predicate.NoApply]) extends TypedAst.Constraint
 
   }
 
@@ -185,9 +139,8 @@ object TypedAst {
      * @param ident the tag name.
      * @param literal the nested literal.
      * @param tpe the type of the tag.
-     * @param defn the definition of the enum.
      */
-    case class Tag(ident: ParsedAst.Ident, literal: TypedAst.Literal, tpe: TypedAst.Type.Enum, defn: WeededAst.Definition.Enum) extends TypedAst.Literal
+    case class Tag(ident: ParsedAst.Ident, literal: TypedAst.Literal, tpe: TypedAst.Type.Enum) extends TypedAst.Literal
 
     /**
      * A typed AST node representing a tuple literal.
@@ -209,7 +162,7 @@ object TypedAst {
 
     case class Var(name: String, tpe: TypedAst.Type) extends TypedAst.Expression
 
-    case class Ref(name: ResolvedAst.RName, decl: WeededAst.Definition, tpe: TypedAst.Type) extends TypedAst.Expression
+    case class Ref(name: ResolvedAst.RName, tpe: TypedAst.Type) extends TypedAst.Expression
 
     case class Apply(name: ResolvedAst.RName, arguments: Seq[TypedAst.Expression], tpe: TypedAst.Type) extends TypedAst.Expression
 
@@ -270,7 +223,7 @@ object TypedAst {
     /**
      * A typed AST node representing a tagged pattern.
      *
-     * @param name the resolved name of the enum.
+     * @param name the namespace of the tag.
      * @param ident the tag name.
      * @param pat the nested pattern.
      * @param tpe the type of the tag.
@@ -288,19 +241,21 @@ object TypedAst {
   }
 
   /**
-   *
+   * A common super-type for typed predicates.
    */
-  sealed trait Predicate
+  sealed trait Predicate extends TypedAst
 
   object Predicate {
 
-    case class NoApply()
+    case class NoApply(name: ResolvedAst.RName, terms: List[TypedAst.Term], tpe: TypedAst.Type) extends TypedAst.Predicate
 
-    case class WithApply()
+    case class WithApply(name: ResolvedAst.RName, terms: List[TypedAst.Term], tpe: TypedAst.Type)  extends TypedAst.Predicate
 
   }
 
-  sealed trait Term {
+  sealed trait Term
+
+  object Term {
 
   }
 
@@ -332,10 +287,20 @@ object TypedAst {
      */
     case object Str extends TypedAst.Type
 
+    /**
+     * An AST node that represents the type of a tag.
+     *
+     * @param name the namespace of the tag.
+     * @param ident the name of the tag.
+     * @param tpe the type of the nested value.
+     */
+    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Type
 
-    case class Tag(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Type
-
-
+    /**
+     * An AST node that represents an enum type (a set of tags).
+     *
+     * @param variants a map from tag names to tag types.
+     */
     case class Enum(variants: Map[String, TypedAst.Type.Tag]) extends TypedAst.Type
 
     /**
