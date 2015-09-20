@@ -8,7 +8,7 @@ object ResolvedAst {
 
   // TODO Replace QName by RName.
   // TODO: Move this to Name.Resolved and Name.Parsed?
-  case class RName(parts: List[String]) extends ResolvedAst
+  case class RName(parts: List[String], location: SourceLocation) extends ResolvedAst
 
   sealed trait Declaration extends ResolvedAst
 

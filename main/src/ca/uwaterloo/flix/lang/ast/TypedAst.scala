@@ -51,9 +51,15 @@ object TypedAst {
      */
     case class Function(name: ResolvedAst.RName, formals: List[TypedAst.FormalArg], retTpe: TypedAst.Type, body: TypedAst.Expression) extends TypedAst.Definition
 
-    //
-    //    case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends TypedAst.Definition
-    //
+    /**
+     * A typed AST node representing an enum definition.
+     *
+     * @param name the name of the enum.
+     * @param cases the tags of the enum.
+     * @param tpe the type of the enum.
+     */
+    case class Enum(name: ResolvedAst.RName, cases: Map[String, ParsedAst.Type.Tag], tpe: TypedAst.Type.Enum) extends TypedAst.Definition
+
     //    case class JoinSemiLattice(ident: ParsedAst.Ident,
     //                               bot: ParsedAst.QName,
     //                               leq: ParsedAst.QName,
@@ -65,17 +71,17 @@ object TypedAst {
     /**
      * A typed AST node representing a relation definition.
      *
-     * @param ident the name of the relation.
+     * @param name the name of the relation.
      * @param attributes the attributes (columns) of the relation.
      */
-    case class Relation(ident: ResolvedAst.RName, attributes: List[TypedAst.Attribute]) extends TypedAst.Definition {
+    case class Relation(name: ResolvedAst.RName, attributes: List[TypedAst.Attribute]) extends TypedAst.Definition {
       /**
        * Returns the attribute with the given `name`.
        */
-      def attribute(name: String): TypedAst.Attribute = attributes find {
-        case TypedAst.Attribute(attributeIdent, tpe) => attributeIdent.name == name
+      def attribute(attribute: String): TypedAst.Attribute = attributes find {
+        case TypedAst.Attribute(ident, tpe) => ident.name == attribute
       } getOrElse {
-        throw Compiler.InternalCompilerError(s"Attribute '$name' does not exist.", ???) // TODO: Need location
+        throw Compiler.InternalCompilerError(s"Attribute '$name' does not exist.", name.location)
       }
     }
 
@@ -266,7 +272,7 @@ object TypedAst {
     /**
      * A typed AST node representing a tagged expression.
      *
-     * @param name the namespace of the enum.
+     * @param name the name of the enum.
      * @param ident the name of the tag.
      * @param e the expression.
      * @param tpe the type of the expression.
