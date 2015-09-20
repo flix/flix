@@ -40,7 +40,7 @@ object Typer {
       case ResolvedAst.Literal.Str(s) => TypedAst.Literal.Str(s).toSuccess
       case ResolvedAst.Literal.Tag(name, ident, literal, defn) => ??? // TODO
       case ResolvedAst.Literal.Tuple(relms) => @@(relms map typer) map {
-        case elms => TypedAst.Literal.Tuple(elms.toList, TypedAst.Type.Tuple(elms map (_.tpe)))
+        case elms => TypedAst.Literal.Tuple(elms.toList, TypedAst.Type.Tuple((elms map (_.tpe)).toList))
       }
     }
 
