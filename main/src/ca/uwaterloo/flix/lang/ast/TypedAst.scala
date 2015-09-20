@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.lang.Compiler
 
 // TODO: if there is going to be an optimized IR then all these helper methods such be moved to that IR.
 // TODO: Look at every occurrence  of RName.
+// TODO: e -> exp
 
 /**
  * A common super-type for typed AST nodes.
@@ -161,15 +162,48 @@ object TypedAst {
 
   object Expression {
 
-    case class Var(name: String, tpe: TypedAst.Type) extends TypedAst.Expression
-
-    case class Ref(name: ResolvedAst.RName, tpe: TypedAst.Type) extends TypedAst.Expression
-
-    case class Apply(name: ResolvedAst.RName, arguments: Seq[TypedAst.Expression], tpe: TypedAst.Type) extends TypedAst.Expression
-
+    /**
+     * A typed AST node representing a literal expression.
+     *
+     * @param literal the literal.
+     * @param tpe the type of the literal.
+     */
     case class Lit(literal: TypedAst.Literal, tpe: TypedAst.Type) extends TypedAst.Expression
 
-    case class Lambda(formals: Seq[(ParsedAst.Ident, TypedAst.Type)], returnType: TypedAst.Type, body: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
+    /**
+     * A typed AST node representing a local variable expression (i.e. a parameter or let-bound variable).
+     *
+     * @param name the name of the variable.
+     * @param tpe the type of the variable.
+     */
+    case class Var(name: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Expression
+
+    /**
+     * A typed AST node representing a reference to a definition (i.e. a value or function).
+     *
+     * @param name the name of the definition.
+     * @param tpe the type of the definition.
+     */
+    case class Ref(name: ResolvedAst.RName, tpe: TypedAst.Type) extends TypedAst.Expression
+
+    /**
+     * A typed AST node representing a lambda abstraction.
+     *
+     * @param formals the formal arguments.
+     * @param returnTpe the declared return type.
+     * @param body the body expression of the lambda.
+     * @param tpe the type of the entire function.
+     */
+    case class Lambda(formals: Seq[(ParsedAst.Ident, TypedAst.Type)], returnTpe: TypedAst.Type, body: TypedAst.Expression, tpe: TypedAst.Type.Function) extends TypedAst.Expression
+
+    /**
+     * A typed AST node representing a function call.
+     *
+     * @param exp the lambda/function expression.
+     * @param args the function arguments.
+     * @param tpe the return type of the function.
+     */
+    case class Apply(exp: TypedAst.Expression, args: Seq[TypedAst.Expression], tpe: TypedAst.Type) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a unary expression.
@@ -379,6 +413,10 @@ object TypedAst {
      * @param elms the types of the elements.
      */
     case class Tuple(elms: Seq[TypedAst.Type]) extends TypedAst.Type
+
+
+    // TODO: ...
+    case class Function() extends TypedAst.Type
 
   }
 

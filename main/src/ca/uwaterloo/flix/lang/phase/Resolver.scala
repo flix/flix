@@ -29,6 +29,8 @@ object Resolver {
       val format = s"Error: Unresolved reference $name in $namespace at ${name.location}\n"
     }
 
+    // TODO: Cyclic stuff.
+
   }
 
   def resolve(wast: WeededAst.Root): Validation[ResolvedAst.Root, ResolverError] = {
