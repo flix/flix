@@ -6,6 +6,8 @@
   Ben Moseley and Peter Marks.
   [Paper.](http://www.shaffner.us/cs/papers/tarpit.pdf)
 
+## Foundations ##
+
 - **What You Always Wanted to Know About Datalog (and Never Dared to Ask)**, 
   Stefano Ceri, Georg Gottlob and Letizia Tanca.
   [Paper.](http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=43410)

@@ -42,8 +42,6 @@ object TypedAst {
     //
     //    case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends TypedAst.Definition
     //
-    //    case class Lattice(ident: ParsedAst.Ident, elms: List[ParsedAst.QName], traits: List[ParsedAst.Trait]) extends TypedAst.Definition
-    //
     //    case class JoinSemiLattice(ident: ParsedAst.Ident,
     //                               bot: ParsedAst.QName,
     //                               leq: ParsedAst.QName,
@@ -350,9 +348,9 @@ object TypedAst {
   sealed trait Predicate extends TypedAst
 
   object Predicate {
-
+    // TODO
     case class NoApply(name: ResolvedAst.RName, terms: List[TypedAst.Term], tpe: TypedAst.Type) extends TypedAst.Predicate
-
+    // TODO
     case class WithApply(name: ResolvedAst.RName, terms: List[TypedAst.Term], tpe: TypedAst.Type) extends TypedAst.Predicate
 
   }
@@ -360,7 +358,7 @@ object TypedAst {
   sealed trait Term
 
   object Term {
-
+// TODO
   }
 
 
@@ -415,7 +413,7 @@ object TypedAst {
     case class Tuple(elms: List[TypedAst.Type]) extends TypedAst.Type
 
 
-    // TODO: ...
+    // TODO: ... this should prob
     case class Function() extends TypedAst.Type
 
   }
