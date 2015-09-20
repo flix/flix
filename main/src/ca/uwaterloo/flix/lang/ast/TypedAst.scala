@@ -60,13 +60,15 @@ object TypedAst {
      */
     case class Enum(name: ResolvedAst.RName, cases: Map[String, ParsedAst.Type.Tag], tpe: TypedAst.Type.Enum) extends TypedAst.Definition
 
-    //    case class JoinSemiLattice(ident: ParsedAst.Ident,
-    //                               bot: ParsedAst.QName,
-    //                               leq: ParsedAst.QName,
-    //                               lub: ParsedAst.QName,
-    //                               norm: Option[ParsedAst.QName],
-    //                               widen: Option[ParsedAst.QName]) extends TypedAst.Definition
-    //
+    /**
+     * A typed AST node representing a join semi lattice definition.
+     *
+     * @param tpe the type of elements.
+     * @param bot the bottom element.
+     * @param leq the partial order.
+     * @param lub the least-upper-bound.
+     */
+    case class JoinSemiLattice(tpe: TypedAst.Type, bot: ResolvedAst.RName, leq: ResolvedAst.RName, lub: ResolvedAst.RName) extends TypedAst.Definition
 
     /**
      * A typed AST node representing a relation definition.
