@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.lang.ast
 import ca.uwaterloo.flix.lang.Compiler
 
 // TODO: if there is going to be an optimized IR then all these helper methods such be moved to that IR.
+// TODO: Look at every occurrence  of RName.
 
 /**
  * A common super-type for typed AST nodes.
@@ -180,12 +181,38 @@ object TypedAst {
 
     case class Match(e: TypedAst.Expression, rules: Seq[(TypedAst.Pattern, TypedAst.Expression)], tpe: TypedAst.Type) extends TypedAst.Expression
 
-    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, e: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
+    /**
+     * A typed AST node representing a tagged expression.
+     *
+     * @param name the namespace of the enum.
+     * @param ident the name of the tag.
+     * @param e the expression.
+     * @param tpe the type of the expression.
+     */
+    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, e: TypedAst.Expression, tpe: TypedAst.Type.Enum) extends TypedAst.Expression
 
+    /**
+     * A typed AST node representing a tuple expression.
+     *
+     * @param elms the elements of the tuple.
+     * @param tpe the type of the tuple.
+     */
     case class Tuple(elms: Seq[TypedAst.Expression], tpe: TypedAst.Type) extends TypedAst.Expression
 
+    /**
+     * A typed AST node representing an ascribed expression.
+     *
+     * @param e the expression.
+     * @param tpe the ascribed type.
+     */
     case class Ascribe(e: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
 
+    /**
+     * A typed AST node representing an error expression.
+     *
+     * @param location the location of the error expression.
+     * @param tpe the type of the error expression.
+     */
     case class Error(location: SourceLocation, tpe: TypedAst.Type) extends TypedAst.Expression
 
   }
@@ -249,7 +276,7 @@ object TypedAst {
 
     case class NoApply(name: ResolvedAst.RName, terms: List[TypedAst.Term], tpe: TypedAst.Type) extends TypedAst.Predicate
 
-    case class WithApply(name: ResolvedAst.RName, terms: List[TypedAst.Term], tpe: TypedAst.Type)  extends TypedAst.Predicate
+    case class WithApply(name: ResolvedAst.RName, terms: List[TypedAst.Term], tpe: TypedAst.Type) extends TypedAst.Predicate
 
   }
 
@@ -268,27 +295,27 @@ object TypedAst {
   object Type {
 
     /**
-     * An AST node that represents the Unit type.
+     * An AST node representing the Unit type.
      */
     case object Unit extends TypedAst.Type
 
     /**
-     * An AST node that represents the Boolean type.
+     * An AST node representing the Boolean type.
      */
     case object Bool extends TypedAst.Type
 
     /**
-     * An AST node that represents the Integer type.
+     * An AST node representing the Integer type.
      */
     case object Int extends TypedAst.Type
 
     /**
-     * An AST node that represents the String type.
+     * An AST node representing the String type.
      */
     case object Str extends TypedAst.Type
 
     /**
-     * An AST node that represents the type of a tag.
+     * An AST node representing the type of a tag.
      *
      * @param name the namespace of the tag.
      * @param ident the name of the tag.
@@ -297,20 +324,18 @@ object TypedAst {
     case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Type
 
     /**
-     * An AST node that represents an enum type (a set of tags).
+     * An AST node representing an enum type (a set of tags).
      *
      * @param variants a map from tag names to tag types.
      */
     case class Enum(variants: Map[String, TypedAst.Type.Tag]) extends TypedAst.Type
 
     /**
-     * An AST node that represents a tuple type.
+     * An AST node representing a tuple type.
      *
      * @param elms the types of the elements.
      */
     case class Tuple(elms: Seq[TypedAst.Type]) extends TypedAst.Type
-
-    case class Parametric(name: ResolvedAst.RName, elms: Seq[TypedAst.Type]) extends TypedAst.Type
 
   }
 
