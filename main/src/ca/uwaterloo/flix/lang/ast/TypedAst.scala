@@ -194,7 +194,7 @@ object TypedAst {
      * @param body the body expression of the lambda.
      * @param tpe the type of the entire function.
      */
-    case class Lambda(formals: Seq[(ParsedAst.Ident, TypedAst.Type)], returnTpe: TypedAst.Type, body: TypedAst.Expression, tpe: TypedAst.Type.Function) extends TypedAst.Expression
+    case class Lambda(formals: List[TypedAst.FormalArg], returnTpe: TypedAst.Type, body: TypedAst.Expression, tpe: TypedAst.Type.Function) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a function call.
@@ -203,7 +203,7 @@ object TypedAst {
      * @param args the function arguments.
      * @param tpe the return type of the function.
      */
-    case class Apply(exp: TypedAst.Expression, args: Seq[TypedAst.Expression], tpe: TypedAst.Type) extends TypedAst.Expression
+    case class Apply(exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: TypedAst.Type) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a unary expression.
@@ -251,7 +251,7 @@ object TypedAst {
      * @param rules the match rules.
      * @param tpe the type of the match expression (which is equivalent to the type of each rule).
      */
-    case class Match(e: TypedAst.Expression, rules: Seq[(TypedAst.Pattern, TypedAst.Expression)], tpe: TypedAst.Type) extends TypedAst.Expression
+    case class Match(e: TypedAst.Expression, rules: List[(TypedAst.Pattern, TypedAst.Expression)], tpe: TypedAst.Type) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a tagged expression.
@@ -269,7 +269,7 @@ object TypedAst {
      * @param elms the elements of the tuple.
      * @param tpe the type of the tuple.
      */
-    case class Tuple(elms: Seq[TypedAst.Expression], tpe: TypedAst.Type) extends TypedAst.Expression
+    case class Tuple(elms: List[TypedAst.Expression], tpe: TypedAst.Type) extends TypedAst.Expression
 
     /**
      * A typed AST node representing an ascribed expression.
@@ -412,7 +412,7 @@ object TypedAst {
      *
      * @param elms the types of the elements.
      */
-    case class Tuple(elms: Seq[TypedAst.Type]) extends TypedAst.Type
+    case class Tuple(elms: List[TypedAst.Type]) extends TypedAst.Type
 
 
     // TODO: ...
@@ -422,7 +422,18 @@ object TypedAst {
 
   /**
    * A typed AST node representing an attribute in a relation.
+   *
+   * @param ident the name of the attribute.
+   * @param tpe  the type of the attribute.
    */
-  case class Attribute(ident: ParsedAst.Ident) extends TypedAst
+  case class Attribute(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst
+
+  /**
+   * A typed AST node representing a formal argument in a function.
+   *
+   * @param ident the name of the argument.
+   * @param tpe the type of the argument.
+   */
+  case class FormalArg(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst
 
 }
