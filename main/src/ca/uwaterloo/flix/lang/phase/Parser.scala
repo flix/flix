@@ -11,6 +11,9 @@ import org.parboiled2._
 import scala.collection.immutable.Seq
 
 // TODO: Dealing with whitespace is hard. Figure out a good way.
+// TODO: Make dot after a fact/rule optional?
+// TODO: Name the attribute in a fact/rule.
+
 
 /**
  * A parser for the Flix language.
