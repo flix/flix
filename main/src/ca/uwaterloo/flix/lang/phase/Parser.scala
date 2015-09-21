@@ -13,6 +13,8 @@ import scala.collection.immutable.Seq
 // TODO: Dealing with whitespace is hard. Figure out a good way.
 // TODO: Make dot after a fact/rule optional?
 // TODO: Name the attribute in a fact/rule.
+// TODO:  Allow fields on case objects.
+// TODO: Two kinds of integrity constraints. One is that a fact exists, and the other is that a fact does not exist.
 
 
 /**
