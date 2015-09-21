@@ -371,16 +371,18 @@ object TypedAst {
      *
      * @param name the name of the predicate.
      * @param terms the terms of the predicate.
+     * @param tpe the type of the predicate.
      */
-    case class Head(name: Name.Resolved, terms: List[TypedAst.Term.Head]) extends TypedAst.Predicate
+    case class Head(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: TypedAst.Type) extends TypedAst.Predicate
 
     /**
      * A predicate that is allowed to occur in the body of a rule.
      *
      * @param name the name of the predicate.
      * @param terms the terms of the predicate.
+     * @param tpe the type of the predicate.
      */
-    case class Body(name: Name.Resolved, terms: List[TypedAst.Term.Body]) extends TypedAst.Predicate
+    case class Body(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type) extends TypedAst.Predicate
 
   }
 
@@ -398,30 +400,34 @@ object TypedAst {
        * An AST node representing a wildcard term.
        *
        * @param location the location of the wildcard.
+       * @param tpe the type of the term.
        */
-      case class Wildcard(location: SourceLocation) extends TypedAst.Term.Head
+      case class Wildcard(location: SourceLocation, tpe: TypedAst.Type) extends TypedAst.Term.Head
 
       /**
        * An AST node representing a variable term.
        *
        * @param ident the variable name.
+       * @param tpe the type of the term.
        */
-      case class Var(ident: ParsedAst.Ident) extends TypedAst.Term.Head
+      case class Var(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Term.Head
 
       /**
        * An AST node representing a literal term.
        *
        * @param literal the literal.
+       * @param tpe the type of the term.
        */
-      case class Lit(literal: WeededAst.Literal) extends TypedAst.Term.Head
+      case class Lit(literal: WeededAst.Literal, tpe: TypedAst.Type) extends TypedAst.Term.Head
 
       /**
        * An AST node representing a function call term.
        *
        * @param name the name of the called function.
        * @param args the arguments to the function.
+       * @param tpe the type of the term.
        */
-      case class Apply(name: Name.Resolved, args: List[TypedAst.Term.Head]) extends TypedAst.Term.Head
+      case class Apply(name: Name.Resolved, args: List[TypedAst.Term.Head], tpe: TypedAst.Type) extends TypedAst.Term.Head
 
     }
 
@@ -436,22 +442,25 @@ object TypedAst {
        * An AST node representing a wildcard term.
        *
        * @param location the location of the wildcard.
+       * @param tpe the type of the term.
        */
-      case class Wildcard(location: SourceLocation) extends TypedAst.Term.Body
+      case class Wildcard(location: SourceLocation, tpe: TypedAst.Type) extends TypedAst.Term.Body
 
       /**
        * An AST node representing a variable term.
        *
        * @param ident the variable name.
+       * @param tpe the type of the term.
        */
-      case class Var(ident: ParsedAst.Ident) extends TypedAst.Term.Body
+      case class Var(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Term.Body
 
       /**
        * An AST node representing a literal term.
        *
        * @param literal the literal.
+       * @param tpe the type of the term.
        */
-      case class Lit(literal: TypedAst.Literal) extends TypedAst.Term.Body
+      case class Lit(literal: TypedAst.Literal, tpe: TypedAst.Type) extends TypedAst.Term.Body
 
     }
 
