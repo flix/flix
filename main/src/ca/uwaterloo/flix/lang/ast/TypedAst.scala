@@ -2,9 +2,6 @@ package ca.uwaterloo.flix.lang.ast
 
 import ca.uwaterloo.flix.lang.Compiler
 
-// TODO: if there is going to be an optimized IR then all these helper methods such be moved to that IR.
-// TODO: e -> exp
-
 /**
  * A common super-type for typed AST nodes.
  */
@@ -101,7 +98,7 @@ object TypedAst {
      *
      * @param head the head predicate.
      */
-    case class Fact(head: TypedAst.Predicate.HeadPredicate) extends TypedAst.Constraint
+    case class Fact(head: TypedAst.Predicate.Head) extends TypedAst.Constraint
 
     /**
      * A typed AST node representing a rule declaration.
@@ -109,7 +106,7 @@ object TypedAst {
      * @param head the head predicate.
      * @param body the body predicates.
      */
-    case class Rule(head: TypedAst.Predicate.HeadPredicate, body: List[TypedAst.Predicate.BodyPredicate]) extends TypedAst.Constraint
+    case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body]) extends TypedAst.Constraint
 
   }
 
@@ -236,21 +233,21 @@ object TypedAst {
      * A typed AST node representing a binary expression.
      *
      * @param op the binary operator.
-     * @param e1 the lhs expression.
-     * @param e2 the rhs expression.
+     * @param exp1 the lhs expression.
+     * @param exp2 the rhs expression.
      * @param tpe the type of the expression.
      */
-    case class Binary(op: BinaryOperator, e1: TypedAst.Expression, e2: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
+    case class Binary(op: BinaryOperator, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
 
     /**
      * A typed AST node representing an if-then-else expression.
      *
-     * @param e1 the conditional expression.
-     * @param e2 the consequent expression.
+     * @param exp1 the conditional expression.
+     * @param exp2 the consequent expression.
      * @param e3 the alternative expression.
      * @param tpe the type of the consequent and alternative expressions.
      */
-    case class IfThenElse(e1: TypedAst.Expression, e2: TypedAst.Expression, e3: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
+    case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, e3: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a let expression.
@@ -265,21 +262,21 @@ object TypedAst {
     /**
      * A typed AST node representing a match expression.
      *
-     * @param e the match expression.
+     * @param exp the match expression.
      * @param rules the match rules.
      * @param tpe the type of the match expression (which is equivalent to the type of each rule).
      */
-    case class Match(e: TypedAst.Expression, rules: List[(TypedAst.Pattern, TypedAst.Expression)], tpe: TypedAst.Type) extends TypedAst.Expression
+    case class Match(exp: TypedAst.Expression, rules: List[(TypedAst.Pattern, TypedAst.Expression)], tpe: TypedAst.Type) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a tagged expression.
      *
      * @param name the name of the enum.
      * @param ident the name of the tag.
-     * @param e the expression.
+     * @param exp the expression.
      * @param tpe the type of the expression.
      */
-    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, e: TypedAst.Expression, tpe: TypedAst.Type.Enum) extends TypedAst.Expression
+    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, exp: TypedAst.Expression, tpe: TypedAst.Type.Enum) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a tuple expression.
@@ -375,7 +372,7 @@ object TypedAst {
      * @param name the name of the predicate.
      * @param terms the terms of the predicate.
      */
-    case class HeadPredicate(name: Name.Resolved, terms: List[TypedAst.Term]) extends TypedAst.Predicate
+    case class Head(name: Name.Resolved, terms: List[TypedAst.Term.Head]) extends TypedAst.Predicate
 
     /**
      * A predicate that is allowed to occur in the body of a rule.
@@ -383,16 +380,82 @@ object TypedAst {
      * @param name the name of the predicate.
      * @param terms the terms of the predicate.
      */
-    case class BodyPredicate(name: Name.Resolved, terms: List[TypedAst.Term]) extends TypedAst.Predicate
+    case class Body(name: Name.Resolved, terms: List[TypedAst.Term.Body]) extends TypedAst.Predicate
 
   }
-
-  sealed trait Term
 
   object Term {
-    // TODO
-  }
 
+    // TODO: Types
+    /**
+     * A common super-type for terms that are allowed appear in a head predicate.
+     */
+    sealed trait Head extends TypedAst
+
+    object Head {
+
+      /**
+       * An AST node representing a wildcard term.
+       *
+       * @param location the location of the wildcard.
+       */
+      case class Wildcard(location: SourceLocation) extends TypedAst.Term.Head
+
+      /**
+       * An AST node representing a variable term.
+       *
+       * @param ident the variable name.
+       */
+      case class Var(ident: ParsedAst.Ident) extends TypedAst.Term.Head
+
+      /**
+       * An AST node representing a literal term.
+       *
+       * @param literal the literal.
+       */
+      case class Lit(literal: WeededAst.Literal) extends TypedAst.Term.Head
+
+      /**
+       * An AST node representing a function call term.
+       *
+       * @param name the name of the called function.
+       * @param args the arguments to the function.
+       */
+      case class Apply(name: Name.Resolved, args: List[TypedAst.Term.Head]) extends TypedAst.Term.Head
+
+    }
+
+    /**
+     * A common super-type for terms that are allowed to appear in a body predicate.
+     */
+    sealed trait Body extends TypedAst
+
+    object Body {
+
+      /**
+       * An AST node representing a wildcard term.
+       *
+       * @param location the location of the wildcard.
+       */
+      case class Wildcard(location: SourceLocation) extends TypedAst.Term.Body
+
+      /**
+       * An AST node representing a variable term.
+       *
+       * @param ident the variable name.
+       */
+      case class Var(ident: ParsedAst.Ident) extends TypedAst.Term.Body
+
+      /**
+       * An AST node representing a literal term.
+       *
+       * @param literal the literal.
+       */
+      case class Lit(literal: TypedAst.Literal) extends TypedAst.Term.Body
+
+    }
+
+  }
 
   /**
    * A common super-type for types.

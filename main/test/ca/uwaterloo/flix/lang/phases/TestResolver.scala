@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.lang.phases
 
-import ca.uwaterloo.flix.lang.ast.{ResolvedAst, ParsedAst, SourceLocation, WeededAst}
+import ca.uwaterloo.flix.lang.ast._
 import ca.uwaterloo.flix.lang.phase.{Resolver, Parser, Weeder}
 import org.scalatest.FunSuite
 
@@ -18,7 +18,7 @@ class TestResolver extends FunSuite {
 
     val namespace = List("A", "B", "C")
     val globals = Map(
-      ResolvedAst.RName(List("SomeName", "OtherName")) -> WeededAst.Definition.Enum(Ident, Map.empty)
+      Name.Resolved(List("SomeName", "OtherName"), SourceLocation.Unknown) -> WeededAst.Definition.Enum(Ident, Map.empty)
     )
 
     val result = Resolver.Literal.resolve(wast, namespace, globals)
@@ -33,7 +33,7 @@ class TestResolver extends FunSuite {
 
     val namespace = List("A", "B", "C")
     val globals = Map(
-      ResolvedAst.RName(List("A", "B", "C", "D")) -> WeededAst.Definition.Enum(Ident, Map.empty)
+      Name.Resolved(List("A", "B", "C", "D"), SourceLocation.Unknown) -> WeededAst.Definition.Enum(Ident, Map.empty)
     )
 
     val result = Resolver.Literal.resolve(wast, namespace, globals)
