@@ -43,18 +43,18 @@ object Resolver {
 
   object Declaration {
 
-    def symbols(wd: WeededAst.Declaration, namespace: List[String]): Validation[Map[ResolvedAst.RName, WeededAst.Definition], ResolverError] = wd match {
+    def symbols(wd: WeededAst.Declaration, namespace: List[String]): Validation[Map[Name.Resolved, WeededAst.Definition], ResolverError] = wd match {
       case WeededAst.Declaration.Namespace(ParsedAst.QName(parts, location), body) =>
 
         ???
 
-      case d: WeededAst.Declaration.Fact => Map.empty[ResolvedAst.RName, WeededAst.Definition].toSuccess // nop
-      case d: WeededAst.Declaration.Rule => Map.empty[ResolvedAst.RName, WeededAst.Definition].toSuccess // nop
+      case d: WeededAst.Declaration.Fact => Map.empty[Name.Resolved, WeededAst.Definition].toSuccess // nop
+      case d: WeededAst.Declaration.Rule => Map.empty[Name.Resolved, WeededAst.Definition].toSuccess // nop
       case d: WeededAst.Definition => Definition.symbols(d)
     }
 
 
-    def link(p: WeededAst.PredicateNoApply, globals: Map[ResolvedAst.RName, WeededAst.Definition]): ResolvedAst.Predicate =
+    def link(p: WeededAst.PredicateNoApply, globals: Map[Name.Resolved, WeededAst.Definition]): ResolvedAst.Predicate =
       ???
 
     //      globals.get(p.name) match {
@@ -67,7 +67,7 @@ object Resolver {
 
   object Definition {
 
-    def symbols(wd: WeededAst.Definition): Validation[Map[ResolvedAst.RName, WeededAst.Definition], ResolverError] = wd match {
+    def symbols(wd: WeededAst.Definition): Validation[Map[Name.Resolved, WeededAst.Definition], ResolverError] = wd match {
       case WeededAst.Definition.Function(ident, formals, tpe, body) => ???
       case _ => ???
     }
@@ -76,7 +76,7 @@ object Resolver {
 
   object Literal {
 
-    def resolve(wast: WeededAst.Literal, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.Literal, ResolverError] = wast match {
+    def resolve(wast: WeededAst.Literal, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Literal, ResolverError] = wast match {
       case WeededAst.Literal.Unit => ResolvedAst.Literal.Unit.toSuccess
       case WeededAst.Literal.Bool(b) => ResolvedAst.Literal.Bool(b).toSuccess
       case WeededAst.Literal.Int(i) => ResolvedAst.Literal.Int(i).toSuccess
@@ -95,7 +95,7 @@ object Resolver {
 
   object Expression {
 
-    def link(wast: WeededAst.Expression, globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.Expression, ResolverError] = wast match {
+    def link(wast: WeededAst.Expression, globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Expression, ResolverError] = wast match {
       case WeededAst.Expression.AmbiguousVar(name) => ???
       case WeededAst.Expression.AmbiguousApply(name, args) => ???
       case WeededAst.Expression.Lit(wlit) => ???
@@ -124,7 +124,7 @@ object Resolver {
 
   object Pattern {
 
-    def resolve(wast: WeededAst.Pattern, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.Pattern, ResolverError] = wast match {
+    def resolve(wast: WeededAst.Pattern, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Pattern, ResolverError] = wast match {
       case WeededAst.Pattern.Wildcard(location) => ResolvedAst.Pattern.Wildcard(location).toSuccess
       case WeededAst.Pattern.Var(ident) => ResolvedAst.Pattern.Var(ident).toSuccess
       case WeededAst.Pattern.Lit(literal) => Literal.resolve(literal, namespace, globals) map ResolvedAst.Pattern.Lit
@@ -144,11 +144,11 @@ object Resolver {
 
   object Term {
 
-    def resolve(wast: WeededAst.TermNoApply, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.TermNoApply, ResolverError] = wast match {
+    def resolve(wast: WeededAst.TermNoApply, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.TermNoApply, ResolverError] = wast match {
       case WeededAst.TermNoApply.Wildcard(location) => ResolvedAst.TermNoApply.Wildcard(location).toSuccess
     }
 
-    def resolve(wast: WeededAst.TermWithApply, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.TermWithApply, ResolverError] = wast match {
+    def resolve(wast: WeededAst.TermWithApply, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.TermWithApply, ResolverError] = wast match {
       case WeededAst.TermWithApply.Wildcard(location) => ResolvedAst.TermWithApply.Wildcard(location).toSuccess
     }
 
@@ -156,7 +156,7 @@ object Resolver {
 
   object Type {
 
-    def resolve(wast: WeededAst.Type, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Validation[ResolvedAst.Type, ResolverError] = wast match {
+    def resolve(wast: WeededAst.Type, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Type, ResolverError] = wast match {
       case WeededAst.Type.Unit => ResolvedAst.Type.Unit.toSuccess
       case WeededAst.Type.Ambiguous(name) => name.parts match {
         case Seq("Bool") => ResolvedAst.Type.Bool.toSuccess
@@ -176,16 +176,16 @@ object Resolver {
   }
 
 
-  def lookupDef(name: ParsedAst.QName, namespace: List[String], globals: Map[ResolvedAst.RName, WeededAst.Definition]): Option[(ResolvedAst.RName, WeededAst.Definition)] =
+  def lookupDef(name: ParsedAst.QName, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Option[(Name.Resolved, WeededAst.Definition)] =
     name.parts.toList match {
       case Nil => throw Compiler.InternalCompilerError("Unexpected emtpy name.", name.location)
       case simple :: Nil =>
-        val rname = ResolvedAst.RName(namespace ::: simple :: Nil)
+        val rname = Name.Resolved(namespace ::: simple :: Nil, ???)
         globals.get(rname) map {
           case d => (rname, d)
         }
       case fqn =>
-        val rname = ResolvedAst.RName(fqn)
+        val rname = Name.Resolved(fqn, ???)
         globals.get(rname) map {
           case d => (rname, d)
         }

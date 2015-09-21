@@ -6,10 +6,6 @@ object ResolvedAst {
 
   case class Root(declarations: Seq[ResolvedAst.Declaration]) extends ResolvedAst
 
-  // TODO Replace QName by RName.
-  // TODO: Move this to Name.Resolved and Name.Parsed?
-  case class RName(parts: List[String], location: SourceLocation) extends ResolvedAst
-
   sealed trait Declaration extends ResolvedAst
 
   object Declaration {
@@ -40,7 +36,7 @@ object ResolvedAst {
     case class Str(literal: java.lang.String) extends ResolvedAst.Literal
 
     // TODO: Enum Def?
-    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, literal: ResolvedAst.Literal, defn: WeededAst.Definition) extends ResolvedAst.Literal
+    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, literal: ResolvedAst.Literal, defn: WeededAst.Definition) extends ResolvedAst.Literal
 
     case class Tuple(elms: Seq[ResolvedAst.Literal]) extends ResolvedAst.Literal
 
@@ -52,7 +48,7 @@ object ResolvedAst {
 
     case class Var(ident: ParsedAst.Ident) extends ResolvedAst.Expression
 
-    case class Ref(name: ResolvedAst.RName, defn: WeededAst.Definition) extends ResolvedAst.Expression
+    case class Ref(name: Name.Resolved, defn: WeededAst.Definition) extends ResolvedAst.Expression
 
     case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Expression
 
@@ -70,7 +66,7 @@ object ResolvedAst {
 
     case class Match(e: ResolvedAst.Expression, rules: Seq[(ResolvedAst.Pattern, ResolvedAst.Expression)]) extends ResolvedAst.Expression
 
-    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, e: ResolvedAst.Expression, defn: WeededAst.Definition.Enum) extends ResolvedAst.Expression
+    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, e: ResolvedAst.Expression, defn: WeededAst.Definition.Enum) extends ResolvedAst.Expression
 
     case class Tuple(elms: Seq[ResolvedAst.Expression]) extends ResolvedAst.Expression
 
@@ -90,7 +86,7 @@ object ResolvedAst {
 
     case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Pattern
 
-    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, pat: ResolvedAst.Pattern, defn: WeededAst.Definition) extends ResolvedAst.Pattern
+    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, pat: ResolvedAst.Pattern, defn: WeededAst.Definition) extends ResolvedAst.Pattern
 
     case class Tuple(elms: Seq[ResolvedAst.Pattern]) extends ResolvedAst.Pattern
 
@@ -150,7 +146,7 @@ object ResolvedAst {
 
     case class Function(t1: ResolvedAst.Type, t2: ResolvedAst.Type) extends ResolvedAst.Type
 
-    case class Parametric(name: ResolvedAst.RName, elms: Seq[ResolvedAst.Type]) extends ResolvedAst.Type
+    case class Parametric(name: Name.Resolved, elms: Seq[ResolvedAst.Type]) extends ResolvedAst.Type
 
     case class Lattice(tpe: ResolvedAst.Type) extends ResolvedAst.Type
 

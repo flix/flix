@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.lang.ast.ResolvedAst
+import ca.uwaterloo.flix.lang.ast.Name
 
 sealed trait Value
 
@@ -14,7 +14,7 @@ object Value {
 
   case class Str()
 
-  case class Tag(name: ResolvedAst.RName, ident: String, value: Value)
+  case class Tag(name: Name.Resolved, ident: String, value: Value)
 
   case class Tuple()
 

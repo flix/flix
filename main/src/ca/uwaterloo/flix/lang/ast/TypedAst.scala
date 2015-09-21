@@ -3,7 +3,6 @@ package ca.uwaterloo.flix.lang.ast
 import ca.uwaterloo.flix.lang.Compiler
 
 // TODO: if there is going to be an optimized IR then all these helper methods such be moved to that IR.
-// TODO: Look at every occurrence  of RName.
 // TODO: e -> exp
 
 /**
@@ -20,7 +19,7 @@ object TypedAst {
    * @param facts a list of facts.
    * @param rules a list of rules.
    */
-  case class Root(defns: Map[ResolvedAst.RName, TypedAst.Definition],
+  case class Root(defns: Map[Name.Resolved, TypedAst.Definition],
                   facts: List[TypedAst.Constraint.Fact],
                   rules: List[TypedAst.Constraint.Rule]) extends TypedAst {
   }
@@ -39,7 +38,7 @@ object TypedAst {
      * @param exp the constant expression.
      * @param tpe the type of the constant.
      */
-    case class Constant(name: ResolvedAst.RName, exp: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Definition
+    case class Constant(name: Name.Resolved, exp: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Definition
 
     /**
      * A typed AST node representing a function definition.
@@ -49,7 +48,7 @@ object TypedAst {
      * @param retTpe the return type of the function.
      * @param body the body expression of the function.
      */
-    case class Function(name: ResolvedAst.RName, formals: List[TypedAst.FormalArg], retTpe: TypedAst.Type, body: TypedAst.Expression) extends TypedAst.Definition
+    case class Function(name: Name.Resolved, formals: List[TypedAst.FormalArg], retTpe: TypedAst.Type, body: TypedAst.Expression) extends TypedAst.Definition
 
     /**
      * A typed AST node representing an enum definition.
@@ -58,7 +57,7 @@ object TypedAst {
      * @param cases the tags of the enum.
      * @param tpe the type of the enum.
      */
-    case class Enum(name: ResolvedAst.RName, cases: Map[String, ParsedAst.Type.Tag], tpe: TypedAst.Type.Enum) extends TypedAst.Definition
+    case class Enum(name: Name.Resolved, cases: Map[String, ParsedAst.Type.Tag], tpe: TypedAst.Type.Enum) extends TypedAst.Definition
 
     /**
      * A typed AST node representing a join semi lattice definition.
@@ -69,15 +68,15 @@ object TypedAst {
      * @param lub the least-upper-bound.
      */
     // TODO: How can we reference till this?
-    case class JoinSemiLattice(tpe: TypedAst.Type, bot: ResolvedAst.RName, leq: ResolvedAst.RName, lub: ResolvedAst.RName) extends TypedAst.Definition
-    
+    case class JoinSemiLattice(tpe: TypedAst.Type, bot: Name.Resolved, leq: Name.Resolved, lub: Name.Resolved) extends TypedAst.Definition
+
     /**
      * A typed AST node representing a relation definition.
      *
      * @param name the name of the relation.
      * @param attributes the attributes (columns) of the relation.
      */
-    case class Relation(name: ResolvedAst.RName, attributes: List[TypedAst.Attribute]) extends TypedAst.Definition {
+    case class Relation(name: Name.Resolved, attributes: List[TypedAst.Attribute]) extends TypedAst.Definition {
       /**
        * Returns the attribute with the given `name`.
        */
@@ -203,7 +202,7 @@ object TypedAst {
      * @param name the name of the definition.
      * @param tpe the type of the definition.
      */
-    case class Ref(name: ResolvedAst.RName, tpe: TypedAst.Type) extends TypedAst.Expression
+    case class Ref(name: Name.Resolved, tpe: TypedAst.Type) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a lambda abstraction.
@@ -280,7 +279,7 @@ object TypedAst {
      * @param e the expression.
      * @param tpe the type of the expression.
      */
-    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, e: TypedAst.Expression, tpe: TypedAst.Type.Enum) extends TypedAst.Expression
+    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, e: TypedAst.Expression, tpe: TypedAst.Type.Enum) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a tuple expression.
@@ -351,7 +350,7 @@ object TypedAst {
      * @param pat the nested pattern.
      * @param tpe the type of the tag.
      */
-    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, pat: TypedAst.Pattern, tpe: TypedAst.Type.Tag) extends TypedAst.Pattern
+    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, pat: TypedAst.Pattern, tpe: TypedAst.Type.Tag) extends TypedAst.Pattern
 
     /**
      * A typed AST node representing a tuple pattern.
@@ -371,20 +370,20 @@ object TypedAst {
   object Predicate {
 
     /**
+     * A predicate that is allowed to occur in the head of a rule.
      *
-     * @param name
-     * @param terms
+     * @param name the name of the predicate.
+     * @param terms the terms of the predicate.
      */
-    case class HeadPredicate(name: ResolvedAst.RName, terms: List[TypedAst.Term]) extends TypedAst.Predicate
+    case class HeadPredicate(name: Name.Resolved, terms: List[TypedAst.Term]) extends TypedAst.Predicate
 
     /**
+     * A predicate that is allowed to occur in the body of a rule.
      *
-     * @param name
-     * @param terms
+     * @param name the name of the predicate.
+     * @param terms the terms of the predicate.
      */
-    case class BodyPredicate(name: ResolvedAst.RName, terms: List[TypedAst.Term]) extends TypedAst.Predicate
-
-    // TODO
+    case class BodyPredicate(name: Name.Resolved, terms: List[TypedAst.Term]) extends TypedAst.Predicate
 
   }
 
@@ -429,7 +428,7 @@ object TypedAst {
      * @param ident the name of the tag.
      * @param tpe the type of the nested value.
      */
-    case class Tag(name: ResolvedAst.RName, ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Type
+    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Type
 
     /**
      * An AST node representing an enum type (a set of tags).
