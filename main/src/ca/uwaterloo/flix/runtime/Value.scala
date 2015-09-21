@@ -5,20 +5,18 @@ import ca.uwaterloo.flix.lang.ast.Name
 sealed trait Value
 
 object Value {
+  case object Unit extends Value
 
-  case object Unit
+  case class Bool(b: scala.Boolean) extends Value
 
-  case class Bool() extends Value
+  case class Int(i: scala.Int) extends Value
 
-  case class Int()
+  case class Str(s: java.lang.String) extends Value
 
-  case class Str()
+  case class Tag(name: Name.Resolved, ident: String, value: Value) extends Value
 
-  case class Tag(name: Name.Resolved, ident: String, value: Value)
-
-  case class Tuple()
+  case class Tuple(elems: List[Value]) extends Value
 
   // ???
-  case class Lambda()
-
+  //case class Lambda()
 }
