@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.lang.phase
 
-import ca.uwaterloo.flix.lang.ast.{WeededAst, TypedAst, ResolvedAst}
-import org.scalatest.events.Location
+import ca.uwaterloo.flix.lang.ast.{SourceLocation, WeededAst, TypedAst, ResolvedAst}
 
 import util.Validation
 import util.Validation._
@@ -18,11 +17,11 @@ object Typer {
 
     // TODO
 
-    case class ExpectedType(expected: TypedAst.Type, actual: TypedAst.Type, location: Location) extends TypeError {
+    case class ExpectedType(expected: TypedAst.Type, actual: TypedAst.Type, location: SourceLocation) extends TypeError {
       val format = ???
     }
 
-    case class ExpectedEqualTypes(tpe1: TypedAst.Type, tpe2: TypedAst.Type, location: Location) extends TypeError {
+    case class ExpectedEqualTypes(tpe1: TypedAst.Type, tpe2: TypedAst.Type, location: SourceLocation) extends TypeError {
       val format = ???
     }
 
