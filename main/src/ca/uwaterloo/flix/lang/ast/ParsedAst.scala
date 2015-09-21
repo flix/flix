@@ -67,6 +67,7 @@ object ParsedAst {
      */
     case class Rule(head: ParsedAst.Predicate, body: Seq[ParsedAst.Predicate]) extends ParsedAst.Definition
 
+    // TODO: Add integrity constraints
   }
 
   /**

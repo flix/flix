@@ -248,6 +248,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     Predicate ~ optWS ~ "." ~ optWS ~> ParsedAst.Declaration.Fact
   }
 
+  // TODO: Optional period.
   def RuleDeclaration: Rule1[ParsedAst.Declaration.Rule] = rule {
     Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ "." ~ optWS ~> ParsedAst.Declaration.Rule
   }
