@@ -68,8 +68,9 @@ object TypedAst {
      * @param leq the partial order.
      * @param lub the least-upper-bound.
      */
+    // TODO: How can we reference till this?
     case class JoinSemiLattice(tpe: TypedAst.Type, bot: ResolvedAst.RName, leq: ResolvedAst.RName, lub: ResolvedAst.RName) extends TypedAst.Definition
-
+    
     /**
      * A typed AST node representing a relation definition.
      *
@@ -101,7 +102,7 @@ object TypedAst {
      *
      * @param head the head predicate.
      */
-    case class Fact(head: TypedAst.Predicate.WithApply) extends TypedAst.Constraint
+    case class Fact(head: TypedAst.Predicate.HeadPredicate) extends TypedAst.Constraint
 
     /**
      * A typed AST node representing a rule declaration.
@@ -109,7 +110,7 @@ object TypedAst {
      * @param head the head predicate.
      * @param body the body predicates.
      */
-    case class Rule(head: TypedAst.Predicate.WithApply, body: List[TypedAst.Predicate.NoApply]) extends TypedAst.Constraint
+    case class Rule(head: TypedAst.Predicate.HeadPredicate, body: List[TypedAst.Predicate.BodyPredicate]) extends TypedAst.Constraint
 
   }
 
@@ -369,11 +370,21 @@ object TypedAst {
 
   object Predicate {
 
-    // TODO
-    case class NoApply(name: ResolvedAst.RName, terms: List[TypedAst.Term], tpe: TypedAst.Type) extends TypedAst.Predicate
+    /**
+     *
+     * @param name
+     * @param terms
+     */
+    case class HeadPredicate(name: ResolvedAst.RName, terms: List[TypedAst.Term]) extends TypedAst.Predicate
+
+    /**
+     *
+     * @param name
+     * @param terms
+     */
+    case class BodyPredicate(name: ResolvedAst.RName, terms: List[TypedAst.Term]) extends TypedAst.Predicate
 
     // TODO
-    case class WithApply(name: ResolvedAst.RName, terms: List[TypedAst.Term], tpe: TypedAst.Type) extends TypedAst.Predicate
 
   }
 
