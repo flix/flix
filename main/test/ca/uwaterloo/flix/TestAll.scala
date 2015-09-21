@@ -1,8 +1,8 @@
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.lang.phases.{TestResolver, TestTyper, TestWeeder, TestParser}
+import ca.uwaterloo.flix.lang.phases._
 import org.scalatest.Suites
 
-class TestAll extends Suites(new TestParser, new TestWeeder, new TestResolver, new TestTyper) {
+class TestAll extends Suites(new TestPhases, new TestExamples) {
 
 }
