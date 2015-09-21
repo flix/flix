@@ -20,16 +20,6 @@ object TypedAst {
                   facts: List[TypedAst.Constraint.Fact],
                   rules: List[TypedAst.Constraint.Rule]) extends TypedAst {
 
-    // TODO: Might consider changing the definition of the root to several maps...
-    /**
-     * Returns all constant definitions in the AST.
-     */
-    val constants: List[TypedAst.Definition.Constant] = defns.values.toList.collect {
-      case defn: TypedAst.Definition.Constant => defn
-    }
-
-
-
   }
 
   /**
