@@ -19,6 +19,16 @@ object TypedAst {
   case class Root(defns: Map[Name.Resolved, TypedAst.Definition],
                   facts: List[TypedAst.Constraint.Fact],
                   rules: List[TypedAst.Constraint.Rule]) extends TypedAst {
+
+    /**
+     * Returns all constant definitions in the AST.
+     */
+    val constants: List[TypedAst.Definition.Constant] = defns.values.toList.collect {
+      case defn: TypedAst.Definition.Constant => defn
+    }
+
+
+
   }
 
   /**
@@ -388,7 +398,6 @@ object TypedAst {
 
   object Term {
 
-    // TODO: Types
     /**
      * A common super-type for terms that are allowed appear in a head predicate.
      */
