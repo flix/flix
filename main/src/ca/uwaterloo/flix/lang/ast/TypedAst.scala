@@ -398,15 +398,6 @@ object TypedAst {
     sealed trait Head extends TypedAst
 
     object Head {
-
-      /**
-       * An AST node representing a wildcard term.
-       *
-       * @param location the location of the wildcard.
-       * @param tpe the type of the term.
-       */
-      case class Wildcard(location: SourceLocation, tpe: TypedAst.Type) extends TypedAst.Term.Head
-
       /**
        * An AST node representing a variable term.
        *
@@ -421,7 +412,7 @@ object TypedAst {
        * @param literal the literal.
        * @param tpe the type of the term.
        */
-      case class Lit(literal: WeededAst.Literal, tpe: TypedAst.Type) extends TypedAst.Term.Head
+      case class Lit(literal: TypedAst.Literal, tpe: TypedAst.Type) extends TypedAst.Term.Head
 
       /**
        * An AST node representing a function call term.

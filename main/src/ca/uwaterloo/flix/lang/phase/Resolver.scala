@@ -239,6 +239,8 @@ object Resolver {
 
   object Predicate {
 
+    // TODO: Check that all variables are bound...
+
     def resolve(p: WeededAst.PredicateWithApply, globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Predicate.Head, ResolverError] = ???
 
     def resolveBody(p: WeededAst.PredicateNoApply, globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Predicate.Body, ResolverError] = ???
@@ -247,12 +249,29 @@ object Resolver {
 
   object Term {
 
-    def resolve(wast: WeededAst.TermNoApply, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Term.Head, ResolverError] = wast match {
-      case WeededAst.TermNoApply.Wildcard(location) => ???
+    object Head {
+
+      /**
+       * Performs symbol resolution in the given head term `wast` under the given `namespace`.
+       */
+      def resolve(wast: WeededAst.TermWithApply, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Term.Head, ResolverError] = wast match {
+        case WeededAst.TermWithApply.Wildcard(location) => throw new RuntimeException("Illegal occurence of wildcard ") // TODO
+        case WeededAst.TermWithApply.Var(ident) => ???
+        case WeededAst.TermWithApply.Lit(lit) => ???
+        case WeededAst.TermWithApply.Apply(name, args) => ???
+      }
     }
 
-    def resolve(wast: WeededAst.TermWithApply, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Term.Body, ResolverError] = wast match {
-      case WeededAst.TermWithApply.Wildcard(location) => ???
+    object Body {
+
+      /**
+       * Performs symbol resolution in the given body term `wast` under the given `namespace`.
+       */
+      def resolve(wast: WeededAst.TermNoApply, namespace: List[String], values: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Term.Body, ResolverError] = wast match {
+        case WeededAst.TermNoApply.Wildcard(location) => ResolvedAst.Term.Body.Wildcard(location).toSuccess
+        case WeededAst.TermNoApply.Var(ident) => ResolvedAst.Term.Body.Var(ident).toSuccess
+        case WeededAst.TermNoApply.Lit(wlit) => Literal.resolve(wlit, namespace, values) map ResolvedAst.Term.Body.Lit
+      }
     }
 
   }

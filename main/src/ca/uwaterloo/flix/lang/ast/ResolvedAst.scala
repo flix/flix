@@ -113,6 +113,7 @@ object ResolvedAst {
   // TODO: Filters
 
   object Predicate {
+
     /**
      * A predicate that is allowed to occur in the head of a rule.
      *
@@ -133,11 +134,66 @@ object ResolvedAst {
 
   object Term {
 
-    sealed trait Head
+    /**
+     * A common super-type for terms that are allowed appear in a head predicate.
+     */
+    sealed trait Head extends ResolvedAst
 
+    object Head {
 
-    sealed trait Body
+      /**
+       * An AST node representing a variable term.
+       *
+       * @param ident the variable name.
+       */
+      case class Var(ident: ParsedAst.Ident) extends ResolvedAst.Term.Head
 
+      /**
+       * An AST node representing a literal term.
+       *
+       * @param literal the literal.
+       */
+      case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Term.Head
+
+      /**
+       * An AST node representing a function call term.
+       *
+       * @param name the name of the called function.
+       * @param args the arguments to the function.
+       */
+      case class Apply(name: Name.Resolved, args: List[ResolvedAst.Term.Head]) extends ResolvedAst.Term.Head
+
+    }
+
+    /**
+     * A common super-type for terms that are allowed to appear in a body predicate.
+     */
+    sealed trait Body extends ResolvedAst
+
+    object Body {
+
+      /**
+       * An AST node representing a wildcard term.
+       *
+       * @param location the location of the wildcard.
+       */
+      case class Wildcard(location: SourceLocation) extends ResolvedAst.Term.Body
+
+      /**
+       * An AST node representing a variable term.
+       *
+       * @param ident the variable name.
+       */
+      case class Var(ident: ParsedAst.Ident) extends ResolvedAst.Term.Body
+
+      /**
+       * An AST node representing a literal term.
+       *
+       * @param literal the literal.
+       */
+      case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Term.Body
+
+    }
 
   }
 
