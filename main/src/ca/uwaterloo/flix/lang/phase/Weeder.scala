@@ -16,7 +16,6 @@ import scala.collection.mutable
 
 // TODO: JoinSemiLattice vs. CompleteLattice.
 // TODO: valid "Traits"
-// TODO: rewrite all functions to lambdas of one argument?
 // TODO: consider naming things pe for parsed expression, instead of we for weeded exp.
 // TODO: Should the phases be structure in a hierarchy namespace too?
 
@@ -163,7 +162,6 @@ object Weeder {
    * Compiles the given parsed definition `d` to a weeded definition.
    */
   def compileDefinition(d: ParsedAst.Definition): Validation[WeededAst.Declaration, WeederError] = d match {
-    case d: ParsedAst.Definition.TypeAlias => compileTypeAlias(d)
     case d: ParsedAst.Definition.Function => compileFunction(d)
     case d: ParsedAst.Definition.Value => compileValue(d)
     case d: ParsedAst.Definition.Enum => compileEnum(d)
@@ -172,15 +170,9 @@ object Weeder {
   }
 
   /**
-   * Compiles the given parsed type declaration `d` to a weeded type declaration.
-   */
-  def compileTypeAlias(d: ParsedAst.Definition.TypeAlias): Validation[WeededAst.Definition.TypeAlias, WeederError] =
-    Type.weed(d.tpe) map (t => WeededAst.Definition.TypeAlias(d.ident, t))
-
-  /**
    * Compiles the given parsed function declaration `d` to a weeded function declaration.
    */
-  def compileFunction(d: ParsedAst.Definition.Function): Validation[WeededAst.Definition.Function, WeederError] = {
+  def compileFunction(d: ParsedAst.Definition.Function): Validation[WeededAst.Definition.Value, WeederError] = {
     val formals2 = d.formals.map {
       case (ident, tpe) => Type.weed(tpe) map (t => (ident, t))
     }
@@ -188,7 +180,10 @@ object Weeder {
     val bodyVal = compileExpression(d.body)
     // TODO: Naming
     @@(@@(formals2), returnTpeVal, bodyVal) map {
-      case (wformals, wreturnTpe, wbody) => WeededAst.Definition.Function(d.ident, wformals, wreturnTpe, wbody)
+      case (wformals, wreturnTpe, wbody) => {
+        val exp = WeededAst.Expression.Lambda(wformals, wreturnTpe, wbody)
+        WeededAst.Definition.Value(d.ident, /*  TODO: incorrect, must construct function type */ wreturnTpe, exp)
+      }
     }
   }
 
@@ -295,7 +290,7 @@ object Weeder {
     case ParsedAst.Expression.Match(e1, rules) =>
       val e1Val = compileExpression(e1)
       val rulesVal = rules map {
-        case (pattern, body) => @@(compilePattern(pattern), compileExpression(body))
+        case (pattern, body) => @@(Pattern.weed(pattern), compileExpression(body))
       }
       @@(e1Val, @@(rulesVal)) map {
         case (we1, wrules) => WeededAst.Expression.Match(we1, wrules)
@@ -316,33 +311,36 @@ object Weeder {
     case ParsedAst.Expression.Error(location) => WeededAst.Expression.Error(location).toSuccess
   }
 
-  /**
-   * Compiles the parsed pattern `p` to a weeded pattern.
-   *
-   * Fails if the pattern is non-linear, i.e. if the same variable occurs twice.
-   */
-  def compilePattern(p: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = {
-    val seen = mutable.Map.empty[String, ParsedAst.Ident]
+  object Pattern {
+    /**
+     * Weeds the parsed pattern `p`.
+     *
+     * Fails if the pattern is non-linear, i.e. if the same variable occurs twice.
+     */
+    def weed(p: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = {
+      val seen = mutable.Map.empty[String, ParsedAst.Ident]
 
-    def visit(p: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = p match {
-      case ParsedAst.Pattern.Wildcard(location) => WeededAst.Pattern.Wildcard(location).toSuccess
-      case ParsedAst.Pattern.Var(ident@ParsedAst.Ident(name, location)) => seen.get(name) match {
-        case None =>
-          seen += (name -> ident)
-          WeededAst.Pattern.Var(ident).toSuccess
-        case Some(otherIdent) => NonLinearPattern(name, otherIdent.location, location).toFailure
+      def visit(p: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = p match {
+        case ParsedAst.Pattern.Wildcard(location) => WeededAst.Pattern.Wildcard(location).toSuccess
+        case ParsedAst.Pattern.Var(ident@ParsedAst.Ident(name, location)) => seen.get(name) match {
+          case None =>
+            seen += (name -> ident)
+            WeededAst.Pattern.Var(ident).toSuccess
+          case Some(otherIdent) => NonLinearPattern(name, otherIdent.location, location).toFailure
+        }
+        case ParsedAst.Pattern.Lit(literal) => compileLiteral(literal) map WeededAst.Pattern.Lit
+        case ParsedAst.Pattern.Tag(name, ident, p2) => visit(p2) map {
+          case wp => WeededAst.Pattern.Tag(name, ident, wp)
+        }
+        case ParsedAst.Pattern.Tuple(elms) => @@(elms map visit) map {
+          case welms => WeededAst.Pattern.Tuple(welms)
+        }
       }
-      case ParsedAst.Pattern.Lit(literal) => compileLiteral(literal) map WeededAst.Pattern.Lit
-      case ParsedAst.Pattern.Tag(name, ident, p2) => visit(p2) map {
-        case wp => WeededAst.Pattern.Tag(name, ident, wp)
-      }
-      case ParsedAst.Pattern.Tuple(elms) => @@(elms map visit) map {
-        case welms => WeededAst.Pattern.Tuple(welms)
-      }
+
+      visit(p)
     }
-
-    visit(p)
   }
+
 
   /**
    * Compiles the given parsed predicate `p` to a weeded predicate.

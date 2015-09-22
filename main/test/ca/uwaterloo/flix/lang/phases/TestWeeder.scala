@@ -81,7 +81,7 @@ class TestWeeder extends FunSuite {
   test("NonLinearPattern01") {
     val input = "(x, x)"
     val past = new Parser(None, input).Pattern.run().get
-    val result = Weeder.compilePattern(past)
+    val result = Weeder.Pattern.weed(past)
     assert(result.isFailure)
     assertResult(1)(result.errors.size)
   }
@@ -89,7 +89,7 @@ class TestWeeder extends FunSuite {
   test("NonLinearPattern02") {
     val input = "(x, (y, (z, x, y)))"
     val past = new Parser(None, input).Pattern.run().get
-    val result = Weeder.compilePattern(past)
+    val result = Weeder.Pattern.weed(past)
     assert(result.isFailure)
     assertResult(2)(result.errors.size)
   }

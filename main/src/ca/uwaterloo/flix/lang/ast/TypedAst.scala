@@ -40,17 +40,6 @@ object TypedAst {
     case class Constant(name: Name.Resolved, exp: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Definition
 
     /**
-     * A typed AST node representing a function definition.
-     *
-     * @param name the name of the function.
-     * @param formals the formal arguments of the function.
-     * @param retTpe the return type of the function.
-     * @param body the body expression of the function.
-     */
-    // TODO: Why not fold function into Constant/Value etc.?
-    case class Function(name: Name.Resolved, formals: List[TypedAst.FormalArg], retTpe: TypedAst.Type, body: TypedAst.Expression) extends TypedAst.Definition
-
-    /**
      * A typed AST node representing an enum definition.
      *
      * @param name the name of the enum.

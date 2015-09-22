@@ -66,18 +66,6 @@ class TestParser extends FunSuite {
     assert(result.isSuccess)
   }
 
-  test("Parser.Definition.TypeAlias01") {
-    val input = "type t = Bool;"
-    val result = new Parser(None, input).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.TypeAlias])
-  }
-
-  test("Parser.Definition.TypeAlias02") {
-    val input = "type t = A[B];"
-    val result = new Parser(None, input).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.TypeAlias])
-  }
-
   test("Parser.Definition.Value01") {
     val input = "val v: Int = 42;"
     val result = new Parser(None, input).Definition.run().get

@@ -70,7 +70,7 @@ object ResolvedAst {
 
     case class Tuple(elms: Seq[ResolvedAst.Expression]) extends ResolvedAst.Expression
 
-    case class Ascribe(e: ResolvedAst.Expression) extends ResolvedAst.Expression
+    case class Ascribe(e: ResolvedAst.Expression, tpe: ResolvedAst.Type) extends ResolvedAst.Expression
 
     case class Error(location: SourceLocation) extends ResolvedAst.Expression
 

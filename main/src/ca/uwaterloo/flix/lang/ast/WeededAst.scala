@@ -28,11 +28,7 @@ object WeededAst {
 
   object Definition {
 
-    case class TypeAlias(ident: ParsedAst.Ident, tpe: WeededAst.Type) extends WeededAst.Definition
-
     case class Value(ident: ParsedAst.Ident, tpe: WeededAst.Type, e: WeededAst.Expression) extends WeededAst.Definition
-
-    case class Function(ident: ParsedAst.Ident, formals: Seq[(ParsedAst.Ident, WeededAst.Type)], tpe: WeededAst.Type, body: WeededAst.Expression) extends WeededAst.Definition
 
     // TODO: Decorate with the full type....
     case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends WeededAst.Definition

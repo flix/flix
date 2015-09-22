@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.lang.phase
 
 import ca.uwaterloo.flix.lang.Compiler
 import ca.uwaterloo.flix.lang.ast._
+import ca.uwaterloo.flix.lang.phase.Weeder.WeederError
 
 import util.Validation
 import util.Validation._
@@ -17,6 +18,7 @@ object Resolver {
   object ResolverError {
 
     // TODO
+    // TODO: Cyclic stuff.
     case class DuplicateDefinition()
 
     /**
@@ -29,13 +31,18 @@ object Resolver {
       val format = s"Error: Unresolved reference $name in $namespace at ${name.location}\n"
     }
 
-    // TODO: Cyclic stuff.
-
   }
 
+  /**
+   * Resolves all symbols in the given AST `wast`.
+   */
   def resolve(wast: WeededAst.Root): Validation[ResolvedAst.Root, ResolverError] = {
-    wast.declarations.map {
-      case wd: WeededAst.Declaration => Declaration.symbols(wd, Nil)
+    val globalsVal = Validation.fold[WeededAst.Declaration, Map[Name.Resolved, WeededAst.Definition], WeederError](wast.declarations, Map.empty) {
+      case (macc, decl) => macc.toSuccess
+    }
+
+    globalsVal map {
+      case globals => @@(wast.declarations.map(d => Declaration.resolve(d, globals))) map ResolvedAst.Root
     }
 
     ???
@@ -53,29 +60,24 @@ object Resolver {
       case d: WeededAst.Definition => Definition.symbols(d)
     }
 
-
-    def link(p: WeededAst.PredicateNoApply, globals: Map[Name.Resolved, WeededAst.Definition]): ResolvedAst.Predicate =
+    def resolve(p: WeededAst.Declaration, globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Declaration, ResolverError] = {
       ???
+    }
 
-    //      globals.get(p.name) match {
-    //        case None => ??? //UnknownPredicate(p.name)
-    //        case Some(d: ParsedAst.Definition.Function) => ResolvedAst.Predicate.Functional()
-    //        case Some(d: ParsedAst.Definition.Relation) => ResolvedAst.Predicate.Relational()
-    //        case Some(otherDecl) => ??? // IllegalReference("Relation", otherDecl)
-    //      }
   }
 
   object Definition {
 
     def symbols(wd: WeededAst.Definition): Validation[Map[Name.Resolved, WeededAst.Definition], ResolverError] = wd match {
-      case WeededAst.Definition.Function(ident, formals, tpe, body) => ???
       case _ => ???
     }
 
   }
 
   object Literal {
-
+    /**
+     * Performs symbol resolution in the given literal `wast` under the given `namespace`.
+     */
     def resolve(wast: WeededAst.Literal, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Literal, ResolverError] = wast match {
       case WeededAst.Literal.Unit => ResolvedAst.Literal.Unit.toSuccess
       case WeededAst.Literal.Bool(b) => ResolvedAst.Literal.Bool(b).toSuccess
@@ -95,7 +97,10 @@ object Resolver {
 
   object Expression {
 
-    def link(wast: WeededAst.Expression, globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Expression, ResolverError] = wast match {
+    /**
+     * Performs symbol resolution in the given expression `wast` under the given `namespace`.
+     */
+    def resolve(wast: WeededAst.Expression, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Expression, ResolverError] = wast match {
       case WeededAst.Expression.AmbiguousVar(name) => ???
       case WeededAst.Expression.AmbiguousApply(name, args) => ???
       case WeededAst.Expression.Lit(wlit) => ???
@@ -103,27 +108,24 @@ object Resolver {
       case WeededAst.Expression.Unary(op, e) => ???
       case WeededAst.Expression.Binary(e1, op, e2) => ???
       case WeededAst.Expression.IfThenElse(e1, e2, e3) => ???
-      //case WeededAst.Expression.Let
-
-      //      case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression) extends WeededAst.Expression
-      //
-      //      case class Let(ident: ParsedAst.Ident, value: WeededAst.Expression, body: WeededAst.Expression) extends WeededAst.Expression
-      //
-      //      case class Match(e: WeededAst.Expression, rules: Seq[(WeededAst.Pattern, WeededAst.Expression)]) extends WeededAst.Expression
-      //
-      //      case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, e: WeededAst.Expression) extends WeededAst.Expression
-      //
-      //      case class Tuple(elms: Seq[WeededAst.Expression]) extends WeededAst.Expression
-      //
-      //      case class Ascribe(e: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Expression
-      //
-      //      case class Error(location: SourceLocation) extends WeededAst.Expression
+      case WeededAst.Expression.Let(ident, value, body) => ???
+      case WeededAst.Expression.Match(e, rules) => ???
+      case WeededAst.Expression.Tag(name, ident, e) => ???
+      case WeededAst.Expression.Tuple(elms) => @@(elms map (e => Expression.resolve(e, namespace, globals))) map ResolvedAst.Expression.Tuple
+      case WeededAst.Expression.Ascribe(we, wtype) =>
+        @@(Expression.resolve(we, namespace, globals), Type.resolve(wtype, namespace, globals)) map {
+          case (e, tpe) => ResolvedAst.Expression.Ascribe(e, tpe)
+        }
+      case WeededAst.Expression.Error(location) => ResolvedAst.Expression.Error(location).toSuccess
     }
 
   }
 
   object Pattern {
 
+    /**
+     * Performs symbol resolution in the given pattern `wast` under the given `namespace`.
+     */
     def resolve(wast: WeededAst.Pattern, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Pattern, ResolverError] = wast match {
       case WeededAst.Pattern.Wildcard(location) => ResolvedAst.Pattern.Wildcard(location).toSuccess
       case WeededAst.Pattern.Var(ident) => ResolvedAst.Pattern.Var(ident).toSuccess
@@ -139,6 +141,7 @@ object Resolver {
   }
 
   object Predicate {
+
 
   }
 
@@ -156,6 +159,9 @@ object Resolver {
 
   object Type {
 
+    /**
+     * Performs symbol resolution in the given type `wast` under the given `namespace`.
+     */
     def resolve(wast: WeededAst.Type, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Type, ResolverError] = wast match {
       case WeededAst.Type.Unit => ResolvedAst.Type.Unit.toSuccess
       case WeededAst.Type.Ambiguous(name) => name.parts match {

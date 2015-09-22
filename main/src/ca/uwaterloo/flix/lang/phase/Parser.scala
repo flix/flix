@@ -42,11 +42,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def Definition: Rule1[ParsedAst.Definition] = rule {
-    TypeAliasDefinition | ValueDefinition | FunctionDefinition | EnumDefinition | LatticeDefinition | RelationDefinition
-  }
-
-  def TypeAliasDefinition: Rule1[ParsedAst.Definition.TypeAlias] = rule {
-    atomic("type") ~ WS ~ Ident ~ optWS ~ "=" ~ optWS ~ Type ~ optSC ~> ParsedAst.Definition.TypeAlias
+    ValueDefinition | FunctionDefinition | EnumDefinition | LatticeDefinition | RelationDefinition
   }
 
   def ValueDefinition: Rule1[ParsedAst.Definition.Value] = rule {
