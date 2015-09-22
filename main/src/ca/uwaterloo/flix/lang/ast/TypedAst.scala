@@ -74,7 +74,7 @@ object TypedAst {
       def attribute(attribute: String): TypedAst.Attribute = attributes find {
         case TypedAst.Attribute(ident, tpe) => ident.name == attribute
       } getOrElse {
-        throw Compiler.InternalCompilerError(s"Attribute '$name' does not exist.", name.location)
+        throw Compiler.InternalCompilerError(s"Attribute '$name' does not exist.", ???)
       }
     }
 

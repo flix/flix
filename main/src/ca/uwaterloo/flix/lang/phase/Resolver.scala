@@ -27,13 +27,29 @@ object Resolver {
      * @param namespace the current namespace.
      */
     case class UnresolvedReference(name: ParsedAst.QName, namespace: List[String]) extends ResolverError {
-      val format = s"Error: Unresolved reference $name in $namespace at ${name.location}\n"
+      val format = s"Error: Unresolved reference to ${name.format} in namespace ${namespace.mkString("::")} at ${name.location.format}\n"
     }
 
   }
 
-  case class SymbolTable(exps: Map[Name.Resolved, WeededAst.Definition],
-                         rels: Map[Name.Resolved, WeededAst.Definition.Relation])
+  case class SymbolTable(value: Map[Name.Resolved, WeededAst.Definition],
+                         relations: Map[Name.Resolved, WeededAst.Definition.Relation]) {
+
+    def lookupValue(name: ParsedAst.QName, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition), ResolverError] = ???
+
+    def lookupRelation(name: ParsedAst.QName, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Relation), ResolverError] = {
+      val rname = Name.Resolved(
+        if (name.parts.size == 1)
+          namespace ::: name.parts.head :: Nil
+        else
+          name.parts.toList
+      )
+      relations.get(rname) match {
+        case None => UnresolvedReference(name, namespace).toFailure
+        case Some(d) => (rname, d).toSuccess
+      }
+    }
+  }
 
   /**
    * Resolves all symbols in the given AST `wast`.
@@ -52,9 +68,9 @@ object Resolver {
     }
 
     exprVal flatMap {
-      case expr =>
+      case values =>
 
-        val syms = SymbolTable(expr, Map.empty)
+        val syms = SymbolTable(values, Map.empty)
 
         val collectedFacts = Declaration.collectFacts(wast, syms)
         val collectedRules = Declaration.collectRules(wast, syms)
@@ -120,7 +136,7 @@ object Resolver {
     def resolve(wast: WeededAst.Definition, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition, ResolverError] = wast match {
       case WeededAst.Definition.Value(ident, wtype, we) =>
         @@(Expression.resolve(we, namespace, syms), Type.resolve(wtype, namespace, syms)) map {
-          case (e, tpe) => ResolvedAst.Definition.Value(Name.Resolved(namespace ::: ident.name :: Nil, ident.location), e, tpe)
+          case (e, tpe) => ResolvedAst.Definition.Value(Name.Resolved(namespace ::: ident.name :: Nil), e, tpe)
         }
 
     }
@@ -136,9 +152,8 @@ object Resolver {
         case WeededAst.Literal.Bool(b) => ResolvedAst.Literal.Bool(b).toSuccess
         case WeededAst.Literal.Int(i) => ResolvedAst.Literal.Int(i).toSuccess
         case WeededAst.Literal.Str(s) => ResolvedAst.Literal.Str(s).toSuccess
-        case WeededAst.Literal.Tag(name, ident, literal) => lookupValue(name, namespace, syms) match {
-          case None => UnresolvedReference(name, namespace).toFailure
-          case Some((rname, defn)) => visit(literal) map {
+        case WeededAst.Literal.Tag(name, ident, literal) => syms.lookupValue(name, namespace) flatMap {
+          case (rname, defn) => visit(literal) map {
             case l => ResolvedAst.Literal.Tag(rname, ident, l, defn)
           }
         }
@@ -164,9 +179,8 @@ object Resolver {
               ResolvedAst.Expression.Var(ParsedAst.Ident(x, name.location)).toSuccess
             else
               UnresolvedReference(name, namespace).toFailure
-          case xs => lookupValue(name, namespace, syms) match {
-            case None => UnresolvedReference(name, namespace).toFailure
-            case Some((rname, defn)) => ResolvedAst.Expression.Ref(rname).toSuccess
+          case xs => syms.lookupValue(name, namespace) map {
+            case (rname, defn) => ResolvedAst.Expression.Ref(rname)
           }
         }
         case WeededAst.Expression.AmbiguousApply(name, args) =>
@@ -229,9 +243,8 @@ object Resolver {
         case WeededAst.Pattern.Wildcard(location) => ResolvedAst.Pattern.Wildcard(location).toSuccess
         case WeededAst.Pattern.Var(ident) => ResolvedAst.Pattern.Var(ident).toSuccess
         case WeededAst.Pattern.Lit(literal) => Literal.resolve(literal, namespace, syms) map ResolvedAst.Pattern.Lit
-        case WeededAst.Pattern.Tag(name, ident, wpat) => lookupValue(name, namespace, syms) match {
-          case None => UnresolvedReference(name, namespace).toFailure
-          case Some((rname, defn)) => visit(wpat) map {
+        case WeededAst.Pattern.Tag(name, ident, wpat) => syms.lookupValue(name, namespace) flatMap {
+          case (rname, defn) => visit(wpat) map {
             case pat => ResolvedAst.Pattern.Tag(rname, ident, pat, defn)
           }
         }
@@ -245,14 +258,14 @@ object Resolver {
 
     object Head {
       /**
-       * Performs symbol resolution in the given head predicate `wast` under the given `namespace`.
+       * Performs symbol resolution in the given head predicate `wast` in the given `namespace` with the given symbol table `syms`.
        */
       def resolve(wast: WeededAst.PredicateWithApply, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Head, ResolverError] =
-
-        @@(wast.terms map (t => Term.Head.resolve(t, namespace, syms))) map {
-          case terms => ??? // TODO: Need to lookup the relation. ???
+        syms.lookupRelation(wast.name, namespace) flatMap {
+          case (name, defn) => @@(wast.terms map (t => Term.Head.resolve(t, namespace, syms))) map {
+            case terms => ResolvedAst.Predicate.Head(name, terms)
+          }
         }
-
     }
 
     object Body {
@@ -272,12 +285,10 @@ object Resolver {
         case WeededAst.TermWithApply.Var(ident) => ResolvedAst.Term.Head.Var(ident).toSuccess
         case WeededAst.TermWithApply.Lit(wlit) => Literal.resolve(wlit, namespace, syms) map ResolvedAst.Term.Head.Lit
         case WeededAst.TermWithApply.Apply(name, wargs) =>
-          lookupValue(name, namespace, syms) match {
-            case None => UnresolvedReference(name, namespace).toFailure
-            case Some((rname, defn)) =>
-              @@(wargs map (arg => resolve(arg, namespace, syms))) map {
-                case args => ResolvedAst.Term.Head.Apply(rname, args.toList)
-              }
+          syms.lookupValue(name, namespace) flatMap {
+            case (rname, defn) => @@(wargs map (arg => resolve(arg, namespace, syms))) map {
+              case args => ResolvedAst.Term.Head.Apply(rname, args.toList)
+            }
           }
       }
     }
@@ -301,45 +312,30 @@ object Resolver {
     /**
      * Performs symbol resolution in the given type `wast` under the given `namespace`.
      */
-    // TODO: Consider inner visit?
-    def resolve(wast: WeededAst.Type, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Type, ResolverError] = wast match {
-      case WeededAst.Type.Unit => ResolvedAst.Type.Unit.toSuccess
-      case WeededAst.Type.Ambiguous(name) => name.parts match {
-        case Seq("Bool") => ResolvedAst.Type.Bool.toSuccess
-        case Seq("Int") => ResolvedAst.Type.Int.toSuccess
-        case Seq("Str") => ResolvedAst.Type.Str.toSuccess
-        case xs => ??? // TODO: Lookup def.
-      }
-      case WeededAst.Type.Tag(ident, tpe) => ??? // TODO: Shouldn't a tag include a namespace? E.g. there is a difference between foo.Foo.Tag and bar.Foo.Tag?
-      case WeededAst.Type.Tuple(welms) => @@(welms map (e => resolve(e, namespace, syms))) map ResolvedAst.Type.Tuple
-      case WeededAst.Type.Function(wtype1, wtype2) =>
-        @@(resolve(wtype1, namespace, syms), resolve(wtype2, namespace, syms)) map {
-          case (tpe1, tpe2) => ResolvedAst.Type.Function(tpe1, tpe2)
+    def resolve(wast: WeededAst.Type, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Type, ResolverError] = {
+      def visit(wast: WeededAst.Type): Validation[ResolvedAst.Type, ResolverError] = wast match {
+        case WeededAst.Type.Unit => ResolvedAst.Type.Unit.toSuccess
+        case WeededAst.Type.Ambiguous(name) => name.parts match {
+          case Seq("Bool") => ResolvedAst.Type.Bool.toSuccess
+          case Seq("Int") => ResolvedAst.Type.Int.toSuccess
+          case Seq("Str") => ResolvedAst.Type.Str.toSuccess
+          case xs => ??? // TODO: Lookup def.
         }
-      case WeededAst.Type.Parametric(name, elms) => ???
-      case WeededAst.Type.Lattice(tpe) => ???
+        case WeededAst.Type.Tag(ident, tpe) => ??? // TODO: Shouldn't a tag include a namespace? E.g. there is a difference between foo.Foo.Tag and bar.Foo.Tag?
+        case WeededAst.Type.Tuple(welms) => @@(welms map (e => resolve(e, namespace, syms))) map ResolvedAst.Type.Tuple
+        case WeededAst.Type.Function(wtype1, wtype2) =>
+          @@(resolve(wtype1, namespace, syms), resolve(wtype2, namespace, syms)) map {
+            case (tpe1, tpe2) => ResolvedAst.Type.Function(tpe1, tpe2)
+          }
+      }
+
+      visit(wast)
     }
   }
 
-  def lookupValue(name: ParsedAst.QName, namespace: List[String], syms: SymbolTable): Option[(Name.Resolved, WeededAst.Definition)] =
-    name.parts.toList match {
-      case Nil => throw Compiler.InternalCompilerError("Unexpected emtpy name.", name.location)
-      case simple :: Nil =>
-        val rname = Name.Resolved(namespace ::: simple :: Nil, ???)
-        syms.exps.get(rname) map {
-          case d => (rname, d)
-        }
-      case fqn =>
-        val rname = Name.Resolved(fqn, ???)
-        syms.exps.get(rname) map {
-          case d => (rname, d)
-        }
-    }
 
-  // TODO
-  def isReserved(name: ParsedAst.QName): Boolean = ???
-
+  // TODO: Need this?
   def toRName(ident: ParsedAst.Ident, namespace: List[String]): Name.Resolved =
-    Name.Resolved(namespace ::: ident.name :: Nil, ident.location)
+    Name.Resolved(namespace ::: ident.name :: Nil)
 
 }

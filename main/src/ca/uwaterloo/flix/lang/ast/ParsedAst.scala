@@ -35,7 +35,9 @@ object ParsedAst {
    * @param parts the name parts.
    * @param location the source location of the first name part.
    */
-  case class QName(parts: Seq[String], location: SourceLocation) extends ParsedAst
+  case class QName(parts: Seq[String], location: SourceLocation) extends ParsedAst {
+    val format: String = parts.mkString("::")
+  }
 
   /**
    * A common super-type for AST nodes that represent declarations.

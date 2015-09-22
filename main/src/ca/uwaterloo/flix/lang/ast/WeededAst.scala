@@ -174,6 +174,7 @@ object WeededAst {
 
     case class Function(t1: WeededAst.Type, t2: WeededAst.Type) extends WeededAst.Type
 
+    // TODO: Disallow
     case class Parametric(name: ParsedAst.QName, elms: Seq[WeededAst.Type]) extends WeededAst.Type
 
     case class Lattice(tpe: WeededAst.Type) extends WeededAst.Type

@@ -67,6 +67,7 @@ object Compiler {
     Console.print("Weeding: ")
     val wast = Weeder.weed(past)
     if (wast.isFailure) {
+      println()
       wast.errors.foreach(e => println(e.format))
       return
     }
@@ -75,7 +76,8 @@ object Compiler {
     Console.print("Resolution: ")
     val rast = Resolver.resolve(wast.get)
     if (rast.isFailure) {
-      wast.errors.foreach(e => println(e.format))
+      println()
+      rast.errors.foreach(e => println(e.format))
       return
     }
     Console.println("Success!")
