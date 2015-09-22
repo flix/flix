@@ -8,7 +8,7 @@ import org.scalatest.FunSuite
 
 class TestExamples extends FunSuite {
 
-  test("Relational.Company.flix") {
+  test("Company.flix") {
     Compiler.compile(List(Paths.get("./examples/Company.flix")))
   }
 

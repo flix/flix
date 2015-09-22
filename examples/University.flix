@@ -1,11 +1,18 @@
 namespace University {
 
     enum Sex {
-        case Male, case Female
+        case Male,
+        case Female
+    }
+
+    enum AcademicRank {
+        case PostDoc,
+        case AssistantProf,
+        case AssociateProf,
+        case FullProf
     }
 
     rel Student(name: String, address: String, age: Int, sex: Sex);
-
     Student("Victor Garcia", "568 Whitman Court", 20, Sex.Male);
     Student("Priscilla T. Reed", "362 Oliverio Drive", 19, Sex.Male);
     Student("Ronald K. Rodriguez", "4245 Brooke Street", 23, Sex.Male);
@@ -17,25 +24,53 @@ namespace University {
     Student("Ilse G. Hurst", "1606 Adelaide St", 22, Sex.Female);
     Student("Anthony I. Killion", "692 Cardero St", 17, Sex.Male);
 
-    rel Faculty(name: String, address: String);
+    rel Faculty(name: String, address: String, rank: AcademicRank);
+    Faculty("Darrel P. Hammond", "4880 Lilac Lane", AcademicRank.PostDoc).
+    Faculty("Melissa R. Morales", "1527 Boone Street", AcademicRank.AssistantProf).
+    Faculty("Elizabeth M. Khan", "1140 Ross Terrasse", AcademicRank.PostDoc).
+    Faculty("Angela M. Coward", "489 Merivale Road", AcademicRank.FullProf).
+    Faculty("Susan H. Warren", "1110 Rue De La Gare", AcademicRank.PostDoc).
+    Faculty("Earl A. Purdy", "4638 5th Avenue", AcademicRank.AssociateProf).
+    Faculty("Brandon H. Rey", "138 47th Avenue", AcademicRank.AssistantProf).
 
     rel Staff(name: String, address: String);
-
-    rel Department(name: String);
+    Staff("Irma S. Duncan", "1970 Bayfield St").
+    Staff("Marion S. Edgin", "3439 James Street").
 
     rel Salary(name: String, amount: Int);
+    Salary(name,     0) :- Student(name, _, _, _, _).
+    Salary(name, 50000) :- Faculty(name, _, AcademicRank.PostDoc).
+    Salary(name, 60000) :- Staff(name, _).
+    Salary(name, 70000) :- Faculty(name, AcademicRank.AssistantProf).
+    Salary(name, 80000) :- Faculty(name, AcademicRank.AssociateProf).
+    Salary(name, 90000) :- Faculty(name, AcademicRank.FullProf).
+
+    rel Department(name: String);
+    Department("Biology").
+    Department("Computer Science").
+    Department("Engineering").
+    Department("Physics").
+    Department("Math").
+
+    rel StudiesIn(studentName: String, departmentName: String);
+
+
+    rel WorksIn(facultyName: String, departmentName: String);
+
+
 
     rel Course(name: String, teacherName: String);
 
+
     rel Grade(studentName: String, courseName: String, grade: Int);
 
+
     rel Publication(title: String, journal: String);
+
 
     rel PublicationAuthor(title: String, authorName: String);
 
     // TODO: Rooms, Exams, Publications, Grants
-
-
 
 
 }
