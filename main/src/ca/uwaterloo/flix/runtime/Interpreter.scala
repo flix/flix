@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.lang.ast.TypedAst.{Expression, Literal, Type}
+import ca.uwaterloo.flix.lang.ast.TypedAst.{Expression, Literal}
 import ca.uwaterloo.flix.lang.ast.{BinaryOperator, UnaryOperator}
 
 object Interpreter {
@@ -36,6 +36,7 @@ object Interpreter {
       case BinaryOperator.Or => Value.Bool(v1.toBool || v2.toBool)
       case BinaryOperator.Minimum => Value.Int(math.min(v1.toInt, v2.toInt))
       case BinaryOperator.Maximum => Value.Int(math.max(v1.toInt, v2.toInt))
+      case _ => ???
     }
 
     expr match {
