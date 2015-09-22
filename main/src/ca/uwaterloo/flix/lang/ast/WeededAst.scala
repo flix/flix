@@ -7,7 +7,8 @@ trait WeededAst
 // TODO: Summary changes made by this phase.
 
 object WeededAst {
-// TODO: Every Seq should be replaced by List
+
+  // TODO: Every Seq should be replaced by List
   case class Root(declarations: List[WeededAst.Declaration]) extends WeededAst
 
   sealed trait Declaration
@@ -112,7 +113,20 @@ object WeededAst {
 
   }
 
-  sealed trait Pattern extends WeededAst
+  sealed trait Pattern extends WeededAst {
+    /**
+     * Returns the set of variables bound by this pattern.
+     */
+    final def bound: Set[String] = this match {
+      case WeededAst.Pattern.Wildcard(_) => Set.empty
+      case WeededAst.Pattern.Var(ident) => Set(ident.name)
+      case WeededAst.Pattern.Lit(lit) => Set.empty
+      case WeededAst.Pattern.Tag(name, ident, p) => p.bound
+      case WeededAst.Pattern.Tuple(elms) => elms.foldLeft(Set.empty[String]) {
+        case (acc, pat) => acc ++ pat.bound
+      }
+    }
+  }
 
   object Pattern {
 

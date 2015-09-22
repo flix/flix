@@ -291,7 +291,16 @@ object Resolver {
             case (value, body) => ResolvedAst.Expression.Let(ident, value, body)
           }
 
-        case WeededAst.Expression.Match(e, rules) => ???
+        case WeededAst.Expression.Match(we, wrules) =>
+          val e2 = visit(we, locals)
+          val rules2 = wrules map {
+            case (rulePat, ruleBody) =>
+              val bound = locals ++ rulePat.bound
+              @@(Pattern.resolve(rulePat, namespace, syms), visit(ruleBody, bound))
+          }
+          @@(e2, @@(rules2)) map {
+            case (e, rules) => ResolvedAst.Expression.Match(e, rules)
+          }
 
         case WeededAst.Expression.Tag(name, ident, e) => ???
 
