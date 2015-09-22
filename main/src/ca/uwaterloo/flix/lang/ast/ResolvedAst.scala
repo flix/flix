@@ -109,39 +109,35 @@ object ResolvedAst {
 
   }
 
-  sealed trait Predicate
+
+  // TODO: Filters
 
   object Predicate {
+    /**
+     * A predicate that is allowed to occur in the head of a rule.
+     *
+     * @param name the name of the predicate.
+     * @param terms the terms of the predicate.
+     */
+    case class Head(name: Name.Resolved, terms: List[ResolvedAst.Term.Head])
 
-    case class Head() extends ResolvedAst.Predicate
-
-    case class Body() extends ResolvedAst.Predicate
+    /**
+     * A predicate that is allowed to occur in the body of a rule.
+     *
+     * @param name the name of the predicate.
+     * @param terms the terms of the predicate.
+     */
+    case class Body(name: Name.Resolved, terms: List[ResolvedAst.Term.Body])
 
   }
 
-  sealed trait TermNoApply
+  object Term {
 
-  object TermNoApply {
+    sealed trait Head
 
-    case class Wildcard(location: SourceLocation) extends ResolvedAst.TermNoApply
 
-    case class Var(ident: ParsedAst.Ident) extends ResolvedAst.TermNoApply
+    sealed trait Body
 
-    case class Lit(literal: WeededAst.Literal) extends ResolvedAst.TermNoApply
-
-  }
-
-  sealed trait TermWithApply extends WeededAst
-
-  object TermWithApply {
-
-    case class Wildcard(location: SourceLocation) extends ResolvedAst.TermWithApply
-
-    case class Var(ident: ParsedAst.Ident) extends ResolvedAst.TermWithApply
-
-    case class Lit(literal: WeededAst.Literal) extends ResolvedAst.TermWithApply
-
-    case class Apply(name: ParsedAst.QName, args: Seq[WeededAst.TermWithApply]) extends ResolvedAst.TermWithApply
 
   }
 

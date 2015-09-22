@@ -51,10 +51,10 @@ object Resolver {
     globalsVal flatMap {
       case globals =>
 
-        val factsVal = Declaration.collectFacts(wast, globals)
-        val rulesVal = Declaration.collectRules(wast, globals)
+        val collectedFacts = Declaration.collectFacts(wast, globals)
+        val collectedRules = Declaration.collectRules(wast, globals)
 
-        @@(factsVal, rulesVal) map {
+        @@(collectedFacts, collectedRules) map {
           case (facts, rules) => ResolvedAst.Root(facts, rules)
         }
     }
@@ -91,6 +91,7 @@ object Resolver {
 
     // TODO: Can we avoid this toList thing?
     def collectFacts(wast: WeededAst.Root, globals: Map[Name.Resolved, WeededAst.Definition]): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = {
+      // TODO: Need recursive visitor?
       @@(wast.declarations.collect {
         case WeededAst.Declaration.Fact(head) => Predicate.resolve(head, globals) map ResolvedAst.Constraint.Fact
       }) map (_.toList)
@@ -246,12 +247,12 @@ object Resolver {
 
   object Term {
 
-    def resolve(wast: WeededAst.TermNoApply, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.TermNoApply, ResolverError] = wast match {
-      case WeededAst.TermNoApply.Wildcard(location) => ResolvedAst.TermNoApply.Wildcard(location).toSuccess
+    def resolve(wast: WeededAst.TermNoApply, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Term.Head, ResolverError] = wast match {
+      case WeededAst.TermNoApply.Wildcard(location) => ???
     }
 
-    def resolve(wast: WeededAst.TermWithApply, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.TermWithApply, ResolverError] = wast match {
-      case WeededAst.TermWithApply.Wildcard(location) => ResolvedAst.TermWithApply.Wildcard(location).toSuccess
+    def resolve(wast: WeededAst.TermWithApply, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Term.Body, ResolverError] = wast match {
+      case WeededAst.TermWithApply.Wildcard(location) => ???
     }
 
   }
