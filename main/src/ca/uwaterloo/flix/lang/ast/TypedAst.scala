@@ -37,6 +37,7 @@ object TypedAst {
      * @param exp the constant expression.
      * @param tpe the type of the constant.
      */
+    // TODO: Should probably be called NamedExpr or such
     case class Constant(name: Name.Resolved, exp: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Definition
 
     /**

@@ -32,6 +32,9 @@ object Resolver {
 
   }
 
+  case class Environment(values: Map[Name.Resolved, WeededAst.Definition], 
+                         relations: Map[Name.Resolved, WeededAst.Definition.Relation])
+
   /**
    * Resolves all symbols in the given AST `wast`.
    */
@@ -50,6 +53,8 @@ object Resolver {
 
     globalsVal flatMap {
       case globals =>
+
+        val env = Environment(globals, Map.empty)
 
         val collectedFacts = Declaration.collectFacts(wast, globals)
         val collectedRules = Declaration.collectRules(wast, globals)
@@ -131,7 +136,7 @@ object Resolver {
         case WeededAst.Literal.Bool(b) => ResolvedAst.Literal.Bool(b).toSuccess
         case WeededAst.Literal.Int(i) => ResolvedAst.Literal.Int(i).toSuccess
         case WeededAst.Literal.Str(s) => ResolvedAst.Literal.Str(s).toSuccess
-        case WeededAst.Literal.Tag(name, ident, literal) => lookupDef(name, namespace, globals) match {
+        case WeededAst.Literal.Tag(name, ident, literal) => lookupValue(name, namespace, globals) match {
           case None => UnresolvedReference(name, namespace).toFailure
           case Some((rname, defn)) => visit(literal) map {
             case l => ResolvedAst.Literal.Tag(rname, ident, l, defn)
@@ -159,7 +164,7 @@ object Resolver {
               ResolvedAst.Expression.Var(ParsedAst.Ident(x, name.location)).toSuccess
             else
               UnresolvedReference(name, namespace).toFailure
-          case xs => lookupDef(name, namespace, globals) match {
+          case xs => lookupValue(name, namespace, globals) match {
             case None => UnresolvedReference(name, namespace).toFailure
             case Some((rname, defn)) => ResolvedAst.Expression.Ref(rname).toSuccess
           }
@@ -224,7 +229,7 @@ object Resolver {
         case WeededAst.Pattern.Wildcard(location) => ResolvedAst.Pattern.Wildcard(location).toSuccess
         case WeededAst.Pattern.Var(ident) => ResolvedAst.Pattern.Var(ident).toSuccess
         case WeededAst.Pattern.Lit(literal) => Literal.resolve(literal, namespace, globals) map ResolvedAst.Pattern.Lit
-        case WeededAst.Pattern.Tag(name, ident, wpat) => lookupDef(name, namespace, globals) match {
+        case WeededAst.Pattern.Tag(name, ident, wpat) => lookupValue(name, namespace, globals) match {
           case None => UnresolvedReference(name, namespace).toFailure
           case Some((rname, defn)) => visit(wpat) map {
             case pat => ResolvedAst.Pattern.Tag(rname, ident, pat, defn)
@@ -267,7 +272,7 @@ object Resolver {
         case WeededAst.TermWithApply.Var(ident) => ResolvedAst.Term.Head.Var(ident).toSuccess
         case WeededAst.TermWithApply.Lit(wlit) => Literal.resolve(wlit, namespace, values) map ResolvedAst.Term.Head.Lit
         case WeededAst.TermWithApply.Apply(name, wargs) =>
-          lookupDef(name, namespace, values) match {
+          lookupValue(name, namespace, values) match {
             case None => UnresolvedReference(name, namespace).toFailure
             case Some((rname, defn)) =>
               @@(wargs map (arg => resolve(arg, namespace, values))) map {
@@ -316,8 +321,7 @@ object Resolver {
     }
   }
 
-
-  def lookupDef(name: ParsedAst.QName, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Option[(Name.Resolved, WeededAst.Definition)] =
+  def lookupValue(name: ParsedAst.QName, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Option[(Name.Resolved, WeededAst.Definition)] =
     name.parts.toList match {
       case Nil => throw Compiler.InternalCompilerError("Unexpected emtpy name.", name.location)
       case simple :: Nil =>

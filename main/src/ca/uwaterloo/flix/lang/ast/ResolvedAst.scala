@@ -5,7 +5,11 @@ trait ResolvedAst
 object ResolvedAst {
 
   case class Root(
-
+// TODO: value environment
+                 // todo: relation environment
+                 // todo: type environment
+                 // todo: lattice environment
+                 // todo: enum environment... sigh so many
                    facts: List[ResolvedAst.Constraint.Fact],
                    rules: List[ResolvedAst.Constraint.Rule]) extends ResolvedAst
 
