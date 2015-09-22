@@ -49,7 +49,7 @@ object Resolver {
   case class SymbolTable(enums: Map[Name.Resolved, WeededAst.Definition.Enum],
                          values: Map[Name.Resolved, WeededAst.Definition.Value],
                          relations: Map[Name.Resolved, WeededAst.Definition.Relation],
-                         types: Map[Name.Resolved, WeededAst.Type]) {
+                         types: Map[Name.Resolved, ResolvedAst.Type]) {
     // TODO: Cleanup
     def lookupEnum(name: ParsedAst.QName, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Enum), ResolverError] = {
       val rname = Name.Resolved(
@@ -91,6 +91,21 @@ object Resolver {
         case Some(d) => (rname, d).toSuccess
       }
     }
+
+    // TODO: Cleanup
+    def lookupType(name: ParsedAst.QName, namespace: List[String]): Validation[ResolvedAst.Type, ResolverError] = {
+      val rname = Name.Resolved(
+        if (name.parts.size == 1)
+          namespace ::: name.parts.head :: Nil
+        else
+          name.parts.toList
+      )
+      types.get(rname) match {
+        case None => UnresolvedReference(name, namespace).toFailure
+        case Some(tpe) => tpe.toSuccess
+      }
+    }
+
   }
 
   /**
@@ -104,6 +119,11 @@ object Resolver {
 
     symsVal flatMap {
       case syms =>
+
+        val collectedValues = syms.values.mapValues {
+          case v => Definition.resolve(v, List.empty, syms)
+        }
+        println(collectedValues)
 
         val collectedFacts = Declaration.collectFacts(wast, syms)
         val collectedRules = Declaration.collectRules(wast, syms)
@@ -188,15 +208,13 @@ object Resolver {
   object Definition {
 
     /**
-     * Performs symbol resolution in the given definition under the given `namespace`.
+     * Performs symbol resolution for the given value definition `wast`.
      */
-    def resolve(wast: WeededAst.Definition, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition, ResolverError] = wast match {
-      case WeededAst.Definition.Value(ident, wtype, we) =>
-        @@(Expression.resolve(we, namespace, syms), Type.resolve(wtype, namespace, syms)) map {
-          case (e, tpe) => ResolvedAst.Definition.Value(Name.Resolved(namespace ::: ident.name :: Nil), e, tpe)
-        }
+    def resolve(wast: WeededAst.Definition.Value, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition, ResolverError] =
+      @@(Expression.resolve(wast.e, namespace, syms), Type.resolve(wast.tpe, namespace, syms)) map {
+        case (e, tpe) => ResolvedAst.Definition.Value(Name.Resolved(namespace ::: wast.ident.name :: Nil), e, tpe)
+      }
 
-    }
   }
 
   object Literal {
@@ -384,7 +402,7 @@ object Resolver {
           case Seq("Bool") => ResolvedAst.Type.Bool.toSuccess
           case Seq("Int") => ResolvedAst.Type.Int.toSuccess
           case Seq("Str") => ResolvedAst.Type.Str.toSuccess
-          case xs => ??? // TODO: Lookup def.
+          case _ => syms.lookupType(name, namespace)
         }
         case WeededAst.Type.Tag(ident, tpe) => ??? // TODO: Shouldn't a tag include a namespace? E.g. there is a difference between foo.Foo.Tag and bar.Foo.Tag?
         case WeededAst.Type.Tuple(welms) => @@(welms map (e => resolve(e, namespace, syms))) map ResolvedAst.Type.Tuple
