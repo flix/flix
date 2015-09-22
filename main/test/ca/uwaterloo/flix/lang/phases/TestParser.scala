@@ -134,6 +134,8 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Definition.Enum])
   }
 
+  // TODO: Allow naming of the enum attributes.
+
   test("Parser.Definition.JoinSemiLattice01") {
     val input = "lat <a> (bot, foo::leq, lub)"
     val result = new Parser(None, input).Definition.run().get

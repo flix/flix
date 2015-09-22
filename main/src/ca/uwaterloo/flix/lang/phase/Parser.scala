@@ -245,12 +245,11 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   // Facts and Rules                                                         //
   /////////////////////////////////////////////////////////////////////////////
   def FactDeclaration: Rule1[ParsedAst.Declaration.Fact] = rule {
-    Predicate ~ optWS ~ "." ~ optWS ~> ParsedAst.Declaration.Fact
+    Predicate ~ optDotOrSC ~> ParsedAst.Declaration.Fact
   }
 
-  // TODO: Optional period.
   def RuleDeclaration: Rule1[ParsedAst.Declaration.Rule] = rule {
-    Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ "." ~ optWS ~> ParsedAst.Declaration.Rule
+    Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optDotOrSC ~> ParsedAst.Declaration.Rule
   }
 
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
@@ -449,6 +448,10 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   def optSC: Rule0 = rule {
     optWS ~ optional(";") ~ optWS
+  }
+
+  def optDotOrSC: Rule0 = rule {
+    optWS ~ optional("." | ";") ~ optWS
   }
 
   def NewLine: Rule0 = rule {
