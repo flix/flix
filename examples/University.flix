@@ -67,7 +67,7 @@ namespace University {
     rel WorksIn(facultyName: String, departmentName: String);
     Faculty("Darrel P. Hammond", "Math").
     Faculty("Melissa R. Morales", "Math").
-    Faculty("Elizabeth M. Khan", "Engineering").
+    Faculty("Elizabeth M. Khan", "Computer Science").
     Faculty("Angela M. Coward", "Engineering").
     Faculty("Susan H. Warren", "Biology").
     Faculty("Earl A. Purdy", "Math").
@@ -88,6 +88,16 @@ namespace University {
     Publication("Multimodal, Client-Server Technology for SMPs", "arXiv")
 
     rel PublicationAuthor(title: String, authorName: String);
+    PublicationAuthor("Points and Problems in Advanced Probabilistic Topology", "Darrel P. Hammond").
+    PublicationAuthor("Points and Problems in Advanced Probabilistic Topology", "Earl A. Purdy").
+    PublicationAuthor("Convexity Methods in Topological Galois Theory", "Darrel P. Hammond").
+    PublicationAuthor("Investigation of Thin Clients", "Earl A. Purdy").
+    PublicationAuthor("Investigation of Thin Clients", "Elizabeth M. Khan").
+    PublicationAuthor("Investigation of Thin Clients", "Earl A. Purdy").
+    PublicationAuthor("Investigation of Thin Clients", "Brandon H. Rey").
+    PublicationAuthor("Multimodal, Client-Server Technology for SMPs", "Elizabeth M. Khan").
+    PublicationAuthor("Multimodal, Client-Server Technology for SMPs", "Edgar K. Clark").
 
-
+    rel StudentPaper(title: String);
+    StudentPaper(title) :- Publication(title, _), PublicationAuthor(title, authorName), Student(authorName, _, _, _).
 }
