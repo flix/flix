@@ -58,7 +58,7 @@ object ResolvedAst {
 
     case class Unary(op: UnaryOperator, e: ResolvedAst.Expression) extends ResolvedAst.Expression
 
-    case class Binary(e1: ResolvedAst.Expression, op: BinaryOperator, e2: ResolvedAst.Expression) extends ResolvedAst.Expression
+    case class Binary(op: BinaryOperator, e1: ResolvedAst.Expression, e2: ResolvedAst.Expression) extends ResolvedAst.Expression
 
     case class IfThenElse(e1: ResolvedAst.Expression, e2: ResolvedAst.Expression, e3: ResolvedAst.Expression) extends ResolvedAst.Expression
 

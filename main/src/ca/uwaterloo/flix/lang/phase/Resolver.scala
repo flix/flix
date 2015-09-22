@@ -107,31 +107,46 @@ object Resolver {
      * Performs symbol resolution in the given expression `wast` under the given `namespace`.
      */
     // TODO: Consider inner visit?
-    def resolve(wast: WeededAst.Expression, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Expression, ResolverError] = wast match {
-      case WeededAst.Expression.AmbiguousVar(name) => ???
-      case WeededAst.Expression.AmbiguousApply(name, args) => throw new RuntimeException("Remove this node.")
-      case WeededAst.Expression.Lit(wlit) => Literal.resolve(wlit, namespace, globals) map ResolvedAst.Expression.Lit
-      case WeededAst.Expression.Lambda(wformals, wtype, wbody) =>
-        val formalsVal = @@(wformals map {
-          case (ident, tpe) => Type.resolve(tpe, namespace, globals) map (t => (ident, t))
-        })
-        @@(formalsVal, Type.resolve(wtype, namespace, globals), Expression.resolve(wbody, namespace, globals)) map {
-          case (formals, tpe, body) => ResolvedAst.Expression.Lambda(formals, tpe, body)
-        }
-      case WeededAst.Expression.Unary(op, we) =>
-        Expression.resolve(we, namespace, globals) map (e => ResolvedAst.Expression.Unary(op, e))
-      case WeededAst.Expression.Binary(we1, op, we2) =>
-        ???
-      case WeededAst.Expression.IfThenElse(e1, e2, e3) => ???
-      case WeededAst.Expression.Let(ident, value, body) => ???
-      case WeededAst.Expression.Match(e, rules) => ???
-      case WeededAst.Expression.Tag(name, ident, e) => ???
-      case WeededAst.Expression.Tuple(elms) => @@(elms map (e => Expression.resolve(e, namespace, globals))) map ResolvedAst.Expression.Tuple
-      case WeededAst.Expression.Ascribe(we, wtype) =>
-        @@(Expression.resolve(we, namespace, globals), Type.resolve(wtype, namespace, globals)) map {
-          case (e, tpe) => ResolvedAst.Expression.Ascribe(e, tpe)
-        }
-      case WeededAst.Expression.Error(location) => ResolvedAst.Expression.Error(location).toSuccess
+    def resolve(wast: WeededAst.Expression, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Expression, ResolverError] = {
+
+
+      wast match {
+        case WeededAst.Expression.AmbiguousVar(name) => ???
+        case WeededAst.Expression.AmbiguousApply(name, args) => throw new RuntimeException("Remove this node.")
+        case WeededAst.Expression.Lit(wlit) => Literal.resolve(wlit, namespace, globals) map ResolvedAst.Expression.Lit
+        case WeededAst.Expression.Lambda(wformals, wtype, wbody) =>
+          val formalsVal = @@(wformals map {
+            case (ident, tpe) => Type.resolve(tpe, namespace, globals) map (t => (ident, t))
+          })
+          @@(formalsVal, Type.resolve(wtype, namespace, globals), Expression.resolve(wbody, namespace, globals)) map {
+            case (formals, tpe, body) => ResolvedAst.Expression.Lambda(formals, tpe, body)
+          }
+        case WeededAst.Expression.Unary(op, we) =>
+          Expression.resolve(we, namespace, globals) map (e => ResolvedAst.Expression.Unary(op, e))
+        case WeededAst.Expression.Binary(we1, op, we2) =>
+          val lhsVal = Expression.resolve(we1, namespace, globals)
+          val rhsVal = Expression.resolve(we2, namespace, globals)
+          @@(lhsVal, rhsVal) map {
+            case (e1, e2) => ResolvedAst.Expression.Binary(op, e1, e2)
+          }
+        case WeededAst.Expression.IfThenElse(we1, we2, we3) =>
+          val conditionVal = Expression.resolve(we1, namespace, globals)
+          val consequentVal = Expression.resolve(we2, namespace, globals)
+          val alternativeVal = Expression.resolve(we3, namespace, globals)
+
+          @@(conditionVal, consequentVal, alternativeVal) map {
+            case (e1, e2, e3) => ResolvedAst.Expression.IfThenElse(e1, e2, e3)
+          }
+        case WeededAst.Expression.Let(ident, value, body) => ???
+        case WeededAst.Expression.Match(e, rules) => ???
+        case WeededAst.Expression.Tag(name, ident, e) => ???
+        case WeededAst.Expression.Tuple(elms) => @@(elms map (e => Expression.resolve(e, namespace, globals))) map ResolvedAst.Expression.Tuple
+        case WeededAst.Expression.Ascribe(we, wtype) =>
+          @@(Expression.resolve(we, namespace, globals), Type.resolve(wtype, namespace, globals)) map {
+            case (e, tpe) => ResolvedAst.Expression.Ascribe(e, tpe)
+          }
+        case WeededAst.Expression.Error(location) => ResolvedAst.Expression.Error(location).toSuccess
+      }
     }
 
   }
