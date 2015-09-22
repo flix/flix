@@ -28,6 +28,7 @@ object WeededAst {
 
   object Definition {
 
+    // TODO: Swap order
     case class Value(ident: ParsedAst.Ident, tpe: WeededAst.Type, e: WeededAst.Expression) extends WeededAst.Definition
 
     // TODO: Decorate with the full type....

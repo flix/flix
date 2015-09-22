@@ -36,15 +36,13 @@ object Resolver {
    * Resolves all symbols in the given AST `wast`.
    */
   def resolve(wast: WeededAst.Root): Validation[ResolvedAst.Root, ResolverError] = {
-    val globalsVal = Validation.fold[WeededAst.Declaration, Map[Name.Resolved, WeededAst.Definition], WeederError](wast.declarations, Map.empty) {
+    val globalsVal = Validation.fold[WeededAst.Declaration, Map[Name.Resolved, WeededAst.Definition], ResolverError](wast.declarations, Map.empty) {
       case (macc, decl) => macc.toSuccess
     }
 
-    globalsVal map {
+    globalsVal flatMap {
       case globals => @@(wast.declarations.map(d => Declaration.resolve(d, List.empty, globals))) map ResolvedAst.Root
     }
-
-    ???
   }
 
   object Declaration {
@@ -62,6 +60,7 @@ object Resolver {
       case WeededAst.Declaration.Namespace(name, body) => ???
       case WeededAst.Declaration.Fact(head) => ???
       case WeededAst.Declaration.Rule(head, body) => ???
+      case defn: WeededAst.Definition => Definition.resolve(defn, namespace, globals)
     }
 
   }
@@ -72,7 +71,11 @@ object Resolver {
      * Performs symbol resolution in the given definition under the given `namespace`.
      */
     def resolve(wast: WeededAst.Definition, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Definition, ResolverError] = wast match {
-      case WeededAst.Definition.Value(ident, tpe, e) => ???
+      case WeededAst.Definition.Value(ident, wtype, we) =>
+        @@(Expression.resolve(we, namespace, globals), Type.resolve(wtype, namespace, globals)) map {
+          case (e, tpe) => ResolvedAst.Definition.Value(Name.Resolved(namespace ::: ident.name :: Nil, ident.location), e, tpe)
+        }
+
     }
   }
 

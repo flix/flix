@@ -19,6 +19,8 @@ object ResolvedAst {
 
   object Definition {
 
+    case class Value(name: Name.Resolved, exp: ResolvedAst.Expression, tpe: ResolvedAst.Type) extends ResolvedAst.Definition
+
     case class Relation() extends ResolvedAst.Definition
 
   }
