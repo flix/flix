@@ -1,8 +1,6 @@
 package ca.uwaterloo.flix.lang.phase
 
-import ca.uwaterloo.flix.lang.Compiler
 import ca.uwaterloo.flix.lang.ast._
-import ca.uwaterloo.flix.lang.phase.Weeder.WeederError
 
 import util.Validation
 import util.Validation._
@@ -45,10 +43,11 @@ object Resolver {
   }
 
   object SymbolTable {
-    val empty = SymbolTable(values = Map.empty, relations = Map.empty)
+    val empty = SymbolTable(values = Map.empty, types = Map.empty, relations = Map.empty)
   }
 
   case class SymbolTable(values: Map[Name.Resolved, WeededAst.Definition.Value],
+                         types: Map[Name.Resolved, WeededAst.Type],
                          relations: Map[Name.Resolved, WeededAst.Definition.Relation]) {
 
     // TODO: Cleanup
@@ -139,8 +138,6 @@ object Resolver {
         }
     }
 
-    // TODO: Check that all variables are bound...
-
     def collectFacts(wast: WeededAst.Root, syms: SymbolTable): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = {
       def visit(wast: WeededAst.Declaration, namespace: List[String]): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = wast match {
         case WeededAst.Declaration.Namespace(name, body) =>
@@ -152,9 +149,20 @@ object Resolver {
       @@(wast.declarations map (d => visit(d, List.empty))) map (xs => xs.flatten)
     }
 
-    // TODO: Can we avoid this toList thing?
     def collectRules(wast: WeededAst.Root, syms: SymbolTable): Validation[List[ResolvedAst.Constraint.Rule], ResolverError] = {
-      List.empty.toSuccess
+      def visit(wast: WeededAst.Declaration, namespace: List[String]): Validation[List[ResolvedAst.Constraint.Rule], ResolverError] = wast match {
+        case WeededAst.Declaration.Namespace(name, body) =>
+          @@(body map (d => visit(d, namespace ::: name.parts.toList))) map (xs => xs.flatten)
+        case WeededAst.Declaration.Rule(whead, wbody) =>
+          val headVal = Predicate.Head.resolve(whead, namespace, syms)
+          val bodyVal = @@(wbody map (p => Predicate.Body.resolve(p, namespace, syms)))
+          @@(headVal, bodyVal) map {
+            case (head, body) => List(ResolvedAst.Constraint.Rule(head, body))
+          }
+        case _ => List.empty[ResolvedAst.Constraint.Rule].toSuccess
+      }
+
+      @@(wast.declarations map (d => visit(d, List.empty))) map (xs => xs.flatten)
     }
   }
 
@@ -239,13 +247,13 @@ object Resolver {
           @@(conditionVal, consequentVal, alternativeVal) map {
             case (e1, e2, e3) => ResolvedAst.Expression.IfThenElse(e1, e2, e3)
           }
-        case WeededAst.Expression.Let(ident, wvalue, wbody) => {
+        case WeededAst.Expression.Let(ident, wvalue, wbody) =>
           val valueVal = visit(wvalue, locals)
           val bodyVal = visit(wbody, locals + ident.name)
           @@(valueVal, bodyVal) map {
             case (value, body) => ResolvedAst.Expression.Let(ident, value, body)
           }
-        }
+
         case WeededAst.Expression.Match(e, rules) => ???
 
         case WeededAst.Expression.Tag(name, ident, e) => ???
@@ -285,7 +293,6 @@ object Resolver {
   }
 
   object Predicate {
-
     object Head {
       /**
        * Performs symbol resolution in the given head predicate `wast` in the given `namespace` with the given symbol table `syms`.
@@ -299,9 +306,16 @@ object Resolver {
     }
 
     object Body {
-      def resolveBody(p: WeededAst.PredicateNoApply, namespace: List[String], values: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Predicate.Body, ResolverError] = ???
+      /**
+       * Performs symbol resolution in the given body predicate `wast` in the given `namespace` with the given symbol table `syms`.
+       */
+      def resolve(wast: WeededAst.PredicateNoApply, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Body, ResolverError] =
+        syms.lookupRelation(wast.name, namespace) flatMap {
+          case (name, defn) => @@(wast.terms map (t => Term.Body.resolve(t, namespace, syms))) map {
+            case terms => ResolvedAst.Predicate.Body(name, terms)
+          }
+        }
     }
-
   }
 
   object Term {
