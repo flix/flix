@@ -13,7 +13,7 @@ namespace University {
     }
 
     rel Student(name: String, address: String, age: Int, sex: Sex);
-    Student("Victor Garcia", "568 Whitman Court", 20, Sex.Male);
+    Student("Victor K. Garcia", "568 Whitman Court", 20, Sex.Male);
     Student("Priscilla T. Reed", "362 Oliverio Drive", 19, Sex.Male);
     Student("Ronald K. Rodriguez", "4245 Brooke Street", 23, Sex.Male);
     Student("David J. Richard", "2565 Willison Street", 18, Sex.Male);
@@ -53,7 +53,7 @@ namespace University {
     Department("Math").
 
     rel StudiesIn(studentName: String, departmentName: String);
-    StudiesIn("Victor Garcia", "Engineering");
+    StudiesIn("Victor K. Garcia", "Engineering");
     StudiesIn("Priscilla T. Reed", "Engineering");
     StudiesIn("Ronald K. Rodriguez", "Math");
     StudiesIn("David J. Richard", "Math");
@@ -77,19 +77,14 @@ namespace University {
     Mathematician(name, amount) :- Student(name, _, _, _), WorksIn(name, "Math"), Salary(name, amount).
     Mathematician(name, amount) :- Faculty(name, _, _), WorksIn(name, "Math"), Salary(name, amount).
 
-    rel Course(name: String, teacherName: String);
-
+    rel Course(name: String, departmentName: String, teacherName: String);
 
     rel Grade(studentName: String, courseName: String, grade: Int);
 
-
     rel Publication(title: String, journal: String);
+    Publication("Points and Problems in Advanced Probabilistic Topology", "arXiv");
+    Publication("Convexity Methods in Topological Galois Theory", "arXiv");
 
     rel PublicationAuthor(title: String, authorName: String);
-
-
-    // TODO: Rooms, Exams, Publications, Grants
-
-
 
 }
