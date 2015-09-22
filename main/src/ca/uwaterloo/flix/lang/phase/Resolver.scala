@@ -43,12 +43,26 @@ object Resolver {
   }
 
   object SymbolTable {
-    val empty = SymbolTable(values = Map.empty, types = Map.empty, relations = Map.empty)
+    val empty = SymbolTable(Map.empty, Map.empty, Map.empty, Map.empty)
   }
 
-  case class SymbolTable(values: Map[Name.Resolved, WeededAst.Definition.Value],
-                         types: Map[Name.Resolved, WeededAst.Type],
-                         relations: Map[Name.Resolved, WeededAst.Definition.Relation]) {
+  case class SymbolTable(enums: Map[Name.Resolved, WeededAst.Definition.Enum],
+                         values: Map[Name.Resolved, WeededAst.Definition.Value],
+                         relations: Map[Name.Resolved, WeededAst.Definition.Relation],
+                         types: Map[Name.Resolved, WeededAst.Type]) {
+    // TODO: Cleanup
+    def lookupEnum(name: ParsedAst.QName, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Enum), ResolverError] = {
+      val rname = Name.Resolved(
+        if (name.parts.size == 1)
+          namespace ::: name.parts.head :: Nil
+        else
+          name.parts.toList
+      )
+      enums.get(rname) match {
+        case None => UnresolvedReference(name, namespace).toFailure
+        case Some(d) => (rname, d).toSuccess
+      }
+    }
 
     // TODO: Cleanup
     def lookupValue(name: ParsedAst.QName, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Value), ResolverError] = {
@@ -126,7 +140,12 @@ object Resolver {
           case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.location, ident.location).toFailure
         }
 
-      case WeededAst.Definition.Enum(ident, cases) => syms.toSuccess // TODO
+      case defn@WeededAst.Definition.Enum(ident, cases) =>
+        val rname = toRName(ident, namespace)
+        syms.enums.get(rname) match {
+          case None => syms.copy(enums = syms.enums + (rname -> defn)).toSuccess
+          case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.location, ident.location).toFailure
+        }
 
       case WeededAst.Definition.Lattice(ident, elms, traits) => syms.toSuccess // TODO
 
@@ -190,9 +209,9 @@ object Resolver {
         case WeededAst.Literal.Bool(b) => ResolvedAst.Literal.Bool(b).toSuccess
         case WeededAst.Literal.Int(i) => ResolvedAst.Literal.Int(i).toSuccess
         case WeededAst.Literal.Str(s) => ResolvedAst.Literal.Str(s).toSuccess
-        case WeededAst.Literal.Tag(name, ident, literal) => syms.lookupValue(name, namespace) flatMap {
+        case WeededAst.Literal.Tag(name, ident, literal) => syms.lookupEnum(name, namespace) flatMap {
           case (rname, defn) => visit(literal) map {
-            case l => ResolvedAst.Literal.Tag(rname, ident, l, defn)
+            case l => ResolvedAst.Literal.Tag(rname, ident, l)
           }
         }
         case WeededAst.Literal.Tuple(welms) => @@(welms map visit) map {
@@ -293,6 +312,7 @@ object Resolver {
   }
 
   object Predicate {
+
     object Head {
       /**
        * Performs symbol resolution in the given head predicate `wast` in the given `namespace` with the given symbol table `syms`.
@@ -316,6 +336,7 @@ object Resolver {
           }
         }
     }
+
   }
 
   object Term {

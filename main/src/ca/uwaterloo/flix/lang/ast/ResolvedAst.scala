@@ -56,8 +56,7 @@ object ResolvedAst {
 
     case class Str(literal: java.lang.String) extends ResolvedAst.Literal
 
-    // TODO: Enum Def?
-    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, literal: ResolvedAst.Literal, defn: WeededAst.Definition) extends ResolvedAst.Literal
+    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, literal: ResolvedAst.Literal) extends ResolvedAst.Literal
 
     case class Tuple(elms: Seq[ResolvedAst.Literal]) extends ResolvedAst.Literal
 

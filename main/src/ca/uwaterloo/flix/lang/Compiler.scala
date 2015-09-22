@@ -82,7 +82,6 @@ object Compiler {
     }
     Console.println("Success!")
 
-    println(rast)
 //
 //    Console.print("Typechecking: ")
 //    val tast = Typer.typecheck(rast.get)
