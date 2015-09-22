@@ -4,18 +4,33 @@ trait ResolvedAst
 
 object ResolvedAst {
 
-  case class Root(declarations: Seq[ResolvedAst.Declaration]) extends ResolvedAst
+  case class Root(
 
-  sealed trait Declaration extends ResolvedAst
+                   facts: List[ResolvedAst.Constraint.Fact],
+                   rules: List[ResolvedAst.Constraint.Rule]) extends ResolvedAst
 
-  object Declaration {
+  sealed trait Constraint extends ResolvedAst
 
-    case class Fact(head: ResolvedAst.Predicate) extends Declaration
+  object Constraint {
 
+    /**
+     * A resolved AST node representing a fact declaration.
+     *
+     * @param head the head predicate.
+     */
+    case class Fact(head: ResolvedAst.Predicate.Head) extends ResolvedAst.Constraint
+
+    /**
+     * A resolved AST node representing a rule declaration.
+     *
+     * @param head the head predicate.
+     * @param body the body predicates.
+     */
+    case class Rule(head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body]) extends ResolvedAst.Constraint
 
   }
 
-  sealed trait Definition extends ResolvedAst.Declaration
+  sealed trait Definition extends ResolvedAst.Constraint
 
   object Definition {
 
@@ -98,9 +113,9 @@ object ResolvedAst {
 
   object Predicate {
 
-    case class Relational(/* todo: what */) extends ResolvedAst.Predicate
+    case class Head() extends ResolvedAst.Predicate
 
-    case class Functional(/*  todo: what */) extends ResolvedAst.Predicate
+    case class Body() extends ResolvedAst.Predicate
 
   }
 

@@ -49,7 +49,14 @@ object Resolver {
     }
 
     globalsVal flatMap {
-      case globals => @@(wast.declarations.map(d => Declaration.resolve(d, List.empty, globals))) map (xs => ResolvedAst.Root(xs.flatten))
+      case globals =>
+
+        val factsVal = Declaration.collectFacts(wast, globals)
+        val rulesVal = Declaration.collectRules(wast, globals)
+
+        @@(factsVal, rulesVal) map {
+          case (facts, rules) => ResolvedAst.Root(facts, rules)
+        }
     }
   }
 
@@ -76,22 +83,28 @@ object Resolver {
     def symbols(wast: WeededAst.Definition, namespace: List[String]): Validation[Map[Name.Resolved, WeededAst.Definition], ResolverError] = wast match {
       case WeededAst.Definition.Value(ident, tpe, e) => Map(toRName(ident, namespace) -> wast).toSuccess
       case WeededAst.Definition.Enum(ident, cases) => Map(toRName(ident, namespace) -> wast).toSuccess
-        // TODO: Here we clearly see the need for several namespaces.
+      // TODO: Here we clearly see the need for several namespaces.
       case WeededAst.Definition.Lattice(ident, elms, traits) => Map.empty[Name.Resolved, WeededAst.Definition].toSuccess // TODO
       case WeededAst.Definition.Relation(ident, attributes) => Map.empty[Name.Resolved, WeededAst.Definition].toSuccess // TODO
     }
 
 
-    /**
-     * Performs symbol resolution in the given declaration `wast` under the given `namespace`.
-     */
-    def resolve(wast: WeededAst.Declaration, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[Option[ResolvedAst.Declaration], ResolverError] = wast match {
-      case WeededAst.Declaration.Namespace(name, body) => None.toSuccess
-      case WeededAst.Declaration.Fact(head) => ???
-      case WeededAst.Declaration.Rule(head, body) => ???
-      case defn: WeededAst.Definition => Definition.resolve(defn, namespace, globals) map Option.apply
+    // TODO: Can we avoid this toList thing?
+    def collectFacts(wast: WeededAst.Root, globals: Map[Name.Resolved, WeededAst.Definition]): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = {
+      @@(wast.declarations.collect {
+        case WeededAst.Declaration.Fact(head) => Predicate.resolve(head, globals) map ResolvedAst.Constraint.Fact
+      }) map (_.toList)
     }
 
+    // TODO: Can we avoid this toList thing?
+    def collectRules(wast: WeededAst.Root, globals: Map[Name.Resolved, WeededAst.Definition]): Validation[List[ResolvedAst.Constraint.Rule], ResolverError] = {
+      @@(wast.declarations.collect {
+        case WeededAst.Declaration.Rule(whead, wbody) =>
+          @@(Predicate.resolve(whead, globals), @@(wbody map (p => Predicate.resolveBody(p, globals)))) map {
+            case (head, body) => ResolvedAst.Constraint.Rule(head, body.toList)
+          }
+      }) map (_.toList)
+    }
   }
 
   object Definition {
@@ -225,6 +238,9 @@ object Resolver {
 
   object Predicate {
 
+    def resolve(p: WeededAst.PredicateWithApply, globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Predicate.Head, ResolverError] = ???
+
+    def resolveBody(p: WeededAst.PredicateNoApply, globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Predicate.Body, ResolverError] = ???
 
   }
 

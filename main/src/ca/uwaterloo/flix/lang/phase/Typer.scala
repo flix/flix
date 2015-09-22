@@ -50,7 +50,7 @@ object Typer {
     def typer(rast: ResolvedAst.Expression, env0: Map[String, TypedAst.Type]): Validation[TypedAst.Expression, TypeError] = rast match {
       case ResolvedAst.Expression.Var(ident) => ??? // pull type out of map.
 
-      case ResolvedAst.Expression.Ref(name, decl) => ??? // TODO
+      case ResolvedAst.Expression.Ref(name) => ??? // TODO
 
       case ResolvedAst.Expression.Let(ident, rvalue, rbody) =>
         typer(rvalue, env0) flatMap {
