@@ -17,7 +17,6 @@ object Resolver {
 
   object ResolverError {
 
-    // TODO
     // TODO: Cyclic stuff.
     case class DuplicateDefinition()
 
@@ -42,7 +41,7 @@ object Resolver {
     }
 
     globalsVal map {
-      case globals => @@(wast.declarations.map(d => Declaration.resolve(d, globals))) map ResolvedAst.Root
+      case globals => @@(wast.declarations.map(d => Declaration.resolve(d, List.empty, globals))) map ResolvedAst.Root
     }
 
     ???
@@ -51,33 +50,37 @@ object Resolver {
   object Declaration {
 
     def symbols(wd: WeededAst.Declaration, namespace: List[String]): Validation[Map[Name.Resolved, WeededAst.Definition], ResolverError] = wd match {
-      case WeededAst.Declaration.Namespace(ParsedAst.QName(parts, location), body) =>
-
-        ???
-
+      case WeededAst.Declaration.Namespace(ParsedAst.QName(parts, location), body) => ???
       case d: WeededAst.Declaration.Fact => Map.empty[Name.Resolved, WeededAst.Definition].toSuccess // nop
       case d: WeededAst.Declaration.Rule => Map.empty[Name.Resolved, WeededAst.Definition].toSuccess // nop
-      case d: WeededAst.Definition => Definition.symbols(d)
     }
 
-    def resolve(p: WeededAst.Declaration, globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Declaration, ResolverError] = {
-      ???
+    /**
+     * Performs symbol resolution in the given declaration `wast` under the given `namespace`.
+     */
+    def resolve(wast: WeededAst.Declaration, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Declaration, ResolverError] = wast match {
+      case WeededAst.Declaration.Namespace(name, body) => ???
+      case WeededAst.Declaration.Fact(head) => ???
+      case WeededAst.Declaration.Rule(head, body) => ???
     }
 
   }
 
   object Definition {
 
-    def symbols(wd: WeededAst.Definition): Validation[Map[Name.Resolved, WeededAst.Definition], ResolverError] = wd match {
-      case _ => ???
+    /**
+     * Performs symbol resolution in the given definition under the given `namespace`.
+     */
+    def resolve(wast: WeededAst.Definition, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Definition, ResolverError] = wast match {
+      case WeededAst.Definition.Value(ident, tpe, e) => ???
     }
-
   }
 
   object Literal {
     /**
      * Performs symbol resolution in the given literal `wast` under the given `namespace`.
      */
+    // TODO: Consider inner visit?
     def resolve(wast: WeededAst.Literal, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Literal, ResolverError] = wast match {
       case WeededAst.Literal.Unit => ResolvedAst.Literal.Unit.toSuccess
       case WeededAst.Literal.Bool(b) => ResolvedAst.Literal.Bool(b).toSuccess
@@ -100,12 +103,19 @@ object Resolver {
     /**
      * Performs symbol resolution in the given expression `wast` under the given `namespace`.
      */
+    // TODO: Consider inner visit?
     def resolve(wast: WeededAst.Expression, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Expression, ResolverError] = wast match {
       case WeededAst.Expression.AmbiguousVar(name) => ???
-      case WeededAst.Expression.AmbiguousApply(name, args) => ???
-      case WeededAst.Expression.Lit(wlit) => ???
-      case WeededAst.Expression.Lambda(formals, tpe, body) => ???
-      case WeededAst.Expression.Unary(op, e) => ???
+      case WeededAst.Expression.AmbiguousApply(name, args) => throw new RuntimeException("Remove this node.")
+      case WeededAst.Expression.Lit(wlit) => Literal.resolve(wlit, namespace, globals) map ResolvedAst.Expression.Lit
+      case WeededAst.Expression.Lambda(wformals, wtype, wbody) =>
+        val formalsVal = @@(wformals map {
+          case (ident, tpe) => Type.resolve(tpe, namespace, globals) map (t => (ident, t))
+        })
+        @@(formalsVal, Type.resolve(wtype, namespace, globals), Expression.resolve(wbody, namespace, globals)) map {
+          case (formals, tpe, body) => ResolvedAst.Expression.Lambda(formals, tpe, body)
+        }
+      case WeededAst.Expression.Unary(op, we) => Expression.resolve(we, namespace, globals) map (e => ResolvedAst.Expression.Unary(op, e))
       case WeededAst.Expression.Binary(e1, op, e2) => ???
       case WeededAst.Expression.IfThenElse(e1, e2, e3) => ???
       case WeededAst.Expression.Let(ident, value, body) => ???
@@ -126,6 +136,7 @@ object Resolver {
     /**
      * Performs symbol resolution in the given pattern `wast` under the given `namespace`.
      */
+    // TODO: Consider inner visit?
     def resolve(wast: WeededAst.Pattern, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Pattern, ResolverError] = wast match {
       case WeededAst.Pattern.Wildcard(location) => ResolvedAst.Pattern.Wildcard(location).toSuccess
       case WeededAst.Pattern.Var(ident) => ResolvedAst.Pattern.Var(ident).toSuccess
@@ -162,6 +173,7 @@ object Resolver {
     /**
      * Performs symbol resolution in the given type `wast` under the given `namespace`.
      */
+    // TODO: Consider inner visit?
     def resolve(wast: WeededAst.Type, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Type, ResolverError] = wast match {
       case WeededAst.Type.Unit => ResolvedAst.Type.Unit.toSuccess
       case WeededAst.Type.Ambiguous(name) => name.parts match {
