@@ -21,7 +21,19 @@ namespace University {
 
     rel Staff(name: String, address: String);
 
-    // TODO: Classes, Salary, Rooms, Exams, Grades, Publications, Grants, Department,
+    rel Department(name: String);
+
+    rel Salary(name: String, amount: Int);
+
+    rel Course(name: String, teacherName: String);
+
+    rel Grade(studentName: String, courseName: String, grade: Int);
+
+    rel Publication(title: String, journal: String);
+
+    rel PublicationAuthor(title: String, authorName: String);
+
+    // TODO: Rooms, Exams, Publications, Grants
 
 
 
