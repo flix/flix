@@ -18,7 +18,19 @@ object Resolver {
   object ResolverError {
 
     // TODO: Cyclic stuff.
-    case class DuplicateDefinition()
+
+    /**
+     * An error raised to indicate that the given `name` is used for multiple definitions.
+     *
+     * @param name the name
+     * @param location1 the location of the first definition.
+     * @param location2 the location of the second definition.
+     */
+    case class DuplicateDefinition(name: Name.Resolved, location1: SourceLocation, location2: SourceLocation) extends ResolverError {
+      val format: String = s"Error: Duplicate definition of '${name.format}'.\n" +
+        s"  First definition was here: ${location1.format}.\n" +
+        s"  Second definition was here: ${location2.format}.\n"
+    }
 
     /**
      * An error raised to indicate that the given `name` in the given `namespace` was not found.
@@ -27,7 +39,7 @@ object Resolver {
      * @param namespace the current namespace.
      */
     case class UnresolvedReference(name: ParsedAst.QName, namespace: List[String]) extends ResolverError {
-      val format = s"Error: Unresolved reference to '${name.format}' in namespace '${namespace.mkString("::")}' at ${name.location.format}\n"
+      val format: String = s"Error: Unresolved reference to '${name.format}' in namespace '${namespace.mkString("::")}' at: ${name.location.format}\n"
     }
 
   }
@@ -92,7 +104,6 @@ object Resolver {
   object Declaration {
 
     def symbolsOf(wast: WeededAst.Declaration, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
-      // TODO: Can anyone actually understand this: ??
       case WeededAst.Declaration.Namespace(ParsedAst.QName(parts, location), body) =>
         Validation.fold[WeededAst.Declaration, SymbolTable, ResolverError](body, syms) {
           case (msyms, d) => symbolsOf(d, namespace ::: parts.toList, msyms)
@@ -107,14 +118,16 @@ object Resolver {
      */
     def symbolsOf(wast: WeededAst.Definition, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
       case WeededAst.Definition.Value(ident, tpe, e) => syms.toSuccess // TODO
+
       case WeededAst.Definition.Enum(ident, cases) => syms.toSuccess // TODO
+
       case WeededAst.Definition.Lattice(ident, elms, traits) => syms.toSuccess // TODO
 
       case defn@WeededAst.Definition.Relation(ident, attributes) =>
         val rname = toRName(ident, namespace)
         syms.relations.get(rname) match {
           case None => syms.copy(relations = syms.relations + (rname -> defn)).toSuccess
-          case Some(otherDefn) => ??? // TODO: Duplicate 
+          case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.location, ident.location).toFailure
         }
     }
 
