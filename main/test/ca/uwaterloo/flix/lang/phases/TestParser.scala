@@ -137,61 +137,73 @@ class TestParser extends FunSuite {
   // TODO: Allow naming of the enum attributes.
 
   test("Parser.Definition.JoinSemiLattice01") {
-    val input = "lat <a> (bot, foo::leq, lub)"
+    val input = "lat <a> (Tag.Bot, foo::leq, lub)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
   test("Parser.Definition.JoinSemiLattice02") {
-    val input = "lat <a> (bot, foo::leq, lub) with Norm(b)"
+    val input = "lat <a> (Tag.Bot, foo::leq, lub)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
   test("Parser.Definition.JoinSemiLattice03") {
-    val input = "lat <a> (bot, foo::leq, lub) with Widen(b)"
+    val input = "lat <a> (Tag.Bot, fn (x: Int): Bool = x, lub)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
   test("Parser.Definition.JoinSemiLattice04") {
-    val input = "lat <a> (bot, foo::leq, lub) with Norm(b) with Widen(c)"
+    val input = "lat <a> (Tag.Bot, foo::leq, lub) with Norm(b)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
   test("Parser.Definition.JoinSemiLattice05") {
-    val input = "lat <a> (bot, foo::leq, lub) with Norm(foo::b) with Widen(foo::c)"
+    val input = "lat <a> (Tag.Bot, foo::leq, lub) with Widen(b)"
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
+  }
+
+  test("Parser.Definition.JoinSemiLattice06") {
+    val input = "lat <a> (Tag.Bot, foo::leq, lub) with Norm(b) with Widen(c)"
+    val result = new Parser(None, input).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
+  }
+
+  test("Parser.Definition.JoinSemiLattice07") {
+    val input = "lat <a> (Tag.Bot, foo::leq, lub) with Norm(foo::b) with Widen(foo::c)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
   test("Parser.Definition.CompleteLattice01") {
-    val input = "lat <a> (bot, top, foo::leq, lub, glb)"
+    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
   test("Parser.Definition.CompleteLattice02") {
-    val input = "lat <a> (bot, top, foo::leq, lub, glb) with Norm(b)"
+    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb) with Norm(b)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
   test("Parser.Definition.CompleteLattice03") {
-    val input = "lat <a> (bot, top, foo::leq, lub, glb) with Widen(b)"
+    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb) with Widen(b)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
   test("Parser.Definition.CompleteLattice04") {
-    val input = "lat <a> (bot, top, foo::leq, lub, glb) with Norm(b) with Widen(c)"
+    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb) with Norm(b) with Widen(c)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
   test("Parser.Definition.CompleteLattice05") {
-    val input = "lat <a> (bot, top, foo::leq, lub, glb) with Norm(foo::b) with Widen(foo::c)"
+    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb) with Norm(foo::b) with Widen(foo::c)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
