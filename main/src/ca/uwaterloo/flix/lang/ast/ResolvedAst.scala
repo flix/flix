@@ -5,11 +5,12 @@ trait ResolvedAst
 object ResolvedAst {
 
   case class Root(
-// TODO: value environment
-                 // todo: relation environment
-                 // todo: type environment
-                 // todo: lattice environment
-                 // todo: enum environment... sigh so many
+                   // TODO: value environment
+                   // todo: relation environment
+                   // todo: type environment
+                   // todo: lattice environment
+                   // todo: enum environment... sigh so many
+                  // relations: Map[Name.Resolved, ResolvedAst.Definition.Relation],
                    facts: List[ResolvedAst.Constraint.Fact],
                    rules: List[ResolvedAst.Constraint.Rule]) extends ResolvedAst
 
@@ -86,7 +87,7 @@ object ResolvedAst {
 
     case class Match(e: ResolvedAst.Expression, rules: Seq[(ResolvedAst.Pattern, ResolvedAst.Expression)]) extends ResolvedAst.Expression
 
-    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, e: ResolvedAst.Expression, defn: WeededAst.Definition.Enum) extends ResolvedAst.Expression
+    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, e: ResolvedAst.Expression) extends ResolvedAst.Expression
 
     case class Tuple(elms: Seq[ResolvedAst.Expression]) extends ResolvedAst.Expression
 
@@ -106,7 +107,7 @@ object ResolvedAst {
 
     case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Pattern
 
-    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, pat: ResolvedAst.Pattern, defn: WeededAst.Definition) extends ResolvedAst.Pattern
+    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, pat: ResolvedAst.Pattern) extends ResolvedAst.Pattern
 
     case class Tuple(elms: Seq[ResolvedAst.Pattern]) extends ResolvedAst.Pattern
 

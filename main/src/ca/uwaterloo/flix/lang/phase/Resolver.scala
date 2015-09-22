@@ -123,7 +123,10 @@ object Resolver {
         val collectedValues = syms.values.mapValues {
           case v => Definition.resolve(v, List.empty, syms)
         }
-        println(collectedValues)
+
+        val collectedRelations = syms.relations.mapValues {
+          r => Definition.resolve(r, List.empty, syms)
+        }
 
         val collectedFacts = Declaration.collectFacts(wast, syms)
         val collectedRules = Declaration.collectRules(wast, syms)
@@ -210,10 +213,13 @@ object Resolver {
     /**
      * Performs symbol resolution for the given value definition `wast`.
      */
-    def resolve(wast: WeededAst.Definition.Value, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition, ResolverError] =
+    def resolve(wast: WeededAst.Definition.Value, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Value, ResolverError] =
       @@(Expression.resolve(wast.e, namespace, syms), Type.resolve(wast.tpe, namespace, syms)) map {
         case (e, tpe) => ResolvedAst.Definition.Value(Name.Resolved(namespace ::: wast.ident.name :: Nil), e, tpe)
       }
+
+    def resolve(wast: WeededAst.Definition.Relation, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Relation, ResolverError] =
+      ???
 
   }
 
@@ -248,6 +254,7 @@ object Resolver {
      */
     def resolve(wast: WeededAst.Expression, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Expression, ResolverError] = {
       def visit(wast: WeededAst.Expression, locals: Set[String]): Validation[ResolvedAst.Expression, ResolverError] = wast match {
+        // TODO: Rewrite this ....
         case WeededAst.Expression.AmbiguousVar(name) => name.parts match {
           case Seq(x) =>
             if (locals contains x)
@@ -302,7 +309,12 @@ object Resolver {
             case (e, rules) => ResolvedAst.Expression.Match(e, rules)
           }
 
-        case WeededAst.Expression.Tag(name, ident, e) => ???
+        case WeededAst.Expression.Tag(name, ident, we) =>
+          syms.lookupEnum(name, namespace) flatMap {
+            case (rname, defn) => visit(we, locals) map {
+              case e => ResolvedAst.Expression.Tag(rname, ident, e)
+            }
+          }
 
         case WeededAst.Expression.Tuple(elms) => @@(elms map (e => visit(e, locals))) map ResolvedAst.Expression.Tuple
         case WeededAst.Expression.Ascribe(we, wtype) =>
@@ -329,7 +341,7 @@ object Resolver {
         case WeededAst.Pattern.Lit(literal) => Literal.resolve(literal, namespace, syms) map ResolvedAst.Pattern.Lit
         case WeededAst.Pattern.Tag(name, ident, wpat) => syms.lookupValue(name, namespace) flatMap {
           case (rname, defn) => visit(wpat) map {
-            case pat => ResolvedAst.Pattern.Tag(rname, ident, pat, defn)
+            case pat => ResolvedAst.Pattern.Tag(rname, ident, pat)
           }
         }
         case WeededAst.Pattern.Tuple(welms) => @@(welms map (e => resolve(e, namespace, syms))) map ResolvedAst.Pattern.Tuple
