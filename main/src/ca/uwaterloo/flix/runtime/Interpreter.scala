@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.lang.ast.TypedAst.{Literal, Expression}
+import ca.uwaterloo.flix.lang.ast.TypedAst.{Expression, Literal}
 
 object Interpreter {
   def eval(expr: Expression): Value = {
@@ -25,7 +25,7 @@ object Interpreter {
       case Expression.Let(ident, value, body, tpe) => ???
       case Expression.Match(exp, rules, tpe) => ???
       case Expression.Tag(name, ident, exp, tpe) => ???
-      case Expression.Tuple(elms, tpe) => Value.Tuple(elms.map(eval))
+      case Expression.Tuple(elms, _) => Value.Tuple(elms.map(eval))
       case Expression.Ascribe(e, tpe) => ???
       case Expression.Error(location, tpe) => ???
     }
