@@ -88,11 +88,11 @@ object Resolver {
         case WeededAst.Literal.Str(s) => ResolvedAst.Literal.Str(s).toSuccess
         case WeededAst.Literal.Tag(name, ident, literal) => lookupDef(name, namespace, globals) match {
           case None => UnresolvedReference(name, namespace).toFailure
-          case Some((rname, defn)) => resolve(literal, namespace, globals) map {
+          case Some((rname, defn)) => visit(literal) map {
             case l => ResolvedAst.Literal.Tag(rname, ident, l, defn)
           }
         }
-        case WeededAst.Literal.Tuple(welms) => @@(welms map (l => resolve(l, namespace, globals))) map {
+        case WeededAst.Literal.Tuple(welms) => @@(welms map visit) map {
           case elms => ResolvedAst.Literal.Tuple(elms)
         }
       }
@@ -118,8 +118,10 @@ object Resolver {
         @@(formalsVal, Type.resolve(wtype, namespace, globals), Expression.resolve(wbody, namespace, globals)) map {
           case (formals, tpe, body) => ResolvedAst.Expression.Lambda(formals, tpe, body)
         }
-      case WeededAst.Expression.Unary(op, we) => Expression.resolve(we, namespace, globals) map (e => ResolvedAst.Expression.Unary(op, e))
-      case WeededAst.Expression.Binary(e1, op, e2) => ???
+      case WeededAst.Expression.Unary(op, we) =>
+        Expression.resolve(we, namespace, globals) map (e => ResolvedAst.Expression.Unary(op, e))
+      case WeededAst.Expression.Binary(we1, op, we2) =>
+        ???
       case WeededAst.Expression.IfThenElse(e1, e2, e3) => ???
       case WeededAst.Expression.Let(ident, value, body) => ???
       case WeededAst.Expression.Match(e, rules) => ???
@@ -146,7 +148,7 @@ object Resolver {
         case WeededAst.Pattern.Lit(literal) => Literal.resolve(literal, namespace, globals) map ResolvedAst.Pattern.Lit
         case WeededAst.Pattern.Tag(name, ident, wpat) => lookupDef(name, namespace, globals) match {
           case None => UnresolvedReference(name, namespace).toFailure
-          case Some((rname, defn)) => resolve(wpat, namespace, globals) map {
+          case Some((rname, defn)) => visit(wpat) map {
             case pat => ResolvedAst.Pattern.Tag(rname, ident, pat, defn)
           }
         }

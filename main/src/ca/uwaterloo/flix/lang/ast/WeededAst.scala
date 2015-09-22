@@ -91,6 +91,7 @@ object WeededAst {
 
     case class Unary(op: UnaryOperator, e: WeededAst.Expression) extends WeededAst.Expression
 
+    // TODO: Swap arguments
     case class Binary(e1: WeededAst.Expression, op: BinaryOperator, e2: WeededAst.Expression) extends WeededAst.Expression
 
     case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression) extends WeededAst.Expression
