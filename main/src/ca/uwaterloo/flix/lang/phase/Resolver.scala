@@ -45,10 +45,10 @@ object Resolver {
   }
 
   object SymbolTable {
-    val empty = SymbolTable(value = Map.empty, relations = Map.empty)
+    val empty = SymbolTable(values = Map.empty, relations = Map.empty)
   }
 
-  case class SymbolTable(value: Map[Name.Resolved, WeededAst.Definition.Value],
+  case class SymbolTable(values: Map[Name.Resolved, WeededAst.Definition.Value],
                          relations: Map[Name.Resolved, WeededAst.Definition.Relation]) {
 
     // TODO: Cleanup
@@ -59,7 +59,7 @@ object Resolver {
         else
           name.parts.toList
       )
-      value.get(rname) match {
+      values.get(rname) match {
         case None => UnresolvedReference(name, namespace).toFailure
         case Some(d) => (rname, d).toSuccess
       }
@@ -103,13 +103,16 @@ object Resolver {
 
   object Declaration {
 
+    /**
+     * Constructs the symbol table for the given definition of `wast`.
+     */
     def symbolsOf(wast: WeededAst.Declaration, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
       case WeededAst.Declaration.Namespace(ParsedAst.QName(parts, location), body) =>
         Validation.fold[WeededAst.Declaration, SymbolTable, ResolverError](body, syms) {
           case (msyms, d) => symbolsOf(d, namespace ::: parts.toList, msyms)
         }
-      case WeededAst.Declaration.Fact(head) => syms.toSuccess // TODO
-      case WeededAst.Declaration.Rule(head, body) => syms.toSuccess // TODO
+      case WeededAst.Declaration.Fact(head) => syms.toSuccess
+      case WeededAst.Declaration.Rule(head, body) => syms.toSuccess
       case defn: WeededAst.Definition => symbolsOf(defn, namespace, syms)
     }
 
@@ -117,7 +120,12 @@ object Resolver {
      * Constructs the symbol for the given definition `wast`.
      */
     def symbolsOf(wast: WeededAst.Definition, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
-      case WeededAst.Definition.Value(ident, tpe, e) => syms.toSuccess // TODO
+      case defn@WeededAst.Definition.Value(ident, tpe, e) =>
+        val rname = toRName(ident, namespace)
+        syms.values.get(rname) match {
+          case None => syms.copy(values = syms.values + (rname -> defn)).toSuccess
+          case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.location, ident.location).toFailure
+        }
 
       case WeededAst.Definition.Enum(ident, cases) => syms.toSuccess // TODO
 
