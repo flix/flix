@@ -80,21 +80,24 @@ object Resolver {
     /**
      * Performs symbol resolution in the given literal `wast` under the given `namespace`.
      */
-    // TODO: Consider inner visit?
-    def resolve(wast: WeededAst.Literal, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Literal, ResolverError] = wast match {
-      case WeededAst.Literal.Unit => ResolvedAst.Literal.Unit.toSuccess
-      case WeededAst.Literal.Bool(b) => ResolvedAst.Literal.Bool(b).toSuccess
-      case WeededAst.Literal.Int(i) => ResolvedAst.Literal.Int(i).toSuccess
-      case WeededAst.Literal.Str(s) => ResolvedAst.Literal.Str(s).toSuccess
-      case WeededAst.Literal.Tag(name, ident, literal) => lookupDef(name, namespace, globals) match {
-        case None => UnresolvedReference(name, namespace).toFailure
-        case Some((rname, defn)) => resolve(literal, namespace, globals) map {
-          case l => ResolvedAst.Literal.Tag(rname, ident, l, defn)
+    def resolve(wast: WeededAst.Literal, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Literal, ResolverError] = {
+      def visit(wast: WeededAst.Literal): Validation[ResolvedAst.Literal, ResolverError] = wast match {
+        case WeededAst.Literal.Unit => ResolvedAst.Literal.Unit.toSuccess
+        case WeededAst.Literal.Bool(b) => ResolvedAst.Literal.Bool(b).toSuccess
+        case WeededAst.Literal.Int(i) => ResolvedAst.Literal.Int(i).toSuccess
+        case WeededAst.Literal.Str(s) => ResolvedAst.Literal.Str(s).toSuccess
+        case WeededAst.Literal.Tag(name, ident, literal) => lookupDef(name, namespace, globals) match {
+          case None => UnresolvedReference(name, namespace).toFailure
+          case Some((rname, defn)) => resolve(literal, namespace, globals) map {
+            case l => ResolvedAst.Literal.Tag(rname, ident, l, defn)
+          }
+        }
+        case WeededAst.Literal.Tuple(welms) => @@(welms map (l => resolve(l, namespace, globals))) map {
+          case elms => ResolvedAst.Literal.Tuple(elms)
         }
       }
-      case WeededAst.Literal.Tuple(welms) => @@(welms map (l => resolve(l, namespace, globals))) map {
-        case elms => ResolvedAst.Literal.Tuple(elms)
-      }
+
+      visit(wast)
     }
   }
 
@@ -136,18 +139,20 @@ object Resolver {
     /**
      * Performs symbol resolution in the given pattern `wast` under the given `namespace`.
      */
-    // TODO: Consider inner visit?
-    def resolve(wast: WeededAst.Pattern, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Pattern, ResolverError] = wast match {
-      case WeededAst.Pattern.Wildcard(location) => ResolvedAst.Pattern.Wildcard(location).toSuccess
-      case WeededAst.Pattern.Var(ident) => ResolvedAst.Pattern.Var(ident).toSuccess
-      case WeededAst.Pattern.Lit(literal) => Literal.resolve(literal, namespace, globals) map ResolvedAst.Pattern.Lit
-      case WeededAst.Pattern.Tag(name, ident, wpat) => lookupDef(name, namespace, globals) match {
-        case None => UnresolvedReference(name, namespace).toFailure
-        case Some((rname, defn)) => resolve(wpat, namespace, globals) map {
-          case pat => ResolvedAst.Pattern.Tag(rname, ident, pat, defn)
+    def resolve(wast: WeededAst.Pattern, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Pattern, ResolverError] = {
+      def visit(wast: WeededAst.Pattern): Validation[ResolvedAst.Pattern, ResolverError] = wast match {
+        case WeededAst.Pattern.Wildcard(location) => ResolvedAst.Pattern.Wildcard(location).toSuccess
+        case WeededAst.Pattern.Var(ident) => ResolvedAst.Pattern.Var(ident).toSuccess
+        case WeededAst.Pattern.Lit(literal) => Literal.resolve(literal, namespace, globals) map ResolvedAst.Pattern.Lit
+        case WeededAst.Pattern.Tag(name, ident, wpat) => lookupDef(name, namespace, globals) match {
+          case None => UnresolvedReference(name, namespace).toFailure
+          case Some((rname, defn)) => resolve(wpat, namespace, globals) map {
+            case pat => ResolvedAst.Pattern.Tag(rname, ident, pat, defn)
+          }
         }
+        case WeededAst.Pattern.Tuple(welms) => @@(welms map (e => resolve(e, namespace, globals))) map ResolvedAst.Pattern.Tuple
       }
-      case WeededAst.Pattern.Tuple(welms) => @@(welms map (e => resolve(e, namespace, globals))) map ResolvedAst.Pattern.Tuple
+      visit(wast)
     }
   }
 
