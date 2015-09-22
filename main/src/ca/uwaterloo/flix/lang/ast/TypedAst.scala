@@ -122,6 +122,8 @@ object TypedAst {
   // Safety property
   // false <= A(...), B(...) (the body must never hold).
   //
+  // always Answer(x).
+  // never Unsafe(x).
 
   /**
    * A common super-type for typed literals.
