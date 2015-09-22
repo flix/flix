@@ -15,7 +15,7 @@ object Value {
 
   case class Tag(name: Name.Resolved, ident: String, value: Value) extends Value
 
-  case class Tuple(elems: List[Value]) extends Value
+  case class Tuple(elms: List[Value]) extends Value
 
   // ???
   //case class Lambda()
