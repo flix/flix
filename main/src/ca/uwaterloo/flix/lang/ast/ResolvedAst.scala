@@ -48,7 +48,7 @@ object ResolvedAst {
 
     case class Var(ident: ParsedAst.Ident) extends ResolvedAst.Expression
 
-    case class Ref(name: Name.Resolved, defn: WeededAst.Definition) extends ResolvedAst.Expression
+    case class Ref(name: Name.Resolved) extends ResolvedAst.Expression
 
     case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Expression
 

@@ -7,7 +7,7 @@ trait WeededAst
 // TODO: Summary changes made by this phase.
 
 object WeededAst {
-
+// TODO: Every Seq should be replaced by List
   case class Root(declarations: Seq[WeededAst.Declaration]) extends WeededAst
 
   sealed trait Declaration
@@ -96,6 +96,7 @@ object WeededAst {
 
     case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression) extends WeededAst.Expression
 
+    // TODO: Why not just call these e1 and e2?
     case class Let(ident: ParsedAst.Ident, value: WeededAst.Expression, body: WeededAst.Expression) extends WeededAst.Expression
 
     case class Match(e: WeededAst.Expression, rules: Seq[(WeededAst.Pattern, WeededAst.Expression)]) extends WeededAst.Expression
