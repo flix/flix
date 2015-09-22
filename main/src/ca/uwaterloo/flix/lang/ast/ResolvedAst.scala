@@ -10,7 +10,8 @@ object ResolvedAst {
                    // todo: type environment
                    // todo: lattice environment
                    // todo: enum environment... sigh so many
-                  // relations: Map[Name.Resolved, ResolvedAst.Definition.Relation],
+                   enums: Map[Name.Resolved, ResolvedAst.Definition.Enum],
+                   // relations: Map[Name.Resolved, ResolvedAst.Definition.Relation],
                    facts: List[ResolvedAst.Constraint.Fact],
                    rules: List[ResolvedAst.Constraint.Rule]) extends ResolvedAst
 
@@ -41,6 +42,8 @@ object ResolvedAst {
 
     case class Value(name: Name.Resolved, exp: ResolvedAst.Expression, tpe: ResolvedAst.Type) extends ResolvedAst.Definition
 
+    case class Enum(name: Name.Resolved, cases: Map[String, ResolvedAst.Type.Tag]) extends ResolvedAst.Definition
+
     case class Relation() extends ResolvedAst.Definition
 
   }
@@ -59,7 +62,7 @@ object ResolvedAst {
 
     case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, literal: ResolvedAst.Literal) extends ResolvedAst.Literal
 
-    case class Tuple(elms: Seq[ResolvedAst.Literal]) extends ResolvedAst.Literal
+    case class Tuple(elms: List[ResolvedAst.Literal]) extends ResolvedAst.Literal
 
   }
 

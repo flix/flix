@@ -158,11 +158,12 @@ object TypedAst {
     /**
      * A typed AST node representing a tagged literal.
      *
+     * @parma name the enum name.
      * @param ident the tag name.
      * @param literal the nested literal.
      * @param tpe the type of the tag.
      */
-    case class Tag(ident: ParsedAst.Ident, literal: TypedAst.Literal, tpe: TypedAst.Type.Enum) extends TypedAst.Literal
+    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, literal: TypedAst.Literal, tpe: TypedAst.Type.Enum) extends TypedAst.Literal
 
     /**
      * A typed AST node representing a tuple literal.
