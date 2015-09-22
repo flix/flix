@@ -37,7 +37,7 @@ object Typer {
       case ResolvedAst.Literal.Bool(b) => TypedAst.Literal.Bool(b).toSuccess
       case ResolvedAst.Literal.Int(i) => TypedAst.Literal.Int(i).toSuccess
       case ResolvedAst.Literal.Str(s) => TypedAst.Literal.Str(s).toSuccess
-      case ResolvedAst.Literal.Tag(name, ident, literal, defn) => ??? // TODO
+      case ResolvedAst.Literal.Tag(name, ident, literal) => ??? // TODO
       case ResolvedAst.Literal.Tuple(relms) => @@(relms map typer) map {
         case elms => TypedAst.Literal.Tuple(elms.toList, TypedAst.Type.Tuple((elms map (_.tpe)).toList))
       }
