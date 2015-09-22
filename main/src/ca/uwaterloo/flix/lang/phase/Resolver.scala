@@ -36,8 +36,16 @@ object Resolver {
    * Resolves all symbols in the given AST `wast`.
    */
   def resolve(wast: WeededAst.Root): Validation[ResolvedAst.Root, ResolverError] = {
+    // TODO: Can anyone actually understand this: ??
     val globalsVal = Validation.fold[WeededAst.Declaration, Map[Name.Resolved, WeededAst.Definition], ResolverError](wast.declarations, Map.empty) {
-      case (macc, decl) => macc.toSuccess
+      case (macc, d) => Declaration.symbols(d, List.empty) map {
+        case m2 => m2.foldLeft(macc) {
+          case (macc2, (rname, defn)) => macc2.get(rname) match {
+            case None => macc2 + (rname -> defn)
+            case Some(_) => throw new RuntimeException("duplicate name")
+          }
+        }
+      }
     }
 
     globalsVal flatMap {
@@ -47,11 +55,32 @@ object Resolver {
 
   object Declaration {
 
-    def symbols(wd: WeededAst.Declaration, namespace: List[String]): Validation[Map[Name.Resolved, WeededAst.Definition], ResolverError] = wd match {
-      case WeededAst.Declaration.Namespace(ParsedAst.QName(parts, location), body) => ???
-      case d: WeededAst.Declaration.Fact => Map.empty[Name.Resolved, WeededAst.Definition].toSuccess // nop
-      case d: WeededAst.Declaration.Rule => Map.empty[Name.Resolved, WeededAst.Definition].toSuccess // nop
+    def symbols(wast: WeededAst.Declaration, namespace: List[String]): Validation[Map[Name.Resolved, WeededAst.Definition], ResolverError] = wast match {
+      // TODO: Can anyone actually understand this: ??
+      case WeededAst.Declaration.Namespace(ParsedAst.QName(parts, location), body) =>
+        Validation.fold[WeededAst.Declaration, Map[Name.Resolved, WeededAst.Definition], ResolverError](body, Map.empty) {
+          case (macc, d) => Declaration.symbols(d, namespace ::: parts.toList) map {
+            case m2 => m2.foldLeft(macc) {
+              case (macc2, (rname, defn)) => macc2.get(rname) match {
+                case None => macc2 + (rname -> defn)
+                case Some(_) => throw new RuntimeException("duplicate name")
+              }
+            }
+          }
+        }
+      case WeededAst.Declaration.Fact(head) => Map.empty[Name.Resolved, WeededAst.Definition].toSuccess // nop
+      case WeededAst.Declaration.Rule(head, body) => Map.empty[Name.Resolved, WeededAst.Definition].toSuccess // nop
+      case defn: WeededAst.Definition => symbols(defn, namespace)
     }
+
+    def symbols(wast: WeededAst.Definition, namespace: List[String]): Validation[Map[Name.Resolved, WeededAst.Definition], ResolverError] = wast match {
+      case WeededAst.Definition.Value(ident, tpe, e) => Map(toRName(ident, namespace) -> wast).toSuccess
+      case WeededAst.Definition.Enum(ident, cases) => Map(toRName(ident, namespace) -> wast).toSuccess
+        // TODO: Here we clearly see the need for several namespaces.
+      case WeededAst.Definition.Lattice(ident, elms, traits) => Map.empty[Name.Resolved, WeededAst.Definition].toSuccess // TODO
+      case WeededAst.Definition.Relation(ident, attributes) => Map.empty[Name.Resolved, WeededAst.Definition].toSuccess // TODO
+    }
+
 
     /**
      * Performs symbol resolution in the given declaration `wast` under the given `namespace`.
@@ -254,5 +283,8 @@ object Resolver {
 
   // TODO
   def isReserved(name: ParsedAst.QName): Boolean = ???
+
+  def toRName(ident: ParsedAst.Ident, namespace: List[String]): Name.Resolved =
+    Name.Resolved(namespace ::: ident.name :: Nil, ident.location)
 
 }
