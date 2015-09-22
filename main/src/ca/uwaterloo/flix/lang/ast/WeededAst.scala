@@ -8,7 +8,7 @@ trait WeededAst
 
 object WeededAst {
 // TODO: Every Seq should be replaced by List
-  case class Root(declarations: Seq[WeededAst.Declaration]) extends WeededAst
+  case class Root(declarations: List[WeededAst.Declaration]) extends WeededAst
 
   sealed trait Declaration
 
@@ -148,6 +148,7 @@ object WeededAst {
 
   object TermWithApply {
 
+    // TODO: Wildcards should not be allowed here...
     case class Wildcard(location: SourceLocation) extends WeededAst.TermWithApply
 
     case class Var(ident: ParsedAst.Ident) extends WeededAst.TermWithApply

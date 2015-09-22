@@ -88,23 +88,22 @@ object Resolver {
       case WeededAst.Definition.Relation(ident, attributes) => Map.empty[Name.Resolved, WeededAst.Definition].toSuccess // TODO
     }
 
+    // TODO: Check that all variables are bound...
 
-    // TODO: Can we avoid this toList thing?
-    def collectFacts(wast: WeededAst.Root, globals: Map[Name.Resolved, WeededAst.Definition]): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = {
-      // TODO: Need recursive visitor?
-      @@(wast.declarations.collect {
-        case WeededAst.Declaration.Fact(head) => Predicate.resolve(head, globals) map ResolvedAst.Constraint.Fact
-      }) map (_.toList)
+    def collectFacts(wast: WeededAst.Root, values: Map[Name.Resolved, WeededAst.Definition]): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = {
+      def visit(wast: WeededAst.Declaration, namespace: List[String]): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = wast match {
+        case WeededAst.Declaration.Namespace(name, body) =>
+          @@(body map (d => visit(d, namespace ::: name.parts.toList))) map (xs => xs.flatten)
+        case WeededAst.Declaration.Fact(whead) => Predicate.Head.resolve(whead, namespace, values) map (p => List(ResolvedAst.Constraint.Fact(p)))
+        case _ => List.empty[ResolvedAst.Constraint.Fact].toSuccess
+      }
+
+      @@(wast.declarations map (d => visit(d, List.empty))) map (xs => xs.flatten)
     }
 
     // TODO: Can we avoid this toList thing?
     def collectRules(wast: WeededAst.Root, globals: Map[Name.Resolved, WeededAst.Definition]): Validation[List[ResolvedAst.Constraint.Rule], ResolverError] = {
-      @@(wast.declarations.collect {
-        case WeededAst.Declaration.Rule(whead, wbody) =>
-          @@(Predicate.resolve(whead, globals), @@(wbody map (p => Predicate.resolveBody(p, globals)))) map {
-            case (head, body) => ResolvedAst.Constraint.Rule(head, body.toList)
-          }
-      }) map (_.toList)
+      List.empty.toSuccess
     }
   }
 
@@ -239,11 +238,21 @@ object Resolver {
 
   object Predicate {
 
-    // TODO: Check that all variables are bound...
+    object Head {
+      /**
+       * Performs symbol resolution in the given head predicate `wast` under the given `namespace`.
+       */
+      def resolve(wast: WeededAst.PredicateWithApply, namespace: List[String], values: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Predicate.Head, ResolverError] =
 
-    def resolve(p: WeededAst.PredicateWithApply, globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Predicate.Head, ResolverError] = ???
+        @@(wast.terms map (t => Term.Head.resolve(t, namespace, values))) map {
+          case terms => ??? // TODO: Need to lookup the relation. ???
+        }
 
-    def resolveBody(p: WeededAst.PredicateNoApply, globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Predicate.Body, ResolverError] = ???
+    }
+
+    object Body {
+      def resolveBody(p: WeededAst.PredicateNoApply, namespace: List[String], values: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Predicate.Body, ResolverError] = ???
+    }
 
   }
 
@@ -254,11 +263,17 @@ object Resolver {
       /**
        * Performs symbol resolution in the given head term `wast` under the given `namespace`.
        */
-      def resolve(wast: WeededAst.TermWithApply, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Term.Head, ResolverError] = wast match {
-        case WeededAst.TermWithApply.Wildcard(location) => throw new RuntimeException("Illegal occurence of wildcard ") // TODO
-        case WeededAst.TermWithApply.Var(ident) => ???
-        case WeededAst.TermWithApply.Lit(lit) => ???
-        case WeededAst.TermWithApply.Apply(name, args) => ???
+      def resolve(wast: WeededAst.TermWithApply, namespace: List[String], values: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Term.Head, ResolverError] = wast match {
+        case WeededAst.TermWithApply.Var(ident) => ResolvedAst.Term.Head.Var(ident).toSuccess
+        case WeededAst.TermWithApply.Lit(wlit) => Literal.resolve(wlit, namespace, values) map ResolvedAst.Term.Head.Lit
+        case WeededAst.TermWithApply.Apply(name, wargs) =>
+          lookupDef(name, namespace, values) match {
+            case None => UnresolvedReference(name, namespace).toFailure
+            case Some((rname, defn)) =>
+              @@(wargs map (arg => resolve(arg, namespace, values))) map {
+                case args => ResolvedAst.Term.Head.Apply(rname, args.toList)
+              }
+          }
       }
     }
 
