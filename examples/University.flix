@@ -53,11 +53,29 @@ namespace University {
     Department("Math").
 
     rel StudiesIn(studentName: String, departmentName: String);
-
+    StudiesIn("Victor Garcia", "Engineering");
+    StudiesIn("Priscilla T. Reed", "Engineering");
+    StudiesIn("Ronald K. Rodriguez", "Math");
+    StudiesIn("David J. Richard", "Math");
+    StudiesIn("Edgar K. Clark", "Math");
+    StudiesIn("Tanya J. Rivera", "Biology");
+    StudiesIn("Ellen L. Matherne", "Physics");
+    StudiesIn("Betty J. Harris", "Biology");
+    StudiesIn("Ilse G. Hurst", "Computer Science");
+    StudiesIn("Anthony I. Killion", "Computer Science");
 
     rel WorksIn(facultyName: String, departmentName: String);
+    Faculty("Darrel P. Hammond", "Math").
+    Faculty("Melissa R. Morales", "Math").
+    Faculty("Elizabeth M. Khan", "Engineering").
+    Faculty("Angela M. Coward", "Engineering").
+    Faculty("Susan H. Warren", "Biology").
+    Faculty("Earl A. Purdy", "Math").
+    Faculty("Brandon H. Rey", "Physics").
 
-
+    rel Mathematician(name: String, amount: Int);
+    Mathematician(name, amount) :- Student(name, _, _, _), WorksIn(name, "Math"), Salary(name, amount).
+    Mathematician(name, amount) :- Faculty(name, _, _), WorksIn(name, "Math"), Salary(name, amount).
 
     rel Course(name: String, teacherName: String);
 
@@ -67,10 +85,11 @@ namespace University {
 
     rel Publication(title: String, journal: String);
 
-
     rel PublicationAuthor(title: String, authorName: String);
 
+
     // TODO: Rooms, Exams, Publications, Grants
+
 
 
 }

@@ -15,7 +15,7 @@ import scala.collection.immutable.Seq
 // TODO: Name the attribute in a fact/rule.
 // TODO:  Allow fields on case objects.
 // TODO: Two kinds of integrity constraints. One is that a fact exists, and the other is that a fact does not exist.
-
+// TODO: Consider allowing dotted predicates: Student(name, ...)
 
 /**
  * A parser for the Flix language.
