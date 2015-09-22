@@ -15,6 +15,7 @@ object TypedAst {
    * @param defns a map from resolved names to definitions.
    * @param facts a list of facts.
    * @param rules a list of rules.
+   *              // TODO: What exactly should go here?
    */
   case class Root(defns: Map[Name.Resolved, TypedAst.Definition],
                   facts: List[TypedAst.Constraint.Fact],
@@ -46,6 +47,7 @@ object TypedAst {
      * @param retTpe the return type of the function.
      * @param body the body expression of the function.
      */
+    // TODO: Why not fold function into Constant/Value etc.?
     case class Function(name: Name.Resolved, formals: List[TypedAst.FormalArg], retTpe: TypedAst.Type, body: TypedAst.Expression) extends TypedAst.Definition
 
     /**
@@ -65,7 +67,8 @@ object TypedAst {
      * @param leq the partial order.
      * @param lub the least-upper-bound.
      */
-    // TODO: How can we reference till this?
+    // TODO: Do we need a global type class namespace? Type -> JoinSemiLattice?
+    // TODO: These should have a different type. Probably Exp.
     case class JoinSemiLattice(tpe: TypedAst.Type, bot: Name.Resolved, leq: Name.Resolved, lub: Name.Resolved) extends TypedAst.Definition
 
     /**
@@ -110,6 +113,15 @@ object TypedAst {
     case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body]) extends TypedAst.Constraint
 
   }
+
+  // TODO: Need meta constraint
+  // true => A(...), B(...) (MUST-HOLD).
+  // Salary(name, amount) => Employee(name, <<unbound>>)
+  // false <= Employee(name, _), !Salary(name, _).
+
+  // Safety property
+  // false <= A(...), B(...) (the body must never hold).
+  //
 
   /**
    * A common super-type for typed literals.
