@@ -1,53 +1,53 @@
 namespace Company {
-    rel Employees(name: String, department: String)
-    rel Interns(name: String, department: String, start: Int, end: Int)
-    rel Departments(name: String, head: String)
-    rel Salaries(employee: String, salary: Int)
-    rel Buildings(address: String, department: String)
+    rel Employee(name: String, department: String)
+    rel Intern(name: String, department: String, start: Int, end: Int)
+    rel Department(name: String, head: String)
+    rel Salary(employee: String, salary: Int)
+    rel Building(address: String, department: String)
 
-    Employees("Adam Smith", "Sales").
-    Employees("Karl Marx", "Sales").
-    Employees("John Maynard Keynes", "Administration").
-    Employees("Vilfredo Pareto", "Operations").
+    Employee("Adam Smith", "Sales").
+    Employee("Karl Marx", "Sales").
+    Employee("John Maynard Keynes", "Administration").
+    Employee("Vilfredo Pareto", "Operations").
 
-    Interns("George Washington", "Sales", 1789, 1797).
-    Interns("John Adams", "Sales", 1797, 1801).
-    Interns("George W. Bush", "Sales", 2001, 2009).
-    Interns("Barack Obama", "Sales", 2009, 2017).
+    Intern("George Washington", "Sales", 1789, 1797).
+    Intern("John Adams", "Sales", 1797, 1801).
+    Intern("George W. Bush", "Sales", 2001, 2009).
+    Intern("Barack Obama", "Sales", 2009, 2017).
 
-    Departments("Sales", "Adam Smith").
-    Departments("Administration", "John Maynard Keynes").
-    Departments("Operations", "Vilfredo Pareto").
+    Department("Sales", "Adam Smith").
+    Department("Administration", "John Maynard Keynes").
+    Department("Operations", "Vilfredo Pareto").
 
-    Salaries("Adam Smith", 100).
-    Salaries("Karl Marx", 0).
-    Salaries("John Maynard Keynes", 5000).
-    Salaries("Vilfredo Pareto", 400).
-    Salaries("George Washington", 50).
-    Salaries("John Adams", 40).
-    Salaries("George W. Bush", 40).
-    Salaries("Barack Obama", 40).
+    Salary("Adam Smith", 100).
+    Salary("Karl Marx", 0).
+    Salary("John Maynard Keynes", 5000).
+    Salary("Vilfredo Pareto", 400).
+    Salary("George Washington", 50).
+    Salary("John Adams", 40).
+    Salary("George W. Bush", 40).
+    Salary("Barack Obama", 40).
 
-    Buildings("123 Main St", "Sales").
-    Buildings("1600 Pennsylvania Ave", "Administration").
-    Buildings("321 1st St", "Operations").
+    Building("123 Main St", "Sales").
+    Building("1600 Pennsylvania Ave", "Administration").
+    Building("321 1st St", "Operations").
 
     rel HeadOfDepartment(name: String)
-    HeadOfDepartment(x) :- Departments(_, x).
+    HeadOfDepartment(x) :- Department(_, x).
 
-    rel Workers(name: String)
-    Workers(x) :- Employees(x, _).
-    Workers(x) :- Interns(x, _, _, _).
+    rel Worker(name: String)
+    Worker(x) :- Employee(x, _).
+    Worker(x) :- Intern(x, _, _, _).
 
-    rel DepartmentHeadSalaries(name: String, salary: Int)
-    DepartmentHeadSalaries(x, s) :- Departments(_, x), Salaries(x, s).
+    rel DepartmentHeadSalary(name: String, salary: Int)
+    DepartmentHeadSalary(x, s) :- Department(_, x), Salary(x, s).
 
-    rel WorkerAddresses(name: String, address: String)
-    WorkerAddresses(name, address) :- Employees(name, dept), Buildings(address, dept).
-    WorkerAddresses(name, address) :- Interns(name, dept, _, _), Buildings(address, dept).
+    rel WorkerAddress(name: String, address: String)
+    WorkerAddress(name, address) :- Employee(name, dept), Building(address, dept).
+    WorkerAddress(name, address) :- Intern(name, dept, _, _), Building(address, dept).
 
     //TODO(Magnus)
     //false :- Intern(name, _, _, _), Worker(name, _).
     //If Adam Smith is an employee, he must be at 123 Main St.
-    //WorkerAddresses("Adam Smith", "123 Main St") :- Employees("Adam Smith", _)
+    //WorkerAddress("Adam Smith", "123 Main St") :- Employee("Adam Smith", _)
 }

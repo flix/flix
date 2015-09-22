@@ -1,3 +1,6 @@
 .idea/
 /api
 /target/
+main/target/
+macro/target
+project/target
