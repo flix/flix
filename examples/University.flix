@@ -84,7 +84,10 @@ namespace University {
     rel Publication(title: String, journal: String);
     Publication("Points and Problems in Advanced Probabilistic Topology", "arXiv");
     Publication("Convexity Methods in Topological Galois Theory", "arXiv");
+    Publication("Investigation of Thin Clients", "arXiv");
+    Publication("Multimodal, Client-Server Technology for SMPs", "arXiv")
 
     rel PublicationAuthor(title: String, authorName: String);
+
 
 }
