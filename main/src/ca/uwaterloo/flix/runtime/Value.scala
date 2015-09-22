@@ -2,7 +2,22 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.lang.ast.Name
 
-sealed trait Value
+sealed trait Value {
+  def toBool: Boolean = this match {
+    case Value.Bool(b) => b
+    case _ => ???
+  }
+
+  def toInt: Int = this match {
+    case Value.Int(i) => i
+    case _ => ???
+  }
+
+  def toStr: String = this match {
+    case Value.Str(s) => s
+    case _ => ???
+  }
+}
 
 object Value {
   case object Unit extends Value
