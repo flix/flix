@@ -27,16 +27,33 @@ object Resolver {
      * @param namespace the current namespace.
      */
     case class UnresolvedReference(name: ParsedAst.QName, namespace: List[String]) extends ResolverError {
-      val format = s"Error: Unresolved reference to ${name.format} in namespace ${namespace.mkString("::")} at ${name.location.format}\n"
+      val format = s"Error: Unresolved reference to '${name.format}' in namespace '${namespace.mkString("::")}' at ${name.location.format}\n"
     }
 
   }
 
-  case class SymbolTable(value: Map[Name.Resolved, WeededAst.Definition],
+  object SymbolTable {
+    val empty = SymbolTable(value = Map.empty, relations = Map.empty)
+  }
+
+  case class SymbolTable(value: Map[Name.Resolved, WeededAst.Definition.Value],
                          relations: Map[Name.Resolved, WeededAst.Definition.Relation]) {
 
-    def lookupValue(name: ParsedAst.QName, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition), ResolverError] = ???
+    // TODO: Cleanup
+    def lookupValue(name: ParsedAst.QName, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Value), ResolverError] = {
+      val rname = Name.Resolved(
+        if (name.parts.size == 1)
+          namespace ::: name.parts.head :: Nil
+        else
+          name.parts.toList
+      )
+      value.get(rname) match {
+        case None => UnresolvedReference(name, namespace).toFailure
+        case Some(d) => (rname, d).toSuccess
+      }
+    }
 
+    // TODO: Cleanup
     def lookupRelation(name: ParsedAst.QName, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Relation), ResolverError] = {
       val rname = Name.Resolved(
         if (name.parts.size == 1)
@@ -56,21 +73,12 @@ object Resolver {
    */
   def resolve(wast: WeededAst.Root): Validation[ResolvedAst.Root, ResolverError] = {
     // TODO: Can anyone actually understand this: ??
-    val exprVal = Validation.fold[WeededAst.Declaration, Map[Name.Resolved, WeededAst.Definition], ResolverError](wast.declarations, Map.empty) {
-      case (macc, d) => Declaration.symbols(d, List.empty) map {
-        case m2 => m2.foldLeft(macc) {
-          case (macc2, (rname, defn)) => macc2.get(rname) match {
-            case None => macc2 + (rname -> defn)
-            case Some(_) => throw new RuntimeException("duplicate name")
-          }
-        }
-      }
+    val symsVal = Validation.fold[WeededAst.Declaration, SymbolTable, ResolverError](wast.declarations, SymbolTable.empty) {
+      case (msyms, d) => Declaration.symbolsOf(d, List.empty, msyms)
     }
 
-    exprVal flatMap {
-      case values =>
-
-        val syms = SymbolTable(values, Map.empty)
+    symsVal flatMap {
+      case syms =>
 
         val collectedFacts = Declaration.collectFacts(wast, syms)
         val collectedRules = Declaration.collectRules(wast, syms)
@@ -83,30 +91,31 @@ object Resolver {
 
   object Declaration {
 
-    def symbols(wast: WeededAst.Declaration, namespace: List[String]): Validation[Map[Name.Resolved, WeededAst.Definition], ResolverError] = wast match {
+    def symbolsOf(wast: WeededAst.Declaration, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
       // TODO: Can anyone actually understand this: ??
       case WeededAst.Declaration.Namespace(ParsedAst.QName(parts, location), body) =>
-        Validation.fold[WeededAst.Declaration, Map[Name.Resolved, WeededAst.Definition], ResolverError](body, Map.empty) {
-          case (macc, d) => Declaration.symbols(d, namespace ::: parts.toList) map {
-            case m2 => m2.foldLeft(macc) {
-              case (macc2, (rname, defn)) => macc2.get(rname) match {
-                case None => macc2 + (rname -> defn)
-                case Some(_) => throw new RuntimeException("duplicate name")
-              }
-            }
-          }
+        Validation.fold[WeededAst.Declaration, SymbolTable, ResolverError](body, syms) {
+          case (msyms, d) => symbolsOf(d, namespace ::: parts.toList, msyms)
         }
-      case WeededAst.Declaration.Fact(head) => Map.empty[Name.Resolved, WeededAst.Definition].toSuccess // nop
-      case WeededAst.Declaration.Rule(head, body) => Map.empty[Name.Resolved, WeededAst.Definition].toSuccess // nop
-      case defn: WeededAst.Definition => symbols(defn, namespace)
+      case WeededAst.Declaration.Fact(head) => syms.toSuccess // TODO
+      case WeededAst.Declaration.Rule(head, body) => syms.toSuccess // TODO
+      case defn: WeededAst.Definition => symbolsOf(defn, namespace, syms)
     }
 
-    def symbols(wast: WeededAst.Definition, namespace: List[String]): Validation[Map[Name.Resolved, WeededAst.Definition], ResolverError] = wast match {
-      case WeededAst.Definition.Value(ident, tpe, e) => Map(toRName(ident, namespace) -> wast).toSuccess
-      case WeededAst.Definition.Enum(ident, cases) => Map(toRName(ident, namespace) -> wast).toSuccess
-      // TODO: Here we clearly see the need for several namespaces.
-      case WeededAst.Definition.Lattice(ident, elms, traits) => Map.empty[Name.Resolved, WeededAst.Definition].toSuccess // TODO
-      case WeededAst.Definition.Relation(ident, attributes) => Map.empty[Name.Resolved, WeededAst.Definition].toSuccess // TODO
+    /**
+     * Constructs the symbol for the given definition `wast`.
+     */
+    def symbolsOf(wast: WeededAst.Definition, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
+      case WeededAst.Definition.Value(ident, tpe, e) => syms.toSuccess // TODO
+      case WeededAst.Definition.Enum(ident, cases) => syms.toSuccess // TODO
+      case WeededAst.Definition.Lattice(ident, elms, traits) => syms.toSuccess // TODO
+
+      case defn@WeededAst.Definition.Relation(ident, attributes) =>
+        val rname = toRName(ident, namespace)
+        syms.relations.get(rname) match {
+          case None => syms.copy(relations = syms.relations + (rname -> defn)).toSuccess
+          case Some(otherDefn) => ??? // TODO: Duplicate 
+        }
     }
 
     // TODO: Check that all variables are bound...
