@@ -49,7 +49,7 @@ object Resolver {
     }
 
     globalsVal flatMap {
-      case globals => @@(wast.declarations.map(d => Declaration.resolve(d, List.empty, globals))) map ResolvedAst.Root
+      case globals => @@(wast.declarations.map(d => Declaration.resolve(d, List.empty, globals))) map (xs => ResolvedAst.Root(xs.flatten))
     }
   }
 
@@ -85,11 +85,11 @@ object Resolver {
     /**
      * Performs symbol resolution in the given declaration `wast` under the given `namespace`.
      */
-    def resolve(wast: WeededAst.Declaration, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[ResolvedAst.Declaration, ResolverError] = wast match {
-      case WeededAst.Declaration.Namespace(name, body) => ???
+    def resolve(wast: WeededAst.Declaration, namespace: List[String], globals: Map[Name.Resolved, WeededAst.Definition]): Validation[Option[ResolvedAst.Declaration], ResolverError] = wast match {
+      case WeededAst.Declaration.Namespace(name, body) => None.toSuccess
       case WeededAst.Declaration.Fact(head) => ???
       case WeededAst.Declaration.Rule(head, body) => ???
-      case defn: WeededAst.Definition => Definition.resolve(defn, namespace, globals)
+      case defn: WeededAst.Definition => Definition.resolve(defn, namespace, globals) map Option.apply
     }
 
   }
