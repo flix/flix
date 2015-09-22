@@ -12,4 +12,8 @@ class TestExamples extends FunSuite {
     Compiler.compile(List(Paths.get("./examples/Company.flix")))
   }
 
+  test("University.flix") {
+    Compiler.compile(List(Paths.get("./examples/University.flix")))
+  }
+
 }

@@ -71,26 +71,26 @@ object Compiler {
       return
     }
     Console.println("Success!")
-
-    Console.print("Resolution: ")
-    val rast = Resolver.resolve(wast.get)
-    if (rast.isFailure) {
-      wast.errors.foreach(e => println(e.format))
-      return
-    }
-    Console.println("Success!")
-
-    Console.print("Typechecking: ")
-    val tast = Typer.typecheck(rast.get)
-    if (tast.isFailure) {
-      tast.errors.foreach(e => println(e.format))
-      return
-    }
-    Console.println("Success!")
-
-    Console.print("Optimization: ")
-    val oast = Optimizer.optimize(tast.get)
-    Console.println("Success!")
+//
+//    Console.print("Resolution: ")
+//    val rast = Resolver.resolve(wast.get)
+//    if (rast.isFailure) {
+//      wast.errors.foreach(e => println(e.format))
+//      return
+//    }
+//    Console.println("Success!")
+//
+//    Console.print("Typechecking: ")
+//    val tast = Typer.typecheck(rast.get)
+//    if (tast.isFailure) {
+//      tast.errors.foreach(e => println(e.format))
+//      return
+//    }
+//    Console.println("Success!")
+//
+//    Console.print("Optimization: ")
+//    val oast = Optimizer.optimize(tast.get)
+//    Console.println("Success!")
 
   }
 
