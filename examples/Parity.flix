@@ -92,7 +92,8 @@ namespace ParityAnalysis {
     // we abstract integers into the parity domain by using modulo.
     def lift(i: Int): Parity = if (i % 2 == 0) Even else Odd;
 
-    lat <Parity> (Parity.Bot, leq, ParityAnalysis::lub);
+// TODO: Allow expressions here.
+    lat <Parity> (Bot, leq, ParityAnalysis::lub);
 
     rel SumOp(result: Int, left: Int, right: Int);
     rel VarPointsTo(localVal: Int, value: <Parity>);
@@ -101,6 +102,6 @@ namespace ParityAnalysis {
     VarPointsTo(1, Parity.Odd).
     VarPointsTo(2, Parity.Even).
 
-    VarPointsTo(t1, plus(v2, v3)) :- SumOp(t1, t2, t3), VarPointsTo(t2, v2), VarPointsTo(t3, v3).
+    VarPointsTo(t1, plus(v2, v3)) :- ParityAnalysis::SumOp(t1, t2, t3), VarPointsTo(t2, v2), VarPointsTo(t3, v3).
 
 };

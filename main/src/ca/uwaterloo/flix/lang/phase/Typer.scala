@@ -15,8 +15,6 @@ object Typer {
 
   object TypeError {
 
-    // TODO
-
     case class ExpectedType(expected: TypedAst.Type, actual: TypedAst.Type, location: SourceLocation) extends TypeError {
       val format = ???
     }
@@ -27,30 +25,45 @@ object Typer {
 
   }
 
+  /**
+   * Runs the typer on the entire given AST `rast`.
+   */
+  def typecheck(rast: ResolvedAst.Root): Validation[TypedAst.Root, TypeError] = TypedAst.Root(Map.empty, List.empty, List.empty).toSuccess
 
-  def typecheck(rast: ResolvedAst.Root): Validation[TypedAst.Root, TypeError] = ???
 
   object Literal {
 
-    def typer(rast: ResolvedAst.Literal): Validation[TypedAst.Literal, TypeError] = rast match {
-      case ResolvedAst.Literal.Unit => TypedAst.Literal.Unit.toSuccess
-      case ResolvedAst.Literal.Bool(b) => TypedAst.Literal.Bool(b).toSuccess
-      case ResolvedAst.Literal.Int(i) => TypedAst.Literal.Int(i).toSuccess
-      case ResolvedAst.Literal.Str(s) => TypedAst.Literal.Str(s).toSuccess
-      case ResolvedAst.Literal.Tag(name, ident, literal, defn) => ??? // TODO
-      case ResolvedAst.Literal.Tuple(relms) => @@(relms map typer) map {
-        case elms => TypedAst.Literal.Tuple(elms.toList, TypedAst.Type.Tuple((elms map (_.tpe)).toList))
+    /**
+     * Types the given resolved literal `rast`.
+     */
+    def typer(rast: ResolvedAst.Literal, root: ResolvedAst.Root): TypedAst.Literal = {
+      def visit(rast: ResolvedAst.Literal): TypedAst.Literal = rast match {
+        case ResolvedAst.Literal.Unit => TypedAst.Literal.Unit
+        case ResolvedAst.Literal.Bool(b) => TypedAst.Literal.Bool(b)
+        case ResolvedAst.Literal.Int(i) => TypedAst.Literal.Int(i)
+        case ResolvedAst.Literal.Str(s) => TypedAst.Literal.Str(s)
+        case ResolvedAst.Literal.Tag(name, ident, rlit) =>
+          val defn = root.enums(name)
+          val cases = defn.cases.map {
+            case (tag, tpe) => tag -> Type.typer(tpe).asInstanceOf[TypedAst.Type.Tag]
+          }
+          TypedAst.Literal.Tag(name, ident, visit(rlit), TypedAst.Type.Enum(cases))
+        case ResolvedAst.Literal.Tuple(relms) =>
+          val elms = relms map visit
+          TypedAst.Literal.Tuple(elms, TypedAst.Type.Tuple(elms map (_.tpe)))
       }
-    }
 
+      visit(rast)
+    }
   }
+
 
   object Expression {
 
     def typer(rast: ResolvedAst.Expression, env0: Map[String, TypedAst.Type]): Validation[TypedAst.Expression, TypeError] = rast match {
       case ResolvedAst.Expression.Var(ident) => ??? // pull type out of map.
 
-      case ResolvedAst.Expression.Ref(name, decl) => ??? // TODO
+      case ResolvedAst.Expression.Ref(name) => ??? // TODO
 
       case ResolvedAst.Expression.Let(ident, rvalue, rbody) =>
         typer(rvalue, env0) flatMap {
@@ -75,18 +88,18 @@ object Typer {
 
   object Type {
 
-    def translate(rast: WeededAst.Type): ResolvedAst.Type = ???
+    def typer(rast: ResolvedAst.Type): TypedAst.Type = ???
 
   }
 
 
-//  def unify(pattern: TypedAst.Pattern, tpe: TypedAst.Type): Validation[Map[String, TypedAst.Type], TypeError] =
-//    (pattern, tpe) match {
-//      case (TypedAst.Pattern.Wildcard(_), _) => Map.empty[String, TypedAst.Type].toSuccess
-//      case (TypedAst.Pattern.Var(ident), t) => Map(ident.name -> t).toSuccess
-//      case (TypedAst.Pattern.Lit(literal), t) => ??? // TODO: Get type of the literal and then we are good?
-//        // TODO: remaining cases.
-//    }
+  //  def unify(pattern: TypedAst.Pattern, tpe: TypedAst.Type): Validation[Map[String, TypedAst.Type], TypeError] =
+  //    (pattern, tpe) match {
+  //      case (TypedAst.Pattern.Wildcard(_), _) => Map.empty[String, TypedAst.Type].toSuccess
+  //      case (TypedAst.Pattern.Var(ident), t) => Map(ident.name -> t).toSuccess
+  //      case (TypedAst.Pattern.Lit(literal), t) => ??? // TODO: Get type of the literal and then we are good?
+  //        // TODO: remaining cases.
+  //    }
 
   def expect(tpe1: TypedAst.Type)(tpe2: TypedAst.Type): Validation[TypedAst.Type, TypeError] = ???
 

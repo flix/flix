@@ -15,6 +15,7 @@ object TypedAst {
    * @param defns a map from resolved names to definitions.
    * @param facts a list of facts.
    * @param rules a list of rules.
+   *              // TODO: What exactly should go here?
    */
   case class Root(defns: Map[Name.Resolved, TypedAst.Definition],
                   facts: List[TypedAst.Constraint.Fact],
@@ -36,17 +37,8 @@ object TypedAst {
      * @param exp the constant expression.
      * @param tpe the type of the constant.
      */
+    // TODO: Should probably be called NamedExpr or such
     case class Constant(name: Name.Resolved, exp: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Definition
-
-    /**
-     * A typed AST node representing a function definition.
-     *
-     * @param name the name of the function.
-     * @param formals the formal arguments of the function.
-     * @param retTpe the return type of the function.
-     * @param body the body expression of the function.
-     */
-    case class Function(name: Name.Resolved, formals: List[TypedAst.FormalArg], retTpe: TypedAst.Type, body: TypedAst.Expression) extends TypedAst.Definition
 
     /**
      * A typed AST node representing an enum definition.
@@ -65,7 +57,8 @@ object TypedAst {
      * @param leq the partial order.
      * @param lub the least-upper-bound.
      */
-    // TODO: How can we reference till this?
+    // TODO: Do we need a global type class namespace? Type -> JoinSemiLattice?
+    // TODO: These should have a different type. Probably Exp.
     case class JoinSemiLattice(tpe: TypedAst.Type, bot: Name.Resolved, leq: Name.Resolved, lub: Name.Resolved) extends TypedAst.Definition
 
     /**
@@ -81,7 +74,7 @@ object TypedAst {
       def attribute(attribute: String): TypedAst.Attribute = attributes find {
         case TypedAst.Attribute(ident, tpe) => ident.name == attribute
       } getOrElse {
-        throw Compiler.InternalCompilerError(s"Attribute '$name' does not exist.", name.location)
+        throw Compiler.InternalCompilerError(s"Attribute '$name' does not exist.", ???)
       }
     }
 
@@ -110,6 +103,17 @@ object TypedAst {
     case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body]) extends TypedAst.Constraint
 
   }
+
+  // TODO: Need meta constraint
+  // true => A(...), B(...) (MUST-HOLD).
+  // Salary(name, amount) => Employee(name, <<unbound>>)
+  // false <= Employee(name, _), !Salary(name, _).
+
+  // Safety property
+  // false <= A(...), B(...) (the body must never hold).
+  //
+  // always Answer(x).
+  // never Unsafe(x).
 
   /**
    * A common super-type for typed literals.
@@ -154,11 +158,12 @@ object TypedAst {
     /**
      * A typed AST node representing a tagged literal.
      *
+     * @parma name the enum name.
      * @param ident the tag name.
      * @param literal the nested literal.
      * @param tpe the type of the tag.
      */
-    case class Tag(ident: ParsedAst.Ident, literal: TypedAst.Literal, tpe: TypedAst.Type.Enum) extends TypedAst.Literal
+    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, literal: TypedAst.Literal, tpe: TypedAst.Type.Enum) extends TypedAst.Literal
 
     /**
      * A typed AST node representing a tuple literal.
@@ -395,15 +400,6 @@ object TypedAst {
     sealed trait Head extends TypedAst
 
     object Head {
-
-      /**
-       * An AST node representing a wildcard term.
-       *
-       * @param location the location of the wildcard.
-       * @param tpe the type of the term.
-       */
-      case class Wildcard(location: SourceLocation, tpe: TypedAst.Type) extends TypedAst.Term.Head
-
       /**
        * An AST node representing a variable term.
        *
@@ -418,7 +414,7 @@ object TypedAst {
        * @param literal the literal.
        * @param tpe the type of the term.
        */
-      case class Lit(literal: WeededAst.Literal, tpe: TypedAst.Type) extends TypedAst.Term.Head
+      case class Lit(literal: TypedAst.Literal, tpe: TypedAst.Type) extends TypedAst.Term.Head
 
       /**
        * An AST node representing a function call term.

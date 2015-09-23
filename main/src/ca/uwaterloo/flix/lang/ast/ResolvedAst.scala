@@ -4,20 +4,45 @@ trait ResolvedAst
 
 object ResolvedAst {
 
-  case class Root(declarations: Seq[ResolvedAst.Declaration]) extends ResolvedAst
+  case class Root(
+                   // TODO: value environment
+                   // todo: relation environment
+                   // todo: type environment
+                   // todo: lattice environment
+                   // todo: enum environment... sigh so many
+                   enums: Map[Name.Resolved, ResolvedAst.Definition.Enum],
+                   // relations: Map[Name.Resolved, ResolvedAst.Definition.Relation],
+                   facts: List[ResolvedAst.Constraint.Fact],
+                   rules: List[ResolvedAst.Constraint.Rule]) extends ResolvedAst
 
-  sealed trait Declaration extends ResolvedAst
+  sealed trait Constraint extends ResolvedAst
 
-  object Declaration {
+  object Constraint {
 
-    case class Fact(head: ResolvedAst.Predicate) extends Declaration
+    /**
+     * A resolved AST node representing a fact declaration.
+     *
+     * @param head the head predicate.
+     */
+    case class Fact(head: ResolvedAst.Predicate.Head) extends ResolvedAst.Constraint
 
+    /**
+     * A resolved AST node representing a rule declaration.
+     *
+     * @param head the head predicate.
+     * @param body the body predicates.
+     */
+    case class Rule(head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body]) extends ResolvedAst.Constraint
 
   }
 
-  sealed trait Definition extends ResolvedAst.Declaration
+  sealed trait Definition extends ResolvedAst.Constraint
 
   object Definition {
+
+    case class Value(name: Name.Resolved, exp: ResolvedAst.Expression, tpe: ResolvedAst.Type) extends ResolvedAst.Definition
+
+    case class Enum(name: Name.Resolved, cases: Map[String, ResolvedAst.Type.Tag]) extends ResolvedAst.Definition
 
     case class Relation() extends ResolvedAst.Definition
 
@@ -35,10 +60,9 @@ object ResolvedAst {
 
     case class Str(literal: java.lang.String) extends ResolvedAst.Literal
 
-    // TODO: Enum Def?
-    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, literal: ResolvedAst.Literal, defn: WeededAst.Definition) extends ResolvedAst.Literal
+    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, literal: ResolvedAst.Literal) extends ResolvedAst.Literal
 
-    case class Tuple(elms: Seq[ResolvedAst.Literal]) extends ResolvedAst.Literal
+    case class Tuple(elms: List[ResolvedAst.Literal]) extends ResolvedAst.Literal
 
   }
 
@@ -48,7 +72,7 @@ object ResolvedAst {
 
     case class Var(ident: ParsedAst.Ident) extends ResolvedAst.Expression
 
-    case class Ref(name: Name.Resolved, defn: WeededAst.Definition) extends ResolvedAst.Expression
+    case class Ref(name: Name.Resolved) extends ResolvedAst.Expression
 
     case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Expression
 
@@ -58,7 +82,7 @@ object ResolvedAst {
 
     case class Unary(op: UnaryOperator, e: ResolvedAst.Expression) extends ResolvedAst.Expression
 
-    case class Binary(e1: ResolvedAst.Expression, op: BinaryOperator, e2: ResolvedAst.Expression) extends ResolvedAst.Expression
+    case class Binary(op: BinaryOperator, e1: ResolvedAst.Expression, e2: ResolvedAst.Expression) extends ResolvedAst.Expression
 
     case class IfThenElse(e1: ResolvedAst.Expression, e2: ResolvedAst.Expression, e3: ResolvedAst.Expression) extends ResolvedAst.Expression
 
@@ -66,11 +90,11 @@ object ResolvedAst {
 
     case class Match(e: ResolvedAst.Expression, rules: Seq[(ResolvedAst.Pattern, ResolvedAst.Expression)]) extends ResolvedAst.Expression
 
-    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, e: ResolvedAst.Expression, defn: WeededAst.Definition.Enum) extends ResolvedAst.Expression
+    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, e: ResolvedAst.Expression) extends ResolvedAst.Expression
 
     case class Tuple(elms: Seq[ResolvedAst.Expression]) extends ResolvedAst.Expression
 
-    case class Ascribe(e: ResolvedAst.Expression) extends ResolvedAst.Expression
+    case class Ascribe(e: ResolvedAst.Expression, tpe: ResolvedAst.Type) extends ResolvedAst.Expression
 
     case class Error(location: SourceLocation) extends ResolvedAst.Expression
 
@@ -86,45 +110,97 @@ object ResolvedAst {
 
     case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Pattern
 
-    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, pat: ResolvedAst.Pattern, defn: WeededAst.Definition) extends ResolvedAst.Pattern
+    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, pat: ResolvedAst.Pattern) extends ResolvedAst.Pattern
 
     case class Tuple(elms: Seq[ResolvedAst.Pattern]) extends ResolvedAst.Pattern
 
   }
 
-  sealed trait Predicate
+
+  // TODO: Filters
 
   object Predicate {
 
-    case class Relational(/* todo: what */) extends ResolvedAst.Predicate
+    /**
+     * A predicate that is allowed to occur in the head of a rule.
+     *
+     * @param name the name of the predicate.
+     * @param terms the terms of the predicate.
+     */
+    case class Head(name: Name.Resolved, terms: List[ResolvedAst.Term.Head])
 
-    case class Functional(/*  todo: what */) extends ResolvedAst.Predicate
+    /**
+     * A predicate that is allowed to occur in the body of a rule.
+     *
+     * @param name the name of the predicate.
+     * @param terms the terms of the predicate.
+     */
+    case class Body(name: Name.Resolved, terms: List[ResolvedAst.Term.Body])
 
   }
 
-  sealed trait TermNoApply
+  object Term {
 
-  object TermNoApply {
+    /**
+     * A common super-type for terms that are allowed appear in a head predicate.
+     */
+    sealed trait Head extends ResolvedAst
 
-    case class Wildcard(location: SourceLocation) extends ResolvedAst.TermNoApply
+    object Head {
 
-    case class Var(ident: ParsedAst.Ident) extends ResolvedAst.TermNoApply
+      /**
+       * An AST node representing a variable term.
+       *
+       * @param ident the variable name.
+       */
+      case class Var(ident: ParsedAst.Ident) extends ResolvedAst.Term.Head
 
-    case class Lit(literal: WeededAst.Literal) extends ResolvedAst.TermNoApply
+      /**
+       * An AST node representing a literal term.
+       *
+       * @param literal the literal.
+       */
+      case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Term.Head
 
-  }
+      /**
+       * An AST node representing a function call term.
+       *
+       * @param name the name of the called function.
+       * @param args the arguments to the function.
+       */
+      case class Apply(name: Name.Resolved, args: List[ResolvedAst.Term.Head]) extends ResolvedAst.Term.Head
 
-  sealed trait TermWithApply extends WeededAst
+    }
 
-  object TermWithApply {
+    /**
+     * A common super-type for terms that are allowed to appear in a body predicate.
+     */
+    sealed trait Body extends ResolvedAst
 
-    case class Wildcard(location: SourceLocation) extends ResolvedAst.TermWithApply
+    object Body {
 
-    case class Var(ident: ParsedAst.Ident) extends ResolvedAst.TermWithApply
+      /**
+       * An AST node representing a wildcard term.
+       *
+       * @param location the location of the wildcard.
+       */
+      case class Wildcard(location: SourceLocation) extends ResolvedAst.Term.Body
 
-    case class Lit(literal: WeededAst.Literal) extends ResolvedAst.TermWithApply
+      /**
+       * An AST node representing a variable term.
+       *
+       * @param ident the variable name.
+       */
+      case class Var(ident: ParsedAst.Ident) extends ResolvedAst.Term.Body
 
-    case class Apply(name: ParsedAst.QName, args: Seq[WeededAst.TermWithApply]) extends ResolvedAst.TermWithApply
+      /**
+       * An AST node representing a literal term.
+       *
+       * @param literal the literal.
+       */
+      case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Term.Body
+
+    }
 
   }
 

@@ -8,7 +8,8 @@ trait WeededAst
 
 object WeededAst {
 
-  case class Root(declarations: Seq[WeededAst.Declaration]) extends WeededAst
+  // TODO: Every Seq should be replaced by List
+  case class Root(declarations: List[WeededAst.Declaration]) extends WeededAst
 
   sealed trait Declaration
 
@@ -28,11 +29,8 @@ object WeededAst {
 
   object Definition {
 
-    case class TypeAlias(ident: ParsedAst.Ident, tpe: WeededAst.Type) extends WeededAst.Definition
-
+    // TODO: Swap order
     case class Value(ident: ParsedAst.Ident, tpe: WeededAst.Type, e: WeededAst.Expression) extends WeededAst.Definition
-
-    case class Function(ident: ParsedAst.Ident, formals: Seq[(ParsedAst.Ident, WeededAst.Type)], tpe: WeededAst.Type, body: WeededAst.Expression) extends WeededAst.Definition
 
     // TODO: Decorate with the full type....
     case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends WeededAst.Definition
@@ -95,10 +93,12 @@ object WeededAst {
 
     case class Unary(op: UnaryOperator, e: WeededAst.Expression) extends WeededAst.Expression
 
+    // TODO: Swap arguments
     case class Binary(e1: WeededAst.Expression, op: BinaryOperator, e2: WeededAst.Expression) extends WeededAst.Expression
 
     case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression) extends WeededAst.Expression
 
+    // TODO: Why not just call these e1 and e2?
     case class Let(ident: ParsedAst.Ident, value: WeededAst.Expression, body: WeededAst.Expression) extends WeededAst.Expression
 
     case class Match(e: WeededAst.Expression, rules: Seq[(WeededAst.Pattern, WeededAst.Expression)]) extends WeededAst.Expression
@@ -113,7 +113,20 @@ object WeededAst {
 
   }
 
-  sealed trait Pattern extends WeededAst
+  sealed trait Pattern extends WeededAst {
+    /**
+     * Returns the set of variables bound by this pattern.
+     */
+    final def bound: Set[String] = this match {
+      case WeededAst.Pattern.Wildcard(_) => Set.empty
+      case WeededAst.Pattern.Var(ident) => Set(ident.name)
+      case WeededAst.Pattern.Lit(lit) => Set.empty
+      case WeededAst.Pattern.Tag(name, ident, p) => p.bound
+      case WeededAst.Pattern.Tuple(elms) => elms.foldLeft(Set.empty[String]) {
+        case (acc, pat) => acc ++ pat.bound
+      }
+    }
+  }
 
   object Pattern {
 
@@ -149,6 +162,7 @@ object WeededAst {
 
   object TermWithApply {
 
+    // TODO: Wildcards should not be allowed here...
     case class Wildcard(location: SourceLocation) extends WeededAst.TermWithApply
 
     case class Var(ident: ParsedAst.Ident) extends WeededAst.TermWithApply
@@ -174,6 +188,7 @@ object WeededAst {
 
     case class Function(t1: WeededAst.Type, t2: WeededAst.Type) extends WeededAst.Type
 
+    // TODO: Disallow
     case class Parametric(name: ParsedAst.QName, elms: Seq[WeededAst.Type]) extends WeededAst.Type
 
     case class Lattice(tpe: WeededAst.Type) extends WeededAst.Type

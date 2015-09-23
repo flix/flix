@@ -35,7 +35,9 @@ object ParsedAst {
    * @param parts the name parts.
    * @param location the source location of the first name part.
    */
-  case class QName(parts: Seq[String], location: SourceLocation) extends ParsedAst
+  case class QName(parts: Seq[String], location: SourceLocation) extends ParsedAst {
+    val format: String = parts.mkString("::")
+  }
 
   /**
    * A common super-type for AST nodes that represent declarations.
@@ -67,6 +69,7 @@ object ParsedAst {
      */
     case class Rule(head: ParsedAst.Predicate, body: Seq[ParsedAst.Predicate]) extends ParsedAst.Definition
 
+    // TODO: Add integrity constraints
   }
 
   /**
@@ -77,23 +80,12 @@ object ParsedAst {
   object Definition {
 
     /**
-     * An AST node that represent a type alias definition.
-     *
-     * @param ident the name of the alias.
-     * @param tpe the type of the alias.
-     */
-    // TODO: Do we really want this?
-    case class TypeAlias(ident: ParsedAst.Ident, tpe: ParsedAst.Type) extends ParsedAst.Definition
-
-    /**
      * An AST node that represents a value definition.
      *
      * @param ident the name of the value.
      * @param tpe the declared type of the value.
      * @param e the expression.
      */
-    // TODO: Maybe this should be called literal or some such?
-    // TODO: Lets call thus constant and use "const"?
     case class Value(ident: ParsedAst.Ident, tpe: ParsedAst.Type, e: ParsedAst.Expression) extends ParsedAst.Definition
 
     /**

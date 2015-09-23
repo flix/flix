@@ -15,7 +15,7 @@ import scala.collection.immutable.Seq
 // TODO: Name the attribute in a fact/rule.
 // TODO:  Allow fields on case objects.
 // TODO: Two kinds of integrity constraints. One is that a fact exists, and the other is that a fact does not exist.
-
+// TODO: Consider allowing dotted predicates: Student(name, ...)
 
 /**
  * A parser for the Flix language.
@@ -42,11 +42,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def Definition: Rule1[ParsedAst.Definition] = rule {
-    TypeAliasDefinition | ValueDefinition | FunctionDefinition | EnumDefinition | LatticeDefinition | RelationDefinition
-  }
-
-  def TypeAliasDefinition: Rule1[ParsedAst.Definition.TypeAlias] = rule {
-    atomic("type") ~ WS ~ Ident ~ optWS ~ "=" ~ optWS ~ Type ~ optSC ~> ParsedAst.Definition.TypeAlias
+    ValueDefinition | FunctionDefinition | EnumDefinition | LatticeDefinition | RelationDefinition
   }
 
   def ValueDefinition: Rule1[ParsedAst.Definition.Value] = rule {
@@ -245,11 +241,11 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   // Facts and Rules                                                         //
   /////////////////////////////////////////////////////////////////////////////
   def FactDeclaration: Rule1[ParsedAst.Declaration.Fact] = rule {
-    Predicate ~ optWS ~ "." ~ optWS ~> ParsedAst.Declaration.Fact
+    Predicate ~ optDotOrSC ~> ParsedAst.Declaration.Fact
   }
 
   def RuleDeclaration: Rule1[ParsedAst.Declaration.Rule] = rule {
-    Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ "." ~ optWS ~> ParsedAst.Declaration.Rule
+    Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optDotOrSC ~> ParsedAst.Declaration.Rule
   }
 
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
@@ -448,6 +444,10 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   def optSC: Rule0 = rule {
     optWS ~ optional(";") ~ optWS
+  }
+
+  def optDotOrSC: Rule0 = rule {
+    optWS ~ optional("." | ";") ~ optWS
   }
 
   def NewLine: Rule0 = rule {
