@@ -18,7 +18,7 @@ class TestTyper extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Constraints                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  test("Constraint.Fact") {
+  test("Constraint.Fact01") {
     val rname = Name.Resolved(List("Student"))
 
     val root = Root.copy(relations = Map(
@@ -35,6 +35,31 @@ class TestTyper extends FunSuite {
     assert(result.isSuccess)
   }
 
+  test("Constraint.Rule01") {
+    val rname = Name.Resolved(List("Edge"))
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val y = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val z = ParsedAst.Ident("x", SourceLocation.Unknown)
+
+    val root = Root.copy(relations = Map(
+      rname -> ResolvedAst.Definition.Relation()
+    ))
+
+    val head = ResolvedAst.Predicate.Head(rname, List(ResolvedAst.Term.Head.Var(x), ResolvedAst.Term.Head.Var(z)))
+
+    val body = List(
+      ResolvedAst.Predicate.Body(rname, List(ResolvedAst.Term.Body.Var(x), ResolvedAst.Term.Body.Var(y))),
+      ResolvedAst.Predicate.Body(rname, List(ResolvedAst.Term.Body.Var(y), ResolvedAst.Term.Body.Var(z)))
+    )
+
+    val rast = ResolvedAst.Constraint.Rule(head, body)
+    val result = Typer.Constraint.typer(rast, root)
+    assert(result.isSuccess)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Lattices                                                                //
+  /////////////////////////////////////////////////////////////////////////////
 
   /////////////////////////////////////////////////////////////////////////////
   // Literals                                                                //
