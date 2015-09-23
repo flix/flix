@@ -314,7 +314,20 @@ object TypedAst {
     /**
      * Returns the bound variables (and their types).
      */
-    def bound: Map[ParsedAst.Ident, TypedAst.Type] = ???
+    def bound: Map[ParsedAst.Ident, TypedAst.Type] = {
+      def visit(pat: TypedAst.Pattern, m: Map[ParsedAst.Ident, TypedAst.Type]): Map[ParsedAst.Ident, TypedAst.Type] =
+        pat match {
+          case TypedAst.Pattern.Wildcard(_) => m
+          case TypedAst.Pattern.Var(ident, tpe) => m + (ident -> tpe)
+          case TypedAst.Pattern.Lit(_, _) => m
+          case TypedAst.Pattern.Tag(_, _, pat2, _) => visit(pat2, m)
+          case TypedAst.Pattern.Tuple(elms, _) => elms.foldLeft(m) {
+            case (macc, elm) => visit(elm, macc)
+          }
+        }
+
+      visit(this, Map.empty)
+    }
   }
 
   object Pattern {
@@ -397,6 +410,7 @@ object TypedAst {
     sealed trait Head extends TypedAst
 
     object Head {
+
       /**
        * An AST node representing a variable term.
        *

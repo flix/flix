@@ -10,7 +10,7 @@ class TestAll extends Suites(
   new TestTypedAst,
   new TestParser,
   new TestResolver,
-  new TestTypedAst,
+  new TestTyper,
   new TestWeeder,
   new TestExamples) with ParallelTestExecution {
 
