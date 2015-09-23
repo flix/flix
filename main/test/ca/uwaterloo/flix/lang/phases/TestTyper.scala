@@ -67,13 +67,44 @@ class TestTyper extends FunSuite {
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
 
-  test("Expression.IfThenElse") {
+  test("Expression.IfThenElse01") {
     val rast = ResolvedAst.Expression.IfThenElse(
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(21)),
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42))
     )
-    assertResult(Typer.Expression.typer(rast, Root))(TypedAst.Type.Int)
+    val result = Typer.Expression.typer(rast, Root)
+    assertResult(result)(TypedAst.Type.Int)
+  }
+
+  test("Expression.IfThenElse02") {
+    val rast = ResolvedAst.Expression.IfThenElse(
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(false)),
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("a")),
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("b"))
+    )
+    val result = Typer.Expression.typer(rast, Root)
+    assertResult(result)(TypedAst.Type.Str)
+  }
+
+  test("Expression.IfThenElse.NonBooleanCondition") {
+    val rast = ResolvedAst.Expression.IfThenElse(
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(1)),
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(2)),
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(3))
+    )
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
+  }
+
+  test("Expression.IfThenElse.ThenElseMismatch") {
+    val rast = ResolvedAst.Expression.IfThenElse(
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(2)),
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo"))
+    )
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
   }
 
 }
