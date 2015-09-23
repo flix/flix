@@ -11,7 +11,7 @@ object Interpreter {
       case Expression.Lit(literal, _) => evalLit(literal)
       case Expression.Var(name, _) => env.get(name) match {
         case Some(value) => value
-        case None => ???
+        case None => assert(false, "Should have a variable"); ???
       }
       case Expression.Ref(name, tpe) => ???
       case Expression.Lambda(formals, retTpe, body, tpe) => ??? // TODO(mhyee)
@@ -25,7 +25,6 @@ object Interpreter {
       case Expression.Match(exp, rules, _) => ??? // TODO(mhyee)
       case Expression.Tag(name, ident, exp, tpe) => ???
       case Expression.Tuple(elms, _) => Value.Tuple(elms.map(e => eval(e, env)))
-      case Expression.Ascribe(e, tpe) => ???
       case Expression.Error(location, tpe) => ???
     }
   }

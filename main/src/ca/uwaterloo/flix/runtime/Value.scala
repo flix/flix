@@ -2,23 +2,12 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.lang.ast.Name
 
-//TODO(mhyee): Do we have standard way for throwing errors?
-
 sealed trait Value {
-  def toBool: Boolean = this match {
-    case Value.Bool(b) => b
-    case _ => ???
-  }
+  def toBool: Boolean = this.asInstanceOf[Value.Bool].b
 
-  def toInt: Int = this match {
-    case Value.Int(i) => i
-    case _ => ???
-  }
+  def toInt: Int = this.asInstanceOf[Value.Int].i
 
-  def toStr: String = this match {
-    case Value.Str(s) => s
-    case _ => ???
-  }
+  def toStr: String = this.asInstanceOf[Value.Str].s
 }
 
 object Value {

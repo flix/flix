@@ -158,7 +158,7 @@ object TypedAst {
     /**
      * A typed AST node representing a tagged literal.
      *
-     * @parma name the enum name.
+     * @param name the enum name.
      * @param ident the tag name.
      * @param literal the nested literal.
      * @param tpe the type of the tag.
@@ -291,14 +291,6 @@ object TypedAst {
      * @param tpe the type of the tuple.
      */
     case class Tuple(elms: List[TypedAst.Expression], tpe: TypedAst.Type) extends TypedAst.Expression
-
-    /**
-     * A typed AST node representing an ascribed expression.
-     *
-     * @param e the expression.
-     * @param tpe the ascribed type.
-     */
-    case class Ascribe(e: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
 
     /**
      * A typed AST node representing an error expression.
