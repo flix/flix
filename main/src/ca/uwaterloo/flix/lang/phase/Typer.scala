@@ -28,8 +28,45 @@ object Typer {
   /**
    * Runs the typer on the entire given AST `rast`.
    */
-  def typecheck(rast: ResolvedAst.Root): Validation[TypedAst.Root, TypeError] = TypedAst.Root(Map.empty, Map.empty, Map.empty, List.empty, List.empty).toSuccess
+  def typecheck(root: ResolvedAst.Root): Validation[TypedAst.Root, TypeError] = {
 
+    // TODO: Need to implement Validation.fold over maps.
+
+    val factsVal = @@(root.facts.map(fact => Constraint.typer(fact, root)))
+    val rulesVal = @@(root.rules.map(rule => Constraint.typer(rule, root)))
+
+    @@(factsVal, rulesVal) map {
+      case (facts, rules) => TypedAst.Root(Map.empty, Map.empty, Map.empty, facts, rules)
+    }
+  }
+
+
+  object Definition {
+
+    def typer(rast: ResolvedAst.Definition.Constant, root: ResolvedAst.Root): Validation[TypedAst.Definition.Constant, TypeError] = {
+      ???
+    }
+
+    def typer(rast: ResolvedAst.Definition.Lattice, root: ResolvedAst.Root): Validation[TypedAst.Definition.Lattice, TypeError] = {
+      ???
+    }
+
+    def typer(rast: ResolvedAst.Definition.Relation, root: ResolvedAst.Root): Validation[TypedAst.Definition.Relation, TypeError] = {
+      ???
+    }
+
+  }
+
+  object Constraint {
+
+    def typer(rast: ResolvedAst.Constraint.Fact, root: ResolvedAst.Root): Validation[TypedAst.Constraint.Fact, TypeError] = {
+      ???
+    }
+
+    def typer(rast: ResolvedAst.Constraint.Rule, root: ResolvedAst.Root): Validation[TypedAst.Constraint.Rule, TypeError] = {
+      ???
+    }
+  }
 
   object Literal {
 
