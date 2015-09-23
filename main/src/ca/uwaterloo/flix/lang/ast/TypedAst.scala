@@ -293,14 +293,6 @@ object TypedAst {
     case class Tuple(elms: List[TypedAst.Expression], tpe: TypedAst.Type) extends TypedAst.Expression
 
     /**
-     * A typed AST node representing an ascribed expression.
-     *
-     * @param e the expression.
-     * @param tpe the ascribed type.
-     */
-    case class Ascribe(e: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
-
-    /**
      * A typed AST node representing an error expression.
      *
      * @param location the location of the error expression.
