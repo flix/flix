@@ -277,10 +277,13 @@ object ResolvedAst {
      */
     case class Tuple(elms: List[ResolvedAst.Type]) extends ResolvedAst.Type
 
-    case class Function(t1: ResolvedAst.Type, t2: ResolvedAst.Type) extends ResolvedAst.Type
-
-    // TODO: Find a place to put this
-    case class Lattice(tpe: ResolvedAst.Type) extends ResolvedAst.Type
+    /**
+     * An AST node representing a function type.
+     *
+     * @param args the argument types.
+     * @param retTpe the return type.
+     */
+    case class Function(args: List[ResolvedAst.Type], retTpe: ResolvedAst.Type) extends ResolvedAst.Type
 
   }
 

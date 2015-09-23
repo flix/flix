@@ -17,6 +17,17 @@ import scala.collection.immutable.Seq
 // TODO: Two kinds of integrity constraints. One is that a fact exists, and the other is that a fact does not exist.
 // TODO: Consider allowing dotted predicates: Student(name, ...)
 
+// TODO: Need meta constraint
+// true => A(...), B(...) (MUST-HOLD).
+// Salary(name, amount) => Employee(name, <<unbound>>)
+// false <= Employee(name, _), !Salary(name, _).
+
+// Safety property
+// false <= A(...), B(...) (the body must never hold).
+//
+// always Answer(x).
+// never Unsafe(x).
+
 /**
  * A parser for the Flix language.
  */

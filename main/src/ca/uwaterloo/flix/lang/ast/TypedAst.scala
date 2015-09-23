@@ -37,7 +37,6 @@ object TypedAst {
      * @param exp the constant expression.
      * @param tpe the type of the constant.
      */
-    // TODO: Should probably be called NamedExpr or such
     case class Constant(name: Name.Resolved, exp: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Definition
 
     /**
@@ -74,7 +73,7 @@ object TypedAst {
       def attribute(attribute: String): TypedAst.Attribute = attributes find {
         case TypedAst.Attribute(ident, tpe) => ident.name == attribute
       } getOrElse {
-        throw Compiler.InternalCompilerError(s"Attribute '$name' does not exist.", ???)
+        throw Compiler.InternalCompilerError(s"Attribute '$name' does not exist.")
       }
     }
 
@@ -103,17 +102,6 @@ object TypedAst {
     case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body]) extends TypedAst.Constraint
 
   }
-
-  // TODO: Need meta constraint
-  // true => A(...), B(...) (MUST-HOLD).
-  // Salary(name, amount) => Employee(name, <<unbound>>)
-  // false <= Employee(name, _), !Salary(name, _).
-
-  // Safety property
-  // false <= A(...), B(...) (the body must never hold).
-  //
-  // always Answer(x).
-  // never Unsafe(x).
 
   /**
    * A common super-type for typed literals.

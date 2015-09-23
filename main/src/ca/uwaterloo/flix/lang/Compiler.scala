@@ -11,7 +11,7 @@ import scala.util.{Failure, Success}
 
 object Compiler {
 
-  case class InternalCompilerError(message: String, location: SourceLocation) extends RuntimeException(message + " near " + location.format)
+  case class InternalCompilerError(message: String) extends RuntimeException(message)
 
   // TODO: Add a high level every Ast node should implement SmartHash... (i.e. hash and eq)
 

@@ -10,8 +10,6 @@ class TestTyper extends FunSuite {
   val Ident = ParsedAst.Ident("x", SourceLocation.Unknown)
   val RName = Name.Resolved(List("foo", "bar"))
 
-  // TODO: At some point it might be worth just compiling program fragments?
-
   /////////////////////////////////////////////////////////////////////////////
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
@@ -419,14 +417,20 @@ class TestTyper extends FunSuite {
     val rtype1 = ResolvedAst.Type.Bool
     val rtype2 = ResolvedAst.Type.Int
     val rast = ResolvedAst.Type.Tuple(List(rtype1, rtype2))
+
     val tpe1 = TypedAst.Type.Bool
     val tpe2 = TypedAst.Type.Int
     val result = Typer.Type.typer(rast)
+
     assertResult(TypedAst.Type.Tuple(List(tpe1, tpe2)))(result)
   }
 
   test("Type.Function") {
-    ??? // TODO
+    val rast = ResolvedAst.Type.Function(List(ResolvedAst.Type.Bool, ResolvedAst.Type.Int), ResolvedAst.Type.Str)
+    val tast = TypedAst.Type.Function(List(TypedAst.Type.Bool, TypedAst.Type.Int), TypedAst.Type.Str)
+
+    val result = Typer.Type.typer(rast)
+    assertResult(tast)(result)
   }
 
 }
