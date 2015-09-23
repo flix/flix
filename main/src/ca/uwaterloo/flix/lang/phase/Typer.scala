@@ -86,6 +86,10 @@ object Typer {
 
   }
 
+  object Pattern {
+    def typer(rast: ResolvedAst.Pattern, tpe: TypedAst.Type): Validation[TypedAst.Pattern, TypeError] = ???
+  }
+
   object Type {
 
     def typer(rast: ResolvedAst.Type): TypedAst.Type = ???

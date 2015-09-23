@@ -291,14 +291,92 @@ class TestTyper extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
   /////////////////////////////////////////////////////////////////////////////
-  test("Pattern.Unit") {
-    val rast = ResolvedAst.Type.Unit
-    val result = Typer.Type.typer(rast)
-    assertResult(TypedAst.Type.Unit)(result)
+  test("Pattern.Wildcard") {
+    val rast = ResolvedAst.Pattern.Wildcard(SourceLocation.Unknown)
+    val tpe = TypedAst.Type.Bool
+    val result = Typer.Pattern.typer(rast, tpe)
+    assert(result.isSuccess)
   }
 
-  // TODO: Test bound
+  test("Pattern.Variable01") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val rast = ResolvedAst.Pattern.Var(x)
+    val tpe = TypedAst.Type.Bool
+    val result = Typer.Pattern.typer(rast, tpe)
+    assertResult(tpe)(result.get.bound(x))
+  }
 
+  test("Pattern.Variable02") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val rast = ResolvedAst.Pattern.Var(x)
+    val tpe = TypedAst.Type.Tuple(List(TypedAst.Type.Bool))
+    val result = Typer.Pattern.typer(rast, tpe)
+    assertResult(tpe)(result.get.bound(x))
+  }
+
+  test("Pattern.Variable03") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
+    val rast = ResolvedAst.Pattern.Tuple(List(
+      ResolvedAst.Pattern.Var(x),
+      ResolvedAst.Pattern.Var(x)
+    ))
+    val tpe = TypedAst.Type.Tuple(List(TypedAst.Type.Bool, TypedAst.Type.Int))
+    val result = Typer.Pattern.typer(rast, tpe)
+    assertResult(tpe)(result.get.bound(y))
+  }
+
+  test("Pattern.Literal") {
+    val rast = ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(true))
+    val tpe = TypedAst.Type.Bool
+    val result = Typer.Pattern.typer(rast, tpe)
+    assertResult(tpe)(result.get.tpe)
+  }
+
+  test("Pattern.Tag01") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val rast = ResolvedAst.Pattern.Tag(RName, Ident, ResolvedAst.Pattern.Var(x))
+    val tpe = TypedAst.Type.Tag(RName, Ident, TypedAst.Type.Unit)
+    val result = Typer.Pattern.typer(rast, tpe)
+    assertResult(TypedAst.Type.Unit)(result.get.bound(x))
+  }
+
+  test("Pattern.Tuple01") {
+    val rast = ResolvedAst.Pattern.Tuple(List(
+      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Unit),
+      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(true))
+    ))
+    val tpe = TypedAst.Type.Tuple(List(
+      TypedAst.Type.Unit,
+      TypedAst.Type.Bool
+    ))
+    val result = Typer.Pattern.typer(rast, tpe)
+    assertResult(tpe)(result.get.tpe)
+  }
+
+  test("Pattern.Tuple02") {
+    val rast = ResolvedAst.Pattern.Tuple(List(
+      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Unit),
+      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(true)),
+      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Int(42)),
+      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Str("foo"))
+    ))
+    val tpe = TypedAst.Type.Tuple(List(
+      TypedAst.Type.Unit,
+      TypedAst.Type.Bool,
+      TypedAst.Type.Int,
+      TypedAst.Type.Str
+    ))
+    val result = Typer.Pattern.typer(rast, tpe)
+    assertResult(tpe)(result.get.tpe)
+  }
+
+  test("Pattern.TypeError") {
+    val rast = ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Unit)
+    val tpe = TypedAst.Type.Bool
+    val result = Typer.Pattern.typer(rast, tpe)
+    assert(result.isFailure)
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //

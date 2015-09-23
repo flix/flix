@@ -107,14 +107,41 @@ object ResolvedAst {
 
   object Pattern {
 
+    /**
+     * An AST node representing a wildcard pattern.
+     *
+     * @param location the source location.
+     */
     case class Wildcard(location: SourceLocation) extends ResolvedAst.Pattern
 
+    /**
+     * An AST node representing a variable pattern.
+     *
+     * @param ident the variable name.
+     */
     case class Var(ident: ParsedAst.Ident) extends ResolvedAst.Pattern
 
+    /**
+     * An AST node representing a literal pattern.
+     *
+     * @param literal the literal.
+     */
     case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Pattern
 
+    /**
+     * An AST node representing a tagged pattern.
+     *
+     * @param name the name of the enum.
+     * @param ident the name of the tag.
+     * @param pat the nested pattern.
+     */
     case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, pat: ResolvedAst.Pattern) extends ResolvedAst.Pattern
 
+    /**
+     * An AST node representing a tuple pattern.
+     *
+     * @param elms the elements of the tuple.
+     */
     case class Tuple(elms: List[ResolvedAst.Pattern]) extends ResolvedAst.Pattern
 
   }
