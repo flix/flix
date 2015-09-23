@@ -63,4 +63,17 @@ class TestTyper extends FunSuite {
     assertResult(TypedAst.Type.Tuple(List(TypedAst.Type.Bool, TypedAst.Type.Int, TypedAst.Type.Str)))(result.tpe)
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Expressions                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.IfThenElse") {
+    val rast = ResolvedAst.Expression.IfThenElse(
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(21)),
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42))
+    )
+    assertResult(Typer.Expression.typer(rast, Root))(TypedAst.Type.Int)
+  }
+
 }

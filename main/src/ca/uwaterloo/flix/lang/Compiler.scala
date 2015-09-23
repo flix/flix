@@ -59,6 +59,7 @@ object Compiler {
     }
   }
 
+  // TODO: Allow input from other sources.
   def compile(paths: Traversable[Path]): Unit = {
     Console.print("Parsing: ")
     val past = parse(paths)
