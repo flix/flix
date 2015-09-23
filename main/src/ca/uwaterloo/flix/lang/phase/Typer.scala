@@ -129,7 +129,12 @@ object Typer {
 
   object Type {
 
-    def typer(rast: ResolvedAst.Type): TypedAst.Type = ???
+    /**
+     * Compiles the given resolved AST node type to a typed AST node.
+     */
+    def typer(rast: ResolvedAst.Type): TypedAst.Type = rast match {
+      case ResolvedAst.Type.Unit => TypedAst.Type.Unit
+    }
 
   }
 

@@ -453,10 +453,6 @@ class TestTyper extends FunSuite {
     assertResult(TypedAst.Type.Tag(RName, Ident, TypedAst.Type.Unit))(result)
   }
 
-  test("Type.Enum") {
-    ??? // TODO
-  }
-
   test("Type.Tuple") {
     val rtype1 = ResolvedAst.Type.Bool
     val rtype2 = ResolvedAst.Type.Int
