@@ -310,6 +310,11 @@ object TypedAst {
      * The type of the pattern.
      */
     def tpe: TypedAst.Type
+
+    /**
+     * Returns the bound variables (and their types).
+     */
+    def bound: Map[ParsedAst.Ident, TypedAst.Type] = ???
   }
 
   object Pattern {

@@ -45,7 +45,7 @@ class TestTyper extends FunSuite {
     assertResult(TypedAst.Type.Str)(result.tpe)
   }
 
-  test("Literal.Tag.Unit") {
+  test("Literal.Tag") {
     val enumName = Name.Resolved(List("foo", "bar", "baz"))
     val tagName = ParsedAst.Ident("Qux", SourceLocation.Unknown)
     val literal = ResolvedAst.Literal.Unit
@@ -68,6 +68,22 @@ class TestTyper extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
+  test("Expression.Var01") {
+    ??? // TODO
+  }
+
+  test("Expression.Ref01") {
+    ??? // TODO
+  }
+
+  test("Expression.Lambda01") {
+    ??? // TODO
+  }
+
+  test("Expression.Apply01") {
+    ??? // TODO
+  }
+
   test("Expression.Unary01") {
     val rast = ResolvedAst.Expression.Unary(UnaryOperator.Not, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)))
     val result = Typer.Expression.typer(rast, Root)
@@ -214,7 +230,13 @@ class TestTyper extends FunSuite {
     assert(result.isFailure)
   }
 
+  test("Expression.Match01") {
+    ???
+  }
 
+  test("Expression.Tag01") {
+    ???
+  }
 
   test("Expression.Tuple01") {
     val e1 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true))
@@ -265,6 +287,13 @@ class TestTyper extends FunSuite {
     val result = Typer.Expression.typer(rast, Root)
     assertResult(TypedAst.Type.Int)(result.get.tpe)
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Patterns                                                                //
+  /////////////////////////////////////////////////////////////////////////////
+
+
+  // TODO: Test bound
 
 
   /////////////////////////////////////////////////////////////////////////////

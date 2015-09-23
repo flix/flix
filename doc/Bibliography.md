@@ -15,6 +15,12 @@
   [Paper.](http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=43410)
   _This paper provides a good introduction to Datalog._
 
+- **Dedalus: Datalog in Time and Space**,
+  Peter Alvaro1, William R. Marczak1, Neil Conway, Joseph M. Hellerstein, David Maier, and Russell Sears.
+  [Paper.](http://db.cs.berkeley.edu/papers/datalog2011-dedalus.pdf)
+  _This paper presents an extension of Datalog which incorporates the notion of time.
+  This has several applications. For example, it allows facts to be retracted between timestamps._
+
 ## Related Languages ##
 
 - **The Eve Programming Language**,

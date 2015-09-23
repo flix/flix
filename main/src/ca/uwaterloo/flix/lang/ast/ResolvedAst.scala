@@ -100,6 +100,9 @@ object ResolvedAst {
 
   }
 
+  /**
+   * A common super-type for resolved patterns.
+   */
   sealed trait Pattern extends ResolvedAst
 
   object Pattern {
@@ -112,7 +115,7 @@ object ResolvedAst {
 
     case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, pat: ResolvedAst.Pattern) extends ResolvedAst.Pattern
 
-    case class Tuple(elms: Seq[ResolvedAst.Pattern]) extends ResolvedAst.Pattern
+    case class Tuple(elms: List[ResolvedAst.Pattern]) extends ResolvedAst.Pattern
 
   }
 
