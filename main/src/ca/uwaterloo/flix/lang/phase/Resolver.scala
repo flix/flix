@@ -429,7 +429,7 @@ object Resolver {
         case WeededAst.Type.Tuple(welms) => @@(welms map (e => resolve(e, namespace, syms))) map ResolvedAst.Type.Tuple
         case WeededAst.Type.Function(wtype1, wtype2) =>
           @@(resolve(wtype1, namespace, syms), resolve(wtype2, namespace, syms)) map {
-            case (tpe1, tpe2) => ResolvedAst.Type.Function(tpe1, tpe2)
+            case (tpe1, tpe2) => ??? // TODO
           }
       }
 

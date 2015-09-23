@@ -28,7 +28,7 @@ object Typer {
   /**
    * Runs the typer on the entire given AST `rast`.
    */
-  def typecheck(rast: ResolvedAst.Root): Validation[TypedAst.Root, TypeError] = TypedAst.Root(Map.empty, List.empty, List.empty).toSuccess
+  def typecheck(rast: ResolvedAst.Root): Validation[TypedAst.Root, TypeError] = TypedAst.Root(Map.empty, Map.empty, Map.empty, List.empty, List.empty).toSuccess
 
 
   object Literal {
