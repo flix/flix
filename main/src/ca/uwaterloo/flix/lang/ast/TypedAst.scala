@@ -158,7 +158,7 @@ object TypedAst {
     /**
      * A typed AST node representing a tagged literal.
      *
-     * @parma name the enum name.
+     * @param name the enum name.
      * @param ident the tag name.
      * @param literal the nested literal.
      * @param tpe the type of the tag.
