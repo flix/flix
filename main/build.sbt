@@ -2,6 +2,8 @@ scalaSource in Compile := baseDirectory.value / "src"
 
 scalaSource in Test := baseDirectory.value / "test"
 
+testOptions in Test += Tests.Argument("-P")
+
 libraryDependencies += "com.chuusai" %% "shapeless" % "2.0.0"
 
 libraryDependencies += "org.parboiled" %% "parboiled" % "2.1.0"
