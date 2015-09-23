@@ -7,6 +7,8 @@ import org.scalatest.FunSuite
 class TestTyper extends FunSuite {
 
   val Root = ResolvedAst.Root(Map.empty, List.empty, List.empty)
+  val Ident = ParsedAst.Ident("x", SourceLocation.Unknown)
+  val RName = Name.Resolved(List("foo", "bar"))
 
   // TODO: At some point it might be worth just compiling program fragments?
 
@@ -48,7 +50,7 @@ class TestTyper extends FunSuite {
     val tagName = ParsedAst.Ident("Qux", SourceLocation.Unknown)
     val literal = ResolvedAst.Literal.Unit
     val rast = ResolvedAst.Literal.Tag(enumName, tagName, literal)
-    val enums = Map(enumName -> ResolvedAst.Definition.Enum(enumName, Map("Qux" -> ResolvedAst.Type.Tag(tagName, ResolvedAst.Type.Unit))))
+    val enums = Map(enumName -> ResolvedAst.Definition.Enum(enumName, Map("Qux" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Unit))))
     val root = Root.copy(enums = enums)
     val result = Typer.Literal.typer(rast, root)
     assertResult(TypedAst.Type.Enum(Map("Qux" -> TypedAst.Type.Tag(enumName, tagName, TypedAst.Type.Unit))))(result.tpe)
@@ -182,6 +184,18 @@ class TestTyper extends FunSuite {
     assert(result.isFailure)
   }
 
+  // TODO
+  test("Expression.Let01") {
+    val rast = ResolvedAst.Expression.IfThenElse(
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(2)),
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo"))
+    )
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
+  }
+
+
   test("Expression.Tuple01") {
     val e1 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true))
     val e2 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42))
@@ -230,6 +244,58 @@ class TestTyper extends FunSuite {
     )
     val result = Typer.Expression.typer(rast, Root)
     assertResult(TypedAst.Type.Int)(result.get.tpe)
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Types                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Type.Unit") {
+    val rast = ResolvedAst.Type.Unit
+    val result = Typer.Type.typer(rast)
+    assertResult(TypedAst.Type.Unit)(result)
+  }
+
+  test("Type.Bool") {
+    val rast = ResolvedAst.Type.Bool
+    val result = Typer.Type.typer(rast)
+    assertResult(TypedAst.Type.Bool)(result)
+  }
+
+  test("Type.Int") {
+    val rast = ResolvedAst.Type.Int
+    val result = Typer.Type.typer(rast)
+    assertResult(TypedAst.Type.Int)(result)
+  }
+
+  test("Type.Str") {
+    val rast = ResolvedAst.Type.Str
+    val result = Typer.Type.typer(rast)
+    assertResult(TypedAst.Type.Str)(result)
+  }
+
+  test("Type.Tag") {
+    val rast = ResolvedAst.Type.Tag(RName, Ident, ResolvedAst.Type.Unit)
+    val result = Typer.Type.typer(rast)
+    assertResult(TypedAst.Type.Tag(RName, Ident, TypedAst.Type.Unit))(result)
+  }
+
+  test("Type.Enum") {
+    ??? // TODO
+  }
+
+  test("Type.Tuple") {
+    val rtype1 = ResolvedAst.Type.Bool
+    val rtype2 = ResolvedAst.Type.Int
+    val rast = ResolvedAst.Type.Tuple(List(rtype1, rtype2))
+    val tpe1 = TypedAst.Type.Bool
+    val tpe2 = TypedAst.Type.Int
+    val result = Typer.Type.typer(rast)
+    assertResult(TypedAst.Type.Tuple(List(tpe1, tpe2)))(result)
+  }
+
+  test("Type.Function") {
+    ??? // TODO
   }
 
 }

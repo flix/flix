@@ -204,26 +204,52 @@ object ResolvedAst {
 
   }
 
+  /**
+   * A common super-type for resolved types.
+   */
   sealed trait Type extends ResolvedAst
 
   object Type {
 
+    /**
+     * An AST node representing the Unit type.
+     */
     case object Unit extends ResolvedAst.Type
 
+    /**
+     * An AST node representing the Boolean type.
+     */
     case object Bool extends ResolvedAst.Type
 
+    /**
+     * An AST node representing the Integer type.
+     */
     case object Int extends ResolvedAst.Type
 
+    /**
+     * An AST node representing the String type.
+     */
     case object Str extends ResolvedAst.Type
 
-    case class Tag(ident: ParsedAst.Ident, tpe: ResolvedAst.Type) extends ResolvedAst.Type
+    /**
+     * An AST node representing a type tag.
+     *
+     * @param name the name of the enum.
+     * @param ident the name of the tag.
+     * @param tpe the nested type.
+     */
+    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, tpe: ResolvedAst.Type) extends ResolvedAst.Type
 
+    /**
+     * An AST node representing a tuple type.
+     *
+     * @param elms the type of the elements.
+     */
     case class Tuple(elms: List[ResolvedAst.Type]) extends ResolvedAst.Type
 
     case class Function(t1: ResolvedAst.Type, t2: ResolvedAst.Type) extends ResolvedAst.Type
 
-    case class Parametric(name: Name.Resolved, elms: List[ResolvedAst.Type]) extends ResolvedAst.Type
-
+    // TODO: Find a place to put this
     case class Lattice(tpe: ResolvedAst.Type) extends ResolvedAst.Type
 
   }
