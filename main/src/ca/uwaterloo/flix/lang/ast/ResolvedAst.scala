@@ -5,15 +5,27 @@ trait ResolvedAst
 object ResolvedAst {
 
   case class Root(
-                   // TODO: value environment
-                   // todo: relation environment
-                   // todo: type environment
-                   // todo: lattice environment
-                   // todo: enum environment... sigh so many
+                   // todo: type environment???
+                   constants: Map[Name.Resolved, ResolvedAst.Definition.Constant],
                    enums: Map[Name.Resolved, ResolvedAst.Definition.Enum],
-                   // relations: Map[Name.Resolved, ResolvedAst.Definition.Relation],
+                   lattices: Map[ResolvedAst.Type, ResolvedAst.Definition.Lattice],
+                   relations: Map[Name.Resolved, ResolvedAst.Definition.Relation],
                    facts: List[ResolvedAst.Constraint.Fact],
                    rules: List[ResolvedAst.Constraint.Rule]) extends ResolvedAst
+
+  sealed trait Definition
+
+  object Definition {
+
+    case class Constant(name: Name.Resolved, exp: ResolvedAst.Expression, tpe: ResolvedAst.Type) extends ResolvedAst.Definition
+
+    case class Enum(name: Name.Resolved, cases: Map[String, ResolvedAst.Type.Tag]) extends ResolvedAst.Definition
+
+    case class Lattice() extends ResolvedAst.Definition
+
+    case class Relation() extends ResolvedAst.Definition
+
+  }
 
   sealed trait Constraint extends ResolvedAst
 
@@ -33,18 +45,6 @@ object ResolvedAst {
      * @param body the body predicates.
      */
     case class Rule(head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body]) extends ResolvedAst.Constraint
-
-  }
-
-  sealed trait Definition extends ResolvedAst.Constraint
-
-  object Definition {
-
-    case class Value(name: Name.Resolved, exp: ResolvedAst.Expression, tpe: ResolvedAst.Type) extends ResolvedAst.Definition
-
-    case class Enum(name: Name.Resolved, cases: Map[String, ResolvedAst.Type.Tag]) extends ResolvedAst.Definition
-
-    case class Relation() extends ResolvedAst.Definition
 
   }
 
@@ -145,9 +145,6 @@ object ResolvedAst {
     case class Tuple(elms: List[ResolvedAst.Pattern]) extends ResolvedAst.Pattern
 
   }
-
-
-  // TODO: Filters
 
   object Predicate {
 

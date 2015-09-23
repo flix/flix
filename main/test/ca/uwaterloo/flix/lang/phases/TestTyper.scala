@@ -6,9 +6,14 @@ import org.scalatest.FunSuite
 
 class TestTyper extends FunSuite {
 
-  val Root = ResolvedAst.Root(Map.empty, List.empty, List.empty)
+  val Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty)
   val Ident = ParsedAst.Ident("x", SourceLocation.Unknown)
   val RName = Name.Resolved(List("foo", "bar"))
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Definitions                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  // TODO
 
   /////////////////////////////////////////////////////////////////////////////
   // Literals                                                                //
@@ -264,6 +269,24 @@ class TestTyper extends FunSuite {
     val tpe1 = TypedAst.Type.Bool
     val tpe2 = TypedAst.Type.Tuple(List(TypedAst.Type.Unit, TypedAst.Type.Unit))
     assertResult(TypedAst.Type.Tuple(List(tpe1, tpe2)))(result.get.tpe)
+  }
+
+  test("Expression.Ascribe01") {
+    val rast = ResolvedAst.Expression.Ascribe(
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
+      ResolvedAst.Type.Bool
+    )
+    val result = Typer.Expression.typer(rast, Root)
+    assertResult(TypedAst.Type.Int)(result.get.tpe)
+  }
+
+  test("Expression.Ascribe02") {
+    val rast = ResolvedAst.Expression.Ascribe(
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
+      ResolvedAst.Type.Int
+    )
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
   }
 
   test("Expression.Error01") {
