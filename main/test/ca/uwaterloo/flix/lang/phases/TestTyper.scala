@@ -18,7 +18,22 @@ class TestTyper extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Constraints                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  // TODO
+  test("Constraint.Fact") {
+    val rname = Name.Resolved(List("Student"))
+
+    val root = Root.copy(relations = Map(
+      rname -> ResolvedAst.Definition.Relation()
+    ))
+
+    val rast = ResolvedAst.Constraint.Fact(ResolvedAst.Predicate.Head(
+      rname, List(
+        ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Str("John Doe")),
+        ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Int(42))
+      ))
+    )
+    val result = Typer.Constraint.typer(rast, root)
+    assert(result.isSuccess)
+  }
 
 
   /////////////////////////////////////////////////////////////////////////////
