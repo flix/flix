@@ -184,16 +184,36 @@ class TestTyper extends FunSuite {
     assert(result.isFailure)
   }
 
-  // TODO
   test("Expression.Let01") {
-    val rast = ResolvedAst.Expression.IfThenElse(
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
+    val rast = ResolvedAst.Expression.Let(
+      Ident,
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(2)),
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo"))
     )
     val result = Typer.Expression.typer(rast, Root)
+    assertResult(TypedAst.Type.Str)(result.get.tpe)
+  }
+
+  test("Expression.Let02") {
+    val rast = ResolvedAst.Expression.Let(
+      Ident,
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(2)),
+      ResolvedAst.Expression.Var(Ident)
+    )
+    val result = Typer.Expression.typer(rast, Root)
+    assertResult(TypedAst.Type.Int)(result.get.tpe)
+  }
+
+  test("Expression.Let.TypeError") {
+    val rast = ResolvedAst.Expression.Let(
+      Ident,
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo")),
+      ResolvedAst.Expression.Unary(UnaryOperator.Not, ResolvedAst.Expression.Var(Ident))
+    )
+    val result = Typer.Expression.typer(rast, Root)
     assert(result.isFailure)
   }
+
 
 
   test("Expression.Tuple01") {
