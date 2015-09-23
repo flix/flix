@@ -20,6 +20,13 @@
   [Paper.](http://db.cs.berkeley.edu/papers/datalog2011-dedalus.pdf)
   _This paper presents an extension of Datalog which incorporates the notion of time.
   This has several applications. For example, it allows facts to be retracted between timestamps._
+  
+- **Logic and Lattices for Distributed Programming**
+  Neil Conway, William Marczak, Peter Alvaro, Joseph M. Hellerstein, and David Maier.
+  [Paper.](http://db.cs.berkeley.edu/papers/UCB-lattice-tr.pdf)
+  _This paper presents an extension of Datalog / Dedalus / Bloom that adds support for user-defined
+  lattices and monotone functions in a distributed setting. 
+  User-defined functions and lattices are assumed to be well-behaved._
 
 ## Related Languages ##
 
