@@ -92,7 +92,7 @@ object ResolvedAst {
 
     case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, e: ResolvedAst.Expression) extends ResolvedAst.Expression
 
-    case class Tuple(elms: Seq[ResolvedAst.Expression]) extends ResolvedAst.Expression
+    case class Tuple(elms: List[ResolvedAst.Expression]) extends ResolvedAst.Expression
 
     case class Ascribe(e: ResolvedAst.Expression, tpe: ResolvedAst.Type) extends ResolvedAst.Expression
 
@@ -100,19 +100,49 @@ object ResolvedAst {
 
   }
 
+  /**
+   * A common super-type for resolved patterns.
+   */
   sealed trait Pattern extends ResolvedAst
 
   object Pattern {
 
+    /**
+     * An AST node representing a wildcard pattern.
+     *
+     * @param location the source location.
+     */
     case class Wildcard(location: SourceLocation) extends ResolvedAst.Pattern
 
+    /**
+     * An AST node representing a variable pattern.
+     *
+     * @param ident the variable name.
+     */
     case class Var(ident: ParsedAst.Ident) extends ResolvedAst.Pattern
 
+    /**
+     * An AST node representing a literal pattern.
+     *
+     * @param literal the literal.
+     */
     case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Pattern
 
+    /**
+     * An AST node representing a tagged pattern.
+     *
+     * @param name the name of the enum.
+     * @param ident the name of the tag.
+     * @param pat the nested pattern.
+     */
     case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, pat: ResolvedAst.Pattern) extends ResolvedAst.Pattern
 
-    case class Tuple(elms: Seq[ResolvedAst.Pattern]) extends ResolvedAst.Pattern
+    /**
+     * An AST node representing a tuple pattern.
+     *
+     * @param elms the elements of the tuple.
+     */
+    case class Tuple(elms: List[ResolvedAst.Pattern]) extends ResolvedAst.Pattern
 
   }
 
@@ -204,27 +234,56 @@ object ResolvedAst {
 
   }
 
+  /**
+   * A common super-type for resolved types.
+   */
   sealed trait Type extends ResolvedAst
 
   object Type {
 
+    /**
+     * An AST node representing the Unit type.
+     */
     case object Unit extends ResolvedAst.Type
 
+    /**
+     * An AST node representing the Boolean type.
+     */
     case object Bool extends ResolvedAst.Type
 
+    /**
+     * An AST node representing the Integer type.
+     */
     case object Int extends ResolvedAst.Type
 
+    /**
+     * An AST node representing the String type.
+     */
     case object Str extends ResolvedAst.Type
 
-    case class Tag(ident: ParsedAst.Ident, tpe: ResolvedAst.Type) extends ResolvedAst.Type
+    /**
+     * An AST node representing a type tag.
+     *
+     * @param name the name of the enum.
+     * @param ident the name of the tag.
+     * @param tpe the nested type.
+     */
+    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, tpe: ResolvedAst.Type) extends ResolvedAst.Type
 
-    case class Tuple(elms: Seq[ResolvedAst.Type]) extends ResolvedAst.Type
+    /**
+     * An AST node representing a tuple type.
+     *
+     * @param elms the type of the elements.
+     */
+    case class Tuple(elms: List[ResolvedAst.Type]) extends ResolvedAst.Type
 
-    case class Function(t1: ResolvedAst.Type, t2: ResolvedAst.Type) extends ResolvedAst.Type
-
-    case class Parametric(name: Name.Resolved, elms: Seq[ResolvedAst.Type]) extends ResolvedAst.Type
-
-    case class Lattice(tpe: ResolvedAst.Type) extends ResolvedAst.Type
+    /**
+     * An AST node representing a function type.
+     *
+     * @param args the argument types.
+     * @param retTpe the return type.
+     */
+    case class Function(args: List[ResolvedAst.Type], retTpe: ResolvedAst.Type) extends ResolvedAst.Type
 
   }
 

@@ -12,12 +12,15 @@ object TypedAst {
   /**
    * A typed AST node representing the root of the entire AST.
    *
-   * @param defns a map from resolved names to definitions.
+   * @param constants a map from names to constant definitions.
+   * @param lattices a map from types to lattice definitions.
+   * @param relations a map from names to relation definitions.
    * @param facts a list of facts.
    * @param rules a list of rules.
-   *              // TODO: What exactly should go here?
    */
-  case class Root(defns: Map[Name.Resolved, TypedAst.Definition],
+  case class Root(constants: Map[Name.Resolved, TypedAst.Definition.Constant],
+                  lattices: Map[TypedAst.Type, TypedAst.Definition.Lattice],
+                  relations: Map[Name.Resolved, TypedAst.Definition.Relation],
                   facts: List[TypedAst.Constraint.Fact],
                   rules: List[TypedAst.Constraint.Rule]) extends TypedAst {
 
@@ -37,29 +40,16 @@ object TypedAst {
      * @param exp the constant expression.
      * @param tpe the type of the constant.
      */
-    // TODO: Should probably be called NamedExpr or such
     case class Constant(name: Name.Resolved, exp: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Definition
 
     /**
-     * A typed AST node representing an enum definition.
+     * A typed AST node representing a lattice definition.
      *
-     * @param name the name of the enum.
-     * @param cases the tags of the enum.
-     * @param tpe the type of the enum.
-     */
-    case class Enum(name: Name.Resolved, cases: Map[String, ParsedAst.Type.Tag], tpe: TypedAst.Type.Enum) extends TypedAst.Definition
-
-    /**
-     * A typed AST node representing a join semi lattice definition.
-     *
-     * @param tpe the type of elements.
      * @param bot the bottom element.
      * @param leq the partial order.
      * @param lub the least-upper-bound.
      */
-    // TODO: Do we need a global type class namespace? Type -> JoinSemiLattice?
-    // TODO: These should have a different type. Probably Exp.
-    case class JoinSemiLattice(tpe: TypedAst.Type, bot: Name.Resolved, leq: Name.Resolved, lub: Name.Resolved) extends TypedAst.Definition
+    case class Lattice(tpe: TypedAst.Type, bot: TypedAst.Expression, leq: TypedAst.Expression, lub: TypedAst.Expression) extends TypedAst.Definition
 
     /**
      * A typed AST node representing a relation definition.
@@ -74,7 +64,7 @@ object TypedAst {
       def attribute(attribute: String): TypedAst.Attribute = attributes find {
         case TypedAst.Attribute(ident, tpe) => ident.name == attribute
       } getOrElse {
-        throw Compiler.InternalCompilerError(s"Attribute '$name' does not exist.", ???)
+        throw Compiler.InternalCompilerError(s"Attribute '$name' does not exist.")
       }
     }
 
@@ -103,17 +93,6 @@ object TypedAst {
     case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body]) extends TypedAst.Constraint
 
   }
-
-  // TODO: Need meta constraint
-  // true => A(...), B(...) (MUST-HOLD).
-  // Salary(name, amount) => Employee(name, <<unbound>>)
-  // false <= Employee(name, _), !Salary(name, _).
-
-  // Safety property
-  // false <= A(...), B(...) (the body must never hold).
-  //
-  // always Answer(x).
-  // never Unsafe(x).
 
   /**
    * A common super-type for typed literals.
@@ -167,6 +146,7 @@ object TypedAst {
 
     /**
      * A typed AST node representing a tuple literal.
+     *
      * @param elms the elements of the tuple.
      * @param tpe the typed of the tuple.
      */
@@ -310,6 +290,24 @@ object TypedAst {
      * The type of the pattern.
      */
     def tpe: TypedAst.Type
+
+    /**
+     * Returns the bound variables (and their types).
+     */
+    def bound: Map[ParsedAst.Ident, TypedAst.Type] = {
+      def visit(pat: TypedAst.Pattern, m: Map[ParsedAst.Ident, TypedAst.Type]): Map[ParsedAst.Ident, TypedAst.Type] =
+        pat match {
+          case TypedAst.Pattern.Wildcard(_) => m
+          case TypedAst.Pattern.Var(ident, tpe) => m + (ident -> tpe)
+          case TypedAst.Pattern.Lit(_, _) => m
+          case TypedAst.Pattern.Tag(_, _, pat2, _) => visit(pat2, m)
+          case TypedAst.Pattern.Tuple(elms, _) => elms.foldLeft(m) {
+            case (macc, elm) => visit(elm, macc)
+          }
+        }
+
+      visit(this, Map.empty)
+    }
   }
 
   object Pattern {
@@ -365,22 +363,22 @@ object TypedAst {
   object Predicate {
 
     /**
-     * A predicate that is allowed to occur in the head of a rule.
+     * A typed predicate that is allowed to occur in the head of a rule.
      *
      * @param name the name of the predicate.
      * @param terms the terms of the predicate.
      * @param tpe the type of the predicate.
      */
-    case class Head(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: TypedAst.Type) extends TypedAst.Predicate
+    case class Head(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: TypedAst.Type.Predicate) extends TypedAst.Predicate
 
     /**
-     * A predicate that is allowed to occur in the body of a rule.
+     * A typed predicate that is allowed to occur in the body of a rule.
      *
      * @param name the name of the predicate.
      * @param terms the terms of the predicate.
      * @param tpe the type of the predicate.
      */
-    case class Body(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type) extends TypedAst.Predicate
+    case class Body(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Predicate) extends TypedAst.Predicate
 
   }
 
@@ -392,8 +390,9 @@ object TypedAst {
     sealed trait Head extends TypedAst
 
     object Head {
+
       /**
-       * An AST node representing a variable term.
+       * A typed AST node representing a variable term.
        *
        * @param ident the variable name.
        * @param tpe the type of the term.
@@ -401,7 +400,7 @@ object TypedAst {
       case class Var(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Term.Head
 
       /**
-       * An AST node representing a literal term.
+       * A typed AST node representing a literal term.
        *
        * @param literal the literal.
        * @param tpe the type of the term.
@@ -409,7 +408,7 @@ object TypedAst {
       case class Lit(literal: TypedAst.Literal, tpe: TypedAst.Type) extends TypedAst.Term.Head
 
       /**
-       * An AST node representing a function call term.
+       * A typed AST node representing a function call term.
        *
        * @param name the name of the called function.
        * @param args the arguments to the function.
@@ -427,7 +426,7 @@ object TypedAst {
     object Body {
 
       /**
-       * An AST node representing a wildcard term.
+       * A typed AST node representing a wildcard term.
        *
        * @param location the location of the wildcard.
        * @param tpe the type of the term.
@@ -435,7 +434,7 @@ object TypedAst {
       case class Wildcard(location: SourceLocation, tpe: TypedAst.Type) extends TypedAst.Term.Body
 
       /**
-       * An AST node representing a variable term.
+       * A typed AST node representing a variable term.
        *
        * @param ident the variable name.
        * @param tpe the type of the term.
@@ -443,7 +442,7 @@ object TypedAst {
       case class Var(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Term.Body
 
       /**
-       * An AST node representing a literal term.
+       * A typed AST node representing a literal term.
        *
        * @param literal the literal.
        * @param tpe the type of the term.
@@ -511,6 +510,13 @@ object TypedAst {
      * @param retTpe the type of the return type.
      */
     case class Function(args: List[TypedAst.Type], retTpe: TypedAst.Type) extends TypedAst.Type
+
+    /**
+     * An AST node representing a predicate type.
+     *
+     * @param terms the terms of the predicate.
+     */
+    case class Predicate(terms: List[TypedAst.Type]) extends TypedAst.Type
 
   }
 

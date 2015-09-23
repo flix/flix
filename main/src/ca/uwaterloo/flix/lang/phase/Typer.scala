@@ -28,7 +28,7 @@ object Typer {
   /**
    * Runs the typer on the entire given AST `rast`.
    */
-  def typecheck(rast: ResolvedAst.Root): Validation[TypedAst.Root, TypeError] = TypedAst.Root(Map.empty, List.empty, List.empty).toSuccess
+  def typecheck(rast: ResolvedAst.Root): Validation[TypedAst.Root, TypeError] = TypedAst.Root(Map.empty, Map.empty, Map.empty, List.empty, List.empty).toSuccess
 
 
   object Literal {
@@ -59,21 +59,21 @@ object Typer {
 
 
   object Expression {
-
-    def typer(rast: ResolvedAst.Expression, env0: Map[String, TypedAst.Type]): Validation[TypedAst.Expression, TypeError] = rast match {
+    // TODO: Visit
+    def typer(rast: ResolvedAst.Expression, root: ResolvedAst.Root, env: Map[String, TypedAst.Type] = Map.empty): Validation[TypedAst.Expression, TypeError] = rast match {
       case ResolvedAst.Expression.Var(ident) => ??? // pull type out of map.
 
       case ResolvedAst.Expression.Ref(name) => ??? // TODO
 
       case ResolvedAst.Expression.Let(ident, rvalue, rbody) =>
-        typer(rvalue, env0) flatMap {
-          case value => typer(rbody, env0 + (ident.name -> value.tpe)) map {
+        typer(rvalue, root, env) flatMap {
+          case value => typer(rbody, root, env + (ident.name -> value.tpe)) map {
             case body => TypedAst.Expression.Let(ident, value, body, body.tpe)
           }
         }
 
       case ResolvedAst.Expression.IfThenElse(re1, re2, re3) =>
-        @@(typer(re1, env0), typer(re2, env0), typer(re3, env0)) flatMap {
+        @@(typer(re1, root, env), typer(re2, root, env), typer(re3, root, env)) flatMap {
           case (e1, e2, e3) =>
             val conditionType = expect(TypedAst.Type.Bool)(e1.tpe)
             val expressionType = expectEqual(e2.tpe, e3.tpe)
@@ -84,6 +84,10 @@ object Typer {
 
     }
 
+  }
+
+  object Pattern {
+    def typer(rast: ResolvedAst.Pattern, tpe: TypedAst.Type): Validation[TypedAst.Pattern, TypeError] = ???
   }
 
   object Type {

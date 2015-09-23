@@ -1,14 +1,19 @@
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.lang.phases.{TestResolver, TestTyper, TestWeeder, TestParser}
+import ca.uwaterloo.flix.lang.ast._
+import ca.uwaterloo.flix.lang.phases._
 import ca.uwaterloo.flix.runtime.TestInterpreter
-import org.scalatest.Suites
+import org.scalatest.{ParallelTestExecution, Suites}
 
+// NB: Run with -P to run in parallel.
 class TestAll extends Suites(
+
+  new TestTypedAst,
   new TestParser,
-  new TestWeeder,
   new TestResolver,
   new TestTyper,
-  new TestInterpreter) {
+  new TestWeeder,
+  new TestInterpreter,
+  new TestExamples) with ParallelTestExecution {
 
 }

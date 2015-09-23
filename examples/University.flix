@@ -78,8 +78,10 @@ namespace University {
     Mathematician(name, amount) :- Faculty(name, _, _), WorksIn(name, "Math"), Salary(name, amount).
 
     rel Course(name: String, departmentName: String, teacherName: String);
+    // TODO
 
     rel Grade(studentName: String, courseName: String, grade: Int);
+    // TODO
 
     rel Publication(title: String, journal: String);
     Publication("Points and Problems in Advanced Probabilistic Topology", "arXiv");
