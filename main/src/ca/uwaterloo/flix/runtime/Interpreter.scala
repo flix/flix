@@ -9,10 +9,7 @@ object Interpreter {
   def eval(expr: Expression, env: Env = Map()): Value = {
     expr match {
       case Expression.Lit(literal, _) => evalLit(literal)
-      case Expression.Var(name, _) => env.get(name) match {
-        case Some(value) => value
-        case None => assert(false, "Should have a variable"); ???
-      }
+      case Expression.Var(name, _) => env(name)
       case Expression.Ref(name, tpe) => ???
       case Expression.Lambda(formals, retTpe, body, tpe) => ??? // TODO(mhyee)
       case Expression.Apply(exp, args, tpe) => ??? // TODO(mhyee)
@@ -60,7 +57,8 @@ object Interpreter {
     case BinaryOperator.Or => Value.Bool(v1.toBool || v2.toBool)
     case BinaryOperator.Minimum => Value.Int(math.min(v1.toInt, v2.toInt))
     case BinaryOperator.Maximum => Value.Int(math.max(v1.toInt, v2.toInt))
-    case _ => ???
+    case BinaryOperator.Union | BinaryOperator.Subset =>
+      assert(false, "Can't have union or subset operators."); Value.Unit
   }
 
 }
