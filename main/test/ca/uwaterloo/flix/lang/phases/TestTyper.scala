@@ -67,6 +67,42 @@ class TestTyper extends FunSuite {
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
 
+  test("Expression.Unary01") {
+    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Not, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)))
+    val result = Typer.Expression.typer(rast, Root)
+    assertResult(result)(TypedAst.Type.Bool)
+  }
+
+  test("Expression.Unary02") {
+    val rast = ResolvedAst.Expression.Unary(UnaryOperator.UnaryPlus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)))
+    val result = Typer.Expression.typer(rast, Root)
+    assertResult(result)(TypedAst.Type.Int)
+  }
+
+  test("Expression.Unary03") {
+    val rast = ResolvedAst.Expression.Unary(UnaryOperator.UnaryMinus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)))
+    val result = Typer.Expression.typer(rast, Root)
+    assertResult(result)(TypedAst.Type.Int)
+  }
+
+  test("Expression.Unary.NonBooleanValue") {
+    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Not, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)))
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
+  }
+
+  test("Expression.Unary.NonIntegerValue01") {
+    val rast = ResolvedAst.Expression.Unary(UnaryOperator.UnaryPlus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)))
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
+  }
+
+  test("Expression.Unary.NonIntegerValue02") {
+    val rast = ResolvedAst.Expression.Unary(UnaryOperator.UnaryMinus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)))
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
+  }
+
   test("Expression.IfThenElse01") {
     val rast = ResolvedAst.Expression.IfThenElse(
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
