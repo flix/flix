@@ -92,7 +92,7 @@ object ResolvedAst {
 
     case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, e: ResolvedAst.Expression) extends ResolvedAst.Expression
 
-    case class Tuple(elms: Seq[ResolvedAst.Expression]) extends ResolvedAst.Expression
+    case class Tuple(elms: List[ResolvedAst.Expression]) extends ResolvedAst.Expression
 
     case class Ascribe(e: ResolvedAst.Expression, tpe: ResolvedAst.Type) extends ResolvedAst.Expression
 
