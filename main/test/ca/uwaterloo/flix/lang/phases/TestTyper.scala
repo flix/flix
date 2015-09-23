@@ -291,7 +291,11 @@ class TestTyper extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
   /////////////////////////////////////////////////////////////////////////////
-
+  test("Pattern.Unit") {
+    val rast = ResolvedAst.Type.Unit
+    val result = Typer.Type.typer(rast)
+    assertResult(TypedAst.Type.Unit)(result)
+  }
 
   // TODO: Test bound
 
