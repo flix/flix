@@ -20,7 +20,7 @@ object Interpreter {
         if (cond) eval(exp2, env) else eval(exp3, env)
       case Expression.Let(ident, value, body, tpe) => ??? // TODO(mhyee)
       case Expression.Match(exp, rules, _) => ??? // TODO(mhyee)
-      case Expression.Tag(name, ident, exp, tpe) => ???
+      case Expression.Tag(name, ident, exp, _) => Value.Tag(name, ident.name, eval(exp, env))
       case Expression.Tuple(elms, _) => Value.Tuple(elms.map(e => eval(e, env)))
       case Expression.Error(location, tpe) => ???
     }
@@ -31,7 +31,7 @@ object Interpreter {
     case Literal.Bool(b) => Value.Bool(b)
     case Literal.Int(i) => Value.Int(i)
     case Literal.Str(s) => Value.Str(s)
-    case Literal.Tag(ident, innerLit, _) => ???
+    case Literal.Tag(name, ident, innerLit, _) => Value.Tag(name, ident.name, evalLit(innerLit))
     case Literal.Tuple(elms, _) => Value.Tuple(elms.map(evalLit))
   }
 

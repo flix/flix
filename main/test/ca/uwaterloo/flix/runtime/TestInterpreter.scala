@@ -943,4 +943,11 @@ class TestInterpreter extends FunSuite {
     val result03 = Interpreter.eval(exp03)
     assertResult(Value.Str("foo"))(result03)
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expressions - Tuples and Tags                                           //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // Note: These are tuple and tag *expressions*, not *literals* (which are tested above)
+  // TODO(mhyee)
 }
