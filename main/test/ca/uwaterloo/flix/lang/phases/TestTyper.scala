@@ -371,7 +371,7 @@ class TestTyper extends FunSuite {
         TypedAst.Type.Bool,
         TypedAst.Type.Int,
         TypedAst.Type.Str
-      ), retTpe = TypedAst.Type.Int)
+      ), retTpe = TypedAst.Type.Str)
     val actualType = Typer.Expression.typer(rast, Root).get.tpe
     assertResult(expectedType)(actualType)
   }
@@ -409,6 +409,7 @@ class TestTyper extends FunSuite {
       args = List(ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42))))
 
     val result = Typer.Expression.typer(rast, Root)
+    println(result)
     assertResult(TypedAst.Type.Unit)(result.get.tpe)
   }
 

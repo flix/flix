@@ -191,12 +191,11 @@ object TypedAst {
     /**
      * A typed AST node representing a lambda abstraction.
      *
-     * @param formals the formal arguments.
-     * @param retTpe the declared return type.
+     * @param args the formal arguments.
      * @param body the body expression of the lambda.
      * @param tpe the type of the entire function.
      */
-    case class Lambda(formals: List[TypedAst.FormalArg], retTpe: TypedAst.Type, body: TypedAst.Expression, tpe: TypedAst.Type.Function) extends TypedAst.Expression
+    case class Lambda(args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: TypedAst.Type.Function) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a function call.

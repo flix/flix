@@ -20,6 +20,7 @@ object Typer {
   object TypeError {
 
     // TODO: Need nice format of these.
+    // TODO: And improve error names etc.
 
     // TODO: Currently we are a bit lacking for source locations here.
     case class ExpectedType(expected: TypedAst.Type, actual: TypedAst.Type) extends TypeError {
@@ -33,6 +34,11 @@ object Typer {
 
     case class IllegalPattern(pat: ResolvedAst.Pattern, tpe: TypedAst.Type) extends TypeError {
       val format = s"Error: Pattern '${pat}' does not match expected type '${tpe}'.\n"
+    }
+
+    case class IllegalApply(tpe: TypedAst.Type) extends TypeError {
+      val format = s"Error: Expected function, but expression has type '${tpe}'.\n"
+
     }
 
   }
@@ -166,6 +172,45 @@ object Typer {
         case ResolvedAst.Expression.Lit(rlit) =>
           val lit = Literal.typer(rlit, root)
           TypedAst.Expression.Lit(lit, lit.tpe).toSuccess
+
+          // TODO: Peer review
+        case ResolvedAst.Expression.Lambda(rargs, rtpe, rbody) =>
+          // compile formal arguments
+          val args = rargs map {
+            case ResolvedAst.FormalArg(ident, t) => TypedAst.FormalArg(ident, Type.typer(t))
+          }
+          // return type
+          val tpe = Type.typer(rtpe)
+          // create extended environment
+          val env1 = args.foldLeft(env) {
+            case (m, TypedAst.FormalArg(ident, t)) => m + (ident.name -> t)
+          }
+
+          // type body
+          visit(rbody, env1) flatMap {
+            case body => expect(tpe, body.tpe) map {
+              case _ => TypedAst.Expression.Lambda(args, body, TypedAst.Type.Function(args map (_.tpe), tpe))
+            }
+          }
+
+        // TODO: Peer review
+        case ResolvedAst.Expression.Apply(re, rargs) =>
+          val lambdaVal = visit(re, env)
+          val argsVal = @@(rargs map (arg => visit(arg, env)))
+
+          @@(lambdaVal, argsVal) flatMap {
+            case (lambda, args) => lambda.tpe match {
+              case TypedAst.Type.Function(targs, retTpe) =>
+                val argsVal = (targs zip args) map {
+                  case (formalType, actualExp) => expect(formalType, actualExp.tpe)
+                }
+
+                @@(argsVal) map {
+                  case _ => TypedAst.Expression.Apply(lambda, args, retTpe)
+                }
+              case tpe => IllegalApply(tpe).toFailure
+            }
+          }
 
         case ResolvedAst.Expression.Unary(op, re) => op match {
           case UnaryOperator.Not =>
