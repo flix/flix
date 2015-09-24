@@ -112,8 +112,14 @@ object Typer {
       }
     }
 
+    /**
+     * Types the given relation definition `rast` under the given AST `root`.
+     */
     def typer(rast: ResolvedAst.Definition.Relation, root: ResolvedAst.Root): Validation[TypedAst.Definition.Relation, TypeError] = {
-      ???
+      val attributes = rast.attributes map {
+        case ResolvedAst.Attribute(ident, tpe) => TypedAst.Attribute(ident, Type.typer(tpe))
+      }
+      TypedAst.Definition.Relation(rast.name, attributes).toSuccess
     }
 
   }
@@ -176,7 +182,7 @@ object Typer {
           val lit = Literal.typer(rlit, root)
           TypedAst.Expression.Lit(lit, lit.tpe).toSuccess
 
-          // TODO: Peer review
+        // TODO: Peer review
         case ResolvedAst.Expression.Lambda(rargs, rtpe, rbody) =>
           // compile formal arguments
           val args = rargs map {

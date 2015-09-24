@@ -132,6 +132,7 @@ object Resolver {
         val collectedRules = Declaration.collectRules(wast, syms)
 
         @@(collectedFacts, collectedRules) map {
+          // TODO: Rest...
           case (facts, rules) => ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, facts, rules)
         }
     }
