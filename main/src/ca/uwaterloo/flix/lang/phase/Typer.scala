@@ -54,9 +54,16 @@ object Typer {
 
 
   object Definition {
-
+    /**
+     * Types the given constant definition `rast` under the given AST `root`.
+     */
     def typer(rast: ResolvedAst.Definition.Constant, root: ResolvedAst.Root): Validation[TypedAst.Definition.Constant, TypeError] = {
-      ???
+      val declaredType = Type.typer(rast.tpe)
+      Expression.typer(rast.exp, root) flatMap {
+        case e => expect(declaredType, e.tpe) map {
+          case tpe => TypedAst.Definition.Constant(rast.name, e, tpe)
+        }
+      }
     }
 
     def typer(rast: ResolvedAst.Definition.Lattice, root: ResolvedAst.Root): Validation[TypedAst.Definition.Lattice, TypeError] = {
