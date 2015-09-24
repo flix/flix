@@ -997,8 +997,137 @@ class TestInterpreter extends FunSuite {
 
   /////////////////////////////////////////////////////////////////////////////
   // Expressions - Tuples and Tags                                           //
+  // These are tuple and tag expressions that aren't literals.               //
   /////////////////////////////////////////////////////////////////////////////
 
-  // Note: These are tuple and tag *expressions*, not *literals* (which are tested above)
-  // TODO(mhyee)
+  test("Tuple expression") {
+    val exp01 = Expression.Tuple(List(
+      Expression.Lit(Literal.Int(42), Type.Int),
+      Expression.Lit(Literal.Bool(false), Type.Bool),
+      Expression.Lit(Literal.Str("hi"), Type.Str)),
+      Type.Tuple(List(Type.Int, Type.Bool, Type.Str)))
+    val result01 = Interpreter.eval(exp01)
+    assertResult(Value.Tuple(List(Value.Int(42), Value.Bool(false), Value.Str("hi"))))(result01)
+
+    val exp02 = Expression.Tuple(List(
+      Expression.Lit(Literal.Int(4), Type.Int),
+      Expression.Tuple(List(Expression.Lit(Literal.Int(12), Type.Int), Expression.Lit(Literal.Int(8), Type.Int)),
+        Type.Tuple(List(Type.Int, Type.Int)))),
+      Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int)))))
+    val result02 = Interpreter.eval(exp02)
+    assertResult(Value.Tuple(List(Value.Int(4), Value.Tuple(List(Value.Int(12), Value.Int(8))))))(result02)
+
+    val exp03 = Expression.Tuple(List(
+      // 40 + 2
+      Expression.Binary(
+        BinaryOperator.Plus,
+        Expression.Lit(Literal.Int(40), Type.Int),
+        Expression.Lit(Literal.Int(2), Type.Int),
+        Type.Int),
+      // !(-12 < 22)
+      Expression.Unary(
+        UnaryOperator.Not,
+        Expression.Binary(
+          BinaryOperator.Less,
+          Expression.Lit(Literal.Int(-12), Type.Int),
+          Expression.Lit(Literal.Int(22), Type.Int),
+          Type.Bool),
+        Type.Bool),
+      // if (true) "hi" else "hello"
+      Expression.IfThenElse(
+        Expression.Lit(Literal.Bool(true), Type.Bool),
+        Expression.Lit(Literal.Str("hi"), Type.Str),
+        Expression.Lit(Literal.Str("hello"), Type.Str),
+        Type.Str)),
+      Type.Tuple(List(Type.Int, Type.Bool, Type.Str)))
+    val result03 = Interpreter.eval(exp03)
+    assertResult(Value.Tuple(List(Value.Int(42), Value.Bool(false), Value.Str("hi"))))(result03)
+  }
+
+  test("Tag expression (simple)") {
+    val name = Name.Resolved(List("foo", "bar"))
+    val ident = ParsedAst.Ident("baz", SourceLocation(None, 0, 0))
+    val tagTpe = Type.Tag(name, ident, Type.Str)
+    val enumTpe = Type.Enum(Map("foo.bar.baz" -> tagTpe))
+    val exp = Expression.Tag(name, ident,
+      // if (!(4 != 4)) "hello world" else "asdfasdf"
+      Expression.IfThenElse(
+        Expression.Unary(
+          UnaryOperator.Not,
+          Expression.Binary(
+            BinaryOperator.NotEqual,
+            Expression.Lit(Literal.Int(4), Type.Int),
+            Expression.Lit(Literal.Int(4), Type.Int),
+            Type.Bool),
+          Type.Bool),
+        Expression.Lit(Literal.Str("hello world"), Type.Str),
+        Expression.Lit(Literal.Str("asdfasdf"), Type.Str),
+        Type.Str),
+      enumTpe)
+    val result = Interpreter.eval(exp)
+    assertResult(Value.Tag(name, "baz", Value.Str("hello world")))(result)
+  }
+
+  test("Tag (tuple)") {
+    val name = Name.Resolved(List("Family"))
+    val ident = ParsedAst.Ident("NameAndAge", SourceLocation(None, 0, 0))
+    val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int)))
+    val enumTpe = Type.Enum(Map("Family.NameAndAge" -> tagTpe))
+    val exp = Expression.Tag(name, ident, Expression.Tuple(List(
+      Expression.Lit(Literal.Str("James"), Type.Str),
+      // 20 + 22
+      Expression.Binary(
+        BinaryOperator.Plus,
+        Expression.Lit(Literal.Int(20), Type.Int),
+        Expression.Lit(Literal.Int(22), Type.Int),
+        Type.Int)),
+      Type.Tuple(List(Type.Str, Type.Int))), enumTpe)
+    val result = Interpreter.eval(exp)
+    assertResult(Value.Tag(name, "NameAndAge", Value.Tuple(List(Value.Str("James"), Value.Int(42)))))(result)
+  }
+
+  test("Tag (constant propagation)") {
+    val name = Name.Resolved(List("ConstProp"))
+    val identB = ParsedAst.Ident("Bot", SourceLocation(None, 0, 0))
+    val identV = ParsedAst.Ident("Val", SourceLocation(None, 0, 0))
+    val identT = ParsedAst.Ident("Top", SourceLocation(None, 0, 0))
+
+    val tagTpeB = Type.Tag(name, identB, Type.Unit)
+    val tagTpeV = Type.Tag(name, identV, Type.Int)
+    val tagTpeT = Type.Tag(name, identT, Type.Unit)
+    val enumTpe = Type.Enum(Map("ConstProp.Bot" -> tagTpeB, "ConstProp.Val" -> tagTpeV, "ConstProp.Top" -> tagTpeT))
+
+    val exp01 = Expression.Tag(name, identB, Expression.Lit(Literal.Unit, Type.Unit), enumTpe)
+    val result01 = Interpreter.eval(exp01)
+    assertResult(Value.Tag(name, "Bot", Value.Unit))(result01)
+
+    val exp02 = Expression.Tag(name, identT, Expression.Lit(Literal.Unit, Type.Unit), enumTpe)
+    val result02 = Interpreter.eval(exp02)
+    assertResult(Value.Tag(name, "Top", Value.Unit))(result02)
+
+    val exp03 = Expression.Tag(name, identV,
+      // 123 - 123
+      Expression.Binary(
+        BinaryOperator.Minus,
+        Expression.Lit(Literal.Int(123), Type.Int),
+        Expression.Lit(Literal.Int(123), Type.Int),
+        Type.Int),
+      enumTpe)
+    val result03 = Interpreter.eval(exp03)
+    assertResult(Value.Tag(name, "Val", Value.Int(0)))(result03)
+
+    val exp04 = Expression.Tag(name, identV,
+      // -240
+      Expression.Unary(
+        UnaryOperator.UnaryMinus,
+        Expression.Lit(Literal.Int(240), Type.Int),
+        Type.Int),
+      enumTpe)
+    val result04 = Interpreter.eval(exp04)
+    assertResult(Value.Tag(name, "Val", Value.Int(-240)))(result04)
+
+    val exp05 = Expression.Tag(name, identV, Expression.Lit(Literal.Int(1241), Type.Int), enumTpe)
+    val result05 = Interpreter.eval(exp05)
+    assertResult(Value.Tag(name, "Val", Value.Int(1241)))(result05)
+  }
 }
