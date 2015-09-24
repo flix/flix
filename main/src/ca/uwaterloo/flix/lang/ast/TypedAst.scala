@@ -45,6 +45,7 @@ object TypedAst {
     /**
      * A typed AST node representing a lattice definition.
      *
+     * @param tpe the type of the lattice elements.
      * @param bot the bottom element.
      * @param leq the partial order.
      * @param lub the least-upper-bound.

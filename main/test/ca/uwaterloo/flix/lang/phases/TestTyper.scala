@@ -1,8 +1,8 @@
 package ca.uwaterloo.flix.lang.phases
 
-import ca.uwaterloo.flix.lang.ast.ResolvedAst.Expression
 import ca.uwaterloo.flix.lang.ast._
 import ca.uwaterloo.flix.lang.phase.Typer
+
 import org.scalatest.FunSuite
 
 class TestTyper extends FunSuite {
@@ -14,7 +14,6 @@ class TestTyper extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Definitions                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  // TODO: constant, lattice ,relation\
 
   test("Definition.Constant01") {
     val exp = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit)
@@ -78,7 +77,62 @@ class TestTyper extends FunSuite {
     assertResult(expectedType)(result.get.tpe)
   }
 
+  test("Definition.Lattice01") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
 
+    val rast = ResolvedAst.Definition.Lattice(
+      tpe = ResolvedAst.Type.Bool,
+      bot = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(false)),
+      leq = ResolvedAst.Expression.Lambda(
+        formals = List(
+          ResolvedAst.FormalArg(x, ResolvedAst.Type.Bool),
+          ResolvedAst.FormalArg(y, ResolvedAst.Type.Bool)),
+        retTpe = ResolvedAst.Type.Bool,
+        body = ResolvedAst.Expression.Binary(
+          BinaryOperator.Or,
+          ResolvedAst.Expression.Unary(UnaryOperator.Not, ResolvedAst.Expression.Var(x)),
+          ResolvedAst.Expression.Var(y))
+      ),
+      lub = ResolvedAst.Expression.Lambda(
+        formals = List(
+          ResolvedAst.FormalArg(x, ResolvedAst.Type.Bool),
+          ResolvedAst.FormalArg(y, ResolvedAst.Type.Bool)),
+        retTpe = ResolvedAst.Type.Bool,
+        body = ResolvedAst.Expression.Binary(
+          BinaryOperator.Or,
+          ResolvedAst.Expression.Var(x),
+          ResolvedAst.Expression.Var(y))
+      ))
+
+    val result = Typer.Definition.typer(rast, Root)
+    assert(result.isSuccess)
+  }
+
+  test("Definition.Lattice.TypeError") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
+
+    val rast = ResolvedAst.Definition.Lattice(
+      tpe = ResolvedAst.Type.Str,
+      bot = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(false)),
+      leq = ResolvedAst.Expression.Lambda(
+        formals = List(
+          ResolvedAst.FormalArg(x, ResolvedAst.Type.Int),
+          ResolvedAst.FormalArg(y, ResolvedAst.Type.Str)),
+        retTpe = ResolvedAst.Type.Int,
+        body = ResolvedAst.Expression.Var(x)),
+      lub = ResolvedAst.Expression.Lambda(
+        formals = List(
+          ResolvedAst.FormalArg(x, ResolvedAst.Type.Bool),
+          ResolvedAst.FormalArg(y, ResolvedAst.Type.Bool)),
+        retTpe = ResolvedAst.Type.Int,
+        body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42))
+      ))
+
+    val result = Typer.Definition.typer(rast, Root)
+    assert(result.isSuccess)
+  }
 
   test("Definition.Relation01") {
     val rast = ResolvedAst.Definition.Relation(RName, List(

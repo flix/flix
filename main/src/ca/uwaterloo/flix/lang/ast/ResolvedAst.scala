@@ -28,7 +28,15 @@ object ResolvedAst {
 
     case class Enum(name: Name.Resolved, cases: Map[String, ResolvedAst.Type.Tag]) extends ResolvedAst.Definition
 
-    case class Lattice() extends ResolvedAst.Definition
+    /**
+     * A resolved AST node representing a lattice definition.
+     *
+     * @param tpe the (declared) type of the lattice elements.
+     * @param bot the bottom element.
+     * @param leq the partial order.
+     * @param lub the least-upper-bound.
+     */
+    case class Lattice(tpe: ResolvedAst.Type, bot: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression) extends ResolvedAst.Definition
 
     /**
      * A resolved AST node representing a relation definition.
