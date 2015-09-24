@@ -28,8 +28,45 @@ object Typer {
   /**
    * Runs the typer on the entire given AST `rast`.
    */
-  def typecheck(rast: ResolvedAst.Root): Validation[TypedAst.Root, TypeError] = TypedAst.Root(Map.empty, Map.empty, Map.empty, List.empty, List.empty).toSuccess
+  def typecheck(root: ResolvedAst.Root): Validation[TypedAst.Root, TypeError] = {
 
+    // TODO: Need to implement Validation.fold over maps.
+
+    val factsVal = @@(root.facts.map(fact => Constraint.typer(fact, root)))
+    val rulesVal = @@(root.rules.map(rule => Constraint.typer(rule, root)))
+
+    @@(factsVal, rulesVal) map {
+      case (facts, rules) => TypedAst.Root(Map.empty, Map.empty, Map.empty, facts, rules)
+    }
+  }
+
+
+  object Definition {
+
+    def typer(rast: ResolvedAst.Definition.Constant, root: ResolvedAst.Root): Validation[TypedAst.Definition.Constant, TypeError] = {
+      ???
+    }
+
+    def typer(rast: ResolvedAst.Definition.Lattice, root: ResolvedAst.Root): Validation[TypedAst.Definition.Lattice, TypeError] = {
+      ???
+    }
+
+    def typer(rast: ResolvedAst.Definition.Relation, root: ResolvedAst.Root): Validation[TypedAst.Definition.Relation, TypeError] = {
+      ???
+    }
+
+  }
+
+  object Constraint {
+
+    def typer(rast: ResolvedAst.Constraint.Fact, root: ResolvedAst.Root): Validation[TypedAst.Constraint.Fact, TypeError] = {
+      ???
+    }
+
+    def typer(rast: ResolvedAst.Constraint.Rule, root: ResolvedAst.Root): Validation[TypedAst.Constraint.Rule, TypeError] = {
+      ???
+    }
+  }
 
   object Literal {
 
@@ -87,23 +124,31 @@ object Typer {
   }
 
   object Pattern {
-    def typer(rast: ResolvedAst.Pattern, tpe: TypedAst.Type): Validation[TypedAst.Pattern, TypeError] = ???
+    /**
+     * Typechecks the given resolved pattern `rast` against the given type `tpe`.
+     */
+    def typer(rast: ResolvedAst.Pattern, tpe: TypedAst.Type): Validation[TypedAst.Pattern, TypeError] = (rast, tpe) match {
+      case _ => ???
+    }
   }
 
   object Type {
 
-    def typer(rast: ResolvedAst.Type): TypedAst.Type = ???
+    /**
+     * Translates a type from the resolved AST into one of the typed AST.
+     */
+    def typer(rast: ResolvedAst.Type): TypedAst.Type = rast match {
+      case ResolvedAst.Type.Unit => TypedAst.Type.Unit
+      case ResolvedAst.Type.Bool => TypedAst.Type.Bool
+      case ResolvedAst.Type.Int => TypedAst.Type.Int
+      case ResolvedAst.Type.Str => TypedAst.Type.Str
+      case ResolvedAst.Type.Tag(name, ident, tpe) => TypedAst.Type.Tag(name, ident, typer(tpe))
+      case ResolvedAst.Type.Tuple(elms) => TypedAst.Type.Tuple(elms map typer)
+      case ResolvedAst.Type.Function(args, retTpe) => TypedAst.Type.Function(args map typer, typer(retTpe))
+    }
 
   }
 
-
-  //  def unify(pattern: TypedAst.Pattern, tpe: TypedAst.Type): Validation[Map[String, TypedAst.Type], TypeError] =
-  //    (pattern, tpe) match {
-  //      case (TypedAst.Pattern.Wildcard(_), _) => Map.empty[String, TypedAst.Type].toSuccess
-  //      case (TypedAst.Pattern.Var(ident), t) => Map(ident.name -> t).toSuccess
-  //      case (TypedAst.Pattern.Lit(literal), t) => ??? // TODO: Get type of the literal and then we are good?
-  //        // TODO: remaining cases.
-  //    }
 
   def expect(tpe1: TypedAst.Type)(tpe2: TypedAst.Type): Validation[TypedAst.Type, TypeError] = ???
 

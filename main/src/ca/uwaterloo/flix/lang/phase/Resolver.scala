@@ -132,7 +132,7 @@ object Resolver {
         val collectedRules = Declaration.collectRules(wast, syms)
 
         @@(collectedFacts, collectedRules) map {
-          case (facts, rules) => ResolvedAst.Root(Map.empty, facts, rules)
+          case (facts, rules) => ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, facts, rules)
         }
     }
   }
@@ -213,9 +213,9 @@ object Resolver {
     /**
      * Performs symbol resolution for the given value definition `wast`.
      */
-    def resolve(wast: WeededAst.Definition.Value, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Value, ResolverError] =
+    def resolve(wast: WeededAst.Definition.Value, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Constant, ResolverError] =
       @@(Expression.resolve(wast.e, namespace, syms), Type.resolve(wast.tpe, namespace, syms)) map {
-        case (e, tpe) => ResolvedAst.Definition.Value(Name.Resolved(namespace ::: wast.ident.name :: Nil), e, tpe)
+        case (e, tpe) => ResolvedAst.Definition.Constant(Name.Resolved(namespace ::: wast.ident.name :: Nil), e, tpe)
       }
 
     def resolve(wast: WeededAst.Definition.Relation, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Relation, ResolverError] =
@@ -270,7 +270,7 @@ object Resolver {
         case WeededAst.Expression.Lit(wlit) => Literal.resolve(wlit, namespace, syms) map ResolvedAst.Expression.Lit
         case WeededAst.Expression.Lambda(wformals, wtype, wbody) =>
           val formalsVal = @@(wformals map {
-            case (ident, tpe) => Type.resolve(tpe, namespace, syms) map (t => (ident, t))
+            case (ident, tpe) => Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.FormalArg(ident, t))
           })
           @@(formalsVal, Type.resolve(wtype, namespace, syms), visit(wbody, locals)) map {
             case (formals, tpe, body) => ResolvedAst.Expression.Lambda(formals, tpe, body)

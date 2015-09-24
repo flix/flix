@@ -5,15 +5,48 @@ trait ResolvedAst
 object ResolvedAst {
 
   case class Root(
-                   // TODO: value environment
-                   // todo: relation environment
-                   // todo: type environment
-                   // todo: lattice environment
-                   // todo: enum environment... sigh so many
+                   // todo: type environment???
+                   constants: Map[Name.Resolved, ResolvedAst.Definition.Constant],
                    enums: Map[Name.Resolved, ResolvedAst.Definition.Enum],
-                   // relations: Map[Name.Resolved, ResolvedAst.Definition.Relation],
+                   lattices: Map[ResolvedAst.Type, ResolvedAst.Definition.Lattice],
+                   relations: Map[Name.Resolved, ResolvedAst.Definition.Relation],
                    facts: List[ResolvedAst.Constraint.Fact],
                    rules: List[ResolvedAst.Constraint.Rule]) extends ResolvedAst
+
+  sealed trait Definition
+
+  object Definition {
+
+    /**
+     * A resolved AST node representing a constant definition.
+     *
+     * @param name the name of the constant.
+     * @param exp the constant expression.
+     * @param tpe the (declared) type of the constant.
+     */
+    case class Constant(name: Name.Resolved, exp: ResolvedAst.Expression, tpe: ResolvedAst.Type) extends ResolvedAst.Definition
+
+    case class Enum(name: Name.Resolved, cases: Map[String, ResolvedAst.Type.Tag]) extends ResolvedAst.Definition
+
+    /**
+     * A resolved AST node representing a lattice definition.
+     *
+     * @param tpe the (declared) type of the lattice elements.
+     * @param bot the bottom element.
+     * @param leq the partial order.
+     * @param lub the least-upper-bound.
+     */
+    case class Lattice(tpe: ResolvedAst.Type, bot: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression) extends ResolvedAst.Definition
+
+    /**
+     * A resolved AST node representing a relation definition.
+     *
+     * @param name the name of the relation.
+     * @param attributes the attributes (columns) of the relation.
+     */
+    case class Relation(name: Name.Resolved, attributes: List[ResolvedAst.Attribute]) extends ResolvedAst.Definition
+
+  }
 
   sealed trait Constraint extends ResolvedAst
 
@@ -33,18 +66,6 @@ object ResolvedAst {
      * @param body the body predicates.
      */
     case class Rule(head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body]) extends ResolvedAst.Constraint
-
-  }
-
-  sealed trait Definition extends ResolvedAst.Constraint
-
-  object Definition {
-
-    case class Value(name: Name.Resolved, exp: ResolvedAst.Expression, tpe: ResolvedAst.Type) extends ResolvedAst.Definition
-
-    case class Enum(name: Name.Resolved, cases: Map[String, ResolvedAst.Type.Tag]) extends ResolvedAst.Definition
-
-    case class Relation() extends ResolvedAst.Definition
 
   }
 
@@ -76,7 +97,7 @@ object ResolvedAst {
 
     case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Expression
 
-    case class Lambda(formals: Seq[(ParsedAst.Ident, ResolvedAst.Type)], returnType: ResolvedAst.Type, body: ResolvedAst.Expression) extends ResolvedAst.Expression
+    case class Lambda(formals: List[FormalArg], retTpe: ResolvedAst.Type, body: ResolvedAst.Expression) extends ResolvedAst.Expression
 
     case class Apply(lambda: ResolvedAst.Expression, args: Seq[ResolvedAst.Expression]) extends ResolvedAst.Expression
 
@@ -145,9 +166,6 @@ object ResolvedAst {
     case class Tuple(elms: List[ResolvedAst.Pattern]) extends ResolvedAst.Pattern
 
   }
-
-
-  // TODO: Filters
 
   object Predicate {
 
@@ -286,5 +304,21 @@ object ResolvedAst {
     case class Function(args: List[ResolvedAst.Type], retTpe: ResolvedAst.Type) extends ResolvedAst.Type
 
   }
+
+  /**
+   * A typed AST node representing an attribute in a relation.
+   *
+   * @param ident the name of the attribute.
+   * @param tpe the (declared) type of the attribute.
+   */
+  case class Attribute(ident: ParsedAst.Ident, tpe: ResolvedAst.Type) extends ResolvedAst
+
+  /**
+   * A resolved AST node representing a formal argument in a function.
+   *
+   * @param ident the name of the argument.
+   * @param tpe the type of the argument.
+   */
+  case class FormalArg(ident: ParsedAst.Ident, tpe: ResolvedAst.Type) extends ResolvedAst
 
 }
