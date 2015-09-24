@@ -30,6 +30,7 @@ object WeededAst {
   object Definition {
 
     // TODO: Swap order
+    // TODO: Check no free variables.
     case class Value(ident: ParsedAst.Ident, tpe: WeededAst.Type, e: WeededAst.Expression) extends WeededAst.Definition
 
     // TODO: Decorate with the full type....

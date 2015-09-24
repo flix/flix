@@ -270,7 +270,7 @@ object Resolver {
         case WeededAst.Expression.Lit(wlit) => Literal.resolve(wlit, namespace, syms) map ResolvedAst.Expression.Lit
         case WeededAst.Expression.Lambda(wformals, wtype, wbody) =>
           val formalsVal = @@(wformals map {
-            case (ident, tpe) => Type.resolve(tpe, namespace, syms) map (t => (ident, t))
+            case (ident, tpe) => Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.FormalArg(ident, t))
           })
           @@(formalsVal, Type.resolve(wtype, namespace, syms), visit(wbody, locals)) map {
             case (formals, tpe, body) => ResolvedAst.Expression.Lambda(formals, tpe, body)

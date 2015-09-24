@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.lang.phases
 
+import ca.uwaterloo.flix.lang.ast.ResolvedAst.Expression
 import ca.uwaterloo.flix.lang.ast._
 import ca.uwaterloo.flix.lang.phase.Typer
 import org.scalatest.FunSuite
@@ -13,7 +14,71 @@ class TestTyper extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Definitions                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  // TODO
+  // TODO: constant, lattice ,relation\
+
+  test("Definition.Constant01") {
+    val exp = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit)
+    val tpe = ResolvedAst.Type.Unit
+    val rast = ResolvedAst.Definition.Constant(RName, exp, tpe)
+
+    val result = Typer.Definition.typer(rast, Root)
+    assertResult(TypedAst.Type.Unit)(result.get.tpe)
+  }
+
+  test("Definition.Constant02") {
+    val exp = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true))
+    val tpe = ResolvedAst.Type.Bool
+    val rast = ResolvedAst.Definition.Constant(RName, exp, tpe)
+
+    val result = Typer.Definition.typer(rast, Root)
+    assertResult(TypedAst.Type.Bool)(result.get.tpe)
+  }
+
+  test("Definition.Constant03") {
+    val exp = ResolvedAst.Expression.Binary(
+      BinaryOperator.Plus,
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(21)),
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)))
+    val tpe = ResolvedAst.Type.Int
+    val rast = ResolvedAst.Definition.Constant(RName, exp, tpe)
+
+    val result = Typer.Definition.typer(rast, Root)
+    assertResult(TypedAst.Type.Int)(result.get.tpe)
+  }
+
+  test("Definition.Constant04") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+
+    // fn (x: Unit): Unit = ()
+    val exp = ResolvedAst.Expression.Lambda(
+      formals = List(ResolvedAst.FormalArg(x, ResolvedAst.Type.Unit)),
+      retTpe = ResolvedAst.Type.Unit,
+      body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit))
+    val tpe = ResolvedAst.Type.Int
+    val rast = ResolvedAst.Definition.Constant(RName, exp, tpe)
+
+    val result = Typer.Definition.typer(rast, Root)
+    val expectedType = TypedAst.Type.Function(List(TypedAst.Type.Unit), TypedAst.Type.Unit)
+    assertResult(expectedType)(result.get.tpe)
+  }
+
+  test("Definition.Constant05") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+
+    // fn (x: Int): Int = x
+    val exp = ResolvedAst.Expression.Lambda(
+      formals = List(ResolvedAst.FormalArg(x, ResolvedAst.Type.Int)),
+      retTpe = ResolvedAst.Type.Unit,
+      body = ResolvedAst.Expression.Var(x))
+    val tpe = ResolvedAst.Type.Int
+    val rast = ResolvedAst.Definition.Constant(RName, exp, tpe)
+
+    val result = Typer.Definition.typer(rast, Root)
+    val expectedType = TypedAst.Type.Function(List(TypedAst.Type.Int), TypedAst.Type.Int)
+    assertResult(expectedType)(result.get.tpe)
+  }
+
+
 
   /////////////////////////////////////////////////////////////////////////////
   // Constraints                                                             //

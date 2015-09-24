@@ -76,7 +76,7 @@ object ResolvedAst {
 
     case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Expression
 
-    case class Lambda(formals: Seq[(ParsedAst.Ident, ResolvedAst.Type)], returnType: ResolvedAst.Type, body: ResolvedAst.Expression) extends ResolvedAst.Expression
+    case class Lambda(formals: List[FormalArg], retTpe: ResolvedAst.Type, body: ResolvedAst.Expression) extends ResolvedAst.Expression
 
     case class Apply(lambda: ResolvedAst.Expression, args: Seq[ResolvedAst.Expression]) extends ResolvedAst.Expression
 
@@ -283,5 +283,13 @@ object ResolvedAst {
     case class Function(args: List[ResolvedAst.Type], retTpe: ResolvedAst.Type) extends ResolvedAst.Type
 
   }
+
+  /**
+   * A resolved AST node representing a formal argument in a function.
+   *
+   * @param ident the name of the argument.
+   * @param tpe the type of the argument.
+   */
+  case class FormalArg(ident: ParsedAst.Ident, tpe: ResolvedAst.Type) extends ResolvedAst
 
 }
