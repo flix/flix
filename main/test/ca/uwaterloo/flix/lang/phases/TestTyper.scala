@@ -265,7 +265,44 @@ class TestTyper extends FunSuite {
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.Var01") {
-    ??? // TODO
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+
+    val rast = ResolvedAst.Expression.Var(x)
+    val env = Map("x" -> TypedAst.Type.Bool)
+
+    val result = Typer.Expression.typer(rast, Root, env)
+    assertResult(TypedAst.Type.Bool)(result.get.tpe)
+  }
+
+  test("Expression.Var02") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
+
+    val rast = ResolvedAst.Expression.Binary(
+      BinaryOperator.Plus,
+      ResolvedAst.Expression.Var(x),
+      ResolvedAst.Expression.Var(y)
+    )
+
+    val env = Map("x" -> TypedAst.Type.Int, "y" -> TypedAst.Type.Int)
+
+    val result = Typer.Expression.typer(rast, Root, env)
+    assertResult(TypedAst.Type.Int)(result.get.tpe)
+  }
+
+  test("Expression.Var03") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
+
+    val rast = ResolvedAst.Expression.Let(
+      ident = x,
+      value = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)),
+      body = ResolvedAst.Expression.Var(x))
+
+    val env = Map("x" -> TypedAst.Type.Bool)
+
+    val result = Typer.Expression.typer(rast, Root, env)
+    assertResult(TypedAst.Type.Int)(result.get.tpe)
   }
 
   test("Expression.Ref01") {
