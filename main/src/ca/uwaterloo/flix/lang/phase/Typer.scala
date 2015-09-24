@@ -5,6 +5,8 @@ import ca.uwaterloo.flix.lang.ast._
 import util.Validation
 import util.Validation._
 
+// TODO: Check code coverage.
+
 object Typer {
 
   import TypeError._
@@ -132,6 +134,32 @@ object Typer {
             }
         }
 
+        case ResolvedAst.Expression.Binary(op, re1, re2) => op match {
+          case _: ArithmeticOperator =>
+            @@(visit(re1, env), visit(re2, env)) flatMap {
+              case (e1, e2) => @@(expect(TypedAst.Type.Int, e1.tpe), expect(TypedAst.Type.Int, e2.tpe)) map {
+                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Int)
+              }
+            }
+          case _: ComparisonOperator =>
+            @@(visit(re1, env), visit(re2, env)) flatMap {
+              case (e1, e2) => @@(expect(TypedAst.Type.Int, e1.tpe), expect(TypedAst.Type.Int, e2.tpe)) map {
+                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Bool)
+              }
+            }
+          case _: EqualityOperator =>
+            @@(visit(re1, env), visit(re2, env)) flatMap {
+              case (e1, e2) => expectEqual(e1.tpe, e2.tpe) map {
+                case tpe => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Bool)
+              }
+            }
+          case _: LogicalOperator =>
+            @@(visit(re1, env), visit(re2, env)) flatMap {
+              case (e1, e2) => @@(expect(TypedAst.Type.Bool, e1.tpe), expect(TypedAst.Type.Bool, e2.tpe)) map {
+                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Bool)
+              }
+            }
+        }
 
         case ResolvedAst.Expression.IfThenElse(re1, re2, re3) =>
           @@(visit(re1, env), visit(re2, env), visit(re3, env)) flatMap {

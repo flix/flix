@@ -35,36 +35,51 @@ object UnaryOperator {
 sealed trait BinaryOperator extends Operator
 
 /**
- * A common super-type for comparison operators
+ * A common super-type for arithmetic operators.
+ */
+sealed trait ArithmeticOperator extends BinaryOperator
+
+/**
+ * A common super-type for comparison operators.
  */
 sealed trait ComparisonOperator extends BinaryOperator
+
+/**
+ * A common super-type for equality operators
+ */
+sealed trait EqualityOperator extends BinaryOperator
+
+/**
+ * A common super-type for logical operators.
+ */
+sealed trait LogicalOperator extends BinaryOperator
 
 object BinaryOperator {
 
   /**
    * Addition.
    */
-  case object Plus extends BinaryOperator
+  case object Plus extends ArithmeticOperator
 
   /**
    * Subtraction.
    */
-  case object Minus extends BinaryOperator
+  case object Minus extends ArithmeticOperator
 
   /**
    * Multiplication.
    */
-  case object Times extends BinaryOperator
+  case object Times extends ArithmeticOperator
 
   /**
    * Division.
    */
-  case object Divide extends BinaryOperator
+  case object Divide extends ArithmeticOperator
 
   /**
    * Modulus.
    */
-  case object Modulo extends BinaryOperator
+  case object Modulo extends ArithmeticOperator
 
   /**
    * Strictly less-than.
@@ -89,23 +104,24 @@ object BinaryOperator {
   /**
    * Equality
    */
-  case object Equal extends ComparisonOperator
+  case object Equal extends EqualityOperator
 
   /**
    * Inequality.
    */
-  case object NotEqual extends ComparisonOperator
+  case object NotEqual extends EqualityOperator
 
   /**
    * Logical conjunction.
    */
-  case object And extends BinaryOperator
+  case object And extends LogicalOperator
 
   /**
    * Logical disjunction.
    */
-  case object Or extends BinaryOperator
+  case object Or extends LogicalOperator
 
+  // TODO: Remove these
   @deprecated("replaced by builtin function", "0.1.0")
   case object Minimum extends BinaryOperator
 
