@@ -17,13 +17,26 @@ object ResolvedAst {
 
   object Definition {
 
+    /**
+     * A resolved AST node representing a constant definition.
+     *
+     * @param name the name of the constant.
+     * @param exp the constant expression.
+     * @param tpe the (declared) type of the constant.
+     */
     case class Constant(name: Name.Resolved, exp: ResolvedAst.Expression, tpe: ResolvedAst.Type) extends ResolvedAst.Definition
 
     case class Enum(name: Name.Resolved, cases: Map[String, ResolvedAst.Type.Tag]) extends ResolvedAst.Definition
 
     case class Lattice() extends ResolvedAst.Definition
 
-    case class Relation() extends ResolvedAst.Definition
+    /**
+     * A resolved AST node representing a relation definition.
+     *
+     * @param name the name of the relation.
+     * @param attributes the attributes (columns) of the relation.
+     */
+    case class Relation(name: Name.Resolved, attributes: List[ResolvedAst.Attribute]) extends ResolvedAst.Definition
 
   }
 
@@ -283,6 +296,14 @@ object ResolvedAst {
     case class Function(args: List[ResolvedAst.Type], retTpe: ResolvedAst.Type) extends ResolvedAst.Type
 
   }
+
+  /**
+   * A typed AST node representing an attribute in a relation.
+   *
+   * @param ident the name of the attribute.
+   * @param tpe the (declared) type of the attribute.
+   */
+  case class Attribute(ident: ParsedAst.Ident, tpe: ResolvedAst.Type) extends ResolvedAst
 
   /**
    * A resolved AST node representing a formal argument in a function.

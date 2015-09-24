@@ -4,6 +4,14 @@ import org.scalatest.FunSuite
 
 class TestTypedAst extends FunSuite {
 
+  test("Predicate.Head.Variables") {
+    ??? // TODO
+  }
+
+  test("Predicate.Body.Variables") {
+    ??? // TODO
+  }
+
   test("Pattern.Bound") {
     val x = ParsedAst.Ident("x", SourceLocation.Unknown)
     val y = ParsedAst.Ident("y", SourceLocation.Unknown)

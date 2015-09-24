@@ -80,6 +80,27 @@ class TestTyper extends FunSuite {
 
 
 
+  test("Definition.Relation01") {
+    val rast = ResolvedAst.Definition.Relation(RName, List(
+      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Bool)
+    ))
+
+    val result = Typer.Definition.typer(rast, Root)
+    assert(result.isSuccess)
+  }
+
+  test("Definition.Relation02") {
+    val rast = ResolvedAst.Definition.Relation(RName, List(
+      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Bool),
+      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int),
+      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Str)
+
+    ))
+
+    val result = Typer.Definition.typer(rast, Root)
+    assert(result.isSuccess)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Constraints                                                             //
   /////////////////////////////////////////////////////////////////////////////
@@ -87,7 +108,10 @@ class TestTyper extends FunSuite {
     val rname = Name.Resolved(List("Student"))
 
     val root = Root.copy(relations = Map(
-      rname -> ResolvedAst.Definition.Relation()
+      rname -> ResolvedAst.Definition.Relation(rname, List(
+        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Str),
+        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int)
+      ))
     ))
 
     val rast = ResolvedAst.Constraint.Fact(ResolvedAst.Predicate.Head(
@@ -107,7 +131,11 @@ class TestTyper extends FunSuite {
     val z = ParsedAst.Ident("x", SourceLocation.Unknown)
 
     val root = Root.copy(relations = Map(
-      rname -> ResolvedAst.Definition.Relation()
+      rname -> ResolvedAst.Definition.Relation(rname, List(
+        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int),
+        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int),
+        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int)
+      ))
     ))
 
     val head = ResolvedAst.Predicate.Head(rname, List(ResolvedAst.Term.Head.Var(x), ResolvedAst.Term.Head.Var(z)))
