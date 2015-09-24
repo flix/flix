@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.lang.phase
 
+import ca.uwaterloo.flix.lang.Compiler
 import ca.uwaterloo.flix.lang.ast._
 
 import util.Validation
@@ -23,7 +24,7 @@ object Typer {
     }
 
     // TODO: Currently we are a bit lacking for source locations here.
-    case class ExpectedEqualTypes(tpe1: TypedAst.Type, tpe2: TypedAst.Type, location: SourceLocation) extends TypeError {
+    case class ExpectedEqualTypes(tpe1: TypedAst.Type, tpe2: TypedAst.Type) extends TypeError {
       val format = s"Error: Expected expressions of the same type, but got '${tpe1}' and ${tpe1}.\n"
     }
 
@@ -178,6 +179,25 @@ object Typer {
             }
           }
 
+        case ResolvedAst.Expression.Match(e, rules) => ???
+
+        case ResolvedAst.Expression.Tag(name, ident, re) => ???
+
+        case ResolvedAst.Expression.Tuple(relms) =>
+          @@(relms map (e => visit(e, env))) map {
+            case elms => TypedAst.Expression.Tuple(elms, TypedAst.Type.Tuple(elms map (_.tpe)))
+          }
+
+        case ResolvedAst.Expression.Ascribe(re, rtype) =>
+          visit(re, env) flatMap {
+            case e => expect(Type.typer(rtype), e.tpe) map {
+              case _ => e
+            }
+          }
+
+        case ResolvedAst.Expression.Error(location) =>
+          throw Compiler.InternalCompilerError("Error expression not yet supported.")
+
       }
 
       visit(rast, env)
@@ -212,7 +232,7 @@ object Typer {
   }
 
   /**
-   * Returns [[Success]] if the given `expected` type matches the given `actual` type.
+   * Returns the given `expected` type wrapped in [[Success]] if it matches the given `actual` type.
    *
    * @param expected the expected type.
    * @param actual the actual type.
@@ -223,7 +243,16 @@ object Typer {
     else
       ExpectedType(expected, actual).toFailure
 
-
-  def expectEqual(tpe1: TypedAst.Type, tpe2: TypedAst.Type): Validation[TypedAst.Type, TypeError] = ???
+  /**
+   * Returns the given `tpe` type wrapped in [[Success]] if it matches the given `tpe2` type.
+   *
+   * @param tpe1 the first type.
+   * @param tpe2 the second type.
+   */
+  def expectEqual(tpe1: TypedAst.Type, tpe2: TypedAst.Type): Validation[TypedAst.Type, TypeError] =
+    if (tpe1 == tpe2)
+      tpe1.toSuccess
+    else
+      ExpectedEqualTypes(tpe1, tpe2).toFailure
 
 }
