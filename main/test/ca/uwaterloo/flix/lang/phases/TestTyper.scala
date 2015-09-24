@@ -718,7 +718,7 @@ class TestTyper extends FunSuite {
     val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit))
 
     val root = Root.copy(enums = Map(
-      RName -> ResolvedAst.Definition.Enum(enumName, Map(
+      enumName -> ResolvedAst.Definition.Enum(enumName, Map(
         "Qux" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Unit)
       ))
     ))
@@ -734,7 +734,7 @@ class TestTyper extends FunSuite {
     val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)))
 
     val root = Root.copy(enums = Map(
-      RName -> ResolvedAst.Definition.Enum(enumName, Map(
+      enumName -> ResolvedAst.Definition.Enum(enumName, Map(
         "A" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Unit),
         "B" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Bool),
         "C" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Int),
@@ -758,11 +758,11 @@ class TestTyper extends FunSuite {
     val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)))
 
     val root = Root.copy(enums = Map(
-      RName -> ResolvedAst.Definition.Enum(enumName, Map(
-        "X" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Unit),
-        "Y" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Bool),
-        "Y" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Int),
-        "Z" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Str)
+      enumName -> ResolvedAst.Definition.Enum(enumName, Map(
+        "A" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Unit),
+        "B" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Bool),
+        "C" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Int),
+        "D" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Str)
       ))
     ))
 

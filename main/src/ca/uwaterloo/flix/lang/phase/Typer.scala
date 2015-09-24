@@ -195,7 +195,16 @@ object Typer {
 
         case ResolvedAst.Expression.Match(e, rules) => ???
 
-        case ResolvedAst.Expression.Tag(name, ident, re) => ???
+        case ResolvedAst.Expression.Tag(enumName, tagName, re) =>
+          visit(re, env) flatMap {
+            case e =>
+              val enum = root.enums(enumName)
+              val cases = enum.cases.mapValues(t => Type.typer(t).asInstanceOf[TypedAst.Type.Tag])
+              val caze = cases(tagName.name)
+              expect(caze.tpe, e.tpe) map {
+                _ => TypedAst.Expression.Tag(enumName, tagName, e, TypedAst.Type.Enum(cases))
+              }
+          }
 
         case ResolvedAst.Expression.Tuple(relms) =>
           @@(relms map (e => visit(e, env))) map {
