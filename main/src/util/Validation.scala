@@ -116,7 +116,7 @@ object Validation {
   // TODO: Order is wrong
   // TODO: Prefer lists to Seq?
   @inline
-  def @@[Value, Alternative](xs: Seq[Validation[Value, Alternative]]): Validation[List[Value], Alternative] = {
+  def @@[Value, Alternative](xs: Traversable[Validation[Value, Alternative]]): Validation[List[Value], Alternative] = {
     // TODO: Optimize
     val zero = Success(List.empty[Value], List.empty[Alternative]): Validation[List[Value], Alternative]
     xs.foldLeft(zero) {

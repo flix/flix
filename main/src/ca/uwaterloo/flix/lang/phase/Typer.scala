@@ -44,6 +44,8 @@ object Typer {
 
     // TODO: Need to implement Validation.fold over maps.
 
+    // TODO: Need to implement @@ over maps or fold
+    //val constantsVal = @@(root.constants.values.map(constant => Definition.typer(constant, root)))
     val factsVal = @@(root.facts.map(fact => Constraint.typer(fact, root)))
     val rulesVal = @@(root.rules.map(rule => Constraint.typer(rule, root)))
 
