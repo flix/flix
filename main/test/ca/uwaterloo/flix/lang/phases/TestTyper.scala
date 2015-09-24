@@ -504,7 +504,59 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Match01") {
-    ???
+    val rast = ResolvedAst.Expression.Match(
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
+      List(
+        ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(true)) -> ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(21)),
+        ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(false)) -> ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42))
+      )
+    )
+
+    val result = Typer.Expression.typer(rast, Root)
+    assertResult(TypedAst.Type.Int)(result.get.tpe)
+  }
+
+  test("Expression.Match02") {
+    val rast = ResolvedAst.Expression.Match(
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)),
+      List(
+        ResolvedAst.Pattern.Var(Ident) -> ResolvedAst.Expression.Var(Ident),
+        ResolvedAst.Pattern.Var(Ident) -> ResolvedAst.Expression.Var(Ident)
+      )
+    )
+
+    val result = Typer.Expression.typer(rast, Root)
+    assertResult(TypedAst.Type.Int)(result.get.tpe)
+  }
+
+  test("Expression.Match03") {
+    val rast = ResolvedAst.Expression.Match(
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Tuple(List(
+        ResolvedAst.Literal.Bool(true), ResolvedAst.Literal.Int(42)
+      ))),
+      List(
+        ResolvedAst.Pattern.Tuple(List(
+          ResolvedAst.Pattern.Wildcard(SourceLocation.Unknown),
+          ResolvedAst.Pattern.Var(Ident)
+        )) -> ResolvedAst.Expression.Var(Ident)
+      )
+    )
+
+    val result = Typer.Expression.typer(rast, Root)
+    assertResult(TypedAst.Type.Int)(result.get.tpe)
+  }
+
+  test("Expression.Match.TypeError") {
+    val rast = ResolvedAst.Expression.Match(
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
+      List(
+        ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Int(42)) -> ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)),
+        ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Str("foo")) -> ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo"))
+      )
+    )
+
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
   }
 
   test("Expression.Tag01") {
@@ -562,7 +614,7 @@ class TestTyper extends FunSuite {
     ))
 
     val result = Typer.Expression.typer(rast, root)
-    assert(result.hasErrors)
+    assert(result.isFailure)
   }
 
   test("Expression.Tuple01") {
