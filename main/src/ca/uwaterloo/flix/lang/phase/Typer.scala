@@ -17,12 +17,12 @@ object Typer {
 
     // TODO: Currently we are a bit lacking for source locations here.
     case class ExpectedType(expected: TypedAst.Type, actual: TypedAst.Type) extends TypeError {
-      val format = ???
+      val format = s"Error: Expected an expression of type '${expected}' but got: ${actual}.\n"
     }
 
     // TODO: Currently we are a bit lacking for source locations here.
     case class ExpectedEqualTypes(tpe1: TypedAst.Type, tpe2: TypedAst.Type, location: SourceLocation) extends TypeError {
-      val format = ???
+      val format = s"Error: Expected expressions of the same type, but got '${tpe1}' and ${tpe1}.\n"
     }
 
   }
@@ -125,7 +125,11 @@ object Typer {
               }
             }
           case UnaryOperator.UnaryPlus | UnaryOperator.UnaryMinus =>
-            ???
+            visit(re, env) flatMap {
+              case e => expect(TypedAst.Type.Int, e.tpe) map {
+                case tpe => TypedAst.Expression.Unary(op, e, tpe)
+              }
+            }
         }
 
 
