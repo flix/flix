@@ -9,15 +9,16 @@ object Interpreter {
   def eval(expr: Expression, env: Env = Map()): Value = {
     expr match {
       case Expression.Lit(literal, _) => evalLit(literal)
-      case Expression.Var(name, _) => env(name)
+      case Expression.Var(ident, _) =>
+        assert(env.contains(ident), s"Expected variable ${ident.name} to be bound.")
+        env(ident)
       case Expression.Ref(name, tpe) => ???
-      case Expression.Lambda(_, _, _, _) => Value.Closure(expr, env)
-      case Expression.Apply(exp, args, _) =>
-        val evaledArgs = args.map(x => eval(x, env))
-        eval(exp, env) match {
+      case Expression.Lambda(_) => Value.Closure(expr, env)
+      case Expression.Apply(exp, args, _) => eval(exp, env) match {
           case Value.Closure(Expression.Lambda(formals, _, body, _), closureEnv) =>
-            val newEnv = formals.map(_.ident).zip(evaledArgs).toMap
-            eval(body, newEnv ++ env)
+            val evalArgs = args.map(x => eval(x, env))
+            val newEnv = closureEnv ++ formals.map(_.ident).zip(evalArgs).toMap
+            eval(body, newEnv)
           case _ => assert(false, "Expected a function."); Value.Unit
         }
       case Expression.Unary(op, exp, _) => apply(op, eval(exp, env))
@@ -67,5 +68,4 @@ object Interpreter {
     case BinaryOperator.Union | BinaryOperator.Subset =>
       assert(false, "Can't have union or subset operators."); Value.Unit
   }
-
 }

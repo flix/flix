@@ -3,19 +3,19 @@ package ca.uwaterloo.flix.runtime
 import ca.uwaterloo.flix.lang.ast.{Name, TypedAst}
 
 sealed trait Value {
-  def toBool: Boolean = this match {
-    case Value.Bool(b) => b
-    case _ => throw new RuntimeException("Expected a Value.Bool.")
+  def toBool: Boolean = {
+    assert(this.isInstanceOf[Value.Bool], "Expected a Value.Bool.")
+    this.asInstanceOf[Value.Bool].b
   }
 
-  def toInt: Int = this match {
-    case Value.Int(i) => i
-    case _ => throw new RuntimeException("Expected a Value.Int.")
+  def toInt: Int = {
+    assert(this.isInstanceOf[Value.Int], "Expected a Value.Int.")
+    this.asInstanceOf[Value.Int].i
   }
 
-  def toStr: String = this match {
-    case Value.Str(s) => s
-    case _ => throw new RuntimeException("Expected a Value.Str.")
+  def toStr: String = {
+    assert(this.isInstanceOf[Value.Str], "Expected a Value.Str.")
+    this.asInstanceOf[Value.Str].s
   }
 }
 
