@@ -508,7 +508,61 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Tag01") {
-    ???
+    val enumName = Name.Resolved(List("Foo", "Bar"))
+    val tagName = ParsedAst.Ident("Qux", SourceLocation.Unknown)
+    val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit))
+
+    val root = Root.copy(enums = Map(
+      RName -> ResolvedAst.Definition.Enum(enumName, Map(
+        "Qux" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Unit)
+      ))
+    ))
+
+    val expectedType = TypedAst.Type.Enum(Map("Qux" -> TypedAst.Type.Tag(enumName, tagName, TypedAst.Type.Unit)))
+    val actualType = Typer.Expression.typer(rast, root).get.tpe
+    assertResult(expectedType)(actualType)
+  }
+
+  test("Expression.Tag02") {
+    val enumName = Name.Resolved(List("Foo", "Bar"))
+    val tagName = ParsedAst.Ident("C", SourceLocation.Unknown)
+    val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)))
+
+    val root = Root.copy(enums = Map(
+      RName -> ResolvedAst.Definition.Enum(enumName, Map(
+        "A" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Unit),
+        "B" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Bool),
+        "C" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Int),
+        "D" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Str)
+      ))
+    ))
+
+    val expectedType = TypedAst.Type.Enum(Map(
+      "A" -> TypedAst.Type.Tag(enumName, tagName, TypedAst.Type.Unit),
+      "B" -> TypedAst.Type.Tag(enumName, tagName, TypedAst.Type.Bool),
+      "C" -> TypedAst.Type.Tag(enumName, tagName, TypedAst.Type.Int),
+      "D" -> TypedAst.Type.Tag(enumName, tagName, TypedAst.Type.Str)
+    ))
+    val actualType = Typer.Expression.typer(rast, root).get.tpe
+    assertResult(expectedType)(actualType)
+  }
+
+  test("Expression.Tag.TypeError") {
+    val enumName = Name.Resolved(List("Foo", "Bar"))
+    val tagName = ParsedAst.Ident("A", SourceLocation.Unknown)
+    val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)))
+
+    val root = Root.copy(enums = Map(
+      RName -> ResolvedAst.Definition.Enum(enumName, Map(
+        "X" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Unit),
+        "Y" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Bool),
+        "Y" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Int),
+        "Z" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Str)
+      ))
+    ))
+
+    val result = Typer.Expression.typer(rast, root)
+    assert(result.hasErrors)
   }
 
   test("Expression.Tuple01") {
