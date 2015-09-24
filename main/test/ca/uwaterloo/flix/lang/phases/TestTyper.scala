@@ -292,7 +292,6 @@ class TestTyper extends FunSuite {
 
   test("Expression.Var03") {
     val x = ParsedAst.Ident("x", SourceLocation.Unknown)
-    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
 
     val rast = ResolvedAst.Expression.Let(
       ident = x,
@@ -306,7 +305,48 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Ref01") {
-    ??? // TODO
+    val rname = Name.Resolved(List("foo", "bar"))
+    val rast = ResolvedAst.Expression.Ref(rname)
+
+    val root = Root.copy(constants = Map(
+      rname -> ResolvedAst.Definition.Constant(
+        name = rname,
+        exp = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
+        tpe = ResolvedAst.Type.Int
+      )))
+
+    val result = Typer.Expression.typer(rast, root)
+    assertResult(TypedAst.Type.Bool)(result.get.tpe)
+  }
+
+  test("Expression.Ref02") {
+    val rname = Name.Resolved(List("foo", "bar"))
+    val rast = ResolvedAst.Expression.Ref(rname)
+
+    val root = Root.copy(constants = Map(
+      rname -> ResolvedAst.Definition.Constant(
+        name = rname,
+        exp = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)),
+        tpe = ResolvedAst.Type.Int
+      )))
+
+    val result = Typer.Expression.typer(rast, root)
+    assertResult(TypedAst.Type.Int)(result.get.tpe)
+  }
+
+  test("Expression.Ref.TypeError") {
+    val rname = Name.Resolved(List("foo", "bar"))
+    val rast = ResolvedAst.Expression.Ref(rname)
+
+    val root = Root.copy(constants = Map(
+      rname -> ResolvedAst.Definition.Constant(
+        name = rname,
+        exp = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
+        tpe = ResolvedAst.Type.Str
+      )))
+
+    val result = Typer.Expression.typer(rast, root)
+    assert(result.isFailure)
   }
 
   test("Expression.Lambda01") {
