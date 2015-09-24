@@ -292,7 +292,6 @@ class TestTyper extends FunSuite {
 
   test("Expression.Var03") {
     val x = ParsedAst.Ident("x", SourceLocation.Unknown)
-    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
 
     val rast = ResolvedAst.Expression.Let(
       ident = x,
@@ -306,15 +305,209 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Ref01") {
-    ??? // TODO
+    val rname = Name.Resolved(List("foo", "bar"))
+    val rast = ResolvedAst.Expression.Ref(rname)
+
+    val root = Root.copy(constants = Map(
+      rname -> ResolvedAst.Definition.Constant(
+        name = rname,
+        exp = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
+        tpe = ResolvedAst.Type.Bool
+      )))
+
+    val result = Typer.Expression.typer(rast, root)
+    assertResult(TypedAst.Type.Bool)(result.get.tpe)
+  }
+
+  test("Expression.Ref02") {
+    val rname = Name.Resolved(List("foo", "bar"))
+    val rast = ResolvedAst.Expression.Ref(rname)
+
+    val root = Root.copy(constants = Map(
+      rname -> ResolvedAst.Definition.Constant(
+        name = rname,
+        exp = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)),
+        tpe = ResolvedAst.Type.Int
+      )))
+
+    val result = Typer.Expression.typer(rast, root)
+    assertResult(TypedAst.Type.Int)(result.get.tpe)
   }
 
   test("Expression.Lambda01") {
-    ??? // TODO
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+
+    val rast = ResolvedAst.Expression.Lambda(
+      formals = List(ResolvedAst.FormalArg(x, ResolvedAst.Type.Int)),
+      retTpe = ResolvedAst.Type.Unit,
+      body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit)
+    )
+
+    val expectedType = TypedAst.Type.Function(List(TypedAst.Type.Int), TypedAst.Type.Unit)
+    val actualType = Typer.Expression.typer(rast, Root).get.tpe
+    assertResult(expectedType)(actualType)
+  }
+
+  test("Expression.Lambda02") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
+    val z = ParsedAst.Ident("z", SourceLocation.Unknown)
+    val w = ParsedAst.Ident("w", SourceLocation.Unknown)
+
+    val rast = ResolvedAst.Expression.Lambda(
+      formals = List(
+        ResolvedAst.FormalArg(x, ResolvedAst.Type.Unit),
+        ResolvedAst.FormalArg(y, ResolvedAst.Type.Bool),
+        ResolvedAst.FormalArg(z, ResolvedAst.Type.Int),
+        ResolvedAst.FormalArg(w, ResolvedAst.Type.Str)
+      ),
+      retTpe = ResolvedAst.Type.Str,
+      body = ResolvedAst.Expression.Var(w)
+    )
+
+    val expectedType = TypedAst.Type.Function(
+      args = List(
+        TypedAst.Type.Unit,
+        TypedAst.Type.Bool,
+        TypedAst.Type.Int,
+        TypedAst.Type.Str
+      ), retTpe = TypedAst.Type.Int)
+    val actualType = Typer.Expression.typer(rast, Root).get.tpe
+    assertResult(expectedType)(actualType)
+  }
+
+  test("Expression.Lambda.TypeError") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
+    val z = ParsedAst.Ident("z", SourceLocation.Unknown)
+    val w = ParsedAst.Ident("w", SourceLocation.Unknown)
+
+    val rast = ResolvedAst.Expression.Lambda(
+      formals = List(
+        ResolvedAst.FormalArg(x, ResolvedAst.Type.Unit),
+        ResolvedAst.FormalArg(y, ResolvedAst.Type.Bool),
+        ResolvedAst.FormalArg(z, ResolvedAst.Type.Int),
+        ResolvedAst.FormalArg(w, ResolvedAst.Type.Str)
+      ),
+      retTpe = ResolvedAst.Type.Unit,
+      body = ResolvedAst.Expression.Var(w)
+    )
+
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
   }
 
   test("Expression.Apply01") {
-    ??? // TODO
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val rast = ResolvedAst.Expression.Apply(
+      lambda =
+        ResolvedAst.Expression.Lambda(
+          formals = List(ResolvedAst.FormalArg(x, ResolvedAst.Type.Int)),
+          retTpe = ResolvedAst.Type.Unit,
+          body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit)
+        ),
+      args = List(ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42))))
+
+    val result = Typer.Expression.typer(rast, Root)
+    assertResult(TypedAst.Type.Unit)(result.get.tpe)
+  }
+
+  test("Expression.Apply02") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
+    val z = ParsedAst.Ident("z", SourceLocation.Unknown)
+
+    val rast = ResolvedAst.Expression.Apply(
+      lambda =
+        ResolvedAst.Expression.Lambda(
+          formals = List(
+            ResolvedAst.FormalArg(x, ResolvedAst.Type.Bool),
+            ResolvedAst.FormalArg(y, ResolvedAst.Type.Int),
+            ResolvedAst.FormalArg(z, ResolvedAst.Type.Str)
+          ),
+          retTpe = ResolvedAst.Type.Int,
+          body = ResolvedAst.Expression.Var(y)
+        ),
+      args = List(
+        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
+        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)),
+        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo"))
+      ))
+
+    val result = Typer.Expression.typer(rast, Root)
+    assertResult(TypedAst.Type.Int)(result.get.tpe)
+  }
+
+  test("Expression.Apply.TypeError.IllegalArgumentType") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
+    val z = ParsedAst.Ident("z", SourceLocation.Unknown)
+
+    val rast = ResolvedAst.Expression.Apply(
+      lambda =
+        ResolvedAst.Expression.Lambda(
+          formals = List(
+            ResolvedAst.FormalArg(x, ResolvedAst.Type.Bool),
+            ResolvedAst.FormalArg(y, ResolvedAst.Type.Int),
+            ResolvedAst.FormalArg(z, ResolvedAst.Type.Str)
+          ),
+          retTpe = ResolvedAst.Type.Int,
+          body = ResolvedAst.Expression.Var(y)
+        ),
+      args = List(
+        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo")),
+        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)),
+        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true))
+      ))
+
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
+  }
+
+  test("Expression.Apply.TypeError.TooFewArguments") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
+    val z = ParsedAst.Ident("z", SourceLocation.Unknown)
+
+    val rast = ResolvedAst.Expression.Apply(
+      lambda =
+        ResolvedAst.Expression.Lambda(
+          formals = List(
+            ResolvedAst.FormalArg(x, ResolvedAst.Type.Bool),
+            ResolvedAst.FormalArg(y, ResolvedAst.Type.Int),
+            ResolvedAst.FormalArg(z, ResolvedAst.Type.Str)
+          ),
+          retTpe = ResolvedAst.Type.Int,
+          body = ResolvedAst.Expression.Var(y)
+        ),
+      args = List(
+        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true))
+      ))
+
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
+  }
+
+  test("Expression.Apply.TypeError.TooManyArguments.") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+
+    val rast = ResolvedAst.Expression.Apply(
+      lambda =
+        ResolvedAst.Expression.Lambda(
+          formals = List(
+            ResolvedAst.FormalArg(x, ResolvedAst.Type.Bool)
+          ),
+          retTpe = ResolvedAst.Type.Bool,
+          body = ResolvedAst.Expression.Var(x)
+        ),
+      args = List(
+        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
+        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)),
+        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo"))
+      ))
+
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
   }
 
   test("Expression.Unary01") {
@@ -464,11 +657,117 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Match01") {
-    ???
+    val rast = ResolvedAst.Expression.Match(
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
+      List(
+        ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(true)) -> ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(21)),
+        ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(false)) -> ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42))
+      )
+    )
+
+    val result = Typer.Expression.typer(rast, Root)
+    assertResult(TypedAst.Type.Int)(result.get.tpe)
+  }
+
+  test("Expression.Match02") {
+    val rast = ResolvedAst.Expression.Match(
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)),
+      List(
+        ResolvedAst.Pattern.Var(Ident) -> ResolvedAst.Expression.Var(Ident),
+        ResolvedAst.Pattern.Var(Ident) -> ResolvedAst.Expression.Var(Ident)
+      )
+    )
+
+    val result = Typer.Expression.typer(rast, Root)
+    assertResult(TypedAst.Type.Int)(result.get.tpe)
+  }
+
+  test("Expression.Match03") {
+    val rast = ResolvedAst.Expression.Match(
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Tuple(List(
+        ResolvedAst.Literal.Bool(true), ResolvedAst.Literal.Int(42)
+      ))),
+      List(
+        ResolvedAst.Pattern.Tuple(List(
+          ResolvedAst.Pattern.Wildcard(SourceLocation.Unknown),
+          ResolvedAst.Pattern.Var(Ident)
+        )) -> ResolvedAst.Expression.Var(Ident)
+      )
+    )
+
+    val result = Typer.Expression.typer(rast, Root)
+    assertResult(TypedAst.Type.Int)(result.get.tpe)
+  }
+
+  test("Expression.Match.TypeError") {
+    val rast = ResolvedAst.Expression.Match(
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
+      List(
+        ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Int(42)) -> ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)),
+        ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Str("foo")) -> ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo"))
+      )
+    )
+
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
   }
 
   test("Expression.Tag01") {
-    ???
+    val enumName = Name.Resolved(List("Foo", "Bar"))
+    val tagName = ParsedAst.Ident("Qux", SourceLocation.Unknown)
+    val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit))
+
+    val root = Root.copy(enums = Map(
+      RName -> ResolvedAst.Definition.Enum(enumName, Map(
+        "Qux" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Unit)
+      ))
+    ))
+
+    val expectedType = TypedAst.Type.Enum(Map("Qux" -> TypedAst.Type.Tag(enumName, tagName, TypedAst.Type.Unit)))
+    val actualType = Typer.Expression.typer(rast, root).get.tpe
+    assertResult(expectedType)(actualType)
+  }
+
+  test("Expression.Tag02") {
+    val enumName = Name.Resolved(List("Foo", "Bar"))
+    val tagName = ParsedAst.Ident("C", SourceLocation.Unknown)
+    val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)))
+
+    val root = Root.copy(enums = Map(
+      RName -> ResolvedAst.Definition.Enum(enumName, Map(
+        "A" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Unit),
+        "B" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Bool),
+        "C" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Int),
+        "D" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Str)
+      ))
+    ))
+
+    val expectedType = TypedAst.Type.Enum(Map(
+      "A" -> TypedAst.Type.Tag(enumName, tagName, TypedAst.Type.Unit),
+      "B" -> TypedAst.Type.Tag(enumName, tagName, TypedAst.Type.Bool),
+      "C" -> TypedAst.Type.Tag(enumName, tagName, TypedAst.Type.Int),
+      "D" -> TypedAst.Type.Tag(enumName, tagName, TypedAst.Type.Str)
+    ))
+    val actualType = Typer.Expression.typer(rast, root).get.tpe
+    assertResult(expectedType)(actualType)
+  }
+
+  test("Expression.Tag.TypeError") {
+    val enumName = Name.Resolved(List("Foo", "Bar"))
+    val tagName = ParsedAst.Ident("A", SourceLocation.Unknown)
+    val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42)))
+
+    val root = Root.copy(enums = Map(
+      RName -> ResolvedAst.Definition.Enum(enumName, Map(
+        "X" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Unit),
+        "Y" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Bool),
+        "Y" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Int),
+        "Z" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Str)
+      ))
+    ))
+
+    val result = Typer.Expression.typer(rast, root)
+    assert(result.isFailure)
   }
 
   test("Expression.Tuple01") {
@@ -507,7 +806,7 @@ class TestTyper extends FunSuite {
       ResolvedAst.Type.Bool
     )
     val result = Typer.Expression.typer(rast, Root)
-    assertResult(TypedAst.Type.Int)(result.get.tpe)
+    assertResult(TypedAst.Type.Bool)(result.get.tpe)
   }
 
   test("Expression.Ascribe02") {
@@ -545,7 +844,7 @@ class TestTyper extends FunSuite {
   test("Pattern.Wildcard") {
     val rast = ResolvedAst.Pattern.Wildcard(SourceLocation.Unknown)
     val tpe = TypedAst.Type.Bool
-    val result = Typer.Pattern.typer(rast, tpe)
+    val result = Typer.Pattern.typer(rast, tpe, Root)
     assert(result.isSuccess)
   }
 
@@ -553,7 +852,7 @@ class TestTyper extends FunSuite {
     val x = ParsedAst.Ident("x", SourceLocation.Unknown)
     val rast = ResolvedAst.Pattern.Var(x)
     val tpe = TypedAst.Type.Bool
-    val result = Typer.Pattern.typer(rast, tpe)
+    val result = Typer.Pattern.typer(rast, tpe, Root)
     assertResult(tpe)(result.get.bound(x))
   }
 
@@ -561,7 +860,7 @@ class TestTyper extends FunSuite {
     val x = ParsedAst.Ident("x", SourceLocation.Unknown)
     val rast = ResolvedAst.Pattern.Var(x)
     val tpe = TypedAst.Type.Tuple(List(TypedAst.Type.Bool))
-    val result = Typer.Pattern.typer(rast, tpe)
+    val result = Typer.Pattern.typer(rast, tpe, Root)
     assertResult(tpe)(result.get.bound(x))
   }
 
@@ -570,17 +869,17 @@ class TestTyper extends FunSuite {
     val y = ParsedAst.Ident("y", SourceLocation.Unknown)
     val rast = ResolvedAst.Pattern.Tuple(List(
       ResolvedAst.Pattern.Var(x),
-      ResolvedAst.Pattern.Var(x)
+      ResolvedAst.Pattern.Var(y)
     ))
     val tpe = TypedAst.Type.Tuple(List(TypedAst.Type.Bool, TypedAst.Type.Int))
-    val result = Typer.Pattern.typer(rast, tpe)
-    assertResult(tpe)(result.get.bound(y))
+    val result = Typer.Pattern.typer(rast, tpe, Root)
+    assertResult(tpe)(result.get.tpe)
   }
 
   test("Pattern.Literal") {
     val rast = ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(true))
     val tpe = TypedAst.Type.Bool
-    val result = Typer.Pattern.typer(rast, tpe)
+    val result = Typer.Pattern.typer(rast, tpe, Root)
     assertResult(tpe)(result.get.tpe)
   }
 
@@ -588,7 +887,7 @@ class TestTyper extends FunSuite {
     val x = ParsedAst.Ident("x", SourceLocation.Unknown)
     val rast = ResolvedAst.Pattern.Tag(RName, Ident, ResolvedAst.Pattern.Var(x))
     val tpe = TypedAst.Type.Tag(RName, Ident, TypedAst.Type.Unit)
-    val result = Typer.Pattern.typer(rast, tpe)
+    val result = Typer.Pattern.typer(rast, tpe, Root)
     assertResult(TypedAst.Type.Unit)(result.get.bound(x))
   }
 
@@ -601,7 +900,7 @@ class TestTyper extends FunSuite {
       TypedAst.Type.Unit,
       TypedAst.Type.Bool
     ))
-    val result = Typer.Pattern.typer(rast, tpe)
+    val result = Typer.Pattern.typer(rast, tpe, Root)
     assertResult(tpe)(result.get.tpe)
   }
 
@@ -618,14 +917,14 @@ class TestTyper extends FunSuite {
       TypedAst.Type.Int,
       TypedAst.Type.Str
     ))
-    val result = Typer.Pattern.typer(rast, tpe)
+    val result = Typer.Pattern.typer(rast, tpe, Root)
     assertResult(tpe)(result.get.tpe)
   }
 
   test("Pattern.TypeError") {
     val rast = ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Unit)
     val tpe = TypedAst.Type.Bool
-    val result = Typer.Pattern.typer(rast, tpe)
+    val result = Typer.Pattern.typer(rast, tpe, Root)
     assert(result.isFailure)
   }
 

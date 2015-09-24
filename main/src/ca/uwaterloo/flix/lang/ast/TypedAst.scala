@@ -175,10 +175,10 @@ object TypedAst {
     /**
      * A typed AST node representing a local variable expression (i.e. a parameter or let-bound variable).
      *
-     * @param name the name of the variable.
+     * @param ident the name of the variable.
      * @param tpe the type of the variable.
      */
-    case class Var(name: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Expression
+    case class Var(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a reference to a definition (i.e. a value or function).
@@ -334,7 +334,7 @@ object TypedAst {
      * @param lit the literal.
      * @param tpe the type of the literal.
      */
-    case class Lit(lit: ResolvedAst.Literal, tpe: TypedAst.Type) extends TypedAst.Pattern
+    case class Lit(lit: TypedAst.Literal, tpe: TypedAst.Type) extends TypedAst.Pattern
 
     /**
      * A typed AST node representing a tagged pattern.
