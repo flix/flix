@@ -844,7 +844,7 @@ class TestTyper extends FunSuite {
   test("Pattern.Wildcard") {
     val rast = ResolvedAst.Pattern.Wildcard(SourceLocation.Unknown)
     val tpe = TypedAst.Type.Bool
-    val result = Typer.Pattern.typer(rast, tpe)
+    val result = Typer.Pattern.typer(rast, tpe, Root)
     assert(result.isSuccess)
   }
 
@@ -852,7 +852,7 @@ class TestTyper extends FunSuite {
     val x = ParsedAst.Ident("x", SourceLocation.Unknown)
     val rast = ResolvedAst.Pattern.Var(x)
     val tpe = TypedAst.Type.Bool
-    val result = Typer.Pattern.typer(rast, tpe)
+    val result = Typer.Pattern.typer(rast, tpe, Root)
     assertResult(tpe)(result.get.bound(x))
   }
 
@@ -860,7 +860,7 @@ class TestTyper extends FunSuite {
     val x = ParsedAst.Ident("x", SourceLocation.Unknown)
     val rast = ResolvedAst.Pattern.Var(x)
     val tpe = TypedAst.Type.Tuple(List(TypedAst.Type.Bool))
-    val result = Typer.Pattern.typer(rast, tpe)
+    val result = Typer.Pattern.typer(rast, tpe, Root)
     assertResult(tpe)(result.get.bound(x))
   }
 
@@ -869,17 +869,17 @@ class TestTyper extends FunSuite {
     val y = ParsedAst.Ident("y", SourceLocation.Unknown)
     val rast = ResolvedAst.Pattern.Tuple(List(
       ResolvedAst.Pattern.Var(x),
-      ResolvedAst.Pattern.Var(x)
+      ResolvedAst.Pattern.Var(y)
     ))
     val tpe = TypedAst.Type.Tuple(List(TypedAst.Type.Bool, TypedAst.Type.Int))
-    val result = Typer.Pattern.typer(rast, tpe)
-    assertResult(tpe)(result.get.bound(y))
+    val result = Typer.Pattern.typer(rast, tpe, Root)
+    assertResult(tpe)(result.get.tpe)
   }
 
   test("Pattern.Literal") {
     val rast = ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(true))
     val tpe = TypedAst.Type.Bool
-    val result = Typer.Pattern.typer(rast, tpe)
+    val result = Typer.Pattern.typer(rast, tpe, Root)
     assertResult(tpe)(result.get.tpe)
   }
 
@@ -887,7 +887,7 @@ class TestTyper extends FunSuite {
     val x = ParsedAst.Ident("x", SourceLocation.Unknown)
     val rast = ResolvedAst.Pattern.Tag(RName, Ident, ResolvedAst.Pattern.Var(x))
     val tpe = TypedAst.Type.Tag(RName, Ident, TypedAst.Type.Unit)
-    val result = Typer.Pattern.typer(rast, tpe)
+    val result = Typer.Pattern.typer(rast, tpe, Root)
     assertResult(TypedAst.Type.Unit)(result.get.bound(x))
   }
 
@@ -900,7 +900,7 @@ class TestTyper extends FunSuite {
       TypedAst.Type.Unit,
       TypedAst.Type.Bool
     ))
-    val result = Typer.Pattern.typer(rast, tpe)
+    val result = Typer.Pattern.typer(rast, tpe, Root)
     assertResult(tpe)(result.get.tpe)
   }
 
@@ -917,14 +917,14 @@ class TestTyper extends FunSuite {
       TypedAst.Type.Int,
       TypedAst.Type.Str
     ))
-    val result = Typer.Pattern.typer(rast, tpe)
+    val result = Typer.Pattern.typer(rast, tpe, Root)
     assertResult(tpe)(result.get.tpe)
   }
 
   test("Pattern.TypeError") {
     val rast = ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Unit)
     val tpe = TypedAst.Type.Bool
-    val result = Typer.Pattern.typer(rast, tpe)
+    val result = Typer.Pattern.typer(rast, tpe, Root)
     assert(result.isFailure)
   }
 

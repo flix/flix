@@ -334,7 +334,7 @@ object TypedAst {
      * @param lit the literal.
      * @param tpe the type of the literal.
      */
-    case class Lit(lit: ResolvedAst.Literal, tpe: TypedAst.Type) extends TypedAst.Pattern
+    case class Lit(lit: TypedAst.Literal, tpe: TypedAst.Type) extends TypedAst.Pattern
 
     /**
      * A typed AST node representing a tagged pattern.

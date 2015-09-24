@@ -724,6 +724,24 @@ class TestParser extends FunSuite {
     assertResult(5)(result.get.body.size)
   }
 
+  // TODO: TestPredicate
+
+  // TODO
+  test("Parser.Predicate.Alias01") {
+    val input = "r := 42"
+    val result = new Parser(None, input).Predicate.run()
+  }
+
+  test("Parser.Predicate.Alias02") {
+    val input = "r := (true, 42, \"foo\")"
+    val result = new Parser(None, input).Predicate.run()
+  }
+
+  test("Parser.Predicate.Alias03") {
+    val input = "r := f(x, g(y, z))"
+    val result = new Parser(None, input).Predicate.run()
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Terms                                                                   //
   /////////////////////////////////////////////////////////////////////////////
@@ -1147,6 +1165,8 @@ class TestParser extends FunSuite {
     val result = new Parser(None, input).AdditiveOp.run().get
     assertResult(BinaryOperator.Minus)(result)
   }
+
+  // TODO: Shift operators
 
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //

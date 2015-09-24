@@ -7,6 +7,7 @@ import util.Validation
 import util.Validation._
 
 // TODO: Check code coverage.
+// TODO: when to use inner visit?
 
 object Typer {
 
@@ -18,6 +19,8 @@ object Typer {
 
   object TypeError {
 
+    // TODO: Need nice format of these.
+
     // TODO: Currently we are a bit lacking for source locations here.
     case class ExpectedType(expected: TypedAst.Type, actual: TypedAst.Type) extends TypeError {
       val format = s"Error: Expected an expression of type '${expected}' but got: ${actual}.\n"
@@ -26,6 +29,10 @@ object Typer {
     // TODO: Currently we are a bit lacking for source locations here.
     case class ExpectedEqualTypes(tpe1: TypedAst.Type, tpe2: TypedAst.Type) extends TypeError {
       val format = s"Error: Expected expressions of the same type, but got '${tpe1}' and ${tpe1}.\n"
+    }
+
+    case class IllegalPattern(pat: ResolvedAst.Pattern, tpe: TypedAst.Type) extends TypeError {
+      val format = s"Error: Pattern '${pat}' does not match expected type '${tpe}'.\n"
     }
 
   }
@@ -208,9 +215,33 @@ object Typer {
   object Pattern {
     /**
      * Types the given resolved pattern `rast` against the given type `tpe`.
+     *
+     * NB: The Weeder ensures that a variable occurs at most once in a pattern.
      */
-    def typer(rast: ResolvedAst.Pattern, tpe: TypedAst.Type): Validation[TypedAst.Pattern, TypeError] = (rast, tpe) match {
-      case _ => ???
+    def typer(rast: ResolvedAst.Pattern, tpe: TypedAst.Type, root: ResolvedAst.Root): Validation[TypedAst.Pattern, TypeError] = rast match {
+      case ResolvedAst.Pattern.Wildcard(loc) =>
+        TypedAst.Pattern.Wildcard(tpe).toSuccess
+      case ResolvedAst.Pattern.Var(ident) =>
+        TypedAst.Pattern.Var(ident, tpe).toSuccess
+      case ResolvedAst.Pattern.Lit(rlit) =>
+        val lit = Literal.typer(rlit, root)
+        expect(tpe, lit.tpe) map {
+          case _ => TypedAst.Pattern.Lit(lit, tpe)
+        }
+      case ResolvedAst.Pattern.Tag(enumName, tagName, rpat) => tpe match {
+        case TypedAst.Type.Tag(enumName2, tagName2, tpe2) => ???
+        case _ => IllegalPattern(rast, tpe).toFailure
+      }
+      case ResolvedAst.Pattern.Tuple(relms) => tpe match {
+        case TypedAst.Type.Tuple(telms) if relms.length == telms.length =>
+          val elmsVal = (relms zip telms) map {
+            case (rp, tp) => typer(rp, tp, root)
+          }
+          @@(elmsVal) map {
+            case elms => TypedAst.Pattern.Tuple(elms, TypedAst.Type.Tuple(elms map (_.tpe)))
+          }
+        case _ => IllegalPattern(rast, tpe).toFailure
+      }
     }
   }
 
