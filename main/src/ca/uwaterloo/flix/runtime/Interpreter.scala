@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.lang.ast.TypedAst.{Expression, Literal}
-import ca.uwaterloo.flix.lang.ast.{BinaryOperator, ParsedAst, UnaryOperator}
+import ca.uwaterloo.flix.lang.ast.{ParsedAst, TypedAst, BinaryOperator, UnaryOperator}
 
 object Interpreter {
   type Env = Map[ParsedAst.Ident, Value]
@@ -26,8 +26,13 @@ object Interpreter {
       case Expression.IfThenElse(exp1, exp2, exp3, tpe) =>
         val cond = eval(exp1, env).toBool
         if (cond) eval(exp2, env) else eval(exp3, env)
-      case Expression.Let(ident, value, body, tpe) => ??? // TODO(mhyee)
-      case Expression.Match(exp, rules, _) => ??? // TODO(mhyee)
+      case Expression.Let(ident, value, body, tpe) =>
+        // TODO(mhyee): Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
+        val func = Expression.Lambda(List(TypedAst.FormalArg(ident, value.tpe)), tpe,
+          body, TypedAst.Type.Function(List(value.tpe), tpe))
+        val desugared = Expression.Apply(func, List(value), tpe)
+        eval(desugared, env)
+      case Expression.Match(exp, rules, _) => ???
       case Expression.Tag(name, ident, exp, _) => Value.Tag(name, ident.name, eval(exp, env))
       case Expression.Tuple(elms, _) => Value.Tuple(elms.map(e => eval(e, env)))
       case Expression.Error(location, tpe) => ???
