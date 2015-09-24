@@ -131,7 +131,7 @@ class TestTyper extends FunSuite {
       ))
 
     val result = Typer.Definition.typer(rast, Root)
-    assert(result.isSuccess)
+    assert(result.isFailure)
   }
 
   test("Definition.Relation01") {

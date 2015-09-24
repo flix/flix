@@ -41,6 +41,9 @@ object Typer {
 
     }
 
+    // TODO: Arity Error.
+
+
   }
 
   /**
