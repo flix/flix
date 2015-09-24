@@ -27,7 +27,7 @@ object Interpreter {
         val cond = eval(exp1, env).toBool
         if (cond) eval(exp2, env) else eval(exp3, env)
       case Expression.Let(ident, value, body, tpe) =>
-        // TODO(mhyee): Right now Let only supports a single binding. Does it make sense to allow a list of bindings?topt
+        // TODO(mhyee): Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
         val func = Expression.Lambda(List(FormalArg(ident, value.tpe)), tpe,
           body, Type.Function(List(value.tpe), tpe))
         val desugared = Expression.Apply(func, List(value), tpe)
