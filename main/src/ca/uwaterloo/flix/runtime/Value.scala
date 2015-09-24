@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.lang.ast.Name
+import ca.uwaterloo.flix.lang.ast.{Name, TypedAst}
 
 sealed trait Value {
   def toBool: Boolean = this match {
@@ -32,6 +32,5 @@ object Value {
 
   case class Tuple(elms: List[Value]) extends Value
 
-  // ???
-  //case class Lambda()
+  case class Closure(func: TypedAst.Expression, env: Interpreter.Env) extends Value
 }

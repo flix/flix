@@ -11,8 +11,15 @@ object Interpreter {
       case Expression.Lit(literal, _) => evalLit(literal)
       case Expression.Var(name, _) => env(name)
       case Expression.Ref(name, tpe) => ???
-      case Expression.Lambda(formals, retTpe, body, tpe) => ??? // TODO(mhyee)
-      case Expression.Apply(exp, args, tpe) => ??? // TODO(mhyee)
+      case Expression.Lambda(_, _, _, _) => Value.Closure(expr, env)
+      case Expression.Apply(exp, args, _) =>
+        val evaledArgs = args.map(x => eval(x, env))
+        eval(exp, env) match {
+          case Value.Closure(Expression.Lambda(formals, _, body, _), closureEnv) =>
+            val newEnv = formals.map(_.ident).zip(evaledArgs).toMap
+            eval(body, newEnv ++ env)
+          case _ => assert(false, "Expected a function."); Value.Unit
+        }
       case Expression.Unary(op, exp, _) => apply(op, eval(exp, env))
       case Expression.Binary(op, exp1, exp2, _) => apply(op, eval(exp1, env), eval(exp2, env))
       case Expression.IfThenElse(exp1, exp2, exp3, tpe) =>
