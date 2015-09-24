@@ -70,7 +70,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Str("\"\"\""))(result05)
   }
 
-  test("Tuple") {
+  test("Tuple literal") {
     val exp01 = Expression.Lit(
       Literal.Tuple(List(Literal.Int(42), Literal.Bool(false), Literal.Str("hi")),
         Type.Tuple(List(Type.Int, Type.Bool, Type.Str))),
@@ -89,29 +89,28 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Tuple(List(Value.Int(4), Value.Tuple(List(Value.Int(12), Value.Int(8))))))(result02)
   }
 
-  test("Tag (simple)") {
+  test("Tag literal (simple)") {
     val name = Name.Resolved(List("foo", "bar"))
     val ident = ParsedAst.Ident("baz", SourceLocation(None, 0, 0))
     val tagTpe = Type.Tag(name, ident, Type.Str)
     val enumTpe = Type.Enum(Map("foo.bar.baz" -> tagTpe))
-    val exp = Expression.Tag(name, ident, Expression.Lit(Literal.Str("hello world"), Type.Str), enumTpe)
+    val exp = Expression.Lit(Literal.Tag(name, ident, Literal.Str("hello world"), enumTpe), tagTpe)
     val result = Interpreter.eval(exp)
     assertResult(Value.Tag(name, "baz", Value.Str("hello world")))(result)
   }
 
-  test("Tag (tuple)") {
+  test("Tag literal (tuple)") {
     val name = Name.Resolved(List("Family"))
     val ident = ParsedAst.Ident("NameAndAge", SourceLocation(None, 0, 0))
     val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int)))
     val enumTpe = Type.Enum(Map("Family.NameAndAge" -> tagTpe))
-    val exp = Expression.Tag(name, ident, Expression.Lit(
-      Literal.Tuple(List(Literal.Str("James"), Literal.Int(42)), Type.Tuple(List(Type.Str, Type.Int))),
-      Type.Tuple(List(Type.Str, Type.Int))), enumTpe)
+    val exp = Expression.Lit(Literal.Tag(name, ident, Literal.Tuple(List(Literal.Str("James"), Literal.Int(42)),
+      Type.Tuple(List(Type.Str, Type.Int))), enumTpe), tagTpe)
     val result = Interpreter.eval(exp)
     assertResult(Value.Tag(name, "NameAndAge", Value.Tuple(List(Value.Str("James"), Value.Int(42)))))(result)
   }
 
-  test("Tag (constant propagation)") {
+  test("Tag literal (constant propagation)") {
     val name = Name.Resolved(List("ConstProp"))
     val identB = ParsedAst.Ident("Bot", SourceLocation(None, 0, 0))
     val identV = ParsedAst.Ident("Val", SourceLocation(None, 0, 0))
@@ -122,23 +121,23 @@ class TestInterpreter extends FunSuite {
     val tagTpeT = Type.Tag(name, identT, Type.Unit)
     val enumTpe = Type.Enum(Map("ConstProp.Bot" -> tagTpeB, "ConstProp.Val" -> tagTpeV, "ConstProp.Top" -> tagTpeT))
 
-    val exp01 = Expression.Tag(name, identB, Expression.Lit(Literal.Unit, Type.Unit), enumTpe)
+    val exp01 = Expression.Lit(Literal.Tag(name, identB, Literal.Unit, enumTpe), tagTpeB)
     val result01 = Interpreter.eval(exp01)
     assertResult(Value.Tag(name, "Bot", Value.Unit))(result01)
 
-    val exp02 = Expression.Tag(name, identT, Expression.Lit(Literal.Unit, Type.Unit), enumTpe)
+    val exp02 = Expression.Lit(Literal.Tag(name, identT, Literal.Unit, enumTpe), tagTpeT)
     val result02 = Interpreter.eval(exp02)
     assertResult(Value.Tag(name, "Top", Value.Unit))(result02)
 
-    val exp03 = Expression.Tag(name, identV, Expression.Lit(Literal.Int(0), Type.Int), enumTpe)
+    val exp03 = Expression.Lit(Literal.Tag(name, identV, Literal.Int(0), enumTpe), tagTpeV)
     val result03 = Interpreter.eval(exp03)
     assertResult(Value.Tag(name, "Val", Value.Int(0)))(result03)
 
-    val exp04 = Expression.Tag(name, identV, Expression.Lit(Literal.Int(-240), Type.Int), enumTpe)
+    val exp04 = Expression.Lit(Literal.Tag(name, identV, Literal.Int(-240), enumTpe), tagTpeV)
     val result04 = Interpreter.eval(exp04)
     assertResult(Value.Tag(name, "Val", Value.Int(-240)))(result04)
 
-    val exp05 = Expression.Tag(name, identV, Expression.Lit(Literal.Int(1241), Type.Int), enumTpe)
+    val exp05 = Expression.Lit(Literal.Tag(name, identV, Literal.Int(1241), enumTpe), tagTpeV)
     val result05 = Interpreter.eval(exp05)
     assertResult(Value.Tag(name, "Val", Value.Int(1241)))(result05)
   }
