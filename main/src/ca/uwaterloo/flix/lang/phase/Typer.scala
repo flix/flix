@@ -68,8 +68,28 @@ object Typer {
       }
     }
 
+    /**
+     * Types the given lattice definition `rast` under the given AST `root`.
+     */
     def typer(rast: ResolvedAst.Definition.Lattice, root: ResolvedAst.Root): Validation[TypedAst.Definition.Lattice, TypeError] = {
-      ???
+      val tpe = Type.typer(rast.tpe)
+      val botType = tpe
+      val leqType = TypedAst.Type.Function(args = List(tpe, tpe), retTpe = TypedAst.Type.Bool)
+      val lubType = TypedAst.Type.Function(args = List(tpe, tpe), retTpe = tpe)
+
+      val botVal = Expression.typer(rast.bot, root) flatMap {
+        case e => expect(botType, e.tpe) map (_ => e)
+      }
+      val leqVal = Expression.typer(rast.leq, root) flatMap {
+        case e => expect(leqType, e.tpe) map (_ => e)
+      }
+      val lubVal = Expression.typer(rast.lub, root) flatMap {
+        case e => expect(lubType, e.tpe) map (_ => e)
+      }
+
+      @@(botVal, leqVal, lubVal) map {
+        case (bot, leq, lub) => TypedAst.Definition.Lattice(tpe, bot, leq, lub)
+      }
     }
 
     def typer(rast: ResolvedAst.Definition.Relation, root: ResolvedAst.Root): Validation[TypedAst.Definition.Relation, TypeError] = {
@@ -195,7 +215,9 @@ object Typer {
             }
           }
 
-        case ResolvedAst.Expression.Match(e, rules) => ???
+        case ResolvedAst.Expression.Match(re, rules) =>
+
+          ???
 
         case ResolvedAst.Expression.Tag(enumName, tagName, re) =>
           visit(re, env) flatMap {

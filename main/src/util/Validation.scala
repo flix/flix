@@ -107,6 +107,9 @@ object Validation {
     }
   }
 
+  @inline
+  def fold[K, V, O, Alternative](m: Map[K, V])(f: (K, V) => Validation[O, Alternative]): Validation[Map[K, O], Alternative] = ???
+
   /**
    * Flattens a sequence of validations into one validation. Alternatives are concatenated.
    *
