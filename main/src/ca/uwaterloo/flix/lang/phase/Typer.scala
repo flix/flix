@@ -20,6 +20,7 @@ object Typer {
       val format = ???
     }
 
+    // TODO: Currently we are a bit lacking for source locations here.
     case class ExpectedEqualTypes(tpe1: TypedAst.Type, tpe2: TypedAst.Type, location: SourceLocation) extends TypeError {
       val format = ???
     }
