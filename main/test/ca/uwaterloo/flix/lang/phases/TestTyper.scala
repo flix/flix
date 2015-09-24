@@ -350,7 +350,66 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Lambda01") {
-    ??? // TODO
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+
+    val rast = ResolvedAst.Expression.Lambda(
+      formals = List(ResolvedAst.FormalArg(x, ResolvedAst.Type.Int)),
+      retTpe = ResolvedAst.Type.Unit,
+      body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit)
+    )
+
+    val expectedType = TypedAst.Type.Function(List(TypedAst.Type.Int), TypedAst.Type.Unit)
+    val actualType = Typer.Expression.typer(rast, Root).get.tpe
+    assertResult(expectedType)(actualType)
+  }
+
+  test("Expression.Lambda02") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
+    val z = ParsedAst.Ident("z", SourceLocation.Unknown)
+    val w = ParsedAst.Ident("w", SourceLocation.Unknown)
+
+    val rast = ResolvedAst.Expression.Lambda(
+      formals = List(
+        ResolvedAst.FormalArg(x, ResolvedAst.Type.Unit),
+        ResolvedAst.FormalArg(y, ResolvedAst.Type.Bool),
+        ResolvedAst.FormalArg(z, ResolvedAst.Type.Int),
+        ResolvedAst.FormalArg(w, ResolvedAst.Type.Str)
+      ),
+      retTpe = ResolvedAst.Type.Str,
+      body = ResolvedAst.Expression.Var(w)
+    )
+
+    val expectedType = TypedAst.Type.Function(
+      args = List(
+        TypedAst.Type.Unit,
+        TypedAst.Type.Bool,
+        TypedAst.Type.Int,
+        TypedAst.Type.Str
+      ), retTpe = TypedAst.Type.Int)
+    val actualType = Typer.Expression.typer(rast, Root).get.tpe
+    assertResult(expectedType)(actualType)
+  }
+
+  test("Expression.Lambda.TypeError") {
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
+    val z = ParsedAst.Ident("z", SourceLocation.Unknown)
+    val w = ParsedAst.Ident("w", SourceLocation.Unknown)
+
+    val rast = ResolvedAst.Expression.Lambda(
+      formals = List(
+        ResolvedAst.FormalArg(x, ResolvedAst.Type.Unit),
+        ResolvedAst.FormalArg(y, ResolvedAst.Type.Bool),
+        ResolvedAst.FormalArg(z, ResolvedAst.Type.Int),
+        ResolvedAst.FormalArg(w, ResolvedAst.Type.Str)
+      ),
+      retTpe = ResolvedAst.Type.Unit,
+      body = ResolvedAst.Expression.Var(w)
+    )
+
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
   }
 
   test("Expression.Apply01") {
