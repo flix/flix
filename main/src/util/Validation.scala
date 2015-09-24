@@ -107,8 +107,19 @@ object Validation {
     }
   }
 
+  /**
+   * TODO: DOC
+   */
+  // TODO: Consider only folding over value?
   @inline
-  def fold[K, V, O, Alternative](m: Map[K, V])(f: (K, V) => Validation[O, Alternative]): Validation[Map[K, O], Alternative] = ???
+  def fold[K, V, K2, V2, Alternative](m: Map[K, V])(f: (K, V) => Validation[(K2, V2), Alternative]): Validation[Map[K2, V2], Alternative] =
+    m.foldLeft(Success(Map.empty[K2, V2], List.empty[Alternative]): Validation[Map[K2, V2], Alternative]) {
+      case (macc, (k, v)) => macc flatMap {
+        case ma => f(k ,v) map {
+          case ko => ma + ko
+        }
+      }
+    }
 
   /**
    * Flattens a sequence of validations into one validation. Alternatives are concatenated.

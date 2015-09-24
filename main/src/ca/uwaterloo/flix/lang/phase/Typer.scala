@@ -41,19 +41,30 @@ object Typer {
    * Runs the typer on the entire given AST `rast`.
    */
   def typecheck(root: ResolvedAst.Root): Validation[TypedAst.Root, TypeError] = {
+    // constants
+    val constantsVal = Validation.fold(root.constants) {
+      case (name, constant) => Definition.typer(constant, root) map (defn => name -> defn)
+    }
 
-    // TODO: Need to implement Validation.fold over maps.
+    // lattices
+    val latticesVal = Validation.fold(root.lattices) {
+      case (tpe, lattice) => Definition.typer(lattice, root) map (defn => Type.typer(tpe) -> defn)
+    }
 
-    // TODO: Need to implement @@ over maps or fold
-    //val constantsVal = @@(root.constants.values.map(constant => Definition.typer(constant, root)))
+    //relations
+    val relationsVal = Validation.fold(root.relations) {
+      case (name, relation) => Definition.typer(relation, root) map (defn => name -> defn)
+    }
+
+    // facts and rules
     val factsVal = @@(root.facts.map(fact => Constraint.typer(fact, root)))
     val rulesVal = @@(root.rules.map(rule => Constraint.typer(rule, root)))
 
-    @@(factsVal, rulesVal) map {
-      case (facts, rules) => TypedAst.Root(Map.empty, Map.empty, Map.empty, facts, rules)
+    // putting it all together
+    @@(constantsVal, latticesVal, relationsVal, factsVal, rulesVal) map {
+      case (constants, lattices, relations, facts, rules) => TypedAst.Root(constants, lattices, relations, facts, rules)
     }
   }
-
 
   object Definition {
     /**
