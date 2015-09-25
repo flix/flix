@@ -1,10 +1,7 @@
 package ca.uwaterloo.flix.lang.phase
 
 import ca.uwaterloo.flix.lang.ast._
-import ca.uwaterloo.flix.lang.phase.{Resolver, Parser, Weeder}
 import org.scalatest.FunSuite
-
-import scala.collection.immutable.Seq
 
 class TestResolver extends FunSuite {
 

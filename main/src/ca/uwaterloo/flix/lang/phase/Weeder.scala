@@ -215,7 +215,7 @@ object Weeder {
      */
     def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Definition.Lattice, WeederError] =
     // TODO
-      WeededAst.Definition.Lattice(past.ident, past.elms, past.traits).toSuccess
+      WeededAst.Definition.Lattice(past.ident, past.elms.toList, past.traits.toList).toSuccess
 
     /**
      * Compiles the given parsed relation `past` to a weeded relation definition.

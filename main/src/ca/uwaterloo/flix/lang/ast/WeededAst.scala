@@ -3,23 +3,21 @@ package ca.uwaterloo.flix.lang.ast
 trait WeededAst
 
 // TODO: Ensure that there is no reference to "ParsedAst.X"
-// TODO: Convert everything into lists?
 // TODO: Summary changes made by this phase.
 
 object WeededAst {
 
-  // TODO: Every Seq should be replaced by List
   case class Root(declarations: List[WeededAst.Declaration]) extends WeededAst
 
   sealed trait Declaration extends WeededAst
 
   object Declaration {
 
-    case class Namespace(name: ParsedAst.QName, body: Seq[WeededAst.Declaration]) extends WeededAst.Declaration
+    case class Namespace(name: ParsedAst.QName, body: List[WeededAst.Declaration]) extends WeededAst.Declaration
 
     case class Fact(head: WeededAst.PredicateWithApply) extends WeededAst.Declaration
 
-    case class Rule(head: WeededAst.PredicateWithApply, body: Seq[WeededAst.PredicateNoApply]) extends WeededAst.Declaration
+    case class Rule(head: WeededAst.PredicateWithApply, body: List[WeededAst.PredicateNoApply]) extends WeededAst.Declaration
 
   }
 
@@ -32,7 +30,7 @@ object WeededAst {
     case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends WeededAst.Definition
 
     // TODO: Improve? or at least do something with traits?
-    case class Lattice(ident: ParsedAst.Ident, elms: Seq[ParsedAst.QName], traits: Seq[ParsedAst.Trait]) extends WeededAst.Definition
+    case class Lattice(ident: ParsedAst.Ident, elms: List[ParsedAst.QName], traits: List[ParsedAst.Trait]) extends WeededAst.Definition
 
     // TODO
     case class JoinSemiLattice(ident: ParsedAst.Ident,
@@ -42,18 +40,7 @@ object WeededAst {
                                norm: Option[ParsedAst.QName],
                                widen: Option[ParsedAst.QName]) extends WeededAst.Definition
 
-    // TODO
-    case class CompleteLattice(ident: ParsedAst.Ident,
-                               bot: ParsedAst.QName,
-                               top: ParsedAst.QName,
-                               leq: ParsedAst.QName,
-                               lub: ParsedAst.QName,
-                               glb: ParsedAst.QName,
-                               norm: Option[ParsedAst.QName],
-                               widen: Option[ParsedAst.QName])
-
-    // TODO: Change signature of attributes.
-    case class Relation(ident: ParsedAst.Ident, attributes: Seq[WeededAst.Attribute]) extends WeededAst.Definition
+    case class Relation(ident: ParsedAst.Ident, attributes: List[WeededAst.Attribute]) extends WeededAst.Definition
 
   }
 
@@ -71,7 +58,7 @@ object WeededAst {
 
     case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, literal: WeededAst.Literal) extends WeededAst.Literal
 
-    case class Tuple(elms: Seq[WeededAst.Literal]) extends WeededAst.Literal
+    case class Tuple(elms: List[WeededAst.Literal]) extends WeededAst.Literal
 
   }
 
@@ -81,27 +68,26 @@ object WeededAst {
 
     case class AmbiguousVar(name: ParsedAst.QName) extends WeededAst.Expression
 
-    case class AmbiguousApply(name: ParsedAst.QName, arguments: Seq[WeededAst.Expression]) extends WeededAst.Expression
+    case class AmbiguousApply(name: ParsedAst.QName, arguments: List[WeededAst.Expression]) extends WeededAst.Expression
 
     case class Lit(literal: WeededAst.Literal) extends WeededAst.Expression
 
-    case class Lambda(formals: Seq[(ParsedAst.Ident, WeededAst.Type)], body: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Expression
+    case class Lambda(formals: List[(ParsedAst.Ident, WeededAst.Type)], body: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Expression
 
     case class Unary(op: UnaryOperator, e: WeededAst.Expression) extends WeededAst.Expression
 
-    // TODO: Swap arguments
-    case class Binary( op: BinaryOperator, e1: WeededAst.Expression,e2: WeededAst.Expression) extends WeededAst.Expression
+    case class Binary(op: BinaryOperator, e1: WeededAst.Expression, e2: WeededAst.Expression) extends WeededAst.Expression
 
     case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression) extends WeededAst.Expression
 
     // TODO: Why not just call these e1 and e2?
     case class Let(ident: ParsedAst.Ident, value: WeededAst.Expression, body: WeededAst.Expression) extends WeededAst.Expression
 
-    case class Match(e: WeededAst.Expression, rs: Seq[(WeededAst.Pattern, WeededAst.Expression)]) extends WeededAst.Expression
+    case class Match(e: WeededAst.Expression, rs: List[(WeededAst.Pattern, WeededAst.Expression)]) extends WeededAst.Expression
 
     case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, e: WeededAst.Expression) extends WeededAst.Expression
 
-    case class Tuple(elms: Seq[WeededAst.Expression]) extends WeededAst.Expression
+    case class Tuple(elms: List[WeededAst.Expression]) extends WeededAst.Expression
 
     case class Ascribe(e: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Expression
 
@@ -134,15 +120,15 @@ object WeededAst {
 
     case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, p: WeededAst.Pattern) extends WeededAst.Pattern
 
-    case class Tuple(elms: Seq[WeededAst.Pattern]) extends WeededAst.Pattern
+    case class Tuple(elms: List[WeededAst.Pattern]) extends WeededAst.Pattern
 
   }
 
   // TODO: Organize these as usually done.
 
-  case class PredicateNoApply(name: ParsedAst.QName, terms: Seq[WeededAst.TermNoApply]) extends WeededAst
+  case class PredicateNoApply(name: ParsedAst.QName, terms: List[WeededAst.TermNoApply]) extends WeededAst
 
-  case class PredicateWithApply(name: ParsedAst.QName, terms: Seq[WeededAst.TermWithApply]) extends WeededAst
+  case class PredicateWithApply(name: ParsedAst.QName, terms: List[WeededAst.TermWithApply]) extends WeededAst
 
   sealed trait TermNoApply extends WeededAst
 
@@ -167,7 +153,7 @@ object WeededAst {
 
     case class Lit(literal: WeededAst.Literal) extends WeededAst.TermWithApply
 
-    case class Apply(name: ParsedAst.QName, args: Seq[WeededAst.TermWithApply]) extends WeededAst.TermWithApply
+    case class Apply(name: ParsedAst.QName, args: List[WeededAst.TermWithApply]) extends WeededAst.TermWithApply
 
   }
 
@@ -182,12 +168,9 @@ object WeededAst {
 
     case class Tag(ident: ParsedAst.Ident, tpe: WeededAst.Type) extends WeededAst.Type
 
-    case class Tuple(elms: Seq[WeededAst.Type]) extends WeededAst.Type
+    case class Tuple(elms: List[WeededAst.Type]) extends WeededAst.Type
 
     case class Function(args: List[WeededAst.Type], retType: WeededAst.Type) extends WeededAst.Type
-
-    // TODO: Disallow
-    case class Parametric(name: ParsedAst.QName, elms: Seq[WeededAst.Type]) extends WeededAst.Type
 
     case class Lattice(tpe: WeededAst.Type) extends WeededAst.Type
 
