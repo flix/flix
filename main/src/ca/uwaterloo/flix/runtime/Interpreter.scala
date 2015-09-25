@@ -6,6 +6,8 @@ import ca.uwaterloo.flix.lang.ast.{ParsedAst, TypedAst, BinaryOperator, UnaryOpe
 object Interpreter {
   type Env = Map[ParsedAst.Ident, Value]
 
+  //TODO(mhyee): eval needs to take a Root. Implement Expression.Ref. Update tests.
+//def eval(expr: Expression, root: TypedAst.Root, env: Env = Map()): Value = {
   def eval(expr: Expression, env: Env = Map()): Value = {
     expr match {
       case Expression.Lit(literal, _) => evalLit(literal)
@@ -32,10 +34,12 @@ object Interpreter {
           body, Type.Function(List(value.tpe), tpe))
         val desugared = Expression.Apply(func, List(value), tpe)
         eval(desugared, env)
-      case Expression.Match(exp, rules, _) => ???
+      case Expression.Match(exp, rules, _) => ??? // TODO(mhyee): Implement this. Need to write a Unify function
       case Expression.Tag(name, ident, exp, _) => Value.Tag(name, ident.name, eval(exp, env))
       case Expression.Tuple(elms, _) => Value.Tuple(elms.map(e => eval(e, env)))
-      case Expression.Error(location, tpe) => ???
+      case Expression.Error(location, tpe) =>
+        // TODO(mhyee): This should signal an error, e.g. throw an exception or gracefully exit with message (location)
+        ???
     }
   }
 
