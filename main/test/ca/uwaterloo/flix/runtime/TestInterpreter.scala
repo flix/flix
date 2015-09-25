@@ -178,6 +178,43 @@ class TestInterpreter extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Expressions - Var                                                       //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Var01") {
+    val ident = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
+    val input = Expression.Lit(Literal.Str("hello"), Type.Str)
+    val env = Map(ident -> Value.Bool(false))
+    val result = Interpreter.eval(input, env)
+    assertResult(Value.Str("hello"))(result)
+  }
+
+  test("Expression.Var02") {
+    val ident = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
+    val input = Expression.Var(ident, Type.Int)
+    val env = Map(ident -> Value.Int(5))
+    val result = Interpreter.eval(input, env)
+    assertResult(Value.Int(5))(result)
+  }
+
+  test("Expression.Var03") {
+    val ident = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
+    val input = Expression.Var(ident, Type.Bool)
+    val env = Map(ident -> Value.Bool(false))
+    val result = Interpreter.eval(input, env)
+    assertResult(Value.Bool(false))(result)
+  }
+
+  test("Expression.Var04") {
+    val ident01 = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
+    val ident02 = ParsedAst.Ident("y", SourceLocation(None, 0, 0))
+    val input = Expression.Var(ident02, Type.Str)
+    val env = Map(ident01 -> Value.Str("foo"), ident02 -> Value.Str("bar"))
+    val result = Interpreter.eval(input, env)
+    assertResult(Value.Str("bar"))(result)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Expressions - Unary and Binary                                          //
   /////////////////////////////////////////////////////////////////////////////
 
