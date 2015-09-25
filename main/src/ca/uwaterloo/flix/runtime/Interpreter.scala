@@ -13,9 +13,9 @@ object Interpreter {
         assert(env.contains(ident), s"Expected variable ${ident.name} to be bound.")
         env(ident)
       case Expression.Ref(name, tpe) => ???
-      case Expression.Lambda(_, _, _, _) => Value.Closure(expr, env)
+      case Expression.Lambda(formals, _, body, _) => Value.Closure(formals, body, env)
       case Expression.Apply(exp, args, _) => eval(exp, env) match {
-          case Value.Closure(Expression.Lambda(formals, _, body, _), closureEnv) =>
+          case Value.Closure(formals, body, closureEnv) =>
             val evalArgs = args.map(x => eval(x, env))
             val newEnv = closureEnv ++ formals.map(_.ident).zip(evalArgs).toMap
             eval(body, newEnv)

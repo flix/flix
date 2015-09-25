@@ -32,5 +32,5 @@ object Value {
 
   case class Tuple(elms: List[Value]) extends Value
 
-  case class Closure(func: TypedAst.Expression, env: Interpreter.Env) extends Value
+  case class Closure(formals: List[TypedAst.FormalArg], body: TypedAst.Expression, env: Interpreter.Env) extends Value
 }
