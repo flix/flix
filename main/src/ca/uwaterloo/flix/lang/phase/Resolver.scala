@@ -278,7 +278,7 @@ object Resolver {
           }
         case WeededAst.Expression.Unary(op, we) =>
           visit(we, locals) map (e => ResolvedAst.Expression.Unary(op, e))
-        case WeededAst.Expression.Binary(we1, op, we2) =>
+        case WeededAst.Expression.Binary(op, we1, we2) =>
           val lhsVal = visit(we1, locals)
           val rhsVal = visit(we2, locals)
           @@(lhsVal, rhsVal) map {

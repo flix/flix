@@ -90,14 +90,14 @@ object WeededAst {
     case class Unary(op: UnaryOperator, e: WeededAst.Expression) extends WeededAst.Expression
 
     // TODO: Swap arguments
-    case class Binary(e1: WeededAst.Expression, op: BinaryOperator, e2: WeededAst.Expression) extends WeededAst.Expression
+    case class Binary( op: BinaryOperator, e1: WeededAst.Expression,e2: WeededAst.Expression) extends WeededAst.Expression
 
     case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression) extends WeededAst.Expression
 
     // TODO: Why not just call these e1 and e2?
     case class Let(ident: ParsedAst.Ident, value: WeededAst.Expression, body: WeededAst.Expression) extends WeededAst.Expression
 
-    case class Match(e: WeededAst.Expression, rules: Seq[(WeededAst.Pattern, WeededAst.Expression)]) extends WeededAst.Expression
+    case class Match(e: WeededAst.Expression, rs: Seq[(WeededAst.Pattern, WeededAst.Expression)]) extends WeededAst.Expression
 
     case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, e: WeededAst.Expression) extends WeededAst.Expression
 
@@ -137,6 +137,8 @@ object WeededAst {
     case class Tuple(elms: Seq[WeededAst.Pattern]) extends WeededAst.Pattern
 
   }
+
+  // TODO: Organize these as usually done.
 
   case class PredicateNoApply(name: ParsedAst.QName, terms: Seq[WeededAst.TermNoApply]) extends WeededAst
 

@@ -8,11 +8,10 @@ import scala.collection.immutable.Seq
 sealed trait ParsedAst
 
 // TODO: Consider order. Maybe just do it be alpabet?
-// TODO: Long or short names?
-// TODO: Use the word "ref".
-// TODO: Inconsistent where source locations are used.
 // TODO: List of missing features: annotations? output to files? debugging information? col indexes?
 // TODO: Enforce uniform naming.
+
+// TODO: Add source locations everywhere.
 
 object ParsedAst {
 
@@ -428,6 +427,7 @@ object ParsedAst {
      * @param t1 the type of the domain.
      * @param t2 the type of the range.
      */
+    // TODO: This needs to be changed.
     case class Function(t1: ParsedAst.Type, t2: ParsedAst.Type) extends ParsedAst.Type
 
     /**

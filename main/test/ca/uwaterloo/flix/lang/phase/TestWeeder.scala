@@ -17,7 +17,7 @@ class TestWeeder extends FunSuite {
       ParsedAst.Attribute(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ))
 
-    val result = Weeder.Definition.weed(past)
+    val result = Weeder.Definition.compile(past)
     assert(result.hasErrors)
   }
 
@@ -29,7 +29,7 @@ class TestWeeder extends FunSuite {
       ParsedAst.Attribute(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ))
 
-    val result = Weeder.Definition.weed(past)
+    val result = Weeder.Definition.compile(past)
     assertResult(2)(result.errors.size)
   }
 
@@ -39,7 +39,7 @@ class TestWeeder extends FunSuite {
       (ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit))
 
-    val result = Weeder.Definition.weed(past)
+    val result = Weeder.Definition.compile(past)
     assert(result.hasErrors)
   }
 
@@ -51,7 +51,7 @@ class TestWeeder extends FunSuite {
       (ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit))
 
-    val result = Weeder.Definition.weed(past)
+    val result = Weeder.Definition.compile(past)
     assertResult(2)(result.errors.size)
   }
 
@@ -62,7 +62,7 @@ class TestWeeder extends FunSuite {
       ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ))
 
-    val result = Weeder.Definition.weed(past)
+    val result = Weeder.Definition.compile(past)
     assert(result.hasErrors)
   }
 
@@ -74,14 +74,14 @@ class TestWeeder extends FunSuite {
       ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ))
 
-    val result = Weeder.Definition.weed(past)
+    val result = Weeder.Definition.compile(past)
     assertResult(2)(result.errors.size)
   }
 
   test("NonLinearPattern01") {
     val input = "(x, x)"
     val past = new Parser(None, input).Pattern.run().get
-    val result = Weeder.Pattern.weed(past)
+    val result = Weeder.Pattern.compile(past)
     assert(result.isFailure)
     assertResult(1)(result.errors.size)
   }
@@ -89,7 +89,7 @@ class TestWeeder extends FunSuite {
   test("NonLinearPattern02") {
     val input = "(x, (y, (z, x, y)))"
     val past = new Parser(None, input).Pattern.run().get
-    val result = Weeder.Pattern.weed(past)
+    val result = Weeder.Pattern.compile(past)
     assert(result.isFailure)
     assertResult(2)(result.errors.size)
   }
@@ -97,41 +97,47 @@ class TestWeeder extends FunSuite {
   test("ApplyNotAllowInBody01") {
     val input = "A(x) :- B(f(x))."
     val past = new Parser(None, input).RuleDeclaration.run().get
-    val result = Weeder.Declaration.weed(past)
+    val result = Weeder.Declaration.compile(past)
     assert(result.isFailure)
     assertResult(1)(result.errors.size)
   }
 
+  // TODO: Wildcard not allowed in head.
+
+  // TODO: Rename
+
   test("ApplyNotAllowInBody02") {
     val input = "A(x) :- B(x), C(f(x)), D(g(x))."
     val past = new Parser(None, input).RuleDeclaration.run().get
-    val result = Weeder.Declaration.weed(past)
+    val result = Weeder.Declaration.compile(past)
     assert(result.isFailure)
     assertResult(2)(result.errors.size)
   }
 
-  test("Compile.TermNoApply") {
+
+
+  test("Term.Heead") {
     val past = ParsedAst.Term.Apply(ParsedAst.QName(Seq("foo"), SourceLocation.Unknown), Seq.empty)
-    val result = Weeder.compileTermNoApply(past)
-    assert(result.isFailure)
+    val result = Weeder.Term.Head.compile(past)
+    assert(result.isSuccess)
   }
 
-  test("Compile.TermWithApply") {
+  test("Term.Body") {
     val past = ParsedAst.Term.Apply(ParsedAst.QName(Seq("foo"), SourceLocation.Unknown), Seq.empty)
-    val result = Weeder.compileTermWithApply(past)
-    assert(result.isSuccess)
+    val result = Weeder.Term.Body.compile(past)
+    assert(result.isFailure)
   }
 
   test("Type.Unit") {
     val past = ParsedAst.Type.Unit
-    val result = Weeder.Type.weed(past)
+    val result = Weeder.Type.compile(past)
 
     assertResult(WeededAst.Type.Unit)(result.get)
   }
 
   test("Type.Tag") {
     val past = ParsedAst.Type.Tag(Ident, ParsedAst.Type.Unit)
-    val result = Weeder.Type.weed(past)
+    val result = Weeder.Type.compile(past)
 
     assertResult(WeededAst.Type.Tag(Ident, WeededAst.Type.Unit))(result.get)
   }
