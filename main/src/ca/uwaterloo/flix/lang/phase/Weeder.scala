@@ -97,6 +97,17 @@ object Weeder {
           s"  Second occurrence was here: ${location2.format}\n"
     }
 
+    /**
+     * An error raised to indicate that a syntactic construct, although successfully parsed, is currently not supported.
+     *
+     * @param message the error message.
+     * @param location the location of the syntactic construct.
+     */
+    case class Unsupported(message: String, location: SourceLocation) extends WeederError {
+      val format =
+        s"Error: $message at ${location.format}\n."
+    }
+
   }
 
   /**
@@ -243,11 +254,12 @@ object Weeder {
     }
   }
 
+  // TODO: cleanup from here ----------------------------------
 
   /**
-   * Compiles the parsed expression `e` to a weeded expression.
+   * Compiles the parsed expression `past` to a weeded expression.
    */
-  def compileExpression(e: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = e match {
+  def compileExpression(past: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = past match {
     case ParsedAst.Expression.AmbiguousVar(name) =>
       WeededAst.Expression.AmbiguousVar(name).toSuccess
     case ParsedAst.Expression.AmbiguousApply(name, args) =>
@@ -265,7 +277,7 @@ object Weeder {
         case (wformals, wtpe, wbody) => WeededAst.Expression.Lambda(wformals, wbody, wtpe)
       }
     case ParsedAst.Expression.Unary(op, e1) =>
-      compileExpression(e) map {
+      compileExpression(e1) map {
         case we1 => WeededAst.Expression.Unary(op, we1)
       }
     case ParsedAst.Expression.Binary(e1, op, e2) =>
@@ -298,7 +310,7 @@ object Weeder {
       case welms => WeededAst.Expression.Tuple(welms)
     }
     case ParsedAst.Expression.Ascribe(e1, tpe) =>
-      @@(compileExpression(e), Type.weed(tpe)) map {
+      @@(compileExpression(e1), Type.weed(tpe)) map {
         case (we1, wtpe) => WeededAst.Expression.Ascribe(we1, wtpe)
       }
     case ParsedAst.Expression.Error(location) => WeededAst.Expression.Error(location).toSuccess
@@ -306,11 +318,11 @@ object Weeder {
 
   object Pattern {
     /**
-     * Weeds the parsed pattern `p`.
+     * Compiles the parsed pattern `past`.
      *
-     * Fails if the pattern is non-linear, i.e. if the same variable occurs twice.
+     * Returns [[Failure]] if the pattern is non-linear, i.e. if the same variable occurs twice.
      */
-    def weed(p: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = {
+    def weed(past: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = {
       val seen = mutable.Map.empty[String, ParsedAst.Ident]
 
       def visit(p: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = p match {
@@ -330,7 +342,7 @@ object Weeder {
         }
       }
 
-      visit(p)
+      visit(past)
     }
   }
 
@@ -384,20 +396,18 @@ object Weeder {
     def weed(past: ParsedAst.Type): Validation[WeededAst.Type, WeederError] = past match {
       case ParsedAst.Type.Unit => WeededAst.Type.Unit.toSuccess
       case ParsedAst.Type.Ambiguous(name) => WeededAst.Type.Ambiguous(name).toSuccess
-      case ParsedAst.Type.Function(ptype1, ptype2) => ???
+      case ParsedAst.Type.Function(ptype1, ptype2) => ??? // TODO
       case ParsedAst.Type.Tag(ident, ptype) => weed(ptype) map {
         case tpe => WeededAst.Type.Tag(ident, tpe)
       }
       case ParsedAst.Type.Tuple(pelms) => @@(pelms map weed) map {
         case elms => WeededAst.Type.Tuple(elms)
       }
-      case ParsedAst.Type.Parametric(name, pelms) => @@(pelms map weed) map {
-        case elms => WeededAst.Type.Parametric(name, elms)
-      }
-      // TODO: What about nested lattice types, e.g. <<foo>> or even <(Int, <Foo>)>
+      // TODO: Come up with different scheme.
       case ParsedAst.Type.Lattice(ptype) => weed(ptype) map {
         case tpe => WeededAst.Type.Lattice(tpe)
       }
+      case ParsedAst.Type.Parametric(name, pelms) => Unsupported("Parametric types are not yet supported.", name.location).toFailure
     }
   }
 
