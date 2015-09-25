@@ -357,6 +357,10 @@ object Typer {
     def typer(rast: ResolvedAst.Predicate.Head, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Head, TypeError] =
       ???
 
+    def typer(rast: ResolvedAst.Predicate.Body, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Body, TypeError] =
+      ???
+
+
   }
 
   object Type {

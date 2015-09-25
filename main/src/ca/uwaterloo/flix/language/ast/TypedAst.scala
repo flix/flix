@@ -83,6 +83,7 @@ object TypedAst {
      *
      * @param head the head predicate.
      */
+    // TODO: Why not equip these with a map from variables to types? Seems like a good idea.
     case class Fact(head: TypedAst.Predicate.Head) extends TypedAst.Constraint
 
     /**
@@ -91,6 +92,7 @@ object TypedAst {
      * @param head the head predicate.
      * @param body the body predicates.
      */
+    // TODO: Why not equip these with a map from variables to types? Seems like a good idea.
     case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body]) extends TypedAst.Constraint
 
   }

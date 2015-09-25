@@ -1031,6 +1031,38 @@ class TestTyper extends FunSuite {
     assertResult(expectedType)(actualType)
   }
 
+  test("Predicate.Body01") {
+    val rname = Name.Resolved(List("foo", "bar"))
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
+    val z = ParsedAst.Ident("z", SourceLocation.Unknown)
+    val w = ParsedAst.Ident("w", SourceLocation.Unknown)
+
+    val root = Root.copy(relations = Map(
+      rname -> ResolvedAst.Definition.Relation(rname, List(
+        ResolvedAst.Attribute(x, ResolvedAst.Type.Unit),
+        ResolvedAst.Attribute(y, ResolvedAst.Type.Bool),
+        ResolvedAst.Attribute(z, ResolvedAst.Type.Int),
+        ResolvedAst.Attribute(w, ResolvedAst.Type.Str)
+      ))
+    ))
+
+    val rast =
+      ResolvedAst.Predicate.Body(rname, List(
+        ResolvedAst.Term.Body.Wildcard(SourceLocation.Unknown),
+        ResolvedAst.Term.Body.Lit(ResolvedAst.Literal.Bool(true)),
+        ResolvedAst.Term.Body.Lit(ResolvedAst.Literal.Int(42)),
+        ResolvedAst.Term.Body.Lit(ResolvedAst.Literal.Str("foo"))
+      ))
+
+    val expectedType = TypedAst.Type.Predicate(List(
+      TypedAst.Type.Unit, TypedAst.Type.Bool, TypedAst.Type.Int, TypedAst.Type.Str
+    ))
+    val actualType = Typer.Predicate.typer(rast, root).get.tpe
+    assertResult(expectedType)(actualType)
+  }
+
+
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////

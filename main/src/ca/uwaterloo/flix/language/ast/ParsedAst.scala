@@ -51,14 +51,14 @@ object ParsedAst {
      * @param name the name of the namespace.
      * @param body the nested declarations.
      */
-    case class Namespace(name: ParsedAst.QName, body: Seq[ParsedAst.Declaration]) extends ParsedAst.Definition
+    case class Namespace(name: ParsedAst.QName, body: Seq[ParsedAst.Declaration]) extends ParsedAst.Declaration
 
     /**
      * An AST node that represents a fact declaration.
      *
      * @param head the head predicate.
      */
-    case class Fact(head: ParsedAst.Predicate) extends ParsedAst.Definition
+    case class Fact(head: ParsedAst.Predicate) extends ParsedAst.Declaration
 
     /**
      * An AST node that represent a rule declaration.
@@ -66,7 +66,7 @@ object ParsedAst {
      * @param head the head predicate.
      * @param body the body predicates.
      */
-    case class Rule(head: ParsedAst.Predicate, body: Seq[ParsedAst.Predicate]) extends ParsedAst.Definition
+    case class Rule(head: ParsedAst.Predicate, body: Seq[ParsedAst.Predicate]) extends ParsedAst.Declaration
 
     // TODO: Add integrity constraints
   }
@@ -368,6 +368,8 @@ object ParsedAst {
    * AST nodes for Terms.
    */
   sealed trait Term extends ParsedAst
+
+  // TODO: Allow ascription
 
   object Term {
 

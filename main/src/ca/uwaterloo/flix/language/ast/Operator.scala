@@ -121,17 +121,4 @@ object BinaryOperator {
    */
   case object Or extends LogicalOperator
 
-  // TODO: Remove these
-  @deprecated("replaced by builtin function", "0.1.0")
-  case object Minimum extends BinaryOperator
-
-  @deprecated("replaced by builtin function", "0.1.0")
-  case object Maximum extends BinaryOperator
-
-  @deprecated("replaced by builtin function", "0.1.0")
-  case object Union extends BinaryOperator
-
-  @deprecated("replaced by builtin function", "0.1.0")
-  case object Subset extends BinaryOperator
-
 }

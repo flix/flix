@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.{WeededAst, ParsedAst, SourceLocation}
-import ca.uwaterloo.flix.language.phase.{Parser, Weeder}
 
 import scala.collection.immutable.Seq
 
