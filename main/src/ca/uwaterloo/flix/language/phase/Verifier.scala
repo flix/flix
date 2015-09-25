@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-class Verifier {
+object Verifier {
 //
 //  /**
 //   * Reflexivity: ?x. x ? x

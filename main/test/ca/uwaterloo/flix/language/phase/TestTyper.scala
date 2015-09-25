@@ -931,8 +931,105 @@ class TestTyper extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Predicates & Terms                                                      //
   /////////////////////////////////////////////////////////////////////////////
-  // TODO: Sadly...
+  test("Predicate.Head01") {
+    val rname = Name.Resolved(List("foo", "bar"))
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
+    val z = ParsedAst.Ident("z", SourceLocation.Unknown)
+    val w = ParsedAst.Ident("w", SourceLocation.Unknown)
 
+    val root = Root.copy(relations = Map(
+      rname -> ResolvedAst.Definition.Relation(rname, List(
+        ResolvedAst.Attribute(x, ResolvedAst.Type.Unit),
+        ResolvedAst.Attribute(y, ResolvedAst.Type.Bool),
+        ResolvedAst.Attribute(z, ResolvedAst.Type.Int),
+        ResolvedAst.Attribute(w, ResolvedAst.Type.Str)
+      ))
+    ))
+
+    val rast =
+      ResolvedAst.Predicate.Head(rname, List(
+        ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Unit),
+        ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Bool(true)),
+        ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Int(42)),
+        ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Str("foo"))
+      ))
+
+    val expectedType = TypedAst.Type.Predicate(List(
+      TypedAst.Type.Unit, TypedAst.Type.Bool, TypedAst.Type.Int, TypedAst.Type.Str
+    ))
+    val actualType = Typer.Predicate.typer(rast, root).get.tpe
+    assertResult(expectedType)(actualType)
+  }
+
+  test("Predicate.Head02") {
+    val rname = Name.Resolved(List("foo", "bar"))
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
+    val z = ParsedAst.Ident("z", SourceLocation.Unknown)
+    val w = ParsedAst.Ident("w", SourceLocation.Unknown)
+
+    // NB: Somewhat misleading we use the same identifiers for both columns and variables.
+
+    val root = Root.copy(relations = Map(
+      rname -> ResolvedAst.Definition.Relation(rname, List(
+        ResolvedAst.Attribute(x, ResolvedAst.Type.Unit),
+        ResolvedAst.Attribute(y, ResolvedAst.Type.Bool),
+        ResolvedAst.Attribute(z, ResolvedAst.Type.Int),
+        ResolvedAst.Attribute(w, ResolvedAst.Type.Str)
+      ))
+    ))
+
+    val rast =
+      ResolvedAst.Predicate.Head(rname, List(
+        ResolvedAst.Term.Head.Var(x),
+        ResolvedAst.Term.Head.Var(y),
+        ResolvedAst.Term.Head.Var(z),
+        ResolvedAst.Term.Head.Var(w)
+      ))
+
+    val expectedType = TypedAst.Type.Predicate(List(
+      TypedAst.Type.Unit, TypedAst.Type.Bool, TypedAst.Type.Int, TypedAst.Type.Str
+    ))
+    val actualType = Typer.Predicate.typer(rast, root).get.tpe
+    assertResult(expectedType)(actualType)
+  }
+
+  test("Predicate.Head03") {
+    val relationName = Name.Resolved(List("foo", "bar"))
+    val functionName = Name.Resolved(List("foo", "baz"))
+    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
+
+    // NB: Somewhat misleading we use the same identifiers for both columns and variables.
+
+    val root = Root.copy(
+      constants = Map(
+        functionName -> ResolvedAst.Definition.Constant(
+          name = functionName,
+          exp = ResolvedAst.Expression.Lambda(
+            formals = List(ResolvedAst.FormalArg(x, ResolvedAst.Type.Bool)),
+            retTpe = ResolvedAst.Type.Unit,
+            body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit)
+          ),
+          tpe = ResolvedAst.Type.Function(List(ResolvedAst.Type.Bool), ResolvedAst.Type.Unit))
+      ),
+      relations = Map(
+        relationName -> ResolvedAst.Definition.Relation(relationName, List(
+          ResolvedAst.Attribute(x, ResolvedAst.Type.Unit)
+        ))
+      ))
+
+    val rast =
+      ResolvedAst.Predicate.Head(relationName, List(
+        ResolvedAst.Term.Head.Apply(
+          functionName,
+          List(ResolvedAst.Term.Head.Lit(
+            ResolvedAst.Literal.Bool(true))))))
+
+    val expectedType = TypedAst.Type.Predicate(List(TypedAst.Type.Unit))
+    val actualType = Typer.Predicate.typer(rast, root).get.tpe
+    assertResult(expectedType)(actualType)
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //

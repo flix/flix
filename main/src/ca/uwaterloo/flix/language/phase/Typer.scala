@@ -352,6 +352,13 @@ object Typer {
     }
   }
 
+  object Predicate {
+
+    def typer(rast: ResolvedAst.Predicate.Head, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Head, TypeError] =
+      ???
+
+  }
+
   object Type {
 
     /**
