@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.lang.phases
+package ca.uwaterloo.flix.lang.phase
 
 import ca.uwaterloo.flix.lang.ast.{WeededAst, ParsedAst, SourceLocation}
 import ca.uwaterloo.flix.lang.phase.{Parser, Weeder}
@@ -17,7 +17,7 @@ class TestWeeder extends FunSuite {
       ParsedAst.Attribute(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ))
 
-    val result = Weeder.compileDefinition(past)
+    val result = Weeder.Definition.weed(past)
     assert(result.hasErrors)
   }
 
@@ -29,7 +29,7 @@ class TestWeeder extends FunSuite {
       ParsedAst.Attribute(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ))
 
-    val result = Weeder.compileDefinition(past)
+    val result = Weeder.Definition.weed(past)
     assertResult(2)(result.errors.size)
   }
 
@@ -39,7 +39,7 @@ class TestWeeder extends FunSuite {
       (ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit))
 
-    val result = Weeder.compileDefinition(past)
+    val result = Weeder.Definition.weed(past)
     assert(result.hasErrors)
   }
 
@@ -51,7 +51,7 @@ class TestWeeder extends FunSuite {
       (ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit))
 
-    val result = Weeder.compileDefinition(past)
+    val result = Weeder.Definition.weed(past)
     assertResult(2)(result.errors.size)
   }
 
@@ -62,7 +62,7 @@ class TestWeeder extends FunSuite {
       ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ))
 
-    val result = Weeder.compileEnum(past)
+    val result = Weeder.Definition.weed(past)
     assert(result.hasErrors)
   }
 
@@ -74,7 +74,7 @@ class TestWeeder extends FunSuite {
       ParsedAst.Type.Tag(ParsedAst.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ))
 
-    val result = Weeder.compileEnum(past)
+    val result = Weeder.Definition.weed(past)
     assertResult(2)(result.errors.size)
   }
 

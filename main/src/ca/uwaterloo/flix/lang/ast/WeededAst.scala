@@ -11,7 +11,7 @@ object WeededAst {
   // TODO: Every Seq should be replaced by List
   case class Root(declarations: List[WeededAst.Declaration]) extends WeededAst
 
-  sealed trait Declaration
+  sealed trait Declaration extends WeededAst
 
   object Declaration {
 
@@ -23,17 +23,12 @@ object WeededAst {
 
   }
 
-  sealed trait Definition extends WeededAst.Declaration {
-    // TODO: require all these to have a tpe?
-  }
+  sealed trait Definition extends WeededAst.Declaration
 
   object Definition {
 
-    // TODO: Swap order
-    // TODO: Check no free variables.
-    case class Value(ident: ParsedAst.Ident, tpe: WeededAst.Type, e: WeededAst.Expression) extends WeededAst.Definition
+    case class Constant(ident: ParsedAst.Ident, e: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Definition
 
-    // TODO: Decorate with the full type....
     case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends WeededAst.Definition
 
     // TODO: Improve? or at least do something with traits?
@@ -90,7 +85,7 @@ object WeededAst {
 
     case class Lit(literal: WeededAst.Literal) extends WeededAst.Expression
 
-    case class Lambda(formals: Seq[(ParsedAst.Ident, WeededAst.Type)], tpe: WeededAst.Type, body: WeededAst.Expression) extends WeededAst.Expression
+    case class Lambda(formals: Seq[(ParsedAst.Ident, WeededAst.Type)], body: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Expression
 
     case class Unary(op: UnaryOperator, e: WeededAst.Expression) extends WeededAst.Expression
 
@@ -187,7 +182,7 @@ object WeededAst {
 
     case class Tuple(elms: Seq[WeededAst.Type]) extends WeededAst.Type
 
-    case class Function(t1: WeededAst.Type, t2: WeededAst.Type) extends WeededAst.Type
+    case class Function(args: List[WeededAst.Type], retType: WeededAst.Type) extends WeededAst.Type
 
     // TODO: Disallow
     case class Parametric(name: ParsedAst.QName, elms: Seq[WeededAst.Type]) extends WeededAst.Type

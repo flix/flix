@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.lang.phases
+package ca.uwaterloo.flix.lang.phase
 
 import ca.uwaterloo.flix.lang.ast._
 import ca.uwaterloo.flix.lang.phase.Typer

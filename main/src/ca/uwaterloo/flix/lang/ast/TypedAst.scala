@@ -537,6 +537,8 @@ object TypedAst {
    */
   case class Attribute(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst
 
+  // TODO: Introduce TypeOrLattice or similar.
+
   /**
    * A typed AST node representing a formal argument in a function.
    *

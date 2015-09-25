@@ -47,7 +47,7 @@ object Resolver {
   }
 
   case class SymbolTable(enums: Map[Name.Resolved, WeededAst.Definition.Enum],
-                         values: Map[Name.Resolved, WeededAst.Definition.Value],
+                         values: Map[Name.Resolved, WeededAst.Definition.Constant],
                          relations: Map[Name.Resolved, WeededAst.Definition.Relation],
                          types: Map[Name.Resolved, ResolvedAst.Type]) {
     // TODO: Cleanup
@@ -65,7 +65,7 @@ object Resolver {
     }
 
     // TODO: Cleanup
-    def lookupValue(name: ParsedAst.QName, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Value), ResolverError] = {
+    def lookupValue(name: ParsedAst.QName, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Constant), ResolverError] = {
       val rname = Name.Resolved(
         if (name.parts.size == 1)
           namespace ::: name.parts.head :: Nil
@@ -157,7 +157,7 @@ object Resolver {
      * Constructs the symbol for the given definition `wast`.
      */
     def symbolsOf(wast: WeededAst.Definition, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
-      case defn@WeededAst.Definition.Value(ident, tpe, e) =>
+      case defn@WeededAst.Definition.Constant(ident, tpe, e) =>
         val rname = toRName(ident, namespace)
         syms.values.get(rname) match {
           case None => syms.copy(values = syms.values + (rname -> defn)).toSuccess
@@ -214,7 +214,7 @@ object Resolver {
     /**
      * Performs symbol resolution for the given value definition `wast`.
      */
-    def resolve(wast: WeededAst.Definition.Value, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Constant, ResolverError] =
+    def resolve(wast: WeededAst.Definition.Constant, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Constant, ResolverError] =
       @@(Expression.resolve(wast.e, namespace, syms), Type.resolve(wast.tpe, namespace, syms)) map {
         case (e, tpe) => ResolvedAst.Definition.Constant(Name.Resolved(namespace ::: wast.ident.name :: Nil), e, tpe)
       }
@@ -269,7 +269,7 @@ object Resolver {
         case WeededAst.Expression.AmbiguousApply(name, args) =>
           throw new RuntimeException("Remove this node.")
         case WeededAst.Expression.Lit(wlit) => Literal.resolve(wlit, namespace, syms) map ResolvedAst.Expression.Lit
-        case WeededAst.Expression.Lambda(wformals, wtype, wbody) =>
+        case WeededAst.Expression.Lambda(wformals, wbody, wtype) =>
           val formalsVal = @@(wformals map {
             case (ident, tpe) => Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.FormalArg(ident, t))
           })
@@ -428,10 +428,7 @@ object Resolver {
         }
         case WeededAst.Type.Tag(ident, tpe) => ??? // TODO: Shouldn't a tag include a namespace? E.g. there is a difference between foo.Foo.Tag and bar.Foo.Tag?
         case WeededAst.Type.Tuple(welms) => @@(welms map (e => resolve(e, namespace, syms))) map ResolvedAst.Type.Tuple
-        case WeededAst.Type.Function(wtype1, wtype2) =>
-          @@(resolve(wtype1, namespace, syms), resolve(wtype2, namespace, syms)) map {
-            case (tpe1, tpe2) => ??? // TODO
-          }
+        case WeededAst.Type.Function(wtype1, wtype2) => ???
       }
 
       visit(wast)
