@@ -1206,6 +1206,129 @@ class TestInterpreter extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Expressions - Let                                                       //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Let01") {
+    // let x = true in 42
+    val ident = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
+    val input = Expression.Let(ident, Expression.Lit(Literal.Bool(true), Type.Bool),
+      Expression.Lit(Literal.Int(42), Type.Int), Type.Int)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(42))(result)
+  }
+
+  test("Expression.Let02") {
+    // let x = 24 in x
+    val ident = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
+    val input = Expression.Let(ident, Expression.Lit(Literal.Int(24), Type.Int),
+      Expression.Var(ident, Type.Int), Type.Int)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(24))(result)
+  }
+
+  test("Expression.Let03") {
+    // let x = 1 in x + 2
+    val ident = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
+    val input = Expression.Let(ident, Expression.Lit(Literal.Int(1), Type.Int),
+      Expression.Binary(
+        BinaryOperator.Plus,
+        Expression.Var(ident, Type.Int),
+        Expression.Lit(Literal.Int(2), Type.Int),
+        Type.Int),
+      Type.Int)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(3))(result)
+  }
+
+  test("Expression.Let04") {
+    // let x = false in if x then "abc" else "xyz"
+    val ident = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
+    val input = Expression.Let(ident, Expression.Lit(Literal.Bool(false), Type.Bool),
+      Expression.IfThenElse(
+        Expression.Var(ident, Type.Bool),
+        Expression.Lit(Literal.Str("abc"), Type.Str),
+        Expression.Lit(Literal.Str("xyz"), Type.Str),
+        Type.Str),
+      Type.Str)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Str("xyz"))(result)
+  }
+
+  test("Expression.Let05") {
+    // let x = 14 - 3 in x + 2
+    val ident = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
+    val input = Expression.Let(ident,
+      Expression.Binary(
+        BinaryOperator.Minus,
+        Expression.Lit(Literal.Int(14), Type.Int),
+        Expression.Lit(Literal.Int(3), Type.Int),
+        Type.Int),
+      Expression.Binary(
+        BinaryOperator.Plus,
+        Expression.Var(ident, Type.Int),
+        Expression.Lit(Literal.Int(2), Type.Int),
+        Type.Int),
+      Type.Int)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(13))(result)
+  }
+
+  test("Expression.Let06") {
+    // let x = 14 - 3 in let y = 2 * 4 in x + y
+    val ident01 = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
+    val ident02 = ParsedAst.Ident("y", SourceLocation(None, 0, 0))
+    val input = Expression.Let(ident01,
+      Expression.Binary(
+        BinaryOperator.Minus,
+        Expression.Lit(Literal.Int(14), Type.Int),
+        Expression.Lit(Literal.Int(3), Type.Int),
+        Type.Int),
+      Expression.Let(ident02,
+        Expression.Binary(
+          BinaryOperator.Times,
+          Expression.Lit(Literal.Int(2), Type.Int),
+          Expression.Lit(Literal.Int(4), Type.Int),
+          Type.Int),
+        Expression.Binary(
+          BinaryOperator.Plus,
+          Expression.Var(ident01, Type.Int),
+          Expression.Var(ident02, Type.Int),
+          Type.Int),
+        Type.Int),
+      Type.Int)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(19))(result)
+  }
+
+  test("Expression.Let07") {
+    // let x = 1 in let y = x + 2 in let z = y + 3 in z
+    val ident01 = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
+    val ident02 = ParsedAst.Ident("y", SourceLocation(None, 0, 0))
+    val ident03 = ParsedAst.Ident("z", SourceLocation(None, 0, 0))
+    val input = Expression.Let(ident01,
+      Expression.Lit(Literal.Int(1), Type.Int),
+      Expression.Let(ident02,
+        Expression.Binary(
+          BinaryOperator.Plus,
+          Expression.Var(ident01, Type.Int),
+          Expression.Lit(Literal.Int(2), Type.Int),
+          Type.Int),
+        Expression.Let(ident03,
+          Expression.Binary(
+            BinaryOperator.Plus,
+            Expression.Var(ident02, Type.Int),
+            Expression.Lit(Literal.Int(3), Type.Int),
+            Type.Int),
+          Expression.Var(ident03, Type.Int),
+          Type.Int),
+        Type.Int),
+      Type.Int)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(6))(result)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Expressions - Tuples and Tags                                           //
   /////////////////////////////////////////////////////////////////////////////
 
