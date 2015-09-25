@@ -2,7 +2,7 @@ package ca.uwaterloo.flix
 
 import java.nio.file.Paths
 
-import ca.uwaterloo.flix.lang.Compiler
+import ca.uwaterloo.flix.language.Compiler
 
 import org.scalatest.FunSuite
 

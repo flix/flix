@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.lang.ast._
-import ca.uwaterloo.flix.lang.phase._
+import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.phase._
 import org.scalatest.{ParallelTestExecution, Suites}
 
 // NB: Run with -P to run in parallel.

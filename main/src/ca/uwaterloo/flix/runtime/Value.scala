@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.lang.ast.Name
+import ca.uwaterloo.flix.language.ast.Name
 
 sealed trait Value
 
