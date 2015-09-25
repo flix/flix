@@ -4,963 +4,1136 @@ import ca.uwaterloo.flix.lang.ast.TypedAst.{Expression, Literal, Type}
 import ca.uwaterloo.flix.lang.ast.{BinaryOperator, UnaryOperator, ParsedAst, Name, SourceLocation}
 import org.scalatest.FunSuite
 
-class TestInterpreter extends FunSuite {
+private object ConstantPropTagDefs {
+  val name = Name.Resolved(List("ConstProp"))
+  val identB = ParsedAst.Ident("Bot", SourceLocation(None, 0, 0))
+  val identV = ParsedAst.Ident("Val", SourceLocation(None, 0, 0))
+  val identT = ParsedAst.Ident("Top", SourceLocation(None, 0, 0))
 
+  val tagTpeB = Type.Tag(name, identB, Type.Unit)
+  val tagTpeV = Type.Tag(name, identV, Type.Int)
+  val tagTpeT = Type.Tag(name, identT, Type.Unit)
+  val enumTpe = Type.Enum(Map("ConstProp.Bot" -> tagTpeB, "ConstProp.Val" -> tagTpeV, "ConstProp.Top" -> tagTpeT))
+}
+
+class TestInterpreter extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Expressions - Literals                                                  //
   /////////////////////////////////////////////////////////////////////////////
 
-  test("Unit") {
-    val exp = Expression.Lit(Literal.Unit, Type.Unit)
-    val result = Interpreter.eval(exp)
+  test("Literal.Unit") {
+    val input = Expression.Lit(Literal.Unit, Type.Unit)
+    val result = Interpreter.eval(input)
     assertResult(Value.Unit)(result)
   }
 
-  test("Bool") {
-    val exp01 = Expression.Lit(Literal.Bool(true), Type.Bool)
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Bool(true))(result01)
-
-    val exp02 = Expression.Lit(Literal.Bool(false), Type.Bool)
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Bool(false))(result02)
+  test("Literal.Bool01") {
+    val input = Expression.Lit(Literal.Bool(true), Type.Bool)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
   }
 
-  test("Int") {
-    val exp01 = Expression.Lit(Literal.Int(-242), Type.Int)
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Int(-242))(result01)
-
-    val exp02 = Expression.Lit(Literal.Int(-42), Type.Int)
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Int(-42))(result02)
-
-    val exp03 = Expression.Lit(Literal.Int(0), Type.Int)
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Int(0))(result03)
-
-    val exp04 = Expression.Lit(Literal.Int(98), Type.Int)
-    val result04 = Interpreter.eval(exp04)
-    assertResult(Value.Int(98))(result04)
-
-    val exp05 = Expression.Lit(Literal.Int(91238), Type.Int)
-    val result05 = Interpreter.eval(exp05)
-    assertResult(Value.Int(91238))(result05)
+  test("Literal.Bool02") {
+    val input = Expression.Lit(Literal.Bool(false), Type.Bool)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
   }
 
-  test("Str") {
-    val exp01 = Expression.Lit(Literal.Str(""), Type.Str)
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Str(""))(result01)
-
-    val exp02 = Expression.Lit(Literal.Str("Hello World!"), Type.Str)
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Str("Hello World!"))(result02)
-
-    val exp03 = Expression.Lit(Literal.Str("asdf"), Type.Str)
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Str("asdf"))(result03)
-
-    val exp04 = Expression.Lit(Literal.Str("foobar"), Type.Str)
-    val result04 = Interpreter.eval(exp04)
-    assertResult(Value.Str("foobar"))(result04)
-
-    val exp05 = Expression.Lit(Literal.Str("\"\"\""), Type.Str)
-    val result05 = Interpreter.eval(exp05)
-    assertResult(Value.Str("\"\"\""))(result05)
+  test("Literal.Int01") {
+    val input = Expression.Lit(Literal.Int(-242), Type.Int)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-242))(result)
   }
 
-  test("Tuple literal") {
-    val exp01 = Expression.Lit(
+  test("Literal.Int02") {
+    val input = Expression.Lit(Literal.Int(-42), Type.Int)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-42))(result)
+  }
+
+  test("Literal.Int03") {
+    val input = Expression.Lit(Literal.Int(0), Type.Int)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(0))(result)
+  }
+
+  test("Literal.Int04") {
+    val input = Expression.Lit(Literal.Int(98), Type.Int)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(98))(result)
+  }
+
+  test("Literal.Int05") {
+    val input = Expression.Lit(Literal.Int(91238), Type.Int)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(91238))(result)
+  }
+
+  test("Literal.Str01") {
+    val input = Expression.Lit(Literal.Str(""), Type.Str)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Str(""))(result)
+  }
+
+  test("Literal.Str02") {
+    val input = Expression.Lit(Literal.Str("Hello World!"), Type.Str)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Str("Hello World!"))(result)
+  }
+
+  test("Literal.Str03") {
+    val input = Expression.Lit(Literal.Str("asdf"), Type.Str)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Str("asdf"))(result)
+  }
+
+  test("Literal.Str04") {
+    val input = Expression.Lit(Literal.Str("foobar"), Type.Str)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Str("foobar"))(result)
+  }
+
+  test("Literal.Str05") {
+    val input = Expression.Lit(Literal.Str("\"\"\""), Type.Str)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Str("\"\"\""))(result)
+  }
+
+  test("Literal.Tuple01") {
+    val input = Expression.Lit(
       Literal.Tuple(List(Literal.Int(42), Literal.Bool(false), Literal.Str("hi")),
         Type.Tuple(List(Type.Int, Type.Bool, Type.Str))),
       Type.Tuple(List(Type.Int, Type.Bool, Type.Str)))
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Tuple(List(Value.Int(42), Value.Bool(false), Value.Str("hi"))))(result01)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Tuple(List(Value.Int(42), Value.Bool(false), Value.Str("hi"))))(result)
+  }
 
-    val exp02 = Expression.Lit(
+  test("Literal.Tuple02") {
+    val input = Expression.Lit(
       Literal.Tuple(List(
         Literal.Int(4),
         Literal.Tuple(List(Literal.Int(12), Literal.Int(8)),
           Type.Tuple(List(Type.Int, Type.Int)))),
         Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int))))),
       Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int)))))
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Tuple(List(Value.Int(4), Value.Tuple(List(Value.Int(12), Value.Int(8))))))(result02)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Tuple(List(Value.Int(4), Value.Tuple(List(Value.Int(12), Value.Int(8))))))(result)
   }
 
-  test("Tag literal (simple)") {
+  test("Literal.Tag01") {
     val name = Name.Resolved(List("foo", "bar"))
     val ident = ParsedAst.Ident("baz", SourceLocation(None, 0, 0))
     val tagTpe = Type.Tag(name, ident, Type.Str)
     val enumTpe = Type.Enum(Map("foo.bar.baz" -> tagTpe))
-    val exp = Expression.Lit(Literal.Tag(name, ident, Literal.Str("hello world"), enumTpe), tagTpe)
-    val result = Interpreter.eval(exp)
+    val input = Expression.Lit(Literal.Tag(name, ident, Literal.Str("hello world"), enumTpe), tagTpe)
+    val result = Interpreter.eval(input)
     assertResult(Value.Tag(name, "baz", Value.Str("hello world")))(result)
   }
 
-  test("Tag literal (tuple)") {
+  test("Literal.Tag02") {
     val name = Name.Resolved(List("Family"))
     val ident = ParsedAst.Ident("NameAndAge", SourceLocation(None, 0, 0))
     val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int)))
     val enumTpe = Type.Enum(Map("Family.NameAndAge" -> tagTpe))
-    val exp = Expression.Lit(Literal.Tag(name, ident, Literal.Tuple(List(Literal.Str("James"), Literal.Int(42)),
+    val input = Expression.Lit(Literal.Tag(name, ident, Literal.Tuple(List(Literal.Str("James"), Literal.Int(42)),
       Type.Tuple(List(Type.Str, Type.Int))), enumTpe), tagTpe)
-    val result = Interpreter.eval(exp)
+    val result = Interpreter.eval(input)
     assertResult(Value.Tag(name, "NameAndAge", Value.Tuple(List(Value.Str("James"), Value.Int(42)))))(result)
   }
 
-  test("Tag literal (constant propagation)") {
-    val name = Name.Resolved(List("ConstProp"))
-    val identB = ParsedAst.Ident("Bot", SourceLocation(None, 0, 0))
-    val identV = ParsedAst.Ident("Val", SourceLocation(None, 0, 0))
-    val identT = ParsedAst.Ident("Top", SourceLocation(None, 0, 0))
+  test("Literal.Tag03a") {
+    import ConstantPropTagDefs._
+    val input = Expression.Lit(Literal.Tag(name, identB, Literal.Unit, enumTpe), tagTpeB)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Tag(name, "Bot", Value.Unit))(result)
+  }
 
-    val tagTpeB = Type.Tag(name, identB, Type.Unit)
-    val tagTpeV = Type.Tag(name, identV, Type.Int)
-    val tagTpeT = Type.Tag(name, identT, Type.Unit)
-    val enumTpe = Type.Enum(Map("ConstProp.Bot" -> tagTpeB, "ConstProp.Val" -> tagTpeV, "ConstProp.Top" -> tagTpeT))
+  test("Literal.Tag03b") {
+    import ConstantPropTagDefs._
+    val input = Expression.Lit(Literal.Tag(name, identT, Literal.Unit, enumTpe), tagTpeT)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Tag(name, "Top", Value.Unit))(result)
+  }
 
-    val exp01 = Expression.Lit(Literal.Tag(name, identB, Literal.Unit, enumTpe), tagTpeB)
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Tag(name, "Bot", Value.Unit))(result01)
+  test("Literal.Tag03c") {
+    import ConstantPropTagDefs._
+    val input = Expression.Lit(Literal.Tag(name, identV, Literal.Int(0), enumTpe), tagTpeV)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Tag(name, "Val", Value.Int(0)))(result)
 
-    val exp02 = Expression.Lit(Literal.Tag(name, identT, Literal.Unit, enumTpe), tagTpeT)
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Tag(name, "Top", Value.Unit))(result02)
+  }
 
-    val exp03 = Expression.Lit(Literal.Tag(name, identV, Literal.Int(0), enumTpe), tagTpeV)
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Tag(name, "Val", Value.Int(0)))(result03)
+  test("Literal.Tag03d") {
+    import ConstantPropTagDefs._
+    val input = Expression.Lit(Literal.Tag(name, identV, Literal.Int(-240), enumTpe), tagTpeV)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Tag(name, "Val", Value.Int(-240)))(result)
+  }
 
-    val exp04 = Expression.Lit(Literal.Tag(name, identV, Literal.Int(-240), enumTpe), tagTpeV)
-    val result04 = Interpreter.eval(exp04)
-    assertResult(Value.Tag(name, "Val", Value.Int(-240)))(result04)
-
-    val exp05 = Expression.Lit(Literal.Tag(name, identV, Literal.Int(1241), enumTpe), tagTpeV)
-    val result05 = Interpreter.eval(exp05)
-    assertResult(Value.Tag(name, "Val", Value.Int(1241)))(result05)
+  test("Literal.Tag03e") {
+    import ConstantPropTagDefs._
+    val input = Expression.Lit(Literal.Tag(name, identV, Literal.Int(1241), enumTpe), tagTpeV)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Tag(name, "Val", Value.Int(1241)))(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Expressions - Unary and Binary                                          //
   /////////////////////////////////////////////////////////////////////////////
 
-  test("unary not") {
-    val exp01 = Expression.Unary(
+  test("UnaryOperator.Not01") {
+    val input = Expression.Unary(
       UnaryOperator.Not,
       Expression.Lit(Literal.Bool(true), Type.Bool),
       Type.Bool)
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Bool(false))(result01)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
+  }
 
-    val exp02 = Expression.Unary(
+  test("UnaryOperator.Not02") {
+    val input = Expression.Unary(
       UnaryOperator.Not,
       Expression.Lit(Literal.Bool(false), Type.Bool),
       Type.Bool)
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Bool(true))(result02)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
   }
 
-  test("unary plus") {
-    val exp01 = Expression.Unary(
+  test("UnaryOperator.UnaryPlus01") {
+    val input = Expression.Unary(
       UnaryOperator.UnaryPlus,
       Expression.Lit(Literal.Int(23), Type.Int),
       Type.Int)
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Int(23))(result01)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(23))(result)
+  }
 
-    val exp02 = Expression.Unary(
+  test("UnaryOperator.UnaryPlus02") {
+    val input = Expression.Unary(
       UnaryOperator.UnaryPlus,
       Expression.Lit(Literal.Int(-4), Type.Int),
       Type.Int)
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Int(-4))(result02)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-4))(result)
   }
 
-  test("unary minus") {
-    val exp01 = Expression.Unary(
+  test("UnaryOperator.UnaryMinus03") {
+    val input = Expression.Unary(
       UnaryOperator.UnaryMinus,
       Expression.Lit(Literal.Int(23), Type.Int),
       Type.Int)
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Int(-23))(result01)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-23))(result)
+  }
 
-    val exp02 = Expression.Unary(
+  test("UnaryOperator.UnaryMinus02") {
+    val input = Expression.Unary(
       UnaryOperator.UnaryMinus,
       Expression.Lit(Literal.Int(-4), Type.Int),
       Type.Int)
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Int(4))(result02)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(4))(result)
   }
 
-  test("binary plus") {
-    val exp01 = Expression.Binary(
+  test("BinaryOperator.Plus01") {
+    val input = Expression.Binary(
       BinaryOperator.Plus,
       Expression.Lit(Literal.Int(400), Type.Int),
       Expression.Lit(Literal.Int(100), Type.Int),
       Type.Int
     )
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Int(500))(result01)
-
-    val exp02 = Expression.Binary(
-      BinaryOperator.Plus,
-      Expression.Lit(Literal.Int(100), Type.Int),
-      Expression.Lit(Literal.Int(400), Type.Int),
-      Type.Int
-    )
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Int(500))(result02)
-
-    val exp03 = Expression.Binary(
-      BinaryOperator.Plus,
-      Expression.Lit(Literal.Int(-400), Type.Int),
-      Expression.Lit(Literal.Int(100), Type.Int),
-      Type.Int
-    )
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Int(-300))(result03)
-
-    val exp04 = Expression.Binary(
-      BinaryOperator.Plus,
-      Expression.Lit(Literal.Int(-100), Type.Int),
-      Expression.Lit(Literal.Int(400), Type.Int),
-      Type.Int
-    )
-    val result04 = Interpreter.eval(exp04)
-    assertResult(Value.Int(300))(result04)
-
-    val exp05 = Expression.Binary(
-      BinaryOperator.Plus,
-      Expression.Lit(Literal.Int(-400), Type.Int),
-      Expression.Lit(Literal.Int(-100), Type.Int),
-      Type.Int
-    )
-    val result05 = Interpreter.eval(exp05)
-    assertResult(Value.Int(-500))(result05)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(500))(result)
   }
 
-  test("binary minus") {
-    val exp01 = Expression.Binary(
-      BinaryOperator.Minus,
-      Expression.Lit(Literal.Int(400), Type.Int),
-      Expression.Lit(Literal.Int(100), Type.Int),
-      Type.Int
-    )
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Int(300))(result01)
-
-    val exp02 = Expression.Binary(
-      BinaryOperator.Minus,
+  test("BinaryOperator.Plus02") {
+    val input = Expression.Binary(
+      BinaryOperator.Plus,
       Expression.Lit(Literal.Int(100), Type.Int),
       Expression.Lit(Literal.Int(400), Type.Int),
       Type.Int
     )
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Int(-300))(result02)
-
-    val exp03 = Expression.Binary(
-      BinaryOperator.Minus,
-      Expression.Lit(Literal.Int(-400), Type.Int),
-      Expression.Lit(Literal.Int(100), Type.Int),
-      Type.Int
-    )
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Int(-500))(result03)
-
-    val exp04 = Expression.Binary(
-      BinaryOperator.Minus,
-      Expression.Lit(Literal.Int(-100), Type.Int),
-      Expression.Lit(Literal.Int(400), Type.Int),
-      Type.Int
-    )
-    val result04 = Interpreter.eval(exp04)
-    assertResult(Value.Int(-500))(result04)
-
-    val exp05 = Expression.Binary(
-      BinaryOperator.Minus,
-      Expression.Lit(Literal.Int(-400), Type.Int),
-      Expression.Lit(Literal.Int(-100), Type.Int),
-      Type.Int
-    )
-    val result05 = Interpreter.eval(exp05)
-    assertResult(Value.Int(-300))(result05)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(500))(result)
   }
 
-  test("binary times") {
-    val exp01 = Expression.Binary(
+  test("BinaryOperator.Plus03") {
+    val input = Expression.Binary(
+      BinaryOperator.Plus,
+      Expression.Lit(Literal.Int(-400), Type.Int),
+      Expression.Lit(Literal.Int(100), Type.Int),
+      Type.Int
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-300))(result)
+  }
+
+  test("BinaryOperator.Plus04") {
+    val input = Expression.Binary(
+      BinaryOperator.Plus,
+      Expression.Lit(Literal.Int(-100), Type.Int),
+      Expression.Lit(Literal.Int(400), Type.Int),
+      Type.Int
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(300))(result)
+  }
+
+  test("BinaryOperator.Plus05") {
+    val input = Expression.Binary(
+      BinaryOperator.Plus,
+      Expression.Lit(Literal.Int(-400), Type.Int),
+      Expression.Lit(Literal.Int(-100), Type.Int),
+      Type.Int
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-500))(result)
+  }
+
+  test("BinaryOperator.Minus01") {
+    val input = Expression.Binary(
+      BinaryOperator.Minus,
+      Expression.Lit(Literal.Int(400), Type.Int),
+      Expression.Lit(Literal.Int(100), Type.Int),
+      Type.Int
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(300))(result)
+  }
+
+  test("BinaryOperator.Minus02") {
+    val input = Expression.Binary(
+      BinaryOperator.Minus,
+      Expression.Lit(Literal.Int(100), Type.Int),
+      Expression.Lit(Literal.Int(400), Type.Int),
+      Type.Int
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-300))(result)
+  }
+
+  test("BinaryOperator.Minus03") {
+    val input = Expression.Binary(
+      BinaryOperator.Minus,
+      Expression.Lit(Literal.Int(-400), Type.Int),
+      Expression.Lit(Literal.Int(100), Type.Int),
+      Type.Int
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-500))(result)
+  }
+
+  test("BinaryOperator.Minus04") {
+    val input = Expression.Binary(
+      BinaryOperator.Minus,
+      Expression.Lit(Literal.Int(-100), Type.Int),
+      Expression.Lit(Literal.Int(400), Type.Int),
+      Type.Int
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-500))(result)
+  }
+
+  test("BinaryOperator.Minus05") {
+    val input = Expression.Binary(
+      BinaryOperator.Minus,
+      Expression.Lit(Literal.Int(-400), Type.Int),
+      Expression.Lit(Literal.Int(-100), Type.Int),
+      Type.Int
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-300))(result)
+  }
+
+  test("BinaryOperator.Times01") {
+    val input = Expression.Binary(
       BinaryOperator.Times,
       Expression.Lit(Literal.Int(2), Type.Int),
       Expression.Lit(Literal.Int(3), Type.Int),
       Type.Int
     )
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Int(6))(result01)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(6))(result)
+  }
 
-    val exp02 = Expression.Binary(
+  test("BinaryOperator.Times02") {
+    val input = Expression.Binary(
       BinaryOperator.Times,
       Expression.Lit(Literal.Int(3), Type.Int),
       Expression.Lit(Literal.Int(2), Type.Int),
       Type.Int
     )
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Int(6))(result02)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(6))(result)
+  }
 
-    val exp03 = Expression.Binary(
+  test("BinaryOperator.Times03") {
+    val input = Expression.Binary(
       BinaryOperator.Times,
       Expression.Lit(Literal.Int(-2), Type.Int),
       Expression.Lit(Literal.Int(3), Type.Int),
       Type.Int
     )
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Int(-6))(result03)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-6))(result)
+  }
 
-    val exp04 = Expression.Binary(
+  test("BinaryOperator.Times04") {
+    val input = Expression.Binary(
       BinaryOperator.Times,
       Expression.Lit(Literal.Int(-3), Type.Int),
       Expression.Lit(Literal.Int(2), Type.Int),
       Type.Int
     )
-    val result04 = Interpreter.eval(exp04)
-    assertResult(Value.Int(-6))(result04)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-6))(result)
+  }
 
-    val exp05 = Expression.Binary(
+  test("BinaryOperator.Times05") {
+    val input = Expression.Binary(
       BinaryOperator.Times,
       Expression.Lit(Literal.Int(-2), Type.Int),
       Expression.Lit(Literal.Int(-3), Type.Int),
       Type.Int
     )
-    val result05 = Interpreter.eval(exp05)
-    assertResult(Value.Int(6))(result05)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(6))(result)
   }
 
-  test("binary divide") {
-    val exp01 = Expression.Binary(
+  test("BinaryOperator.Divide01") {
+    val input = Expression.Binary(
       BinaryOperator.Divide,
       Expression.Lit(Literal.Int(12), Type.Int),
       Expression.Lit(Literal.Int(3), Type.Int),
       Type.Int
     )
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Int(4))(result01)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(4))(result)
+  }
 
-    val exp02 = Expression.Binary(
+  test("BinaryOperator.Divide02") {
+    val input = Expression.Binary(
       BinaryOperator.Divide,
       Expression.Lit(Literal.Int(3), Type.Int),
       Expression.Lit(Literal.Int(12), Type.Int),
       Type.Int
     )
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Int(0))(result02)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(0))(result)
+  }
 
-    val exp03 = Expression.Binary(
+  test("BinaryOperator.Divide03") {
+    val input = Expression.Binary(
       BinaryOperator.Divide,
       Expression.Lit(Literal.Int(-12), Type.Int),
       Expression.Lit(Literal.Int(3), Type.Int),
       Type.Int
     )
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Int(-4))(result03)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-4))(result)
+  }
 
-    val exp04 = Expression.Binary(
+  test("BinaryOperator.Divide04") {
+    val input = Expression.Binary(
       BinaryOperator.Divide,
       Expression.Lit(Literal.Int(-3), Type.Int),
       Expression.Lit(Literal.Int(12), Type.Int),
       Type.Int
     )
-    val result04 = Interpreter.eval(exp04)
-    assertResult(Value.Int(0))(result04)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(0))(result)
+  }
 
-    val exp05 = Expression.Binary(
+  test("BinaryOperator.Divide05") {
+    val input = Expression.Binary(
       BinaryOperator.Divide,
       Expression.Lit(Literal.Int(-12), Type.Int),
       Expression.Lit(Literal.Int(-3), Type.Int),
       Type.Int
     )
-    val result05 = Interpreter.eval(exp05)
-    assertResult(Value.Int(4))(result05)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(4))(result)
   }
 
   // TODO(mhyee): We need to document the exact semantics of modulo on negative operands
-  test("binary modulo") {
-    val exp01 = Expression.Binary(
+  test("BinaryOperator.Modulo01") {
+    val input = Expression.Binary(
       BinaryOperator.Modulo,
       Expression.Lit(Literal.Int(12), Type.Int),
       Expression.Lit(Literal.Int(2), Type.Int),
       Type.Int
     )
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Int(0))(result01)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(0))(result)
+  }
 
-    val exp02 = Expression.Binary(
+  test("BinaryOperator.Modulo02") {
+    val input = Expression.Binary(
       BinaryOperator.Modulo,
       Expression.Lit(Literal.Int(12), Type.Int),
       Expression.Lit(Literal.Int(5), Type.Int),
       Type.Int
     )
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Int(2))(result02)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(2))(result)
+  }
 
-    val exp03 = Expression.Binary(
+  test("BinaryOperator.Modulo03") {
+    val input = Expression.Binary(
       BinaryOperator.Modulo,
       Expression.Lit(Literal.Int(-12), Type.Int),
       Expression.Lit(Literal.Int(5), Type.Int),
       Type.Int
     )
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Int(-2))(result03)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-2))(result)
+  }
 
-    val exp04 = Expression.Binary(
+  test("BinaryOperator.Modulo04") {
+    val input = Expression.Binary(
       BinaryOperator.Modulo,
       Expression.Lit(Literal.Int(12), Type.Int),
       Expression.Lit(Literal.Int(-5), Type.Int),
       Type.Int
     )
-    val result04 = Interpreter.eval(exp04)
-    assertResult(Value.Int(2))(result04)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(2))(result)
+  }
 
-    val exp05 = Expression.Binary(
+  test("BinaryOperator.Modulo05") {
+    val input = Expression.Binary(
       BinaryOperator.Modulo,
       Expression.Lit(Literal.Int(-12), Type.Int),
       Expression.Lit(Literal.Int(-5), Type.Int),
       Type.Int
     )
-    val result05 = Interpreter.eval(exp05)
-    assertResult(Value.Int(-2))(result05)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-2))(result)
   }
 
-  test("binary less than") {
-    val exp01 = Expression.Binary(
+  test("BinaryOperator.Less01") {
+    val input = Expression.Binary(
       BinaryOperator.Less,
       Expression.Lit(Literal.Int(12), Type.Int),
       Expression.Lit(Literal.Int(3), Type.Int),
       Type.Bool
     )
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Bool(false))(result01)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
+  }
 
-    val exp02 = Expression.Binary(
+  test("BinaryOperator.Less02") {
+    val input = Expression.Binary(
       BinaryOperator.Less,
       Expression.Lit(Literal.Int(3), Type.Int),
       Expression.Lit(Literal.Int(12), Type.Int),
       Type.Bool
     )
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Bool(true))(result02)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
 
-    val exp03 = Expression.Binary(
+  test("BinaryOperator.Less03") {
+    val input = Expression.Binary(
       BinaryOperator.Less,
       Expression.Lit(Literal.Int(3), Type.Int),
       Expression.Lit(Literal.Int(3), Type.Int),
       Type.Bool
     )
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Bool(false))(result03)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
+  }
 
-    val exp04 = Expression.Binary(
+  test("BinaryOperator.Less04") {
+    val input = Expression.Binary(
       BinaryOperator.Less,
       Expression.Lit(Literal.Int(-12), Type.Int),
       Expression.Lit(Literal.Int(-3), Type.Int),
       Type.Bool
     )
-    val result04 = Interpreter.eval(exp04)
-    assertResult(Value.Bool(true))(result04)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
 
-    val exp05 = Expression.Binary(
+  test("BinaryOperator.Less05") {
+    val input = Expression.Binary(
       BinaryOperator.Less,
       Expression.Lit(Literal.Int(-3), Type.Int),
       Expression.Lit(Literal.Int(-12), Type.Int),
       Type.Bool
     )
-    val result05 = Interpreter.eval(exp05)
-    assertResult(Value.Bool(false))(result05)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
+  }
 
-    val exp06 = Expression.Binary(
+  test("BinaryOperator.Less06") {
+    val input = Expression.Binary(
       BinaryOperator.Less,
       Expression.Lit(Literal.Int(-3), Type.Int),
       Expression.Lit(Literal.Int(-3), Type.Int),
       Type.Bool
     )
-    val result06 = Interpreter.eval(exp06)
-    assertResult(Value.Bool(false))(result06)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
   }
 
-  test("binary less than or equal") {
-    val exp01 = Expression.Binary(
+  test("BinaryOperator.LessEqual01") {
+    val input = Expression.Binary(
       BinaryOperator.LessEqual,
       Expression.Lit(Literal.Int(12), Type.Int),
       Expression.Lit(Literal.Int(3), Type.Int),
       Type.Bool
     )
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Bool(false))(result01)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
+  }
 
-    val exp02 = Expression.Binary(
+  test("BinaryOperator.LessEqual02") {
+    val input = Expression.Binary(
       BinaryOperator.LessEqual,
       Expression.Lit(Literal.Int(3), Type.Int),
       Expression.Lit(Literal.Int(12), Type.Int),
       Type.Bool
     )
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Bool(true))(result02)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
 
-    val exp03 = Expression.Binary(
+  test("BinaryOperator.LessEqual03") {
+    val input = Expression.Binary(
       BinaryOperator.LessEqual,
       Expression.Lit(Literal.Int(3), Type.Int),
       Expression.Lit(Literal.Int(3), Type.Int),
       Type.Bool
     )
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Bool(true))(result03)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
 
-    val exp04 = Expression.Binary(
+  test("BinaryOperator.LessEqual04") {
+    val input = Expression.Binary(
       BinaryOperator.LessEqual,
       Expression.Lit(Literal.Int(-12), Type.Int),
       Expression.Lit(Literal.Int(-3), Type.Int),
       Type.Bool
     )
-    val result04 = Interpreter.eval(exp04)
-    assertResult(Value.Bool(true))(result04)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
 
-    val exp05 = Expression.Binary(
+  test("BinaryOperator.LessEqual05") {
+    val input = Expression.Binary(
       BinaryOperator.LessEqual,
       Expression.Lit(Literal.Int(-3), Type.Int),
       Expression.Lit(Literal.Int(-12), Type.Int),
       Type.Bool
     )
-    val result05 = Interpreter.eval(exp05)
-    assertResult(Value.Bool(false))(result05)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
+  }
 
-    val exp06 = Expression.Binary(
+  test("BinaryOperator.LessEqual06") {
+    val input = Expression.Binary(
       BinaryOperator.LessEqual,
       Expression.Lit(Literal.Int(-3), Type.Int),
       Expression.Lit(Literal.Int(-3), Type.Int),
       Type.Bool
     )
-    val result06 = Interpreter.eval(exp06)
-    assertResult(Value.Bool(true))(result06)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
   }
 
-  test("binary greater than") {
-    val exp01 = Expression.Binary(
+  test("BinaryOperator.Greater01") {
+    val input = Expression.Binary(
       BinaryOperator.Greater,
       Expression.Lit(Literal.Int(12), Type.Int),
       Expression.Lit(Literal.Int(3), Type.Int),
       Type.Bool
     )
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Bool(true))(result01)
-
-    val exp02 = Expression.Binary(
-      BinaryOperator.Greater,
-      Expression.Lit(Literal.Int(3), Type.Int),
-      Expression.Lit(Literal.Int(12), Type.Int),
-      Type.Bool
-    )
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Bool(false))(result02)
-
-    val exp03 = Expression.Binary(
-      BinaryOperator.Greater,
-      Expression.Lit(Literal.Int(3), Type.Int),
-      Expression.Lit(Literal.Int(3), Type.Int),
-      Type.Bool
-    )
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Bool(false))(result03)
-
-    val exp04 = Expression.Binary(
-      BinaryOperator.Greater,
-      Expression.Lit(Literal.Int(-12), Type.Int),
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Type.Bool
-    )
-    val result04 = Interpreter.eval(exp04)
-    assertResult(Value.Bool(false))(result04)
-
-    val exp05 = Expression.Binary(
-      BinaryOperator.Greater,
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Expression.Lit(Literal.Int(-12), Type.Int),
-      Type.Bool
-    )
-    val result05 = Interpreter.eval(exp05)
-    assertResult(Value.Bool(true))(result05)
-
-    val exp06 = Expression.Binary(
-      BinaryOperator.Greater,
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Type.Bool
-    )
-    val result06 = Interpreter.eval(exp06)
-    assertResult(Value.Bool(false))(result06)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
   }
 
-  test("binary greater than or equal") {
-    val exp01 = Expression.Binary(
-      BinaryOperator.GreaterEqual,
-      Expression.Lit(Literal.Int(12), Type.Int),
-      Expression.Lit(Literal.Int(3), Type.Int),
-      Type.Bool
-    )
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Bool(true))(result01)
-
-    val exp02 = Expression.Binary(
-      BinaryOperator.GreaterEqual,
+  test("BinaryOperator.Greater02") {
+    val input = Expression.Binary(
+      BinaryOperator.Greater,
       Expression.Lit(Literal.Int(3), Type.Int),
       Expression.Lit(Literal.Int(12), Type.Int),
       Type.Bool
     )
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Bool(false))(result02)
-
-    val exp03 = Expression.Binary(
-      BinaryOperator.GreaterEqual,
-      Expression.Lit(Literal.Int(3), Type.Int),
-      Expression.Lit(Literal.Int(3), Type.Int),
-      Type.Bool
-    )
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Bool(true))(result03)
-
-    val exp04 = Expression.Binary(
-      BinaryOperator.GreaterEqual,
-      Expression.Lit(Literal.Int(-12), Type.Int),
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Type.Bool
-    )
-    val result04 = Interpreter.eval(exp04)
-    assertResult(Value.Bool(false))(result04)
-
-    val exp05 = Expression.Binary(
-      BinaryOperator.GreaterEqual,
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Expression.Lit(Literal.Int(-12), Type.Int),
-      Type.Bool
-    )
-    val result05 = Interpreter.eval(exp05)
-    assertResult(Value.Bool(true))(result05)
-
-    val exp06 = Expression.Binary(
-      BinaryOperator.GreaterEqual,
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Type.Bool
-    )
-    val result06 = Interpreter.eval(exp06)
-    assertResult(Value.Bool(true))(result06)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
   }
 
-  test("binary equal") {
-    val exp01 = Expression.Binary(
-      BinaryOperator.Equal,
-      Expression.Lit(Literal.Int(12), Type.Int),
-      Expression.Lit(Literal.Int(3), Type.Int),
-      Type.Bool
-    )
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Bool(false))(result01)
-
-    val exp02 = Expression.Binary(
-      BinaryOperator.Equal,
-      Expression.Lit(Literal.Int(3), Type.Int),
-      Expression.Lit(Literal.Int(12), Type.Int),
-      Type.Bool
-    )
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Bool(false))(result02)
-
-    val exp03 = Expression.Binary(
-      BinaryOperator.Equal,
+  test("BinaryOperator.Greater03") {
+    val input = Expression.Binary(
+      BinaryOperator.Greater,
       Expression.Lit(Literal.Int(3), Type.Int),
       Expression.Lit(Literal.Int(3), Type.Int),
       Type.Bool
     )
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Bool(true))(result03)
-
-    val exp04 = Expression.Binary(
-      BinaryOperator.Equal,
-      Expression.Lit(Literal.Int(-12), Type.Int),
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Type.Bool
-    )
-    val result04 = Interpreter.eval(exp04)
-    assertResult(Value.Bool(false))(result04)
-
-    val exp05 = Expression.Binary(
-      BinaryOperator.Equal,
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Expression.Lit(Literal.Int(-12), Type.Int),
-      Type.Bool
-    )
-    val result05 = Interpreter.eval(exp05)
-    assertResult(Value.Bool(false))(result05)
-
-    val exp06 = Expression.Binary(
-      BinaryOperator.Equal,
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Type.Bool
-    )
-    val result06 = Interpreter.eval(exp06)
-    assertResult(Value.Bool(true))(result06)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
   }
 
-  test("binary not equal") {
-    val exp01 = Expression.Binary(
-      BinaryOperator.NotEqual,
-      Expression.Lit(Literal.Int(12), Type.Int),
-      Expression.Lit(Literal.Int(3), Type.Int),
-      Type.Bool
-    )
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Bool(true))(result01)
-
-    val exp02 = Expression.Binary(
-      BinaryOperator.NotEqual,
-      Expression.Lit(Literal.Int(3), Type.Int),
-      Expression.Lit(Literal.Int(12), Type.Int),
-      Type.Bool
-    )
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Bool(true))(result02)
-
-    val exp03 = Expression.Binary(
-      BinaryOperator.NotEqual,
-      Expression.Lit(Literal.Int(3), Type.Int),
-      Expression.Lit(Literal.Int(3), Type.Int),
-      Type.Bool
-    )
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Bool(false))(result03)
-
-    val exp04 = Expression.Binary(
-      BinaryOperator.NotEqual,
+  test("BinaryOperator.Greater04") {
+    val input = Expression.Binary(
+      BinaryOperator.Greater,
       Expression.Lit(Literal.Int(-12), Type.Int),
       Expression.Lit(Literal.Int(-3), Type.Int),
       Type.Bool
     )
-    val result04 = Interpreter.eval(exp04)
-    assertResult(Value.Bool(true))(result04)
-
-    val exp05 = Expression.Binary(
-      BinaryOperator.NotEqual,
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Expression.Lit(Literal.Int(-12), Type.Int),
-      Type.Bool
-    )
-    val result05 = Interpreter.eval(exp05)
-    assertResult(Value.Bool(true))(result05)
-
-    val exp06 = Expression.Binary(
-      BinaryOperator.NotEqual,
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Type.Bool
-    )
-    val result06 = Interpreter.eval(exp06)
-    assertResult(Value.Bool(false))(result06)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
   }
 
-  test("binary and") {
-    val exp01 = Expression.Binary(
+  test("BinaryOperator.Greater05") {
+    val input = Expression.Binary(
+      BinaryOperator.Greater,
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Expression.Lit(Literal.Int(-12), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
+
+  test("BinaryOperator.Greater06") {
+    val input = Expression.Binary(
+      BinaryOperator.Greater,
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
+  }
+
+  test("BinaryOperator.GreaterEqual01") {
+    val input = Expression.Binary(
+      BinaryOperator.GreaterEqual,
+      Expression.Lit(Literal.Int(12), Type.Int),
+      Expression.Lit(Literal.Int(3), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
+
+  test("BinaryOperator.GreaterEqual02") {
+    val input = Expression.Binary(
+      BinaryOperator.GreaterEqual,
+      Expression.Lit(Literal.Int(3), Type.Int),
+      Expression.Lit(Literal.Int(12), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
+  }
+
+  test("BinaryOperator.GreaterEqual03") {
+    val input = Expression.Binary(
+      BinaryOperator.GreaterEqual,
+      Expression.Lit(Literal.Int(3), Type.Int),
+      Expression.Lit(Literal.Int(3), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
+
+  test("BinaryOperator.GreaterEqual04") {
+    val input = Expression.Binary(
+      BinaryOperator.GreaterEqual,
+      Expression.Lit(Literal.Int(-12), Type.Int),
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
+  }
+
+  test("BinaryOperator.GreaterEqual05") {
+    val input = Expression.Binary(
+      BinaryOperator.GreaterEqual,
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Expression.Lit(Literal.Int(-12), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
+
+  test("BinaryOperator.GreaterEqual06") {
+    val input = Expression.Binary(
+      BinaryOperator.GreaterEqual,
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
+
+  test("BinaryOperator.Equal01") {
+    val input = Expression.Binary(
+      BinaryOperator.Equal,
+      Expression.Lit(Literal.Int(12), Type.Int),
+      Expression.Lit(Literal.Int(3), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
+  }
+
+  test("BinaryOperator.Equal02") {
+    val input = Expression.Binary(
+      BinaryOperator.Equal,
+      Expression.Lit(Literal.Int(3), Type.Int),
+      Expression.Lit(Literal.Int(12), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
+  }
+
+  test("BinaryOperator.Equal03") {
+    val input = Expression.Binary(
+      BinaryOperator.Equal,
+      Expression.Lit(Literal.Int(3), Type.Int),
+      Expression.Lit(Literal.Int(3), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
+
+  test("BinaryOperator.Equal04") {
+    val input = Expression.Binary(
+      BinaryOperator.Equal,
+      Expression.Lit(Literal.Int(-12), Type.Int),
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
+  }
+
+  test("BinaryOperator.Equal05") {
+    val input = Expression.Binary(
+      BinaryOperator.Equal,
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Expression.Lit(Literal.Int(-12), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
+  }
+
+  test("BinaryOperator.Equal06") {
+    val input = Expression.Binary(
+      BinaryOperator.Equal,
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
+
+  test("BinaryOperator.NotEqual01") {
+    val input = Expression.Binary(
+      BinaryOperator.NotEqual,
+      Expression.Lit(Literal.Int(12), Type.Int),
+      Expression.Lit(Literal.Int(3), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
+
+  test("BinaryOperator.NotEqual02") {
+    val input = Expression.Binary(
+      BinaryOperator.NotEqual,
+      Expression.Lit(Literal.Int(3), Type.Int),
+      Expression.Lit(Literal.Int(12), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
+
+  test("BinaryOperator.NotEqual03") {
+    val input = Expression.Binary(
+      BinaryOperator.NotEqual,
+      Expression.Lit(Literal.Int(3), Type.Int),
+      Expression.Lit(Literal.Int(3), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
+  }
+
+  test("BinaryOperator.NotEqual04") {
+    val input = Expression.Binary(
+      BinaryOperator.NotEqual,
+      Expression.Lit(Literal.Int(-12), Type.Int),
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
+
+  test("BinaryOperator.NotEqual05") {
+    val input = Expression.Binary(
+      BinaryOperator.NotEqual,
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Expression.Lit(Literal.Int(-12), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
+
+  test("BinaryOperator.NotEqual06") {
+    val input = Expression.Binary(
+      BinaryOperator.NotEqual,
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
+  }
+
+  test("BinaryOperator.And01") {
+    val input = Expression.Binary(
       BinaryOperator.And,
       Expression.Lit(Literal.Bool(true), Type.Bool),
       Expression.Lit(Literal.Bool(true), Type.Bool),
       Type.Bool
     )
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Bool(true))(result01)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
 
-    val exp02 = Expression.Binary(
+  test("BinaryOperator.And02") {
+    val input = Expression.Binary(
       BinaryOperator.And,
       Expression.Lit(Literal.Bool(true), Type.Bool),
       Expression.Lit(Literal.Bool(false), Type.Bool),
       Type.Bool
     )
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Bool(false))(result02)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
+  }
 
-    val exp03 = Expression.Binary(
+  test("BinaryOperator.And03") {
+    val input = Expression.Binary(
       BinaryOperator.And,
       Expression.Lit(Literal.Bool(false), Type.Bool),
       Expression.Lit(Literal.Bool(false), Type.Bool),
       Type.Bool
     )
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Bool(false))(result03)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
   }
 
-  test("binary or") {
-    val exp01 = Expression.Binary(
+  test("BinaryOperator.Or01") {
+    val input = Expression.Binary(
       BinaryOperator.Or,
       Expression.Lit(Literal.Bool(true), Type.Bool),
       Expression.Lit(Literal.Bool(true), Type.Bool),
       Type.Bool
     )
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Bool(true))(result01)
-
-    val exp02 = Expression.Binary(
-      BinaryOperator.Or,
-      Expression.Lit(Literal.Bool(true), Type.Bool),
-      Expression.Lit(Literal.Bool(false), Type.Bool),
-      Type.Bool
-    )
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Bool(true))(result02)
-
-    val exp03 = Expression.Binary(
-      BinaryOperator.Or,
-      Expression.Lit(Literal.Bool(false), Type.Bool),
-      Expression.Lit(Literal.Bool(false), Type.Bool),
-      Type.Bool
-    )
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Bool(false))(result03)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
   }
 
-  test("binary minimum") {
-    val exp01 = Expression.Binary(
+  test("BinaryOperator.Or02") {
+    val input = Expression.Binary(
+      BinaryOperator.Or,
+      Expression.Lit(Literal.Bool(true), Type.Bool),
+      Expression.Lit(Literal.Bool(false), Type.Bool),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(true))(result)
+  }
+
+  test("BinaryOperator.Or03") {
+    val input = Expression.Binary(
+      BinaryOperator.Or,
+      Expression.Lit(Literal.Bool(false), Type.Bool),
+      Expression.Lit(Literal.Bool(false), Type.Bool),
+      Type.Bool
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Bool(false))(result)
+  }
+
+  test("BinaryOperator.Minimum01") {
+    val input = Expression.Binary(
      BinaryOperator.Minimum,
       Expression.Lit(Literal.Int(12), Type.Int),
       Expression.Lit(Literal.Int(3), Type.Int),
       Type.Int
     )
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Int(3))(result01)
-
-    val exp02 = Expression.Binary(
-      BinaryOperator.Minimum,
-      Expression.Lit(Literal.Int(3), Type.Int),
-      Expression.Lit(Literal.Int(12), Type.Int),
-      Type.Int
-    )
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Int(3))(result02)
-
-    val exp03 = Expression.Binary(
-      BinaryOperator.Minimum,
-      Expression.Lit(Literal.Int(3), Type.Int),
-      Expression.Lit(Literal.Int(3), Type.Int),
-      Type.Int
-    )
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Int(3))(result03)
-
-    val exp04 = Expression.Binary(
-      BinaryOperator.Minimum,
-      Expression.Lit(Literal.Int(-12), Type.Int),
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Type.Int
-    )
-    val result04 = Interpreter.eval(exp04)
-    assertResult(Value.Int(-12))(result04)
-
-    val exp05 = Expression.Binary(
-      BinaryOperator.Minimum,
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Expression.Lit(Literal.Int(-12), Type.Int),
-      Type.Int
-    )
-    val result05 = Interpreter.eval(exp05)
-    assertResult(Value.Int(-12))(result05)
-
-    val exp06 = Expression.Binary(
-      BinaryOperator.Minimum,
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Expression.Lit(Literal.Int(-3), Type.Int),
-      Type.Int
-    )
-    val result06 = Interpreter.eval(exp06)
-    assertResult(Value.Int(-3))(result06)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(3))(result)
   }
 
-  test("binary maximum") {
-    val exp01 = Expression.Binary(
+  test("BinaryOperator.Minimum02") {
+    val input = Expression.Binary(
+      BinaryOperator.Minimum,
+      Expression.Lit(Literal.Int(3), Type.Int),
+      Expression.Lit(Literal.Int(12), Type.Int),
+      Type.Int
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(3))(result)
+  }
+
+  test("BinaryOperator.Minimum03") {
+    val input = Expression.Binary(
+      BinaryOperator.Minimum,
+      Expression.Lit(Literal.Int(3), Type.Int),
+      Expression.Lit(Literal.Int(3), Type.Int),
+      Type.Int
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(3))(result)
+  }
+
+  test("BinaryOperator.Minimum04") {
+    val input = Expression.Binary(
+      BinaryOperator.Minimum,
+      Expression.Lit(Literal.Int(-12), Type.Int),
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Type.Int
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-12))(result)
+  }
+
+  test("BinaryOperator.Minimum05") {
+    val input = Expression.Binary(
+      BinaryOperator.Minimum,
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Expression.Lit(Literal.Int(-12), Type.Int),
+      Type.Int
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-12))(result)
+  }
+
+  test("BinaryOperator.Minimum06") {
+    val input = Expression.Binary(
+      BinaryOperator.Minimum,
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Expression.Lit(Literal.Int(-3), Type.Int),
+      Type.Int
+    )
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-3))(result)
+  }
+
+  test("BinaryOperator.Maximum01") {
+    val input = Expression.Binary(
       BinaryOperator.Maximum,
       Expression.Lit(Literal.Int(12), Type.Int),
       Expression.Lit(Literal.Int(3), Type.Int),
       Type.Int
     )
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Int(12))(result01)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(12))(result)
+  }
 
-    val exp02 = Expression.Binary(
+  test("BinaryOperator.Maximum02") {
+    val input = Expression.Binary(
       BinaryOperator.Maximum,
       Expression.Lit(Literal.Int(3), Type.Int),
       Expression.Lit(Literal.Int(12), Type.Int),
       Type.Int
     )
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Int(12))(result02)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(12))(result)
+  }
 
-    val exp03 = Expression.Binary(
+  test("BinaryOperator.Maximum03") {
+    val input = Expression.Binary(
       BinaryOperator.Maximum,
       Expression.Lit(Literal.Int(3), Type.Int),
       Expression.Lit(Literal.Int(3), Type.Int),
       Type.Int
     )
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Int(3))(result03)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(3))(result)
+  }
 
-    val exp04 = Expression.Binary(
+  test("BinaryOperator.Maximum04") {
+    val input = Expression.Binary(
       BinaryOperator.Maximum,
       Expression.Lit(Literal.Int(-12), Type.Int),
       Expression.Lit(Literal.Int(-3), Type.Int),
       Type.Int
     )
-    val result04 = Interpreter.eval(exp04)
-    assertResult(Value.Int(-3))(result04)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-3))(result)
+  }
 
-    val exp05 = Expression.Binary(
+  test("BinaryOperator.Maximum05") {
+    val input = Expression.Binary(
       BinaryOperator.Maximum,
       Expression.Lit(Literal.Int(-3), Type.Int),
       Expression.Lit(Literal.Int(-12), Type.Int),
       Type.Int
     )
-    val result05 = Interpreter.eval(exp05)
-    assertResult(Value.Int(-3))(result05)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-3))(result)
+  }
 
-    val exp06 = Expression.Binary(
+  test("BinaryOperator.Maximum06") {
+    val input = Expression.Binary(
       BinaryOperator.Maximum,
       Expression.Lit(Literal.Int(-3), Type.Int),
       Expression.Lit(Literal.Int(-3), Type.Int),
       Type.Int
     )
-    val result06 = Interpreter.eval(exp06)
-    assertResult(Value.Int(-3))(result06)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Int(-3))(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Expressions - If Then Else                                              //
   /////////////////////////////////////////////////////////////////////////////
 
-  test("if then else") {
-    val exp01 = Expression.IfThenElse(
+  test("Expression.IfThenElse01") {
+    val input = Expression.IfThenElse(
       Expression.Lit(Literal.Bool(true), Type.Bool),
       Expression.Lit(Literal.Str("foo"), Type.Str),
       Expression.Lit(Literal.Str("bar"), Type.Str),
       Type.Str
     )
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Str("foo"))(result01)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Str("foo"))(result)
+  }
 
-    val exp02 = Expression.IfThenElse(
+  test("Expression.IfThenElse02") {
+    val input = Expression.IfThenElse(
       Expression.Lit(Literal.Bool(false), Type.Bool),
       Expression.Lit(Literal.Str("foo"), Type.Str),
       Expression.Lit(Literal.Str("bar"), Type.Str),
       Type.Str
     )
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Str("bar"))(result02)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Str("bar"))(result)
+  }
 
+  test("Expression.IfThenElse03") {
     // if (20 % 7 >= 3 || 25 - 5 == 4) "foo" else "bar"
-    val exp03 = Expression.IfThenElse(
+    val input = Expression.IfThenElse(
       Expression.Binary(
         BinaryOperator.Or,
         Expression.Binary(
@@ -991,33 +1164,36 @@ class TestInterpreter extends FunSuite {
       Expression.Lit(Literal.Str("bar"), Type.Str),
       Type.Str
     )
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Str("foo"))(result03)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Str("foo"))(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Expressions - Tuples and Tags                                           //
-  // These are tuple and tag expressions that aren't literals.               //
   /////////////////////////////////////////////////////////////////////////////
 
-  test("Tuple expression") {
-    val exp01 = Expression.Tuple(List(
+  test("Expression.Tuple01") {
+    val input = Expression.Tuple(List(
       Expression.Lit(Literal.Int(42), Type.Int),
       Expression.Lit(Literal.Bool(false), Type.Bool),
       Expression.Lit(Literal.Str("hi"), Type.Str)),
       Type.Tuple(List(Type.Int, Type.Bool, Type.Str)))
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Tuple(List(Value.Int(42), Value.Bool(false), Value.Str("hi"))))(result01)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Tuple(List(Value.Int(42), Value.Bool(false), Value.Str("hi"))))(result)
+  }
 
-    val exp02 = Expression.Tuple(List(
+  test("Expression.Tuple02") {
+    val input = Expression.Tuple(List(
       Expression.Lit(Literal.Int(4), Type.Int),
       Expression.Tuple(List(Expression.Lit(Literal.Int(12), Type.Int), Expression.Lit(Literal.Int(8), Type.Int)),
         Type.Tuple(List(Type.Int, Type.Int)))),
       Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int)))))
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Tuple(List(Value.Int(4), Value.Tuple(List(Value.Int(12), Value.Int(8))))))(result02)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Tuple(List(Value.Int(4), Value.Tuple(List(Value.Int(12), Value.Int(8))))))(result)
+  }
 
-    val exp03 = Expression.Tuple(List(
+  test("Expression.Tuple03") {
+    val input = Expression.Tuple(List(
       // 40 + 2
       Expression.Binary(
         BinaryOperator.Plus,
@@ -1040,16 +1216,16 @@ class TestInterpreter extends FunSuite {
         Expression.Lit(Literal.Str("hello"), Type.Str),
         Type.Str)),
       Type.Tuple(List(Type.Int, Type.Bool, Type.Str)))
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Tuple(List(Value.Int(42), Value.Bool(false), Value.Str("hi"))))(result03)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Tuple(List(Value.Int(42), Value.Bool(false), Value.Str("hi"))))(result)
   }
 
-  test("Tag expression (simple)") {
+  test("Expression.Tag01") {
     val name = Name.Resolved(List("foo", "bar"))
     val ident = ParsedAst.Ident("baz", SourceLocation(None, 0, 0))
     val tagTpe = Type.Tag(name, ident, Type.Str)
     val enumTpe = Type.Enum(Map("foo.bar.baz" -> tagTpe))
-    val exp = Expression.Tag(name, ident,
+    val input = Expression.Tag(name, ident,
       // if (!(4 != 4)) "hello world" else "asdfasdf"
       Expression.IfThenElse(
         Expression.Unary(
@@ -1064,16 +1240,16 @@ class TestInterpreter extends FunSuite {
         Expression.Lit(Literal.Str("asdfasdf"), Type.Str),
         Type.Str),
       enumTpe)
-    val result = Interpreter.eval(exp)
+    val result = Interpreter.eval(input)
     assertResult(Value.Tag(name, "baz", Value.Str("hello world")))(result)
   }
 
-  test("Tag (tuple)") {
+  test("Expression.Tag02") {
     val name = Name.Resolved(List("Family"))
     val ident = ParsedAst.Ident("NameAndAge", SourceLocation(None, 0, 0))
     val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int)))
     val enumTpe = Type.Enum(Map("Family.NameAndAge" -> tagTpe))
-    val exp = Expression.Tag(name, ident, Expression.Tuple(List(
+    val input = Expression.Tag(name, ident, Expression.Tuple(List(
       Expression.Lit(Literal.Str("James"), Type.Str),
       // 20 + 22
       Expression.Binary(
@@ -1082,30 +1258,27 @@ class TestInterpreter extends FunSuite {
         Expression.Lit(Literal.Int(22), Type.Int),
         Type.Int)),
       Type.Tuple(List(Type.Str, Type.Int))), enumTpe)
-    val result = Interpreter.eval(exp)
+    val result = Interpreter.eval(input)
     assertResult(Value.Tag(name, "NameAndAge", Value.Tuple(List(Value.Str("James"), Value.Int(42)))))(result)
   }
 
-  test("Tag (constant propagation)") {
-    val name = Name.Resolved(List("ConstProp"))
-    val identB = ParsedAst.Ident("Bot", SourceLocation(None, 0, 0))
-    val identV = ParsedAst.Ident("Val", SourceLocation(None, 0, 0))
-    val identT = ParsedAst.Ident("Top", SourceLocation(None, 0, 0))
+  test("Expression.Tag03a") {
+    import ConstantPropTagDefs._
+    val input = Expression.Tag(name, identB, Expression.Lit(Literal.Unit, Type.Unit), enumTpe)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Tag(name, "Bot", Value.Unit))(result)
+  }
 
-    val tagTpeB = Type.Tag(name, identB, Type.Unit)
-    val tagTpeV = Type.Tag(name, identV, Type.Int)
-    val tagTpeT = Type.Tag(name, identT, Type.Unit)
-    val enumTpe = Type.Enum(Map("ConstProp.Bot" -> tagTpeB, "ConstProp.Val" -> tagTpeV, "ConstProp.Top" -> tagTpeT))
+  test("Expression.Tag03b") {
+    import ConstantPropTagDefs._
+    val input = Expression.Tag(name, identT, Expression.Lit(Literal.Unit, Type.Unit), enumTpe)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Tag(name, "Top", Value.Unit))(result)
+  }
 
-    val exp01 = Expression.Tag(name, identB, Expression.Lit(Literal.Unit, Type.Unit), enumTpe)
-    val result01 = Interpreter.eval(exp01)
-    assertResult(Value.Tag(name, "Bot", Value.Unit))(result01)
-
-    val exp02 = Expression.Tag(name, identT, Expression.Lit(Literal.Unit, Type.Unit), enumTpe)
-    val result02 = Interpreter.eval(exp02)
-    assertResult(Value.Tag(name, "Top", Value.Unit))(result02)
-
-    val exp03 = Expression.Tag(name, identV,
+  test("Expression.Tag03c") {
+    import ConstantPropTagDefs._
+    val input = Expression.Tag(name, identV,
       // 123 - 123
       Expression.Binary(
         BinaryOperator.Minus,
@@ -1113,21 +1286,27 @@ class TestInterpreter extends FunSuite {
         Expression.Lit(Literal.Int(123), Type.Int),
         Type.Int),
       enumTpe)
-    val result03 = Interpreter.eval(exp03)
-    assertResult(Value.Tag(name, "Val", Value.Int(0)))(result03)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Tag(name, "Val", Value.Int(0)))(result)
+  }
 
-    val exp04 = Expression.Tag(name, identV,
+  test("Expression.Tag03d") {
+    import ConstantPropTagDefs._
+    val input = Expression.Tag(name, identV,
       // -240
       Expression.Unary(
         UnaryOperator.UnaryMinus,
         Expression.Lit(Literal.Int(240), Type.Int),
         Type.Int),
       enumTpe)
-    val result04 = Interpreter.eval(exp04)
-    assertResult(Value.Tag(name, "Val", Value.Int(-240)))(result04)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Tag(name, "Val", Value.Int(-240)))(result)
+  }
 
-    val exp05 = Expression.Tag(name, identV, Expression.Lit(Literal.Int(1241), Type.Int), enumTpe)
-    val result05 = Interpreter.eval(exp05)
-    assertResult(Value.Tag(name, "Val", Value.Int(1241)))(result05)
+  test("Expression.Tag03e") {
+    import ConstantPropTagDefs._
+    val input = Expression.Tag(name, identV, Expression.Lit(Literal.Int(1241), Type.Int), enumTpe)
+    val result = Interpreter.eval(input)
+    assertResult(Value.Tag(name, "Val", Value.Int(1241)))(result)
   }
 }
