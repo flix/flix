@@ -1634,4 +1634,16 @@ class TestInterpreter extends FunSuite {
     val result = Interpreter.eval(input)
     assertResult(Value.Tag(name, "Val", Value.Int(1241)))(result)
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expressions - Error                                                     //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Error01") {
+    val input = Expression.Error(SourceLocation(None, 0, 0), Type.Unit)
+    intercept[RuntimeException] {
+      Interpreter.eval(input)
+    }
+  }
+
 }

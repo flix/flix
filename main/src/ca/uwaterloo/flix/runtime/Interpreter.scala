@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.lang.ast.TypedAst.{Expression, Literal, Type, FormalArg}
-import ca.uwaterloo.flix.lang.ast.{ParsedAst, TypedAst, BinaryOperator, UnaryOperator}
+import ca.uwaterloo.flix.lang.ast.{ParsedAst, BinaryOperator, UnaryOperator}
 
 object Interpreter {
   type Env = Map[ParsedAst.Ident, Value]
@@ -37,9 +37,10 @@ object Interpreter {
       case Expression.Match(exp, rules, _) => ??? // TODO(mhyee): Implement this. Need to write a Unify function
       case Expression.Tag(name, ident, exp, _) => Value.Tag(name, ident.name, eval(exp, env))
       case Expression.Tuple(elms, _) => Value.Tuple(elms.map(e => eval(e, env)))
-      case Expression.Error(location, tpe) =>
-        // TODO(mhyee): This should signal an error, e.g. throw an exception or gracefully exit with message (location)
-        ???
+      case Expression.Error(location, tpe) => location.path match {
+        case Some(path) => throw new RuntimeException(s"Error at $path:${location.line}:${location.column}")
+        case None => throw new RuntimeException("Error at unknown location")
+      }
     }
   }
 
