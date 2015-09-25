@@ -1,22 +1,26 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.lang.ast.TypedAst.{Expression, Literal, Type}
+import ca.uwaterloo.flix.lang.ast.TypedAst.{Expression, Literal, Type, FormalArg}
 import ca.uwaterloo.flix.lang.ast.{BinaryOperator, UnaryOperator, ParsedAst, Name, SourceLocation}
 import org.scalatest.FunSuite
 
-private object ConstantPropTagDefs {
-  val name = Name.Resolved(List("ConstProp"))
-  val identB = ParsedAst.Ident("Bot", SourceLocation(None, 0, 0))
-  val identV = ParsedAst.Ident("Val", SourceLocation(None, 0, 0))
-  val identT = ParsedAst.Ident("Top", SourceLocation(None, 0, 0))
-
-  val tagTpeB = Type.Tag(name, identB, Type.Unit)
-  val tagTpeV = Type.Tag(name, identV, Type.Int)
-  val tagTpeT = Type.Tag(name, identT, Type.Unit)
-  val enumTpe = Type.Enum(Map("ConstProp.Bot" -> tagTpeB, "ConstProp.Val" -> tagTpeV, "ConstProp.Top" -> tagTpeT))
-}
-
 class TestInterpreter extends FunSuite {
+  object ConstantPropTagDefs {
+    val name = Name.Resolved(List("ConstProp"))
+    val identB = ParsedAst.Ident("Bot", SourceLocation(None, 0, 0))
+    val identV = ParsedAst.Ident("Val", SourceLocation(None, 0, 0))
+    val identT = ParsedAst.Ident("Top", SourceLocation(None, 0, 0))
+
+    val tagTpeB = Type.Tag(name, identB, Type.Unit)
+    val tagTpeV = Type.Tag(name, identV, Type.Int)
+    val tagTpeT = Type.Tag(name, identT, Type.Unit)
+    val enumTpe = Type.Enum(Map("ConstProp.Bot" -> tagTpeB, "ConstProp.Val" -> tagTpeV, "ConstProp.Top" -> tagTpeT))
+  }
+
+  val ident01 = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
+  val ident02 = ParsedAst.Ident("y", SourceLocation(None, 0, 0))
+  val ident03 = ParsedAst.Ident("z", SourceLocation(None, 0, 0))
+
   /////////////////////////////////////////////////////////////////////////////
   // Expressions - Literals                                                  //
   /////////////////////////////////////////////////////////////////////////////
@@ -182,37 +186,208 @@ class TestInterpreter extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   test("Expression.Var01") {
-    val ident = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
     val input = Expression.Lit(Literal.Str("hello"), Type.Str)
-    val env = Map(ident -> Value.Bool(false))
+    val env = Map(ident01 -> Value.Bool(false))
     val result = Interpreter.eval(input, env)
     assertResult(Value.Str("hello"))(result)
   }
 
   test("Expression.Var02") {
-    val ident = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
-    val input = Expression.Var(ident, Type.Int)
-    val env = Map(ident -> Value.Int(5))
+    val input = Expression.Var(ident01, Type.Int)
+    val env = Map(ident01 -> Value.Int(5))
     val result = Interpreter.eval(input, env)
     assertResult(Value.Int(5))(result)
   }
 
   test("Expression.Var03") {
-    val ident = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
-    val input = Expression.Var(ident, Type.Bool)
-    val env = Map(ident -> Value.Bool(false))
+    val input = Expression.Var(ident01, Type.Bool)
+    val env = Map(ident01 -> Value.Bool(false))
     val result = Interpreter.eval(input, env)
     assertResult(Value.Bool(false))(result)
   }
 
   test("Expression.Var04") {
-    val ident01 = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
-    val ident02 = ParsedAst.Ident("y", SourceLocation(None, 0, 0))
     val input = Expression.Var(ident02, Type.Str)
     val env = Map(ident01 -> Value.Str("foo"), ident02 -> Value.Str("bar"))
     val result = Interpreter.eval(input, env)
     assertResult(Value.Str("bar"))(result)
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expressions - Lambda and Apply                                          //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Lambda01") {
+    // () => false
+    val lambda = Expression.Lambda(
+      List(),
+      Type.Bool,
+      Expression.Lit(Literal.Bool(false), Type.Bool),
+      Type.Function(List(), Type.Bool))
+    val expected = Value.Closure(lambda.formals, lambda.body, Map())
+    val closure = Interpreter.eval(lambda)
+    assertResult(expected)(closure)
+
+    // (() => false)()
+    val apply = Expression.Apply(lambda, List(), Type.Bool)
+    val value = Interpreter.eval(apply)
+    assertResult(Value.Bool(false))(value)
+  }
+
+  test("Expression.Lambda02") {
+    // x => 3
+    val lambda = Expression.Lambda(
+      List(FormalArg(ident01, Type.Int)),
+      Type.Int,
+      Expression.Lit(Literal.Int(3), Type.Int),
+      Type.Function(List(Type.Int), Type.Int))
+    val expected = Value.Closure(lambda.formals, lambda.body, Map())
+    val closure = Interpreter.eval(lambda)
+    assertResult(expected)(closure)
+
+    // (x => 3)(4)
+    val apply = Expression.Apply(lambda, List(Expression.Lit(Literal.Int(4), Type.Int)), Type.Int)
+    val value = Interpreter.eval(apply)
+    assertResult(Value.Int(3))(value)
+  }
+
+  test("Expression.Lambda03") {
+    // x => x
+    val lambda = Expression.Lambda(
+      List(FormalArg(ident01, Type.Int)),
+      Type.Int,
+      Expression.Var(ident01, Type.Int),
+      Type.Function(List(Type.Int), Type.Int))
+    val expected = Value.Closure(lambda.formals, lambda.body, Map())
+    val closure = Interpreter.eval(lambda)
+    assertResult(expected)(closure)
+
+    // (x => x)(5)
+    val apply = Expression.Apply(lambda, List(Expression.Lit(Literal.Int(5), Type.Int)), Type.Int)
+    val value = Interpreter.eval(apply)
+    assertResult(Value.Int(5))(value)
+  }
+
+  test("Expression.Lambda04") {
+    // x => 1 + 2
+    val lambda = Expression.Lambda(
+      List(FormalArg(ident01, Type.Int)),
+      Type.Int,
+      Expression.Binary(
+        BinaryOperator.Plus,
+        Expression.Lit(Literal.Int(1), Type.Int),
+        Expression.Lit(Literal.Int(2), Type.Int),
+        Type.Int),
+      Type.Function(List(Type.Int), Type.Int))
+    val expected = Value.Closure(lambda.formals, lambda.body, Map())
+    val closure = Interpreter.eval(lambda)
+    assertResult(expected)(closure)
+
+    // (x => 1 + 2)(42)
+    val apply = Expression.Apply(lambda, List(Expression.Lit(Literal.Int(42), Type.Int)), Type.Int)
+    val value = Interpreter.eval(apply)
+    assertResult(Value.Int(3))(value)
+  }
+
+  test("Expression.Lambda05") {
+    // x => x + 2
+    val lambda = Expression.Lambda(
+      List(FormalArg(ident01, Type.Int)),
+      Type.Int,
+      Expression.Binary(
+        BinaryOperator.Plus,
+        Expression.Var(ident01, Type.Int),
+        Expression.Lit(Literal.Int(2), Type.Int),
+        Type.Int),
+      Type.Function(List(Type.Int), Type.Int))
+    val expected = Value.Closure(lambda.formals, lambda.body, Map())
+    val closure = Interpreter.eval(lambda)
+    assertResult(expected)(closure)
+
+    // (x => x + 2)(100)
+    val apply = Expression.Apply(lambda, List(Expression.Lit(Literal.Int(100), Type.Int)), Type.Int)
+    val value = Interpreter.eval(apply)
+    assertResult(Value.Int(102))(value)
+  }
+
+  test("Expression.Lambda06") {
+    // (x, y) => x + y
+    val lambda = Expression.Lambda(
+      List(FormalArg(ident01, Type.Int), FormalArg(ident02, Type.Int)),
+      Type.Int,
+      Expression.Binary(
+        BinaryOperator.Plus,
+        Expression.Var(ident01, Type.Int),
+        Expression.Var(ident02, Type.Int),
+        Type.Int),
+      Type.Function(List(Type.Int, Type.Int), Type.Int))
+    val expected = Value.Closure(lambda.formals, lambda.body, Map())
+    val closure = Interpreter.eval(lambda)
+    assertResult(expected)(closure)
+
+    // (x, y => x + y)(3, 4)
+    val apply = Expression.Apply(lambda, List(
+      Expression.Lit(Literal.Int(3), Type.Int),
+      Expression.Lit(Literal.Int(4), Type.Int)),
+      Type.Int)
+    val value = Interpreter.eval(apply)
+    assertResult(Value.Int(7))(value)
+  }
+
+  test("Expression.Lambda07") {
+    // (x, y) => if (x) then true else y
+    val lambda = Expression.Lambda(
+      List(FormalArg(ident01, Type.Bool), FormalArg(ident02, Type.Bool)),
+      Type.Int,
+      Expression.IfThenElse(
+        Expression.Var(ident01, Type.Bool),
+        Expression.Lit(Literal.Bool(true), Type.Bool),
+        Expression.Var(ident02, Type.Bool),
+        Type.Bool),
+      Type.Function(List(Type.Bool, Type.Bool), Type.Bool))
+    val expected = Value.Closure(lambda.formals, lambda.body, Map())
+    val closure = Interpreter.eval(lambda)
+    assertResult(expected)(closure)
+
+    // ((x, y) => if (x) then true else y)(false, true)
+    val apply = Expression.Apply(lambda, List(
+      Expression.Lit(Literal.Bool(false), Type.Bool),
+      Expression.Lit(Literal.Bool(true), Type.Bool)),
+      Type.Bool)
+    val value = Interpreter.eval(apply)
+    assertResult(Value.Bool(true))(value)
+  }
+
+  test("Expression.Lambda08") {
+    // (x, y, z) => x + (y + z)
+    val lambda = Expression.Lambda(
+      List(FormalArg(ident01, Type.Int), FormalArg(ident02, Type.Int), FormalArg(ident03, Type.Int)),
+      Type.Int,
+      Expression.Binary(
+        BinaryOperator.Plus,
+        Expression.Var(ident01, Type.Int),
+        Expression.Binary(
+          BinaryOperator.Plus,
+          Expression.Var(ident02, Type.Int),
+          Expression.Var(ident03, Type.Int),
+          Type.Int),
+        Type.Int),
+      Type.Function(List(Type.Int, Type.Int, Type.Int), Type.Int))
+    val expected = Value.Closure(lambda.formals, lambda.body, Map())
+    val closure = Interpreter.eval(lambda)
+    assertResult(expected)(closure)
+
+    // (x, y, z => x + (y + z))(2, 42, 5)
+    val apply = Expression.Apply(lambda, List(
+      Expression.Lit(Literal.Int(2), Type.Int),
+      Expression.Lit(Literal.Int(42), Type.Int),
+      Expression.Lit(Literal.Int(5), Type.Int)),
+      Type.Int)
+    val value = Interpreter.eval(apply)
+    assertResult(Value.Int(49))(value)
+  }
+
+  // TODO(mhyee): Tests for Lambda and Apply. Nested functions? Higher-order functions?
 
   /////////////////////////////////////////////////////////////////////////////
   // Expressions - Unary and Binary                                          //
@@ -1211,8 +1386,7 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Let01") {
     // let x = true in 42
-    val ident = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
-    val input = Expression.Let(ident, Expression.Lit(Literal.Bool(true), Type.Bool),
+    val input = Expression.Let(ident01, Expression.Lit(Literal.Bool(true), Type.Bool),
       Expression.Lit(Literal.Int(42), Type.Int), Type.Int)
     val result = Interpreter.eval(input)
     assertResult(Value.Int(42))(result)
@@ -1220,20 +1394,18 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Let02") {
     // let x = 24 in x
-    val ident = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
-    val input = Expression.Let(ident, Expression.Lit(Literal.Int(24), Type.Int),
-      Expression.Var(ident, Type.Int), Type.Int)
+    val input = Expression.Let(ident01, Expression.Lit(Literal.Int(24), Type.Int),
+      Expression.Var(ident01, Type.Int), Type.Int)
     val result = Interpreter.eval(input)
     assertResult(Value.Int(24))(result)
   }
 
   test("Expression.Let03") {
     // let x = 1 in x + 2
-    val ident = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
-    val input = Expression.Let(ident, Expression.Lit(Literal.Int(1), Type.Int),
+    val input = Expression.Let(ident01, Expression.Lit(Literal.Int(1), Type.Int),
       Expression.Binary(
         BinaryOperator.Plus,
-        Expression.Var(ident, Type.Int),
+        Expression.Var(ident01, Type.Int),
         Expression.Lit(Literal.Int(2), Type.Int),
         Type.Int),
       Type.Int)
@@ -1243,10 +1415,9 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Let04") {
     // let x = false in if x then "abc" else "xyz"
-    val ident = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
-    val input = Expression.Let(ident, Expression.Lit(Literal.Bool(false), Type.Bool),
+    val input = Expression.Let(ident01, Expression.Lit(Literal.Bool(false), Type.Bool),
       Expression.IfThenElse(
-        Expression.Var(ident, Type.Bool),
+        Expression.Var(ident01, Type.Bool),
         Expression.Lit(Literal.Str("abc"), Type.Str),
         Expression.Lit(Literal.Str("xyz"), Type.Str),
         Type.Str),
@@ -1257,8 +1428,7 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Let05") {
     // let x = 14 - 3 in x + 2
-    val ident = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
-    val input = Expression.Let(ident,
+    val input = Expression.Let(ident01,
       Expression.Binary(
         BinaryOperator.Minus,
         Expression.Lit(Literal.Int(14), Type.Int),
@@ -1266,7 +1436,7 @@ class TestInterpreter extends FunSuite {
         Type.Int),
       Expression.Binary(
         BinaryOperator.Plus,
-        Expression.Var(ident, Type.Int),
+        Expression.Var(ident01, Type.Int),
         Expression.Lit(Literal.Int(2), Type.Int),
         Type.Int),
       Type.Int)
@@ -1276,8 +1446,6 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Let06") {
     // let x = 14 - 3 in let y = 2 * 4 in x + y
-    val ident01 = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
-    val ident02 = ParsedAst.Ident("y", SourceLocation(None, 0, 0))
     val input = Expression.Let(ident01,
       Expression.Binary(
         BinaryOperator.Minus,
@@ -1303,9 +1471,6 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Let07") {
     // let x = 1 in let y = x + 2 in let z = y + 3 in z
-    val ident01 = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
-    val ident02 = ParsedAst.Ident("y", SourceLocation(None, 0, 0))
-    val ident03 = ParsedAst.Ident("z", SourceLocation(None, 0, 0))
     val input = Expression.Let(ident01,
       Expression.Lit(Literal.Int(1), Type.Int),
       Expression.Let(ident02,
