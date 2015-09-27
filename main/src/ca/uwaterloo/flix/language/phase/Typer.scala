@@ -125,12 +125,24 @@ object Typer {
 
   object Constraint {
 
+    /**
+     * Types the given fact `rast` under the given AST `root`.
+     */
     def typer(rast: ResolvedAst.Constraint.Fact, root: ResolvedAst.Root): Validation[TypedAst.Constraint.Fact, TypeError] = {
-      ???
+      Predicate.typer(rast.head, root) map TypedAst.Constraint.Fact
     }
 
+    /**
+     * Types the given rule `rast` under the given AST `root`.
+     */
     def typer(rast: ResolvedAst.Constraint.Rule, root: ResolvedAst.Root): Validation[TypedAst.Constraint.Rule, TypeError] = {
-      ???
+      val headVal = Predicate.typer(rast.head, root)
+      // TODO: Should check that variables have consistent types?
+      val bodyVal = @@(rast.body map (p => Predicate.typer(p, root)))
+
+      @@(headVal, bodyVal) map {
+        case (head, body) => TypedAst.Constraint.Rule(head, body)
+      }
     }
   }
 
@@ -354,12 +366,37 @@ object Typer {
 
   object Predicate {
 
-    def typer(rast: ResolvedAst.Predicate.Head, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Head, TypeError] =
+    def typer(rast: ResolvedAst.Predicate.Head, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Head, TypeError] = {
+      val relation = root.relations(rast.name)
+      val termsVal = (rast.terms zip relation.attributes) map {
+        case (term, ResolvedAst.Attribute(_, tpe)) => Term.typer(term, Type.typer(tpe), root)
+      }
+
       ???
+    }
+
 
     def typer(rast: ResolvedAst.Predicate.Body, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Body, TypeError] =
       ???
 
+
+  }
+
+  object Term {
+    /**
+     * Types the given head term `rast` according to the (declared) type `tpe` under the given AST `root`.
+     */
+    def typer(rast: ResolvedAst.Term.Head, tpe: TypedAst.Type, root: ResolvedAst.Root): Validation[TypedAst.Term.Head, TypeError] = rast match {
+      case ResolvedAst.Term.Head.Var(ident) => TypedAst.Term.Head.Var(ident, tpe).toSuccess
+      case ResolvedAst.Term.Head.Lit(rlit) => ??? // Literal.typer(rlit, root)
+
+      // TODO
+    }
+
+    /**
+     * Types the given body term `rast` according to the given type `tpe`.
+     */
+    def typer(rast: ResolvedAst.Term.Body, tpe: TypedAst.Type): Validation[TypedAst.Term.Head, TypeError] = ???
 
   }
 

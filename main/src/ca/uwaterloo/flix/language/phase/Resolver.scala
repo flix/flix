@@ -39,6 +39,8 @@ object Resolver {
       val format: String = s"Error: Unresolved reference to '${name.format}' in namespace '${namespace.mkString("::")}' at: ${name.location.format}\n"
     }
 
+    // TODO: All kinds of arity errors....
+
   }
 
   object SymbolTable {

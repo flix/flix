@@ -9,18 +9,21 @@ import org.parboiled2.{ErrorFormatter, ParseError}
 import scala.io.Source
 import scala.util.{Failure, Success}
 
-// TODO: http://elm-lang.org/blog/compiler-errors-for-humans
+/**
+ * A compiler's primary function is to compile, organize the compilation, and go right back to compiling.
+ * It compiles basically only those things that require to be compiled, ignoring things that should not be compiled.
+ * The main way a compiler compiles, is to compile the things to be compiled until the compilation is complete.
+ *
+ * via Olivier Danvy.
+ */
 
+// TODO: http://elm-lang.org/blog/compiler-errors-for-humans
 
 object Compiler {
 
+  // TODO: DOC
   case class InternalCompilerError(message: String) extends RuntimeException(message)
 
-  // TODO: Add a high level every Ast node should implement SmartHash... (i.e. hash and eq)
-
-
-  // TODO: Here all the phases will be applied one-by-one.
-  // TODO: Rename package to lang=>language
   /**
    * Returns the abstract syntax tree of the given `paths`.
    */
@@ -42,19 +45,13 @@ object Compiler {
     else if (!Files.isRegularFile(path))
       throw new RuntimeException(s"Path '$path' is not a regular file.")
     else
-      parse(Source.fromFile(path.toFile).getLines().mkString("\n"))
+      parse(Source.fromFile(path.toFile).getLines().mkString("\n"), Some(path))
 
   /**
    * Returns the abstract syntax tree of the given string `input`.
    */
-  def parse(input: String): ParsedAst.Root = {
-    val parser = new Parser(None, input)
-    //    val formatter = new ErrorFormatter(
-    //      showExpected = true,
-    //      showPosition = true,
-    //      showLine = true,
-    //      showTraces = true
-    //    )
+  def parse(input: String, path: Option[Path]): ParsedAst.Root = {
+    val parser = new Parser(path, input)
     parser.Root.run() match {
       case Success(ast) => ast
       case Failure(e: ParseError) => throw new RuntimeException(parser.formatError(e))
