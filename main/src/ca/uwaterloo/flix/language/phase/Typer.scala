@@ -395,7 +395,13 @@ object Typer {
       }
 
       @@(termsVal) map {
-        case terms => TypedAst.Predicate.Head(rast.name, terms, TypedAst.Type.Predicate(terms map (_.tpe)))
+        case terms =>
+          // TODO
+//          val vars = Validation.fold(terms, Map.empty[String, TypedAst.Type]) {
+//            case (macc, term) => ???
+//          }
+
+          TypedAst.Predicate.Head(rast.name, terms, TypedAst.Type.Predicate(terms map (_.tpe)))
       }
     }
 

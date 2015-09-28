@@ -365,6 +365,8 @@ object TypedAst {
 
   object Predicate {
 
+    // TODO Add maps from String to Type for vars?
+
     /**
      * A typed predicate that is allowed to occur in the head of a rule.
      *
@@ -372,11 +374,7 @@ object TypedAst {
      * @param terms the terms of the predicate.
      * @param tpe the type of the predicate.
      */
-    case class Head(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: TypedAst.Type.Predicate) extends TypedAst.Predicate {
-
-     // def variables: Map[String, TypedAst.Type] = ??? // TODO
-
-    }
+    case class Head(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: TypedAst.Type.Predicate) extends TypedAst.Predicate
 
     /**
      * A typed predicate that is allowed to occur in the body of a rule.
@@ -385,12 +383,7 @@ object TypedAst {
      * @param terms the terms of the predicate.
      * @param tpe the type of the predicate.
      */
-    case class Body(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Predicate) extends TypedAst.Predicate {
-
-     // def variables: Map[String, TypedAst.Type] = ??? // TODO
-
-    }
-
+    case class Body(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Predicate) extends TypedAst.Predicate
 
   }
 
