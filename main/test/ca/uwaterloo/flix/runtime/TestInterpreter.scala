@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.lang.ast.TypedAst.{Definition, Expression, Literal, Type, FormalArg, Root}
+import ca.uwaterloo.flix.lang.ast.TypedAst.{Definition, Expression, Literal, Pattern, Type, FormalArg, Root}
 import ca.uwaterloo.flix.lang.ast.{BinaryOperator, UnaryOperator, ParsedAst, Name, SourceLocation}
 import org.scalatest.FunSuite
 
@@ -1597,7 +1597,201 @@ class TestInterpreter extends FunSuite {
   // Expressions - Match                                                     //
   /////////////////////////////////////////////////////////////////////////////
 
+  test("Pattern.Wildcard01") {
+    // Unit match { case _ => 11 }
+    val rules = List((Pattern.Wildcard(Type.Int), Expression.Lit(Literal.Int(11), Type.Int)))
+    val input = Expression.Match(Expression.Lit(Literal.Unit, Type.Unit), rules, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(11))(result)
+  }
+
+  test("Pattern.Var01") {
+    // 3 match { case x => x }
+    val rules = List((Pattern.Var(ident01, Type.Int), Expression.Var(ident01, Type.Int)))
+    val input = Expression.Match(Expression.Lit(Literal.Int(3), Type.Int), rules, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(3))(result)
+  }
+
+  test("Pattern.Var02") {
+    // 3 match { case x => x + 11 }
+    val rules = List((Pattern.Var(ident01, Type.Int), Expression.Binary(
+      BinaryOperator.Plus,
+      Expression.Var(ident01, Type.Int),
+      Expression.Lit(Literal.Int(11), Type.Int),
+      Type.Int)))
+    val input = Expression.Match(Expression.Lit(Literal.Int(3), Type.Int), rules, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(14))(result)
+  }
+
+  test("Pattern.Literal.Unit01") {
+    // Unit match { case Unit => true }
+    val rules = List((Pattern.Lit(Literal.Unit, Type.Unit), Expression.Lit(Literal.Bool(true), Type.Bool)))
+    val input = Expression.Match(Expression.Lit(Literal.Unit, Type.Unit), rules, Type.Bool)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Bool(true))(result)
+  }
+
+  test("Pattern.Literal.Bool01") {
+    // true match { case true => 30 }
+    val rules = List((Pattern.Lit(Literal.Bool(true), Type.Bool), Expression.Lit(Literal.Int(30), Type.Int)))
+    val input = Expression.Match(Expression.Lit(Literal.Bool(true), Type.Bool), rules, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(30))(result)
+  }
+
+  test("Pattern.Literal.Bool02") {
+    // true match { case false => 0; case _ => 1 }
+    val rules = List(
+      (Pattern.Lit(Literal.Bool(false), Type.Bool), Expression.Lit(Literal.Int(0), Type.Int)),
+      (Pattern.Wildcard(Type.Bool), Expression.Lit(Literal.Int(1), Type.Int)))
+    val input = Expression.Match(Expression.Lit(Literal.Bool(true), Type.Bool), rules, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(1))(result)
+  }
+
+  test("Pattern.Literal.Int01") {
+    // 87 match { case 87 => 1 }
+    val rules = List((Pattern.Lit(Literal.Int(87), Type.Int), Expression.Lit(Literal.Int(1), Type.Int)))
+    val input = Expression.Match(Expression.Lit(Literal.Int(87), Type.Int), rules, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(1))(result)
+  }
+
+  test("Pattern.Literal.Int02") {
+    // 87 match { case 86 => "foo"; case _ => "bar" }
+    val rules = List(
+      (Pattern.Lit(Literal.Int(86), Type.Int), Expression.Lit(Literal.Str("foo"), Type.Str)),
+      (Pattern.Wildcard(Type.Int), Expression.Lit(Literal.Str("bar"), Type.Str)))
+    val input = Expression.Match(Expression.Lit(Literal.Int(87), Type.Int), rules, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Str("bar"))(result)
+  }
+
+  test("Pattern.Literal.Str01") {
+    // "hello" match { case "hello" => "world" }
+    val rules = List((Pattern.Lit(Literal.Str("hello"), Type.Str), Expression.Lit(Literal.Str("world"), Type.Str)))
+    val input = Expression.Match(Expression.Lit(Literal.Str("hello"), Type.Str), rules, Type.Str)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Str("world"))(result)
+  }
+
+  test("Pattern.Literal.Str02") {
+    // "hello" match { case "bonjour" => 1; case "hola" => 2; case _ => 0 }
+    val rules = List(
+      (Pattern.Lit(Literal.Str("bonjour"), Type.Str), Expression.Lit(Literal.Int(1), Type.Int)),
+      (Pattern.Lit(Literal.Str("hola"), Type.Str), Expression.Lit(Literal.Int(2), Type.Int)),
+      (Pattern.Wildcard(Type.Str), Expression.Lit(Literal.Int(0), Type.Int)))
+    val input = Expression.Match(Expression.Lit(Literal.Str("hello"), Type.Str), rules, Type.Str)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(0))(result)
+  }
+
+  test("Pattern.Literal.Tag01") {
+    // foo.bar.baz "hello world" match { case foo.bar.baz "hello world" => true }
+    val name = Name.Resolved(List("foo", "bar"))
+    val ident = ParsedAst.Ident("baz", SourceLocation(None, 0, 0))
+    val tagTpe = Type.Tag(name, ident, Type.Str)
+    val enumTpe = Type.Enum(Map("foo.bar.baz" -> tagTpe))
+    val rules = List(
+      (Pattern.Lit(Literal.Tag(name, ident, Literal.Str("hello world"), enumTpe), tagTpe),
+        Expression.Lit(Literal.Bool(true), Type.Bool)))
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tag(name, ident, Literal.Str("hello world"), enumTpe), tagTpe),
+      rules, Type.Bool)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Bool(true))(result)
+  }
+
+  test("Pattern.Literal.Tag02") {
+    // NameAndAge ("James", 42) match { case NameAndAge ("James", 40) => true; case _ => false }
+    val name = Name.Resolved(List("Family"))
+    val ident = ParsedAst.Ident("NameAndAge", SourceLocation(None, 0, 0))
+    val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int)))
+    val enumTpe = Type.Enum(Map("Family.NameAndAge" -> tagTpe))
+    val rules = List(
+      (Pattern.Lit(Literal.Tag(name, ident,
+        Literal.Tuple(List(Literal.Str("James"), Literal.Int(40)), Type.Tuple(List(Type.Str, Type.Int))),
+        enumTpe), tagTpe), Expression.Lit(Literal.Bool(true), Type.Bool)),
+      (Pattern.Wildcard(tagTpe), Expression.Lit(Literal.Bool(false), Type.Bool)))
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tag(name, ident,
+        Literal.Tuple(List(
+          Literal.Str("James"), Literal.Int(42)), Type.Tuple(List(Type.Str, Type.Int))), enumTpe), tagTpe),
+      rules, Type.Bool)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Bool(false))(result)
+  }
+
+  test("Pattern.Literal.Tag03a") {
+    // ConstProp.Val 4 match { case ConstProp.Bot => true; case _ => false }
+  }
+
+  test("Pattern.Literal.Tag03b") {
+    // ConstProp.Val 4 match { case ConstProp.Top => true; case _ => false }
+  }
+
+  test("Pattern.Literal.Tag03c") {
+    // ConstProp.Val 4 match { case ConstProp.Val 4 => true; case _ => false }
+  }
+
+  test("Pattern.Literal.Tag03d") {
+    // ConstProp.Val 4 match { case ConstProp.Val 5 => true; case _ => false }
+  }
+
+  test("Pattern.Literal.Tuple01") {
+    // ("hi", true) match { case ("hi", false) => 1; case _ => 2 }
+    val rules = List(
+      (Pattern.Lit(Literal.Tuple(List(Literal.Str("hi"), Literal.Bool(false)), Type.Tuple(List(Type.Str, Type.Bool))),
+        Type.Tuple(List(Type.Str, Type.Bool))), Expression.Lit(Literal.Int(1), Type.Int)),
+      (Pattern.Wildcard(Type.Tuple(List(Type.Str, Type.Bool))), Expression.Lit(Literal.Int(2), Type.Int)))
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tuple(List(Literal.Str("hi"), Literal.Bool(true)),
+        Type.Tuple(List(Type.Str, Type.Bool))), Type.Tuple(List(Type.Str, Type.Bool))),
+      rules, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(2))(result)
+  }
+
+  test("Pattern.Literal.Tuple02") {
+    // (4, (12, 8)) match { case (4, (12, 8)) => 24 }
+    val rules = List((Pattern.Lit(
+      Literal.Tuple(List(
+        Literal.Int(4),
+        Literal.Tuple(List(Literal.Int(12), Literal.Int(8)),
+          Type.Tuple(List(Type.Int, Type.Int)))),
+        Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int))))),
+      Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int))))),
+      Expression.Lit(Literal.Int(24), Type.Int)))
+    val input = Expression.Match(Expression.Lit(
+      Literal.Tuple(List(
+        Literal.Int(4),
+        Literal.Tuple(List(Literal.Int(12), Literal.Int(8)),
+          Type.Tuple(List(Type.Int, Type.Int)))),
+        Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int))))),
+      Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int))))),
+    rules, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(24))(result)
+  }
+
   // TODO(mhyee): Match expressions and unifier
+  // tag (unit, int, multiple matches)
+  // tuple (bool, str, multiple matches)
+
+  test("Pattern.Tag01") {
+    // NameAndAge ("James", 42) match { case NameAndAge (_, age) => age }
+  }
+
+  test("Expression.Match.Error01") {
+    // 123 match { case 321 => Unit }
+    val rules = List((Pattern.Lit(Literal.Int(321), Type.Int), Expression.Lit(Literal.Unit, Type.Unit)))
+    val input = Expression.Match(Expression.Lit(Literal.Int(123), Type.Int), rules, Type.Int)
+    intercept[RuntimeException] {
+      Interpreter.eval(input, root)
+    }
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Expressions - Tuples and Tags                                           //
