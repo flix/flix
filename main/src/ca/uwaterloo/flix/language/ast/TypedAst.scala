@@ -106,6 +106,11 @@ object TypedAst {
      * The type of the literal.
      */
     def tpe: TypedAst.Type
+
+    /**
+     * The source location of the literal.
+     */
+    def loc: SourceLocation
   }
 
   object Literal {
