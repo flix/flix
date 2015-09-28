@@ -149,17 +149,17 @@ object Typer {
      */
     def typer(rast: ResolvedAst.Literal, root: ResolvedAst.Root): TypedAst.Literal = {
       def visit(rast: ResolvedAst.Literal): TypedAst.Literal = rast match {
-        case ResolvedAst.Literal.Unit => TypedAst.Literal.Unit
-        case ResolvedAst.Literal.Bool(b) => TypedAst.Literal.Bool(b)
-        case ResolvedAst.Literal.Int(i) => TypedAst.Literal.Int(i)
-        case ResolvedAst.Literal.Str(s) => TypedAst.Literal.Str(s)
-        case ResolvedAst.Literal.Tag(name, ident, rlit) =>
+        case ResolvedAst.Literal.Unit(loc) => TypedAst.Literal.Unit
+        case ResolvedAst.Literal.Bool(b, loc) => TypedAst.Literal.Bool(b)
+        case ResolvedAst.Literal.Int(i, loc) => TypedAst.Literal.Int(i)
+        case ResolvedAst.Literal.Str(s, loc) => TypedAst.Literal.Str(s)
+        case ResolvedAst.Literal.Tag(name, ident, rlit, loc) =>
           val defn = root.enums(name)
           val cases = defn.cases.map {
             case (tag, tpe) => tag -> Type.typer(tpe).asInstanceOf[TypedAst.Type.Tag]
           }
           TypedAst.Literal.Tag(name, ident, visit(rlit), TypedAst.Type.Enum(cases))
-        case ResolvedAst.Literal.Tuple(relms) =>
+        case ResolvedAst.Literal.Tuple(relms, loc) =>
           val elms = relms map visit
           TypedAst.Literal.Tuple(elms, TypedAst.Type.Tuple(elms map (_.tpe)))
       }

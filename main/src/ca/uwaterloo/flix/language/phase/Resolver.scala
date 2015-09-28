@@ -268,17 +268,17 @@ object Resolver {
      */
     def resolve(wast: WeededAst.Literal, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Literal, ResolverError] = {
       def visit(wast: WeededAst.Literal): Validation[ResolvedAst.Literal, ResolverError] = wast match {
-        case WeededAst.Literal.Unit(loc) => ResolvedAst.Literal.Unit.toSuccess
-        case WeededAst.Literal.Bool(b, loc) => ResolvedAst.Literal.Bool(b).toSuccess
-        case WeededAst.Literal.Int(i, loc) => ResolvedAst.Literal.Int(i).toSuccess
-        case WeededAst.Literal.Str(s, loc) => ResolvedAst.Literal.Str(s).toSuccess
+        case WeededAst.Literal.Unit(loc) => ResolvedAst.Literal.Unit(loc).toSuccess
+        case WeededAst.Literal.Bool(b, loc) => ResolvedAst.Literal.Bool(b, loc).toSuccess
+        case WeededAst.Literal.Int(i, loc) => ResolvedAst.Literal.Int(i, loc).toSuccess
+        case WeededAst.Literal.Str(s, loc) => ResolvedAst.Literal.Str(s, loc).toSuccess
         case WeededAst.Literal.Tag(name, ident, literal, loc) => syms.lookupEnum(name, namespace) flatMap {
           case (rname, defn) => visit(literal) map {
-            case l => ResolvedAst.Literal.Tag(rname, ident, l)
+            case l => ResolvedAst.Literal.Tag(rname, ident, l, loc)
           }
         }
         case WeededAst.Literal.Tuple(welms, loc) => @@(welms map visit) map {
-          case elms => ResolvedAst.Literal.Tuple(elms)
+          case elms => ResolvedAst.Literal.Tuple(elms, loc)
         }
       }
 

@@ -71,17 +71,17 @@ object ResolvedAst {
 
   object Literal {
 
-    case object Unit extends ResolvedAst.Literal
+    case class Unit(loc: SourceLocation) extends ResolvedAst.Literal
 
-    case class Bool(literal: scala.Boolean) extends ResolvedAst.Literal
+    case class Bool(lit: scala.Boolean, loc: SourceLocation) extends ResolvedAst.Literal
 
-    case class Int(literal: scala.Int) extends ResolvedAst.Literal
+    case class Int(lit: scala.Int, loc: SourceLocation) extends ResolvedAst.Literal
 
-    case class Str(literal: java.lang.String) extends ResolvedAst.Literal
+    case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Literal
 
-    case class Tag(name: Name.Resolved, ident: Name.Ident, literal: ResolvedAst.Literal) extends ResolvedAst.Literal
+    case class Tag(name: Name.Resolved, ident: Name.Ident, lit: ResolvedAst.Literal, loc: SourceLocation) extends ResolvedAst.Literal
 
-    case class Tuple(elms: List[ResolvedAst.Literal]) extends ResolvedAst.Literal
+    case class Tuple(elms: List[ResolvedAst.Literal], loc: SourceLocation) extends ResolvedAst.Literal
 
   }
 
