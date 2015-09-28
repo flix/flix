@@ -11,7 +11,7 @@ object Main {
 
     implicit val options = Options()
 
-    val asts = Compiler.compile(args.map(arg => Paths.get(arg)))
+    val ast = Compiler.compile(args.map(arg => Paths.get(arg)))
 
 //    val shell = new Shell()
 //    shell.startAndAwait()

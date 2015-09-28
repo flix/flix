@@ -23,19 +23,19 @@ object Typer {
     // TODOL Doc
 
     case class ExpectedType(expected: TypedAst.Type, actual: TypedAst.Type) extends TypeError {
-      val format = s"Error: Expected an expression of type '${expected.format}' but got: ${actual.format}.\n"
+      val format = s"Type Error: Expected an expression of type '${expected.format}' but got: ${actual.format}.\n"
     }
 
     case class ExpectedEqualTypes(tpe1: TypedAst.Type, tpe2: TypedAst.Type) extends TypeError {
-      val format = s"Error: Expected expressions of the same type, but got '${tpe1.format}' and ${tpe2.format}.\n"
+      val format = s"Type Error: Expected expressions of the same type, but got '${tpe1.format}' and ${tpe2.format}.\n"
     }
 
     case class IllegalPattern(pat: ResolvedAst.Pattern, tpe: TypedAst.Type) extends TypeError {
-      val format = s"Error: Pattern '${pat.format}' does not match expected type '${tpe.format}'.\n"
+      val format = s"Type Error: Pattern '${pat.format}' does not match expected type '${tpe.format}'.\n"
     }
 
     case class IllegalApply(tpe: TypedAst.Type) extends TypeError {
-      val format = s"Error: Expected function, but expression has type '${tpe.format}'.\n"
+      val format = s"Type Error: Expected function, but expression has type '${tpe.format}'.\n"
 
     }
 

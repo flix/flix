@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language
 
 import java.nio.file.{Files, Path}
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, ResolvedAst, ParsedAst}
+import ca.uwaterloo.flix.language.ast.{TypedAst, SourceLocation, ResolvedAst, ParsedAst}
 import ca.uwaterloo.flix.language.phase._
 import org.parboiled2.{ErrorFormatter, ParseError}
 
@@ -15,13 +15,19 @@ import scala.util.{Failure, Success}
  * The main way a compiler compiles, is to compile the things to be compiled until the compilation is complete.
  *
  * via Olivier Danvy.
+ *
+ * Inspiration for better error messages: http://elm-lang.org/blog/compiler-errors-for-humans
  */
-
-// TODO: http://elm-lang.org/blog/compiler-errors-for-humans
 
 object Compiler {
 
-  // TODO: DOC
+  /**
+   * An exception thrown to indicate an internal compiler error.
+   *
+   * This exception should never be thrown, if the compiler is correctly implemented.
+   *
+   * @param message the error message.
+   */
   case class InternalCompilerError(message: String) extends RuntimeException(message)
 
   /**
@@ -59,38 +65,37 @@ object Compiler {
     }
   }
 
-  // TODO: Allow input from other sources.
-  def compile(paths: Traversable[Path]): Unit = {
-    Console.print("Parsing: ")
+  /**
+   * Applies the compiler to all the given source `paths`.
+   */
+  def compile(paths: Traversable[Path]): TypedAst.Root = {
     val past = parse(paths)
-    Console.println("Success!")
 
-    Console.print("Weeding: ")
     val wast = Weeder.weed(past)
     if (wast.isFailure) {
       println()
       wast.errors.foreach(e => println(e.format))
-      return
+      Console.println("Aborting due to previous errors.")
+      System.exit(1)
     }
-    Console.println("Success!")
 
-    Console.print("Resolution: ")
     val rast = Resolver.resolve(wast.get)
     if (rast.isFailure) {
       println()
       rast.errors.foreach(e => println(e.format))
-      return
+      Console.println("Aborting due to previous errors.")
+      System.exit(1)
     }
-    Console.println("Success!")
 
-    Console.print("Typechecking: ")
     val tast = Typer.typecheck(rast.get)
     if (tast.isFailure) {
       tast.errors.foreach(e => println(e.format))
-      return
+      Console.println("Aborting due to previous errors.")
+      System.exit(1)
     }
-    Console.println("Success!")
 
+    Console.println("Compilation successful.")
+    tast.get
   }
 
 }
