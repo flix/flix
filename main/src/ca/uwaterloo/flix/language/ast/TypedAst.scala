@@ -85,7 +85,6 @@ object TypedAst {
      *
      * @param head the head predicate.
      */
-    // TODO: Why not equip these with a map from variables to types? Seems like a good idea.
     case class Fact(head: TypedAst.Predicate.Head) extends TypedAst.Constraint
 
     /**
@@ -94,7 +93,7 @@ object TypedAst {
      * @param head the head predicate.
      * @param body the body predicates.
      */
-    // TODO: Why not equip these with a map from variables to types? Seems like a good idea.
+    // TODO: Equip with bindings: Map[String, TypedAst.Type]
     case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body]) extends TypedAst.Constraint
 
   }
@@ -375,7 +374,7 @@ object TypedAst {
      */
     case class Head(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: TypedAst.Type.Predicate) extends TypedAst.Predicate {
 
-      def variables: Map[String, TypedAst.Type] = ??? // TODO
+     // def variables: Map[String, TypedAst.Type] = ??? // TODO
 
     }
 
@@ -388,7 +387,7 @@ object TypedAst {
      */
     case class Body(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Predicate) extends TypedAst.Predicate {
 
-      def variables: Map[String, TypedAst.Type] = ??? // TODO
+     // def variables: Map[String, TypedAst.Type] = ??? // TODO
 
     }
 
