@@ -62,7 +62,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   def EnumDefinition: Rule1[ParsedAst.Definition.Enum] = {
     def UnitCase: Rule1[ParsedAst.Type.Tag] = rule {
-      atomic("case") ~ WS ~ Ident ~> ((ident: ParsedAst.Ident) => ParsedAst.Type.Tag(ident, ParsedAst.Type.Unit))
+      atomic("case") ~ WS ~ Ident ~> ((ident: Name.Ident) => ParsedAst.Type.Tag(ident, ParsedAst.Type.Unit))
     }
 
     def NestedCase: Rule1[ParsedAst.Type.Tag] = rule {
@@ -175,7 +175,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   def TagExpression: Rule1[ParsedAst.Expression.Tag] = rule {
     QName ~ "." ~ Ident ~ optWS ~ optional(Expression) ~>
-      ((name: ParsedAst.QName, ident: ParsedAst.Ident, exp: Option[ParsedAst.Expression]) => exp match {
+      ((name: Name.Unresolved, ident: Name.Ident, exp: Option[ParsedAst.Expression]) => exp match {
         case None => ParsedAst.Expression.Tag(name, ident, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit))
         case Some(e) => ParsedAst.Expression.Tag(name, ident, e)
       })
@@ -234,7 +234,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   def TagPattern: Rule1[ParsedAst.Pattern.Tag] = rule {
     QName ~ "." ~ Ident ~ optWS ~ optional(Pattern) ~>
-      ((name: ParsedAst.QName, ident: ParsedAst.Ident, pattern: Option[ParsedAst.Pattern]) => pattern match {
+      ((name: Name.Unresolved, ident: Name.Ident, pattern: Option[ParsedAst.Pattern]) => pattern match {
         case None => ParsedAst.Pattern.Tag(name, ident, ParsedAst.Pattern.Lit(ParsedAst.Literal.Unit))
         case Some(p) => ParsedAst.Pattern.Tag(name, ident, p)
       })
@@ -334,12 +334,12 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /** Helpers                                                               ***/
   /** *************************************************************************/
   // TODO: Can we get rid of these?
-  def ArgumentList: Rule1[Seq[(ParsedAst.Ident, ParsedAst.Type)]] = rule {
+  def ArgumentList: Rule1[Seq[(Name.Ident, ParsedAst.Type)]] = rule {
     zeroOrMore(Argument).separatedBy(optWS ~ "," ~ optWS)
   }
 
-  def Argument: Rule1[(ParsedAst.Ident, ParsedAst.Type)] = rule {
-    Ident ~ ":" ~ optWS ~ Type ~> ((name: ParsedAst.Ident, typ: ParsedAst.Type) => (name, typ))
+  def Argument: Rule1[(Name.Ident, ParsedAst.Type)] = rule {
+    Ident ~ ":" ~ optWS ~ Type ~> ((name: Name.Ident, typ: ParsedAst.Type) => (name, typ))
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -349,14 +349,14 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum | "_") ~ zeroOrMore("'"))
   }
 
-  def Ident: Rule1[ParsedAst.Ident] = rule {
+  def Ident: Rule1[Name.Ident] = rule {
     SourceLocation ~ LegalIdentifier ~>
-      ((location: SourceLocation, name: String) => ParsedAst.Ident(name, location))
+      ((location: SourceLocation, name: String) => Name.Ident(name, location))
   }
 
-  def QName: Rule1[ParsedAst.QName] = rule {
+  def QName: Rule1[Name.Unresolved] = rule {
     SourceLocation ~ oneOrMore(LegalIdentifier).separatedBy(atomic("::")) ~>
-      ((location: SourceLocation, parts: Seq[String]) => ParsedAst.QName(parts, location))
+      ((location: SourceLocation, parts: Seq[String]) => Name.Unresolved(parts.toList, location))
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -384,7 +384,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   def TagLiteral: Rule1[ParsedAst.Literal.Tag] = rule {
     QName ~ "." ~ Ident ~ optWS ~ optional(Literal) ~>
-      ((name: ParsedAst.QName, ident: ParsedAst.Ident, literal: Option[ParsedAst.Literal]) => literal match {
+      ((name: Name.Unresolved, ident: Name.Ident, literal: Option[ParsedAst.Literal]) => literal match {
         case None => ParsedAst.Literal.Tag(name, ident, ParsedAst.Literal.Unit)
         case Some(lit) => ParsedAst.Literal.Tag(name, ident, lit)
       })

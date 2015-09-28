@@ -146,7 +146,7 @@ object TypedAst {
      * @param literal the nested literal.
      * @param tpe the type of the tag.
      */
-    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, literal: TypedAst.Literal, tpe: TypedAst.Type.Enum) extends TypedAst.Literal
+    case class Tag(name: Name.Resolved, ident: Name.Ident, literal: TypedAst.Literal, tpe: TypedAst.Type.Enum) extends TypedAst.Literal
 
     /**
      * A typed AST node representing a tuple literal.
@@ -181,7 +181,7 @@ object TypedAst {
      * @param ident the name of the variable.
      * @param tpe the type of the variable.
      */
-    case class Var(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Expression
+    case class Var(ident: Name.Ident, tpe: TypedAst.Type) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a reference to a definition (i.e. a value or function).
@@ -246,7 +246,7 @@ object TypedAst {
      * @param body the body expression in which the bound variable is visible.
      * @param tpe the type of the expression (which is equivalent to the type of the body expression).
      */
-    case class Let(ident: ParsedAst.Ident, value: TypedAst.Expression, body: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
+    case class Let(ident: Name.Ident, value: TypedAst.Expression, body: TypedAst.Expression, tpe: TypedAst.Type) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a match expression.
@@ -265,7 +265,7 @@ object TypedAst {
      * @param exp the expression.
      * @param tpe the type of the expression.
      */
-    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, exp: TypedAst.Expression, tpe: TypedAst.Type.Enum) extends TypedAst.Expression
+    case class Tag(name: Name.Resolved, ident: Name.Ident, exp: TypedAst.Expression, tpe: TypedAst.Type.Enum) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a tuple expression.
@@ -328,7 +328,7 @@ object TypedAst {
      * @param ident the name of the variable.
      * @param tpe the type of the variable.
      */
-    case class Var(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Pattern
+    case class Var(ident: Name.Ident, tpe: TypedAst.Type) extends TypedAst.Pattern
 
     /**
      * A typed AST node representing a literal pattern.
@@ -346,7 +346,7 @@ object TypedAst {
      * @param pat the nested pattern.
      * @param tpe the type of the tag.
      */
-    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, pat: TypedAst.Pattern, tpe: TypedAst.Type.Tag) extends TypedAst.Pattern
+    case class Tag(name: Name.Resolved, ident: Name.Ident, pat: TypedAst.Pattern, tpe: TypedAst.Type.Tag) extends TypedAst.Pattern
 
     /**
      * A typed AST node representing a tuple pattern.
@@ -407,7 +407,7 @@ object TypedAst {
        * @param ident the variable name.
        * @param tpe the type of the term.
        */
-      case class Var(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Term.Head
+      case class Var(ident: Name.Ident, tpe: TypedAst.Type) extends TypedAst.Term.Head
 
       /**
        * A typed AST node representing a literal term.
@@ -454,7 +454,7 @@ object TypedAst {
        * @param ident the variable name.
        * @param tpe the type of the term.
        */
-      case class Var(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Term.Body
+      case class Var(ident: Name.Ident, tpe: TypedAst.Type) extends TypedAst.Term.Body
 
       /**
        * A typed AST node representing a literal term.
@@ -517,7 +517,7 @@ object TypedAst {
      * @param ident the name of the tag.
      * @param tpe the type of the nested value.
      */
-    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst.Type
+    case class Tag(name: Name.Resolved, ident: Name.Ident, tpe: TypedAst.Type) extends TypedAst.Type
 
     /**
      * An AST node representing an enum type (a set of tags).
@@ -556,7 +556,7 @@ object TypedAst {
    * @param ident the name of the attribute.
    * @param tpe  the type of the attribute.
    */
-  case class Attribute(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst
+  case class Attribute(ident: Name.Ident, tpe: TypedAst.Type) extends TypedAst
 
   // TODO: Introduce TypeOrLattice or similar.
 
@@ -566,6 +566,6 @@ object TypedAst {
    * @param ident the name of the argument.
    * @param tpe the type of the argument.
    */
-  case class FormalArg(ident: ParsedAst.Ident, tpe: TypedAst.Type) extends TypedAst
+  case class FormalArg(ident: Name.Ident, tpe: TypedAst.Type) extends TypedAst
 
 }

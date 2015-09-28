@@ -23,24 +23,6 @@ object ParsedAst {
   case class Root(declarations: Seq[ParsedAst.Declaration]) extends ParsedAst
 
   /**
-   * An AST node that represent an identifier.
-   *
-   * @param name the identifier.
-   * @param location the source location of the identifier.
-   */
-  case class Ident(name: String, location: SourceLocation) extends ParsedAst
-
-  /**
-   * An AST node that represents a qualified name.
-   *
-   * @param parts the name parts.
-   * @param location the source location of the first name part.
-   */
-  case class QName(parts: Seq[String], location: SourceLocation) extends ParsedAst {
-    val format: String = parts.mkString("::")
-  }
-
-  /**
    * A common super-type for AST nodes that represent declarations.
    */
   sealed trait Declaration extends ParsedAst
@@ -53,7 +35,7 @@ object ParsedAst {
      * @param name the name of the namespace.
      * @param body the nested declarations.
      */
-    case class Namespace(name: ParsedAst.QName, body: Seq[ParsedAst.Declaration]) extends ParsedAst.Declaration
+    case class Namespace(name: Name.Unresolved, body: Seq[ParsedAst.Declaration]) extends ParsedAst.Declaration
 
     /**
      * An AST node that represents a fact declaration.
@@ -87,7 +69,7 @@ object ParsedAst {
      * @param tpe the declared type of the value.
      * @param e the expression.
      */
-    case class Value(ident: ParsedAst.Ident, tpe: ParsedAst.Type, e: ParsedAst.Expression) extends ParsedAst.Definition
+    case class Value(ident: Name.Ident, tpe: ParsedAst.Type, e: ParsedAst.Expression) extends ParsedAst.Definition
 
     /**
      * An AST node that represents a function definition.
@@ -97,7 +79,7 @@ object ParsedAst {
      * @param tpe the return type.
      * @param body the body expression of the function.
      */
-    case class Function(ident: ParsedAst.Ident, formals: Seq[(ParsedAst.Ident, ParsedAst.Type)], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Definition
+    case class Function(ident: Name.Ident, formals: Seq[(Name.Ident, ParsedAst.Type)], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Definition
 
     /**
      * An AST node that represents a enum definition.
@@ -105,7 +87,7 @@ object ParsedAst {
      * @param ident the name of the enum.
      * @param cases the variants of the enum.
      */
-    case class Enum(ident: ParsedAst.Ident, cases: Seq[ParsedAst.Type.Tag]) extends ParsedAst.Definition
+    case class Enum(ident: Name.Ident, cases: Seq[ParsedAst.Type.Tag]) extends ParsedAst.Definition
 
     /**
      * An AST node that represents a lattice definition.
@@ -114,7 +96,7 @@ object ParsedAst {
      * @param elms the components of the lattice (e.g. bot, leq, lub).
      * @param traits the traits of the lattice (e.g. Norm and Widening).
      */
-    case class Lattice(ident: ParsedAst.Ident, elms: Seq[ParsedAst.Expression], traits: Seq[ParsedAst.Trait]) extends ParsedAst.Definition
+    case class Lattice(ident: Name.Ident, elms: Seq[ParsedAst.Expression], traits: Seq[ParsedAst.Trait]) extends ParsedAst.Definition
 
     /**
      * An AST that represent a relation definition.
@@ -122,7 +104,7 @@ object ParsedAst {
      * @param ident the name of the relation.
      * @param attributes the name and type of the attributes.
      */
-    case class Relation(ident: ParsedAst.Ident, attributes: Seq[ParsedAst.Attribute]) extends ParsedAst.Definition
+    case class Relation(ident: Name.Ident, attributes: Seq[ParsedAst.Attribute]) extends ParsedAst.Definition
 
   }
 
@@ -133,7 +115,7 @@ object ParsedAst {
    * @param name the value passed to the trait.
    */
   // TODO: Find a better name or eliminate entirely...
-  case class Trait(ident: ParsedAst.Ident, name: QName) extends ParsedAst
+  case class Trait(ident: Name.Ident, name: Name.Unresolved) extends ParsedAst
 
   /**
    * AST nodes for Literals.
@@ -175,7 +157,7 @@ object ParsedAst {
      * @param ident the name of the tag.
      * @param literal the nested literal.
      */
-    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, literal: ParsedAst.Literal) extends ParsedAst.Literal
+    case class Tag(name: Name.Unresolved, ident: Name.Ident, literal: ParsedAst.Literal) extends ParsedAst.Literal
 
     /**
      * An AST node that represents a tuple literal.
@@ -198,7 +180,7 @@ object ParsedAst {
      *
      * @param name the ambiguous name.
      */
-    case class AmbiguousVar(name: ParsedAst.QName) extends ParsedAst.Expression
+    case class AmbiguousVar(name: Name.Unresolved) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a function application.
@@ -207,7 +189,7 @@ object ParsedAst {
      * @param arguments the arguments to the function.
      */
     // TODO: Should the base not be parsed as an expression??
-    case class AmbiguousApply(name: ParsedAst.QName, arguments: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
+    case class AmbiguousApply(name: Name.Unresolved, arguments: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a literal.
@@ -223,7 +205,7 @@ object ParsedAst {
      * @param tpe the return type.
      * @param body the body expression of the lambda.
      */
-    case class Lambda(formals: Seq[(ParsedAst.Ident, ParsedAst.Type)], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Lambda(formals: Seq[(Name.Ident, ParsedAst.Type)], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents unary expressions.
@@ -258,7 +240,7 @@ object ParsedAst {
      * @param value the expression whose value the identifier should be bound to.
      * @param body the expression in which the bound variable is visible.
      */
-    case class Let(ident: ParsedAst.Ident, value: ParsedAst.Expression, body: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Let(ident: Name.Ident, value: ParsedAst.Expression, body: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a match expression.
@@ -275,7 +257,7 @@ object ParsedAst {
      * @param name the ambiguous name of the function.
      * @param e2 the second argument expression.
      */
-    case class Infix(e1: ParsedAst.Expression, name: ParsedAst.QName, e2: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Infix(e1: ParsedAst.Expression, name: Name.Unresolved, e2: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a tagged expression.
@@ -284,7 +266,7 @@ object ParsedAst {
      * @param ident the tag name.
      * @param e the nested expression.
      */
-    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, e: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Tag(name: Name.Unresolved, ident: Name.Ident, e: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a tuple expression.
@@ -332,7 +314,7 @@ object ParsedAst {
      *
      * @param ident the variable identifier.
      */
-    case class Var(ident: ParsedAst.Ident) extends ParsedAst.Pattern
+    case class Var(ident: Name.Ident) extends ParsedAst.Pattern
 
     /**
      * An AST node that represents a literal pattern.
@@ -348,7 +330,7 @@ object ParsedAst {
      * @param ident the tag name.
      * @param p the nested pattern.
      */
-    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, p: ParsedAst.Pattern) extends ParsedAst.Pattern
+    case class Tag(name: Name.Unresolved, ident: Name.Ident, p: ParsedAst.Pattern) extends ParsedAst.Pattern
 
     /**
      * An AST node that represents a tuple pattern.
@@ -365,7 +347,7 @@ object ParsedAst {
    * @param name the unresolved name of the predicate.
    * @param terms the terms of the predicate.
    */
-  case class Predicate(name: ParsedAst.QName, terms: Seq[ParsedAst.Term]) extends ParsedAst
+  case class Predicate(name: Name.Unresolved, terms: Seq[ParsedAst.Term]) extends ParsedAst
 
   /**
    * AST nodes for Terms.
@@ -388,7 +370,7 @@ object ParsedAst {
      *
      * @param ident the variable identifier.
      */
-    case class Var(ident: ParsedAst.Ident) extends ParsedAst.Term
+    case class Var(ident: Name.Ident) extends ParsedAst.Term
 
     /**
      * An AST node that represent a literal term.
@@ -403,7 +385,7 @@ object ParsedAst {
      * @param name the unresolved name of the function.
      * @param args the arguments to the function.
      */
-    case class Apply(name: ParsedAst.QName, args: Seq[ParsedAst.Term]) extends ParsedAst.Term
+    case class Apply(name: Name.Unresolved, args: Seq[ParsedAst.Term]) extends ParsedAst.Term
 
   }
 
@@ -424,7 +406,7 @@ object ParsedAst {
      *
      * @param name the ambiguous name.
      */
-    case class Ambiguous(name: ParsedAst.QName) extends ParsedAst.Type
+    case class Ambiguous(name: Name.Unresolved) extends ParsedAst.Type
 
     /**
      * An AST node that represent a function type.
@@ -441,7 +423,7 @@ object ParsedAst {
      * @param ident the tag name.
      * @param tpe the type of nested components.
      */
-    case class Tag(ident: ParsedAst.Ident, tpe: ParsedAst.Type) extends ParsedAst.Type
+    case class Tag(ident: Name.Ident, tpe: ParsedAst.Type) extends ParsedAst.Type
 
     /**
      * An AST node that represent a tuple type.
@@ -456,7 +438,7 @@ object ParsedAst {
      * @param name the ambiguous name.
      * @param elms the type of the type parameters.
      */
-    case class Parametric(name: ParsedAst.QName, elms: Seq[ParsedAst.Type]) extends ParsedAst.Type
+    case class Parametric(name: Name.Unresolved, elms: Seq[ParsedAst.Type]) extends ParsedAst.Type
 
     /**
      * An AST node that represent a lattice type (i.e. a type equipped with lattice operators).
@@ -473,6 +455,6 @@ object ParsedAst {
    * @param ident the name of the attribute.
    * @param tpe the type of the attribute.
    */
-  case class Attribute(ident: ParsedAst.Ident, tpe: ParsedAst.Type) extends ParsedAst
+  case class Attribute(ident: Name.Ident, tpe: ParsedAst.Type) extends ParsedAst
 
 }

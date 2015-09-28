@@ -13,8 +13,8 @@ class TestTypedAst extends FunSuite {
   }
 
   test("Pattern.Bound") {
-    val x = ParsedAst.Ident("x", SourceLocation.Unknown)
-    val y = ParsedAst.Ident("y", SourceLocation.Unknown)
+    val x = Name.Ident("x", SourceLocation.Unknown)
+    val y = Name.Ident("y", SourceLocation.Unknown)
 
     val pat = TypedAst.Pattern.Tuple(List(
       TypedAst.Pattern.Var(x, TypedAst.Type.Bool),

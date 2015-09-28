@@ -13,7 +13,7 @@ object WeededAst {
 
   object Declaration {
 
-    case class Namespace(name: ParsedAst.QName, body: List[WeededAst.Declaration]) extends WeededAst.Declaration
+    case class Namespace(name: Name.Unresolved, body: List[WeededAst.Declaration]) extends WeededAst.Declaration
 
     case class Fact(head: WeededAst.PredicateWithApply) extends WeededAst.Declaration
 
@@ -25,22 +25,22 @@ object WeededAst {
 
   object Definition {
 
-    case class Constant(ident: ParsedAst.Ident, e: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Definition
+    case class Constant(ident: Name.Ident, e: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Definition
 
-    case class Enum(ident: ParsedAst.Ident, cases: Map[String, WeededAst.Type.Tag]) extends WeededAst.Definition
+    case class Enum(ident: Name.Ident, cases: Map[String, WeededAst.Type.Tag]) extends WeededAst.Definition
 
     // TODO: Improve? or at least do something with traits?
-    case class Lattice(ident: ParsedAst.Ident, elms: List[WeededAst.Expression], traits: List[ParsedAst.Trait]) extends WeededAst.Definition
+    case class Lattice(ident: Name.Ident, elms: List[WeededAst.Expression], traits: List[ParsedAst.Trait]) extends WeededAst.Definition
 
     // TODO
-    case class JoinSemiLattice(ident: ParsedAst.Ident,
-                               bot: ParsedAst.QName,
-                               leq: ParsedAst.QName,
-                               lub: ParsedAst.QName,
-                               norm: Option[ParsedAst.QName],
-                               widen: Option[ParsedAst.QName]) extends WeededAst.Definition
+    case class JoinSemiLattice(ident: Name.Ident,
+                               bot: Name.Unresolved,
+                               leq: Name.Unresolved,
+                               lub: Name.Unresolved,
+                               norm: Option[Name.Unresolved],
+                               widen: Option[Name.Unresolved]) extends WeededAst.Definition
 
-    case class Relation(ident: ParsedAst.Ident, attributes: List[WeededAst.Attribute]) extends WeededAst.Definition
+    case class Relation(ident: Name.Ident, attributes: List[WeededAst.Attribute]) extends WeededAst.Definition
 
   }
 
@@ -56,7 +56,7 @@ object WeededAst {
 
     case class Str(literal: java.lang.String) extends WeededAst.Literal
 
-    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, literal: WeededAst.Literal) extends WeededAst.Literal
+    case class Tag(name: Name.Unresolved, ident: Name.Ident, literal: WeededAst.Literal) extends WeededAst.Literal
 
     case class Tuple(elms: List[WeededAst.Literal]) extends WeededAst.Literal
 
@@ -66,13 +66,13 @@ object WeededAst {
 
   object Expression {
 
-    case class AmbiguousVar(name: ParsedAst.QName) extends WeededAst.Expression
+    case class AmbiguousVar(name: Name.Unresolved) extends WeededAst.Expression
 
-    case class AmbiguousApply(name: ParsedAst.QName, arguments: List[WeededAst.Expression]) extends WeededAst.Expression
+    case class AmbiguousApply(name: Name.Unresolved, arguments: List[WeededAst.Expression]) extends WeededAst.Expression
 
     case class Lit(literal: WeededAst.Literal) extends WeededAst.Expression
 
-    case class Lambda(formals: List[(ParsedAst.Ident, WeededAst.Type)], body: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Expression
+    case class Lambda(formals: List[(Name.Ident, WeededAst.Type)], body: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Expression
 
     case class Unary(op: UnaryOperator, e: WeededAst.Expression) extends WeededAst.Expression
 
@@ -81,11 +81,11 @@ object WeededAst {
     case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression) extends WeededAst.Expression
 
     // TODO: Why not just call these e1 and e2?
-    case class Let(ident: ParsedAst.Ident, value: WeededAst.Expression, body: WeededAst.Expression) extends WeededAst.Expression
+    case class Let(ident: Name.Ident, value: WeededAst.Expression, body: WeededAst.Expression) extends WeededAst.Expression
 
     case class Match(e: WeededAst.Expression, rs: List[(WeededAst.Pattern, WeededAst.Expression)]) extends WeededAst.Expression
 
-    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, e: WeededAst.Expression) extends WeededAst.Expression
+    case class Tag(name: Name.Unresolved, ident: Name.Ident, e: WeededAst.Expression) extends WeededAst.Expression
 
     case class Tuple(elms: List[WeededAst.Expression]) extends WeededAst.Expression
 
@@ -114,11 +114,11 @@ object WeededAst {
 
     case class Wildcard(location: SourceLocation) extends WeededAst.Pattern
 
-    case class Var(ident: ParsedAst.Ident) extends WeededAst.Pattern
+    case class Var(ident: Name.Ident) extends WeededAst.Pattern
 
     case class Lit(literal: WeededAst.Literal) extends WeededAst.Pattern
 
-    case class Tag(name: ParsedAst.QName, ident: ParsedAst.Ident, p: WeededAst.Pattern) extends WeededAst.Pattern
+    case class Tag(name: Name.Unresolved, ident: Name.Ident, p: WeededAst.Pattern) extends WeededAst.Pattern
 
     case class Tuple(elms: List[WeededAst.Pattern]) extends WeededAst.Pattern
 
@@ -126,9 +126,9 @@ object WeededAst {
 
   // TODO: Organize these as usually done.
 
-  case class PredicateNoApply(name: ParsedAst.QName, terms: List[WeededAst.TermNoApply]) extends WeededAst
+  case class PredicateNoApply(name: Name.Unresolved, terms: List[WeededAst.TermNoApply]) extends WeededAst
 
-  case class PredicateWithApply(name: ParsedAst.QName, terms: List[WeededAst.TermWithApply]) extends WeededAst
+  case class PredicateWithApply(name: Name.Unresolved, terms: List[WeededAst.TermWithApply]) extends WeededAst
 
   sealed trait TermNoApply extends WeededAst
 
@@ -136,7 +136,7 @@ object WeededAst {
 
     case class Wildcard(location: SourceLocation) extends WeededAst.TermNoApply
 
-    case class Var(ident: ParsedAst.Ident) extends WeededAst.TermNoApply
+    case class Var(ident: Name.Ident) extends WeededAst.TermNoApply
 
     case class Lit(literal: WeededAst.Literal) extends WeededAst.TermNoApply
 
@@ -149,11 +149,11 @@ object WeededAst {
     // TODO: Wildcards should not be allowed here...
     case class Wildcard(location: SourceLocation) extends WeededAst.TermWithApply
 
-    case class Var(ident: ParsedAst.Ident) extends WeededAst.TermWithApply
+    case class Var(ident: Name.Ident) extends WeededAst.TermWithApply
 
     case class Lit(literal: WeededAst.Literal) extends WeededAst.TermWithApply
 
-    case class Apply(name: ParsedAst.QName, args: List[WeededAst.TermWithApply]) extends WeededAst.TermWithApply
+    case class Apply(name: Name.Unresolved, args: List[WeededAst.TermWithApply]) extends WeededAst.TermWithApply
 
   }
 
@@ -164,9 +164,9 @@ object WeededAst {
 
     case object Unit extends WeededAst.Type
 
-    case class Ambiguous(name: ParsedAst.QName) extends WeededAst.Type
+    case class Ambiguous(name: Name.Unresolved) extends WeededAst.Type
 
-    case class Tag(tagName: ParsedAst.Ident, tpe: WeededAst.Type) extends WeededAst.Type
+    case class Tag(tagName: Name.Ident, tpe: WeededAst.Type) extends WeededAst.Type
 
     case class Enum(name: Name.Resolved, cases: Map[String, WeededAst.Type.Tag]) extends WeededAst.Type
 
@@ -179,6 +179,6 @@ object WeededAst {
   }
 
 
-  case class Attribute(ident: ParsedAst.Ident, tpe: WeededAst.Type) extends WeededAst
+  case class Attribute(ident: Name.Ident, tpe: WeededAst.Type) extends WeededAst
 
 }

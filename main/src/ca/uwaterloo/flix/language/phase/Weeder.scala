@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.{WeededAst, SourceLocation, ParsedAst}
+import ca.uwaterloo.flix.language.ast.{WeededAst, SourceLocation, ParsedAst, Name}
 import ca.uwaterloo.flix.util.Validation
 import Validation._
 
@@ -180,7 +180,7 @@ object Weeder {
      * Compiles the given parsed function declaration `past` to a weeded definition.
      */
     def compile(past: ParsedAst.Definition.Function): Validation[WeededAst.Definition.Constant, WeederError] = {
-      val seen = mutable.Map.empty[String, ParsedAst.Ident]
+      val seen = mutable.Map.empty[String, Name.Ident]
 
       val formalsVal = @@(past.formals.map {
         case (ident, tpe) => seen.get(ident.name) match {
@@ -208,7 +208,7 @@ object Weeder {
     def compile(past: ParsedAst.Definition.Enum): Validation[WeededAst.Definition.Enum, WeederError] =
       Validation.fold[ParsedAst.Type.Tag, Map[String, WeededAst.Type.Tag], WeederError](past.cases, Map.empty) {
         // loop through each tag declaration.
-        case (macc, tag@ParsedAst.Type.Tag(ParsedAst.Ident(name, location), _)) => macc.get(name) match {
+        case (macc, tag@ParsedAst.Type.Tag(Name.Ident(name, location), _)) => macc.get(name) match {
           // check if the tag was already declared.
           case None => Type.compile(tag) map (tpe => macc + (name -> tpe.asInstanceOf[WeededAst.Type.Tag]))
           case Some(otherTag) => DuplicateTag(name, otherTag.tagName.location, location).toFailure
@@ -233,7 +233,7 @@ object Weeder {
      * Compiles the given parsed relation `past` to a weeded relation definition.
      */
     def compile(past: ParsedAst.Definition.Relation): Validation[WeededAst.Definition.Relation, WeederError] = {
-      val seen = mutable.Map.empty[String, ParsedAst.Ident]
+      val seen = mutable.Map.empty[String, Name.Ident]
 
       val attributesVal = past.attributes.map {
         case ParsedAst.Attribute(ident, ptype) => seen.get(ident.name) match {
@@ -347,7 +347,7 @@ object Weeder {
      * Returns [[Failure]] if the pattern is non-linear, i.e. if the same variable occurs twice.
      */
     def compile(past: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = {
-      val seen = mutable.Map.empty[String, ParsedAst.Ident]
+      val seen = mutable.Map.empty[String, Name.Ident]
 
       def visit(p: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = p match {
         case ParsedAst.Pattern.Wildcard(loc) => WeededAst.Pattern.Wildcard(loc).toSuccess

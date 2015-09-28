@@ -1,18 +1,15 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Wildcard
-
 trait ResolvedAst
 
 object ResolvedAst {
 
-  case class Root(
-                   constants: Map[Name.Resolved, ResolvedAst.Definition.Constant],
-                   enums: Map[Name.Resolved, ResolvedAst.Definition.Enum],
-                   lattices: Map[ResolvedAst.Type, ResolvedAst.Definition.Lattice],
-                   relations: Map[Name.Resolved, ResolvedAst.Definition.Relation],
-                   facts: List[ResolvedAst.Constraint.Fact],
-                   rules: List[ResolvedAst.Constraint.Rule]) extends ResolvedAst
+  case class Root(constants: Map[Name.Resolved, ResolvedAst.Definition.Constant],
+                  enums: Map[Name.Resolved, ResolvedAst.Definition.Enum],
+                  lattices: Map[ResolvedAst.Type, ResolvedAst.Definition.Lattice],
+                  relations: Map[Name.Resolved, ResolvedAst.Definition.Relation],
+                  facts: List[ResolvedAst.Constraint.Fact],
+                  rules: List[ResolvedAst.Constraint.Rule]) extends ResolvedAst
 
   sealed trait Definition
 
@@ -82,7 +79,7 @@ object ResolvedAst {
 
     case class Str(literal: java.lang.String) extends ResolvedAst.Literal
 
-    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, literal: ResolvedAst.Literal) extends ResolvedAst.Literal
+    case class Tag(name: Name.Resolved, ident: Name.Ident, literal: ResolvedAst.Literal) extends ResolvedAst.Literal
 
     case class Tuple(elms: List[ResolvedAst.Literal]) extends ResolvedAst.Literal
 
@@ -92,7 +89,7 @@ object ResolvedAst {
 
   object Expression {
 
-    case class Var(ident: ParsedAst.Ident) extends ResolvedAst.Expression
+    case class Var(ident: Name.Ident) extends ResolvedAst.Expression
 
     case class Ref(name: Name.Resolved) extends ResolvedAst.Expression
 
@@ -108,11 +105,11 @@ object ResolvedAst {
 
     case class IfThenElse(e1: ResolvedAst.Expression, e2: ResolvedAst.Expression, e3: ResolvedAst.Expression) extends ResolvedAst.Expression
 
-    case class Let(ident: ParsedAst.Ident, value: ResolvedAst.Expression, body: ResolvedAst.Expression) extends ResolvedAst.Expression
+    case class Let(ident: Name.Ident, value: ResolvedAst.Expression, body: ResolvedAst.Expression) extends ResolvedAst.Expression
 
     case class Match(e: ResolvedAst.Expression, rules: List[(ResolvedAst.Pattern, ResolvedAst.Expression)]) extends ResolvedAst.Expression
 
-    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, e: ResolvedAst.Expression) extends ResolvedAst.Expression
+    case class Tag(name: Name.Resolved, ident: Name.Ident, e: ResolvedAst.Expression) extends ResolvedAst.Expression
 
     case class Tuple(elms: List[ResolvedAst.Expression]) extends ResolvedAst.Expression
 
@@ -129,7 +126,7 @@ object ResolvedAst {
     // TODO: Move somewhere else?
     final def format: String = this match {
       case ResolvedAst.Pattern.Wildcard(_) => "_"
-      case ResolvedAst.Pattern.Var(ParsedAst.Ident(name, _)) => name
+      case ResolvedAst.Pattern.Var(Name.Ident(name, _)) => name
       case ResolvedAst.Pattern.Lit(lit) => lit.toString
       case ResolvedAst.Pattern.Tag(enumName, tagName, pat) =>
         enumName.format + "." + tagName.name + "(" + pat.format + ")"
@@ -152,7 +149,7 @@ object ResolvedAst {
      *
      * @param ident the variable name.
      */
-    case class Var(ident: ParsedAst.Ident) extends ResolvedAst.Pattern
+    case class Var(ident: Name.Ident) extends ResolvedAst.Pattern
 
     /**
      * An AST node representing a literal pattern.
@@ -168,7 +165,7 @@ object ResolvedAst {
      * @param ident the name of the tag.
      * @param pat the nested pattern.
      */
-    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, pat: ResolvedAst.Pattern) extends ResolvedAst.Pattern
+    case class Tag(name: Name.Resolved, ident: Name.Ident, pat: ResolvedAst.Pattern) extends ResolvedAst.Pattern
 
     /**
      * An AST node representing a tuple pattern.
@@ -213,7 +210,7 @@ object ResolvedAst {
        *
        * @param ident the variable name.
        */
-      case class Var(ident: ParsedAst.Ident) extends ResolvedAst.Term.Head
+      case class Var(ident: Name.Ident) extends ResolvedAst.Term.Head
 
       /**
        * An AST node representing a literal term.
@@ -251,7 +248,7 @@ object ResolvedAst {
        *
        * @param ident the variable name.
        */
-      case class Var(ident: ParsedAst.Ident) extends ResolvedAst.Term.Body
+      case class Var(ident: Name.Ident) extends ResolvedAst.Term.Body
 
       /**
        * An AST node representing a literal term.
@@ -298,7 +295,7 @@ object ResolvedAst {
      * @param ident the name of the tag.
      * @param tpe the nested type.
      */
-    case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, tpe: ResolvedAst.Type) extends ResolvedAst.Type
+    case class Tag(name: Name.Resolved, ident: Name.Ident, tpe: ResolvedAst.Type) extends ResolvedAst.Type
 
     /**
      * An AST node representing an enum type (a set of tags).
@@ -330,7 +327,7 @@ object ResolvedAst {
    * @param ident the name of the attribute.
    * @param tpe the (declared) type of the attribute.
    */
-  case class Attribute(ident: ParsedAst.Ident, tpe: ResolvedAst.Type) extends ResolvedAst
+  case class Attribute(ident: Name.Ident, tpe: ResolvedAst.Type) extends ResolvedAst
 
   /**
    * A resolved AST node representing a formal argument in a function.
@@ -338,6 +335,6 @@ object ResolvedAst {
    * @param ident the name of the argument.
    * @param tpe the type of the argument.
    */
-  case class FormalArg(ident: ParsedAst.Ident, tpe: ResolvedAst.Type) extends ResolvedAst
+  case class FormalArg(ident: Name.Ident, tpe: ResolvedAst.Type) extends ResolvedAst
 
 }

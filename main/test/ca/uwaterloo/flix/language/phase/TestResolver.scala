@@ -5,7 +5,7 @@ import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite {
 
-  val Ident = ParsedAst.Ident("x", SourceLocation.Unknown)
+  val Ident = Name.Ident("x", SourceLocation.Unknown)
 
   test("Literal.Tag01") {
 //    val wast = WeededAst.Literal.Tag(
