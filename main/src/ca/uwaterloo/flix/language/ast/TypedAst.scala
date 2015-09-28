@@ -278,10 +278,10 @@ object TypedAst {
     /**
      * A typed AST node representing an error expression.
      *
-     * @param location the location of the error expression.
      * @param tpe the type of the error expression.
+     * @param loc the location of the error expression.
      */
-    case class Error(location: SourceLocation, tpe: TypedAst.Type) extends TypedAst.Expression
+    case class Error(tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
 
   }
 

@@ -366,7 +366,10 @@ object Resolver {
           @@(visit(we, locals), Type.resolve(wtype, namespace, syms)) map {
             case (e, tpe) => ResolvedAst.Expression.Ascribe(e, tpe)
           }
-        case WeededAst.Expression.Error(location) => ResolvedAst.Expression.Error(location).toSuccess
+        case WeededAst.Expression.Error(wtype, loc) =>
+          Type.resolve(wtype, namespace, syms) map {
+            case tpe => ResolvedAst.Expression.Error(tpe, loc)
+          }
       }
 
       visit(wast, Set.empty)

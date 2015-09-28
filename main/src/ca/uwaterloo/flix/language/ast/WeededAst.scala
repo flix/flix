@@ -91,7 +91,7 @@ object WeededAst {
 
     case class Ascribe(e: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Expression
 
-    case class Error(location: SourceLocation) extends WeededAst.Expression
+    case class Error(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
   }
 

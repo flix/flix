@@ -284,11 +284,10 @@ object ParsedAst {
     /**
      * An AST node that represents an error expression.
      *
-     * @param location the source location where the error expression occurs.
+     * @param loc the source location of the error expression.
+     * @param tpe the type of the error expression.
      */
-    case class Error(location: SourceLocation) extends ParsedAst.Expression
-
-    // TODO: Add an explicit ascribed type.
+    case class Error(loc: SourceLocation, tpe: ParsedAst.Type) extends ParsedAst.Expression
 
   }
 
@@ -352,8 +351,6 @@ object ParsedAst {
    * AST nodes for Terms.
    */
   sealed trait Term extends ParsedAst
-
-  // TODO: Allow ascription
 
   object Term {
 

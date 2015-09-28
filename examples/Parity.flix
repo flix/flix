@@ -57,7 +57,7 @@ namespace ParityAnalysis {
         case (Parity.Bot, _)              => Parity.Bot;
         case (Parity.Odd, Parity.Odd)     => Parity.Odd;
         case (Parity.Odd, Parity.Even)    => Parity.Even;
-        case (Parity.Even, Parity.Odd)    => Parity.Even;
+        case (Parity.Even, Parity.Odd)    => ??? : Parity;
         case (Parity.Even, Parity.Even)   => Parity.Even;
         case _                            => Parity.Top;
     };

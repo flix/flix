@@ -601,7 +601,7 @@ class TestParser extends FunSuite {
   }
 
   test("Expression.ErrorExp01") {
-    val input = "???"
+    val input = "??? : Int"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.Error])

@@ -208,7 +208,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def ErrorExpression: Rule1[ParsedAst.Expression] = rule {
-    SourceLocation ~ atomic("???") ~> ParsedAst.Expression.Error
+    SourceLocation ~ atomic("???") ~ optWS ~ ":" ~ optWS ~ Type ~> ParsedAst.Expression.Error
   }
 
   /////////////////////////////////////////////////////////////////////////////

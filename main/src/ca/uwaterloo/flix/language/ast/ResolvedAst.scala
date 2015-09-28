@@ -115,7 +115,7 @@ object ResolvedAst {
 
     case class Ascribe(e: ResolvedAst.Expression, tpe: ResolvedAst.Type) extends ResolvedAst.Expression
 
-    case class Error(location: SourceLocation) extends ResolvedAst.Expression
+    case class Error(tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Expression
 
   }
 

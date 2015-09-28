@@ -332,10 +332,8 @@ object Typer {
               case _ => e
             }
           }
-
-        case ResolvedAst.Expression.Error(location) =>
-          throw Compiler.InternalCompilerError("Error expression not yet supported.")
-
+        case ResolvedAst.Expression.Error(tpe, loc) =>
+          TypedAst.Expression.Error(Type.typer(tpe), loc).toSuccess
       }
 
       visit(rast, env)
@@ -397,9 +395,9 @@ object Typer {
       @@(termsVal) map {
         case terms =>
           // TODO
-//          val vars = Validation.fold(terms, Map.empty[String, TypedAst.Type]) {
-//            case (macc, term) => ???
-//          }
+          //          val vars = Validation.fold(terms, Map.empty[String, TypedAst.Type]) {
+          //            case (macc, term) => ???
+          //          }
 
           TypedAst.Predicate.Head(rast.name, terms, TypedAst.Type.Predicate(terms map (_.tpe)))
       }

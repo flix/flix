@@ -335,8 +335,10 @@ object Weeder {
           case (e, tpe) => WeededAst.Expression.Ascribe(e, tpe)
         }
 
-      case ParsedAst.Expression.Error(loc) =>
-        WeededAst.Expression.Error(loc).toSuccess
+      case ParsedAst.Expression.Error(loc, ptype) =>
+        Type.compile(ptype) map {
+          case tpe => WeededAst.Expression.Error(tpe, loc)
+        }
     }
   }
 
