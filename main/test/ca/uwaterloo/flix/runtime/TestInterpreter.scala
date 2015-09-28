@@ -431,7 +431,64 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Int(49))(value)
   }
 
-  // TODO(mhyee): Tests for Lambda and Apply. Nested functions? Higher-order functions?
+  test("Expression.Lambda09") {
+    // x => (y => x + y)
+    val lambda = Expression.Lambda(
+      List(FormalArg(ident01, Type.Int)),
+      Type.Int,
+      Expression.Lambda(
+        List(FormalArg(ident02, Type.Int)),
+        Type.Int,
+        Expression.Binary(
+          BinaryOperator.Plus,
+          Expression.Var(ident01, Type.Int),
+          Expression.Var(ident02, Type.Int),
+          Type.Int),
+        Type.Function(List(Type.Int), Type.Int)),
+      Type.Function(List(Type.Int), Type.Function(List(Type.Int), Type.Int)))
+    val expected = Value.Closure(lambda.formals, lambda.body, Map())
+    val closure = Interpreter.eval(lambda, root)
+    assertResult(expected)(closure)
+
+    // (x => (y => x + y)(3)(4)
+    val apply = Expression.Apply(
+      Expression.Apply(lambda, List(Expression.Lit(Literal.Int(3), Type.Int)), Type.Int),
+      List(Expression.Lit(Literal.Int(4), Type.Int)),
+      Type.Int)
+    val value = Interpreter.eval(apply, root)
+    assertResult(Value.Int(7))(value)
+  }
+
+  test("Expression.Lambda10") {
+    // x, y => x(y)
+    val lambda = Expression.Lambda(
+      List(FormalArg(ident01, Type.Function(List(Type.Int), Type.Int)), FormalArg(ident02, Type.Int)),
+      Type.Int,
+      Expression.Apply(
+        Expression.Var(ident01, Type.Function(List(Type.Int), Type.Int)),
+        List(Expression.Var(ident02, Type.Int)),
+        Type.Int),
+      Type.Function(List(Type.Function(List(Type.Int), Type.Int), Type.Int), Type.Int))
+    val expected = Value.Closure(lambda.formals, lambda.body, Map())
+    val closure = Interpreter.eval(lambda, root)
+    assertResult(expected)(closure)
+
+    // (x, y => x(y))((x => x + 1), 5)
+    val apply = Expression.Apply(lambda, List(
+      Expression.Lambda(
+        List(FormalArg(ident01, Type.Int)),
+        Type.Int,
+        Expression.Binary(
+          BinaryOperator.Plus,
+          Expression.Var(ident01, Type.Int),
+          Expression.Lit(Literal.Int(1), Type.Int),
+          Type.Int),
+        Type.Function(List(Type.Int), Type.Int)),
+      Expression.Lit(Literal.Int(5), Type.Int)),
+      Type.Int)
+    val value = Interpreter.eval(apply, root)
+    assertResult(Value.Int(6))(value)
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Expressions - Unary and Binary                                          //
@@ -711,7 +768,6 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Int(4))(result)
   }
 
-  // TODO(mhyee): We need to document the exact semantics of modulo on negative operands
   test("BinaryOperator.Modulo01") {
     val input = Expression.Binary(
       BinaryOperator.Modulo,

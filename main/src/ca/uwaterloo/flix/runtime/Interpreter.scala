@@ -29,7 +29,7 @@ object Interpreter {
         val cond = eval(exp1, root, env).toBool
         if (cond) eval(exp2, root, env) else eval(exp3, root, env)
       case Expression.Let(ident, value, body, tpe) =>
-        // TODO(mhyee): Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
+        // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
         val func = Expression.Lambda(List(FormalArg(ident, value.tpe)), tpe,
           body, Type.Function(List(value.tpe), tpe))
         val desugared = Expression.Apply(func, List(value), tpe)
@@ -69,7 +69,7 @@ object Interpreter {
     case BinaryOperator.Minus => Value.Int(v1.toInt - v2.toInt)
     case BinaryOperator.Times => Value.Int(v1.toInt * v2.toInt)
     case BinaryOperator.Divide => Value.Int(v1.toInt / v2.toInt)
-    case BinaryOperator.Modulo => Value.Int(v1.toInt % v2.toInt)
+    case BinaryOperator.Modulo => Value.Int(v1.toInt % v2.toInt) // TODO: Document semantics of modulo on negative operands
     case BinaryOperator.Less => Value.Bool(v1.toInt < v2.toInt)
     case BinaryOperator.LessEqual => Value.Bool(v1.toInt <= v2.toInt)
     case BinaryOperator.Greater => Value.Bool(v1.toInt > v2.toInt)
