@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.util.CachedHash
+
 object Name {
 
   /**
@@ -8,7 +10,7 @@ object Name {
    * @param name the identifier.
    * @param location the source location of the identifier.
    */
-  case class Ident(name: String, location: SourceLocation) {
+  case class Ident(name: String, location: SourceLocation) extends CachedHash {
     /**
      * Returns a human readable string representation of the identifier.
      */
@@ -22,7 +24,7 @@ object Name {
    *
    * @param location the source location of the first name part.
    */
-  case class Unresolved(parts: List[String], location: SourceLocation) {
+  case class Unresolved(parts: List[String], location: SourceLocation) extends CachedHash {
     /**
      * Returns a human readable string representation of the unresolved name.
      */
@@ -34,7 +36,7 @@ object Name {
    *
    * @param parts the parts of the name.
    */
-  case class Resolved(parts: List[String]) {
+  case class Resolved(parts: List[String]) extends CachedHash {
     /**
      * Returns a human readable string representation of the resolved name.
      */

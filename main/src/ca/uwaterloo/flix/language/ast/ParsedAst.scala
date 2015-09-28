@@ -10,8 +10,6 @@ sealed trait ParsedAst
 // TODO: Consider order. Maybe just do it be alpabet?
 // TODO: List of missing features: annotations? output to files? debugging information? col indexes?
 // TODO: Enforce uniform naming.
-// TODO: Add a high level every Ast node should implement SmartHash... (i.e. hash and eq)
-
 
 // TODO: Add source locations everywhere.
 
