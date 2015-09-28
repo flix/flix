@@ -398,7 +398,12 @@ object TypedAst {
     /**
      * A common super-type for terms that are allowed appear in a head predicate.
      */
-    sealed trait Head extends TypedAst
+    sealed trait Head extends TypedAst {
+      /**
+       * Returns the type of the term.
+       */
+      def tpe: TypedAst.Type
+    }
 
     object Head {
 

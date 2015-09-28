@@ -41,6 +41,8 @@ object Resolver {
 
     // TODO: All kinds of arity errors....
 
+    // TODO: Unused, let, parameters etc.
+
   }
 
   object SymbolTable {
@@ -125,16 +127,17 @@ object Resolver {
           case v => Definition.resolve(v, List.empty, syms)
         }
 
-        val collectedRelations = syms.relations.mapValues {
-          r => Definition.resolve(r, List.empty, syms)
+        // TODO: This actually has to be a recursive traversal thingy.. to drag the namespace along...
+        val collectedRelations = Validation.fold[Name.Resolved, WeededAst.Definition.Relation, Name.Resolved, ResolvedAst.Definition.Relation, ResolverError](syms.relations) {
+          case (k, v) => Definition.resolve(v, List.empty, syms) map (d => k -> d)
         }
 
         val collectedFacts = Declaration.collectFacts(wast, syms)
         val collectedRules = Declaration.collectRules(wast, syms)
 
-        @@(collectedFacts, collectedRules) map {
+        @@(collectedRelations, collectedFacts, collectedRules) map {
           // TODO: Rest...
-          case (facts, rules) => ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, facts, rules)
+          case (relations, facts, rules) => ResolvedAst.Root(Map.empty, Map.empty, Map.empty, relations, facts, rules)
         }
     }
   }
@@ -215,13 +218,26 @@ object Resolver {
     /**
      * Performs symbol resolution for the given value definition `wast`.
      */
-    def resolve(wast: WeededAst.Definition.Constant, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Constant, ResolverError] =
+    def resolve(wast: WeededAst.Definition.Constant, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Constant, ResolverError] = {
+      val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
+
       @@(Expression.resolve(wast.e, namespace, syms), Type.resolve(wast.tpe, namespace, syms)) map {
-        case (e, tpe) => ResolvedAst.Definition.Constant(Name.Resolved(namespace ::: wast.ident.name :: Nil), e, tpe)
+        case (e, tpe) =>
+          ResolvedAst.Definition.Constant(name, e, tpe)
+      }
+    }
+
+    def resolve(wast: WeededAst.Definition.Relation, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Relation, ResolverError] = {
+      val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
+
+      val attributesVal = wast.attributes.map {
+        case WeededAst.Attribute(ident, tpe) => Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.Attribute(ident, t))
       }
 
-    def resolve(wast: WeededAst.Definition.Relation, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Relation, ResolverError] =
-      ???
+      @@(attributesVal) map {
+        case attributes => ResolvedAst.Definition.Relation(name, attributes)
+      }
+    }
 
   }
 
@@ -430,6 +446,7 @@ object Resolver {
         case WeededAst.Type.Tag(ident, tpe) => ??? // TODO: Shouldn't a tag include a namespace? E.g. there is a difference between foo.Foo.Tag and bar.Foo.Tag?
         case WeededAst.Type.Tuple(welms) => @@(welms map (e => resolve(e, namespace, syms))) map ResolvedAst.Type.Tuple
         case WeededAst.Type.Function(wtype1, wtype2) => ???
+        case WeededAst.Type.Lattice(t) => visit(t) // TODO: Incorrect.
       }
 
       visit(wast)

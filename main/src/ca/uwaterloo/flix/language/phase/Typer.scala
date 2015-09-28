@@ -366,19 +366,25 @@ object Typer {
 
   object Predicate {
 
+    /**
+     * Types the given head predicate `rast` under the given AST `root`.
+     */
     def typer(rast: ResolvedAst.Predicate.Head, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Head, TypeError] = {
       val relation = root.relations(rast.name)
       val termsVal = (rast.terms zip relation.attributes) map {
         case (term, ResolvedAst.Attribute(_, tpe)) => Term.typer(term, Type.typer(tpe), root)
       }
 
-      ???
+      @@(termsVal) map {
+        case terms => TypedAst.Predicate.Head(rast.name, terms, TypedAst.Type.Predicate(terms map (_.tpe)))
+      }
     }
 
-
+    /**
+     * Types the given body predicate `rast` under the given AST `root`.
+     */
     def typer(rast: ResolvedAst.Predicate.Body, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Body, TypeError] =
       ???
-
 
   }
 
