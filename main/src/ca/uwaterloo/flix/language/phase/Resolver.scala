@@ -179,7 +179,7 @@ object Resolver {
         syms.enums.get(rname) match {
           case None => syms.copy(
             enums = syms.enums + (rname -> defn),
-            types = syms.types + (rname -> WeededAst.Type.Enum(defn.cases))
+            types = syms.types + (rname -> WeededAst.Type.Enum(rname, defn.cases))
           ).toSuccess
           case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.location, ident.location).toFailure
         }
@@ -240,7 +240,7 @@ object Resolver {
       val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
 
       val casesVal = Validation.fold[String, WeededAst.Type.Tag, String, ResolvedAst.Type.Tag, ResolverError](wast.cases) {
-        (k, tpe) => Type.resolve(tpe, namespace, syms) map (t => k -> t.asInstanceOf[ResolvedAst.Type.Tag])
+        (k, tpe) => Type.resolve(tpe, namespace ::: wast.ident.name :: Nil, syms) map (t => k -> t.asInstanceOf[ResolvedAst.Type.Tag])
       }
 
       casesVal map {
@@ -472,9 +472,9 @@ object Resolver {
         }
         case WeededAst.Type.Tag(tagName, tpe) =>
           visit(tpe) map (t => ResolvedAst.Type.Tag(Name.Resolved(namespace), tagName, t))
-        case WeededAst.Type.Enum(wcases) =>
+        case WeededAst.Type.Enum(name, wcases) =>
           val casesVal = Validation.fold(wcases) {
-            case (k, v) => visit(v) map (tpe => k -> tpe.asInstanceOf[ResolvedAst.Type.Tag])
+            case (k, v) => resolve(v, name.parts, syms) map (tpe => k -> tpe.asInstanceOf[ResolvedAst.Type.Tag])
           }
           casesVal map ResolvedAst.Type.Enum
         case WeededAst.Type.Tuple(welms) => @@(welms map (e => resolve(e, namespace, syms))) map ResolvedAst.Type.Tuple

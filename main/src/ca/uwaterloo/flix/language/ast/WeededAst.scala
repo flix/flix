@@ -168,7 +168,7 @@ object WeededAst {
 
     case class Tag(tagName: ParsedAst.Ident, tpe: WeededAst.Type) extends WeededAst.Type
 
-    case class Enum(cases: Map[String, WeededAst.Type.Tag]) extends WeededAst.Type
+    case class Enum(name: Name.Resolved, cases: Map[String, WeededAst.Type.Tag]) extends WeededAst.Type
 
     case class Tuple(elms: List[WeededAst.Type]) extends WeededAst.Type
 
