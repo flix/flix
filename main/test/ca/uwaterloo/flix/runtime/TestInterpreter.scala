@@ -1714,7 +1714,7 @@ class TestInterpreter extends FunSuite {
       (Pattern.Lit(Literal.Tag(name, ident,
         Literal.Tuple(List(Literal.Str("James"), Literal.Int(40)), Type.Tuple(List(Type.Str, Type.Int))),
         enumTpe), tagTpe), Expression.Lit(Literal.Bool(true), Type.Bool)),
-      (Pattern.Wildcard(tagTpe), Expression.Lit(Literal.Bool(false), Type.Bool)))
+      (Pattern.Wildcard(enumTpe), Expression.Lit(Literal.Bool(false), Type.Bool)))
     val input = Expression.Match(
       Expression.Lit(Literal.Tag(name, ident,
         Literal.Tuple(List(
@@ -1726,18 +1726,62 @@ class TestInterpreter extends FunSuite {
 
   test("Pattern.Literal.Tag03a") {
     // ConstProp.Val 4 match { case ConstProp.Bot => true; case _ => false }
+    import ConstantPropTagDefs._
+    val rules = List(
+      (Pattern.Lit(Literal.Tag(name, identB, Literal.Unit, enumTpe), tagTpeB),
+        Expression.Lit(Literal.Bool(true), Type.Bool)),
+      (Pattern.Wildcard(enumTpe), Expression.Lit(Literal.Bool(false), Type.Bool))
+    )
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tag(name, identV, Literal.Int(4), enumTpe), tagTpeV),
+      rules, Type.Bool)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Bool(false))(result)
   }
 
   test("Pattern.Literal.Tag03b") {
     // ConstProp.Val 4 match { case ConstProp.Top => true; case _ => false }
+    import ConstantPropTagDefs._
+    val rules = List(
+      (Pattern.Lit(Literal.Tag(name, identT, Literal.Unit, enumTpe), tagTpeT),
+        Expression.Lit(Literal.Bool(true), Type.Bool)),
+      (Pattern.Wildcard(enumTpe), Expression.Lit(Literal.Bool(false), Type.Bool))
+    )
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tag(name, identV, Literal.Int(4), enumTpe), tagTpeV),
+      rules, Type.Bool)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Bool(false))(result)
   }
 
   test("Pattern.Literal.Tag03c") {
     // ConstProp.Val 4 match { case ConstProp.Val 4 => true; case _ => false }
+    import ConstantPropTagDefs._
+    val rules = List(
+      (Pattern.Lit(Literal.Tag(name, identV, Literal.Int(4), enumTpe), tagTpeV),
+        Expression.Lit(Literal.Bool(true), Type.Bool)),
+      (Pattern.Wildcard(enumTpe), Expression.Lit(Literal.Bool(false), Type.Bool))
+    )
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tag(name, identV, Literal.Int(4), enumTpe), tagTpeV),
+      rules, Type.Bool)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Bool(true))(result)
   }
 
   test("Pattern.Literal.Tag03d") {
     // ConstProp.Val 4 match { case ConstProp.Val 5 => true; case _ => false }
+    import ConstantPropTagDefs._
+    val rules = List(
+      (Pattern.Lit(Literal.Tag(name, identV, Literal.Int(5), enumTpe), tagTpeV),
+        Expression.Lit(Literal.Bool(true), Type.Bool)),
+      (Pattern.Wildcard(enumTpe), Expression.Lit(Literal.Bool(false), Type.Bool))
+    )
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tag(name, identV, Literal.Int(4), enumTpe), tagTpeV),
+      rules, Type.Bool)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Bool(false))(result)
   }
 
   test("Pattern.Literal.Tuple01") {
