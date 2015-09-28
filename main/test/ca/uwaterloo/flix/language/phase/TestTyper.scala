@@ -886,9 +886,10 @@ class TestTyper extends FunSuite {
   }
 
   test("Pattern.Tag01") {
+    val tagName = ParsedAst.Ident("Qux", SourceLocation.Unknown)
     val x = ParsedAst.Ident("x", SourceLocation.Unknown)
-    val rast = ResolvedAst.Pattern.Tag(RName, Ident, ResolvedAst.Pattern.Var(x))
-    val tpe = TypedAst.Type.Tag(RName, Ident, TypedAst.Type.Unit)
+    val rast = ResolvedAst.Pattern.Tag(RName, tagName, ResolvedAst.Pattern.Var(x))
+    val tpe = TypedAst.Type.Enum(Map("Qux" -> TypedAst.Type.Tag(RName, tagName, TypedAst.Type.Unit)))
     val result = Typer.Pattern.typer(rast, tpe, Root)
     assertResult(TypedAst.Type.Unit)(result.get.bound(x.name))
   }

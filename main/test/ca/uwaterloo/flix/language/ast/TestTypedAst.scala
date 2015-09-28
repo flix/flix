@@ -4,11 +4,11 @@ import org.scalatest.FunSuite
 
 class TestTypedAst extends FunSuite {
 
-  test("Predicate.Head.Variables") {
+  ignore("Predicate.Head.Variables") {
     ??? // TODO
   }
 
-  test("Predicate.Body.Variables") {
+  ignore("Predicate.Body.Variables") {
     ??? // TODO
   }
 
@@ -22,8 +22,8 @@ class TestTypedAst extends FunSuite {
     ), TypedAst.Type.Tuple(List(TypedAst.Type.Bool, TypedAst.Type.Int)))
 
     assertResult(Map(
-      x -> TypedAst.Type.Bool,
-      y -> TypedAst.Type.Int
+      "x" -> TypedAst.Type.Bool,
+      "y" -> TypedAst.Type.Int
     ))(pat.bound)
   }
 

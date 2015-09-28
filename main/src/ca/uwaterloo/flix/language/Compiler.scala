@@ -4,6 +4,7 @@ import java.nio.file.{Files, Path}
 
 import ca.uwaterloo.flix.language.ast.{TypedAst, SourceLocation, ResolvedAst, ParsedAst}
 import ca.uwaterloo.flix.language.phase._
+import ca.uwaterloo.flix.util.Validation
 import org.parboiled2.{ErrorFormatter, ParseError}
 
 import scala.io.Source
@@ -68,7 +69,7 @@ object Compiler {
   /**
    * Applies the compiler to all the given source `paths`.
    */
-  def compile(paths: Traversable[Path]): TypedAst.Root = {
+  def compile(paths: Traversable[Path]): Option[TypedAst.Root] = {
     val past = parse(paths)
 
     val wast = Weeder.weed(past)
@@ -76,7 +77,7 @@ object Compiler {
       println()
       wast.errors.foreach(e => println(e.format))
       Console.println("Aborting due to previous errors.")
-      System.exit(1)
+      return None
     }
 
     val rast = Resolver.resolve(wast.get)
@@ -84,18 +85,18 @@ object Compiler {
       println()
       rast.errors.foreach(e => println(e.format))
       Console.println("Aborting due to previous errors.")
-      System.exit(1)
+      return None
     }
 
     val tast = Typer.typecheck(rast.get)
     if (tast.isFailure) {
       tast.errors.foreach(e => println(e.format))
       Console.println("Aborting due to previous errors.")
-      System.exit(1)
+      return None
     }
 
     Console.println("Compilation successful.")
-    tast.get
+    Some(tast.get)
   }
 
 }
