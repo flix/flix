@@ -307,6 +307,7 @@ object ParsedAst {
      * @param location the source location where the error expression occurs.
      */
     case class Error(location: SourceLocation) extends ParsedAst.Expression
+    // TODO: Add an explicit ascribed type.
 
   }
 

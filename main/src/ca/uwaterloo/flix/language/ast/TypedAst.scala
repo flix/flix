@@ -479,7 +479,22 @@ object TypedAst {
   /**
    * A common super-type for types.
    */
-  sealed trait Type extends TypedAst
+  sealed trait Type extends TypedAst {
+    // TODO Move somewhere else?
+    final def format: String = this match {
+      case Type.Unit => "()"
+      case Type.Bool => "Bool"
+      case Type.Int => "Int"
+      case Type.Str => "Str"
+      case Type.Tag(enumName, tagName, tpe) =>
+        enumName.parts.mkString("::") + "." + tagName.name + "(" + tpe.format + ")"
+      case Type.Enum(cases) =>
+        "Enum(" + cases.mkString(", ") + ")"
+      case Type.Tuple(elms) => "(" + elms.map(_.format).mkString(", ") + ")"
+      case Type.Function(args, retTpe) =>
+        "(" + args.map(_.format).mkString(", ") + ") -> " + retTpe.format
+    }
+  }
 
   object Type {
 
