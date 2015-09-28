@@ -439,7 +439,12 @@ object TypedAst {
     /**
      * A common super-type for terms that are allowed to appear in a body predicate.
      */
-    sealed trait Body extends TypedAst
+    sealed trait Body extends TypedAst {
+      /**
+       * Returns the type of the term.
+       */
+      def tpe: TypedAst.Type
+    }
 
     object Body {
 

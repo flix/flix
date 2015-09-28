@@ -383,9 +383,16 @@ object Typer {
     /**
      * Types the given body predicate `rast` under the given AST `root`.
      */
-    def typer(rast: ResolvedAst.Predicate.Body, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Body, TypeError] =
-      ???
+    def typer(rast: ResolvedAst.Predicate.Body, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Body, TypeError] = {
+      val relation = root.relations(rast.name)
+      val termsVal = (rast.terms zip relation.attributes) map {
+        case (term, ResolvedAst.Attribute(_, tpe)) => Term.typer(term, Type.typer(tpe), root)
+      }
 
+      @@(termsVal) map {
+        case terms => TypedAst.Predicate.Body(rast.name, terms, TypedAst.Type.Predicate(terms map (_.tpe)))
+      }
+    }
   }
 
   object Term {
