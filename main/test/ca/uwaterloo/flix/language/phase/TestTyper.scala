@@ -52,7 +52,7 @@ class TestTyper extends FunSuite {
       formals = List(ResolvedAst.FormalArg(x, ResolvedAst.Type.Unit)),
       retTpe = ResolvedAst.Type.Unit,
       body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit))
-    val tpe = ResolvedAst.Type.Int
+    val tpe = ResolvedAst.Type.Function(List(ResolvedAst.Type.Unit), ResolvedAst.Type.Unit)
     val rast = ResolvedAst.Definition.Constant(RName, exp, tpe)
 
     val result = Typer.Definition.typer(rast, Root)
@@ -66,9 +66,9 @@ class TestTyper extends FunSuite {
     // fn (x: Int): Int = x
     val exp = ResolvedAst.Expression.Lambda(
       formals = List(ResolvedAst.FormalArg(x, ResolvedAst.Type.Int)),
-      retTpe = ResolvedAst.Type.Unit,
+      retTpe = ResolvedAst.Type.Int,
       body = ResolvedAst.Expression.Var(x))
-    val tpe = ResolvedAst.Type.Int
+    val tpe = ResolvedAst.Type.Function(List(ResolvedAst.Type.Int), ResolvedAst.Type.Int)
     val rast = ResolvedAst.Definition.Constant(RName, exp, tpe)
 
     val result = Typer.Definition.typer(rast, Root)
