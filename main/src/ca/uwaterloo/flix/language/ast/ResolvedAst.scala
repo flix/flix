@@ -5,7 +5,6 @@ trait ResolvedAst
 object ResolvedAst {
 
   case class Root(
-                   // todo: type environment???
                    constants: Map[Name.Resolved, ResolvedAst.Definition.Constant],
                    enums: Map[Name.Resolved, ResolvedAst.Definition.Enum],
                    lattices: Map[ResolvedAst.Type, ResolvedAst.Definition.Lattice],
@@ -287,6 +286,13 @@ object ResolvedAst {
      * @param tpe the nested type.
      */
     case class Tag(name: Name.Resolved, ident: ParsedAst.Ident, tpe: ResolvedAst.Type) extends ResolvedAst.Type
+
+    /**
+     * An AST node representing an enum type (a set of tags).
+     *
+     * @param cases a map from tag names to tag types.
+     */
+    case class Enum(cases: Map[String, ResolvedAst.Type.Tag]) extends ResolvedAst.Type
 
     /**
      * An AST node representing a tuple type.

@@ -198,12 +198,12 @@ object Weeder {
      * Returns [[Failure]] if the same tag name occurs twice.
      */
     def compile(past: ParsedAst.Definition.Enum): Validation[WeededAst.Definition.Enum, WeederError] =
-      Validation.fold[ParsedAst.Type.Tag, Map[String, ParsedAst.Type.Tag], WeederError](past.cases, Map.empty) {
+      Validation.fold[ParsedAst.Type.Tag, Map[String, WeededAst.Type.Tag], WeederError](past.cases, Map.empty) {
         // loop through each tag declaration.
         case (macc, tag@ParsedAst.Type.Tag(ParsedAst.Ident(name, location), _)) => macc.get(name) match {
           // check if the tag was already declared.
-          case None => (macc + (name -> tag)).toSuccess
-          case Some(otherTag) => DuplicateTag(name, otherTag.ident.location, location).toFailure
+          case None => Type.compile(tag) map (tpe => macc + (name -> tpe.asInstanceOf[WeededAst.Type.Tag]))
+          case Some(otherTag) => DuplicateTag(name, otherTag.tagName.location, location).toFailure
         }
       } map {
         case m => WeededAst.Definition.Enum(past.ident, m)

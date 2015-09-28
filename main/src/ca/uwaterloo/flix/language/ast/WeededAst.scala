@@ -27,7 +27,7 @@ object WeededAst {
 
     case class Constant(ident: ParsedAst.Ident, e: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Definition
 
-    case class Enum(ident: ParsedAst.Ident, cases: Map[String, ParsedAst.Type.Tag]) extends WeededAst.Definition
+    case class Enum(ident: ParsedAst.Ident, cases: Map[String, WeededAst.Type.Tag]) extends WeededAst.Definition
 
     // TODO: Improve? or at least do something with traits?
     case class Lattice(ident: ParsedAst.Ident, elms: List[ParsedAst.QName], traits: List[ParsedAst.Trait]) extends WeededAst.Definition
@@ -166,7 +166,9 @@ object WeededAst {
 
     case class Ambiguous(name: ParsedAst.QName) extends WeededAst.Type
 
-    case class Tag(ident: ParsedAst.Ident, tpe: WeededAst.Type) extends WeededAst.Type
+    case class Tag(tagName: ParsedAst.Ident, tpe: WeededAst.Type) extends WeededAst.Type
+
+    case class Enum(cases: Map[String, WeededAst.Type.Tag]) extends WeededAst.Type
 
     case class Tuple(elms: List[WeededAst.Type]) extends WeededAst.Type
 

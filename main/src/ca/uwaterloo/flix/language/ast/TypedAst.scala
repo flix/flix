@@ -508,9 +508,9 @@ object TypedAst {
     /**
      * An AST node representing an enum type (a set of tags).
      *
-     * @param variants a map from tag names to tag types.
+     * @param cases a map from tag names to tag types.
      */
-    case class Enum(variants: Map[String, TypedAst.Type.Tag]) extends TypedAst.Type
+    case class Enum(cases: Map[String, TypedAst.Type.Tag]) extends TypedAst.Type
 
     /**
      * An AST node representing a tuple type.

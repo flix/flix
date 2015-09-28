@@ -52,7 +52,7 @@ object Resolver {
   case class SymbolTable(enums: Map[Name.Resolved, WeededAst.Definition.Enum],
                          values: Map[Name.Resolved, WeededAst.Definition.Constant],
                          relations: Map[Name.Resolved, WeededAst.Definition.Relation],
-                         types: Map[Name.Resolved, ResolvedAst.Type]) {
+                         types: Map[Name.Resolved, WeededAst.Type]) {
     // TODO: Cleanup
     def lookupEnum(name: ParsedAst.QName, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Enum), ResolverError] = {
       val rname = Name.Resolved(
@@ -96,7 +96,7 @@ object Resolver {
     }
 
     // TODO: Cleanup
-    def lookupType(name: ParsedAst.QName, namespace: List[String]): Validation[ResolvedAst.Type, ResolverError] = {
+    def lookupType(name: ParsedAst.QName, namespace: List[String]): Validation[WeededAst.Type, ResolverError] = {
       val rname = Name.Resolved(
         if (name.parts.size == 1)
           namespace ::: name.parts.head :: Nil
@@ -110,6 +110,9 @@ object Resolver {
     }
 
   }
+
+  // TODO: Introduce ResolvedSymbolTable
+
 
   /**
    * Resolves all symbols in the given AST `wast`.
@@ -127,9 +130,8 @@ object Resolver {
           case v => Definition.resolve(v, List.empty, syms)
         }
 
-        // TODO: This actually has to be a recursive traversal thingy.. to drag the namespace along...
         val collectedRelations = Validation.fold[Name.Resolved, WeededAst.Definition.Relation, Name.Resolved, ResolvedAst.Definition.Relation, ResolverError](syms.relations) {
-          case (k, v) => Definition.resolve(v, List.empty, syms) map (d => k -> d)
+          case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
 
         val collectedFacts = Declaration.collectFacts(wast, syms)
@@ -171,7 +173,10 @@ object Resolver {
       case defn@WeededAst.Definition.Enum(ident, cases) =>
         val rname = toRName(ident, namespace)
         syms.enums.get(rname) match {
-          case None => syms.copy(enums = syms.enums + (rname -> defn)).toSuccess
+          case None => syms.copy(
+            enums = syms.enums + (rname -> defn),
+            types = syms.types + (rname -> WeededAst.Type.Enum(defn.cases))
+          ).toSuccess
           case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.location, ident.location).toFailure
         }
 
@@ -183,10 +188,6 @@ object Resolver {
           case None => syms.copy(relations = syms.relations + (rname -> defn)).toSuccess
           case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.location, ident.location).toFailure
         }
-    }
-
-    def disambiguateRelations(wast: WeededAst.Root, syms: SymbolTable): Validation[List[ResolvedAst.Definition.Relation], ResolverError] = {
-      ???
     }
 
     def collectFacts(wast: WeededAst.Root, syms: SymbolTable): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = {
@@ -445,9 +446,15 @@ object Resolver {
           case Seq("Bool") => ResolvedAst.Type.Bool.toSuccess
           case Seq("Int") => ResolvedAst.Type.Int.toSuccess
           case Seq("Str") => ResolvedAst.Type.Str.toSuccess
-          case _ => syms.lookupType(name, namespace)
+          case _ => syms.lookupType(name, namespace) flatMap (tpe => visit(tpe))
         }
-        case WeededAst.Type.Tag(ident, tpe) => ??? // TODO: Shouldn't a tag include a namespace? E.g. there is a difference between foo.Foo.Tag and bar.Foo.Tag?
+        case WeededAst.Type.Tag(tagName, tpe) =>
+          visit(tpe) map (t => ResolvedAst.Type.Tag(Name.Resolved(namespace), tagName, t))
+        case WeededAst.Type.Enum(wcases) =>
+          val casesVal = Validation.fold(wcases) {
+            case (k, v) => visit(v) map (tpe => k -> tpe.asInstanceOf[ResolvedAst.Type.Tag])
+          }
+          casesVal map ResolvedAst.Type.Enum
         case WeededAst.Type.Tuple(welms) => @@(welms map (e => resolve(e, namespace, syms))) map ResolvedAst.Type.Tuple
         case WeededAst.Type.Function(wtype1, wtype2) => ???
         case WeededAst.Type.Lattice(t) => visit(t) // TODO: Incorrect.
