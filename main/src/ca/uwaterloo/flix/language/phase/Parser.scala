@@ -303,7 +303,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   def Type: Rule1[ParsedAst.Type] = rule {
     oneOrMore(SimpleType).separatedBy(optWS ~ "->" ~ optWS) ~> ((types: Seq[ParsedAst.Type]) => types match {
       case xs if xs.size == 1 => xs.head
-      case xs => xs.reduceRight[ParsedAst.Type](ParsedAst.Type.Function)
+      case xs => ParsedAst.Type.Function(xs.dropRight(1).toList, xs.last)
     })
   }
 

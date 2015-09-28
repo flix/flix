@@ -829,22 +829,22 @@ class TestParser extends FunSuite {
   test("Type.Function01") {
     val input = "A -> B"
     val result = new Parser(None, input).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
-    assertResult(Seq("A"))(result.t1.asInstanceOf[ParsedAst.Type.Ambiguous].name.parts)
-    assertResult(Seq("B"))(result.t2.asInstanceOf[ParsedAst.Type.Ambiguous].name.parts)
+    assertResult(Seq("A"))(result.formals.head.asInstanceOf[ParsedAst.Type.Ambiguous].name.parts)
+    assertResult(Seq("B"))(result.retTpe.asInstanceOf[ParsedAst.Type.Ambiguous].name.parts)
   }
 
   test("Type.Function02") {
     val input = "A -> B -> C"
     val result = new Parser(None, input).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
-    assert(result.t1.isInstanceOf[ParsedAst.Type.Ambiguous])
-    assert(result.t2.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Ambiguous])
+    assert(result.formals.tail.head.isInstanceOf[ParsedAst.Type.Ambiguous])
   }
 
   test("Type.Function03") {
     val input = "(A -> B) -> C"
     val result = new Parser(None, input).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
-    assert(result.t1.isInstanceOf[ParsedAst.Type.Function])
-    assert(result.t2.isInstanceOf[ParsedAst.Type.Ambiguous])
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Ambiguous])
   }
 
   test("Type.Tuple01") {

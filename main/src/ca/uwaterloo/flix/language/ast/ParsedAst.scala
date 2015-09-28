@@ -7,10 +7,6 @@ import scala.collection.immutable.Seq
  */
 sealed trait ParsedAst
 
-// TODO: Consider order. Maybe just do it be alpabet?
-// TODO: List of missing features: annotations? output to files? debugging information? col indexes?
-// TODO: Enforce uniform naming.
-
 // TODO: Add source locations everywhere.
 
 object ParsedAst {
@@ -415,11 +411,10 @@ object ParsedAst {
     /**
      * An AST node that represent a function type.
      *
-     * @param t1 the type of the domain.
-     * @param t2 the type of the range.
+     * @param formals the type of the arguments.
+     * @param retTpe the return type.
      */
-    // TODO: This needs to be changed.
-    case class Function(t1: ParsedAst.Type, t2: ParsedAst.Type) extends ParsedAst.Type
+    case class Function(formals: List[ParsedAst.Type], retTpe: ParsedAst.Type) extends ParsedAst.Type
 
     /**
      * An AST node that represents a tagged type.
