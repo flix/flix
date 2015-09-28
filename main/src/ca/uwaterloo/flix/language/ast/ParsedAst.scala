@@ -8,7 +8,6 @@ import scala.collection.immutable.Seq
 sealed trait ParsedAst
 
 // TODO: Add source locations everywhere.
-// TODO: Function -> Lambda
 
 object ParsedAst {
 
@@ -102,15 +101,6 @@ object ParsedAst {
     case class Relation(ident: Name.Ident, attributes: Seq[ParsedAst.Attribute]) extends ParsedAst.Definition
 
   }
-
-  /**
-   * An AST node that represent a trait.
-   *
-   * @param ident the name of the trait.
-   * @param name the value passed to the trait.
-   */
-  // TODO: Find a better name or eliminate entirely...
-  case class Trait(ident: Name.Ident, name: Name.Unresolved) extends ParsedAst
 
   /**
    * AST nodes for Literals.
@@ -402,11 +392,11 @@ object ParsedAst {
     case object Unit extends ParsedAst.Type
 
     /**
-     * An AST node that represent a reference to a type.
+     * An AST node that represent an unresolved type.
      *
      * @param name the ambiguous name.
      */
-    case class Ambiguous(name: Name.Unresolved) extends ParsedAst.Type
+    case class Var(name: Name.Unresolved) extends ParsedAst.Type
 
     /**
      * An AST node that represent a function type.
@@ -439,14 +429,6 @@ object ParsedAst {
      */
     case class Parametric(name: Name.Unresolved, elms: Seq[ParsedAst.Type]) extends ParsedAst.Type
 
-    /**
-     * An AST node that represent a lattice type (i.e. a type equipped with lattice operators).
-     *
-     * @param tpe the enriched type.
-     */
-    // TODO: Remove this?
-    case class Lattice(tpe: ParsedAst.Type) extends ParsedAst.Type
-
   }
 
   /**
@@ -455,6 +437,17 @@ object ParsedAst {
    * @param ident the name of the attribute.
    * @param tpe the type of the attribute.
    */
+  // TODO: Lattice notion
   case class Attribute(ident: Name.Ident, tpe: ParsedAst.Type) extends ParsedAst
 
+  // TODO: FormalARG?
+
+  /**
+   * An AST node that represent a trait.
+   *
+   * @param ident the name of the trait.
+   * @param name the value passed to the trait.
+   */
+  // TODO: Find a better name or eliminate entirely...
+  case class Trait(ident: Name.Ident, name: Name.Unresolved) extends ParsedAst
 }

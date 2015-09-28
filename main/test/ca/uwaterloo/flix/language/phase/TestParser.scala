@@ -829,22 +829,22 @@ class TestParser extends FunSuite {
   test("Type.Function01") {
     val input = "A -> B"
     val result = new Parser(None, input).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
-    assertResult(Seq("A"))(result.formals.head.asInstanceOf[ParsedAst.Type.Ambiguous].name.parts)
-    assertResult(Seq("B"))(result.retTpe.asInstanceOf[ParsedAst.Type.Ambiguous].name.parts)
+    assertResult(Seq("A"))(result.formals.head.asInstanceOf[ParsedAst.Type.Var].name.parts)
+    assertResult(Seq("B"))(result.retTpe.asInstanceOf[ParsedAst.Type.Var].name.parts)
   }
 
   test("Type.Function02") {
     val input = "A -> B -> C"
     val result = new Parser(None, input).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
-    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Ambiguous])
-    assert(result.formals.tail.head.isInstanceOf[ParsedAst.Type.Ambiguous])
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Var])
+    assert(result.formals.tail.head.isInstanceOf[ParsedAst.Type.Var])
   }
 
   test("Type.Function03") {
     val input = "(A -> B) -> C"
     val result = new Parser(None, input).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
     assert(result.formals.head.isInstanceOf[ParsedAst.Type.Function])
-    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Ambiguous])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Var])
   }
 
   test("Type.Tuple01") {
@@ -858,7 +858,7 @@ class TestParser extends FunSuite {
     val input = "(A)"
     val result = new Parser(None, input).Type.run()
     assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Type.Ambiguous])
+    assert(result.get.isInstanceOf[ParsedAst.Type.Var])
   }
 
   test("Type.Tuple03") {
@@ -896,20 +896,6 @@ class TestParser extends FunSuite {
     val result = new Parser(None, input).Type.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Type.Parametric])
-  }
-
-  test("Type.Lattice01") {
-    val input = "<Sign>"
-    val result = new Parser(None, input).Type.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Type.Lattice])
-  }
-
-  test("Type.Lattice02") {
-    val input = "<foo::bar::Sign>"
-    val result = new Parser(None, input).Type.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Type.Lattice])
   }
 
   /////////////////////////////////////////////////////////////////////////////

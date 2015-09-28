@@ -34,6 +34,7 @@ object Compiler {
   /**
    * Returns the abstract syntax tree of the given `paths`.
    */
+  // TODO: Return validation
   def parse(paths: Traversable[Path]): ParsedAst.Root = {
     val asts = paths map parse
     asts.reduce[ParsedAst.Root] {
@@ -44,6 +45,7 @@ object Compiler {
   /**
    * Returns the abstract syntax tree of the given `path`.
    */
+  // TODO: Return validation
   def parse(path: Path): ParsedAst.Root =
     if (!Files.exists(path))
       throw new RuntimeException(s"Path '$path' does not exist.")
@@ -57,6 +59,7 @@ object Compiler {
   /**
    * Returns the abstract syntax tree of the given string `input`.
    */
+  // TODO: Return validation
   def parse(input: String, path: Option[Path]): ParsedAst.Root = {
     val parser = new Parser(path, input)
     parser.Root.run() match {

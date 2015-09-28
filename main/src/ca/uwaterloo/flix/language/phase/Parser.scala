@@ -312,11 +312,11 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   // NB: ParametricType must be parsed before AmbiguousType.
   def SimpleType: Rule1[ParsedAst.Type] = rule {
-    ParametricType | AmbiguousType | TupleType | LatticeType
+    ParametricType | AmbiguousType | TupleType
   }
 
-  def AmbiguousType: Rule1[ParsedAst.Type.Ambiguous] = rule {
-    QName ~> ParsedAst.Type.Ambiguous
+  def AmbiguousType: Rule1[ParsedAst.Type.Var] = rule {
+    QName ~> ParsedAst.Type.Var
   }
 
   def ParametricType: Rule1[ParsedAst.Type.Parametric] = rule {
@@ -339,10 +339,6 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     rule {
       Unit | Singleton | Tuple
     }
-  }
-
-  def LatticeType: Rule1[ParsedAst.Type.Lattice] = rule {
-    "<" ~ Type ~ ">" ~> ParsedAst.Type.Lattice
   }
 
   /** *************************************************************************/

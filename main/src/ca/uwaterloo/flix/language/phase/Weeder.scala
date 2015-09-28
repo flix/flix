@@ -453,7 +453,7 @@ object Weeder {
      */
     def compile(past: ParsedAst.Type): Validation[WeededAst.Type, WeederError] = past match {
       case ParsedAst.Type.Unit => WeededAst.Type.Unit.toSuccess
-      case ParsedAst.Type.Ambiguous(name) => WeededAst.Type.Ambiguous(name).toSuccess
+      case ParsedAst.Type.Var(name) => WeededAst.Type.Ambiguous(name).toSuccess
       case ParsedAst.Type.Function(pformals, pret) =>
         val formalTypeVal = @@(pformals map compile)
         val returnTypeVal = compile(pret)
@@ -465,10 +465,6 @@ object Weeder {
       }
       case ParsedAst.Type.Tuple(pelms) => @@(pelms map compile) map {
         case elms => WeededAst.Type.Tuple(elms)
-      }
-      case ParsedAst.Type.Lattice(ptype) => compile(ptype) map {
-        // TODO: Support lattices in a different way.
-        case tpe => WeededAst.Type.Lattice(tpe)
       }
       case ParsedAst.Type.Parametric(name, pelms) =>
         Unsupported("Parametric types are not yet supported.", name.location).toFailure
