@@ -30,7 +30,7 @@ object WeededAst {
     case class Enum(ident: ParsedAst.Ident, cases: Map[String, WeededAst.Type.Tag]) extends WeededAst.Definition
 
     // TODO: Improve? or at least do something with traits?
-    case class Lattice(ident: ParsedAst.Ident, elms: List[ParsedAst.QName], traits: List[ParsedAst.Trait]) extends WeededAst.Definition
+    case class Lattice(ident: ParsedAst.Ident, elms: List[WeededAst.Expression], traits: List[ParsedAst.Trait]) extends WeededAst.Definition
 
     // TODO
     case class JoinSemiLattice(ident: ParsedAst.Ident,

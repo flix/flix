@@ -114,7 +114,7 @@ object ParsedAst {
      * @param elms the components of the lattice (e.g. bot, leq, lub).
      * @param traits the traits of the lattice (e.g. Norm and Widening).
      */
-    case class Lattice(ident: ParsedAst.Ident, elms: Seq[ParsedAst.QName], traits: Seq[ParsedAst.Trait]) extends ParsedAst.Definition
+    case class Lattice(ident: ParsedAst.Ident, elms: Seq[ParsedAst.Expression], traits: Seq[ParsedAst.Trait]) extends ParsedAst.Definition
 
     /**
      * An AST that represent a relation definition.

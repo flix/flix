@@ -212,9 +212,14 @@ object Weeder {
     /**
      * Compiles the given parsed lattice `past` to a weeded lattice definition.
      */
-    def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Definition.Lattice, WeederError] =
-    // TODO
-      WeededAst.Definition.Lattice(past.ident, past.elms.toList, past.traits.toList).toSuccess
+    def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Definition.Lattice, WeederError] = {
+      // TODO
+
+      val elmsVal = @@(past.elms.toList.map(Expression.compile))
+      elmsVal map {
+        case elms => WeededAst.Definition.Lattice(past.ident, elms, past.traits.toList)
+      }
+    }
 
     /**
      * Compiles the given parsed relation `past` to a weeded relation definition.

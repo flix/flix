@@ -84,8 +84,8 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def LatticeDefinition: Rule1[ParsedAst.Definition] = {
-    def Elms: Rule1[Seq[ParsedAst.QName]] = rule {
-      oneOrMore(QName).separatedBy(optWS ~ "," ~ optWS)
+    def Elms: Rule1[Seq[ParsedAst.Expression]] = rule {
+      oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
     }
 
     def Traits: Rule1[Seq[ParsedAst.Trait]] = rule {
