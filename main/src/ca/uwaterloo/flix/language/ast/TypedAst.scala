@@ -112,49 +112,62 @@ object TypedAst {
 
     /**
      * A typed AST node representing the unit literal.
+     *
+     * @param loc the source location.
      */
-    case object Unit extends TypedAst.Literal {
+    case class Unit(loc: SourceLocation) extends TypedAst.Literal {
       final val tpe = TypedAst.Type.Unit
     }
 
     /**
      * A typed AST node representing a boolean literal.
+     *
+     * @param lit the boolean literal.
+     * @param loc the source location.
      */
-    case class Bool(literal: scala.Boolean) extends TypedAst.Literal {
+    case class Bool(lit: scala.Boolean, loc: SourceLocation) extends TypedAst.Literal {
       final val tpe = TypedAst.Type.Bool
     }
 
     /**
      * A typed AST node representing an integer literal.
+     *
+     * @param lit the integer literal.
+     * @param loc the source location.
      */
-    case class Int(literal: scala.Int) extends TypedAst.Literal {
+    case class Int(lit: scala.Int, loc: SourceLocation) extends TypedAst.Literal {
       final val tpe = TypedAst.Type.Int
     }
 
     /**
      * A typed AST node representing a string literal.
+     *
+     * @param lit the string literal.
+     * @param loc the source location.
      */
-    case class Str(literal: java.lang.String) extends TypedAst.Literal {
+    case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Literal {
       final val tpe = TypedAst.Type.Str
     }
 
     /**
      * A typed AST node representing a tagged literal.
      *
-     * @param name the enum name.
-     * @param ident the tag name.
-     * @param literal the nested literal.
+     * @param enum the enum name.
+     * @param tag the tag name.
+     * @param lit the nested literal.
      * @param tpe the type of the tag.
+     * @param loc the source location.
      */
-    case class Tag(name: Name.Resolved, ident: Name.Ident, literal: TypedAst.Literal, tpe: TypedAst.Type.Enum) extends TypedAst.Literal
+    case class Tag(enum: Name.Resolved, tag: Name.Ident, lit: TypedAst.Literal, tpe: TypedAst.Type.Enum, loc: SourceLocation) extends TypedAst.Literal
 
     /**
      * A typed AST node representing a tuple literal.
      *
      * @param elms the elements of the tuple.
      * @param tpe the typed of the tuple.
+     * @param loc the source location.
      */
-    case class Tuple(elms: List[TypedAst.Literal], tpe: TypedAst.Type.Tuple) extends TypedAst.Literal
+    case class Tuple(elms: List[TypedAst.Literal], tpe: TypedAst.Type.Tuple, loc: SourceLocation) extends TypedAst.Literal
 
   }
 
