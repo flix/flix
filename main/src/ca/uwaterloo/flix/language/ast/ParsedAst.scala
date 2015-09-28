@@ -274,7 +274,7 @@ object ParsedAst {
     case class Tuple(elms: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
 
     /**
-     * An AST node that ascribe a type to an expression.
+     * An AST node that ascribes a type to an expression.
      *
      * @param e the expression.
      * @param tpe the ascribed type.
@@ -287,6 +287,7 @@ object ParsedAst {
      * @param location the source location where the error expression occurs.
      */
     case class Error(location: SourceLocation) extends ParsedAst.Expression
+
     // TODO: Add an explicit ascribed type.
 
   }
@@ -376,6 +377,14 @@ object ParsedAst {
      * @param literal the literal.
      */
     case class Lit(literal: ParsedAst.Literal) extends ParsedAst.Term
+
+    /**
+     * An AST node that represents an ascribed term.
+     *
+     * @param term the term.
+     * @param tpe the type.
+     */
+    case class Ascribe(term: ParsedAst.Term, tpe: ParsedAst.Type) extends ParsedAst.Term
 
     /**
      * An AST node that represent a function application term

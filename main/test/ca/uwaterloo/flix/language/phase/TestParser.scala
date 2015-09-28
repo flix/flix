@@ -12,13 +12,13 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Root                                                                    //
   /////////////////////////////////////////////////////////////////////////////
-  test("Parser.Root01") {
+  test("Root01") {
     val input = ""
     val result = new Parser(None, input).Root.run().get
     assert(result.isInstanceOf[ParsedAst.Root])
   }
 
-  test("Parser.Root02") {
+  test("Root02") {
     val input =
       """namespace a {
         |  // a comment
@@ -31,7 +31,7 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Declarations and Definitions                                            //
   /////////////////////////////////////////////////////////////////////////////
-  test("Parser.Declaration.Namespace01") {
+  test("Declaration.Namespace01") {
     val input =
       """namespace foo {
         |  // a comment
@@ -41,7 +41,7 @@ class TestParser extends FunSuite {
     assertResult(Seq("foo"))(result.name.parts)
   }
 
-  test("Parser.Declaration.Namespace02") {
+  test("Declaration.Namespace02") {
     val input =
       """namespace foo::bar::baz {
         |  // a comment
@@ -51,7 +51,7 @@ class TestParser extends FunSuite {
     assertResult(Seq("foo", "bar", "baz"))(result.name.parts)
   }
 
-  test("Parser.Declaration.Namespace03") {
+  test("Declaration.Namespace03") {
     val input =
       """namespace foo {
         |  namespace bar {
@@ -65,31 +65,31 @@ class TestParser extends FunSuite {
     assert(result.isSuccess)
   }
 
-  test("Parser.Definition.Value01") {
+  test("Definition.Value01") {
     val input = "val v: Int = 42;"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Value])
   }
 
-  test("Parser.Definition.Value02") {
+  test("Definition.Value02") {
     val input = "val v: Int = 1 + 1;"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Value])
   }
 
-  test("Parser.Definition.Function01") {
+  test("Definition.Function01") {
     val input = "def foo(x: Int): Int = 42"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Function])
   }
 
-  test("Parser.Definition.Function02") {
+  test("Definition.Function02") {
     val input = "def foo(x: Int, y: Int, z: Int): Int = x + y + z"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Function])
   }
 
-  test("Parser.Definition.Enum01") {
+  test("Definition.Enum01") {
     val input =
       """enum A {
         |  case B
@@ -99,7 +99,7 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Definition.Enum])
   }
 
-  test("Parser.Definition.Enum02") {
+  test("Definition.Enum02") {
     val input =
       """enum A {
         |  case B(Int)
@@ -109,7 +109,7 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Definition.Enum])
   }
 
-  test("Parser.Definition.Enum03") {
+  test("Definition.Enum03") {
     val input =
       """enum A {
         |  case B,
@@ -123,43 +123,43 @@ class TestParser extends FunSuite {
 
   // TODO: Allow naming of the enum attributes.
 
-  test("Parser.Definition.JoinSemiLattice01") {
+  test("Definition.JoinSemiLattice01") {
     val input = "lat <a> (Tag.Bot, foo::leq, lub)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  test("Parser.Definition.JoinSemiLattice02") {
+  test("Definition.JoinSemiLattice02") {
     val input = "lat <a> (Tag.Bot, foo::leq, lub)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  test("Parser.Definition.JoinSemiLattice03") {
+  test("Definition.JoinSemiLattice03") {
     val input = "lat <a> (Tag.Bot, fn (x: Int): Bool = x, lub)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  test("Parser.Definition.JoinSemiLattice04") {
+  test("Definition.JoinSemiLattice04") {
     val input = "lat <a> (Tag.Bot, foo::leq, lub) with Norm(b)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  test("Parser.Definition.JoinSemiLattice05") {
+  test("Definition.JoinSemiLattice05") {
     val input = "lat <a> (Tag.Bot, foo::leq, lub) with Widen(b)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  test("Parser.Definition.JoinSemiLattice06") {
+  test("Definition.JoinSemiLattice06") {
     val input = "lat <a> (Tag.Bot, foo::leq, lub) with Norm(b) with Widen(c)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  test("Parser.Definition.JoinSemiLattice07") {
+  test("Definition.JoinSemiLattice07") {
     val input = "lat <a> (Tag.Bot, foo::leq, lub) with Norm(foo::b) with Widen(foo::c)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
@@ -195,13 +195,13 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  test("Parser.Definition.Relation01") {
+  test("Definition.Relation01") {
     val input = "rel A(b: B)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Relation])
   }
 
-  test("Parser.Definition.Relation02") {
+  test("Definition.Relation02") {
     val input = "rel A(b: B, c: C, d: D)"
     val result = new Parser(None, input).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Relation])
@@ -212,43 +212,43 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // TODO: Check up on associativity.
 
-  test("Parser.Expression.LogicalExp01") {
+  test("Expression.LogicalExp01") {
     val input = "true && false"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
     assertResult(BinaryOperator.And)(result.op)
   }
 
-  test("Parser.Expression.LogicalExp02") {
+  test("Expression.LogicalExp02") {
     val input = "true || false"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
     assertResult(BinaryOperator.Or)(result.op)
   }
 
-  test("Parser.Expression.LogicalExp03") {
+  test("Expression.LogicalExp03") {
     val input = "1 < 2 && 3 < 4"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
     assertResult(BinaryOperator.And)(result.op)
   }
 
-  test("Parser.Expression.ComparisonExp01") {
+  test("Expression.ComparisonExp01") {
     val input = "1 < 2"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
     assertResult(BinaryOperator.Less)(result.op)
   }
 
-  test("Parser.Expression.ComparisonExp02") {
+  test("Expression.ComparisonExp02") {
     val input = "1 + 2 > 3"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
     assertResult(BinaryOperator.Greater)(result.op)
   }
 
-  test("Parser.Expression.ComparisonExp03") {
+  test("Expression.ComparisonExp03") {
     val input = "1 + 2 > 3 + 4"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
     assertResult(BinaryOperator.Greater)(result.op)
   }
 
-  test("Parser.Expression.MultiplicativeExp01") {
+  test("Expression.MultiplicativeExp01") {
     val input = "1 * 2"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
     assertResult(BinaryOperator.Times)(result.op)
@@ -256,25 +256,25 @@ class TestParser extends FunSuite {
     assert(result.e2.isInstanceOf[ParsedAst.Expression.Lit])
   }
 
-  test("Parser.Expression.MultiplicativeExp02") {
+  test("Expression.MultiplicativeExp02") {
     val input = "1 * 2 * 3"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
     assertResult(BinaryOperator.Times)(result.op)
   }
 
-  test("Parser.Expression.MultiplicativeExp03") {
+  test("Expression.MultiplicativeExp03") {
     val input = "1 * 2 + 3"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
     assertResult(BinaryOperator.Plus)(result.op)
   }
 
-  test("Parser.Expression.MultiplicativeExp04") {
+  test("Expression.MultiplicativeExp04") {
     val input = "1 + 2 * 3"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
     assertResult(BinaryOperator.Plus)(result.op)
   }
 
-  test("Parser.Expression.AdditiveExp01") {
+  test("Expression.AdditiveExp01") {
     val input = "1 + 2"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
     assertResult(BinaryOperator.Plus)(result.op)
@@ -282,13 +282,13 @@ class TestParser extends FunSuite {
     assert(result.e2.isInstanceOf[ParsedAst.Expression.Lit])
   }
 
-  test("Parser.Expression.AdditiveExp02") {
+  test("Expression.AdditiveExp02") {
     val input = "1 + 2 + 3"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
     assertResult(BinaryOperator.Plus)(result.op)
   }
 
-  test("Parser.Expression.AdditiveExp03") {
+  test("Expression.AdditiveExp03") {
     val input = "1 - 2"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
     assertResult(BinaryOperator.Minus)(result.op)
@@ -296,7 +296,7 @@ class TestParser extends FunSuite {
     assert(result.e2.isInstanceOf[ParsedAst.Expression.Lit])
   }
 
-  test("Parser.Expression.AdditiveExp04") {
+  test("Expression.AdditiveExp04") {
     val input = "1 - 2 - 3"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
     assertResult(BinaryOperator.Minus)(result.op)
@@ -307,13 +307,13 @@ class TestParser extends FunSuite {
     assert(result.e2.isInstanceOf[ParsedAst.Expression.Lit])
   }
 
-  test("Parser.Expression.AdditiveExp05") {
+  test("Expression.AdditiveExp05") {
     val input = "1 + 2 - 3 + 4 - 5 + 6"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
   }
 
-  test("Parser.Expression.Infix01") {
+  test("Expression.Infix01") {
     val input = "1 `plus` 2"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Infix]
     assert(result.e1.isInstanceOf[ParsedAst.Expression.Lit])
@@ -321,7 +321,7 @@ class TestParser extends FunSuite {
     assertResult(Seq("plus"))(result.name.parts)
   }
 
-  test("Parser.Expression.Infix02") {
+  test("Expression.Infix02") {
     val input = "1 `foo::bar::baz::plus` 2"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Infix]
     assert(result.e1.isInstanceOf[ParsedAst.Expression.Lit])
@@ -329,74 +329,74 @@ class TestParser extends FunSuite {
     assertResult(Seq("foo", "bar", "baz", "plus"))(result.name.parts)
   }
 
-  test("Parser.Expression.Infix03") {
+  test("Expression.Infix03") {
     val input = "+1 `plus` -1"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Infix]
     assert(result.e1.isInstanceOf[ParsedAst.Expression.Unary])
     assert(result.e2.isInstanceOf[ParsedAst.Expression.Unary])
   }
 
-  test("Parser.Expression.UnaryExp01") {
+  test("Expression.UnaryExp01") {
     val input = "+ 1"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Unary]
     assertResult(UnaryOperator.UnaryPlus)(result.op)
   }
 
-  test("Parser.Expression.UnaryExp02") {
+  test("Expression.UnaryExp02") {
     val input = "- 1"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Unary]
     assertResult(UnaryOperator.UnaryMinus)(result.op)
   }
 
-  test("Parser.Expression.UnaryExp03") {
+  test("Expression.UnaryExp03") {
     val input = "!! true"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Unary]
     assertResult(UnaryOperator.Not)(result.op)
   }
 
-  test("Parser.Expression.Ascribe01") {
+  test("Expression.Ascribe01") {
     val input = "true: Bool"
     val result = new Parser(None, input).Expression.run().get
     assert(result.isInstanceOf[ParsedAst.Expression.Ascribe])
   }
 
-  test("Parser.Expression.Ascribe02") {
+  test("Expression.Ascribe02") {
     val input = "x: Bool -> Int"
     val result = new Parser(None, input).Expression.run().get
     assert(result.isInstanceOf[ParsedAst.Expression.Ascribe])
   }
 
-  test("Parser.Expression.LiteralExp01") {
+  test("Expression.LiteralExp01") {
     val input = "true"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
     assertResult(true)(result.literal.asInstanceOf[ParsedAst.Literal.Bool].literal)
   }
 
-  test("Parser.Expression.LiteralExp02") {
+  test("Expression.LiteralExp02") {
     val input = "42"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
     assertResult(42)(result.literal.asInstanceOf[ParsedAst.Literal.Int].literal)
   }
 
-  test("Parser.Expression.LiteralExp03") {
+  test("Expression.LiteralExp03") {
     val input = "\"foo\""
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
     assertResult("foo")(result.literal.asInstanceOf[ParsedAst.Literal.Str].literal)
   }
 
-  test("Parser.Expression.LetExp01") {
+  test("Expression.LetExp01") {
     val input = "let x = 42 in x"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Let]
     assertResult("x")(result.ident.name)
   }
 
-  test("Parser.Expression.LetExp02") {
+  test("Expression.LetExp02") {
     val input = "let x' = f(1, 2, 3) in g(4, 5, 6)"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Let]
     assertResult("x'")(result.ident.name)
   }
 
-  test("Parser.Expression.LetExp03") {
+  test("Expression.LetExp03") {
     val input =
       """let x = 1 in
         |let y = 2 in
@@ -410,28 +410,28 @@ class TestParser extends FunSuite {
     assertResult("z")(l3.ident.name)
   }
 
-  test("Parser.Expression.IfThenElseExp01") {
+  test("Expression.IfThenElseExp01") {
     val input = "if (1) 2 else 3"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.IfThenElse])
   }
 
-  test("Parser.Expression.IfThenElseExp02") {
+  test("Expression.IfThenElseExp02") {
     val input = "if (f(1, 2, 3)) g(4, 5, 6) else h(7, 8, 9)"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.IfThenElse])
   }
 
-  test("Parser.Expression.IfThenElseExp03") {
+  test("Expression.IfThenElseExp03") {
     val input = "if ((1)) (2) else (3)"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.IfThenElse])
   }
 
-  test("Parser.Expression.MatchExp01") {
+  test("Expression.MatchExp01") {
     val input =
       """match 1 with {
         |  case 2 => 3
@@ -442,7 +442,7 @@ class TestParser extends FunSuite {
     assert(result.get.isInstanceOf[ParsedAst.Expression.Match])
   }
 
-  test("Parser.Expression.MatchExp02") {
+  test("Expression.MatchExp02") {
     val input =
       """match 1 with {
         |  case 2 => 3
@@ -454,7 +454,7 @@ class TestParser extends FunSuite {
     assert(result.get.isInstanceOf[ParsedAst.Expression.Match])
   }
 
-  test("Parser.Expression.MatchExp03") {
+  test("Expression.MatchExp03") {
     val input =
       """match 1 with {
         |  case 2 => match 3 with {
@@ -470,7 +470,7 @@ class TestParser extends FunSuite {
     assertResult(5)(l.literal.asInstanceOf[ParsedAst.Literal.Int].literal)
   }
 
-  test("Parser.Expression.MatchExp04") {
+  test("Expression.MatchExp04") {
     val input =
       """match
         |  match 1 with {
@@ -486,121 +486,121 @@ class TestParser extends FunSuite {
     assertResult(3)(l.literal.asInstanceOf[ParsedAst.Literal.Int].literal)
   }
 
-  test("Parser.Expression.CallExp01") {
+  test("Expression.CallExp01") {
     val input = "f()"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.AmbiguousApply])
   }
 
-  test("Parser.Expression.CallExp02") {
+  test("Expression.CallExp02") {
     val input = "f(1, 2, 3)"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.AmbiguousApply])
   }
 
-  test("Parser.Expression.CallExp03") {
+  test("Expression.CallExp03") {
     val input = "f(f(1), f(f(2)))"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.AmbiguousApply])
   }
 
-  test("Parser.Expression.CallExp04") {
+  test("Expression.CallExp04") {
     val input = "foo::bar::baz::f(1, 2, 3)"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.AmbiguousApply])
   }
 
-  test("Parser.Expression.Tag01") {
+  test("Expression.Tag01") {
     val input = "Foo.Bar"
     val result = new Parser(None, input).Expression.run().get
     assert(result.isInstanceOf[ParsedAst.Expression.Tag])
   }
 
-  test("Parser.Expression.Tag02") {
+  test("Expression.Tag02") {
     val input = "Foo.Bar ()"
     val result = new Parser(None, input).Expression.run().get
     assert(result.isInstanceOf[ParsedAst.Expression.Tag])
   }
 
-  test("Parser.Expression.Tag03") {
+  test("Expression.Tag03") {
     val input = "Foo.Bar Baz.Qux"
     val result = new Parser(None, input).Expression.run().get
     assert(result.isInstanceOf[ParsedAst.Expression.Tag])
   }
 
-  test("Parser.Expression.Tag04") {
+  test("Expression.Tag04") {
     val input = "Foo.Bar (x, y)"
     val result = new Parser(None, input).Expression.run().get
     assert(result.isInstanceOf[ParsedAst.Expression.Tag])
   }
 
-  test("Parser.Expression.Tag05") {
+  test("Expression.Tag05") {
     val input = "foo::bar::Baz.Qux (42, x, (3, 4))"
     val result = new Parser(None, input).Expression.run().get
     assert(result.isInstanceOf[ParsedAst.Expression.Tag])
   }
 
-  test("Parser.Expression.Tuple01") {
+  test("Expression.Tuple01") {
     val input = "()"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
     assertResult(ParsedAst.Literal.Unit)(result.literal)
   }
 
-  test("Parser.Expression.Tuple02") {
+  test("Expression.Tuple02") {
     val input = "(1)"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
     assertResult(ParsedAst.Literal.Int(1))(result.literal)
   }
 
-  test("Parser.Expression.Tuple03") {
+  test("Expression.Tuple03") {
     val input = "(1, x)"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Tuple]
     assertResult(2)(result.elms.size)
   }
 
-  test("Parser.Expression.Tuple04") {
+  test("Expression.Tuple04") {
     val input = "(1, 2, x, 4, 5, 6)"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Tuple]
     assertResult(6)(result.elms.size)
   }
 
-  test("Parser.Expression.Tuple05") {
+  test("Expression.Tuple05") {
     val input = "((1, 2), (x, (4, 5)))"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Tuple]
     assertResult(2)(result.elms.size)
   }
 
-  test("Parser.Expression.Var01") {
+  test("Expression.Var01") {
     val input = "x"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.AmbiguousVar])
   }
 
-  test("Parser.Expression.Var02") {
+  test("Expression.Var02") {
     val input = "foo::bar::baz::x_y_z''"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.AmbiguousVar])
   }
 
-  test("Parser.Expression.Lambda01") {
+  test("Expression.Lambda01") {
     val input = "fn(x: Int): Int = 42"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lambda]
     assert(result.body.isInstanceOf[ParsedAst.Expression.Lit])
   }
 
-  test("Parser.Expression.Lambda02") {
+  test("Expression.Lambda02") {
     val input = "fn(x: Bool, y: Int, z: Str): Str = x + y + z"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lambda]
     assert(result.body.isInstanceOf[ParsedAst.Expression.Binary])
   }
 
-  test("Parser.Expression.ErrorExp01") {
+  test("Expression.ErrorExp01") {
     val input = "???"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
@@ -610,72 +610,72 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
   /////////////////////////////////////////////////////////////////////////////
-  test("Parser.Pattern.Wildcard") {
+  test("Pattern.Wildcard") {
     val input = "_"
     val result = new Parser(None, input).Pattern.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Pattern.Wildcard])
   }
 
-  test("Parser.Pattern.Var01") {
+  test("Pattern.Var01") {
     val input = "x"
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Var]
     assertResult("x")(result.ident.name)
   }
 
-  test("Parser.Pattern.Var02") {
+  test("Pattern.Var02") {
     val input = "foo_Bar'"
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Var]
     assertResult("foo_Bar'")(result.ident.name)
   }
 
-  test("Parser.Pattern.Literal01") {
+  test("Pattern.Literal01") {
     val input = "true"
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
     assertResult(ParsedAst.Literal.Bool(true))(result.literal)
   }
 
-  test("Parser.Pattern.Literal02") {
+  test("Pattern.Literal02") {
     val input = "42"
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
     assertResult(ParsedAst.Literal.Int(42))(result.literal)
   }
 
-  test("Parser.Pattern.Literal03") {
+  test("Pattern.Literal03") {
     val input = "\"foo\""
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
     assertResult(ParsedAst.Literal.Str("foo"))(result.literal)
   }
 
-  test("Parser.Pattern.Tag01") {
+  test("Pattern.Tag01") {
     val input = "Const.Bot"
     val result = new Parser(None, input).Pattern.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Pattern.Tag])
   }
 
-  test("Parser.Pattern.Tag02") {
+  test("Pattern.Tag02") {
     val input = "Const.Cst(5)"
     val result = new Parser(None, input).Pattern.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Pattern.Tag])
   }
 
-  test("Parser.Pattern.Tag03") {
+  test("Pattern.Tag03") {
     val input = "Foo.Bar (x, _, z)"
     val result = new Parser(None, input).Pattern.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Pattern.Tag])
   }
 
-  test("Parser.Pattern.Tag04") {
+  test("Pattern.Tag04") {
     val input = "foo::bar::baz.Foo(x, y, z)"
     val result = new Parser(None, input).Pattern.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Pattern.Tag])
   }
 
-  test("Parser.Pattern.Tuple01") {
+  test("Pattern.Tuple01") {
     val input = "(x, y, true)"
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Tuple]
     assertResult(3)(result.elms.size)
@@ -684,39 +684,39 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Facts and Rules                                                         //
   /////////////////////////////////////////////////////////////////////////////
-  test("Parser.FactDeclaration01") {
+  test("FactDeclaration01") {
     val input = "P(42)."
     val result = new Parser(None, input).FactDeclaration.run()
     assert(result.isSuccess)
   }
 
-  test("Parser.FactDeclaration02") {
+  test("FactDeclaration02") {
     val input = "P(\"foo\")."
     val result = new Parser(None, input).FactDeclaration.run()
     assert(result.isSuccess)
   }
 
-  test("Parser.FactDeclaration03") {
+  test("FactDeclaration03") {
     val input = "P(f(1, 2, 3))."
     val result = new Parser(None, input).FactDeclaration.run()
     assert(result.isSuccess)
   }
 
-  test("Parser.RuleDeclaration01") {
+  test("RuleDeclaration01") {
     val input = "P(x) :- A(x)."
     val result = new Parser(None, input).RuleDeclaration.run()
     assert(result.isSuccess)
     assertResult(1)(result.get.body.size)
   }
 
-  test("Parser.RuleDeclaration02") {
+  test("RuleDeclaration02") {
     val input = "P(x, y, z) :- A(x), B(y), C(z)."
     val result = new Parser(None, input).RuleDeclaration.run()
     assert(result.isSuccess)
     assertResult(3)(result.get.body.size)
   }
 
-  test("Parser.RuleDeclaration03") {
+  test("RuleDeclaration03") {
     val input = "P(f(x), g(y, z)) :- isFoo(x, y), isBar(y, z), A(x), B(y), C(z)."
     val result = new Parser(None, input).RuleDeclaration.run()
     assert(result.isSuccess)
@@ -726,17 +726,17 @@ class TestParser extends FunSuite {
   // TODO: TestPredicate
 
   // TODO
-  test("Parser.Predicate.Alias01") {
+  test("Predicate.Alias01") {
     val input = "r := 42"
     val result = new Parser(None, input).Predicate.run()
   }
 
-  test("Parser.Predicate.Alias02") {
+  test("Predicate.Alias02") {
     val input = "r := (true, 42, \"foo\")"
     val result = new Parser(None, input).Predicate.run()
   }
 
-  test("Parser.Predicate.Alias03") {
+  test("Predicate.Alias03") {
     val input = "r := f(x, g(y, z))"
     val result = new Parser(None, input).Predicate.run()
   }
@@ -744,94 +744,124 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Terms                                                                   //
   /////////////////////////////////////////////////////////////////////////////
-  test("Parser.Term01") {
+  test("Term01") {
     val input = "_"
     val result = new Parser(None, input).Term.run().get
     assert(result.isInstanceOf[ParsedAst.Term.Wildcard])
   }
 
-  test("Parser.Term02") {
+  test("Term02") {
     val input = "x"
     val result = new Parser(None, input).Term.run().get.asInstanceOf[ParsedAst.Term.Var]
     assertResult("x")(result.ident.name)
   }
 
-  test("Parser.Term03") {
+  test("Term03") {
     val input = "42"
     val result = new Parser(None, input).Term.run().get.asInstanceOf[ParsedAst.Term.Lit]
     assertResult(42)(result.literal.asInstanceOf[ParsedAst.Literal.Int].literal)
   }
 
-  test("Parser.Term04") {
+  test("Term04") {
     val input = "foo(x)"
     val result = new Parser(None, input).Term.run().get.asInstanceOf[ParsedAst.Term.Apply]
     assertResult(Seq("foo"))(result.name.parts)
   }
 
-  test("Parser.Term05") {
+  test("Term05") {
     val input = "foo::bar(x, y, z)"
     val result = new Parser(None, input).Term.run().get.asInstanceOf[ParsedAst.Term.Apply]
     assertResult(Seq("foo", "bar"))(result.name.parts)
     assertResult(Seq("x", "y", "z"))(result.args.map(_.asInstanceOf[ParsedAst.Term.Var].ident.name))
   }
 
-  test("Parser.Term.Tag01") {
+  test("Term.Tag01") {
     val input = "Foo.Bar"
     val result = new Parser(None, input).Term.run().get.asInstanceOf[ParsedAst.Term.Lit]
     assert(result.literal.isInstanceOf[ParsedAst.Literal.Tag])
   }
 
-  test("Parser.Term.Tag02") {
+  test("Term.Tag02") {
     val input = "Foo.Bar(1)"
     val result = new Parser(None, input).Term.run().get.asInstanceOf[ParsedAst.Term.Lit]
     assert(result.literal.isInstanceOf[ParsedAst.Literal.Tag])
   }
 
-  test("Parser.Term.Tag03") {
+  test("Term.Tag03") {
     val input = "foo::bar::Baz.Bar(1, 2, 3)"
     val result = new Parser(None, input).Term.run().get.asInstanceOf[ParsedAst.Term.Lit]
     assert(result.literal.isInstanceOf[ParsedAst.Literal.Tag])
   }
 
+  test("Term.Ascribe01") {
+    val input = "(): Unit"
+    val result = new Parser(None, input).Term.run().get
+    assert(result.isInstanceOf[ParsedAst.Term.Ascribe])
+  }
+
+  test("Term.Ascribe02") {
+    val input = "true: Bool"
+    val result = new Parser(None, input).Term.run().get
+    assert(result.isInstanceOf[ParsedAst.Term.Ascribe])
+  }
+
+  test("Term.Ascribe03") {
+    val input = "42: Int"
+    val result = new Parser(None, input).Term.run().get
+    assert(result.isInstanceOf[ParsedAst.Term.Ascribe])
+  }
+
+  test("Term.Ascribe04") {
+    val input = "\"foo\": Str"
+    val result = new Parser(None, input).Term.run().get
+    assert(result.isInstanceOf[ParsedAst.Term.Ascribe])
+  }
+
+  test("Term.Ascribe05") {
+    val input = "((1: Int): Int) : Int"
+    val result = new Parser(None, input).Term.run().get
+    assert(result.isInstanceOf[ParsedAst.Term.Ascribe])
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
-  test("Parser.Type.Function01") {
+  test("Type.Function01") {
     val input = "A -> B"
     val result = new Parser(None, input).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
     assertResult(Seq("A"))(result.t1.asInstanceOf[ParsedAst.Type.Ambiguous].name.parts)
     assertResult(Seq("B"))(result.t2.asInstanceOf[ParsedAst.Type.Ambiguous].name.parts)
   }
 
-  test("Parser.Type.Function02") {
+  test("Type.Function02") {
     val input = "A -> B -> C"
     val result = new Parser(None, input).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
     assert(result.t1.isInstanceOf[ParsedAst.Type.Ambiguous])
     assert(result.t2.isInstanceOf[ParsedAst.Type.Function])
   }
 
-  test("Parser.Type.Function03") {
+  test("Type.Function03") {
     val input = "(A -> B) -> C"
     val result = new Parser(None, input).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
     assert(result.t1.isInstanceOf[ParsedAst.Type.Function])
     assert(result.t2.isInstanceOf[ParsedAst.Type.Ambiguous])
   }
 
-  test("Parser.Type.Tuple01") {
+  test("Type.Tuple01") {
     val input = "()"
     val result = new Parser(None, input).Type.run()
     assert(result.isSuccess)
     assertResult(result.get)(ParsedAst.Type.Unit)
   }
 
-  test("Parser.Type.Tuple02") {
+  test("Type.Tuple02") {
     val input = "(A)"
     val result = new Parser(None, input).Type.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Type.Ambiguous])
   }
 
-  test("Parser.Type.Tuple03") {
+  test("Type.Tuple03") {
     val input = "(A, B)"
     val result = new Parser(None, input).Type.run()
     assert(result.isSuccess)
@@ -839,7 +869,7 @@ class TestParser extends FunSuite {
     assertResult(2)(result.get.asInstanceOf[ParsedAst.Type.Tuple].elms.length)
   }
 
-  test("Parser.Type.Tuple04") {
+  test("Type.Tuple04") {
     val input = "(A, B, C)"
     val result = new Parser(None, input).Type.run()
     assert(result.isSuccess)
@@ -847,35 +877,35 @@ class TestParser extends FunSuite {
     assertResult(3)(result.get.asInstanceOf[ParsedAst.Type.Tuple].elms.length)
   }
 
-  test("Parser.Type.Parametric01") {
+  test("Type.Parametric01") {
     val input = "A[B]"
     val result = new Parser(None, input).Type.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Type.Parametric])
   }
 
-  test("Parser.Type.Parametric02") {
+  test("Type.Parametric02") {
     val input = "A[B, C]"
     val result = new Parser(None, input).Type.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Type.Parametric])
   }
 
-  test("Parser.Type.Parametric03") {
+  test("Type.Parametric03") {
     val input = "A[B, C[D, E]]"
     val result = new Parser(None, input).Type.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Type.Parametric])
   }
 
-  test("Parser.Type.Lattice01") {
+  test("Type.Lattice01") {
     val input = "<Sign>"
     val result = new Parser(None, input).Type.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Type.Lattice])
   }
 
-  test("Parser.Type.Lattice02") {
+  test("Type.Lattice02") {
     val input = "<foo::bar::Sign>"
     val result = new Parser(None, input).Type.run()
     assert(result.isSuccess)
@@ -885,91 +915,91 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Identifiers & Names                                                     //
   /////////////////////////////////////////////////////////////////////////////
-  test("Parser.Ident01") {
+  test("Ident01") {
     val input = "x"
     val result = new Parser(None, input).Ident.run().get
     assertResult("x")(result.name)
   }
 
-  test("Parser.Ident02") {
+  test("Ident02") {
     val input = "y"
     val result = new Parser(None, input).Ident.run().get
     assertResult("y")(result.name)
   }
 
-  test("Parser.Ident03") {
+  test("Ident03") {
     val input = "x0"
     val result = new Parser(None, input).Ident.run().get
     assertResult("x0")(result.name)
   }
 
-  test("Parser.Ident04") {
+  test("Ident04") {
     val input = "x'"
     val result = new Parser(None, input).Ident.run().get
     assertResult("x'")(result.name)
   }
 
-  test("Parser.Ident05") {
+  test("Ident05") {
     val input = "foobar"
     val result = new Parser(None, input).Ident.run().get
     assertResult("foobar")(result.name)
   }
 
-  test("Parser.Ident06") {
+  test("Ident06") {
     val input = "fooBar"
     val result = new Parser(None, input).Ident.run().get
     assertResult("fooBar")(result.name)
   }
 
-  test("Parser.Ident07") {
+  test("Ident07") {
     val input = "foo_bar"
     val result = new Parser(None, input).Ident.run().get
     assertResult("foo_bar")(result.name)
   }
 
-  test("Parser.Ident08") {
+  test("Ident08") {
     val input = "f00_BAR'''"
     val result = new Parser(None, input).Ident.run().get
     assertResult("f00_BAR'''")(result.name)
   }
 
-  test("Parser.Ident09") {
+  test("Ident09") {
     val input = "1"
     val result = new Parser(None, input).Ident.run()
     assert(result.isFailure)
   }
 
-  test("Parser.Ident10") {
+  test("Ident10") {
     val input = "'"
     val result = new Parser(None, input).Ident.run()
     assert(result.isFailure)
   }
 
-  test("Parser.Ident11") {
+  test("Ident11") {
     val input = "_"
     val result = new Parser(None, input).Ident.run()
     assert(result.isFailure)
   }
 
-  test("Parser.QName01") {
+  test("QName01") {
     val input = "x"
     val result = new Parser(None, input).QName.run().get
     assertResult(Seq("x"))(result.parts)
   }
 
-  test("Parser.QName02") {
+  test("QName02") {
     val input = "x::y"
     val result = new Parser(None, input).QName.run().get
     assertResult(Seq("x", "y"))(result.parts)
   }
 
-  test("Parser.QName03") {
+  test("QName03") {
     val input = "x::y::z"
     val result = new Parser(None, input).QName.run().get
     assertResult(Seq("x", "y", "z"))(result.parts)
   }
 
-  test("Parser.QName04") {
+  test("QName04") {
     val input = "abc::def::hij"
     val result = new Parser(None, input).QName.run().get
     assertResult(Seq("abc", "def", "hij"))(result.parts)
@@ -982,85 +1012,85 @@ class TestParser extends FunSuite {
   // TODO: The parser could be simplified by allowing expressions everywhere and
   // then simply checking whether such an expression is a literal.
 
-  test("Parser.Literal (Unit)") {
+  test("Literal (Unit)") {
     val input = "()"
     val result = new Parser(None, input).Literal.run().get
     assertResult(result)(ParsedAst.Literal.Unit)
   }
 
-  test("Parser.Literal (true)") {
+  test("Literal (true)") {
     val input = "true"
     val result = new Parser(None, input).Literal.run().get
     assertResult(result)(ParsedAst.Literal.Bool(literal = true))
   }
 
-  test("Parser.Literal (false)") {
+  test("Literal (false)") {
     val input = "false"
     val result = new Parser(None, input).Literal.run().get
     assertResult(result)(ParsedAst.Literal.Bool(literal = false))
   }
 
-  test("Parser.Literal (123)") {
+  test("Literal (123)") {
     val input = "123"
     val result = new Parser(None, input).Literal.run().get
     assertResult(result)(ParsedAst.Literal.Int(literal = 123))
   }
 
-  test("Parser.Literal (\"\")") {
+  test("Literal (\"\")") {
     val input = "\"\""
     val result = new Parser(None, input).Literal.run().get
     assertResult(result)(ParsedAst.Literal.Str(literal = ""))
   }
 
-  test("Parser.Literal (\"foo\")") {
+  test("Literal (\"foo\")") {
     val input = "\"foo\""
     val result = new Parser(None, input).Literal.run().get
     assertResult(result)(ParsedAst.Literal.Str(literal = "foo"))
   }
 
-  test("Parser.Literal.Tag01") {
+  test("Literal.Tag01") {
     val input = "Foo.Bar"
     val result = new Parser(None, input).Literal.run().get
     assert(result.isInstanceOf[ParsedAst.Literal.Tag])
   }
 
-  test("Parser.Literal.Tag02") {
+  test("Literal.Tag02") {
     val input = "Foo.Bar()"
     val result = new Parser(None, input).Literal.run().get
     assert(result.isInstanceOf[ParsedAst.Literal.Tag])
   }
 
-  test("Parser.Literal.Tag03") {
+  test("Literal.Tag03") {
     val input = "Foo.Bar Baz.Quux"
     val result = new Parser(None, input).Literal.run().get
     assert(result.isInstanceOf[ParsedAst.Literal.Tag])
   }
 
-  test("Parser.Literal.Tag04") {
+  test("Literal.Tag04") {
     val input = "quux::Foo.Bar(true, 42, \"foo\")"
     val result = new Parser(None, input).Literal.run().get
     assert(result.isInstanceOf[ParsedAst.Literal.Tag])
   }
 
-  test("Parser.Literal.Tuple01") {
+  test("Literal.Tuple01") {
     val input = "()"
     val result = new Parser(None, input).Literal.run().get
     assertResult(ParsedAst.Literal.Unit)(result)
   }
 
-  test("Parser.Literal.Tuple02") {
+  test("Literal.Tuple02") {
     val input = "(1)"
     val result = new Parser(None, input).Literal.run().get
     assert(result.isInstanceOf[ParsedAst.Literal.Int])
   }
 
-  test("Parser.Literal.Tuple03") {
+  test("Literal.Tuple03") {
     val input = "(1, 2, 3)"
     val result = new Parser(None, input).Literal.run().get
     assert(result.isInstanceOf[ParsedAst.Literal.Tuple])
   }
 
-  test("Parser.Literal.Tuple04") {
+  test("Literal.Tuple04") {
     val input = "(true, 42, \"foo\")"
     val result = new Parser(None, input).Literal.run().get
     assert(result.isInstanceOf[ParsedAst.Literal.Tuple])
@@ -1069,97 +1099,97 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Operators                                                               //
   /////////////////////////////////////////////////////////////////////////////
-  test("Parser.UnaryOp !") {
+  test("UnaryOp !") {
     val input = "!"
     val result = new Parser(None, input).UnaryOp.run().get
     assertResult(UnaryOperator.Not)(result)
   }
 
-  test("Parser.UnaryOp +") {
+  test("UnaryOp +") {
     val input = "+"
     val result = new Parser(None, input).UnaryOp.run().get
     assertResult(UnaryOperator.UnaryPlus)(result)
   }
 
-  test("Parser.UnaryOp -") {
+  test("UnaryOp -") {
     val input = "-"
     val result = new Parser(None, input).UnaryOp.run().get
     assertResult(UnaryOperator.UnaryMinus)(result)
   }
 
-  test("Parser.LogicalOp &&") {
+  test("LogicalOp &&") {
     val input = "&&"
     val result = new Parser(None, input).LogicalOp.run().get
     assertResult(BinaryOperator.And)(result)
   }
 
-  test("Parser.LogicalOp ||") {
+  test("LogicalOp ||") {
     val input = "||"
     val result = new Parser(None, input).LogicalOp.run().get
     assertResult(BinaryOperator.Or)(result)
   }
 
-  test("Parser.ComparisonOp <") {
+  test("ComparisonOp <") {
     val input = "<"
     val result = new Parser(None, input).ComparisonOp.run().get
     assertResult(BinaryOperator.Less)(result)
   }
 
-  test("Parser.ComparisonOp <=") {
+  test("ComparisonOp <=") {
     val input = "<="
     val result = new Parser(None, input).ComparisonOp.run().get
     assertResult(BinaryOperator.LessEqual)(result)
   }
 
-  test("Parser.ComparisonOp >") {
+  test("ComparisonOp >") {
     val input = ">"
     val result = new Parser(None, input).ComparisonOp.run().get
     assertResult(BinaryOperator.Greater)(result)
   }
 
-  test("Parser.ComparisonOp >=") {
+  test("ComparisonOp >=") {
     val input = ">="
     val result = new Parser(None, input).ComparisonOp.run().get
     assertResult(BinaryOperator.GreaterEqual)(result)
   }
 
-  test("Parser.ComparisonOp ==") {
+  test("ComparisonOp ==") {
     val input = "=="
     val result = new Parser(None, input).ComparisonOp.run().get
     assertResult(BinaryOperator.Equal)(result)
   }
 
-  test("Parser.ComparisonOp !=") {
+  test("ComparisonOp !=") {
     val input = "!="
     val result = new Parser(None, input).ComparisonOp.run().get
     assertResult(BinaryOperator.NotEqual)(result)
   }
 
-  test("Parser.MultiplicativeOp *") {
+  test("MultiplicativeOp *") {
     val input = "*"
     val result = new Parser(None, input).MultiplicativeOp.run().get
     assertResult(BinaryOperator.Times)(result)
   }
 
-  test("Parser.MultiplicativeOp /") {
+  test("MultiplicativeOp /") {
     val input = "/"
     val result = new Parser(None, input).MultiplicativeOp.run().get
     assertResult(BinaryOperator.Divide)(result)
   }
 
-  test("Parser.MultiplicativeOp %") {
+  test("MultiplicativeOp %") {
     val input = "%"
     val result = new Parser(None, input).MultiplicativeOp.run().get
     assertResult(BinaryOperator.Modulo)(result)
   }
 
-  test("Parser.AdditiveOp +") {
+  test("AdditiveOp +") {
     val input = "+"
     val result = new Parser(None, input).AdditiveOp.run().get
     assertResult(BinaryOperator.Plus)(result)
   }
 
-  test("Parser.AdditiveOp -") {
+  test("AdditiveOp -") {
     val input = "-"
     val result = new Parser(None, input).AdditiveOp.run().get
     assertResult(BinaryOperator.Minus)(result)
@@ -1170,37 +1200,37 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //
   /////////////////////////////////////////////////////////////////////////////
-  test("Parser.WhiteSpace (1)") {
+  test("WhiteSpace (1)") {
     val input = " "
     val result = new Parser(None, input).WS.run()
     assert(result.isSuccess)
   }
 
-  test("Parser.WhiteSpace (2)") {
+  test("WhiteSpace (2)") {
     val input = "    "
     val result = new Parser(None, input).WS.run()
     assert(result.isSuccess)
   }
 
-  test("Parser.WhiteSpace (3)") {
+  test("WhiteSpace (3)") {
     val input = "\t"
     val result = new Parser(None, input).WS.run()
     assert(result.isSuccess)
   }
 
-  test("Parser.WhiteSpace (4)") {
+  test("WhiteSpace (4)") {
     val input = "\n\r"
     val result = new Parser(None, input).WS.run()
     assert(result.isSuccess)
   }
 
-  test("Parser.WhiteSpace (5)") {
+  test("WhiteSpace (5)") {
     val input = " // comments are also whitespace "
     val result = new Parser(None, input).WS.run()
     assert(result.isSuccess)
   }
 
-  test("Parser.WhiteSpace (6)") {
+  test("WhiteSpace (6)") {
     val input = " /* comments are also whitespace */ "
     val result = new Parser(None, input).WS.run()
     assert(result.isSuccess)
@@ -1209,13 +1239,13 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Comments                                                                //
   /////////////////////////////////////////////////////////////////////////////
-  test("Parser.SingleLineComment (1)") {
+  test("SingleLineComment (1)") {
     val input = "// a comment"
     val result = new Parser(None, input).SingleLineComment.run()
     assert(result.isSuccess)
   }
 
-  test("Parser.SingleLineComment (2)") {
+  test("SingleLineComment (2)") {
     val input =
       """// a comment
         |// another comment
@@ -1225,13 +1255,13 @@ class TestParser extends FunSuite {
     assert(result.isSuccess)
   }
 
-  test("Parser.MultiLineComment (1)") {
+  test("MultiLineComment (1)") {
     val input = "/* a comment */"
     val result = new Parser(None, input).MultiLineComment.run()
     assert(result.isSuccess)
   }
 
-  test("Parser.MultiLineComment (2)") {
+  test("MultiLineComment (2)") {
     val input =
       """/*
         |a comment
@@ -1243,7 +1273,7 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Source Location                                                         //
   /////////////////////////////////////////////////////////////////////////////
-  test("Parser.SourceLocation01") {
+  test("SourceLocation01") {
     val input = "x"
     val result = new Parser(None, input).Ident.run().get
     assertResult(result.location)(SourceLocation(None, 1, 1))

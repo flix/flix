@@ -262,9 +262,17 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /////////////////////////////////////////////////////////////////////////////
   // Terms                                                                   //
   /////////////////////////////////////////////////////////////////////////////
-  // NB: ApplyTerm must be parsed before LiteralTerm which must be parsed before VariableTerm.
   def Term: Rule1[ParsedAst.Term] = rule {
-    ApplyTerm | LiteralTerm | WildcardTerm | VariableTerm
+    AscribeTerm | SimpleTerm
+  }
+
+  // NB: ApplyTerm must be parsed before LiteralTerm which must be parsed before VariableTerm.
+  def SimpleTerm: Rule1[ParsedAst.Term] = rule {
+    ApplyTerm | ParenTerm | LiteralTerm | WildcardTerm | VariableTerm
+  }
+
+  def ParenTerm: Rule1[ParsedAst.Term] = rule {
+    "(" ~ optWS ~ Term ~ optWS ~ ")"
   }
 
   def WildcardTerm: Rule1[ParsedAst.Term] = rule {
@@ -277,6 +285,10 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
 
   def LiteralTerm: Rule1[ParsedAst.Term.Lit] = rule {
     Literal ~> ParsedAst.Term.Lit
+  }
+
+  def AscribeTerm: Rule1[ParsedAst.Term.Ascribe] = rule {
+    SimpleTerm ~ optWS ~ ":" ~ optWS ~ Type ~> ParsedAst.Term.Ascribe
   }
 
   def ApplyTerm: Rule1[ParsedAst.Term.Apply] = rule {
