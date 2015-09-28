@@ -394,17 +394,25 @@ object Typer {
      */
     def typer(rast: ResolvedAst.Term.Head, tpe: TypedAst.Type, root: ResolvedAst.Root): Validation[TypedAst.Term.Head, TypeError] = rast match {
       case ResolvedAst.Term.Head.Var(ident) => TypedAst.Term.Head.Var(ident, tpe).toSuccess
-      case ResolvedAst.Term.Head.Lit(rlit) => ???
+      case ResolvedAst.Term.Head.Lit(rlit) =>
+        val lit = Literal.typer(rlit, root)
+        expect(tpe, lit.tpe) map {
+          case _ => TypedAst.Term.Head.Lit(lit, lit.tpe)
+        }
       case ResolvedAst.Term.Head.Apply(name, args) => ???
     }
 
     /**
-     * Types the given body term `rast` according to the given type `tpe`.
+     * Types the given body term `rast` according to the given type `tpe`. under the given AST `root`.
      */
-    def typer(rast: ResolvedAst.Term.Body, tpe: TypedAst.Type): Validation[TypedAst.Term.Head, TypeError] = rast match {
-      case ResolvedAst.Term.Body.Wildcard(loc) => ???
-      case ResolvedAst.Term.Body.Var(ident) => ???
-      case ResolvedAst.Term.Body.Lit(rlit) => ???
+    def typer(rast: ResolvedAst.Term.Body, tpe: TypedAst.Type, root: ResolvedAst.Root): Validation[TypedAst.Term.Body, TypeError] = rast match {
+      case ResolvedAst.Term.Body.Wildcard(loc) => TypedAst.Term.Body.Wildcard(loc, tpe).toSuccess
+      case ResolvedAst.Term.Body.Var(ident) => TypedAst.Term.Body.Var(ident, tpe).toSuccess
+      case ResolvedAst.Term.Body.Lit(rlit) =>
+        val lit = Literal.typer(rlit, root)
+        expect(tpe, lit.tpe) map {
+          case _ => TypedAst.Term.Body.Lit(lit, lit.tpe)
+        }
     }
 
   }

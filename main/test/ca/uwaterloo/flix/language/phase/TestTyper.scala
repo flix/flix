@@ -464,7 +464,8 @@ class TestTyper extends FunSuite {
     assert(result.isFailure)
   }
 
-  test("Expression.Apply.TypeError.TooFewArguments") {
+  // TODO: Check here or in resolver?
+  ignore("Expression.Apply.TypeError.TooFewArguments") {
     val x = ParsedAst.Ident("x", SourceLocation.Unknown)
     val y = ParsedAst.Ident("y", SourceLocation.Unknown)
     val z = ParsedAst.Ident("z", SourceLocation.Unknown)
@@ -488,7 +489,8 @@ class TestTyper extends FunSuite {
     assert(result.isFailure)
   }
 
-  test("Expression.Apply.TypeError.TooManyArguments.") {
+  // TODO: Check here or in resolver?
+  ignore("Expression.Apply.TypeError.TooManyArguments.") {
     val x = ParsedAst.Ident("x", SourceLocation.Unknown)
 
     val rast = ResolvedAst.Expression.Apply(
@@ -818,7 +820,7 @@ class TestTyper extends FunSuite {
     assert(result.isFailure)
   }
 
-  test("Expression.Error01") {
+  ignore("Expression.Error01") {
     val rast = ResolvedAst.Expression.IfThenElse(
       ResolvedAst.Expression.Error(SourceLocation.Unknown),
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(21)),
@@ -828,7 +830,7 @@ class TestTyper extends FunSuite {
     assertResult(TypedAst.Type.Int)(result.get.tpe)
   }
 
-  test("Expression.Error02") {
+  ignore("Expression.Error02") {
     val rast = ResolvedAst.Expression.IfThenElse(
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true)),
       ResolvedAst.Expression.Error(SourceLocation.Unknown),
