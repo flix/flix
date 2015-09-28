@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.ast.ParsedAst.Literal
 import ca.uwaterloo.flix.language.ast._
 
 import org.scalatest.FunSuite
@@ -8,6 +9,8 @@ import org.scalatest.FunSuite
 // TODO: Write custom assert which will actually print the parse error...
 
 class TestParser extends FunSuite {
+
+  val SL = SourceLocation.Test
 
   /////////////////////////////////////////////////////////////////////////////
   // Root                                                                    //
@@ -369,19 +372,19 @@ class TestParser extends FunSuite {
   test("Expression.LiteralExp01") {
     val input = "true"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult(true)(result.literal.asInstanceOf[ParsedAst.Literal.Bool].literal)
+    assertResult(true)(result.literal.asInstanceOf[ParsedAst.Literal.Bool].lit)
   }
 
   test("Expression.LiteralExp02") {
     val input = "42"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult(42)(result.literal.asInstanceOf[ParsedAst.Literal.Int].literal)
+    assertResult(42)(result.literal.asInstanceOf[ParsedAst.Literal.Int].lit)
   }
 
   test("Expression.LiteralExp03") {
     val input = "\"foo\""
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult("foo")(result.literal.asInstanceOf[ParsedAst.Literal.Str].literal)
+    assertResult("foo")(result.literal.asInstanceOf[ParsedAst.Literal.Str].lit)
   }
 
   test("Expression.LetExp01") {
@@ -467,7 +470,7 @@ class TestParser extends FunSuite {
     val m1 = result.asInstanceOf[ParsedAst.Expression.Match]
     val m2 = m1.rules.head._2.asInstanceOf[ParsedAst.Expression.Match]
     val l = m2.rules.head._2.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult(5)(l.literal.asInstanceOf[ParsedAst.Literal.Int].literal)
+    assertResult(5)(l.literal.asInstanceOf[ParsedAst.Literal.Int].lit)
   }
 
   test("Expression.MatchExp04") {
@@ -483,7 +486,7 @@ class TestParser extends FunSuite {
     val m1 = result.asInstanceOf[ParsedAst.Expression.Match]
     val m2 = m1.e.asInstanceOf[ParsedAst.Expression.Match]
     val l = m2.rules.head._2.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult(3)(l.literal.asInstanceOf[ParsedAst.Literal.Int].literal)
+    assertResult(3)(l.literal.asInstanceOf[ParsedAst.Literal.Int].lit)
   }
 
   test("Expression.CallExp01") {
@@ -547,13 +550,14 @@ class TestParser extends FunSuite {
   test("Expression.Tuple01") {
     val input = "()"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult(ParsedAst.Literal.Unit)(result.literal)
+    assertResult(ParsedAst.Literal.Unit(SL))(result.literal)
   }
 
   test("Expression.Tuple02") {
     val input = "(1)"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult(ParsedAst.Literal.Int(1))(result.literal)
+    val literal = result.literal.asInstanceOf[Literal.Int]
+    assertResult(1)(literal.lit)
   }
 
   test("Expression.Tuple03") {
@@ -632,19 +636,19 @@ class TestParser extends FunSuite {
   test("Pattern.Literal01") {
     val input = "true"
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
-    assertResult(ParsedAst.Literal.Bool(true))(result.literal)
+    assertResult(ParsedAst.Literal.Bool(SL, true))(result.literal)
   }
 
   test("Pattern.Literal02") {
     val input = "42"
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
-    assertResult(ParsedAst.Literal.Int(42))(result.literal)
+    assertResult(ParsedAst.Literal.Int(SL, 42))(result.literal)
   }
 
   test("Pattern.Literal03") {
     val input = "\"foo\""
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
-    assertResult(ParsedAst.Literal.Str("foo"))(result.literal)
+    assertResult(ParsedAst.Literal.Str(SL, "foo"))(result.literal)
   }
 
   test("Pattern.Tag01") {
@@ -759,7 +763,7 @@ class TestParser extends FunSuite {
   test("Term03") {
     val input = "42"
     val result = new Parser(None, input).Term.run().get.asInstanceOf[ParsedAst.Term.Lit]
-    assertResult(42)(result.literal.asInstanceOf[ParsedAst.Literal.Int].literal)
+    assertResult(42)(result.literal.asInstanceOf[ParsedAst.Literal.Int].lit)
   }
 
   test("Term04") {
@@ -1001,37 +1005,37 @@ class TestParser extends FunSuite {
   test("Literal (Unit)") {
     val input = "()"
     val result = new Parser(None, input).Literal.run().get
-    assertResult(result)(ParsedAst.Literal.Unit)
+    assertResult(result)(ParsedAst.Literal.Unit(SL))
   }
 
   test("Literal (true)") {
     val input = "true"
-    val result = new Parser(None, input).Literal.run().get
-    assertResult(result)(ParsedAst.Literal.Bool(literal = true))
+    val result = new Parser(None, input).Literal.run().get.asInstanceOf[ParsedAst.Literal.Bool]
+    assertResult(result.lit)(true)
   }
 
   test("Literal (false)") {
     val input = "false"
-    val result = new Parser(None, input).Literal.run().get
-    assertResult(result)(ParsedAst.Literal.Bool(literal = false))
+    val result = new Parser(None, input).Literal.run().get.asInstanceOf[ParsedAst.Literal.Bool]
+    assertResult(result.lit)(false)
   }
 
   test("Literal (123)") {
     val input = "123"
-    val result = new Parser(None, input).Literal.run().get
-    assertResult(result)(ParsedAst.Literal.Int(literal = 123))
+    val result = new Parser(None, input).Literal.run().get.asInstanceOf[ParsedAst.Literal.Int]
+    assertResult(result.lit)(123)
   }
 
   test("Literal (\"\")") {
     val input = "\"\""
-    val result = new Parser(None, input).Literal.run().get
-    assertResult(result)(ParsedAst.Literal.Str(literal = ""))
+    val result = new Parser(None, input).Literal.run().get.asInstanceOf[ParsedAst.Literal.Str]
+    assertResult(result.lit)("")
   }
 
   test("Literal (\"foo\")") {
     val input = "\"foo\""
-    val result = new Parser(None, input).Literal.run().get
-    assertResult(result)(ParsedAst.Literal.Str(literal = "foo"))
+    val result = new Parser(None, input).Literal.run().get.asInstanceOf[ParsedAst.Literal.Str]
+    assertResult(result.lit)("foo")
   }
 
   test("Literal.Tag01") {
@@ -1061,7 +1065,7 @@ class TestParser extends FunSuite {
   test("Literal.Tuple01") {
     val input = "()"
     val result = new Parser(None, input).Literal.run().get
-    assertResult(ParsedAst.Literal.Unit)(result)
+    assertResult(ParsedAst.Literal.Unit(SL))(result)
   }
 
   test("Literal.Tuple02") {

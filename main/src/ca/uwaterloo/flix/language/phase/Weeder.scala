@@ -257,12 +257,14 @@ object Weeder {
      * Compiles the parsed literal `past` to a weeded literal.
      */
     def compile(past: ParsedAst.Literal): Validation[WeededAst.Literal, WeederError] = past match {
-      case ParsedAst.Literal.Unit => WeededAst.Literal.Unit.toSuccess
-      case ParsedAst.Literal.Bool(b) => WeededAst.Literal.Bool(b).toSuccess
-      case ParsedAst.Literal.Int(i) => WeededAst.Literal.Int(i).toSuccess
-      case ParsedAst.Literal.Str(s) => WeededAst.Literal.Str(s).toSuccess
-      case ParsedAst.Literal.Tag(name, ident, literal) => compile(literal) map (l => WeededAst.Literal.Tag(name, ident, l))
-      case ParsedAst.Literal.Tuple(elms) => @@(elms map compile) map WeededAst.Literal.Tuple
+      case ParsedAst.Literal.Unit(loc) => WeededAst.Literal.Unit(loc).toSuccess
+      case ParsedAst.Literal.Bool(loc, b) => WeededAst.Literal.Bool(b, loc).toSuccess
+      case ParsedAst.Literal.Int(loc, i) => WeededAst.Literal.Int(i, loc).toSuccess
+      case ParsedAst.Literal.Str(loc, s) => WeededAst.Literal.Str(s, loc).toSuccess
+      case ParsedAst.Literal.Tag(loc, name, ident, literal) => compile(literal) map (l => WeededAst.Literal.Tag(name, ident, l, loc))
+      case ParsedAst.Literal.Tuple(loc, pelms) => @@(pelms map compile) map {
+        case elms => WeededAst.Literal.Tuple(elms, loc)
+      }
     }
   }
 

@@ -89,11 +89,11 @@ namespace ParityAnalysis {
         case Parity.Top    => true;
     };
 
-// TODO: Allow expressions here.
     lat <Parity> (Bot, leq, ParityAnalysis::lub);
 
     rel SumOp(result: Int, left: Int, right: Int);
-    rel VarPointsTo(localVal: Int, value: <Parity>);
+//    rel VarPointsTo(localVal: Int, value: <Parity>); TODO
+    rel VarPointsTo(localVal: Int, value: Parity);
 
     SumOp(3, 1, 2).
     VarPointsTo(1, Parity.Odd).

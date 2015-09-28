@@ -111,45 +111,52 @@ object ParsedAst {
 
     /**
      * An AST node that represents the Unit literal.
+     *
+     * @param loc the source location.
      */
-    case object Unit extends ParsedAst.Literal
+    case class Unit(loc: SourceLocation) extends ParsedAst.Literal
 
     /**
      * An AST node that represents a boolean literal.
      *
-     * @param literal the boolean literal.
+     * @param loc the source location.
+     * @param lit the boolean literal.
      */
-    case class Bool(literal: scala.Boolean) extends ParsedAst.Literal
+    case class Bool(loc: SourceLocation, lit: scala.Boolean) extends ParsedAst.Literal
 
     /**
      * An AST node that represents an integer literal.
      *
-     * @param literal the integer literal.
+     * @param loc the source location.
+     * @param lit the integer literal.
      */
-    case class Int(literal: scala.Int) extends ParsedAst.Literal
+    case class Int(loc: SourceLocation, lit: scala.Int) extends ParsedAst.Literal
 
     /**
      * An AST node that represents a string literal.
      *
-     * @param literal the string literal.
+     * @param loc the source location.
+     * @param lit the string literal.
      */
-    case class Str(literal: java.lang.String) extends ParsedAst.Literal
+    case class Str(loc: SourceLocation, lit: java.lang.String) extends ParsedAst.Literal
 
     /**
      * An AST node that represents a tagged literal.
      *
-     * @param name the namespace of the enum.
-     * @param ident the name of the tag.
-     * @param literal the nested literal.
+     * @param loc the source location.
+     * @param enum the name of the enum.
+     * @param tag the name of the tag.
+     * @param lit the nested literal.
      */
-    case class Tag(name: Name.Unresolved, ident: Name.Ident, literal: ParsedAst.Literal) extends ParsedAst.Literal
+    case class Tag(loc: SourceLocation, enum: Name.Unresolved, tag: Name.Ident, lit: ParsedAst.Literal) extends ParsedAst.Literal
 
     /**
      * An AST node that represents a tuple literal.
      *
+     * @param loc the source location.
      * @param elms the elements of the tuple.
      */
-    case class Tuple(elms: Seq[ParsedAst.Literal]) extends ParsedAst.Literal
+    case class Tuple(loc: SourceLocation, elms: Seq[ParsedAst.Literal]) extends ParsedAst.Literal
 
   }
 
@@ -166,7 +173,7 @@ object ParsedAst {
      * @param literal the literal.
      */
     case class Lit(literal: ParsedAst.Literal) extends ParsedAst.Expression
-    
+
     /**
      * An AST node that represents an unresolved variable.
      *
@@ -450,4 +457,5 @@ object ParsedAst {
    */
   // TODO: Find a better name or eliminate entirely...
   case class Trait(ident: Name.Ident, name: Name.Unresolved) extends ParsedAst
+
 }

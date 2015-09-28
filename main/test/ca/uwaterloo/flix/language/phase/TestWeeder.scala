@@ -8,6 +8,7 @@ import org.scalatest.FunSuite
 
 class TestWeeder extends FunSuite {
 
+  val SL = SourceLocation.Unknown
   val Ident = Name.Ident("x", SourceLocation.Unknown)
 
   test("DuplicateAttribute01") {
@@ -36,7 +37,7 @@ class TestWeeder extends FunSuite {
     val past = ParsedAst.Definition.Function(Ident, Seq(
       (Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       (Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
-    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit))
+    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit(SL)))
 
     val result = Weeder.Definition.compile(past)
     assert(result.hasErrors)
@@ -48,7 +49,7 @@ class TestWeeder extends FunSuite {
       (Name.Ident("y", SourceLocation.Unknown), ParsedAst.Type.Unit),
       (Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       (Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
-    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit))
+    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit(SL)))
 
     val result = Weeder.Definition.compile(past)
     assertResult(2)(result.errors.size)

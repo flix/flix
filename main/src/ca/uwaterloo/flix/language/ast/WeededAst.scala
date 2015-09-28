@@ -48,17 +48,17 @@ object WeededAst {
 
   object Literal {
 
-    case object Unit extends WeededAst.Literal
+    case class Unit(loc: SourceLocation) extends WeededAst.Literal
 
-    case class Bool(literal: scala.Boolean) extends WeededAst.Literal
+    case class Bool(lit: scala.Boolean, loc: SourceLocation) extends WeededAst.Literal
 
-    case class Int(literal: scala.Int) extends WeededAst.Literal
+    case class Int(lit: scala.Int, loc: SourceLocation) extends WeededAst.Literal
 
-    case class Str(literal: java.lang.String) extends WeededAst.Literal
+    case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Literal
 
-    case class Tag(name: Name.Unresolved, ident: Name.Ident, literal: WeededAst.Literal) extends WeededAst.Literal
+    case class Tag(enum: Name.Unresolved, tag: Name.Ident, literal: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Literal
 
-    case class Tuple(elms: List[WeededAst.Literal]) extends WeededAst.Literal
+    case class Tuple(elms: List[WeededAst.Literal], loc: SourceLocation) extends WeededAst.Literal
 
   }
 
@@ -176,8 +176,6 @@ object WeededAst {
     case class Tuple(elms: List[WeededAst.Type]) extends WeededAst.Type
 
     case class Function(args: List[WeededAst.Type], retType: WeededAst.Type) extends WeededAst.Type
-
-    case class Lattice(tpe: WeededAst.Type) extends WeededAst.Type
 
   }
 

@@ -179,14 +179,14 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   def TagExpression: Rule1[ParsedAst.Expression.Tag] = rule {
     QName ~ "." ~ Ident ~ optWS ~ optional(Expression) ~>
       ((name: Name.Unresolved, ident: Name.Ident, exp: Option[ParsedAst.Expression]) => exp match {
-        case None => ParsedAst.Expression.Tag(name, ident, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit))
+        case None => ParsedAst.Expression.Tag(name, ident, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit(ast.SourceLocation.Inferred)))
         case Some(e) => ParsedAst.Expression.Tag(name, ident, e)
       })
   }
 
   def TupleExpression: Rule1[ParsedAst.Expression] = {
     def Unit: Rule1[ParsedAst.Expression] = rule {
-      atomic("()") ~> (() => ParsedAst.Expression.Lit(ParsedAst.Literal.Unit))
+      SL ~ atomic("()") ~> ((loc: SourceLocation) => ParsedAst.Expression.Lit(ParsedAst.Literal.Unit(loc)))
     }
 
     def Singleton: Rule1[ParsedAst.Expression] = rule {
@@ -211,7 +211,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def ErrorExpression: Rule1[ParsedAst.Expression] = rule {
-    SourceLocation ~ atomic("???") ~ optWS ~ ":" ~ optWS ~ Type ~> ParsedAst.Expression.Error
+    SL ~ atomic("???") ~ optWS ~ ":" ~ optWS ~ Type ~> ParsedAst.Expression.Error
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -224,7 +224,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def WildcardPattern: Rule1[ParsedAst.Pattern.Wildcard] = rule {
-    SourceLocation ~ atomic("_") ~> ParsedAst.Pattern.Wildcard
+    SL ~ atomic("_") ~> ParsedAst.Pattern.Wildcard
   }
 
   def VariablePattern: Rule1[ParsedAst.Pattern.Var] = rule {
@@ -238,7 +238,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   def TagPattern: Rule1[ParsedAst.Pattern.Tag] = rule {
     QName ~ "." ~ Ident ~ optWS ~ optional(Pattern) ~>
       ((name: Name.Unresolved, ident: Name.Ident, pattern: Option[ParsedAst.Pattern]) => pattern match {
-        case None => ParsedAst.Pattern.Tag(name, ident, ParsedAst.Pattern.Lit(ParsedAst.Literal.Unit))
+        case None => ParsedAst.Pattern.Tag(name, ident, ParsedAst.Pattern.Lit(ParsedAst.Literal.Unit(ast.SourceLocation.Inferred)))
         case Some(p) => ParsedAst.Pattern.Tag(name, ident, p)
       })
   }
@@ -279,7 +279,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def WildcardTerm: Rule1[ParsedAst.Term] = rule {
-    SourceLocation ~ atomic("_") ~> ParsedAst.Term.Wildcard
+    SL ~ atomic("_") ~> ParsedAst.Term.Wildcard
   }
 
   def VariableTerm: Rule1[ParsedAst.Term.Var] = rule {
@@ -361,12 +361,12 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def Ident: Rule1[Name.Ident] = rule {
-    SourceLocation ~ LegalIdentifier ~>
+    SL ~ LegalIdentifier ~>
       ((location: SourceLocation, name: String) => Name.Ident(name, location))
   }
 
   def QName: Rule1[Name.Unresolved] = rule {
-    SourceLocation ~ oneOrMore(LegalIdentifier).separatedBy(atomic("::")) ~>
+    SL ~ oneOrMore(LegalIdentifier).separatedBy(atomic("::")) ~>
       ((location: SourceLocation, parts: Seq[String]) => Name.Unresolved(parts.toList, location))
   }
 
@@ -377,27 +377,35 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     UnitLiteral | BoolLiteral | IntLiteral | StrLiteral | TagLiteral | TupleLiteral
   }
 
-  def UnitLiteral: Rule1[ParsedAst.Literal.Unit.type] = rule {
-    atomic("()") ~> (() => ParsedAst.Literal.Unit)
+  def UnitLiteral: Rule1[ParsedAst.Literal.Unit] = rule {
+    SL ~ atomic("()") ~> ParsedAst.Literal.Unit
   }
 
   def BoolLiteral: Rule1[ParsedAst.Literal.Bool] = rule {
-    atomic("true") ~> (() => ParsedAst.Literal.Bool(literal = true)) | atomic("false") ~> (() => ParsedAst.Literal.Bool(literal = false))
+    TrueLiteral | FalseLiteral
+  }
+
+  def TrueLiteral: Rule1[ParsedAst.Literal.Bool] = rule {
+    SL ~ atomic("true") ~> ((loc: SourceLocation) => ParsedAst.Literal.Bool(loc, lit = true))
+  }
+
+  def FalseLiteral: Rule1[ParsedAst.Literal.Bool] = rule {
+    SL ~ atomic("false") ~> ((loc: SourceLocation) => ParsedAst.Literal.Bool(loc, lit = false))
   }
 
   def IntLiteral: Rule1[ParsedAst.Literal.Int] = rule {
-    capture(oneOrMore(CharPredicate.Digit)) ~> ((x: String) => ParsedAst.Literal.Int(x.toInt))
+    SL ~ capture(oneOrMore(CharPredicate.Digit)) ~> ((loc: SourceLocation, x: String) => ParsedAst.Literal.Int(loc, x.toInt))
   }
 
   def StrLiteral: Rule1[ParsedAst.Literal.Str] = rule {
-    "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~> ParsedAst.Literal.Str
+    SL ~ "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~> ParsedAst.Literal.Str
   }
 
   def TagLiteral: Rule1[ParsedAst.Literal.Tag] = rule {
-    QName ~ "." ~ Ident ~ optWS ~ optional(Literal) ~>
-      ((name: Name.Unresolved, ident: Name.Ident, literal: Option[ParsedAst.Literal]) => literal match {
-        case None => ParsedAst.Literal.Tag(name, ident, ParsedAst.Literal.Unit)
-        case Some(lit) => ParsedAst.Literal.Tag(name, ident, lit)
+    SL ~ QName ~ "." ~ Ident ~ optWS ~ optional(Literal) ~>
+      ((loc: SourceLocation, name: Name.Unresolved, ident: Name.Ident, literal: Option[ParsedAst.Literal]) => literal match {
+        case None => ParsedAst.Literal.Tag(loc, name, ident, ParsedAst.Literal.Unit(loc))
+        case Some(lit) => ParsedAst.Literal.Tag(loc, name, ident, lit)
       })
   }
 
@@ -407,7 +415,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     }
 
     def Tuple: Rule1[ParsedAst.Literal] = rule {
-      "(" ~ optWS ~ oneOrMore(Literal).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Literal.Tuple
+      SL ~ "(" ~ optWS ~ oneOrMore(Literal).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Literal.Tuple
     }
 
     rule {
@@ -491,7 +499,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   // Source Location                                                         //
   /////////////////////////////////////////////////////////////////////////////
   @Unoptimized
-  def SourceLocation: Rule1[SourceLocation] = {
+  def SL: Rule1[SourceLocation] = {
     val position = Position(cursor, input)
     rule {
       push(ast.SourceLocation(path, position.line, position.column))

@@ -7,6 +7,9 @@ import java.nio.file.Path
  */
 object SourceLocation {
   val Unknown = SourceLocation(None, 0, 0)
+  val Inferred = SourceLocation(None, 0, 0)
+
+  val Test = SourceLocation(None, 1, 1)
 }
 
 /**
