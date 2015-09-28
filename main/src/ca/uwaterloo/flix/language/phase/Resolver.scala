@@ -50,7 +50,7 @@ object Resolver {
   }
 
   case class SymbolTable(enums: Map[Name.Resolved, WeededAst.Definition.Enum],
-                         values: Map[Name.Resolved, WeededAst.Definition.Constant],
+                         constants: Map[Name.Resolved, WeededAst.Definition.Constant],
                          relations: Map[Name.Resolved, WeededAst.Definition.Relation],
                          types: Map[Name.Resolved, WeededAst.Type]) {
     // TODO: Cleanup
@@ -75,7 +75,7 @@ object Resolver {
         else
           name.parts.toList
       )
-      values.get(rname) match {
+      constants.get(rname) match {
         case None => UnresolvedReference(name, namespace).toFailure
         case Some(d) => (rname, d).toSuccess
       }
@@ -126,8 +126,12 @@ object Resolver {
     symsVal flatMap {
       case syms =>
 
-        val collectedValues = syms.values.mapValues {
-          case v => Definition.resolve(v, List.empty, syms)
+        val collectedConstants = Validation.fold[Name.Resolved, WeededAst.Definition.Constant, Name.Resolved, ResolvedAst.Definition.Constant, ResolverError](syms.constants) {
+          case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
+        }
+
+        val collectedEnums = Validation.fold[Name.Resolved, WeededAst.Definition.Enum, Name.Resolved, ResolvedAst.Definition.Enum, ResolverError](syms.enums) {
+          case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
 
         val collectedRelations = Validation.fold[Name.Resolved, WeededAst.Definition.Relation, Name.Resolved, ResolvedAst.Definition.Relation, ResolverError](syms.relations) {
@@ -137,9 +141,9 @@ object Resolver {
         val collectedFacts = Declaration.collectFacts(wast, syms)
         val collectedRules = Declaration.collectRules(wast, syms)
 
-        @@(collectedRelations, collectedFacts, collectedRules) map {
+        @@(collectedConstants, collectedEnums, collectedRelations, collectedFacts, collectedRules) map {
           // TODO: Rest...
-          case (relations, facts, rules) => ResolvedAst.Root(Map.empty, Map.empty, Map.empty, relations, facts, rules)
+          case (constants, enums, relations, facts, rules) => ResolvedAst.Root(constants, enums, Map.empty, relations, facts, rules)
         }
     }
   }
@@ -165,8 +169,8 @@ object Resolver {
     def symbolsOf(wast: WeededAst.Definition, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
       case defn@WeededAst.Definition.Constant(ident, tpe, e) =>
         val rname = toRName(ident, namespace)
-        syms.values.get(rname) match {
-          case None => syms.copy(values = syms.values + (rname -> defn)).toSuccess
+        syms.constants.get(rname) match {
+          case None => syms.copy(constants = syms.constants + (rname -> defn)).toSuccess
           case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.location, ident.location).toFailure
         }
 
@@ -229,6 +233,18 @@ object Resolver {
       @@(Expression.resolve(wast.e, namespace, syms), Type.resolve(wast.tpe, namespace, syms)) map {
         case (e, tpe) =>
           ResolvedAst.Definition.Constant(name, e, tpe)
+      }
+    }
+
+    def resolve(wast: WeededAst.Definition.Enum, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Enum, ResolverError] = {
+      val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
+
+      val casesVal = Validation.fold[String, WeededAst.Type.Tag, String, ResolvedAst.Type.Tag, ResolverError](wast.cases) {
+        (k, tpe) => Type.resolve(tpe, namespace, syms) map (t => k -> t.asInstanceOf[ResolvedAst.Type.Tag])
+      }
+
+      casesVal map {
+        case cases => ResolvedAst.Definition.Enum(name, cases)
       }
     }
 

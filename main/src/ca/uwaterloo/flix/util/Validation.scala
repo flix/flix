@@ -112,6 +112,7 @@ object Validation {
    */
   // TODO: Consider only folding over value?
   // TODO: Rename to map
+  // TODO: need foldMap, foldMapKeys, foldMapValues
   @inline
   def fold[K, V, K2, V2, Alternative](m: Map[K, V])(f: (K, V) => Validation[(K2, V2), Alternative]): Validation[Map[K2, V2], Alternative] =
     m.foldLeft(Success(Map.empty[K2, V2], List.empty[Alternative]): Validation[Map[K2, V2], Alternative]) {
