@@ -426,6 +426,8 @@ object Typer {
           case _ => TypedAst.Term.Head.Lit(lit, lit.tpe)
         }
       case ResolvedAst.Term.Head.Apply(name, actuals) =>
+        // TODO: This needs to be rewritten
+
         val constant = root.constants(name)
         // TODO: This might actually be slightly problematic, since not every constant may be a fully evalauted lambda.
         // Instead we should focus on the type of the constant, which should be Function.

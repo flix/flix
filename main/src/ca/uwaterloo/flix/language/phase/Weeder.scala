@@ -186,8 +186,8 @@ object Weeder {
 
       @@(formalsVal, Expression.compile(past.body), Type.compile(past.tpe)) map {
         case (args, body, retType) =>
+          val exp = WeededAst.Expression.Lambda(args, body, retType)
           val tpe = WeededAst.Type.Function(args map (_._2), retType)
-          val exp = WeededAst.Expression.Lambda(args, body, tpe)
           WeededAst.Definition.Constant(past.ident, exp, tpe)
       }
     }
