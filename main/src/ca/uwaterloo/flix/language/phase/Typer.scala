@@ -360,10 +360,14 @@ object Typer {
           case _ => TypedAst.Pattern.Lit(lit, tpe)
         }
       case ResolvedAst.Pattern.Tag(enumName, tagName, rpat) => tpe match {
-        case TypedAst.Type.Tag(enumName2, tagName2, tpe2) if enumName == enumName2 && tagName.name == tagName2.name =>
-          typer(rpat, tpe2, root) map {
-            case pat => TypedAst.Pattern.Tag(enumName, tagName, pat, TypedAst.Type.Tag(enumName, tagName, pat.tpe))
+        case TypedAst.Type.Enum(cases) => cases.get(tagName.name) match {
+          case Some(tag) if enumName == tag.name => {
+            typer(rpat, tag.tpe, root) map {
+              case pat => TypedAst.Pattern.Tag(enumName, tagName, pat, TypedAst.Type.Tag(enumName, tagName, pat.tpe))
+            }
           }
+          case _ => IllegalPattern(rast, tpe).toFailure
+        }
         case _ => IllegalPattern(rast, tpe).toFailure
       }
       case ResolvedAst.Pattern.Tuple(relms) => tpe match {
