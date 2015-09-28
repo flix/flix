@@ -1,11 +1,15 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.lang.ast.TypedAst.{Expression, Literal, Type, FormalArg, Root}
+import ca.uwaterloo.flix.lang.ast.TypedAst.{Definition, Expression, Literal, Type, FormalArg, Root}
 import ca.uwaterloo.flix.lang.ast.{BinaryOperator, UnaryOperator, ParsedAst, Name, SourceLocation}
 import org.scalatest.FunSuite
 
 class TestInterpreter extends FunSuite {
   val root = Root(Map(), Map(), Map(), List(), List())
+
+  val ident01 = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
+  val ident02 = ParsedAst.Ident("y", SourceLocation(None, 0, 0))
+  val ident03 = ParsedAst.Ident("z", SourceLocation(None, 0, 0))
 
   object ConstantPropTagDefs {
     val name = Name.Resolved(List("ConstProp"))
@@ -18,10 +22,6 @@ class TestInterpreter extends FunSuite {
     val tagTpeT = Type.Tag(name, identT, Type.Unit)
     val enumTpe = Type.Enum(Map("ConstProp.Bot" -> tagTpeB, "ConstProp.Val" -> tagTpeV, "ConstProp.Top" -> tagTpeT))
   }
-
-  val ident01 = ParsedAst.Ident("x", SourceLocation(None, 0, 0))
-  val ident02 = ParsedAst.Ident("y", SourceLocation(None, 0, 0))
-  val ident03 = ParsedAst.Ident("z", SourceLocation(None, 0, 0))
 
   /////////////////////////////////////////////////////////////////////////////
   // Expressions - Literals                                                  //
@@ -212,6 +212,48 @@ class TestInterpreter extends FunSuite {
     val input = Expression.Var(ident02, Type.Str)
     val env = Map(ident01 -> Value.Str("foo"), ident02 -> Value.Str("bar"))
     val result = Interpreter.eval(input, root, env)
+    assertResult(Value.Str("bar"))(result)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expressions - Ref                                                       //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Ref01") {
+    val name = Name.Resolved(List("foo", "bar", "baz"))
+    val const = Definition.Constant(name, Expression.Lit(Literal.Bool(false), Type.Bool), Type.Bool)
+    val root = Root(Map(name -> const), Map(), Map(), List(), List())
+    val input = Expression.Lit(Literal.Str("hello"), Type.Str)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Str("hello"))(result)
+  }
+
+  test("Expression.Ref02") {
+    val name = Name.Resolved(List("foo", "bar", "baz"))
+    val const = Definition.Constant(name, Expression.Lit(Literal.Int(5), Type.Int), Type.Int)
+    val root = Root(Map(name -> const), Map(), Map(), List(), List())
+    val input = Expression.Ref(name, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(5))(result)
+  }
+
+  test("Expression.Ref03") {
+    val name = Name.Resolved(List("foo", "bar", "baz"))
+    val const = Definition.Constant(name, Expression.Lit(Literal.Bool(false), Type.Bool), Type.Bool)
+    val root = Root(Map(name -> const), Map(), Map(), List(), List())
+    val input = Expression.Ref(name, Type.Bool)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Bool(false))(result)
+  }
+
+  test("Expression.Ref04") {
+    val name01 = Name.Resolved(List("foo", "bar", "baz"))
+    val name02 = Name.Resolved(List("abc", "def", "ghi"))
+    val const01 = Definition.Constant(name01, Expression.Lit(Literal.Str("foo"), Type.Str), Type.Str)
+    val const02 = Definition.Constant(name01, Expression.Lit(Literal.Str("bar"), Type.Str), Type.Str)
+    val root = Root(Map(name01 -> const01, name02 -> const02), Map(), Map(), List(), List())
+    val input = Expression.Ref(name02, Type.Str)
+    val result = Interpreter.eval(input, root)
     assertResult(Value.Str("bar"))(result)
   }
 

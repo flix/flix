@@ -12,7 +12,9 @@ object Interpreter {
       case Expression.Var(ident, _) =>
         assert(env.contains(ident), s"Expected variable ${ident.name} to be bound.")
         env(ident)
-      case Expression.Ref(name, tpe) => ??? // TODO(mhyee): Implement this
+      case Expression.Ref(name, _) =>
+        assert(root.constants.contains(name), s"Expected constant ${name.parts.mkString(".")} to be defined.")
+        eval(root.constants(name).exp, root, env)
       case Expression.Lambda(formals, _, body, _) => Value.Closure(formals, body, env)
       case Expression.Apply(exp, args, _) => eval(exp, root, env) match {
           case Value.Closure(formals, body, closureEnv) =>
