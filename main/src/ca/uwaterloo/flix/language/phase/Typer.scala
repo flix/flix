@@ -431,6 +431,11 @@ object Typer {
         expect(tpe, lit.tpe) map {
           case _ => TypedAst.Term.Head.Lit(lit, lit.tpe)
         }
+      case ResolvedAst.Term.Head.Ascribe(rterm, rtpe) =>
+        val ascribedType = Type.typer(rtpe)
+        expect(ascribedType, tpe) flatMap {
+          case _ => typer(rterm, tpe, root)
+        }
       case ResolvedAst.Term.Head.Apply(name, actuals) =>
         // TODO: This needs to be rewritten
 
@@ -462,6 +467,11 @@ object Typer {
         val lit = Literal.typer(rlit, root)
         expect(tpe, lit.tpe) map {
           case _ => TypedAst.Term.Body.Lit(lit, lit.tpe)
+        }
+      case ResolvedAst.Term.Body.Ascribe(rterm, rtpe) =>
+        val ascribedType = Type.typer(rtpe)
+        expect(ascribedType, tpe) flatMap {
+          case _ => typer(rterm, tpe, root)
         }
     }
 

@@ -1065,6 +1065,8 @@ class TestTyper extends FunSuite {
     assertResult(expectedType)(actualType)
   }
 
+  // TODO: Test Term.Ascribe.
+
 
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //

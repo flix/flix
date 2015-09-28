@@ -4,7 +4,7 @@ import java.nio.file.{Files, Path}
 
 import ca.uwaterloo.flix.language.ast.{TypedAst, SourceLocation, ResolvedAst, ParsedAst}
 import ca.uwaterloo.flix.language.phase._
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{StopWatch, Validation}
 import org.parboiled2.{ErrorFormatter, ParseError}
 
 import scala.io.Source
@@ -70,7 +70,10 @@ object Compiler {
    * Applies the compiler to all the given source `paths`.
    */
   def compile(paths: Traversable[Path]): Option[TypedAst.Root] = {
+    val stopWatch = new StopWatch()
+
     val past = parse(paths)
+    println(f"Parser:     ${stopWatch.click() / 1000000}%4d msec.")
 
     val wast = Weeder.weed(past)
     if (wast.isFailure) {
@@ -79,6 +82,7 @@ object Compiler {
       Console.println("Aborting due to previous errors.")
       return None
     }
+    println(f"Weeder:     ${stopWatch.click() / 1000000}%4d msec.")
 
     val rast = Resolver.resolve(wast.get)
     if (rast.isFailure) {
@@ -87,6 +91,7 @@ object Compiler {
       Console.println("Aborting due to previous errors.")
       return None
     }
+    println(f"Resolver:   ${stopWatch.click() / 1000000}%4d msec.")
 
     val tast = Typer.typecheck(rast.get)
     if (tast.isFailure) {
@@ -94,7 +99,9 @@ object Compiler {
       Console.println("Aborting due to previous errors.")
       return None
     }
+    println(f"Typer:      ${stopWatch.click() / 1000000}%4d msec.")
 
+    println()
     Console.println("Compilation successful.")
     Some(tast.get)
   }

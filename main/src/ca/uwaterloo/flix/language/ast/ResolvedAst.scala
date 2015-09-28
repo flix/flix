@@ -220,6 +220,14 @@ object ResolvedAst {
       case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Term.Head
 
       /**
+       * An AST node representing an ascribed term.
+       *
+       * @param term the ascribed term.
+       * @param tpe the ascribed type.
+       */
+      case class Ascribe(term: ResolvedAst.Term.Head, tpe: ResolvedAst.Type) extends ResolvedAst.Term.Head
+
+      /**
        * An AST node representing a function call term.
        *
        * @param name the name of the called function.
@@ -256,6 +264,14 @@ object ResolvedAst {
        * @param literal the literal.
        */
       case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Term.Body
+
+      /**
+       * An AST node representing an ascribed term.
+       *
+       * @param term the ascribed term.
+       * @param tpe the ascribed type.
+       */
+      case class Ascribe(term: ResolvedAst.Term.Body, tpe: ResolvedAst.Type) extends ResolvedAst.Term.Body
 
     }
 

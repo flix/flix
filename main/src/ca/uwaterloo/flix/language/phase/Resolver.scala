@@ -433,6 +433,10 @@ object Resolver {
       def resolve(wast: WeededAst.TermWithApply, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Term.Head, ResolverError] = wast match {
         case WeededAst.TermWithApply.Var(ident) => ResolvedAst.Term.Head.Var(ident).toSuccess
         case WeededAst.TermWithApply.Lit(wlit) => Literal.resolve(wlit, namespace, syms) map ResolvedAst.Term.Head.Lit
+        case WeededAst.TermWithApply.Ascribe(wterm, wtpe) =>
+          @@(resolve(wterm, namespace, syms), Type.resolve(wtpe, namespace, syms)) map {
+            case (term, tpe) => ResolvedAst.Term.Head.Ascribe(term, tpe)
+          }
         case WeededAst.TermWithApply.Apply(name, wargs) =>
           syms.lookupConstant(name, namespace) flatMap {
             case (rname, defn) => @@(wargs map (arg => resolve(arg, namespace, syms))) map {
@@ -451,6 +455,10 @@ object Resolver {
         case WeededAst.TermNoApply.Wildcard(location) => ResolvedAst.Term.Body.Wildcard(location).toSuccess
         case WeededAst.TermNoApply.Var(ident) => ResolvedAst.Term.Body.Var(ident).toSuccess
         case WeededAst.TermNoApply.Lit(wlit) => Literal.resolve(wlit, namespace, syms) map ResolvedAst.Term.Body.Lit
+        case WeededAst.TermNoApply.Ascribe(wterm, wtpe) =>
+          @@(resolve(wterm, namespace, syms), Type.resolve(wtpe, namespace, syms)) map {
+            case (term, tpe) => ResolvedAst.Term.Body.Ascribe(term, tpe)
+          }
       }
     }
 

@@ -412,6 +412,10 @@ object Weeder {
         case ParsedAst.Term.Lit(literal) => Literal.compile(literal) map WeededAst.TermWithApply.Lit
 
         // TODO: Non-literal tag and tuple could be allowed here.
+        case ParsedAst.Term.Ascribe(pterm, ptpe) =>
+          @@(compile(pterm), Type.compile(ptpe)) map {
+            case (term, tpe) => WeededAst.TermWithApply.Ascribe(term, tpe)
+          }
 
         case ParsedAst.Term.Apply(name, pargs) =>
           @@(pargs map compile) map {
@@ -430,6 +434,10 @@ object Weeder {
         case ParsedAst.Term.Wildcard(loc) => WeededAst.TermNoApply.Wildcard(loc).toSuccess
         case ParsedAst.Term.Var(ident) => WeededAst.TermNoApply.Var(ident).toSuccess
         case ParsedAst.Term.Lit(literal) => Literal.compile(literal) map WeededAst.TermNoApply.Lit
+        case ParsedAst.Term.Ascribe(pterm, ptpe) =>
+          @@(compile(pterm), Type.compile(ptpe)) map {
+            case (term, tpe) => WeededAst.TermNoApply.Ascribe(term, tpe)
+          }
         case ParsedAst.Term.Apply(name, args) => IllegalTerm("Function calls not allowed in body terms.", name.location).toFailure
       }
     }

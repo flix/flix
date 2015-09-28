@@ -140,6 +140,7 @@ object WeededAst {
 
     case class Lit(literal: WeededAst.Literal) extends WeededAst.TermNoApply
 
+    case class Ascribe(term: TermNoApply, tpe: WeededAst.Type) extends WeededAst.TermNoApply
   }
 
   sealed trait TermWithApply extends WeededAst
@@ -152,6 +153,8 @@ object WeededAst {
     case class Var(ident: Name.Ident) extends WeededAst.TermWithApply
 
     case class Lit(literal: WeededAst.Literal) extends WeededAst.TermWithApply
+
+    case class Ascribe(term: TermWithApply, tpe: WeededAst.Type) extends WeededAst.TermWithApply
 
     case class Apply(name: Name.Unresolved, args: List[WeededAst.TermWithApply]) extends WeededAst.TermWithApply
 
