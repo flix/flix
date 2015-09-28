@@ -294,7 +294,7 @@ object Resolver {
     def resolve(wast: WeededAst.Expression, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Expression, ResolverError] = {
       def visit(wast: WeededAst.Expression, locals: Set[String]): Validation[ResolvedAst.Expression, ResolverError] = wast match {
         // TODO: Rewrite this ....
-        case WeededAst.Expression.AmbiguousVar(name) => name.parts match {
+        case WeededAst.Expression.Var(name) => name.parts match {
           case Seq(x) =>
             if (locals contains x)
               ResolvedAst.Expression.Var(Name.Ident(x, name.location)).toSuccess
@@ -304,9 +304,12 @@ object Resolver {
             case (rname, defn) => ResolvedAst.Expression.Ref(rname)
           }
         }
-        case WeededAst.Expression.AmbiguousApply(name, args) =>
-          throw new RuntimeException("Remove this node.")
+
+        case WeededAst.Expression.Apply(lambda, args) =>
+          ??? // TODO
+
         case WeededAst.Expression.Lit(wlit) => Literal.resolve(wlit, namespace, syms) map ResolvedAst.Expression.Lit
+
         case WeededAst.Expression.Lambda(wformals, wbody, wtype) =>
           val formalsVal = @@(wformals map {
             case (ident, tpe) => Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.FormalArg(ident, t))

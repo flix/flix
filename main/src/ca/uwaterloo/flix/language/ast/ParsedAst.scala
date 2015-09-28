@@ -8,6 +8,7 @@ import scala.collection.immutable.Seq
 sealed trait ParsedAst
 
 // TODO: Add source locations everywhere.
+// TODO: Function -> Lambda
 
 object ParsedAst {
 
@@ -170,27 +171,26 @@ object ParsedAst {
   object Expression {
 
     /**
-     * An AST node that represents an unresolved variable.
-     *
-     * @param name the ambiguous name.
-     */
-    case class AmbiguousVar(name: Name.Unresolved) extends ParsedAst.Expression
-
-    /**
-     * An AST node that represents a function application.
-     *
-     * @param name the unresolved name of the function.
-     * @param arguments the arguments to the function.
-     */
-    // TODO: Should the base not be parsed as an expression??
-    case class AmbiguousApply(name: Name.Unresolved, arguments: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
-
-    /**
      * An AST node that represents a literal.
      *
      * @param literal the literal.
      */
     case class Lit(literal: ParsedAst.Literal) extends ParsedAst.Expression
+    
+    /**
+     * An AST node that represents an unresolved variable.
+     *
+     * @param name the ambiguous name.
+     */
+    case class Var(name: Name.Unresolved) extends ParsedAst.Expression
+
+    /**
+     * An AST node that represents a function application.
+     *
+     * @param lambda the lambda expression.
+     * @param actuals the arguments.
+     */
+    case class Apply(lambda: ParsedAst.Expression, actuals: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a lambda expression.
@@ -444,6 +444,7 @@ object ParsedAst {
      *
      * @param tpe the enriched type.
      */
+    // TODO: Remove this?
     case class Lattice(tpe: ParsedAst.Type) extends ParsedAst.Type
 
   }

@@ -271,15 +271,16 @@ object Weeder {
      * Compiles the parsed expression `past` to a weeded expression.
      */
     def compile(past: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = past match {
-      case ParsedAst.Expression.AmbiguousVar(name) =>
-        WeededAst.Expression.AmbiguousVar(name).toSuccess
-
-      case ParsedAst.Expression.AmbiguousApply(name, wargs) =>
-        @@(wargs map compile) map {
-          case args => WeededAst.Expression.AmbiguousApply(name, args)
-        }
       case ParsedAst.Expression.Lit(literal) =>
         Literal.compile(literal) map WeededAst.Expression.Lit
+
+      case ParsedAst.Expression.Var(name) =>
+        WeededAst.Expression.Var(name).toSuccess
+
+      case ParsedAst.Expression.Apply(wlambda, wargs) =>
+        @@(compile(wlambda), @@(wargs map compile)) map {
+          case (lambda, args) => WeededAst.Expression.Apply(lambda, args)
+        }
 
       case ParsedAst.Expression.Lambda(pargs, ptype, pbody) =>
         val argsVal = @@(pargs map {
@@ -319,7 +320,7 @@ object Weeder {
 
       case ParsedAst.Expression.Infix(pe1, name, pe2) =>
         @@(compile(pe1), compile(pe2)) map {
-          case (e1, e2) => WeededAst.Expression.AmbiguousApply(name, List(e1, e2))
+          case (e1, e2) => WeededAst.Expression.Apply(WeededAst.Expression.Var(name), List(e1, e2))
         }
 
       case ParsedAst.Expression.Tag(enumName, tagName, pe) => compile(pe) map {

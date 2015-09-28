@@ -139,11 +139,15 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def AscribeExpression: Rule1[ParsedAst.Expression] = rule {
-    SimpleExpression ~ optWS ~ ":" ~ optWS ~ Type ~> ParsedAst.Expression.Ascribe | SimpleExpression
+    InvokeExpression ~ optWS ~ ":" ~ optWS ~ Type ~> ParsedAst.Expression.Ascribe | InvokeExpression
+  }
+
+  def InvokeExpression: Rule1[ParsedAst.Expression] = rule {
+    ApplyExpression | SimpleExpression
   }
 
   def SimpleExpression: Rule1[ParsedAst.Expression] = rule {
-    LetExpression | IfThenElseExpression | MatchExpression | TagExpression | TupleExpression | LiteralExpression | LambdaExpression | ApplyExpression | VariableExpression | ErrorExpression
+    LetExpression | IfThenElseExpression | MatchExpression | TagExpression | TupleExpression | LiteralExpression | LambdaExpression | VariableExpression | ErrorExpression
   }
 
   def LiteralExpression: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -168,9 +172,8 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     }
   }
 
-  // TODO: This needs to allow the function to be an expression.
-  def ApplyExpression: Rule1[ParsedAst.Expression.AmbiguousApply] = rule {
-    QName ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Expression.AmbiguousApply
+  def ApplyExpression: Rule1[ParsedAst.Expression.Apply] = rule {
+    SimpleExpression ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Expression.Apply
   }
 
   def TagExpression: Rule1[ParsedAst.Expression.Tag] = rule {
@@ -199,8 +202,8 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     }
   }
 
-  def VariableExpression: Rule1[ParsedAst.Expression.AmbiguousVar] = rule {
-    QName ~> ParsedAst.Expression.AmbiguousVar
+  def VariableExpression: Rule1[ParsedAst.Expression.Var] = rule {
+    QName ~> ParsedAst.Expression.Var
   }
 
   def LambdaExpression: Rule1[ParsedAst.Expression.Lambda] = rule {

@@ -66,11 +66,11 @@ object WeededAst {
 
   object Expression {
 
-    case class AmbiguousVar(name: Name.Unresolved) extends WeededAst.Expression
-
-    case class AmbiguousApply(name: Name.Unresolved, arguments: List[WeededAst.Expression]) extends WeededAst.Expression
-
     case class Lit(literal: WeededAst.Literal) extends WeededAst.Expression
+
+    case class Var(name: Name.Unresolved) extends WeededAst.Expression
+
+    case class Apply(lambda: WeededAst.Expression, arguments: List[WeededAst.Expression]) extends WeededAst.Expression
 
     case class Lambda(formals: List[(Name.Ident, WeededAst.Type)], body: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Expression
 

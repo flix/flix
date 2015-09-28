@@ -490,28 +490,28 @@ class TestParser extends FunSuite {
     val input = "f()"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.AmbiguousApply])
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Apply])
   }
 
   test("Expression.CallExp02") {
     val input = "f(1, 2, 3)"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.AmbiguousApply])
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Apply])
   }
 
   test("Expression.CallExp03") {
     val input = "f(f(1), f(f(2)))"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.AmbiguousApply])
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Apply])
   }
 
   test("Expression.CallExp04") {
     val input = "foo::bar::baz::f(1, 2, 3)"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.AmbiguousApply])
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Apply])
   }
 
   test("Expression.Tag01") {
@@ -578,14 +578,14 @@ class TestParser extends FunSuite {
     val input = "x"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.AmbiguousVar])
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Var])
   }
 
   test("Expression.Var02") {
     val input = "foo::bar::baz::x_y_z''"
     val result = new Parser(None, input).Expression.run()
     assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.AmbiguousVar])
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Var])
   }
 
   test("Expression.Lambda01") {
