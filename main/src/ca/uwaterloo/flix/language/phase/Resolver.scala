@@ -311,9 +311,15 @@ object Resolver {
           val formalsVal = @@(wformals map {
             case (ident, tpe) => Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.FormalArg(ident, t))
           })
-          @@(formalsVal, Type.resolve(wtype, namespace, syms), visit(wbody, locals)) map {
-            case (formals, tpe, body) => ResolvedAst.Expression.Lambda(formals, tpe, body)
+
+          formalsVal flatMap {
+            case formals =>
+              val bindings = formals map (_.ident.name)
+              @@(Type.resolve(wtype, namespace, syms), visit(wbody, locals ++ bindings)) map {
+                case (tpe, body) => ResolvedAst.Expression.Lambda(formals, tpe, body)
+              }
           }
+
         case WeededAst.Expression.Unary(op, we) =>
           visit(we, locals) map (e => ResolvedAst.Expression.Unary(op, e))
         case WeededAst.Expression.Binary(op, we1, we2) =>
@@ -472,7 +478,13 @@ object Resolver {
           }
           casesVal map ResolvedAst.Type.Enum
         case WeededAst.Type.Tuple(welms) => @@(welms map (e => resolve(e, namespace, syms))) map ResolvedAst.Type.Tuple
-        case WeededAst.Type.Function(wtype1, wtype2) => ???
+        case WeededAst.Type.Function(wargs, wretType) =>
+          val argsVal = @@(wargs map visit)
+          val retTypeVal = visit(wretType)
+
+          @@(argsVal, retTypeVal) map {
+            case (args, retTpe) => ResolvedAst.Type.Function(args, retTpe)
+          }
         case WeededAst.Type.Lattice(t) => visit(t) // TODO: Incorrect.
       }
 
