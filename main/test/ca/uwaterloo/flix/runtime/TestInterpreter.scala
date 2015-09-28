@@ -147,21 +147,21 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Tag(name, "NameAndAge", Value.Tuple(List(Value.Str("James"), Value.Int(42)))))(result)
   }
 
-  test("Literal.Tag03a") {
+  test("Literal.Tag03") {
     import ConstantPropTagDefs._
     val input = Expression.Lit(Literal.Tag(name, identB, Literal.Unit, enumTpe), tagTpeB)
     val result = Interpreter.eval(input, root)
     assertResult(Value.Tag(name, "Bot", Value.Unit))(result)
   }
 
-  test("Literal.Tag03b") {
+  test("Literal.Tag04") {
     import ConstantPropTagDefs._
     val input = Expression.Lit(Literal.Tag(name, identT, Literal.Unit, enumTpe), tagTpeT)
     val result = Interpreter.eval(input, root)
     assertResult(Value.Tag(name, "Top", Value.Unit))(result)
   }
 
-  test("Literal.Tag03c") {
+  test("Literal.Tag05") {
     import ConstantPropTagDefs._
     val input = Expression.Lit(Literal.Tag(name, identV, Literal.Int(0), enumTpe), tagTpeV)
     val result = Interpreter.eval(input, root)
@@ -169,14 +169,14 @@ class TestInterpreter extends FunSuite {
 
   }
 
-  test("Literal.Tag03d") {
+  test("Literal.Tag06") {
     import ConstantPropTagDefs._
     val input = Expression.Lit(Literal.Tag(name, identV, Literal.Int(-240), enumTpe), tagTpeV)
     val result = Interpreter.eval(input, root)
     assertResult(Value.Tag(name, "Val", Value.Int(-240)))(result)
   }
 
-  test("Literal.Tag03e") {
+  test("Literal.Tag07") {
     import ConstantPropTagDefs._
     val input = Expression.Lit(Literal.Tag(name, identV, Literal.Int(1241), enumTpe), tagTpeV)
     val result = Interpreter.eval(input, root)
@@ -1724,7 +1724,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Bool(false))(result)
   }
 
-  test("Pattern.Literal.Tag03a") {
+  test("Pattern.Literal.Tag03") {
     // ConstProp.Val 4 match { case ConstProp.Bot => true; case _ => false }
     import ConstantPropTagDefs._
     val rules = List(
@@ -1739,7 +1739,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Bool(false))(result)
   }
 
-  test("Pattern.Literal.Tag03b") {
+  test("Pattern.Literal.Tag04") {
     // ConstProp.Val 4 match { case ConstProp.Top => true; case _ => false }
     import ConstantPropTagDefs._
     val rules = List(
@@ -1754,7 +1754,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Bool(false))(result)
   }
 
-  test("Pattern.Literal.Tag03c") {
+  test("Pattern.Literal.Tag05") {
     // ConstProp.Val 4 match { case ConstProp.Val 4 => true; case _ => false }
     import ConstantPropTagDefs._
     val rules = List(
@@ -1769,7 +1769,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Bool(true))(result)
   }
 
-  test("Pattern.Literal.Tag03d") {
+  test("Pattern.Literal.Tag06") {
     // ConstProp.Val 4 match { case ConstProp.Val 5 => true; case _ => false }
     import ConstantPropTagDefs._
     val rules = List(
@@ -1820,13 +1820,135 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Int(24))(result)
   }
 
-  // TODO(mhyee): Match expressions and unifier
-  // tag (unit, int, multiple matches)
-  // tuple (bool, str, multiple matches)
-
   test("Pattern.Tag01") {
     // NameAndAge ("James", 42) match { case NameAndAge (_, age) => age }
+    val name = Name.Resolved(List("Family"))
+    val ident = ParsedAst.Ident("NameAndAge", SourceLocation(None, 0, 0))
+    val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int)))
+    val enumTpe = Type.Enum(Map("Family.NameAndAge" -> tagTpe))
+    val rules = List(
+      (Pattern.Tag(name, ident,
+        Pattern.Tuple(List(Pattern.Wildcard(Type.Str), Pattern.Var(ident01, Type.Int)),
+          Type.Tuple(List(Type.Str, Type.Int))), tagTpe), Expression.Var(ident01, Type.Int)))
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tag(name, ident,
+        Literal.Tuple(List(
+          Literal.Str("James"), Literal.Int(42)), Type.Tuple(List(Type.Str, Type.Int))), enumTpe), tagTpe),
+        rules, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(42))(result)
   }
+
+  test("Pattern.Tag02") {
+    // NameAndAge ("James", 42) match { case NameAndAge ("James", age) => age; case NameAndAge _ => 0 }
+    val name = Name.Resolved(List("Family"))
+    val ident = ParsedAst.Ident("NameAndAge", SourceLocation(None, 0, 0))
+    val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int)))
+    val enumTpe = Type.Enum(Map("Family.NameAndAge" -> tagTpe))
+    val rules = List(
+      (Pattern.Tag(name, ident,
+        Pattern.Tuple(List(Pattern.Lit(Literal.Str("James"), Type.Str), Pattern.Var(ident01, Type.Int)),
+          Type.Tuple(List(Type.Str, Type.Int))), tagTpe), Expression.Var(ident01, Type.Int)),
+      (Pattern.Wildcard(Type.Str), Expression.Lit(Literal.Int(0), Type.Int)))
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tag(name, ident,
+        Literal.Tuple(List(
+          Literal.Str("James"), Literal.Int(42)), Type.Tuple(List(Type.Str, Type.Int))), enumTpe), tagTpe),
+      rules, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(42))(result)
+  }
+
+  test("Pattern.Tag03") {
+    // NameAndAge ("John", 42) match { case NameAndAge ("James", age) => age; case NameAndAge _ => 0 }
+    val name = Name.Resolved(List("Family"))
+    val ident = ParsedAst.Ident("NameAndAge", SourceLocation(None, 0, 0))
+    val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int)))
+    val enumTpe = Type.Enum(Map("Family.NameAndAge" -> tagTpe))
+    val rules = List(
+      (Pattern.Tag(name, ident,
+        Pattern.Tuple(List(Pattern.Lit(Literal.Str("James"), Type.Str), Pattern.Var(ident01, Type.Int)),
+          Type.Tuple(List(Type.Str, Type.Int))), tagTpe), Expression.Var(ident01, Type.Int)),
+      (Pattern.Wildcard(Type.Str), Expression.Lit(Literal.Int(0), Type.Int)))
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tag(name, ident,
+        Literal.Tuple(List(
+          Literal.Str("John"), Literal.Int(42)), Type.Tuple(List(Type.Str, Type.Int))), enumTpe), tagTpe),
+      rules, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(0))(result)
+  }
+
+  test("Pattern.Tag04") {
+    // ConstProp.Top match {
+    //   case ConstProp.Top => 0
+    //   case ConstProp.Val v => v
+    //   case ConstProp.Bot => 0
+    // }
+    import ConstantPropTagDefs._
+    val rules = List(
+      (Pattern.Lit(Literal.Tag(name, identT, Literal.Unit, enumTpe), tagTpeT), Expression.Lit(Literal.Int(0), Type.Int)),
+      (Pattern.Tag(name, identV, Pattern.Var(ident01, Type.Int), tagTpeV), Expression.Var(ident01, Type.Int)),
+      (Pattern.Lit(Literal.Tag(name, identB, Literal.Unit, enumTpe), tagTpeB), Expression.Lit(Literal.Int(0), Type.Int)))
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tag(name, identT, Literal.Unit, enumTpe), tagTpeT), rules, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(0))(result)
+  }
+
+  test("Pattern.Tag05") {
+    // ConstProp.Bot match {
+    //   case ConstProp.Top => 0
+    //   case ConstProp.Val v => v
+    //   case ConstProp.Bot => 0
+    // }
+    import ConstantPropTagDefs._
+    val rules = List(
+      (Pattern.Lit(Literal.Tag(name, identT, Literal.Unit, enumTpe), tagTpeT), Expression.Lit(Literal.Int(0), Type.Int)),
+      (Pattern.Tag(name, identV, Pattern.Var(ident01, Type.Int), tagTpeV), Expression.Var(ident01, Type.Int)),
+      (Pattern.Lit(Literal.Tag(name, identB, Literal.Unit, enumTpe), tagTpeB), Expression.Lit(Literal.Int(0), Type.Int)))
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tag(name, identB, Literal.Unit, enumTpe), tagTpeB), rules, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(0))(result)
+  }
+
+  test("Pattern.Tag06") {
+    // ConstProp.Val 42 match {
+    //   case ConstProp.Top => 0
+    //   case ConstProp.Val v => v
+    //   case ConstProp.Bot => 0
+    // }
+    import ConstantPropTagDefs._
+    val rules = List(
+      (Pattern.Lit(Literal.Tag(name, identT, Literal.Unit, enumTpe), tagTpeT), Expression.Lit(Literal.Int(0), Type.Int)),
+      (Pattern.Tag(name, identV, Pattern.Var(ident01, Type.Int), tagTpeV), Expression.Var(ident01, Type.Int)),
+      (Pattern.Lit(Literal.Tag(name, identB, Literal.Unit, enumTpe), tagTpeB), Expression.Lit(Literal.Int(0), Type.Int)))
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tag(name, identV, Literal.Int(42), enumTpe), tagTpeV), rules, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(42))(result)
+  }
+
+  test("Pattern.Tag07") {
+    // ConstProp.Val 100 match {
+    //   case ConstProp.Top => 0
+    //   case ConstProp.Val v => v
+    //   case ConstProp.Bot => 0
+    // }
+    import ConstantPropTagDefs._
+    val rules = List(
+      (Pattern.Lit(Literal.Tag(name, identT, Literal.Unit, enumTpe), tagTpeT), Expression.Lit(Literal.Int(0), Type.Int)),
+      (Pattern.Tag(name, identV, Pattern.Var(ident01, Type.Int), tagTpeV), Expression.Var(ident01, Type.Int)),
+      (Pattern.Lit(Literal.Tag(name, identB, Literal.Unit, enumTpe), tagTpeB), Expression.Lit(Literal.Int(0), Type.Int)))
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tag(name, identV, Literal.Int(100), enumTpe), tagTpeV), rules, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(100))(result)
+  }
+
+  // TODO(mhyee): Match expressions and unifier
+  // tuple pattern (bool, str, multiple matches)
 
   test("Expression.Match.Error01") {
     // 123 match { case 321 => Unit }
@@ -1931,21 +2053,21 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Tag(name, "NameAndAge", Value.Tuple(List(Value.Str("James"), Value.Int(42)))))(result)
   }
 
-  test("Expression.Tag03a") {
+  test("Expression.Tag03") {
     import ConstantPropTagDefs._
     val input = Expression.Tag(name, identB, Expression.Lit(Literal.Unit, Type.Unit), enumTpe)
     val result = Interpreter.eval(input, root)
     assertResult(Value.Tag(name, "Bot", Value.Unit))(result)
   }
 
-  test("Expression.Tag03b") {
+  test("Expression.Tag04") {
     import ConstantPropTagDefs._
     val input = Expression.Tag(name, identT, Expression.Lit(Literal.Unit, Type.Unit), enumTpe)
     val result = Interpreter.eval(input, root)
     assertResult(Value.Tag(name, "Top", Value.Unit))(result)
   }
 
-  test("Expression.Tag03c") {
+  test("Expression.Tag05") {
     import ConstantPropTagDefs._
     val input = Expression.Tag(name, identV,
       // 123 - 123
@@ -1959,7 +2081,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Tag(name, "Val", Value.Int(0)))(result)
   }
 
-  test("Expression.Tag03d") {
+  test("Expression.Tag06") {
     import ConstantPropTagDefs._
     val input = Expression.Tag(name, identV,
       // -240
@@ -1972,7 +2094,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Tag(name, "Val", Value.Int(-240)))(result)
   }
 
-  test("Expression.Tag03e") {
+  test("Expression.Tag07") {
     import ConstantPropTagDefs._
     val input = Expression.Tag(name, identV, Expression.Lit(Literal.Int(1241), Type.Int), enumTpe)
     val result = Interpreter.eval(input, root)
