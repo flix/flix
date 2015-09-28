@@ -180,8 +180,16 @@ object Weeder {
      * Compiles the given parsed function declaration `past` to a weeded definition.
      */
     def compile(past: ParsedAst.Definition.Function): Validation[WeededAst.Definition.Constant, WeederError] = {
+      val seen = mutable.Map.empty[String, ParsedAst.Ident]
+
       val formalsVal = @@(past.formals.map {
-        case (ident, tpe) => Type.compile(tpe) map (t => (ident, t))
+        case (ident, tpe) => seen.get(ident.name) match {
+          case None =>
+            seen += (ident.name -> ident)
+            Type.compile(tpe) map (t => (ident, t))
+          case Some(otherIdent) =>
+            (DuplicateFormal(ident.name, otherIdent.location, ident.location): WeederError).toFailure
+        }
       })
 
       @@(formalsVal, Expression.compile(past.body), Type.compile(past.tpe)) map {
