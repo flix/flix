@@ -185,6 +185,10 @@ object Resolver {
         }
     }
 
+    def disambiguateRelations(wast: WeededAst.Root, syms: SymbolTable): Validation[List[ResolvedAst.Definition.Relation], ResolverError] = {
+      ???
+    }
+
     def collectFacts(wast: WeededAst.Root, syms: SymbolTable): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = {
       def visit(wast: WeededAst.Declaration, namespace: List[String]): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = wast match {
         case WeededAst.Declaration.Namespace(name, body) =>
