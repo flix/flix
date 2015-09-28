@@ -298,11 +298,11 @@ object TypedAst {
     /**
      * Returns the bound variables (and their types).
      */
-    def bound: Map[ParsedAst.Ident, TypedAst.Type] = {
-      def visit(pat: TypedAst.Pattern, m: Map[ParsedAst.Ident, TypedAst.Type]): Map[ParsedAst.Ident, TypedAst.Type] =
+    def bound: Map[String, TypedAst.Type] = {
+      def visit(pat: TypedAst.Pattern, m: Map[String, TypedAst.Type]): Map[String, TypedAst.Type] =
         pat match {
           case TypedAst.Pattern.Wildcard(_) => m
-          case TypedAst.Pattern.Var(ident, tpe) => m + (ident -> tpe)
+          case TypedAst.Pattern.Var(ident, tpe) => m + (ident.name -> tpe)
           case TypedAst.Pattern.Lit(_, _) => m
           case TypedAst.Pattern.Tag(_, _, pat2, _) => visit(pat2, m)
           case TypedAst.Pattern.Tuple(elms, _) => elms.foldLeft(m) {

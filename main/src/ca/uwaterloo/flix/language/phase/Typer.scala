@@ -20,6 +20,9 @@ object Typer {
 
     // TODO: Need nice format of these.
     // TODO: And improve error names etc.
+    // TODO: Arity Error.
+
+    // TODO: Add nice format for these things:
 
     // TODO: Currently we are a bit lacking for source locations here.
     case class ExpectedType(expected: TypedAst.Type, actual: TypedAst.Type) extends TypeError {
@@ -39,9 +42,6 @@ object Typer {
       val format = s"Error: Expected function, but expression has type '${tpe}'.\n"
 
     }
-
-    // TODO: Arity Error.
-
 
   }
 
@@ -291,9 +291,28 @@ object Typer {
             }
           }
 
-        case ResolvedAst.Expression.Match(re, rules) =>
-
-          ???
+        // TODO: Peer review
+        case ResolvedAst.Expression.Match(re, rs) =>
+          visit(re, env) flatMap {
+            case matchValue =>
+              val rulesVal = rs map {
+                case (pat, body) =>
+                  // type the pattern of the rule against the type of the match value.
+                  Pattern.typer(pat, matchValue.tpe, root) flatMap {
+                    // type the body of the rule under the extended environment provided by the pattern.
+                    case typedPat => visit(body, env ++ typedPat.bound) map {
+                      case typedBody => (typedPat, typedBody)
+                    }
+                  }
+              }
+              @@(rulesVal) flatMap {
+                case rules =>
+                  // ensure that the body of every rule has the same type.
+                  expectEqual(rules.map(_._2.tpe)) map {
+                    case tpe => TypedAst.Expression.Match(matchValue, rules, tpe)
+                  }
+              }
+          }
 
         case ResolvedAst.Expression.Tag(enumName, tagName, re) =>
           visit(re, env) flatMap {
@@ -485,5 +504,19 @@ object Typer {
       tpe1.toSuccess
     else
       ExpectedEqualTypes(tpe1, tpe2).toFailure
+
+  /**
+   * Returns a type wrapped in [[Success]] if all the given `types` are equal.
+   */
+  def expectEqual(types: List[TypedAst.Type]): Validation[TypedAst.Type, TypeError] = {
+    assert(types.nonEmpty)
+    val tpe1 = types.head
+    if (types.forall(t => t == tpe1)) {
+      tpe1.toSuccess
+    } else {
+      val tpe2 = types.find(t => t != tpe1).get
+      ExpectedEqualTypes(tpe1, tpe2).toFailure
+    }
+  }
 
 }
