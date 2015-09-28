@@ -488,7 +488,7 @@ object TypedAst {
       case Type.Tag(enumName, tagName, tpe) =>
         enumName.parts.mkString("::") + "." + tagName.name + "(" + tpe.format + ")"
       case Type.Enum(cases) =>
-        "Enum(" + cases.mkString(", ") + ")"
+        "Enum(" + cases.head._2.name.format + ")"
       case Type.Tuple(elms) => "(" + elms.map(_.format).mkString(", ") + ")"
       case Type.Function(args, retTpe) =>
         "(" + args.map(_.format).mkString(", ") + ") -> " + retTpe.format
