@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Wildcard
+
 trait ResolvedAst
 
 object ResolvedAst {
@@ -123,7 +125,18 @@ object ResolvedAst {
   /**
    * A common super-type for resolved patterns.
    */
-  sealed trait Pattern extends ResolvedAst
+  sealed trait Pattern extends ResolvedAst {
+    // TODO: Move somewhere else?
+    final def format: String = this match {
+      case ResolvedAst.Pattern.Wildcard(_) => "_"
+      case ResolvedAst.Pattern.Var(ParsedAst.Ident(name, _)) => name
+      case ResolvedAst.Pattern.Lit(lit) => lit.toString
+      case ResolvedAst.Pattern.Tag(enumName, tagName, pat) =>
+        enumName.format + "." + tagName.name + "(" + pat.format + ")"
+      case ResolvedAst.Pattern.Tuple(elms) =>
+        "(" + elms.map(_.format).mkString(", ") + ")"
+    }
+  }
 
   object Pattern {
 

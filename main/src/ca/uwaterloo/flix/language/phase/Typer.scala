@@ -31,7 +31,7 @@ object Typer {
     }
 
     case class IllegalPattern(pat: ResolvedAst.Pattern, tpe: TypedAst.Type) extends TypeError {
-      val format = s"Error: Pattern '${pat}' does not match expected type '${tpe.format}'.\n"
+      val format = s"Error: Pattern '${pat.format}' does not match expected type '${tpe.format}'.\n"
     }
 
     case class IllegalApply(tpe: TypedAst.Type) extends TypeError {
