@@ -61,3 +61,11 @@
   Norman Ramsey, Joao Dias and Simon Peyton Jones.
   [Paper.](http://dl.acm.org/citation.cfm?id=1863539)
 
+
+## Optimization ##
+
+- **The Essence of Compiling with Continuations**,
+  Cormac Flanagan, Amr Sabry, Bruce F. Duba and Matthias Felleisen.
+  [Paper.](https://www.classes.cs.uchicago.edu/archive/2004/fall/32630-1/papers/p237-flanagan.pdf)
+  _This paper introduces an intermediate code representation, called A Normal Form, that is useful for optimization._
+  

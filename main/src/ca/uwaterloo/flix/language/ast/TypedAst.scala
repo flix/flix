@@ -5,6 +5,8 @@ import ca.uwaterloo.flix.language.Compiler
 /**
  * A common super-type for typed AST nodes.
  */
+// TODO: Add source locations.
+
 sealed trait TypedAst
 
 object TypedAst {
