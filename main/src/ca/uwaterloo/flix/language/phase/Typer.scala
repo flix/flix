@@ -420,6 +420,11 @@ object Typer {
       case ResolvedAst.Type.Int => TypedAst.Type.Int
       case ResolvedAst.Type.Str => TypedAst.Type.Str
       case ResolvedAst.Type.Tag(name, ident, tpe) => TypedAst.Type.Tag(name, ident, typer(tpe))
+      case ResolvedAst.Type.Enum(rcases) =>
+        val cases = rcases.mapValues {
+          case tpe => typer(tpe).asInstanceOf[TypedAst.Type.Tag]
+        }
+        TypedAst.Type.Enum(cases)
       case ResolvedAst.Type.Tuple(elms) => TypedAst.Type.Tuple(elms map typer)
       case ResolvedAst.Type.Function(args, retTpe) => TypedAst.Type.Function(args map typer, typer(retTpe))
     }
