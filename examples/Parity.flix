@@ -24,7 +24,7 @@ namespace ParityAnalysis {
     def lub(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (Parity.Bot, _)              => e2;
         case (_, Parity.Bot)              => e1;
-        case (Parity.Odd, Parity.Odd)     => Odd;
+        case (Parity.Odd, Parity.Odd)     => Parity.Odd;
         case (Parity.Even, Parity.Even)   => Parity.Even;
         case _                            => Parity.Top;
     };
@@ -55,7 +55,7 @@ namespace ParityAnalysis {
     def times(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Parity.Bot)              => Parity.Bot;
         case (Parity.Bot, _)              => Parity.Bot;
-        case (Parity.Odd, Parity.Odd)     => Odd;
+        case (Parity.Odd, Parity.Odd)     => Parity.Odd;
         case (Parity.Odd, Parity.Even)    => Parity.Even;
         case (Parity.Even, Parity.Odd)    => Parity.Even;
         case (Parity.Even, Parity.Even)   => Parity.Even;
@@ -88,9 +88,6 @@ namespace ParityAnalysis {
         case Parity.Even   => false;
         case Parity.Top    => true;
     };
-
-    // we abstract integers into the parity domain by using modulo.
-    def lift(i: Int): Parity = if (i % 2 == 0) Even else Odd;
 
 // TODO: Allow expressions here.
     lat <Parity> (Bot, leq, ParityAnalysis::lub);

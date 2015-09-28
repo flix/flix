@@ -68,7 +68,7 @@ object Resolver {
     }
 
     // TODO: Cleanup
-    def lookupValue(name: ParsedAst.QName, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Constant), ResolverError] = {
+    def lookupConstant(name: ParsedAst.QName, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Constant), ResolverError] = {
       val rname = Name.Resolved(
         if (name.parts.size == 1)
           namespace ::: name.parts.head :: Nil
@@ -300,7 +300,7 @@ object Resolver {
               ResolvedAst.Expression.Var(ParsedAst.Ident(x, name.location)).toSuccess
             else
               UnresolvedReference(name, namespace).toFailure
-          case xs => syms.lookupValue(name, namespace) map {
+          case xs => syms.lookupConstant(name, namespace) map {
             case (rname, defn) => ResolvedAst.Expression.Ref(rname)
           }
         }
@@ -384,8 +384,8 @@ object Resolver {
         case WeededAst.Pattern.Wildcard(location) => ResolvedAst.Pattern.Wildcard(location).toSuccess
         case WeededAst.Pattern.Var(ident) => ResolvedAst.Pattern.Var(ident).toSuccess
         case WeededAst.Pattern.Lit(literal) => Literal.resolve(literal, namespace, syms) map ResolvedAst.Pattern.Lit
-        case WeededAst.Pattern.Tag(name, ident, wpat) => syms.lookupValue(name, namespace) flatMap {
-          case (rname, defn) => visit(wpat) map {
+        case WeededAst.Pattern.Tag(name, ident, wpat) => syms.lookupEnum(name, namespace) flatMap {
+          case (rname, enum) => visit(wpat) map {
             case pat => ResolvedAst.Pattern.Tag(rname, ident, pat)
           }
         }
@@ -434,7 +434,7 @@ object Resolver {
         case WeededAst.TermWithApply.Var(ident) => ResolvedAst.Term.Head.Var(ident).toSuccess
         case WeededAst.TermWithApply.Lit(wlit) => Literal.resolve(wlit, namespace, syms) map ResolvedAst.Term.Head.Lit
         case WeededAst.TermWithApply.Apply(name, wargs) =>
-          syms.lookupValue(name, namespace) flatMap {
+          syms.lookupConstant(name, namespace) flatMap {
             case (rname, defn) => @@(wargs map (arg => resolve(arg, namespace, syms))) map {
               case args => ResolvedAst.Term.Head.Apply(rname, args.toList)
             }
