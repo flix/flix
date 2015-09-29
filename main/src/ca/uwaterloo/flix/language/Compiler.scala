@@ -3,8 +3,10 @@ package ca.uwaterloo.flix.language
 import java.nio.file.{Files, Path}
 
 import ca.uwaterloo.flix.language.ast.{TypedAst, SourceLocation, ResolvedAst, ParsedAst}
+import ca.uwaterloo.flix.language.phase.Parser
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.util.{StopWatch, Validation}
+
 import org.parboiled2.{ErrorFormatter, ParseError}
 
 import scala.io.Source
@@ -109,6 +111,26 @@ object Compiler {
     println()
     Console.println("Compilation successful.")
     Some(tast.get)
+  }
+
+  // TODO: Experimental section -----------------------------------------------
+
+  // TODO: Need generic CompilerError trait
+  object Expression {
+    def compile(input: String): TypedAst.Expression = {
+
+      val past = new Parser(None, input).Expression.run().get
+
+      val wast = Weeder.Expression.compile(past).get
+
+      // TODO: SymbolTable?
+      val rast = Resolver.Expression.resolve(wast, List.empty, Resolver.SymbolTable.empty).get
+
+      // TODO: Symbols?
+      val tast = Typer.Expression.typer(rast, ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty))
+
+      tast.get
+    }
   }
 
 }

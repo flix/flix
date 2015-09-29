@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast._
 
 import org.scalatest.FunSuite
@@ -556,6 +557,13 @@ class TestTyper extends FunSuite {
     val rast = ResolvedAst.Expression.Binary(BinaryOperator.And, e1, e2, SL)
     val result = Typer.Expression.typer(rast, Root)
     assertResult(TypedAst.Type.Bool)(result.get.tpe)
+  }
+
+  test("Expression.Binary01'") {
+    val s = "true && false"
+
+    val result = Compiler.Expression.compile(s)
+    assertResult(TypedAst.Type.Bool)(result.tpe)
   }
 
   test("Expression.Binary02") {
