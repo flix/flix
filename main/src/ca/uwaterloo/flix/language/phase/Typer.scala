@@ -176,21 +176,21 @@ object Typer {
      */
     def typer(rast: ResolvedAst.Expression, root: ResolvedAst.Root, env: Map[String, TypedAst.Type] = Map.empty): Validation[TypedAst.Expression, TypeError] = {
       def visit(rast: ResolvedAst.Expression, env: Map[String, TypedAst.Type]): Validation[TypedAst.Expression, TypeError] = rast match {
-        case ResolvedAst.Expression.Var(ident) =>
+        case ResolvedAst.Expression.Var(ident, loc) =>
           val tpe = env(ident.name)
           TypedAst.Expression.Var(ident, tpe).toSuccess
 
-        case ResolvedAst.Expression.Ref(name) =>
+        case ResolvedAst.Expression.Ref(name, loc) =>
           val constant = root.constants(name)
           val tpe = Type.typer(constant.tpe)
           TypedAst.Expression.Ref(name, tpe).toSuccess
 
-        case ResolvedAst.Expression.Lit(rlit) =>
+        case ResolvedAst.Expression.Lit(rlit, loc) =>
           val lit = Literal.typer(rlit, root)
           TypedAst.Expression.Lit(lit, lit.tpe).toSuccess
 
         // TODO: Peer review
-        case ResolvedAst.Expression.Lambda(rargs, rtpe, rbody) =>
+        case ResolvedAst.Expression.Lambda(rargs, rtpe, rbody, loc) =>
           // compile formal arguments
           val args = rargs map {
             case ResolvedAst.FormalArg(ident, t) => TypedAst.FormalArg(ident, Type.typer(t))
@@ -210,7 +210,7 @@ object Typer {
           }
 
         // TODO: Peer review
-        case ResolvedAst.Expression.Apply(re, rargs) =>
+        case ResolvedAst.Expression.Apply(re, rargs, loc) =>
           val lambdaVal = visit(re, env)
           val argsVal = @@(rargs map (arg => visit(arg, env)))
 
@@ -228,7 +228,7 @@ object Typer {
             }
           }
 
-        case ResolvedAst.Expression.Unary(op, re) => op match {
+        case ResolvedAst.Expression.Unary(op, re, loc) => op match {
           case UnaryOperator.Not =>
             visit(re, env) flatMap {
               case e => expect(TypedAst.Type.Bool, e.tpe) map {
@@ -243,7 +243,7 @@ object Typer {
             }
         }
 
-        case ResolvedAst.Expression.Binary(op, re1, re2) => op match {
+        case ResolvedAst.Expression.Binary(op, re1, re2, loc) => op match {
           case _: ArithmeticOperator =>
             @@(visit(re1, env), visit(re2, env)) flatMap {
               case (e1, e2) => @@(expect(TypedAst.Type.Int, e1.tpe), expect(TypedAst.Type.Int, e2.tpe)) map {
@@ -270,7 +270,7 @@ object Typer {
             }
         }
 
-        case ResolvedAst.Expression.IfThenElse(re1, re2, re3) =>
+        case ResolvedAst.Expression.IfThenElse(re1, re2, re3, loc) =>
           @@(visit(re1, env), visit(re2, env), visit(re3, env)) flatMap {
             case (e1, e2, e3) =>
               val conditionType = expect(TypedAst.Type.Bool, e1.tpe)
@@ -280,7 +280,7 @@ object Typer {
               }
           }
 
-        case ResolvedAst.Expression.Let(ident, rvalue, rbody) =>
+        case ResolvedAst.Expression.Let(ident, rvalue, rbody, loc) =>
           visit(rvalue, env) flatMap {
             case value => visit(rbody, env + (ident.name -> value.tpe)) map {
               case body => TypedAst.Expression.Let(ident, value, body, body.tpe)
@@ -288,7 +288,7 @@ object Typer {
           }
 
         // TODO: Peer review
-        case ResolvedAst.Expression.Match(re, rs) =>
+        case ResolvedAst.Expression.Match(re, rs, loc) =>
           visit(re, env) flatMap {
             case matchValue =>
               val rulesVal = rs map {
@@ -310,7 +310,7 @@ object Typer {
               }
           }
 
-        case ResolvedAst.Expression.Tag(enumName, tagName, re) =>
+        case ResolvedAst.Expression.Tag(enumName, tagName, re, loc) =>
           visit(re, env) flatMap {
             case e =>
               val enum = root.enums(enumName)
@@ -321,12 +321,12 @@ object Typer {
               }
           }
 
-        case ResolvedAst.Expression.Tuple(relms) =>
+        case ResolvedAst.Expression.Tuple(relms, loc) =>
           @@(relms map (e => visit(e, env))) map {
             case elms => TypedAst.Expression.Tuple(elms, TypedAst.Type.Tuple(elms map (_.tpe)))
           }
 
-        case ResolvedAst.Expression.Ascribe(re, rtype) =>
+        case ResolvedAst.Expression.Ascribe(re, rtype, loc) =>
           visit(re, env) flatMap {
             case e => expect(Type.typer(rtype), e.tpe) map {
               case _ => e
@@ -350,14 +350,14 @@ object Typer {
     def typer(rast: ResolvedAst.Pattern, tpe: TypedAst.Type, root: ResolvedAst.Root): Validation[TypedAst.Pattern, TypeError] = rast match {
       case ResolvedAst.Pattern.Wildcard(loc) =>
         TypedAst.Pattern.Wildcard(tpe).toSuccess
-      case ResolvedAst.Pattern.Var(ident) =>
+      case ResolvedAst.Pattern.Var(ident, loc) =>
         TypedAst.Pattern.Var(ident, tpe).toSuccess
-      case ResolvedAst.Pattern.Lit(rlit) =>
+      case ResolvedAst.Pattern.Lit(rlit, loc) =>
         val lit = Literal.typer(rlit, root)
         expect(tpe, lit.tpe) map {
           case _ => TypedAst.Pattern.Lit(lit, tpe)
         }
-      case ResolvedAst.Pattern.Tag(enumName, tagName, rpat) => tpe match {
+      case ResolvedAst.Pattern.Tag(enumName, tagName, rpat, loc) => tpe match {
         case TypedAst.Type.Enum(cases) => cases.get(tagName.name) match {
           case Some(tag) if enumName == tag.name => {
             typer(rpat, tag.tpe, root) map {
@@ -368,7 +368,7 @@ object Typer {
         }
         case _ => IllegalPattern(rast, tpe).toFailure
       }
-      case ResolvedAst.Pattern.Tuple(relms) => tpe match {
+      case ResolvedAst.Pattern.Tuple(relms, loc) => tpe match {
         case TypedAst.Type.Tuple(telms) if relms.length == telms.length =>
           val elmsVal = (relms zip telms) map {
             case (rp, tp) => typer(rp, tp, root)
@@ -423,18 +423,18 @@ object Typer {
      * Types the given head term `rast` according to the (declared) type `tpe` under the given AST `root`.
      */
     def typer(rast: ResolvedAst.Term.Head, tpe: TypedAst.Type, root: ResolvedAst.Root): Validation[TypedAst.Term.Head, TypeError] = rast match {
-      case ResolvedAst.Term.Head.Var(ident) => TypedAst.Term.Head.Var(ident, tpe).toSuccess
-      case ResolvedAst.Term.Head.Lit(rlit) =>
+      case ResolvedAst.Term.Head.Var(ident, loc) => TypedAst.Term.Head.Var(ident, tpe).toSuccess
+      case ResolvedAst.Term.Head.Lit(rlit, loc) =>
         val lit = Literal.typer(rlit, root)
         expect(tpe, lit.tpe) map {
           case _ => TypedAst.Term.Head.Lit(lit, lit.tpe)
         }
-      case ResolvedAst.Term.Head.Ascribe(rterm, rtpe) =>
+      case ResolvedAst.Term.Head.Ascribe(rterm, rtpe, loc) =>
         val ascribedType = Type.typer(rtpe)
         expect(ascribedType, tpe) flatMap {
           case _ => typer(rterm, tpe, root)
         }
-      case ResolvedAst.Term.Head.Apply(name, actuals) =>
+      case ResolvedAst.Term.Head.Apply(name, actuals, loc) =>
         // TODO: This needs to be rewritten
 
         val constant = root.constants(name)
@@ -442,7 +442,7 @@ object Typer {
         // Instead we should focus on the type of the constant, which should be Function.
 
         constant.exp match {
-          case ResolvedAst.Expression.Lambda(formals, retTpe, _) =>
+          case ResolvedAst.Expression.Lambda(formals, retTpe, _, loc) =>
             // type arguments with the declared formals.
             val argsVal = (actuals zip formals) map {
               case (term, ResolvedAst.FormalArg(_, termType)) => Term.typer(term, Type.typer(termType), root)
@@ -460,13 +460,13 @@ object Typer {
      */
     def typer(rast: ResolvedAst.Term.Body, tpe: TypedAst.Type, root: ResolvedAst.Root): Validation[TypedAst.Term.Body, TypeError] = rast match {
       case ResolvedAst.Term.Body.Wildcard(loc) => TypedAst.Term.Body.Wildcard(loc, tpe).toSuccess
-      case ResolvedAst.Term.Body.Var(ident) => TypedAst.Term.Body.Var(ident, tpe).toSuccess
-      case ResolvedAst.Term.Body.Lit(rlit) =>
+      case ResolvedAst.Term.Body.Var(ident, loc) => TypedAst.Term.Body.Var(ident, tpe).toSuccess
+      case ResolvedAst.Term.Body.Lit(rlit, loc) =>
         val lit = Literal.typer(rlit, root)
         expect(tpe, lit.tpe) map {
           case _ => TypedAst.Term.Body.Lit(lit, lit.tpe)
         }
-      case ResolvedAst.Term.Body.Ascribe(rterm, rtpe) =>
+      case ResolvedAst.Term.Body.Ascribe(rterm, rtpe, loc) =>
         val ascribedType = Type.typer(rtpe)
         expect(ascribedType, tpe) flatMap {
           case _ => typer(rterm, tpe, root)

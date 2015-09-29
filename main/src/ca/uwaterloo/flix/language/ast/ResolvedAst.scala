@@ -21,10 +21,11 @@ object ResolvedAst {
      * @param name the name of the constant.
      * @param exp the constant expression.
      * @param tpe the (declared) type of the constant.
+     * @param loc the location.
      */
-    case class Constant(name: Name.Resolved, exp: ResolvedAst.Expression, tpe: ResolvedAst.Type) extends ResolvedAst.Definition
+    case class Constant(name: Name.Resolved, exp: ResolvedAst.Expression, tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Definition
 
-    case class Enum(name: Name.Resolved, cases: Map[String, ResolvedAst.Type.Tag]) extends ResolvedAst.Definition
+    case class Enum(name: Name.Resolved, cases: Map[String, ResolvedAst.Type.Tag], loc: SourceLocation) extends ResolvedAst.Definition
 
     /**
      * A resolved AST node representing a lattice definition.
@@ -33,16 +34,18 @@ object ResolvedAst {
      * @param bot the bottom element.
      * @param leq the partial order.
      * @param lub the least-upper-bound.
+     * @param loc the location.
      */
-    case class Lattice(tpe: ResolvedAst.Type, bot: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression) extends ResolvedAst.Definition
+    case class Lattice(tpe: ResolvedAst.Type, bot: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Definition
 
     /**
      * A resolved AST node representing a relation definition.
      *
      * @param name the name of the relation.
      * @param attributes the attributes (columns) of the relation.
+     * @param loc the location.
      */
-    case class Relation(name: Name.Resolved, attributes: List[ResolvedAst.Attribute]) extends ResolvedAst.Definition
+    case class Relation(name: Name.Resolved, attributes: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Definition
 
   }
 
@@ -89,31 +92,31 @@ object ResolvedAst {
 
   object Expression {
 
-    case class Var(ident: Name.Ident) extends ResolvedAst.Expression
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Ref(name: Name.Resolved) extends ResolvedAst.Expression
+    case class Ref(name: Name.Resolved, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Expression
+    case class Lit(literal: ResolvedAst.Literal, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Lambda(formals: List[FormalArg], retTpe: ResolvedAst.Type, body: ResolvedAst.Expression) extends ResolvedAst.Expression
+    case class Lambda(formals: List[FormalArg], retTpe: ResolvedAst.Type, body: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Apply(lambda: ResolvedAst.Expression, args: Seq[ResolvedAst.Expression]) extends ResolvedAst.Expression
+    case class Apply(lambda: ResolvedAst.Expression, args: Seq[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Unary(op: UnaryOperator, e: ResolvedAst.Expression) extends ResolvedAst.Expression
+    case class Unary(op: UnaryOperator, e: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Binary(op: BinaryOperator, e1: ResolvedAst.Expression, e2: ResolvedAst.Expression) extends ResolvedAst.Expression
+    case class Binary(op: BinaryOperator, e1: ResolvedAst.Expression, e2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class IfThenElse(e1: ResolvedAst.Expression, e2: ResolvedAst.Expression, e3: ResolvedAst.Expression) extends ResolvedAst.Expression
+    case class IfThenElse(e1: ResolvedAst.Expression, e2: ResolvedAst.Expression, e3: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Let(ident: Name.Ident, value: ResolvedAst.Expression, body: ResolvedAst.Expression) extends ResolvedAst.Expression
+    case class Let(ident: Name.Ident, value: ResolvedAst.Expression, body: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Match(e: ResolvedAst.Expression, rules: List[(ResolvedAst.Pattern, ResolvedAst.Expression)]) extends ResolvedAst.Expression
+    case class Match(e: ResolvedAst.Expression, rules: List[(ResolvedAst.Pattern, ResolvedAst.Expression)], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Tag(name: Name.Resolved, ident: Name.Ident, e: ResolvedAst.Expression) extends ResolvedAst.Expression
+    case class Tag(name: Name.Resolved, ident: Name.Ident, e: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Tuple(elms: List[ResolvedAst.Expression]) extends ResolvedAst.Expression
+    case class Tuple(elms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Ascribe(e: ResolvedAst.Expression, tpe: ResolvedAst.Type) extends ResolvedAst.Expression
+    case class Ascribe(e: ResolvedAst.Expression, tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Error(tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -125,12 +128,12 @@ object ResolvedAst {
   sealed trait Pattern extends ResolvedAst {
     // TODO: Move somewhere else?
     final def format: String = this match {
-      case ResolvedAst.Pattern.Wildcard(_) => "_"
-      case ResolvedAst.Pattern.Var(Name.Ident(name, _)) => name
-      case ResolvedAst.Pattern.Lit(lit) => lit.toString
-      case ResolvedAst.Pattern.Tag(enumName, tagName, pat) =>
+      case ResolvedAst.Pattern.Wildcard(loc) => "_"
+      case ResolvedAst.Pattern.Var(Name.Ident(name, _), loc) => name
+      case ResolvedAst.Pattern.Lit(lit, loc) => lit.toString
+      case ResolvedAst.Pattern.Tag(enumName, tagName, pat, loc) =>
         enumName.format + "." + tagName.name + "(" + pat.format + ")"
-      case ResolvedAst.Pattern.Tuple(elms) =>
+      case ResolvedAst.Pattern.Tuple(elms, loc) =>
         "(" + elms.map(_.format).mkString(", ") + ")"
     }
   }
@@ -140,23 +143,25 @@ object ResolvedAst {
     /**
      * An AST node representing a wildcard pattern.
      *
-     * @param location the source location.
+     * @param loc the source location.
      */
-    case class Wildcard(location: SourceLocation) extends ResolvedAst.Pattern
+    case class Wildcard(loc: SourceLocation) extends ResolvedAst.Pattern
 
     /**
      * An AST node representing a variable pattern.
      *
      * @param ident the variable name.
+     * @param loc the location.
      */
-    case class Var(ident: Name.Ident) extends ResolvedAst.Pattern
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends ResolvedAst.Pattern
 
     /**
      * An AST node representing a literal pattern.
      *
-     * @param literal the literal.
+     * @param lit the literal.
+     * @param loc the location.
      */
-    case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Pattern
+    case class Lit(lit: ResolvedAst.Literal, loc: SourceLocation) extends ResolvedAst.Pattern
 
     /**
      * An AST node representing a tagged pattern.
@@ -164,15 +169,17 @@ object ResolvedAst {
      * @param name the name of the enum.
      * @param ident the name of the tag.
      * @param pat the nested pattern.
+     * @param loc the location.
      */
-    case class Tag(name: Name.Resolved, ident: Name.Ident, pat: ResolvedAst.Pattern) extends ResolvedAst.Pattern
+    case class Tag(name: Name.Resolved, ident: Name.Ident, pat: ResolvedAst.Pattern, loc: SourceLocation) extends ResolvedAst.Pattern
 
     /**
      * An AST node representing a tuple pattern.
      *
      * @param elms the elements of the tuple.
+     * @param loc the location.
      */
-    case class Tuple(elms: List[ResolvedAst.Pattern]) extends ResolvedAst.Pattern
+    case class Tuple(elms: List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Pattern
 
   }
 
@@ -183,16 +190,18 @@ object ResolvedAst {
      *
      * @param name the name of the predicate.
      * @param terms the terms of the predicate.
+     * @param loc the location.
      */
-    case class Head(name: Name.Resolved, terms: List[ResolvedAst.Term.Head])
+    case class Head(name: Name.Resolved, terms: List[ResolvedAst.Term.Head], loc: SourceLocation)
 
     /**
      * A predicate that is allowed to occur in the body of a rule.
      *
      * @param name the name of the predicate.
      * @param terms the terms of the predicate.
+     * @param loc the location.
      */
-    case class Body(name: Name.Resolved, terms: List[ResolvedAst.Term.Body])
+    case class Body(name: Name.Resolved, terms: List[ResolvedAst.Term.Body], loc: SourceLocation)
 
   }
 
@@ -209,31 +218,35 @@ object ResolvedAst {
        * An AST node representing a variable term.
        *
        * @param ident the variable name.
+       * @param loc the location.
        */
-      case class Var(ident: Name.Ident) extends ResolvedAst.Term.Head
+      case class Var(ident: Name.Ident, loc: SourceLocation) extends ResolvedAst.Term.Head
 
       /**
        * An AST node representing a literal term.
        *
        * @param literal the literal.
+       * @param loc the location.
        */
-      case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Term.Head
+      case class Lit(literal: ResolvedAst.Literal, loc: SourceLocation) extends ResolvedAst.Term.Head
 
       /**
        * An AST node representing an ascribed term.
        *
        * @param term the ascribed term.
        * @param tpe the ascribed type.
+       * @param loc the location.
        */
-      case class Ascribe(term: ResolvedAst.Term.Head, tpe: ResolvedAst.Type) extends ResolvedAst.Term.Head
+      case class Ascribe(term: ResolvedAst.Term.Head, tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Term.Head
 
       /**
        * An AST node representing a function call term.
        *
        * @param name the name of the called function.
        * @param args the arguments to the function.
+       * @param loc the location.
        */
-      case class Apply(name: Name.Resolved, args: List[ResolvedAst.Term.Head]) extends ResolvedAst.Term.Head
+      case class Apply(name: Name.Resolved, args: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Term.Head
 
     }
 
@@ -247,31 +260,34 @@ object ResolvedAst {
       /**
        * An AST node representing a wildcard term.
        *
-       * @param location the location of the wildcard.
+       * @param loc the location of the wildcard.
        */
-      case class Wildcard(location: SourceLocation) extends ResolvedAst.Term.Body
+      case class Wildcard(loc: SourceLocation) extends ResolvedAst.Term.Body
 
       /**
        * An AST node representing a variable term.
        *
        * @param ident the variable name.
+       * @param loc the location.
        */
-      case class Var(ident: Name.Ident) extends ResolvedAst.Term.Body
+      case class Var(ident: Name.Ident, loc: SourceLocation) extends ResolvedAst.Term.Body
 
       /**
        * An AST node representing a literal term.
        *
        * @param literal the literal.
+       * @param loc the location.
        */
-      case class Lit(literal: ResolvedAst.Literal) extends ResolvedAst.Term.Body
+      case class Lit(literal: ResolvedAst.Literal, loc: SourceLocation) extends ResolvedAst.Term.Body
 
       /**
        * An AST node representing an ascribed term.
        *
        * @param term the ascribed term.
        * @param tpe the ascribed type.
+       * @param loc the location.
        */
-      case class Ascribe(term: ResolvedAst.Term.Body, tpe: ResolvedAst.Type) extends ResolvedAst.Term.Body
+      case class Ascribe(term: ResolvedAst.Term.Body, tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Term.Body
 
     }
 

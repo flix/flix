@@ -69,6 +69,8 @@ object Compiler {
     }
   }
 
+  // TODO: Would it be possible to implement a "compile expression" thing?
+
   /**
    * Applies the compiler to all the given source `paths`.
    */
