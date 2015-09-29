@@ -1947,8 +1947,66 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Int(100))(result)
   }
 
-  // TODO(mhyee): Match expressions and unifier
-  // tuple pattern (bool, str, multiple matches)
+  test("Pattern.Tuple01") {
+    // (5, 6) match { case (x, y) => x + y }
+    val rules = List(
+      (Pattern.Tuple(List(Pattern.Var(ident01, Type.Int), Pattern.Var(ident02, Type.Int)),
+        Type.Tuple(List(Type.Int, Type.Int))),Expression.Binary(BinaryOperator.Plus,
+        Expression.Var(ident01, Type.Int), Expression.Var(ident02, Type.Int), Type.Int)))
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tuple(List(Literal.Int(5), Literal.Int(6)), Type.Tuple(List(Type.Int, Type.Int))),
+        Type.Tuple(List(Type.Int, Type.Int))), rules, Type.Int)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Int(11))(result)
+  }
+
+  test("Pattern.Tuple02") {
+    // (5, 6) match { case (5, 6) => "abc"; case (5, _) => "def"; case (_, _) => "ghi" }
+    val rules = List(
+      (Pattern.Tuple(List(Pattern.Lit(Literal.Int(5), Type.Int), Pattern.Lit(Literal.Int(6), Type.Int)),
+        Type.Tuple(List(Type.Int, Type.Int))), Expression.Lit(Literal.Str("abc"), Type.Str)),
+      (Pattern.Tuple(List(Pattern.Lit(Literal.Int(5), Type.Int), Pattern.Wildcard(Type.Int)),
+        Type.Tuple(List(Type.Int, Type.Int))), Expression.Lit(Literal.Str("def"), Type.Str)),
+      (Pattern.Tuple(List(Pattern.Wildcard(Type.Int), Pattern.Wildcard(Type.Int)),
+        Type.Tuple(List(Type.Int, Type.Int))), Expression.Lit(Literal.Str("ghi"), Type.Str)))
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tuple(List(Literal.Int(5), Literal.Int(6)), Type.Tuple(List(Type.Int, Type.Int))),
+        Type.Tuple(List(Type.Int, Type.Int))), rules, Type.Str)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Str("abc"))(result)
+  }
+
+  test("Pattern.Tuple03") {
+    // (5, 16) match { case (5, 6) => "abc"; case (5, _) => "def"; case (_, _) => "ghi" }
+    val rules = List(
+      (Pattern.Tuple(List(Pattern.Lit(Literal.Int(5), Type.Int), Pattern.Lit(Literal.Int(6), Type.Int)),
+        Type.Tuple(List(Type.Int, Type.Int))), Expression.Lit(Literal.Str("abc"), Type.Str)),
+      (Pattern.Tuple(List(Pattern.Lit(Literal.Int(5), Type.Int), Pattern.Wildcard(Type.Int)),
+        Type.Tuple(List(Type.Int, Type.Int))), Expression.Lit(Literal.Str("def"), Type.Str)),
+      (Pattern.Tuple(List(Pattern.Wildcard(Type.Int), Pattern.Wildcard(Type.Int)),
+        Type.Tuple(List(Type.Int, Type.Int))), Expression.Lit(Literal.Str("ghi"), Type.Str)))
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tuple(List(Literal.Int(5), Literal.Int(16)), Type.Tuple(List(Type.Int, Type.Int))),
+        Type.Tuple(List(Type.Int, Type.Int))), rules, Type.Str)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Str("def"))(result)
+  }
+
+  test("Pattern.Tuple04") {
+    // (15, 16) match { case (5, 6) => "abc"; case (5, _) => "def"; case (_, _) => "ghi" }
+    val rules = List(
+      (Pattern.Tuple(List(Pattern.Lit(Literal.Int(5), Type.Int), Pattern.Lit(Literal.Int(6), Type.Int)),
+        Type.Tuple(List(Type.Int, Type.Int))), Expression.Lit(Literal.Str("abc"), Type.Str)),
+      (Pattern.Tuple(List(Pattern.Lit(Literal.Int(5), Type.Int), Pattern.Wildcard(Type.Int)),
+        Type.Tuple(List(Type.Int, Type.Int))), Expression.Lit(Literal.Str("def"), Type.Str)),
+      (Pattern.Tuple(List(Pattern.Wildcard(Type.Int), Pattern.Wildcard(Type.Int)),
+        Type.Tuple(List(Type.Int, Type.Int))), Expression.Lit(Literal.Str("ghi"), Type.Str)))
+    val input = Expression.Match(
+      Expression.Lit(Literal.Tuple(List(Literal.Int(15), Literal.Int(16)), Type.Tuple(List(Type.Int, Type.Int))),
+        Type.Tuple(List(Type.Int, Type.Int))), rules, Type.Str)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Str("ghi"))(result)
+  }
 
   test("Expression.Match.Error01") {
     // 123 match { case 321 => Unit }
