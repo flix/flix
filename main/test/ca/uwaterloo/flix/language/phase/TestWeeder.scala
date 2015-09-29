@@ -37,7 +37,7 @@ class TestWeeder extends FunSuite {
     val past = ParsedAst.Definition.Function(Ident, Seq(
       ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
-    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit(SL)))
+    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SL, ParsedAst.Literal.Unit(SL)))
 
     val result = Weeder.Definition.compile(past)
     assert(result.hasErrors)
@@ -49,7 +49,7 @@ class TestWeeder extends FunSuite {
       ParsedAst.FormalArg(Name.Ident("y", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
-    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit(SL)))
+    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SL, ParsedAst.Literal.Unit(SL)))
 
     val result = Weeder.Definition.compile(past)
     assertResult(2)(result.errors.size)

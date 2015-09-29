@@ -170,109 +170,122 @@ object ParsedAst {
     /**
      * An AST node that represents a literal.
      *
-     * @param literal the literal.
+     * @param loc the location.
+     * @param lit the literal.
      */
-    case class Lit(literal: ParsedAst.Literal) extends ParsedAst.Expression
+    case class Lit(loc: SourceLocation, lit: ParsedAst.Literal) extends ParsedAst.Expression
 
     /**
      * An AST node that represents an unresolved variable.
      *
+     * @param loc the location.
      * @param name the ambiguous name.
      */
-    case class Var(name: Name.Unresolved) extends ParsedAst.Expression
+    case class Var(loc: SourceLocation, name: Name.Unresolved) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a function application.
      *
+     * @param loc the location.
      * @param lambda the lambda expression.
      * @param actuals the arguments.
      */
-    case class Apply(lambda: ParsedAst.Expression, actuals: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
+    case class Apply(loc: SourceLocation, lambda: ParsedAst.Expression, actuals: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a lambda expression.
      *
+     * @param loc the location.
      * @param formals the formals (i.e. parameters and their types).
      * @param tpe the return type.
      * @param body the body expression of the lambda.
      */
-    case class Lambda(formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Lambda(loc: SourceLocation, formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents unary expressions.
      *
+     * @param loc the location.
      * @param op the unary operator.
-     * @param e the expression.   
+     * @param e the expression.
      */
-    case class Unary(op: UnaryOperator, e: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Unary(loc: SourceLocation, op: UnaryOperator, e: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents binary expressions.
      *
      * @param e1 the left expression.
+     * @param loc the location.
      * @param op the binary operator.
      * @param e2 the right expression.
      */
-    case class Binary(e1: ParsedAst.Expression, op: BinaryOperator, e2: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Binary(e1: ParsedAst.Expression,loc: SourceLocation, op: BinaryOperator, e2: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents an if-then-else expression.
      *
+     * @param loc the location.
      * @param e1 the conditional expression.
      * @param e2 the consequence expression.
      * @param e3 the alternative expression.
      */
-    case class IfThenElse(e1: ParsedAst.Expression, e2: ParsedAst.Expression, e3: ParsedAst.Expression) extends ParsedAst.Expression
+    case class IfThenElse(loc: SourceLocation, e1: ParsedAst.Expression, e2: ParsedAst.Expression, e3: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a let-binding.
      *
+     * @param loc the location.
      * @param ident the identifier to be bound.
      * @param value the expression whose value the identifier should be bound to.
      * @param body the expression in which the bound variable is visible.
      */
-    case class Let(ident: Name.Ident, value: ParsedAst.Expression, body: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Let(loc: SourceLocation, ident: Name.Ident, value: ParsedAst.Expression, body: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a match expression.
      *
+     * @param loc the location.
      * @param e the match expression.
      * @param rules the match rules and their bodies.
      */
-    case class Match(e: ParsedAst.Expression, rules: Seq[(ParsedAst.Pattern, ParsedAst.Expression)]) extends ParsedAst.Expression
+    case class Match(loc: SourceLocation, e: ParsedAst.Expression, rules: Seq[(ParsedAst.Pattern, ParsedAst.Expression)]) extends ParsedAst.Expression
 
     /**
      * An AST node that represents an infix function call.
      *
      * @param e1 the first argument expression.
+     * @param loc the location.
      * @param name the ambiguous name of the function.
      * @param e2 the second argument expression.
      */
-    case class Infix(e1: ParsedAst.Expression, name: Name.Unresolved, e2: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Infix(e1: ParsedAst.Expression, loc: SourceLocation, name: Name.Unresolved, e2: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a tagged expression.
      *
+     * @param loc the location.
      * @param name the namespace of the enum.
      * @param ident the tag name.
      * @param e the nested expression.
      */
-    case class Tag(name: Name.Unresolved, ident: Name.Ident, e: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Tag(loc: SourceLocation, name: Name.Unresolved, ident: Name.Ident, e: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents a tuple expression.
      *
+     * @param loc the location.
      * @param elms the elements of the tuple.
      */
-    case class Tuple(elms: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
+    case class Tuple(loc: SourceLocation, elms: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
 
     /**
      * An AST node that ascribes a type to an expression.
      *
+     * @param loc the location.
      * @param e the expression.
      * @param tpe the ascribed type.
      */
-    case class Ascribe(e: ParsedAst.Expression, tpe: ParsedAst.Type) extends ParsedAst.Expression
+    case class Ascribe(loc: SourceLocation, e: ParsedAst.Expression, tpe: ParsedAst.Type) extends ParsedAst.Expression
 
     /**
      * An AST node that represents an error expression.

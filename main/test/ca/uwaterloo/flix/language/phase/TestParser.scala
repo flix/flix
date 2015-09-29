@@ -372,19 +372,19 @@ class TestParser extends FunSuite {
   test("Expression.LiteralExp01") {
     val input = "true"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult(true)(result.literal.asInstanceOf[ParsedAst.Literal.Bool].lit)
+    assertResult(true)(result.lit.asInstanceOf[ParsedAst.Literal.Bool].lit)
   }
 
   test("Expression.LiteralExp02") {
     val input = "42"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult(42)(result.literal.asInstanceOf[ParsedAst.Literal.Int].lit)
+    assertResult(42)(result.lit.asInstanceOf[ParsedAst.Literal.Int].lit)
   }
 
   test("Expression.LiteralExp03") {
     val input = "\"foo\""
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult("foo")(result.literal.asInstanceOf[ParsedAst.Literal.Str].lit)
+    assertResult("foo")(result.lit.asInstanceOf[ParsedAst.Literal.Str].lit)
   }
 
   test("Expression.LetExp01") {
@@ -470,7 +470,7 @@ class TestParser extends FunSuite {
     val m1 = result.asInstanceOf[ParsedAst.Expression.Match]
     val m2 = m1.rules.head._2.asInstanceOf[ParsedAst.Expression.Match]
     val l = m2.rules.head._2.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult(5)(l.literal.asInstanceOf[ParsedAst.Literal.Int].lit)
+    assertResult(5)(l.lit.asInstanceOf[ParsedAst.Literal.Int].lit)
   }
 
   test("Expression.MatchExp04") {
@@ -486,7 +486,7 @@ class TestParser extends FunSuite {
     val m1 = result.asInstanceOf[ParsedAst.Expression.Match]
     val m2 = m1.e.asInstanceOf[ParsedAst.Expression.Match]
     val l = m2.rules.head._2.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult(3)(l.literal.asInstanceOf[ParsedAst.Literal.Int].lit)
+    assertResult(3)(l.lit.asInstanceOf[ParsedAst.Literal.Int].lit)
   }
 
   test("Expression.CallExp01") {
@@ -550,13 +550,13 @@ class TestParser extends FunSuite {
   test("Expression.Tuple01") {
     val input = "()"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult(ParsedAst.Literal.Unit(SL))(result.literal)
+    assertResult(ParsedAst.Literal.Unit(SL))(result.lit)
   }
 
   test("Expression.Tuple02") {
     val input = "(1)"
     val result = new Parser(None, input).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    val literal = result.literal.asInstanceOf[Literal.Int]
+    val literal = result.lit.asInstanceOf[Literal.Int]
     assertResult(1)(literal.lit)
   }
 
