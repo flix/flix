@@ -173,7 +173,7 @@ object Weeder {
      */
     def compile(past: ParsedAst.Definition.Value): Validation[WeededAst.Definition.Constant, WeederError] =
       @@(Expression.compile(past.e), Type.compile(past.tpe)) map {
-        case (exp, tpe) => WeededAst.Definition.Constant(past.ident, exp, tpe)
+        case (exp, tpe) => WeededAst.Definition.Constant(past.ident, exp, tpe, past.loc)
       }
 
     /**
@@ -194,9 +194,9 @@ object Weeder {
 
       @@(formalsVal, Expression.compile(past.body), Type.compile(past.tpe)) map {
         case (args, body, retType) =>
-          val exp = WeededAst.Expression.Lambda(args, body, retType)
+          val exp = WeededAst.Expression.Lambda(args, body, retType, past.body.loc)
           val tpe = WeededAst.Type.Function(args map (_.tpe), retType)
-          WeededAst.Definition.Constant(past.ident, exp, tpe)
+          WeededAst.Definition.Constant(past.ident, exp, tpe, past.loc)
       }
     }
 
@@ -214,7 +214,7 @@ object Weeder {
           case Some(otherTag) => DuplicateTag(name, otherTag.tagName.location, location).toFailure
         }
       } map {
-        case m => WeededAst.Definition.Enum(past.ident, m)
+        case m => WeededAst.Definition.Enum(past.ident, m, past.loc)
       }
 
     /**
@@ -225,7 +225,7 @@ object Weeder {
 
       val elmsVal = @@(past.elms.toList.map(Expression.compile))
       elmsVal map {
-        case elms => WeededAst.Definition.Lattice(past.ident, elms)
+        case elms => WeededAst.Definition.Lattice(past.ident, elms, past.loc)
       }
     }
 
@@ -247,7 +247,7 @@ object Weeder {
       }
 
       @@(attributesVal) map {
-        case attributes => WeededAst.Definition.Relation(past.ident, attributes)
+        case attributes => WeededAst.Definition.Relation(past.ident, attributes, past.loc)
       }
     }
   }
@@ -274,14 +274,16 @@ object Weeder {
      */
     def compile(past: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = past match {
       case ParsedAst.Expression.Lit(loc, literal) =>
-        Literal.compile(literal) map WeededAst.Expression.Lit
+        Literal.compile(literal) map {
+          case lit => WeededAst.Expression.Lit(lit, loc)
+        }
 
       case ParsedAst.Expression.Var(loc, name) =>
-        WeededAst.Expression.Var(name).toSuccess
+        WeededAst.Expression.Var(name, loc).toSuccess
 
       case ParsedAst.Expression.Apply(loc, wlambda, wargs) =>
         @@(compile(wlambda), @@(wargs map compile)) map {
-          case (lambda, args) => WeededAst.Expression.Apply(lambda, args)
+          case (lambda, args) => WeededAst.Expression.Apply(lambda, args, loc)
         }
 
       case ParsedAst.Expression.Lambda(loc, pargs, ptype, pbody) =>
@@ -289,27 +291,27 @@ object Weeder {
           case ParsedAst.FormalArg(ident, tpe) => Type.compile(tpe) map (t => WeededAst.FormalArg(ident, t))
         })
         @@(argsVal, Type.compile(ptype), compile(pbody)) map {
-          case (args, tpe, body) => WeededAst.Expression.Lambda(args, body, tpe)
+          case (args, tpe, body) => WeededAst.Expression.Lambda(args, body, tpe, loc)
         }
 
       case ParsedAst.Expression.Unary(loc, op, pe) =>
         compile(pe) map {
-          case e => WeededAst.Expression.Unary(op, e)
+          case e => WeededAst.Expression.Unary(op, e, loc)
         }
 
       case ParsedAst.Expression.Binary(pe1, loc, op, pe2) =>
         @@(compile(pe1), compile(pe2)) map {
-          case (e1, e2) => WeededAst.Expression.Binary(op, e1, e2)
+          case (e1, e2) => WeededAst.Expression.Binary(op, e1, e2, loc)
         }
 
       case ParsedAst.Expression.IfThenElse(loc, pe1, pe2, pe3) =>
         @@(compile(pe1), compile(pe2), compile(pe3)) map {
-          case (e1, e2, e3) => WeededAst.Expression.IfThenElse(e1, e2, e3)
+          case (e1, e2, e3) => WeededAst.Expression.IfThenElse(e1, e2, e3, loc)
         }
 
       case ParsedAst.Expression.Let(loc, ident, pvalue, pbody) =>
         @@(compile(pvalue), compile(pbody)) map {
-          case (value, body) => WeededAst.Expression.Let(ident, value, body)
+          case (value, body) => WeededAst.Expression.Let(ident, value, body, loc)
         }
 
       case ParsedAst.Expression.Match(loc, pe, prules) =>
@@ -317,25 +319,25 @@ object Weeder {
           case (pat, body) => @@(Pattern.compile(pat), compile(body))
         }
         @@(compile(pe), @@(rulesVal)) map {
-          case (e, rs) => WeededAst.Expression.Match(e, rs)
+          case (e, rs) => WeededAst.Expression.Match(e, rs, loc)
         }
 
       case ParsedAst.Expression.Infix(pe1, loc, name, pe2) =>
         @@(compile(pe1), compile(pe2)) map {
-          case (e1, e2) => WeededAst.Expression.Apply(WeededAst.Expression.Var(name), List(e1, e2))
+          case (e1, e2) => WeededAst.Expression.Apply(WeededAst.Expression.Var(name, loc), List(e1, e2), loc)
         }
 
       case ParsedAst.Expression.Tag(loc, enumName, tagName, pe) => compile(pe) map {
-        case e => WeededAst.Expression.Tag(enumName, tagName, e)
+        case e => WeededAst.Expression.Tag(enumName, tagName, e, loc)
       }
 
       case ParsedAst.Expression.Tuple(loc, pelms) => @@(pelms map compile) map {
-        case elms => WeededAst.Expression.Tuple(elms)
+        case elms => WeededAst.Expression.Tuple(elms, loc)
       }
 
       case ParsedAst.Expression.Ascribe(loc, pe, ptype) =>
         @@(compile(pe), Type.compile(ptype)) map {
-          case (e, tpe) => WeededAst.Expression.Ascribe(e, tpe)
+          case (e, tpe) => WeededAst.Expression.Ascribe(e, tpe, loc)
         }
 
       case ParsedAst.Expression.Error(loc, ptype) =>
@@ -359,16 +361,18 @@ object Weeder {
         case ParsedAst.Pattern.Var(loc, ident) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> ident)
-            WeededAst.Pattern.Var(ident).toSuccess
+            WeededAst.Pattern.Var(ident, loc).toSuccess
           case Some(otherIdent) =>
             NonLinearPattern(ident.name, otherIdent.location, ident.location).toFailure
         }
-        case ParsedAst.Pattern.Lit(loc, literal) => Literal.compile(literal) map WeededAst.Pattern.Lit
+        case ParsedAst.Pattern.Lit(loc, literal) => Literal.compile(literal) map {
+          case lit => WeededAst.Pattern.Lit(lit, loc)
+        }
         case ParsedAst.Pattern.Tag(loc, enumName, tagName, ppat) => visit(ppat) map {
-          case pat => WeededAst.Pattern.Tag(enumName, tagName, pat)
+          case pat => WeededAst.Pattern.Tag(enumName, tagName, pat, loc)
         }
         case ParsedAst.Pattern.Tuple(loc, pelms) => @@(pelms map visit) map {
-          case elms => WeededAst.Pattern.Tuple(elms)
+          case elms => WeededAst.Pattern.Tuple(elms, loc)
         }
       }
 
@@ -385,7 +389,7 @@ object Weeder {
        */
       def compile(past: ParsedAst.Predicate): Validation[WeededAst.PredicateWithApply, WeederError] =
         @@(past.terms.map(Term.Head.compile)) map {
-          case terms => WeededAst.PredicateWithApply(past.name, terms)
+          case terms => WeededAst.PredicateWithApply(past.name, terms, past.loc)
         }
     }
 
@@ -396,7 +400,7 @@ object Weeder {
        */
       def compile(past: ParsedAst.Predicate): Validation[WeededAst.PredicateNoApply, WeederError] =
         @@(past.terms.map(Term.Body.compile)) map {
-          case terms => WeededAst.PredicateNoApply(past.name, terms)
+          case terms => WeededAst.PredicateNoApply(past.name, terms, past.loc)
         }
     }
 
@@ -413,18 +417,20 @@ object Weeder {
        */
       def compile(past: ParsedAst.Term): Validation[WeededAst.TermWithApply, WeederError] = past match {
         case ParsedAst.Term.Wildcard(loc) => IllegalTerm("Wildcard variables not allowed in head terms.", loc).toFailure
-        case ParsedAst.Term.Var(loc, ident) => WeededAst.TermWithApply.Var(ident).toSuccess
-        case ParsedAst.Term.Lit(loc, literal) => Literal.compile(literal) map WeededAst.TermWithApply.Lit
+        case ParsedAst.Term.Var(loc, ident) => WeededAst.TermWithApply.Var(ident, loc).toSuccess
+        case ParsedAst.Term.Lit(loc, literal) => Literal.compile(literal) map {
+          case lit => WeededAst.TermWithApply.Lit(lit, loc)
+        }
 
         // TODO: Non-literal tag and tuple could be allowed here.
-        case ParsedAst.Term.Ascribe(oc, pterm, ptpe) =>
+        case ParsedAst.Term.Ascribe(loc, pterm, ptpe) =>
           @@(compile(pterm), Type.compile(ptpe)) map {
-            case (term, tpe) => WeededAst.TermWithApply.Ascribe(term, tpe)
+            case (term, tpe) => WeededAst.TermWithApply.Ascribe(term, tpe, loc)
           }
 
         case ParsedAst.Term.Apply(loc, name, pargs) =>
           @@(pargs map compile) map {
-            case args => WeededAst.TermWithApply.Apply(name, args)
+            case args => WeededAst.TermWithApply.Apply(name, args, loc)
           }
       }
     }
@@ -437,11 +443,13 @@ object Weeder {
        */
       def compile(past: ParsedAst.Term): Validation[WeededAst.TermNoApply, WeederError] = past match {
         case ParsedAst.Term.Wildcard(loc) => WeededAst.TermNoApply.Wildcard(loc).toSuccess
-        case ParsedAst.Term.Var(loc, ident) => WeededAst.TermNoApply.Var(ident).toSuccess
-        case ParsedAst.Term.Lit(loc, literal) => Literal.compile(literal) map WeededAst.TermNoApply.Lit
+        case ParsedAst.Term.Var(loc, ident) => WeededAst.TermNoApply.Var(ident, loc).toSuccess
+        case ParsedAst.Term.Lit(loc, literal) => Literal.compile(literal) map {
+          case lit => WeededAst.TermNoApply.Lit(lit, loc)
+        }
         case ParsedAst.Term.Ascribe(loc, pterm, ptpe) =>
           @@(compile(pterm), Type.compile(ptpe)) map {
-            case (term, tpe) => WeededAst.TermNoApply.Ascribe(term, tpe)
+            case (term, tpe) => WeededAst.TermNoApply.Ascribe(term, tpe, loc)
           }
         case ParsedAst.Term.Apply(loc, name, args) => IllegalTerm("Function calls not allowed in body terms.", name.location).toFailure
       }

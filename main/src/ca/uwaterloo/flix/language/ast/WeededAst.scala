@@ -22,13 +22,13 @@ object WeededAst {
 
   object Definition {
 
-    case class Constant(ident: Name.Ident, e: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Definition
+    case class Constant(ident: Name.Ident, e: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Definition
 
-    case class Enum(ident: Name.Ident, cases: Map[String, WeededAst.Type.Tag]) extends WeededAst.Definition
+    case class Enum(ident: Name.Ident, cases: Map[String, WeededAst.Type.Tag], loc: SourceLocation) extends WeededAst.Definition
 
-    case class Lattice(ident: Name.Ident, elms: List[WeededAst.Expression]) extends WeededAst.Definition
+    case class Lattice(ident: Name.Ident, elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Definition
 
-    case class Relation(ident: Name.Ident, attributes: List[WeededAst.Attribute]) extends WeededAst.Definition
+    case class Relation(ident: Name.Ident, attributes: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Definition
 
   }
 
@@ -54,29 +54,29 @@ object WeededAst {
 
   object Expression {
 
-    case class Lit(literal: WeededAst.Literal) extends WeededAst.Expression
+    case class Lit(literal: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Var(name: Name.Unresolved) extends WeededAst.Expression
+    case class Var(name: Name.Unresolved, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Apply(lambda: WeededAst.Expression, arguments: List[WeededAst.Expression]) extends WeededAst.Expression
+    case class Apply(lambda: WeededAst.Expression, arguments: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Lambda(formals: List[WeededAst.FormalArg], body: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Expression
+    case class Lambda(formals: List[WeededAst.FormalArg], body: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Unary(op: UnaryOperator, e: WeededAst.Expression) extends WeededAst.Expression
+    case class Unary(op: UnaryOperator, e: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Binary(op: BinaryOperator, e1: WeededAst.Expression, e2: WeededAst.Expression) extends WeededAst.Expression
+    case class Binary(op: BinaryOperator, e1: WeededAst.Expression, e2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression) extends WeededAst.Expression
+    case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Let(ident: Name.Ident, value: WeededAst.Expression, body: WeededAst.Expression) extends WeededAst.Expression
+    case class Let(ident: Name.Ident, value: WeededAst.Expression, body: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Match(e: WeededAst.Expression, rs: List[(WeededAst.Pattern, WeededAst.Expression)]) extends WeededAst.Expression
+    case class Match(e: WeededAst.Expression, rs: List[(WeededAst.Pattern, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Tag(name: Name.Unresolved, ident: Name.Ident, e: WeededAst.Expression) extends WeededAst.Expression
+    case class Tag(name: Name.Unresolved, ident: Name.Ident, e: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Tuple(elms: List[WeededAst.Expression]) extends WeededAst.Expression
+    case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Ascribe(e: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Expression
+    case class Ascribe(e: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
     case class Error(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
@@ -88,10 +88,10 @@ object WeededAst {
      */
     final def bound: Set[String] = this match {
       case WeededAst.Pattern.Wildcard(_) => Set.empty
-      case WeededAst.Pattern.Var(ident) => Set(ident.name)
-      case WeededAst.Pattern.Lit(lit) => Set.empty
-      case WeededAst.Pattern.Tag(name, ident, p) => p.bound
-      case WeededAst.Pattern.Tuple(elms) => elms.foldLeft(Set.empty[String]) {
+      case WeededAst.Pattern.Var(ident, loc) => Set(ident.name)
+      case WeededAst.Pattern.Lit(lit, loc) => Set.empty
+      case WeededAst.Pattern.Tag(_name, ident, p, loc) => p.bound
+      case WeededAst.Pattern.Tuple(elms, loc) => elms.foldLeft(Set.empty[String]) {
         case (acc, pat) => acc ++ pat.bound
       }
     }
@@ -99,35 +99,36 @@ object WeededAst {
 
   object Pattern {
 
-    case class Wildcard(location: SourceLocation) extends WeededAst.Pattern
+    case class Wildcard(loc: SourceLocation) extends WeededAst.Pattern
 
-    case class Var(ident: Name.Ident) extends WeededAst.Pattern
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Pattern
 
-    case class Lit(literal: WeededAst.Literal) extends WeededAst.Pattern
+    case class Lit(literal: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Pattern
 
-    case class Tag(name: Name.Unresolved, ident: Name.Ident, p: WeededAst.Pattern) extends WeededAst.Pattern
+    case class Tag(name: Name.Unresolved, ident: Name.Ident, p: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
-    case class Tuple(elms: List[WeededAst.Pattern]) extends WeededAst.Pattern
+    case class Tuple(elms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
   }
 
   // TODO: Organize these as usually done.
 
-  case class PredicateNoApply(name: Name.Unresolved, terms: List[WeededAst.TermNoApply]) extends WeededAst
+  case class PredicateNoApply(name: Name.Unresolved, terms: List[WeededAst.TermNoApply], loc: SourceLocation) extends WeededAst
 
-  case class PredicateWithApply(name: Name.Unresolved, terms: List[WeededAst.TermWithApply]) extends WeededAst
+  case class PredicateWithApply(name: Name.Unresolved, terms: List[WeededAst.TermWithApply], loc: SourceLocation) extends WeededAst
 
   sealed trait TermNoApply extends WeededAst
 
   object TermNoApply {
 
-    case class Wildcard(location: SourceLocation) extends WeededAst.TermNoApply
+    case class Wildcard(loc: SourceLocation) extends WeededAst.TermNoApply
 
-    case class Var(ident: Name.Ident) extends WeededAst.TermNoApply
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.TermNoApply
 
-    case class Lit(literal: WeededAst.Literal) extends WeededAst.TermNoApply
+    case class Lit(literal: WeededAst.Literal, loc: SourceLocation) extends WeededAst.TermNoApply
 
-    case class Ascribe(term: TermNoApply, tpe: WeededAst.Type) extends WeededAst.TermNoApply
+    case class Ascribe(term: TermNoApply, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.TermNoApply
+
   }
 
   sealed trait TermWithApply extends WeededAst
@@ -135,15 +136,15 @@ object WeededAst {
   object TermWithApply {
 
     // TODO: Wildcards should not be allowed here...
-    case class Wildcard(location: SourceLocation) extends WeededAst.TermWithApply
+    case class Wildcard(loc: SourceLocation) extends WeededAst.TermWithApply
 
-    case class Var(ident: Name.Ident) extends WeededAst.TermWithApply
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.TermWithApply
 
-    case class Lit(literal: WeededAst.Literal) extends WeededAst.TermWithApply
+    case class Lit(literal: WeededAst.Literal, loc: SourceLocation) extends WeededAst.TermWithApply
 
-    case class Ascribe(term: TermWithApply, tpe: WeededAst.Type) extends WeededAst.TermWithApply
+    case class Ascribe(term: TermWithApply, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.TermWithApply
 
-    case class Apply(name: Name.Unresolved, args: List[WeededAst.TermWithApply]) extends WeededAst.TermWithApply
+    case class Apply(name: Name.Unresolved, args: List[WeededAst.TermWithApply], loc: SourceLocation) extends WeededAst.TermWithApply
 
   }
 

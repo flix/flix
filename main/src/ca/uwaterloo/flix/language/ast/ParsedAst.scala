@@ -110,7 +110,9 @@ object ParsedAst {
   /**
    * AST nodes for Literals.
    */
-  sealed trait Literal
+  sealed trait Literal {
+
+  }
 
   object Literal {
 
@@ -168,7 +170,12 @@ object ParsedAst {
   /**
    * AST nodes for expressions.
    */
-  sealed trait Expression extends ParsedAst
+  sealed trait Expression extends ParsedAst {
+    /**
+     * Returns the source location of `this` expression.
+     */
+    def loc: SourceLocation
+  }
 
   object Expression {
 
@@ -224,7 +231,7 @@ object ParsedAst {
      * @param op the binary operator.
      * @param e2 the right expression.
      */
-    case class Binary(e1: ParsedAst.Expression,loc: SourceLocation, op: BinaryOperator, e2: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Binary(e1: ParsedAst.Expression, loc: SourceLocation, op: BinaryOperator, e2: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents an if-then-else expression.
