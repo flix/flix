@@ -60,7 +60,7 @@ object WeededAst {
 
     case class Apply(lambda: WeededAst.Expression, arguments: List[WeededAst.Expression]) extends WeededAst.Expression
 
-    case class Lambda(formals: List[(Name.Ident, WeededAst.Type)], body: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Expression
+    case class Lambda(formals: List[WeededAst.FormalArg], body: WeededAst.Expression, tpe: WeededAst.Type) extends WeededAst.Expression
 
     case class Unary(op: UnaryOperator, e: WeededAst.Expression) extends WeededAst.Expression
 
@@ -68,7 +68,6 @@ object WeededAst {
 
     case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression) extends WeededAst.Expression
 
-    // TODO: Why not just call these e1 and e2?
     case class Let(ident: Name.Ident, value: WeededAst.Expression, body: WeededAst.Expression) extends WeededAst.Expression
 
     case class Match(e: WeededAst.Expression, rs: List[(WeededAst.Pattern, WeededAst.Expression)]) extends WeededAst.Expression
@@ -175,7 +174,6 @@ object WeededAst {
    * @param ident the name of the argument.
    * @param tpe the type of the argument.
    */
-  // TODO: Make sure to use this
   case class FormalArg(ident: Name.Ident, tpe: WeededAst.Type) extends WeededAst
 
 

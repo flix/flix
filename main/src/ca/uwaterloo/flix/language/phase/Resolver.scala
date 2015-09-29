@@ -312,7 +312,7 @@ object Resolver {
 
         case WeededAst.Expression.Lambda(wformals, wbody, wtype) =>
           val formalsVal = @@(wformals map {
-            case (ident, tpe) => Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.FormalArg(ident, t))
+            case WeededAst.FormalArg(ident, tpe) => Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.FormalArg(ident, t))
           })
 
           formalsVal flatMap {

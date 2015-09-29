@@ -186,7 +186,7 @@ object Weeder {
         case ParsedAst.FormalArg(ident, tpe) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> ident)
-            Type.compile(tpe) map (t => (ident, t))
+            Type.compile(tpe) map (t => WeededAst.FormalArg(ident, t))
           case Some(otherIdent) =>
             (DuplicateFormal(ident.name, otherIdent.location, ident.location): WeederError).toFailure
         }
@@ -195,7 +195,7 @@ object Weeder {
       @@(formalsVal, Expression.compile(past.body), Type.compile(past.tpe)) map {
         case (args, body, retType) =>
           val exp = WeededAst.Expression.Lambda(args, body, retType)
-          val tpe = WeededAst.Type.Function(args map (_._2), retType)
+          val tpe = WeededAst.Type.Function(args map (_.tpe), retType)
           WeededAst.Definition.Constant(past.ident, exp, tpe)
       }
     }
@@ -286,7 +286,7 @@ object Weeder {
 
       case ParsedAst.Expression.Lambda(pargs, ptype, pbody) =>
         val argsVal = @@(pargs map {
-          case ParsedAst.FormalArg(ident, tpe) => Type.compile(tpe) map (t => (ident, t))
+          case ParsedAst.FormalArg(ident, tpe) => Type.compile(tpe) map (t => WeededAst.FormalArg(ident, t))
         })
         @@(argsVal, Type.compile(ptype), compile(pbody)) map {
           case (args, tpe, body) => WeededAst.Expression.Lambda(args, body, tpe)
