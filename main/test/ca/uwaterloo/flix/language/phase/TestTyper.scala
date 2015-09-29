@@ -560,7 +560,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Binary01'") {
-    val s = "true && false"
+    val s = "true && false" // TODO: Consider adding an: asExp
 
     val result = Compiler.Expression.compile(s)
     assertResult(TypedAst.Type.Bool)(result.tpe)

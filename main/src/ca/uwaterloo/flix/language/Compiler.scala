@@ -119,6 +119,8 @@ object Compiler {
   object Expression {
     def compile(input: String): TypedAst.Expression = {
 
+      // TODO: Consider using a prelude
+
       val past = new Parser(None, input).Expression.run().get
 
       val wast = Weeder.Expression.compile(past).get
