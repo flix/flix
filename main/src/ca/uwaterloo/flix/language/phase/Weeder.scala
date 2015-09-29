@@ -183,7 +183,7 @@ object Weeder {
       val seen = mutable.Map.empty[String, Name.Ident]
 
       val formalsVal = @@(past.formals.map {
-        case (ident, tpe) => seen.get(ident.name) match {
+        case ParsedAst.FormalArg(ident, tpe) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> ident)
             Type.compile(tpe) map (t => (ident, t))
@@ -225,7 +225,7 @@ object Weeder {
 
       val elmsVal = @@(past.elms.toList.map(Expression.compile))
       elmsVal map {
-        case elms => WeededAst.Definition.Lattice(past.ident, elms, past.traits.toList)
+        case elms => WeededAst.Definition.Lattice(past.ident, elms)
       }
     }
 
@@ -286,7 +286,7 @@ object Weeder {
 
       case ParsedAst.Expression.Lambda(pargs, ptype, pbody) =>
         val argsVal = @@(pargs map {
-          case (ident, tpe) => Type.compile(tpe) map (t => (ident, t))
+          case ParsedAst.FormalArg(ident, tpe) => Type.compile(tpe) map (t => (ident, t))
         })
         @@(argsVal, Type.compile(ptype), compile(pbody)) map {
           case (args, tpe, body) => WeededAst.Expression.Lambda(args, body, tpe)

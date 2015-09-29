@@ -35,8 +35,8 @@ class TestWeeder extends FunSuite {
 
   test("DuplicateFormal01") {
     val past = ParsedAst.Definition.Function(Ident, Seq(
-      (Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
-      (Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
+      ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
+      ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit(SL)))
 
     val result = Weeder.Definition.compile(past)
@@ -45,10 +45,10 @@ class TestWeeder extends FunSuite {
 
   test("DuplicateFormal02") {
     val past = ParsedAst.Definition.Function(Ident, Seq(
-      (Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
-      (Name.Ident("y", SourceLocation.Unknown), ParsedAst.Type.Unit),
-      (Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
-      (Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
+      ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
+      ParsedAst.FormalArg(Name.Ident("y", SourceLocation.Unknown), ParsedAst.Type.Unit),
+      ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
+      ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(ParsedAst.Literal.Unit(SL)))
 
     val result = Weeder.Definition.compile(past)

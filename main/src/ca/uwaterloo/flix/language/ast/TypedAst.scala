@@ -579,7 +579,7 @@ object TypedAst {
   // TODO: Introduce TypeOrLattice or similar.
 
   /**
-   * A typed AST node representing a formal argument in a function.
+   * A typed AST node representing a formal argument of a function.
    *
    * @param ident the name of the argument.
    * @param tpe the type of the argument.

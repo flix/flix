@@ -2,9 +2,6 @@ package ca.uwaterloo.flix.language.ast
 
 trait WeededAst
 
-// TODO: Ensure that there is no reference to "ParsedAst.X"
-// TODO: Summary changes made by this phase.
-
 object WeededAst {
 
   case class Root(declarations: List[WeededAst.Declaration]) extends WeededAst
@@ -29,16 +26,7 @@ object WeededAst {
 
     case class Enum(ident: Name.Ident, cases: Map[String, WeededAst.Type.Tag]) extends WeededAst.Definition
 
-    // TODO: Improve? or at least do something with traits?
-    case class Lattice(ident: Name.Ident, elms: List[WeededAst.Expression], traits: List[ParsedAst.Trait]) extends WeededAst.Definition
-
-    // TODO
-    case class JoinSemiLattice(ident: Name.Ident,
-                               bot: Name.Unresolved,
-                               leq: Name.Unresolved,
-                               lub: Name.Unresolved,
-                               norm: Option[Name.Unresolved],
-                               widen: Option[Name.Unresolved]) extends WeededAst.Definition
+    case class Lattice(ident: Name.Ident, elms: List[WeededAst.Expression]) extends WeededAst.Definition
 
     case class Relation(ident: Name.Ident, attributes: List[WeededAst.Attribute]) extends WeededAst.Definition
 
@@ -179,7 +167,16 @@ object WeededAst {
 
   }
 
-
   case class Attribute(ident: Name.Ident, tpe: WeededAst.Type) extends WeededAst
+
+  /**
+   * An AST node representing a formal argument of a function.
+   *
+   * @param ident the name of the argument.
+   * @param tpe the type of the argument.
+   */
+  // TODO: Make sure to use this
+  case class FormalArg(ident: Name.Ident, tpe: WeededAst.Type) extends WeededAst
+
 
 }

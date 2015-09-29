@@ -62,16 +62,16 @@ namespace ParityAnalysis {
         case _                            => Parity.Top;
     };
 
-//    // and division:
-//     def divide(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-//        case (_, Parity.Bot)              => Parity.Bot;
-//        case (Parity.Bot, _)              => Parity.Bot;
-//        case (Parity.Odd, Parity.Odd)     => ???;
-//        case (Parity.Odd, Parity.Even)    => ???;
-//        case (Parity.Even, Parity.Odd)    => ???;
-//        case (Parity.Even, Parity.Even)   => ???;
-//        case _                            => Parity.Top;
-//     };
+    // and division:
+     def divide(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+        case (_, Parity.Bot)              => Parity.Bot;
+        case (Parity.Bot, _)              => Parity.Bot;
+        case (Parity.Odd, Parity.Odd)     => ???: Parity;
+        case (Parity.Odd, Parity.Even)    => ???: Parity;
+        case (Parity.Even, Parity.Odd)    => ???: Parity;
+        case (Parity.Even, Parity.Even)   => ???: Parity;
+        case _                            => Parity.Top;
+     };
 
     // we can test whether a number may be zero:
     def isMaybeZero(e: Parity): Bool = match e with {

@@ -344,13 +344,12 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   /** *************************************************************************/
   /** Helpers                                                               ***/
   /** *************************************************************************/
-  // TODO: Can we get rid of these?
-  def ArgumentList: Rule1[Seq[(Name.Ident, ParsedAst.Type)]] = rule {
+  def ArgumentList: Rule1[Seq[ParsedAst.FormalArg]] = rule {
     zeroOrMore(Argument).separatedBy(optWS ~ "," ~ optWS)
   }
 
-  def Argument: Rule1[(Name.Ident, ParsedAst.Type)] = rule {
-    Ident ~ ":" ~ optWS ~ Type ~> ((name: Name.Ident, typ: ParsedAst.Type) => (name, typ))
+  def Argument: Rule1[ParsedAst.FormalArg] = rule {
+    Ident ~ ":" ~ optWS ~ Type ~> ParsedAst.FormalArg
   }
 
   /////////////////////////////////////////////////////////////////////////////

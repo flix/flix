@@ -73,7 +73,7 @@ object ParsedAst {
      * @param tpe the return type.
      * @param body the body expression of the function.
      */
-    case class Function(ident: Name.Ident, formals: Seq[(Name.Ident, ParsedAst.Type)], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Definition
+    case class Function(ident: Name.Ident, formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Definition
 
     /**
      * An AST node that represents a enum definition.
@@ -196,7 +196,7 @@ object ParsedAst {
      * @param tpe the return type.
      * @param body the body expression of the lambda.
      */
-    case class Lambda(formals: Seq[(Name.Ident, ParsedAst.Type)], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Lambda(formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
      * An AST node that represents unary expressions.
@@ -447,7 +447,13 @@ object ParsedAst {
   // TODO: Lattice notion
   case class Attribute(ident: Name.Ident, tpe: ParsedAst.Type) extends ParsedAst
 
-  // TODO: FormalARG?
+  /**
+   * An AST node representing a formal argument of a function.
+   *
+   * @param ident the name of the argument.
+   * @param tpe the type of the argument.
+   */
+  case class FormalArg(ident: Name.Ident, tpe: ParsedAst.Type) extends ParsedAst
 
   /**
    * An AST node that represent a trait.

@@ -184,7 +184,7 @@ object Resolver {
           case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.location, ident.location).toFailure
         }
 
-      case WeededAst.Definition.Lattice(ident, elms, traits) => syms.toSuccess // TODO
+      case WeededAst.Definition.Lattice(ident, elms) => syms.toSuccess // TODO
 
       case defn@WeededAst.Definition.Relation(ident, attributes) =>
         val rname = toRName(ident, namespace)
