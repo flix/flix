@@ -102,8 +102,11 @@ namespace ParityAnalysis {
     VarPointsTo(t1, plus(v2, v3): Parity) :- ParityAnalysis::SumOp(t1: Int, t2, t3), VarPointsTo(t2, v2), VarPointsTo(t3, v3).
 
     // alternative:
-    //VarPointsTo(t1, result) :- SumOp(t1, t2, t3), VarPointsTo(t2, v2), VarPointsTo(t3, v3),
-    //                           result := plus(v2, v3).
+    //VarPointsTo(t1, result) :- t1 != t2, // filter
+    //                           isMaybeOdd(v2), isMaybeOdd(v3), // filter
+    //                           SumOp(t1, t2, t3), VarPointsTo(t2, v2), VarPointsTo(t3, v3), // predicates
+    //                           // aggregates
+    //                           result := plus(v2, v3). // alias
 
 
 };
