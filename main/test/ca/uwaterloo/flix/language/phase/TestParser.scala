@@ -636,19 +636,19 @@ class TestParser extends FunSuite {
   test("Pattern.Literal01") {
     val input = "true"
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
-    assertResult(ParsedAst.Literal.Bool(SL, true))(result.literal)
+    assertResult(ParsedAst.Literal.Bool(SL, true))(result.lit)
   }
 
   test("Pattern.Literal02") {
     val input = "42"
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
-    assertResult(ParsedAst.Literal.Int(SL, 42))(result.literal)
+    assertResult(ParsedAst.Literal.Int(SL, 42))(result.lit)
   }
 
   test("Pattern.Literal03") {
     val input = "\"foo\""
     val result = new Parser(None, input).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
-    assertResult(ParsedAst.Literal.Str(SL, "foo"))(result.literal)
+    assertResult(ParsedAst.Literal.Str(SL, "foo"))(result.lit)
   }
 
   test("Pattern.Tag01") {

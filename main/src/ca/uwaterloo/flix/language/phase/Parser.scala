@@ -53,11 +53,11 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def ValueDefinition: Rule1[ParsedAst.Definition.Value] = rule {
-    atomic("val") ~ WS ~ Ident ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Definition.Value
+    SL ~ atomic("val") ~ WS ~ Ident ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Definition.Value
   }
 
   def FunctionDefinition: Rule1[ParsedAst.Definition.Function] = rule {
-    atomic("def") ~ WS ~ Ident ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Definition.Function
+    SL~ atomic("def") ~ WS ~ Ident ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Definition.Function
   }
 
   def EnumDefinition: Rule1[ParsedAst.Definition.Enum] = {
@@ -75,7 +75,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     }
 
     rule {
-      atomic("enum") ~ WS ~ Ident ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ optSC ~> ParsedAst.Definition.Enum
+      SL ~ atomic("enum") ~ WS ~ Ident ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ optSC ~> ParsedAst.Definition.Enum
     }
   }
 
@@ -89,7 +89,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     }
 
     rule {
-      atomic("lat") ~ optWS ~ "<" ~ Ident ~ ">" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ optWS ~ Traits ~ optSC ~> ParsedAst.Definition.Lattice
+      SL ~ atomic("lat") ~ optWS ~ "<" ~ Ident ~ ">" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ optWS ~ Traits ~ optSC ~> ParsedAst.Definition.Lattice
     }
   }
 
@@ -103,7 +103,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     }
 
     rule {
-      atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ optSC ~> ParsedAst.Definition.Relation
+      SL ~ atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ optSC ~> ParsedAst.Definition.Relation
     }
   }
 
@@ -229,23 +229,23 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def VariablePattern: Rule1[ParsedAst.Pattern.Var] = rule {
-    Ident ~> ParsedAst.Pattern.Var
+    SL ~ Ident ~> ParsedAst.Pattern.Var
   }
 
   def LiteralPattern: Rule1[ParsedAst.Pattern.Lit] = rule {
-    Literal ~> ParsedAst.Pattern.Lit
+    SL ~ Literal ~> ParsedAst.Pattern.Lit
   }
 
   def TagPattern: Rule1[ParsedAst.Pattern.Tag] = rule {
-    QName ~ "." ~ Ident ~ optWS ~ optional(Pattern) ~>
-      ((name: Name.Unresolved, ident: Name.Ident, pattern: Option[ParsedAst.Pattern]) => pattern match {
-        case None => ParsedAst.Pattern.Tag(name, ident, ParsedAst.Pattern.Lit(ParsedAst.Literal.Unit(ast.SourceLocation.Inferred)))
-        case Some(p) => ParsedAst.Pattern.Tag(name, ident, p)
+    SL ~ QName ~ "." ~ Ident ~ optWS ~ optional(Pattern) ~>
+      ((loc: SourceLocation, name: Name.Unresolved, ident: Name.Ident, pattern: Option[ParsedAst.Pattern]) => pattern match {
+        case None => ParsedAst.Pattern.Tag(loc, name, ident, ParsedAst.Pattern.Lit(loc, ParsedAst.Literal.Unit(loc)))
+        case Some(p) => ParsedAst.Pattern.Tag(loc, name, ident, p)
       })
   }
 
   def TuplePattern: Rule1[ParsedAst.Pattern.Tuple] = rule {
-    "(" ~ oneOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~> ParsedAst.Pattern.Tuple
+    SL ~ "(" ~ oneOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~> ParsedAst.Pattern.Tuple
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -260,7 +260,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~> ParsedAst.Predicate
+    SL ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~> ParsedAst.Predicate
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -284,19 +284,19 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def VariableTerm: Rule1[ParsedAst.Term.Var] = rule {
-    Ident ~> ParsedAst.Term.Var
+    SL ~ Ident ~> ParsedAst.Term.Var
   }
 
   def LiteralTerm: Rule1[ParsedAst.Term.Lit] = rule {
-    Literal ~> ParsedAst.Term.Lit
+    SL ~ Literal ~> ParsedAst.Term.Lit
   }
 
   def AscribeTerm: Rule1[ParsedAst.Term.Ascribe] = rule {
-    SimpleTerm ~ optWS ~ ":" ~ optWS ~ Type ~> ParsedAst.Term.Ascribe
+    SL ~ SimpleTerm ~ optWS ~ ":" ~ optWS ~ Type ~> ParsedAst.Term.Ascribe
   }
 
   def ApplyTerm: Rule1[ParsedAst.Term.Apply] = rule {
-    QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy("," ~ optWS) ~ ")" ~> ParsedAst.Term.Apply
+    SL ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy("," ~ optWS) ~ ")" ~> ParsedAst.Term.Apply
   }
 
   /////////////////////////////////////////////////////////////////////////////

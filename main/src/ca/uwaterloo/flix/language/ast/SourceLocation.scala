@@ -6,8 +6,8 @@ import java.nio.file.Path
  * Companion object for the [[SourceLocation]] class.
  */
 object SourceLocation {
+
   val Unknown = SourceLocation(None, 0, 0)
-  val Inferred = SourceLocation(None, 0, 0)
 
   val Test = SourceLocation(None, 1, 1)
 }

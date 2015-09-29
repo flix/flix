@@ -356,18 +356,18 @@ object Weeder {
 
       def visit(p: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = p match {
         case ParsedAst.Pattern.Wildcard(loc) => WeededAst.Pattern.Wildcard(loc).toSuccess
-        case ParsedAst.Pattern.Var(ident) => seen.get(ident.name) match {
+        case ParsedAst.Pattern.Var(loc, ident) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> ident)
             WeededAst.Pattern.Var(ident).toSuccess
           case Some(otherIdent) =>
             NonLinearPattern(ident.name, otherIdent.location, ident.location).toFailure
         }
-        case ParsedAst.Pattern.Lit(literal) => Literal.compile(literal) map WeededAst.Pattern.Lit
-        case ParsedAst.Pattern.Tag(enumName, tagName, ppat) => visit(ppat) map {
+        case ParsedAst.Pattern.Lit(loc, literal) => Literal.compile(literal) map WeededAst.Pattern.Lit
+        case ParsedAst.Pattern.Tag(loc, enumName, tagName, ppat) => visit(ppat) map {
           case pat => WeededAst.Pattern.Tag(enumName, tagName, pat)
         }
-        case ParsedAst.Pattern.Tuple(pelms) => @@(pelms map visit) map {
+        case ParsedAst.Pattern.Tuple(loc, pelms) => @@(pelms map visit) map {
           case elms => WeededAst.Pattern.Tuple(elms)
         }
       }
@@ -413,16 +413,16 @@ object Weeder {
        */
       def compile(past: ParsedAst.Term): Validation[WeededAst.TermWithApply, WeederError] = past match {
         case ParsedAst.Term.Wildcard(loc) => IllegalTerm("Wildcard variables not allowed in head terms.", loc).toFailure
-        case ParsedAst.Term.Var(ident) => WeededAst.TermWithApply.Var(ident).toSuccess
-        case ParsedAst.Term.Lit(literal) => Literal.compile(literal) map WeededAst.TermWithApply.Lit
+        case ParsedAst.Term.Var(loc, ident) => WeededAst.TermWithApply.Var(ident).toSuccess
+        case ParsedAst.Term.Lit(loc, literal) => Literal.compile(literal) map WeededAst.TermWithApply.Lit
 
         // TODO: Non-literal tag and tuple could be allowed here.
-        case ParsedAst.Term.Ascribe(pterm, ptpe) =>
+        case ParsedAst.Term.Ascribe(oc, pterm, ptpe) =>
           @@(compile(pterm), Type.compile(ptpe)) map {
             case (term, tpe) => WeededAst.TermWithApply.Ascribe(term, tpe)
           }
 
-        case ParsedAst.Term.Apply(name, pargs) =>
+        case ParsedAst.Term.Apply(loc, name, pargs) =>
           @@(pargs map compile) map {
             case args => WeededAst.TermWithApply.Apply(name, args)
           }
@@ -437,13 +437,13 @@ object Weeder {
        */
       def compile(past: ParsedAst.Term): Validation[WeededAst.TermNoApply, WeederError] = past match {
         case ParsedAst.Term.Wildcard(loc) => WeededAst.TermNoApply.Wildcard(loc).toSuccess
-        case ParsedAst.Term.Var(ident) => WeededAst.TermNoApply.Var(ident).toSuccess
-        case ParsedAst.Term.Lit(literal) => Literal.compile(literal) map WeededAst.TermNoApply.Lit
-        case ParsedAst.Term.Ascribe(pterm, ptpe) =>
+        case ParsedAst.Term.Var(loc, ident) => WeededAst.TermNoApply.Var(ident).toSuccess
+        case ParsedAst.Term.Lit(loc, literal) => Literal.compile(literal) map WeededAst.TermNoApply.Lit
+        case ParsedAst.Term.Ascribe(loc, pterm, ptpe) =>
           @@(compile(pterm), Type.compile(ptpe)) map {
             case (term, tpe) => WeededAst.TermNoApply.Ascribe(term, tpe)
           }
-        case ParsedAst.Term.Apply(name, args) => IllegalTerm("Function calls not allowed in body terms.", name.location).toFailure
+        case ParsedAst.Term.Apply(loc, name, args) => IllegalTerm("Function calls not allowed in body terms.", name.location).toFailure
       }
     }
 

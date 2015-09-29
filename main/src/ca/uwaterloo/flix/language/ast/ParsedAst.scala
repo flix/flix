@@ -59,46 +59,51 @@ object ParsedAst {
     /**
      * An AST node that represents a value definition.
      *
+     * @param loc the location.
      * @param ident the name of the value.
      * @param tpe the declared type of the value.
      * @param e the expression.
      */
-    case class Value(ident: Name.Ident, tpe: ParsedAst.Type, e: ParsedAst.Expression) extends ParsedAst.Definition
+    case class Value(loc: SourceLocation, ident: Name.Ident, tpe: ParsedAst.Type, e: ParsedAst.Expression) extends ParsedAst.Definition
 
     /**
      * An AST node that represents a function definition.
      *
+     * @param loc the location.
      * @param ident the name of the function.
      * @param formals the formals (i.e. parameters and their types).
      * @param tpe the return type.
      * @param body the body expression of the function.
      */
-    case class Function(ident: Name.Ident, formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Definition
+    case class Function(loc: SourceLocation, ident: Name.Ident, formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Definition
 
     /**
      * An AST node that represents a enum definition.
      *
+     * @param loc the location.
      * @param ident the name of the enum.
      * @param cases the variants of the enum.
      */
-    case class Enum(ident: Name.Ident, cases: Seq[ParsedAst.Type.Tag]) extends ParsedAst.Definition
+    case class Enum(loc: SourceLocation, ident: Name.Ident, cases: Seq[ParsedAst.Type.Tag]) extends ParsedAst.Definition
 
     /**
      * An AST node that represents a lattice definition.
      *
+     * @param loc the location.
      * @param ident the name of the lattice.
      * @param elms the components of the lattice (e.g. bot, leq, lub).
      * @param traits the traits of the lattice (e.g. Norm and Widening).
      */
-    case class Lattice(ident: Name.Ident, elms: Seq[ParsedAst.Expression], traits: Seq[ParsedAst.Trait]) extends ParsedAst.Definition
+    case class Lattice(loc: SourceLocation, ident: Name.Ident, elms: Seq[ParsedAst.Expression], traits: Seq[ParsedAst.Trait]) extends ParsedAst.Definition
 
     /**
      * An AST that represent a relation definition.
      *
+     * @param loc the location.
      * @param ident the name of the relation.
      * @param attributes the name and type of the attributes.
      */
-    case class Relation(ident: Name.Ident, attributes: Seq[ParsedAst.Attribute]) extends ParsedAst.Definition
+    case class Relation(loc: SourceLocation, ident: Name.Ident, attributes: Seq[ParsedAst.Attribute]) extends ParsedAst.Definition
 
   }
 
@@ -309,49 +314,54 @@ object ParsedAst {
     /**
      * An AST node that represents a wildcard pattern.
      *
-     * @param location the source location of the wildcard.
+     * @param loc the source location of the wildcard.
      */
-    case class Wildcard(location: SourceLocation) extends ParsedAst.Pattern
+    case class Wildcard(loc: SourceLocation) extends ParsedAst.Pattern
 
     /**
      * An AST node that represents a variable pattern.
      *
+     * @param loc the location.
      * @param ident the variable identifier.
      */
-    case class Var(ident: Name.Ident) extends ParsedAst.Pattern
+    case class Var(loc: SourceLocation, ident: Name.Ident) extends ParsedAst.Pattern
 
     /**
      * An AST node that represents a literal pattern.
      *
-     * @param literal the literal.
+     * @param loc the location.
+     * @param lit the literal.
      */
-    case class Lit(literal: ParsedAst.Literal) extends ParsedAst.Pattern
+    case class Lit(loc: SourceLocation, lit: ParsedAst.Literal) extends ParsedAst.Pattern
 
     /**
      * An AST node that represents a tagged pattern.
      *
+     * @param loc the location.
      * @param name the namespace of the enum.
      * @param ident the tag name.
      * @param p the nested pattern.
      */
-    case class Tag(name: Name.Unresolved, ident: Name.Ident, p: ParsedAst.Pattern) extends ParsedAst.Pattern
+    case class Tag(loc: SourceLocation, name: Name.Unresolved, ident: Name.Ident, p: ParsedAst.Pattern) extends ParsedAst.Pattern
 
     /**
      * An AST node that represents a tuple pattern.
      *
+     * @param loc the location.
      * @param elms the elements of the tuple.
      */
-    case class Tuple(elms: Seq[ParsedAst.Pattern]) extends ParsedAst.Pattern
+    case class Tuple(loc: SourceLocation, elms: Seq[ParsedAst.Pattern]) extends ParsedAst.Pattern
 
   }
 
   /**
    * An AST node that represent an unresolved predicate.
    *
+   * @param loc the location.
    * @param name the unresolved name of the predicate.
    * @param terms the terms of the predicate.
    */
-  case class Predicate(name: Name.Unresolved, terms: Seq[ParsedAst.Term]) extends ParsedAst
+  case class Predicate(loc: SourceLocation, name: Name.Unresolved, terms: Seq[ParsedAst.Term]) extends ParsedAst
 
   /**
    * AST nodes for Terms.
@@ -363,39 +373,43 @@ object ParsedAst {
     /**
      * An AST node that represent a wildcard variable term.
      *
-     * @param location the source location of the wildcard.
+     * @param loc the source location of the wildcard.
      */
-    case class Wildcard(location: SourceLocation) extends ParsedAst.Term
+    case class Wildcard(loc: SourceLocation) extends ParsedAst.Term
 
     /**
      * An AST node that represent a variable term.
      *
+     * @param loc the location.
      * @param ident the variable identifier.
      */
-    case class Var(ident: Name.Ident) extends ParsedAst.Term
+    case class Var(loc: SourceLocation, ident: Name.Ident) extends ParsedAst.Term
 
     /**
      * An AST node that represent a literal term.
      *
+     * @param loc the location.
      * @param literal the literal.
      */
-    case class Lit(literal: ParsedAst.Literal) extends ParsedAst.Term
+    case class Lit(loc: SourceLocation, literal: ParsedAst.Literal) extends ParsedAst.Term
 
     /**
      * An AST node that represents an ascribed term.
      *
+     * @param loc the location.
      * @param term the term.
      * @param tpe the type.
      */
-    case class Ascribe(term: ParsedAst.Term, tpe: ParsedAst.Type) extends ParsedAst.Term
+    case class Ascribe(loc: SourceLocation, term: ParsedAst.Term, tpe: ParsedAst.Type) extends ParsedAst.Term
 
     /**
      * An AST node that represent a function application term
      *
+     * @param loc the location.
      * @param name the unresolved name of the function.
      * @param args the arguments to the function.
      */
-    case class Apply(name: Name.Unresolved, args: Seq[ParsedAst.Term]) extends ParsedAst.Term
+    case class Apply(loc: SourceLocation, name: Name.Unresolved, args: Seq[ParsedAst.Term]) extends ParsedAst.Term
 
   }
 

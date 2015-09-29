@@ -12,7 +12,7 @@ class TestWeeder extends FunSuite {
   val Ident = Name.Ident("x", SourceLocation.Unknown)
 
   test("DuplicateAttribute01") {
-    val past = ParsedAst.Definition.Relation(Ident, Seq(
+    val past = ParsedAst.Definition.Relation(SL, Ident, Seq(
       ParsedAst.Attribute(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Attribute(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ))
@@ -22,7 +22,7 @@ class TestWeeder extends FunSuite {
   }
 
   test("DuplicateAttribute02") {
-    val past = ParsedAst.Definition.Relation(Ident, Seq(
+    val past = ParsedAst.Definition.Relation(SL, Ident, Seq(
       ParsedAst.Attribute(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Attribute(Name.Ident("y", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Attribute(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
@@ -34,7 +34,7 @@ class TestWeeder extends FunSuite {
   }
 
   test("DuplicateFormal01") {
-    val past = ParsedAst.Definition.Function(Ident, Seq(
+    val past = ParsedAst.Definition.Function(SL, Ident, Seq(
       ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SL, ParsedAst.Literal.Unit(SL)))
@@ -44,7 +44,7 @@ class TestWeeder extends FunSuite {
   }
 
   test("DuplicateFormal02") {
-    val past = ParsedAst.Definition.Function(Ident, Seq(
+    val past = ParsedAst.Definition.Function(SL, Ident, Seq(
       ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.FormalArg(Name.Ident("y", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
@@ -57,7 +57,7 @@ class TestWeeder extends FunSuite {
 
 
   test("DuplicateTag01") {
-    val past = ParsedAst.Definition.Enum(Ident, Seq(
+    val past = ParsedAst.Definition.Enum(SL, Ident, Seq(
       ParsedAst.Type.Tag(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Type.Tag(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
     ))
@@ -67,7 +67,7 @@ class TestWeeder extends FunSuite {
   }
 
   test("DuplicateTag02") {
-    val past = ParsedAst.Definition.Enum(Ident, Seq(
+    val past = ParsedAst.Definition.Enum(SL, Ident, Seq(
       ParsedAst.Type.Tag(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Type.Tag(Name.Ident("y", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Type.Tag(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
@@ -117,13 +117,13 @@ class TestWeeder extends FunSuite {
 
 
   test("Term.Heead") {
-    val past = ParsedAst.Term.Apply(Name.Unresolved(List("foo"), SourceLocation.Unknown), Seq.empty)
+    val past = ParsedAst.Term.Apply(SL, Name.Unresolved(List("foo"), SourceLocation.Unknown), Seq.empty)
     val result = Weeder.Term.Head.compile(past)
     assert(result.isSuccess)
   }
 
   test("Term.Body") {
-    val past = ParsedAst.Term.Apply(Name.Unresolved(List("foo"), SourceLocation.Unknown), Seq.empty)
+    val past = ParsedAst.Term.Apply(SL, Name.Unresolved(List("foo"), SourceLocation.Unknown), Seq.empty)
     val result = Weeder.Term.Body.compile(past)
     assert(result.isFailure)
   }
