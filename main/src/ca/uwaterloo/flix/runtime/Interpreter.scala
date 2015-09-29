@@ -1,21 +1,21 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.lang.ast.TypedAst.{Expression, Literal, Pattern, Type, FormalArg, Root}
-import ca.uwaterloo.flix.lang.ast.{ParsedAst, BinaryOperator, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Type, FormalArg, Root}
+import ca.uwaterloo.flix.language.ast.{Name, BinaryOperator, UnaryOperator}
 
 object Interpreter {
-  type Env = Map[ParsedAst.Ident, Value]
+  type Env = Map[Name.Ident, Value]
 
   def eval(expr: Expression, root: Root, env: Env = Map()): Value = {
     expr match {
       case Expression.Lit(literal, _) => evalLit(literal)
       case Expression.Var(ident, _) =>
-        assert(env.contains(ident), s"Expected variable ${ident.name} to be bound.")
+        assert(env.contains(ident), s"Expected variable ${ident.format} to be bound.")
         env(ident)
       case Expression.Ref(name, _) =>
-        assert(root.constants.contains(name), s"Expected constant ${name.parts.mkString(".")} to be defined.")
+        assert(root.constants.contains(name), s"Expected constant ${name.format} to be defined.")
         eval(root.constants(name).exp, root, env)
-      case Expression.Lambda(formals, _, body, _) => Value.Closure(formals, body, env)
+      case Expression.Lambda(formals, body, _) => Value.Closure(formals, body, env)
       case Expression.Apply(exp, args, _) => eval(exp, root, env) match {
           case Value.Closure(formals, body, closureEnv) =>
             val evalArgs = args.map(x => eval(x, root, env))
@@ -30,8 +30,7 @@ object Interpreter {
         if (cond) eval(exp2, root, env) else eval(exp3, root, env)
       case Expression.Let(ident, value, body, tpe) =>
         // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
-        val func = Expression.Lambda(List(FormalArg(ident, value.tpe)), tpe,
-          body, Type.Function(List(value.tpe), tpe))
+        val func = Expression.Lambda(List(FormalArg(ident, value.tpe)), body, Type.Function(List(value.tpe), tpe))
         val desugared = Expression.Apply(func, List(value), tpe)
         eval(desugared, root, env)
       case Expression.Match(exp, rules, _) =>
@@ -42,20 +41,20 @@ object Interpreter {
         }
       case Expression.Tag(name, ident, exp, _) => Value.Tag(name, ident.name, eval(exp, root, env))
       case Expression.Tuple(elms, _) => Value.Tuple(elms.map(e => eval(e, root, env)))
-      case Expression.Error(location, tpe) => location.path match {
-        case Some(path) => throw new RuntimeException(s"Error at $path:${location.line}:${location.column}.")
+      case Expression.Error(tpe, loc) => loc.path match {
+        case Some(path) => throw new RuntimeException(s"Error at $path:${loc.line}:${loc.column}.")
         case None => throw new RuntimeException("Error at unknown location.")
       }
     }
   }
 
   private def evalLit(lit: Literal): Value = lit match {
-    case Literal.Unit => Value.Unit
-    case Literal.Bool(b) => Value.Bool(b)
-    case Literal.Int(i) => Value.Int(i)
-    case Literal.Str(s) => Value.Str(s)
-    case Literal.Tag(name, ident, innerLit, _) => Value.Tag(name, ident.name, evalLit(innerLit))
-    case Literal.Tuple(elms, _) => Value.Tuple(elms.map(evalLit))
+    case Literal.Unit(_) => Value.Unit
+    case Literal.Bool(b, _) => Value.Bool(b)
+    case Literal.Int(i, _) => Value.Int(i)
+    case Literal.Str(s, _) => Value.Str(s)
+    case Literal.Tag(name, ident, innerLit, _, _) => Value.Tag(name, ident.name, evalLit(innerLit))
+    case Literal.Tuple(elms, _, _) => Value.Tuple(elms.map(evalLit))
   }
 
   private def evalUnary(op: UnaryOperator, v: Value): Value = op match {
@@ -78,10 +77,6 @@ object Interpreter {
     case BinaryOperator.NotEqual => Value.Bool(v1 != v2)
     case BinaryOperator.And => Value.Bool(v1.toBool && v2.toBool)
     case BinaryOperator.Or => Value.Bool(v1.toBool || v2.toBool)
-    case BinaryOperator.Minimum => Value.Int(math.min(v1.toInt, v2.toInt))
-    case BinaryOperator.Maximum => Value.Int(math.max(v1.toInt, v2.toInt))
-    case BinaryOperator.Union | BinaryOperator.Subset =>
-      assert(false, "Can't have union or subset operators."); Value.Unit
   }
 
   private def matchRule(rules: List[(Pattern, Expression)], value: Value): Option[(Expression, Env)] = rules match {
@@ -101,7 +96,7 @@ object Interpreter {
     case (Pattern.Tuple(pats, _), Value.Tuple(vals)) =>
       val envs = pats.zip(vals).map { case (p, v) => unify(p, v) }.collect { case Some(e) => e }
       if (pats.size == envs.size)
-        Some(envs.foldLeft(Map[ParsedAst.Ident, Value]()) { case (acc, newEnv) => acc ++ newEnv })
+        Some(envs.foldLeft(Map[Name.Ident, Value]()) { case (acc, newEnv) => acc ++ newEnv })
       else None
     case _ => None
   }

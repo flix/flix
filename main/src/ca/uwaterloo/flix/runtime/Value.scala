@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.lang.ast.{Name, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 
 sealed trait Value {
   def toBool: Boolean = {

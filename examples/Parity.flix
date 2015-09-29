@@ -24,7 +24,7 @@ namespace ParityAnalysis {
     def lub(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (Parity.Bot, _)              => e2;
         case (_, Parity.Bot)              => e1;
-        case (Parity.Odd, Parity.Odd)     => Odd;
+        case (Parity.Odd, Parity.Odd)     => Parity.Odd;
         case (Parity.Even, Parity.Even)   => Parity.Even;
         case _                            => Parity.Top;
     };
@@ -55,9 +55,9 @@ namespace ParityAnalysis {
     def times(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Parity.Bot)              => Parity.Bot;
         case (Parity.Bot, _)              => Parity.Bot;
-        case (Parity.Odd, Parity.Odd)     => Odd;
+        case (Parity.Odd, Parity.Odd)     => Parity.Odd;
         case (Parity.Odd, Parity.Even)    => Parity.Even;
-        case (Parity.Even, Parity.Odd)    => Parity.Even;
+        case (Parity.Even, Parity.Odd)    => ??? : Parity;
         case (Parity.Even, Parity.Even)   => Parity.Even;
         case _                            => Parity.Top;
     };
@@ -66,10 +66,10 @@ namespace ParityAnalysis {
      def divide(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Parity.Bot)              => Parity.Bot;
         case (Parity.Bot, _)              => Parity.Bot;
-        case (Parity.Odd, Parity.Odd)     => ???;
-        case (Parity.Odd, Parity.Even)    => ???;
-        case (Parity.Even, Parity.Odd)    => ???;
-        case (Parity.Even, Parity.Even)   => ???;
+        case (Parity.Odd, Parity.Odd)     => ???: Parity;
+        case (Parity.Odd, Parity.Even)    => ???: Parity;
+        case (Parity.Even, Parity.Odd)    => ???: Parity;
+        case (Parity.Even, Parity.Even)   => ???: Parity;
         case _                            => Parity.Top;
      };
 
@@ -89,19 +89,21 @@ namespace ParityAnalysis {
         case Parity.Top    => true;
     };
 
-    // we abstract integers into the parity domain by using modulo.
-    def lift(i: Int): Parity = if (i % 2 == 0) Even else Odd;
-
-// TODO: Allow expressions here.
     lat <Parity> (Bot, leq, ParityAnalysis::lub);
 
     rel SumOp(result: Int, left: Int, right: Int);
-    rel VarPointsTo(localVal: Int, value: <Parity>);
+//    rel VarPointsTo(localVal: Int, value: <Parity>); TODO
+    rel VarPointsTo(localVal: Int, value: Parity);
 
     SumOp(3, 1, 2).
     VarPointsTo(1, Parity.Odd).
     VarPointsTo(2, Parity.Even).
 
-    VarPointsTo(t1, plus(v2, v3)) :- ParityAnalysis::SumOp(t1, t2, t3), VarPointsTo(t2, v2), VarPointsTo(t3, v3).
+    VarPointsTo(t1, plus(v2, v3): Parity) :- ParityAnalysis::SumOp(t1: Int, t2, t3), VarPointsTo(t2, v2), VarPointsTo(t3, v3).
+
+    // alternative:
+    //VarPointsTo(t1, result) :- SumOp(t1, t2, t3), VarPointsTo(t2, v2), VarPointsTo(t3, v3),
+    //                           result := plus(v2, v3).
+
 
 };
