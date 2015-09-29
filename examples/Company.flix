@@ -1,9 +1,9 @@
 namespace Company {
-    rel Employee(name: String, department: String)
-    rel Intern(name: String, department: String, start: Int, end: Int)
-    rel Department(name: String, head: String)
-    rel Salary(employee: String, salary: Int)
-    rel Building(address: String, department: String)
+    rel Employee(name: Str, department: Str)
+    rel Intern(name: Str, department: Str, start: Int, end: Int)
+    rel Department(name: Str, head: Str)
+    rel Salary(employee: Str, salary: Int)
+    rel Building(address: Str, department: Str)
 
     Employee("Adam Smith", "Sales").
     Employee("Karl Marx", "Sales").
@@ -32,17 +32,17 @@ namespace Company {
     Building("1600 Pennsylvania Ave", "Administration").
     Building("321 1st St", "Operations").
 
-    rel HeadOfDepartment(name: String)
+    rel HeadOfDepartment(name: Str)
     HeadOfDepartment(x) :- Department(_, x).
 
-    rel Worker(name: String)
+    rel Worker(name: Str)
     Worker(x) :- Employee(x, _).
     Worker(x) :- Intern(x, _, _, _).
 
-    rel DepartmentHeadSalary(name: String, salary: Int)
+    rel DepartmentHeadSalary(name: Str, salary: Int)
     DepartmentHeadSalary(x, s) :- Department(_, x), Salary(x, s).
 
-    rel WorkerAddress(name: String, address: String)
+    rel WorkerAddress(name: Str, address: Str)
     WorkerAddress(name, address) :- Employee(name, dept), Building(address, dept).
     WorkerAddress(name, address) :- Intern(name, dept, _, _), Building(address, dept).
 
