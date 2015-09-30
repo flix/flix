@@ -3,19 +3,20 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation
-import Validation._
-
-// TODO: Check code coverage.
-// TODO: when to use inner visit?
-// TODO: use pattern match on rast
+import ca.uwaterloo.flix.util.Validation._
 
 object Typer {
 
+  // TODO: Check code coverage.
+  // TODO: when to use inner visit?
+  // TODO: use pattern match on rast
+
   import TypeError._
 
-  sealed trait TypeError {
-    def format: String
-  }
+  /**
+   * A common super-type for type errors.
+   */
+  sealed trait TypeError extends Compiler.CompilationError
 
   object TypeError {
 
@@ -24,19 +25,19 @@ object Typer {
     // TODOL Doc
 
     case class ExpectedType(expected: TypedAst.Type, actual: TypedAst.Type) extends TypeError {
-      val format = s"Type Error: Expected an expression of type '${expected.format}' but got: ${actual.format}.\n"
+      val format = s"Type Error: Expected an expression of type '${prettyPrint(expected)}' but got: ${prettyPrint(actual)}.\n"
     }
 
     case class ExpectedEqualTypes(tpe1: TypedAst.Type, tpe2: TypedAst.Type) extends TypeError {
-      val format = s"Type Error: Expected expressions of the same type, but got '${tpe1.format}' and ${tpe2.format}.\n"
+      val format = s"Type Error: Expected expressions of the same type, but got '${prettyPrint(tpe1)}' and ${prettyPrint(tpe2)}.\n"
     }
 
     case class IllegalPattern(pat: ResolvedAst.Pattern, tpe: TypedAst.Type) extends TypeError {
-      val format = s"Type Error: Pattern '${pat.format}' does not match expected type '${tpe.format}'.\n"
+      val format = s"Type Error: Pattern '${pat.format}' does not match expected type '${prettyPrint(tpe)}'.\n"
     }
 
     case class IllegalApply(tpe: TypedAst.Type) extends TypeError {
-      val format = s"Type Error: Expected function, but expression has type '${tpe.format}'.\n"
+      val format = s"Type Error: Expected function, but expression has type '${prettyPrint(tpe)}'.\n"
 
     }
 
@@ -534,6 +535,26 @@ object Typer {
       val tpe2 = types.find(t => t != tpe1).get
       ExpectedEqualTypes(tpe1, tpe2).toFailure
     }
+  }
+
+  /**
+   * Returns a human readable string representation of the given type `tpe`.
+   */
+  private def prettyPrint(tpe: TypedAst.Type): String = tpe match {
+    case TypedAst.Type.Unit => s"()"
+    case TypedAst.Type.Bool => s"Bool"
+    case TypedAst.Type.Int => s"Int"
+    case TypedAst.Type.Str => s"Str"
+    case TypedAst.Type.Tag(enumName, tagName, t) =>
+      val enumAndTag = enumName.parts.mkString("::") + "." + tagName.name
+      val nested = s"(${prettyPrint(tpe)}})"
+      enumAndTag + nested
+    case TypedAst.Type.Enum(cases) =>
+      s"Enum(${cases.head._2.name.format})"
+    case TypedAst.Type.Tuple(elms) => "(" + elms.map(prettyPrint).mkString(", ") + ")"
+    case TypedAst.Type.Function(args, retTpe) =>
+      "(" + args.map(prettyPrint).mkString(", ") + ") -> " + prettyPrint(retTpe)
+    case TypedAst.Type.Predicate(terms) => s"Predicate(${terms map prettyPrint})"
   }
 
 }

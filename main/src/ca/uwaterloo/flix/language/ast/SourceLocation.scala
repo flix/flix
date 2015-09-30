@@ -29,4 +29,5 @@ case class SourceLocation(path: Option[Path], line: Int, column: Int) {
   }
 }
 
-// TODO: Consider source locations which have an end point.
+// TODO: Consider lineBegin, columnBegin, lineEnd, columnEnd
+

@@ -25,6 +25,17 @@ import scala.util.{Failure, Success}
 object Compiler {
 
   /**
+   * A common super-type for compilation errors.
+   */
+  trait CompilationError {
+    /**
+     * Returns a human readable string representation of the error.
+     */
+    def format: String
+  }
+
+
+  /**
    * An exception thrown to indicate an internal compiler error.
    *
    * This exception should never be thrown, if the compiler is correctly implemented.
