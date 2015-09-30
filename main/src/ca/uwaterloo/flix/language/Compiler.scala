@@ -83,6 +83,8 @@ object Compiler {
 
   // TODO: Would it be possible to implement a "compile expression" thing?
 
+  def compile(path: Path): Option[TypedAst.Root] = compile(List(path))
+
   /**
    * Applies the compiler to all the given source `paths`.
    */
