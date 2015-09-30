@@ -13,6 +13,6 @@ object Optimizer {
   // - Apply partial evaluation to everything.
   // - Finally, compile to JVM bytecode.
 
-  def optimize(tast: TypedAst.Root): TypedAst.Root = ???
+  def optimize(tast: TypedAst.Root): TypedAst.Root = throw new UnsupportedOperationException()
 
 }

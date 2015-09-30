@@ -468,16 +468,16 @@ object Typer {
         // Instead we should focus on the type of the constant, which should be Function.
 
         constant.exp match {
-          case ResolvedAst.Expression.Lambda(formals, retTpe, _, loc) =>
+          case ResolvedAst.Expression.Lambda(formals, retTpe, _, loc2) =>
             // type arguments with the declared formals.
             val argsVal = (actuals zip formals) map {
               case (term, ResolvedAst.FormalArg(_, termType)) => Term.typer(term, Type.typer(termType), root)
             }
             // put everything together and check the return type.
-            @@(@@(argsVal), expect(tpe, Type.typer(retTpe), loc)) map {
-              case (args, returnType) => TypedAst.Term.Head.Apply(name, args, returnType, loc)
+            @@(@@(argsVal), expect(tpe, Type.typer(retTpe), loc2)) map {
+              case (args, returnType) => TypedAst.Term.Head.Apply(name, args, returnType, loc2)
             }
-          case _ => ??? // TODO non-function call.
+          case _ => IllegalApply(Type.typer(constant.tpe), loc).toFailure
         }
     }
 

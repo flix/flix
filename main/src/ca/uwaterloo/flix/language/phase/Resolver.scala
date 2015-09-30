@@ -296,6 +296,10 @@ object Resolver {
      */
     def resolve(wast: WeededAst.Expression, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Expression, ResolverError] = {
       def visit(wast: WeededAst.Expression, locals: Set[String]): Validation[ResolvedAst.Expression, ResolverError] = wast match {
+        case WeededAst.Expression.Lit(wlit, loc) => Literal.resolve(wlit, namespace, syms) map {
+          case lit => ResolvedAst.Expression.Lit(lit, loc)
+        }
+
         // TODO: Rewrite this ....
         case WeededAst.Expression.Var(name, loc) => name.parts match {
           case Seq(x) =>
@@ -308,12 +312,15 @@ object Resolver {
           }
         }
 
-        case WeededAst.Expression.Apply(lambda, args, loc) =>
-          ??? // TODO
+        case WeededAst.Expression.Apply(wlambda, wargs, loc) =>
+          val lambdaVal = visit(wlambda, locals)
+          val argsVal = @@(wargs map {
+            case actual => visit(actual, locals)
+          })
 
-        case WeededAst.Expression.Lit(wlit, loc) => Literal.resolve(wlit, namespace, syms) map {
-          case lit => ResolvedAst.Expression.Lit(lit, loc)
-        }
+          @@(lambdaVal, argsVal) map {
+            case (lambda, args) => ResolvedAst.Expression.Apply(lambda, args, loc)
+          }
 
         case WeededAst.Expression.Lambda(wformals, wbody, wtype, loc) =>
           val formalsVal = @@(wformals map {
