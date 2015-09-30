@@ -7,8 +7,6 @@ import scala.collection.immutable.Seq
  */
 sealed trait ParsedAst
 
-// TODO: Add source locations everywhere.
-
 object ParsedAst {
 
   /**

@@ -6,14 +6,6 @@ class TestTypedAst extends FunSuite {
 
   val SL = SourceLocation.Test
 
-  ignore("Predicate.Head.Variables") {
-    ??? // TODO
-  }
-
-  ignore("Predicate.Body.Variables") {
-    ??? // TODO
-  }
-
   test("Pattern.Bound") {
     val x = Name.Ident("x", SourceLocation.Unknown)
     val y = Name.Ident("y", SourceLocation.Unknown)

@@ -41,9 +41,9 @@ namespace University {
     Salary(name,     0) :- Student(name, _, _, _, _).
     Salary(name, 50000) :- Faculty(name, _, AcademicRank.PostDoc).
     Salary(name, 60000) :- Staff(name, _).
-    Salary(name, 70000) :- Faculty(name, AcademicRank.AssistantProf).
-    Salary(name, 80000) :- Faculty(name, AcademicRank.AssociateProf).
-    Salary(name, 90000) :- Faculty(name, AcademicRank.FullProf).
+    Salary(name, 70000) :- Faculty(name, _, AcademicRank.AssistantProf).
+    Salary(name, 80000) :- Faculty(name, _, AcademicRank.AssociateProf).
+    Salary(name, 90000) :- Faculty(name, _, AcademicRank.FullProf).
 
     rel Department(name: Str);
     Department("Biology").

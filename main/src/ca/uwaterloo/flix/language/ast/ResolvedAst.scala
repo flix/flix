@@ -128,16 +128,7 @@ object ResolvedAst {
    * A common super-type for resolved patterns.
    */
   sealed trait Pattern extends ResolvedAst {
-    // TODO: Move somewhere else?
-    final def format: String = this match {
-      case ResolvedAst.Pattern.Wildcard(loc) => "_"
-      case ResolvedAst.Pattern.Var(Name.Ident(name, _), loc) => name
-      case ResolvedAst.Pattern.Lit(lit, loc) => lit.toString
-      case ResolvedAst.Pattern.Tag(enumName, tagName, pat, loc) =>
-        enumName.format + "." + tagName.name + "(" + pat.format + ")"
-      case ResolvedAst.Pattern.Tuple(elms, loc) =>
-        "(" + elms.map(_.format).mkString(", ") + ")"
-    }
+
   }
 
   object Pattern {

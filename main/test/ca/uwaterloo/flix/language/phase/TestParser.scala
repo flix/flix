@@ -168,35 +168,36 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
-  ignore("Parser.Definition.CompleteLattice01") {
-    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb)"
-    val result = new Parser(None, input).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
-  }
-
-  ignore("Parser.Definition.CompleteLattice02") {
-    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb) with Norm(b)"
-    val result = new Parser(None, input).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
-  }
-
-  ignore("Parser.Definition.CompleteLattice03") {
-    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb) with Widen(b)"
-    val result = new Parser(None, input).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
-  }
-
-  ignore("Parser.Definition.CompleteLattice04") {
-    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb) with Norm(b) with Widen(c)"
-    val result = new Parser(None, input).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
-  }
-
-  ignore("Parser.Definition.CompleteLattice05") {
-    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb) with Norm(foo::b) with Widen(foo::c)"
-    val result = new Parser(None, input).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
-  }
+  // TODO
+  //  ignore("Parser.Definition.CompleteLattice01") {
+  //    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb)"
+  //    val result = new Parser(None, input).Definition.run().get
+  //    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
+  //  }
+  //
+  //  ignore("Parser.Definition.CompleteLattice02") {
+  //    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb) with Norm(b)"
+  //    val result = new Parser(None, input).Definition.run().get
+  //    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
+  //  }
+  //
+  //  ignore("Parser.Definition.CompleteLattice03") {
+  //    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb) with Widen(b)"
+  //    val result = new Parser(None, input).Definition.run().get
+  //    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
+  //  }
+  //
+  //  ignore("Parser.Definition.CompleteLattice04") {
+  //    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb) with Norm(b) with Widen(c)"
+  //    val result = new Parser(None, input).Definition.run().get
+  //    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
+  //  }
+  //
+  //  ignore("Parser.Definition.CompleteLattice05") {
+  //    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb) with Norm(foo::b) with Widen(foo::c)"
+  //    val result = new Parser(None, input).Definition.run().get
+  //    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
+  //  }
 
   test("Definition.Relation01") {
     val input = "rel A(b: B)"

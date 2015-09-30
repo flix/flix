@@ -411,7 +411,6 @@ class TestTyper extends FunSuite {
       args = List(ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL)), SL)
 
     val result = Typer.Expression.typer(rast, Root)
-    println(result)
     assertResult(TypedAst.Type.Unit)(result.get.tpe)
   }
 
@@ -461,54 +460,6 @@ class TestTyper extends FunSuite {
         ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo", SL), SL),
         ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL),
         ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
-      ), SL)
-
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
-  }
-
-  // TODO: Check here or in resolver?
-  ignore("Expression.Apply.TypeError.TooFewArguments") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
-    val y = Name.Ident("y", SourceLocation.Unknown)
-    val z = Name.Ident("z", SourceLocation.Unknown)
-
-    val rast = ResolvedAst.Expression.Apply(
-      lambda =
-        ResolvedAst.Expression.Lambda(
-          formals = List(
-            ResolvedAst.FormalArg(x, ResolvedAst.Type.Bool),
-            ResolvedAst.FormalArg(y, ResolvedAst.Type.Int),
-            ResolvedAst.FormalArg(z, ResolvedAst.Type.Str)
-          ),
-          retTpe = ResolvedAst.Type.Int,
-          body = ResolvedAst.Expression.Var(y, SL)
-          , SL),
-      args = List(
-        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
-      ), SL)
-
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
-  }
-
-  // TODO: Check here or in resolver?
-  ignore("Expression.Apply.TypeError.TooManyArguments.") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
-
-    val rast = ResolvedAst.Expression.Apply(
-      lambda =
-        ResolvedAst.Expression.Lambda(
-          formals = List(
-            ResolvedAst.FormalArg(x, ResolvedAst.Type.Bool)
-          ),
-          retTpe = ResolvedAst.Type.Bool,
-          body = ResolvedAst.Expression.Var(x, SL)
-          , SL),
-      args = List(
-        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
-        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL),
-        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo", SL), SL)
       ), SL)
 
     val result = Typer.Expression.typer(rast, Root)

@@ -60,7 +60,7 @@ object Typer {
      * @param loc the source location.
      */
     case class IllegalPattern(pat: ResolvedAst.Pattern, tpe: TypedAst.Type, loc: SourceLocation) extends TypeError {
-      val format = s"Type Error: Pattern '${pat.format}' does not match expected type '${prettyPrint(tpe)}' at ${loc.format}.\n"
+      val format = s"Type Error: Pattern '${prettyPrint(pat)}' does not match expected type '${prettyPrint(tpe)}' at ${loc.format}.\n"
     }
 
     // TODO: Check arity of function calls, predicates, etc.
@@ -584,4 +584,13 @@ object Typer {
     case TypedAst.Type.Predicate(terms) => s"Predicate(${terms map prettyPrint})"
   }
 
+  private def prettyPrint(pat: ResolvedAst.Pattern): String = pat match {
+    case ResolvedAst.Pattern.Wildcard(loc) => "_"
+    case ResolvedAst.Pattern.Var(Name.Ident(name, _), loc) => name
+    case ResolvedAst.Pattern.Lit(lit, loc) => lit.toString
+    case ResolvedAst.Pattern.Tag(enumName, tagName, pat, loc) =>
+      enumName.format + "." + tagName.name + "(" + prettyPrint(pat) + ")"
+    case ResolvedAst.Pattern.Tuple(elms, loc) =>
+      "(" + elms.map(prettyPrint).mkString(", ") + ")"
+  }
 }

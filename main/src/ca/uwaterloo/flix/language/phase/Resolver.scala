@@ -364,7 +364,7 @@ object Resolver {
           val e2 = visit(we, locals)
           val rules2 = wrules map {
             case (rulePat, ruleBody) =>
-              val bound = locals ++ rulePat.bound
+              val bound = locals ++ rulePat.freeVars
               @@(Pattern.resolve(rulePat, namespace, syms), visit(ruleBody, bound))
           }
           @@(e2, @@(rules2)) map {

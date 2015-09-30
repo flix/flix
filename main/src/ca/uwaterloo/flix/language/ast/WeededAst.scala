@@ -26,6 +26,7 @@ object WeededAst {
 
     case class Enum(ident: Name.Ident, cases: Map[String, WeededAst.Type.Tag], loc: SourceLocation) extends WeededAst.Definition
 
+    // TODO split the elms
     case class Lattice(ident: Name.Ident, elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Definition
 
     case class Relation(ident: Name.Ident, attributes: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Definition
@@ -87,15 +88,15 @@ object WeededAst {
     def loc: SourceLocation
 
     /**
-     * Returns the set of variables bound by this pattern.
+     * Returns the set of free variables in `this` pattern.
      */
-    final def bound: Set[String] = this match {
+    final def freeVars: Set[String] = this match {
       case WeededAst.Pattern.Wildcard(_) => Set.empty
       case WeededAst.Pattern.Var(ident, loc) => Set(ident.name)
       case WeededAst.Pattern.Lit(lit, loc) => Set.empty
-      case WeededAst.Pattern.Tag(_name, ident, p, loc) => p.bound
+      case WeededAst.Pattern.Tag(_name, ident, p, loc) => p.freeVars
       case WeededAst.Pattern.Tuple(elms, loc) => elms.foldLeft(Set.empty[String]) {
-        case (acc, pat) => acc ++ pat.bound
+        case (acc, pat) => acc ++ pat.freeVars
       }
     }
   }
