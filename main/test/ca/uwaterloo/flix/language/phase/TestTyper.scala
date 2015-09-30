@@ -865,7 +865,7 @@ class TestTyper extends FunSuite {
     val rast = ResolvedAst.Pattern.Var(x, SL)
     val tpe = TypedAst.Type.Bool
     val result = Typer.Pattern.typer(rast, tpe, Root)
-    assertResult(tpe)(result.get.bound(x.name))
+    assertResult(tpe)(result.get.freeVars(x.name))
   }
 
   test("Pattern.Variable02") {
@@ -873,7 +873,7 @@ class TestTyper extends FunSuite {
     val rast = ResolvedAst.Pattern.Var(x, SL)
     val tpe = TypedAst.Type.Tuple(List(TypedAst.Type.Bool))
     val result = Typer.Pattern.typer(rast, tpe, Root)
-    assertResult(tpe)(result.get.bound(x.name))
+    assertResult(tpe)(result.get.freeVars(x.name))
   }
 
   test("Pattern.Variable03") {
@@ -901,7 +901,7 @@ class TestTyper extends FunSuite {
     val rast = ResolvedAst.Pattern.Tag(RName, tagName, ResolvedAst.Pattern.Var(x, SL), SL)
     val tpe = TypedAst.Type.Enum(Map("Qux" -> TypedAst.Type.Tag(RName, tagName, TypedAst.Type.Unit)))
     val result = Typer.Pattern.typer(rast, tpe, Root)
-    assertResult(TypedAst.Type.Unit)(result.get.bound(x.name))
+    assertResult(TypedAst.Type.Unit)(result.get.freeVars(x.name))
   }
 
   test("Pattern.Tuple01") {

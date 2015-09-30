@@ -26,7 +26,7 @@ class TestTypedAst extends FunSuite {
     assertResult(Map(
       "x" -> TypedAst.Type.Bool,
       "y" -> TypedAst.Type.Int
-    ))(pat.bound)
+    ))(pat.freeVars)
   }
 
 }

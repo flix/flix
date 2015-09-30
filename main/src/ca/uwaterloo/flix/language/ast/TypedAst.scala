@@ -1,7 +1,5 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.Compiler
-
 /**
  * A common super-type for typed AST nodes.
  */
@@ -22,9 +20,7 @@ object TypedAst {
                   lattices: Map[TypedAst.Type, TypedAst.Definition.Lattice],
                   relations: Map[Name.Resolved, TypedAst.Definition.Relation],
                   facts: List[TypedAst.Constraint.Fact],
-                  rules: List[TypedAst.Constraint.Rule]) extends TypedAst {
-
-  }
+                  rules: List[TypedAst.Constraint.Rule]) extends TypedAst
 
   /**
    * A common super-type for typed definitions.
@@ -61,16 +57,7 @@ object TypedAst {
      * @param attributes the attributes (columns) of the relation.
      * @param loc the source location.
      */
-    case class Relation(name: Name.Resolved, attributes: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Definition {
-      /**
-       * Returns the attribute with the given `name`.
-       */
-      def attribute(attribute: String): TypedAst.Attribute = attributes find {
-        case TypedAst.Attribute(ident, tpe) => ident.name == attribute
-      } getOrElse {
-        throw Compiler.InternalCompilerError(s"Attribute '$name' does not exist.")
-      }
-    }
+    case class Relation(name: Name.Resolved, attributes: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Definition
 
   }
 
@@ -263,22 +250,22 @@ object TypedAst {
      *
      * @param exp1 the conditional expression.
      * @param exp2 the consequent expression.
-     * @param e3 the alternative expression.
+     * @param exp3 the alternative expression.
      * @param tpe the type of the consequent and alternative expressions.
      * @param loc the source location.
      */
-    case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, e3: TypedAst.Expression, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a let expression.
      *
      * @param ident the name of the bound variable.
-     * @param value the value of the bound variable.
-     * @param body the body expression in which the bound variable is visible.
+     * @param exp1 the value of the bound variable.
+     * @param exp2 the body expression in which the bound variable is visible.
      * @param tpe the type of the expression (which is equivalent to the type of the body expression).
      * @param loc the source location.
      */
-    case class Let(ident: Name.Ident, value: TypedAst.Expression, body: TypedAst.Expression, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Let(ident: Name.Ident, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a match expression.
@@ -335,9 +322,9 @@ object TypedAst {
     def loc: SourceLocation
 
     /**
-     * Returns the bound variables (and their types).
+     * Returns the free variables (along with their types) in `this` pattern.
      */
-    def bound: Map[String, TypedAst.Type] = {
+    def freeVars: Map[String, TypedAst.Type] = {
       def visit(pat: TypedAst.Pattern, m: Map[String, TypedAst.Type]): Map[String, TypedAst.Type] =
         pat match {
           case TypedAst.Pattern.Wildcard(_, _) => m

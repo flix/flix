@@ -298,7 +298,7 @@ object Typer {
                   // type the pattern of the rule against the type of the match value.
                   Pattern.typer(pat, matchValue.tpe, root) flatMap {
                     // type the body of the rule under the extended environment provided by the pattern.
-                    case typedPat => visit(body, env ++ typedPat.bound) map {
+                    case typedPat => visit(body, env ++ typedPat.freeVars) map {
                       case typedBody => (typedPat, typedBody)
                     }
                   }
