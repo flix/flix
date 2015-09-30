@@ -7,7 +7,6 @@ import ca.uwaterloo.flix.util.Validation._
 
 object Typer {
 
-  // TODO: Check code coverage.
   // TODO: when to use inner visit?
   // TODO: use pattern match on rast
 
@@ -20,10 +19,6 @@ object Typer {
 
   object TypeError {
 
-    // TODO: Arity Error.
-    // TODO: Currently we are a bit lacking for source locations here.
-    // TODOL Doc
-
     /**
      * An error raised to indicate a type mismatch between an `expected` and an `actual` type.
      *
@@ -35,8 +30,15 @@ object Typer {
       val format = s"Type Error: The type '${prettyPrint(expected)}' was expected but the actual type is '${prettyPrint(actual)}' at ${loc.format}.\n"
     }
 
-
-    case class ExpectedEqualTypes(tpe1: TypedAst.Type, tpe2: TypedAst.Type) extends TypeError {
+    /**
+     * An error raised to indicate that the two given types `tpe1` and `tpe2` were expected to be equal.
+     *
+     * @param tpe1 the first type.
+     * @param tpe2 the second type.
+     * @param loc1 the source location of the first type.
+     * @param loc2 the source location of the second type.
+     */
+    case class ExpectedEqualTypes(tpe1: TypedAst.Type, tpe2: TypedAst.Type, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
       val format = s"Type Error: Expected expressions of the same type, but got '${prettyPrint(tpe1)}' and ${prettyPrint(tpe2)}.\n"
     }
 
@@ -60,6 +62,8 @@ object Typer {
     case class IllegalPattern(pat: ResolvedAst.Pattern, tpe: TypedAst.Type, loc: SourceLocation) extends TypeError {
       val format = s"Type Error: Pattern '${pat.format}' does not match expected type '${prettyPrint(tpe)}' at ${loc.format}.\n"
     }
+
+    // TODO: Check arity of function calls, predicates, etc.
 
   }
 
@@ -280,7 +284,7 @@ object Typer {
             }
           case _: EqualityOperator =>
             @@(visit(re1, env), visit(re2, env)) flatMap {
-              case (e1, e2) => expectEqual(e1.tpe, e2.tpe) map {
+              case (e1, e2) => expectEqual(e1.tpe, e2.tpe, e1.loc, e2.loc) map {
                 case tpe => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Bool, loc)
               }
             }
@@ -296,7 +300,7 @@ object Typer {
           @@(visit(re1, env), visit(re2, env), visit(re3, env)) flatMap {
             case (e1, e2, e3) =>
               val conditionType = expect(TypedAst.Type.Bool, e1.tpe, e1.loc)
-              val expressionType = expectEqual(e2.tpe, e3.tpe)
+              val expressionType = expectEqual(e2.tpe, e3.tpe, e2.loc, e3.loc)
               #@(conditionType, expressionType) map {
                 case tpe => TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc)
               }
@@ -326,7 +330,7 @@ object Typer {
               @@(rulesVal) flatMap {
                 case rules =>
                   // ensure that the body of every rule has the same type.
-                  expectEqual(rules.map(_._2.tpe)) map {
+                  expectEqual(rules.map(p => (p._2.tpe, p._2.loc))) map {
                     case tpe => TypedAst.Expression.Match(matchValue, rules, tpe, loc)
                   }
               }
@@ -537,24 +541,26 @@ object Typer {
    *
    * @param tpe1 the first type.
    * @param tpe2 the second type.
+   * @param loc1 the source location of the first type.
+   * @param loc2 the source location of the second type.
    */
-  def expectEqual(tpe1: TypedAst.Type, tpe2: TypedAst.Type): Validation[TypedAst.Type, TypeError] =
+  def expectEqual(tpe1: TypedAst.Type, tpe2: TypedAst.Type, loc1: SourceLocation, loc2: SourceLocation): Validation[TypedAst.Type, TypeError] =
     if (tpe1 == tpe2)
       tpe1.toSuccess
     else
-      ExpectedEqualTypes(tpe1, tpe2).toFailure
+      ExpectedEqualTypes(tpe1, tpe2, loc1, loc2).toFailure
 
   /**
    * Returns a type wrapped in [[Success]] if all the given `types` are equal.
    */
-  def expectEqual(types: List[TypedAst.Type]): Validation[TypedAst.Type, TypeError] = {
+  def expectEqual(types: List[(TypedAst.Type, SourceLocation)]): Validation[TypedAst.Type, TypeError] = {
     assert(types.nonEmpty)
-    val tpe1 = types.head
-    if (types.forall(t => t == tpe1)) {
+    val (tpe1, loc1) = types.head
+    if (types.forall(t => t._1 == tpe1)) {
       tpe1.toSuccess
     } else {
-      val tpe2 = types.find(t => t != tpe1).get
-      ExpectedEqualTypes(tpe1, tpe2).toFailure
+      val (tpe2, loc2) = types.find(t => t._1 != tpe1).get
+      ExpectedEqualTypes(tpe1, tpe2, loc1, loc2).toFailure
     }
   }
 
