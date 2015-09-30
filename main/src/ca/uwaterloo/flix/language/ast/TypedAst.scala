@@ -212,7 +212,7 @@ object TypedAst {
      * @param tpe the type of the entire function.
      * @param loc the source location.
      */
-    case class Lambda(args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: TypedAst.Type.Function, loc: SourceLocation) extends TypedAst.Expression
+    case class Lambda(args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: TypedAst.Type.Lambda, loc: SourceLocation) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a function call.
@@ -573,7 +573,7 @@ object TypedAst {
      * @param args the type of the arguments.
      * @param retTpe the type of the return type.
      */
-    case class Function(args: List[TypedAst.Type], retTpe: TypedAst.Type) extends TypedAst.Type
+    case class Lambda(args: List[TypedAst.Type], retTpe: TypedAst.Type) extends TypedAst.Type
 
     /**
      * An AST node representing a predicate type.

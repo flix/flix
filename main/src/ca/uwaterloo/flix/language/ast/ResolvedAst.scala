@@ -88,7 +88,9 @@ object ResolvedAst {
 
   }
 
-  sealed trait Expression extends Definition
+  sealed trait Expression extends Definition {
+    def loc: SourceLocation
+  }
 
   object Expression {
 

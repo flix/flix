@@ -34,11 +34,10 @@ object Compiler {
     def format: String
   }
 
-
   /**
    * An exception thrown to indicate an internal compiler error.
    *
-   * This exception should never be thrown, if the compiler is correctly implemented.
+   * This exception should never be thrown if the compiler is implemented correctly.
    *
    * @param message the error message.
    */

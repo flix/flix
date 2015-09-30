@@ -60,7 +60,7 @@ class TestTyper extends FunSuite {
     val rast = ResolvedAst.Definition.Constant(RName, exp, tpe, SL)
 
     val result = Typer.Definition.typer(rast, Root)
-    val expectedType = TypedAst.Type.Function(List(TypedAst.Type.Unit), TypedAst.Type.Unit)
+    val expectedType = TypedAst.Type.Lambda(List(TypedAst.Type.Unit), TypedAst.Type.Unit)
     assertResult(expectedType)(result.get.tpe)
   }
 
@@ -76,7 +76,7 @@ class TestTyper extends FunSuite {
     val rast = ResolvedAst.Definition.Constant(RName, exp, tpe, SL)
 
     val result = Typer.Definition.typer(rast, Root)
-    val expectedType = TypedAst.Type.Function(List(TypedAst.Type.Int), TypedAst.Type.Int)
+    val expectedType = TypedAst.Type.Lambda(List(TypedAst.Type.Int), TypedAst.Type.Int)
     assertResult(expectedType)(result.get.tpe)
   }
 
@@ -345,7 +345,7 @@ class TestTyper extends FunSuite {
       body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL)
       , SL)
 
-    val expectedType = TypedAst.Type.Function(List(TypedAst.Type.Int), TypedAst.Type.Unit)
+    val expectedType = TypedAst.Type.Lambda(List(TypedAst.Type.Int), TypedAst.Type.Unit)
     val actualType = Typer.Expression.typer(rast, Root).get.tpe
     assertResult(expectedType)(actualType)
   }
@@ -367,7 +367,7 @@ class TestTyper extends FunSuite {
       body = ResolvedAst.Expression.Var(w, SL)
       , SL)
 
-    val expectedType = TypedAst.Type.Function(
+    val expectedType = TypedAst.Type.Lambda(
       args = List(
         TypedAst.Type.Unit,
         TypedAst.Type.Bool,
@@ -1126,7 +1126,7 @@ class TestTyper extends FunSuite {
 
   test("Type.Function") {
     val rast = ResolvedAst.Type.Function(List(ResolvedAst.Type.Bool, ResolvedAst.Type.Int), ResolvedAst.Type.Str)
-    val tast = TypedAst.Type.Function(List(TypedAst.Type.Bool, TypedAst.Type.Int), TypedAst.Type.Str)
+    val tast = TypedAst.Type.Lambda(List(TypedAst.Type.Bool, TypedAst.Type.Int), TypedAst.Type.Str)
 
     val result = Typer.Type.typer(rast)
     assertResult(tast)(result)

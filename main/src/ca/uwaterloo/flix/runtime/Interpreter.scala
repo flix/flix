@@ -6,12 +6,25 @@ import ca.uwaterloo.flix.language.ast.{Name, BinaryOperator, UnaryOperator}
 object Interpreter {
   type Env = Map[Name.Ident, Value]
 
+  // TODO: Use this exception:
+
+  /**
+   * An exception thrown to indicate an internal runtime error.
+   *
+   * This exception should never be thrown if the compiler and runtime is implemented correctly.
+   *
+   * @param message the error message.
+   */
+  case class InternalCompilerError(message: String) extends RuntimeException(message)
+
+
   def eval(expr: Expression, root: Root, env: Env = Map()): Value = {
     expr match {
       case Expression.Lit(literal, _, _) => evalLit(literal)
-      case Expression.Var(ident, _, _) =>
-        assert(env.contains(ident), s"Expected variable ${ident.format} to be bound.")
-        env(ident)
+      case Expression.Var(ident, _, loc) => env.get(ident) match {
+        case None => throw InternalCompilerError(s"Unbound variable ${ident.name} at ${loc.format}.")
+        case Some(value) => value
+      }
       case Expression.Ref(name, _, _) =>
         assert(root.constants.contains(name), s"Expected constant ${name.format} to be defined.")
         eval(root.constants(name).exp, root, env)
@@ -30,7 +43,7 @@ object Interpreter {
         if (cond) eval(exp2, root, env) else eval(exp3, root, env)
       case Expression.Let(ident, value, body, tpe, loc) =>
         // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
-        val func = Expression.Lambda(List(FormalArg(ident, value.tpe)), body, Type.Function(List(value.tpe), tpe), loc)
+        val func = Expression.Lambda(List(FormalArg(ident, value.tpe)), body, Type.Lambda(List(value.tpe), tpe), loc)
         val desugared = Expression.Apply(func, List(value), tpe, loc)
         eval(desugared, root, env)
       case Expression.Match(exp, rules, _, _) =>

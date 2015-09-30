@@ -267,7 +267,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Lambda01") {
     // () => false
     val lambda = Expression.Lambda(
-      List(), Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Function(List(), Type.Bool), loc)
+      List(), Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Lambda(List(), Type.Bool), loc)
     val expected = Value.Closure(lambda.args, lambda.body, Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
@@ -282,7 +282,7 @@ class TestInterpreter extends FunSuite {
     // x => 3
     val lambda = Expression.Lambda(
       List(FormalArg(ident01, Type.Int)), Expression.Lit(Literal.Int(3, loc), Type.Int, loc),
-      Type.Function(List(Type.Int), Type.Int), loc)
+      Type.Lambda(List(Type.Int), Type.Int), loc)
     val expected = Value.Closure(lambda.args, lambda.body, Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
@@ -297,7 +297,7 @@ class TestInterpreter extends FunSuite {
     // x => x
     val lambda = Expression.Lambda(
       List(FormalArg(ident01, Type.Int)), Expression.Var(ident01, Type.Int, loc),
-      Type.Function(List(Type.Int), Type.Int), loc)
+      Type.Lambda(List(Type.Int), Type.Int), loc)
     val expected = Value.Closure(lambda.args, lambda.body, Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
@@ -317,7 +317,7 @@ class TestInterpreter extends FunSuite {
         Expression.Lit(Literal.Int(1, loc), Type.Int, loc),
         Expression.Lit(Literal.Int(2, loc), Type.Int, loc),
         Type.Int, loc),
-      Type.Function(List(Type.Int), Type.Int), loc)
+      Type.Lambda(List(Type.Int), Type.Int), loc)
     val expected = Value.Closure(lambda.args, lambda.body, Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
@@ -337,7 +337,7 @@ class TestInterpreter extends FunSuite {
         Expression.Var(ident01, Type.Int, loc),
         Expression.Lit(Literal.Int(2, loc), Type.Int, loc),
         Type.Int, loc),
-      Type.Function(List(Type.Int), Type.Int), loc)
+      Type.Lambda(List(Type.Int), Type.Int), loc)
     val expected = Value.Closure(lambda.args, lambda.body, Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
@@ -357,7 +357,7 @@ class TestInterpreter extends FunSuite {
         Expression.Var(ident01, Type.Int, loc),
         Expression.Var(ident02, Type.Int, loc),
         Type.Int, loc),
-      Type.Function(List(Type.Int, Type.Int), Type.Int), loc)
+      Type.Lambda(List(Type.Int, Type.Int), Type.Int), loc)
     val expected = Value.Closure(lambda.args, lambda.body, Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
@@ -380,7 +380,7 @@ class TestInterpreter extends FunSuite {
         Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
         Expression.Var(ident02, Type.Bool, loc),
         Type.Bool, loc),
-      Type.Function(List(Type.Bool, Type.Bool), Type.Bool), loc)
+      Type.Lambda(List(Type.Bool, Type.Bool), Type.Bool), loc)
     val expected = Value.Closure(lambda.args, lambda.body, Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
@@ -407,7 +407,7 @@ class TestInterpreter extends FunSuite {
           Expression.Var(ident03, Type.Int, loc),
           Type.Int, loc),
         Type.Int, loc),
-      Type.Function(List(Type.Int, Type.Int, Type.Int), Type.Int), loc)
+      Type.Lambda(List(Type.Int, Type.Int, Type.Int), Type.Int), loc)
     val expected = Value.Closure(lambda.args, lambda.body, Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
@@ -433,8 +433,8 @@ class TestInterpreter extends FunSuite {
           Expression.Var(ident01, Type.Int, loc),
           Expression.Var(ident02, Type.Int, loc),
           Type.Int, loc),
-        Type.Function(List(Type.Int), Type.Int), loc),
-      Type.Function(List(Type.Int), Type.Function(List(Type.Int), Type.Int)), loc)
+        Type.Lambda(List(Type.Int), Type.Int), loc),
+      Type.Lambda(List(Type.Int), Type.Lambda(List(Type.Int), Type.Int)), loc)
     val expected = Value.Closure(lambda.args, lambda.body, Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
@@ -451,12 +451,12 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Lambda10") {
     // x, y => x(y)
     val lambda = Expression.Lambda(
-      List(FormalArg(ident01, Type.Function(List(Type.Int), Type.Int)), FormalArg(ident02, Type.Int)),
+      List(FormalArg(ident01, Type.Lambda(List(Type.Int), Type.Int)), FormalArg(ident02, Type.Int)),
       Expression.Apply(
-        Expression.Var(ident01, Type.Function(List(Type.Int), Type.Int), loc),
+        Expression.Var(ident01, Type.Lambda(List(Type.Int), Type.Int), loc),
         List(Expression.Var(ident02, Type.Int, loc)),
         Type.Int, loc),
-      Type.Function(List(Type.Function(List(Type.Int), Type.Int), Type.Int), Type.Int), loc)
+      Type.Lambda(List(Type.Lambda(List(Type.Int), Type.Int), Type.Int), Type.Int), loc)
     val expected = Value.Closure(lambda.args, lambda.body, Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
@@ -470,7 +470,7 @@ class TestInterpreter extends FunSuite {
           Expression.Var(ident01, Type.Int, loc),
           Expression.Lit(Literal.Int(1, loc), Type.Int, loc),
           Type.Int, loc),
-        Type.Function(List(Type.Int), Type.Int), loc),
+        Type.Lambda(List(Type.Int), Type.Int), loc),
       Expression.Lit(Literal.Int(5, loc), Type.Int, loc)),
       Type.Int, loc)
     val value = Interpreter.eval(apply, root)
