@@ -360,13 +360,25 @@ object ParsedAst {
   }
 
   /**
-   * An AST node that represent an unresolved predicate.
-   *
-   * @param loc the location.
-   * @param name the unresolved name of the predicate.
-   * @param terms the terms of the predicate.
+   * A common super-type for predicates.
    */
-  case class Predicate(loc: SourceLocation, name: Name.Unresolved, terms: Seq[ParsedAst.Term]) extends ParsedAst
+  sealed trait Predicate extends ParsedAst
+
+  object Predicate {
+
+    /**
+     * An AST node that represent an unresolved predicate.
+     *
+     * @param loc the location.
+     * @param name the unresolved name of the predicate.
+     * @param terms the terms of the predicate.
+     */
+    case class Unresolved(loc: SourceLocation, name: Name.Unresolved, terms: Seq[ParsedAst.Term]) extends ParsedAst.Predicate
+
+    // TODO
+    case class Alias() extends ParsedAst.Predicate
+
+  }
 
   /**
    * AST nodes for Terms.

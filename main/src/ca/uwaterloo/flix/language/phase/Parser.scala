@@ -260,7 +260,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    SL ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~> ParsedAst.Predicate
+    SL ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~> ParsedAst.Predicate.Unresolved
   }
 
   /////////////////////////////////////////////////////////////////////////////

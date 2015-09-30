@@ -384,10 +384,18 @@ object Weeder {
   object Predicate {
 
     object Head {
+
+      /**
+       * Compiles the given parsed predicate `p` to a weeded predicate.
+       */
+      def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Head, WeederError] = past match {
+        case p: ParsedAst.Predicate.Unresolved => compile(p)
+      }
+
       /**
        * Compiles the given parsed predicate `past` to a weeded predicate.
        */
-      def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Head, WeederError] =
+      def compile(past: ParsedAst.Predicate.Unresolved): Validation[WeededAst.Predicate.Head, WeederError] =
         @@(past.terms.map(Term.Head.compile)) map {
           case terms => WeededAst.Predicate.Head(past.name, terms, past.loc)
         }
@@ -398,7 +406,14 @@ object Weeder {
       /**
        * Compiles the given parsed predicate `p` to a weeded predicate.
        */
-      def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] =
+      def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
+        case p: ParsedAst.Predicate.Unresolved => compile(p)
+      }
+
+      /**
+       * Compiles the given parsed predicate `p` to a weeded predicate.
+       */
+      def compile(past: ParsedAst.Predicate.Unresolved): Validation[WeededAst.Predicate.Body, WeederError] =
         @@(past.terms.map(Term.Body.compile)) map {
           case terms => WeededAst.Predicate.Body(past.name, terms, past.loc)
         }
