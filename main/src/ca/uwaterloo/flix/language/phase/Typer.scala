@@ -25,7 +25,7 @@ object Typer {
     // TODOL Doc
 
     /**
-     * An error raised to indicate a type mismatch betwee an `expected` and an `actual` type.
+     * An error raised to indicate a type mismatch between an `expected` and an `actual` type.
      *
      * @param expected the expected type.
      * @param actual the actual type.
@@ -40,13 +40,25 @@ object Typer {
       val format = s"Type Error: Expected expressions of the same type, but got '${prettyPrint(tpe1)}' and ${prettyPrint(tpe2)}.\n"
     }
 
-    case class IllegalPattern(pat: ResolvedAst.Pattern, tpe: TypedAst.Type) extends TypeError {
-      val format = s"Type Error: Pattern '${pat.format}' does not match expected type '${prettyPrint(tpe)}'.\n"
+    /**
+     * An error raised to indicate that the given type `tpe` was expected to be a function type.
+     *
+     * @param tpe the erroneous type.
+     * @param loc the source location.
+     */
+    case class IllegalApply(tpe: TypedAst.Type, loc: SourceLocation) extends TypeError {
+      val format = s"Type Error: The type '${prettyPrint(tpe)}' is not a function type at ${loc.format}.\n"
     }
 
-    case class IllegalApply(tpe: TypedAst.Type) extends TypeError {
-      val format = s"Type Error: Expected function, but expression has type '${prettyPrint(tpe)}'.\n"
-
+    /**
+     * An error raised to indicate a type mismatch between a pattern `pat` and an expected type `tpe`.
+     *
+     * @param pat the pattern.
+     * @param tpe the type.
+     * @param loc the source location.
+     */
+    case class IllegalPattern(pat: ResolvedAst.Pattern, tpe: TypedAst.Type, loc: SourceLocation) extends TypeError {
+      val format = s"Type Error: Pattern '${pat.format}' does not match expected type '${prettyPrint(tpe)}' at ${loc.format}.\n"
     }
 
   }
@@ -234,7 +246,7 @@ object Typer {
                 @@(argsVal) map {
                   case _ => TypedAst.Expression.Apply(lambda, args, retTpe, loc)
                 }
-              case tpe => IllegalApply(tpe).toFailure
+              case tpe => IllegalApply(tpe, loc).toFailure
             }
           }
 
@@ -374,9 +386,9 @@ object Typer {
               case pat => TypedAst.Pattern.Tag(enumName, tagName, pat, TypedAst.Type.Tag(enumName, tagName, pat.tpe), loc)
             }
           }
-          case _ => IllegalPattern(rast, tpe).toFailure
+          case _ => IllegalPattern(rast, tpe, loc).toFailure
         }
-        case _ => IllegalPattern(rast, tpe).toFailure
+        case _ => IllegalPattern(rast, tpe, loc).toFailure
       }
       case ResolvedAst.Pattern.Tuple(relms, loc) => tpe match {
         case TypedAst.Type.Tuple(telms) if relms.length == telms.length =>
@@ -386,7 +398,7 @@ object Typer {
           @@(elmsVal) map {
             case elms => TypedAst.Pattern.Tuple(elms, TypedAst.Type.Tuple(elms map (_.tpe)), loc)
           }
-        case _ => IllegalPattern(rast, tpe).toFailure
+        case _ => IllegalPattern(rast, tpe, loc).toFailure
       }
     }
   }
