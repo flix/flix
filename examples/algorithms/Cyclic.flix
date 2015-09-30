@@ -15,6 +15,6 @@ namespace Cycles {
     Cyclic(x) :- Reachable(x, x).
 
     // TODO: add assertion
-    assert Cylic(1).
+    // assert Cylic(1).
 
 }
