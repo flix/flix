@@ -4,6 +4,8 @@ import org.scalatest.FunSuite
 
 class TestTypedAst extends FunSuite {
 
+  val SL = SourceLocation.Test
+
   ignore("Predicate.Head.Variables") {
     ??? // TODO
   }
@@ -17,9 +19,9 @@ class TestTypedAst extends FunSuite {
     val y = Name.Ident("y", SourceLocation.Unknown)
 
     val pat = TypedAst.Pattern.Tuple(List(
-      TypedAst.Pattern.Var(x, TypedAst.Type.Bool),
-      TypedAst.Pattern.Var(y, TypedAst.Type.Int)
-    ), TypedAst.Type.Tuple(List(TypedAst.Type.Bool, TypedAst.Type.Int)))
+      TypedAst.Pattern.Var(x, TypedAst.Type.Bool, SL),
+      TypedAst.Pattern.Var(y, TypedAst.Type.Int, SL)
+    ), TypedAst.Type.Tuple(List(TypedAst.Type.Bool, TypedAst.Type.Int)), SL)
 
     assertResult(Map(
       "x" -> TypedAst.Type.Bool,

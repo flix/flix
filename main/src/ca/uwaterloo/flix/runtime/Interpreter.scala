@@ -8,39 +8,39 @@ object Interpreter {
 
   def eval(expr: Expression, root: Root, env: Env = Map()): Value = {
     expr match {
-      case Expression.Lit(literal, _) => evalLit(literal)
-      case Expression.Var(ident, _) =>
+      case Expression.Lit(literal, _, _) => evalLit(literal)
+      case Expression.Var(ident, _, _) =>
         assert(env.contains(ident), s"Expected variable ${ident.format} to be bound.")
         env(ident)
-      case Expression.Ref(name, _) =>
+      case Expression.Ref(name, _, _) =>
         assert(root.constants.contains(name), s"Expected constant ${name.format} to be defined.")
         eval(root.constants(name).exp, root, env)
-      case Expression.Lambda(formals, body, _) => Value.Closure(formals, body, env)
-      case Expression.Apply(exp, args, _) => eval(exp, root, env) match {
+      case Expression.Lambda(formals, body, _, _) => Value.Closure(formals, body, env)
+      case Expression.Apply(exp, args, _, _) => eval(exp, root, env) match {
           case Value.Closure(formals, body, closureEnv) =>
             val evalArgs = args.map(x => eval(x, root, env))
             val newEnv = closureEnv ++ formals.map(_.ident).zip(evalArgs).toMap
             eval(body, root, newEnv)
           case _ => assert(false, "Expected a function."); Value.Unit
         }
-      case Expression.Unary(op, exp, _) => evalUnary(op, eval(exp, root, env))
-      case Expression.Binary(op, exp1, exp2, _) => evalBinary(op, eval(exp1, root, env), eval(exp2, root, env))
-      case Expression.IfThenElse(exp1, exp2, exp3, tpe) =>
+      case Expression.Unary(op, exp, _, _) => evalUnary(op, eval(exp, root, env))
+      case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, eval(exp1, root, env), eval(exp2, root, env))
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
         val cond = eval(exp1, root, env).toBool
         if (cond) eval(exp2, root, env) else eval(exp3, root, env)
-      case Expression.Let(ident, value, body, tpe) =>
+      case Expression.Let(ident, value, body, tpe, loc) =>
         // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
-        val func = Expression.Lambda(List(FormalArg(ident, value.tpe)), body, Type.Function(List(value.tpe), tpe))
-        val desugared = Expression.Apply(func, List(value), tpe)
+        val func = Expression.Lambda(List(FormalArg(ident, value.tpe)), body, Type.Function(List(value.tpe), tpe), loc)
+        val desugared = Expression.Apply(func, List(value), tpe, loc)
         eval(desugared, root, env)
-      case Expression.Match(exp, rules, _) =>
+      case Expression.Match(exp, rules, _, _) =>
         val value = eval(exp, root, env)
         matchRule(rules, value) match {
           case Some((matchExp, matchEnv)) => eval(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
-      case Expression.Tag(name, ident, exp, _) => Value.Tag(name, ident.name, eval(exp, root, env))
-      case Expression.Tuple(elms, _) => Value.Tuple(elms.map(e => eval(e, root, env)))
+      case Expression.Tag(name, ident, exp, _, _) => Value.Tag(name, ident.name, eval(exp, root, env))
+      case Expression.Tuple(elms, _, _) => Value.Tuple(elms.map(e => eval(e, root, env)))
       case Expression.Error(tpe, loc) => loc.path match {
         case Some(path) => throw new RuntimeException(s"Error at $path:${loc.line}:${loc.column}.")
         case None => throw new RuntimeException("Error at unknown location.")
@@ -88,12 +88,12 @@ object Interpreter {
   }
 
   private def unify(pattern: Pattern, value: Value): Option[Env] = (pattern, value) match {
-    case (Pattern.Wildcard(_), _) => Some(Map())
-    case (Pattern.Var(ident, _), _) => Some(Map(ident -> value))
-    case (Pattern.Lit(lit, _), _) if evalLit(lit) == value => Some(Map())
-    case (Pattern.Tag(name1, ident1, innerPat, _), Value.Tag(name2, ident2, innerVal))
+    case (Pattern.Wildcard(_, _), _) => Some(Map())
+    case (Pattern.Var(ident, _, _), _) => Some(Map(ident -> value))
+    case (Pattern.Lit(lit, _, _), _) if evalLit(lit) == value => Some(Map())
+    case (Pattern.Tag(name1, ident1, innerPat, _, _), Value.Tag(name2, ident2, innerVal))
       if name1 == name2 && ident1.name == ident2 => unify(innerPat, innerVal)
-    case (Pattern.Tuple(pats, _), Value.Tuple(vals)) =>
+    case (Pattern.Tuple(pats, _, _), Value.Tuple(vals)) =>
       val envs = pats.zip(vals).map { case (p, v) => unify(p, v) }.collect { case Some(e) => e }
       if (pats.size == envs.size)
         Some(envs.foldLeft(Map[Name.Ident, Value]()) { case (acc, newEnv) => acc ++ newEnv })

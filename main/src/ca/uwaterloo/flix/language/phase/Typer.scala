@@ -7,6 +7,7 @@ import Validation._
 
 // TODO: Check code coverage.
 // TODO: when to use inner visit?
+// TODO: use pattern match on rast
 
 object Typer {
 
@@ -78,7 +79,7 @@ object Typer {
       val declaredType = Type.typer(rast.tpe)
       Expression.typer(rast.exp, root) flatMap {
         case e => expect(declaredType, e.tpe) map {
-          case tpe => TypedAst.Definition.Constant(rast.name, e, tpe)
+          case tpe => TypedAst.Definition.Constant(rast.name, e, tpe, rast.loc)
         }
       }
     }
@@ -103,7 +104,7 @@ object Typer {
       }
 
       @@(botVal, leqVal, lubVal) map {
-        case (bot, leq, lub) => TypedAst.Definition.Lattice(tpe, bot, leq, lub)
+        case (bot, leq, lub) => TypedAst.Definition.Lattice(tpe, bot, leq, lub, rast.loc)
       }
     }
 
@@ -114,7 +115,7 @@ object Typer {
       val attributes = rast.attributes map {
         case ResolvedAst.Attribute(ident, tpe) => TypedAst.Attribute(ident, Type.typer(tpe))
       }
-      TypedAst.Definition.Relation(rast.name, attributes).toSuccess
+      TypedAst.Definition.Relation(rast.name, attributes, rast.loc).toSuccess
     }
 
   }
@@ -178,16 +179,16 @@ object Typer {
       def visit(rast: ResolvedAst.Expression, env: Map[String, TypedAst.Type]): Validation[TypedAst.Expression, TypeError] = rast match {
         case ResolvedAst.Expression.Var(ident, loc) =>
           val tpe = env(ident.name)
-          TypedAst.Expression.Var(ident, tpe).toSuccess
+          TypedAst.Expression.Var(ident, tpe, loc).toSuccess
 
         case ResolvedAst.Expression.Ref(name, loc) =>
           val constant = root.constants(name)
           val tpe = Type.typer(constant.tpe)
-          TypedAst.Expression.Ref(name, tpe).toSuccess
+          TypedAst.Expression.Ref(name, tpe, loc).toSuccess
 
         case ResolvedAst.Expression.Lit(rlit, loc) =>
           val lit = Literal.typer(rlit, root)
-          TypedAst.Expression.Lit(lit, lit.tpe).toSuccess
+          TypedAst.Expression.Lit(lit, lit.tpe, loc).toSuccess
 
         // TODO: Peer review
         case ResolvedAst.Expression.Lambda(rargs, rtpe, rbody, loc) =>
@@ -205,7 +206,7 @@ object Typer {
           // type body
           visit(rbody, env1) flatMap {
             case body => expect(tpe, body.tpe) map {
-              case _ => TypedAst.Expression.Lambda(args, body, TypedAst.Type.Function(args map (_.tpe), tpe))
+              case _ => TypedAst.Expression.Lambda(args, body, TypedAst.Type.Function(args map (_.tpe), tpe), loc)
             }
           }
 
@@ -222,7 +223,7 @@ object Typer {
                 }
 
                 @@(argsVal) map {
-                  case _ => TypedAst.Expression.Apply(lambda, args, retTpe)
+                  case _ => TypedAst.Expression.Apply(lambda, args, retTpe, loc)
                 }
               case tpe => IllegalApply(tpe).toFailure
             }
@@ -232,13 +233,13 @@ object Typer {
           case UnaryOperator.Not =>
             visit(re, env) flatMap {
               case e => expect(TypedAst.Type.Bool, e.tpe) map {
-                case tpe => TypedAst.Expression.Unary(op, e, tpe)
+                case tpe => TypedAst.Expression.Unary(op, e, tpe, loc)
               }
             }
           case UnaryOperator.UnaryPlus | UnaryOperator.UnaryMinus =>
             visit(re, env) flatMap {
               case e => expect(TypedAst.Type.Int, e.tpe) map {
-                case tpe => TypedAst.Expression.Unary(op, e, tpe)
+                case tpe => TypedAst.Expression.Unary(op, e, tpe, loc)
               }
             }
         }
@@ -247,25 +248,25 @@ object Typer {
           case _: ArithmeticOperator =>
             @@(visit(re1, env), visit(re2, env)) flatMap {
               case (e1, e2) => @@(expect(TypedAst.Type.Int, e1.tpe), expect(TypedAst.Type.Int, e2.tpe)) map {
-                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Int)
+                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Int, loc)
               }
             }
           case _: ComparisonOperator =>
             @@(visit(re1, env), visit(re2, env)) flatMap {
               case (e1, e2) => @@(expect(TypedAst.Type.Int, e1.tpe), expect(TypedAst.Type.Int, e2.tpe)) map {
-                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Bool)
+                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Bool, loc)
               }
             }
           case _: EqualityOperator =>
             @@(visit(re1, env), visit(re2, env)) flatMap {
               case (e1, e2) => expectEqual(e1.tpe, e2.tpe) map {
-                case tpe => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Bool)
+                case tpe => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Bool, loc)
               }
             }
           case _: LogicalOperator =>
             @@(visit(re1, env), visit(re2, env)) flatMap {
               case (e1, e2) => @@(expect(TypedAst.Type.Bool, e1.tpe), expect(TypedAst.Type.Bool, e2.tpe)) map {
-                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Bool)
+                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Bool, loc)
               }
             }
         }
@@ -276,14 +277,14 @@ object Typer {
               val conditionType = expect(TypedAst.Type.Bool, e1.tpe)
               val expressionType = expectEqual(e2.tpe, e3.tpe)
               #@(conditionType, expressionType) map {
-                case tpe => TypedAst.Expression.IfThenElse(e1, e2, e3, tpe)
+                case tpe => TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc)
               }
           }
 
         case ResolvedAst.Expression.Let(ident, rvalue, rbody, loc) =>
           visit(rvalue, env) flatMap {
             case value => visit(rbody, env + (ident.name -> value.tpe)) map {
-              case body => TypedAst.Expression.Let(ident, value, body, body.tpe)
+              case body => TypedAst.Expression.Let(ident, value, body, body.tpe, loc)
             }
           }
 
@@ -305,7 +306,7 @@ object Typer {
                 case rules =>
                   // ensure that the body of every rule has the same type.
                   expectEqual(rules.map(_._2.tpe)) map {
-                    case tpe => TypedAst.Expression.Match(matchValue, rules, tpe)
+                    case tpe => TypedAst.Expression.Match(matchValue, rules, tpe, loc)
                   }
               }
           }
@@ -317,13 +318,13 @@ object Typer {
               val cases = enum.cases.mapValues(t => Type.typer(t).asInstanceOf[TypedAst.Type.Tag])
               val caze = cases(tagName.name)
               expect(caze.tpe, e.tpe) map {
-                _ => TypedAst.Expression.Tag(enumName, tagName, e, TypedAst.Type.Enum(cases))
+                _ => TypedAst.Expression.Tag(enumName, tagName, e, TypedAst.Type.Enum(cases), loc)
               }
           }
 
         case ResolvedAst.Expression.Tuple(relms, loc) =>
           @@(relms map (e => visit(e, env))) map {
-            case elms => TypedAst.Expression.Tuple(elms, TypedAst.Type.Tuple(elms map (_.tpe)))
+            case elms => TypedAst.Expression.Tuple(elms, TypedAst.Type.Tuple(elms map (_.tpe)), loc)
           }
 
         case ResolvedAst.Expression.Ascribe(re, rtype, loc) =>
@@ -349,19 +350,19 @@ object Typer {
      */
     def typer(rast: ResolvedAst.Pattern, tpe: TypedAst.Type, root: ResolvedAst.Root): Validation[TypedAst.Pattern, TypeError] = rast match {
       case ResolvedAst.Pattern.Wildcard(loc) =>
-        TypedAst.Pattern.Wildcard(tpe).toSuccess
+        TypedAst.Pattern.Wildcard(tpe, loc).toSuccess
       case ResolvedAst.Pattern.Var(ident, loc) =>
-        TypedAst.Pattern.Var(ident, tpe).toSuccess
+        TypedAst.Pattern.Var(ident, tpe, loc).toSuccess
       case ResolvedAst.Pattern.Lit(rlit, loc) =>
         val lit = Literal.typer(rlit, root)
         expect(tpe, lit.tpe) map {
-          case _ => TypedAst.Pattern.Lit(lit, tpe)
+          case _ => TypedAst.Pattern.Lit(lit, tpe, loc)
         }
       case ResolvedAst.Pattern.Tag(enumName, tagName, rpat, loc) => tpe match {
         case TypedAst.Type.Enum(cases) => cases.get(tagName.name) match {
           case Some(tag) if enumName == tag.name => {
             typer(rpat, tag.tpe, root) map {
-              case pat => TypedAst.Pattern.Tag(enumName, tagName, pat, TypedAst.Type.Tag(enumName, tagName, pat.tpe))
+              case pat => TypedAst.Pattern.Tag(enumName, tagName, pat, TypedAst.Type.Tag(enumName, tagName, pat.tpe), loc)
             }
           }
           case _ => IllegalPattern(rast, tpe).toFailure
@@ -374,7 +375,7 @@ object Typer {
             case (rp, tp) => typer(rp, tp, root)
           }
           @@(elmsVal) map {
-            case elms => TypedAst.Pattern.Tuple(elms, TypedAst.Type.Tuple(elms map (_.tpe)))
+            case elms => TypedAst.Pattern.Tuple(elms, TypedAst.Type.Tuple(elms map (_.tpe)), loc)
           }
         case _ => IllegalPattern(rast, tpe).toFailure
       }
@@ -399,7 +400,7 @@ object Typer {
           //            case (macc, term) => ???
           //          }
 
-          TypedAst.Predicate.Head(rast.name, terms, TypedAst.Type.Predicate(terms map (_.tpe)))
+          TypedAst.Predicate.Head(rast.name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), rast.loc)
       }
     }
 
@@ -413,7 +414,7 @@ object Typer {
       }
 
       @@(termsVal) map {
-        case terms => TypedAst.Predicate.Body(rast.name, terms, TypedAst.Type.Predicate(terms map (_.tpe)))
+        case terms => TypedAst.Predicate.Body(rast.name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), rast.loc)
       }
     }
   }
@@ -423,11 +424,11 @@ object Typer {
      * Types the given head term `rast` according to the (declared) type `tpe` under the given AST `root`.
      */
     def typer(rast: ResolvedAst.Term.Head, tpe: TypedAst.Type, root: ResolvedAst.Root): Validation[TypedAst.Term.Head, TypeError] = rast match {
-      case ResolvedAst.Term.Head.Var(ident, loc) => TypedAst.Term.Head.Var(ident, tpe).toSuccess
+      case ResolvedAst.Term.Head.Var(ident, loc) => TypedAst.Term.Head.Var(ident, tpe, loc).toSuccess
       case ResolvedAst.Term.Head.Lit(rlit, loc) =>
         val lit = Literal.typer(rlit, root)
         expect(tpe, lit.tpe) map {
-          case _ => TypedAst.Term.Head.Lit(lit, lit.tpe)
+          case _ => TypedAst.Term.Head.Lit(lit, lit.tpe, loc)
         }
       case ResolvedAst.Term.Head.Ascribe(rterm, rtpe, loc) =>
         val ascribedType = Type.typer(rtpe)
@@ -449,7 +450,7 @@ object Typer {
             }
             // put everything together and check the return type.
             @@(@@(argsVal), expect(tpe, Type.typer(retTpe))) map {
-              case (args, returnType) => TypedAst.Term.Head.Apply(name, args, returnType)
+              case (args, returnType) => TypedAst.Term.Head.Apply(name, args, returnType, loc)
             }
           case _ => ??? // TODO non-function call.
         }
@@ -459,12 +460,12 @@ object Typer {
      * Types the given body term `rast` according to the given type `tpe`. under the given AST `root`.
      */
     def typer(rast: ResolvedAst.Term.Body, tpe: TypedAst.Type, root: ResolvedAst.Root): Validation[TypedAst.Term.Body, TypeError] = rast match {
-      case ResolvedAst.Term.Body.Wildcard(loc) => TypedAst.Term.Body.Wildcard(loc, tpe).toSuccess
-      case ResolvedAst.Term.Body.Var(ident, loc) => TypedAst.Term.Body.Var(ident, tpe).toSuccess
+      case ResolvedAst.Term.Body.Wildcard(loc) => TypedAst.Term.Body.Wildcard(tpe, loc).toSuccess
+      case ResolvedAst.Term.Body.Var(ident, loc) => TypedAst.Term.Body.Var(ident, tpe, loc).toSuccess
       case ResolvedAst.Term.Body.Lit(rlit, loc) =>
         val lit = Literal.typer(rlit, root)
         expect(tpe, lit.tpe) map {
-          case _ => TypedAst.Term.Body.Lit(lit, lit.tpe)
+          case _ => TypedAst.Term.Body.Lit(lit, lit.tpe, loc)
         }
       case ResolvedAst.Term.Body.Ascribe(rterm, rtpe, loc) =>
         val ascribedType = Type.typer(rtpe)
