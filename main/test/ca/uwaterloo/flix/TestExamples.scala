@@ -13,8 +13,12 @@ class TestExamples extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Algorithms                                                              //
   /////////////////////////////////////////////////////////////////////////////
-  test("Cycles.flix") {
-    Compiler.compile(Paths.get("./examples/algorithms/Cycles.flix"))
+  test("Cyclic.flix") {
+    Compiler.compile(Paths.get("./examples/algorithms/Cyclic.flix"))
+  }
+
+  test("Reachability.flix") {
+    Compiler.compile(Paths.get("./examples/algorithms/Reachability.flix"))
   }
 
   /////////////////////////////////////////////////////////////////////////////

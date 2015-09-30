@@ -1,20 +1,19 @@
 namespace Reachability {
-    type Vertex = Str;
 
-    //var Edge: Vertex -> { Bool }; // TODO
+    rel Edge(src: Int, dst: Int);
+    Edge(1, 2).
+    Edge(2, 3).
+    Edge(3, 1).
+    Edge(1, 5).
+    Edge(3, 5).
+    Edge(7, 8).
+    Edge(8, 7).
 
-    // Edges
-    fact Edge "x" -> {"y"};
-    fact Edge "y" -> {"z"};
-    fact Edge "z" -> {"x"};
+    rel Reachable(src: Int, dst: Int);
+    Reachable(x, y) :- Edge(x, y).
+    Reachable(x, z) :- Reachable(x, y), Edge(y, z).
 
-    fact Edge "a" -> {"b", "c", "d"};
-    fact Edge "b" -> {"c", "d"};
-    fact Edge "c" -> {"a"};
+    // TODO: add assertion
+    // assert Reachable(5, 7)
 
-    // Reflexivity
-    rule Edge x -> {x} if Edge x -> {_};
-
-    // Transitivity
-    rule Edge x -> {z} if Edge x -> {y}, Edge y -> {z};
 };

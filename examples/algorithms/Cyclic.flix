@@ -14,4 +14,7 @@ namespace Cycles {
     rel Cyclic(vertex: Int);
     Cyclic(x) :- Reachable(x, x).
 
+    // TODO: add assertion
+    assert Cylic(1).
+
 }
