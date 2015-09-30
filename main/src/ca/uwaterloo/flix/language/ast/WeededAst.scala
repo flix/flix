@@ -12,9 +12,9 @@ object WeededAst {
 
     case class Namespace(name: Name.Unresolved, body: List[WeededAst.Declaration]) extends WeededAst.Declaration
 
-    case class Fact(head: WeededAst.PredicateWithApply) extends WeededAst.Declaration
+    case class Fact(head: WeededAst.Predicate.Head) extends WeededAst.Declaration
 
-    case class Rule(head: WeededAst.PredicateWithApply, body: List[WeededAst.PredicateNoApply]) extends WeededAst.Declaration
+    case class Rule(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body]) extends WeededAst.Declaration
 
   }
 
@@ -83,6 +83,9 @@ object WeededAst {
   }
 
   sealed trait Pattern extends WeededAst {
+
+    def loc: SourceLocation
+
     /**
      * Returns the set of variables bound by this pattern.
      */
@@ -111,40 +114,47 @@ object WeededAst {
 
   }
 
-  // TODO: Organize these as usually done.
+  object Predicate {
 
-  case class PredicateNoApply(name: Name.Unresolved, terms: List[WeededAst.TermNoApply], loc: SourceLocation) extends WeededAst
+    case class Head(name: Name.Unresolved, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst
 
-  case class PredicateWithApply(name: Name.Unresolved, terms: List[WeededAst.TermWithApply], loc: SourceLocation) extends WeededAst
-
-  sealed trait TermNoApply extends WeededAst
-
-  object TermNoApply {
-
-    case class Wildcard(loc: SourceLocation) extends WeededAst.TermNoApply
-
-    case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.TermNoApply
-
-    case class Lit(literal: WeededAst.Literal, loc: SourceLocation) extends WeededAst.TermNoApply
-
-    case class Ascribe(term: TermNoApply, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.TermNoApply
+    case class Body(name: Name.Unresolved, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst
 
   }
 
-  sealed trait TermWithApply extends WeededAst
+  object Term {
 
-  object TermWithApply {
+    sealed trait Head extends WeededAst {
+      def loc: SourceLocation
+    }
 
-    // TODO: Wildcards should not be allowed here...
-    case class Wildcard(loc: SourceLocation) extends WeededAst.TermWithApply
+    object Head {
 
-    case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.TermWithApply
+      case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Term.Head
 
-    case class Lit(literal: WeededAst.Literal, loc: SourceLocation) extends WeededAst.TermWithApply
+      case class Lit(literal: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Term.Head
 
-    case class Ascribe(term: TermWithApply, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.TermWithApply
+      case class Apply(name: Name.Unresolved, args: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Term.Head
 
-    case class Apply(name: Name.Unresolved, args: List[WeededAst.TermWithApply], loc: SourceLocation) extends WeededAst.TermWithApply
+      case class Ascribe(term: Head, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Term.Head
+
+    }
+
+    sealed trait Body extends WeededAst {
+      def loc: SourceLocation
+    }
+
+    object Body {
+
+      case class Wildcard(loc: SourceLocation) extends WeededAst.Term.Body
+
+      case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Term.Body
+
+      case class Lit(literal: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Term.Body
+
+      case class Ascribe(term: Body, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Term.Body
+
+    }
 
   }
 

@@ -387,9 +387,9 @@ object Weeder {
       /**
        * Compiles the given parsed predicate `past` to a weeded predicate.
        */
-      def compile(past: ParsedAst.Predicate): Validation[WeededAst.PredicateWithApply, WeederError] =
+      def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Head, WeederError] =
         @@(past.terms.map(Term.Head.compile)) map {
-          case terms => WeededAst.PredicateWithApply(past.name, terms, past.loc)
+          case terms => WeededAst.Predicate.Head(past.name, terms, past.loc)
         }
     }
 
@@ -398,9 +398,9 @@ object Weeder {
       /**
        * Compiles the given parsed predicate `p` to a weeded predicate.
        */
-      def compile(past: ParsedAst.Predicate): Validation[WeededAst.PredicateNoApply, WeederError] =
+      def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] =
         @@(past.terms.map(Term.Body.compile)) map {
-          case terms => WeededAst.PredicateNoApply(past.name, terms, past.loc)
+          case terms => WeededAst.Predicate.Body(past.name, terms, past.loc)
         }
     }
 
@@ -411,47 +411,44 @@ object Weeder {
     object Head {
 
       /**
-       * Compiles the given parsed term `past` to a weeded term.
+       * Compiles the given parsed head term `past` to a weeded term.
        *
        * Returns [[Failure]] if the term contains a wildcard variable.
        */
-      def compile(past: ParsedAst.Term): Validation[WeededAst.TermWithApply, WeederError] = past match {
+      def compile(past: ParsedAst.Term): Validation[WeededAst.Term.Head, WeederError] = past match {
         case ParsedAst.Term.Wildcard(loc) => IllegalTerm("Wildcard variables not allowed in head terms.", loc).toFailure
-        case ParsedAst.Term.Var(loc, ident) => WeededAst.TermWithApply.Var(ident, loc).toSuccess
+        case ParsedAst.Term.Var(loc, ident) => WeededAst.Term.Head.Var(ident, loc).toSuccess
         case ParsedAst.Term.Lit(loc, literal) => Literal.compile(literal) map {
-          case lit => WeededAst.TermWithApply.Lit(lit, loc)
+          case lit => WeededAst.Term.Head.Lit(lit, loc)
         }
-
-        // TODO: Non-literal tag and tuple could be allowed here.
         case ParsedAst.Term.Ascribe(loc, pterm, ptpe) =>
           @@(compile(pterm), Type.compile(ptpe)) map {
-            case (term, tpe) => WeededAst.TermWithApply.Ascribe(term, tpe, loc)
+            case (term, tpe) => WeededAst.Term.Head.Ascribe(term, tpe, loc)
           }
-
         case ParsedAst.Term.Apply(loc, name, pargs) =>
           @@(pargs map compile) map {
-            case args => WeededAst.TermWithApply.Apply(name, args, loc)
+            case args => WeededAst.Term.Head.Apply(name, args, loc)
           }
       }
     }
 
     object Body {
       /**
-       * Compiles the given parsed term `past` to a weeded term.
+       * Compiles the given parsed body term `past` to a weeded term.
        *
        * Returns [[Failure]] if the term contains a function call.
        */
-      def compile(past: ParsedAst.Term): Validation[WeededAst.TermNoApply, WeederError] = past match {
-        case ParsedAst.Term.Wildcard(loc) => WeededAst.TermNoApply.Wildcard(loc).toSuccess
-        case ParsedAst.Term.Var(loc, ident) => WeededAst.TermNoApply.Var(ident, loc).toSuccess
+      def compile(past: ParsedAst.Term): Validation[WeededAst.Term.Body, WeederError] = past match {
+        case ParsedAst.Term.Wildcard(loc) => WeededAst.Term.Body.Wildcard(loc).toSuccess
+        case ParsedAst.Term.Var(loc, ident) => WeededAst.Term.Body.Var(ident, loc).toSuccess
         case ParsedAst.Term.Lit(loc, literal) => Literal.compile(literal) map {
-          case lit => WeededAst.TermNoApply.Lit(lit, loc)
+          case lit => WeededAst.Term.Body.Lit(lit, loc)
         }
         case ParsedAst.Term.Ascribe(loc, pterm, ptpe) =>
           @@(compile(pterm), Type.compile(ptpe)) map {
-            case (term, tpe) => WeededAst.TermNoApply.Ascribe(term, tpe, loc)
+            case (term, tpe) => WeededAst.Term.Body.Ascribe(term, tpe, loc)
           }
-        case ParsedAst.Term.Apply(loc, name, args) => IllegalTerm("Function calls not allowed in body terms.", name.location).toFailure
+        case ParsedAst.Term.Apply(loc, name, args) => IllegalTerm("Function calls not allowed in body terms.", loc).toFailure
       }
     }
 

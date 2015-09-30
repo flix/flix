@@ -1,16 +1,18 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.util.Validation
-import Validation._
+import ca.uwaterloo.flix.util.Validation._
 
 object Resolver {
 
   import ResolverError._
 
-  sealed trait ResolverError {
-    def format: String
-  }
+  /**
+   * A common super-type for resolver errors.
+   */
+  sealed trait ResolverError extends Compiler.CompilationError
 
   object ResolverError {
 
@@ -425,26 +427,31 @@ object Resolver {
       /**
        * Performs symbol resolution in the given head predicate `wast` in the given `namespace` with the given symbol table `syms`.
        */
-      // TODO: Pattern match on wast?
-      def resolve(wast: WeededAst.PredicateWithApply, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Head, ResolverError] =
-        syms.lookupRelation(wast.name, namespace) flatMap {
-          case (name, defn) => @@(wast.terms map (t => Term.Head.resolve(t, namespace, syms))) map {
-            case terms => ResolvedAst.Predicate.Head(name, terms, wast.loc)
+      def resolve(wast: WeededAst.Predicate.Head, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Head, ResolverError] = {
+        val WeededAst.Predicate.Head(name, wterms, loc) = wast
+
+        syms.lookupRelation(name, namespace) flatMap {
+          case (rname, defn) => @@(wterms map (term => Term.Head.resolve(term, namespace, syms))) map {
+            case terms => ResolvedAst.Predicate.Head(rname, terms, loc)
           }
         }
+      }
+
     }
 
     object Body {
       /**
        * Performs symbol resolution in the given body predicate `wast` in the given `namespace` with the given symbol table `syms`.
        */
-      // TODO: Pattern match on wast?
-      def resolve(wast: WeededAst.PredicateNoApply, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Body, ResolverError] =
-        syms.lookupRelation(wast.name, namespace) flatMap {
-          case (name, defn) => @@(wast.terms map (t => Term.Body.resolve(t, namespace, syms))) map {
-            case terms => ResolvedAst.Predicate.Body(name, terms, wast.loc)
+      def resolve(wast: WeededAst.Predicate.Body, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Body, ResolverError] = {
+        val WeededAst.Predicate.Body(name, wterms, loc) = wast
+
+        syms.lookupRelation(name, namespace) flatMap {
+          case (rname, defn) => @@(wterms map (term => Term.Body.resolve(term, namespace, syms))) map {
+            case terms => ResolvedAst.Predicate.Body(rname, terms, loc)
           }
         }
+      }
     }
 
   }
@@ -456,16 +463,16 @@ object Resolver {
       /**
        * Performs symbol resolution in the given head term `wast` under the given `namespace`.
        */
-      def resolve(wast: WeededAst.TermWithApply, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Term.Head, ResolverError] = wast match {
-        case WeededAst.TermWithApply.Var(ident, loc) => ResolvedAst.Term.Head.Var(ident, loc).toSuccess
-        case WeededAst.TermWithApply.Lit(wlit, loc) => Literal.resolve(wlit, namespace, syms) map {
+      def resolve(wast: WeededAst.Term.Head, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Term.Head, ResolverError] = wast match {
+        case WeededAst.Term.Head.Var(ident, loc) => ResolvedAst.Term.Head.Var(ident, loc).toSuccess
+        case WeededAst.Term.Head.Lit(wlit, loc) => Literal.resolve(wlit, namespace, syms) map {
           case lit => ResolvedAst.Term.Head.Lit(lit, loc)
         }
-        case WeededAst.TermWithApply.Ascribe(wterm, wtpe, loc) =>
+        case WeededAst.Term.Head.Ascribe(wterm, wtpe, loc) =>
           @@(resolve(wterm, namespace, syms), Type.resolve(wtpe, namespace, syms)) map {
             case (term, tpe) => ResolvedAst.Term.Head.Ascribe(term, tpe, loc)
           }
-        case WeededAst.TermWithApply.Apply(name, wargs, loc) =>
+        case WeededAst.Term.Head.Apply(name, wargs, loc) =>
           syms.lookupConstant(name, namespace) flatMap {
             case (rname, defn) => @@(wargs map (arg => resolve(arg, namespace, syms))) map {
               case args => ResolvedAst.Term.Head.Apply(rname, args.toList, loc)
@@ -479,13 +486,13 @@ object Resolver {
       /**
        * Performs symbol resolution in the given body term `wast` under the given `namespace`.
        */
-      def resolve(wast: WeededAst.TermNoApply, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Term.Body, ResolverError] = wast match {
-        case WeededAst.TermNoApply.Wildcard(loc) => ResolvedAst.Term.Body.Wildcard(loc).toSuccess
-        case WeededAst.TermNoApply.Var(ident, loc) => ResolvedAst.Term.Body.Var(ident, loc).toSuccess
-        case WeededAst.TermNoApply.Lit(wlit, loc) => Literal.resolve(wlit, namespace, syms) map {
+      def resolve(wast: WeededAst.Term.Body, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Term.Body, ResolverError] = wast match {
+        case WeededAst.Term.Body.Wildcard(loc) => ResolvedAst.Term.Body.Wildcard(loc).toSuccess
+        case WeededAst.Term.Body.Var(ident, loc) => ResolvedAst.Term.Body.Var(ident, loc).toSuccess
+        case WeededAst.Term.Body.Lit(wlit, loc) => Literal.resolve(wlit, namespace, syms) map {
           case lit => ResolvedAst.Term.Body.Lit(lit, loc)
         }
-        case WeededAst.TermNoApply.Ascribe(wterm, wtpe, loc) =>
+        case WeededAst.Term.Body.Ascribe(wterm, wtpe, loc) =>
           @@(resolve(wterm, namespace, syms), Type.resolve(wtpe, namespace, syms)) map {
             case (term, tpe) => ResolvedAst.Term.Body.Ascribe(term, tpe, loc)
           }
