@@ -9,6 +9,7 @@ import ca.uwaterloo.flix.util.annotation.Unoptimized
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
+import scala.io.Source
 
 // TODO: Dealing with whitespace is hard. Figure out a good way.
 // TODO:  Allow fields on case objects.
@@ -27,7 +28,15 @@ import scala.collection.immutable.Seq
 /**
  * A parser for the Flix language.
  */
-class Parser(val path: Option[Path], val input: ParserInput) extends org.parboiled2.Parser {
+class Parser(val source: SourceInput) extends org.parboiled2.Parser {
+
+  /*
+   * Initialize parser intput.
+   */
+  override val input: ParserInput = source match {
+    case SourceInput.Str(str) => str
+    case SourceInput.File(path) => Source.fromFile(path.toFile).getLines().mkString("\n")
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Root                                                                    //
@@ -57,7 +66,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def FunctionDefinition: Rule1[ParsedAst.Definition.Function] = rule {
-    SL~ atomic("def") ~ WS ~ Ident ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Definition.Function
+    SL ~ atomic("def") ~ WS ~ Ident ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Definition.Function
   }
 
   def EnumDefinition: Rule1[ParsedAst.Definition.Enum] = {
@@ -361,8 +370,9 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   def Ident: Rule1[Name.Ident] = rule {
-    SL ~ LegalIdentifier ~>
-      ((location: SourceLocation, name: String) => Name.Ident(name, location))
+    SP ~ LegalIdentifier ~ SP ~>
+      ((beginSP: SourcePosition, name: String, endSP: SourcePosition) =>
+        Name.Ident(name, getSourceLocation(beginSP, endSP)))
   }
 
   def QName: Rule1[Name.Unresolved] = rule {
@@ -496,14 +506,25 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Source Location                                                         //
+  // Source Positions and Locations                                          //
   /////////////////////////////////////////////////////////////////////////////
+  @Unoptimized
+  def SP: Rule1[SourcePosition] = {
+    val position = Position(cursor, input)
+    rule {
+      push(SourcePosition(position.line, position.column, input.getLine(position.line)))
+    }
+  }
+
   @Unoptimized
   def SL: Rule1[SourceLocation] = {
     val position = Position(cursor, input)
     rule {
-      push(ast.SourceLocation(path, position.line, position.column))
+      push(ast.SourceLocation(source, position.line, position.column, 0, position.column + 20, input.getLine(position.line)))
     }
   }
+
+  private def getSourceLocation(beginSP: SourcePosition, endSP: SourcePosition): SourceLocation =
+    SourceLocation(source, beginSP.lineNumber, beginSP.colNumber, endSP.lineNumber, endSP.colNumber, beginSP.line)
 
 }

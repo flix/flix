@@ -24,6 +24,8 @@ object Weeder {
 
   object WeederError {
 
+    implicit val consoleCtx = Compiler.ConsoleCtx
+
     /**
      * An error raised to indicate that the attribute `name` was declared multiple times.
      *
@@ -33,9 +35,15 @@ object Weeder {
      */
     case class DuplicateAttribute(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
       val format =
-        s"Error: Duplicate attribute name: '$name'.\n" +
-          s"  First declaration was here: ${location1.format}.\n" +
-          s"  Second declaration was here: ${location2.format}\n"
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR ------------------------------------------------ ${location1.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Duplicate attribute name '$name'.")}
+            |
+            |First declaration was here:
+            |${location1.underline}
+            |Second declaration was here:
+            |${location2.underline}
+         """.stripMargin
     }
 
     /**
@@ -47,9 +55,15 @@ object Weeder {
      */
     case class DuplicateFormal(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
       val format =
-        s"Error: Duplicate formal argument: '$name'.\n" +
-          s"  First declaration was here ${location1.format}\n" +
-          s"  Second declaration was here: ${location2.format}\n"
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR ------------------------------------------------ ${location1.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Duplicate formal argument '$name'.")}
+            |
+            |First declaration was here:
+            |${location1.underline}
+            |Second declaration was here:
+            |${location2.underline}
+         """.stripMargin
     }
 
     /**
@@ -61,9 +75,15 @@ object Weeder {
      */
     case class DuplicateTag(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
       val format =
-        s"Error: Duplicate tag name: '$name'.\n" +
-          s"  First declaration was here: ${location1.format}. This one will be used.\n" +
-          s"  Second declaration was here: ${location2.format}. This one will be ignored.\n"
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR ------------------------------------------------ ${location1.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Duplicate tag name '$name'.")}
+            |
+            |First declaration was here:
+            |${location1.underline}
+            |Second declaration was here:
+            |${location2.underline}
+         """.stripMargin
     }
 
     /**

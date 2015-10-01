@@ -54,10 +54,7 @@ object Interpreter {
         }
       case Expression.Tag(name, ident, exp, _, _) => Value.Tag(name, ident.name, eval(exp, root, env))
       case Expression.Tuple(elms, _, _) => Value.Tuple(elms.map(e => eval(e, root, env)))
-      case Expression.Error(tpe, loc) => loc.path match {
-        case Some(path) => throw new RuntimeException(s"Error at $path:${loc.line}:${loc.column}.")
-        case None => throw new RuntimeException("Error at unknown location.")
-      }
+      case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
     }
   }
 

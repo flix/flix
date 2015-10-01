@@ -2,10 +2,10 @@ package ca.uwaterloo.flix.language
 
 import java.nio.file.{Files, Path}
 
-import ca.uwaterloo.flix.language.ast.{TypedAst, ResolvedAst, ParsedAst}
+import ca.uwaterloo.flix.language.ast.{SourceInput, TypedAst, ResolvedAst, ParsedAst}
 import ca.uwaterloo.flix.language.phase.Parser
 import ca.uwaterloo.flix.language.phase._
-import ca.uwaterloo.flix.util.StopWatch
+import ca.uwaterloo.flix.util.{AnsiConsole, StopWatch}
 
 import org.parboiled2.ParseError
 
@@ -43,6 +43,8 @@ object Compiler {
    */
   case class InternalCompilerError(message: String) extends RuntimeException(message)
 
+  implicit val ConsoleCtx = new AnsiConsole()
+
   /**
    * Returns the abstract syntax tree of the given `paths`.
    */
@@ -73,7 +75,7 @@ object Compiler {
    */
   // TODO: Return validation
   def parse(input: String, path: Option[Path]): ParsedAst.Root = {
-    val parser = new Parser(path, input)
+    val parser = new Parser(SourceInput.File(path.get))
     parser.Root.run() match {
       case Success(ast) => ast
       case Failure(e: ParseError) => throw new RuntimeException(parser.formatError(e))
@@ -133,17 +135,18 @@ object Compiler {
 
       // TODO: Consider using a prelude
 
-      val past = new Parser(None, input).Expression.run().get
-
-      val wast = Weeder.Expression.compile(past).get
-
-      // TODO: SymbolTable?
-      val rast = Resolver.Expression.resolve(wast, List.empty, Resolver.SymbolTable.empty).get
-
-      // TODO: Symbols?
-      val tast = Typer.Expression.typer(rast, ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty))
-
-      tast.get
+//      val past = new Parser(None, input).Expression.run().get
+//
+//      val wast = Weeder.Expression.compile(past).get
+//
+//      // TODO: SymbolTable?
+//      val rast = Resolver.Expression.resolve(wast, List.empty, Resolver.SymbolTable.empty).get
+//
+//      // TODO: Symbols?
+//      val tast = Typer.Expression.typer(rast, ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty))
+//
+//      tast.get
+      ???
     }
   }
 

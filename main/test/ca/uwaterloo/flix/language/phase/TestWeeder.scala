@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.{Name, WeededAst, ParsedAst, SourceLocation}
+import ca.uwaterloo.flix.language.ast._
 
 import scala.collection.immutable.Seq
 
@@ -80,7 +80,7 @@ class TestWeeder extends FunSuite {
 
   test("NonLinearPattern01") {
     val input = "(x, x)"
-    val past = new Parser(None, input).Pattern.run().get
+    val past = new Parser(SourceInput.Str(input)).Pattern.run().get
     val result = Weeder.Pattern.compile(past)
     assert(result.isFailure)
     assertResult(1)(result.errors.size)
@@ -88,7 +88,7 @@ class TestWeeder extends FunSuite {
 
   test("NonLinearPattern02") {
     val input = "(x, (y, (z, x, y)))"
-    val past = new Parser(None, input).Pattern.run().get
+    val past = new Parser(SourceInput.Str(input)).Pattern.run().get
     val result = Weeder.Pattern.compile(past)
     assert(result.isFailure)
     assertResult(2)(result.errors.size)
@@ -96,7 +96,7 @@ class TestWeeder extends FunSuite {
 
   test("ApplyNotAllowInBody01") {
     val input = "A(x) :- B(f(x))."
-    val past = new Parser(None, input).RuleDeclaration.run().get
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
     val result = Weeder.Declaration.compile(past)
     assert(result.isFailure)
     assertResult(1)(result.errors.size)
@@ -108,7 +108,7 @@ class TestWeeder extends FunSuite {
 
   test("ApplyNotAllowInBody02") {
     val input = "A(x) :- B(x), C(f(x)), D(g(x))."
-    val past = new Parser(None, input).RuleDeclaration.run().get
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
     val result = Weeder.Declaration.compile(past)
     assert(result.isFailure)
     assertResult(2)(result.errors.size)
