@@ -92,6 +92,24 @@ object Weeder {
     // TODO: Format the rest of these nicely.
 
     /**
+     * An error raised to indicate that wildcards are not allowed in head terms.
+     *
+     * @param location the location where the illegal term occurs.
+     */
+    case class WildcardInHeadTerm(location: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${location.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Illegal wildcard in head of a fact/rule.")}
+            |
+            |${location.underline}
+            |Wildcards (i.e. implicitly unbound variables) are not allowed to occur in the head of a fact/rule.
+            |
+            |Tip: Remove the wildcard or replace it by bound variable.
+         """.stripMargin
+    }
+
+    /**
      * An error raised to indicate that an illegal term occurs inside a predicate.
      *
      * @param location the location where the illegal term occurs.
@@ -459,7 +477,7 @@ object Weeder {
        * Returns [[Failure]] if the term contains a wildcard variable.
        */
       def compile(past: ParsedAst.Term): Validation[WeededAst.Term.Head, WeederError] = past match {
-        case ParsedAst.Term.Wildcard(loc) => IllegalTerm("Wildcard variables not allowed in head terms.", loc).toFailure
+        case ParsedAst.Term.Wildcard(loc) => WildcardInHeadTerm(loc).toFailure
         case ParsedAst.Term.Var(loc, ident) => WeededAst.Term.Head.Var(ident, loc).toSuccess
         case ParsedAst.Term.Lit(loc, literal) => Literal.compile(literal) map {
           case lit => WeededAst.Term.Head.Lit(lit, loc)

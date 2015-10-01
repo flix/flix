@@ -289,7 +289,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def WildcardTerm: Rule1[ParsedAst.Term] = rule {
-    SL ~ atomic("_") ~> ParsedAst.Term.Wildcard
+    SP ~ atomic("_") ~ SP ~> ((sp1: SourcePosition, sp2: SourcePosition) => ParsedAst.Term.Wildcard(getSourceLocation(sp1, sp2)))
   }
 
   def VariableTerm: Rule1[ParsedAst.Term.Var] = rule {
@@ -520,7 +520,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   def SL: Rule1[SourceLocation] = {
     val position = Position(cursor, input)
     rule {
-      push(ast.FileLocation(source, position.line, position.column, 0, position.column + 20, input.getLine(position.line)))
+      push(ast.FileLocation(source, position.line, position.column, position.line, position.column + 1, input.getLine(position.line)))
     }
   }
 

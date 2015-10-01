@@ -510,7 +510,7 @@ class TestTyper extends FunSuite {
     assertResult(TypedAst.Type.Bool)(result.get.tpe)
   }
 
-  test("Expression.Binary01'") {
+  ignore("Expression.Binary01'") {
     val s = "true && false" // TODO: Consider adding an: asExp
 
     val result = Compiler.Expression.compile(s)
