@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 
 object Optimizer {
 
-  // TODO: Priority Low: Optimizer:
+  // TODO: Implement an optimization phase.
   // - Inline every non-recursive expression.
   // - Curry all lambdas to take a single argument.
   // - Flatten all pattern match expressions.
