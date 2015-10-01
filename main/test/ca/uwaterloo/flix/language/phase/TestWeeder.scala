@@ -120,47 +120,17 @@ class TestWeeder extends FunSuite {
     assert(result.isFailure)
   }
 
-
-
-
-
-
-
-
-
-
-
-  // TODO: Wildcard not allowed in head.
-
-  // TODO: Rename
-
-  test("ApplyNotAllowInBody02") {
-    val input = "A(x) :- B(x), C(f(x)), D(g(x))."
-    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.isFailure)
-    assertResult(2)(result.errors.size)
-  }
-
-  test("ApplyNotAllowInBody01") {
+  test("Term.Body.Apply01") {
     val input = "A(x) :- B(f(x))."
     val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
     val result = Weeder.Declaration.compile(past)
     assert(result.isFailure)
-    assertResult(1)(result.errors.size)
   }
 
-
-
-  test("Term.Heead") {
-    val past = ParsedAst.Term.Apply(SL, Name.Unresolved(List("foo"), SourceLocation.Unknown), Seq.empty)
-    val result = Weeder.Term.Head.compile(past)
-    assert(result.isSuccess)
-  }
-
-  test("Term.Body") {
-    val past = ParsedAst.Term.Apply(SL, Name.Unresolved(List("foo"), SourceLocation.Unknown), Seq.empty)
-    val result = Weeder.Term.Body.compile(past)
+  test("Term.Body.Apply02") {
+    val input = "A(x) :- B(x), C(f(x)), D(g(x))."
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
     assert(result.isFailure)
   }
 

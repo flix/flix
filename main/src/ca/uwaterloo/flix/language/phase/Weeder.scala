@@ -89,10 +89,8 @@ object Weeder {
          """.stripMargin
     }
 
-    // TODO: Format the rest of these nicely.
-
     /**
-     * An error raised to indicate that wildcards are not allowed in head terms.
+     * An error raised to indicate that a wildcard occurs in a head term.
      *
      * @param location the location where the illegal term occurs.
      */
@@ -110,13 +108,26 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate that an illegal term occurs inside a predicate.
+     * An error raised to indicate that a function application occurs in a body term.
      *
      * @param location the location where the illegal term occurs.
      */
-    case class IllegalTerm(message: String, location: SourceLocation) extends WeederError {
-      val format = s"Error: $message Term was here: ${location.format}.\n"
+    case class ApplyInBodyTerm(location: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${location.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Illegal function call in body of a rule.")}
+            |
+            |${location.underline}
+            |Function calls are not allowed to occur in the body of a rule. Only in its head.
+            |
+            |Tip: Restructure the rule such that the function call does not occur in its body.
+            |     Possibly by breaking up the rule into multiple smaller rules.
+         """.stripMargin
     }
+
+
+    // TODO: Format the rest of these nicely.
 
     /**
      * An error raised to indicate an illegal lattice definition.
@@ -509,7 +520,7 @@ object Weeder {
           @@(compile(pterm), Type.compile(ptpe)) map {
             case (term, tpe) => WeededAst.Term.Body.Ascribe(term, tpe, loc)
           }
-        case ParsedAst.Term.Apply(loc, name, args) => IllegalTerm("Function calls not allowed in body terms.", loc).toFailure
+        case ParsedAst.Term.Apply(loc, name, args) => ApplyInBodyTerm(loc).toFailure
       }
     }
 

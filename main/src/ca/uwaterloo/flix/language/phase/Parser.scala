@@ -305,7 +305,9 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def ApplyTerm: Rule1[ParsedAst.Term.Apply] = rule {
-    SL ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy("," ~ optWS) ~ ")" ~> ParsedAst.Term.Apply
+    SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy("," ~ optWS) ~ ")" ~ SP ~> (
+      (sp1: SourcePosition, name: Name.Unresolved, args: Seq[ParsedAst.Term], sp2: SourcePosition) =>
+        ParsedAst.Term.Apply(getSourceLocation(sp1, sp2), name, args))
   }
 
   /////////////////////////////////////////////////////////////////////////////
