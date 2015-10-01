@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.{WeededAst, SourceLocation, ParsedAst, Name}
 import ca.uwaterloo.flix.util.Validation
 import Validation._
@@ -19,12 +20,7 @@ object Weeder {
   /**
    * A common super-type for weeding errors.
    */
-  sealed trait WeederError {
-    /**
-     * Returns a human readable error message as a string.
-     */
-    def format: String
-  }
+  sealed trait WeederError extends Compiler.CompilationError
 
   object WeederError {
 

@@ -2,12 +2,12 @@ package ca.uwaterloo.flix.language
 
 import java.nio.file.{Files, Path}
 
-import ca.uwaterloo.flix.language.ast.{TypedAst, SourceLocation, ResolvedAst, ParsedAst}
+import ca.uwaterloo.flix.language.ast.{TypedAst, ResolvedAst, ParsedAst}
 import ca.uwaterloo.flix.language.phase.Parser
 import ca.uwaterloo.flix.language.phase._
-import ca.uwaterloo.flix.util.{StopWatch, Validation}
+import ca.uwaterloo.flix.util.StopWatch
 
-import org.parboiled2.{ErrorFormatter, ParseError}
+import org.parboiled2.ParseError
 
 import scala.io.Source
 import scala.util.{Failure, Success}
@@ -81,12 +81,13 @@ object Compiler {
     }
   }
 
-  // TODO: Would it be possible to implement a "compile expression" thing?
-
+  /**
+   * Compiles the source code of the given `path`.
+   */
   def compile(path: Path): Option[TypedAst.Root] = compile(List(path))
 
   /**
-   * Applies the compiler to all the given source `paths`.
+   * Compiles  the source code of the given `paths`.
    */
   def compile(paths: Traversable[Path]): Option[TypedAst.Root] = {
     val stopWatch = new StopWatch()
@@ -127,7 +128,6 @@ object Compiler {
 
   // TODO: Experimental section -----------------------------------------------
 
-  // TODO: Need generic CompilerError trait
   object Expression {
     def compile(input: String): TypedAst.Expression = {
 
