@@ -113,7 +113,7 @@ object Typer {
      * Types the given lattice definition `rast` under the given AST `root`.
      */
     def typer(rast: ResolvedAst.Definition.Lattice, root: ResolvedAst.Root): Validation[TypedAst.Definition.Lattice, TypeError] = {
-      val tpe = Type.typer(rast.tpe)
+      val tpe = Type.typer(rast.elms)
       val botType = tpe
       val leqType = TypedAst.Type.Lambda(args = List(tpe, tpe), retTpe = TypedAst.Type.Bool)
       val lubType = TypedAst.Type.Lambda(args = List(tpe, tpe), retTpe = tpe)

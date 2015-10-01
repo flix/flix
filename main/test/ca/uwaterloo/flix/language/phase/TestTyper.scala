@@ -85,7 +85,7 @@ class TestTyper extends FunSuite {
     val y = Name.Ident("y", SourceLocation.Unknown)
 
     val rast = ResolvedAst.Definition.Lattice(
-      tpe = ResolvedAst.Type.Bool,
+      elms = ResolvedAst.Type.Bool,
       bot = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(false, SL), SL),
       leq = ResolvedAst.Expression.Lambda(
         formals = List(
@@ -117,7 +117,7 @@ class TestTyper extends FunSuite {
     val y = Name.Ident("y", SourceLocation.Unknown)
 
     val rast = ResolvedAst.Definition.Lattice(
-      tpe = ResolvedAst.Type.Str,
+      elms = ResolvedAst.Type.Str,
       bot = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(false, SL), SL),
       leq = ResolvedAst.Expression.Lambda(
         formals = List(

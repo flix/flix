@@ -48,11 +48,12 @@ object Resolver {
   }
 
   object SymbolTable {
-    val empty = SymbolTable(Map.empty, Map.empty, Map.empty, Map.empty)
+    val empty = SymbolTable(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
   }
 
   case class SymbolTable(enums: Map[Name.Resolved, WeededAst.Definition.Enum],
                          constants: Map[Name.Resolved, WeededAst.Definition.Constant],
+                         lattices: Map[Name.Resolved, WeededAst.Definition.Lattice],
                          relations: Map[Name.Resolved, WeededAst.Definition.Relation],
                          types: Map[Name.Resolved, WeededAst.Type]) {
     // TODO: Cleanup
@@ -61,7 +62,7 @@ object Resolver {
         if (name.parts.size == 1)
           namespace ::: name.parts.head :: Nil
         else
-          name.parts.toList
+          name.parts
       )
       enums.get(rname) match {
         case None => UnresolvedReference(name, namespace).toFailure
@@ -75,7 +76,7 @@ object Resolver {
         if (name.parts.size == 1)
           namespace ::: name.parts.head :: Nil
         else
-          name.parts.toList
+          name.parts
       )
       constants.get(rname) match {
         case None => UnresolvedReference(name, namespace).toFailure
@@ -89,7 +90,7 @@ object Resolver {
         if (name.parts.size == 1)
           namespace ::: name.parts.head :: Nil
         else
-          name.parts.toList
+          name.parts
       )
       relations.get(rname) match {
         case None => UnresolvedReference(name, namespace).toFailure
@@ -103,7 +104,7 @@ object Resolver {
         if (name.parts.size == 1)
           namespace ::: name.parts.head :: Nil
         else
-          name.parts.toList
+          name.parts
       )
       types.get(rname) match {
         case None => UnresolvedReference(name, namespace).toFailure
@@ -135,6 +136,10 @@ object Resolver {
         val collectedEnums = Validation.fold[Name.Resolved, WeededAst.Definition.Enum, Name.Resolved, ResolvedAst.Definition.Enum, ResolverError](syms.enums) {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
+
+//        val collectedLattices = Validation.fold[Name.Resolved, WeededAst.Definition.Lattice, Name.Resolved, ResolvedAst.Definition.Lattice, ResolverError](syms.lattices) {
+//          case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
+//        }
 
         val collectedRelations = Validation.fold[Name.Resolved, WeededAst.Definition.Relation, Name.Resolved, ResolvedAst.Definition.Relation, ResolverError](syms.relations) {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
@@ -186,7 +191,9 @@ object Resolver {
           case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.location, ident.location).toFailure
         }
 
-      case WeededAst.Definition.Lattice(ident, elms, loc) => syms.toSuccess // TODO
+      case defn@WeededAst.Definition.Lattice(ident, bot, leq, lub, loc) =>
+        val rname = toRName(ident, namespace)
+        syms.copy(lattices = syms.lattices + (rname -> defn)).toSuccess
 
       case defn@WeededAst.Definition.Relation(ident, attributes, loc) =>
         val rname = toRName(ident, namespace)
@@ -199,7 +206,7 @@ object Resolver {
     def collectFacts(wast: WeededAst.Root, syms: SymbolTable): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = {
       def visit(wast: WeededAst.Declaration, namespace: List[String]): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = wast match {
         case WeededAst.Declaration.Namespace(name, body) =>
-          @@(body map (d => visit(d, namespace ::: name.parts.toList))) map (xs => xs.flatten)
+          @@(body map (d => visit(d, namespace ::: name.parts))) map (xs => xs.flatten)
         case WeededAst.Declaration.Fact(whead) => Predicate.Head.resolve(whead, namespace, syms) map (p => List(ResolvedAst.Constraint.Fact(p)))
         case _ => List.empty[ResolvedAst.Constraint.Fact].toSuccess
       }
@@ -249,6 +256,17 @@ object Resolver {
 
       casesVal map {
         case cases => ResolvedAst.Definition.Enum(name, cases, wast.loc)
+      }
+    }
+
+    def resolve(wast: WeededAst.Definition.Lattice, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Lattice, ResolverError] = {
+      val elmsVal = ???
+      val botVal = Expression.resolve(wast.bot, namespace, syms)
+      val leqVal = Expression.resolve(wast.leq, namespace, syms)
+      val lubVal = Expression.resolve(wast.lub, namespace, syms)
+
+      @@(elmsVal, botVal, leqVal, lubVal) map {
+        case (elms, bot, leq, lub) => ResolvedAst.Definition.Lattice(elms, bot, leq, lub, wast.loc)
       }
     }
 

@@ -92,6 +92,7 @@ object ParsedAst {
      * @param elms the components of the lattice (e.g. bot, leq, lub).
      * @param traits the traits of the lattice (e.g. Norm and Widening).
      */
+    // TODO: Should ident not be type?
     case class Lattice(loc: SourceLocation, ident: Name.Ident, elms: Seq[ParsedAst.Expression], traits: Seq[ParsedAst.Trait]) extends ParsedAst.Definition
 
     /**

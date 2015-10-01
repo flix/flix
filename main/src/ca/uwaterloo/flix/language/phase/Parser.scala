@@ -89,7 +89,7 @@ class Parser(val path: Option[Path], val input: ParserInput) extends org.parboil
     }
 
     rule {
-      SL ~ atomic("lat") ~ optWS ~ "<" ~ Ident ~ ">" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ optWS ~ Traits ~ optSC ~> ParsedAst.Definition.Lattice
+      SL ~ atomic("lat") ~ optWS ~ Ident ~ atomic("<>") ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ optWS ~ Traits ~ optSC ~> ParsedAst.Definition.Lattice
     }
   }
 

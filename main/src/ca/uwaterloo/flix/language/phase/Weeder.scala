@@ -70,14 +70,22 @@ object Weeder {
           s"  Second declaration was here: ${location2.format}. This one will be ignored.\n"
     }
 
-
     /**
      * An error raised to indicate that an illegal term occurs inside a predicate.
      *
      * @param location the location where the illegal term occurs.
      */
     case class IllegalTerm(message: String, location: SourceLocation) extends WeederError {
-      val format = s"Error: $message at ${location.format}.\n"
+      val format = s"Error: $message Term was here: ${location.format}.\n"
+    }
+
+    /**
+     * An error raised to indicate an illegal lattice definition.
+     *
+     * @param location the location where the illegal definition occurs.
+     */
+    case class IllegalLattice(message: String, location: SourceLocation) extends WeederError {
+      val format = s"Error: $message Definition was here: ${location.format}.\n"
     }
 
     /**
@@ -221,11 +229,10 @@ object Weeder {
      * Compiles the given parsed lattice `past` to a weeded lattice definition.
      */
     def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Definition.Lattice, WeederError] = {
-      // TODO
-
       val elmsVal = @@(past.elms.toList.map(Expression.compile))
-      elmsVal map {
-        case elms => WeededAst.Definition.Lattice(past.ident, elms, past.loc)
+      elmsVal flatMap {
+        case bot :: leq :: lub :: Nil => WeededAst.Definition.Lattice(past.ident, bot, leq, lub, past.loc).toSuccess
+        case _ => IllegalLattice("Lattice definition must have exactly three elements: bot, leq and lub.", past.loc).toFailure
       }
     }
 

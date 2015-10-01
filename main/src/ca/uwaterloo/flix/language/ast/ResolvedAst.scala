@@ -30,13 +30,13 @@ object ResolvedAst {
     /**
      * A resolved AST node representing a lattice definition.
      *
-     * @param tpe the (declared) type of the lattice elements.
+     * @param elms the (declared) type of the lattice elements.
      * @param bot the bottom element.
      * @param leq the partial order.
      * @param lub the least-upper-bound.
      * @param loc the location.
      */
-    case class Lattice(tpe: ResolvedAst.Type, bot: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Definition
+    case class Lattice(elms: ResolvedAst.Type, bot: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Definition
 
     /**
      * A resolved AST node representing a relation definition.
