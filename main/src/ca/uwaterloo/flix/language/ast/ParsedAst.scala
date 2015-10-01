@@ -50,7 +50,12 @@ object ParsedAst {
   /**
    * A common super-type for AST nodes that represent definitions.
    */
-  sealed trait Definition extends Declaration
+  sealed trait Definition extends Declaration {
+    /**
+     * Returns the source location of `this` definition.
+     */
+    def loc: SourceLocation
+  }
 
   object Definition {
 
@@ -114,7 +119,10 @@ object ParsedAst {
    * AST nodes for Literals.
    */
   sealed trait Literal {
-// TODO: LOC
+    /**
+     * Returns the source location of `this` literal.
+     */
+    def loc: SourceLocation
   }
 
   object Literal {
@@ -388,7 +396,12 @@ object ParsedAst {
   /**
    * AST nodes for Terms.
    */
-  sealed trait Term extends ParsedAst
+  sealed trait Term extends ParsedAst {
+    /**
+     * Returns the source location of `this` term.
+     */
+    def loc: SourceLocation
+  }
 
   object Term {
 
