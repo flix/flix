@@ -212,6 +212,57 @@ class TestParser extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Directives                                                              //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Directive.Assert01") {
+    // P(42).
+    val input = "assert P(42)."
+    ???
+  }
+
+  test("Directive.Assert02") {
+    // \forall x. P(x). This is trivially true.
+    val input = "assert P(x)."
+    ???
+  }
+
+  test("Directive.Assert03") {
+    // \forall y. P(1, y), Q(y, 3).
+    val input = "assert P(1, y), Q(y, 3)."
+    ???
+  }
+
+  test("Directive.Assert04") {
+    // \forall x, y, z. P(x, y), Q(y, z).
+    val input = "assert P(x, y), Q(y, z)."
+    ???
+  }
+
+  test("Directive.Refute01") {
+    // P(42) => false.
+    val input = "refute P(42)."
+    ???
+  }
+
+  test("Directive.Refute02") {
+    // \forall x. P(x) => false.
+    val input = "refute P(x)."
+    ???
+  }
+
+  test("Directive.Refute03") {
+    // \forall y. P(1, y), Q(y, 3) => false.
+    val input = "refute P(1,  y), Q(y, 3)."
+    ???
+  }
+
+  test("Directive.Refute04") {
+    // \forall x, y, z. P(x, y), Q(y, z) => false.
+    val input = "refute P(x,  y), Q(y, z)."
+    ???
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
   // TODO: Check up on associativity.
