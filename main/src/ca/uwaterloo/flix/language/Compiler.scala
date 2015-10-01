@@ -98,7 +98,7 @@ object Compiler {
     println(f"Parser:     ${stopWatch.click() / 1000000}%4d msec.")
 
     val wast = Weeder.weed(past)
-    if (wast.isFailure) {
+    if (wast.hasErrors) {
       println()
       wast.errors.foreach(e => println(e.format))
       Console.println("Aborting due to previous errors.")
@@ -107,7 +107,7 @@ object Compiler {
     println(f"Weeder:     ${stopWatch.click() / 1000000}%4d msec.")
 
     val rast = Resolver.resolve(wast.get)
-    if (rast.isFailure) {
+    if (rast.hasErrors) {
       println()
       rast.errors.foreach(e => println(e.format))
       Console.println("Aborting due to previous errors.")
@@ -116,7 +116,7 @@ object Compiler {
     println(f"Resolver:   ${stopWatch.click() / 1000000}%4d msec.")
 
     val tast = Typer.typecheck(rast.get)
-    if (tast.isFailure) {
+    if (tast.hasErrors) {
       tast.errors.foreach(e => println(e.format))
       Console.println("Aborting due to previous errors.")
       return None

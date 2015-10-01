@@ -7,7 +7,6 @@ namespace ParityAnalysis {
     // the parity lattice consists of just four elements:
     enum Parity {
                   case Top,
-                  case Bot,
         case Odd,          case Even,
                   case Bot
     };
@@ -83,7 +82,7 @@ namespace ParityAnalysis {
     };
 
     // or may be odd:
-    def isMaybeOdd(e: Parity, e: Int): Bool = match e with {
+    def isMaybeOdd(e: Parity): Bool = match e with {
         case Parity.Bot    => false;
         case Parity.Odd    => true;
         case Parity.Even   => false;
@@ -92,7 +91,7 @@ namespace ParityAnalysis {
 
     lat Parity<> (Bot, leq, ParityAnalysis::lub);
 
-    rel SumOp(result: Int, result: Int, left: Int, right: Int);
+    rel SumOp(result: Int, left: Int, right: Int);
 //    rel VarPointsTo(localVal: Int, value: <Parity>); TODO
     rel VarPointsTo(localVal: Int, value: Parity);
 

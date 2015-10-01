@@ -35,14 +35,15 @@ object Weeder {
      */
     case class DuplicateAttribute(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
       val format =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR ------------------------------------------------ ${location1.formatSource}")}
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${location1.formatSource}")}
             |
             |${consoleCtx.red(s">> Duplicate attribute name '$name'.")}
             |
-            |First declaration was here:
+            |First definition was here:
             |${location1.underline}
-            |Second declaration was here:
+            |Second definition was here:
             |${location2.underline}
+            |Tip: Consider renaming or removing one of the attributes.
          """.stripMargin
     }
 
@@ -55,14 +56,15 @@ object Weeder {
      */
     case class DuplicateFormal(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
       val format =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR ------------------------------------------------ ${location1.formatSource}")}
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${location1.formatSource}")}
             |
             |${consoleCtx.red(s">> Duplicate formal argument '$name'.")}
             |
-            |First declaration was here:
+            |First definition was here:
             |${location1.underline}
-            |Second declaration was here:
+            |Second definition was here:
             |${location2.underline}
+            |Tip: Consider renaming or removing one of the arguments.
          """.stripMargin
     }
 
@@ -75,7 +77,7 @@ object Weeder {
      */
     case class DuplicateTag(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
       val format =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR ------------------------------------------------ ${location1.formatSource}")}
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${location1.formatSource}")}
             |
             |${consoleCtx.red(s">> Duplicate tag name '$name'.")}
             |
