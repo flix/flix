@@ -5,7 +5,6 @@ namespace Cycles {
     Edge(2, 3).
     Edge(3, 1).
     Edge(1, 5).
-    Edge(3, 5).
 
     rel Reachable(src: Int, dst: Int);
     Reachable(x, y) :- Edge(x, y).
@@ -16,5 +15,6 @@ namespace Cycles {
 
     // TODO: add assertion
     // assert Cylic(1).
+    // refute Cyclic(5).
 
 }

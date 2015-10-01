@@ -14,6 +14,8 @@ namespace Reachability {
     Reachable(x, z) :- Reachable(x, y), Edge(y, z).
 
     // TODO: add assertion
-    // assert Reachable(5, 7)
+    // assert Reachable(5, 7).
+    // assert Reachable(1, y), Reachable(y, 3).
+    // refute Reachable(1, 9).
 
 };

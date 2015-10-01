@@ -221,43 +221,43 @@ class TestParser extends FunSuite {
   }
 
   test("Directive.Assert02") {
-    // \forall x. P(x). This is trivially true.
+    // \exists x. P(x). This is trivially true.
     val input = "assert P(x)."
     ???
   }
 
   test("Directive.Assert03") {
-    // \forall y. P(1, y), Q(y, 3).
+    // \exists y. P(1, y), Q(y, 3).
     val input = "assert P(1, y), Q(y, 3)."
     ???
   }
 
   test("Directive.Assert04") {
-    // \forall x, y, z. P(x, y), Q(y, z).
+    // \exists x, y, z. P(x, y), Q(y, z).
     val input = "assert P(x, y), Q(y, z)."
     ???
   }
 
   test("Directive.Refute01") {
-    // P(42) => false.
+    // P(42) => false. <==> \not P(42).
     val input = "refute P(42)."
     ???
   }
 
   test("Directive.Refute02") {
-    // \forall x. P(x) => false.
+    // \forall x. P(x) => false. <==> \not \exists x. P(x).
     val input = "refute P(x)."
     ???
   }
 
   test("Directive.Refute03") {
-    // \forall y. P(1, y), Q(y, 3) => false.
+    // \forall y. P(1, y), Q(y, 3) => false. <==> \not \exists y. P(1, y), Q(y, 3)
     val input = "refute P(1,  y), Q(y, 3)."
     ???
   }
 
   test("Directive.Refute04") {
-    // \forall x, y, z. P(x, y), Q(y, z) => false.
+    // \forall x, y, z. P(x, y), Q(y, z) => false. <==> \not \exists x, y. z. P(x, y), Q(y, z)
     val input = "refute P(x,  y), Q(y, z)."
     ???
   }
