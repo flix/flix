@@ -693,19 +693,19 @@ class TestParser extends FunSuite {
   test("Pattern.Literal01") {
     val input = "true"
     val result = new Parser(SourceInput.Str(input)).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
-    assertResult(true)(result.lit.asInstanceOf[ParsedAst.Literal.Bool])
+    assertResult(true)(result.lit.asInstanceOf[ParsedAst.Literal.Bool].lit)
   }
 
   test("Pattern.Literal02") {
     val input = "42"
     val result = new Parser(SourceInput.Str(input)).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
-    assertResult(42)(result.lit.asInstanceOf[ParsedAst.Literal.Int])
+    assertResult(42)(result.lit.asInstanceOf[ParsedAst.Literal.Int].lit)
   }
 
   test("Pattern.Literal03") {
     val input = "\"foo\""
     val result = new Parser(SourceInput.Str(input)).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
-    assertResult("foo")(result.lit.asInstanceOf[ParsedAst.Literal.Str])
+    assertResult("foo")(result.lit.asInstanceOf[ParsedAst.Literal.Str].lit)
   }
 
   test("Pattern.Tag01") {
@@ -1062,7 +1062,7 @@ class TestParser extends FunSuite {
   test("Literal (Unit)") {
     val input = "()"
     val result = new Parser(SourceInput.Str(input)).Literal.run().get
-    assertResult(result)(ParsedAst.Literal.Unit(SL))
+    assert(result.isInstanceOf[ParsedAst.Literal.Unit])
   }
 
   test("Literal (true)") {
@@ -1122,7 +1122,7 @@ class TestParser extends FunSuite {
   test("Literal.Tuple01") {
     val input = "()"
     val result = new Parser(SourceInput.Str(input)).Literal.run().get
-    assertResult(ParsedAst.Literal.Unit(SL))(result)
+    assert(result.isInstanceOf[ParsedAst.Literal.Unit])
   }
 
   test("Literal.Tuple02") {

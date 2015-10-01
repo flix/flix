@@ -520,11 +520,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   def SL: Rule1[SourceLocation] = {
     val position = Position(cursor, input)
     rule {
-      push(ast.FileSourceLocation(source, position.line, position.column, 0, position.column + 20, input.getLine(position.line)))
+      push(ast.FileLocation(source, position.line, position.column, 0, position.column + 20, input.getLine(position.line)))
     }
   }
 
   private def getSourceLocation(beginSP: SourcePosition, endSP: SourcePosition): SourceLocation =
-    FileSourceLocation(source, beginSP.lineNumber, beginSP.colNumber, endSP.lineNumber, endSP.colNumber, beginSP.line)
+    FileLocation(source, beginSP.lineNumber, beginSP.colNumber, endSP.lineNumber, endSP.colNumber, beginSP.line)
 
 }

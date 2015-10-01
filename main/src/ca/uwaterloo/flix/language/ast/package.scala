@@ -6,6 +6,8 @@ import ca.uwaterloo.flix.util.ConsoleCtx
 
 package object ast {
 
+  // TODO: Cleanup this class...
+
   /**
    * A common super-type for sources.
    */
@@ -64,7 +66,7 @@ package object ast {
    * @param endCol the column number where the entity ends.
    * @param line the optional line (if the syntactic entity occurs on one line).
    */
-  case class FileSourceLocation(source: SourceInput, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int, line: String) extends SourceLocation {
+  case class FileLocation(source: SourceInput, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int, line: String) extends SourceLocation {
 
     val formatSource: String = source match {
       case SourceInput.File(p) => p.toString
