@@ -7,7 +7,7 @@ import org.scalatest.FunSuite
 class TestInterpreter extends FunSuite {
   val root = Root(Map(), Map(), Map(), List(), List())
 
-  val loc = SourceLocation.Test
+  val loc = SourceLocation.Unknown
 
   val ident01 = Name.Ident("x", loc)
   val ident02 = Name.Ident("y", loc)

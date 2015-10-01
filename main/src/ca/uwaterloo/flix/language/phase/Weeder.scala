@@ -85,8 +85,11 @@ object Weeder {
             |${location1.underline}
             |Second declaration was here:
             |${location2.underline}
+            |Tip: Consider renaming or removing one of the tags.
          """.stripMargin
     }
+
+    // TODO: Format the rest of these nicely.
 
     /**
      * An error raised to indicate that an illegal term occurs inside a predicate.

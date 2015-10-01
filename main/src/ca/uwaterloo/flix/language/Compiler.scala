@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language
 
 import java.nio.file.{Files, Path}
 
-import ca.uwaterloo.flix.language.ast.{SourceInput, TypedAst, ResolvedAst, ParsedAst}
+import ca.uwaterloo.flix.language.ast.{SourceInput, TypedAst, ParsedAst}
 import ca.uwaterloo.flix.language.phase.Parser
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.util.{AnsiConsole, StopWatch}

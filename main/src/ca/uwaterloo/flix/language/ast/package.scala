@@ -7,24 +7,21 @@ import ca.uwaterloo.flix.util.ConsoleCtx
 package object ast {
 
   /**
-   * A common super-type for input sources.
+   * A common super-type for sources.
    */
   sealed trait SourceInput
 
   object SourceInput {
 
     /**
-     * An input source that is backed by a regular string.
+     * An source that is backed by a regular string.
      */
     case class Str(str: String) extends SourceInput
 
     /**
-     * An input source that is backed by a regular file.
+     * An source that is backed by a regular file.
      */
     case class File(path: Path) extends SourceInput
-
-    case object Test extends SourceInput
-
   }
 
   /**
@@ -36,13 +33,25 @@ package object ast {
    */
   case class SourcePosition(lineNumber: Int, colNumber: Int, line: String)
 
+  sealed trait SourceLocation {
+    val formatSource: String
+
+    val format: String
+
+    def underline(implicit consoleCtx: ConsoleCtx): String
+  }
+
   /**
    * Companion object for the [[SourceLocation]] class.
    */
   object SourceLocation {
-    // TODO: Merge these into one.
-    val Unknown = SourceLocation(SourceInput.Test, 0, 0, 0, 0, "")
-    val Test = SourceLocation(SourceInput.Test, 1, 1, 1, 1, "")
+
+    val Unknown = new SourceLocation {
+      override val formatSource: String = ""
+      override val format: String = ""
+      override def underline(implicit consoleCtx: ConsoleCtx): String = ""
+    }
+
   }
 
   /**
@@ -55,12 +64,11 @@ package object ast {
    * @param endCol the column number where the entity ends.
    * @param line the optional line (if the syntactic entity occurs on one line).
    */
-  case class SourceLocation(source: SourceInput, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int, line: String) {
+  case class FileSourceLocation(source: SourceInput, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int, line: String) extends SourceLocation {
 
     val formatSource: String = source match {
       case SourceInput.File(p) => p.toString
       case SourceInput.Str(_) => "???"
-      case SourceInput.Test => "test"
     }
 
     /**
@@ -70,7 +78,6 @@ package object ast {
     val format: String = source match {
       case SourceInput.Str(_) => s"<<unknown>>:$beginLine:$beginCol"
       case SourceInput.File(p) => s"$p:$beginLine:$beginCol"
-      case SourceInput.Test => "test"
     }
 
     def underline(implicit consoleCtx: ConsoleCtx): String = {

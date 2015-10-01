@@ -55,7 +55,6 @@ class TestWeeder extends FunSuite {
     assertResult(2)(result.errors.size)
   }
 
-
   test("DuplicateTag01") {
     val past = ParsedAst.Definition.Enum(SL, Ident, Seq(
       ParsedAst.Type.Tag(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
@@ -94,6 +93,12 @@ class TestWeeder extends FunSuite {
     assertResult(2)(result.errors.size)
   }
 
+
+
+
+
+
+
   test("ApplyNotAllowInBody01") {
     val input = "A(x) :- B(f(x))."
     val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
@@ -101,6 +106,10 @@ class TestWeeder extends FunSuite {
     assert(result.isFailure)
     assertResult(1)(result.errors.size)
   }
+
+
+
+
 
   // TODO: Wildcard not allowed in head.
 
@@ -114,8 +123,6 @@ class TestWeeder extends FunSuite {
     assertResult(2)(result.errors.size)
   }
 
-
-
   test("Term.Heead") {
     val past = ParsedAst.Term.Apply(SL, Name.Unresolved(List("foo"), SourceLocation.Unknown), Seq.empty)
     val result = Weeder.Term.Head.compile(past)
@@ -126,20 +133,6 @@ class TestWeeder extends FunSuite {
     val past = ParsedAst.Term.Apply(SL, Name.Unresolved(List("foo"), SourceLocation.Unknown), Seq.empty)
     val result = Weeder.Term.Body.compile(past)
     assert(result.isFailure)
-  }
-
-  test("Type.Unit") {
-    val past = ParsedAst.Type.Unit
-    val result = Weeder.Type.compile(past)
-
-    assertResult(WeededAst.Type.Unit)(result.get)
-  }
-
-  test("Type.Tag") {
-    val past = ParsedAst.Type.Tag(Ident, ParsedAst.Type.Unit)
-    val result = Weeder.Type.compile(past)
-
-    assertResult(WeededAst.Type.Tag(Ident, WeededAst.Type.Unit))(result.get)
   }
 
 }

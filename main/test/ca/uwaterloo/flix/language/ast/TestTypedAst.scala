@@ -4,7 +4,7 @@ import org.scalatest.FunSuite
 
 class TestTypedAst extends FunSuite {
 
-  val SL = SourceLocation.Test
+  val SL = SourceLocation.Unknown
 
   test("Pattern.Bound") {
     val x = Name.Ident("x", SourceLocation.Unknown)

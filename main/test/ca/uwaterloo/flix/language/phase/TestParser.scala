@@ -10,7 +10,7 @@ import org.scalatest.FunSuite
 
 class TestParser extends FunSuite {
 
-  val SL = SourceLocation.Test
+  val SL = SourceLocation.Unknown
 
   /////////////////////////////////////////////////////////////////////////////
   // Root                                                                    //
@@ -693,19 +693,19 @@ class TestParser extends FunSuite {
   test("Pattern.Literal01") {
     val input = "true"
     val result = new Parser(SourceInput.Str(input)).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
-    assertResult(ParsedAst.Literal.Bool(SL, true))(result.lit)
+    assertResult(true)(result.lit.asInstanceOf[ParsedAst.Literal.Bool])
   }
 
   test("Pattern.Literal02") {
     val input = "42"
     val result = new Parser(SourceInput.Str(input)).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
-    assertResult(ParsedAst.Literal.Int(SL, 42))(result.lit)
+    assertResult(42)(result.lit.asInstanceOf[ParsedAst.Literal.Int])
   }
 
   test("Pattern.Literal03") {
     val input = "\"foo\""
     val result = new Parser(SourceInput.Str(input)).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
-    assertResult(ParsedAst.Literal.Str(SL, "foo"))(result.lit)
+    assertResult("foo")(result.lit.asInstanceOf[ParsedAst.Literal.Str])
   }
 
   test("Pattern.Tag01") {
