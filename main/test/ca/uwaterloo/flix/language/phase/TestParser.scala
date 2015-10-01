@@ -214,6 +214,11 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Directives                                                              //
   /////////////////////////////////////////////////////////////////////////////
+  // TODO: Alternative
+  // false <= P(x).
+  // Error(x) <= P(x).
+  // Error(y) <= !Edge(1, 3)
+
   test("Directive.Assert01") {
     // P(42).
     val input = "assert P(42)."
