@@ -100,40 +100,7 @@ class TestResolver extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  test("UnresolvedReference01") {
-    val input =
-      s"""namespace A {
-         |  def foo(x: Int, y: Int): Int = z;
-         |};
-       """.stripMargin
-    val result = Compiler.compile(input)
-    assert(result.hasErrors)
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedReference])
-  }
-
-  test("UnresolvedReference02") {
-    val input =
-      s"""namespace A {
-         |  def foo(x: Int, y: Int): Int = x + y + z;
-         |};
-       """.stripMargin
-    val result = Compiler.compile(input)
-    assert(result.hasErrors)
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedReference])
-  }
-
-  test("UnresolvedReference03") {
-    val input =
-      s"""namespace A {
-         |  val x: Int = let y = 42 in z;
-         |};
-       """.stripMargin
-    val result = Compiler.compile(input)
-    assert(result.hasErrors)
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedReference])
-  }
-
-  test("UnresolvedReference04") {
+  test("UnresolvedConstantReference01") {
     val input =
       s"""namespace A {
          |  val x: Int = y;
@@ -141,10 +108,19 @@ class TestResolver extends FunSuite {
        """.stripMargin
     val result = Compiler.compile(input)
     assert(result.hasErrors)
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedReference])
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
   }
 
-
+  test("UnresolvedConstantReference02") {
+    val input =
+      s"""namespace A {
+         |  def foo(x: Int, y: Int): Int = x + y + z;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
+  }
 
   test("UnresolvedEnumReference01") {
     val input =
@@ -166,6 +142,22 @@ class TestResolver extends FunSuite {
     val result = Compiler.compile(input)
     assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference])
+  }
+
+  test("UnresolvedTagReference01") {
+    val input =
+      s"""namespace A {
+         |  enum B {
+         |    case Foo,
+         |    case Bar
+         |  }
+         |
+         |  val b: B = B.Qux;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference]) // TODO
   }
 
   test("UnresolvedRelationReference01") {

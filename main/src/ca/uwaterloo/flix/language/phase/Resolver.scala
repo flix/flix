@@ -40,19 +40,34 @@ object Resolver {
     }
 
 
-    // TODO: Split this into multiple different versions:
-
-
     /**
      * An error raised to indicate that the given `name` in the given `namespace` was not found.
      *
      * @param name the unresolved name.
      * @param namespace the current namespace.
      */
+    // TODO: Split this into multiple different versions:
+    @deprecated
     case class UnresolvedReference(name: Name.Unresolved, namespace: List[String]) extends ResolverError {
       val format: String = s"Error: Unresolved reference to '${name.format}' in namespace '${namespace.mkString("::")}' at: ${name.loc.format}\n"
     }
 
+    /**
+     * An error raised to indicate a reference to an unknown constant.
+     *
+     * @param name the unresolved name.
+     * @param namespace the current namespace.
+     * @param loc the source location of the reference.
+     */
+    case class UnresolvedConstantReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Unresolved reference to constant '${name.format}'.")}
+            |
+            |${loc.underline}
+         """.stripMargin
+    }
 
     /**
      * An error raised to indicate a reference to an unknown enum.
@@ -105,7 +120,7 @@ object Resolver {
          """.stripMargin
     }
 
-
+    // TODO: Check tag names.
     // TODO: All kinds of arity errors....
     // TODO: Cyclic stuff.
 
@@ -130,7 +145,7 @@ object Resolver {
           name.parts
       )
       constants.get(rname) match {
-        case None => UnresolvedReference(name, namespace).toFailure
+        case None => UnresolvedConstantReference(name, namespace, name.loc).toFailure
         case Some(d) => (rname, d).toSuccess
       }
     }
@@ -391,7 +406,7 @@ object Resolver {
             if (locals contains x)
               ResolvedAst.Expression.Var(Name.Ident(x, name.loc), loc).toSuccess
             else
-              UnresolvedReference(name, namespace).toFailure
+              UnresolvedReference(name, namespace).toFailure // TODO: Specialize this.
           case xs => syms.lookupConstant(name, namespace) map {
             case (rname, defn) => ResolvedAst.Expression.Ref(rname, loc)
           }
