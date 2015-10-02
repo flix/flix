@@ -289,25 +289,23 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def WildcardTerm: Rule1[ParsedAst.Term] = rule {
-    SP ~ atomic("_") ~ SP ~> ((sp1: SourcePosition, sp2: SourcePosition) => ParsedAst.Term.Wildcard(getSourceLocation(sp1, sp2)))
+    SP ~ atomic("_") ~ SP ~ optWS ~> ParsedAst.Term.Wildcard
   }
 
   def VariableTerm: Rule1[ParsedAst.Term.Var] = rule {
-    SL ~ Ident ~> ParsedAst.Term.Var
+    SP ~ Ident ~ SP ~ optWS ~> ParsedAst.Term.Var
   }
 
   def LiteralTerm: Rule1[ParsedAst.Term.Lit] = rule {
-    SL ~ Literal ~> ParsedAst.Term.Lit
+    SP ~ Literal ~ SP ~ optWS ~> ParsedAst.Term.Lit
   }
 
   def AscribeTerm: Rule1[ParsedAst.Term.Ascribe] = rule {
-    SL ~ SimpleTerm ~ optWS ~ ":" ~ optWS ~ Type ~> ParsedAst.Term.Ascribe
+    SP ~ SimpleTerm ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Term.Ascribe
   }
 
   def ApplyTerm: Rule1[ParsedAst.Term.Apply] = rule {
-    SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy("," ~ optWS) ~ ")" ~ SP ~> (
-      (sp1: SourcePosition, name: Name.Unresolved, args: Seq[ParsedAst.Term], sp2: SourcePosition) =>
-        ParsedAst.Term.Apply(getSourceLocation(sp1, sp2), name, args))
+    SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy("," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Term.Apply
   }
 
   /////////////////////////////////////////////////////////////////////////////

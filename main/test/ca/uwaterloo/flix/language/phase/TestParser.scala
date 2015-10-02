@@ -820,7 +820,7 @@ class TestParser extends FunSuite {
   test("Term03") {
     val input = "42"
     val result = new Parser(SourceInput.Str(input)).Term.run().get.asInstanceOf[ParsedAst.Term.Lit]
-    assertResult("42")(result.literal.asInstanceOf[ParsedAst.Literal.Int].lit)
+    assertResult("42")(result.lit.asInstanceOf[ParsedAst.Literal.Int].lit)
   }
 
   test("Term04") {
@@ -839,19 +839,19 @@ class TestParser extends FunSuite {
   test("Term.Tag01") {
     val input = "Foo.Bar"
     val result = new Parser(SourceInput.Str(input)).Term.run().get.asInstanceOf[ParsedAst.Term.Lit]
-    assert(result.literal.isInstanceOf[ParsedAst.Literal.Tag])
+    assert(result.lit.isInstanceOf[ParsedAst.Literal.Tag])
   }
 
   test("Term.Tag02") {
     val input = "Foo.Bar(1)"
     val result = new Parser(SourceInput.Str(input)).Term.run().get.asInstanceOf[ParsedAst.Term.Lit]
-    assert(result.literal.isInstanceOf[ParsedAst.Literal.Tag])
+    assert(result.lit.isInstanceOf[ParsedAst.Literal.Tag])
   }
 
   test("Term.Tag03") {
     val input = "foo::bar::Baz.Bar(1, 2, 3)"
     val result = new Parser(SourceInput.Str(input)).Term.run().get.asInstanceOf[ParsedAst.Term.Lit]
-    assert(result.literal.isInstanceOf[ParsedAst.Literal.Tag])
+    assert(result.lit.isInstanceOf[ParsedAst.Literal.Tag])
   }
 
   test("Term.Ascribe01") {

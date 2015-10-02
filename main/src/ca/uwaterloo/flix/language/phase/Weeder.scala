@@ -122,7 +122,7 @@ object Weeder {
             |Function calls are not allowed to occur in the body of a rule. Only in its head.
             |
             |Tip: Restructure the rule such that the function call does not occur in its body.
-            | Possibly by breaking up the rule into multiple smaller rules.
+            |Possibly by breaking up the rule into multiple smaller rules.
          """.stripMargin
     }
 
@@ -492,18 +492,18 @@ object Weeder {
        * Returns [[Failure]] if the term contains a wildcard variable.
        */
       def compile(past: ParsedAst.Term): Validation[WeededAst.Term.Head, WeederError] = past match {
-        case ParsedAst.Term.Wildcard(loc) => WildcardInHeadTerm(loc).toFailure
-        case ParsedAst.Term.Var(loc, ident) => WeededAst.Term.Head.Var(ident, loc).toSuccess
-        case ParsedAst.Term.Lit(loc, literal) => Literal.compile(literal) map {
-          case lit => WeededAst.Term.Head.Lit(lit, loc)
+        case term: ParsedAst.Term.Wildcard => WildcardInHeadTerm(term.loc).toFailure
+        case term: ParsedAst.Term.Var => WeededAst.Term.Head.Var(term.ident, term.loc).toSuccess
+        case term: ParsedAst.Term.Lit => Literal.compile(term.lit) map {
+          case lit => WeededAst.Term.Head.Lit(lit, term.loc)
         }
-        case ParsedAst.Term.Ascribe(loc, pterm, ptpe) =>
-          @@(compile(pterm), Type.compile(ptpe)) map {
-            case (term, tpe) => WeededAst.Term.Head.Ascribe(term, tpe, loc)
+        case term: ParsedAst.Term.Ascribe =>
+          @@(compile(term.term), Type.compile(term.tpe)) map {
+            case (t, tpe) => WeededAst.Term.Head.Ascribe(t, tpe, term.loc)
           }
-        case ParsedAst.Term.Apply(loc, name, pargs) =>
-          @@(pargs map compile) map {
-            case args => WeededAst.Term.Head.Apply(name, args, loc)
+        case term: ParsedAst.Term.Apply =>
+          @@(term.args map compile) map {
+            case args => WeededAst.Term.Head.Apply(term.name, args, term.loc)
           }
       }
     }
@@ -515,16 +515,16 @@ object Weeder {
        * Returns [[Failure]] if the term contains a function call.
        */
       def compile(past: ParsedAst.Term): Validation[WeededAst.Term.Body, WeederError] = past match {
-        case ParsedAst.Term.Wildcard(loc) => WeededAst.Term.Body.Wildcard(loc).toSuccess
-        case ParsedAst.Term.Var(loc, ident) => WeededAst.Term.Body.Var(ident, loc).toSuccess
-        case ParsedAst.Term.Lit(loc, literal) => Literal.compile(literal) map {
-          case lit => WeededAst.Term.Body.Lit(lit, loc)
+        case term: ParsedAst.Term.Wildcard => WeededAst.Term.Body.Wildcard(term.loc).toSuccess
+        case term: ParsedAst.Term.Var => WeededAst.Term.Body.Var(term.ident, term.loc).toSuccess
+        case term: ParsedAst.Term.Lit => Literal.compile(term.lit) map {
+          case lit => WeededAst.Term.Body.Lit(lit, term.loc)
         }
-        case ParsedAst.Term.Ascribe(loc, pterm, ptpe) =>
-          @@(compile(pterm), Type.compile(ptpe)) map {
-            case (term, tpe) => WeededAst.Term.Body.Ascribe(term, tpe, loc)
+        case term: ParsedAst.Term.Ascribe =>
+          @@(compile(term.term), Type.compile(term.tpe)) map {
+            case (t, tpe) => WeededAst.Term.Body.Ascribe(t, tpe, term.loc)
           }
-        case ParsedAst.Term.Apply(loc, name, args) => ApplyInBodyTerm(loc).toFailure
+        case term: ParsedAst.Term.Apply => ApplyInBodyTerm(term.loc).toFailure
       }
     }
 

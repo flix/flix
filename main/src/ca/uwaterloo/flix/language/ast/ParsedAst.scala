@@ -446,43 +446,58 @@ object ParsedAst {
     /**
      * An AST node that represent a wildcard variable term.
      *
-     * @param loc the source location of the wildcard.
+     * @param sp1 the position of the first character in the literal.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Wildcard(loc: SourceLocation) extends ParsedAst.Term
+    case class Wildcard(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Term {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represent a variable term.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the literal.
      * @param ident the variable identifier.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Var(loc: SourceLocation, ident: Name.Ident) extends ParsedAst.Term
+    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Term {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represent a literal term.
      *
-     * @param loc the location.
-     * @param literal the literal.
+     * @param sp1 the position of the first character in the literal.
+     * @param lit the literal.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Lit(loc: SourceLocation, literal: ParsedAst.Literal) extends ParsedAst.Term
+    case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Term {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents an ascribed term.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the literal.
      * @param term the term.
      * @param tpe the type.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Ascribe(loc: SourceLocation, term: ParsedAst.Term, tpe: ParsedAst.Type) extends ParsedAst.Term
+    case class Ascribe(sp1: SourcePosition, term: ParsedAst.Term, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Term {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represent a function application term
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the literal.
      * @param name the unresolved name of the function.
      * @param args the arguments to the function.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Apply(loc: SourceLocation, name: Name.Unresolved, args: Seq[ParsedAst.Term]) extends ParsedAst.Term
+    case class Apply(sp1: SourcePosition, name: Name.Unresolved, args: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
   }
 
