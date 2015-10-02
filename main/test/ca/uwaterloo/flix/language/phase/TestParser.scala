@@ -606,8 +606,8 @@ class TestParser extends FunSuite {
 
   test("Expression.Tuple01") {
     val input = "()"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Literal.Unit])
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
+    assert(result.lit.isInstanceOf[ParsedAst.Literal.Unit])
   }
 
   test("Expression.Tuple02") {

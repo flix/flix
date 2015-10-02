@@ -38,6 +38,34 @@ class TestWeeder extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Lattices                                                                //
+  /////////////////////////////////////////////////////////////////////////////
+  test("IllegalLattice01") {
+    val past = ParsedAst.Definition.Lattice(SL, Ident, Seq(), Seq.empty)
+    val result = Weeder.Definition.compile(past)
+    assert(result.hasErrors)
+  }
+
+  test("IllegalLattice02") {
+    val past = ParsedAst.Definition.Lattice(SL, Ident, Seq(
+      ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP)
+    ), Seq.empty)
+    val result = Weeder.Definition.compile(past)
+    assert(result.hasErrors)
+  }
+
+  test("IllegalLattice03") {
+    val past = ParsedAst.Definition.Lattice(SL, Ident, Seq(
+      ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP),
+      ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP),
+      ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP),
+      ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP)
+    ), Seq.empty)
+    val result = Weeder.Definition.compile(past)
+    assert(result.hasErrors)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Relations                                                               //
   /////////////////////////////////////////////////////////////////////////////
   test("DuplicateAttribute01") {
