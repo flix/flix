@@ -169,7 +169,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def IfThenElseExpression: Rule1[ParsedAst.Expression.IfThenElse] = rule {
-    SL ~ atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ WS ~ Expression ~ WS ~ atomic("else") ~ WS ~ Expression ~> ParsedAst.Expression.IfThenElse
+    SL ~ atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ optWS ~ atomic("else") ~ optWS ~ Expression ~> ParsedAst.Expression.IfThenElse
   }
 
   def MatchExpression: Rule1[ParsedAst.Expression.Match] = {
@@ -187,16 +187,16 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def TagExpression: Rule1[ParsedAst.Expression.Tag] = rule {
-    SL ~ QName ~ "." ~ Ident ~ optWS ~ optional(Expression) ~>
-      ((loc: SourceLocation, name: Name.Unresolved, ident: Name.Ident, exp: Option[ParsedAst.Expression]) => exp match {
-        case None => ParsedAst.Expression.Tag(loc, name, ident, ParsedAst.Expression.Lit(loc, ParsedAst.Literal.Unit(loc)))
-        case Some(e) => ParsedAst.Expression.Tag(loc, name, ident, e)
+    SP ~ QName ~ "." ~ Ident ~ optWS ~ optional(Expression) ~ SP ~>
+      ((sp1: SourcePosition, name: Name.Unresolved, ident: Name.Ident, exp: Option[ParsedAst.Expression], sp2: SourcePosition) => exp match {
+        case None => ParsedAst.Expression.Tag(???, name, ident, ParsedAst.Expression.Lit(???, ParsedAst.Literal.Unit(sp1, sp2)))
+        case Some(e) => ParsedAst.Expression.Tag(???, name, ident, e)
       })
   }
 
   def TupleExpression: Rule1[ParsedAst.Expression] = {
     def Unit: Rule1[ParsedAst.Expression] = rule {
-      SL ~ atomic("()") ~> ((loc: SourceLocation) => ParsedAst.Expression.Lit(loc, ParsedAst.Literal.Unit(loc)))
+      SL ~ atomic("()") ~> ((loc: SourceLocation) => ParsedAst.Expression.Lit(loc, ParsedAst.Literal.Unit(???, ???)))
     }
 
     def Singleton: Rule1[ParsedAst.Expression] = rule {
@@ -248,7 +248,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   def TagPattern: Rule1[ParsedAst.Pattern.Tag] = rule {
     SL ~ QName ~ "." ~ Ident ~ optWS ~ optional(Pattern) ~>
       ((loc: SourceLocation, name: Name.Unresolved, ident: Name.Ident, pattern: Option[ParsedAst.Pattern]) => pattern match {
-        case None => ParsedAst.Pattern.Tag(loc, name, ident, ParsedAst.Pattern.Lit(loc, ParsedAst.Literal.Unit(loc)))
+        case None => ParsedAst.Pattern.Tag(loc, name, ident, ParsedAst.Pattern.Lit(loc, ParsedAst.Literal.Unit(???, ???)))
         case Some(p) => ParsedAst.Pattern.Tag(loc, name, ident, p)
       })
   }
@@ -390,34 +390,26 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def UnitLiteral: Rule1[ParsedAst.Literal.Unit] = rule {
-    SL ~ atomic("()") ~> ParsedAst.Literal.Unit
+    SP ~ atomic("()") ~ SP ~ optWS ~> ParsedAst.Literal.Unit
   }
 
   def BoolLiteral: Rule1[ParsedAst.Literal.Bool] = rule {
-    TrueLiteral | FalseLiteral
-  }
-
-  def TrueLiteral: Rule1[ParsedAst.Literal.Bool] = rule {
-    SL ~ atomic("true") ~> ((loc: SourceLocation) => ParsedAst.Literal.Bool(loc, lit = true))
-  }
-
-  def FalseLiteral: Rule1[ParsedAst.Literal.Bool] = rule {
-    SL ~ atomic("false") ~> ((loc: SourceLocation) => ParsedAst.Literal.Bool(loc, lit = false))
+    SP ~ capture(atomic("true") | atomic("false")) ~ SP ~ optWS ~> ParsedAst.Literal.Bool
   }
 
   def IntLiteral: Rule1[ParsedAst.Literal.Int] = rule {
-    SL ~ capture(oneOrMore(CharPredicate.Digit)) ~> ((loc: SourceLocation, x: String) => ParsedAst.Literal.Int(loc, x.toInt))
+    SP ~ capture(oneOrMore(CharPredicate.Digit)) ~ SP ~ optWS ~> ParsedAst.Literal.Int
   }
 
   def StrLiteral: Rule1[ParsedAst.Literal.Str] = rule {
-    SL ~ "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~> ParsedAst.Literal.Str
+    SP ~ "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~ SP ~ optWS ~> ParsedAst.Literal.Str
   }
 
   def TagLiteral: Rule1[ParsedAst.Literal.Tag] = rule {
-    SL ~ QName ~ "." ~ Ident ~ optWS ~ optional(Literal) ~>
-      ((loc: SourceLocation, name: Name.Unresolved, ident: Name.Ident, literal: Option[ParsedAst.Literal]) => literal match {
-        case None => ParsedAst.Literal.Tag(loc, name, ident, ParsedAst.Literal.Unit(loc))
-        case Some(lit) => ParsedAst.Literal.Tag(loc, name, ident, lit)
+    SP ~ QName ~ "." ~ Ident ~ optWS ~ optional(Literal) ~ SP ~ optWS ~>
+      ((sp1: SourcePosition, name: Name.Unresolved, ident: Name.Ident, literal: Option[ParsedAst.Literal], sp2: SourcePosition) => literal match {
+        case None => ParsedAst.Literal.Tag(sp1, name, ident, ParsedAst.Literal.Unit(sp1, sp2), sp2)
+        case Some(lit) => ParsedAst.Literal.Tag(sp1, name, ident, lit, sp2)
       })
   }
 
@@ -427,7 +419,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Tuple: Rule1[ParsedAst.Literal] = rule {
-      SL ~ "(" ~ optWS ~ oneOrMore(Literal).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Literal.Tuple
+      SP ~ "(" ~ optWS ~ oneOrMore(Literal).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optWS ~> ParsedAst.Literal.Tuple
     }
 
     rule {
@@ -514,7 +506,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   def SP: Rule1[SourcePosition] = {
     val position = Position(cursor, input)
     rule {
-      push(SourcePosition(position.line, position.column, input.getLine(position.line)))
+      push(SourcePosition(source, position.line, position.column, input.getLine(position.line)))
     }
   }
 
@@ -522,11 +514,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   def SL: Rule1[SourceLocation] = {
     val position = Position(cursor, input)
     rule {
-      push(ast.FileLocation(source, position.line, position.column, position.line, position.column + 1, input.getLine(position.line)))
+      push(SourceLocation(source, position.line, position.column, position.line, position.column + 1, input.getLine(position.line)))
     }
   }
 
-  private def getSourceLocation(beginSP: SourcePosition, endSP: SourcePosition): SourceLocation =
-    FileLocation(source, beginSP.lineNumber, beginSP.colNumber, endSP.lineNumber, endSP.colNumber, beginSP.line)
+  private def getSourceLocation(b: SourcePosition, e: SourcePosition): SourceLocation =
+    SourceLocation.mk(b, e)
 
 }

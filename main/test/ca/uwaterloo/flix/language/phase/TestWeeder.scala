@@ -9,6 +9,7 @@ import org.scalatest.FunSuite
 class TestWeeder extends FunSuite {
 
   val SL = SourceLocation.Unknown
+  val SP = SourcePosition.Unknown
   val Ident = Name.Ident("x", SourceLocation.Unknown)
 
   /////////////////////////////////////////////////////////////////////////////
@@ -69,7 +70,7 @@ class TestWeeder extends FunSuite {
     val past = ParsedAst.Definition.Function(SL, Ident, Seq(
       ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
-    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SL, ParsedAst.Literal.Unit(SL)))
+    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SL, ParsedAst.Literal.Unit(SP, SP)))
 
     val result = Weeder.Definition.compile(past)
     assert(result.hasErrors)
@@ -81,7 +82,7 @@ class TestWeeder extends FunSuite {
       ParsedAst.FormalArg(Name.Ident("y", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
-    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SL, ParsedAst.Literal.Unit(SL)))
+    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SL, ParsedAst.Literal.Unit(SP, SP)))
 
     val result = Weeder.Definition.compile(past)
     assertResult(2)(result.errors.size)

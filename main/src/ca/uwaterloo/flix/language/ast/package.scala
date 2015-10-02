@@ -24,34 +24,32 @@ package object ast {
      * An source that is backed by a regular file.
      */
     case class File(path: Path) extends SourceInput
+
+  }
+
+  object SourcePosition {
+    val Unknown: SourcePosition = SourcePosition(SourceInput.Str(""), 0, 0, "")
   }
 
   /**
    * A class that represent a physical source position inside a source input.
    *
-   * @param lineNumber the line number.
-   * @param colNumber the column number.
-   * @param line the line.
+   * @param line the line number.
+   * @param col the column number.
+   * @param code the line.
    */
-  case class SourcePosition(lineNumber: Int, colNumber: Int, line: String)
-
-  sealed trait SourceLocation {
-    val formatSource: String
-
-    val format: String
-
-    def underline(implicit consoleCtx: ConsoleCtx): String
-  }
+  case class SourcePosition(source: SourceInput, line: Int, col: Int, code: String)
 
   /**
    * Companion object for the [[SourceLocation]] class.
    */
   object SourceLocation {
 
-    val Unknown = new SourceLocation {
-      override val formatSource: String = ""
-      override val format: String = ""
-      override def underline(implicit consoleCtx: ConsoleCtx): String = ""
+    val Unknown: SourceLocation = mk(SourcePosition.Unknown, SourcePosition.Unknown)
+
+    def mk(b: SourcePosition, e: SourcePosition): SourceLocation = {
+      assert(b.source == e.source)
+      SourceLocation(b.source, b.line, b.col, e.line, e.col, b.code)
     }
 
   }
@@ -66,7 +64,7 @@ package object ast {
    * @param endCol the column number where the entity ends.
    * @param line the optional line (if the syntactic entity occurs on one line).
    */
-  case class FileLocation(source: SourceInput, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int, line: String) extends SourceLocation {
+  case class SourceLocation(source: SourceInput, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int, line: String) {
 
     val formatSource: String = source match {
       case SourceInput.File(p) => p.toString

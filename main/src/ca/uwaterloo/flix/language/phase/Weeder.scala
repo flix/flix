@@ -122,7 +122,7 @@ object Weeder {
             |Function calls are not allowed to occur in the body of a rule. Only in its head.
             |
             |Tip: Restructure the rule such that the function call does not occur in its body.
-            |     Possibly by breaking up the rule into multiple smaller rules.
+            | Possibly by breaking up the rule into multiple smaller rules.
          """.stripMargin
     }
 
@@ -314,13 +314,17 @@ object Weeder {
      * Compiles the parsed literal `past` to a weeded literal.
      */
     def compile(past: ParsedAst.Literal): Validation[WeededAst.Literal, WeederError] = past match {
-      case ParsedAst.Literal.Unit(loc) => WeededAst.Literal.Unit(loc).toSuccess
-      case ParsedAst.Literal.Bool(loc, b) => WeededAst.Literal.Bool(b, loc).toSuccess
-      case ParsedAst.Literal.Int(loc, i) => WeededAst.Literal.Int(i, loc).toSuccess
-      case ParsedAst.Literal.Str(loc, s) => WeededAst.Literal.Str(s, loc).toSuccess
-      case ParsedAst.Literal.Tag(loc, name, ident, literal) => compile(literal) map (l => WeededAst.Literal.Tag(name, ident, l, loc))
-      case ParsedAst.Literal.Tuple(loc, pelms) => @@(pelms map compile) map {
-        case elms => WeededAst.Literal.Tuple(elms, loc)
+      case plit: ParsedAst.Literal.Unit => WeededAst.Literal.Unit(plit.loc).toSuccess
+      case plit: ParsedAst.Literal.Bool => plit.lit match {
+        case "true" => WeededAst.Literal.Bool(lit = true, plit.loc).toSuccess
+        case "false" => WeededAst.Literal.Bool(lit = false, plit.loc).toSuccess
+        case _ => throw Compiler.InternalCompilerError("Impossible non-boolean value.")
+      }
+      case plit: ParsedAst.Literal.Int => WeededAst.Literal.Int(plit.lit.toInt, plit.loc).toSuccess
+      case plit: ParsedAst.Literal.Str => WeededAst.Literal.Str(plit.lit, plit.loc).toSuccess
+      case plit: ParsedAst.Literal.Tag => compile(plit.lit) map (lit => WeededAst.Literal.Tag(plit.enum, plit.tag, lit, plit.loc))
+      case plit: ParsedAst.Literal.Tuple => @@(plit.elms map compile) map {
+        case elms => WeededAst.Literal.Tuple(elms, plit.loc)
       }
     }
   }

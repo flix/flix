@@ -130,51 +130,69 @@ object ParsedAst {
     /**
      * An AST node that represents the Unit literal.
      *
-     * @param loc the source location.
+     * @param sp1 the position of the first character in the literal.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Unit(loc: SourceLocation) extends ParsedAst.Literal
+    case class Unit(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Literal {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a boolean literal.
      *
-     * @param loc the source location.
+     * @param sp1 the position of the first character in the literal.
      * @param lit the boolean literal.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Bool(loc: SourceLocation, lit: scala.Boolean) extends ParsedAst.Literal
+    case class Bool(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents an integer literal.
      *
-     * @param loc the source location.
+     * @param sp1 the position of the first character in the literal.
      * @param lit the integer literal.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Int(loc: SourceLocation, lit: scala.Int) extends ParsedAst.Literal
+    case class Int(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a string literal.
      *
-     * @param loc the source location.
+     * @param sp1 the position of the first character in the literal.
      * @param lit the string literal.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Str(loc: SourceLocation, lit: java.lang.String) extends ParsedAst.Literal
+    case class Str(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a tagged literal.
      *
-     * @param loc the source location.
+     * @param sp1 the position of the first character in the literal.
      * @param enum the name of the enum.
      * @param tag the name of the tag.
      * @param lit the nested literal.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Tag(loc: SourceLocation, enum: Name.Unresolved, tag: Name.Ident, lit: ParsedAst.Literal) extends ParsedAst.Literal
+    case class Tag(sp1: SourcePosition, enum: Name.Unresolved, tag: Name.Ident, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Literal {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a tuple literal.
      *
-     * @param loc the source location.
+     * @param sp1 the position of the first character in the literal.
      * @param elms the elements of the tuple.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Tuple(loc: SourceLocation, elms: Seq[ParsedAst.Literal]) extends ParsedAst.Literal
+    case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Literal], sp2: SourcePosition) extends ParsedAst.Literal {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
   }
 
