@@ -343,16 +343,24 @@ object ParsedAst {
    *
    * A pattern is like a literal except it may contain variables and wildcards.
    */
-  sealed trait Pattern extends ParsedAst
+  sealed trait Pattern extends ParsedAst {
+    /**
+     * The source location of `this` pattern.
+     */
+    def loc: SourceLocation
+  }
 
   object Pattern {
 
     /**
      * An AST node that represents a wildcard pattern.
      *
-     * @param loc the source location of the wildcard.
+     * @param sp1 the position of the first character in the literal.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Wildcard(loc: SourceLocation) extends ParsedAst.Pattern
+    case class Wildcard(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a variable pattern.

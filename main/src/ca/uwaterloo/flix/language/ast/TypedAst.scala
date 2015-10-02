@@ -91,12 +91,12 @@ object TypedAst {
    */
   sealed trait Literal extends TypedAst {
     /**
-     * The type of the literal.
+     * The type of `this` literal.
      */
     def tpe: TypedAst.Type
 
     /**
-     * The source location of the literal.
+     * The source location of `this` literal.
      */
     def loc: SourceLocation
   }

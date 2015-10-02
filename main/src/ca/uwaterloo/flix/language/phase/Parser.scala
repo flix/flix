@@ -174,11 +174,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def MatchExpression: Rule1[ParsedAst.Expression.Match] = {
     def MatchRule: Rule1[(ParsedAst.Pattern, ParsedAst.Expression)] = rule {
-      atomic("case") ~ WS ~ Pattern ~ optWS ~ atomic("=>") ~ WS ~ Expression ~ optSC ~> ((p: ParsedAst.Pattern, e: ParsedAst.Expression) => (p, e))
+      atomic("case") ~ optWS ~ Pattern ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~ optSC ~> ((p: ParsedAst.Pattern, e: ParsedAst.Expression) => (p, e))
     }
 
     rule {
-      SL ~ atomic("match") ~ WS ~ Expression ~ WS ~ atomic("with") ~ optWS ~ "{" ~ WS ~ oneOrMore(MatchRule) ~ "}" ~> ParsedAst.Expression.Match
+      SL ~ atomic("match") ~ optWS ~ Expression ~ optWS ~ atomic("with") ~ optWS ~ "{" ~ WS ~ oneOrMore(MatchRule) ~ "}" ~> ParsedAst.Expression.Match
     }
   }
 
@@ -234,7 +234,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def WildcardPattern: Rule1[ParsedAst.Pattern.Wildcard] = rule {
-    SL ~ atomic("_") ~> ParsedAst.Pattern.Wildcard
+    SP ~ atomic("_") ~ SP ~ optWS ~> ParsedAst.Pattern.Wildcard
   }
 
   def VariablePattern: Rule1[ParsedAst.Pattern.Var] = rule {
@@ -511,6 +511,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   @Unoptimized
+  // TODO: Remove
   def SL: Rule1[SourceLocation] = {
     val position = Position(cursor, input)
     rule {
@@ -518,6 +519,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
   }
 
+  // TODO: Remove
   private def getSourceLocation(b: SourcePosition, e: SourcePosition): SourceLocation =
     SourceLocation.mk(b, e)
 

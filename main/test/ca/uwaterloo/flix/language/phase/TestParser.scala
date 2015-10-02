@@ -527,7 +527,7 @@ class TestParser extends FunSuite {
     val m1 = result.asInstanceOf[ParsedAst.Expression.Match]
     val m2 = m1.rules.head._2.asInstanceOf[ParsedAst.Expression.Match]
     val l = m2.rules.head._2.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult(5)(l.lit.asInstanceOf[ParsedAst.Literal.Int].lit)
+    assertResult("5")(l.lit.asInstanceOf[ParsedAst.Literal.Int].lit)
   }
 
   test("Expression.MatchExp04") {
@@ -543,7 +543,7 @@ class TestParser extends FunSuite {
     val m1 = result.asInstanceOf[ParsedAst.Expression.Match]
     val m2 = m1.e.asInstanceOf[ParsedAst.Expression.Match]
     val l = m2.rules.head._2.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult(3)(l.lit.asInstanceOf[ParsedAst.Literal.Int].lit)
+    assertResult("3")(l.lit.asInstanceOf[ParsedAst.Literal.Int].lit)
   }
 
   test("Expression.CallExp01") {

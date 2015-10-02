@@ -418,7 +418,7 @@ object Weeder {
       val seen = mutable.Map.empty[String, Name.Ident]
 
       def visit(p: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = p match {
-        case ParsedAst.Pattern.Wildcard(loc) => WeededAst.Pattern.Wildcard(loc).toSuccess
+        case pat: ParsedAst.Pattern.Wildcard => WeededAst.Pattern.Wildcard(pat.loc).toSuccess
         case ParsedAst.Pattern.Var(loc, ident) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> ident)
