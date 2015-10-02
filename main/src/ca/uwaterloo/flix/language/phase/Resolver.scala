@@ -15,6 +15,9 @@ object Resolver {
   sealed trait ResolverError extends Compiler.CompilationError
 
   object ResolverError {
+
+    implicit val consoleCtx = Compiler.ConsoleCtx
+
     /**
      * An error raised to indicate that the given `name` is used for multiple definitions.
      *
@@ -23,9 +26,17 @@ object Resolver {
      * @param loc2 the location of the second definition.
      */
     case class DuplicateDefinition(name: Name.Resolved, loc1: SourceLocation, loc2: SourceLocation) extends ResolverError {
-      val format: String = s"Error: Duplicate definition of '${name.format}'.\n" +
-        s"  First definition was here: ${loc1.format}.\n" +
-        s"  Second definition was here: ${loc2.format}.\n"
+      val format =
+        s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Duplicate definition of the name '${name.format}'.")}
+            |
+            |First definition was here:
+            |${loc1.underline}
+            |Second definition was here:
+            |${loc2.underline}
+            |Tip: Consider renaming or removing one of the definitions.
+         """.stripMargin
     }
 
     /**

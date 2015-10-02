@@ -19,7 +19,10 @@ import scala.util.{Failure, Success}
  *
  * via Olivier Danvy.
  *
- * Inspiration for better error messages: http://elm-lang.org/blog/compiler-errors-for-humans
+ * Inspiration for better error messages:
+ *
+ *  http://clang.llvm.org/diagnostics.html
+ *  http://elm-lang.org/blog/compiler-errors-for-humans
  */
 
 object Compiler {
