@@ -5,7 +5,7 @@ import java.nio.file.{Files, Path}
 import ca.uwaterloo.flix.language.ast.{SourceInput, TypedAst, ParsedAst}
 import ca.uwaterloo.flix.language.phase.Parser
 import ca.uwaterloo.flix.language.phase._
-import ca.uwaterloo.flix.util.{AnsiConsole, StopWatch}
+import ca.uwaterloo.flix.util.{Validation, AnsiConsole, StopWatch}
 
 import org.parboiled2.ParseError
 
@@ -135,19 +135,35 @@ object Compiler {
 
       // TODO: Consider using a prelude
 
-//      val past = new Parser(None, input).Expression.run().get
-//
-//      val wast = Weeder.Expression.compile(past).get
-//
-//      // TODO: SymbolTable?
-//      val rast = Resolver.Expression.resolve(wast, List.empty, Resolver.SymbolTable.empty).get
-//
-//      // TODO: Symbols?
-//      val tast = Typer.Expression.typer(rast, ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty))
-//
-//      tast.get
+      //      val past = new Parser(None, input).Expression.run().get
+      //
+      //      val wast = Weeder.Expression.compile(past).get
+      //
+      //      // TODO: SymbolTable?
+      //      val rast = Resolver.Expression.resolve(wast, List.empty, Resolver.SymbolTable.empty).get
+      //
+      //      // TODO: Symbols?
+      //      val tast = Typer.Expression.typer(rast, ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty))
+      //
+      //      tast.get
       ???
     }
+  }
+
+  def compile(input: String): Validation[TypedAst.Root, CompilationError] = {
+    val past = parse(input, None)
+
+    val wast = Weeder.weed(past)
+    if (wast.isFailure) {
+      return wast.asInstanceOf[Validation[TypedAst.Root, CompilationError]]
+    }
+
+    val rast = Resolver.resolve(wast.get)
+    if (rast.isFailure) {
+      return rast.asInstanceOf[Validation[TypedAst.Root, CompilationError]]
+    }
+
+    return Typer.typecheck(rast.get).asInstanceOf[Validation[TypedAst.Root, CompilationError]]
   }
 
 }

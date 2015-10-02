@@ -10,9 +10,6 @@ import scala.collection.mutable
 /**
  * The Weeder phase performs simple syntactic checks and rewritings.
  */
-// TODO: JoinSemiLattice vs. CompleteLattice.
-// TODO: valid "Traits"
-
 object Weeder {
 
   import WeederError._
@@ -476,6 +473,7 @@ object Weeder {
        */
       def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case p: ParsedAst.Predicate.Unresolved => compile(p)
+        case p: ParsedAst.Predicate.Alias => ???
       }
 
       /**
@@ -494,6 +492,7 @@ object Weeder {
        */
       def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
         case p: ParsedAst.Predicate.Unresolved => compile(p)
+        case p: ParsedAst.Predicate.Alias => ???
       }
 
       /**

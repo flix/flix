@@ -15,20 +15,17 @@ object Resolver {
   sealed trait ResolverError extends Compiler.CompilationError
 
   object ResolverError {
-
-    // TODO: Cyclic stuff.
-
     /**
      * An error raised to indicate that the given `name` is used for multiple definitions.
      *
      * @param name the name
-     * @param location1 the location of the first definition.
-     * @param location2 the location of the second definition.
+     * @param loc1 the location of the first definition.
+     * @param loc2 the location of the second definition.
      */
-    case class DuplicateDefinition(name: Name.Resolved, location1: SourceLocation, location2: SourceLocation) extends ResolverError {
+    case class DuplicateDefinition(name: Name.Resolved, loc1: SourceLocation, loc2: SourceLocation) extends ResolverError {
       val format: String = s"Error: Duplicate definition of '${name.format}'.\n" +
-        s"  First definition was here: ${location1.format}.\n" +
-        s"  Second definition was here: ${location2.format}.\n"
+        s"  First definition was here: ${loc1.format}.\n" +
+        s"  Second definition was here: ${loc2.format}.\n"
     }
 
     /**
@@ -42,6 +39,8 @@ object Resolver {
     }
 
     // TODO: All kinds of arity errors....
+
+    // TODO: Cyclic stuff.
 
     // TODO: Unused, let, parameters etc.
 
