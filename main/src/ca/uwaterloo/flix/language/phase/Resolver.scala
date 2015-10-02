@@ -39,6 +39,10 @@ object Resolver {
          """.stripMargin
     }
 
+
+    // TODO: Split this into multiple different versions:
+
+
     /**
      * An error raised to indicate that the given `name` in the given `namespace` was not found.
      *
@@ -46,8 +50,27 @@ object Resolver {
      * @param namespace the current namespace.
      */
     case class UnresolvedReference(name: Name.Unresolved, namespace: List[String]) extends ResolverError {
-      val format: String = s"Error: Unresolved reference to '${name.format}' in namespace '${namespace.mkString("::")}' at: ${name.location.format}\n"
+      val format: String = s"Error: Unresolved reference to '${name.format}' in namespace '${namespace.mkString("::")}' at: ${name.loc.format}\n"
     }
+
+
+    /**
+     * An error raised to indicate a reference to an unknown type.
+     *
+     * @param name the unresolved name.
+     * @param namespace the current namespace.
+     * @param loc the source location of the reference.
+     */
+    case class UnresolvedTypeReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Unresolved type reference '${name.format}'.")}
+            |
+            |${loc.underline}
+         """.stripMargin
+    }
+
 
     // TODO: All kinds of arity errors....
 
@@ -117,7 +140,7 @@ object Resolver {
           name.parts
       )
       types.get(rname) match {
-        case None => UnresolvedReference(name, namespace).toFailure
+        case None => UnresolvedTypeReference(name, namespace, name.loc).toFailure
         case Some(tpe) => tpe.toSuccess
       }
     }
@@ -147,9 +170,9 @@ object Resolver {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
 
-//        val collectedLattices = Validation.fold[Name.Resolved, WeededAst.Definition.Lattice, Name.Resolved, ResolvedAst.Definition.Lattice, ResolverError](syms.lattices) {
-//          case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
-//        }
+        //        val collectedLattices = Validation.fold[Name.Resolved, WeededAst.Definition.Lattice, Name.Resolved, ResolvedAst.Definition.Lattice, ResolverError](syms.lattices) {
+        //          case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
+        //        }
 
         val collectedRelations = Validation.fold[Name.Resolved, WeededAst.Definition.Relation, Name.Resolved, ResolvedAst.Definition.Relation, ResolverError](syms.relations) {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
@@ -171,7 +194,7 @@ object Resolver {
      * Constructs the symbol table for the given definition of `wast`.
      */
     def symbolsOf(wast: WeededAst.Declaration, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
-      case WeededAst.Declaration.Namespace(Name.Unresolved(parts, location), body) =>
+      case WeededAst.Declaration.Namespace(Name.Unresolved(sp1, parts, sp2), body) =>
         Validation.fold[WeededAst.Declaration, SymbolTable, ResolverError](body, syms) {
           case (msyms, d) => symbolsOf(d, namespace ::: parts.toList, msyms)
         }
@@ -334,7 +357,7 @@ object Resolver {
         case WeededAst.Expression.Var(name, loc) => name.parts match {
           case Seq(x) =>
             if (locals contains x)
-              ResolvedAst.Expression.Var(Name.Ident(x, name.location), loc).toSuccess
+              ResolvedAst.Expression.Var(Name.Ident(x, name.loc), loc).toSuccess
             else
               UnresolvedReference(name, namespace).toFailure
           case xs => syms.lookupConstant(name, namespace) map {

@@ -574,7 +574,7 @@ object Weeder {
         case elms => WeededAst.Type.Tuple(elms)
       }
       case ParsedAst.Type.Parametric(name, pelms) =>
-        Unsupported("Parametric types are not yet supported.", name.location).toFailure
+        Unsupported("Parametric types are not yet supported.", name.loc).toFailure
     }
   }
 

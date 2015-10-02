@@ -166,4 +166,25 @@ class TestResolver extends FunSuite {
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedReference])
   }
 
+  test("UnresolvedTypeReference01") {
+    val input =
+      s"""namespace A {
+         |  val x: Foo = 42;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
+  }
+
+  test("UnresolvedTypeReference02") {
+    val input =
+      s"""namespace A {
+         |  def foo(bar: Baz, baz: Baz): Qux = bar;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
+  }
 }
