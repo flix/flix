@@ -171,7 +171,15 @@ object Weeder {
      */
     case class Unsupported(message: String, location: SourceLocation) extends WeederError {
       val format =
-        s"Error: $message at ${location.format}\n."
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${location.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Unsupported feature: $message")}
+            |
+            |${location.underline}
+            |This feature is not yet supported, implemented or considered stable.
+            |
+            |Tip: Avoid using this feature.
+         """.stripMargin
     }
 
   }
