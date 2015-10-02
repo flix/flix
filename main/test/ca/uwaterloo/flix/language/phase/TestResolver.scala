@@ -6,6 +6,9 @@ import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite {
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Definitions                                                             //
+  /////////////////////////////////////////////////////////////////////////////
   test("DuplicateDefinition01") {
     val input =
       s"""namespace A {
@@ -16,13 +19,12 @@ class TestResolver extends FunSuite {
        """.stripMargin
     val result = Compiler.compile(input)
     assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
   test("DuplicateDefinition02") {
     val input =
       s"""namespace A {
-         |  val foo: Unit = ();
-         |
          |  val foo: Bool = true;
          |
          |  val foo: Int = 42;
@@ -32,6 +34,7 @@ class TestResolver extends FunSuite {
        """.stripMargin
     val result = Compiler.compile(input)
     assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
   test("DuplicateDefinition03") {
@@ -44,6 +47,7 @@ class TestResolver extends FunSuite {
        """.stripMargin
     val result = Compiler.compile(input)
     assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
   test("DuplicateDefinition04") {
@@ -56,6 +60,7 @@ class TestResolver extends FunSuite {
        """.stripMargin
     val result = Compiler.compile(input)
     assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
   test("DuplicateDefinition05") {
@@ -70,6 +75,7 @@ class TestResolver extends FunSuite {
        """.stripMargin
     val result = Compiler.compile(input)
     assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
   test("DuplicateDefinition06") {
@@ -88,6 +94,76 @@ class TestResolver extends FunSuite {
        """.stripMargin
     val result = Compiler.compile(input)
     assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expressions                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  test("UnresolvedReference01") {
+    val input =
+      s"""namespace A {
+         |  def foo(x: Int, y: Int): Int = z;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedReference])
+  }
+
+  test("UnresolvedReference02") {
+    val input =
+      s"""namespace A {
+         |  def foo(x: Int, y: Int): Int = x + y + z;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedReference])
+  }
+
+  test("UnresolvedReference03") {
+    val input =
+      s"""namespace A {
+         |  val x: Int = let y = 42 in z;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedReference])
+  }
+
+  test("UnresolvedReference04") {
+    val input =
+      s"""namespace A {
+         |  val x: Int = y;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedReference])
+  }
+
+  test("UnresolvedReference05") {
+    val input =
+      s"""namespace A {
+         |  val x: Int = B.x;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedReference])
+  }
+
+  test("UnresolvedReference06") {
+    val input =
+      s"""namespace A {
+         |  val x: Int = B::C::D.E true;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedReference])
   }
 
 }
