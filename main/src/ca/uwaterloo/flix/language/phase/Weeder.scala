@@ -419,21 +419,21 @@ object Weeder {
 
       def visit(p: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = p match {
         case pat: ParsedAst.Pattern.Wildcard => WeededAst.Pattern.Wildcard(pat.loc).toSuccess
-        case ParsedAst.Pattern.Var(loc, ident) => seen.get(ident.name) match {
+        case pat: ParsedAst.Pattern.Var => seen.get(pat.ident.name) match {
           case None =>
-            seen += (ident.name -> ident)
-            WeededAst.Pattern.Var(ident, loc).toSuccess
+            seen += (pat.ident.name -> pat.ident)
+            WeededAst.Pattern.Var(pat.ident, pat.loc).toSuccess
           case Some(otherIdent) =>
-            NonLinearPattern(ident.name, otherIdent.location, ident.location).toFailure
+            NonLinearPattern(pat.ident.name, otherIdent.location, pat.ident.location).toFailure
         }
-        case ParsedAst.Pattern.Lit(loc, literal) => Literal.compile(literal) map {
-          case lit => WeededAst.Pattern.Lit(lit, loc)
+        case pat: ParsedAst.Pattern.Lit => Literal.compile(pat.lit) map {
+          case lit => WeededAst.Pattern.Lit(lit, pat.loc)
         }
-        case ParsedAst.Pattern.Tag(loc, enumName, tagName, ppat) => visit(ppat) map {
-          case pat => WeededAst.Pattern.Tag(enumName, tagName, pat, loc)
+        case ppat: ParsedAst.Pattern.Tag => visit(ppat.p) map {
+          case pat => WeededAst.Pattern.Tag(ppat.enumName, ppat.tagName, pat, ppat.loc)
         }
-        case ParsedAst.Pattern.Tuple(loc, pelms) => @@(pelms map visit) map {
-          case elms => WeededAst.Pattern.Tuple(elms, loc)
+        case pat: ParsedAst.Pattern.Tuple => @@(pat.elms map visit) map {
+          case elms => WeededAst.Pattern.Tuple(elms, pat.loc)
         }
       }
 

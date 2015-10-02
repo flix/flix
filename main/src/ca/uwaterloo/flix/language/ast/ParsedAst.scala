@@ -365,36 +365,48 @@ object ParsedAst {
     /**
      * An AST node that represents a variable pattern.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the literal.
      * @param ident the variable identifier.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Var(loc: SourceLocation, ident: Name.Ident) extends ParsedAst.Pattern
+    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Pattern {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a literal pattern.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the literal.
      * @param lit the literal.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Lit(loc: SourceLocation, lit: ParsedAst.Literal) extends ParsedAst.Pattern
+    case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Pattern {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a tagged pattern.
      *
-     * @param loc the location.
-     * @param name the namespace of the enum.
-     * @param ident the tag name.
+     * @param sp1 the position of the first character in the literal.
+     * @param enumName the enum name.
+     * @param tagName the tag name.
      * @param p the nested pattern.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Tag(loc: SourceLocation, name: Name.Unresolved, ident: Name.Ident, p: ParsedAst.Pattern) extends ParsedAst.Pattern
+    case class Tag(sp1: SourcePosition, enumName: Name.Unresolved, tagName: Name.Ident, p: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a tuple pattern.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the literal.
      * @param elms the elements of the tuple.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Tuple(loc: SourceLocation, elms: Seq[ParsedAst.Pattern]) extends ParsedAst.Pattern
+    case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
   }
 

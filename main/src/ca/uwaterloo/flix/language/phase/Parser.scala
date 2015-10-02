@@ -238,23 +238,23 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def VariablePattern: Rule1[ParsedAst.Pattern.Var] = rule {
-    SL ~ Ident ~> ParsedAst.Pattern.Var
+    SP ~ Ident ~ SP ~ optWS ~> ParsedAst.Pattern.Var
   }
 
   def LiteralPattern: Rule1[ParsedAst.Pattern.Lit] = rule {
-    SL ~ Literal ~> ParsedAst.Pattern.Lit
+    SP ~ Literal ~ SP ~ optWS ~> ParsedAst.Pattern.Lit
   }
 
   def TagPattern: Rule1[ParsedAst.Pattern.Tag] = rule {
-    SL ~ QName ~ "." ~ Ident ~ optWS ~ optional(Pattern) ~>
-      ((loc: SourceLocation, name: Name.Unresolved, ident: Name.Ident, pattern: Option[ParsedAst.Pattern]) => pattern match {
-        case None => ParsedAst.Pattern.Tag(loc, name, ident, ParsedAst.Pattern.Lit(loc, ParsedAst.Literal.Unit(???, ???)))
-        case Some(p) => ParsedAst.Pattern.Tag(loc, name, ident, p)
+    SP ~ QName ~ "." ~ Ident ~ optWS ~ optional(Pattern) ~ SP ~>
+      ((sp1: SourcePosition, name: Name.Unresolved, ident: Name.Ident, pattern: Option[ParsedAst.Pattern], sp2: SourcePosition) => pattern match {
+        case None => ParsedAst.Pattern.Tag(sp1, name, ident, ParsedAst.Pattern.Lit(sp1, ParsedAst.Literal.Unit(sp1, sp2), sp2), sp2)
+        case Some(p) => ParsedAst.Pattern.Tag(sp1, name, ident, p, sp2)
       })
   }
 
   def TuplePattern: Rule1[ParsedAst.Pattern.Tuple] = rule {
-    SL ~ "(" ~ oneOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~> ParsedAst.Pattern.Tuple
+    SP ~ "(" ~ oneOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~ optWS ~> ParsedAst.Pattern.Tuple
   }
 
   /////////////////////////////////////////////////////////////////////////////
