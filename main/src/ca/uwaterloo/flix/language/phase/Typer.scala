@@ -63,6 +63,7 @@ object Typer {
      * @param tpe the erroneous type.
      * @param loc the source location.
      */
+    // TODO: Pretty print
     case class IllegalApply(tpe: TypedAst.Type, loc: SourceLocation) extends TypeError {
       val format = s"Type Error: The type '${prettyPrint(tpe)}' is not a function type at ${loc.format}.\n"
     }
@@ -74,6 +75,7 @@ object Typer {
      * @param tpe the type.
      * @param loc the source location.
      */
+    // TODO: Pretty print
     case class IllegalPattern(pat: ResolvedAst.Pattern, tpe: TypedAst.Type, loc: SourceLocation) extends TypeError {
       val format = s"Type Error: Pattern '${prettyPrint(pat)}' does not match expected type '${prettyPrint(tpe)}' at ${loc.format}.\n"
     }
