@@ -43,6 +43,9 @@ object Compiler {
    */
   case class InternalCompilerError(message: String) extends RuntimeException(message)
 
+  /**
+   * The console context used to format error messages.
+   */
   implicit val ConsoleCtx = new AnsiConsole()
 
   /**
@@ -68,14 +71,14 @@ object Compiler {
     else if (!Files.isRegularFile(path))
       throw new RuntimeException(s"Path '$path' is not a regular file.")
     else
-      parse(Source.fromFile(path.toFile).getLines().mkString("\n"), Some(path))
+      parse(SourceInput.File(path))
 
   /**
    * Returns the abstract syntax tree of the given string `input`.
    */
   // TODO: Return validation
-  def parse(input: String, path: Option[Path]): ParsedAst.Root = {
-    val parser = new Parser(SourceInput.File(path.get))
+  def parse(source: SourceInput): ParsedAst.Root = {
+    val parser = new Parser(source)
     parser.Root.run() match {
       case Success(ast) => ast
       case Failure(e: ParseError) => throw new RuntimeException(parser.formatError(e))
@@ -128,42 +131,20 @@ object Compiler {
     Some(tast.get)
   }
 
-  // TODO: Experimental section -----------------------------------------------
-
-  object Expression {
-    def compile(input: String): TypedAst.Expression = {
-
-      // TODO: Consider using a prelude
-
-      //      val past = new Parser(None, input).Expression.run().get
-      //
-      //      val wast = Weeder.Expression.compile(past).get
-      //
-      //      // TODO: SymbolTable?
-      //      val rast = Resolver.Expression.resolve(wast, List.empty, Resolver.SymbolTable.empty).get
-      //
-      //      // TODO: Symbols?
-      //      val tast = Typer.Expression.typer(rast, ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty))
-      //
-      //      tast.get
-      ???
-    }
-  }
-
   def compile(input: String): Validation[TypedAst.Root, CompilationError] = {
-    val past = parse(input, None)
+    val past = parse(SourceInput.Str(input))
 
     val wast = Weeder.weed(past)
-    if (wast.isFailure) {
+    if (wast.hasErrors) {
       return wast.asInstanceOf[Validation[TypedAst.Root, CompilationError]]
     }
 
     val rast = Resolver.resolve(wast.get)
-    if (rast.isFailure) {
+    if (rast.hasErrors) {
       return rast.asInstanceOf[Validation[TypedAst.Root, CompilationError]]
     }
 
-    return Typer.typecheck(rast.get).asInstanceOf[Validation[TypedAst.Root, CompilationError]]
+    Typer.typecheck(rast.get).asInstanceOf[Validation[TypedAst.Root, CompilationError]]
   }
 
 }

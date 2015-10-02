@@ -218,7 +218,7 @@ object ParsedAst {
      * @param sp2 the position of the last character in the expression.
      */
     case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Expression {
-      val loc: SourceLocation = SourceLocation.mk(sp1, sp2) // TODO: Move to interface???
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
     /**

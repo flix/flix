@@ -15,6 +15,7 @@ sealed trait Validation[+Value, Error] {
   /**
    * Returns `true` iff `this` validation has errors.
    */
+  // TODO: Need to think harder about how to use hasErrors vs. Success/Failure and when the compiler should bail out.
   // TODO: DOC
   def hasErrors = errors.nonEmpty
 
