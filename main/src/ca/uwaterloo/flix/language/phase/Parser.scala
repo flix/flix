@@ -462,6 +462,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //
   /////////////////////////////////////////////////////////////////////////////
+  // TODO: Get rid of  this?
   def WS: Rule0 = rule {
     oneOrMore(" " | "\t" | NewLine | SingleLineComment | MultiLineComment)
   }
@@ -509,7 +510,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   @Unoptimized
-  // TODO: Remove
+  // TODO: Get rid of this
   def SL: Rule1[SourceLocation] = {
     val position = Position(cursor, input)
     rule {
