@@ -334,76 +334,77 @@ object Weeder {
      * Compiles the parsed expression `past` to a weeded expression.
      */
     def compile(past: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = past match {
-      case ParsedAst.Expression.Lit(loc, literal) =>
-        Literal.compile(literal) map {
-          case lit => WeededAst.Expression.Lit(lit, loc)
+      case exp: ParsedAst.Expression.Lit =>
+        Literal.compile(exp.lit) map {
+          case lit => WeededAst.Expression.Lit(lit, exp.loc)
         }
 
-      case ParsedAst.Expression.Var(loc, name) =>
-        WeededAst.Expression.Var(name, loc).toSuccess
+      case exp: ParsedAst.Expression.Var =>
+        WeededAst.Expression.Var(exp.name, exp.loc).toSuccess
 
-      case ParsedAst.Expression.Apply(loc, wlambda, wargs) =>
-        @@(compile(wlambda), @@(wargs map compile)) map {
-          case (lambda, args) => WeededAst.Expression.Apply(lambda, args, loc)
+      case exp: ParsedAst.Expression.Apply =>
+        @@(compile(exp.lambda), @@(exp.actuals map compile)) map {
+          case (lambda, args) => WeededAst.Expression.Apply(lambda, args, exp.loc)
         }
 
-      case ParsedAst.Expression.Lambda(loc, pargs, ptype, pbody) =>
-        val argsVal = @@(pargs map {
+      case exp: ParsedAst.Expression.Lambda =>
+        val argsVal = @@(exp.formals map {
           case ParsedAst.FormalArg(ident, tpe) => Type.compile(tpe) map (t => WeededAst.FormalArg(ident, t))
         })
-        @@(argsVal, Type.compile(ptype), compile(pbody)) map {
-          case (args, tpe, body) => WeededAst.Expression.Lambda(args, body, tpe, loc)
+        @@(argsVal, Type.compile(exp.tpe), compile(exp.body)) map {
+          case (args, tpe, body) => WeededAst.Expression.Lambda(args, body, tpe, exp.loc)
         }
 
-      case ParsedAst.Expression.Unary(loc, op, pe) =>
-        compile(pe) map {
-          case e => WeededAst.Expression.Unary(op, e, loc)
+      case exp: ParsedAst.Expression.Unary =>
+        compile(exp.e) map {
+          case e => WeededAst.Expression.Unary(exp.op, e, exp.loc)
         }
 
-      case ParsedAst.Expression.Binary(pe1, loc, op, pe2) =>
-        @@(compile(pe1), compile(pe2)) map {
-          case (e1, e2) => WeededAst.Expression.Binary(op, e1, e2, loc)
+      case exp: ParsedAst.Expression.Binary =>
+        @@(compile(exp.e1), compile(exp.e2)) map {
+          case (e1, e2) => WeededAst.Expression.Binary(exp.op, e1, e2, exp.loc)
         }
 
-      case ParsedAst.Expression.IfThenElse(loc, pe1, pe2, pe3) =>
-        @@(compile(pe1), compile(pe2), compile(pe3)) map {
-          case (e1, e2, e3) => WeededAst.Expression.IfThenElse(e1, e2, e3, loc)
+      case exp: ParsedAst.Expression.IfThenElse =>
+        @@(compile(exp.e1), compile(exp.e2), compile(exp.e3)) map {
+          case (e1, e2, e3) => WeededAst.Expression.IfThenElse(e1, e2, e3, exp.loc)
         }
 
-      case ParsedAst.Expression.Let(loc, ident, pvalue, pbody) =>
-        @@(compile(pvalue), compile(pbody)) map {
-          case (value, body) => WeededAst.Expression.Let(ident, value, body, loc)
+      case exp: ParsedAst.Expression.Let =>
+        @@(compile(exp.value), compile(exp.body)) map {
+          case (value, body) => WeededAst.Expression.Let(exp.ident, value, body, exp.loc)
         }
 
-      case ParsedAst.Expression.Match(loc, pe, prules) =>
-        val rulesVal = prules map {
+      case exp: ParsedAst.Expression.Match =>
+        val rulesVal = exp.rules map {
           case (pat, body) => @@(Pattern.compile(pat), compile(body))
         }
-        @@(compile(pe), @@(rulesVal)) map {
-          case (e, rs) => WeededAst.Expression.Match(e, rs, loc)
+        @@(compile(exp.e), @@(rulesVal)) map {
+          case (e, rs) => WeededAst.Expression.Match(e, rs, exp.loc)
         }
 
-      case ParsedAst.Expression.Infix(pe1, loc, name, pe2) =>
-        @@(compile(pe1), compile(pe2)) map {
-          case (e1, e2) => WeededAst.Expression.Apply(WeededAst.Expression.Var(name, loc), List(e1, e2), loc)
+      case exp: ParsedAst.Expression.Infix =>
+        @@(compile(exp.e1), compile(exp.e2)) map {
+          case (e1, e2) => WeededAst.Expression.Apply(WeededAst.Expression.Var(exp.name, exp.loc), List(e1, e2), exp.loc)
         }
 
-      case ParsedAst.Expression.Tag(loc, enumName, tagName, pe) => compile(pe) map {
-        case e => WeededAst.Expression.Tag(enumName, tagName, e, loc)
+      case exp: ParsedAst.Expression.Tag => compile(exp.e) map {
+        case e => WeededAst.Expression.Tag(exp.enumName, exp.tagName, e, exp.loc)
       }
 
-      case ParsedAst.Expression.Tuple(loc, pelms) => @@(pelms map compile) map {
-        case elms => WeededAst.Expression.Tuple(elms, loc)
-      }
-
-      case ParsedAst.Expression.Ascribe(loc, pe, ptype) =>
-        @@(compile(pe), Type.compile(ptype)) map {
-          case (e, tpe) => WeededAst.Expression.Ascribe(e, tpe, loc)
+      case exp: ParsedAst.Expression.Tuple =>
+        @@(exp.elms map compile) map {
+          case elms => WeededAst.Expression.Tuple(elms, exp.loc)
         }
 
-      case ParsedAst.Expression.Error(loc, ptype) =>
-        Type.compile(ptype) map {
-          case tpe => WeededAst.Expression.Error(tpe, loc)
+      case exp: ParsedAst.Expression.Ascribe =>
+        @@(compile(exp.e), Type.compile(exp.tpe)) map {
+          case (e, tpe) => WeededAst.Expression.Ascribe(e, tpe, exp.loc)
+        }
+
+      case exp: ParsedAst.Expression.Error =>
+        Type.compile(exp.tpe) map {
+          case tpe => WeededAst.Expression.Error(tpe, exp.loc)
         }
     }
   }

@@ -7,6 +7,8 @@ import scala.collection.immutable.Seq
  */
 sealed trait ParsedAst
 
+// TODO: Ensure precise source locations.
+
 object ParsedAst {
 
   /**
@@ -211,130 +213,172 @@ object ParsedAst {
     /**
      * An AST node that represents a literal.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the expression.
      * @param lit the literal.
+     * @param sp2 the position of the last character in the expression.
      */
-    case class Lit(loc: SourceLocation, lit: ParsedAst.Literal) extends ParsedAst.Expression
+    case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Expression {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2) // TODO: Move to interface???
+    }
 
     /**
      * An AST node that represents an unresolved variable.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the expression.
      * @param name the ambiguous name.
+     * @param sp2 the position of the last character in the expression.
      */
-    case class Var(loc: SourceLocation, name: Name.Unresolved) extends ParsedAst.Expression
+    case class Var(sp1: SourcePosition, name: Name.Unresolved, sp2: SourcePosition) extends ParsedAst.Expression {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a function application.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the expression.
      * @param lambda the lambda expression.
      * @param actuals the arguments.
+     * @param sp2 the position of the last character in the expression.
      */
-    case class Apply(loc: SourceLocation, lambda: ParsedAst.Expression, actuals: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
+    case class Apply(sp1: SourcePosition, lambda: ParsedAst.Expression, actuals: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a lambda expression.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the expression.
      * @param formals the formals (i.e. parameters and their types).
      * @param tpe the return type.
      * @param body the body expression of the lambda.
+     * @param sp2 the position of the last character in the expression.
      */
-    case class Lambda(loc: SourceLocation, formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Lambda(sp1: SourcePosition, formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents unary expressions.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the expression.
      * @param op the unary operator.
      * @param e the expression.
+     * @param sp2 the position of the last character in the expression.
      */
-    case class Unary(loc: SourceLocation, op: UnaryOperator, e: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Unary(sp1: SourcePosition, op: UnaryOperator, e: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents binary expressions.
      *
      * @param e1 the left expression.
-     * @param loc the location.
+     * @param sp1 the position of the first character in the expression.
      * @param op the binary operator.
      * @param e2 the right expression.
+     * @param sp2 the position of the last character in the expression.
      */
-    case class Binary(e1: ParsedAst.Expression, loc: SourceLocation, op: BinaryOperator, e2: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Binary(e1: ParsedAst.Expression, sp1: SourcePosition, op: BinaryOperator, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents an if-then-else expression.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the expression.
      * @param e1 the conditional expression.
      * @param e2 the consequence expression.
      * @param e3 the alternative expression.
+     * @param sp2 the position of the last character in the expression.
      */
-    case class IfThenElse(loc: SourceLocation, e1: ParsedAst.Expression, e2: ParsedAst.Expression, e3: ParsedAst.Expression) extends ParsedAst.Expression
+    case class IfThenElse(sp1: SourcePosition, e1: ParsedAst.Expression, e2: ParsedAst.Expression, e3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a let-binding.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the expression.
      * @param ident the identifier to be bound.
      * @param value the expression whose value the identifier should be bound to.
      * @param body the expression in which the bound variable is visible.
+     * @param sp2 the position of the last character in the expression.
      */
-    case class Let(loc: SourceLocation, ident: Name.Ident, value: ParsedAst.Expression, body: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Let(sp1: SourcePosition, ident: Name.Ident, value: ParsedAst.Expression, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a match expression.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the expression.
      * @param e the match expression.
      * @param rules the match rules and their bodies.
+     * @param sp2 the position of the last character in the expression.
      */
-    case class Match(loc: SourceLocation, e: ParsedAst.Expression, rules: Seq[(ParsedAst.Pattern, ParsedAst.Expression)]) extends ParsedAst.Expression
+    case class Match(sp1: SourcePosition, e: ParsedAst.Expression, rules: Seq[(ParsedAst.Pattern, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents an infix function call.
      *
      * @param e1 the first argument expression.
-     * @param loc the location.
+     * @param sp1 the position of the first character in the expression.
      * @param name the ambiguous name of the function.
      * @param e2 the second argument expression.
+     * @param sp2 the position of the last character in the expression.
      */
-    case class Infix(e1: ParsedAst.Expression, loc: SourceLocation, name: Name.Unresolved, e2: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Infix(e1: ParsedAst.Expression, sp1: SourcePosition, name: Name.Unresolved, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a tagged expression.
      *
-     * @param loc the location.
-     * @param name the namespace of the enum.
-     * @param ident the tag name.
+     * @param sp1 the position of the first character in the expression.
+     * @param enumName the namespace of the enum.
+     * @param tagName the tag name.
      * @param e the nested expression.
+     * @param sp2 the position of the last character in the expression.
      */
-    case class Tag(loc: SourceLocation, name: Name.Unresolved, ident: Name.Ident, e: ParsedAst.Expression) extends ParsedAst.Expression
+    case class Tag(sp1: SourcePosition, enumName: Name.Unresolved, tagName: Name.Ident, e: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a tuple expression.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the expression.
      * @param elms the elements of the tuple.
+     * @param sp2 the position of the last character in the expression.
      */
-    case class Tuple(loc: SourceLocation, elms: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
+    case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that ascribes a type to an expression.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the expression.
      * @param e the expression.
      * @param tpe the ascribed type.
+     * @param sp2 the position of the last character in the expression.
      */
-    case class Ascribe(loc: SourceLocation, e: ParsedAst.Expression, tpe: ParsedAst.Type) extends ParsedAst.Expression
+    case class Ascribe(sp1: SourcePosition, e: ParsedAst.Expression, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents an error expression.
      *
-     * @param loc the source location of the error expression.
+     * @param sp1 the position of the first character in the expression.
      * @param tpe the type of the error expression.
+     * @param sp2 the position of the last character in the expression.
      */
-    case class Error(loc: SourceLocation, tpe: ParsedAst.Type) extends ParsedAst.Expression
+    case class Error(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
   }
 
@@ -355,8 +399,8 @@ object ParsedAst {
     /**
      * An AST node that represents a wildcard pattern.
      *
-     * @param sp1 the position of the first character in the literal.
-     * @param sp2 the position of the last character in the literal.
+     * @param sp1 the position of the first character in the pattern.
+     * @param sp2 the position of the last character in the pattern.
      */
     case class Wildcard(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
@@ -365,9 +409,9 @@ object ParsedAst {
     /**
      * An AST node that represents a variable pattern.
      *
-     * @param sp1 the position of the first character in the literal.
+     * @param sp1 the position of the first character in the pattern.
      * @param ident the variable identifier.
-     * @param sp2 the position of the last character in the literal.
+     * @param sp2 the position of the last character in the pattern.
      */
     case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Pattern {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
@@ -376,9 +420,9 @@ object ParsedAst {
     /**
      * An AST node that represents a literal pattern.
      *
-     * @param sp1 the position of the first character in the literal.
+     * @param sp1 the position of the first character in the pattern.
      * @param lit the literal.
-     * @param sp2 the position of the last character in the literal.
+     * @param sp2 the position of the last character in the pattern.
      */
     case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Pattern {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
@@ -387,11 +431,11 @@ object ParsedAst {
     /**
      * An AST node that represents a tagged pattern.
      *
-     * @param sp1 the position of the first character in the literal.
+     * @param sp1 the position of the first character in the pattern.
      * @param enumName the enum name.
      * @param tagName the tag name.
      * @param p the nested pattern.
-     * @param sp2 the position of the last character in the literal.
+     * @param sp2 the position of the last character in the pattern.
      */
     case class Tag(sp1: SourcePosition, enumName: Name.Unresolved, tagName: Name.Ident, p: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
@@ -400,9 +444,9 @@ object ParsedAst {
     /**
      * An AST node that represents a tuple pattern.
      *
-     * @param sp1 the position of the first character in the literal.
+     * @param sp1 the position of the first character in the pattern.
      * @param elms the elements of the tuple.
-     * @param sp2 the position of the last character in the literal.
+     * @param sp2 the position of the last character in the pattern.
      */
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
@@ -446,8 +490,8 @@ object ParsedAst {
     /**
      * An AST node that represent a wildcard variable term.
      *
-     * @param sp1 the position of the first character in the literal.
-     * @param sp2 the position of the last character in the literal.
+     * @param sp1 the position of the first character in the term.
+     * @param sp2 the position of the last character in the term.
      */
     case class Wildcard(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Term {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
@@ -456,9 +500,9 @@ object ParsedAst {
     /**
      * An AST node that represent a variable term.
      *
-     * @param sp1 the position of the first character in the literal.
+     * @param sp1 the position of the first character in the term.
      * @param ident the variable identifier.
-     * @param sp2 the position of the last character in the literal.
+     * @param sp2 the position of the last character in the term.
      */
     case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Term {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
@@ -467,9 +511,9 @@ object ParsedAst {
     /**
      * An AST node that represent a literal term.
      *
-     * @param sp1 the position of the first character in the literal.
+     * @param sp1 the position of the first character in the term.
      * @param lit the literal.
-     * @param sp2 the position of the last character in the literal.
+     * @param sp2 the position of the last character in the term.
      */
     case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Term {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
@@ -478,10 +522,10 @@ object ParsedAst {
     /**
      * An AST node that represents an ascribed term.
      *
-     * @param sp1 the position of the first character in the literal.
+     * @param sp1 the position of the first character in the term.
      * @param term the term.
      * @param tpe the type.
-     * @param sp2 the position of the last character in the literal.
+     * @param sp2 the position of the last character in the term.
      */
     case class Ascribe(sp1: SourcePosition, term: ParsedAst.Term, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Term {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
@@ -490,10 +534,10 @@ object ParsedAst {
     /**
      * An AST node that represent a function application term
      *
-     * @param sp1 the position of the first character in the literal.
+     * @param sp1 the position of the first character in the term.
      * @param name the unresolved name of the function.
      * @param args the arguments to the function.
-     * @param sp2 the position of the last character in the literal.
+     * @param sp2 the position of the last character in the term.
      */
     case class Apply(sp1: SourcePosition, name: Name.Unresolved, args: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
