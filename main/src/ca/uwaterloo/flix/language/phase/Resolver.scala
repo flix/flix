@@ -55,6 +55,40 @@ object Resolver {
 
 
     /**
+     * An error raised to indicate a reference to an unknown enum.
+     *
+     * @param name the unresolved name.
+     * @param namespace the current namespace.
+     * @param loc the source location of the reference.
+     */
+    case class UnresolvedEnumReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Unresolved reference to enum '${name.format}'.")}
+            |
+            |${loc.underline}
+         """.stripMargin
+    }
+
+    /**
+     * An error raised to indicate a reference to an unknown relation.
+     *
+     * @param name the unresolved name.
+     * @param namespace the current namespace.
+     * @param loc the source location of the reference.
+     */
+    case class UnresolvedRelationReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Unresolved reference to relation '${name.format}'.")}
+            |
+            |${loc.underline}
+         """.stripMargin
+    }
+
+    /**
      * An error raised to indicate a reference to an unknown type.
      *
      * @param name the unresolved name.
@@ -65,7 +99,7 @@ object Resolver {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
             |
-            |${consoleCtx.red(s">> Unresolved type reference '${name.format}'.")}
+            |${consoleCtx.red(s">> Unresolved reference to type '${name.format}'.")}
             |
             |${loc.underline}
          """.stripMargin
@@ -73,10 +107,7 @@ object Resolver {
 
 
     // TODO: All kinds of arity errors....
-
     // TODO: Cyclic stuff.
-
-    // TODO: Unused, let, parameters etc.
 
   }
 
@@ -89,19 +120,6 @@ object Resolver {
                          lattices: Map[Name.Resolved, WeededAst.Definition.Lattice],
                          relations: Map[Name.Resolved, WeededAst.Definition.Relation],
                          types: Map[Name.Resolved, WeededAst.Type]) {
-    // TODO: Cleanup
-    def lookupEnum(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Enum), ResolverError] = {
-      val rname = Name.Resolved(
-        if (name.parts.size == 1)
-          namespace ::: name.parts.head :: Nil
-        else
-          name.parts
-      )
-      enums.get(rname) match {
-        case None => UnresolvedReference(name, namespace).toFailure
-        case Some(d) => (rname, d).toSuccess
-      }
-    }
 
     // TODO: Cleanup
     def lookupConstant(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Constant), ResolverError] = {
@@ -118,6 +136,20 @@ object Resolver {
     }
 
     // TODO: Cleanup
+    def lookupEnum(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Enum), ResolverError] = {
+      val rname = Name.Resolved(
+        if (name.parts.size == 1)
+          namespace ::: name.parts.head :: Nil
+        else
+          name.parts
+      )
+      enums.get(rname) match {
+        case None => UnresolvedEnumReference(name, namespace, name.loc).toFailure
+        case Some(d) => (rname, d).toSuccess
+      }
+    }
+
+    // TODO: Cleanup
     def lookupRelation(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Relation), ResolverError] = {
       val rname = Name.Resolved(
         if (name.parts.size == 1)
@@ -126,7 +158,7 @@ object Resolver {
           name.parts
       )
       relations.get(rname) match {
-        case None => UnresolvedReference(name, namespace).toFailure
+        case None => UnresolvedRelationReference(name, namespace, name.loc).toFailure
         case Some(d) => (rname, d).toSuccess
       }
     }

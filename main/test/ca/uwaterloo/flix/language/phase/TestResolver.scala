@@ -144,26 +144,50 @@ class TestResolver extends FunSuite {
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedReference])
   }
 
-  test("UnresolvedReference05") {
+
+
+  test("UnresolvedEnumReference01") {
     val input =
       s"""namespace A {
-         |  val x: Int = B.x;
+         |  val x: Int = Foo.Bar
          |};
        """.stripMargin
     val result = Compiler.compile(input)
     assert(result.hasErrors)
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedReference])
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference])
   }
 
-  test("UnresolvedReference06") {
+  test("UnresolvedEnumReference02") {
     val input =
       s"""namespace A {
-         |  val x: Int = B::C::D.E true;
+         |  val x: Int = Foo::Bar.Qux true
          |};
        """.stripMargin
     val result = Compiler.compile(input)
     assert(result.hasErrors)
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedReference])
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference])
+  }
+
+  test("UnresolvedRelationReference01") {
+    val input =
+      s"""namespace A {
+         |  VarPointsTo(1, 2).
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedRelationReference])
+  }
+
+  test("UnresolvedRelationReference02") {
+    val input =
+      s"""namespace A {
+         |  VarPointsTo(1, 2).
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedRelationReference])
   }
 
   test("UnresolvedTypeReference01") {
