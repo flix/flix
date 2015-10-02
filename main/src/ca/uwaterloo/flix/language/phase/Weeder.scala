@@ -148,9 +148,19 @@ object Weeder {
      */
     case class NonLinearPattern(name: String, location1: SourceLocation, location2: SourceLocation) extends WeederError {
       val format =
-        s"Error: Non-linear pattern: The variable: '$name' occurs twice.\n" +
-          s"  First occurrence was here: ${location1.format}\n" +
-          s"  Second occurrence was here: ${location2.format}\n"
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${location1.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Duplicate definition of the same variable '$name' in pattern.")}
+            |
+            |First definition was here:
+            |${location1.underline}
+            |Second definition was here:
+            |${location2.underline}
+            |
+            |A variable is must only occurs once in a pattern.
+            |
+            |Tip: Remove the duplicate variable and use '==' to test for equality.
+         """.stripMargin
     }
 
     /**
