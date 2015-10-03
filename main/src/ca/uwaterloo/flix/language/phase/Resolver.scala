@@ -258,7 +258,7 @@ object Resolver {
         val rname = toRName(ident, namespace)
         syms.constants.get(rname) match {
           case None => syms.copy(constants = syms.constants + (rname -> defn)).toSuccess
-          case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.location, ident.location).toFailure
+          case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.loc, ident.loc).toFailure
         }
 
       case defn@WeededAst.Definition.Enum(ident, cases, loc) =>
@@ -268,7 +268,7 @@ object Resolver {
             enums = syms.enums + (rname -> defn),
             types = syms.types + (rname -> WeededAst.Type.Enum(rname, defn.cases))
           ).toSuccess
-          case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.location, ident.location).toFailure
+          case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.loc, ident.loc).toFailure
         }
 
       case defn@WeededAst.Definition.Lattice(ident, bot, leq, lub, loc) =>
@@ -279,7 +279,7 @@ object Resolver {
         val rname = toRName(ident, namespace)
         syms.relations.get(rname) match {
           case None => syms.copy(relations = syms.relations + (rname -> defn)).toSuccess
-          case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.location, ident.location).toFailure
+          case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.loc, ident.loc).toFailure
         }
     }
 
@@ -404,7 +404,7 @@ object Resolver {
         case WeededAst.Expression.Var(name, loc) => name.parts match {
           case Seq(x) =>
             if (locals contains x)
-              ResolvedAst.Expression.Var(Name.Ident(x, name.loc), loc).toSuccess
+              ResolvedAst.Expression.Var(Name.Ident(name.sp1, x, name.sp2), loc).toSuccess
             else
               UnresolvedReference(name, namespace).toFailure // TODO: Specialize this.
           case xs => syms.lookupConstant(name, namespace) map {

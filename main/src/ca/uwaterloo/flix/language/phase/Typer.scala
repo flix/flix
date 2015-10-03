@@ -603,7 +603,7 @@ object Typer {
 
   private def prettyPrint(pat: ResolvedAst.Pattern): String = pat match {
     case ResolvedAst.Pattern.Wildcard(loc) => "_"
-    case ResolvedAst.Pattern.Var(Name.Ident(name, _), loc) => name
+    case ResolvedAst.Pattern.Var(ident, loc) => ident.name
     case ResolvedAst.Pattern.Lit(lit, loc) => lit.toString
     case ResolvedAst.Pattern.Tag(enumName, tagName, pat, loc) =>
       enumName.format + "." + tagName.name + "(" + prettyPrint(pat) + ")"

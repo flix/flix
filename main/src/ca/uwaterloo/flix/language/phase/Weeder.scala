@@ -33,14 +33,14 @@ object Weeder {
     case class DuplicateAttribute(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.formatSource}")}
-            |
+           |
             |${consoleCtx.red(s">> Duplicate attribute name '$name'.")}
-            |
+           |
             |First definition was here:
-            |${loc1.underline}
-            |Second definition was here:
-            |${loc2.underline}
-            |Tip: Consider renaming or removing one of the attributes.
+           |${loc1.underline}
+           |Second definition was here:
+           |${loc2.underline}
+           |Tip: Consider renaming or removing one of the attributes.
          """.stripMargin
     }
 
@@ -54,14 +54,14 @@ object Weeder {
     case class DuplicateFormal(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.formatSource}")}
-            |
+           |
             |${consoleCtx.red(s">> Duplicate formal argument '$name'.")}
-            |
+           |
             |First definition was here:
-            |${loc1.underline}
-            |Second definition was here:
-            |${loc2.underline}
-            |Tip: Consider renaming or removing one of the arguments.
+           |${loc1.underline}
+           |Second definition was here:
+           |${loc2.underline}
+           |Tip: Consider renaming or removing one of the arguments.
          """.stripMargin
     }
 
@@ -75,14 +75,14 @@ object Weeder {
     case class DuplicateTag(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.formatSource}")}
-            |
+           |
             |${consoleCtx.red(s">> Duplicate tag name '$name'.")}
-            |
+           |
             |First declaration was here:
-            |${loc1.underline}
-            |Second declaration was here:
-            |${loc2.underline}
-            |Tip: Consider renaming or removing one of the tags.
+           |${loc1.underline}
+           |Second declaration was here:
+           |${loc2.underline}
+           |Tip: Consider renaming or removing one of the tags.
          """.stripMargin
     }
 
@@ -94,12 +94,12 @@ object Weeder {
     case class WildcardInHeadTerm(loc: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
-            |
+           |
             |${consoleCtx.red(s">> Illegal wildcard in head of a fact/rule.")}
-            |
+           |
             |${loc.underline}
-            |Wildcards (i.e. implicitly unbound variables) are not allowed to occur in the head of a fact/rule.
-            |
+           |Wildcards (i.e. implicitly unbound variables) are not allowed to occur in the head of a fact/rule.
+           |
             |Tip: Remove the wildcard or replace it by bound variable.
          """.stripMargin
     }
@@ -112,14 +112,14 @@ object Weeder {
     case class ApplyInBodyTerm(loc: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
-            |
+           |
             |${consoleCtx.red(s">> Illegal function call in body of a rule.")}
-            |
+           |
             |${loc.underline}
-            |Function calls are not allowed to occur in the body of a rule. Only in its head.
-            |
+           |Function calls are not allowed to occur in the body of a rule. Only in its head.
+           |
             |Tip: Restructure the rule such that the function call does not occur in its body.
-            |Possibly by breaking up the rule into multiple smaller rules.
+           |Possibly by breaking up the rule into multiple smaller rules.
          """.stripMargin
     }
 
@@ -131,13 +131,13 @@ object Weeder {
     case class IllegalLattice(loc: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
-            |
+           |
             |${consoleCtx.red(s">> Lattice definition must have exactly three components: bot, leq and lub.")}
-            |
+           |
             |${loc.underline}
-            |the first component should be the bottom element,
-            |the second component should be the partial order function,
-            |and the third component should be the least upper bound function.
+           |the first component should be the bottom element,
+           |the second component should be the partial order function,
+           |and the third component should be the least upper bound function.
          """.stripMargin
     }
 
@@ -152,16 +152,16 @@ object Weeder {
     case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.formatSource}")}
-            |
+           |
             |${consoleCtx.red(s">> Duplicate definition of the same variable '$name' in pattern.")}
-            |
+           |
             |First definition was here:
-            |${loc1.underline}
-            |Second definition was here:
-            |${loc2.underline}
-            |
+           |${loc1.underline}
+           |Second definition was here:
+           |${loc2.underline}
+           |
             |A variable is must only occurs once in a pattern.
-            |
+           |
             |Tip: Remove the duplicate variable and use '==' to test for equality.
          """.stripMargin
     }
@@ -175,12 +175,12 @@ object Weeder {
     case class Unsupported(message: String, location: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${location.formatSource}")}
-            |
+           |
             |${consoleCtx.red(s">> Unsupported feature: $message")}
-            |
+           |
             |${location.underline}
-            |This feature is not yet supported, implemented or considered stable.
-            |
+           |This feature is not yet supported, implemented or considered stable.
+           |
             |Tip: Avoid using this feature.
          """.stripMargin
     }
@@ -267,7 +267,7 @@ object Weeder {
             seen += (ident.name -> ident)
             Type.compile(tpe) map (t => WeededAst.FormalArg(ident, t))
           case Some(otherIdent) =>
-            (DuplicateFormal(ident.name, otherIdent.location, ident.location): WeederError).toFailure
+            (DuplicateFormal(ident.name, otherIdent.loc, ident.loc): WeederError).toFailure
         }
       })
 
@@ -287,10 +287,10 @@ object Weeder {
     def compile(past: ParsedAst.Definition.Enum): Validation[WeededAst.Definition.Enum, WeederError] =
       Validation.fold[ParsedAst.Type.Tag, Map[String, WeededAst.Type.Tag], WeederError](past.cases, Map.empty) {
         // loop through each tag declaration.
-        case (macc, tag@ParsedAst.Type.Tag(Name.Ident(name, location), _)) => macc.get(name) match {
+        case (macc, tag@ParsedAst.Type.Tag(tagName, _)) => macc.get(tagName.name) match {
           // check if the tag was already declared.
-          case None => Type.compile(tag) map (tpe => macc + (name -> tpe.asInstanceOf[WeededAst.Type.Tag]))
-          case Some(otherTag) => DuplicateTag(name, otherTag.tagName.location, location).toFailure
+          case None => Type.compile(tag) map (tpe => macc + (tagName.name -> tpe.asInstanceOf[WeededAst.Type.Tag]))
+          case Some(otherTag) => DuplicateTag(tagName.name, otherTag.tagName.loc, tagName.loc).toFailure
         }
       } map {
         case m => WeededAst.Definition.Enum(past.ident, m, past.loc)
@@ -320,7 +320,7 @@ object Weeder {
             seen += (ident.name -> ident)
             Type.compile(ptype) map (tpe => WeededAst.Attribute(ident, tpe))
           case Some(otherIdent) =>
-            (DuplicateAttribute(ident.name, otherIdent.location, ident.location): WeederError).toFailure
+            (DuplicateAttribute(ident.name, otherIdent.loc, ident.loc): WeederError).toFailure
         }
       }
 
@@ -446,7 +446,7 @@ object Weeder {
             seen += (pat.ident.name -> pat.ident)
             WeededAst.Pattern.Var(pat.ident, pat.loc).toSuccess
           case Some(otherIdent) =>
-            NonLinearPattern(pat.ident.name, otherIdent.location, pat.ident.location).toFailure
+            NonLinearPattern(pat.ident.name, otherIdent.loc, pat.ident.loc).toFailure
         }
         case pat: ParsedAst.Pattern.Lit => Literal.compile(pat.lit) map {
           case lit => WeededAst.Pattern.Lit(lit, pat.loc)

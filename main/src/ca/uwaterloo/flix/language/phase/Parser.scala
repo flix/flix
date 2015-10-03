@@ -370,9 +370,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Ident: Rule1[Name.Ident] = rule {
-    SP ~ LegalIdentifier ~ SP ~>
-      ((beginSP: SourcePosition, name: String, endSP: SourcePosition) =>
-        Name.Ident(name, getSourceLocation(beginSP, endSP)))
+    SP ~ LegalIdentifier ~ SP ~> Name.Ident
   }
 
   def QName: Rule1[Name.Unresolved] = rule {
