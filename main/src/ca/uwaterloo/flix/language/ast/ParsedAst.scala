@@ -61,11 +61,11 @@ object ParsedAst {
     /**
      * An AST node that represents a value definition.
      *
-     * @param sp1 the position of the first character in the literal.
+     * @param sp1 the position of the first character in the definition.
      * @param ident the name of the value.
      * @param tpe the declared type of the value.
      * @param e the expression.
-     * @param sp2 the position of the last character in the literal.
+     * @param sp2 the position of the last character in the definition.
      */
     case class Value(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, e: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
       /**
@@ -77,12 +77,12 @@ object ParsedAst {
     /**
      * An AST node that represents a function definition.
      *
-     * @param sp1 the position of the first character in the literal.
+     * @param sp1 the position of the first character in the definition.
      * @param ident the name of the function.
      * @param formals the formals (i.e. parameters and their types).
      * @param tpe the return type.
      * @param body the body expression of the function.
-     * @param sp2 the position of the last character in the literal.
+     * @param sp2 the position of the last character in the definition.
      */
     case class Function(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
       /**
@@ -94,10 +94,10 @@ object ParsedAst {
     /**
      * An AST node that represents a enum definition.
      *
-     * @param sp1 the position of the first character in the literal.
+     * @param sp1 the position of the first character in the definition.
      * @param ident the name of the enum.
      * @param cases the variants of the enum.
-     * @param sp2 the position of the last character in the literal.
+     * @param sp2 the position of the last character in the definition.
      */
     case class Enum(sp1: SourcePosition, ident: Name.Ident, cases: Seq[ParsedAst.Type.Tag], sp2: SourcePosition) extends ParsedAst.Definition {
       /**
@@ -109,11 +109,11 @@ object ParsedAst {
     /**
      * An AST node that represents a lattice definition.
      *
-     * @param sp1 the position of the first character in the literal.
+     * @param sp1 the position of the first character in the definition.
      * @param ident the name of the lattice.
      * @param elms the components of the lattice (e.g. bot, leq, lub).
      * @param traits the traits of the lattice (e.g. Norm and Widening).
-     * @param sp2 the position of the last character in the literal.
+     * @param sp2 the position of the last character in the definition.
      */
     // TODO: Should ident not be type?
     case class Lattice(sp1: SourcePosition, ident: Name.Ident, elms: Seq[ParsedAst.Expression], traits: Seq[ParsedAst.Trait], sp2: SourcePosition) extends ParsedAst.Definition {
@@ -126,10 +126,10 @@ object ParsedAst {
     /**
      * An AST that represent a relation definition.
      *
-     * @param sp1 the position of the first character in the literal.
+     * @param sp1 the position of the first character in the definition.
      * @param ident the name of the relation.
      * @param attributes the name and type of the attributes.
-     * @param sp2 the position of the last character in the literal.
+     * @param sp2 the position of the last character in the definition.
      */
     case class Relation(sp1: SourcePosition, ident: Name.Ident, attributes: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Definition {
       /**

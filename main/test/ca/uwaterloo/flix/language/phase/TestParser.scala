@@ -1329,16 +1329,4 @@ class TestParser extends FunSuite {
     assert(result.isSuccess)
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Source Location                                                         //
-  /////////////////////////////////////////////////////////////////////////////
-  test("SourceLocation01") {
-    val input = "x"
-    val result = new Parser(SourceInput.Str(input)).Ident.run().get
-    //assertResult(result.location)(SourceLocation(None, 1, 1))
-    ???
-  }
-
-  // TODO: Add more tests for source location
-
 }
