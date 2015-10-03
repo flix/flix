@@ -110,13 +110,11 @@ object ParsedAst {
      * An AST node that represents a lattice definition.
      *
      * @param sp1 the position of the first character in the definition.
-     * @param ident the name of the lattice.
+     * @param tpe the type of the lattice elements.
      * @param elms the components of the lattice (e.g. bot, leq, lub).
-     * @param traits the traits of the lattice (e.g. Norm and Widening).
      * @param sp2 the position of the last character in the definition.
      */
-    // TODO: Should ident not be type?
-    case class Lattice(sp1: SourcePosition, ident: Name.Ident, elms: Seq[ParsedAst.Expression], traits: Seq[ParsedAst.Trait], sp2: SourcePosition) extends ParsedAst.Definition {
+    case class Lattice(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], traits: Seq[ParsedAst.Trait], sp2: SourcePosition) extends ParsedAst.Definition {
       /**
        * Returns the source location of `this` definition.
        */

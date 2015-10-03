@@ -170,7 +170,8 @@ class TestParser extends FunSuite {
   }
 
   // TODO
-
+  // TODO: Consider
+  // lat a<> with Bot(...) with Leq(...) with Lub(...) with Top(...) with Glb(...) with Norm(...) with Widen(...)
   //  ignore("Parser.Definition.CompleteLattice01") {
   //    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb)"
   //    val result = new Parser(SourceInput.Str(input)).Definition.run().get

@@ -40,13 +40,13 @@ class TestWeeder extends FunSuite {
   // Lattices                                                                //
   /////////////////////////////////////////////////////////////////////////////
   test("IllegalLattice01") {
-    val past = ParsedAst.Definition.Lattice(SP, Ident, Seq(), Seq.empty, SP)
+    val past = ParsedAst.Definition.Lattice(SP, ParsedAst.Type.Unit, Seq(), Seq.empty, SP)
     val result = Weeder.Definition.compile(past)
     assert(result.hasErrors)
   }
 
   test("IllegalLattice02") {
-    val past = ParsedAst.Definition.Lattice(SP, Ident, Seq(
+    val past = ParsedAst.Definition.Lattice(SP, ParsedAst.Type.Unit, Seq(
       ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP)
     ), Seq.empty, SP)
     val result = Weeder.Definition.compile(past)
@@ -54,7 +54,7 @@ class TestWeeder extends FunSuite {
   }
 
   test("IllegalLattice03") {
-    val past = ParsedAst.Definition.Lattice(SP, Ident, Seq(
+    val past = ParsedAst.Definition.Lattice(SP, ParsedAst.Type.Unit, Seq(
       ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP),
       ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP),
       ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP),

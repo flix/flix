@@ -300,9 +300,10 @@ object Weeder {
      * Compiles the given parsed lattice `past` to a weeded lattice definition.
      */
     def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Definition.Lattice, WeederError] = {
+      val tpeVal = Type.compile(past.tpe)
       val elmsVal = @@(past.elms.toList.map(Expression.compile))
-      elmsVal flatMap {
-        case bot :: leq :: lub :: Nil => WeededAst.Definition.Lattice(past.ident, bot, leq, lub, past.loc).toSuccess
+      @@(tpeVal, elmsVal) flatMap {
+        case (tpe, bot :: leq :: lub :: Nil) => WeededAst.Definition.Lattice(tpe, bot, leq, lub, past.loc).toSuccess
         case _ => IllegalLattice(past.loc).toFailure
       }
     }

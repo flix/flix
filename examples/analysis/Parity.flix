@@ -92,7 +92,7 @@ namespace ParityAnalysis {
     lat Parity<> (Parity.Bot, leq, ParityAnalysis::lub);
 
     rel SumOp(result: Int, left: Int, right: Int);
-//    rel VarPointsTo(localVal: Int, value: <Parity>); TODO
+    rel VarPointsTo(localVal: Int, value: Parity<>)
     rel VarPointsTo(localVal: Int, value: Parity);
 
     SumOp(3, 1, 2).

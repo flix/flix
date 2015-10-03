@@ -5,6 +5,7 @@ import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
+// TODO: Rename to Namer?
 object Resolver {
 
   import ResolverError._
@@ -132,7 +133,7 @@ object Resolver {
 
   case class SymbolTable(enums: Map[Name.Resolved, WeededAst.Definition.Enum],
                          constants: Map[Name.Resolved, WeededAst.Definition.Constant],
-                         lattices: Map[Name.Resolved, WeededAst.Definition.Lattice],
+                         lattices: Map[WeededAst.Type, WeededAst.Definition.Lattice],
                          relations: Map[Name.Resolved, WeededAst.Definition.Relation],
                          types: Map[Name.Resolved, WeededAst.Type]) {
 
@@ -271,9 +272,8 @@ object Resolver {
           case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.loc, ident.loc).toFailure
         }
 
-      case defn@WeededAst.Definition.Lattice(ident, bot, leq, lub, loc) =>
-        val rname = toRName(ident, namespace)
-        syms.copy(lattices = syms.lattices + (rname -> defn)).toSuccess
+      case defn@WeededAst.Definition.Lattice(tpe, bot, leq, lub, loc) =>
+        syms.copy(lattices = syms.lattices + (tpe -> defn)).toSuccess
 
       case defn@WeededAst.Definition.Relation(ident, attributes, loc) =>
         val rname = toRName(ident, namespace)
