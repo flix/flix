@@ -8,7 +8,6 @@ import org.scalatest.FunSuite
 
 class TestWeeder extends FunSuite {
 
-  val SL = SourceLocation.Unknown
   val SP = SourcePosition.Unknown
   val Ident = Name.Ident("x", SourceLocation.Unknown)
 
@@ -16,22 +15,22 @@ class TestWeeder extends FunSuite {
   // Enums                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   test("DuplicateTag01") {
-    val past = ParsedAst.Definition.Enum(SL, Ident, Seq(
+    val past = ParsedAst.Definition.Enum(SP, Ident, Seq(
       ParsedAst.Type.Tag(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Type.Tag(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
-    ))
+    ), SP)
 
     val result = Weeder.Definition.compile(past)
     assert(result.hasErrors)
   }
 
   test("DuplicateTag02") {
-    val past = ParsedAst.Definition.Enum(SL, Ident, Seq(
+    val past = ParsedAst.Definition.Enum(SP, Ident, Seq(
       ParsedAst.Type.Tag(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Type.Tag(Name.Ident("y", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Type.Tag(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Type.Tag(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
-    ))
+    ), SP)
 
     val result = Weeder.Definition.compile(past)
     assertResult(2)(result.errors.size)
@@ -41,26 +40,26 @@ class TestWeeder extends FunSuite {
   // Lattices                                                                //
   /////////////////////////////////////////////////////////////////////////////
   test("IllegalLattice01") {
-    val past = ParsedAst.Definition.Lattice(SL, Ident, Seq(), Seq.empty)
+    val past = ParsedAst.Definition.Lattice(SP, Ident, Seq(), Seq.empty, SP)
     val result = Weeder.Definition.compile(past)
     assert(result.hasErrors)
   }
 
   test("IllegalLattice02") {
-    val past = ParsedAst.Definition.Lattice(SL, Ident, Seq(
+    val past = ParsedAst.Definition.Lattice(SP, Ident, Seq(
       ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP)
-    ), Seq.empty)
+    ), Seq.empty, SP)
     val result = Weeder.Definition.compile(past)
     assert(result.hasErrors)
   }
 
   test("IllegalLattice03") {
-    val past = ParsedAst.Definition.Lattice(SL, Ident, Seq(
+    val past = ParsedAst.Definition.Lattice(SP, Ident, Seq(
       ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP),
       ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP),
       ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP),
       ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP)
-    ), Seq.empty)
+    ), Seq.empty, SP)
     val result = Weeder.Definition.compile(past)
     assert(result.hasErrors)
   }
@@ -69,22 +68,22 @@ class TestWeeder extends FunSuite {
   // Relations                                                               //
   /////////////////////////////////////////////////////////////////////////////
   test("DuplicateAttribute01") {
-    val past = ParsedAst.Definition.Relation(SL, Ident, Seq(
+    val past = ParsedAst.Definition.Relation(SP, Ident, Seq(
       ParsedAst.Attribute(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Attribute(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
-    ))
+    ), SP)
 
     val result = Weeder.Definition.compile(past)
     assert(result.hasErrors)
   }
 
   test("DuplicateAttribute02") {
-    val past = ParsedAst.Definition.Relation(SL, Ident, Seq(
+    val past = ParsedAst.Definition.Relation(SP, Ident, Seq(
       ParsedAst.Attribute(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Attribute(Name.Ident("y", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Attribute(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.Attribute(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
-    ))
+    ), SP)
 
     val result = Weeder.Definition.compile(past)
     assertResult(2)(result.errors.size)
@@ -95,22 +94,22 @@ class TestWeeder extends FunSuite {
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
   test("DuplicateFormal01") {
-    val past = ParsedAst.Definition.Function(SL, Ident, Seq(
+    val past = ParsedAst.Definition.Function(SP, Ident, Seq(
       ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
-    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SP, ParsedAst.Literal.Unit(SP, SP), SP))
+    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SP, ParsedAst.Literal.Unit(SP, SP), SP), SP)
 
     val result = Weeder.Definition.compile(past)
     assert(result.hasErrors)
   }
 
   test("DuplicateFormal02") {
-    val past = ParsedAst.Definition.Function(SL, Ident, Seq(
+    val past = ParsedAst.Definition.Function(SP, Ident, Seq(
       ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.FormalArg(Name.Ident("y", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit),
       ParsedAst.FormalArg(Name.Ident("x", SourceLocation.Unknown), ParsedAst.Type.Unit)
-    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SP, ParsedAst.Literal.Unit(SP, SP), SP))
+    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SP, ParsedAst.Literal.Unit(SP, SP), SP), SP)
 
     val result = Weeder.Definition.compile(past)
     assertResult(2)(result.errors.size)

@@ -219,49 +219,49 @@ class TestParser extends FunSuite {
   // Error(x) <= P(x).
   // Error(y) <= !Edge(1, 3)
 
-  test("Directive.Assert01") {
+  ignore("Directive.Assert01") {
     // P(42).
     val input = "assert P(42)."
     ???
   }
 
-  test("Directive.Assert02") {
+  ignore("Directive.Assert02") {
     // \exists x. P(x). This is trivially true.
     val input = "assert P(x)."
     ???
   }
 
-  test("Directive.Assert03") {
+  ignore("Directive.Assert03") {
     // \exists y. P(1, y), Q(y, 3).
     val input = "assert P(1, y), Q(y, 3)."
     ???
   }
 
-  test("Directive.Assert04") {
+  ignore("Directive.Assert04") {
     // \exists x, y, z. P(x, y), Q(y, z).
     val input = "assert P(x, y), Q(y, z)."
     ???
   }
 
-  test("Directive.Refute01") {
+  ignore("Directive.Refute01") {
     // P(42) => false. <==> \not P(42).
     val input = "refute P(42)."
     ???
   }
 
-  test("Directive.Refute02") {
+  ignore("Directive.Refute02") {
     // \forall x. P(x) => false. <==> \not \exists x. P(x).
     val input = "refute P(x)."
     ???
   }
 
-  test("Directive.Refute03") {
+  ignore("Directive.Refute03") {
     // \forall y. P(1, y), Q(y, 3) => false. <==> \not \exists y. P(1, y), Q(y, 3)
     val input = "refute P(1,  y), Q(y, 3)."
     ???
   }
 
-  test("Directive.Refute04") {
+  ignore("Directive.Refute04") {
     // \forall x, y, z. P(x, y), Q(y, z) => false. <==> \not \exists x, y. z. P(x, y), Q(y, z)
     val input = "refute P(x,  y), Q(y, z)."
     ???
@@ -784,19 +784,19 @@ class TestParser extends FunSuite {
     assertResult(5)(result.get.body.size)
   }
 
-  test("Predicate.Alias01") {
+  ignore("Predicate.Alias01") {
     val input = "r := 42"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
     assert(result.isInstanceOf[ParsedAst.Predicate.Alias])
   }
 
-  test("Predicate.Alias02") {
+  ignore("Predicate.Alias02") {
     val input = "r := (true, 42, \"foo\")"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
     assert(result.isInstanceOf[ParsedAst.Predicate.Alias])
   }
 
-  test("Predicate.Alias03") {
+  ignore("Predicate.Alias03") {
     val input = "r := f(x, g(y, z))"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
     assert(result.isInstanceOf[ParsedAst.Predicate.Alias])

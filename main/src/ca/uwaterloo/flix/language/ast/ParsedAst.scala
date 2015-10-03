@@ -7,8 +7,6 @@ import scala.collection.immutable.Seq
  */
 sealed trait ParsedAst
 
-// TODO: Ensure precise source locations.
-
 object ParsedAst {
 
   /**
@@ -46,7 +44,6 @@ object ParsedAst {
      */
     case class Rule(head: ParsedAst.Predicate, body: Seq[ParsedAst.Predicate]) extends ParsedAst.Declaration
 
-    // TODO: Add integrity constraints
   }
 
   /**
@@ -64,23 +61,35 @@ object ParsedAst {
     /**
      * An AST node that represents a value definition.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the literal.
      * @param ident the name of the value.
      * @param tpe the declared type of the value.
      * @param e the expression.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Value(loc: SourceLocation, ident: Name.Ident, tpe: ParsedAst.Type, e: ParsedAst.Expression) extends ParsedAst.Definition
+    case class Value(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, e: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
+      /**
+       * Returns the source location of `this` definition.
+       */
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a function definition.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the literal.
      * @param ident the name of the function.
      * @param formals the formals (i.e. parameters and their types).
      * @param tpe the return type.
      * @param body the body expression of the function.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Function(loc: SourceLocation, ident: Name.Ident, formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Definition
+    case class Function(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
+      /**
+       * Returns the source location of `this` definition.
+       */
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a enum definition.

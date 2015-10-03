@@ -62,11 +62,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def ValueDefinition: Rule1[ParsedAst.Definition.Value] = rule {
-    SL ~ atomic("val") ~ WS ~ Ident ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Definition.Value
+    SP ~ atomic("val") ~ WS ~ Ident ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Value
   }
 
   def FunctionDefinition: Rule1[ParsedAst.Definition.Function] = rule {
-    SL ~ atomic("def") ~ WS ~ Ident ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Definition.Function
+    SP ~ atomic("def") ~ WS ~ Ident ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Function
   }
 
   def EnumDefinition: Rule1[ParsedAst.Definition.Enum] = {
@@ -84,7 +84,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     rule {
-      SL ~ atomic("enum") ~ WS ~ Ident ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ optSC ~> ParsedAst.Definition.Enum
+      SP ~ atomic("enum") ~ WS ~ Ident ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~ optSC ~> ParsedAst.Definition.Enum
     }
   }
 
@@ -98,7 +98,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     rule {
-      SL ~ atomic("lat") ~ optWS ~ Ident ~ atomic("<>") ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ optWS ~ Traits ~ optSC ~> ParsedAst.Definition.Lattice
+      SP ~ atomic("lat") ~ optWS ~ Ident ~ atomic("<>") ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ optWS ~ Traits ~ SP ~ optSC ~> ParsedAst.Definition.Lattice
     }
   }
 
@@ -112,7 +112,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     rule {
-      SL ~ atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ optSC ~> ParsedAst.Definition.Relation
+      SP ~ atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.Relation
     }
   }
 
@@ -471,6 +471,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     optional(WS)
   }
 
+  // TODO: Look for uneeded semicolons
   def optSC: Rule0 = rule {
     optWS ~ optional(";") ~ optWS
   }
