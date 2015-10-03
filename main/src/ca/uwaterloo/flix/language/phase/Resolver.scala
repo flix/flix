@@ -29,14 +29,14 @@ object Resolver {
     case class DuplicateDefinition(name: Name.Resolved, loc1: SourceLocation, loc2: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.formatSource}")}
-            |
-            |${consoleCtx.red(s">> Duplicate definition of the name '${name.format}'.")}
-            |
-            |First definition was here:
-            |${loc1.underline}
-            |Second definition was here:
-            |${loc2.underline}
-            |Tip: Consider renaming or removing one of the definitions.
+           |
+           |${consoleCtx.red(s">> Duplicate definition of the name '${name.format}'.")}
+           |
+           |First definition was here:
+           |${loc1.underline}
+           |Second definition was here:
+           |${loc2.underline}
+           |Tip: Consider renaming or removing one of the definitions.
          """.stripMargin
     }
 
@@ -63,10 +63,10 @@ object Resolver {
     case class UnresolvedConstantReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
-            |
-            |${consoleCtx.red(s">> Unresolved reference to constant '${name.format}'.")}
-            |
-            |${loc.underline}
+           |
+           |${consoleCtx.red(s">> Unresolved reference to constant '${name.format}'.")}
+           |
+           |${loc.underline}
          """.stripMargin
     }
 
@@ -80,10 +80,10 @@ object Resolver {
     case class UnresolvedEnumReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
-            |
-            |${consoleCtx.red(s">> Unresolved reference to enum '${name.format}'.")}
-            |
-            |${loc.underline}
+           |
+           |${consoleCtx.red(s">> Unresolved reference to enum '${name.format}'.")}
+           |
+           |${loc.underline}
          """.stripMargin
     }
 
@@ -97,10 +97,10 @@ object Resolver {
     case class UnresolvedRelationReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
-            |
-            |${consoleCtx.red(s">> Unresolved reference to relation '${name.format}'.")}
-            |
-            |${loc.underline}
+           |
+           |${consoleCtx.red(s">> Unresolved reference to relation '${name.format}'.")}
+           |
+           |${loc.underline}
          """.stripMargin
     }
 
@@ -114,10 +114,10 @@ object Resolver {
     case class UnresolvedTypeReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
-            |
-            |${consoleCtx.red(s">> Unresolved reference to type '${name.format}'.")}
-            |
-            |${loc.underline}
+           |
+           |${consoleCtx.red(s">> Unresolved reference to type '${name.format}'.")}
+           |
+           |${loc.underline}
          """.stripMargin
     }
 
@@ -220,8 +220,10 @@ object Resolver {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
 
-        val collectedLattices = Validation.fold[WeededAst.Type, (List[String], WeededAst.Definition.Lattice), WeededAst.Type, ResolvedAst.Definition.Lattice, ResolverError](syms.lattices) {
-          case (k, (namespace, v)) => Definition.resolve(v, namespace, syms) map (d => k -> d)
+        val collectedLattices = Validation.fold[WeededAst.Type, (List[String], WeededAst.Definition.Lattice), ResolvedAst.Type, ResolvedAst.Definition.Lattice, ResolverError](syms.lattices) {
+          case (k, (namespace, v)) => Type.resolve(k, namespace, syms) flatMap {
+            case tpe =>  Definition.resolve(v, namespace, syms) map (d => tpe -> d)
+          }
         }
 
         val collectedRelations = Validation.fold[Name.Resolved, WeededAst.Definition.Relation, Name.Resolved, ResolvedAst.Definition.Relation, ResolverError](syms.relations) {
@@ -231,9 +233,8 @@ object Resolver {
         val collectedFacts = Declaration.collectFacts(wast, syms)
         val collectedRules = Declaration.collectRules(wast, syms)
 
-        @@(collectedConstants, collectedEnums, collectedRelations, collectedFacts, collectedRules) map {
-          // TODO: Rest...
-          case (constants, enums, relations, facts, rules) => ResolvedAst.Root(constants, enums, Map.empty, relations, facts, rules)
+        @@(collectedConstants, collectedEnums, collectedLattices, collectedRelations, collectedFacts, collectedRules) map {
+          case (constants, enums, lattices, relations, facts, rules) => ResolvedAst.Root(constants, enums, lattices, relations, facts, rules)
         }
     }
   }
@@ -405,14 +406,9 @@ object Resolver {
           case lit => ResolvedAst.Expression.Lit(lit, loc)
         }
 
-        // TODO: Rewrite this ....
         case WeededAst.Expression.Var(name, loc) => name.parts match {
-          case Seq(x) =>
-            if (locals contains x)
-              ResolvedAst.Expression.Var(Name.Ident(name.sp1, x, name.sp2), loc).toSuccess
-            else
-              UnresolvedReference(name, namespace).toFailure // TODO: Specialize this.
-          case xs => syms.lookupConstant(name, namespace) map {
+          case Seq(x) if locals contains x => ResolvedAst.Expression.Var(Name.Ident(name.sp1, x, name.sp2), loc).toSuccess
+          case _ => syms.lookupConstant(name, namespace) map {
             case (rname, defn) => ResolvedAst.Expression.Ref(rname, loc)
           }
         }
