@@ -85,31 +85,49 @@ object ParsedAst {
     /**
      * An AST node that represents a enum definition.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the literal.
      * @param ident the name of the enum.
      * @param cases the variants of the enum.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Enum(loc: SourceLocation, ident: Name.Ident, cases: Seq[ParsedAst.Type.Tag]) extends ParsedAst.Definition
+    case class Enum(sp1: SourcePosition, ident: Name.Ident, cases: Seq[ParsedAst.Type.Tag], sp2: SourcePosition) extends ParsedAst.Definition {
+      /**
+       * Returns the source location of `this` definition.
+       */
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a lattice definition.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the literal.
      * @param ident the name of the lattice.
      * @param elms the components of the lattice (e.g. bot, leq, lub).
      * @param traits the traits of the lattice (e.g. Norm and Widening).
+     * @param sp2 the position of the last character in the literal.
      */
     // TODO: Should ident not be type?
-    case class Lattice(loc: SourceLocation, ident: Name.Ident, elms: Seq[ParsedAst.Expression], traits: Seq[ParsedAst.Trait]) extends ParsedAst.Definition
+    case class Lattice(sp1: SourcePosition, ident: Name.Ident, elms: Seq[ParsedAst.Expression], traits: Seq[ParsedAst.Trait], sp2: SourcePosition) extends ParsedAst.Definition {
+      /**
+       * Returns the source location of `this` definition.
+       */
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST that represent a relation definition.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the literal.
      * @param ident the name of the relation.
      * @param attributes the name and type of the attributes.
+     * @param sp2 the position of the last character in the literal.
      */
-    case class Relation(loc: SourceLocation, ident: Name.Ident, attributes: Seq[ParsedAst.Attribute]) extends ParsedAst.Definition
+    case class Relation(sp1: SourcePosition, ident: Name.Ident, attributes: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Definition {
+      /**
+       * Returns the source location of `this` definition.
+       */
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
   }
 
