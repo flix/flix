@@ -20,11 +20,16 @@ object Name {
   /**
    * Represents an unresolved name.
    *
+   * @param sp1 the position of the first character in the literal.
    * @param parts the name parts.
-   *
-   * @param location the source location of the first name part.
+   * @param sp2 the position of the last character in the literal.
    */
-  case class Unresolved(parts: List[String], location: SourceLocation) extends CachedHash {
+  case class Unresolved(sp1: SourcePosition, parts: List[String], sp2: SourcePosition) extends CachedHash {
+    /**
+     * The source location of `this` unresolved name.
+     */
+    val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+
     /**
      * Returns a human readable string representation of the unresolved name.
      */

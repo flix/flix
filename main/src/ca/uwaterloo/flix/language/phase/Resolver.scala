@@ -15,6 +15,9 @@ object Resolver {
   sealed trait ResolverError extends Compiler.CompilationError
 
   object ResolverError {
+
+    implicit val consoleCtx = Compiler.ConsoleCtx
+
     /**
      * An error raised to indicate that the given `name` is used for multiple definitions.
      *
@@ -23,10 +26,19 @@ object Resolver {
      * @param loc2 the location of the second definition.
      */
     case class DuplicateDefinition(name: Name.Resolved, loc1: SourceLocation, loc2: SourceLocation) extends ResolverError {
-      val format: String = s"Error: Duplicate definition of '${name.format}'.\n" +
-        s"  First definition was here: ${loc1.format}.\n" +
-        s"  Second definition was here: ${loc2.format}.\n"
+      val format =
+        s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Duplicate definition of the name '${name.format}'.")}
+            |
+            |First definition was here:
+            |${loc1.underline}
+            |Second definition was here:
+            |${loc2.underline}
+            |Tip: Consider renaming or removing one of the definitions.
+         """.stripMargin
     }
+
 
     /**
      * An error raised to indicate that the given `name` in the given `namespace` was not found.
@@ -34,15 +46,83 @@ object Resolver {
      * @param name the unresolved name.
      * @param namespace the current namespace.
      */
+    // TODO: Split this into multiple different versions:
+    @deprecated
     case class UnresolvedReference(name: Name.Unresolved, namespace: List[String]) extends ResolverError {
-      val format: String = s"Error: Unresolved reference to '${name.format}' in namespace '${namespace.mkString("::")}' at: ${name.location.format}\n"
+      val format: String = s"Error: Unresolved reference to '${name.format}' in namespace '${namespace.mkString("::")}' at: ${name.loc.format}\n"
     }
 
+    /**
+     * An error raised to indicate a reference to an unknown constant.
+     *
+     * @param name the unresolved name.
+     * @param namespace the current namespace.
+     * @param loc the source location of the reference.
+     */
+    case class UnresolvedConstantReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Unresolved reference to constant '${name.format}'.")}
+            |
+            |${loc.underline}
+         """.stripMargin
+    }
+
+    /**
+     * An error raised to indicate a reference to an unknown enum.
+     *
+     * @param name the unresolved name.
+     * @param namespace the current namespace.
+     * @param loc the source location of the reference.
+     */
+    case class UnresolvedEnumReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Unresolved reference to enum '${name.format}'.")}
+            |
+            |${loc.underline}
+         """.stripMargin
+    }
+
+    /**
+     * An error raised to indicate a reference to an unknown relation.
+     *
+     * @param name the unresolved name.
+     * @param namespace the current namespace.
+     * @param loc the source location of the reference.
+     */
+    case class UnresolvedRelationReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Unresolved reference to relation '${name.format}'.")}
+            |
+            |${loc.underline}
+         """.stripMargin
+    }
+
+    /**
+     * An error raised to indicate a reference to an unknown type.
+     *
+     * @param name the unresolved name.
+     * @param namespace the current namespace.
+     * @param loc the source location of the reference.
+     */
+    case class UnresolvedTypeReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Unresolved reference to type '${name.format}'.")}
+            |
+            |${loc.underline}
+         """.stripMargin
+    }
+
+    // TODO: Check tag names.
     // TODO: All kinds of arity errors....
-
     // TODO: Cyclic stuff.
-
-    // TODO: Unused, let, parameters etc.
 
   }
 
@@ -55,19 +135,6 @@ object Resolver {
                          lattices: Map[Name.Resolved, WeededAst.Definition.Lattice],
                          relations: Map[Name.Resolved, WeededAst.Definition.Relation],
                          types: Map[Name.Resolved, WeededAst.Type]) {
-    // TODO: Cleanup
-    def lookupEnum(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Enum), ResolverError] = {
-      val rname = Name.Resolved(
-        if (name.parts.size == 1)
-          namespace ::: name.parts.head :: Nil
-        else
-          name.parts
-      )
-      enums.get(rname) match {
-        case None => UnresolvedReference(name, namespace).toFailure
-        case Some(d) => (rname, d).toSuccess
-      }
-    }
 
     // TODO: Cleanup
     def lookupConstant(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Constant), ResolverError] = {
@@ -78,7 +145,21 @@ object Resolver {
           name.parts
       )
       constants.get(rname) match {
-        case None => UnresolvedReference(name, namespace).toFailure
+        case None => UnresolvedConstantReference(name, namespace, name.loc).toFailure
+        case Some(d) => (rname, d).toSuccess
+      }
+    }
+
+    // TODO: Cleanup
+    def lookupEnum(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Enum), ResolverError] = {
+      val rname = Name.Resolved(
+        if (name.parts.size == 1)
+          namespace ::: name.parts.head :: Nil
+        else
+          name.parts
+      )
+      enums.get(rname) match {
+        case None => UnresolvedEnumReference(name, namespace, name.loc).toFailure
         case Some(d) => (rname, d).toSuccess
       }
     }
@@ -92,7 +173,7 @@ object Resolver {
           name.parts
       )
       relations.get(rname) match {
-        case None => UnresolvedReference(name, namespace).toFailure
+        case None => UnresolvedRelationReference(name, namespace, name.loc).toFailure
         case Some(d) => (rname, d).toSuccess
       }
     }
@@ -106,7 +187,7 @@ object Resolver {
           name.parts
       )
       types.get(rname) match {
-        case None => UnresolvedReference(name, namespace).toFailure
+        case None => UnresolvedTypeReference(name, namespace, name.loc).toFailure
         case Some(tpe) => tpe.toSuccess
       }
     }
@@ -136,9 +217,9 @@ object Resolver {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
 
-//        val collectedLattices = Validation.fold[Name.Resolved, WeededAst.Definition.Lattice, Name.Resolved, ResolvedAst.Definition.Lattice, ResolverError](syms.lattices) {
-//          case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
-//        }
+        //        val collectedLattices = Validation.fold[Name.Resolved, WeededAst.Definition.Lattice, Name.Resolved, ResolvedAst.Definition.Lattice, ResolverError](syms.lattices) {
+        //          case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
+        //        }
 
         val collectedRelations = Validation.fold[Name.Resolved, WeededAst.Definition.Relation, Name.Resolved, ResolvedAst.Definition.Relation, ResolverError](syms.relations) {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
@@ -160,7 +241,7 @@ object Resolver {
      * Constructs the symbol table for the given definition of `wast`.
      */
     def symbolsOf(wast: WeededAst.Declaration, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
-      case WeededAst.Declaration.Namespace(Name.Unresolved(parts, location), body) =>
+      case WeededAst.Declaration.Namespace(Name.Unresolved(sp1, parts, sp2), body) =>
         Validation.fold[WeededAst.Declaration, SymbolTable, ResolverError](body, syms) {
           case (msyms, d) => symbolsOf(d, namespace ::: parts.toList, msyms)
         }
@@ -323,9 +404,9 @@ object Resolver {
         case WeededAst.Expression.Var(name, loc) => name.parts match {
           case Seq(x) =>
             if (locals contains x)
-              ResolvedAst.Expression.Var(Name.Ident(x, name.location), loc).toSuccess
+              ResolvedAst.Expression.Var(Name.Ident(x, name.loc), loc).toSuccess
             else
-              UnresolvedReference(name, namespace).toFailure
+              UnresolvedReference(name, namespace).toFailure // TODO: Specialize this.
           case xs => syms.lookupConstant(name, namespace) map {
             case (rname, defn) => ResolvedAst.Expression.Ref(rname, loc)
           }

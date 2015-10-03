@@ -376,8 +376,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def QName: Rule1[Name.Unresolved] = rule {
-    SL ~ oneOrMore(LegalIdentifier).separatedBy(atomic("::")) ~>
-      ((location: SourceLocation, parts: Seq[String]) => Name.Unresolved(parts.toList, location))
+    SP ~ oneOrMore(LegalIdentifier).separatedBy(atomic("::")) ~ SP ~>
+      ((sp1: SourcePosition, parts: Seq[String], sp2: SourcePosition) => Name.Unresolved(sp1, parts.toList, sp2))
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -462,6 +462,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //
   /////////////////////////////////////////////////////////////////////////////
+  // TODO: Get rid of  this?
   def WS: Rule0 = rule {
     oneOrMore(" " | "\t" | NewLine | SingleLineComment | MultiLineComment)
   }
@@ -509,7 +510,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   @Unoptimized
-  // TODO: Remove
+  // TODO: Get rid of this
   def SL: Rule1[SourceLocation] = {
     val position = Position(cursor, input)
     rule {

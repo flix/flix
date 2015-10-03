@@ -19,6 +19,8 @@ object Typer {
 
   object TypeError {
 
+    implicit val consoleCtx = Compiler.ConsoleCtx
+
     /**
      * An error raised to indicate a type mismatch between an `expected` and an `actual` type.
      *
@@ -27,7 +29,13 @@ object Typer {
      * @param loc the source location.
      */
     case class ExpectedType(expected: TypedAst.Type, actual: TypedAst.Type, loc: SourceLocation) extends TypeError {
-      val format = s"Type Error: The type '${prettyPrint(expected)}' was expected but the actual type is '${prettyPrint(actual)}' at ${loc.format}.\n"
+      val format =
+        s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Expected type '${prettyPrint(expected)}' but actual type is '${prettyPrint(actual)}'.")}
+            |
+            |${loc.underline}
+         """.stripMargin
     }
 
     /**
@@ -39,7 +47,14 @@ object Typer {
      * @param loc2 the source location of the second type.
      */
     case class ExpectedEqualTypes(tpe1: TypedAst.Type, tpe2: TypedAst.Type, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
-      val format = s"Type Error: Expected expressions of the same type, but got '${prettyPrint(tpe1)}' and ${prettyPrint(tpe2)}.\n"
+      val format =
+        s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc1.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Expected equal types '${prettyPrint(tpe1)}' and '${prettyPrint(tpe2)}'.")}
+            |
+            |${loc1.underline}
+            |${loc2.underline}
+         """.stripMargin
     }
 
     /**
@@ -48,6 +63,7 @@ object Typer {
      * @param tpe the erroneous type.
      * @param loc the source location.
      */
+    // TODO: Pretty print
     case class IllegalApply(tpe: TypedAst.Type, loc: SourceLocation) extends TypeError {
       val format = s"Type Error: The type '${prettyPrint(tpe)}' is not a function type at ${loc.format}.\n"
     }
@@ -59,6 +75,7 @@ object Typer {
      * @param tpe the type.
      * @param loc the source location.
      */
+    // TODO: Pretty print
     case class IllegalPattern(pat: ResolvedAst.Pattern, tpe: TypedAst.Type, loc: SourceLocation) extends TypeError {
       val format = s"Type Error: Pattern '${prettyPrint(pat)}' does not match expected type '${prettyPrint(tpe)}' at ${loc.format}.\n"
     }
