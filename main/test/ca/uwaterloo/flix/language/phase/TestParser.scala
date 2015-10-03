@@ -7,6 +7,7 @@ import org.scalatest.FunSuite
 
 // TODO: Cleanup names. Numbering and remove the Parser. prefix.
 // TODO: Write custom assert which will actually print the parse error...
+// TODO:  Allow fields on case objects.
 
 class TestParser extends FunSuite {
 
@@ -169,6 +170,7 @@ class TestParser extends FunSuite {
   }
 
   // TODO
+
   //  ignore("Parser.Definition.CompleteLattice01") {
   //    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb)"
   //    val result = new Parser(SourceInput.Str(input)).Definition.run().get
@@ -218,6 +220,16 @@ class TestParser extends FunSuite {
   // false <= P(x).
   // Error(x) <= P(x).
   // Error(y) <= !Edge(1, 3)
+  // TODO: Need meta constraint
+  // true => A(...), B(...) (MUST-HOLD).
+  // Salary(name, amount) => Employee(name, <<unbound>>)
+  // false <= Employee(name, _), !Salary(name, _).
+
+  // Safety property
+  // false <= A(...), B(...) (the body must never hold).
+  //
+  // always Answer(x).
+  // never Unsafe(x).
 
   ignore("Directive.Assert01") {
     // P(42).

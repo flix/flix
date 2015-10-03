@@ -11,19 +11,7 @@ import org.parboiled2._
 import scala.collection.immutable.Seq
 import scala.io.Source
 
-// TODO: Dealing with whitespace is hard. Figure out a good way.
-// TODO:  Allow fields on case objects.
-
-// TODO: Need meta constraint
-// true => A(...), B(...) (MUST-HOLD).
-// Salary(name, amount) => Employee(name, <<unbound>>)
-// false <= Employee(name, _), !Salary(name, _).
-
-// Safety property
-// false <= A(...), B(...) (the body must never hold).
-//
-// always Answer(x).
-// never Unsafe(x).
+// TODO: Improve handling of whitespace.
 
 /**
  * A parser for the Flix language.
@@ -269,7 +257,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    SL ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~> ParsedAst.Predicate.Unresolved
+    SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~ optWS ~> ParsedAst.Predicate.Unresolved
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -498,27 +486,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Source Positions and Locations                                          //
+  // Source Positions                                                        //
   /////////////////////////////////////////////////////////////////////////////
   @Unoptimized
   def SP: Rule1[SourcePosition] = {
     val position = Position(cursor, input)
+    val line: String = input.getLine(position.line)
     rule {
-      push(SourcePosition(source, position.line, position.column, input.getLine(position.line)))
+      push(SourcePosition(source, position.line, position.column, line))
     }
   }
-
-  @Unoptimized
-  // TODO: Get rid of this
-  def SL: Rule1[SourceLocation] = {
-    val position = Position(cursor, input)
-    rule {
-      push(SourceLocation(source, position.line, position.column, position.line, position.column + 1, input.getLine(position.line)))
-    }
-  }
-
-  // TODO: Remove
-  private def getSourceLocation(b: SourcePosition, e: SourcePosition): SourceLocation =
-    SourceLocation.mk(b, e)
 
 }
