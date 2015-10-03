@@ -355,7 +355,7 @@ object Resolver {
       val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
 
       val attributesVal = wast.attributes.map {
-        case WeededAst.Attribute(ident, tpe) => Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.Attribute(ident, t))
+        case WeededAst.Attribute(ident, tpe, interp) => Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.Attribute(ident, t))
       }
 
       @@(attributesVal) map {

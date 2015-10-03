@@ -629,10 +629,38 @@ object ParsedAst {
    * An AST node that represents an attribute.
    *
    * @param ident the name of the attribute.
-   * @param tpe the type of the attribute.
+   * @param interp the interpretation of the attribute.
    */
-  // TODO: Lattice notion
-  case class Attribute(ident: Name.Ident, tpe: ParsedAst.Type) extends ParsedAst
+  case class Attribute(ident: Name.Ident, interp: Interpretation) extends ParsedAst
+
+  /**
+   * A common super-type for attribute interpretations.
+   */
+  sealed trait Interpretation {
+    /**
+     * The type of elements in `this` interpretation.
+     */
+    def tpe: ParsedAst.Type
+  }
+
+  object Interpretation {
+
+    /**
+     * An AST node representing the standard set-based interpretation of an attribute in a relation.
+     *
+     * @param tpe the type of the attribute.
+     */
+    case class Set(tpe: ParsedAst.Type) extends Interpretation
+
+    /**
+     * An AST node representing a lattice-based interpretation of an attribute in a relation.
+     *
+     * @param tpe the type of the attribute.
+     */
+    case class Lattice(tpe: ParsedAst.Type) extends Interpretation
+
+  }
+
 
   /**
    * An AST node representing a formal argument of a function.

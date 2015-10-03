@@ -214,6 +214,24 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Definition.Relation])
   }
 
+  test("Definition.Relation03") {
+    val input = "rel A(b: B<>)"
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Relation])
+  }
+
+  test("Definition.Relation04") {
+    val input = "rel A(b: B, c: C<>, d: D<>)"
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Relation])
+  }
+
+  test("Definition.Relation05") {
+    val input = "rel A(b: B<>, c: C, d: D<>)"
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Relation])
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Directives                                                              //
   /////////////////////////////////////////////////////////////////////////////

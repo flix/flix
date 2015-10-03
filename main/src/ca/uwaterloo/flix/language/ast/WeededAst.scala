@@ -177,7 +177,15 @@ object WeededAst {
 
   }
 
-  case class Attribute(ident: Name.Ident, tpe: WeededAst.Type) extends WeededAst
+  case class Attribute(ident: Name.Ident, tpe: WeededAst.Type, interp: WeededAst.Interpretation) extends WeededAst
+
+  sealed trait Interpretation
+
+  object Interpretation {
+    case object Set extends Interpretation
+
+    case object Lattice extends Interpretation
+  }
 
   /**
    * An AST node representing a formal argument of a function.

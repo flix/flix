@@ -93,7 +93,6 @@ namespace ParityAnalysis {
 
     rel SumOp(result: Int, left: Int, right: Int);
     rel VarPointsTo(localVal: Int, value: Parity<>)
-    rel VarPointsTo(localVal: Int, value: Parity);
 
     SumOp(3, 1, 2).
     VarPointsTo(1, Parity.Odd).

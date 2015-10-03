@@ -315,11 +315,14 @@ object Weeder {
       val seen = mutable.Map.empty[String, Name.Ident]
 
       val attributesVal = past.attributes.map {
-        case ParsedAst.Attribute(ident, ptype) => seen.get(ident.name) match {
+        case ParsedAst.Attribute(ident, interp) => seen.get(ident.name) match {
           // check if the attribute name was already declared.
           case None =>
             seen += (ident.name -> ident)
-            Type.compile(ptype) map (tpe => WeededAst.Attribute(ident, tpe))
+            interp match {
+              case i: ParsedAst.Interpretation.Set => Type.compile(interp.tpe) map (tpe => WeededAst.Attribute(ident, tpe, WeededAst.Interpretation.Set))
+              case i: ParsedAst.Interpretation.Lattice => Type.compile(interp.tpe) map (tpe => WeededAst.Attribute(ident, tpe, WeededAst.Interpretation.Lattice))
+            }
           case Some(otherIdent) =>
             (DuplicateAttribute(ident.name, otherIdent.loc, ident.loc): WeederError).toFailure
         }

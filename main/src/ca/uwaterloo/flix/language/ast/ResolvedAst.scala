@@ -352,6 +352,7 @@ object ResolvedAst {
    * @param ident the name of the attribute.
    * @param tpe the (declared) type of the attribute.
    */
+  // TODO: Interp
   case class Attribute(ident: Name.Ident, tpe: ResolvedAst.Type) extends ResolvedAst
 
   /**

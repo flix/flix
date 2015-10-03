@@ -90,8 +90,13 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def RelationDefinition: Rule1[ParsedAst.Definition.Relation] = {
+
+    def Interpretation: Rule1[ParsedAst.Interpretation] = rule {
+      Type ~ "<>" ~> ParsedAst.Interpretation.Lattice | Type ~> ParsedAst.Interpretation.Set
+    }
+
     def Attribute: Rule1[ParsedAst.Attribute] = rule {
-      Ident ~ optWS ~ ":" ~ optWS ~ Type ~> ParsedAst.Attribute
+      Ident ~ optWS ~ ":" ~ optWS ~ Interpretation ~> ParsedAst.Attribute
     }
 
     def Attributes: Rule1[Seq[ParsedAst.Attribute]] = rule {
