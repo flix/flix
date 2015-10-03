@@ -224,11 +224,26 @@ object Weeder {
      * Compiles the parsed rule `past` to a weeded rule.
      */
     def compile(past: ParsedAst.Declaration.Rule): Validation[WeededAst.Declaration.Rule, WeederError] = {
-      val headVal = Predicate.Head.compile(past.head)
-      val bodyVal = @@(past.body.map(Predicate.Body.compile))
+      // TODO: Improve code by having "aliases" on a rule?
 
-      @@(headVal, bodyVal) map {
-        case (head, body) => WeededAst.Declaration.Rule(head, body)
+      // compute an map from variable names to alias predicates.
+      val aliasesVal = Validation.fold[ParsedAst.Predicate, Map[String, ParsedAst.Predicate.Alias], WeederError](past.body, Map.empty) {
+        case (m, p: ParsedAst.Predicate.Alias) => m.get(p.ident.name) match {
+          case None => (m + (p.ident.name -> p)).toSuccess
+          case Some(otherAlias) => ??? //  TODO: Error duplicate definition.
+        }
+        case (m, _) => m.toSuccess
+      }
+
+      aliasesVal flatMap {
+        case aliases =>
+          val headVal = Predicate.Head.compile(past.head, aliases)
+          val bodyVal = past.body.collect {
+            case p: ParsedAst.Predicate.Unresolved => Predicate.Body.compile(p)
+          }
+          @@(headVal, @@(bodyVal)) map {
+            case (head, body) => WeededAst.Declaration.Rule(head, body)
+          }
       }
     }
 
@@ -475,29 +490,21 @@ object Weeder {
       /**
        * Compiles the given parsed predicate `p` to a weeded predicate.
        */
-      def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Head, WeederError] = past match {
-        case p: ParsedAst.Predicate.Unresolved => compile(p)
-        case p: ParsedAst.Predicate.Alias => ???
+      def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Alias] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
+        case p: ParsedAst.Predicate.Unresolved => compile(p, aliases)
+        case p: ParsedAst.Predicate.Alias => ??? // TODO: raise error
       }
 
       /**
        * Compiles the given parsed predicate `past` to a weeded predicate.
        */
-      def compile(past: ParsedAst.Predicate.Unresolved): Validation[WeededAst.Predicate.Head, WeederError] =
-        @@(past.terms.map(Term.Head.compile)) map {
+      def compile(past: ParsedAst.Predicate.Unresolved, aliases: Map[String, ParsedAst.Predicate.Alias]): Validation[WeededAst.Predicate.Head, WeederError] =
+        @@(past.terms.map(t => Term.Head.compile(t, aliases))) map {
           case terms => WeededAst.Predicate.Head(past.name, terms, past.loc)
         }
     }
 
     object Body {
-
-      /**
-       * Compiles the given parsed predicate `p` to a weeded predicate.
-       */
-      def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
-        case p: ParsedAst.Predicate.Unresolved => compile(p)
-        case p: ParsedAst.Predicate.Alias => ???
-      }
 
       /**
        * Compiles the given parsed predicate `p` to a weeded predicate.
@@ -519,18 +526,21 @@ object Weeder {
        *
        * Returns [[Failure]] if the term contains a wildcard variable.
        */
-      def compile(past: ParsedAst.Term): Validation[WeededAst.Term.Head, WeederError] = past match {
+      def compile(past: ParsedAst.Term, aliases: Map[String, ParsedAst.Predicate.Alias]): Validation[WeededAst.Term.Head, WeederError] = past match {
         case term: ParsedAst.Term.Wildcard => WildcardInHeadTerm(term.loc).toFailure
-        case term: ParsedAst.Term.Var => WeededAst.Term.Head.Var(term.ident, term.loc).toSuccess
+        case term: ParsedAst.Term.Var => aliases.get(term.ident.name) match {
+          case None => WeededAst.Term.Head.Var(term.ident, term.loc).toSuccess
+          case Some(alias) => compile(alias.term, aliases)
+        }
         case term: ParsedAst.Term.Lit => Literal.compile(term.lit) map {
           case lit => WeededAst.Term.Head.Lit(lit, term.loc)
         }
         case term: ParsedAst.Term.Ascribe =>
-          @@(compile(term.term), Type.compile(term.tpe)) map {
+          @@(compile(term.term, aliases), Type.compile(term.tpe)) map {
             case (t, tpe) => WeededAst.Term.Head.Ascribe(t, tpe, term.loc)
           }
         case term: ParsedAst.Term.Apply =>
-          @@(term.args map compile) map {
+          @@(term.args map (t => compile(t, aliases))) map {
             case args => WeededAst.Term.Head.Apply(term.name, args, term.loc)
           }
       }

@@ -489,17 +489,27 @@ object ParsedAst {
     /**
      * An AST node that represent an unresolved predicate.
      *
-     * @param sp1 the position of the first character in the term.
+     * @param sp1 the position of the first character in the predicate.
      * @param name the unresolved name of the predicate.
      * @param terms the terms of the predicate.
-     * @param sp2 the position of the last character in the term.
+     * @param sp2 the position of the last character in the predicate.
      */
+    // TODO: Need better name.
     case class Unresolved(sp1: SourcePosition, name: Name.Unresolved, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
-    // TODO
-    case class Alias() extends ParsedAst.Predicate
+    /**
+     * An AST node that represents an alias predicate.
+     *
+     * @param sp1 the position of the first character in the predicate.
+     * @param ident the name of the variable.
+     * @param term the term.
+     * @param sp2 the position of the last character in the predicate.
+     */
+    case class Alias(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Term, sp2: SourcePosition) extends ParsedAst.Predicate {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
   }
 

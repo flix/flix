@@ -815,22 +815,28 @@ class TestParser extends FunSuite {
     assertResult(5)(result.get.body.size)
   }
 
-  ignore("Predicate.Alias01") {
+  test("Predicate.Alias01") {
     val input = "r := 42"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
     assert(result.isInstanceOf[ParsedAst.Predicate.Alias])
   }
 
-  ignore("Predicate.Alias02") {
+  test("Predicate.Alias02") {
     val input = "r := (true, 42, \"foo\")"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
     assert(result.isInstanceOf[ParsedAst.Predicate.Alias])
   }
 
-  ignore("Predicate.Alias03") {
+  test("Predicate.Alias03") {
     val input = "r := f(x, g(y, z))"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
     assert(result.isInstanceOf[ParsedAst.Predicate.Alias])
+  }
+
+  ignore("Predicate.NotEqual01") {
+    val input = "x != y"
+    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate])
   }
 
   /////////////////////////////////////////////////////////////////////////////

@@ -261,7 +261,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
+    RelationalPredicate | AliasPredicate
+  }
+
+  def RelationalPredicate: Rule1[ParsedAst.Predicate.Unresolved] = rule {
     SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Unresolved
+  }
+
+  def AliasPredicate: Rule1[ParsedAst.Predicate.Alias] = rule {
+    SP ~ Ident ~ optWS ~ atomic(":=") ~ optWS ~ Term ~ SP ~> ParsedAst.Predicate.Alias
   }
 
   /////////////////////////////////////////////////////////////////////////////

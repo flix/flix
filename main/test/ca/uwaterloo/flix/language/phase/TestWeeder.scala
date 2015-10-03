@@ -131,6 +131,12 @@ class TestWeeder extends FunSuite {
     assertResult(2)(result.errors.size)
   }
 
+  // TODO: Must ensure that the variable bound by an alias is not abused. (i.e. used in other places).
+  test("IllegalAlias01") {
+    val input = "P(x) :- x := 42, x := 21"
+    ???
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Terms                                                                   //
   /////////////////////////////////////////////////////////////////////////////
