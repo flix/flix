@@ -351,9 +351,28 @@ object ResolvedAst {
    *
    * @param ident the name of the attribute.
    * @param tpe the (declared) type of the attribute.
+   * @param interp the interpretation of the attribute.
    */
-  // TODO: Interp
-  case class Attribute(ident: Name.Ident, tpe: ResolvedAst.Type) extends ResolvedAst
+  case class Attribute(ident: Name.Ident, tpe: ResolvedAst.Type, interp: Interpretation) extends ResolvedAst
+
+  /**
+   * A common super-type for attribute interpretations.
+   */
+  sealed trait Interpretation
+
+  object Interpretation {
+
+    /**
+     * An AST node representing the standard set-based interpretation of an attribute in a relation.
+     */
+    case object Set extends ResolvedAst.Interpretation
+
+    /**
+     * An AST node representing a lattice-based interpretation of an attribute in a relation.
+     */
+    case object Lattice extends ResolvedAst.Interpretation
+
+  }
 
   /**
    * A resolved AST node representing a formal argument in a function.

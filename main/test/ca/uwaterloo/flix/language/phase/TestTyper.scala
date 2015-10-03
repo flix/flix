@@ -139,7 +139,7 @@ class TestTyper extends FunSuite {
 
   test("Definition.Relation01") {
     val rast = ResolvedAst.Definition.Relation(RName, List(
-      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Bool)
+      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Bool, ResolvedAst.Interpretation.Set)
     ), SL)
 
     val result = Typer.Definition.typer(rast, Root)
@@ -148,9 +148,9 @@ class TestTyper extends FunSuite {
 
   test("Definition.Relation02") {
     val rast = ResolvedAst.Definition.Relation(RName, List(
-      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Bool),
-      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int),
-      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Str)
+      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Bool, ResolvedAst.Interpretation.Set),
+      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set),
+      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Str, ResolvedAst.Interpretation.Set)
     ), SL)
 
     val result = Typer.Definition.typer(rast, Root)
@@ -165,8 +165,8 @@ class TestTyper extends FunSuite {
 
     val root = Root.copy(relations = Map(
       rname -> ResolvedAst.Definition.Relation(rname, List(
-        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Str),
-        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int)
+        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Str, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set)
       ), SL)
     ))
 
@@ -188,9 +188,9 @@ class TestTyper extends FunSuite {
 
     val root = Root.copy(relations = Map(
       rname -> ResolvedAst.Definition.Relation(rname, List(
-        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int),
-        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int),
-        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int)
+        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set)
       ), SL)
     ))
 
@@ -898,10 +898,10 @@ class TestTyper extends FunSuite {
 
     val root = Root.copy(relations = Map(
       rname -> ResolvedAst.Definition.Relation(rname, List(
-        ResolvedAst.Attribute(x, ResolvedAst.Type.Unit),
-        ResolvedAst.Attribute(y, ResolvedAst.Type.Bool),
-        ResolvedAst.Attribute(z, ResolvedAst.Type.Int),
-        ResolvedAst.Attribute(w, ResolvedAst.Type.Str)
+        ResolvedAst.Attribute(x, ResolvedAst.Type.Unit, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(y, ResolvedAst.Type.Bool, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(z, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(w, ResolvedAst.Type.Str, ResolvedAst.Interpretation.Set)
       ), SL)
     ))
 
@@ -931,10 +931,10 @@ class TestTyper extends FunSuite {
 
     val root = Root.copy(relations = Map(
       rname -> ResolvedAst.Definition.Relation(rname, List(
-        ResolvedAst.Attribute(x, ResolvedAst.Type.Unit),
-        ResolvedAst.Attribute(y, ResolvedAst.Type.Bool),
-        ResolvedAst.Attribute(z, ResolvedAst.Type.Int),
-        ResolvedAst.Attribute(w, ResolvedAst.Type.Str)
+        ResolvedAst.Attribute(x, ResolvedAst.Type.Unit, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(y, ResolvedAst.Type.Bool, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(z, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(w, ResolvedAst.Type.Str, ResolvedAst.Interpretation.Set)
       ), SL)
     ))
 
@@ -973,7 +973,7 @@ class TestTyper extends FunSuite {
       ),
       relations = Map(
         relationName -> ResolvedAst.Definition.Relation(relationName, List(
-          ResolvedAst.Attribute(x, ResolvedAst.Type.Unit)
+          ResolvedAst.Attribute(x, ResolvedAst.Type.Unit, ResolvedAst.Interpretation.Set)
         ), SL)
       ))
 
@@ -998,10 +998,10 @@ class TestTyper extends FunSuite {
 
     val root = Root.copy(relations = Map(
       rname -> ResolvedAst.Definition.Relation(rname, List(
-        ResolvedAst.Attribute(x, ResolvedAst.Type.Unit),
-        ResolvedAst.Attribute(y, ResolvedAst.Type.Bool),
-        ResolvedAst.Attribute(z, ResolvedAst.Type.Int),
-        ResolvedAst.Attribute(w, ResolvedAst.Type.Str)
+        ResolvedAst.Attribute(x, ResolvedAst.Type.Unit, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(y, ResolvedAst.Type.Bool, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(z, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(w, ResolvedAst.Type.Str, ResolvedAst.Interpretation.Set)
       ), SL)
     ))
 

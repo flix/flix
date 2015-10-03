@@ -650,17 +650,16 @@ object ParsedAst {
      *
      * @param tpe the type of the attribute.
      */
-    case class Set(tpe: ParsedAst.Type) extends Interpretation
+    case class Set(tpe: ParsedAst.Type) extends ParsedAst.Interpretation
 
     /**
      * An AST node representing a lattice-based interpretation of an attribute in a relation.
      *
      * @param tpe the type of the attribute.
      */
-    case class Lattice(tpe: ParsedAst.Type) extends Interpretation
+    case class Lattice(tpe: ParsedAst.Type) extends ParsedAst.Interpretation
 
   }
-
 
   /**
    * An AST node representing a formal argument of a function.

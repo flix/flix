@@ -590,9 +590,26 @@ object TypedAst {
    * @param ident the name of the attribute.
    * @param tpe  the type of the attribute.
    */
-  case class Attribute(ident: Name.Ident, tpe: TypedAst.Type) extends TypedAst
+  case class Attribute(ident: Name.Ident, tpe: TypedAst.Type, interp: Interpretation) extends TypedAst
 
-  // TODO: Introduce TypeOrLattice or similar.
+  /**
+   * A common super-type for attribute interpretations.
+   */
+  sealed trait Interpretation
+
+  object Interpretation {
+
+    /**
+     * An AST node representing the standard set-based interpretation of an attribute in a relation.
+     */
+    case object Set extends TypedAst.Interpretation
+
+    /**
+     * An AST node representing a lattice-based interpretation of an attribute in a relation.
+     */
+    case object Lattice extends TypedAst.Interpretation
+
+  }
 
   /**
    * A typed AST node representing a formal argument of a function.

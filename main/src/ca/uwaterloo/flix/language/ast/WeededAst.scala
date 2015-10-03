@@ -182,9 +182,11 @@ object WeededAst {
   sealed trait Interpretation
 
   object Interpretation {
-    case object Set extends Interpretation
 
-    case object Lattice extends Interpretation
+    case object Set extends WeededAst.Interpretation
+
+    case object Lattice extends WeededAst.Interpretation
+
   }
 
   /**

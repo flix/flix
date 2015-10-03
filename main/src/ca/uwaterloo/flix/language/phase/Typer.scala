@@ -155,7 +155,10 @@ object Typer {
      */
     def typer(rast: ResolvedAst.Definition.Relation, root: ResolvedAst.Root): Validation[TypedAst.Definition.Relation, TypeError] = {
       val attributes = rast.attributes map {
-        case ResolvedAst.Attribute(ident, tpe) => TypedAst.Attribute(ident, Type.typer(tpe))
+        case ResolvedAst.Attribute(ident, tpe, ResolvedAst.Interpretation.Set) =>
+          TypedAst.Attribute(ident, Type.typer(tpe), TypedAst.Interpretation.Set)
+        case ResolvedAst.Attribute(ident, tpe, ResolvedAst.Interpretation.Lattice) =>
+          TypedAst.Attribute(ident, Type.typer(tpe), TypedAst.Interpretation.Lattice)
       }
       TypedAst.Definition.Relation(rast.name, attributes, rast.loc).toSuccess
     }
@@ -432,7 +435,7 @@ object Typer {
     def typer(rast: ResolvedAst.Predicate.Head, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Head, TypeError] = {
       val relation = root.relations(rast.name)
       val termsVal = (rast.terms zip relation.attributes) map {
-        case (term, ResolvedAst.Attribute(_, tpe)) => Term.typer(term, Type.typer(tpe), root)
+        case (term, ResolvedAst.Attribute(_, tpe, _)) => Term.typer(term, Type.typer(tpe), root)
       }
 
       @@(termsVal) map {
@@ -452,7 +455,7 @@ object Typer {
     def typer(rast: ResolvedAst.Predicate.Body, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Body, TypeError] = {
       val relation = root.relations(rast.name)
       val termsVal = (rast.terms zip relation.attributes) map {
-        case (term, ResolvedAst.Attribute(_, tpe)) => Term.typer(term, Type.typer(tpe), root)
+        case (term, ResolvedAst.Attribute(_, tpe, _)) => Term.typer(term, Type.typer(tpe), root)
       }
 
       @@(termsVal) map {
