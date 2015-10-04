@@ -246,6 +246,7 @@ class TestParser extends FunSuite {
 
   // Safety property
   // false <= A(...), B(...) (the body must never hold).
+  // false <= !A(..). with stratified negation.
   //
   // always Answer(x).
   // never Unsafe(x).
