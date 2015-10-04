@@ -24,6 +24,27 @@ object Weeder {
     implicit val consoleCtx = Compiler.ConsoleCtx
 
     /**
+     * An error raised to indicate that the alias `name` was defined multiple times.
+     *
+     * @param name the name of the variable.
+     * @param loc1 the location of the first declaration.
+     * @param loc2 the location of the second declaration.
+     */
+    case class DuplicateAlias(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.formatSource}")}
+           |
+           |${consoleCtx.red(s">> Duplicate definition of the variable '$name'.")}
+           |
+           |First definition was here:
+           |${loc1.underline}
+           |Second definition was here:
+           |${loc2.underline}
+           |Tip: Consider renaming or removing one of the aliases.
+         """.stripMargin
+    }
+
+    /**
      * An error raised to indicate that the attribute `name` was declared multiple times.
      *
      * @param name the name of the attribute.
@@ -34,9 +55,9 @@ object Weeder {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.formatSource}")}
            |
-            |${consoleCtx.red(s">> Duplicate attribute name '$name'.")}
+           |${consoleCtx.red(s">> Duplicate attribute name '$name'.")}
            |
-            |First definition was here:
+           |First definition was here:
            |${loc1.underline}
            |Second definition was here:
            |${loc2.underline}
@@ -55,9 +76,9 @@ object Weeder {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.formatSource}")}
            |
-            |${consoleCtx.red(s">> Duplicate formal argument '$name'.")}
+           |${consoleCtx.red(s">> Duplicate formal argument '$name'.")}
            |
-            |First definition was here:
+           |First definition was here:
            |${loc1.underline}
            |Second definition was here:
            |${loc2.underline}
@@ -76,9 +97,9 @@ object Weeder {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.formatSource}")}
            |
-            |${consoleCtx.red(s">> Duplicate tag name '$name'.")}
+           |${consoleCtx.red(s">> Duplicate tag name '$name'.")}
            |
-            |First declaration was here:
+           |First declaration was here:
            |${loc1.underline}
            |Second declaration was here:
            |${loc2.underline}
@@ -95,12 +116,12 @@ object Weeder {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
            |
-            |${consoleCtx.red(s">> Illegal wildcard in head of a fact/rule.")}
+           |${consoleCtx.red(s">> Illegal wildcard in head of a fact/rule.")}
            |
-            |${loc.underline}
-           |Wildcards (i.e. implicitly unbound variables) are not allowed to occur in the head of a fact/rule.
+           |${loc.underline}
+           |Wildcards (i.e. implicitly unbound variables) are not allowed to occur in the head of a fact/rule/alias.
            |
-            |Tip: Remove the wildcard or replace it by bound variable.
+           |Tip: Remove the wildcard or replace it by bound variable.
          """.stripMargin
     }
 
@@ -113,12 +134,12 @@ object Weeder {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
            |
-            |${consoleCtx.red(s">> Illegal function call in body of a rule.")}
+           |${consoleCtx.red(s">> Illegal function call in body of a rule.")}
            |
-            |${loc.underline}
+           |${loc.underline}
            |Function calls are not allowed to occur in the body of a rule. Only in its head.
            |
-            |Tip: Restructure the rule such that the function call does not occur in its body.
+           |Tip: Restructure the rule such that the function call does not occur in its body.
            |Possibly by breaking up the rule into multiple smaller rules.
          """.stripMargin
     }
@@ -132,9 +153,9 @@ object Weeder {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
            |
-            |${consoleCtx.red(s">> Lattice definition must have exactly three components: bot, leq and lub.")}
+           |${consoleCtx.red(s">> Lattice definition must have exactly three components: bot, leq and lub.")}
            |
-            |${loc.underline}
+           |${loc.underline}
            |the first component should be the bottom element,
            |the second component should be the partial order function,
            |and the third component should be the least upper bound function.
@@ -153,16 +174,16 @@ object Weeder {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.formatSource}")}
            |
-            |${consoleCtx.red(s">> Duplicate definition of the same variable '$name' in pattern.")}
+           |${consoleCtx.red(s">> Duplicate definition of the same variable '$name' in pattern.")}
            |
-            |First definition was here:
+           |First definition was here:
            |${loc1.underline}
            |Second definition was here:
            |${loc2.underline}
            |
-            |A variable is must only occurs once in a pattern.
+           |A variable is must only occurs once in a pattern.
            |
-            |Tip: Remove the duplicate variable and use '==' to test for equality.
+           |Tip: Remove the duplicate variable and use '==' to test for equality.
          """.stripMargin
     }
 
@@ -176,12 +197,12 @@ object Weeder {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${location.formatSource}")}
            |
-            |${consoleCtx.red(s">> Unsupported feature: $message")}
+           |${consoleCtx.red(s">> Unsupported feature: $message")}
            |
-            |${location.underline}
+           |${location.underline}
            |This feature is not yet supported, implemented or considered stable.
            |
-            |Tip: Avoid using this feature.
+           |Tip: Avoid using this feature.
          """.stripMargin
     }
 
@@ -230,7 +251,7 @@ object Weeder {
       val aliasesVal = Validation.fold[ParsedAst.Predicate, Map[String, ParsedAst.Predicate.Alias], WeederError](past.body, Map.empty) {
         case (m, p: ParsedAst.Predicate.Alias) => m.get(p.ident.name) match {
           case None => (m + (p.ident.name -> p)).toSuccess
-          case Some(otherAlias) => ??? //  TODO: Error duplicate definition.
+          case Some(otherAlias) => DuplicateAlias(p.ident.name, otherAlias.loc, p.loc).toFailure
         }
         case (m, _) => m.toSuccess
       }

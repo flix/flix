@@ -131,10 +131,25 @@ class TestWeeder extends FunSuite {
     assertResult(2)(result.errors.size)
   }
 
-  // TODO: Must ensure that the variable bound by an alias is not abused. (i.e. used in other places).
   test("IllegalAlias01") {
     val input = "P(x) :- x := 42, x := 21"
-    ???
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
+  }
+
+  test("IllegalAlias02") {
+    val input = "P(x, y) :- x := 42, y := x"
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
+  }
+
+  test("IllegalAlias03") {
+    val input = "P(x) :- x := _."
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
   }
 
   /////////////////////////////////////////////////////////////////////////////
