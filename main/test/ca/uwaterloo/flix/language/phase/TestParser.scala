@@ -283,18 +283,21 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Directive.AssertRule])
   }
 
+  // TODO: Maybe its better to print a relation?
   test("Directive.Print01") {
     val input = "Print#(x) :- A(x)."
     val result = new Parser(SourceInput.Str(input)).Declaration.run().get
     assert(result.isInstanceOf[ParsedAst.Directive.Print])
   }
 
+  // TODO: Maybe its better to print a relation?
   test("Directive.Print02") {
     val input = "Print#(x, z) :- A(x, y), B(y, z)."
     val result = new Parser(SourceInput.Str(input)).Declaration.run().get
     assert(result.isInstanceOf[ParsedAst.Directive.Print])
   }
 
+  // TODO: Maybe its better to print a relation?
   test("Directive.Print03") {
     val input = "Print#(x, f(z)) :- A(x, y), B(y, z)."
     val result = new Parser(SourceInput.Str(input)).Declaration.run().get
