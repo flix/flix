@@ -5,6 +5,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head
 import ca.uwaterloo.flix.language.ast.TypedAst.Term
 import ca.uwaterloo.flix.language.ast.TypedAst.Term.Body
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
+import ca.uwaterloo.flix.util.AsciiTable
 
 import scala.collection.mutable
 
@@ -38,7 +39,7 @@ class Solver(root: TypedAst.Root) {
       }
     }
 
-    println(database)
+    printDatabase()
   }
 
   /**
@@ -148,6 +149,34 @@ class Solver(root: TypedAst.Root) {
    */
   def dependencies(name: Name.Resolved): List[TypedAst.Constraint.Rule] = root.rules.filter {
     case rule => rule.body.exists(p => p.name == name)
+  }
+
+
+  def printDatabase(): Unit = {
+    for ((name, relation) <- root.relations) {
+      val table = database(name)
+      val cols = relation.attributes.map(_.ident.name)
+      val ascii = new AsciiTable().withCols(cols: _*)
+      for (row <- table) {
+        ascii.mkRow(row map pretty)
+      }
+
+      Console.println(relation.name)
+      ascii.write(System.out)
+      Console.println()
+      Console.println()
+    }
+  }
+
+  // TODO: Move somewhere. Decide where
+  def pretty(v: Value): String = v match {
+    case Value.Unit => "()"
+    case Value.Bool(b) => b.toString
+    case Value.Int(i) => i.toString
+    case Value.Str(s) => s.toString
+    case Value.Tag(enum, tag, value) => enum + "." + tag + pretty(value)
+    case Value.Tuple(elms) => "(" + (elms map pretty) + ")"
+    case Value.Closure(_, _, _) => ??? // TODO: WHAT?
   }
 
 }
