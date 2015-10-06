@@ -2,72 +2,132 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Constraint.Rule
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head
+import ca.uwaterloo.flix.language.ast.TypedAst.Term
+import ca.uwaterloo.flix.language.ast.TypedAst.Term.Body
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 
 import scala.collection.mutable
-import scala.collection.immutable
 
 class Solver(root: TypedAst.Root) {
 
-  val env = mutable.Map.empty[Name.Resolved, List[List[Value]]]
+  val database = mutable.Map.empty[Name.Resolved, List[List[Value]]]
 
-  val worklist = mutable.ListBuffer.empty[(Name.Resolved, List[Value])]
+  val worklist = mutable.Queue.empty[(Name.Resolved, List[Value])]
 
+  /**
+   * Solves the Flix program.
+   */
   def solve(): Unit = {
-
+    // adds all facts to the database.
     for (fact <- root.facts) {
       val name = fact.head.name
       val values = fact.head.terms map Interpreter.evalHeadTerm
       newFact(name, values)
     }
 
+    // iterate until fixpoint.
     while (worklist.nonEmpty) {
-      val item = worklist.head
-      worklist -= item
-      val (name, row) = item
+      // extract fact from the worklist.
+      val (name, row) = worklist.dequeue()
 
+      // re-evaluate all dependencies.
       val rules = dependencies(name)
-
       for (rule <- rules) {
-        eval(rule, row)
+        // TODO: Use `row` as the initial environment to speedup computation.
+        evalBody(rule, Map.empty)
       }
     }
+
+    println(database)
   }
 
+  /**
+   * Adds the given `row` as a fact in the database for the relation with the given `name`.
+   *
+   * Adds the new fact to the worklist if the database was changed.
+   */
   def newFact(name: Name.Resolved, row: List[Value]): Unit = {
-    val table = env.getOrElse(name, List.empty)
+    val table = database.getOrElse(name, List.empty)
 
+    // TODO: Must take lattice semantics into account.
     val rowExists = table.contains(row)
-
     if (!rowExists) {
-      env += (name -> (row :: table))
+      database += (name -> (row :: table))
       worklist += ((name, row))
     }
   }
 
-  def eval(rule: Rule, row: List[Value]) = {
-    // TODO: For now we ignore `row` and just re-evaluate the entire rule.
-    evalBody(rule, Map.empty[String, Value])
+  /**
+   * Evaluates the head of the given `rule` under the given environment `env0`.
+   */
+  def evalHead(rule: Rule, env0: Map[String, Value]) = {
+    val row = rule.head.terms map Interpreter.evalHeadTerm
+    newFact(rule.head.name, row)
   }
 
-  
-
+  /**
+   * Evaluates the body of the given `rule` under the given initial environment `env0`.
+   */
   def evalBody(rule: Rule, env0: Map[String, Value]): Unit = {
-    
-    def visit(p: TypedAst.Predicate.Body, env: List[Map[String, Value]]): List[Map[String, Value]] = ???
-    
-    val env2 = rule.body.foldLeft(List(env0)) {
+    /**
+     * Extend the given environment `env` according to the given predicate `p`.
+     */
+    def visit(p: TypedAst.Predicate.Body, env: List[Map[String, Value]]): List[Map[String, Value]] = {
+      // TODO: Replace by faster join algorithm.
+      val table = database(p.name)
+
+      table flatMap {
+        case row => unifyRow(row, p.terms) match {
+          case None => List.empty
+          case Some(m) => extend(env, m)
+        }
+      }
+    }
+
+    // fold the environment over every rule in the body.
+    val envs = rule.body.foldLeft(List(env0)) {
       case (env1, p) => visit(p, env1)
     }
-    
-    for (env <- env2) {
-      evalHead(rule.head, env)  
+
+    // evaluate the head predicate for every satisfying environment. 
+    for (env <- envs) {
+      evalHead(rule, env)
     }
   }
 
-  def evalHead(head: Head, env: Map[String, Value]) = {
-    val row = head.terms map Interpreter.evalHeadTerm
-    newFact(head.name, row)
+  /**
+   * Unifies the given `row` with the given terms.
+   */
+  def unifyRow(row: List[Value], terms: List[Body]): Option[Map[String, Value]] = {
+    assert(row.length == terms.length)
+
+    (row zip terms).foldLeft(Option(Map.empty[String, Value])) {
+      case (None, (value, term)) => None
+      case (Some(macc), (value, term)) => term match {
+        case Term.Body.Wildcard(tpe, loc) => Some(macc)
+        case Term.Body.Var(ident, tpe, loc) => macc.get(ident.name) match {
+          case None => Some(macc + (ident.name -> value))
+          case Some(otherValue) =>
+            if (value != otherValue)
+              None
+            else
+              Some(macc)
+        }
+        case Term.Body.Lit(lit, tpe, loc) =>
+          val otherValue = Interpreter.evalLit(lit)
+          if (value != otherValue)
+            None
+          else
+            Some(macc)
+      }
+    }
+  }
+
+  /**
+   * Extends the given environments `envs` with the environment `m`.
+   */
+  def extend(envs: List[Map[String, Value]], m: Map[String, Value]) = {
+    ???
   }
 
   /**

@@ -507,11 +507,11 @@ object TypedAst {
       /**
        * A typed AST node representing a literal term.
        *
-       * @param literal the literal.
+       * @param lit the literal.
        * @param tpe the type of the term.
        * @param loc the source location.
        */
-      case class Lit(literal: TypedAst.Literal, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Term.Body
+      case class Lit(lit: TypedAst.Literal, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Term.Body
 
     }
 
