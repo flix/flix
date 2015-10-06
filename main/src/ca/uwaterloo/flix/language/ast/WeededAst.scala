@@ -26,7 +26,7 @@ object WeededAst {
 
     case class Enum(ident: Name.Ident, cases: Map[String, WeededAst.Type.Tag], loc: SourceLocation) extends WeededAst.Definition
 
-    case class Lattice(ident: Name.Ident, bot: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Definition
+    case class Lattice(tpe: WeededAst.Type, bot: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Definition
 
     case class Relation(ident: Name.Ident, attributes: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Definition
 
@@ -177,7 +177,17 @@ object WeededAst {
 
   }
 
-  case class Attribute(ident: Name.Ident, tpe: WeededAst.Type) extends WeededAst
+  case class Attribute(ident: Name.Ident, tpe: WeededAst.Type, interp: WeededAst.Interpretation) extends WeededAst
+
+  sealed trait Interpretation
+
+  object Interpretation {
+
+    case object Set extends WeededAst.Interpretation
+
+    case object Lattice extends WeededAst.Interpretation
+
+  }
 
   /**
    * An AST node representing a formal argument of a function.

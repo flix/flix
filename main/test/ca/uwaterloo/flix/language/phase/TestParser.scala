@@ -7,6 +7,7 @@ import org.scalatest.FunSuite
 
 // TODO: Cleanup names. Numbering and remove the Parser. prefix.
 // TODO: Write custom assert which will actually print the parse error...
+// TODO:  Allow fields on case objects.
 
 class TestParser extends FunSuite {
 
@@ -169,6 +170,8 @@ class TestParser extends FunSuite {
   }
 
   // TODO
+  // TODO: Consider
+  // lat a<> with Bot(...) with Leq(...) with Lub(...) with Top(...) with Glb(...) with Norm(...) with Widen(...)
   //  ignore("Parser.Definition.CompleteLattice01") {
   //    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb)"
   //    val result = new Parser(SourceInput.Str(input)).Definition.run().get
@@ -211,6 +214,24 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Definition.Relation])
   }
 
+  test("Definition.Relation03") {
+    val input = "rel A(b: B<>)"
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Relation])
+  }
+
+  test("Definition.Relation04") {
+    val input = "rel A(b: B, c: C<>, d: D<>)"
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Relation])
+  }
+
+  test("Definition.Relation05") {
+    val input = "rel A(b: B<>, c: C, d: D<>)"
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Relation])
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Directives                                                              //
   /////////////////////////////////////////////////////////////////////////////
@@ -218,7 +239,6 @@ class TestParser extends FunSuite {
   // false <= P(x).
   // Error(x) <= P(x).
   // Error(y) <= !Edge(1, 3)
-
   // TODO: Need meta constraint
   // true => A(...), B(...) (MUST-HOLD).
   // Salary(name, amount) => Employee(name, <<unbound>>)
@@ -230,49 +250,49 @@ class TestParser extends FunSuite {
   // always Answer(x).
   // never Unsafe(x).
 
-  test("Directive.Assert01") {
+  ignore("Directive.Assert01") {
     // P(42).
     val input = "assert P(42)."
     ???
   }
 
-  test("Directive.Assert02") {
+  ignore("Directive.Assert02") {
     // \exists x. P(x). This is trivially true.
     val input = "assert P(x)."
     ???
   }
 
-  test("Directive.Assert03") {
+  ignore("Directive.Assert03") {
     // \exists y. P(1, y), Q(y, 3).
     val input = "assert P(1, y), Q(y, 3)."
     ???
   }
 
-  test("Directive.Assert04") {
+  ignore("Directive.Assert04") {
     // \exists x, y, z. P(x, y), Q(y, z).
     val input = "assert P(x, y), Q(y, z)."
     ???
   }
 
-  test("Directive.Refute01") {
+  ignore("Directive.Refute01") {
     // P(42) => false. <==> \not P(42).
     val input = "refute P(42)."
     ???
   }
 
-  test("Directive.Refute02") {
+  ignore("Directive.Refute02") {
     // \forall x. P(x) => false. <==> \not \exists x. P(x).
     val input = "refute P(x)."
     ???
   }
 
-  test("Directive.Refute03") {
+  ignore("Directive.Refute03") {
     // \forall y. P(1, y), Q(y, 3) => false. <==> \not \exists y. P(1, y), Q(y, 3)
     val input = "refute P(1,  y), Q(y, 3)."
     ???
   }
 
-  test("Directive.Refute04") {
+  ignore("Directive.Refute04") {
     // \forall x, y, z. P(x, y), Q(y, z) => false. <==> \not \exists x, y. z. P(x, y), Q(y, z)
     val input = "refute P(x,  y), Q(y, z)."
     ???
@@ -813,6 +833,12 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Predicate.Alias])
   }
 
+  ignore("Predicate.NotEqual01") {
+    val input = "x != y"
+    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate])
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Terms                                                                   //
   /////////////////////////////////////////////////////////////////////////////
@@ -1327,17 +1353,5 @@ class TestParser extends FunSuite {
     val result = new Parser(SourceInput.Str(input)).MultiLineComment.run()
     assert(result.isSuccess)
   }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Source Location                                                         //
-  /////////////////////////////////////////////////////////////////////////////
-  test("SourceLocation01") {
-    val input = "x"
-    val result = new Parser(SourceInput.Str(input)).Ident.run().get
-    //assertResult(result.location)(SourceLocation(None, 1, 1))
-    ???
-  }
-
-  // TODO: Add more tests for source location
 
 }

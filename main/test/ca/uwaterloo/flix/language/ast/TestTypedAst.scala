@@ -7,8 +7,8 @@ class TestTypedAst extends FunSuite {
   val SL = SourceLocation.Unknown
 
   test("Pattern.Bound") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
-    val y = Name.Ident("y", SourceLocation.Unknown)
+    val x = ident("x")
+    val y = ident("y")
 
     val pat = TypedAst.Pattern.Tuple(List(
       TypedAst.Pattern.Var(x, TypedAst.Type.Bool, SL),
@@ -20,5 +20,7 @@ class TestTypedAst extends FunSuite {
       "y" -> TypedAst.Type.Int
     ))(pat.freeVars)
   }
+
+  def ident(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
 
 }

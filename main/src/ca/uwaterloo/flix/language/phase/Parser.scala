@@ -1,8 +1,5 @@
 package ca.uwaterloo.flix.language.phase
 
-import java.nio.file.Path
-
-import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.annotation.Unoptimized
 
@@ -11,9 +8,9 @@ import org.parboiled2._
 import scala.collection.immutable.Seq
 import scala.io.Source
 
-// TODO: Dealing with whitespace is hard. Figure out a good way.
-// TODO:  Allow fields on case objects.
+// TODO: Parse whitespace more "tightly" to improve source positions.
 
+// TODO: Add source locations in a few missing places?
 
 /**
  * A parser for the Flix language.
@@ -21,7 +18,7 @@ import scala.io.Source
 class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   /*
-   * Initialize parser intput.
+   * Initialize parser input.
    */
   override val input: ParserInput = source match {
     case SourceInput.Str(str) => str
@@ -52,11 +49,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def ValueDefinition: Rule1[ParsedAst.Definition.Value] = rule {
-    SL ~ atomic("val") ~ WS ~ Ident ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Definition.Value
+    SP ~ atomic("val") ~ WS ~ Ident ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Value
   }
 
   def FunctionDefinition: Rule1[ParsedAst.Definition.Function] = rule {
-    SL ~ atomic("def") ~ WS ~ Ident ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ optSC ~> ParsedAst.Definition.Function
+    SP ~ atomic("def") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ ArgumentList ~ optWS ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Function
   }
 
   def EnumDefinition: Rule1[ParsedAst.Definition.Enum] = {
@@ -74,7 +71,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     rule {
-      SL ~ atomic("enum") ~ WS ~ Ident ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ optSC ~> ParsedAst.Definition.Enum
+      SP ~ atomic("enum") ~ WS ~ Ident ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~ optSC ~> ParsedAst.Definition.Enum
     }
   }
 
@@ -88,13 +85,18 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     rule {
-      SL ~ atomic("lat") ~ optWS ~ Ident ~ atomic("<>") ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ optWS ~ Traits ~ optSC ~> ParsedAst.Definition.Lattice
+      SP ~ atomic("lat") ~ optWS ~ Type ~ atomic("<>") ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ optWS ~ Traits ~ SP ~ optSC ~> ParsedAst.Definition.Lattice
     }
   }
 
   def RelationDefinition: Rule1[ParsedAst.Definition.Relation] = {
+
+    def Interpretation: Rule1[ParsedAst.Interpretation] = rule {
+      Type ~ "<>" ~> ParsedAst.Interpretation.Lattice | Type ~> ParsedAst.Interpretation.Set
+    }
+
     def Attribute: Rule1[ParsedAst.Attribute] = rule {
-      Ident ~ optWS ~ ":" ~ optWS ~ Type ~> ParsedAst.Attribute
+      Ident ~ optWS ~ ":" ~ optWS ~ Interpretation ~> ParsedAst.Attribute
     }
 
     def Attributes: Rule1[Seq[ParsedAst.Attribute]] = rule {
@@ -102,7 +104,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     rule {
-      SL ~ atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ optSC ~> ParsedAst.Definition.Relation
+      SP ~ atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.Relation
     }
   }
 
@@ -159,7 +161,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def IfThenElseExpression: Rule1[ParsedAst.Expression.IfThenElse] = rule {
-    SP ~ atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ optWS ~ atomic("else") ~ optWS ~ Expression ~ SP ~ optWS ~> ParsedAst.Expression.IfThenElse
+    SP ~ atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ optWS ~ atomic("else") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
   }
 
   def MatchExpression: Rule1[ParsedAst.Expression.Match] = {
@@ -168,12 +170,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     rule {
-      SP ~ atomic("match") ~ optWS ~ Expression ~ optWS ~ atomic("with") ~ optWS ~ "{" ~ WS ~ oneOrMore(MatchRule) ~ "}" ~ SP ~ optWS ~> ParsedAst.Expression.Match
+      SP ~ atomic("match") ~ optWS ~ Expression ~ optWS ~ atomic("with") ~ optWS ~ "{" ~ WS ~ oneOrMore(MatchRule) ~ "}" ~ SP ~> ParsedAst.Expression.Match
     }
   }
 
   def ApplyExpression: Rule1[ParsedAst.Expression.Apply] = rule {
-    SP ~ SimpleExpression ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optWS ~> ParsedAst.Expression.Apply
+    SP ~ SimpleExpression ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Apply
   }
 
   def TagExpression: Rule1[ParsedAst.Expression.Tag] = rule {
@@ -186,7 +188,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def TupleExpression: Rule1[ParsedAst.Expression] = {
     def Unit: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("()") ~ SP ~ optWS ~> ((sp1: SourcePosition, sp2: SourcePosition) => ParsedAst.Expression.Lit(sp1, ParsedAst.Literal.Unit(sp1, sp2), sp2))
+      SP ~ atomic("()") ~ SP ~> ((sp1: SourcePosition, sp2: SourcePosition) => ParsedAst.Expression.Lit(sp1, ParsedAst.Literal.Unit(sp1, sp2), sp2))
     }
 
     def Singleton: Rule1[ParsedAst.Expression] = rule {
@@ -194,7 +196,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Tuple: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optWS ~> ParsedAst.Expression.Tuple
+      SP ~ "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Tuple
     }
 
     rule {
@@ -224,15 +226,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def WildcardPattern: Rule1[ParsedAst.Pattern.Wildcard] = rule {
-    SP ~ atomic("_") ~ SP ~ optWS ~> ParsedAst.Pattern.Wildcard
+    SP ~ atomic("_") ~ SP ~> ParsedAst.Pattern.Wildcard
   }
 
   def VariablePattern: Rule1[ParsedAst.Pattern.Var] = rule {
-    SP ~ Ident ~ SP ~ optWS ~> ParsedAst.Pattern.Var
+    SP ~ Ident ~ SP ~> ParsedAst.Pattern.Var
   }
 
   def LiteralPattern: Rule1[ParsedAst.Pattern.Lit] = rule {
-    SP ~ Literal ~ SP ~ optWS ~> ParsedAst.Pattern.Lit
+    SP ~ Literal ~ SP ~> ParsedAst.Pattern.Lit
   }
 
   def TagPattern: Rule1[ParsedAst.Pattern.Tag] = rule {
@@ -244,7 +246,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def TuplePattern: Rule1[ParsedAst.Pattern.Tuple] = rule {
-    SP ~ "(" ~ oneOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~ optWS ~> ParsedAst.Pattern.Tuple
+    SP ~ "(" ~ oneOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Pattern.Tuple
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -259,7 +261,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    SL ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ optWS ~> ParsedAst.Predicate.Unresolved
+    RelationalPredicate | AliasPredicate
+  }
+
+  def RelationalPredicate: Rule1[ParsedAst.Predicate.Unresolved] = rule {
+    SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Unresolved
+  }
+
+  def AliasPredicate: Rule1[ParsedAst.Predicate.Alias] = rule {
+    SP ~ Ident ~ optWS ~ atomic(":=") ~ optWS ~ Term ~ SP ~> ParsedAst.Predicate.Alias
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -279,15 +289,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def WildcardTerm: Rule1[ParsedAst.Term] = rule {
-    SP ~ atomic("_") ~ SP ~ optWS ~> ParsedAst.Term.Wildcard
+    SP ~ atomic("_") ~ SP ~> ParsedAst.Term.Wildcard
   }
 
   def VariableTerm: Rule1[ParsedAst.Term.Var] = rule {
-    SP ~ Ident ~ SP ~ optWS ~> ParsedAst.Term.Var
+    SP ~ Ident ~ SP ~> ParsedAst.Term.Var
   }
 
   def LiteralTerm: Rule1[ParsedAst.Term.Lit] = rule {
-    SP ~ Literal ~ SP ~ optWS ~> ParsedAst.Term.Lit
+    SP ~ Literal ~ SP ~> ParsedAst.Term.Lit
   }
 
   def AscribeTerm: Rule1[ParsedAst.Term.Ascribe] = rule {
@@ -341,9 +351,9 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
   }
 
-  /** *************************************************************************/
-  /** Helpers                                                               ***/
-  /** *************************************************************************/
+  /////////////////////////////////////////////////////////////////////////////
+  // Helpers                                                                 //
+  /////////////////////////////////////////////////////////////////////////////
   def ArgumentList: Rule1[Seq[ParsedAst.FormalArg]] = rule {
     zeroOrMore(Argument).separatedBy(optWS ~ "," ~ optWS)
   }
@@ -360,9 +370,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Ident: Rule1[Name.Ident] = rule {
-    SP ~ LegalIdentifier ~ SP ~>
-      ((beginSP: SourcePosition, name: String, endSP: SourcePosition) =>
-        Name.Ident(name, getSourceLocation(beginSP, endSP)))
+    SP ~ LegalIdentifier ~ SP ~> Name.Ident
   }
 
   def QName: Rule1[Name.Unresolved] = rule {
@@ -378,23 +386,23 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def UnitLiteral: Rule1[ParsedAst.Literal.Unit] = rule {
-    SP ~ atomic("()") ~ SP ~ optWS ~> ParsedAst.Literal.Unit
+    SP ~ atomic("()") ~ SP ~> ParsedAst.Literal.Unit
   }
 
   def BoolLiteral: Rule1[ParsedAst.Literal.Bool] = rule {
-    SP ~ capture(atomic("true") | atomic("false")) ~ SP ~ optWS ~> ParsedAst.Literal.Bool
+    SP ~ capture(atomic("true") | atomic("false")) ~ SP ~> ParsedAst.Literal.Bool
   }
 
   def IntLiteral: Rule1[ParsedAst.Literal.Int] = rule {
-    SP ~ capture(oneOrMore(CharPredicate.Digit)) ~ SP ~ optWS ~> ParsedAst.Literal.Int
+    SP ~ capture(oneOrMore(CharPredicate.Digit)) ~ SP ~> ParsedAst.Literal.Int
   }
 
   def StrLiteral: Rule1[ParsedAst.Literal.Str] = rule {
-    SP ~ "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~ SP ~ optWS ~> ParsedAst.Literal.Str
+    SP ~ "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
   }
 
   def TagLiteral: Rule1[ParsedAst.Literal.Tag] = rule {
-    SP ~ QName ~ "." ~ Ident ~ optWS ~ optional(Literal) ~ SP ~ optWS ~>
+    SP ~ QName ~ "." ~ Ident ~ optWS ~ optional(Literal) ~ SP ~>
       ((sp1: SourcePosition, name: Name.Unresolved, ident: Name.Ident, literal: Option[ParsedAst.Literal], sp2: SourcePosition) => literal match {
         case None => ParsedAst.Literal.Tag(sp1, name, ident, ParsedAst.Literal.Unit(sp1, sp2), sp2)
         case Some(lit) => ParsedAst.Literal.Tag(sp1, name, ident, lit, sp2)
@@ -407,7 +415,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Tuple: Rule1[ParsedAst.Literal] = rule {
-      SP ~ "(" ~ optWS ~ oneOrMore(Literal).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optWS ~> ParsedAst.Literal.Tuple
+      SP ~ "(" ~ optWS ~ oneOrMore(Literal).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Literal.Tuple
     }
 
     rule {
@@ -452,7 +460,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //
   /////////////////////////////////////////////////////////////////////////////
-  // TODO: Get rid of  this?
   def WS: Rule0 = rule {
     oneOrMore(" " | "\t" | NewLine | SingleLineComment | MultiLineComment)
   }
@@ -489,27 +496,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Source Positions and Locations                                          //
+  // Source Positions                                                        //
   /////////////////////////////////////////////////////////////////////////////
   @Unoptimized
   def SP: Rule1[SourcePosition] = {
     val position = Position(cursor, input)
+    val line: String = input.getLine(position.line)
     rule {
-      push(SourcePosition(source, position.line, position.column, input.getLine(position.line)))
+      push(SourcePosition(source, position.line, position.column, line))
     }
   }
-
-  @Unoptimized
-  // TODO: Get rid of this
-  def SL: Rule1[SourceLocation] = {
-    val position = Position(cursor, input)
-    rule {
-      push(SourceLocation(source, position.line, position.column, position.line, position.column + 1, input.getLine(position.line)))
-    }
-  }
-
-  // TODO: Remove
-  private def getSourceLocation(b: SourcePosition, e: SourcePosition): SourceLocation =
-    SourceLocation.mk(b, e)
 
 }

@@ -11,7 +11,7 @@ class TestTyper extends FunSuite {
 
   val SL = SourceLocation.Unknown
   val Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty)
-  val Ident = Name.Ident("x", SourceLocation.Unknown)
+  val Ident = ident("x")
   val RName = Name.Resolved(List("foo", "bar"))
 
   /////////////////////////////////////////////////////////////////////////////
@@ -49,7 +49,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Definition.Constant04") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
+    val x = ident("x")
 
     // fn (x: Unit): Unit = ()
     val exp = ResolvedAst.Expression.Lambda(
@@ -65,7 +65,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Definition.Constant05") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
+    val x = ident("x")
 
     // fn (x: Int): Int = x
     val exp = ResolvedAst.Expression.Lambda(
@@ -81,8 +81,8 @@ class TestTyper extends FunSuite {
   }
 
   test("Definition.Lattice01") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
-    val y = Name.Ident("y", SourceLocation.Unknown)
+    val x = ident("x")
+    val y = ident("y")
 
     val rast = ResolvedAst.Definition.Lattice(
       elms = ResolvedAst.Type.Bool,
@@ -113,8 +113,8 @@ class TestTyper extends FunSuite {
   }
 
   test("Definition.Lattice.TypeError") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
-    val y = Name.Ident("y", SourceLocation.Unknown)
+    val x = ident("x")
+    val y = ident("y")
 
     val rast = ResolvedAst.Definition.Lattice(
       elms = ResolvedAst.Type.Str,
@@ -139,7 +139,7 @@ class TestTyper extends FunSuite {
 
   test("Definition.Relation01") {
     val rast = ResolvedAst.Definition.Relation(RName, List(
-      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Bool)
+      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Bool, ResolvedAst.Interpretation.Set)
     ), SL)
 
     val result = Typer.Definition.typer(rast, Root)
@@ -148,9 +148,9 @@ class TestTyper extends FunSuite {
 
   test("Definition.Relation02") {
     val rast = ResolvedAst.Definition.Relation(RName, List(
-      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Bool),
-      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int),
-      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Str)
+      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Bool, ResolvedAst.Interpretation.Set),
+      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set),
+      ResolvedAst.Attribute(Ident, ResolvedAst.Type.Str, ResolvedAst.Interpretation.Set)
     ), SL)
 
     val result = Typer.Definition.typer(rast, Root)
@@ -165,8 +165,8 @@ class TestTyper extends FunSuite {
 
     val root = Root.copy(relations = Map(
       rname -> ResolvedAst.Definition.Relation(rname, List(
-        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Str),
-        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int)
+        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Str, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set)
       ), SL)
     ))
 
@@ -182,15 +182,15 @@ class TestTyper extends FunSuite {
 
   test("Constraint.Rule01") {
     val rname = Name.Resolved(List("Edge"))
-    val x = Name.Ident("x", SourceLocation.Unknown)
-    val y = Name.Ident("x", SourceLocation.Unknown)
-    val z = Name.Ident("x", SourceLocation.Unknown)
+    val x = ident("x")
+    val y = ident("y")
+    val z = ident("z")
 
     val root = Root.copy(relations = Map(
       rname -> ResolvedAst.Definition.Relation(rname, List(
-        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int),
-        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int),
-        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int)
+        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set)
       ), SL)
     ))
 
@@ -245,7 +245,7 @@ class TestTyper extends FunSuite {
 
   test("Literal.Tag") {
     val enumName = Name.Resolved(List("foo", "bar", "baz"))
-    val tagName = Name.Ident("Qux", SourceLocation.Unknown)
+    val tagName = ident("Qux")
     val literal = ResolvedAst.Literal.Unit(SL)
     val rast = ResolvedAst.Literal.Tag(enumName, tagName, literal, SL)
     val enums = Map(enumName -> ResolvedAst.Definition.Enum(enumName, Map("Qux" -> ResolvedAst.Type.Tag(enumName, tagName, ResolvedAst.Type.Unit)), SL))
@@ -267,7 +267,7 @@ class TestTyper extends FunSuite {
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.Var01") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
+    val x = ident("x")
 
     val rast = ResolvedAst.Expression.Var(x, SL)
     val env = Map("x" -> TypedAst.Type.Bool)
@@ -277,8 +277,8 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Var02") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
-    val y = Name.Ident("y", SourceLocation.Unknown)
+    val x = ident("x")
+    val y = ident("y")
 
     val rast = ResolvedAst.Expression.Binary(
       BinaryOperator.Plus,
@@ -293,7 +293,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Var03") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
+    val x = ident("x")
 
     val rast = ResolvedAst.Expression.Let(
       ident = x,
@@ -337,7 +337,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Lambda01") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
+    val x = ident("x")
 
     val rast = ResolvedAst.Expression.Lambda(
       formals = List(ResolvedAst.FormalArg(x, ResolvedAst.Type.Int)),
@@ -351,10 +351,10 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Lambda02") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
-    val y = Name.Ident("y", SourceLocation.Unknown)
-    val z = Name.Ident("z", SourceLocation.Unknown)
-    val w = Name.Ident("w", SourceLocation.Unknown)
+    val x = ident("x")
+    val y = ident("y")
+    val z = ident("z")
+    val w = ident("w")
 
     val rast = ResolvedAst.Expression.Lambda(
       formals = List(
@@ -379,10 +379,10 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Lambda.TypeError") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
-    val y = Name.Ident("y", SourceLocation.Unknown)
-    val z = Name.Ident("z", SourceLocation.Unknown)
-    val w = Name.Ident("w", SourceLocation.Unknown)
+    val x = ident("x")
+    val y = ident("y")
+    val z = ident("z")
+    val w = ident("w")
 
     val rast = ResolvedAst.Expression.Lambda(
       formals = List(
@@ -400,7 +400,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Apply01") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
+    val x = ident("x")
     val rast = ResolvedAst.Expression.Apply(
       lambda =
         ResolvedAst.Expression.Lambda(
@@ -415,9 +415,9 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Apply02") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
-    val y = Name.Ident("y", SourceLocation.Unknown)
-    val z = Name.Ident("z", SourceLocation.Unknown)
+    val x = ident("x")
+    val y = ident("y")
+    val z = ident("z")
 
     val rast = ResolvedAst.Expression.Apply(
       lambda =
@@ -441,9 +441,9 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Apply.TypeError.IllegalArgumentType") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
-    val y = Name.Ident("y", SourceLocation.Unknown)
-    val z = Name.Ident("z", SourceLocation.Unknown)
+    val x = ident("x")
+    val y = ident("y")
+    val z = ident("z")
 
     val rast = ResolvedAst.Expression.Apply(
       lambda =
@@ -670,7 +670,7 @@ class TestTyper extends FunSuite {
 
   test("Expression.Tag01") {
     val enumName = Name.Resolved(List("Foo", "Bar"))
-    val tagName = Name.Ident("Qux", SourceLocation.Unknown)
+    val tagName = ident("Qux")
     val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL), SL)
 
     val root = Root.copy(enums = Map(
@@ -686,7 +686,7 @@ class TestTyper extends FunSuite {
 
   test("Expression.Tag02") {
     val enumName = Name.Resolved(List("Foo", "Bar"))
-    val tagName = Name.Ident("C", SourceLocation.Unknown)
+    val tagName = ident("C")
     val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
 
     val root = Root.copy(enums = Map(
@@ -710,7 +710,7 @@ class TestTyper extends FunSuite {
 
   test("Expression.Tag.TypeError") {
     val enumName = Name.Resolved(List("Foo", "Bar"))
-    val tagName = Name.Ident("A", SourceLocation.Unknown)
+    val tagName = ident("A")
     val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
 
     val root = Root.copy(enums = Map(
@@ -805,7 +805,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Pattern.Variable01") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
+    val x = ident("x")
     val rast = ResolvedAst.Pattern.Var(x, SL)
     val tpe = TypedAst.Type.Bool
     val result = Typer.Pattern.typer(rast, tpe, Root)
@@ -813,7 +813,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Pattern.Variable02") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
+    val x = ident("x")
     val rast = ResolvedAst.Pattern.Var(x, SL)
     val tpe = TypedAst.Type.Tuple(List(TypedAst.Type.Bool))
     val result = Typer.Pattern.typer(rast, tpe, Root)
@@ -821,8 +821,8 @@ class TestTyper extends FunSuite {
   }
 
   test("Pattern.Variable03") {
-    val x = Name.Ident("x", SourceLocation.Unknown)
-    val y = Name.Ident("y", SourceLocation.Unknown)
+    val x = ident("x")
+    val y = ident("y")
     val rast = ResolvedAst.Pattern.Tuple(List(
       ResolvedAst.Pattern.Var(x, SL),
       ResolvedAst.Pattern.Var(y, SL)
@@ -840,8 +840,8 @@ class TestTyper extends FunSuite {
   }
 
   test("Pattern.Tag01") {
-    val tagName = Name.Ident("Qux", SourceLocation.Unknown)
-    val x = Name.Ident("x", SourceLocation.Unknown)
+    val tagName = ident("Qux")
+    val x = ident("x")
     val rast = ResolvedAst.Pattern.Tag(RName, tagName, ResolvedAst.Pattern.Var(x, SL), SL)
     val tpe = TypedAst.Type.Enum(Map("Qux" -> TypedAst.Type.Tag(RName, tagName, TypedAst.Type.Unit)))
     val result = Typer.Pattern.typer(rast, tpe, Root)
@@ -891,17 +891,17 @@ class TestTyper extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("Predicate.Head01") {
     val rname = Name.Resolved(List("foo", "bar"))
-    val x = Name.Ident("x", SourceLocation.Unknown)
-    val y = Name.Ident("y", SourceLocation.Unknown)
-    val z = Name.Ident("z", SourceLocation.Unknown)
-    val w = Name.Ident("w", SourceLocation.Unknown)
+    val x = ident("x")
+    val y = ident("y")
+    val z = ident("z")
+    val w = ident("w")
 
     val root = Root.copy(relations = Map(
       rname -> ResolvedAst.Definition.Relation(rname, List(
-        ResolvedAst.Attribute(x, ResolvedAst.Type.Unit),
-        ResolvedAst.Attribute(y, ResolvedAst.Type.Bool),
-        ResolvedAst.Attribute(z, ResolvedAst.Type.Int),
-        ResolvedAst.Attribute(w, ResolvedAst.Type.Str)
+        ResolvedAst.Attribute(x, ResolvedAst.Type.Unit, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(y, ResolvedAst.Type.Bool, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(z, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(w, ResolvedAst.Type.Str, ResolvedAst.Interpretation.Set)
       ), SL)
     ))
 
@@ -922,19 +922,19 @@ class TestTyper extends FunSuite {
 
   test("Predicate.Head02") {
     val rname = Name.Resolved(List("foo", "bar"))
-    val x = Name.Ident("x", SourceLocation.Unknown)
-    val y = Name.Ident("y", SourceLocation.Unknown)
-    val z = Name.Ident("z", SourceLocation.Unknown)
-    val w = Name.Ident("w", SourceLocation.Unknown)
+    val x = ident("x")
+    val y = ident("y")
+    val z = ident("z")
+    val w = ident("w")
 
     // NB: Somewhat misleading we use the same identifiers for both columns and variables.
 
     val root = Root.copy(relations = Map(
       rname -> ResolvedAst.Definition.Relation(rname, List(
-        ResolvedAst.Attribute(x, ResolvedAst.Type.Unit),
-        ResolvedAst.Attribute(y, ResolvedAst.Type.Bool),
-        ResolvedAst.Attribute(z, ResolvedAst.Type.Int),
-        ResolvedAst.Attribute(w, ResolvedAst.Type.Str)
+        ResolvedAst.Attribute(x, ResolvedAst.Type.Unit, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(y, ResolvedAst.Type.Bool, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(z, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(w, ResolvedAst.Type.Str, ResolvedAst.Interpretation.Set)
       ), SL)
     ))
 
@@ -956,7 +956,7 @@ class TestTyper extends FunSuite {
   test("Predicate.Head03") {
     val relationName = Name.Resolved(List("foo", "bar"))
     val functionName = Name.Resolved(List("foo", "baz"))
-    val x = Name.Ident("x", SourceLocation.Unknown)
+    val x = ident("x")
 
     // NB: Somewhat misleading we use the same identifiers for both columns and variables.
 
@@ -973,7 +973,7 @@ class TestTyper extends FunSuite {
       ),
       relations = Map(
         relationName -> ResolvedAst.Definition.Relation(relationName, List(
-          ResolvedAst.Attribute(x, ResolvedAst.Type.Unit)
+          ResolvedAst.Attribute(x, ResolvedAst.Type.Unit, ResolvedAst.Interpretation.Set)
         ), SL)
       ))
 
@@ -991,17 +991,17 @@ class TestTyper extends FunSuite {
 
   test("Predicate.Body01") {
     val rname = Name.Resolved(List("foo", "bar"))
-    val x = Name.Ident("x", SourceLocation.Unknown)
-    val y = Name.Ident("y", SourceLocation.Unknown)
-    val z = Name.Ident("z", SourceLocation.Unknown)
-    val w = Name.Ident("w", SourceLocation.Unknown)
+    val x = ident("x")
+    val y = ident("y")
+    val z = ident("z")
+    val w = ident("w")
 
     val root = Root.copy(relations = Map(
       rname -> ResolvedAst.Definition.Relation(rname, List(
-        ResolvedAst.Attribute(x, ResolvedAst.Type.Unit),
-        ResolvedAst.Attribute(y, ResolvedAst.Type.Bool),
-        ResolvedAst.Attribute(z, ResolvedAst.Type.Int),
-        ResolvedAst.Attribute(w, ResolvedAst.Type.Str)
+        ResolvedAst.Attribute(x, ResolvedAst.Type.Unit, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(y, ResolvedAst.Type.Bool, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(z, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set),
+        ResolvedAst.Attribute(w, ResolvedAst.Type.Str, ResolvedAst.Interpretation.Set)
       ), SL)
     ))
 
@@ -1075,5 +1075,7 @@ class TestTyper extends FunSuite {
     val result = Typer.Type.typer(rast)
     assertResult(tast)(result)
   }
+
+  def ident(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
 
 }

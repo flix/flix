@@ -5,6 +5,7 @@ import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
+// TODO: Rename to Namer?
 object Resolver {
 
   import ResolverError._
@@ -28,14 +29,14 @@ object Resolver {
     case class DuplicateDefinition(name: Name.Resolved, loc1: SourceLocation, loc2: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.formatSource}")}
-            |
-            |${consoleCtx.red(s">> Duplicate definition of the name '${name.format}'.")}
-            |
-            |First definition was here:
-            |${loc1.underline}
-            |Second definition was here:
-            |${loc2.underline}
-            |Tip: Consider renaming or removing one of the definitions.
+           |
+           |${consoleCtx.red(s">> Duplicate definition of the name '${name.format}'.")}
+           |
+           |First definition was here:
+           |${loc1.underline}
+           |Second definition was here:
+           |${loc2.underline}
+           |Tip: Consider renaming or removing one of the definitions.
          """.stripMargin
     }
 
@@ -62,10 +63,10 @@ object Resolver {
     case class UnresolvedConstantReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
-            |
-            |${consoleCtx.red(s">> Unresolved reference to constant '${name.format}'.")}
-            |
-            |${loc.underline}
+           |
+           |${consoleCtx.red(s">> Unresolved reference to constant '${name.format}'.")}
+           |
+           |${loc.underline}
          """.stripMargin
     }
 
@@ -79,10 +80,10 @@ object Resolver {
     case class UnresolvedEnumReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
-            |
-            |${consoleCtx.red(s">> Unresolved reference to enum '${name.format}'.")}
-            |
-            |${loc.underline}
+           |
+           |${consoleCtx.red(s">> Unresolved reference to enum '${name.format}'.")}
+           |
+           |${loc.underline}
          """.stripMargin
     }
 
@@ -96,10 +97,10 @@ object Resolver {
     case class UnresolvedRelationReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
-            |
-            |${consoleCtx.red(s">> Unresolved reference to relation '${name.format}'.")}
-            |
-            |${loc.underline}
+           |
+           |${consoleCtx.red(s">> Unresolved reference to relation '${name.format}'.")}
+           |
+           |${loc.underline}
          """.stripMargin
     }
 
@@ -113,10 +114,10 @@ object Resolver {
     case class UnresolvedTypeReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
-            |
-            |${consoleCtx.red(s">> Unresolved reference to type '${name.format}'.")}
-            |
-            |${loc.underline}
+           |
+           |${consoleCtx.red(s">> Unresolved reference to type '${name.format}'.")}
+           |
+           |${loc.underline}
          """.stripMargin
     }
 
@@ -130,9 +131,11 @@ object Resolver {
     val empty = SymbolTable(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
   }
 
+  // TODO: Come up with a SymbolTable that can give the set of definitions in each namespace.
+
   case class SymbolTable(enums: Map[Name.Resolved, WeededAst.Definition.Enum],
                          constants: Map[Name.Resolved, WeededAst.Definition.Constant],
-                         lattices: Map[Name.Resolved, WeededAst.Definition.Lattice],
+                         lattices: Map[WeededAst.Type, (List[String], WeededAst.Definition.Lattice)],
                          relations: Map[Name.Resolved, WeededAst.Definition.Relation],
                          types: Map[Name.Resolved, WeededAst.Type]) {
 
@@ -217,9 +220,11 @@ object Resolver {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
 
-        //        val collectedLattices = Validation.fold[Name.Resolved, WeededAst.Definition.Lattice, Name.Resolved, ResolvedAst.Definition.Lattice, ResolverError](syms.lattices) {
-        //          case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
-        //        }
+        val collectedLattices = Validation.fold[WeededAst.Type, (List[String], WeededAst.Definition.Lattice), ResolvedAst.Type, ResolvedAst.Definition.Lattice, ResolverError](syms.lattices) {
+          case (k, (namespace, v)) => Type.resolve(k, namespace, syms) flatMap {
+            case tpe =>  Definition.resolve(v, namespace, syms) map (d => tpe -> d)
+          }
+        }
 
         val collectedRelations = Validation.fold[Name.Resolved, WeededAst.Definition.Relation, Name.Resolved, ResolvedAst.Definition.Relation, ResolverError](syms.relations) {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
@@ -228,9 +233,8 @@ object Resolver {
         val collectedFacts = Declaration.collectFacts(wast, syms)
         val collectedRules = Declaration.collectRules(wast, syms)
 
-        @@(collectedConstants, collectedEnums, collectedRelations, collectedFacts, collectedRules) map {
-          // TODO: Rest...
-          case (constants, enums, relations, facts, rules) => ResolvedAst.Root(constants, enums, Map.empty, relations, facts, rules)
+        @@(collectedConstants, collectedEnums, collectedLattices, collectedRelations, collectedFacts, collectedRules) map {
+          case (constants, enums, lattices, relations, facts, rules) => ResolvedAst.Root(constants, enums, lattices, relations, facts, rules)
         }
     }
   }
@@ -258,7 +262,7 @@ object Resolver {
         val rname = toRName(ident, namespace)
         syms.constants.get(rname) match {
           case None => syms.copy(constants = syms.constants + (rname -> defn)).toSuccess
-          case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.location, ident.location).toFailure
+          case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.loc, ident.loc).toFailure
         }
 
       case defn@WeededAst.Definition.Enum(ident, cases, loc) =>
@@ -268,18 +272,17 @@ object Resolver {
             enums = syms.enums + (rname -> defn),
             types = syms.types + (rname -> WeededAst.Type.Enum(rname, defn.cases))
           ).toSuccess
-          case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.location, ident.location).toFailure
+          case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.loc, ident.loc).toFailure
         }
 
-      case defn@WeededAst.Definition.Lattice(ident, bot, leq, lub, loc) =>
-        val rname = toRName(ident, namespace)
-        syms.copy(lattices = syms.lattices + (rname -> defn)).toSuccess
+      case defn@WeededAst.Definition.Lattice(tpe, bot, leq, lub, loc) =>
+        syms.copy(lattices = syms.lattices + (tpe ->(namespace, defn))).toSuccess
 
       case defn@WeededAst.Definition.Relation(ident, attributes, loc) =>
         val rname = toRName(ident, namespace)
         syms.relations.get(rname) match {
           case None => syms.copy(relations = syms.relations + (rname -> defn)).toSuccess
-          case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.location, ident.location).toFailure
+          case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.loc, ident.loc).toFailure
         }
     }
 
@@ -340,13 +343,13 @@ object Resolver {
     }
 
     def resolve(wast: WeededAst.Definition.Lattice, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Lattice, ResolverError] = {
-      val elmsVal = ???
+      val tpeVal = Type.resolve(wast.tpe, namespace, syms)
       val botVal = Expression.resolve(wast.bot, namespace, syms)
       val leqVal = Expression.resolve(wast.leq, namespace, syms)
       val lubVal = Expression.resolve(wast.lub, namespace, syms)
 
-      @@(elmsVal, botVal, leqVal, lubVal) map {
-        case (elms, bot, leq, lub) => ResolvedAst.Definition.Lattice(elms, bot, leq, lub, wast.loc)
+      @@(tpeVal, botVal, leqVal, lubVal) map {
+        case (tpe, bot, leq, lub) => ResolvedAst.Definition.Lattice(tpe, bot, leq, lub, wast.loc)
       }
     }
 
@@ -355,7 +358,10 @@ object Resolver {
       val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
 
       val attributesVal = wast.attributes.map {
-        case WeededAst.Attribute(ident, tpe) => Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.Attribute(ident, t))
+        case WeededAst.Attribute(ident, tpe, WeededAst.Interpretation.Set) =>
+          Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.Attribute(ident, t, ResolvedAst.Interpretation.Set))
+        case WeededAst.Attribute(ident, tpe, WeededAst.Interpretation.Lattice) =>
+          Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.Attribute(ident, t, ResolvedAst.Interpretation.Lattice))
       }
 
       @@(attributesVal) map {
@@ -400,14 +406,9 @@ object Resolver {
           case lit => ResolvedAst.Expression.Lit(lit, loc)
         }
 
-        // TODO: Rewrite this ....
         case WeededAst.Expression.Var(name, loc) => name.parts match {
-          case Seq(x) =>
-            if (locals contains x)
-              ResolvedAst.Expression.Var(Name.Ident(x, name.loc), loc).toSuccess
-            else
-              UnresolvedReference(name, namespace).toFailure // TODO: Specialize this.
-          case xs => syms.lookupConstant(name, namespace) map {
+          case Seq(x) if locals contains x => ResolvedAst.Expression.Var(Name.Ident(name.sp1, x, name.sp2), loc).toSuccess
+          case _ => syms.lookupConstant(name, namespace) map {
             case (rname, defn) => ResolvedAst.Expression.Ref(rname, loc)
           }
         }

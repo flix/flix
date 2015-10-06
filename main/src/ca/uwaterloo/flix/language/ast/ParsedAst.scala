@@ -7,8 +7,6 @@ import scala.collection.immutable.Seq
  */
 sealed trait ParsedAst
 
-// TODO: Ensure precise source locations.
-
 object ParsedAst {
 
   /**
@@ -46,7 +44,6 @@ object ParsedAst {
      */
     case class Rule(head: ParsedAst.Predicate, body: Seq[ParsedAst.Predicate]) extends ParsedAst.Declaration
 
-    // TODO: Add integrity constraints
   }
 
   /**
@@ -64,52 +61,80 @@ object ParsedAst {
     /**
      * An AST node that represents a value definition.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the definition.
      * @param ident the name of the value.
      * @param tpe the declared type of the value.
      * @param e the expression.
+     * @param sp2 the position of the last character in the definition.
      */
-    case class Value(loc: SourceLocation, ident: Name.Ident, tpe: ParsedAst.Type, e: ParsedAst.Expression) extends ParsedAst.Definition
+    case class Value(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, e: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
+      /**
+       * Returns the source location of `this` definition.
+       */
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a function definition.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the definition.
      * @param ident the name of the function.
      * @param formals the formals (i.e. parameters and their types).
      * @param tpe the return type.
      * @param body the body expression of the function.
+     * @param sp2 the position of the last character in the definition.
      */
-    case class Function(loc: SourceLocation, ident: Name.Ident, formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression) extends ParsedAst.Definition
+    case class Function(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
+      /**
+       * Returns the source location of `this` definition.
+       */
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a enum definition.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the definition.
      * @param ident the name of the enum.
      * @param cases the variants of the enum.
+     * @param sp2 the position of the last character in the definition.
      */
-    case class Enum(loc: SourceLocation, ident: Name.Ident, cases: Seq[ParsedAst.Type.Tag]) extends ParsedAst.Definition
+    case class Enum(sp1: SourcePosition, ident: Name.Ident, cases: Seq[ParsedAst.Type.Tag], sp2: SourcePosition) extends ParsedAst.Definition {
+      /**
+       * Returns the source location of `this` definition.
+       */
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a lattice definition.
      *
-     * @param loc the location.
-     * @param ident the name of the lattice.
+     * @param sp1 the position of the first character in the definition.
+     * @param tpe the type of the lattice elements.
      * @param elms the components of the lattice (e.g. bot, leq, lub).
-     * @param traits the traits of the lattice (e.g. Norm and Widening).
+     * @param sp2 the position of the last character in the definition.
      */
-    // TODO: Should ident not be type?
-    case class Lattice(loc: SourceLocation, ident: Name.Ident, elms: Seq[ParsedAst.Expression], traits: Seq[ParsedAst.Trait]) extends ParsedAst.Definition
+    case class Lattice(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], traits: Seq[ParsedAst.Trait], sp2: SourcePosition) extends ParsedAst.Definition {
+      /**
+       * Returns the source location of `this` definition.
+       */
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST that represent a relation definition.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the definition.
      * @param ident the name of the relation.
      * @param attributes the name and type of the attributes.
+     * @param sp2 the position of the last character in the definition.
      */
-    case class Relation(loc: SourceLocation, ident: Name.Ident, attributes: Seq[ParsedAst.Attribute]) extends ParsedAst.Definition
+    case class Relation(sp1: SourcePosition, ident: Name.Ident, attributes: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Definition {
+      /**
+       * Returns the source location of `this` definition.
+       */
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
   }
 
@@ -464,14 +489,27 @@ object ParsedAst {
     /**
      * An AST node that represent an unresolved predicate.
      *
-     * @param loc the location.
+     * @param sp1 the position of the first character in the predicate.
      * @param name the unresolved name of the predicate.
      * @param terms the terms of the predicate.
+     * @param sp2 the position of the last character in the predicate.
      */
-    case class Unresolved(loc: SourceLocation, name: Name.Unresolved, terms: Seq[ParsedAst.Term]) extends ParsedAst.Predicate
+    // TODO: Need better name.
+    case class Unresolved(sp1: SourcePosition, name: Name.Unresolved, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
-    // TODO
-    case class Alias() extends ParsedAst.Predicate
+    /**
+     * An AST node that represents an alias predicate.
+     *
+     * @param sp1 the position of the first character in the predicate.
+     * @param ident the name of the variable.
+     * @param term the term.
+     * @param sp2 the position of the last character in the predicate.
+     */
+    case class Alias(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Term, sp2: SourcePosition) extends ParsedAst.Predicate {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
   }
 
@@ -601,10 +639,37 @@ object ParsedAst {
    * An AST node that represents an attribute.
    *
    * @param ident the name of the attribute.
-   * @param tpe the type of the attribute.
+   * @param interp the interpretation of the attribute.
    */
-  // TODO: Lattice notion
-  case class Attribute(ident: Name.Ident, tpe: ParsedAst.Type) extends ParsedAst
+  case class Attribute(ident: Name.Ident, interp: Interpretation) extends ParsedAst
+
+  /**
+   * A common super-type for attribute interpretations.
+   */
+  sealed trait Interpretation {
+    /**
+     * The type of elements in `this` interpretation.
+     */
+    def tpe: ParsedAst.Type
+  }
+
+  object Interpretation {
+
+    /**
+     * An AST node representing the standard set-based interpretation of an attribute in a relation.
+     *
+     * @param tpe the type of the attribute.
+     */
+    case class Set(tpe: ParsedAst.Type) extends ParsedAst.Interpretation
+
+    /**
+     * An AST node representing a lattice-based interpretation of an attribute in a relation.
+     *
+     * @param tpe the type of the attribute.
+     */
+    case class Lattice(tpe: ParsedAst.Type) extends ParsedAst.Interpretation
+
+  }
 
   /**
    * An AST node representing a formal argument of a function.

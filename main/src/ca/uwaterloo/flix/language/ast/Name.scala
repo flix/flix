@@ -7,10 +7,16 @@ object Name {
   /**
    * Represents an identifier.
    *
+   * @param sp1 the position of the first character in the literal.
    * @param name the identifier.
-   * @param location the source location of the identifier.
+   * @param sp2 the position of the last character in the literal.
    */
-  case class Ident(name: String, location: SourceLocation) extends CachedHash {
+  case class Ident(sp1: SourcePosition, name: String, sp2: SourcePosition) extends CachedHash {
+    /**
+     * The source location of `this` unresolved name.
+     */
+    val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+
     /**
      * Returns a human readable string representation of the identifier.
      */
