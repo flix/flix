@@ -46,8 +46,8 @@ namespace Company {
     WorkerAddress(name, address) :- Employee(name, dept), Building(address, dept).
     WorkerAddress(name, address) :- Intern(name, dept, _, _), Building(address, dept).
 
-    //TODO(Magnus)
-    //false :- Intern(name, _, _, _), Worker(name, _).
-    //If Adam Smith is an employee, he must be at 123 Main St.
-    //WorkerAddress("Adam Smith", "123 Main St") :- Employee("Adam Smith", _)
+    assert Employee("Adam Smith")
+    assert WorkerAddress("Adam Smith", "123 Main St").
+    assert Error#(name) :- Intern(name, _, _, _), Worker(name, _).
+
 }

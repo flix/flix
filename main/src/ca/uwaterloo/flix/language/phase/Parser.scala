@@ -37,7 +37,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // NB: RuleDeclaration must be parsed before FactDeclaration.
   def Declaration: Rule1[ParsedAst.Declaration] = rule {
-    NamespaceDeclaration | RuleDeclaration | FactDeclaration | Definition
+    NamespaceDeclaration | RuleDeclaration | FactDeclaration | Definition | Directive
   }
 
   def NamespaceDeclaration: Rule1[ParsedAst.Declaration.Namespace] = rule {
@@ -106,6 +106,21 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     rule {
       SP ~ atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.Relation
     }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Directives                                                              //
+  /////////////////////////////////////////////////////////////////////////////
+  def Directive: Rule1[ParsedAst.Directive] = rule {
+    AssertRule | AssertFact
+  }
+
+  def AssertFact: Rule1[ParsedAst.Directive.AssertFact] = rule {
+    SP ~ atomic("assert") ~ WS ~ FactDeclaration ~ SP ~> ParsedAst.Directive.AssertFact
+  }
+
+  def AssertRule: Rule1[ParsedAst.Directive.AssertRule] = rule {
+    SP ~ atomic("assert") ~ WS ~ RuleDeclaration ~ SP ~> ParsedAst.Directive.AssertRule
   }
 
   /////////////////////////////////////////////////////////////////////////////

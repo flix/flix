@@ -34,6 +34,7 @@ object ParsedAst {
      *
      * @param head the head predicate.
      */
+    // TODO: Add source location
     case class Fact(head: ParsedAst.Predicate) extends ParsedAst.Declaration
 
     /**
@@ -42,6 +43,7 @@ object ParsedAst {
      * @param head the head predicate.
      * @param body the body predicates.
      */
+    // TODO: Add source location.
     case class Rule(head: ParsedAst.Predicate, body: Seq[ParsedAst.Predicate]) extends ParsedAst.Declaration
 
   }
@@ -68,9 +70,6 @@ object ParsedAst {
      * @param sp2 the position of the last character in the definition.
      */
     case class Value(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, e: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
-      /**
-       * Returns the source location of `this` definition.
-       */
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -85,9 +84,6 @@ object ParsedAst {
      * @param sp2 the position of the last character in the definition.
      */
     case class Function(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
-      /**
-       * Returns the source location of `this` definition.
-       */
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -100,9 +96,6 @@ object ParsedAst {
      * @param sp2 the position of the last character in the definition.
      */
     case class Enum(sp1: SourcePosition, ident: Name.Ident, cases: Seq[ParsedAst.Type.Tag], sp2: SourcePosition) extends ParsedAst.Definition {
-      /**
-       * Returns the source location of `this` definition.
-       */
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -115,9 +108,6 @@ object ParsedAst {
      * @param sp2 the position of the last character in the definition.
      */
     case class Lattice(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], traits: Seq[ParsedAst.Trait], sp2: SourcePosition) extends ParsedAst.Definition {
-      /**
-       * Returns the source location of `this` definition.
-       */
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -141,7 +131,7 @@ object ParsedAst {
   /**
    * A common super-type for AST nodes that represent directives.
    */
-  sealed trait Directive {
+  sealed trait Directive extends ParsedAst.Declaration {
     /**
      * Returns the source location of `this` directive.
      */
@@ -151,23 +141,37 @@ object ParsedAst {
   object Directive {
 
     /**
-     * An AST node that represents
+     * An AST node that represents a fact assertion.
      *
      * @param sp1 the position of the first character in the directive.
+     * @param fact the asserted fact.
      * @param sp2 the position of the last character in the directive.
      */
-    case class AssertFact(sp1: SourcePosition, sp2: SourcePosition)
+    case class AssertFact(sp1: SourcePosition, fact: ParsedAst.Declaration.Fact, sp2: SourcePosition) extends Directive {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
-    // TODO
-    case class AssertRule()
+    /**
+     * An AST node that represents a rule assertion.
+     *
+     * @param sp1 the position of the first character in the directive.
+     * @param rule the asserted rule.
+     * @param sp2 the position of the last character in the directive.
+     */
+    case class AssertRule(sp1: SourcePosition, rule: ParsedAst.Declaration.Rule, sp2: SourcePosition) extends Directive {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
 
     // TODO
     case class Print()
+
     // TODO
     case class Read()
 
     // TODO
     case class Write()
+
     // TODO
     case class Trace()
 
@@ -513,7 +517,12 @@ object ParsedAst {
   /**
    * A common super-type for predicates.
    */
-  sealed trait Predicate extends ParsedAst
+  sealed trait Predicate extends ParsedAst {
+    /**
+     * Returns the source location of `this` predicate.
+     */
+    def loc: SourceLocation
+  }
 
   object Predicate {
 

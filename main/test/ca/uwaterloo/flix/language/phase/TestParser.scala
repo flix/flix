@@ -254,19 +254,19 @@ class TestParser extends FunSuite {
   }
 
   test("Directive.Assert04") {
-    val input = "assert Err#(x) :- A(x)."
+    val input = "assert Error#(x) :- A(x)."
     val result = new Parser(SourceInput.Str(input)).Declaration.run().get
     assert(result.isInstanceOf[ParsedAst.Directive.AssertRule])
   }
 
   test("Directive.Assert05") {
-    val input = "assert Err#(x, z) :- A(x, y), B(y, z)."
+    val input = "assert Error#(x, z) :- A(x, y), B(y, z)."
     val result = new Parser(SourceInput.Str(input)).Declaration.run().get
     assert(result.isInstanceOf[ParsedAst.Directive.AssertRule])
   }
 
   test("Directive.Assert06") {
-    val input = "assert Err#(x, f(z)) :- A(x, y), B(y, z)."
+    val input = "assert Error#(x, f(z)) :- A(x, y), B(y, z)."
     val result = new Parser(SourceInput.Str(input)).Declaration.run().get
     assert(result.isInstanceOf[ParsedAst.Directive.AssertRule])
   }
