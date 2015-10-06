@@ -15,14 +15,14 @@ object Interpreter {
    *
    * @param message the error message.
    */
-  case class InternalCompilerError(message: String) extends RuntimeException(message)
+  case class InternalRuntimeError(message: String) extends RuntimeException(message)
 
 
   def eval(expr: Expression, root: Root, env: Env = Map()): Value = {
     expr match {
       case Expression.Lit(literal, _, _) => evalLit(literal)
       case Expression.Var(ident, _, loc) => env.get(ident) match {
-        case None => throw InternalCompilerError(s"Unbound variable ${ident.name} at ${loc.format}.")
+        case None => throw InternalRuntimeError(s"Unbound variable ${ident.name} at ${loc.format}.")
         case Some(value) => value
       }
       case Expression.Ref(name, _, _) =>
@@ -58,7 +58,7 @@ object Interpreter {
     }
   }
 
-  private def evalLit(lit: Literal): Value = lit match {
+  def evalLit(lit: Literal): Value = lit match {
     case Literal.Unit(_) => Value.Unit
     case Literal.Bool(b, _) => Value.Bool(b)
     case Literal.Int(i, _) => Value.Int(i)

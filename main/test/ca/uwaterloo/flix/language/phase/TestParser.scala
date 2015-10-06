@@ -219,6 +219,17 @@ class TestParser extends FunSuite {
   // Error(x) <= P(x).
   // Error(y) <= !Edge(1, 3)
 
+  // TODO: Need meta constraint
+  // true => A(...), B(...) (MUST-HOLD).
+  // Salary(name, amount) => Employee(name, <<unbound>>)
+  // false <= Employee(name, _), !Salary(name, _).
+
+  // Safety property
+  // false <= A(...), B(...) (the body must never hold).
+  //
+  // always Answer(x).
+  // never Unsafe(x).
+
   test("Directive.Assert01") {
     // P(42).
     val input = "assert P(42)."

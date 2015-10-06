@@ -14,16 +14,6 @@ import scala.io.Source
 // TODO: Dealing with whitespace is hard. Figure out a good way.
 // TODO:  Allow fields on case objects.
 
-// TODO: Need meta constraint
-// true => A(...), B(...) (MUST-HOLD).
-// Salary(name, amount) => Employee(name, <<unbound>>)
-// false <= Employee(name, _), !Salary(name, _).
-
-// Safety property
-// false <= A(...), B(...) (the body must never hold).
-//
-// always Answer(x).
-// never Unsafe(x).
 
 /**
  * A parser for the Flix language.
