@@ -42,6 +42,9 @@ object Name {
      * Returns a human readable string representation of the unresolved name.
      */
     val format: String = parts.mkString("::")
+
+    // TODO: Doc
+    override val toString: String = "?" + parts.mkString("::")
   }
 
   /**
@@ -56,7 +59,7 @@ object Name {
     val format: String = parts.mkString("::")
 
     // TODO: Doc
-    override val toString: String = parts.mkString("::")
+    override val toString: String = "/" + parts.mkString("::")
   }
 
 
