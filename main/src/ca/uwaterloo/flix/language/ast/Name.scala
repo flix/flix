@@ -54,6 +54,9 @@ object Name {
      * Returns a human readable string representation of the resolved name.
      */
     val format: String = parts.mkString("::")
+
+    // TODO: Doc
+    override val toString: String = parts.mkString("::")
   }
 
 
