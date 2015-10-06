@@ -21,7 +21,7 @@ class Solver(root: TypedAst.Root) {
     // adds all facts to the database.
     for (fact <- root.facts) {
       val name = fact.head.name
-      val values = fact.head.terms map Interpreter.evalHeadTerm
+      val values = fact.head.terms map (term => Interpreter.evalHeadTerm(term, Map.empty))
       newFact(name, values)
     }
 
@@ -61,7 +61,7 @@ class Solver(root: TypedAst.Root) {
    * Evaluates the head of the given `rule` under the given environment `env0`.
    */
   def evalHead(rule: Rule, env0: Map[String, Value]) = {
-    val row = rule.head.terms map Interpreter.evalHeadTerm
+    val row = rule.head.terms map (term => Interpreter.evalHeadTerm(term, env0))
     newFact(rule.head.name, row)
   }
 
@@ -126,8 +126,21 @@ class Solver(root: TypedAst.Root) {
   /**
    * Extends the given environments `envs` with the environment `m`.
    */
-  def extend(envs: List[Map[String, Value]], m: Map[String, Value]) = {
-    ???
+  def extend(envs: List[Map[String, Value]], m: Map[String, Value]): List[Map[String, Value]] = {
+    envs flatMap {
+      case env =>
+        m.foldLeft(Option(env)) {
+          case (None, _) => None
+          case (Some(macc), (key, value)) => macc.get(key) match {
+            case None => Some(macc + (key -> value))
+            case Some(otherValue) =>
+              if (value != otherValue)
+                None
+              else
+                Some(macc)
+          }
+        }
+    }
   }
 
   /**

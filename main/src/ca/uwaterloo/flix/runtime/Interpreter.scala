@@ -30,12 +30,12 @@ object Interpreter {
         eval(root.constants(name).exp, root, env)
       case Expression.Lambda(formals, body, _, _) => Value.Closure(formals, body, env)
       case Expression.Apply(exp, args, _, _) => eval(exp, root, env) match {
-          case Value.Closure(formals, body, closureEnv) =>
-            val evalArgs = args.map(x => eval(x, root, env))
-            val newEnv = closureEnv ++ formals.map(_.ident).zip(evalArgs).toMap
-            eval(body, root, newEnv)
-          case _ => assert(false, "Expected a function."); Value.Unit
-        }
+        case Value.Closure(formals, body, closureEnv) =>
+          val evalArgs = args.map(x => eval(x, root, env))
+          val newEnv = closureEnv ++ formals.map(_.ident).zip(evalArgs).toMap
+          eval(body, root, newEnv)
+        case _ => assert(false, "Expected a function."); Value.Unit
+      }
       case Expression.Unary(op, exp, _, _) => evalUnary(op, eval(exp, root, env))
       case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, eval(exp1, root, env), eval(exp2, root, env))
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
@@ -112,10 +112,14 @@ object Interpreter {
   }
 
 
-
-  // TODO: make this take an environment env: Map[String, Value]
-  def evalHeadTerm(t: TypedAst.Term.Head): Value = t match {
-    case TypedAst.Term.Head.Var(x, tpe, loc) => throw Interpreter.InternalRuntimeError("A variable term is not allowed to occur in a fact.")
+  /**
+   * Evaluates the given head term `t` under the given environment `env0`
+   */
+  def evalHeadTerm(t: TypedAst.Term.Head, env: Map[String, Value]): Value = t match {
+    case TypedAst.Term.Head.Var(x, tpe, loc) => env.get(x.name) match {
+      case None => throw InternalRuntimeError("Unbound variable in head term!")
+      case Some(value) => value
+    }
     case TypedAst.Term.Head.Lit(lit, tpe, loc) => Interpreter.evalLit(lit)
     case TypedAst.Term.Head.Apply(name, args, tpe, loc) => ???
   }
