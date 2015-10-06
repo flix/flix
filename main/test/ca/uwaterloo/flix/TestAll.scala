@@ -8,13 +8,13 @@ import org.scalatest.{ParallelTestExecution, Suites}
 
 // NB: Run with -P to run in parallel.
 class TestAll extends Suites(
-
   new TestTypedAst,
   new TestParser,
   new TestResolver,
   new TestTyper,
   new TestWeeder,
   new TestInterpreter,
-  new TestExamples) with ParallelTestExecution {
+  new TestExamples,
+  new TestMicro) with ParallelTestExecution {
 
 }
