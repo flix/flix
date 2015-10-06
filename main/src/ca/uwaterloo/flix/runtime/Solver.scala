@@ -29,7 +29,7 @@ class Solver(root: TypedAst.Root) {
       val rules = dependencies(name)
 
       for (rule <- rules) {
-        evalBody(rule, row)
+        eval(rule, row)
       }
     }
   }
@@ -45,7 +45,7 @@ class Solver(root: TypedAst.Root) {
     }
   }
 
-  def evalBody(rule: Rule, row: List[Value]) = {
+  def eval(rule: Rule, row: List[Value]) = {
     // TODO: For now we ignore `row` and just re-evaluate the entire rule.
     evalBody(rule, Map.empty[String, Value])
   }
