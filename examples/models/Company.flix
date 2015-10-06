@@ -1,24 +1,23 @@
 namespace Company {
-    rel Employee(name: Str, department: Str)
-    rel Intern(name: Str, department: Str, start: Int, end: Int)
-    rel Department(name: Str, head: Str)
-    rel Salary(employee: Str, salary: Int)
-    rel Building(address: Str, department: Str)
 
+    rel Employee(name: Str, department: Str);
     Employee("Adam Smith", "Sales").
     Employee("Karl Marx", "Sales").
     Employee("John Maynard Keynes", "Administration").
     Employee("Vilfredo Pareto", "Operations").
 
+    rel Intern(name: Str, department: Str, start: Int, end: Int)
     Intern("George Washington", "Sales", 1789, 1797).
     Intern("John Adams", "Sales", 1797, 1801).
     Intern("George W. Bush", "Sales", 2001, 2009).
     Intern("Barack Obama", "Sales", 2009, 2017).
 
+    rel Department(name: Str, head: Str)
     Department("Sales", "Adam Smith").
     Department("Administration", "John Maynard Keynes").
     Department("Operations", "Vilfredo Pareto").
 
+    rel Salary(employee: Str, salary: Int)
     Salary("Adam Smith", 100).
     Salary("Karl Marx", 0).
     Salary("John Maynard Keynes", 5000).
@@ -28,6 +27,7 @@ namespace Company {
     Salary("George W. Bush", 40).
     Salary("Barack Obama", 40).
 
+    rel Building(address: Str, department: Str)
     Building("123 Main St", "Sales").
     Building("1600 Pennsylvania Ave", "Administration").
     Building("321 1st St", "Operations").
