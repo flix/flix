@@ -138,8 +138,25 @@ object ParsedAst {
 
   }
 
+  sealed trait Directive {
+
+  }
+
   object Directive {
+
     // TODO
+    case class AssertFact()
+
+    case class AssertRule()
+
+    case class Print()
+
+    case class Read()
+
+    case class Write()
+
+    case class Trace()
+
   }
 
   /**

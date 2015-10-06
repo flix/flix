@@ -17,7 +17,7 @@ class Solver(root: TypedAst.Root) {
 
     for (fact <- root.facts) {
       val name = fact.head.name
-      val values = fact.head.terms map evalHeadTerm
+      val values = fact.head.terms map Interpreter.evalHeadTerm
       newFact(name, values)
     }
 
@@ -66,16 +66,8 @@ class Solver(root: TypedAst.Root) {
   }
 
   def evalHead(head: Head, env: Map[String, Value]) = {
-    val row = head.terms map evalHeadTerm
+    val row = head.terms map Interpreter.evalHeadTerm
     newFact(head.name, row)
-  }
-
-  // TODO: Move to interpreter
-  // TODO: make this take an environment env: Map[String, Value]
-  def evalHeadTerm(t: TypedAst.Term.Head): Value = t match {
-    case TypedAst.Term.Head.Var(x, tpe, loc) => throw Interpreter.InternalRuntimeError("A variable term is not allowed to occur in a fact.")
-    case TypedAst.Term.Head.Lit(lit, tpe, loc) => Interpreter.evalLit(lit)
-    case TypedAst.Term.Head.Apply(name, args, tpe, loc) => ???
   }
 
   /**

@@ -4,6 +4,8 @@ import ca.uwaterloo.flix.util.CachedHash
 
 object Name {
 
+  // TODO: These object should be interned.
+
   /**
    * Represents an identifier.
    *

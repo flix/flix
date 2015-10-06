@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Type, FormalArg, Root}
-import ca.uwaterloo.flix.language.ast.{Name, BinaryOperator, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{TypedAst, Name, BinaryOperator, UnaryOperator}
 
 object Interpreter {
   type Env = Map[Name.Ident, Value]
@@ -110,4 +110,14 @@ object Interpreter {
       else None
     case _ => None
   }
+
+
+
+  // TODO: make this take an environment env: Map[String, Value]
+  def evalHeadTerm(t: TypedAst.Term.Head): Value = t match {
+    case TypedAst.Term.Head.Var(x, tpe, loc) => throw Interpreter.InternalRuntimeError("A variable term is not allowed to occur in a fact.")
+    case TypedAst.Term.Head.Lit(lit, tpe, loc) => Interpreter.evalLit(lit)
+    case TypedAst.Term.Head.Apply(name, args, tpe, loc) => ???
+  }
+
 }

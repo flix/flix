@@ -235,67 +235,106 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Directives                                                              //
   /////////////////////////////////////////////////////////////////////////////
-  // TODO: Alternative
-  // false <= P(x).
-  // Error(x) <= P(x).
-  // Error(y) <= !Edge(1, 3)
-  // TODO: Need meta constraint
-  // true => A(...), B(...) (MUST-HOLD).
-  // Salary(name, amount) => Employee(name, <<unbound>>)
-  // false <= Employee(name, _), !Salary(name, _).
-
-  // Safety property
-  // false <= A(...), B(...) (the body must never hold).
-  //
-  // always Answer(x).
-  // never Unsafe(x).
-
-  ignore("Directive.Assert01") {
-    // P(42).
+  test("Directive.Assert01") {
     val input = "assert P(42)."
-    ???
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.AssertFact])
   }
 
-  ignore("Directive.Assert02") {
-    // \exists x. P(x). This is trivially true.
-    val input = "assert P(x)."
-    ???
+  test("Directive.Assert02") {
+    val input = "assert P(21, 42, \"foo\")."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.AssertFact])
   }
 
-  ignore("Directive.Assert03") {
-    // \exists y. P(1, y), Q(y, 3).
-    val input = "assert P(1, y), Q(y, 3)."
-    ???
+  test("Directive.Assert03") {
+    val input = "assert P(f(1), g(2, h(3, 4)))."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.AssertRule])
   }
 
-  ignore("Directive.Assert04") {
-    // \exists x, y, z. P(x, y), Q(y, z).
-    val input = "assert P(x, y), Q(y, z)."
-    ???
+  test("Directive.Assert04") {
+    val input = "assert Err#(x) :- A(x)."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.AssertRule])
   }
 
-  ignore("Directive.Refute01") {
-    // P(42) => false. <==> \not P(42).
-    val input = "refute P(42)."
-    ???
+  test("Directive.Assert05") {
+    val input = "assert Err#(x, z) :- A(x, y), B(y, z)."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.AssertRule])
   }
 
-  ignore("Directive.Refute02") {
-    // \forall x. P(x) => false. <==> \not \exists x. P(x).
-    val input = "refute P(x)."
-    ???
+  test("Directive.Assert06") {
+    val input = "assert Err#(x, f(z)) :- A(x, y), B(y, z)."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.AssertRule])
   }
 
-  ignore("Directive.Refute03") {
-    // \forall y. P(1, y), Q(y, 3) => false. <==> \not \exists y. P(1, y), Q(y, 3)
-    val input = "refute P(1,  y), Q(y, 3)."
-    ???
+  test("Directive.Assert07") {
+    val input = "assert H(x) :- A(x)."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.AssertRule])
   }
 
-  ignore("Directive.Refute04") {
-    // \forall x, y, z. P(x, y), Q(y, z) => false. <==> \not \exists x, y. z. P(x, y), Q(y, z)
-    val input = "refute P(x,  y), Q(y, z)."
-    ???
+  test("Directive.Assert08") {
+    val input = "assert H(x, z) :- A(x, y), B(y, z)."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.AssertRule])
+  }
+
+  test("Directive.Print01") {
+    val input = "Print#(x) :- A(x)."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.Print])
+  }
+
+  test("Directive.Print02") {
+    val input = "Print#(x, z) :- A(x, y), B(y, z)."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.Print])
+  }
+
+  test("Directive.Print03") {
+    val input = "Print#(x, f(z)) :- A(x, y), B(y, z)."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.Print])
+  }
+
+  test("Directive.Read01") {
+    val input = "H(x) :- Read#(x, \"a.csv\")."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.Read])
+  }
+
+  test("Directive.Read02") {
+    val input = "H(x, y, z) :- Read#(x, y, z, \"a.csv\")."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.Read])
+  }
+
+  test("Directive.Write01") {
+    val input = "Write#(x, \"a.csv\") :- A(x)."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.Write])
+  }
+
+  test("Directive.Write02") {
+    val input = "Write#(x, y, z, \"a.csv\") :- A(x, y, z)."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.Write])
+  }
+
+  ignore("Directive.Trace01") {
+    val input = "trace H(x) :- A(x)."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.Trace])
+  }
+
+  ignore("Directive.Trace02") {
+    val input = "trace H(x, y, z) :- A(x,  y), B(y, z)."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.Trace])
   }
 
   /////////////////////////////////////////////////////////////////////////////
