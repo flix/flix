@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Type, FormalArg, Root}
-import ca.uwaterloo.flix.language.ast.{Name, BinaryOperator, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{TypedAst, Name, BinaryOperator, UnaryOperator}
 
 object Interpreter {
   type Env = Map[Name.Ident, Value]
@@ -15,14 +15,14 @@ object Interpreter {
    *
    * @param message the error message.
    */
-  case class InternalCompilerError(message: String) extends RuntimeException(message)
+  case class InternalRuntimeError(message: String) extends RuntimeException(message)
 
 
   def eval(expr: Expression, root: Root, env: Env = Map()): Value = {
     expr match {
       case Expression.Lit(literal, _, _) => evalLit(literal)
       case Expression.Var(ident, _, loc) => env.get(ident) match {
-        case None => throw InternalCompilerError(s"Unbound variable ${ident.name} at ${loc.format}.")
+        case None => throw InternalRuntimeError(s"Unbound variable ${ident.name} at ${loc.format}.")
         case Some(value) => value
       }
       case Expression.Ref(name, _, _) =>
@@ -30,12 +30,12 @@ object Interpreter {
         eval(root.constants(name).exp, root, env)
       case Expression.Lambda(formals, body, _, _) => Value.Closure(formals, body, env)
       case Expression.Apply(exp, args, _, _) => eval(exp, root, env) match {
-          case Value.Closure(formals, body, closureEnv) =>
-            val evalArgs = args.map(x => eval(x, root, env))
-            val newEnv = closureEnv ++ formals.map(_.ident).zip(evalArgs).toMap
-            eval(body, root, newEnv)
-          case _ => assert(false, "Expected a function."); Value.Unit
-        }
+        case Value.Closure(formals, body, closureEnv) =>
+          val evalArgs = args.map(x => eval(x, root, env))
+          val newEnv = closureEnv ++ formals.map(_.ident).zip(evalArgs).toMap
+          eval(body, root, newEnv)
+        case _ => assert(false, "Expected a function."); Value.Unit
+      }
       case Expression.Unary(op, exp, _, _) => evalUnary(op, eval(exp, root, env))
       case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, eval(exp1, root, env), eval(exp2, root, env))
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
@@ -58,7 +58,7 @@ object Interpreter {
     }
   }
 
-  private def evalLit(lit: Literal): Value = lit match {
+  def evalLit(lit: Literal): Value = lit match {
     case Literal.Unit(_) => Value.Unit
     case Literal.Bool(b, _) => Value.Bool(b)
     case Literal.Int(i, _) => Value.Int(i)
@@ -110,4 +110,18 @@ object Interpreter {
       else None
     case _ => None
   }
+
+
+  /**
+   * Evaluates the given head term `t` under the given environment `env0`
+   */
+  def evalHeadTerm(t: TypedAst.Term.Head, env: Map[String, Value]): Value = t match {
+    case TypedAst.Term.Head.Var(x, tpe, loc) => env.get(x.name) match {
+      case None => throw InternalRuntimeError("Unbound variable in head term!")
+      case Some(value) => value
+    }
+    case TypedAst.Term.Head.Lit(lit, tpe, loc) => Interpreter.evalLit(lit)
+    case TypedAst.Term.Head.Apply(name, args, tpe, loc) => ???
+  }
+
 }

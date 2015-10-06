@@ -4,6 +4,8 @@ import ca.uwaterloo.flix.util.CachedHash
 
 object Name {
 
+  // TODO: These object should be interned.
+
   /**
    * Represents an identifier.
    *
@@ -40,6 +42,9 @@ object Name {
      * Returns a human readable string representation of the unresolved name.
      */
     val format: String = parts.mkString("::")
+
+    // TODO: Doc
+    override val toString: String = "?" + parts.mkString("::")
   }
 
   /**
@@ -52,6 +57,9 @@ object Name {
      * Returns a human readable string representation of the resolved name.
      */
     val format: String = parts.mkString("::")
+
+    // TODO: Doc
+    override val toString: String = "/" + parts.mkString("::")
   }
 
 

@@ -122,7 +122,7 @@ object ParsedAst {
     }
 
     /**
-     * An AST that represent a relation definition.
+     * An AST node that represent a relation definition.
      *
      * @param sp1 the position of the first character in the definition.
      * @param ident the name of the relation.
@@ -138,8 +138,39 @@ object ParsedAst {
 
   }
 
+  /**
+   * A common super-type for AST nodes that represent directives.
+   */
+  sealed trait Directive {
+    /**
+     * Returns the source location of `this` directive.
+     */
+    def loc: SourceLocation
+  }
+
   object Directive {
+
+    /**
+     * An AST node that represents
+     *
+     * @param sp1 the position of the first character in the directive.
+     * @param sp2 the position of the last character in the directive.
+     */
+    case class AssertFact(sp1: SourcePosition, sp2: SourcePosition)
+
     // TODO
+    case class AssertRule()
+
+    // TODO
+    case class Print()
+    // TODO
+    case class Read()
+
+    // TODO
+    case class Write()
+    // TODO
+    case class Trace()
+
   }
 
   /**
