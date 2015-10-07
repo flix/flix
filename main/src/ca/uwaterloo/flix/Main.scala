@@ -12,14 +12,15 @@ object Main {
 
     implicit val options = Options()
 
-    val ast = Compiler.compile(args.map(arg => Paths.get(arg)))
+    val ast = Compiler.compile(args.filterNot(_.contains("-")).map(arg => Paths.get(arg)))
 
     val solver = new Solver(ast.get)
     solver.solve()
 
-//    val shell = new Shell()
-//    shell.startAndAwait()
-
+    if (args.exists(_.contains("-i"))) {
+      val shell = new Shell()
+      shell.startAndAwait()
+    }
   }
 
 }

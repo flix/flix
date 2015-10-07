@@ -46,8 +46,8 @@ namespace Company {
     WorkerAddress(name, address) :- Employee(name, dept), Building(address, dept).
     WorkerAddress(name, address) :- Intern(name, dept, _, _), Building(address, dept).
 
-    assert Employee("Adam Smith")
-    assert WorkerAddress("Adam Smith", "123 Main St").
-    assert Error#(name) :- Intern(name, _, _, _), Worker(name, _).
+  //  assert Employee("Adam Smith")
+  //  assert WorkerAddress("Adam Smith", "123 Main St").
+  //  assert Error#(name) :- Intern(name, _, _, _), Worker(name, _).
 
 }
