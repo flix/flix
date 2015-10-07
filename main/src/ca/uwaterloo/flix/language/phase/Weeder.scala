@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.Compiler
+import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.{WeededAst, SourceLocation, ParsedAst, Name}
 import ca.uwaterloo.flix.util.Validation
 import Validation._
@@ -108,7 +109,7 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate that the predicate is not allowed in the head of a fact/rule.
+     * An error raised to indicate that a predicate is not allowed in the head of a fact/rule.
      *
      * @param loc the location where the illegal predicate occurs.
      */
@@ -117,6 +118,22 @@ object Weeder {
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
             |
             |${consoleCtx.red(s">> Illegal predicate in the head of a fact/rule.")}
+            |
+            |${loc.underline}
+         """.stripMargin
+    }
+
+
+    /**
+     * An error raised to indicate that a predicate is not allowed in the body rule.
+     *
+     * @param loc the location where the illegal predicate occurs.
+     */
+    case class IllegalBodyPredicate(loc: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Illegal predicate in the body of a rule.")}
             |
             |${loc.underline}
          """.stripMargin
@@ -275,10 +292,9 @@ object Weeder {
       aliasesVal flatMap {
         case aliases =>
           val headVal = Predicate.Head.compile(past.head, aliases)
-          val bodyVal = past.body.collect {
-            case p: ParsedAst.Predicate.FunctionOrRelation => Predicate.Body.compile(p)
-          }
-          @@(headVal, @@(bodyVal)) map {
+          val bodyVal = @@(past.body.filterNot(_.isInstanceOf[ParsedAst.Predicate.Alias]).map(Predicate.Body.compile))
+
+          @@(headVal, bodyVal) map {
             case (head, body) => WeededAst.Declaration.Rule(head, body)
           }
       }
@@ -542,36 +558,42 @@ object Weeder {
     object Head {
 
       /**
-       * Compiles the given parsed predicate `p` to a weeded predicate.
+       * Compiles the given parsed predicate `p` to a weeded head predicate.
        */
       def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Alias] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
-        case p: ParsedAst.Predicate.FunctionOrRelation => compile(p, aliases)
-        case p: ParsedAst.Predicate.Alias => IllegalHeadPredicate(p.loc).toFailure
-        case p: ParsedAst.Predicate.NotEqual => IllegalHeadPredicate(p.loc).toFailure
-        case p: ParsedAst.Predicate.Read => IllegalHeadPredicate(p.loc).toFailure
+        case p: ParsedAst.Predicate.FunctionOrRelation =>
+          @@(p.terms.map(t => Term.Head.compile(t, aliases))) map {
+            case terms => WeededAst.Predicate.Head(p.name, terms, past.loc)
+          }
+
         case p: ParsedAst.Predicate.Print => ???
         case p: ParsedAst.Predicate.Write => ???
         case p: ParsedAst.Predicate.Error => ???
+        case p: ParsedAst.Predicate.Alias => IllegalHeadPredicate(p.loc).toFailure
+        case p: ParsedAst.Predicate.Read => IllegalHeadPredicate(p.loc).toFailure
+        case p: ParsedAst.Predicate.NotEqual => IllegalHeadPredicate(p.loc).toFailure
       }
 
-      /**
-       * Compiles the given parsed predicate `past` to a weeded predicate.
-       */
-      def compile(past: ParsedAst.Predicate.FunctionOrRelation, aliases: Map[String, ParsedAst.Predicate.Alias]): Validation[WeededAst.Predicate.Head, WeederError] =
-        @@(past.terms.map(t => Term.Head.compile(t, aliases))) map {
-          case terms => WeededAst.Predicate.Head(past.name, terms, past.loc)
-        }
     }
 
     object Body {
 
       /**
-       * Compiles the given parsed predicate `p` to a weeded predicate.
+       * Compiles the given parsed predicate `p` to a weeded body predicate.
        */
-      def compile(past: ParsedAst.Predicate.FunctionOrRelation): Validation[WeededAst.Predicate.Body, WeederError] =
-        @@(past.terms.map(Term.Body.compile)) map {
-          case terms => WeededAst.Predicate.Body(past.name, terms, past.loc)
-        }
+      def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
+        case p: ParsedAst.Predicate.FunctionOrRelation =>
+          @@(p.terms.map(Term.Body.compile)) map {
+            case terms => WeededAst.Predicate.Body(p.name, terms, past.loc)
+          }
+
+        case p: ParsedAst.Predicate.NotEqual => ???
+        case p: ParsedAst.Predicate.Read => ???
+        case p: ParsedAst.Predicate.Print => IllegalBodyPredicate(p.loc).toFailure
+        case p: ParsedAst.Predicate.Write => IllegalBodyPredicate(p.loc).toFailure
+        case p: ParsedAst.Predicate.Error => IllegalBodyPredicate(p.loc).toFailure
+        case p: ParsedAst.Predicate.Alias => throw Compiler.InternalCompilerError("Alias predicate should never occur here.")
+      }
     }
 
   }

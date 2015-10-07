@@ -130,19 +130,6 @@ class TestWeeder extends FunSuite {
     assertResult(2)(result.errors.size)
   }
 
-  test("IllegalAlias01") {
-    val input = "P(x) :- x := 42, x := 21"
-    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.isFailure)
-  }
-
-  test("IllegalAlias02") {
-    val input = "P(x) :- x := _."
-    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.isFailure)
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Predicates                                                              //
@@ -189,6 +176,27 @@ class TestWeeder extends FunSuite {
     assert(result.isFailure)
   }
 
+  test("IllegalBodyPredicate.Print01") {
+    val input = "A(x, y) :- Print#(x, y)."
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
+  }
+
+  test("IllegalBodyPredicate.Write01") {
+    val input = "A(x, y) :- Write#(x, y)."
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
+  }
+
+  test("IllegalBodyPredicate.Error01") {
+    val input = "A(x, y) :- Error#(x, y)."
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Terms                                                                   //
   /////////////////////////////////////////////////////////////////////////////
@@ -218,6 +226,41 @@ class TestWeeder extends FunSuite {
     val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
     val result = Weeder.Declaration.compile(past)
     assert(result.isFailure)
+  }
+
+  test("IllegalAlias01") {
+    val input = "P(x) :- x := 42, x := 21"
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
+  }
+
+  test("IllegalAlias02") {
+    val input = "P(x) :- x := _."
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
+  }
+
+  test("RuleIsFact01") {
+    val input = "P(x) :- x := 42"
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isInstanceOf[WeededAst.Declaration.Fact])
+  }
+
+  test("RuleIsFact02") {
+    val input = "P(x, y) :- x := 21, y := 42"
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isInstanceOf[WeededAst.Declaration.Fact])
+  }
+
+  test("RuleIsFact03") {
+    val input = "P(f(x, y)) :- x := 21, y := 42"
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isInstanceOf[WeededAst.Declaration.Fact])
   }
 
   def ident(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
