@@ -12,7 +12,7 @@ object WeededAst {
 
     case class Namespace(name: Name.Unresolved, body: List[WeededAst.Declaration]) extends WeededAst.Declaration
 
-    case class Fact(head: WeededAst.Predicate.Head) extends WeededAst.Declaration
+    case class Fact(head: WeededAst.Predicate.FunctionOrRelation) extends WeededAst.Declaration
 
     case class Rule(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body]) extends WeededAst.Declaration
 
@@ -126,11 +126,19 @@ object WeededAst {
 
   }
 
+  sealed trait Predicate extends WeededAst
+
   object Predicate {
 
-    case class Head(name: Name.Unresolved, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst
+    sealed trait Head extends Predicate
+
+    case class FunctionOrRelation(name: Name.Unresolved, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
+
+    case class Error(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
+
 
     case class Body(name: Name.Unresolved, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst
+
 
   }
 

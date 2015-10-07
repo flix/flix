@@ -326,7 +326,7 @@ object Resolver {
         case WeededAst.Declaration.Namespace(name, body) =>
           @@(body map (d => visit(d, namespace ::: name.parts.toList))) map (xs => xs.flatten)
         case WeededAst.Declaration.Rule(whead, wbody) =>
-          val headVal = Predicate.Head.resolve(whead, namespace, syms)
+          val headVal = Predicate.Head.resolve(whead.asInstanceOf[WeededAst.Predicate.FunctionOrRelation], namespace, syms) // TODO: Cast
           val bodyVal = @@(wbody map (p => Predicate.Body.resolve(p, namespace, syms)))
           @@(headVal, bodyVal) map {
             case (head, body) => List(ResolvedAst.Constraint.Rule(head, body))
@@ -570,8 +570,8 @@ object Resolver {
       /**
        * Performs symbol resolution in the given head predicate `wast` in the given `namespace` with the given symbol table `syms`.
        */
-      def resolve(wast: WeededAst.Predicate.Head, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Head, ResolverError] = {
-        val WeededAst.Predicate.Head(name, wterms, loc) = wast
+      def resolve(wast: WeededAst.Predicate.FunctionOrRelation, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Head, ResolverError] = {
+        val WeededAst.Predicate.FunctionOrRelation(name, wterms, loc) = wast
 
         syms.lookupRelation(name, namespace) flatMap {
           case (rname, defn) => @@(wterms map (term => Term.Head.resolve(term, namespace, syms))) map {

@@ -271,7 +271,7 @@ object Weeder {
      */
     def compile(past: ParsedAst.Declaration.Fact): Validation[WeededAst.Declaration.Fact, WeederError] =
       Predicate.Head.compile(past.head) map {
-        case p => WeededAst.Declaration.Fact(p)
+        case p => WeededAst.Declaration.Fact(p.asInstanceOf[WeededAst.Predicate.FunctionOrRelation]) // TODO: Replace cast by check
       }
 
     /**
@@ -563,12 +563,16 @@ object Weeder {
       def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Alias] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case p: ParsedAst.Predicate.FunctionOrRelation =>
           @@(p.terms.map(t => Term.Head.compile(t, aliases))) map {
-            case terms => WeededAst.Predicate.Head(p.name, terms, past.loc)
+            case terms => WeededAst.Predicate.FunctionOrRelation(p.name, terms, past.loc)
           }
 
         case p: ParsedAst.Predicate.Print => ???
         case p: ParsedAst.Predicate.Write => ???
-        case p: ParsedAst.Predicate.Error => ???
+        case p: ParsedAst.Predicate.Error =>
+          @@(p.terms map (t => Term.Head.compile(t, aliases))) map {
+            case terms => WeededAst.Predicate.Error(terms, p.loc)
+          }
+
         case p: ParsedAst.Predicate.Alias => IllegalHeadPredicate(p.loc).toFailure
         case p: ParsedAst.Predicate.Read => IllegalHeadPredicate(p.loc).toFailure
         case p: ParsedAst.Predicate.NotEqual => IllegalHeadPredicate(p.loc).toFailure
