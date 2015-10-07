@@ -96,14 +96,13 @@ object Resolver {
      */
     case class UnresolvedTagReference(enum: WeededAst.Definition.Enum, tag: String, loc: SourceLocation) extends ResolverError {
       val format = {
-        val tags = enum.cases.keySet
+        val tags = enum.cases.keySet.map(t => "'" + t + "'").mkString(", ")
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
             |
             |${consoleCtx.red(s">> Unresolved reference to tag '$tag'.")}
             |
             |${loc.underline}
-            |
-            |The enum '${enum.ident.format}' declares the tags: '${tags.mkString(", ")}' at '${enum.loc.format}'.
+            |The enum '${enum.ident.format}' declares the tags: $tags at '${enum.loc.format}'.
          """.stripMargin
       }
     }
