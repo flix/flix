@@ -107,8 +107,10 @@ object Weeder {
          """.stripMargin
     }
 
+    // TODO: Consider merging these.
+
     /**
-     * An error raised to indicate that a alias predicate occurs in the head of a fact/rule.
+     * An error raised to indicate that an alias predicate occurs in the head of a fact/rule.
      *
      * @param loc the location where the illegal alias predicate occurs.
      */
@@ -117,6 +119,22 @@ object Weeder {
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
             |
             |${consoleCtx.red(s">> Illegal alias in the head of a fact/rule.")}
+            |
+            |${loc.underline}
+         """.stripMargin
+    }
+
+
+    /**
+     * An error raised to indicate that a not equal predicate occurs in the head of a fact/rule.
+     *
+     * @param loc the location where the illegal not equal predicate occurs.
+     */
+    case class IllegalNotEqualInHead(loc: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Illegal not equal in the head of a fact/rule.")}
             |
             |${loc.underline}
          """.stripMargin
@@ -547,6 +565,7 @@ object Weeder {
       def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Alias] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case p: ParsedAst.Predicate.FunctionOrRelation => compile(p, aliases)
         case p: ParsedAst.Predicate.Alias => IllegalAliasInHead(p.loc).toFailure
+        case p: ParsedAst.Predicate.NotEqual => IllegalNotEqualInHead(p.loc).toFailure
       }
 
       /**

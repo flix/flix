@@ -46,16 +46,17 @@ namespace Company {
     WorkerAddress(name, address) :- Employee(name, dept), Building(address, dept).
     WorkerAddress(name, address) :- Intern(name, dept, _, _), Building(address, dept).
 
-    assert Employee("Adam Smith")
-    //assert WorkerAddress("Adam Smith", "123 Main St").
-    //assert Error#(name) :- Intern(name, _, _, _), Worker(name, _).
+    x != y.
 
-    //print WorkerAddress.
-
-    //Error#(x) :- Employee(x, _).
-    //Print#(x) :- Employee(x, _).
-    //Error#(x) :- Employee(x, _), Read#(x, "foo.txt").
-
+//    assert Employee("Adam Smith")
+//    assert WorkerAddress("Adam Smith", "123 Main St").
+//    assert Error#(name) :- Intern(name, _, _, _), Worker(name, _).
+//
+//    print WorkerAddress.
+//
+//    Error#(x) :- Employee(x, _).
+//    Print#(x) :- Employee(x, _).
+//    Error#(x) :- Employee(x, _), Read#(x, "foo.txt").
 
 
 }

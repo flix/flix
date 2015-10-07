@@ -130,6 +130,9 @@ class TestWeeder extends FunSuite {
     assertResult(2)(result.errors.size)
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Rules & Predicates                                                      //
+  /////////////////////////////////////////////////////////////////////////////
   test("IllegalAlias01") {
     val input = "P(x) :- x := 42, x := 21"
     val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
@@ -144,8 +147,15 @@ class TestWeeder extends FunSuite {
     assert(result.isFailure)
   }
 
-  test("IllegalAlias03") {
+  test("IllegalAliasInHead01") {
     val input = "x := y :- A(x, y)."
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
+  }
+
+  test("IllegalNotEqualInHead01") {
+    val input = "x != y :- A(x, y)."
     val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
     val result = Weeder.Declaration.compile(past)
     assert(result.isFailure)
