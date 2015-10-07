@@ -32,14 +32,14 @@ if exists("b:current_syntax")
 endif
 
 syn keyword keywords assert case def else enum if in lat
-syn keyword keywords let match namespace print rel val with.
+syn keyword keywords let match namespace print rel val with
 
 let b:current_syntax = "flix"
 
 hi def link keywords Statement
 ```
 
-Ensure that your `~/.vim/vimrc` file contains at least the following:
+Ensure that your `~/.vimrc` file contains at least the following:
 
 ```
 source ~/.vim/syntax/flix.vim
