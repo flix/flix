@@ -89,8 +89,6 @@ namespace ParityAnalysis {
         case Parity.Top    => true;
     };
 
-    val x: Parity = Parity.Foo;
-
     lat Parity<> (Parity.Bot, leq, ParityAnalysis::lub);
 
     rel SumOp(result: Int, left: Int, right: Int);

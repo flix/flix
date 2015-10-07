@@ -542,9 +542,14 @@ object Resolver {
         case WeededAst.Pattern.Lit(literal, loc) => Literal.resolve(literal, namespace, syms) map {
           case lit => ResolvedAst.Pattern.Lit(lit, loc)
         }
-        case WeededAst.Pattern.Tag(name, ident, wpat, loc) => syms.lookupEnum(name, namespace) flatMap {
-          case (rname, enum) => visit(wpat) map {
-            case pat => ResolvedAst.Pattern.Tag(rname, ident, pat, loc)
+        case WeededAst.Pattern.Tag(enum, tag, wpat, loc) => syms.lookupEnum(enum, namespace) flatMap {
+          case (rname, defn) => visit(wpat) flatMap {
+            case pat =>
+              val tags = defn.cases.keySet
+              if (tags contains tag.name)
+                ResolvedAst.Pattern.Tag(rname, tag, pat, loc).toSuccess
+              else
+                UnresolvedTagReference(defn, tag.name, loc).toFailure
           }
         }
         case WeededAst.Pattern.Tuple(welms, loc) => @@(welms map (e => resolve(e, namespace, syms))) map {
