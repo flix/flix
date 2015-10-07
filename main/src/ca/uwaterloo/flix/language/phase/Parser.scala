@@ -111,16 +111,21 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Directives                                                              //
   /////////////////////////////////////////////////////////////////////////////
+  // NB: AssertRuleDirective must be parsed before AssertFactDirective.
   def Directive: Rule1[ParsedAst.Directive] = rule {
-    AssertRule | AssertFact
+    AssertRuleDirective | AssertFactDirective | PrintDirective
   }
 
-  def AssertFact: Rule1[ParsedAst.Directive.AssertFact] = rule {
+  def AssertFactDirective: Rule1[ParsedAst.Directive.AssertFact] = rule {
     SP ~ atomic("assert") ~ WS ~ FactDeclaration ~ SP ~> ParsedAst.Directive.AssertFact
   }
 
-  def AssertRule: Rule1[ParsedAst.Directive.AssertRule] = rule {
+  def AssertRuleDirective: Rule1[ParsedAst.Directive.AssertRule] = rule {
     SP ~ atomic("assert") ~ WS ~ RuleDeclaration ~ SP ~> ParsedAst.Directive.AssertRule
+  }
+
+  def PrintDirective: Rule1[ParsedAst.Directive.Print] = rule {
+    SP ~ atomic("print") ~ WS ~ QName ~ optDotOrSC ~ SP ~> ParsedAst.Directive.Print
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -276,15 +281,31 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    ErrorPredicate | RelationalPredicate | AliasPredicate
+    FunctionOrRelationPredicate | NotEqualPredicate | PrintPredicate | ReadPredicate | WritePredicate | ErrorPredicate | AliasPredicate
+  }
+
+  def FunctionOrRelationPredicate: Rule1[ParsedAst.Predicate.FunctionOrRelation] = rule {
+    SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.FunctionOrRelation
+  }
+
+  def NotEqualPredicate: Rule1[ParsedAst.Predicate.NotEqual] = rule {
+    SP ~ Ident ~ optWS ~ atomic("!=") ~ optWS ~ Ident ~ SP ~> ParsedAst.Predicate.NotEqual
+  }
+
+  def PrintPredicate: Rule1[ParsedAst.Predicate.Print] = rule {
+    SP ~ atomic("Print#") ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Print
+  }
+
+  def ReadPredicate: Rule1[ParsedAst.Predicate.Read] = rule {
+    SP ~ atomic("Read#") ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Read
+  }
+
+  def WritePredicate: Rule1[ParsedAst.Predicate.Write] = rule {
+    SP ~ atomic("Write#") ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Write
   }
 
   def ErrorPredicate: Rule1[ParsedAst.Predicate.Error] = rule {
     SP ~ atomic("Error#") ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Error
-  }
-
-  def RelationalPredicate: Rule1[ParsedAst.Predicate.Unresolved] = rule {
-    SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Unresolved
   }
 
   def AliasPredicate: Rule1[ParsedAst.Predicate.Alias] = rule {

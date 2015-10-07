@@ -162,6 +162,17 @@ object ParsedAst {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
+    /**
+     * An AST node that represents a directive to print a relation.
+     *
+     * @param sp1 the position of the first character in the directive.
+     * @param name the name of the relation.
+     * @param sp2 the position of the last character in the directive.
+     */
+    case class Print(sp1: SourcePosition, name: Name.Unresolved, sp2: SourcePosition) extends Directive {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
   }
 
   /**
@@ -514,20 +525,26 @@ object ParsedAst {
   object Predicate {
 
     /**
-     * An AST node that represent an unresolved predicate.
+     * An AST node that represent a functional or relational predicate.
      *
      * @param sp1 the position of the first character in the predicate.
      * @param name the unresolved name of the predicate.
      * @param terms the terms of the predicate.
      * @param sp2 the position of the last character in the predicate.
      */
-    // TODO: Need better name.
-    case class Unresolved(sp1: SourcePosition, name: Name.Unresolved, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
+    case class FunctionOrRelation(sp1: SourcePosition, name: Name.Unresolved, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
     /**
-     * An AST node that represents an alias predicate.
+     * An AST node that represents the special "not equal" predicate.
+     */
+    case class NotEqual(sp1: SourcePosition, ident1: Name.Ident, ident2: Name.Ident, sp2: SourcePosition) extends ParsedAst.Predicate {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+    
+    /**
+     * An AST node that represents the special alias predicate.
      *
      * @param sp1 the position of the first character in the predicate.
      * @param ident the name of the variable.
@@ -538,21 +555,45 @@ object ParsedAst {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
-    // TODO
-    case class Print()
+    /**
+     * An AST node that represents the special print predicate.
+     *
+     * @param sp1 the position of the first character in the predicate.
+     * @param terms the terms of the predicate.
+     * @param sp2 the position of the last character in the predicate.
+     */
+    case class Print(sp1: SourcePosition, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
-    // TODO
-    case class Read()
+    /**
+     * An AST node that represents the special read predicate.
+     *
+     * @param sp1 the position of the first character in the predicate.
+     * @param terms the terms of the predicate.
+     * @param sp2 the position of the last character in the predicate.
+     */
+    case class Read(sp1: SourcePosition, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
-    // TODO
-    case class Write()
+    /**
+     * An AST node that represents the special write predicate.
+     *
+     * @param sp1 the position of the first character in the predicate.
+     * @param terms the terms of the predicate.
+     * @param sp2 the position of the last character in the predicate.
+     */
+    case class Write(sp1: SourcePosition, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents the special error predicate.
      *
-     * @param sp1 the position of the first character in the term.
+     * @param sp1 the position of the first character in the predicate.
      * @param terms the terms of the predicate.
-     * @param sp2 the position of the last character in the term.
+     * @param sp2 the position of the last character in the predicate.
      */
     case class Error(sp1: SourcePosition, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)

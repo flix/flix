@@ -283,6 +283,12 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Directive.AssertRule])
   }
 
+  test("Directive.Print01") {
+    val input = "print H."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Directive.Print])
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
@@ -818,6 +824,48 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Predicate.Alias])
   }
 
+  test("Predicate.Print01") {
+    val input = "Print#(x)"
+    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Print])
+  }
+
+  test("Predicate.Print02") {
+    val input = "Print#(x, z)"
+    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Print])
+  }
+
+  test("Predicate.Print03") {
+    val input = "Print#(x, f(z))"
+    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Print])
+  }
+
+  test("Predicate.Read01") {
+    val input = "Read#(x, \"a.csv\")"
+    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Read])
+  }
+
+  test("Predicate.Read02") {
+    val input = "Read#(x, y, z, \"a.csv\")"
+    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Read])
+  }
+
+  test("Predicate.Write01") {
+    val input = "Write#(x, \"a.csv\")"
+    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Write])
+  }
+
+  test("Predicate.Write02") {
+    val input = "Write#(x, y, z, \"a.csv\")"
+    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Write])
+  }
+
   test("Predicate.Error01") {
     val input = "Error#(42)"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
@@ -836,49 +884,7 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Predicate.Error])
   }
 
-  test("Predicate.Print01") {
-    val input = "Print#(x) :- A(x)."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Predicate.Print])
-  }
-
-  test("Predicate.Print02") {
-    val input = "Print#(x, z) :- A(x, y), B(y, z)."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Predicate.Print])
-  }
-
-  test("Predicate.Print03") {
-    val input = "Print#(x, f(z)) :- A(x, y), B(y, z)."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Predicate.Print])
-  }
-
-  test("Predicate.Read01") {
-    val input = "H(x) :- Read#(x, \"a.csv\")."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Predicate.Read])
-  }
-
-  test("Predicate.Read02") {
-    val input = "H(x, y, z) :- Read#(x, y, z, \"a.csv\")."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Predicate.Read])
-  }
-
-  test("Predicate.Write01") {
-    val input = "Write#(x, \"a.csv\") :- A(x)."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Predicate.Write])
-  }
-
-  test("Predicate.Write02") {
-    val input = "Write#(x, y, z, \"a.csv\") :- A(x, y, z)."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Predicate.Write])
-  }
-
-  ignore("Predicate.NotEqual01") {
+  test("Predicate.NotEqual01") {
     val input = "x != y"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
     assert(result.isInstanceOf[ParsedAst.Predicate])

@@ -260,7 +260,7 @@ object Weeder {
         case aliases =>
           val headVal = Predicate.Head.compile(past.head, aliases)
           val bodyVal = past.body.collect {
-            case p: ParsedAst.Predicate.Unresolved => Predicate.Body.compile(p)
+            case p: ParsedAst.Predicate.FunctionOrRelation => Predicate.Body.compile(p)
           }
           @@(headVal, @@(bodyVal)) map {
             case (head, body) => WeededAst.Declaration.Rule(head, body)
@@ -512,14 +512,14 @@ object Weeder {
        * Compiles the given parsed predicate `p` to a weeded predicate.
        */
       def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Alias] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
-        case p: ParsedAst.Predicate.Unresolved => compile(p, aliases)
+        case p: ParsedAst.Predicate.FunctionOrRelation => compile(p, aliases)
         case p: ParsedAst.Predicate.Alias => ??? // TODO: raise error
       }
 
       /**
        * Compiles the given parsed predicate `past` to a weeded predicate.
        */
-      def compile(past: ParsedAst.Predicate.Unresolved, aliases: Map[String, ParsedAst.Predicate.Alias]): Validation[WeededAst.Predicate.Head, WeederError] =
+      def compile(past: ParsedAst.Predicate.FunctionOrRelation, aliases: Map[String, ParsedAst.Predicate.Alias]): Validation[WeededAst.Predicate.Head, WeederError] =
         @@(past.terms.map(t => Term.Head.compile(t, aliases))) map {
           case terms => WeededAst.Predicate.Head(past.name, terms, past.loc)
         }
@@ -530,7 +530,7 @@ object Weeder {
       /**
        * Compiles the given parsed predicate `p` to a weeded predicate.
        */
-      def compile(past: ParsedAst.Predicate.Unresolved): Validation[WeededAst.Predicate.Body, WeederError] =
+      def compile(past: ParsedAst.Predicate.FunctionOrRelation): Validation[WeededAst.Predicate.Body, WeederError] =
         @@(past.terms.map(Term.Body.compile)) map {
           case terms => WeededAst.Predicate.Body(past.name, terms, past.loc)
         }
