@@ -162,19 +162,6 @@ object ParsedAst {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
-
-    // TODO
-    case class Print()
-
-    // TODO
-    case class Read()
-
-    // TODO
-    case class Write()
-
-    // TODO
-    case class Trace()
-
   }
 
   /**
@@ -550,6 +537,15 @@ object ParsedAst {
     case class Alias(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Term, sp2: SourcePosition) extends ParsedAst.Predicate {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
+
+    // TODO
+    case class Print()
+
+    // TODO
+    case class Read()
+
+    // TODO
+    case class Write()
 
     /**
      * An AST node that represents the special error predicate.

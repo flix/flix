@@ -250,7 +250,7 @@ class TestParser extends FunSuite {
   test("Directive.Assert03") {
     val input = "assert P(1, f(2))."
     val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Directive.AssertRule])
+    assert(result.isInstanceOf[ParsedAst.Directive.AssertFact])
   }
 
   test("Directive.Assert04") {
@@ -281,63 +281,6 @@ class TestParser extends FunSuite {
     val input = "assert H(x, z) :- A(x, y), B(y, z)."
     val result = new Parser(SourceInput.Str(input)).Declaration.run().get
     assert(result.isInstanceOf[ParsedAst.Directive.AssertRule])
-  }
-
-  // TODO: Maybe its better to print a relation?
-  test("Directive.Print01") {
-    val input = "Print#(x) :- A(x)."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Directive.Print])
-  }
-
-  // TODO: Maybe its better to print a relation?
-  test("Directive.Print02") {
-    val input = "Print#(x, z) :- A(x, y), B(y, z)."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Directive.Print])
-  }
-
-  // TODO: Maybe its better to print a relation?
-  test("Directive.Print03") {
-    val input = "Print#(x, f(z)) :- A(x, y), B(y, z)."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Directive.Print])
-  }
-
-  test("Directive.Read01") {
-    val input = "H(x) :- Read#(x, \"a.csv\")."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Directive.Read])
-  }
-
-  test("Directive.Read02") {
-    val input = "H(x, y, z) :- Read#(x, y, z, \"a.csv\")."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Directive.Read])
-  }
-
-  test("Directive.Write01") {
-    val input = "Write#(x, \"a.csv\") :- A(x)."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Directive.Write])
-  }
-
-  test("Directive.Write02") {
-    val input = "Write#(x, y, z, \"a.csv\") :- A(x, y, z)."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Directive.Write])
-  }
-
-  ignore("Directive.Trace01") {
-    val input = "trace H(x) :- A(x)."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Directive.Trace])
-  }
-
-  ignore("Directive.Trace02") {
-    val input = "trace H(x, y, z) :- A(x,  y), B(y, z)."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Directive.Trace])
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -891,6 +834,48 @@ class TestParser extends FunSuite {
     val input = "Error#(42, f(x, g(y, z)))"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
     assert(result.isInstanceOf[ParsedAst.Predicate.Error])
+  }
+
+  test("Predicate.Print01") {
+    val input = "Print#(x) :- A(x)."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Print])
+  }
+
+  test("Predicate.Print02") {
+    val input = "Print#(x, z) :- A(x, y), B(y, z)."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Print])
+  }
+
+  test("Predicate.Print03") {
+    val input = "Print#(x, f(z)) :- A(x, y), B(y, z)."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Print])
+  }
+
+  test("Predicate.Read01") {
+    val input = "H(x) :- Read#(x, \"a.csv\")."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Read])
+  }
+
+  test("Predicate.Read02") {
+    val input = "H(x, y, z) :- Read#(x, y, z, \"a.csv\")."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Read])
+  }
+
+  test("Predicate.Write01") {
+    val input = "Write#(x, \"a.csv\") :- A(x)."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Write])
+  }
+
+  test("Predicate.Write02") {
+    val input = "Write#(x, y, z, \"a.csv\") :- A(x, y, z)."
+    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Write])
   }
 
   ignore("Predicate.NotEqual01") {
