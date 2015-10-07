@@ -90,12 +90,24 @@ object Resolver {
     /**
      * An error raised to indicate a reference to an unknown tag in an enum.
      *
-     * @param name the tag name.
+     * @param enum the enum.
+     * @param tag the tag name.
      * @param loc the source location of the reference.
      */
-    case class UnresolvedTagReference(name: String, tags: Set[String], loc: SourceLocation) extends ResolverError {
-      val format = "TODO"
+    case class UnresolvedTagReference(enum: WeededAst.Definition.Enum, tag: String, loc: SourceLocation) extends ResolverError {
+      val format = {
+        val tags = enum.cases.keySet
+        s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Unresolved reference to tag '$tag'.")}
+            |
+            |${loc.underline}
+            |
+            |The enum '${enum.ident.format}' declares the tags: '${tags.mkString(", ")}' at '${enum.loc.format}'.
+         """.stripMargin
+      }
     }
+
 
     /**
      * An error raised to indicate a reference to an unknown relation.
@@ -397,7 +409,7 @@ object Resolver {
               if (tags contains tag.name)
                 ResolvedAst.Literal.Tag(rname, tag, l, loc).toSuccess
               else
-                UnresolvedTagReference(tag.name, tags, loc).toFailure
+                UnresolvedTagReference(defn, tag.name, loc).toFailure
           }
         }
         case WeededAst.Literal.Tuple(welms, loc) => @@(welms map visit) map {
@@ -495,7 +507,7 @@ object Resolver {
                 if (tags contains tag.name)
                   ResolvedAst.Expression.Tag(rname, tag, e, loc).toSuccess
                 else
-                  UnresolvedTagReference(tag.name, tags, loc).toFailure
+                  UnresolvedTagReference(defn, tag.name, loc).toFailure
             }
           }
 
