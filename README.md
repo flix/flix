@@ -13,6 +13,36 @@ A new programming language for declarative fixpoint programming with functions, 
     * Block comment start: `/*`. Block comment end: `*/`.
     * Check support `paired braces`, `paired parens`, and `paired brackets`.
     * Add the following keywords: 
-        * `assert`, `case`, `def`, `else`, `enum`, `if`, `in`, `lat`, `let`, `match`,  `namespace`, `print`, `rel`, `val`, `with`,  
+        * `assert`, `case`, `def`, `else`, `enum`, `if`, `in`, `lat`, `let`, `match`,  `namespace`, `print`, `rel`, `val`, `with`.
+- Press `OK`.
 
-### VIM ###
+### Vim - Vi IMproved ###
+
+Create the file `~/.vim/ftdetect/flix.vim` with the content:
+
+```
+au BufRead,BufNewFile *.flix set filetype=flix
+```
+
+Create the file `~/.vim/syntax/flix.vim` with the content:
+
+```
+if exists("b:current_syntax")
+  finish
+endif
+
+syn keyword keywords assert case def else enum if in lat
+syn keyword keywords let match namespace print rel val with.
+
+let b:current_syntax = "flix"
+
+hi def link keywords Statement
+```
+
+Ensure that your `~/.vim/vimrc` file contains at least the following:
+
+```
+source ~/.vim/syntax/flix.vim
+source ~/.vim/ftdetect/flix.vim
+syntax on
+```
