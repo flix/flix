@@ -144,6 +144,13 @@ class TestWeeder extends FunSuite {
     assert(result.isFailure)
   }
 
+  test("IllegalAlias03") {
+    val input = "x := y :- A(x, y)."
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Terms                                                                   //
   /////////////////////////////////////////////////////////////////////////////

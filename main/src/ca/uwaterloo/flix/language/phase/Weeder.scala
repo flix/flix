@@ -108,6 +108,21 @@ object Weeder {
     }
 
     /**
+     * An error raised to indicate that a alias predicate occurs in the head of a fact/rule.
+     *
+     * @param loc the location where the illegal alias predicate occurs.
+     */
+    case class IllegalAliasInHead(loc: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
+            |
+            |${consoleCtx.red(s">> Illegal alias in the head of a fact/rule.")}
+            |
+            |${loc.underline}
+         """.stripMargin
+    }
+
+    /**
      * An error raised to indicate that a wildcard occurs in a head term.
      *
      * @param loc the location where the illegal term occurs.
@@ -380,7 +395,9 @@ object Weeder {
       case d: ParsedAst.Directive.AssertFact => Declaration.compile(d.fact) map {
         case fact => WeededAst.Directive.AssertFact(fact, d.loc)
       }
-      case d: ParsedAst.Directive.AssertRule => ???
+      case d: ParsedAst.Directive.AssertRule => Declaration.compile(d.rule) map {
+        case rule => WeededAst.Directive.AssertRule(rule, d.loc)
+      }
       case d: ParsedAst.Directive.Print => WeededAst.Directive.Print(d.name, d.loc).toSuccess
     }
 
@@ -529,7 +546,7 @@ object Weeder {
        */
       def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Alias] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case p: ParsedAst.Predicate.FunctionOrRelation => compile(p, aliases)
-        case p: ParsedAst.Predicate.Alias => ??? // TODO: raise error
+        case p: ParsedAst.Predicate.Alias => IllegalAliasInHead(p.loc).toFailure
       }
 
       /**

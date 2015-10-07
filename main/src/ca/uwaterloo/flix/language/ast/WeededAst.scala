@@ -38,7 +38,7 @@ object WeededAst {
 
     case class AssertFact(fact: WeededAst.Declaration.Fact, loc: SourceLocation) extends WeededAst.Directive
 
-    case class AssertRule(loc: SourceLocation) extends WeededAst.Directive
+    case class AssertRule(rule: WeededAst.Declaration.Rule, loc: SourceLocation) extends WeededAst.Directive
 
     case class Print(name: Name.Unresolved, loc: SourceLocation) extends WeededAst.Directive
 

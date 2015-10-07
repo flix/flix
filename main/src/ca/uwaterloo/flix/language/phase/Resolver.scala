@@ -104,7 +104,7 @@ object Resolver {
             |${consoleCtx.red(s">> Unresolved reference to tag '$tag'.")}
             |
             |${loc.underline}
-            |${consoleCtx.green(s"Perhaps you meant: '${Levenshtein.bestMatch(tag, tags).get}' ?")}
+            |${consoleCtx.green(s"Did you mean: '${Levenshtein.bestMatch(tag, tags).get}' ?")}
             |
             |The enum '${enum.ident.format}' declares the tags: $formattedTags at '${enum.loc.format}'.
          """.stripMargin
