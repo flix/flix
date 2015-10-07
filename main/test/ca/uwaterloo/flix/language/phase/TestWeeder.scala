@@ -130,9 +130,6 @@ class TestWeeder extends FunSuite {
     assertResult(2)(result.errors.size)
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Rules & Predicates                                                      //
-  /////////////////////////////////////////////////////////////////////////////
   test("IllegalAlias01") {
     val input = "P(x) :- x := 42, x := 21"
     val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
@@ -147,15 +144,46 @@ class TestWeeder extends FunSuite {
     assert(result.isFailure)
   }
 
-  test("IllegalAliasInHead01") {
+  /////////////////////////////////////////////////////////////////////////////
+  // Predicates                                                              //
+  /////////////////////////////////////////////////////////////////////////////
+  test("IllegalHeadPredicate.Alias01") {
+    val input = "x := y."
+    val past = new Parser(SourceInput.Str(input)).FactDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
+  }
+
+  test("IllegalHeadPredicate.Alias02") {
     val input = "x := y :- A(x, y)."
     val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
     val result = Weeder.Declaration.compile(past)
     assert(result.isFailure)
   }
 
-  test("IllegalNotEqualInHead01") {
+  test("IllegalHeadPredicate.NotEqual01") {
+    val input = "x != y."
+    val past = new Parser(SourceInput.Str(input)).FactDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
+  }
+
+  test("IllegalHeadPredicate.NotEqual02") {
     val input = "x != y :- A(x, y)."
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
+  }
+
+  test("IllegalHeadPredicate.Read01") {
+    val input = "Read#(x, y)."
+    val past = new Parser(SourceInput.Str(input)).FactDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
+  }
+
+  test("IllegalHeadPredicate.Read02") {
+    val input = "Read#(x, y) :- A(x, y)."
     val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
     val result = Weeder.Declaration.compile(past)
     assert(result.isFailure)
