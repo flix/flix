@@ -1,6 +1,6 @@
 # Flix: Programming with Fixpoints #
 
-A new programming language for declarative fixpoint programming with functions, relations and lattices.
+A new programming language for declarative fixpoint computations based on Datalog.
 
 ## Syntax Highlighting ##
 
@@ -16,7 +16,7 @@ A new programming language for declarative fixpoint programming with functions, 
         * `assert`, `case`, `def`, `else`, `enum`, `if`, `in`, `lat`, `let`, `match`,  `namespace`, `print`, `rel`, `val`, `with`.
 - Press `OK`.
 
-### Vim - Vi IMproved ###
+### Vim ###
 
 Create the file `~/.vim/ftdetect/flix.vim` with the content:
 
