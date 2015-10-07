@@ -32,6 +32,18 @@ object WeededAst {
 
   }
 
+  sealed trait Directive extends WeededAst.Declaration
+
+  object Directive {
+
+    case class AssertFact(fact: WeededAst.Declaration.Fact, loc: SourceLocation) extends WeededAst.Directive
+
+    case class AssertRule(loc: SourceLocation) extends WeededAst.Directive
+
+    case class Print(name: Name.Unresolved, loc: SourceLocation) extends WeededAst.Directive
+
+  }
+
   sealed trait Literal extends WeededAst
 
   object Literal {

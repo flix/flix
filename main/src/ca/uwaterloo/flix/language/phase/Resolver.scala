@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.misc.Levenshtein
 
 // TODO: Rename to Namer?
 object Resolver {
@@ -96,13 +97,16 @@ object Resolver {
      */
     case class UnresolvedTagReference(enum: WeededAst.Definition.Enum, tag: String, loc: SourceLocation) extends ResolverError {
       val format = {
-        val tags = enum.cases.keySet.map(t => "'" + t + "'").mkString(", ")
+        val tags = enum.cases.keySet
+        val formattedTags = tags.map(t => "'" + t + "'").mkString(", ")
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
             |
             |${consoleCtx.red(s">> Unresolved reference to tag '$tag'.")}
             |
             |${loc.underline}
-            |The enum '${enum.ident.format}' declares the tags: $tags at '${enum.loc.format}'.
+            |${consoleCtx.green(s"Perhaps you meant: '${Levenshtein.bestMatch(tag, tags).get}' ?")}
+            |
+            |The enum '${enum.ident.format}' declares the tags: $formattedTags at '${enum.loc.format}'.
          """.stripMargin
       }
     }
