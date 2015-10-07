@@ -248,7 +248,7 @@ class TestParser extends FunSuite {
   }
 
   test("Directive.Assert03") {
-    val input = "assert P(f(1), g(2, h(3, 4)))."
+    val input = "assert P(1, f(2))."
     val result = new Parser(SourceInput.Str(input)).Declaration.run().get
     assert(result.isInstanceOf[ParsedAst.Directive.AssertRule])
   }

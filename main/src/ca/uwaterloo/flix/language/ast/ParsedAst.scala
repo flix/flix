@@ -558,7 +558,7 @@ object ParsedAst {
      * @param terms the terms of the predicate.
      * @param sp2 the position of the last character in the term.
      */
-    case class Error(sp1: SourcePosition, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term {
+    case class Error(sp1: SourcePosition, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 

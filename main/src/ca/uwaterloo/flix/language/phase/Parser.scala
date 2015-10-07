@@ -276,7 +276,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    RelationalPredicate | AliasPredicate
+    ErrorPredicate | RelationalPredicate | AliasPredicate
+  }
+
+  def ErrorPredicate: Rule1[ParsedAst.Predicate.Error] = rule {
+    SP ~ atomic("Error#") ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Error
   }
 
   def RelationalPredicate: Rule1[ParsedAst.Predicate.Unresolved] = rule {
