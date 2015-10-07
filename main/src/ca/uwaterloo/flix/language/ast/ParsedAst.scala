@@ -551,6 +551,17 @@ object ParsedAst {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
+    /**
+     * An AST node that represents the special error predicate.
+     *
+     * @param sp1 the position of the first character in the term.
+     * @param terms the terms of the predicate.
+     * @param sp2 the position of the last character in the term.
+     */
+    case class Error(sp1: SourcePosition, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
   }
 
   /**
