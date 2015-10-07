@@ -14,12 +14,14 @@ object Main {
 
     val ast = Compiler.compile(args.filterNot(_.contains("-")).map(arg => Paths.get(arg)))
 
-    val solver = new Solver(ast.get)
-    solver.solve()
+    if (ast.nonEmpty) {
+      val solver = new Solver(ast.get)
+      solver.solve()
 
-    if (args.exists(_.contains("-i"))) {
-      val shell = new Shell()
-      shell.startAndAwait()
+      if (args.exists(_.contains("-i"))) {
+        val shell = new Shell()
+        shell.startAndAwait()
+      }
     }
   }
 

@@ -28,12 +28,11 @@ class TestWeeder extends FunSuite {
     val past = ParsedAst.Definition.Enum(SP, Ident, Seq(
       ParsedAst.Type.Tag(ident("x"), ParsedAst.Type.Unit),
       ParsedAst.Type.Tag(ident("y"), ParsedAst.Type.Unit),
-      ParsedAst.Type.Tag(ident("x"), ParsedAst.Type.Unit),
       ParsedAst.Type.Tag(ident("x"), ParsedAst.Type.Unit)
     ), SP)
 
     val result = Weeder.Definition.compile(past)
-    assertResult(2)(result.errors.size)
+    assert(result.isFailure)
   }
 
   /////////////////////////////////////////////////////////////////////////////

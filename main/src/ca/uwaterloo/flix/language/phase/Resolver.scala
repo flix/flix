@@ -29,14 +29,14 @@ object Resolver {
     case class DuplicateDefinition(name: Name.Resolved, loc1: SourceLocation, loc2: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.formatSource}")}
-           |
-           |${consoleCtx.red(s">> Duplicate definition of the name '${name.format}'.")}
-           |
-           |First definition was here:
-           |${loc1.underline}
-           |Second definition was here:
-           |${loc2.underline}
-           |Tip: Consider renaming or removing one of the definitions.
+            |
+            |${consoleCtx.red(s">> Duplicate definition of the name '${name.format}'.")}
+            |
+            |First definition was here:
+            |${loc1.underline}
+            |Second definition was here:
+            |${loc2.underline}
+            |Tip: Consider renaming or removing one of the definitions.
          """.stripMargin
     }
 
@@ -63,10 +63,10 @@ object Resolver {
     case class UnresolvedConstantReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
-           |
-           |${consoleCtx.red(s">> Unresolved reference to constant '${name.format}'.")}
-           |
-           |${loc.underline}
+            |
+            |${consoleCtx.red(s">> Unresolved reference to constant '${name.format}'.")}
+            |
+            |${loc.underline}
          """.stripMargin
     }
 
@@ -80,11 +80,21 @@ object Resolver {
     case class UnresolvedEnumReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
-           |
-           |${consoleCtx.red(s">> Unresolved reference to enum '${name.format}'.")}
-           |
-           |${loc.underline}
+            |
+            |${consoleCtx.red(s">> Unresolved reference to enum '${name.format}'.")}
+            |
+            |${loc.underline}
          """.stripMargin
+    }
+
+    /**
+     * An error raised to indicate a reference to an unknown tag in an enum.
+     *
+     * @param name the tag name.
+     * @param loc the source location of the reference.
+     */
+    case class UnresolvedTagReference(name: String, tags: Set[String], loc: SourceLocation) extends ResolverError {
+      val format = "TODO"
     }
 
     /**
@@ -97,10 +107,10 @@ object Resolver {
     case class UnresolvedRelationReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
-           |
-           |${consoleCtx.red(s">> Unresolved reference to relation '${name.format}'.")}
-           |
-           |${loc.underline}
+            |
+            |${consoleCtx.red(s">> Unresolved reference to relation '${name.format}'.")}
+            |
+            |${loc.underline}
          """.stripMargin
     }
 
@@ -114,14 +124,13 @@ object Resolver {
     case class UnresolvedTypeReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
-           |
-           |${consoleCtx.red(s">> Unresolved reference to type '${name.format}'.")}
-           |
-           |${loc.underline}
+            |
+            |${consoleCtx.red(s">> Unresolved reference to type '${name.format}'.")}
+            |
+            |${loc.underline}
          """.stripMargin
     }
 
-    // TODO: Check tag names.
     // TODO: All kinds of arity errors....
     // TODO: Cyclic stuff.
 
@@ -222,7 +231,7 @@ object Resolver {
 
         val collectedLattices = Validation.fold[WeededAst.Type, (List[String], WeededAst.Definition.Lattice), ResolvedAst.Type, ResolvedAst.Definition.Lattice, ResolverError](syms.lattices) {
           case (k, (namespace, v)) => Type.resolve(k, namespace, syms) flatMap {
-            case tpe =>  Definition.resolve(v, namespace, syms) map (d => tpe -> d)
+            case tpe => Definition.resolve(v, namespace, syms) map (d => tpe -> d)
           }
         }
 
@@ -381,9 +390,14 @@ object Resolver {
         case WeededAst.Literal.Bool(b, loc) => ResolvedAst.Literal.Bool(b, loc).toSuccess
         case WeededAst.Literal.Int(i, loc) => ResolvedAst.Literal.Int(i, loc).toSuccess
         case WeededAst.Literal.Str(s, loc) => ResolvedAst.Literal.Str(s, loc).toSuccess
-        case WeededAst.Literal.Tag(name, ident, literal, loc) => syms.lookupEnum(name, namespace) flatMap {
-          case (rname, defn) => visit(literal) map {
-            case l => ResolvedAst.Literal.Tag(rname, ident, l, loc)
+        case WeededAst.Literal.Tag(enum, tag, literal, loc) => syms.lookupEnum(enum, namespace) flatMap {
+          case (rname, defn) => visit(literal) flatMap {
+            case l =>
+              val tags = defn.cases.keySet
+              if (tags contains tag.name)
+                ResolvedAst.Literal.Tag(rname, tag, l, loc).toSuccess
+              else
+                UnresolvedTagReference(tag.name, tags, loc).toFailure
           }
         }
         case WeededAst.Literal.Tuple(welms, loc) => @@(welms map visit) map {
@@ -438,12 +452,14 @@ object Resolver {
 
         case WeededAst.Expression.Unary(op, we, loc) =>
           visit(we, locals) map (e => ResolvedAst.Expression.Unary(op, e, loc))
+
         case WeededAst.Expression.Binary(op, we1, we2, loc) =>
           val lhsVal = visit(we1, locals)
           val rhsVal = visit(we2, locals)
           @@(lhsVal, rhsVal) map {
             case (e1, e2) => ResolvedAst.Expression.Binary(op, e1, e2, loc)
           }
+
         case WeededAst.Expression.IfThenElse(we1, we2, we3, loc) =>
           val conditionVal = visit(we1, locals)
           val consequentVal = visit(we2, locals)
@@ -452,6 +468,7 @@ object Resolver {
           @@(conditionVal, consequentVal, alternativeVal) map {
             case (e1, e2, e3) => ResolvedAst.Expression.IfThenElse(e1, e2, e3, loc)
           }
+
         case WeededAst.Expression.Let(ident, wvalue, wbody, loc) =>
           val valueVal = visit(wvalue, locals)
           val bodyVal = visit(wbody, locals + ident.name)
@@ -470,20 +487,27 @@ object Resolver {
             case (e, rules) => ResolvedAst.Expression.Match(e, rules, loc)
           }
 
-        case WeededAst.Expression.Tag(name, ident, we, loc) =>
-          syms.lookupEnum(name, namespace) flatMap {
-            case (rname, defn) => visit(we, locals) map {
-              case e => ResolvedAst.Expression.Tag(rname, ident, e, loc)
+        case WeededAst.Expression.Tag(enum, tag, we, loc) =>
+          syms.lookupEnum(enum, namespace) flatMap {
+            case (rname, defn) => visit(we, locals) flatMap {
+              case e =>
+                val tags = defn.cases.keySet
+                if (tags contains tag.name)
+                  ResolvedAst.Expression.Tag(rname, tag, e, loc).toSuccess
+                else
+                  UnresolvedTagReference(tag.name, tags, loc).toFailure
             }
           }
 
         case WeededAst.Expression.Tuple(welms, loc) => @@(welms map (e => visit(e, locals))) map {
           case elms => ResolvedAst.Expression.Tuple(elms, loc)
         }
+
         case WeededAst.Expression.Ascribe(we, wtype, loc) =>
           @@(visit(we, locals), Type.resolve(wtype, namespace, syms)) map {
             case (e, tpe) => ResolvedAst.Expression.Ascribe(e, tpe, loc)
           }
+
         case WeededAst.Expression.Error(wtype, loc) =>
           Type.resolve(wtype, namespace, syms) map {
             case tpe => ResolvedAst.Expression.Error(tpe, loc)

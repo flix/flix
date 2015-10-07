@@ -103,7 +103,7 @@ object Validation {
   def fold[In, Out, Alternative](xs: Seq[In], zero: Out)(f: (Out, In) => Validation[Out, Alternative]): Validation[Out, Alternative] = {
     xs.foldLeft(Success(zero, List.empty[Alternative]): Validation[Out, Alternative]) {
       case (acc, a) => acc flatMap {
-        case value => f(value, a).orElse[Out](value)
+        case value => f(value, a)
       }
     }
   }

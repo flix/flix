@@ -156,8 +156,42 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference]) // TODO
+    assert(result.isFailure)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
+  }
+
+  test("UnresolvedTagReference02") {
+    val input =
+      s"""namespace A {
+         |  enum B {
+         |    case Foo,
+         |    case Bar
+         |  }
+         |
+         |  val x: B = B.Qux(1 + 2);
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.isFailure)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
+  }
+
+  test("UnresolvedTagReference03") {
+    val input =
+      s"""namespace A {
+         |  enum B {
+         |    case Foo,
+         |    case Bar
+         |  }
+         |
+         |  def foo(b: B): Int = match b with {
+         |    case B.Qux => 42;
+         |  }
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.isFailure)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
   }
 
   test("UnresolvedRelationReference01") {
