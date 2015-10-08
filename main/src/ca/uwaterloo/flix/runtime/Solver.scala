@@ -39,7 +39,7 @@ class Solver(root: TypedAst.Root) {
       val format =
         s"""${consoleCtx.blue(s"-- SOLVER ERROR -------------------------------------------------- ${loc.formatSource}")}
            |
-            |${consoleCtx.red(s">> Assertion violation. The asserted fact does not hold in the minimal model!")}
+            |${consoleCtx.red(s">> Assertion violated: The asserted fact does not hold in the minimal model!")}
            |
            |${loc.underline}
          """.stripMargin
