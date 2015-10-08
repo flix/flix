@@ -113,7 +113,7 @@ object Typer {
 
     // putting it all together
     @@(constantsVal, directivesVal, latticesVal, relationsVal, factsVal, rulesVal) map {
-      case (constants, directives, lattices, relations, facts, rules) => TypedAst.Root(constants, directives, lattices, relations, facts, rules)
+      case (constants, directives, lattices, relations, facts, rules) => TypedAst.Root(constants, TypedAst.Directives(directives), lattices, relations, facts, rules)
     }
   }
 

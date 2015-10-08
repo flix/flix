@@ -2,7 +2,6 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Constraint.Rule
 import ca.uwaterloo.flix.language.ast.TypedAst.Directive.{AssertRule, AssertFact}
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head.Relation
 import ca.uwaterloo.flix.language.ast.TypedAst.Term
 import ca.uwaterloo.flix.language.ast.TypedAst.Term.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
@@ -41,7 +40,7 @@ class Solver(root: TypedAst.Root) {
       }
     }
 
-    evalDirectives()
+    directives()
   }
 
   /**
@@ -178,17 +177,28 @@ class Solver(root: TypedAst.Root) {
     }
   }
 
-  def evalDirectives(): Unit = {
-    for (directive <- root.directives) {
-      directive match {
-        case d: Directive.Print => evalPrint(d)
-        case d: Directive.AssertFact => checkAssertedFact(d)
-        case d: Directive.AssertRule => checkAssertRule(d)
-      }
+
+  /**
+   * Processes all directives in the program.
+   */
+  def directives(): Unit = {
+    for (directive <- root.directives.prints) {
+      print(directive)
+    }
+
+    for (directive <- root.directives.assertedFacts) {
+      checkAssertedFact(directive)
+    }
+
+    for (directive <- root.directives.assertedRules) {
+      checkAssertedRule(directive)
     }
   }
 
-  def evalPrint(directive: Directive.Print): Unit = {
+  /**
+   * Evaluates the given print `directive`.
+   */
+  def print(directive: Directive.Print): Unit = {
     val relation = root.relations(directive.name)
     val table = database(directive.name)
     val cols = relation.attributes.map(_.ident.name)
@@ -203,7 +213,10 @@ class Solver(root: TypedAst.Root) {
     Console.println()
   }
 
-  def checkAssertedFact(d: AssertFact) = d.fact.head match {
+  /**
+   * Verifies that the given asserted fact `d` holds in the minimal model.
+   */
+  def checkAssertedFact(d: Directive.AssertFact) = d.fact.head match {
     case Predicate.Head.Relation(name, terms, _, _) =>
       val row = terms map (t => Interpreter.evalHeadTerm(t, Map.empty))
       val table = database(name)
@@ -213,9 +226,13 @@ class Solver(root: TypedAst.Root) {
     case _ => // nop
   }
 
-  def checkAssertRule(d: AssertRule) = {
+  /**
+   * Verifies that the given asserted rule `d` holds in the minimal model.
+   */
+  def checkAssertedRule(d: Directive.AssertRule) = {
     // TODO:
   }
+
 
   // TODO: Move somewhere. Decide where
   def pretty(v: Value): String = v match {

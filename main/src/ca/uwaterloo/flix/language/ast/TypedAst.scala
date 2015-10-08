@@ -20,7 +20,7 @@ object TypedAst {
    * @param rules a list of rules.
    */
   case class Root(constants: Map[Name.Resolved, TypedAst.Definition.Constant],
-                  directives: List[TypedAst.Directive],
+                  directives: TypedAst.Directives,
                   lattices: Map[TypedAst.Type, TypedAst.Definition.Lattice],
                   relations: Map[Name.Resolved, TypedAst.Definition.Relation],
                   facts: List[TypedAst.Constraint.Fact],
@@ -93,6 +93,32 @@ object TypedAst {
 
     }
 
+  }
+
+  /**
+   * A container class for all typed directives.
+   */
+  case class Directives(directives: List[TypedAst.Directive]) extends TypedAst {
+    /**
+     * A collection fact assertions in the program.
+     */
+    val assertedFacts: List[TypedAst.Directive.AssertFact] = directives collect {
+      case d: TypedAst.Directive.AssertFact => d
+    }
+
+    /**
+     * A collection of rule assertions in the program.
+     */
+    val assertedRules: List[TypedAst.Directive.AssertRule] = directives collect {
+      case d: TypedAst.Directive.AssertRule => d
+    }
+
+    /**
+     * A collection print directives in the program.
+     */
+    val prints: List[TypedAst.Directive.Print] = directives collect {
+      case d: TypedAst.Directive.Print => d
+    }
   }
 
   /**
