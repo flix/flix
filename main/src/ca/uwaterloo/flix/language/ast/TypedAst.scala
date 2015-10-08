@@ -393,31 +393,59 @@ object TypedAst {
   /**
    * A common super-type for typed predicates.
    */
-  sealed trait Predicate extends TypedAst
+  sealed trait Predicate extends TypedAst {
+    /**
+     * The type of the predicate.
+     */
+    def tpe: TypedAst.Type
+
+    /**
+     * The source location of the predicate.
+     */
+    def loc: SourceLocation
+  }
 
   object Predicate {
 
     // TODO Add maps from String to Type for vars?
 
     /**
-     * A typed predicate that is allowed to occur in the head of a rule.
-     *
-     * @param name the name of the predicate.
-     * @param terms the terms of the predicate.
-     * @param tpe the type of the predicate.
-     * @param loc the source location.
+     * A common super-type for head predicates.
      */
-    case class Head(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate
+    sealed trait Head extends TypedAst.Predicate
+
+    object Head {
+
+      /**
+       * A typed relational predicate that occurs in the head of a rule.
+       *
+       * @param name the name of the predicate.
+       * @param terms the terms of the predicate.
+       * @param tpe the type of the predicate.
+       * @param loc the source location.
+       */
+      case class Relation(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Head
+
+    }
 
     /**
-     * A typed predicate that is allowed to occur in the body of a rule.
-     *
-     * @param name the name of the predicate.
-     * @param terms the terms of the predicate.
-     * @param tpe the type of the predicate.
-     * @param loc the source location.
+     * A common super-type for body predicates.
      */
-    case class Body(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate
+    sealed trait Body extends TypedAst.Predicate
+
+    object Body {
+
+      /**
+       * A typed relational predicate that occurs in the body of a rule.
+       *
+       * @param name the name of the predicate.
+       * @param terms the terms of the predicate.
+       * @param tpe the type of the predicate.
+       * @param loc the source location.
+       */
+      case class Relation(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Body
+
+    }
 
   }
 

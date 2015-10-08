@@ -171,16 +171,16 @@ object Typer {
      * Types the given fact `rast` under the given AST `root`.
      */
     def typer(rast: ResolvedAst.Constraint.Fact, root: ResolvedAst.Root): Validation[TypedAst.Constraint.Fact, TypeError] = {
-      Predicate.typer(rast.head, root) map TypedAst.Constraint.Fact
+      Predicate.Head.typer(rast.head, root) map TypedAst.Constraint.Fact
     }
 
     /**
      * Types the given rule `rast` under the given AST `root`.
      */
     def typer(rast: ResolvedAst.Constraint.Rule, root: ResolvedAst.Root): Validation[TypedAst.Constraint.Rule, TypeError] = {
-      val headVal = Predicate.typer(rast.head, root)
+      val headVal = Predicate.Head.typer(rast.head, root)
       // TODO: Should check that variables have consistent types?
-      val bodyVal = @@(rast.body map (p => Predicate.typer(p, root)))
+      val bodyVal = @@(rast.body map (p => Predicate.Body.typer(p, root)))
 
       @@(headVal, bodyVal) map {
         case (head, body) => TypedAst.Constraint.Rule(head, body)
@@ -429,43 +429,47 @@ object Typer {
 
   object Predicate {
 
-    // TODO: Wrap these in Head/Body.
+    object Head {
 
-    /**
-     * Types the given head predicate `rast` under the given AST `root`.
-     */
-    def typer(rast: ResolvedAst.Predicate.Head, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Head, TypeError] = rast match {
-      case ResolvedAst.Predicate.Head.Relation(name, rterms, loc) =>
-        val relation = root.relations(name)
-        val termsVal = (rterms zip relation.attributes) map {
-          case (term, ResolvedAst.Attribute(_, tpe, _)) => Term.typer(term, Type.typer(tpe), root)
-        }
+      /**
+       * Types the given head predicate `rast` under the given AST `root`.
+       */
+      def typer(rast: ResolvedAst.Predicate.Head, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Head, TypeError] = rast match {
+        case ResolvedAst.Predicate.Head.Relation(name, rterms, loc) =>
+          val relation = root.relations(name)
+          val termsVal = (rterms zip relation.attributes) map {
+            case (term, ResolvedAst.Attribute(_, tpe, _)) => Term.typer(term, Type.typer(tpe), root)
+          }
 
-        @@(termsVal) map {
-          case terms =>
-            // TODO
-            //          val vars = Validation.fold(terms, Map.empty[String, TypedAst.Type]) {
-            //            case (macc, term) => ???
-            //          }
+          @@(termsVal) map {
+            case terms =>
+              // TODO
+              //          val vars = Validation.fold(terms, Map.empty[String, TypedAst.Type]) {
+              //            case (macc, term) => ???
+              //          }
 
-            TypedAst.Predicate.Head(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
-        }
+              TypedAst.Predicate.Head.Relation(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
+          }
+      }
     }
 
-    /**
-     * Types the given body predicate `rast` under the given AST `root`.
-     */
-    def typer(rast: ResolvedAst.Predicate.Body, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Body, TypeError] = rast match {
-      case ResolvedAst.Predicate.Body.Relation(name, rterms, loc) =>
-        val relation = root.relations(name)
-        val termsVal = (rterms zip relation.attributes) map {
-          case (term, ResolvedAst.Attribute(_, tpe, _)) => Term.typer(term, Type.typer(tpe), root)
-        }
+    object Body {
+      /**
+       * Types the given body predicate `rast` under the given AST `root`.
+       */
+      def typer(rast: ResolvedAst.Predicate.Body, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Body, TypeError] = rast match {
+        case ResolvedAst.Predicate.Body.Relation(name, rterms, loc) =>
+          val relation = root.relations(name)
+          val termsVal = (rterms zip relation.attributes) map {
+            case (term, ResolvedAst.Attribute(_, tpe, _)) => Term.typer(term, Type.typer(tpe), root)
+          }
 
-        @@(termsVal) map {
-          case terms => TypedAst.Predicate.Body(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
-        }
+          @@(termsVal) map {
+            case terms => TypedAst.Predicate.Body.Relation(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
+          }
+      }
     }
+
   }
 
   object Term {

@@ -916,7 +916,7 @@ class TestTyper extends FunSuite {
     val expectedType = TypedAst.Type.Predicate(List(
       TypedAst.Type.Unit, TypedAst.Type.Bool, TypedAst.Type.Int, TypedAst.Type.Str
     ))
-    val actualType = Typer.Predicate.typer(rast, root).get.tpe
+    val actualType = Typer.Predicate.Head.typer(rast, root).get.tpe
     assertResult(expectedType)(actualType)
   }
 
@@ -949,7 +949,7 @@ class TestTyper extends FunSuite {
     val expectedType = TypedAst.Type.Predicate(List(
       TypedAst.Type.Unit, TypedAst.Type.Bool, TypedAst.Type.Int, TypedAst.Type.Str
     ))
-    val actualType = Typer.Predicate.typer(rast, root).get.tpe
+    val actualType = Typer.Predicate.Head.typer(rast, root).get.tpe
     assertResult(expectedType)(actualType)
   }
 
@@ -985,7 +985,7 @@ class TestTyper extends FunSuite {
             ResolvedAst.Literal.Bool(true, SL), SL)), SL)), SL)
 
     val expectedType = TypedAst.Type.Predicate(List(TypedAst.Type.Unit))
-    val actualType = Typer.Predicate.typer(rast, root).get.tpe
+    val actualType = Typer.Predicate.Head.typer(rast, root).get.tpe
     assertResult(expectedType)(actualType)
   }
 
@@ -1016,7 +1016,7 @@ class TestTyper extends FunSuite {
     val expectedType = TypedAst.Type.Predicate(List(
       TypedAst.Type.Unit, TypedAst.Type.Bool, TypedAst.Type.Int, TypedAst.Type.Str
     ))
-    val actualType = Typer.Predicate.typer(rast, root).get.tpe
+    val actualType = Typer.Predicate.Body.typer(rast, root).get.tpe
     assertResult(expectedType)(actualType)
   }
 

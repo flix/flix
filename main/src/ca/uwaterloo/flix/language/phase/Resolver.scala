@@ -585,8 +585,8 @@ object Resolver {
             case terms => ResolvedAst.Predicate.Head.Print(terms, loc)
           }
 
-        case WeededAst.Predicate.Head.Write(wterms, path, loc) =>
-          @@(@@(wterms map (t => Term.Head.resolve(t, namespace, syms))), Term.Head.resolve(path, namespace, syms)) map {
+        case WeededAst.Predicate.Head.Write(wterms, wpath, loc) =>
+          @@(@@(wterms map (t => Term.Head.resolve(t, namespace, syms))), Term.Head.resolve(wpath, namespace, syms)) map {
             case (terms, path) => ResolvedAst.Predicate.Head.Write(terms, path, loc)
           }
 
@@ -613,8 +613,8 @@ object Resolver {
         case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
           ResolvedAst.Predicate.Body.NotEqual(ident1, ident2, loc).toSuccess
 
-        case WeededAst.Predicate.Body.Read(wterms, path, loc) =>
-          @@(@@(wterms map (t => Term.Body.resolve(t, namespace, syms))), Term.Body.resolve(path, namespace, syms)) map {
+        case WeededAst.Predicate.Body.Read(wterms, wpath, loc) =>
+          @@(@@(wterms map (t => Term.Body.resolve(t, namespace, syms))), Term.Body.resolve(wpath, namespace, syms)) map {
             case (terms, path) => ResolvedAst.Predicate.Body.Read(terms, path, loc)
           }
       }

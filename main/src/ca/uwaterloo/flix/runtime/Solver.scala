@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Constraint.Rule
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head.Relation
 import ca.uwaterloo.flix.language.ast.TypedAst.Term
 import ca.uwaterloo.flix.language.ast.TypedAst.Term.Body
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
@@ -21,8 +21,8 @@ class Solver(root: TypedAst.Root) {
   def solve(): Unit = {
     // adds all facts to the database.
     for (fact <- root.facts) {
-      val name = fact.head.name
-      val values = fact.head.terms map (term => Interpreter.evalHeadTerm(term, Map.empty))
+      val name = fact.head.asInstanceOf[TypedAst.Predicate.Head.Relation].name // TODO: Cast
+      val values = fact.head.asInstanceOf[TypedAst.Predicate.Head.Relation].terms map (term => Interpreter.evalHeadTerm(term, Map.empty)) // TODO: Cast
       newFact(name, values)
     }
 
@@ -62,8 +62,8 @@ class Solver(root: TypedAst.Root) {
    * Evaluates the head of the given `rule` under the given environment `env0`.
    */
   def evalHead(rule: Rule, env0: Map[String, Value]) = {
-    val row = rule.head.terms map (term => Interpreter.evalHeadTerm(term, env0))
-    newFact(rule.head.name, row)
+    val row = rule.head.asInstanceOf[TypedAst.Predicate.Head.Relation].terms map (term => Interpreter.evalHeadTerm(term, env0))
+    newFact(rule.head.asInstanceOf[TypedAst.Predicate.Head.Relation].name, row)
   }
 
   /**
@@ -75,10 +75,10 @@ class Solver(root: TypedAst.Root) {
      */
     def visit(p: TypedAst.Predicate.Body, env: List[Map[String, Value]]): List[Map[String, Value]] = {
       // TODO: Replace by faster join algorithm.
-      val table = database(p.name)
+      val table = database(p.asInstanceOf[TypedAst.Predicate.Body.Relation].name)// TODO: Cast
 
       table flatMap {
-        case row => unifyRow(row, p.terms) match {
+        case row => unifyRow(row, p.asInstanceOf[TypedAst.Predicate.Body.Relation].terms) match { // TODO: Cast
           case None => List.empty
           case Some(m) => extend(env, m)
         }
@@ -148,7 +148,7 @@ class Solver(root: TypedAst.Root) {
    * Returns all rules where the given `name` occurs in a body predicate of the rule.
    */
   def dependencies(name: Name.Resolved): List[TypedAst.Constraint.Rule] = root.rules.filter {
-    case rule => rule.body.exists(p => p.name == name)
+    case rule => rule.body.exists(p => p.asInstanceOf[TypedAst.Predicate.Body.Relation].name == name) // TODO cast
   }
 
 
