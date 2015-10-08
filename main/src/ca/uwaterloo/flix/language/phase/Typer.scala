@@ -490,6 +490,10 @@ object Typer {
             case terms => TypedAst.Predicate.Body.Relation(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
           }
 
+        case ResolvedAst.Predicate.Body.Function(name, terms, loc) =>
+          // TODO
+          ???
+
         case ResolvedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
           TypedAst.Predicate.Body.NotEqual(ident1, ident2, TypedAst.Type.Bool, loc: SourceLocation).toSuccess
 

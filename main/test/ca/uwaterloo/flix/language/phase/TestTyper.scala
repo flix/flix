@@ -10,7 +10,7 @@ class TestTyper extends FunSuite {
   // TODO: Consider using real syntax?
 
   val SL = SourceLocation.Unknown
-  val Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty)
+  val Root = ResolvedAst.Root(Map.empty, List.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty)
   val Ident = ident("x")
   val RName = Name.Resolved(List("foo", "bar"))
 

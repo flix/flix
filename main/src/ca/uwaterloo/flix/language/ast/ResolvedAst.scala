@@ -8,6 +8,7 @@ object ResolvedAst {
 
   // TODO: Add directives.
   case class Root(constants: Map[Name.Resolved, ResolvedAst.Definition.Constant],
+                  directives: List[ResolvedAst.Directive],
                   enums: Map[Name.Resolved, ResolvedAst.Definition.Enum],
                   lattices: Map[ResolvedAst.Type, ResolvedAst.Definition.Lattice],
                   relations: Map[Name.Resolved, ResolvedAst.Definition.Relation],
@@ -71,6 +72,18 @@ object ResolvedAst {
      * @param body the body predicates.
      */
     case class Rule(head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body]) extends ResolvedAst.Constraint
+
+  }
+
+  sealed trait Directive
+
+  object Directive {
+
+    case class AssertFact(fact: ResolvedAst.Constraint.Fact, loc: SourceLocation) extends ResolvedAst.Directive
+
+    case class AssertRule(rule: ResolvedAst.Constraint.Rule, loc: SourceLocation) extends ResolvedAst.Directive
+
+    case class Print(name: Name.Resolved, loc: SourceLocation) extends ResolvedAst.Directive
 
   }
 
@@ -242,6 +255,15 @@ object ResolvedAst {
        * @param loc the source location.
        */
       case class Relation(name: Name.Resolved, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
+
+      /**
+       * A functional predicate that occurs in the body of a rule.
+       *
+       * @param name the name of the function.
+       * @param terms the terms of the predicate.
+       * @param loc the source location.
+       */
+      case class Function(name: Name.Resolved, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
       /**
        * A not equal predicate that occurs in the body of a rule.

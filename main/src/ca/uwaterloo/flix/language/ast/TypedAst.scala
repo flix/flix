@@ -473,12 +473,22 @@ object TypedAst {
       /**
        * A typed relational predicate that occurs in the body of a rule.
        *
-       * @param name the name of the predicate.
+       * @param name the name of the relation.
        * @param terms the terms of the predicate.
        * @param tpe the type of the predicate.
        * @param loc the source location.
        */
       case class Relation(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Body
+
+      /**
+       * A typed functional predicate that occurs in the body of a rule.
+       *
+       * @param name the name of the function.
+       * @param terms the terms of the predicate.
+       * @param tpe the type of the predicate.
+       * @param loc the source location.
+       */
+      case class Function(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Body
 
       /**
        * A typed not equal predicate that occurs in the body of a rule.

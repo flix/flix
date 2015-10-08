@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.ast.WeededAst.Root
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.util.Validation
@@ -240,6 +241,8 @@ object Resolver {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
 
+        val collectedDirectives = Directive.collect(wast, syms)
+
         val collectedEnums = Validation.fold[Name.Resolved, WeededAst.Definition.Enum, Name.Resolved, ResolvedAst.Definition.Enum, ResolverError](syms.enums) {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
@@ -257,8 +260,8 @@ object Resolver {
         val collectedFacts = Declaration.collectFacts(wast, syms)
         val collectedRules = Declaration.collectRules(wast, syms)
 
-        @@(collectedConstants, collectedEnums, collectedLattices, collectedRelations, collectedFacts, collectedRules) map {
-          case (constants, enums, lattices, relations, facts, rules) => ResolvedAst.Root(constants, enums, lattices, relations, facts, rules)
+        @@(collectedConstants, collectedDirectives, collectedEnums, collectedLattices, collectedRelations, collectedFacts, collectedRules) map {
+          case (constants, directives, enums, lattices, relations, facts, rules) => ResolvedAst.Root(constants, directives, enums, lattices, relations, facts, rules)
         }
     }
   }
@@ -315,7 +318,7 @@ object Resolver {
       def visit(wast: WeededAst.Declaration, namespace: List[String]): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = wast match {
         case WeededAst.Declaration.Namespace(name, body) =>
           @@(body map (d => visit(d, namespace ::: name.parts))) map (xs => xs.flatten)
-        case WeededAst.Declaration.Fact(whead) => Predicate.Head.resolve(whead, namespace, syms) map (p => List(ResolvedAst.Constraint.Fact(p)))
+        case fact: WeededAst.Declaration.Fact => Constraint.resolve(fact, namespace, syms) map (f => List(f))
         case _ => List.empty[ResolvedAst.Constraint.Fact].toSuccess
       }
 
@@ -326,12 +329,7 @@ object Resolver {
       def visit(wast: WeededAst.Declaration, namespace: List[String]): Validation[List[ResolvedAst.Constraint.Rule], ResolverError] = wast match {
         case WeededAst.Declaration.Namespace(name, body) =>
           @@(body map (d => visit(d, namespace ::: name.parts))) map (xs => xs.flatten)
-        case WeededAst.Declaration.Rule(whead, wbody) =>
-          val headVal = Predicate.Head.resolve(whead, namespace, syms)
-          val bodyVal = @@(wbody map (p => Predicate.Body.resolve(p, namespace, syms)))
-          @@(headVal, bodyVal) map {
-            case (head, body) => List(ResolvedAst.Constraint.Rule(head, body))
-          }
+        case rule: WeededAst.Declaration.Rule => Constraint.resolve(rule, namespace, syms) map (r => List(r))
         case _ => List.empty[ResolvedAst.Constraint.Rule].toSuccess
       }
 
@@ -394,6 +392,46 @@ object Resolver {
       }
     }
 
+  }
+
+  object Constraint {
+
+    def resolve(wast: WeededAst.Declaration.Fact, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Constraint.Fact, ResolverError] = {
+      Predicate.Head.resolve(wast.head, namespace, syms) map (p => ResolvedAst.Constraint.Fact(p))
+    }
+
+    def resolve(wast: WeededAst.Declaration.Rule, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Constraint.Rule, ResolverError] = {
+      val headVal = Predicate.Head.resolve(wast.head, namespace, syms)
+      val bodyVal = @@(wast.body map (p => Predicate.Body.resolve(p, namespace, syms)))
+      @@(headVal, bodyVal) map {
+        case (head, body) => ResolvedAst.Constraint.Rule(head, body)
+      }
+    }
+  }
+
+  object Directive {
+    def collect(wast: Root, syms: SymbolTable): Validation[List[ResolvedAst.Directive], ResolverError] = {
+      def visit(wast: WeededAst.Declaration, namespace: List[String]): Validation[List[ResolvedAst.Directive], ResolverError] = wast match {
+        case WeededAst.Declaration.Namespace(name, body) =>
+          @@(body map (d => visit(d, namespace ::: name.parts))) map (xs => xs.flatten)
+        case WeededAst.Directive.AssertFact(fact, loc) =>
+          Constraint.resolve(fact, namespace, syms) map {
+            case f => List(ResolvedAst.Directive.AssertFact(f, loc))
+          }
+
+        case WeededAst.Directive.AssertRule(rule, loc) =>
+          Constraint.resolve(rule, namespace, syms) map {
+            case r => List(ResolvedAst.Directive.AssertRule(r, loc))
+          }
+
+        case WeededAst.Directive.Print(name, loc) => syms.lookupRelation(name, namespace) map {
+          case (rname, defn) => List(ResolvedAst.Directive.Print(rname, loc))
+        }
+        case _ => List.empty[ResolvedAst.Directive].toSuccess
+      }
+
+      @@(wast.declarations map (d => visit(d, List.empty))) map (xs => xs.flatten)
+    }
   }
 
   object Literal {
