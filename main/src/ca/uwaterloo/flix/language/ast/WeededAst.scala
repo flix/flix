@@ -134,8 +134,11 @@ object WeededAst {
 
     case class FunctionOrRelation(name: Name.Unresolved, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
+    case class Print(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
+
     case class Error(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
+    case class Read(terms: List[WeededAst.Term.Body], path: WeededAst.Term.Body, loc: SourceLocation) // TODO: extends
 
     case class Body(name: Name.Unresolved, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst
 
