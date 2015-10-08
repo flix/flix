@@ -149,8 +149,23 @@ object Weeder {
             |${consoleCtx.red(s">> Too few arguments for Read# predicate.")}
            |
             |${loc.underline}
+           |A Read# predicate must have atleast two arguments.
+         """.stripMargin
+    }
+
+    /**
+     * An error raised to indicate that a write predicate has too few arguments.
+     *
+     * @param loc the location where the illegal predicate occurs.
+     */
+    case class IllegalWritePredicate(loc: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
            |
-            |A Read# predicate must have atleast two arguments.
+            |${consoleCtx.red(s">> Too few arguments for Write# predicate.")}
+           |
+            |${loc.underline}
+           |A Write# predicate must have atleast two arguments.
          """.stripMargin
     }
 
@@ -586,7 +601,11 @@ object Weeder {
             case terms => WeededAst.Predicate.Head.Print(terms, p.loc)
           }
 
-        case p: ParsedAst.Predicate.Write => ???
+        case p: ParsedAst.Predicate.Write =>
+          @@(p.terms.map(t => Term.Head.compile(t, aliases))) flatMap {
+            case terms if terms.size < 2 => IllegalWritePredicate(p.loc).toFailure
+            case terms => WeededAst.Predicate.Head.Write(terms.dropRight(1), terms.last, p.loc).toSuccess
+          }
 
         case p: ParsedAst.Predicate.Error =>
           @@(p.terms map (t => Term.Head.compile(t, aliases))) map {
@@ -611,18 +630,19 @@ object Weeder {
             case terms => WeededAst.Predicate.Body.FunctionOrRelation(p.name, terms, past.loc)
           }
 
-        case p: ParsedAst.Predicate.NotEqual => ???
+        case p: ParsedAst.Predicate.NotEqual =>
+          WeededAst.Predicate.Body.NotEqual(p.ident1, p.ident2, p.loc).toSuccess
 
         case p: ParsedAst.Predicate.Read =>
           @@(p.terms.map(t => Term.Body.compile(t))) flatMap {
-            case terms if terms.size <= 1 => IllegalReadPredicate(p.loc).toFailure
+            case terms if terms.size < 2 => IllegalReadPredicate(p.loc).toFailure
             case terms => WeededAst.Predicate.Body.Read(terms.dropRight(1), terms.last, p.loc).toSuccess
           }
 
         case p: ParsedAst.Predicate.Print => IllegalBodyPredicate(p.loc).toFailure
         case p: ParsedAst.Predicate.Write => IllegalBodyPredicate(p.loc).toFailure
         case p: ParsedAst.Predicate.Error => IllegalBodyPredicate(p.loc).toFailure
-        case p: ParsedAst.Predicate.Alias => throw Compiler.InternalCompilerError("Alias predicate should never occur here.")
+        case p: ParsedAst.Predicate.Alias => throw Compiler.InternalCompilerError("Alias predicate should already have been eliminated.")
       }
     }
 

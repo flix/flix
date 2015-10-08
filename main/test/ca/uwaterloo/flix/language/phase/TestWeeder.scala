@@ -204,6 +204,13 @@ class TestWeeder extends FunSuite {
     assert(result.isFailure)
   }
 
+  test("IllegalWritePredicate01") {
+    val input = "Write#(\"a.txt\") :- A(x)."
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Terms                                                                   //
   /////////////////////////////////////////////////////////////////////////////

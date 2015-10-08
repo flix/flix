@@ -140,6 +140,8 @@ object WeededAst {
 
       case class Print(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
+      case class Write(terms: List[WeededAst.Term.Head], path: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Predicate.Head
+
       case class Error(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
     }
@@ -149,9 +151,11 @@ object WeededAst {
 
     object Body {
 
-      case class Read(terms: List[WeededAst.Term.Body], path: WeededAst.Term.Body, loc: SourceLocation) extends WeededAst.Predicate.Body
-
       case class FunctionOrRelation(name: Name.Unresolved, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst.Predicate.Body
+
+      case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends WeededAst.Predicate.Body
+
+      case class Read(terms: List[WeededAst.Term.Body], path: WeededAst.Term.Body, loc: SourceLocation) extends WeededAst.Predicate.Body
 
     }
 

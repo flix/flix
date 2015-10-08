@@ -40,7 +40,7 @@ namespace Company {
     Worker(x) :- Intern(x, _, _, _).
 
     rel DepartmentHeadSalary(name: Str, salary: Int)
-    DepartmentHeadSalary(x, s) :- Department(_, x), Salary(x, s).
+    DepartmentHeadSalary(x, s) :- Department(_, x), Salary(x, s), x != s.
 
     rel WorkerAddress(name: Str, address: Str)
     WorkerAddress(name, address) :- Employee(name, dept), Building(address, dept).
@@ -54,6 +54,7 @@ namespace Company {
 
     Error#(x) :- Employee(x, _).
     Print#(x) :- Employee(x, _).
+    Write#(x, "a.txt") :- Employee(x, _).
     Error#(x) :- Employee(x, _), Read#(x, "foo.txt").
 
 
