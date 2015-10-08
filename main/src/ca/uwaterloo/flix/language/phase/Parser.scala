@@ -29,7 +29,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Root                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Root: Rule1[ParsedAst.Root] = rule {
-    optWS ~ zeroOrMore(Declaration) ~ optWS ~ EOI ~> ParsedAst.Root
+    optWS ~ zeroOrMore(Declaration).separatedBy(optWS) ~ optWS ~ EOI ~> ParsedAst.Root
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -41,7 +41,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def NamespaceDeclaration: Rule1[ParsedAst.Declaration.Namespace] = rule {
-    atomic("namespace") ~ WS ~ QName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration) ~ optWS ~ '}' ~ optSC ~> ParsedAst.Declaration.Namespace
+    atomic("namespace") ~ WS ~ QName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration).separatedBy(optWS) ~ optWS ~ '}' ~ optSC ~> ParsedAst.Declaration.Namespace
   }
 
   def Definition: Rule1[ParsedAst.Definition] = rule {
@@ -186,7 +186,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def MatchExpression: Rule1[ParsedAst.Expression.Match] = {
     def MatchRule: Rule1[(ParsedAst.Pattern, ParsedAst.Expression)] = rule {
-      atomic("case") ~ optWS ~ Pattern ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~ optSC ~> ((p: ParsedAst.Pattern, e: ParsedAst.Expression) => (p, e))
+      atomic("case") ~ optWS ~ Pattern ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~ optSC ~ optWS ~> ((p: ParsedAst.Pattern, e: ParsedAst.Expression) => (p, e))
     }
 
     rule {
@@ -509,11 +509,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def optSC: Rule0 = rule {
-    optWS ~ optional(";") ~ optWS
+    optional(optWS ~ ";")
   }
 
   def optDotOrSC: Rule0 = rule {
-    optWS ~ optional("." | ";") ~ optWS
+     optional(optWS ~ "." | ";")
   }
 
   def NewLine: Rule0 = rule {

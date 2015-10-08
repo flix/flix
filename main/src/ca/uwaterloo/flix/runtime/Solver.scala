@@ -1,16 +1,53 @@
 package ca.uwaterloo.flix.runtime
 
+import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.TypedAst.Constraint.Rule
 import ca.uwaterloo.flix.language.ast.TypedAst.Directive.{AssertRule, AssertFact}
 import ca.uwaterloo.flix.language.ast.TypedAst.Term
 import ca.uwaterloo.flix.language.ast.TypedAst.Term.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
-import ca.uwaterloo.flix.util.AsciiTable
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Name, TypedAst}
+import ca.uwaterloo.flix.util.{Validation, AsciiTable}
+import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
 class Solver(root: TypedAst.Root) {
+
+  import SolverError._
+
+  /**
+   * A common super-type for solver errors.
+   */
+  sealed trait SolverError {
+    /**
+     * Returns a human readable string representation of the error.
+     */
+    def format: String
+  }
+
+  object SolverError {
+
+    implicit val consoleCtx = Compiler.ConsoleCtx
+
+    /**
+     * An error raised to indicate that the asserted fact does not hold in the minimal model.
+     *
+     * @param loc the location of the asserted fact.
+     */
+    case class AssertedFactViolated(loc: SourceLocation) extends SolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SOLVER ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> Assertion violation. The asserted fact does not hold in the minimal model!")}
+           |
+           |${loc.underline}
+         """.stripMargin
+    }
+
+
+  }
+
 
   val database = mutable.Map.empty[Name.Resolved, List[List[Value]]]
 
@@ -186,13 +223,16 @@ class Solver(root: TypedAst.Root) {
       print(directive)
     }
 
-    for (directive <- root.directives.assertedFacts) {
-      checkAssertedFact(directive)
+    val assertedFacts = @@(root.directives.assertedFacts map checkAssertedFact)
+    if (assertedFacts.hasErrors) {
+      assertedFacts.errors.foreach(e => println(e.format))
     }
 
     for (directive <- root.directives.assertedRules) {
       checkAssertedRule(directive)
     }
+
+
   }
 
   /**
@@ -216,14 +256,17 @@ class Solver(root: TypedAst.Root) {
   /**
    * Verifies that the given asserted fact `d` holds in the minimal model.
    */
-  def checkAssertedFact(d: Directive.AssertFact) = d.fact.head match {
+  // TODO: Use Validation and nice error mesages
+  def checkAssertedFact(d: Directive.AssertFact): Validation[Unit, SolverError] = d.fact.head match {
     case Predicate.Head.Relation(name, terms, _, _) =>
       val row = terms map (t => Interpreter.evalHeadTerm(t, Map.empty))
       val table = database(name)
-      if (!(table contains row)) {
-        throw new RuntimeException("Assertion violation!")
+      if (table contains row) {
+        ().toSuccess
+      } else {
+        AssertedFactViolated(d.loc).toFailure
       }
-    case _ => // nop
+    case _ => ().toSuccess
   }
 
   /**
