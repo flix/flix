@@ -327,8 +327,8 @@ object Resolver {
         case WeededAst.Declaration.Namespace(name, body) =>
           @@(body map (d => visit(d, namespace ::: name.parts))) map (xs => xs.flatten)
         case WeededAst.Declaration.Rule(whead, wbody) =>
-          val headVal = Predicate.Head.resolve(whead.asInstanceOf[WeededAst.Predicate.Head.FunctionOrRelation], namespace, syms) // TODO: Cast
-        val bodyVal = @@(wbody map (p => Predicate.Body.resolve(p, namespace, syms)))
+          val headVal = Predicate.Head.resolve(whead, namespace, syms)
+          val bodyVal = @@(wbody map (p => Predicate.Body.resolve(p, namespace, syms)))
           @@(headVal, bodyVal) map {
             case (head, body) => List(ResolvedAst.Constraint.Rule(head, body))
           }
@@ -572,12 +572,27 @@ object Resolver {
        * Performs symbol resolution in the given head predicate `wast` in the given `namespace` with the given symbol table `syms`.
        */
       def resolve(wast: WeededAst.Predicate.Head, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Head, ResolverError] = wast match {
-          // TODO: Must disambiguate
+        // TODO: Must disambiguate
         case WeededAst.Predicate.Head.FunctionOrRelation(name, wterms, loc) =>
           syms.lookupRelation(name, namespace) flatMap {
-            case (rname, defn) => @@(wterms map (term => Term.Head.resolve(term, namespace, syms))) map {
+            case (rname, defn) => @@(wterms map (t => Term.Head.resolve(t, namespace, syms))) map {
               case terms => ResolvedAst.Predicate.Head.Relation(rname, terms, loc)
             }
+          }
+
+        case WeededAst.Predicate.Head.Print(wterms, loc) =>
+          @@(wterms map (t => Term.Head.resolve(t, namespace, syms))) map {
+            case terms => ResolvedAst.Predicate.Head.Print(terms, loc)
+          }
+
+        case WeededAst.Predicate.Head.Write(wterms, path, loc) =>
+          @@(@@(wterms map (t => Term.Head.resolve(t, namespace, syms))), Term.Head.resolve(path, namespace, syms)) map {
+            case (terms, path) => ResolvedAst.Predicate.Head.Write(terms, path, loc)
+          }
+
+        case WeededAst.Predicate.Head.Error(wterms, loc) =>
+          @@(wterms map (t => Term.Head.resolve(t, namespace, syms))) map {
+            case terms => ResolvedAst.Predicate.Head.Error(terms, loc)
           }
       }
     }
@@ -588,13 +603,20 @@ object Resolver {
        */
       def resolve(wast: WeededAst.Predicate.Body, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Body, ResolverError] = wast match {
         case WeededAst.Predicate.Body.FunctionOrRelation(name, wterms, loc) =>
+          // TODO: Must disambiguate
           syms.lookupRelation(name, namespace) flatMap {
-            case (rname, defn) => @@(wterms map (term => Term.Body.resolve(term, namespace, syms))) map {
+            case (rname, defn) => @@(wterms map (t => Term.Body.resolve(t, namespace, syms))) map {
               case terms => ResolvedAst.Predicate.Body.Relation(rname, terms, loc)
             }
           }
+
         case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
-          ???
+          ResolvedAst.Predicate.Body.NotEqual(ident1, ident2, loc).toSuccess
+
+        case WeededAst.Predicate.Body.Read(wterms, path, loc) =>
+          @@(@@(wterms map (t => Term.Body.resolve(t, namespace, syms))), Term.Body.resolve(path, namespace, syms)) map {
+            case (terms, path) => ResolvedAst.Predicate.Body.Read(terms, path, loc)
+          }
       }
     }
 

@@ -6,6 +6,7 @@ trait ResolvedAst
 
 object ResolvedAst {
 
+  // TODO: Add directives.
   case class Root(constants: Map[Name.Resolved, ResolvedAst.Definition.Constant],
                   enums: Map[Name.Resolved, ResolvedAst.Definition.Enum],
                   lattices: Map[ResolvedAst.Type, ResolvedAst.Definition.Lattice],
@@ -195,9 +196,34 @@ object ResolvedAst {
        *
        * @param name the name of the relation.
        * @param terms the terms of the predicate.
-       * @param loc the location.
+       * @param loc the source location.
        */
       case class Relation(name: Name.Resolved, terms: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Predicate.Head
+
+      /**
+       * A special print predicate that occurs in the head of a fact/rule.
+       *
+       * @param terms the terms of the predicate.
+       * @param loc the source location.
+       */
+      case class Print(terms: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Predicate.Head
+
+      /**
+       * A special write predicate that occurs in the head of a fact/rule.
+       *
+       * @param terms the terms of the predicate.
+       * @param path the path to write to.
+       * @param loc the source location.
+       */
+      case class Write(terms: List[ResolvedAst.Term.Head], path: ResolvedAst.Term.Head, loc: SourceLocation) extends ResolvedAst.Predicate.Head
+
+      /**
+       * A special error predicate that occurs in the head of a fact/rule.
+       *
+       * @param terms the terms of the predicate.
+       * @param loc the source location.
+       */
+      case class Error(terms: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
     }
 
@@ -213,9 +239,23 @@ object ResolvedAst {
        *
        * @param name the name of the relation.
        * @param terms the terms of the predicate.
-       * @param loc the location.
+       * @param loc the source location.
        */
       case class Relation(name: Name.Resolved, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
+
+      /**
+       * A not equal predicate that occurs in the body of a rule.
+       *
+       * @param ident1 the name of the first variable.
+       * @param ident2 the name of the second variable.
+       * @param loc the source location.
+       */
+      case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends ResolvedAst.Predicate.Body
+
+      /**
+       * A special read predicate that occurs in the body of a rule.
+       */
+      case class Read(terms: List[ResolvedAst.Term.Body], path: ResolvedAst.Term.Body, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
     }
 

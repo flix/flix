@@ -2,6 +2,8 @@ package ca.uwaterloo.flix.language.ast
 
 import scala.collection.immutable.Seq
 
+// TODO: Some questions about the utility of Print, Read and Write and whether they occur in the right place.
+
 /**
  * A common-super type for all parsed AST nodes.
  */
