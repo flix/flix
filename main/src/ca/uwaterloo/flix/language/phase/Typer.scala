@@ -429,24 +429,27 @@ object Typer {
 
   object Predicate {
 
+    // TODO: Wrap these in Head/Body.
+
     /**
      * Types the given head predicate `rast` under the given AST `root`.
      */
-    def typer(rast: ResolvedAst.Predicate.Head, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Head, TypeError] = {
-      val relation = root.relations(rast.name)
-      val termsVal = (rast.terms zip relation.attributes) map {
-        case (term, ResolvedAst.Attribute(_, tpe, _)) => Term.typer(term, Type.typer(tpe), root)
-      }
+    def typer(rast: ResolvedAst.Predicate.Head, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Head, TypeError] = rast match {
+      case ResolvedAst.Predicate.Head.Relation(name, rterms, loc) =>
+        val relation = root.relations(name)
+        val termsVal = (rterms zip relation.attributes) map {
+          case (term, ResolvedAst.Attribute(_, tpe, _)) => Term.typer(term, Type.typer(tpe), root)
+        }
 
-      @@(termsVal) map {
-        case terms =>
-          // TODO
-          //          val vars = Validation.fold(terms, Map.empty[String, TypedAst.Type]) {
-          //            case (macc, term) => ???
-          //          }
+        @@(termsVal) map {
+          case terms =>
+            // TODO
+            //          val vars = Validation.fold(terms, Map.empty[String, TypedAst.Type]) {
+            //            case (macc, term) => ???
+            //          }
 
-          TypedAst.Predicate.Head(rast.name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), rast.loc)
-      }
+            TypedAst.Predicate.Head(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
+        }
     }
 
     /**

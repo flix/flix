@@ -170,7 +170,7 @@ class TestTyper extends FunSuite {
       ), SL)
     ))
 
-    val rast = ResolvedAst.Constraint.Fact(ResolvedAst.Predicate.Head(
+    val rast = ResolvedAst.Constraint.Fact(ResolvedAst.Predicate.Head.Relation(
       rname, List(
         ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Str("John Doe", SL), SL),
         ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Int(42, SL), SL)
@@ -194,7 +194,7 @@ class TestTyper extends FunSuite {
       ), SL)
     ))
 
-    val head = ResolvedAst.Predicate.Head(rname, List(ResolvedAst.Term.Head.Var(x, SL), ResolvedAst.Term.Head.Var(z, SL)), SL)
+    val head = ResolvedAst.Predicate.Head.Relation(rname, List(ResolvedAst.Term.Head.Var(x, SL), ResolvedAst.Term.Head.Var(z, SL)), SL)
 
     val body = List(
       ResolvedAst.Predicate.Body(rname, List(ResolvedAst.Term.Body.Var(x, SL), ResolvedAst.Term.Body.Var(y, SL)), SL),
@@ -906,7 +906,7 @@ class TestTyper extends FunSuite {
     ))
 
     val rast =
-      ResolvedAst.Predicate.Head(rname, List(
+      ResolvedAst.Predicate.Head.Relation(rname, List(
         ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Unit(SL), SL),
         ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
         ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Int(42, SL), SL),
@@ -939,7 +939,7 @@ class TestTyper extends FunSuite {
     ))
 
     val rast =
-      ResolvedAst.Predicate.Head(rname, List(
+      ResolvedAst.Predicate.Head.Relation(rname, List(
         ResolvedAst.Term.Head.Var(x, SL),
         ResolvedAst.Term.Head.Var(y, SL),
         ResolvedAst.Term.Head.Var(z, SL),
@@ -978,7 +978,7 @@ class TestTyper extends FunSuite {
       ))
 
     val rast =
-      ResolvedAst.Predicate.Head(relationName, List(
+      ResolvedAst.Predicate.Head.Relation(relationName, List(
         ResolvedAst.Term.Head.Apply(
           functionName,
           List(ResolvedAst.Term.Head.Lit(

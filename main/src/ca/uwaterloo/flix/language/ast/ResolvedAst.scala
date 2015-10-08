@@ -28,7 +28,6 @@ object ResolvedAst {
     case class Constant(name: Name.Resolved, exp: ResolvedAst.Expression, tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Definition
 
 
-
     case class Enum(name: Name.Resolved, cases: Map[String, ResolvedAst.Type.Tag], loc: SourceLocation) extends ResolvedAst.Definition
 
     /**
@@ -180,16 +179,24 @@ object ResolvedAst {
 
   }
 
+  sealed trait Predicate
+
   object Predicate {
 
-    /**
-     * A predicate that is allowed to occur in the head of a rule.
-     *
-     * @param name the name of the predicate.
-     * @param terms the terms of the predicate.
-     * @param loc the location.
-     */
-    case class Head(name: Name.Resolved, terms: List[ResolvedAst.Term.Head], loc: SourceLocation)
+    sealed trait Head extends ResolvedAst.Predicate
+
+    object Head {
+
+      /**
+       * A relational predicate that occurs in the head of a fact/rule.
+       *
+       * @param name the name of the predicate.
+       * @param terms the terms of the predicate.
+       * @param loc the location.
+       */
+      case class Relation(name: Name.Resolved, terms: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Predicate.Head
+
+    }
 
     /**
      * A predicate that is allowed to occur in the body of a rule.

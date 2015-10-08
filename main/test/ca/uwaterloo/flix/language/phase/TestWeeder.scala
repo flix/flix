@@ -256,21 +256,21 @@ class TestWeeder extends FunSuite {
     assert(result.isFailure)
   }
 
-  test("RuleIsFact01") {
+  ignore("RuleIsFact01") {
     val input = "P(x) :- x := 42"
     val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
     val result = Weeder.Declaration.compile(past)
     assert(result.isInstanceOf[WeededAst.Declaration.Fact])
   }
 
-  test("RuleIsFact02") {
+  ignore("RuleIsFact02") {
     val input = "P(x, y) :- x := 21, y := 42"
     val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
     val result = Weeder.Declaration.compile(past)
     assert(result.isInstanceOf[WeededAst.Declaration.Fact])
   }
 
-  test("RuleIsFact03") {
+  ignore("RuleIsFact03") {
     val input = "P(f(x, y)) :- x := 21, y := 42"
     val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
     val result = Weeder.Declaration.compile(past)

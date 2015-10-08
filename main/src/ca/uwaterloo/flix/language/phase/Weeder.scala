@@ -301,7 +301,7 @@ object Weeder {
      */
     def compile(past: ParsedAst.Declaration.Fact): Validation[WeededAst.Declaration.Fact, WeederError] =
       Predicate.Head.compile(past.head) map {
-        case p => WeededAst.Declaration.Fact(p.asInstanceOf[WeededAst.Predicate.Head.FunctionOrRelation]) // TODO: Replace cast by check
+        case p => WeededAst.Declaration.Fact(p)
       }
 
     /**

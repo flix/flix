@@ -276,6 +276,7 @@ object Resolver {
       case WeededAst.Declaration.Fact(head) => syms.toSuccess
       case WeededAst.Declaration.Rule(head, body) => syms.toSuccess
       case defn: WeededAst.Definition => symbolsOf(defn, namespace, syms)
+      case dir: WeededAst.Directive => syms.toSuccess
     }
 
     /**
@@ -571,10 +572,11 @@ object Resolver {
        * Performs symbol resolution in the given head predicate `wast` in the given `namespace` with the given symbol table `syms`.
        */
       def resolve(wast: WeededAst.Predicate.Head, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Head, ResolverError] = wast match {
+          // TODO: Must disambiguate
         case WeededAst.Predicate.Head.FunctionOrRelation(name, wterms, loc) =>
           syms.lookupRelation(name, namespace) flatMap {
             case (rname, defn) => @@(wterms map (term => Term.Head.resolve(term, namespace, syms))) map {
-              case terms => ResolvedAst.Predicate.Head(rname, terms, loc)
+              case terms => ResolvedAst.Predicate.Head.Relation(rname, terms, loc)
             }
           }
       }
@@ -591,6 +593,8 @@ object Resolver {
               case terms => ResolvedAst.Predicate.Body(rname, terms, loc)
             }
           }
+        case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
+          ???
       }
     }
 
