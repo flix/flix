@@ -30,14 +30,14 @@ object Resolver {
     case class DuplicateDefinition(name: Name.Resolved, loc1: SourceLocation, loc2: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.formatSource}")}
-            |
+           |
             |${consoleCtx.red(s">> Duplicate definition of the name '${name.format}'.")}
-            |
+           |
             |First definition was here:
-            |${loc1.underline}
-            |Second definition was here:
-            |${loc2.underline}
-            |Tip: Consider renaming or removing one of the definitions.
+           |${loc1.underline}
+           |Second definition was here:
+           |${loc2.underline}
+           |Tip: Consider renaming or removing one of the definitions.
          """.stripMargin
     }
 
@@ -64,9 +64,9 @@ object Resolver {
     case class UnresolvedConstantReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
-            |
+           |
             |${consoleCtx.red(s">> Unresolved reference to constant '${name.format}'.")}
-            |
+           |
             |${loc.underline}
          """.stripMargin
     }
@@ -81,9 +81,9 @@ object Resolver {
     case class UnresolvedEnumReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
-            |
+           |
             |${consoleCtx.red(s">> Unresolved reference to enum '${name.format}'.")}
-            |
+           |
             |${loc.underline}
          """.stripMargin
     }
@@ -100,12 +100,12 @@ object Resolver {
         val tags = enum.cases.keySet
         val formattedTags = tags.map(t => "'" + t + "'").mkString(", ")
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
-            |
+           |
             |${consoleCtx.red(s">> Unresolved reference to tag '$tag'.")}
-            |
+           |
             |${loc.underline}
-            |${consoleCtx.green(s"Did you mean: '${Levenshtein.bestMatch(tag, tags).get}' ?")}
-            |
+           |${consoleCtx.green(s"Did you mean: '${Levenshtein.bestMatch(tag, tags).get}' ?")}
+           |
             |The enum '${enum.ident.format}' declares the tags: $formattedTags at '${enum.loc.format}'.
          """.stripMargin
       }
@@ -122,9 +122,9 @@ object Resolver {
     case class UnresolvedRelationReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
-            |
+           |
             |${consoleCtx.red(s">> Unresolved reference to relation '${name.format}'.")}
-            |
+           |
             |${loc.underline}
          """.stripMargin
     }
@@ -139,9 +139,9 @@ object Resolver {
     case class UnresolvedTypeReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
-            |
+           |
             |${consoleCtx.red(s">> Unresolved reference to type '${name.format}'.")}
-            |
+           |
             |${loc.underline}
          """.stripMargin
     }
@@ -324,10 +324,10 @@ object Resolver {
     def collectRules(wast: WeededAst.Root, syms: SymbolTable): Validation[List[ResolvedAst.Constraint.Rule], ResolverError] = {
       def visit(wast: WeededAst.Declaration, namespace: List[String]): Validation[List[ResolvedAst.Constraint.Rule], ResolverError] = wast match {
         case WeededAst.Declaration.Namespace(name, body) =>
-          @@(body map (d => visit(d, namespace ::: name.parts.toList))) map (xs => xs.flatten)
+          @@(body map (d => visit(d, namespace ::: name.parts))) map (xs => xs.flatten)
         case WeededAst.Declaration.Rule(whead, wbody) =>
-          val headVal = Predicate.Head.resolve(whead.asInstanceOf[WeededAst.Predicate.FunctionOrRelation], namespace, syms) // TODO: Cast
-          val bodyVal = @@(wbody map (p => Predicate.Body.resolve(p, namespace, syms)))
+          val headVal = Predicate.Head.resolve(whead.asInstanceOf[WeededAst.Predicate.Head.FunctionOrRelation], namespace, syms) // TODO: Cast
+        val bodyVal = @@(wbody map (p => Predicate.Body.resolve(p, namespace, syms)))
           @@(headVal, bodyVal) map {
             case (head, body) => List(ResolvedAst.Constraint.Rule(head, body))
           }
@@ -570,30 +570,27 @@ object Resolver {
       /**
        * Performs symbol resolution in the given head predicate `wast` in the given `namespace` with the given symbol table `syms`.
        */
-      def resolve(wast: WeededAst.Predicate.FunctionOrRelation, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Head, ResolverError] = {
-        val WeededAst.Predicate.FunctionOrRelation(name, wterms, loc) = wast
-
-        syms.lookupRelation(name, namespace) flatMap {
-          case (rname, defn) => @@(wterms map (term => Term.Head.resolve(term, namespace, syms))) map {
-            case terms => ResolvedAst.Predicate.Head(rname, terms, loc)
+      def resolve(wast: WeededAst.Predicate.Head, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Head, ResolverError] = wast match {
+        case WeededAst.Predicate.Head.FunctionOrRelation(name, wterms, loc) =>
+          syms.lookupRelation(name, namespace) flatMap {
+            case (rname, defn) => @@(wterms map (term => Term.Head.resolve(term, namespace, syms))) map {
+              case terms => ResolvedAst.Predicate.Head(rname, terms, loc)
+            }
           }
-        }
       }
-
     }
 
     object Body {
       /**
        * Performs symbol resolution in the given body predicate `wast` in the given `namespace` with the given symbol table `syms`.
        */
-      def resolve(wast: WeededAst.Predicate.Body, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Body, ResolverError] = {
-        val WeededAst.Predicate.Body(name, wterms, loc) = wast
-
-        syms.lookupRelation(name, namespace) flatMap {
-          case (rname, defn) => @@(wterms map (term => Term.Body.resolve(term, namespace, syms))) map {
-            case terms => ResolvedAst.Predicate.Body(rname, terms, loc)
+      def resolve(wast: WeededAst.Predicate.Body, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Body, ResolverError] = wast match {
+        case WeededAst.Predicate.Body.FunctionOrRelation(name, wterms, loc) =>
+          syms.lookupRelation(name, namespace) flatMap {
+            case (rname, defn) => @@(wterms map (term => Term.Body.resolve(term, namespace, syms))) map {
+              case terms => ResolvedAst.Predicate.Body(rname, terms, loc)
+            }
           }
-        }
       }
     }
 

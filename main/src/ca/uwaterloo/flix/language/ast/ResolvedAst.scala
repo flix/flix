@@ -2,6 +2,8 @@ package ca.uwaterloo.flix.language.ast
 
 trait ResolvedAst
 
+// TODO: DOC
+
 object ResolvedAst {
 
   case class Root(constants: Map[Name.Resolved, ResolvedAst.Definition.Constant],
@@ -24,6 +26,8 @@ object ResolvedAst {
      * @param loc the location.
      */
     case class Constant(name: Name.Resolved, exp: ResolvedAst.Expression, tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Definition
+
+
 
     case class Enum(name: Name.Resolved, cases: Map[String, ResolvedAst.Type.Tag], loc: SourceLocation) extends ResolvedAst.Definition
 

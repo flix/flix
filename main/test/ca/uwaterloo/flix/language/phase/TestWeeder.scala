@@ -132,7 +132,7 @@ class TestWeeder extends FunSuite {
 
 
   /////////////////////////////////////////////////////////////////////////////
-  // Predicates                                                              //
+  // Predicates, Facts and Rules                                             //
   /////////////////////////////////////////////////////////////////////////////
   test("IllegalHeadPredicate.Alias01") {
     val input = "x := y."
@@ -192,6 +192,13 @@ class TestWeeder extends FunSuite {
 
   test("IllegalBodyPredicate.Error01") {
     val input = "A(x, y) :- Error#(x, y)."
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
+  }
+
+  test("IllegalReadPredicate01") {
+    val input = "A(x, y) :- Read#(\"a.txt\")."
     val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
     val result = Weeder.Declaration.compile(past)
     assert(result.isFailure)

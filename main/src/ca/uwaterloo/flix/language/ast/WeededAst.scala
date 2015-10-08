@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
+// TODO: DOC
+
 trait WeededAst
 
 object WeededAst {
@@ -12,7 +14,7 @@ object WeededAst {
 
     case class Namespace(name: Name.Unresolved, body: List[WeededAst.Declaration]) extends WeededAst.Declaration
 
-    case class Fact(head: WeededAst.Predicate.FunctionOrRelation) extends WeededAst.Declaration
+    case class Fact(head: WeededAst.Predicate.Head) extends WeededAst.Declaration
 
     case class Rule(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body]) extends WeededAst.Declaration
 
@@ -130,18 +132,28 @@ object WeededAst {
 
   object Predicate {
 
-    sealed trait Head extends Predicate
+    sealed trait Head extends WeededAst.Predicate
 
-    case class FunctionOrRelation(name: Name.Unresolved, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
+    object Head {
 
-    case class Print(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
+      case class FunctionOrRelation(name: Name.Unresolved, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
-    case class Error(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
+      case class Print(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
-    case class Read(terms: List[WeededAst.Term.Body], path: WeededAst.Term.Body, loc: SourceLocation) // TODO: extends
+      case class Error(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
-    case class Body(name: Name.Unresolved, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst
+    }
 
+
+    sealed trait Body extends WeededAst.Predicate
+
+    object Body {
+
+      case class Read(terms: List[WeededAst.Term.Body], path: WeededAst.Term.Body, loc: SourceLocation) extends WeededAst.Predicate.Body
+
+      case class FunctionOrRelation(name: Name.Unresolved, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst.Predicate.Body
+
+    }
 
   }
 

@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.Compiler
-import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.{WeededAst, SourceLocation, ParsedAst, Name}
 import ca.uwaterloo.flix.util.Validation
 import Validation._
@@ -123,7 +122,6 @@ object Weeder {
          """.stripMargin
     }
 
-
     /**
      * An error raised to indicate that a predicate is not allowed in the body rule.
      *
@@ -136,6 +134,23 @@ object Weeder {
             |${consoleCtx.red(s">> Illegal predicate in the body of a rule.")}
            |
             |${loc.underline}
+         """.stripMargin
+    }
+
+    /**
+     * An error raised to indicate that a read predicate has too few arguments.
+     *
+     * @param loc the location where the illegal predicate occurs.
+     */
+    case class IllegalReadPredicate(loc: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> Too few arguments for Read# predicate.")}
+           |
+            |${loc.underline}
+           |
+            |A Read# predicate must have atleast two arguments.
          """.stripMargin
     }
 
@@ -271,7 +286,7 @@ object Weeder {
      */
     def compile(past: ParsedAst.Declaration.Fact): Validation[WeededAst.Declaration.Fact, WeederError] =
       Predicate.Head.compile(past.head) map {
-        case p => WeededAst.Declaration.Fact(p.asInstanceOf[WeededAst.Predicate.FunctionOrRelation]) // TODO: Replace cast by check
+        case p => WeededAst.Declaration.Fact(p.asInstanceOf[WeededAst.Predicate.Head.FunctionOrRelation]) // TODO: Replace cast by check
       }
 
     /**
@@ -563,19 +578,19 @@ object Weeder {
       def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Alias] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case p: ParsedAst.Predicate.FunctionOrRelation =>
           @@(p.terms.map(t => Term.Head.compile(t, aliases))) map {
-            case terms => WeededAst.Predicate.FunctionOrRelation(p.name, terms, p.loc)
+            case terms => WeededAst.Predicate.Head.FunctionOrRelation(p.name, terms, p.loc)
           }
 
         case p: ParsedAst.Predicate.Print =>
           @@(p.terms.map(t => Term.Head.compile(t, aliases))) map {
-            case terms => WeededAst.Predicate.Print(terms, p.loc)
+            case terms => WeededAst.Predicate.Head.Print(terms, p.loc)
           }
 
         case p: ParsedAst.Predicate.Write => ???
 
         case p: ParsedAst.Predicate.Error =>
           @@(p.terms map (t => Term.Head.compile(t, aliases))) map {
-            case terms => WeededAst.Predicate.Error(terms, p.loc)
+            case terms => WeededAst.Predicate.Head.Error(terms, p.loc)
           }
 
         case p: ParsedAst.Predicate.Alias => IllegalHeadPredicate(p.loc).toFailure
@@ -593,15 +608,15 @@ object Weeder {
       def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
         case p: ParsedAst.Predicate.FunctionOrRelation =>
           @@(p.terms.map(Term.Body.compile)) map {
-            case terms => WeededAst.Predicate.Body(p.name, terms, past.loc)
+            case terms => WeededAst.Predicate.Body.FunctionOrRelation(p.name, terms, past.loc)
           }
 
         case p: ParsedAst.Predicate.NotEqual => ???
 
         case p: ParsedAst.Predicate.Read =>
-          @@(p.terms.map(t => Term.Body.compile(t))) map {
-            case Nil => ??? // TODO Error
-            case terms => ??? // WeededAst.Predicate.Read(terms.dropRight(1), terms.last, p.loc)
+          @@(p.terms.map(t => Term.Body.compile(t))) flatMap {
+            case terms if terms.size <= 1 => IllegalReadPredicate(p.loc).toFailure
+            case terms => WeededAst.Predicate.Body.Read(terms.dropRight(1), terms.last, p.loc).toSuccess
           }
 
         case p: ParsedAst.Predicate.Print => IllegalBodyPredicate(p.loc).toFailure
