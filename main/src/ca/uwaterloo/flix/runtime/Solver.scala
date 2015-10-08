@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Constraint.Rule
+import ca.uwaterloo.flix.language.ast.TypedAst.Directive.{AssertRule, AssertFact}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head.Relation
 import ca.uwaterloo.flix.language.ast.TypedAst.Term
 import ca.uwaterloo.flix.language.ast.TypedAst.Term.Body
@@ -40,7 +41,7 @@ class Solver(root: TypedAst.Root) {
       }
     }
 
-    printDatabase()
+    evalDirectives()
   }
 
   /**
@@ -82,17 +83,30 @@ class Solver(root: TypedAst.Root) {
     /**
      * Extend the given environment `env` according to the given predicate `p`.
      */
-    def visit(p: TypedAst.Predicate.Body, env: List[Map[String, Value]]): List[Map[String, Value]] = {
-      // TODO: Replace by faster join algorithm.
-      val table = database(p.asInstanceOf[TypedAst.Predicate.Body.Relation].name) // TODO: Cast
+    def visit(p: TypedAst.Predicate.Body, env: List[Map[String, Value]]): List[Map[String, Value]] = p match {
+      case r: Predicate.Body.Relation => {
+        // TODO: Replace by faster join algorithm.
+        val table = database(p.asInstanceOf[TypedAst.Predicate.Body.Relation].name) // TODO: Cast
 
-      table flatMap {
-        case row => unifyRow(row, p.asInstanceOf[TypedAst.Predicate.Body.Relation].terms) match {
-          // TODO: Cast
-          case None => List.empty
-          case Some(m) => extend(env, m)
+        table flatMap {
+          case row => unifyRow(row, p.asInstanceOf[TypedAst.Predicate.Body.Relation].terms) match {
+            // TODO: Cast
+            case None => List.empty
+            case Some(m) => extend(env, m)
+          }
         }
       }
+
+      case Predicate.Body.NotEqual(ident1, ident2, _, _) =>
+        env flatMap {
+          case m =>
+            val v1 = m(ident1.name)
+            val v2 = m(ident2.name)
+            if (v1 == v2)
+              None
+            else
+              Some(m)
+        }
     }
 
     // fold the environment over every rule in the body.
@@ -164,21 +178,43 @@ class Solver(root: TypedAst.Root) {
     }
   }
 
-
-  def printDatabase(): Unit = {
-    for ((name, relation) <- root.relations) {
-      val table = database(name)
-      val cols = relation.attributes.map(_.ident.name)
-      val ascii = new AsciiTable().withCols(cols: _*)
-      for (row <- table) {
-        ascii.mkRow(row map pretty)
+  def evalDirectives(): Unit = {
+    for (directive <- root.directives) {
+      directive match {
+        case d: Directive.Print => evalPrint(d)
+        case d: Directive.AssertFact => checkAssertedFact(d)
+        case d: Directive.AssertRule => checkAssertRule(d)
       }
-
-      Console.println(relation.name)
-      ascii.write(System.out)
-      Console.println()
-      Console.println()
     }
+  }
+
+  def evalPrint(directive: Directive.Print): Unit = {
+    val relation = root.relations(directive.name)
+    val table = database(directive.name)
+    val cols = relation.attributes.map(_.ident.name)
+    val ascii = new AsciiTable().withCols(cols: _*)
+    for (row <- table) {
+      ascii.mkRow(row map pretty)
+    }
+
+    Console.println(relation.name)
+    ascii.write(System.out)
+    Console.println()
+    Console.println()
+  }
+
+  def checkAssertedFact(d: AssertFact) = d.fact.head match {
+    case Predicate.Head.Relation(name, terms, _, _) =>
+      val row = terms map (t => Interpreter.evalHeadTerm(t, Map.empty))
+      val table = database(name)
+      if (!(table contains row)) {
+        throw new RuntimeException("Assertion violation!")
+      }
+    case _ => // nop
+  }
+
+  def checkAssertRule(d: AssertRule) = {
+    // TODO:
   }
 
   // TODO: Move somewhere. Decide where
