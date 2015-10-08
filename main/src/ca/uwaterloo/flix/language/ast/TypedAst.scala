@@ -82,7 +82,12 @@ object TypedAst {
      * @param body the body predicates.
      */
     // TODO: Equip with bindings: Map[String, TypedAst.Type]
-    case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body]) extends TypedAst.Constraint
+    case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body]) extends TypedAst.Constraint {
+
+      // TODO: Consider these?
+      def filters: List[TypedAst.Predicate.Body.NotEqual] = ???
+
+    }
 
   }
 
@@ -417,7 +422,7 @@ object TypedAst {
     object Head {
 
       /**
-       * A typed relational predicate that occurs in the head of a rule.
+       * A typed relational predicate that occurs in the head of a fact/rule.
        *
        * @param name the name of the predicate.
        * @param terms the terms of the predicate.
@@ -425,6 +430,11 @@ object TypedAst {
        * @param loc the source location.
        */
       case class Relation(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Head
+
+      /**
+       * A typed error predicate that occurs in the head of a rule.
+       */
+      case class Error(tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Head
 
     }
 
@@ -444,6 +454,16 @@ object TypedAst {
        * @param loc the source location.
        */
       case class Relation(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Body
+
+      /**
+       * A typed not equal predicate that occurs in the body of a rule.
+       *
+       * @param ident1 the name of the first variable.
+       * @param ident2 the name of the second variable.
+       * @param tpe the type of the predicate.
+       * @param loc the source location.
+       */
+      case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Body
 
     }
 

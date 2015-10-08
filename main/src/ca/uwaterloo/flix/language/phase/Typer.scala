@@ -450,6 +450,15 @@ object Typer {
 
               TypedAst.Predicate.Head.Relation(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
           }
+
+        case ResolvedAst.Predicate.Head.Print(terms, loc) =>
+          // TODO: Again, how can we type the terms?
+          ???
+
+        case ResolvedAst.Predicate.Head.Error(rterms, loc) =>
+          // TODO: Currently terms are not supported in Error predicates.
+          // TODO: The type assigned here is kind of spurious...
+          TypedAst.Predicate.Head.Error(TypedAst.Type.Bool, loc).toSuccess
       }
     }
 
@@ -467,6 +476,11 @@ object Typer {
           @@(termsVal) map {
             case terms => TypedAst.Predicate.Body.Relation(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
           }
+
+        case ResolvedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
+          TypedAst.Predicate.Body.NotEqual(ident1, ident2, TypedAst.Type.Bool, loc: SourceLocation).toSuccess
+
+
       }
     }
 
