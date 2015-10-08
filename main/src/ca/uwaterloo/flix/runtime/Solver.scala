@@ -122,10 +122,10 @@ class Solver(root: TypedAst.Root) {
     def visit(p: TypedAst.Predicate.Body, env: List[Map[String, Value]]): List[Map[String, Value]] = p match {
       case r: Predicate.Body.Relation => {
         // TODO: Replace by faster join algorithm.
-        val table = database(p.asInstanceOf[TypedAst.Predicate.Body.Relation].name) // TODO: Cast
+        val table = database(r.name)
 
         table flatMap {
-          case row => unifyRow(row, p.asInstanceOf[TypedAst.Predicate.Body.Relation].terms) match {
+          case row => unifyRow(row, r.terms) match {
             // TODO: Cast
             case None => List.empty
             case Some(m) => extend(env, m)
