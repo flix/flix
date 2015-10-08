@@ -52,9 +52,10 @@ namespace Company {
 
     print WorkerAddress.
 
+// TODO: Rename to trace?
     Print#(x) :- Employee(x, _).
     Write#(x, "tmp.txt") :- Employee(x, _).
 //    Error#(x) :- Employee(x, _), Read#(x, "tmp.txt").
-
+// TODO: Figure out how to deal with Read.
 
 }
