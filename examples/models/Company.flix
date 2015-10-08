@@ -54,8 +54,8 @@ namespace Company {
 
     Error#(x) :- Employee(x, _).
     Print#(x) :- Employee(x, _).
-    Write#(x, "a.txt") :- Employee(x, _).
-    Error#(x) :- Employee(x, _), Read#(x, "foo.txt").
+    Write#(x, "tmp.txt") :- Employee(x, _).
+    Error#(x) :- Employee(x, _), Read#(x, "tmp.txt").
 
 
 }

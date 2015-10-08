@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
+// TODO: The documentation is not fully consistent with when something is an AST node.
+
 /**
  * A common super-type for typed AST nodes.
  */
@@ -432,9 +434,32 @@ object TypedAst {
       case class Relation(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Head
 
       /**
-       * A typed error predicate that occurs in the head of a rule.
+       * A typed print predicate that occurs in the head of a rule.
+       *
+       * @param terms the terms of the predicate.
+       * @param tpe the type of the predicate.
+       * @param loc the source location.
        */
-      case class Error(tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class Print(terms: List[TypedAst.Term.Head], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Head
+
+      /**
+       * A typed write predicate that occurs in the head of a rule.
+       *
+       * @param terms the terms of the predicate.
+       * @param path the path to write to.
+       * @param tpe the type of the predicate.
+       * @param loc the source location.
+       */
+      case class Write(terms: List[TypedAst.Term.Head], path: TypedAst.Term.Head, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Head
+
+      /**
+       * A typed error predicate that occurs in the head of a rule.
+       *
+       * @param terms the terms of the predicate.
+       * @param tpe the type of the predicate.
+       * @param loc the source location.
+       */
+      case class Error(terms: List[TypedAst.Term.Head], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Head
 
     }
 
@@ -464,6 +489,17 @@ object TypedAst {
        * @param loc the source location.
        */
       case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Body
+
+      /**
+       * A typed read predicate that occurs in the head of a rule.
+       *
+       * @param terms the terms of the predicate.
+       * @param path the path to read from.
+       * @param tpe the type of the predicate.
+       * @param loc the source location.
+       */
+      case class Read(terms: List[TypedAst.Term.Body], path: TypedAst.Term.Body, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Body
+
 
     }
 
@@ -571,6 +607,11 @@ object TypedAst {
   sealed trait Type extends TypedAst
 
   object Type {
+
+    /**
+     * A type variable.
+     */
+    case class Var(x: String) extends TypedAst.Type
 
     /**
      * An AST node representing the Unit type.

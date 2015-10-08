@@ -9,6 +9,7 @@ object Typer {
 
   // TODO: when to use inner visit?
   // TODO: use pattern match on rast
+  // TODO: Probably need to rewrite this to be unification based.
 
   import TypeError._
 
@@ -451,14 +452,26 @@ object Typer {
               TypedAst.Predicate.Head.Relation(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
           }
 
-        case ResolvedAst.Predicate.Head.Print(terms, loc) =>
-          // TODO: Again, how can we type the terms?
-          ???
+        case ResolvedAst.Predicate.Head.Print(rterms, loc) =>
+          // TODO: This needs to use proper unification
+          @@(rterms map (t => Term.typer(t, TypedAst.Type.Var("x"), root))) map {
+            // TODO: The use of Type.Bool here is kind of spurious.
+            case terms => TypedAst.Predicate.Head.Print(terms, TypedAst.Type.Bool, loc)
+          }
+
+        case ResolvedAst.Predicate.Head.Write(rterms, rpath, loc) =>
+          // TODO: This needs to use proper unification
+          @@(@@(rterms map (t => Term.typer(t, TypedAst.Type.Var("x"), root))), Term.typer(rpath, TypedAst.Type.Str, root)) map {
+            // TODO: The use of Type.Bool here is kind of spurious.
+            case (terms, path) => TypedAst.Predicate.Head.Write(terms, path, TypedAst.Type.Bool, loc)
+          }
 
         case ResolvedAst.Predicate.Head.Error(rterms, loc) =>
-          // TODO: Currently terms are not supported in Error predicates.
-          // TODO: The type assigned here is kind of spurious...
-          TypedAst.Predicate.Head.Error(TypedAst.Type.Bool, loc).toSuccess
+          // TODO: This needs to use proper unification
+          @@(rterms map (t => Term.typer(t, TypedAst.Type.Var("x"), root))) map {
+            // TODO: The use of Type.Bool here is kind of spurious.
+            case terms => TypedAst.Predicate.Head.Error(terms, TypedAst.Type.Bool, loc)
+          }
       }
     }
 
@@ -480,6 +493,12 @@ object Typer {
         case ResolvedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
           TypedAst.Predicate.Body.NotEqual(ident1, ident2, TypedAst.Type.Bool, loc: SourceLocation).toSuccess
 
+        case ResolvedAst.Predicate.Body.Read(rterms, rpath, loc) =>
+          // TODO: This needs to use proper unification
+          @@(@@(rterms map (t => Term.typer(t, TypedAst.Type.Var("x"), root))), Term.typer(rpath, TypedAst.Type.Str, root)) map {
+            // TODO: The use of Type.Bool here is kind of spurious.
+            case (terms, path) => TypedAst.Predicate.Body.Read(terms, path, TypedAst.Type.Bool, loc)
+          }
 
       }
     }
@@ -487,6 +506,8 @@ object Typer {
   }
 
   object Term {
+    // TODO: Introduce head/body.
+
     /**
      * Types the given head term `rast` according to the (declared) type `tpe` under the given AST `root`.
      */
@@ -610,6 +631,7 @@ object Typer {
    * Returns a human readable string representation of the given type `tpe`.
    */
   private def prettyPrint(tpe: TypedAst.Type): String = tpe match {
+    case TypedAst.Type.Var(x) => s"Var($x)"
     case TypedAst.Type.Unit => s"()"
     case TypedAst.Type.Bool => s"Bool"
     case TypedAst.Type.Int => s"Int"
