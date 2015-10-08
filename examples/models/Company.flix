@@ -52,10 +52,9 @@ namespace Company {
 
     print WorkerAddress.
 
-    Error#(x) :- Employee(x, _).
     Print#(x) :- Employee(x, _).
     Write#(x, "tmp.txt") :- Employee(x, _).
-    Error#(x) :- Employee(x, _), Read#(x, "tmp.txt").
+//    Error#(x) :- Employee(x, _), Read#(x, "tmp.txt").
 
 
 }

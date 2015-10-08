@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.language.ast._
 import org.scalatest.FunSuite
 
 class TestInterpreter extends FunSuite {
-  val root = Root(Map(), Map(), Map(), List(), List())
+  val root = Root(Map(), List(), Map(), Map(), List(), List())
 
   val loc = SourceLocation.Unknown
 
@@ -225,7 +225,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Ref01") {
     val name = Name.Resolved(List("foo", "bar", "baz"))
     val const = Definition.Constant(name, Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Bool, loc)
-    val root = Root(Map(name -> const), Map(), Map(), List(), List())
+    val root = Root(Map(name -> const), List(), Map(), Map(), List(), List())
     val input = Expression.Lit(Literal.Str("hello", loc), Type.Str, loc)
     val result = Interpreter.eval(input, root)
     assertResult(Value.Str("hello"))(result)
@@ -234,7 +234,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Ref02") {
     val name = Name.Resolved(List("foo", "bar", "baz"))
     val const = Definition.Constant(name, Expression.Lit(Literal.Int(5, loc), Type.Int, loc), Type.Int, loc)
-    val root = Root(Map(name -> const), Map(), Map(), List(), List())
+    val root = Root(Map(name -> const), List(), Map(), Map(), List(), List())
     val input = Expression.Ref(name, Type.Int, loc)
     val result = Interpreter.eval(input, root)
     assertResult(Value.Int(5))(result)
@@ -243,7 +243,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Ref03") {
     val name = Name.Resolved(List("foo", "bar", "baz"))
     val const = Definition.Constant(name, Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Bool, loc)
-    val root = Root(Map(name -> const), Map(), Map(), List(), List())
+    val root = Root(Map(name -> const), List(), Map(), Map(), List(), List())
     val input = Expression.Ref(name, Type.Bool, loc)
     val result = Interpreter.eval(input, root)
     assertResult(Value.Bool(false))(result)
@@ -254,7 +254,7 @@ class TestInterpreter extends FunSuite {
     val name02 = Name.Resolved(List("abc", "def", "ghi"))
     val const01 = Definition.Constant(name01, Expression.Lit(Literal.Str("foo", loc), Type.Str, loc), Type.Str, loc)
     val const02 = Definition.Constant(name01, Expression.Lit(Literal.Str("bar", loc), Type.Str, loc), Type.Str, loc)
-    val root = Root(Map(name01 -> const01, name02 -> const02), Map(), Map(), List(), List())
+    val root = Root(Map(name01 -> const01, name02 -> const02), List(), Map(), Map(), List(), List())
     val input = Expression.Ref(name02, Type.Str, loc)
     val result = Interpreter.eval(input, root)
     assertResult(Value.Str("bar"))(result)

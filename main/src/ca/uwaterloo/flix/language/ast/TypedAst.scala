@@ -13,12 +13,14 @@ object TypedAst {
    * A typed AST node representing the root of the entire AST.
    *
    * @param constants a map from names to constant definitions.
+   * @param directives a list of directives.
    * @param lattices a map from types to lattice definitions.
    * @param relations a map from names to relation definitions.
    * @param facts a list of facts.
    * @param rules a list of rules.
    */
   case class Root(constants: Map[Name.Resolved, TypedAst.Definition.Constant],
+                  directives: List[TypedAst.Directive],
                   lattices: Map[TypedAst.Type, TypedAst.Definition.Lattice],
                   relations: Map[Name.Resolved, TypedAst.Definition.Relation],
                   facts: List[TypedAst.Constraint.Fact],
@@ -90,6 +92,39 @@ object TypedAst {
       def filters: List[TypedAst.Predicate.Body.NotEqual] = ???
 
     }
+
+  }
+
+  /**
+   * A common super-type for typed directives.
+   */
+  sealed trait Directive
+
+  object Directive {
+
+    /**
+     * A typed directive asserting a fact.
+     *
+     * @param fact the asserted fact.
+     * @param loc the source location of the directive.
+     */
+    case class AssertFact(fact: TypedAst.Constraint.Fact, loc: SourceLocation) extends TypedAst.Directive
+
+    /**
+     * A typed directive asserting a rule.
+     *
+     * @param rule the asserted rule.
+     * @param loc the source location of the directive.
+     */
+    case class AssertRule(rule: TypedAst.Constraint.Rule, loc: SourceLocation) extends TypedAst.Directive
+
+    /**
+     * A typed directive asserting that relation should be printed.
+     *
+     * @param name the name of the relation.
+     * @param loc the source location of the directive.
+     */
+    case class Print(name: Name.Resolved, loc: SourceLocation) extends TypedAst.Directive
 
   }
 

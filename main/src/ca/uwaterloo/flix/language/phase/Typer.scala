@@ -94,6 +94,9 @@ object Typer {
       case (name, constant) => Definition.typer(constant, root) map (defn => name -> defn)
     }
 
+    // directives
+    val directivesVal = @@(root.directives.map(directive => Directive.typer(directive, root)))
+
     // lattices
     val latticesVal = Validation.fold(root.lattices) {
       case (tpe, lattice) => Definition.typer(lattice, root) map (defn => Type.typer(tpe) -> defn)
@@ -109,8 +112,8 @@ object Typer {
     val rulesVal = @@(root.rules.map(rule => Constraint.typer(rule, root)))
 
     // putting it all together
-    @@(constantsVal, latticesVal, relationsVal, factsVal, rulesVal) map {
-      case (constants, lattices, relations, facts, rules) => TypedAst.Root(constants, lattices, relations, facts, rules)
+    @@(constantsVal, directivesVal, latticesVal, relationsVal, factsVal, rulesVal) map {
+      case (constants, directives, lattices, relations, facts, rules) => TypedAst.Root(constants, directives, lattices, relations, facts, rules)
     }
   }
 
@@ -189,6 +192,23 @@ object Typer {
     }
   }
 
+  object Directive {
+
+    /**
+     * Types the given resolved directive `rast`.
+     */
+    def typer(rast: ResolvedAst.Directive, root: ResolvedAst.Root): Validation[TypedAst.Directive, TypeError] = rast match {
+      case ResolvedAst.Directive.AssertFact(fact, loc) => Constraint.typer(fact, root) map {
+        case f => TypedAst.Directive.AssertFact(f, loc)
+      }
+      case ResolvedAst.Directive.AssertRule(rule, loc) => Constraint.typer(rule, root) map {
+        case r => TypedAst.Directive.AssertRule(r, loc)
+      }
+      case ResolvedAst.Directive.Print(name, loc) => TypedAst.Directive.Print(name, loc).toSuccess
+    }
+
+  }
+
   object Literal {
 
     /**
@@ -214,7 +234,6 @@ object Typer {
       visit(rast)
     }
   }
-
 
   object Expression {
 
