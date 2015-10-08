@@ -183,6 +183,9 @@ object ResolvedAst {
 
   object Predicate {
 
+    /**
+     * A common super-type for head predicates.
+     */
     sealed trait Head extends ResolvedAst.Predicate
 
     object Head {
@@ -190,7 +193,7 @@ object ResolvedAst {
       /**
        * A relational predicate that occurs in the head of a fact/rule.
        *
-       * @param name the name of the predicate.
+       * @param name the name of the relation.
        * @param terms the terms of the predicate.
        * @param loc the location.
        */
@@ -199,13 +202,22 @@ object ResolvedAst {
     }
 
     /**
-     * A predicate that is allowed to occur in the body of a rule.
-     *
-     * @param name the name of the predicate.
-     * @param terms the terms of the predicate.
-     * @param loc the location.
+     * A common super-type for body predicates.
      */
-    case class Body(name: Name.Resolved, terms: List[ResolvedAst.Term.Body], loc: SourceLocation)
+    sealed trait Body extends ResolvedAst.Predicate
+
+    object Body {
+
+      /**
+       * A relational predicate that occurs in the body of a rule.
+       *
+       * @param name the name of the relation.
+       * @param terms the terms of the predicate.
+       * @param loc the location.
+       */
+      case class Relation(name: Name.Resolved, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
+
+    }
 
   }
 

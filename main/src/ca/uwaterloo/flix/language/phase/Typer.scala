@@ -31,9 +31,9 @@ object Typer {
     case class ExpectedType(expected: TypedAst.Type, actual: TypedAst.Type, loc: SourceLocation) extends TypeError {
       val format =
         s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.formatSource}")}
-            |
+           |
             |${consoleCtx.red(s">> Expected type '${prettyPrint(expected)}' but actual type is '${prettyPrint(actual)}'.")}
-            |
+           |
             |${loc.underline}
          """.stripMargin
     }
@@ -49,11 +49,11 @@ object Typer {
     case class ExpectedEqualTypes(tpe1: TypedAst.Type, tpe2: TypedAst.Type, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
       val format =
         s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc1.formatSource}")}
-            |
+           |
             |${consoleCtx.red(s">> Expected equal types '${prettyPrint(tpe1)}' and '${prettyPrint(tpe2)}'.")}
-            |
+           |
             |${loc1.underline}
-            |${loc2.underline}
+           |${loc2.underline}
          """.stripMargin
     }
 
@@ -455,15 +455,16 @@ object Typer {
     /**
      * Types the given body predicate `rast` under the given AST `root`.
      */
-    def typer(rast: ResolvedAst.Predicate.Body, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Body, TypeError] = {
-      val relation = root.relations(rast.name)
-      val termsVal = (rast.terms zip relation.attributes) map {
-        case (term, ResolvedAst.Attribute(_, tpe, _)) => Term.typer(term, Type.typer(tpe), root)
-      }
+    def typer(rast: ResolvedAst.Predicate.Body, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Body, TypeError] = rast match {
+      case ResolvedAst.Predicate.Body.Relation(name, rterms, loc) =>
+        val relation = root.relations(name)
+        val termsVal = (rterms zip relation.attributes) map {
+          case (term, ResolvedAst.Attribute(_, tpe, _)) => Term.typer(term, Type.typer(tpe), root)
+        }
 
-      @@(termsVal) map {
-        case terms => TypedAst.Predicate.Body(rast.name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), rast.loc)
-      }
+        @@(termsVal) map {
+          case terms => TypedAst.Predicate.Body(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
+        }
     }
   }
 

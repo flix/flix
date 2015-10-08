@@ -590,7 +590,7 @@ object Resolver {
         case WeededAst.Predicate.Body.FunctionOrRelation(name, wterms, loc) =>
           syms.lookupRelation(name, namespace) flatMap {
             case (rname, defn) => @@(wterms map (term => Term.Body.resolve(term, namespace, syms))) map {
-              case terms => ResolvedAst.Predicate.Body(rname, terms, loc)
+              case terms => ResolvedAst.Predicate.Body.Relation(rname, terms, loc)
             }
           }
         case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>

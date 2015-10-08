@@ -197,8 +197,8 @@ class TestTyper extends FunSuite {
     val head = ResolvedAst.Predicate.Head.Relation(rname, List(ResolvedAst.Term.Head.Var(x, SL), ResolvedAst.Term.Head.Var(z, SL)), SL)
 
     val body = List(
-      ResolvedAst.Predicate.Body(rname, List(ResolvedAst.Term.Body.Var(x, SL), ResolvedAst.Term.Body.Var(y, SL)), SL),
-      ResolvedAst.Predicate.Body(rname, List(ResolvedAst.Term.Body.Var(y, SL), ResolvedAst.Term.Body.Var(z, SL)), SL)
+      ResolvedAst.Predicate.Body.Relation(rname, List(ResolvedAst.Term.Body.Var(x, SL), ResolvedAst.Term.Body.Var(y, SL)), SL),
+      ResolvedAst.Predicate.Body.Relation(rname, List(ResolvedAst.Term.Body.Var(y, SL), ResolvedAst.Term.Body.Var(z, SL)), SL)
     )
 
     val rast = ResolvedAst.Constraint.Rule(head, body)
@@ -1006,7 +1006,7 @@ class TestTyper extends FunSuite {
     ))
 
     val rast =
-      ResolvedAst.Predicate.Body(rname, List(
+      ResolvedAst.Predicate.Body.Relation(rname, List(
         ResolvedAst.Term.Body.Wildcard(SourceLocation.Unknown),
         ResolvedAst.Term.Body.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
         ResolvedAst.Term.Body.Lit(ResolvedAst.Literal.Int(42, SL), SL),
