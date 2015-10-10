@@ -24,7 +24,7 @@ object Resolver {
     /**
      * An error raised to indicate that the given `name` is used for multiple definitions.
      *
-     * @param name the name
+     * @param name the name.
      * @param loc1 the location of the first definition.
      * @param loc2 the location of the second definition.
      */
@@ -42,13 +42,38 @@ object Resolver {
          """.stripMargin
     }
 
-
-    case class IllegalConstantName() extends ResolverError {
-      val format = ???
+    /**
+     * An error raised to indicate that the given `name` is illegal for a constant definition.
+     *
+     * @param name the invalid name.
+     * @param loc the location of the name.
+     */
+    case class IllegalConstantName(name: String, loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> Illegal uppercase name '$name'.")}
+           |
+           |${loc.underline}
+           |A value or function definition must start with a lowercase letter.
+         """.stripMargin
     }
 
-    case class IllegalRelationName() extends ResolverError {
-      val format = ???
+    /**
+     * An error raised to indicate that the given `name` is illegal for a relation definition.
+     *
+     * @param name the invalid name.
+     * @param loc the location of the name.
+     */
+    case class IllegalRelationName(name: String, loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> Illegal lowercase name '$name'.")}
+           |
+           |${loc.underline}
+           |A relation or lattice definition must start with an uppercase letter.
+         """.stripMargin
     }
 
     /**
@@ -297,7 +322,11 @@ object Resolver {
       case defn@WeededAst.Definition.Constant(ident, tpe, e, loc) =>
         val rname = toRName(ident, namespace)
         syms.constants.get(rname) match {
-          case None => syms.copy(constants = syms.constants + (rname -> defn)).toSuccess
+          case None =>
+            if (ident.name.head.isUpper)
+              IllegalConstantName(ident.name, ident.loc).toFailure
+            else
+              syms.copy(constants = syms.constants + (rname -> defn)).toSuccess
           case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.loc, ident.loc).toFailure
         }
 
@@ -317,7 +346,11 @@ object Resolver {
       case defn@WeededAst.Definition.Relation(ident, attributes, loc) =>
         val rname = toRName(ident, namespace)
         syms.relations.get(rname) match {
-          case None => syms.copy(relations = syms.relations + (rname -> defn)).toSuccess
+          case None =>
+            if (ident.name.head.isLower)
+              IllegalRelationName(ident.name, ident.loc).toFailure
+            else
+              syms.copy(relations = syms.relations + (rname -> defn)).toSuccess
           case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.loc, ident.loc).toFailure
         }
     }
