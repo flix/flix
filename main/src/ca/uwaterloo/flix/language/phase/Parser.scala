@@ -10,9 +10,6 @@ import scala.io.Source
 
 // TODO: Parse whitespace more "tightly" to improve source positions.
 
-// TODO: Some questions about the utility of Print, Read and Write and whether they occur in the right place.
-
-
 /**
  * A parser for the Flix language.
  */
