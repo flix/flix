@@ -49,7 +49,8 @@ class Solver(root: TypedAst.Root) {
   }
 
 
-  val database = mutable.Map.empty[Name.Resolved, List[List[Value]]]
+  val dbRel = mutable.Map.empty[Name.Resolved, List[List[Value]]]
+  val dbLat = mutable.Map.empty[Name.Resolved, Map[List[Value], List[Value]]]
 
   val worklist = mutable.Queue.empty[(Name.Resolved, List[Value])]
 
@@ -86,15 +87,23 @@ class Solver(root: TypedAst.Root) {
    * Adds the new fact to the worklist if the database was changed.
    */
   def newFact(name: Name.Resolved, row: List[Value]): Unit = {
-    val table = database.getOrElse(name, List.empty)
+    val defn = root.relations(name)
 
-    // TODO: Must take lattice semantics into account.
-    val rowExists = table.contains(row)
-    if (!rowExists) {
-      database += (name -> (row :: table))
-      worklist += ((name, row))
+    if (isLat(defn)) {
+      getKeys(defn)
+
+      ???
+    } else {
+      val table = dbRel.getOrElse(name, List.empty)
+      val rowExists = table.contains(row)
+      if (!rowExists) {
+        dbRel += (name -> (row :: table))
+        worklist += ((name, row))
+      }
     }
+
   }
+
 
   /**
    * Evaluates the head of the given `rule` under the given environment `env0`.
@@ -124,27 +133,33 @@ class Solver(root: TypedAst.Root) {
     def visit(p: TypedAst.Predicate.Body, env: List[Map[String, Value]]): List[Map[String, Value]] = p match {
       case r: Predicate.Body.Relation => {
         // TODO: Replace by faster join algorithm.
-        val table = database(r.name)
 
-        table flatMap {
-          case row => unifyRow(row, r.terms) match {
-            // TODO: Cast
-            case None => List.empty
-            case Some(m) => extend(env, m)
+        val defn = root.relations(r.name)
+        if (isLat(defn)) {
+          ???
+        } else {
+          val table = dbRel(r.name)
+
+          table flatMap {
+            case row => unifyRow(row, r.terms) match {
+              // TODO: Cast
+              case None => List.empty
+              case Some(m) => extend(env, m)
+            }
           }
         }
       }
 
       case r: Predicate.Body.Function =>
         val f = root.constants(r.name)
-       env flatMap {
-         case m =>
-           val result = Interpreter.evalCall(f, r.terms, root, m).toBool
-           if (!result)
-             None
-           else
-             Some(m)
-       }
+        env flatMap {
+          case m =>
+            val result = Interpreter.evalCall(f, r.terms, root, m).toBool
+            if (!result)
+              None
+            else
+              Some(m)
+        }
 
       case Predicate.Body.NotEqual(ident1, ident2, _, _) =>
         env flatMap {
@@ -255,7 +270,7 @@ class Solver(root: TypedAst.Root) {
    */
   def print(directive: Directive.Print): Unit = {
     val relation = root.relations(directive.name)
-    val table = database(directive.name)
+    val table = dbRel(directive.name)
     val cols = relation.attributes.map(_.ident.name)
     val ascii = new AsciiTable().withCols(cols: _*)
     for (row <- table) {
@@ -274,8 +289,9 @@ class Solver(root: TypedAst.Root) {
   // TODO: Use Validation and nice error mesages
   def checkAssertedFact(d: Directive.AssertFact): Validation[Unit, SolverError] = d.fact.head match {
     case Predicate.Head.Relation(name, terms, _, _) =>
+      // TODO: Check kind...
       val row = terms map (t => Interpreter.evalHeadTerm(t, root, Map.empty))
-      val table = database(name)
+      val table = dbRel(name)
       if (table contains row) {
         ().toSuccess
       } else {
@@ -291,6 +307,12 @@ class Solver(root: TypedAst.Root) {
     // TODO:
   }
 
+  private def isLat(defn: TypedAst.Definition.Relation): Boolean =
+    defn.attributes.exists(_.interp == TypedAst.Interpretation.Lattice)
+
+  private def getKeys(defn: TypedAst.Definition.Relation): List[Attribute] = {
+    defn.attributes.filter(_.interp == TypedAst.Interpretation.Set)
+  }
 
   // TODO: Move somewhere. Decide where
   def pretty(v: Value): String = v match {
