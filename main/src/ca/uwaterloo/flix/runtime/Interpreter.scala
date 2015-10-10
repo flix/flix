@@ -112,17 +112,24 @@ object Interpreter {
   }
 
   // TODO: Need to come up with some more clean interfaces
+  // TODO: Everything below here is really bad and should just be replaced at will.
 
   /**
    * Evaluates the given head term `t` under the given environment `env0`
    */
-  def evalHeadTerm(t: TypedAst.Term.Head, env: Map[String, Value]): Value = t match {
+  def evalHeadTerm(t: TypedAst.Term.Head, root: TypedAst.Root, env: Map[String, Value]): Value = t match {
     case TypedAst.Term.Head.Var(x, tpe, loc) => env.get(x.name) match {
       case None => throw InternalRuntimeError("Unbound variable in head term!")
       case Some(value) => value
     }
     case TypedAst.Term.Head.Lit(lit, tpe, loc) => Interpreter.evalLit(lit)
-    case TypedAst.Term.Head.Apply(name, args, tpe, loc) => ???
+    case TypedAst.Term.Head.Apply(name, terms, tpe, loc) =>
+      val f = root.constants(name)
+      val Value.Closure(formals, body, closureEnv) = eval(f.exp, root, env)
+      val evalArgs = terms.map(t => evalHeadTerm(t, root, env))
+      val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
+      eval(body, root, newEnv)
+
   }
 
   def evalBodyTerm(t: TypedAst.Term.Body, env: Map[String, Value]): Value = t match {

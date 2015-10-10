@@ -60,7 +60,7 @@ class Solver(root: TypedAst.Root) {
     // adds all facts to the database.
     for (fact <- root.facts) {
       val name = fact.head.asInstanceOf[TypedAst.Predicate.Head.Relation].name // TODO: Cast
-      val values = fact.head.asInstanceOf[TypedAst.Predicate.Head.Relation].terms map (term => Interpreter.evalHeadTerm(term, Map.empty)) // TODO: Cast
+      val values = fact.head.asInstanceOf[TypedAst.Predicate.Head.Relation].terms map (term => Interpreter.evalHeadTerm(term, root, Map.empty)) // TODO: Cast
       newFact(name, values)
     }
 
@@ -101,7 +101,7 @@ class Solver(root: TypedAst.Root) {
    */
   def evalHead(rule: Rule, env0: Map[String, Value]): Unit = rule.head match {
     case p: Predicate.Head.Relation =>
-      val row = p.terms map (t => Interpreter.evalHeadTerm(t, env0))
+      val row = p.terms map (t => Interpreter.evalHeadTerm(t, root, env0))
       newFact(p.name, row)
     case p: Predicate.Head.Print =>
       val values = p.terms.collect {
@@ -274,7 +274,7 @@ class Solver(root: TypedAst.Root) {
   // TODO: Use Validation and nice error mesages
   def checkAssertedFact(d: Directive.AssertFact): Validation[Unit, SolverError] = d.fact.head match {
     case Predicate.Head.Relation(name, terms, _, _) =>
-      val row = terms map (t => Interpreter.evalHeadTerm(t, Map.empty))
+      val row = terms map (t => Interpreter.evalHeadTerm(t, root, Map.empty))
       val table = database(name)
       if (table contains row) {
         ().toSuccess
