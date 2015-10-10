@@ -170,43 +170,6 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate that a wildcard occurs in a head term.
-     *
-     * @param loc the location where the illegal term occurs.
-     */
-    case class WildcardInHeadTerm(loc: SourceLocation) extends WeederError {
-      val format =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
-           |
-            |${consoleCtx.red(s">> Illegal wildcard in head of a fact/rule.")}
-           |
-            |${loc.underline}
-           |Wildcards (i.e. implicitly unbound variables) are not allowed to occur in the head of a fact/rule/alias.
-           |
-            |Tip: Remove the wildcard or replace it by bound variable.
-         """.stripMargin
-    }
-
-    /**
-     * An error raised to indicate that a function application occurs in a body term.
-     *
-     * @param loc the location where the illegal term occurs.
-     */
-    case class ApplyInBodyTerm(loc: SourceLocation) extends WeederError {
-      val format =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
-           |
-            |${consoleCtx.red(s">> Illegal function call in body of a rule.")}
-           |
-            |${loc.underline}
-           |Function calls are not allowed to occur in the body of a rule. Only in its head.
-           |
-            |Tip: Restructure the rule such that the function call does not occur in its body.
-           |Possibly by breaking up the rule into multiple smaller rules.
-         """.stripMargin
-    }
-
-    /**
      * An error raised to indicate an illegal lattice definition.
      *
      * @param loc the location where the illegal definition occurs.
@@ -265,6 +228,46 @@ object Weeder {
            |This feature is not yet supported, implemented or considered stable.
            |
             |Tip: Avoid using this feature.
+         """.stripMargin
+    }
+
+
+    /**
+     * An error raised to indicate that a wildcard occurs in a head term.
+     *
+     * @param loc the location where the illegal term occurs.
+     */
+    case class WildcardInHeadTerm(loc: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> Illegal wildcard in head of a fact/rule.")}
+           |
+            |${loc.underline}
+           |Wildcards (i.e. implicitly unbound variables) are not allowed to occur in the head of a fact/rule/alias.
+           |
+            |Tip: Remove the wildcard or replace it by bound variable.
+         """.stripMargin
+    }
+
+
+    /**
+     * An error raised to indicate that a function application occurs in a body term.
+     *
+     * @param loc the location where the illegal term occurs.
+     */
+    // TODO: replace?
+    case class ApplyInBodyTerm(loc: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> Illegal function call in body of a rule.")}
+           |
+            |${loc.underline}
+           |Function calls are not allowed to occur in the body of a rule. Only in its head.
+           |
+            |Tip: Restructure the rule such that the function call does not occur in its body.
+           |Possibly by breaking up the rule into multiple smaller rules.
          """.stripMargin
     }
 
@@ -593,7 +596,7 @@ object Weeder {
       def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Alias] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case p: ParsedAst.Predicate.FunctionOrRelation =>
           @@(p.terms.map(t => Term.Head.compile(t, aliases))) map {
-            case terms => WeededAst.Predicate.Head.FunctionOrRelation(p.name, terms, p.loc)
+            case terms => WeededAst.Predicate.Head.Relation(p.name, terms, p.loc)
           }
 
         case p: ParsedAst.Predicate.Print =>

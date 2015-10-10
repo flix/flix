@@ -136,7 +136,7 @@ object WeededAst {
 
     object Head {
 
-      case class FunctionOrRelation(name: Name.Unresolved, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
+      case class Relation(name: Name.Unresolved, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
       case class Print(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 

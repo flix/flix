@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.Compiler
 
 import scala.collection.immutable.Seq
 

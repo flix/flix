@@ -43,6 +43,14 @@ object Resolver {
     }
 
 
+    case class IllegalConstantName() extends ResolverError {
+      val format = ???
+    }
+
+    case class IllegalRelationName() extends ResolverError {
+      val format = ???
+    }
+
     /**
      * An error raised to indicate that the given `name` in the given `namespace` was not found.
      *
@@ -611,7 +619,7 @@ object Resolver {
        */
       def resolve(wast: WeededAst.Predicate.Head, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Head, ResolverError] = wast match {
         // TODO: Must disambiguate
-        case WeededAst.Predicate.Head.FunctionOrRelation(name, wterms, loc) =>
+        case WeededAst.Predicate.Head.Relation(name, wterms, loc) =>
           syms.lookupRelation(name, namespace) flatMap {
             case (rname, defn) => @@(wterms map (t => Term.Head.resolve(t, namespace, syms))) map {
               case terms => ResolvedAst.Predicate.Head.Relation(rname, terms, loc)

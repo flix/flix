@@ -21,8 +21,8 @@ import scala.util.{Failure, Success}
  *
  * Inspiration for better error messages:
  *
- *  http://clang.llvm.org/diagnostics.html
- *  http://elm-lang.org/blog/compiler-errors-for-humans
+ * http://clang.llvm.org/diagnostics.html
+ * http://elm-lang.org/blog/compiler-errors-for-humans
  */
 
 object Compiler {
@@ -101,7 +101,7 @@ object Compiler {
     val stopWatch = new StopWatch()
 
     val past = parse(paths)
-    println(f"Parser:     ${stopWatch.click() / 1000000}%4d msec.")
+    val parserTime = stopWatch.click() / 1000000
 
     val wast = Weeder.weed(past)
     if (wast.hasErrors) {
@@ -110,7 +110,7 @@ object Compiler {
       Console.println("Aborting due to previous errors.")
       return None
     }
-    println(f"Weeder:     ${stopWatch.click() / 1000000}%4d msec.")
+    val weederTime = stopWatch.click() / 1000000
 
     val rast = Resolver.resolve(wast.get)
     if (rast.hasErrors) {
@@ -119,7 +119,7 @@ object Compiler {
       Console.println("Aborting due to previous errors.")
       return None
     }
-    println(f"Resolver:   ${stopWatch.click() / 1000000}%4d msec.")
+    val resolverTime = stopWatch.click() / 1000000
 
     val tast = Typer.typecheck(rast.get)
     if (tast.hasErrors) {
@@ -127,10 +127,11 @@ object Compiler {
       Console.println("Aborting due to previous errors.")
       return None
     }
-    println(f"Typer:      ${stopWatch.click() / 1000000}%4d msec.")
+    val typerTime = stopWatch.click() / 1000000
 
-    println()
-    Console.println("Compilation successful.")
+    val totalTime = parserTime + weederTime + resolverTime + typerTime
+
+    Console.println(s"Compilation successful. Completed in $totalTime msec. (parser: $parserTime msec, weeder: $weederTime msec, resolver: $resolverTime msec, typer: $typerTime msec).")
     Some(tast.get)
   }
 

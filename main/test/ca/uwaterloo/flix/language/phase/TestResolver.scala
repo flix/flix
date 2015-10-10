@@ -6,9 +6,6 @@ import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite {
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Definitions                                                             //
-  /////////////////////////////////////////////////////////////////////////////
   test("DuplicateDefinition01") {
     val input =
       s"""namespace A {
@@ -97,9 +94,72 @@ class TestResolver extends FunSuite {
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Expressions                                                             //
-  /////////////////////////////////////////////////////////////////////////////
+  test("IllegalConstantName01") {
+    val input =
+      s"""namespace A {
+         |  val F: Int = 42;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
+  }
+
+  test("IllegalConstantName02") {
+    val input =
+      s"""namespace A {
+         |  val Foo: Int = 42;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
+  }
+
+  test("IllegalConstantName03") {
+    val input =
+      s"""namespace A {
+         |  val FOO: Int = 42;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
+  }
+
+  test("IllegalConstantName04") {
+    val input =
+      s"""namespace A {
+         |  def F(x: Int): Int = x;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
+  }
+
+  test("IllegalConstantName05") {
+    val input =
+      s"""namespace A {
+         |  def Foo(x: Int): Int = x;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
+  }
+
+  test("IllegalConstantName06") {
+    val input =
+      s"""namespace A {
+         |  def FOO(x: Int): Int = x;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
+  }
+
   test("UnresolvedConstantReference01") {
     val input =
       s"""namespace A {
@@ -237,4 +297,5 @@ class TestResolver extends FunSuite {
     assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
   }
+
 }
