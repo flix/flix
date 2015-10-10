@@ -141,7 +141,7 @@ class Solver(root: TypedAst.Root) {
           val table = dbRel(r.name)
 
           table flatMap {
-            case row => unifyRow(row, r.terms) match {
+            case row => unifyRelRow(row, r.terms) match {
               // TODO: Cast
               case None => List.empty
               case Some(m) => extend(env, m)
@@ -189,7 +189,7 @@ class Solver(root: TypedAst.Root) {
   /**
    * Unifies the given `row` with the given terms.
    */
-  def unifyRow(row: List[Value], terms: List[Body]): Option[Map[String, Value]] = {
+  def unifyRelRow(row: List[Value], terms: List[Body]): Option[Map[String, Value]] = {
     assert(row.length == terms.length)
 
     (row zip terms).foldLeft(Option(Map.empty[String, Value])) {
