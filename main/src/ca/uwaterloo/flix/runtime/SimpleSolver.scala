@@ -1,0 +1,359 @@
+package ca.uwaterloo.flix.runtime
+
+import ca.uwaterloo.flix.language.Compiler
+import ca.uwaterloo.flix.language.ast.TypedAst.Constraint.Rule
+import ca.uwaterloo.flix.language.ast.TypedAst.Directive.{AssertRule, AssertFact}
+import ca.uwaterloo.flix.language.ast.TypedAst.Term
+import ca.uwaterloo.flix.language.ast.TypedAst.Term.Body
+import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Name, TypedAst}
+import ca.uwaterloo.flix.util.{Validation, AsciiTable}
+import ca.uwaterloo.flix.util.Validation._
+
+import scala.collection.mutable
+
+class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
+
+  import SolverError._
+
+  /**
+   * A common super-type for solver errors.
+   */
+  sealed trait SolverError {
+    /**
+     * Returns a human readable string representation of the error.
+     */
+    def format: String
+  }
+
+  object SolverError {
+
+    implicit val consoleCtx = Compiler.ConsoleCtx
+
+    /**
+     * An error raised to indicate that the asserted fact does not hold in the minimal model.
+     *
+     * @param loc the location of the asserted fact.
+     */
+    case class AssertedFactViolated(loc: SourceLocation) extends SolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SOLVER ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> Assertion violated: The asserted fact does not hold in the minimal model!")}
+           |
+           |${loc.underline}
+         """.stripMargin
+    }
+
+
+  }
+
+
+  val dbRel = mutable.Map.empty[Name.Resolved, List[List[Value]]]
+  val dbLat = mutable.Map.empty[Name.Resolved, Map[List[Value], List[Value]]]
+
+  val worklist = mutable.Queue.empty[(Name.Resolved, List[Value])]
+
+  /**
+   * Solves the Flix program.
+   */
+  def solve(): Unit = {
+    // adds all facts to the database.
+    for (fact <- sCtx.root.facts) {
+      val name = fact.head.asInstanceOf[TypedAst.Predicate.Head.Relation].name // TODO: Cast
+      val values = fact.head.asInstanceOf[TypedAst.Predicate.Head.Relation].terms map (term => Interpreter.evalHeadTerm(term, sCtx.root, Map.empty)) // TODO: Cast
+      newFact(name, values)
+    }
+
+    // iterate until fixpoint.
+    while (worklist.nonEmpty) {
+      // extract fact from the worklist.
+      val (name, row) = worklist.dequeue()
+
+      // re-evaluate all dependencies.
+      val rules = dependencies(name)
+      for (rule <- rules) {
+        // TODO: Use `row` as the initial environment to speedup computation.
+        evalBody(rule, Map.empty)
+      }
+    }
+
+    directives()
+  }
+
+  /**
+   * Adds the given `row` as a fact in the database for the relation with the given `name`.
+   *
+   * Adds the new fact to the work list if the database was changed.
+   */
+  def newFact(name: Name.Resolved, row: List[Value]): Unit = {
+    val defn = sCtx.root.relations(name)
+
+    if (isLat(defn)) {
+      // TODO: This assumes that all keys occur before any lattice value.
+
+      val keys = getKeys(defn)
+      val latAttr = getLatAttr(defn)
+      val map = dbLat.getOrElse(name, Map.empty)
+
+      val (ks, vs) = row.splitAt(keys.size)
+
+      map.get(ks) match {
+        case None =>
+          dbLat += (name -> Map(ks -> vs))
+          worklist += ((name, row))
+        case Some(vs2) =>
+          var changed = false
+
+          val vs3 = (vs zip vs2 zip latAttr) map {
+            case ((v1, v2), TypedAst.Attribute(_, tpe, _)) =>
+              val lat = sCtx.root.lattices(tpe)
+              val newLub = Interpreter.eval2(lat.lub, v1, v2, sCtx.root)
+              val isSubsumed = Interpreter.eval2(lat.leq, newLub, v2, sCtx.root).toBool
+
+              changed = changed || isSubsumed
+              newLub
+          }
+
+          if (changed) {
+            dbLat += (name -> Map(ks -> vs3))
+            worklist += ((name, row)) // TODO: Row is incorrect here.
+          }
+      }
+    } else {
+      val table = dbRel.getOrElse(name, List.empty)
+      val rowExists = table.contains(row)
+      if (!rowExists) {
+        dbRel += (name -> (row :: table))
+        worklist += ((name, row))
+      }
+    }
+
+  }
+
+
+  /**
+   * Evaluates the head of the given `rule` under the given environment `env0`.
+   */
+  def evalHead(rule: Rule, env0: Map[String, Value]): Unit = rule.head match {
+    case p: Predicate.Head.Relation =>
+      val row = p.terms map (t => Interpreter.evalHeadTerm(t, sCtx.root, env0))
+      newFact(p.name, row)
+    case p: Predicate.Head.Print =>
+      val values = p.terms.collect {
+        case Term.Head.Var(ident, _, _) => ident.name + " => " + pretty(env0(ident.name))
+      }
+      println(values.mkString(", "))
+    case p: Predicate.Head.Write =>
+      println("Write Not supported yet.")
+
+    case p: Predicate.Head.Error => ??? // TODO: not implemented.
+  }
+
+  /**
+   * Evaluates the body of the given `rule` under the given initial environment `env0`.
+   */
+  def evalBody(rule: Rule, env0: Map[String, Value]): Unit = {
+    /**
+     * Extend the given environment `env` according to the given predicate `p`.
+     */
+    def visit(p: TypedAst.Predicate.Body, env: List[Map[String, Value]]): List[Map[String, Value]] = p match {
+      case r: Predicate.Body.Relation => {
+        // TODO: Replace by faster join algorithm.
+
+        val defn = sCtx.root.relations(r.name)
+        if (isLat(defn)) {
+          ???
+        } else {
+          val table = dbRel(r.name)
+
+          table flatMap {
+            case row => unifyRelRow(row, r.terms) match {
+              // TODO: Cast
+              case None => List.empty
+              case Some(m) => extend(env, m)
+            }
+          }
+        }
+      }
+
+      case r: Predicate.Body.Function =>
+        val f = sCtx.root.constants(r.name)
+        env flatMap {
+          case m =>
+            val result = Interpreter.evalCall(f, r.terms, sCtx.root, m).toBool
+            if (!result)
+              None
+            else
+              Some(m)
+        }
+
+      case Predicate.Body.NotEqual(ident1, ident2, _, _) =>
+        env flatMap {
+          case m =>
+            val v1 = m(ident1.name)
+            val v2 = m(ident2.name)
+            if (v1 == v2)
+              None
+            else
+              Some(m)
+        }
+
+      case Predicate.Body.Read(terms, path, _, _) => ???
+    }
+
+    // fold the environment over every rule in the body.
+    val envs = rule.body.foldLeft(List(env0)) {
+      case (env1, p) => visit(p, env1)
+    }
+
+    // evaluate the head predicate for every satisfying environment. 
+    for (env <- envs) {
+      evalHead(rule, env)
+    }
+  }
+
+  /**
+   * Unifies the given `row` with the given terms.
+   */
+  def unifyRelRow(row: List[Value], terms: List[Body]): Option[Map[String, Value]] = {
+    assert(row.length == terms.length)
+
+    (row zip terms).foldLeft(Option(Map.empty[String, Value])) {
+      case (None, (value, term)) => None
+      case (Some(macc), (value, term)) => term match {
+        case Term.Body.Wildcard(tpe, loc) => Some(macc)
+        case Term.Body.Var(ident, tpe, loc) => macc.get(ident.name) match {
+          case None => Some(macc + (ident.name -> value))
+          case Some(otherValue) =>
+            if (value != otherValue)
+              None
+            else
+              Some(macc)
+        }
+        case Term.Body.Lit(lit, tpe, loc) =>
+          val otherValue = Interpreter.evalLit(lit)
+          if (value != otherValue)
+            None
+          else
+            Some(macc)
+      }
+    }
+  }
+
+  /**
+   * Extends the given environments `envs` with the environment `m`.
+   */
+  def extend(envs: List[Map[String, Value]], m: Map[String, Value]): List[Map[String, Value]] = {
+    envs flatMap {
+      case env =>
+        m.foldLeft(Option(env)) {
+          case (None, _) => None
+          case (Some(macc), (key, value)) => macc.get(key) match {
+            case None => Some(macc + (key -> value))
+            case Some(otherValue) =>
+              if (value != otherValue)
+                None
+              else
+                Some(macc)
+          }
+        }
+    }
+  }
+
+  /**
+   * Returns all rules where the given `name` occurs in a body predicate of the rule.
+   */
+  def dependencies(name: Name.Resolved): List[TypedAst.Constraint.Rule] = sCtx.root.rules.filter {
+    case rule => rule.body.exists {
+      case r: Predicate.Body.Relation => name == r.name
+      case _ => false
+    }
+  }
+
+
+  /**
+   * Processes all directives in the program.
+   */
+  def directives(): Unit = {
+    for (directive <- sCtx.root.directives.prints) {
+      print(directive)
+    }
+
+    val assertedFacts = @@(sCtx.root.directives.assertedFacts map checkAssertedFact)
+    if (assertedFacts.hasErrors) {
+      assertedFacts.errors.foreach(e => println(e.format))
+    }
+
+    for (directive <- sCtx.root.directives.assertedRules) {
+      checkAssertedRule(directive)
+    }
+
+
+  }
+
+  /**
+   * Evaluates the given print `directive`.
+   */
+  def print(directive: Directive.Print): Unit = {
+    val relation = sCtx.root.relations(directive.name)
+    val table = dbRel(directive.name)
+    val cols = relation.attributes.map(_.ident.name)
+    val ascii = new AsciiTable().withCols(cols: _*)
+    for (row <- table) {
+      ascii.mkRow(row map pretty)
+    }
+
+    Console.println(relation.name)
+    ascii.write(System.out)
+    Console.println()
+    Console.println()
+  }
+
+  /**
+   * Verifies that the given asserted fact `d` holds in the minimal model.
+   */
+  // TODO: Use Validation and nice error mesages
+  def checkAssertedFact(d: Directive.AssertFact): Validation[Unit, SolverError] = d.fact.head match {
+    case Predicate.Head.Relation(name, terms, _, _) =>
+      // TODO: Check kind...
+      val row = terms map (t => Interpreter.evalHeadTerm(t, sCtx.root, Map.empty))
+      val table = dbRel(name)
+      if (table contains row) {
+        ().toSuccess
+      } else {
+        AssertedFactViolated(d.loc).toFailure
+      }
+    case _ => ().toSuccess
+  }
+
+  /**
+   * Verifies that the given asserted rule `d` holds in the minimal model.
+   */
+  def checkAssertedRule(d: Directive.AssertRule) = {
+    // TODO:
+  }
+
+  private def isLat(defn: TypedAst.Definition.Relation): Boolean =
+    defn.attributes.exists(_.interp == TypedAst.Interpretation.Lattice)
+
+  private def getKeys(defn: TypedAst.Definition.Relation): List[Attribute] = {
+    defn.attributes.filter(_.interp == TypedAst.Interpretation.Set)
+  }
+
+  private def getLatAttr(defn: TypedAst.Definition.Relation): List[Attribute] = {
+    defn.attributes.filter(_.interp == TypedAst.Interpretation.Lattice)
+  }
+
+  // TODO: Move somewhere. Decide where
+  def pretty(v: Value): String = v match {
+    case Value.Unit => "()"
+    case Value.Bool(b) => b.toString
+    case Value.Int(i) => i.toString
+    case Value.Str(s) => s.toString
+    case Value.Tag(enum, tag, value) => enum + "." + tag + pretty(value)
+    case Value.Tuple(elms) => "(" + (elms map pretty) + ")"
+    case Value.Closure(_, _, _) => ??? // TODO: WHAT?
+  }
+
+}
