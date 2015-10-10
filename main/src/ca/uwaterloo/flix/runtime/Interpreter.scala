@@ -3,7 +3,9 @@ package ca.uwaterloo.flix.runtime
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Type, FormalArg, Root}
 import ca.uwaterloo.flix.language.ast.{TypedAst, Name, BinaryOperator, UnaryOperator}
 
+// TODO: Consider an EvaluationContext
 object Interpreter {
+
   type Env = Map[String, Value]
 
   // TODO: Use this exception:
@@ -136,6 +138,9 @@ object Interpreter {
     case TypedAst.Term.Body.Var(x, _, _) => env(x.name)
     // TODO ...
   }
+
+  def eval2(lambda: Expression, v1: Value, v2: Value, root: TypedAst.Root): Value =
+    ???
 
   def evalCall(d: TypedAst.Definition.Constant, terms: List[TypedAst.Term.Body], root: TypedAst.Root, env: Map[String, Value]): Value = {
     eval(d.exp, root, env) match {

@@ -12,6 +12,7 @@ import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
+// TODO: Consider an EvaluationContext
 class Solver(root: TypedAst.Root) {
 
   import SolverError._
@@ -84,15 +85,42 @@ class Solver(root: TypedAst.Root) {
   /**
    * Adds the given `row` as a fact in the database for the relation with the given `name`.
    *
-   * Adds the new fact to the worklist if the database was changed.
+   * Adds the new fact to the work list if the database was changed.
    */
   def newFact(name: Name.Resolved, row: List[Value]): Unit = {
     val defn = root.relations(name)
 
     if (isLat(defn)) {
-      getKeys(defn)
+      // TODO: This assumes that all keys occur before any lattice value.
 
-      ???
+      val keys = getKeys(defn)
+      val latAttr = getLatAttr(defn)
+      val map = dbLat.getOrElse(name, Map.empty)
+
+      val (ks, vs) = row.splitAt(keys.size)
+
+      map.get(ks) match {
+        case None =>
+          dbLat += (name -> Map(ks -> vs))
+          worklist += ((name, row))
+        case Some(vs2) =>
+          var changed = false
+
+          val vs3 = (vs zip vs2 zip latAttr) map {
+            case ((v1, v2), TypedAst.Attribute(_, tpe, _)) =>
+              val lat = root.lattices(tpe)
+              val newLub = Interpreter.eval2(lat.lub, v1, v2, root)
+              val isSubsumed = Interpreter.eval2(lat.leq, newLub, v2, root).toBool
+
+              changed = changed || isSubsumed
+              newLub
+          }
+
+          if (changed) {
+            dbLat += (name -> Map(ks -> vs3))
+            worklist += ((name, row)) // TODO: Row is incorrect here.
+          }
+      }
     } else {
       val table = dbRel.getOrElse(name, List.empty)
       val rowExists = table.contains(row)
@@ -312,6 +340,10 @@ class Solver(root: TypedAst.Root) {
 
   private def getKeys(defn: TypedAst.Definition.Relation): List[Attribute] = {
     defn.attributes.filter(_.interp == TypedAst.Interpretation.Set)
+  }
+
+  private def getLatAttr(defn: TypedAst.Definition.Relation): List[Attribute] = {
+    defn.attributes.filter(_.interp == TypedAst.Interpretation.Lattice)
   }
 
   // TODO: Move somewhere. Decide where
