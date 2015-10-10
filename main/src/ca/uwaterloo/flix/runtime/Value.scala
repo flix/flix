@@ -4,17 +4,14 @@ import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 
 sealed trait Value {
   def toBool: Boolean = {
-    assert(this.isInstanceOf[Value.Bool], "Expected a Value.Bool.")
     this.asInstanceOf[Value.Bool].b
   }
 
   def toInt: Int = {
-    assert(this.isInstanceOf[Value.Int], "Expected a Value.Int.")
     this.asInstanceOf[Value.Int].i
   }
 
   def toStr: String = {
-    assert(this.isInstanceOf[Value.Str], "Expected a Value.Str.")
     this.asInstanceOf[Value.Str].s
   }
 }

@@ -136,8 +136,15 @@ class Solver(root: TypedAst.Root) {
       }
 
       case r: Predicate.Body.Function =>
-        println("functions not impl.")
-        ???
+        val f = root.constants(r.name)
+       env flatMap {
+         case m =>
+           val result = Interpreter.evalCall(f, r.terms, root, m).toBool
+           if (!result)
+             None
+           else
+             Some(m)
+       }
 
       case Predicate.Body.NotEqual(ident1, ident2, _, _) =>
         env flatMap {
@@ -149,6 +156,8 @@ class Solver(root: TypedAst.Root) {
             else
               Some(m)
         }
+
+      case Predicate.Body.Read(terms, path, _, _) => ???
     }
 
     // fold the environment over every rule in the body.

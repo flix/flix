@@ -192,28 +192,28 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - Expression.Var01") {
     val input = Expression.Lit(Literal.Str("hello", loc), Type.Str, loc)
-    val env = Map(ident01 -> Value.Bool(false))
+    val env = Map(ident01.name -> Value.Bool(false))
     val result = Interpreter.eval(input, root, env)
     assertResult(Value.Str("hello"))(result)
   }
 
   test("Interpreter - Expression.Var02") {
     val input = Expression.Var(ident01, Type.Int, loc)
-    val env = Map(ident01 -> Value.Int(5))
+    val env = Map(ident01.name -> Value.Int(5))
     val result = Interpreter.eval(input, root, env)
     assertResult(Value.Int(5))(result)
   }
 
   test("Interpreter - Expression.Var03") {
     val input = Expression.Var(ident01, Type.Bool, loc)
-    val env = Map(ident01 -> Value.Bool(false))
+    val env = Map(ident01.name -> Value.Bool(false))
     val result = Interpreter.eval(input, root, env)
     assertResult(Value.Bool(false))(result)
   }
 
   test("Interpreter - Expression.Var04") {
     val input = Expression.Var(ident02, Type.Str, loc)
-    val env = Map(ident01 -> Value.Str("foo"), ident02 -> Value.Str("bar"))
+    val env = Map(ident01.name -> Value.Str("foo"), ident02.name -> Value.Str("bar"))
     val result = Interpreter.eval(input, root, env)
     assertResult(Value.Str("bar"))(result)
   }

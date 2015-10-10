@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Ty
 import ca.uwaterloo.flix.language.ast.{TypedAst, Name, BinaryOperator, UnaryOperator}
 
 object Interpreter {
-  type Env = Map[Name.Ident, Value]
+  type Env = Map[String, Value]
 
   // TODO: Use this exception:
 
@@ -21,7 +21,7 @@ object Interpreter {
   def eval(expr: Expression, root: Root, env: Env = Map()): Value = {
     expr match {
       case Expression.Lit(literal, _, _) => evalLit(literal)
-      case Expression.Var(ident, _, loc) => env.get(ident) match {
+      case Expression.Var(ident, _, loc) => env.get(ident.name) match {
         case None => throw InternalRuntimeError(s"Unbound variable ${ident.name} at ${loc.format}.")
         case Some(value) => value
       }
@@ -32,7 +32,7 @@ object Interpreter {
       case Expression.Apply(exp, args, _, _) => eval(exp, root, env) match {
         case Value.Closure(formals, body, closureEnv) =>
           val evalArgs = args.map(x => eval(x, root, env))
-          val newEnv = closureEnv ++ formals.map(_.ident).zip(evalArgs).toMap
+          val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
           eval(body, root, newEnv)
         case _ => assert(false, "Expected a function."); Value.Unit
       }
@@ -99,18 +99,19 @@ object Interpreter {
 
   private def unify(pattern: Pattern, value: Value): Option[Env] = (pattern, value) match {
     case (Pattern.Wildcard(_, _), _) => Some(Map())
-    case (Pattern.Var(ident, _, _), _) => Some(Map(ident -> value))
+    case (Pattern.Var(ident, _, _), _) => Some(Map(ident.name -> value))
     case (Pattern.Lit(lit, _, _), _) if evalLit(lit) == value => Some(Map())
     case (Pattern.Tag(name1, ident1, innerPat, _, _), Value.Tag(name2, ident2, innerVal))
       if name1 == name2 && ident1.name == ident2 => unify(innerPat, innerVal)
     case (Pattern.Tuple(pats, _, _), Value.Tuple(vals)) =>
       val envs = pats.zip(vals).map { case (p, v) => unify(p, v) }.collect { case Some(e) => e }
       if (pats.size == envs.size)
-        Some(envs.foldLeft(Map[Name.Ident, Value]()) { case (acc, newEnv) => acc ++ newEnv })
+        Some(envs.foldLeft(Map[String, Value]()) { case (acc, newEnv) => acc ++ newEnv })
       else None
     case _ => None
   }
 
+  // TODO: Need to come up with some more clean interfaces
 
   /**
    * Evaluates the given head term `t` under the given environment `env0`
@@ -122,6 +123,21 @@ object Interpreter {
     }
     case TypedAst.Term.Head.Lit(lit, tpe, loc) => Interpreter.evalLit(lit)
     case TypedAst.Term.Head.Apply(name, args, tpe, loc) => ???
+  }
+
+  def evalBodyTerm(t: TypedAst.Term.Body, env: Map[String, Value]): Value = t match {
+    case TypedAst.Term.Body.Var(x, _, _) => env(x.name)
+    // TODO ...
+  }
+
+  def evalCall(d: TypedAst.Definition.Constant, terms: List[TypedAst.Term.Body], root: TypedAst.Root, env: Map[String, Value]): Value = {
+    eval(d.exp, root, env) match {
+      case Value.Closure(formals, body, closureEnv) =>
+        val evalArgs = terms.map(t => evalBodyTerm(t, env))
+        val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
+        eval(body, root, newEnv)
+      case _ => ???
+    }
   }
 
 }
