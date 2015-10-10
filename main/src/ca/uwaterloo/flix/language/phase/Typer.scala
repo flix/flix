@@ -672,7 +672,7 @@ object Typer {
       val nested = s"(${prettyPrint(tpe)}})"
       enumAndTag + nested
     case TypedAst.Type.Enum(cases) =>
-      s"Enum(${cases.head._2.name.format})"
+      s"Enum(${cases.head._2.name})"
     case TypedAst.Type.Tuple(elms) => "(" + elms.map(prettyPrint).mkString(", ") + ")"
     case TypedAst.Type.Lambda(args, retTpe) =>
       "(" + args.map(prettyPrint).mkString(", ") + ") -> " + prettyPrint(retTpe)
@@ -684,7 +684,7 @@ object Typer {
     case ResolvedAst.Pattern.Var(ident, loc) => ident.name
     case ResolvedAst.Pattern.Lit(lit, loc) => lit.toString
     case ResolvedAst.Pattern.Tag(enumName, tagName, pat, loc) =>
-      enumName.format + "." + tagName.name + "(" + prettyPrint(pat) + ")"
+      enumName + "." + tagName.name + "(" + prettyPrint(pat) + ")"
     case ResolvedAst.Pattern.Tuple(elms, loc) =>
       "(" + elms.map(prettyPrint).mkString(", ") + ")"
   }

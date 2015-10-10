@@ -28,7 +28,7 @@ object Interpreter {
         case Some(value) => value
       }
       case Expression.Ref(name, _, _) =>
-        assert(root.constants.contains(name), s"Expected constant ${name.format} to be defined.")
+        assert(root.constants.contains(name), s"Expected constant $name to be defined.")
         eval(root.constants(name).exp, root, env)
       case Expression.Lambda(formals, body, _, _) => Value.Closure(formals, body, env)
       case Expression.Apply(exp, args, _, _) => eval(exp, root, env) match {

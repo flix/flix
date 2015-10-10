@@ -1,10 +1,10 @@
 package ca.uwaterloo.flix.util
 
-trait CachedHash {
+trait SmartHash {
   this: Product =>
 
   /**
-   * Cache hashCode for immutable values.
+   * Cached hashCode for immutable values.
    */
   final override val hashCode: Int = scala.runtime.ScalaRunTime._hashCode(this)
 

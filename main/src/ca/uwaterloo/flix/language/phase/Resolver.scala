@@ -32,7 +32,7 @@ object Resolver {
       val format =
         s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.formatSource}")}
            |
-            |${consoleCtx.red(s">> Duplicate definition of the name '${name.format}'.")}
+            |${consoleCtx.red(s">> Duplicate definition of the name '$name'.")}
            |
             |First definition was here:
            |${loc1.underline}
@@ -85,7 +85,7 @@ object Resolver {
     // TODO: Split this into multiple different versions:
     @deprecated
     case class UnresolvedReference(name: Name.Unresolved, namespace: List[String]) extends ResolverError {
-      val format: String = s"Error: Unresolved reference to '${name.format}' in namespace '${namespace.mkString("::")}' at: ${name.loc.format}\n"
+      val format: String = s"Error: Unresolved reference to '$name' in namespace '${namespace.mkString("::")}' at: ${name.loc.format}\n"
     }
 
     /**
@@ -99,7 +99,7 @@ object Resolver {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
            |
-            |${consoleCtx.red(s">> Unresolved reference to constant '${name.format}'.")}
+            |${consoleCtx.red(s">> Unresolved reference to constant '$name'.")}
            |
             |${loc.underline}
          """.stripMargin
@@ -116,7 +116,7 @@ object Resolver {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
            |
-            |${consoleCtx.red(s">> Unresolved reference to enum '${name.format}'.")}
+            |${consoleCtx.red(s">> Unresolved reference to enum '$name'.")}
            |
             |${loc.underline}
          """.stripMargin
@@ -140,7 +140,7 @@ object Resolver {
             |${loc.underline}
            |${consoleCtx.green(s"Did you mean: '${Levenshtein.bestMatch(tag, tags).get}' ?")}
            |
-            |The enum '${enum.ident.format}' declares the tags: $formattedTags at '${enum.loc.format}'.
+            |The enum '${enum.ident}' declares the tags: $formattedTags at '${enum.loc.format}'.
          """.stripMargin
       }
     }
@@ -157,7 +157,7 @@ object Resolver {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
            |
-            |${consoleCtx.red(s">> Unresolved reference to relation '${name.format}'.")}
+            |${consoleCtx.red(s">> Unresolved reference to relation '$name'.")}
            |
             |${loc.underline}
          """.stripMargin
@@ -174,7 +174,7 @@ object Resolver {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
            |
-            |${consoleCtx.red(s">> Unresolved reference to type '${name.format}'.")}
+            |${consoleCtx.red(s">> Unresolved reference to type '$name'.")}
            |
             |${loc.underline}
          """.stripMargin

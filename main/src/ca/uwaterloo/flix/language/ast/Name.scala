@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.util.CachedHash
+import ca.uwaterloo.flix.util.SmartHash
 
 object Name {
 
@@ -13,7 +13,7 @@ object Name {
    * @param name the identifier.
    * @param sp2 the position of the last character in the literal.
    */
-  case class Ident(sp1: SourcePosition, name: String, sp2: SourcePosition) extends CachedHash {
+  case class Ident(sp1: SourcePosition, name: String, sp2: SourcePosition) extends SmartHash {
     /**
      * The source location of `this` unresolved name.
      */
@@ -22,7 +22,7 @@ object Name {
     /**
      * Returns a human readable string representation of the identifier.
      */
-    val format: String = name
+    override val toString: String = name
   }
 
   /**
@@ -32,18 +32,15 @@ object Name {
    * @param parts the name parts.
    * @param sp2 the position of the last character in the literal.
    */
-  case class Unresolved(sp1: SourcePosition, parts: List[String], sp2: SourcePosition) extends CachedHash {
+  case class Unresolved(sp1: SourcePosition, parts: List[String], sp2: SourcePosition) extends SmartHash {
     /**
      * The source location of `this` unresolved name.
      */
     val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
 
     /**
-     * Returns a human readable string representation of the unresolved name.
+     * Returns a human readable string representation of the resolved name.
      */
-    val format: String = parts.mkString("::")
-
-    // TODO: Doc
     override val toString: String = "?" + parts.mkString("::")
   }
 
@@ -52,13 +49,10 @@ object Name {
    *
    * @param parts the parts of the name.
    */
-  case class Resolved(parts: List[String]) extends CachedHash {
+  case class Resolved(parts: List[String]) extends SmartHash {
     /**
      * Returns a human readable string representation of the resolved name.
      */
-    val format: String = parts.mkString("::")
-
-    // TODO: Doc
     override val toString: String = "/" + parts.mkString("::")
   }
 
