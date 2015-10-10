@@ -708,7 +708,7 @@ object Weeder {
      */
     def compile(past: ParsedAst.Type): Validation[WeededAst.Type, WeederError] = past match {
       case ParsedAst.Type.Unit => WeededAst.Type.Unit.toSuccess
-      case ParsedAst.Type.Var(name) => WeededAst.Type.Ambiguous(name).toSuccess
+      case ParsedAst.Type.Ref(name) => WeededAst.Type.Ambiguous(name).toSuccess
       case ParsedAst.Type.Function(pformals, pret) =>
         val formalTypeVal = @@(pformals map compile)
         val returnTypeVal = compile(pret)

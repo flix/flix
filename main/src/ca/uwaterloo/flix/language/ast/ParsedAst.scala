@@ -2,8 +2,6 @@ package ca.uwaterloo.flix.language.ast
 
 import scala.collection.immutable.Seq
 
-// TODO: Some questions about the utility of Print, Read and Write and whether they occur in the right place.
-
 /**
  * A common-super type for all parsed AST nodes.
  */
@@ -117,6 +115,7 @@ object ParsedAst {
      * @param sp1 the position of the first character in the definition.
      * @param tpe the type of the lattice elements.
      * @param elms the components of the lattice (e.g. bot, leq, lub).
+     * @param traits the optional components of the lattice (e.g. lub, top, norm).
      * @param sp2 the position of the last character in the definition.
      */
     case class Lattice(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], traits: Seq[ParsedAst.Trait], sp2: SourcePosition) extends ParsedAst.Definition {
@@ -549,7 +548,7 @@ object ParsedAst {
     }
 
     /**
-     * An AST node that represents the special "not equal" predicate.
+     * An AST node that represents the special not equal predicate.
      */
     case class NotEqual(sp1: SourcePosition, ident1: Name.Ident, ident2: Name.Ident, sp2: SourcePosition) extends ParsedAst.Predicate {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
@@ -696,19 +695,11 @@ object ParsedAst {
     case object Unit extends ParsedAst.Type
 
     /**
-     * An AST node that represent an unresolved type.
+     * An AST node that represent a reference to a type.
      *
-     * @param name the ambiguous name.
+     * @param name the resolved name.
      */
-    case class Var(name: Name.Unresolved) extends ParsedAst.Type
-
-    /**
-     * An AST node that represent a function type.
-     *
-     * @param formals the type of the arguments.
-     * @param retTpe the return type.
-     */
-    case class Function(formals: List[ParsedAst.Type], retTpe: ParsedAst.Type) extends ParsedAst.Type
+    case class Ref(name: Name.Unresolved) extends ParsedAst.Type
 
     /**
      * An AST node that represents a tagged type.
@@ -724,6 +715,14 @@ object ParsedAst {
      * @param elms the type of the individual elements.
      */
     case class Tuple(elms: Seq[ParsedAst.Type]) extends ParsedAst.Type
+
+    /**
+     * An AST node that represent a function type.
+     *
+     * @param formals the type of the arguments.
+     * @param retTpe the return type.
+     */
+    case class Function(formals: List[ParsedAst.Type], retTpe: ParsedAst.Type) extends ParsedAst.Type
 
     /**
      * An AST node that represent a parametric type.
@@ -785,7 +784,6 @@ object ParsedAst {
    * @param ident the name of the trait.
    * @param name the value passed to the trait.
    */
-  // TODO: Find a better name or eliminate entirely...
   case class Trait(ident: Name.Ident, name: Name.Unresolved) extends ParsedAst
 
 }

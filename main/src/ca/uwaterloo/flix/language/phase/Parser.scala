@@ -10,7 +10,8 @@ import scala.io.Source
 
 // TODO: Parse whitespace more "tightly" to improve source positions.
 
-// TODO: Add source locations in a few missing places?
+// TODO: Some questions about the utility of Print, Read and Write and whether they occur in the right place.
+
 
 /**
  * A parser for the Flix language.
@@ -365,8 +366,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     ParametricType | AmbiguousType | TupleType
   }
 
-  def AmbiguousType: Rule1[ParsedAst.Type.Var] = rule {
-    QName ~> ParsedAst.Type.Var
+  def AmbiguousType: Rule1[ParsedAst.Type.Ref] = rule {
+    QName ~> ParsedAst.Type.Ref
   }
 
   def ParametricType: Rule1[ParsedAst.Type.Parametric] = rule {
