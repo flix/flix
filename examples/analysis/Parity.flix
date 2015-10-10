@@ -91,7 +91,7 @@ namespace ParityAnalysis {
 
     // TODO: Need alternate syntax
     // bind Parity (Parity.Bot, leq, ParityAnalysis::lub)
-    lat Parity<> (Parity.Bot, leq, ParityAnalysis::lub);
+    lat Parity<> (Parity.Bot, leq, ParityAnalysis::lub)
 
     rel SumOp(result: Int, left: Int, right: Int);
     // TODO: Need alternate syntax

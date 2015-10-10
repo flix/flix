@@ -41,7 +41,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def NamespaceDeclaration: Rule1[ParsedAst.Declaration.Namespace] = rule {
-    atomic("namespace") ~ WS ~ QName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration).separatedBy(optWS) ~ optWS ~ '}' ~ optSC ~> ParsedAst.Declaration.Namespace
+    SP ~ atomic("namespace") ~ WS ~ QName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration).separatedBy(optWS) ~ optWS ~ '}' ~ SP ~ optSC ~> ParsedAst.Declaration.Namespace
   }
 
   def Definition: Rule1[ParsedAst.Definition] = rule {
@@ -273,11 +273,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Facts and Rules                                                         //
   /////////////////////////////////////////////////////////////////////////////
   def FactDeclaration: Rule1[ParsedAst.Declaration.Fact] = rule {
-    Predicate ~ optDotOrSC ~> ParsedAst.Declaration.Fact
+    SP ~ Predicate ~ SP ~ optDotOrSC ~> ParsedAst.Declaration.Fact
   }
 
   def RuleDeclaration: Rule1[ParsedAst.Declaration.Rule] = rule {
-    Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optDotOrSC ~> ParsedAst.Declaration.Rule
+    SP ~ Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ SP ~ optDotOrSC ~> ParsedAst.Declaration.Rule
   }
 
   def Predicate: Rule1[ParsedAst.Predicate] = rule {

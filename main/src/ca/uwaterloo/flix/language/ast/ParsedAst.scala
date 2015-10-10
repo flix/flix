@@ -19,46 +19,56 @@ object ParsedAst {
   /**
    * A common super-type for AST nodes that represent declarations.
    */
-  sealed trait Declaration extends ParsedAst
+  sealed trait Declaration extends ParsedAst {
+    /**
+     * Returns the source location of `this` definition.
+     */
+    def loc: SourceLocation
+  }
 
   object Declaration {
 
     /**
      * An AST node that represents a namespace declaration.
      *
+     * @param sp1 the position of the first character in the namespace.
      * @param name the name of the namespace.
      * @param body the nested declarations.
+     * @param sp2 the position of the last character in the namespace.
      */
-    case class Namespace(name: Name.Unresolved, body: Seq[ParsedAst.Declaration]) extends ParsedAst.Declaration
+    case class Namespace(sp1: SourcePosition, name: Name.Unresolved, body: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represents a fact declaration.
      *
+     * @param sp1 the position of the first character in the fact.
      * @param head the head predicate.
+     * @param sp2 the position of the last character in the fact.
      */
-    // TODO: Add source location
-    case class Fact(head: ParsedAst.Predicate) extends ParsedAst.Declaration
+    case class Fact(sp1: SourcePosition, head: ParsedAst.Predicate, sp2: SourcePosition) extends ParsedAst.Declaration {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
     /**
      * An AST node that represent a rule declaration.
      *
+     * @param sp1 the position of the first character in the rule.
      * @param head the head predicate.
      * @param body the body predicates.
+     * @param sp2 the position of the last character in the rule.
      */
-    // TODO: Add source location.
-    case class Rule(head: ParsedAst.Predicate, body: Seq[ParsedAst.Predicate]) extends ParsedAst.Declaration
+    case class Rule(sp1: SourcePosition, head: ParsedAst.Predicate, body: Seq[ParsedAst.Predicate], sp2: SourcePosition) extends ParsedAst.Declaration {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
   }
 
   /**
    * A common super-type for AST nodes that represent definitions.
    */
-  sealed trait Definition extends Declaration {
-    /**
-     * Returns the source location of `this` definition.
-     */
-    def loc: SourceLocation
-  }
+  sealed trait Definition extends Declaration
 
   object Definition {
 
@@ -544,7 +554,7 @@ object ParsedAst {
     case class NotEqual(sp1: SourcePosition, ident1: Name.Ident, ident2: Name.Ident, sp2: SourcePosition) extends ParsedAst.Predicate {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
-    
+
     /**
      * An AST node that represents the special alias predicate.
      *

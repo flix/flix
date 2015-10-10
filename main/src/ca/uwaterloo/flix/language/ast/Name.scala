@@ -4,8 +4,6 @@ import ca.uwaterloo.flix.util.SmartHash
 
 object Name {
 
-  // TODO: These object should be interned.
-
   /**
    * Represents an identifier.
    *
