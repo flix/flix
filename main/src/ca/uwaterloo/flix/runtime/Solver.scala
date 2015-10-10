@@ -110,6 +110,8 @@ class Solver(root: TypedAst.Root) {
       println(values.mkString(", "))
     case p: Predicate.Head.Write =>
       println("Write Not supported yet.")
+
+    case p: Predicate.Head.Error => ??? // TODO: not implemented.
   }
 
   /**
