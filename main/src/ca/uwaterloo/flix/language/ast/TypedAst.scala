@@ -549,7 +549,7 @@ object TypedAst {
        * @param tpe the type of the predicate.
        * @param loc the source location.
        */
-      case class Function(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Function(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body
 
       /**
        * A typed not equal predicate that occurs in the body of a rule.

@@ -509,9 +509,17 @@ object Typer {
             case terms => TypedAst.Predicate.Body.Relation(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
           }
 
-        case ResolvedAst.Predicate.Body.Function(name, terms, loc) =>
-          // TODO
-          ???
+        case ResolvedAst.Predicate.Body.Function(name, rterms, loc) =>
+          val constant = root.constants(name)
+          // TODO: Check that result type is bool.
+          // TODO: Improve the cast here
+          val termsVal = (rterms zip constant.tpe.asInstanceOf[ResolvedAst.Type.Function].args) map {
+            case (term, tpe) => Term.typer(term, Type.typer(tpe), root)
+          }
+
+          @@(termsVal) map {
+            case terms => TypedAst.Predicate.Body.Function(name, terms, TypedAst.Type.Lambda(terms map (_.tpe), TypedAst.Type.Bool), loc) // TODO Type
+          }
 
         case ResolvedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
           TypedAst.Predicate.Body.NotEqual(ident1, ident2, TypedAst.Type.Bool, loc: SourceLocation).toSuccess

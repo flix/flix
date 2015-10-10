@@ -135,6 +135,10 @@ class Solver(root: TypedAst.Root) {
         }
       }
 
+      case r: Predicate.Body.Function =>
+        println("functions not impl.")
+        ???
+
       case Predicate.Body.NotEqual(ident1, ident2, _, _) =>
         env flatMap {
           case m =>

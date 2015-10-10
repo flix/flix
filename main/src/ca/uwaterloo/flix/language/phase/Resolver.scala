@@ -651,7 +651,7 @@ object Resolver {
        * Performs symbol resolution in the given head predicate `wast` in the given `namespace` with the given symbol table `syms`.
        */
       def resolve(wast: WeededAst.Predicate.Head, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Head, ResolverError] = wast match {
-        // TODO: Must disambiguate
+        // TODO: What if a function symbol occurs in the head?
         case WeededAst.Predicate.Head.Relation(name, wterms, loc) =>
           syms.lookupRelation(name, namespace) flatMap {
             case (rname, defn) => @@(wterms map (t => Term.Head.resolve(t, namespace, syms))) map {
@@ -682,10 +682,15 @@ object Resolver {
        */
       def resolve(wast: WeededAst.Predicate.Body, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Body, ResolverError] = wast match {
         case WeededAst.Predicate.Body.FunctionOrRelation(name, wterms, loc) =>
-          // TODO: Must disambiguate
-          syms.lookupRelation(name, namespace) flatMap {
-            case (rname, defn) => @@(wterms map (t => Term.Body.resolve(t, namespace, syms))) map {
-              case terms => ResolvedAst.Predicate.Body.Relation(rname, terms, loc)
+          val termsVal = @@(wterms map (t => Term.Body.resolve(t, namespace, syms)))
+
+          if (name.parts.last.head.isUpper) {
+            @@(syms.lookupRelation(name, namespace), termsVal) map {
+              case ((rname, defn), terms) => ResolvedAst.Predicate.Body.Relation(rname, terms, loc)
+            }
+          } else {
+            @@(syms.lookupConstant(name, namespace), termsVal) map {
+              case ((rname, defn), terms) => ResolvedAst.Predicate.Body.Function(rname, terms, loc)
             }
           }
 
