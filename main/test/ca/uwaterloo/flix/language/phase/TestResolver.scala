@@ -160,6 +160,39 @@ class TestResolver extends FunSuite {
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
   }
 
+  test("IllegalRelationName01") {
+    val input =
+      s"""namespace A {
+         |  rel f(x: Int)
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
+  }
+
+  test("IllegalRelationName02") {
+    val input =
+      s"""namespace A {
+         |  rel foo(x: Int)
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
+  }
+
+  test("IllegalRelationName03") {
+    val input =
+      s"""namespace A {
+         |  rel fOO(x: Int)
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
+  }
+
   test("UnresolvedConstantReference01") {
     val input =
       s"""namespace A {
