@@ -140,20 +140,65 @@ object WeededAst {
 
   }
 
-  sealed trait Literal extends WeededAst
+  /**
+   * A common super-type for AST node that represents literals.
+   */
+  sealed trait Literal extends WeededAst {
+    /**
+     * Returns the source location of `this` literal.
+     */
+    def loc: SourceLocation
+  }
 
   object Literal {
 
+    /**
+     * An AST node that represents a unit literal
+     *
+     * @param loc the source location of the literal.
+     */
     case class Unit(loc: SourceLocation) extends WeededAst.Literal
 
+    /**
+     * An AST node that represents a boolean literal.
+     *
+     * @param lit the boolean literal.
+     * @param loc the source location of the literal.
+     */
     case class Bool(lit: scala.Boolean, loc: SourceLocation) extends WeededAst.Literal
 
+    /**
+     * An AST node that represents an integer literal.
+     *
+     * @param lit the integer literal.
+     * @param loc the source location of the literal
+     */
     case class Int(lit: scala.Int, loc: SourceLocation) extends WeededAst.Literal
 
+    /**
+     * An AST node that represents a string literal.
+     *
+     * @param lit the string literal.
+     * @param loc the source location of the literal.
+     */
     case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Literal
 
+    /**
+     * An AST node that represents a tagged literal.
+     *
+     * @param enum the enum name.
+     * @param tag the tag name.
+     * @param literal the literal
+     * @param loc the source location of the literal.
+     */
     case class Tag(enum: Name.Unresolved, tag: Name.Ident, literal: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Literal
 
+    /**
+     * An AST node that represents a tuple literal.
+     *
+     * @param elms the elements of the tuple.
+     * @param loc the source location of the literal.
+     */
     case class Tuple(elms: List[WeededAst.Literal], loc: SourceLocation) extends WeededAst.Literal
 
   }

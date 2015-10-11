@@ -196,7 +196,7 @@ object ParsedAst {
   }
 
   /**
-   * AST nodes for Literals.
+   * A common super-type for AST node that represents literals.
    */
   sealed trait Literal {
     /**
