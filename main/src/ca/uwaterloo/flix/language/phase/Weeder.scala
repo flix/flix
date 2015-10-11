@@ -334,11 +334,11 @@ object Weeder {
      * Compiles the given parsed definition `past` to a weeded definition.
      */
     def compile(past: ParsedAst.Definition): Validation[WeededAst.Declaration, WeederError] = past match {
-      case d: ParsedAst.Definition.Value => compile(d)
-      case d: ParsedAst.Definition.Function => compile(d)
-      case d: ParsedAst.Definition.Enum => compile(d)
-      case d: ParsedAst.Definition.Lattice => compile(d)
-      case d: ParsedAst.Definition.Relation => compile(d)
+      case d: ParsedAst.Definition.Value => Definition.compile(d)
+      case d: ParsedAst.Definition.Function => Definition.compile(d)
+      case d: ParsedAst.Definition.Enum => Definition.compile(d)
+      case d: ParsedAst.Definition.Lattice => Definition.compile(d)
+      case d: ParsedAst.Definition.Relation => Definition.compile(d)
     }
 
     /**
@@ -353,8 +353,8 @@ object Weeder {
      * Compiles the given parsed function declaration `past` to a weeded definition.
      */
     def compile(past: ParsedAst.Definition.Function): Validation[WeededAst.Definition.Constant, WeederError] = {
+      // check duplicate formals.
       val seen = mutable.Map.empty[String, Name.Ident]
-
       val formalsVal = @@(past.formals.map {
         case ParsedAst.FormalArg(ident, tpe) => seen.get(ident.name) match {
           case None =>
@@ -378,22 +378,23 @@ object Weeder {
      *
      * Returns [[Failure]] if the same tag name occurs twice.
      */
-    def compile(past: ParsedAst.Definition.Enum): Validation[WeededAst.Definition.Enum, WeederError] =
+    def compile(past: ParsedAst.Definition.Enum): Validation[WeededAst.Definition.Enum, WeederError] = {
+      // check duplicate tags.
       Validation.fold[ParsedAst.Type.Tag, Map[String, WeededAst.Type.Tag], WeederError](past.cases, Map.empty) {
-        // loop through each tag declaration.
         case (macc, tag@ParsedAst.Type.Tag(tagName, _)) => macc.get(tagName.name) match {
-          // check if the tag was already declared.
           case None => Type.compile(tag) map (tpe => macc + (tagName.name -> tpe.asInstanceOf[WeededAst.Type.Tag]))
           case Some(otherTag) => DuplicateTag(tagName.name, otherTag.tagName.loc, tagName.loc).toFailure
         }
       } map {
         case m => WeededAst.Definition.Enum(past.ident, m, past.loc)
       }
+    }
 
     /**
      * Compiles the given parsed lattice `past` to a weeded lattice definition.
      */
     def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Definition.Lattice, WeederError] = {
+      // check lattice definition.
       val tpeVal = Type.compile(past.tpe)
       val elmsVal = @@(past.elms.toList.map(Expression.compile))
       @@(tpeVal, elmsVal) flatMap {
@@ -406,11 +407,10 @@ object Weeder {
      * Compiles the given parsed relation `past` to a weeded relation definition.
      */
     def compile(past: ParsedAst.Definition.Relation): Validation[WeededAst.Definition.Relation, WeederError] = {
+      // check duplicate attributes.
       val seen = mutable.Map.empty[String, Name.Ident]
-
       val attributesVal = past.attributes.map {
         case ParsedAst.Attribute(ident, interp) => seen.get(ident.name) match {
-          // check if the attribute name was already declared.
           case None =>
             seen += (ident.name -> ident)
             interp match {
@@ -548,12 +548,10 @@ object Weeder {
   object Pattern {
     /**
      * Compiles the parsed pattern `past`.
-     *
-     * Returns [[Failure]] if the pattern is non-linear, i.e. if the same variable occurs twice.
      */
     def compile(past: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = {
+      // check non-linear pattern, i.e. duplicate variable occurence.
       val seen = mutable.Map.empty[String, Name.Ident]
-
       def visit(p: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = p match {
         case pat: ParsedAst.Pattern.Wildcard => WeededAst.Pattern.Wildcard(pat.loc).toSuccess
         case pat: ParsedAst.Pattern.Var => seen.get(pat.ident.name) match {
@@ -650,8 +648,6 @@ object Weeder {
 
       /**
        * Compiles the given parsed head term `past` to a weeded term.
-       *
-       * Returns [[Failure]] if the term contains a wildcard variable.
        */
       def compile(past: ParsedAst.Term, aliases: Map[String, ParsedAst.Predicate.Alias]): Validation[WeededAst.Term.Head, WeederError] = past match {
         case term: ParsedAst.Term.Wildcard => IllegalHeadTerm("Wildcards may not occur in head predicates.", term.loc).toFailure
@@ -676,8 +672,6 @@ object Weeder {
     object Body {
       /**
        * Compiles the given parsed body term `past` to a weeded term.
-       *
-       * Returns [[Failure]] if the term contains a function call.
        */
       def compile(past: ParsedAst.Term): Validation[WeededAst.Term.Body, WeederError] = past match {
         case term: ParsedAst.Term.Wildcard => WeededAst.Term.Body.Wildcard(term.loc).toSuccess
