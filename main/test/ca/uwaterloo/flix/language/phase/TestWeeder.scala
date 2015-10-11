@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.Compiler
 
 import scala.collection.immutable.Seq
 
@@ -9,6 +8,7 @@ import org.scalatest.FunSuite
 
 class TestWeeder extends FunSuite {
 
+  // TODO: Use source code directly in tests.
   val SP = SourcePosition.Unknown
   val Ident = ident("x")
 

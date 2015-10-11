@@ -550,7 +550,7 @@ object Weeder {
      * Compiles the parsed pattern `past`.
      */
     def compile(past: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = {
-      // check non-linear pattern, i.e. duplicate variable occurence.
+      // check non-linear pattern, i.e. duplicate variable occurrence.
       val seen = mutable.Map.empty[String, Name.Ident]
       def visit(p: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = p match {
         case pat: ParsedAst.Pattern.Wildcard => WeededAst.Pattern.Wildcard(pat.loc).toSuccess
