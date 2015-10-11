@@ -105,7 +105,6 @@ object Compiler {
 
     val wast = Weeder.weed(past)
     if (wast.hasErrors) {
-      println()
       wast.errors.foreach(e => println(e.format))
       Console.println("Aborting due to previous errors.")
       return None
@@ -114,7 +113,6 @@ object Compiler {
 
     val rast = Resolver.resolve(wast.get)
     if (rast.hasErrors) {
-      println()
       rast.errors.foreach(e => println(e.format))
       Console.println("Aborting due to previous errors.")
       return None

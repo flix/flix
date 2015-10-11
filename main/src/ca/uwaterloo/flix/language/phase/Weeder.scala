@@ -170,6 +170,41 @@ object Weeder {
     }
 
     /**
+     * An error raised to indicate that an illegal term occurs in a head predicate.
+     *
+     * @param msg the error message.
+     * @param loc the location where the illegal term occurs.
+     */
+    case class IllegalHeadTerm(msg: String, loc: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> Illegal term in the head of a fact/rule.")}
+           |
+            |${loc.underline}
+           |$msg
+         """.stripMargin
+    }
+
+    /**
+     * An error raised to indicate that an illegal term occurs in a body predicate.
+     *
+     * @param msg the error message.
+     * @param loc the location where the illegal term occurs.
+     */
+    case class IllegalBodyTerm(msg: String, loc: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> Illegal term in the body of a rule.")}
+           |
+            |${loc.underline}
+           |$msg
+         """.stripMargin
+    }
+
+
+    /**
      * An error raised to indicate an illegal lattice definition.
      *
      * @param loc the location where the illegal definition occurs.
@@ -228,46 +263,6 @@ object Weeder {
            |This feature is not yet supported, implemented or considered stable.
            |
             |Tip: Avoid using this feature.
-         """.stripMargin
-    }
-
-
-    /**
-     * An error raised to indicate that a wildcard occurs in a head term.
-     *
-     * @param loc the location where the illegal term occurs.
-     */
-    case class WildcardInHeadTerm(loc: SourceLocation) extends WeederError {
-      val format =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
-           |
-            |${consoleCtx.red(s">> Illegal wildcard in head of a fact/rule.")}
-           |
-            |${loc.underline}
-           |Wildcards (i.e. implicitly unbound variables) are not allowed to occur in the head of a fact/rule/alias.
-           |
-            |Tip: Remove the wildcard or replace it by bound variable.
-         """.stripMargin
-    }
-
-
-    /**
-     * An error raised to indicate that a function application occurs in a body term.
-     *
-     * @param loc the location where the illegal term occurs.
-     */
-    // TODO: replace?
-    case class ApplyInBodyTerm(loc: SourceLocation) extends WeederError {
-      val format =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
-           |
-            |${consoleCtx.red(s">> Illegal function call in body of a rule.")}
-           |
-            |${loc.underline}
-           |Function calls are not allowed to occur in the body of a rule. Only in its head.
-           |
-            |Tip: Restructure the rule such that the function call does not occur in its body.
-           |Possibly by breaking up the rule into multiple smaller rules.
          """.stripMargin
     }
 
@@ -661,7 +656,7 @@ object Weeder {
        * Returns [[Failure]] if the term contains a wildcard variable.
        */
       def compile(past: ParsedAst.Term, aliases: Map[String, ParsedAst.Predicate.Alias]): Validation[WeededAst.Term.Head, WeederError] = past match {
-        case term: ParsedAst.Term.Wildcard => WildcardInHeadTerm(term.loc).toFailure
+        case term: ParsedAst.Term.Wildcard => IllegalHeadTerm("Wildcards may not occur in head predicates.", term.loc).toFailure
         case term: ParsedAst.Term.Var => aliases.get(term.ident.name) match {
           case None => WeededAst.Term.Head.Var(term.ident, term.loc).toSuccess
           case Some(alias) => compile(alias.term, aliases)
@@ -696,7 +691,7 @@ object Weeder {
           @@(compile(term.term), Type.compile(term.tpe)) map {
             case (t, tpe) => WeededAst.Term.Body.Ascribe(t, tpe, term.loc)
           }
-        case term: ParsedAst.Term.Apply => ApplyInBodyTerm(term.loc).toFailure
+        case term: ParsedAst.Term.Apply => IllegalBodyTerm("Function calls may not occur in body predicates.", term.loc).toFailure
       }
     }
 
