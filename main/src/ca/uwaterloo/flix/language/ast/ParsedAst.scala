@@ -58,6 +58,13 @@ object ParsedAst {
      * @param sp2 the position of the last character in the rule.
      */
     case class Rule(sp1: SourcePosition, head: ParsedAst.Predicate, body: Seq[ParsedAst.Predicate], sp2: SourcePosition) extends ParsedAst.Declaration {
+      /**
+       * Returns the list of alias predicates occurring the body of the rule.
+       */
+      val aliases: Seq[ParsedAst.Predicate.Alias] = body collect {
+        case p: ParsedAst.Predicate.Alias => p
+      }
+
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 

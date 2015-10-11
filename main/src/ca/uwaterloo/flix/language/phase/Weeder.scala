@@ -203,7 +203,6 @@ object Weeder {
          """.stripMargin
     }
 
-
     /**
      * An error raised to indicate an illegal lattice definition.
      *
@@ -281,9 +280,9 @@ object Weeder {
      * Compiles the given parsed declaration `past` to a weeded declaration.
      */
     def compile(past: ParsedAst.Declaration): Validation[WeededAst.Declaration, WeederError] = past match {
-      case d: ParsedAst.Declaration.Namespace => compile(d)
-      case d: ParsedAst.Declaration.Fact => compile(d)
-      case d: ParsedAst.Declaration.Rule => compile(d)
+      case d: ParsedAst.Declaration.Namespace => Declaration.compile(d)
+      case d: ParsedAst.Declaration.Fact => Declaration.compile(d)
+      case d: ParsedAst.Declaration.Rule => Declaration.compile(d)
       case d: ParsedAst.Definition => Definition.compile(d)
       case d: ParsedAst.Directive => Directive.compile(d)
     }
@@ -292,7 +291,9 @@ object Weeder {
      * Compiles the given parsed namespace declaration `past` to a weeded namespace declaration.
      */
     def compile(past: ParsedAst.Declaration.Namespace): Validation[WeededAst.Declaration.Namespace, WeederError] =
-      @@(past.body.map(compile)) map (ds => WeededAst.Declaration.Namespace(past.name, ds))
+      @@(past.body.map(compile)) map {
+        case decls => WeededAst.Declaration.Namespace(past.name, decls)
+      }
 
     /**
      * Compiles the given parsed fact `past` to a weeded fact.
@@ -306,15 +307,12 @@ object Weeder {
      * Compiles the parsed rule `past` to a weeded rule.
      */
     def compile(past: ParsedAst.Declaration.Rule): Validation[WeededAst.Declaration.Rule, WeederError] = {
-      // TODO: Improve code by having "aliases" on a rule?
-
       // compute an map from variable names to alias predicates.
-      val aliasesVal = Validation.fold[ParsedAst.Predicate, Map[String, ParsedAst.Predicate.Alias], WeederError](past.body, Map.empty) {
-        case (m, p: ParsedAst.Predicate.Alias) => m.get(p.ident.name) match {
+      val aliasesVal = Validation.fold[ParsedAst.Predicate.Alias, Map[String, ParsedAst.Predicate.Alias], WeederError](past.aliases, Map.empty) {
+        case (m, p) => m.get(p.ident.name) match {
           case None => (m + (p.ident.name -> p)).toSuccess
           case Some(otherAlias) => DuplicateAlias(p.ident.name, otherAlias.loc, p.loc).toFailure
         }
-        case (m, _) => m.toSuccess
       }
 
       aliasesVal flatMap {
