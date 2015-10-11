@@ -274,12 +274,35 @@ object WeededAst {
      */
     case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-
+    /**
+     * An AST node that represents a let expression.
+     *
+     * @param ident the name of the bound variable.
+     * @param value the value expression.
+     * @param body the body expression in which the let-bound variable occurs.
+     * @param loc the source location.
+     */
     case class Let(ident: Name.Ident, value: WeededAst.Expression, body: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    /**
+     * An AST node that represents a match expression.
+     *
+     * @param e the match value expression.
+     * @param rs the match rules.
+     * @param loc the source location.
+     */
     case class Match(e: WeededAst.Expression, rs: List[(WeededAst.Pattern, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Tag(name: Name.Unresolved, ident: Name.Ident, e: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    /**
+     * An AST node that represents a tagged expression.
+     *
+     * @param enum the enum name.
+     * @param tag the tag name.
+     * @param e the tagged expression.
+     * @param loc the source location.
+     */
+    case class Tag(enum: Name.Unresolved, tag: Name.Ident, e: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
 
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
