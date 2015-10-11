@@ -206,7 +206,12 @@ object WeededAst {
   /**
    * A common super-type for AST nodes representing expressions.
    */
-  sealed trait Expression extends WeededAst
+  sealed trait Expression extends WeededAst {
+    /**
+     * Returns the source location of `this` expression.
+     */
+    def loc: SourceLocation
+  }
 
   object Expression {
 
@@ -329,6 +334,8 @@ object WeededAst {
     case class Error(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
   }
+
+  // TODO: Continue from here...
 
   sealed trait Pattern extends WeededAst {
 
