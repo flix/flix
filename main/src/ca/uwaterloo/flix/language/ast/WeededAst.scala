@@ -1,22 +1,56 @@
 package ca.uwaterloo.flix.language.ast
 
-// TODO: DOC
-
+/**
+ * A common super-type for weeded AST nodes.
+ */
 trait WeededAst
 
 object WeededAst {
 
+  /**
+   * The AST root node.
+   *
+   * @param declarations the declarations in the AST.
+   */
   case class Root(declarations: List[WeededAst.Declaration]) extends WeededAst
 
-  sealed trait Declaration extends WeededAst
+  /**
+   * A common super-type for AST nodes that represents declarations.
+   */
+  sealed trait Declaration extends WeededAst {
+    /**
+     * Returns the source location of `this` declaration.
+     */
+    def loc: SourceLocation
+  }
 
   object Declaration {
 
-    case class Namespace(name: Name.Unresolved, body: List[WeededAst.Declaration]) extends WeededAst.Declaration
+    /**
+     * An AST node that represents a namespace declaration.
+     *
+     * @param name the name of the namespace.
+     * @param body the nested declarations.
+     * @param loc the source location.
+     */
+    case class Namespace(name: Name.Unresolved, body: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Fact(head: WeededAst.Predicate.Head) extends WeededAst.Declaration
+    /**
+     * An AST node that a fact declaration.
+     *
+     * @param head the head predicate.
+     * @param loc the source location.
+     */
+    case class Fact(head: WeededAst.Predicate.Head, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Rule(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body]) extends WeededAst.Declaration
+    /**
+     * An AST node that represents a rule declaration.
+     *
+     * @param head the head predicate.
+     * @param body the body predicate.
+     * @param loc the source location.
+     */
+    case class Rule(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation) extends WeededAst.Declaration
 
   }
 
@@ -238,3 +272,5 @@ object WeededAst {
 
 
 }
+
+// TODO: DOC

@@ -292,7 +292,7 @@ object Weeder {
      */
     def compile(past: ParsedAst.Declaration.Namespace): Validation[WeededAst.Declaration.Namespace, WeederError] =
       @@(past.body.map(compile)) map {
-        case decls => WeededAst.Declaration.Namespace(past.name, decls)
+        case decls => WeededAst.Declaration.Namespace(past.name, decls, past.loc)
       }
 
     /**
@@ -300,7 +300,7 @@ object Weeder {
      */
     def compile(past: ParsedAst.Declaration.Fact): Validation[WeededAst.Declaration.Fact, WeederError] =
       Predicate.Head.compile(past.head) map {
-        case p => WeededAst.Declaration.Fact(p)
+        case p => WeededAst.Declaration.Fact(p, past.loc)
       }
 
     /**
@@ -321,7 +321,7 @@ object Weeder {
           val bodyVal = @@(past.body.filterNot(_.isInstanceOf[ParsedAst.Predicate.Alias]).map(Predicate.Body.compile))
 
           @@(headVal, bodyVal) map {
-            case (head, body) => WeededAst.Declaration.Rule(head, body)
+            case (head, body) => WeededAst.Declaration.Rule(head, body, past.loc)
           }
       }
     }

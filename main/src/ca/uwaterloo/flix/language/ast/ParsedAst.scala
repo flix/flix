@@ -3,14 +3,16 @@ package ca.uwaterloo.flix.language.ast
 import scala.collection.immutable.Seq
 
 /**
- * A common-super type for all parsed AST nodes.
+ * A common-super type for parsed AST nodes.
  */
 sealed trait ParsedAst
 
 object ParsedAst {
 
   /**
-   * The Ast root node. 
+   * The AST root node.
+   *
+   * @param declarations the declarations in the AST.
    */
   case class Root(declarations: Seq[ParsedAst.Declaration]) extends ParsedAst
 
@@ -19,7 +21,7 @@ object ParsedAst {
    */
   sealed trait Declaration extends ParsedAst {
     /**
-     * Returns the source location of `this` definition.
+     * Returns the source location of `this` declaration.
      */
     def loc: SourceLocation
   }

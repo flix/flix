@@ -135,8 +135,9 @@ object Interpreter {
   }
 
   def evalBodyTerm(t: TypedAst.Term.Body, env: Map[String, Value]): Value = t match {
+    case TypedAst.Term.Body.Wildcard(_, _) => ???
     case TypedAst.Term.Body.Var(x, _, _) => env(x.name)
-    // TODO ...
+    case TypedAst.Term.Body.Lit(lit, _, _) => ???
   }
 
   def eval2(lambda: Expression, v1: Value, v2: Value, root: TypedAst.Root): Value =

@@ -305,12 +305,12 @@ object Resolver {
      * Constructs the symbol table for the given definition of `wast`.
      */
     def symbolsOf(wast: WeededAst.Declaration, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
-      case WeededAst.Declaration.Namespace(Name.Unresolved(sp1, parts, sp2), body) =>
+      case WeededAst.Declaration.Namespace(Name.Unresolved(sp1, parts, sp2), body, loc) =>
         Validation.fold[WeededAst.Declaration, SymbolTable, ResolverError](body, syms) {
           case (msyms, d) => symbolsOf(d, namespace ::: parts.toList, msyms)
         }
-      case WeededAst.Declaration.Fact(head) => syms.toSuccess
-      case WeededAst.Declaration.Rule(head, body) => syms.toSuccess
+      case WeededAst.Declaration.Fact(head, loc) => syms.toSuccess
+      case WeededAst.Declaration.Rule(head, body, loc) => syms.toSuccess
       case defn: WeededAst.Definition => symbolsOf(defn, namespace, syms)
       case dir: WeededAst.Directive => syms.toSuccess
     }
@@ -357,7 +357,7 @@ object Resolver {
 
     def collectFacts(wast: WeededAst.Root, syms: SymbolTable): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = {
       def visit(wast: WeededAst.Declaration, namespace: List[String]): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = wast match {
-        case WeededAst.Declaration.Namespace(name, body) =>
+        case WeededAst.Declaration.Namespace(name, body, loc) =>
           @@(body map (d => visit(d, namespace ::: name.parts))) map (xs => xs.flatten)
         case fact: WeededAst.Declaration.Fact => Constraint.resolve(fact, namespace, syms) map (f => List(f))
         case _ => List.empty[ResolvedAst.Constraint.Fact].toSuccess
@@ -368,7 +368,7 @@ object Resolver {
 
     def collectRules(wast: WeededAst.Root, syms: SymbolTable): Validation[List[ResolvedAst.Constraint.Rule], ResolverError] = {
       def visit(wast: WeededAst.Declaration, namespace: List[String]): Validation[List[ResolvedAst.Constraint.Rule], ResolverError] = wast match {
-        case WeededAst.Declaration.Namespace(name, body) =>
+        case WeededAst.Declaration.Namespace(name, body, loc) =>
           @@(body map (d => visit(d, namespace ::: name.parts))) map (xs => xs.flatten)
         case rule: WeededAst.Declaration.Rule => Constraint.resolve(rule, namespace, syms) map (r => List(r))
         case _ => List.empty[ResolvedAst.Constraint.Rule].toSuccess
@@ -453,7 +453,7 @@ object Resolver {
   object Directive {
     def collect(wast: Root, syms: SymbolTable): Validation[List[ResolvedAst.Directive], ResolverError] = {
       def visit(wast: WeededAst.Declaration, namespace: List[String]): Validation[List[ResolvedAst.Directive], ResolverError] = wast match {
-        case WeededAst.Declaration.Namespace(name, body) =>
+        case WeededAst.Declaration.Namespace(name, body, loc) =>
           @@(body map (d => visit(d, namespace ::: name.parts))) map (xs => xs.flatten)
         case WeededAst.Directive.AssertFact(fact, loc) =>
           Constraint.resolve(fact, namespace, syms) map {
