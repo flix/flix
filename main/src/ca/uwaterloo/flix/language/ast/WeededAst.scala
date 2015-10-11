@@ -102,14 +102,40 @@ object WeededAst {
 
   }
 
-  sealed trait Directive extends WeededAst.Declaration
+  /**
+   * A common super-type for AST nodes that represent directives.
+   */
+  sealed trait Directive extends WeededAst.Declaration {
+    /**
+     * Returns the source location of `this` directive.
+     */
+    def loc: SourceLocation
+  }
 
   object Directive {
 
+    /**
+     * An AST node that represents an asserted fact.
+     *
+     * @param fact the asserted fact.
+     * @param loc the source location.
+     */
     case class AssertFact(fact: WeededAst.Declaration.Fact, loc: SourceLocation) extends WeededAst.Directive
 
+    /**
+     * An AST node that represents an asserted rule.
+     *
+     * @param rule the asserted rule.
+     * @param loc the source location.
+     */
     case class AssertRule(rule: WeededAst.Declaration.Rule, loc: SourceLocation) extends WeededAst.Directive
 
+    /**
+     * An AST node that represents a directive to print a relation.
+     *
+     * @param name the name of the relation.
+     * @param loc the source location.
+     */
     case class Print(name: Name.Unresolved, loc: SourceLocation) extends WeededAst.Directive
 
   }
