@@ -245,11 +245,35 @@ object WeededAst {
      */
     case class Apply(lambda: WeededAst.Expression, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
+    /**
+     * An AST node that represents a unary expression.
+     *
+     * @param op the unary operator.
+     * @param e the nested expression.
+     * @param loc the source location.
+     */
     case class Unary(op: UnaryOperator, e: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    /**
+     * An AST node that represents a binary expression.
+     *
+     * @param op the binary operator.
+     * @param e1 the lhs expression.
+     * @param e2 the rhs expression.
+     * @param loc the source location.
+     */
     case class Binary(op: BinaryOperator, e1: WeededAst.Expression, e2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    /**
+     * An AST node that represents an if-then-else expression.
+     *
+     * @param e1 the conditional expression.
+     * @param e2 the consequent expression.
+     * @param e3 the alternate expression.
+     * @param loc the source location.
+     */
     case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
 
     case class Let(ident: Name.Ident, value: WeededAst.Expression, body: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
