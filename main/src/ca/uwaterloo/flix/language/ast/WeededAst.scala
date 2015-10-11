@@ -303,11 +303,29 @@ object WeededAst {
      */
     case class Tag(enum: Name.Unresolved, tag: Name.Ident, e: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-
+    /**
+     * An AST node that represents a tuple expression.
+     *
+     * @param elms the elements of the tuple.
+     * @param loc the source location.
+     */
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
+    /**
+     * An AST node that represents an ascribe expression.
+     *
+     * @param e the ascribed expression.
+     * @param tpe the ascribed type.
+     * @param loc the source location.
+     */
     case class Ascribe(e: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
+    /**
+     * An AST node that represents an error expression.
+     *
+     * @param tpe the type of the expression.
+     * @param loc the source location.
+     */
     case class Error(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
   }
