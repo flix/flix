@@ -203,17 +203,47 @@ object WeededAst {
 
   }
 
+  /**
+   * A common super-type for AST nodes representing expressions.
+   */
   sealed trait Expression extends WeededAst
 
   object Expression {
 
-    case class Lit(literal: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Expression
+    /**
+     * An AST node that represents a literal expressions.
+     *
+     * @param lit the literal.
+     * @param loc the source location.
+     */
+    case class Lit(lit: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Expression
 
+    /**
+     * An AST node that represents a variable or unresolved reference.
+     *
+     * @param name the unresolved name.
+     * @param loc the source location.
+     */
     case class Var(name: Name.Unresolved, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Apply(lambda: WeededAst.Expression, arguments: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    /**
+     * An AST node that represents a lambda expressions.
+     *
+     * @param formals the formal arguments.
+     * @param body the body expression.
+     * @param retTpe the declared return type.
+     * @param loc the source location.
+     */
+    case class Lambda(formals: List[WeededAst.FormalArg], body: WeededAst.Expression, retTpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Lambda(formals: List[WeededAst.FormalArg], body: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+    /**
+     * An AST node that represents a call expression.
+     *
+     * @param lambda the lambda expression.
+     * @param args the argument expressions.
+     * @param loc the source location.
+     */
+    case class Apply(lambda: WeededAst.Expression, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class Unary(op: UnaryOperator, e: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
