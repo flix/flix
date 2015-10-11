@@ -54,16 +54,50 @@ object WeededAst {
 
   }
 
+  /**
+   * A common super-type for AST nodes that represents definitions.
+   */
   sealed trait Definition extends WeededAst.Declaration
 
   object Definition {
 
+    /**
+     * An AST node that represent a constant definition.
+     *
+     * @param ident the name of the constant.
+     * @param e the named expression.
+     * @param tpe the declared type of the expression.
+     * @param loc the source location.
+     */
     case class Constant(ident: Name.Ident, e: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Definition
 
+    /**
+     * An AST node that represents an enum definition.
+     *
+     * @param ident the name of the enum.
+     * @param cases the cases of the enum.
+     * @param loc the source location.
+     */
     case class Enum(ident: Name.Ident, cases: Map[String, WeededAst.Type.Tag], loc: SourceLocation) extends WeededAst.Definition
 
+    /**
+     * An AST node that represents a lattice definition.
+     *
+     * @param tpe the type of the lattice elements.
+     * @param bot the bottom element.
+     * @param leq the less-than-equal function.
+     * @param lub the least-upper-bound function.
+     * @param loc the source location.
+     */
     case class Lattice(tpe: WeededAst.Type, bot: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Definition
 
+    /**
+     * An AST node that represents a relation definition.
+     *
+     * @param ident the name of the relation.
+     * @param attributes the attributes of the relation.
+     * @param loc the source location of the relation.
+     */
     case class Relation(ident: Name.Ident, attributes: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Definition
 
   }
