@@ -335,16 +335,14 @@ object WeededAst {
 
   }
 
-  // TODO: Continue from here...
-
+  /**
+   * A common super-type for AST nodes that represent patterns.
+   */
   sealed trait Pattern extends WeededAst {
-
-    def loc: SourceLocation
-
     /**
      * Returns the set of free variables in `this` pattern.
      */
-    final def freeVars: Set[String] = this match {
+    def freeVars: Set[String] = this match {
       case WeededAst.Pattern.Wildcard(_) => Set.empty
       case WeededAst.Pattern.Var(ident, loc) => Set(ident.name)
       case WeededAst.Pattern.Lit(lit, loc) => Set.empty
@@ -353,49 +351,140 @@ object WeededAst {
         case (acc, pat) => acc ++ pat.freeVars
       }
     }
+
+    /**
+     * The source location of `this` pattern.
+     */
+    def loc: SourceLocation
   }
 
   object Pattern {
 
+    /**
+     * An AST node that represents a wildcard pattern.
+     *
+     * @param loc the source location.
+     */
     case class Wildcard(loc: SourceLocation) extends WeededAst.Pattern
 
+    /**
+     * An AST node that represents a variable pattern.
+     *
+     * @param ident the name of the variable.
+     * @param loc the source location.
+     */
     case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Pattern
 
-    case class Lit(literal: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Pattern
+    /**
+     * An AST node that represents a literal pattern.
+     *
+     * @param lit the literal.
+     * @param loc the source location.
+     */
+    case class Lit(lit: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Pattern
 
-    case class Tag(name: Name.Unresolved, ident: Name.Ident, p: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
+    /**
+     * An AST node that represents a tagged pattern.
+     *
+     * @param enum the enum name.
+     * @param tag the tag name.
+     * @param pat the nested pattern.
+     * @param loc the source location.
+     */
+    case class Tag(enum: Name.Unresolved, tag: Name.Ident, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
+    /**
+     * An AST node that represents a tuple pattern.
+     *
+     * @param elms the elements of the tuple.
+     * @param loc the source location.
+     */
     case class Tuple(elms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
   }
 
+  /**
+   * A common super-type for AST nodes that represent predicates.
+   */
   sealed trait Predicate extends WeededAst
 
   object Predicate {
 
+    /**
+     * A common super-type for AST nodes that represents head predicates.
+     */
     sealed trait Head extends WeededAst.Predicate
 
     object Head {
 
+      /**
+       * An AST node that represents a relational predicate.
+       *
+       * @param name the name of the relation.
+       * @param terms the terms of the predicate.
+       * @param loc the source location.
+       */
       case class Relation(name: Name.Unresolved, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
+      /**
+       * An AST node that represents the special print predicate.
+       *
+       * @param terms the terms of the predicate.
+       * @param loc the source location.
+       */
       case class Print(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
+      /**
+       * An AST node that represents the special write predicate.
+       *
+       * @param terms the terms of the predicate.
+       * @param path the path to write to.
+       * @param loc the source location.
+       */
       case class Write(terms: List[WeededAst.Term.Head], path: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Predicate.Head
 
+      /**
+       * An AST node that represents the special error predicate.
+       *
+       * @param terms the terms of the predicate.
+       * @param loc the source location.
+       */
       case class Error(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
     }
 
-
+    /**
+     * A common super-type for AST nodes that represents body predicates.
+     */
     sealed trait Body extends WeededAst.Predicate
 
     object Body {
 
+      /**
+       * An AST node that represents a functional or relational predicate.
+       *
+       * @param name the name of the function or relation.
+       * @param terms the terms of the predicate.
+       * @param loc the source location.
+       */
       case class FunctionOrRelation(name: Name.Unresolved, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst.Predicate.Body
 
+      /**
+       * An AST node that represents the special not equal predicate.
+       *
+       * @param ident1 the name of the first variable.
+       * @param ident2 the name of the second variable.
+       * @param loc the source location.
+       */
       case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends WeededAst.Predicate.Body
 
+      /**
+       * An AST node that represents the special read predicate.
+       *
+       * @param terms the terms of the predicate.
+       * @param path the path to read from.
+       * @param loc the source location.
+       */
       case class Read(terms: List[WeededAst.Term.Body], path: WeededAst.Term.Body, loc: SourceLocation) extends WeededAst.Predicate.Body
 
     }
