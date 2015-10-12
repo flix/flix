@@ -141,7 +141,13 @@ object Interpreter {
   }
 
   def eval2(lambda: Expression, v1: Value, v2: Value, root: TypedAst.Root): Value =
-    ???
+    eval(lambda, root, Map.empty) match {
+      case Value.Closure(formals, body, closureEnv) =>
+        val evalArgs = List(v1, v2)
+        val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
+        eval(body, root, newEnv)
+      case _ => ??? // TODO: Just omit this
+    }
 
   def evalCall(d: TypedAst.Definition.Constant, terms: List[TypedAst.Term.Body], root: TypedAst.Root, env: Map[String, Value]): Value = {
     eval(d.exp, root, env) match {
@@ -149,7 +155,7 @@ object Interpreter {
         val evalArgs = terms.map(t => evalBodyTerm(t, env))
         val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
         eval(body, root, newEnv)
-      case _ => ???
+      case _ => ??? // TODO: Just omit this
     }
   }
 

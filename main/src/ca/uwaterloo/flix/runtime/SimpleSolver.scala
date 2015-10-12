@@ -163,6 +163,9 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
 
         val defn = sCtx.root.relations(r.name)
         if (isLat(defn)) {
+          val table = dbLat(r.name)
+
+          // TODO
           ???
         } else {
           val table = dbRel(r.name)
