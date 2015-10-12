@@ -1,4 +1,5 @@
-namespace ConstantProp {
+namespace Constant {
+
     enum Element {
         case Top,
         case Constant(Int),
@@ -32,24 +33,16 @@ namespace ConstantProp {
         case Element.Top => true;
     };
 
-    //TODO(Magnus): Fix this parser bug
-    //lat <Element> (Element.Bot, leq, lub);
+    // TODO: Define lattice and use these:
 
-    rel A(x: <Element>)
+    rel A(x: Element<>)
     A(Element.Constant(42)).
     A(Element.Constant(56)).
     //A should be Element.Top
     //A(Element.Top) :- true
 
-    rel B(x: <Element>)
+    rel B(x: Element<>)
     B(sum(Element.Constant(1), Element.Constant(41))).
     //B(Element.Constant(42)) :- true
-
-    rel C(x: <Element>, y: String)
-    C(Element.Constant(2), "even").
-    C(Element.Bot, "bot").
-
-    rel EvenCs(y: String)
-    EvenCs(y) :- maybeEven(e), C(e, y).
 
 }

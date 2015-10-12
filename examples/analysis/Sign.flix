@@ -51,15 +51,11 @@ namespace Sign {
         case _          => Bot;
     };
 
-    /**
-     * Defines the Sign lattice.
-     */
-    lat Sign = record { bot = Bot, leq = leq, lub = lub };
+    // TODO: Define lattice
 
     /**
      * Returns the sum of `e1` and `e2`.
      */
-    @monotone @strict
     def plus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot;
         case (_, Bot)   => Bot;
@@ -78,7 +74,6 @@ namespace Sign {
     /**
      * Returns the product of `e1` and `e2`.
      */
-    @monotone @strict
     def times(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot;
         case (_, Bot)   => Bot;
@@ -93,12 +88,6 @@ namespace Sign {
         case (Pos, Pos) => Pos;
         case _          => Top;
     };
-
-    /**
-     * Returns the inverted sign of `e`.
-     */
-    @monotone @strict
-    def invert(e: Sign): Sign = times(Neg, e);
 
     /**
      * Returns a Fuzzy boolean representing whether `e1` may equal `e2`.
@@ -117,7 +106,6 @@ namespace Sign {
     /**
      * Returns `true` if `e` may be zero.
      */
-    @monotone @strict
     def isZero(e: Sign): Bool = match e with {
         case Zer => true;
         case Top => true;
@@ -127,7 +115,6 @@ namespace Sign {
     /**
      * Returns `true` if `e` maybe non-zero.
      */
-    @monotone @strict
     def isNonZero(e: Sign): Bool = match e with {
         case Neg => true;
         case Pos => true;
