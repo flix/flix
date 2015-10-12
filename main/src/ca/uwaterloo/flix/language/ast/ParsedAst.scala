@@ -706,7 +706,7 @@ object ParsedAst {
     /**
      * An AST node that represent a reference to a type.
      *
-     * @param name the resolved name.
+     * @param name the name of the type.
      */
     case class Ref(name: Name.Unresolved) extends ParsedAst.Type
 

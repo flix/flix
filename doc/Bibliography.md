@@ -69,3 +69,7 @@
   [Paper.](https://www.classes.cs.uchicago.edu/archive/2004/fall/32630-1/papers/p237-flanagan.pdf)
   _This paper introduces an intermediate code representation, called A Normal Form, that is useful for optimization._
   
+## Human Error Messages ## 
+- **Expressive Diagnostics** in Clang, [URL](http://clang.llvm.org/diagnostics.html)
+
+- **Compiler Errors for Humans** in Elm, [URL](http://elm-lang.org/blog/compiler-errors-for-humans)

@@ -491,69 +491,180 @@ object WeededAst {
 
   }
 
+  /**
+   * A common super-type for AST nodes that represent terms.
+   */
+  sealed trait Term extends WeededAst {
+    /**
+     * The source location of `this` term.
+     */
+    def loc: SourceLocation
+  }
+
   object Term {
 
-    sealed trait Head extends WeededAst {
-      def loc: SourceLocation
-    }
+    /**
+     * A common super-type for AST nodes that represents head terms.
+     */
+    sealed trait Head extends WeededAst.Term
 
     object Head {
 
+      /**
+       * A variable term.
+       *
+       * @param ident the name of the variable.
+       * @param loc the source location.
+       */
       case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Term.Head
 
-      case class Lit(literal: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Term.Head
+      /**
+       * A literal term
+       *
+       * @param lit the literal.
+       * @param loc the source location.
+       */
+      case class Lit(lit: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Term.Head
 
+      /**
+       * An apply term (function call).
+       *
+       * @param name the name of the function.
+       * @param args the arguments to the function. 
+       * @param loc the source location.
+       */
       case class Apply(name: Name.Unresolved, args: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Term.Head
 
+      /**
+       * An ascribe term.
+       *
+       * @param term the ascribed term.
+       * @param tpe the typed of the ascribed term.
+       * @param loc the source location.
+       */
       case class Ascribe(term: Head, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Term.Head
 
     }
 
-    sealed trait Body extends WeededAst {
-      def loc: SourceLocation
-    }
+    /**
+     * A common super-type for AST nodes that represents body terms.
+     */
+    sealed trait Body extends WeededAst.Term
 
     object Body {
 
+      /**
+       * A wilcard variable.
+       *
+       * @param loc the source location.
+       */
       case class Wildcard(loc: SourceLocation) extends WeededAst.Term.Body
 
+      /**
+       * A variable term.
+       *
+       * @param ident the name of the variable.
+       * @param loc the source location.
+       */
       case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Term.Body
 
-      case class Lit(literal: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Term.Body
+      /**
+       * A literal term
+       *
+       * @param lit the literal.
+       * @param loc the source location.
+       */
+      case class Lit(lit: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Term.Body
 
+      /**
+       * An ascribe term.
+       *
+       * @param term the ascribed term.
+       * @param tpe the typed of the ascribed term.
+       * @param loc the source location.
+       */
       case class Ascribe(term: Body, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Term.Body
 
     }
 
   }
 
-
-  sealed trait Type
+  /**
+   * A common super-type for AST nodes that represent types. 
+   */
+  sealed trait Type extends WeededAst
 
   object Type {
 
+    /**
+     * An AST node that represents the unit type.
+     */
     case object Unit extends WeededAst.Type
 
-    case class Ambiguous(name: Name.Unresolved) extends WeededAst.Type
+    /**
+     * An AST node that represent a reference to a type.
+     *
+     * @param name the name of the type.
+     */
+    case class Ref(name: Name.Unresolved) extends WeededAst.Type
 
-    case class Tag(tagName: Name.Ident, tpe: WeededAst.Type) extends WeededAst.Type
+    /**
+     * An AST node that represents a tagged type.
+     *
+     * @param tag the tag name.
+     * @param tpe the nested type.
+     */
+    case class Tag(tag: Name.Ident, tpe: WeededAst.Type) extends WeededAst.Type
 
+    /**
+     * An AST node that represents an enum type.
+     *
+     * @param name the name of the enum.
+     * @param cases the cases of the enum.
+     */
     case class Enum(name: Name.Resolved, cases: Map[String, WeededAst.Type.Tag]) extends WeededAst.Type
 
+    /**
+     * An AST node that represents a tuple type.
+     *
+     * @param elms the type of the tuple elements.
+     */
     case class Tuple(elms: List[WeededAst.Type]) extends WeededAst.Type
 
-    case class Function(args: List[WeededAst.Type], retType: WeededAst.Type) extends WeededAst.Type
+    /**
+     * An AST node  that represents a function type.
+     *
+     * @param args the type of the arguments.
+     * @param retTpe the return type.
+     */
+    case class Function(args: List[WeededAst.Type], retTpe: WeededAst.Type) extends WeededAst.Type
 
   }
 
+  /**
+   * An AST node that represents an attribute in a relation.
+   *
+   * @param ident the name of the attribute.
+   * @param tpe the declared type of the attribute.
+   * @param interp the interpretation of the attribute.
+   */
   case class Attribute(ident: Name.Ident, tpe: WeededAst.Type, interp: WeededAst.Interpretation) extends WeededAst
 
-  sealed trait Interpretation
+  /**
+   * An AST node that represents an attribute interpretation.
+   */
+  sealed trait Interpretation extends WeededAst
 
   object Interpretation {
 
+    /**
+     * An AST node that represents a set-based interpretation.
+     */
     case object Set extends WeededAst.Interpretation
 
+    /**
+     * An AST node that represents a lattice-based interpretation.
+     */
     case object Lattice extends WeededAst.Interpretation
 
   }

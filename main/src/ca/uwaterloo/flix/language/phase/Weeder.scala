@@ -383,7 +383,7 @@ object Weeder {
       Validation.fold[ParsedAst.Type.Tag, Map[String, WeededAst.Type.Tag], WeederError](past.cases, Map.empty) {
         case (macc, tag@ParsedAst.Type.Tag(tagName, _)) => macc.get(tagName.name) match {
           case None => Type.compile(tag) map (tpe => macc + (tagName.name -> tpe.asInstanceOf[WeededAst.Type.Tag]))
-          case Some(otherTag) => DuplicateTag(tagName.name, otherTag.tagName.loc, tagName.loc).toFailure
+          case Some(otherTag) => DuplicateTag(tagName.name, otherTag.tag.loc, tagName.loc).toFailure
         }
       } map {
         case m => WeededAst.Definition.Enum(past.ident, m, past.loc)
@@ -695,7 +695,7 @@ object Weeder {
      */
     def compile(past: ParsedAst.Type): Validation[WeededAst.Type, WeederError] = past match {
       case ParsedAst.Type.Unit => WeededAst.Type.Unit.toSuccess
-      case ParsedAst.Type.Ref(name) => WeededAst.Type.Ambiguous(name).toSuccess
+      case ParsedAst.Type.Ref(name) => WeededAst.Type.Ref(name).toSuccess
       case ParsedAst.Type.Function(pformals, pret) =>
         val formalTypeVal = @@(pformals map compile)
         val returnTypeVal = compile(pret)

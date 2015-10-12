@@ -759,7 +759,7 @@ object Resolver {
     def resolve(wast: WeededAst.Type, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Type, ResolverError] = {
       def visit(wast: WeededAst.Type): Validation[ResolvedAst.Type, ResolverError] = wast match {
         case WeededAst.Type.Unit => ResolvedAst.Type.Unit.toSuccess
-        case WeededAst.Type.Ambiguous(name) => name.parts match {
+        case WeededAst.Type.Ref(name) => name.parts match {
           case Seq("Bool") => ResolvedAst.Type.Bool.toSuccess
           case Seq("Int") => ResolvedAst.Type.Int.toSuccess
           case Seq("Str") => ResolvedAst.Type.Str.toSuccess
