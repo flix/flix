@@ -8,8 +8,6 @@ import org.scalatest.FunSuite
 
 class TestExamples extends FunSuite {
 
-  // TODO: Figure out proper interface for the compiler and runtime.
-
   /////////////////////////////////////////////////////////////////////////////
   // Algorithms                                                              //
   /////////////////////////////////////////////////////////////////////////////
@@ -19,6 +17,29 @@ class TestExamples extends FunSuite {
 
   test("Reachability.flix") {
     Compiler.compile(Paths.get("./examples/algorithms/Reachability.flix"))
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Analysis                                                                //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Belnap.flix") {
+    Compiler.compile(Paths.get("./examples/analysis/Belnap.flix"))
+  }
+
+  test("Constant.flix") {
+    Compiler.compile(Paths.get("./examples/analysis/Constant.flix"))
+  }
+
+  test("Interval.flix") {
+    Compiler.compile(Paths.get("./examples/analysis/Interval.flix"))
+  }
+
+  test("Parity.flix") {
+    Compiler.compile(Paths.get("./examples/analysis/Parity.flix"))
+  }
+
+  test("Sign.flix") {
+    Compiler.compile(Paths.get("./examples/analysis/Sign.flix"))
   }
 
   /////////////////////////////////////////////////////////////////////////////
