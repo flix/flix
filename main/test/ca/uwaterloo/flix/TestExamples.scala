@@ -1,9 +1,5 @@
 package ca.uwaterloo.flix
 
-import java.nio.file.Paths
-
-import ca.uwaterloo.flix.language.Compiler
-
 import org.scalatest.FunSuite
 
 class TestExamples extends FunSuite {
@@ -12,34 +8,54 @@ class TestExamples extends FunSuite {
   // Algorithms                                                              //
   /////////////////////////////////////////////////////////////////////////////
   test("Cyclic.flix") {
-    Compiler.compile(Paths.get("./examples/algorithms/Cyclic.flix"))
+    Flix.solve("./examples/algorithms/Cyclic.flix")
   }
 
   test("Reachability.flix") {
-    Compiler.compile(Paths.get("./examples/algorithms/Reachability.flix"))
+    Flix.solve("./examples/algorithms/Reachability.flix")
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Analysis                                                                //
   /////////////////////////////////////////////////////////////////////////////
   test("Belnap.flix") {
-    Compiler.compile(Paths.get("./examples/analysis/Belnap.flix"))
+    Flix.solve("./examples/analysis/Belnap.flix")
   }
 
   test("Constant.flix") {
-    Compiler.compile(Paths.get("./examples/analysis/Constant.flix"))
+    Flix.solve("./examples/analysis/Constant.flix")
+  }
+
+  test("Divisor.flix") {
+    Flix.solve("./examples/analysis/Divisor.flix")
+  }
+
+  test("IDE.flix") {
+    Flix.solve("./examples/analysis/IDE.flix")
+  }
+
+  test("IFDS.flix") {
+    Flix.solve("./examples/analysis/IFDS.flix")
   }
 
   test("Interval.flix") {
-    Compiler.compile(Paths.get("./examples/analysis/Interval.flix"))
+    Flix.solve("./examples/analysis/Interval.flix")
   }
 
   test("Parity.flix") {
-    Compiler.compile(Paths.get("./examples/analysis/Parity.flix"))
+    Flix.solve("./examples/analysis/Parity.flix")
   }
 
   test("Sign.flix") {
-    Compiler.compile(Paths.get("./examples/analysis/Sign.flix"))
+    Flix.solve("./examples/analysis/Sign.flix")
+  }
+
+  test("SU.flix") {
+    Flix.solve("./examples/analysis/SU.flix")
+  }
+
+  test("Taint.flix") {
+    Flix.solve("./examples/analysis/Taint.flix")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -47,15 +63,43 @@ class TestExamples extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   test("Bank.flix") {
-    Compiler.compile(Paths.get("./examples/models/Bank.flix"))
+    Flix.solve("./examples/models/Bank.flix")
+  }
+
+  test("Cards.flix") {
+    Flix.solve("./examples/models/Cards.flix")
+  }
+
+  test("Cinema.flix") {
+    Flix.solve("./examples/models/Cinema.flix")
   }
 
   test("Company.flix") {
-    Compiler.compile(Paths.get("./examples/models/Company.flix"))
+    Flix.solve("./examples/models/Company.flix")
+  }
+
+  test("Hotel.flix") {
+    Flix.solve("./examples/models/Hotel.flix")
+  }
+
+  test("Library.flix") {
+    Flix.solve("./examples/models/Library.flix")
+  }
+
+  test("Manufacturer.flix") {
+    Flix.solve("./examples/models/Manufacturer.flix")
+  }
+
+  test("Realtor.flix") {
+    Flix.solve("./examples/models/Realtor.flix")
+  }
+
+  test("Tournament.flix") {
+    Flix.solve("./examples/models/Tournament.flix")
   }
 
   test("University.flix") {
-    Compiler.compile(Paths.get("./examples/models/University.flix"))
+    Flix.solve("./examples/models/University.flix")
   }
 
 }
