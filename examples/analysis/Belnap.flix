@@ -68,13 +68,17 @@ namespace Belnap {
     lat Belnap<> (Belnap.Bot, leq, lub);
 
     rel A(k: Int, v: Belnap<>);
+    A(0, Belnap.Bot).
     A(1, Belnap.True).
     A(2, Belnap.False).
     A(3, and(Belnap.True, Belnap.False)).
     A(4, v1 `or` v2) :- A(1, v1), A(2, v2).
+    A(5, Belnap.True).
+    A(5, Belnap.False).
 
     assert A(3, Belnap.False).
     assert A(4, Belnap.True).
+    assert A(5, Belnap.Top).
 
     print A.
 
