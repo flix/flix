@@ -10,6 +10,7 @@ object Typer {
   // TODO: when to use inner visit?
   // TODO: use pattern match on rast
   // TODO: Probably need to rewrite this to be unification based.
+  // TODO: Check that lattice variables are not bound multiple times.
 
   import TypeError._
 

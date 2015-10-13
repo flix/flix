@@ -184,11 +184,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def MatchExpression: Rule1[ParsedAst.Expression.Match] = {
     def MatchRule: Rule1[(ParsedAst.Pattern, ParsedAst.Expression)] = rule {
-      atomic("case") ~ optWS ~ Pattern ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~ optSC ~ optWS ~> ((p: ParsedAst.Pattern, e: ParsedAst.Expression) => (p, e))
+      atomic("case") ~ optWS ~ Pattern ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~ optSC ~> ((p: ParsedAst.Pattern, e: ParsedAst.Expression) => (p, e))
     }
 
     rule {
-      SP ~ atomic("match") ~ optWS ~ Expression ~ optWS ~ atomic("with") ~ optWS ~ "{" ~ WS ~ oneOrMore(MatchRule) ~ "}" ~ SP ~> ParsedAst.Expression.Match
+      SP ~ atomic("match") ~ optWS ~ Expression ~ optWS ~ atomic("with") ~ optWS ~ "{" ~ optWS ~ oneOrMore(MatchRule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
     }
   }
 

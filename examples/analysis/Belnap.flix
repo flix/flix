@@ -11,8 +11,48 @@ namespace Belnap {
              case Bot
     }
 
+    /**
+     * Returns `true` iff `e1` is less than or equal to `e2`.
+     */
     def leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) with {
-        case ()
+        case (Belnap.Bot, _) => true;
+        case (Belnap.True, Belnap.True) => true;
+        case (Belnap.False, Belnap.False) => true;
+        case (_, Belnap.Top) => true;
+        case _ => false;
     }
+
+    /**
+     * Returns the least upper bound of `e1` and `e2`.
+     */
+    def lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+        case (Belnap.Bot, _) => e2;
+        case (_, Belnap.Bot) => e1;
+        case (Belnap.True, Belnap.True) => Belnap.True;
+        case (Belnap.False, Belnap.False) => Belnap.False;
+        case _ => Belnap.Top;
+    }
+
+    /**
+     * Over-approximates the logical `and` operator.
+     */
+    def and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+        case (Belnap.Bot, _) => Belnap.Bot;
+        case (_, Belnap.Bot) => Belnap.Bot;
+        case (Belnap.True, Belnap.True) => Belnap.True;
+        case (Belnap.False, Belnap.True) => Belnap.False;
+        case (Belnap.True, Belnap.False) => Belnap.False;
+        case (Belnap.False, Belnap.False) => Belnap.False;
+        case _ => Belnap.Top;
+    }
+
+    /**
+     * Over-approximates the logical `or` operator.
+     */
+
+    /**
+     * Over-approximates the logical `xor` operator.
+     */
+
 
 }
