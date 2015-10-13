@@ -27,13 +27,28 @@ sealed trait Value {
   }
 }
 
-//  TODO: Intern these values.
-
 object Value {
+  private val TRUE = new Bool(true)
+  private val FALSE = new Bool(false)
+
+  def mkBool(b: Boolean) = if (b) TRUE else FALSE
 
   case object Unit extends Value
 
-  case class Bool(b: scala.Boolean) extends Value
+  final class Bool private[Value] (val b: scala.Boolean) extends Value {
+    override val toString: String = s"Value.Bool($b)"
+
+    override def equals(other: Any): Boolean = other match {
+      case that: Bool => that eq this
+      case _ => false
+    }
+
+    override val hashCode: scala.Int = b.hashCode
+  }
+
+  object Bool {
+    def unapply(b: Bool): Option[scala.Boolean] = Some(b.b)
+  }
 
   case class Int(i: scala.Int) extends Value
 

@@ -2,7 +2,7 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
-import ca.uwaterloo.flix.runtime.TestInterpreter
+import ca.uwaterloo.flix.runtime.{TestValue, TestInterpreter}
 
 import org.scalatest.{ParallelTestExecution, Suites}
 
@@ -14,6 +14,7 @@ class TestAll extends Suites(
   new TestTyper,
   new TestWeeder,
   new TestInterpreter,
+  new TestValue,
   new TestExamples,
   new TestMicro) with ParallelTestExecution {
 
