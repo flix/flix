@@ -52,10 +52,20 @@ namespace Belnap {
     /**
      * Over-approximates the logical `or` operator.
      */
+    def or(e1: Belnap, e2: Belnap): Belnap =
+        if (e1 == Belnap.Bot || e2 == Belnap.Bot)
+            Belnap.Bot
+        else
+            if (e1 == Belnap.Top || e2 == Belnap.Top)
+                Belnap.Top
+            else
+                let answer = (e1 == Belnap.True || e2 == Belnap.True) in
+                    if (answer)
+                        Belnap.True
+                    else
+                        Belnap.False
 
-    /**
-     * Over-approximates the logical `xor` operator.
-     */
+
 
 
 }

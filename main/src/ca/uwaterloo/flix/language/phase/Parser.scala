@@ -197,7 +197,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def TagExpression: Rule1[ParsedAst.Expression.Tag] = rule {
-    SP ~ QName ~ "." ~ Ident ~ optWS ~ optional(Expression) ~ SP ~>
+    SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ TupleExpression) ~ SP ~>
       ((sp1: SourcePosition, name: Name.Unresolved, ident: Name.Ident, exp: Option[ParsedAst.Expression], sp2: SourcePosition) => exp match {
         case None => ParsedAst.Expression.Tag(sp1, name, ident, ParsedAst.Expression.Lit(sp1, ParsedAst.Literal.Unit(sp1, sp2), sp2), sp2)
         case Some(e) => ParsedAst.Expression.Tag(sp1, name, ident, e, sp2)
@@ -440,7 +440,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def TagLiteral: Rule1[ParsedAst.Literal.Tag] = rule {
-    SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ Literal) ~ SP ~>
+    SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ TupleLiteral) ~ SP ~>
       ((sp1: SourcePosition, name: Name.Unresolved, ident: Name.Ident, literal: Option[ParsedAst.Literal], sp2: SourcePosition) => literal match {
         case None => ParsedAst.Literal.Tag(sp1, name, ident, ParsedAst.Literal.Unit(sp1, sp2), sp2)
         case Some(lit) => ParsedAst.Literal.Tag(sp1, name, ident, lit, sp2)

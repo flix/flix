@@ -229,7 +229,7 @@ class TestResolver extends FunSuite {
   test("UnresolvedEnumReference02") {
     val input =
       s"""namespace A {
-         |  val x: Int = Foo::Bar.Qux true
+         |  val x: Int = Foo::Bar.Qux(true)
          |};
        """.stripMargin
     val result = Compiler.compile(input)
