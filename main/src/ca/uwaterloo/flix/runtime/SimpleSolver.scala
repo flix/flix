@@ -100,7 +100,8 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
 
       map.get(ks) match {
         case None =>
-          dbLat += (name -> Map(ks -> vs))
+          val result = map + (ks -> vs)
+          dbLat += (name -> result)
           worklist += ((name, row))
         case Some(vs2) =>
           var changed = false
@@ -111,12 +112,13 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
               val newLub = Interpreter.eval2(lat.lub, v1, v2, sCtx.root)
               val isSubsumed = Interpreter.eval2(lat.leq, newLub, v2, sCtx.root).toBool
 
-              changed = changed || isSubsumed
+              changed = changed || !isSubsumed
               newLub
           }
 
           if (changed) {
-            dbLat += (name -> Map(ks -> vs3))
+            val result = map + (ks -> vs3)
+            dbLat += (name -> result)
             worklist += ((name, row)) // TODO: Row is incorrect here.
           }
       }
@@ -150,6 +152,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     case p: Predicate.Head.Error => ??? // TODO: not implemented.
   }
 
+
   /**
    * Evaluates the body of the given `rule` under the given initial environment `env0`.
    */
@@ -165,14 +168,27 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
         if (isLat(defn)) {
           val table = dbLat(r.name)
 
-          // TODO
-          ???
+          val keyAttr = getKeys(defn)
+          val (keyTerms, valueTerms) = r.terms.splitAt(keyAttr.size)
+
+          val res = table flatMap {
+            case (keys, values) =>
+              unifyRelRow(keys, keyTerms) match {
+                case None => List.empty[Map[String, Value]]
+                case Some(m) => unifyLatRow(values, valueTerms) match {
+                  case None => List.empty[Map[String, Value]]
+                  case Some(m2) =>
+                    extend(env, m2) // TODO: This is incorrect if env/m2 contains lattice variables.
+                }
+              }
+          }
+
+          res.toList
         } else {
           val table = dbRel(r.name)
 
           table flatMap {
             case row => unifyRelRow(row, r.terms) match {
-              // TODO: Cast
               case None => List.empty
               case Some(m) => extend(env, m)
             }
@@ -247,6 +263,29 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     }
   }
 
+  def unifyLatRow(values: List[Value], terms: List[Body]): Option[Map[String, Value]] = {
+    assert(values.length == terms.length)
+
+    (values zip terms).foldLeft(Option(Map.empty[String, Value])) {
+      case (None, (value, term)) => None
+      case (Some(macc), (value, term)) => term match {
+        case Term.Body.Wildcard(tpe, loc) => Some(macc)
+        case Term.Body.Var(ident, tpe, loc) => macc.get(ident.name) match {
+          case None => Some(macc + (ident.name -> value))
+          case Some(otherValue) =>
+            if (value != otherValue)
+              None
+            else
+              Some(macc)
+        }
+        case Term.Body.Lit(lit, tpe, loc) =>
+          // TODO: Has to call leq.
+          ???
+      }
+    }
+  }
+
+
   /**
    * Extends the given environments `envs` with the environment `m`.
    */
@@ -303,17 +342,37 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
    */
   def print(directive: Directive.Print): Unit = {
     val relation = sCtx.root.relations(directive.name)
-    val table = dbRel(directive.name)
-    val cols = relation.attributes.map(_.ident.name)
-    val ascii = new AsciiTable().withCols(cols: _*)
-    for (row <- table) {
-      ascii.mkRow(row map pretty)
+
+    dbRel.get(directive.name) match {
+      case None => // nop
+      case Some(table) =>
+        val cols = relation.attributes.map(_.ident.name)
+        val ascii = new AsciiTable().withCols(cols: _*)
+        for (row <- table) {
+          ascii.mkRow(row map pretty)
+        }
+
+        Console.println(relation.name)
+        ascii.write(System.out)
+        Console.println()
+        Console.println()
     }
 
-    Console.println(relation.name)
-    ascii.write(System.out)
-    Console.println()
-    Console.println()
+    dbLat.get(directive.name) match {
+      case None => // nop
+      case Some(table) =>
+        val cols = relation.attributes.map(_.ident.name)
+        val ascii = new AsciiTable().withCols(cols: _*)
+        for ((keys, elms) <- table) {
+          ascii.mkRow((keys map pretty) ::: (elms map pretty))
+        }
+
+        Console.println(relation.name)
+        ascii.write(System.out)
+        Console.println()
+        Console.println()
+    }
+
   }
 
   /**
