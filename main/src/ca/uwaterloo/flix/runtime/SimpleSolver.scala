@@ -57,6 +57,8 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
    */
   val worklist = mutable.Queue.empty[(Name.Resolved, List[Value])]
 
+  // TODO: Return this.
+  case class Model()
 
   /**
    * Solves the Flix program.
