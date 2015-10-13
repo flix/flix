@@ -66,6 +66,15 @@ namespace Belnap {
                         Belnap.False
 
 
+    rel A(k: Int, v: Belnap<>);
+    A(1, Belnap.True).
+    A(2, Belnap.False).
+    A(3, and(Belnap.True, Belnap.False)).
+    A(4, v1 `or` v2) :- A(1, v1), A(2, v2).
 
+    assert A(3, Belnap.False).
+    assert A(4, Belnap.True).
+
+    print A.
 
 }
