@@ -2,7 +2,6 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.TypedAst.Constraint.Rule
-import ca.uwaterloo.flix.language.ast.TypedAst.Directive.{AssertRule, AssertFact}
 import ca.uwaterloo.flix.language.ast.TypedAst.Term
 import ca.uwaterloo.flix.language.ast.TypedAst.Term.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
@@ -13,8 +12,6 @@ import ca.uwaterloo.flix.util.Validation._
 import scala.collection.mutable
 
 class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
-
-  import SolverError._
 
   /**
    * A common super-type for solver errors.
@@ -48,11 +45,18 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
 
   }
 
-
+  /**
+   *
+   */
   val dbRel = mutable.Map.empty[Name.Resolved, List[List[Value]]]
+
   val dbLat = mutable.Map.empty[Name.Resolved, Map[List[Value], List[Value]]]
 
+  /**
+   * The work list of pending predicate names and their associated values.
+   */
   val worklist = mutable.Queue.empty[(Name.Resolved, List[Value])]
+
 
   /**
    * Solves the Flix program.
@@ -333,8 +337,6 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     for (directive <- sCtx.root.directives.assertedRules) {
       checkAssertedRule(directive)
     }
-
-
   }
 
   /**
@@ -375,30 +377,6 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
 
   }
 
-  /**
-   * Verifies that the given asserted fact `d` holds in the minimal model.
-   */
-  // TODO: Use Validation and nice error mesages
-  def checkAssertedFact(d: Directive.AssertFact): Validation[Unit, SolverError] = d.fact.head match {
-    case Predicate.Head.Relation(name, terms, _, _) =>
-      // TODO: Check kind...
-      val row = terms map (t => Interpreter.evalHeadTerm(t, sCtx.root, Map.empty))
-      val table = dbRel(name)
-      if (table contains row) {
-        ().toSuccess
-      } else {
-        AssertedFactViolated(d.loc).toFailure
-      }
-    case _ => ().toSuccess
-  }
-
-  /**
-   * Verifies that the given asserted rule `d` holds in the minimal model.
-   */
-  def checkAssertedRule(d: Directive.AssertRule) = {
-    // TODO:
-  }
-
   private def isLat(defn: TypedAst.Definition.Relation): Boolean =
     defn.attributes.exists(_.interp == TypedAst.Interpretation.Lattice)
 
@@ -421,4 +399,19 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     case Value.Closure(_, _, _) => ??? // TODO: WHAT?
   }
 
+  /**
+   * Verifies that the given asserted fact `d` holds in the minimal model.
+   */
+  def checkAssertedFact(d: Directive.AssertFact): Validation[Boolean, SolverError] = {
+    // TODO
+    ???
+  }
+
+  /**
+   * Verifies that the given asserted rule `d` holds in the minimal model.
+   */
+  def checkAssertedRule(d: Directive.AssertRule): Validation[Boolean, SolverError] = {
+    // TODO
+    ???
+  }
 }
