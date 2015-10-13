@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Type, FormalArg, Root}
 import ca.uwaterloo.flix.language.ast.{TypedAst, Name, BinaryOperator, UnaryOperator}
+import com.sun.javafx.fxml.expression.BinaryExpression
 
 // TODO: Consider an EvaluationContext
 object Interpreter {
@@ -74,6 +75,22 @@ object Interpreter {
     case UnaryOperator.UnaryPlus => Value.Int(+v.toInt)
     case UnaryOperator.UnaryMinus => Value.Int(-v.toInt)
   }
+
+// TODO: Specialize interpreter.
+//  def eval(e: Expression): Value = e match {
+//    case (Expression.Tag(enum, tag, exp, tpe, loc)) => exp.tpe match {
+//      case Type.Int => Value.Int(evalInt(exp))
+//    }
+//
+//  }
+//
+//  def evalInt(e: Expression): Int = e match {
+//
+//    case (Expression.Binary(BinaryOperator.Plus, e1, e2)) => evalInt(e1) + evalInt(e1)
+//    case _ => ??? // TYPE ERROR
+//  }
+
+
 
   private def evalBinary(op: BinaryOperator, v1: Value, v2: Value): Value = op match {
     case BinaryOperator.Plus => Value.Int(v1.toInt + v2.toInt)

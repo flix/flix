@@ -15,6 +15,7 @@ sealed trait Value {
     this.asInstanceOf[Value.Str].s
   }
 }
+//  TODO: Intern these values.
 
 object Value {
   case object Unit extends Value

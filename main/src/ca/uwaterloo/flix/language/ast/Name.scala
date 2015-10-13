@@ -47,6 +47,7 @@ object Name {
    *
    * @param parts the parts of the name.
    */
+  // TODO: intern
   case class Resolved(parts: List[String]) extends SmartHash {
     /**
      * Returns a human readable string representation of the resolved name.
