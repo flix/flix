@@ -666,18 +666,6 @@ object ParsedAst {
     }
 
     /**
-     * An AST node that represents an ascribed term.
-     *
-     * @param sp1 the position of the first character in the term.
-     * @param term the term.
-     * @param tpe the type.
-     * @param sp2 the position of the last character in the term.
-     */
-    case class Ascribe(sp1: SourcePosition, term: ParsedAst.Term, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Term {
-      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
      * An AST node that represent a function application term
      *
      * @param sp1 the position of the first character in the term.
@@ -686,6 +674,31 @@ object ParsedAst {
      * @param sp2 the position of the last character in the term.
      */
     case class Apply(sp1: SourcePosition, name: Name.Unresolved, args: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+     * An AST node that represents an infix function application term.
+     *
+     * @param sp1 the position of the first character in the term.
+     * @param t1 the left argument.
+     * @param name the unresolved name of the function.
+     * @param t2 the right argument.
+     * @param sp2  the position of the last character in the term.
+     */
+    case class Infix(sp1: SourcePosition, t1: ParsedAst.Term, name: Name.Unresolved, t2: ParsedAst.Term, sp2: SourcePosition) extends ParsedAst.Term {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+     * An AST node that represents an ascribed term.
+     *
+     * @param sp1 the position of the first character in the term.
+     * @param term the term.
+     * @param tpe the type.
+     * @param sp2 the position of the last character in the term.
+     */
+    case class Ascribe(sp1: SourcePosition, term: ParsedAst.Term, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Term {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 

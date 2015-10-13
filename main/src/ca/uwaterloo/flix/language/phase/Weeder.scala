@@ -666,6 +666,10 @@ object Weeder {
           @@(term.args map (t => compile(t, aliases))) map {
             case args => WeededAst.Term.Head.Apply(term.name, args, term.loc)
           }
+        case term: ParsedAst.Term.Infix =>
+          @@(compile(term.t1, aliases), compile(term.t2, aliases)) map {
+            case (t1, t2) => WeededAst.Term.Head.Apply(term.name, List(t1, t2), term.loc)
+          }
       }
     }
 
@@ -684,6 +688,7 @@ object Weeder {
             case (t, tpe) => WeededAst.Term.Body.Ascribe(t, tpe, term.loc)
           }
         case term: ParsedAst.Term.Apply => IllegalBodyTerm("Function calls may not occur in body predicates.", term.loc).toFailure
+        case term: ParsedAst.Term.Infix => IllegalBodyTerm("Function calls may not occur in body predicates.", term.loc).toFailure
       }
     }
 

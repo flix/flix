@@ -972,6 +972,24 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Term.Ascribe])
   }
 
+  test("Term.Infix01") {
+    val input = "1 `plus` 2"
+    val result = new Parser(SourceInput.Str(input)).Term.run().get
+    assert(result.isInstanceOf[ParsedAst.Term.Infix])
+  }
+
+  test("Term.Infix02") {
+    val input = "x `plus` y"
+    val result = new Parser(SourceInput.Str(input)).Term.run().get
+    assert(result.isInstanceOf[ParsedAst.Term.Infix])
+  }
+
+  test("Term.Infix03") {
+    val input = "Foo.Bar `plus` Baz.Qux"
+    val result = new Parser(SourceInput.Str(input)).Term.run().get
+    assert(result.isInstanceOf[ParsedAst.Term.Infix])
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////

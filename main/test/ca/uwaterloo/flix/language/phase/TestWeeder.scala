@@ -242,6 +242,13 @@ class TestWeeder extends FunSuite {
     assert(result.isFailure)
   }
 
+  test("Term.Body.Apply03") {
+    val input = "A(x) :- B(x `plus` y)."
+    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
+  }
+
   test("IllegalAlias01") {
     val input = "P(x) :- x := 42, x := 21"
     val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get

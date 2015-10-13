@@ -65,6 +65,7 @@ namespace Belnap {
                     else
                         Belnap.False
 
+    lat Belnap<> (Belnap.Bot, leq, lub);
 
     rel A(k: Int, v: Belnap<>);
     A(1, Belnap.True).

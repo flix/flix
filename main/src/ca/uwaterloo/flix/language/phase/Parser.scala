@@ -313,15 +313,22 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Terms                                                                   //
   /////////////////////////////////////////////////////////////////////////////
+  // NB: InfixTerm must be parsed before SimpleTerm.
   def Term: Rule1[ParsedAst.Term] = rule {
-    AscribeTerm | SimpleTerm
+    InfixTerm | SimpleTerm
+  }
+
+  // NB: AscribeTerm must be parsed before BaseTerm.
+  def SimpleTerm: Rule1[ParsedAst.Term] = rule {
+    AscribeTerm | BaseTerm
   }
 
   // NB: ApplyTerm must be parsed before LiteralTerm which must be parsed before VariableTerm.
-  def SimpleTerm: Rule1[ParsedAst.Term] = rule {
+  def BaseTerm: Rule1[ParsedAst.Term] = rule {
     ApplyTerm | ParenTerm | LiteralTerm | WildcardTerm | VariableTerm
   }
 
+  // TODO: Probably unfold singleton tuples.
   def ParenTerm: Rule1[ParsedAst.Term] = rule {
     "(" ~ optWS ~ Term ~ optWS ~ ")"
   }
@@ -339,11 +346,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def AscribeTerm: Rule1[ParsedAst.Term.Ascribe] = rule {
-    SP ~ SimpleTerm ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Term.Ascribe
+    SP ~ BaseTerm ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Term.Ascribe
   }
 
   def ApplyTerm: Rule1[ParsedAst.Term.Apply] = rule {
     SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy("," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Term.Apply
+  }
+
+  def InfixTerm: Rule1[ParsedAst.Term.Infix] = rule {
+    SP ~ SimpleTerm ~ optWS ~ "`" ~ QName ~ "`" ~ optWS ~ SimpleTerm ~ SP ~> ParsedAst.Term.Infix
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -511,7 +522,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def optDotOrSC: Rule0 = rule {
-     optional(optWS ~ "." | ";")
+    optional(optWS ~ "." | ";")
   }
 
   def NewLine: Rule0 = rule {
