@@ -348,7 +348,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
       case Some(table) =>
         val cols = relation.attributes.map(_.ident.name)
         val ascii = new AsciiTable().withCols(cols: _*)
-        for (row <- table) {
+        for (row <- table.sortBy(_.head.toString)) {
           ascii.mkRow(row map pretty)
         }
 
@@ -363,7 +363,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
       case Some(table) =>
         val cols = relation.attributes.map(_.ident.name)
         val ascii = new AsciiTable().withCols(cols: _*)
-        for ((keys, elms) <- table) {
+        for ((keys, elms) <- table.toSeq.sortBy(_._1.head.toString)) {
           ascii.mkRow((keys map pretty) ::: (elms map pretty))
         }
 
