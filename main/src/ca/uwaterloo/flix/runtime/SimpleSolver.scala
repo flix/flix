@@ -62,6 +62,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
    * Solves the Flix program.
    */
   def solve(): Unit = {
+    val t = System.nanoTime()
     // adds all facts to the database.
     for (fact <- sCtx.root.facts) {
       val name = fact.head.asInstanceOf[TypedAst.Predicate.Head.Relation].name // TODO: Cast
@@ -81,6 +82,9 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
         evalBody(rule, Map.empty)
       }
     }
+
+    val elapsed = System.nanoTime() - t
+    println(s"Successfully solved in ${elapsed / 1000000} msec.")
 
     directives()
   }
