@@ -3,6 +3,9 @@
  */
 namespace Belnap {
 
+    /**
+     * The boolean lattice.
+     */
     enum Belnap {
              case Top,
 

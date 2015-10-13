@@ -440,7 +440,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def TagLiteral: Rule1[ParsedAst.Literal.Tag] = rule {
-    SP ~ QName ~ "." ~ Ident ~ optWS ~ optional(Literal) ~ SP ~>
+    SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ Literal) ~ SP ~>
       ((sp1: SourcePosition, name: Name.Unresolved, ident: Name.Ident, literal: Option[ParsedAst.Literal], sp2: SourcePosition) => literal match {
         case None => ParsedAst.Literal.Tag(sp1, name, ident, ParsedAst.Literal.Unit(sp1, sp2), sp2)
         case Some(lit) => ParsedAst.Literal.Tag(sp1, name, ident, lit, sp2)
