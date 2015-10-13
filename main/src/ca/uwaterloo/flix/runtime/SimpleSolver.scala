@@ -236,8 +236,6 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     }
   }
 
-  // TODO: Some questions about the utility of Print, Read and Write and whether they occur in the right place.
-
 
   /**
    * Unifies the given `row` with the given terms.
