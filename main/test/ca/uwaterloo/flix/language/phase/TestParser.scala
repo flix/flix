@@ -130,43 +130,43 @@ class TestParser extends FunSuite {
   test("Definition.JoinSemiLattice01") {
     val input = "lat a<> (Tag.Bot, foo::leq, lub)"
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
+    assert(result.isInstanceOf[ParsedAst.Definition.PartialOrder])
   }
 
   test("Definition.JoinSemiLattice02") {
     val input = "lat a<> (Tag.Bot, foo::leq, lub)"
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
+    assert(result.isInstanceOf[ParsedAst.Definition.PartialOrder])
   }
 
   test("Definition.JoinSemiLattice03") {
     val input = "lat a<> (Tag.Bot, fn (x: Int): Bool = x, lub)"
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
+    assert(result.isInstanceOf[ParsedAst.Definition.PartialOrder])
   }
 
   test("Definition.JoinSemiLattice04") {
     val input = "lat a<> (Tag.Bot, foo::leq, lub) with Norm(b)"
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
+    assert(result.isInstanceOf[ParsedAst.Definition.PartialOrder])
   }
 
   test("Definition.JoinSemiLattice05") {
     val input = "lat a<> (Tag.Bot, foo::leq, lub) with Widen(b)"
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
+    assert(result.isInstanceOf[ParsedAst.Definition.PartialOrder])
   }
 
   test("Definition.JoinSemiLattice06") {
     val input = "lat a<> (Tag.Bot, foo::leq, lub) with Norm(b) with Widen(c)"
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
+    assert(result.isInstanceOf[ParsedAst.Definition.PartialOrder])
   }
 
   test("Definition.JoinSemiLattice07") {
     val input = "lat a<> (Tag.Bot, foo::leq, lub) with Norm(foo::b) with Widen(foo::c)"
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
+    assert(result.isInstanceOf[ParsedAst.Definition.PartialOrder])
   }
 
   // TODO

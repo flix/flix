@@ -14,15 +14,15 @@ object TypedAst {
    *
    * @param constants a map from names to constant definitions.
    * @param directives a list of directives.
-   * @param lattices a map from types to lattice definitions.
-   * @param relations a map from names to relation definitions.
+   * @param lattices a map from types to user-specified bounded lattice definitions.
+   * @param collections a map from names to lattice or relation definitions.
    * @param facts a list of facts.
    * @param rules a list of rules.
    */
   case class Root(constants: Map[Name.Resolved, TypedAst.Definition.Constant],
                   directives: TypedAst.Directives,
-                  lattices: Map[TypedAst.Type, TypedAst.Definition.Lattice],
-                  relations: Map[Name.Resolved, TypedAst.Definition.Relation],
+                  lattices: Map[TypedAst.Type, TypedAst.Definition.BoundedLattice],
+                  collections: Map[Name.Resolved, TypedAst.Definition.Relation],
                   facts: List[TypedAst.Constraint.Fact],
                   rules: List[TypedAst.Constraint.Rule]) extends TypedAst
 
@@ -44,21 +44,24 @@ object TypedAst {
     case class Constant(name: Name.Resolved, exp: TypedAst.Expression, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Definition
 
     /**
-     * A typed AST node representing a lattice definition.
+     * A typed AST node representing a partial order definition.
      *
      * @param tpe the type of the lattice elements.
-     * @param bot the bottom element.
      * @param leq the partial order.
-     * @param lub the least-upper-bound.
+     * @param bot the bot element.
+     * @param top the top element.
+     * @param lub the least upper bound.
+     * @param glb the greatest lower bound.
      * @param loc the source location.
      */
-    case class Lattice(tpe: TypedAst.Type, bot: TypedAst.Expression, leq: TypedAst.Expression, lub: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Definition
+    case class BoundedLattice(tpe: TypedAst.Type, leq: TypedAst.Expression, bot: TypedAst.Expression, top: TypedAst.Expression,
+                              lub: TypedAst.Expression, glb: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Definition
 
     /**
      * A typed AST node representing a relation definition.
      *
      * @param name the name of the relation.
-     * @param attributes the attributes (columns) of the relation.
+     * @param attributes the attributes of the relation.
      * @param loc the source location.
      */
     case class Relation(name: Name.Resolved, attributes: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Definition

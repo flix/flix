@@ -117,7 +117,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
    * Adds the new fact to the work list if the database was changed.
    */
   def newFact(name: Name.Resolved, row: List[Value]): Unit = {
-    val defn = sCtx.root.relations(name)
+    val defn = sCtx.root.collections(name)
 
     if (isLat(defn)) {
       // TODO: This assumes that all keys occur before any lattice value.
@@ -191,7 +191,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     def visit(p: TypedAst.Predicate.Body, env: List[Map[String, Value]]): List[Map[String, Value]] = p match {
       case r: Predicate.Body.Relation => {
 
-        val defn = sCtx.root.relations(r.name)
+        val defn = sCtx.root.collections(r.name)
         if (isLat(defn)) {
           val table = dbLat(r.name)
 
@@ -364,7 +364,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
    * Evaluates the given print `directive`.
    */
   def print(directive: Directive.Print): Unit = {
-    val relation = sCtx.root.relations(directive.name)
+    val relation = sCtx.root.collections(directive.name)
 
     dbRel.get(directive.name) match {
       case None => // nop

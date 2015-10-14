@@ -10,7 +10,7 @@ object ResolvedAst {
   case class Root(constants: Map[Name.Resolved, ResolvedAst.Definition.Constant],
                   directives: List[ResolvedAst.Directive],
                   enums: Map[Name.Resolved, ResolvedAst.Definition.Enum],
-                  lattices: Map[ResolvedAst.Type, ResolvedAst.Definition.Lattice],
+                  partialOrders: Map[ResolvedAst.Type, ResolvedAst.Definition.PartialOrder],
                   relations: Map[Name.Resolved, ResolvedAst.Definition.Relation],
                   facts: List[ResolvedAst.Constraint.Fact],
                   rules: List[ResolvedAst.Constraint.Rule]) extends ResolvedAst
@@ -33,7 +33,7 @@ object ResolvedAst {
     case class Enum(name: Name.Resolved, cases: Map[String, ResolvedAst.Type.Tag], loc: SourceLocation) extends ResolvedAst.Definition
 
     /**
-     * A resolved AST node representing a lattice definition.
+     * A resolved AST node representing a partial order definition.
      *
      * @param elms the (declared) type of the lattice elements.
      * @param bot the bottom element.
@@ -41,7 +41,7 @@ object ResolvedAst {
      * @param lub the least-upper-bound.
      * @param loc the location.
      */
-    case class Lattice(elms: ResolvedAst.Type, bot: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Definition
+    case class PartialOrder(elms: ResolvedAst.Type, bot: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Definition
 
     /**
      * A resolved AST node representing a relation definition.

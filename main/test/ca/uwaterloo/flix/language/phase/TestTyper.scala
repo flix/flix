@@ -84,7 +84,7 @@ class TestTyper extends FunSuite {
     val x = ident("x")
     val y = ident("y")
 
-    val rast = ResolvedAst.Definition.Lattice(
+    val rast = ResolvedAst.Definition.PartialOrder(
       elms = ResolvedAst.Type.Bool,
       bot = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(false, SL), SL),
       leq = ResolvedAst.Expression.Lambda(
@@ -116,7 +116,7 @@ class TestTyper extends FunSuite {
     val x = ident("x")
     val y = ident("y")
 
-    val rast = ResolvedAst.Definition.Lattice(
+    val rast = ResolvedAst.Definition.PartialOrder(
       elms = ResolvedAst.Type.Str,
       bot = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(false, SL), SL),
       leq = ResolvedAst.Expression.Lambda(

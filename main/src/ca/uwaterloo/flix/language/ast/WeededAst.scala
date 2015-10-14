@@ -81,7 +81,7 @@ object WeededAst {
     case class Enum(ident: Name.Ident, cases: Map[String, WeededAst.Type.Tag], loc: SourceLocation) extends WeededAst.Definition
 
     /**
-     * An AST node that represents a lattice definition.
+     * An AST node that represents a partial order definition.
      *
      * @param tpe the type of the lattice elements.
      * @param bot the bottom element.
@@ -89,7 +89,7 @@ object WeededAst {
      * @param lub the least-upper-bound function.
      * @param loc the source location.
      */
-    case class Lattice(tpe: WeededAst.Type, bot: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Definition
+    case class PartialOrder(tpe: WeededAst.Type, bot: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Definition
 
     /**
      * An AST node that represents a relation definition.

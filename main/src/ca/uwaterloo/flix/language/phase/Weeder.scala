@@ -337,7 +337,7 @@ object Weeder {
       case d: ParsedAst.Definition.Value => Definition.compile(d)
       case d: ParsedAst.Definition.Function => Definition.compile(d)
       case d: ParsedAst.Definition.Enum => Definition.compile(d)
-      case d: ParsedAst.Definition.Lattice => Definition.compile(d)
+      case d: ParsedAst.Definition.PartialOrder => Definition.compile(d)
       case d: ParsedAst.Definition.Relation => Definition.compile(d)
     }
 
@@ -393,12 +393,12 @@ object Weeder {
     /**
      * Compiles the given parsed lattice `past` to a weeded lattice definition.
      */
-    def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Definition.Lattice, WeederError] = {
+    def compile(past: ParsedAst.Definition.PartialOrder): Validation[WeededAst.Definition.PartialOrder, WeederError] = {
       // check lattice definition.
       val tpeVal = Type.compile(past.tpe)
       val elmsVal = @@(past.elms.toList.map(Expression.compile))
       @@(tpeVal, elmsVal) flatMap {
-        case (tpe, bot :: leq :: lub :: Nil) => WeededAst.Definition.Lattice(tpe, bot, leq, lub, past.loc).toSuccess
+        case (tpe, bot :: leq :: lub :: Nil) => WeededAst.Definition.PartialOrder(tpe, bot, leq, lub, past.loc).toSuccess
         case _ => IllegalLattice(past.loc).toFailure
       }
     }

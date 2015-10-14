@@ -99,7 +99,7 @@ object Typer {
     val directivesVal = @@(root.directives.map(directive => Directive.typer(directive, root)))
 
     // lattices
-    val latticesVal = Validation.fold(root.lattices) {
+    val latticesVal = Validation.fold(root.partialOrders) {
       case (tpe, lattice) => Definition.typer(lattice, root) map (defn => Type.typer(tpe) -> defn)
     }
 
@@ -134,7 +134,7 @@ object Typer {
     /**
      * Types the given lattice definition `rast` under the given AST `root`.
      */
-    def typer(rast: ResolvedAst.Definition.Lattice, root: ResolvedAst.Root): Validation[TypedAst.Definition.Lattice, TypeError] = {
+    def typer(rast: ResolvedAst.Definition.PartialOrder, root: ResolvedAst.Root): Validation[TypedAst.Definition.BoundedLattice, TypeError] = {
       val tpe = Type.typer(rast.elms)
       val botType = tpe
       val leqType = TypedAst.Type.Lambda(args = List(tpe, tpe), retTpe = TypedAst.Type.Bool)
@@ -151,7 +151,7 @@ object Typer {
       }
 
       @@(botVal, leqVal, lubVal) map {
-        case (bot, leq, lub) => TypedAst.Definition.Lattice(tpe, bot, leq, lub, rast.loc)
+        case (bot, leq, lub) => TypedAst.Definition.BoundedLattice(tpe, bot, leq, lub, rast.loc)
       }
     }
 
