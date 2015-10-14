@@ -52,13 +52,25 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
 
   val dbLat = mutable.Map.empty[Name.Resolved, Map[List[Value], List[Value]]]
 
+  class DataStore {
+
+    class Table() {
+
+      def getIndices() = ???
+
+      def hasIndices() = ???
+
+      def useIndex(env: Map[String, Value]) = ???
+    }
+
+    def getTable(name: Name.Resolved): Table = ???
+
+  }
+
   /**
    * The work list of pending predicate names and their associated values.
    */
   val worklist = mutable.Queue.empty[(Name.Resolved, List[Value])]
-
-  // TODO: Return this.
-  case class Model()
 
   /**
    * Solves the Flix program.
@@ -170,9 +182,9 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     /**
      * Extend the given environment `env` according to the given predicate `p`.
      */
+    // TODO: Use loop instead.
     def visit(p: TypedAst.Predicate.Body, env: List[Map[String, Value]]): List[Map[String, Value]] = p match {
       case r: Predicate.Body.Relation => {
-        // TODO: Replace by faster join algorithm.
 
         val defn = sCtx.root.relations(r.name)
         if (isLat(defn)) {
