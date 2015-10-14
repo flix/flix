@@ -659,9 +659,9 @@ object Resolver {
             }
           }
 
-        case WeededAst.Predicate.Head.Print(wterms, loc) =>
+        case WeededAst.Predicate.Head.Trace(wterms, loc) =>
           @@(wterms map (t => Term.Head.resolve(t, namespace, syms))) map {
-            case terms => ResolvedAst.Predicate.Head.Print(terms, loc)
+            case terms => ResolvedAst.Predicate.Head.Trace(terms, loc)
           }
 
         case WeededAst.Predicate.Head.Write(wterms, wpath, loc) =>

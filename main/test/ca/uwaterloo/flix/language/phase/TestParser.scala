@@ -824,22 +824,22 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Predicate.Alias])
   }
 
-  test("Predicate.Print01") {
-    val input = "Print#(x)"
+  test("Predicate.Trace01") {
+    val input = "Trace#(x)"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
-    assert(result.isInstanceOf[ParsedAst.Predicate.Print])
+    assert(result.isInstanceOf[ParsedAst.Predicate.Trace])
   }
 
-  test("Predicate.Print02") {
-    val input = "Print#(x, z)"
+  test("Predicate.Trace02") {
+    val input = "Trace#(x, z)"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
-    assert(result.isInstanceOf[ParsedAst.Predicate.Print])
+    assert(result.isInstanceOf[ParsedAst.Predicate.Trace])
   }
 
-  test("Predicate.Print03") {
-    val input = "Print#(x, f(z))"
+  test("Predicate.Trace03") {
+    val input = "Trace#(x, f(z))"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
-    assert(result.isInstanceOf[ParsedAst.Predicate.Print])
+    assert(result.isInstanceOf[ParsedAst.Predicate.Trace])
   }
 
   test("Predicate.Read01") {

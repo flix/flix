@@ -171,15 +171,12 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     case p: Predicate.Head.Relation =>
       val row = p.terms map (t => Interpreter.evalHeadTerm(t, sCtx.root, env0))
       newFact(p.name, row)
-    case p: Predicate.Head.Print =>
-      val values = p.terms.collect {
-        case Term.Head.Var(ident, _, _) => ident.name + " => " + pretty(env0(ident.name))
-      }
-      println(values.mkString(", "))
-    case p: Predicate.Head.Write =>
-      println("Write Not supported yet.")
-
-    case p: Predicate.Head.Error => ??? // TODO: not implemented.
+    case p: Predicate.Head.Trace =>
+      val row = p.terms map (t => pretty(Interpreter.evalHeadTerm(t, sCtx.root, env0)))
+      val out = "Trace(" + row.mkString(", ") + ")"
+      Console.println(out)
+    case p: Predicate.Head.Write => // NOP - used when the fixpoint has been found.
+    case p: Predicate.Head.Error => // NOP - used when the fixpoint has been found.
   }
 
 

@@ -214,12 +214,12 @@ object ResolvedAst {
       case class Relation(name: Name.Resolved, terms: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
       /**
-       * A special print predicate that occurs in the head of a fact/rule.
+       * A special trace predicate that occurs in the head of a rule.
        *
        * @param terms the terms of the predicate.
        * @param loc the source location.
        */
-      case class Print(terms: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Predicate.Head
+      case class Trace(terms: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
       /**
        * A special write predicate that occurs in the head of a fact/rule.

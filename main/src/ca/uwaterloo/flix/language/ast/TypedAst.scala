@@ -495,13 +495,13 @@ object TypedAst {
       case class Relation(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Head
 
       /**
-       * A typed print predicate that occurs in the head of a rule.
+       * A typed trace predicate that occurs in the head of a rule.
        *
        * @param terms the terms of the predicate.
        * @param tpe the type of the predicate.
        * @param loc the source location.
        */
-      case class Print(terms: List[TypedAst.Term.Head], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class Trace(terms: List[TypedAst.Term.Head], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Head
 
       /**
        * A typed write predicate that occurs in the head of a rule.

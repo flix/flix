@@ -472,11 +472,11 @@ object Typer {
               TypedAst.Predicate.Head.Relation(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
           }
 
-        case ResolvedAst.Predicate.Head.Print(rterms, loc) =>
+        case ResolvedAst.Predicate.Head.Trace(rterms, loc) =>
           // TODO: This needs to use proper unification
           @@(rterms map (t => Term.typer(t, TypedAst.Type.Var("x"), root))) map {
             // TODO: The use of Type.Bool here is kind of spurious.
-            case terms => TypedAst.Predicate.Head.Print(terms, TypedAst.Type.Bool, loc)
+            case terms => TypedAst.Predicate.Head.Trace(terms, TypedAst.Type.Bool, loc)
           }
 
         case ResolvedAst.Predicate.Head.Write(rterms, rpath, loc) =>

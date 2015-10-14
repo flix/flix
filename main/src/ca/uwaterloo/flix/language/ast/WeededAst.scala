@@ -427,12 +427,12 @@ object WeededAst {
       case class Relation(name: Name.Unresolved, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
       /**
-       * An AST node that represents the special print predicate.
+       * An AST node that represents the special trace predicate.
        *
        * @param terms the terms of the predicate.
        * @param loc the source location.
        */
-      case class Print(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
+      case class Trace(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
       /**
        * An AST node that represents the special write predicate.

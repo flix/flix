@@ -576,13 +576,13 @@ object ParsedAst {
     }
 
     /**
-     * An AST node that represents the special print predicate.
+     * An AST node that represents the special trace predicate.
      *
      * @param sp1 the position of the first character in the predicate.
      * @param terms the terms of the predicate.
      * @param sp2 the position of the last character in the predicate.
      */
-    case class Print(sp1: SourcePosition, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
+    case class Trace(sp1: SourcePosition, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 

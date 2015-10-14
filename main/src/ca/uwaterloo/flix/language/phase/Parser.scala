@@ -279,7 +279,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    FunctionOrRelationPredicate | NotEqualPredicate | PrintPredicate | ReadPredicate | WritePredicate | ErrorPredicate | AliasPredicate
+    FunctionOrRelationPredicate | NotEqualPredicate | TracePredicate | ReadPredicate | WritePredicate | ErrorPredicate | AliasPredicate
   }
 
   def FunctionOrRelationPredicate: Rule1[ParsedAst.Predicate.FunctionOrRelation] = rule {
@@ -290,8 +290,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     SP ~ Ident ~ optWS ~ atomic("!=") ~ optWS ~ Ident ~ SP ~> ParsedAst.Predicate.NotEqual
   }
 
-  def PrintPredicate: Rule1[ParsedAst.Predicate.Print] = rule {
-    SP ~ atomic("Print#") ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Print
+  def TracePredicate: Rule1[ParsedAst.Predicate.Trace] = rule {
+    SP ~ atomic("Trace#") ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Trace
   }
 
   def ReadPredicate: Rule1[ParsedAst.Predicate.Read] = rule {

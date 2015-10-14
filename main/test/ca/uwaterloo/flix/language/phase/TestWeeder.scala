@@ -176,8 +176,8 @@ class TestWeeder extends FunSuite {
     assert(result.isFailure)
   }
 
-  test("IllegalBodyPredicate.Print01") {
-    val input = "A(x, y) :- Print#(x, y)."
+  test("IllegalBodyPredicate.Trace01") {
+    val input = "A(x, y) :- Trace#(x, y)."
     val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
     val result = Weeder.Declaration.compile(past)
     assert(result.isFailure)
