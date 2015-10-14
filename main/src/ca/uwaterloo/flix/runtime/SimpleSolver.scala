@@ -54,13 +54,21 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
 
   class DataStore {
 
-    class Table() {
+    trait Table {
 
       def getIndices() = ???
 
       def hasIndices() = ???
 
       def useIndex(env: Map[String, Value]) = ???
+    }
+
+    class Relation {
+
+    }
+
+    class Lattice {
+
     }
 
     def getTable(name: Name.Resolved): Table = ???
