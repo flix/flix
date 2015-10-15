@@ -136,8 +136,8 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     val name = defn.name
     val row = f.toList
 
-    val keys = getKeys(defn)
-    val latAttr = getLatAttr(defn)
+    val keys = l.keys
+    val latAttr = l.values
     val map = dbLat.getOrElse(name, Map.empty)
 
     val (ks, vs) = row.splitAt(keys.size)
@@ -207,10 +207,10 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
                 case Some(m) => extend(env, m)
               }
             }
-          case _: Collection.Lattice =>
+          case l: Collection.Lattice =>
             val table = dbLat(r.name)
 
-            val keyAttr = getKeys(defn)
+            val keyAttr = l.keys
             val (keyTerms, valueTerms) = r.terms.splitAt(keyAttr.size)
 
             val res = table flatMap {
@@ -405,14 +405,6 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     }
 
   }
-
-  private def isLat(defn: TypedAst.Collection): Boolean = defn.isInstanceOf[TypedAst.Collection.Lattice]
-
-  private def getKeys(defn: TypedAst.Collection): List[Attribute] =
-    defn.asInstanceOf[TypedAst.Collection.Lattice].keys
-
-  private def getLatAttr(defn: TypedAst.Collection): List[Attribute] =
-    defn.asInstanceOf[TypedAst.Collection.Lattice].values
 
   // TODO: Move somewhere. Decide where
   def pretty(v: Value): String = v match {
