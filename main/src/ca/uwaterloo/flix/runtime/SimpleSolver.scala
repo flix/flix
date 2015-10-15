@@ -7,6 +7,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Term
 import ca.uwaterloo.flix.language.ast.TypedAst.Term.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Name, TypedAst}
+import ca.uwaterloo.flix.language.backend.phase.Indexer
 import ca.uwaterloo.flix.runtime.datastore.IndexedRelation
 import ca.uwaterloo.flix.util.{Validation, AsciiTable}
 import ca.uwaterloo.flix.util.Validation._
@@ -55,6 +56,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
 
   val dbLat = mutable.Map.empty[Name.Resolved, Map[List[Value], List[Value]]]
 
+
   class DataStore {
 
     /**
@@ -62,59 +64,18 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
      */
     val relations = mutable.Map.empty[Name.Resolved, IndexedRelation]
 
-    /**
-     * A map from names to sets of indexes attributes.
-     *
-     * For example, if the map contains "foo" -> Set(Seq(0), Seq(1, 2)) then the collection named "foo"
-     * should have an index on its 0th attribute and its 1st and 2nd attributes together.
-     */
-    val indexes = mutable.Map.empty[Name.Resolved, Set[Seq[Int]]]
-
-    /**
-     * Computes indexes for all collections based on a left-to-right evaluation strategy of each rule.
-     */
-    def computeIndexes(): Unit = {
-      // iterate through each rule.
-      for (constraint <- sCtx.root.rules) {
-        // maintain set of bound variables in each rule.
-        val bound = mutable.Set.empty[String]
-        // iterate through each collection predicate in the body.
-        for (body <- constraint.body) {
-          body match {
-            case Predicate.Body.Relation(name, terms, _, _) =>
-              // TODO: This has to be careful with lattices.
-
-              // compute the indices of the determinate terms.
-              val determinate = terms.zipWithIndex.foldLeft(Seq.empty[Int]) {
-                case (xs, (t: Term.Body.Wildcard, i)) => xs
-                case (xs, (t: Term.Body.Var, i)) =>
-                  if (bound contains t.ident.name)
-                    xs :+ i
-                  else
-                    xs
-                case (xs, (t: Term.Body.Lit, i)) => xs :+ i
-              }
-
-              if (determinate.nonEmpty) {
-                val idxs = indexes.getOrElse(name, Set.empty)
-                indexes(name) = idxs + determinate
-              }
-
-              // update the set of bound variables.
-              bound ++= body.freeVars
-            case _ => // nop
-          }
-        }
-      }
-    }
-
     def init(): Unit = {
+      // compute indexes based on the program constraint rules.
+      val indexes = Indexer.index(sCtx.root)
+
+      // initialize all indexed relations and lattices.
       for ((name, collection) <- sCtx.root.collections) {
         collection match {
           case r: Collection.Relation =>
             relations(name) = new IndexedRelation(r, indexes.getOrElse(name, Set.empty))
 
           case l: Collection.Lattice => // todo
+
         }
       }
     }
@@ -137,9 +98,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
   def solve(): Unit = {
     val t = System.nanoTime()
 
-    dataStore.computeIndexes()
     dataStore.init()
-    println(dataStore.indexes)
 
     // adds all facts to the database.
     for (fact <- sCtx.root.facts) {
