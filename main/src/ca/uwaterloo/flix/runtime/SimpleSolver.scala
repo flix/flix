@@ -173,7 +173,11 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
   def inferredFact(name: Name.Resolved, fact: List[Value]): Unit = sCtx.root.collections(name) match {
     case r: TypedAst.Collection.Relation =>
       inferredRelationFact(r, fact.toArray)
-      dataStore.relations(name).inferredFact(fact.toArray)
+
+      val changed = dataStore.relations(name).inferredFact(fact.toArray)
+      if (changed) {
+        worklist += ((r.name, fact))
+      }
 
     case l: TypedAst.Collection.Lattice => inferredLatticeFact(l, fact.toArray)
   }
