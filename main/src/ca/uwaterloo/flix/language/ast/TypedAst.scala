@@ -515,6 +515,7 @@ object TypedAst {
        * @param tpe the type of the predicate.
        * @param loc the source location.
        */
+      // TODO: Need better name....could also be a lattice...
       case class Relation(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Head
 
       /**
@@ -550,7 +551,19 @@ object TypedAst {
     /**
      * A common super-type for body predicates.
      */
-    sealed trait Body extends TypedAst.Predicate
+    sealed trait Body extends TypedAst.Predicate {
+      /**
+       * Returns the set of free variables in the term.
+       */
+      def freeVars: Set[String] = this match {
+        case TypedAst.Predicate.Body.Relation(_, terms, _, _) => terms.foldLeft(Set.empty[String]) {
+          case (xs, t: TypedAst.Term.Body.Wildcard) => xs
+          case (xs, t: TypedAst.Term.Body.Var) => xs + t.ident.name
+          case (xs, t: TypedAst.Term.Body.Lit) => xs
+        }
+        // TODO: Rest
+      }
+    }
 
     object Body {
 

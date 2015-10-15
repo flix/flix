@@ -54,11 +54,43 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
 
   class DataStore {
 
-    def computeIndices(): Unit = {
-      // TODO
+    val indexes = mutable.Map.empty[Name.Resolved, Set[Set[Int]]]
+
+    def computeIndexes(): Unit = {
+      // iterate through each rule.
+      for (constraint <- sCtx.root.rules) {
+        // maintain set of bound variables in each rule.
+        val bound = mutable.Set.empty[String]
+        // iterate through each collection predicate in the body.
+        for (body <- constraint.body) {
+          body match {
+            case Predicate.Body.Relation(name, terms, _, _) =>
+              // TODO: This has to be careful with lattices.
+
+              // compute the indices of the determinate terms.
+              val determinate = terms.zipWithIndex.foldLeft(Set.empty[Int]) {
+                case (xs, (t: Term.Body.Wildcard, i)) => xs
+                case (xs, (t: Term.Body.Var, i)) =>
+                  if (bound contains t.ident.name)
+                    xs + i
+                  else
+                    xs
+                case (xs, (t: Term.Body.Lit, i)) => xs + i
+              }
+
+              if (determinate.nonEmpty) {
+                val idxs = indexes.getOrElse(name, Set.empty)
+                indexes(name) = idxs + determinate
+              }
+
+              // update the set of bound variables.
+              bound ++= body.freeVars
+            case _ => // nop
+          }
+        }
+
+      }
     }
-
-
   }
 
   /**
@@ -71,6 +103,11 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
    */
   def solve(): Unit = {
     val t = System.nanoTime()
+
+    val ds = new DataStore
+    ds.computeIndexes()
+    println(ds.indexes)
+
     // adds all facts to the database.
     for (fact <- sCtx.root.facts) {
       val name = fact.head.asInstanceOf[TypedAst.Predicate.Head.Relation].name // TODO: Cast
