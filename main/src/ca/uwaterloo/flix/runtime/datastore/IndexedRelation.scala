@@ -22,14 +22,12 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
   /**
    * A map from keys, i.e. (index, value) pairs, to rows matching the key.
    */
-  val store = mutable.Map.empty[(Seq[Int], Seq[Value]), mutable.Set[Array[Value]]]
+  private val store = mutable.Map.empty[(Seq[Int], Seq[Value]), mutable.Set[Array[Value]]]
 
   /**
-   * The default index (which always exists).
-   *
-   * This corresponds to an index on all attributes.
+   * The default index which always exists. Currently an index on the first attribute.
    */
-  val defaultIndex: Seq[Int] = relation.attributes.zipWithIndex.map(_._2)
+  private val defaultIndex: Seq[Int] = Seq(0)
 
   /**
    * Returns an iterator over all rows currently in the relation.
@@ -95,7 +93,7 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
    * Returns all rows in the relation using a table scan.
    */
   // TODO: Improve performance ...
-  def scan: Iterator[Array[Value]] = (store map {
+  private def scan: Iterator[Array[Value]] = (store map {
     case (_, rows) => rows
   }).toList.flatten.toIterator
 
