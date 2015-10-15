@@ -7,6 +7,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Term
 import ca.uwaterloo.flix.language.ast.TypedAst.Term.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Name, TypedAst}
+import ca.uwaterloo.flix.runtime.datastore.IndexedRelation
 import ca.uwaterloo.flix.util.{Validation, AsciiTable}
 import ca.uwaterloo.flix.util.Validation._
 
@@ -118,83 +119,6 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
       }
     }
 
-    class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]]) {
-
-      /**
-       * A map from indexes to the table of the relation.
-       */
-      val store = mutable.Map.empty[(Seq[Int], Seq[Value]), mutable.Set[Array[Value]]]
-
-      /**
-       * The default index (which always exists).
-       */
-      val defaultIndex: Seq[Int] = relation.attributes.zipWithIndex.map(_._2)
-
-      /**
-       * Returns a traversable of the current rows in the relation.
-       */
-      def table: Traversable[Array[Value]] = scan
-
-      /**
-       * Processes a new inferred fact `f`.
-       *
-       * Returns `true` if the fact was new.
-       */
-      def inferredFact(f: Array[Value]): Boolean = {
-        val key = (defaultIndex, defaultIndex map f)
-
-        if (store contains key)
-          return false
-
-        newFact(f)
-      }
-
-      /**
-       * Updates all indexes and tables with a new fact `f`.
-       */
-      def newFact(f: Array[Value]): Boolean = {
-        for (idx <- indexes + defaultIndex) {
-          val key = (idx, idx map f)
-          val table = store.getOrElse(key, {
-            val newTable = mutable.Set.empty[Array[Value]]
-            store(key) = newTable
-            newTable
-          })
-          table += f
-        }
-        true
-      }
-
-      /**
-       * Performs a lookup of the given row. The row may contain `null` entries. If so, these are interpreted as free variables.
-       *
-       * Returns a traversable over the matched rows.
-       */
-      def lookup(row: Array[Value]): Traversable[Array[Value]] = {
-        val idx = row.toSeq.zipWithIndex.collect {
-          case (v, i) if v != null => i
-        }
-        val key = (idx, idx map row)
-
-        if (indexes contains idx) {
-          // use index
-          store(key)
-        } else {
-          // table scan
-          table
-        }
-      }
-
-      /**
-       * Scans through all rows in the table.
-       */
-      // TODO: Improve performance ...
-      def scan: Traversable[Array[Value]] =
-        (for (((idx, key), rows) <- store; if idx == defaultIndex)
-          yield rows).flatten
-
-
-    }
 
   }
 
