@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.Compiler
+import ca.uwaterloo.flix.language.ast.TypedAst.Collection.Relation
 import ca.uwaterloo.flix.language.ast.TypedAst.Constraint.Rule
 import ca.uwaterloo.flix.language.ast.TypedAst.Term
 import ca.uwaterloo.flix.language.ast.TypedAst.Term.Body
@@ -10,6 +11,7 @@ import ca.uwaterloo.flix.util.{Validation, AsciiTable}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
 
@@ -62,10 +64,10 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     /**
      * A map from names to sets of indexes attributes.
      *
-     * For example, if the map contains "foo" -> Set(Set(0), Set(1, 2)) then the collection named "foo"
+     * For example, if the map contains "foo" -> Set(Seq(0), Seq(1, 2)) then the collection named "foo"
      * should have an index on its 0th attribute and its 1st and 2nd attributes together.
      */
-    val indexes = mutable.Map.empty[Name.Resolved, Set[Set[Int]]]
+    val indexes = mutable.Map.empty[Name.Resolved, Set[Seq[Int]]]
 
     /**
      * Computes indexes for all collections based on a left-to-right evaluation strategy of each rule.
@@ -82,14 +84,14 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
               // TODO: This has to be careful with lattices.
 
               // compute the indices of the determinate terms.
-              val determinate = terms.zipWithIndex.foldLeft(Set.empty[Int]) {
+              val determinate = terms.zipWithIndex.foldLeft(Seq.empty[Int]) {
                 case (xs, (t: Term.Body.Wildcard, i)) => xs
                 case (xs, (t: Term.Body.Var, i)) =>
                   if (bound contains t.ident.name)
-                    xs + i
+                    xs :+ i
                   else
                     xs
-                case (xs, (t: Term.Body.Lit, i)) => xs + i
+                case (xs, (t: Term.Body.Lit, i)) => xs :+ i
               }
 
               if (determinate.nonEmpty) {
@@ -106,25 +108,62 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     }
 
     def init(): Unit = {
-      // TODO: initialize relations and lattices.
+      for ((name, collection) <- sCtx.root.collections) {
+        collection match {
+          case r: Collection.Relation =>
+            relations(name) = new IndexedRelation(r, indexes.getOrElse(name, Set.empty))
+
+          case l: Collection.Lattice => // todo
+        }
+      }
     }
 
-    class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Set[Int]]) {
+    class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]]) {
 
-      val store = mutable.Map.empty[Set[Int], Array[Value]]
+      /**
+       * A map from indexes to the table of the relation.
+       */
+      val store = mutable.Map.empty[(Seq[Int], Seq[Value]), mutable.Set[Array[Value]]]
+
+      /**
+       * The default index (which always exists).
+       */
+      val defaultIndex: Seq[Int] = relation.attributes.zipWithIndex.map(_._2)
 
       def inferredFact(f: Array[Value]): Boolean = {
-        ???
+        val key = (defaultIndex, defaultIndex map f)
+
+        if (store contains key)
+          return false
+
+        newFact(f)
+      }
+
+      def newFact(f: Array[Value]): Boolean = {
+        for (idx <- indexes + defaultIndex) {
+          val key = (idx, idx map f)
+          val coll = store.getOrElse(key, {
+            val s = mutable.Set.empty[Array[Value]]
+            store(key) = s
+            s
+          })
+          coll += f
+        }
+        true
       }
 
     }
 
   }
 
+  // TODO: Avoid indirection as much as possible.
+
   /**
    * The work list of pending predicate names and their associated values.
    */
   val worklist = mutable.Queue.empty[(Name.Resolved, List[Value])]
+
+  val ds = new DataStore
 
   /**
    * Solves the Flix program.
@@ -132,8 +171,8 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
   def solve(): Unit = {
     val t = System.nanoTime()
 
-    val ds = new DataStore
     ds.computeIndexes()
+    ds.init()
     println(ds.indexes)
 
     // adds all facts to the database.
@@ -166,7 +205,10 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
    * Processes an inferred `fact` for the relation or lattice with the `name`.
    */
   def inferredFact(name: Name.Resolved, fact: List[Value]): Unit = sCtx.root.collections(name) match {
-    case r: TypedAst.Collection.Relation => inferredRelationFact(r, fact.toArray)
+    case r: TypedAst.Collection.Relation =>
+      inferredRelationFact(r, fact.toArray)
+      ds.relations(name).inferredFact(fact.toArray)
+
     case l: TypedAst.Collection.Lattice => inferredLatticeFact(l, fact.toArray)
   }
 
