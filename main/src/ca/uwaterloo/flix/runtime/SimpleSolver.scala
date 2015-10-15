@@ -54,8 +54,17 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
 
   class DataStore {
 
+    /**
+     * A map from names to sets of indexes attributes.
+     *
+     * For example, if the map contains "foo" -> Set(Set(0), Set(1, 2)) then the collection named "foo"
+     * should have an index on its 0th attribute and its 1st and 2nd attributes together.
+     */
     val indexes = mutable.Map.empty[Name.Resolved, Set[Set[Int]]]
 
+    /**
+     * Computes indexes for all collections based on a left-to-right evaluation strategy of each rule.
+     */
     def computeIndexes(): Unit = {
       // iterate through each rule.
       for (constraint <- sCtx.root.rules) {
