@@ -78,7 +78,7 @@ namespace Belnap {
 
     let Belnap<> = (Belnap.Bot, Belnap.Top, leq, lub, glb);
 
-    rel A(k: Int, v: Belnap<>);
+    lat A(k: Int, v: Belnap<>);
     A(0, Belnap.Bot).
     A(1, Belnap.True).
     A(2, Belnap.False).

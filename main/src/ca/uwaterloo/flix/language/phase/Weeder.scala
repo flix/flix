@@ -204,11 +204,11 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate an illegal lattice definition.
+     * An error raised to indicate an illegal bounded lattice definition.
      *
      * @param loc the location where the illegal definition occurs.
      */
-    case class IllegalLattice(loc: SourceLocation) extends WeederError {
+    case class IllegalBoundedLattice(loc: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
            |
@@ -220,6 +220,42 @@ object Weeder {
            |the 3rd component must be the partial order function,
            |the 4th component must be the least upper bound function, and
            |the 5th component must be the greatest upper bound function.
+         """.stripMargin
+    }
+
+    /**
+     * An error raised to indicate an illegal lattice attribute occurring in a relation.
+     *
+     * @param loc the location where the illegal definition occurs.
+     */
+    case class IllegalLatticeAttributeInRelation(loc: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> Illegal lattice attribute in relation.")}
+           |
+            |${loc.underline}
+           |A relation must not contain any lattice interpreted attributes.
+           |
+            |Tip: Remove the lattice interpretation (<>) or change the relation to a lattice (replace rel by lat).
+         """.stripMargin
+    }
+
+    /**
+     * An error raised to indicate that the last attribute of a lattice definition does not have a lattice interpretation.
+     *
+     * @param loc the location where the illegal definition occurs.
+     */
+    case class IllegalNonLatticeAttribute(loc: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> Illegal non-lattice attribute.")}
+           |
+            |${loc.underline}
+           |The last attribute of lattice must have a lattice interpretation.
+           |
+            |Tip: Change the interpretation of the last attribute (adding <>) or change the lattice to a relation (replace lat by rel).
          """.stripMargin
     }
 
@@ -341,6 +377,7 @@ object Weeder {
       case d: ParsedAst.Definition.Enum => Definition.compile(d)
       case d: ParsedAst.Definition.BoundedLattice => Definition.compile(d)
       case d: ParsedAst.Definition.Relation => Definition.compile(d)
+      case d: ParsedAst.Definition.Lattice => Definition.compile(d)
     }
 
     /**
@@ -401,7 +438,7 @@ object Weeder {
       val elmsVal = @@(past.elms.toList.map(Expression.compile))
       @@(tpeVal, elmsVal) flatMap {
         case (tpe, List(bot, top, leq, lub, glb)) => WeededAst.Definition.BoundedLattice(tpe, bot, top, leq, lub, glb, past.loc).toSuccess
-        case _ => IllegalLattice(past.loc).toFailure
+        case _ => IllegalBoundedLattice(past.loc).toFailure
       }
     }
 
@@ -417,7 +454,8 @@ object Weeder {
             seen += (ident.name -> ident)
             interp match {
               case i: ParsedAst.Interpretation.Set => Type.compile(interp.tpe) map (tpe => WeededAst.Attribute(ident, tpe, WeededAst.Interpretation.Set))
-              case i: ParsedAst.Interpretation.Lattice => Type.compile(interp.tpe) map (tpe => WeededAst.Attribute(ident, tpe, WeededAst.Interpretation.Lattice))
+              case i: ParsedAst.Interpretation.Lattice =>
+                (IllegalLatticeAttributeInRelation(ident.loc): WeederError).toFailure
             }
           case Some(otherIdent) =>
             (DuplicateAttribute(ident.name, otherIdent.loc, ident.loc): WeederError).toFailure
@@ -428,6 +466,38 @@ object Weeder {
         case attributes => WeededAst.Definition.Relation(past.ident, attributes, past.loc)
       }
     }
+
+    /**
+     * Compiles the given parsed relation `past` to a weeded lattice definition.
+     */
+    def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Definition.Relation, WeederError] = {
+      // check duplicate attributes.
+      val seen = mutable.Map.empty[String, Name.Ident]
+      val attributesVal = past.attributes.map {
+        case ParsedAst.Attribute(ident, interp) => seen.get(ident.name) match {
+          case None =>
+            seen += (ident.name -> ident)
+            interp match {
+              case i: ParsedAst.Interpretation.Set => Type.compile(interp.tpe) map (tpe => WeededAst.Attribute(ident, tpe, WeededAst.Interpretation.Set))
+              case i: ParsedAst.Interpretation.Lattice => Type.compile(interp.tpe) map (tpe => WeededAst.Attribute(ident, tpe, WeededAst.Interpretation.Lattice))
+            }
+          case Some(otherIdent) =>
+            (DuplicateAttribute(ident.name, otherIdent.loc, ident.loc): WeederError).toFailure
+        }
+      }
+
+      @@(attributesVal) flatMap {
+        case attributes =>
+          // the last attribute of a lattice definition must have a lattice interpretation.
+          attributes.last.interp match {
+            case WeededAst.Interpretation.Set =>
+              (IllegalNonLatticeAttribute(attributes.last.ident.loc): WeederError).toFailure
+            case WeededAst.Interpretation.Lattice =>
+              WeededAst.Definition.Relation(past.ident, attributes, past.loc).toSuccess // TODO
+          }
+      }
+    }
+
   }
 
   object Directive {

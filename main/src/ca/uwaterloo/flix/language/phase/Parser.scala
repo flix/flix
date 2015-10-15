@@ -43,7 +43,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Definition: Rule1[ParsedAst.Definition] = rule {
-    ValueDefinition | FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition
+    ValueDefinition | FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition
   }
 
   def ValueDefinition: Rule1[ParsedAst.Definition.Value] = rule {
@@ -83,23 +83,24 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
   }
 
-  def RelationDefinition: Rule1[ParsedAst.Definition.Relation] = {
+  def RelationDefinition: Rule1[ParsedAst.Definition.Relation] = rule {
+    SP ~ atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.Relation
+  }
 
-    def Interpretation: Rule1[ParsedAst.Interpretation] = rule {
-      Type ~ "<>" ~> ParsedAst.Interpretation.Lattice | Type ~> ParsedAst.Interpretation.Set
-    }
+  def LatticeDefinition: Rule1[ParsedAst.Definition.Lattice] = rule {
+    SP ~ atomic("lat") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.Lattice
+  }
 
-    def Attribute: Rule1[ParsedAst.Attribute] = rule {
-      Ident ~ optWS ~ ":" ~ optWS ~ Interpretation ~> ParsedAst.Attribute
-    }
+  def Interpretation: Rule1[ParsedAst.Interpretation] = rule {
+    Type ~ "<>" ~> ParsedAst.Interpretation.Lattice | Type ~> ParsedAst.Interpretation.Set
+  }
 
-    def Attributes: Rule1[Seq[ParsedAst.Attribute]] = rule {
-      oneOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
-    }
+  def Attribute: Rule1[ParsedAst.Attribute] = rule {
+    Ident ~ optWS ~ ":" ~ optWS ~ Interpretation ~> ParsedAst.Attribute
+  }
 
-    rule {
-      SP ~ atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.Relation
-    }
+  def Attributes: Rule1[Seq[ParsedAst.Attribute]] = rule {
+    oneOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
   }
 
   /////////////////////////////////////////////////////////////////////////////

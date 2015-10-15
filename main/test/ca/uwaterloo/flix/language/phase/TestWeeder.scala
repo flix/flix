@@ -37,7 +37,7 @@ class TestWeeder extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Lattices                                                                //
+  // BoundedLattices                                                         //
   /////////////////////////////////////////////////////////////////////////////
   test("IllegalBoundedLattice01") {
     val input = "let Foo<> = (bot)"
@@ -61,7 +61,7 @@ class TestWeeder extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Relations                                                               //
+  // Lattices and Relations                                                  //
   /////////////////////////////////////////////////////////////////////////////
   test("DuplicateAttribute01") {
     val past = ParsedAst.Definition.Relation(SP, Ident, Seq(
@@ -83,6 +83,34 @@ class TestWeeder extends FunSuite {
 
     val result = Weeder.Definition.compile(past)
     assertResult(2)(result.errors.size)
+  }
+
+  test("IllegalAttribute01") {
+    val input = "rel A(b: Int, c: Int<>)."
+    val past = new Parser(SourceInput.Str(input)).Definition.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalLatticeAttributeInRelation])
+  }
+
+  test("IllegalAttribute02") {
+    val input = "rel A(b: Int<>, c: Int)."
+    val past = new Parser(SourceInput.Str(input)).Definition.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalLatticeAttributeInRelation])
+  }
+
+  test("IllegalAttribute03") {
+    val input = "rel A(b: Int<>, c: Int<>)."
+    val past = new Parser(SourceInput.Str(input)).Definition.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalLatticeAttributeInRelation])
+  }
+
+  test("IllegalNonLatticeAttribute01") {
+    val input = "lat A(b: Int, c: Int)."
+    val past = new Parser(SourceInput.Str(input)).Definition.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalNonLatticeAttribute])
   }
 
   /////////////////////////////////////////////////////////////////////////////

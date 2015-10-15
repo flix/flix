@@ -145,6 +145,21 @@ object ParsedAst {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
+    /**
+     * An AST node that represents a lattice definition.
+     *
+     * @param sp1 the position of the first character in the definition.
+     * @param ident the name of the relation.
+     * @param attributes the name and type of the attributes.
+     * @param sp2 the position of the last character in the definition.
+     */
+    case class Lattice(sp1: SourcePosition, ident: Name.Ident, attributes: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Definition {
+      /**
+       * Returns the source location of `this` definition.
+       */
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
   }
 
   /**
