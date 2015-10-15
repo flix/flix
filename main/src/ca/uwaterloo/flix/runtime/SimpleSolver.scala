@@ -137,7 +137,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
           var changed = false
 
           val vs3 = (vs zip vs2 zip latAttr) map {
-            case ((v1, v2), TypedAst.Attribute(_, tpe, _)) =>
+            case ((v1, v2), TypedAst.Attribute(_, tpe)) =>
               val lat = sCtx.root.lattices(tpe)
               val newLub = Interpreter.eval2(lat.lub, v1, v2, sCtx.root)
               val isSubsumed = Interpreter.eval2(lat.leq, newLub, v2, sCtx.root).toBool
@@ -364,50 +364,51 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
    * Evaluates the given print `directive`.
    */
   def print(directive: Directive.Print): Unit = {
-    val relation = sCtx.root.collections(directive.name)
+    val collection = sCtx.root.collections(directive.name)
 
-    dbRel.get(directive.name) match {
-      case None => // nop
-      case Some(table) =>
-        val cols = relation.attributes.map(_.ident.name)
-        val ascii = new AsciiTable().withCols(cols: _*)
-        for (row <- table.sortBy(_.head.toString)) {
-          ascii.mkRow(row map pretty)
+    collection match {
+      case r: TypedAst.Definition.Relation =>
+        dbRel.get(directive.name) match {
+          case None => // nop
+          case Some(table) =>
+            val cols = r.attributes.map(_.ident.name)
+            val ascii = new AsciiTable().withCols(cols: _*)
+            for (row <- table.sortBy(_.head.toString)) {
+              ascii.mkRow(row map pretty)
+            }
+
+            Console.println(r.name)
+            ascii.write(System.out)
+            Console.println()
+            Console.println()
         }
+      case l: TypedAst.Definition.Lattice =>
 
-        Console.println(relation.name)
-        ascii.write(System.out)
-        Console.println()
-        Console.println()
+        dbLat.get(directive.name) match {
+          case None => // nop
+          case Some(table) =>
+            val cols = (l.keys ::: l.values).map(_.ident.name)
+            val ascii = new AsciiTable().withCols(cols: _*)
+            for ((keys, elms) <- table.toSeq.sortBy(_._1.head.toString)) {
+              ascii.mkRow((keys map pretty) ::: (elms map pretty))
+            }
+
+            Console.println(l.name)
+            ascii.write(System.out)
+            Console.println()
+            Console.println()
+        }
     }
 
-    dbLat.get(directive.name) match {
-      case None => // nop
-      case Some(table) =>
-        val cols = relation.attributes.map(_.ident.name)
-        val ascii = new AsciiTable().withCols(cols: _*)
-        for ((keys, elms) <- table.toSeq.sortBy(_._1.head.toString)) {
-          ascii.mkRow((keys map pretty) ::: (elms map pretty))
-        }
-
-        Console.println(relation.name)
-        ascii.write(System.out)
-        Console.println()
-        Console.println()
-    }
-
   }
 
-  private def isLat(defn: TypedAst.Definition.Relation): Boolean =
-    defn.attributes.exists(_.interp == TypedAst.Interpretation.Lattice)
+  private def isLat(defn: TypedAst.Definition.Collection): Boolean = defn.isInstanceOf[TypedAst.Definition.Lattice]
 
-  private def getKeys(defn: TypedAst.Definition.Relation): List[Attribute] = {
-    defn.attributes.filter(_.interp == TypedAst.Interpretation.Set)
-  }
+  private def getKeys(defn: TypedAst.Definition.Collection): List[Attribute] =
+    defn.asInstanceOf[TypedAst.Definition.Lattice].keys
 
-  private def getLatAttr(defn: TypedAst.Definition.Relation): List[Attribute] = {
-    defn.attributes.filter(_.interp == TypedAst.Interpretation.Lattice)
-  }
+  private def getLatAttr(defn: TypedAst.Definition.Collection): List[Attribute] =
+    defn.asInstanceOf[TypedAst.Definition.Lattice].values
 
   // TODO: Move somewhere. Decide where
   def pretty(v: Value): String = v match {

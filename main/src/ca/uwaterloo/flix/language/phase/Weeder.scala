@@ -493,6 +493,8 @@ object Weeder {
      * Compiles the given parsed relation `past` to a weeded lattice definition.
      */
     def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Definition.Lattice, WeederError] = {
+      // TODO: Rewrite so we can get rid of WeededAst.Interpretation.
+
       // check duplicate attributes.
       val seen = mutable.Map.empty[String, Name.Ident]
       val attributesVal = past.attributes.map {

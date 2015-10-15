@@ -11,7 +11,7 @@ object ResolvedAst {
                   directives: List[ResolvedAst.Directive],
                   enums: Map[Name.Resolved, ResolvedAst.Definition.Enum],
                   lattices: Map[ResolvedAst.Type, ResolvedAst.Definition.BoundedLattice],
-                  collections: Map[Name.Resolved, ResolvedAst.Definition.Relation],
+                  collections: Map[Name.Resolved, ResolvedAst.Definition.Collection],
                   facts: List[ResolvedAst.Constraint.Fact],
                   rules: List[ResolvedAst.Constraint.Rule]) extends ResolvedAst
 
@@ -46,14 +46,30 @@ object ResolvedAst {
     case class BoundedLattice(tpe: ResolvedAst.Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, leq: ResolvedAst.Expression,
                               lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Definition
 
+    // TODO: Move this one level out??
+    /**
+     * A common super-type for collections that are either relations or lattices.
+     */
+    sealed trait Collection extends ResolvedAst.Definition
+
     /**
      * A resolved AST node representing a relation definition.
      *
      * @param name the name of the relation.
-     * @param attributes the attributes (columns) of the relation.
+     * @param attributes the attributes of the relation.
      * @param loc the location.
      */
-    case class Relation(name: Name.Resolved, attributes: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Definition
+    case class Relation(name: Name.Resolved, attributes: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Definition.Collection
+
+    /**
+     * A resolved AST node representing a lattice definition.
+     *
+     * @param name the name of the relation.
+     * @param keys the keys of the lattice.
+     * @param values the values of the lattice.
+     * @param loc the location.
+     */
+    case class Lattice(name: Name.Resolved, keys: List[ResolvedAst.Attribute], values: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Definition.Collection
 
   }
 
@@ -439,28 +455,8 @@ object ResolvedAst {
    *
    * @param ident the name of the attribute.
    * @param tpe the (declared) type of the attribute.
-   * @param interp the interpretation of the attribute.
    */
-  case class Attribute(ident: Name.Ident, tpe: ResolvedAst.Type, interp: Interpretation) extends ResolvedAst
-
-  /**
-   * A common super-type for attribute interpretations.
-   */
-  sealed trait Interpretation
-
-  object Interpretation {
-
-    /**
-     * An AST node representing the standard set-based interpretation of an attribute in a relation.
-     */
-    case object Set extends ResolvedAst.Interpretation
-
-    /**
-     * An AST node representing a lattice-based interpretation of an attribute in a relation.
-     */
-    case object Lattice extends ResolvedAst.Interpretation
-
-  }
+  case class Attribute(ident: Name.Ident, tpe: ResolvedAst.Type) extends ResolvedAst
 
   /**
    * A resolved AST node representing a formal argument in a function.

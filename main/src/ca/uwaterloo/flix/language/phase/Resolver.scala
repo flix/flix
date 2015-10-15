@@ -65,6 +65,7 @@ object Resolver {
      * @param name the invalid name.
      * @param loc the location of the name.
      */
+    // TODO: Rename to illegal collection name.
     case class IllegalRelationName(name: String, loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc.formatSource}")}
@@ -194,7 +195,7 @@ object Resolver {
   case class SymbolTable(enums: Map[Name.Resolved, WeededAst.Definition.Enum],
                          constants: Map[Name.Resolved, WeededAst.Definition.Constant],
                          lattices: Map[WeededAst.Type, (List[String], WeededAst.Definition.BoundedLattice)],
-                         relations: Map[Name.Resolved, WeededAst.Definition.Relation],
+                         relations: Map[Name.Resolved, WeededAst.Definition.Collection],
                          types: Map[Name.Resolved, WeededAst.Type]) {
 
     // TODO: Cleanup
@@ -226,7 +227,8 @@ object Resolver {
     }
 
     // TODO: Cleanup
-    def lookupRelation(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Relation), ResolverError] = {
+    // TODO: Rename: lookupCollection
+    def lookupRelation(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Collection), ResolverError] = {
       val rname = Name.Resolved(
         if (name.parts.size == 1)
           namespace ::: name.parts.head :: Nil
@@ -286,15 +288,15 @@ object Resolver {
           }
         }
 
-        val collectedRelations = Validation.fold[Name.Resolved, WeededAst.Definition.Relation, Name.Resolved, ResolvedAst.Definition.Relation, ResolverError](syms.relations) {
+        val collectionsVal = Validation.fold[Name.Resolved, WeededAst.Definition.Collection, Name.Resolved, ResolvedAst.Definition.Collection, ResolverError](syms.relations) {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
 
         val collectedFacts = Declaration.collectFacts(wast, syms)
         val collectedRules = Declaration.collectRules(wast, syms)
 
-        @@(collectedConstants, collectedDirectives, collectedEnums, collectedLattices, collectedRelations, collectedFacts, collectedRules) map {
-          case (constants, directives, enums, lattices, relations, facts, rules) => ResolvedAst.Root(constants, directives, enums, lattices, relations, facts, rules)
+        @@(collectedConstants, collectedDirectives, collectedEnums, collectedLattices, collectionsVal, collectedFacts, collectedRules) map {
+          case (constants, directives, enums, lattices, collections, facts, rules) => ResolvedAst.Root(constants, directives, enums, lattices, collections, facts, rules)
         }
     }
   }
@@ -344,6 +346,17 @@ object Resolver {
         syms.copy(lattices = syms.lattices + (tpe ->(namespace, defn))).toSuccess
 
       case defn@WeededAst.Definition.Relation(ident, attributes, loc) =>
+        val rname = toRName(ident, namespace)
+        syms.relations.get(rname) match {
+          case None =>
+            if (ident.name.head.isLower)
+              IllegalRelationName(ident.name, ident.loc).toFailure
+            else
+              syms.copy(relations = syms.relations + (rname -> defn)).toSuccess
+          case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.loc, ident.loc).toFailure
+        }
+
+      case defn@WeededAst.Definition.Lattice(ident, keys, values, loc) =>
         val rname = toRName(ident, namespace)
         syms.relations.get(rname) match {
           case None =>
@@ -419,19 +432,37 @@ object Resolver {
       }
     }
 
-    // TODO: Pattern match on wast?
-    def resolve(wast: WeededAst.Definition.Relation, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Relation, ResolverError] = {
+    def resolve(wast: WeededAst.Definition.Collection, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Collection, ResolverError] = wast match {
+      case d: WeededAst.Definition.Relation => resolve2(d, namespace, syms)
+      case d: WeededAst.Definition.Lattice => resolve2(d, namespace, syms)
+    }
+
+    def resolve2(wast: WeededAst.Definition.Relation, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Relation, ResolverError] = {
       val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
 
       val attributesVal = wast.attributes.map {
-        case WeededAst.Attribute(ident, tpe, WeededAst.Interpretation.Set) =>
-          Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.Attribute(ident, t, ResolvedAst.Interpretation.Set))
-        case WeededAst.Attribute(ident, tpe, WeededAst.Interpretation.Lattice) =>
-          Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.Attribute(ident, t, ResolvedAst.Interpretation.Lattice))
+        case WeededAst.Attribute(ident, tpe, _) =>
+          Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.Attribute(ident, t))
       }
 
       @@(attributesVal) map {
         case attributes => ResolvedAst.Definition.Relation(name, attributes, wast.loc)
+      }
+    }
+
+    def resolve2(wast: WeededAst.Definition.Lattice, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Lattice, ResolverError] = {
+      val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
+
+      val keysVal = wast.keys.map {
+        case WeededAst.Attribute(ident, tpe, _) => Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.Attribute(ident, t))
+      }
+
+      val valuesVal = wast.values.map {
+        case WeededAst.Attribute(ident, tpe, _) => Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.Attribute(ident, t))
+      }
+
+      @@(@@(keysVal), @@(valuesVal)) map {
+        case (keys, values) => ResolvedAst.Definition.Lattice(name, keys, values, wast.loc)
       }
     }
 
