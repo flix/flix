@@ -127,80 +127,23 @@ class TestParser extends FunSuite {
 
   // TODO: Allow naming of the enum attributes.
 
-  test("Definition.JoinSemiLattice01") {
-    val input = "lat a<> (Tag.Bot, foo::leq, lub)"
+  test("Definition.BoundedLattice01") {
+    val input = "let a<> = (Tag.Bot, Tag.Top, leq, lub, glb)"
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.PartialOrder])
+    assert(result.isInstanceOf[ParsedAst.Definition.BoundedLattice])
   }
 
-  test("Definition.JoinSemiLattice02") {
-    val input = "lat a<> (Tag.Bot, foo::leq, lub)"
+  test("Definition.BoundedLattice02") {
+    val input = "let a<> = (Tag.Bot, Tag.Top, foo::leq, bar::lub, baz::qux::glb)"
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.PartialOrder])
+    assert(result.isInstanceOf[ParsedAst.Definition.BoundedLattice])
   }
 
-  test("Definition.JoinSemiLattice03") {
-    val input = "lat a<> (Tag.Bot, fn (x: Int): Bool = x, lub)"
+  test("Definition.BoundedLattice03") {
+    val input = "let a<> = (Tag.Bot, Tag.Top, fn (x: Int, y: Int): Bool = true, bar::lub, baz::qux::glb)"
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.PartialOrder])
+    assert(result.isInstanceOf[ParsedAst.Definition.BoundedLattice])
   }
-
-  test("Definition.JoinSemiLattice04") {
-    val input = "lat a<> (Tag.Bot, foo::leq, lub) with Norm(b)"
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.PartialOrder])
-  }
-
-  test("Definition.JoinSemiLattice05") {
-    val input = "lat a<> (Tag.Bot, foo::leq, lub) with Widen(b)"
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.PartialOrder])
-  }
-
-  test("Definition.JoinSemiLattice06") {
-    val input = "lat a<> (Tag.Bot, foo::leq, lub) with Norm(b) with Widen(c)"
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.PartialOrder])
-  }
-
-  test("Definition.JoinSemiLattice07") {
-    val input = "lat a<> (Tag.Bot, foo::leq, lub) with Norm(foo::b) with Widen(foo::c)"
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.PartialOrder])
-  }
-
-  // TODO
-  // TODO: Consider
-  // lat a<> with Bot(...) with Leq(...) with Lub(...) with Top(...) with Glb(...) with Norm(...) with Widen(...)
-  //  ignore("Parser.Definition.CompleteLattice01") {
-  //    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb)"
-  //    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-  //    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
-  //  }
-  //
-  //  ignore("Parser.Definition.CompleteLattice02") {
-  //    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb) with Norm(b)"
-  //    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-  //    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
-  //  }
-  //
-  //  ignore("Parser.Definition.CompleteLattice03") {
-  //    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb) with Widen(b)"
-  //    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-  //    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
-  //  }
-  //
-  //  ignore("Parser.Definition.CompleteLattice04") {
-  //    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb) with Norm(b) with Widen(c)"
-  //    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-  //    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
-  //  }
-  //
-  //  ignore("Parser.Definition.CompleteLattice05") {
-  //    val input = "lat <a> (Tag.Bot, top, foo::leq, lub, glb) with Norm(foo::b) with Widen(foo::c)"
-  //    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-  //    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
-  //  }
 
   test("Definition.Relation01") {
     val input = "rel A(b: B)"

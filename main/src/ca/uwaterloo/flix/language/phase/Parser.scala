@@ -43,7 +43,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Definition: Rule1[ParsedAst.Definition] = rule {
-    ValueDefinition | FunctionDefinition | EnumDefinition | PartialOrderDefinition | RelationDefinition
+    ValueDefinition | FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition
   }
 
   def ValueDefinition: Rule1[ParsedAst.Definition.Value] = rule {
@@ -73,17 +73,13 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
   }
 
-  def PartialOrderDefinition: Rule1[ParsedAst.Definition] = {
+  def BoundedLatticeDefinition: Rule1[ParsedAst.Definition] = {
     def Elms: Rule1[Seq[ParsedAst.Expression]] = rule {
       oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
     }
 
-    def Traits: Rule1[Seq[ParsedAst.Trait]] = rule {
-      zeroOrMore(atomic("with") ~ WS ~ Ident ~ optWS ~ "(" ~ QName ~ ")" ~ optWS ~> ParsedAst.Trait)
-    }
-
     rule {
-      SP ~ atomic("ord") ~ optWS ~ Type ~ atomic("<>") ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ optWS ~ Traits ~ SP ~ optSC ~> ParsedAst.Definition.PartialOrder
+      SP ~ atomic("let") ~ optWS ~ Type ~ atomic("<>") ~ optWS ~ "=" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.BoundedLattice
     }
   }
 

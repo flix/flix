@@ -10,8 +10,8 @@ object ResolvedAst {
   case class Root(constants: Map[Name.Resolved, ResolvedAst.Definition.Constant],
                   directives: List[ResolvedAst.Directive],
                   enums: Map[Name.Resolved, ResolvedAst.Definition.Enum],
-                  partialOrders: Map[ResolvedAst.Type, ResolvedAst.Definition.PartialOrder],
-                  relations: Map[Name.Resolved, ResolvedAst.Definition.Relation],
+                  lattices: Map[ResolvedAst.Type, ResolvedAst.Definition.BoundedLattice],
+                  collections: Map[Name.Resolved, ResolvedAst.Definition.Relation],
                   facts: List[ResolvedAst.Constraint.Fact],
                   rules: List[ResolvedAst.Constraint.Rule]) extends ResolvedAst
 
@@ -29,19 +29,22 @@ object ResolvedAst {
      */
     case class Constant(name: Name.Resolved, exp: ResolvedAst.Expression, tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Definition
 
-
+    //  TODO: DOC
     case class Enum(name: Name.Resolved, cases: Map[String, ResolvedAst.Type.Tag], loc: SourceLocation) extends ResolvedAst.Definition
 
     /**
-     * A resolved AST node representing a partial order definition.
+     * A resolved AST node that represents a bounded lattice definition.
      *
-     * @param elms the (declared) type of the lattice elements.
-     * @param bot the bottom element.
+     * @param tpe the type of the lattice elements.
+     * @param bot the bot element.
+     * @param top the top element.
      * @param leq the partial order.
-     * @param lub the least-upper-bound.
-     * @param loc the location.
+     * @param lub the least upper bound.
+     * @param glb the greatest lower bound.
+     * @param loc the source location.
      */
-    case class PartialOrder(elms: ResolvedAst.Type, bot: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Definition
+    case class BoundedLattice(tpe: ResolvedAst.Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, leq: ResolvedAst.Expression,
+                              lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Definition
 
     /**
      * A resolved AST node representing a relation definition.

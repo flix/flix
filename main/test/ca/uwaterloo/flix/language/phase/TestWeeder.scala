@@ -39,29 +39,25 @@ class TestWeeder extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Lattices                                                                //
   /////////////////////////////////////////////////////////////////////////////
-  test("IllegalLattice01") {
-    val past = ParsedAst.Definition.PartialOrder(SP, ParsedAst.Type.Unit, Seq(), Seq.empty, SP)
-    val result = Weeder.Definition.compile(past)
-    assert(result.hasErrors)
+  test("IllegalBoundedLattice01") {
+    val input = "let Foo<> = (bot)"
+    val past = new Parser(SourceInput.Str(input)).BoundedLatticeDefinition.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
   }
 
-  test("IllegalLattice02") {
-    val past = ParsedAst.Definition.PartialOrder(SP, ParsedAst.Type.Unit, Seq(
-      ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP)
-    ), Seq.empty, SP)
-    val result = Weeder.Definition.compile(past)
-    assert(result.hasErrors)
+  test("IllegalBoundedLattice02") {
+    val input = "let Foo<> = (bot, top)"
+    val past = new Parser(SourceInput.Str(input)).BoundedLatticeDefinition.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
   }
 
-  test("IllegalLattice03") {
-    val past = ParsedAst.Definition.PartialOrder(SP, ParsedAst.Type.Unit, Seq(
-      ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP),
-      ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP),
-      ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP),
-      ParsedAst.Expression.Error(SP, ParsedAst.Type.Unit, SP)
-    ), Seq.empty, SP)
-    val result = Weeder.Definition.compile(past)
-    assert(result.hasErrors)
+  test("IllegalBoundedLattice03") {
+    val input = "let Foo<> = (1, 2, 3, 4, 5, 6, 7)"
+    val past = new Parser(SourceInput.Str(input)).BoundedLatticeDefinition.run().get
+    val result = Weeder.Declaration.compile(past)
+    assert(result.isFailure)
   }
 
   /////////////////////////////////////////////////////////////////////////////

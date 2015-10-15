@@ -99,12 +99,12 @@ object Typer {
     val directivesVal = @@(root.directives.map(directive => Directive.typer(directive, root)))
 
     // lattices
-    val latticesVal = Validation.fold(root.partialOrders) {
+    val latticesVal = Validation.fold(root.lattices) {
       case (tpe, lattice) => Definition.typer(lattice, root) map (defn => Type.typer(tpe) -> defn)
     }
 
     //relations
-    val relationsVal = Validation.fold(root.relations) {
+    val relationsVal = Validation.fold(root.collections) {
       case (name, relation) => Definition.typer(relation, root) map (defn => name -> defn)
     }
 
@@ -134,14 +134,17 @@ object Typer {
     /**
      * Types the given lattice definition `rast` under the given AST `root`.
      */
-    def typer(rast: ResolvedAst.Definition.PartialOrder, root: ResolvedAst.Root): Validation[TypedAst.Definition.BoundedLattice, TypeError] = {
-      val tpe = Type.typer(rast.elms)
-      val botType = tpe
+    def typer(rast: ResolvedAst.Definition.BoundedLattice, root: ResolvedAst.Root): Validation[TypedAst.Definition.BoundedLattice, TypeError] = {
+      val tpe = Type.typer(rast.tpe)
       val leqType = TypedAst.Type.Lambda(args = List(tpe, tpe), retTpe = TypedAst.Type.Bool)
       val lubType = TypedAst.Type.Lambda(args = List(tpe, tpe), retTpe = tpe)
+      val glbType = TypedAst.Type.Lambda(args = List(tpe, tpe), retTpe = tpe)
 
       val botVal = Expression.typer(rast.bot, root) flatMap {
-        case e => expect(botType, e.tpe, rast.bot.loc) map (_ => e)
+        case e => expect(tpe, e.tpe, rast.bot.loc) map (_ => e)
+      }
+      val topVal = Expression.typer(rast.top, root) flatMap {
+        case e => expect(tpe, e.tpe, rast.top.loc) map (_ => e)
       }
       val leqVal = Expression.typer(rast.leq, root) flatMap {
         case e => expect(leqType, e.tpe, rast.leq.loc) map (_ => e)
@@ -149,9 +152,12 @@ object Typer {
       val lubVal = Expression.typer(rast.lub, root) flatMap {
         case e => expect(lubType, e.tpe, rast.lub.loc) map (_ => e)
       }
+      val glbVal = Expression.typer(rast.glb, root) flatMap {
+        case e => expect(glbType, e.tpe, rast.lub.loc) map (_ => e)
+      }
 
-      @@(botVal, leqVal, lubVal) map {
-        case (bot, leq, lub) => TypedAst.Definition.BoundedLattice(tpe, bot, leq, lub, rast.loc)
+      @@(leqVal, botVal, topVal, lubVal, glbVal) map {
+        case (leq, bot, top, lub, glb) => TypedAst.Definition.BoundedLattice(tpe, bot, top, leq, lub, glb, rast.loc)
       }
     }
 
@@ -457,7 +463,7 @@ object Typer {
        */
       def typer(rast: ResolvedAst.Predicate.Head, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Head, TypeError] = rast match {
         case ResolvedAst.Predicate.Head.Relation(name, rterms, loc) =>
-          val relation = root.relations(name)
+          val relation = root.collections(name)
           val termsVal = (rterms zip relation.attributes) map {
             case (term, ResolvedAst.Attribute(_, tpe, _)) => Term.typer(term, Type.typer(tpe), root)
           }
@@ -501,7 +507,7 @@ object Typer {
        */
       def typer(rast: ResolvedAst.Predicate.Body, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Body, TypeError] = rast match {
         case ResolvedAst.Predicate.Body.Relation(name, rterms, loc) =>
-          val relation = root.relations(name)
+          val relation = root.collections(name)
           val termsVal = (rterms zip relation.attributes) map {
             case (term, ResolvedAst.Attribute(_, tpe, _)) => Term.typer(term, Type.typer(tpe), root)
           }

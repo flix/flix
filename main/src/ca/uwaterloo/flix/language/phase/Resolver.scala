@@ -193,7 +193,7 @@ object Resolver {
 
   case class SymbolTable(enums: Map[Name.Resolved, WeededAst.Definition.Enum],
                          constants: Map[Name.Resolved, WeededAst.Definition.Constant],
-                         lattices: Map[WeededAst.Type, (List[String], WeededAst.Definition.PartialOrder)],
+                         lattices: Map[WeededAst.Type, (List[String], WeededAst.Definition.BoundedLattice)],
                          relations: Map[Name.Resolved, WeededAst.Definition.Relation],
                          types: Map[Name.Resolved, WeededAst.Type]) {
 
@@ -280,7 +280,7 @@ object Resolver {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
 
-        val collectedLattices = Validation.fold[WeededAst.Type, (List[String], WeededAst.Definition.PartialOrder), ResolvedAst.Type, ResolvedAst.Definition.PartialOrder, ResolverError](syms.lattices) {
+        val collectedLattices = Validation.fold[WeededAst.Type, (List[String], WeededAst.Definition.BoundedLattice), ResolvedAst.Type, ResolvedAst.Definition.BoundedLattice, ResolverError](syms.lattices) {
           case (k, (namespace, v)) => Type.resolve(k, namespace, syms) flatMap {
             case tpe => Definition.resolve(v, namespace, syms) map (d => tpe -> d)
           }
@@ -340,7 +340,7 @@ object Resolver {
           case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.loc, ident.loc).toFailure
         }
 
-      case defn@WeededAst.Definition.PartialOrder(tpe, bot, leq, lub, loc) =>
+      case defn@WeededAst.Definition.BoundedLattice(tpe, bot, top, leq, lub, glb, loc) =>
         syms.copy(lattices = syms.lattices + (tpe ->(namespace, defn))).toSuccess
 
       case defn@WeededAst.Definition.Relation(ident, attributes, loc) =>
@@ -406,14 +406,16 @@ object Resolver {
       }
     }
 
-    def resolve(wast: WeededAst.Definition.PartialOrder, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.PartialOrder, ResolverError] = {
+    def resolve(wast: WeededAst.Definition.BoundedLattice, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.BoundedLattice, ResolverError] = {
       val tpeVal = Type.resolve(wast.tpe, namespace, syms)
       val botVal = Expression.resolve(wast.bot, namespace, syms)
+      val topVal = Expression.resolve(wast.top, namespace, syms)
       val leqVal = Expression.resolve(wast.leq, namespace, syms)
       val lubVal = Expression.resolve(wast.lub, namespace, syms)
+      val glbVal = Expression.resolve(wast.glb, namespace, syms)
 
-      @@(tpeVal, botVal, leqVal, lubVal) map {
-        case (tpe, bot, leq, lub) => ResolvedAst.Definition.PartialOrder(tpe, bot, leq, lub, wast.loc)
+      @@(tpeVal, botVal, topVal, leqVal, lubVal, glbVal) map {
+        case (tpe, bot, top, leq, lub, glb) => ResolvedAst.Definition.BoundedLattice(tpe, bot, top, leq, lub, glb, wast.loc)
       }
     }
 

@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.ast
 
-// TODO: The documentation is not fully consistent with when something is an AST node.
+// TODO: The documentation is not fully consistent with when something is an AST node. "that represents" vs "representing"...
 
 /**
  * A common super-type for typed AST nodes.
@@ -47,14 +47,14 @@ object TypedAst {
      * A typed AST node representing a partial order definition.
      *
      * @param tpe the type of the lattice elements.
-     * @param leq the partial order.
      * @param bot the bot element.
      * @param top the top element.
+     * @param leq the partial order.
      * @param lub the least upper bound.
      * @param glb the greatest lower bound.
      * @param loc the source location.
      */
-    case class BoundedLattice(tpe: TypedAst.Type, leq: TypedAst.Expression, bot: TypedAst.Expression, top: TypedAst.Expression,
+    case class BoundedLattice(tpe: TypedAst.Type, bot: TypedAst.Expression, top: TypedAst.Expression, leq: TypedAst.Expression,
                               lub: TypedAst.Expression, glb: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Definition
 
     /**

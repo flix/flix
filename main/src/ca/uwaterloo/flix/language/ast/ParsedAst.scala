@@ -119,15 +119,14 @@ object ParsedAst {
     }
 
     /**
-     * An AST node that represents a partial order definition.
+     * An AST node that represents bounded lattice definition.
      *
      * @param sp1 the position of the first character in the definition.
      * @param tpe the type of the lattice elements.
-     * @param elms the components of the partial order (e.g. bot, leq, lub).
-     * @param traits the optional components of the lattice (e.g. lub, top, norm).
+     * @param elms the components of the lattice.
      * @param sp2 the position of the last character in the definition.
      */
-    case class PartialOrder(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], traits: Seq[ParsedAst.Trait], sp2: SourcePosition) extends ParsedAst.Definition {
+    case class BoundedLattice(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Definition {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -799,13 +798,5 @@ object ParsedAst {
    * @param tpe the type of the argument.
    */
   case class FormalArg(ident: Name.Ident, tpe: ParsedAst.Type) extends ParsedAst
-
-  /**
-   * An AST node that represent a trait.
-   *
-   * @param ident the name of the trait.
-   * @param name the value passed to the trait.
-   */
-  case class Trait(ident: Name.Ident, name: Name.Unresolved) extends ParsedAst
 
 }

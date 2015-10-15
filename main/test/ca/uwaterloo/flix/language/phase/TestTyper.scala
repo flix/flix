@@ -80,61 +80,24 @@ class TestTyper extends FunSuite {
     assertResult(expectedType)(result.get.tpe)
   }
 
-  test("Definition.Lattice01") {
-    val x = ident("x")
-    val y = ident("y")
-
-    val rast = ResolvedAst.Definition.PartialOrder(
-      elms = ResolvedAst.Type.Bool,
-      bot = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(false, SL), SL),
-      leq = ResolvedAst.Expression.Lambda(
-        formals = List(
-          ResolvedAst.FormalArg(x, ResolvedAst.Type.Bool),
-          ResolvedAst.FormalArg(y, ResolvedAst.Type.Bool)),
-        retTpe = ResolvedAst.Type.Bool,
-        body = ResolvedAst.Expression.Binary(
-          BinaryOperator.Or,
-          ResolvedAst.Expression.Unary(UnaryOperator.Not, ResolvedAst.Expression.Var(x, SL), SL),
-          ResolvedAst.Expression.Var(y, SL), SL), SL
-      ),
-      lub = ResolvedAst.Expression.Lambda(
-        formals = List(
-          ResolvedAst.FormalArg(x, ResolvedAst.Type.Bool),
-          ResolvedAst.FormalArg(y, ResolvedAst.Type.Bool)),
-        retTpe = ResolvedAst.Type.Bool,
-        body = ResolvedAst.Expression.Binary(
-          BinaryOperator.Or,
-          ResolvedAst.Expression.Var(x, SL),
-          ResolvedAst.Expression.Var(y, SL), SL), SL
-      ), SL)
-
-    val result = Typer.Definition.typer(rast, Root)
-    assert(result.isSuccess)
+  test("Definition.BoundedLattice.TypeError01") {
+    val input =
+      """let Int<> = (0, 1, 2, 3, 4);
+      """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.errors.head.isInstanceOf[Typer.TypeError])
   }
 
-  test("Definition.Lattice.TypeError") {
-    val x = ident("x")
-    val y = ident("y")
-
-    val rast = ResolvedAst.Definition.PartialOrder(
-      elms = ResolvedAst.Type.Str,
-      bot = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(false, SL), SL),
-      leq = ResolvedAst.Expression.Lambda(
-        formals = List(
-          ResolvedAst.FormalArg(x, ResolvedAst.Type.Int),
-          ResolvedAst.FormalArg(y, ResolvedAst.Type.Str)),
-        retTpe = ResolvedAst.Type.Int,
-        body = ResolvedAst.Expression.Var(x, SL), SL),
-      lub = ResolvedAst.Expression.Lambda(
-        formals = List(
-          ResolvedAst.FormalArg(x, ResolvedAst.Type.Bool),
-          ResolvedAst.FormalArg(y, ResolvedAst.Type.Bool)),
-        retTpe = ResolvedAst.Type.Int,
-        body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL)
-        , SL), SL)
-
-    val result = Typer.Definition.typer(rast, Root)
-    assert(result.isFailure)
+  test("Definition.BoundedLattice.TypeError02") {
+    val input =
+      """|def leq(x: Int, y: Int): Bool = true;
+        |def lub(x: Int, y: Int): Int = 42;
+        |def glb(x: Int, y: Int): Int = 21;
+        |
+        |let Int<> = (0, 1, lub, leq, glb);
+      """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.errors.head.isInstanceOf[Typer.TypeError])
   }
 
   test("Definition.Relation01") {
@@ -163,7 +126,7 @@ class TestTyper extends FunSuite {
   test("Constraint.Fact01") {
     val rname = Name.Resolved(List("Student"))
 
-    val root = Root.copy(relations = Map(
+    val root = Root.copy(collections = Map(
       rname -> ResolvedAst.Definition.Relation(rname, List(
         ResolvedAst.Attribute(Ident, ResolvedAst.Type.Str, ResolvedAst.Interpretation.Set),
         ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set)
@@ -186,7 +149,7 @@ class TestTyper extends FunSuite {
     val y = ident("y")
     val z = ident("z")
 
-    val root = Root.copy(relations = Map(
+    val root = Root.copy(collections = Map(
       rname -> ResolvedAst.Definition.Relation(rname, List(
         ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set),
         ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int, ResolvedAst.Interpretation.Set),
@@ -896,7 +859,7 @@ class TestTyper extends FunSuite {
     val z = ident("z")
     val w = ident("w")
 
-    val root = Root.copy(relations = Map(
+    val root = Root.copy(collections = Map(
       rname -> ResolvedAst.Definition.Relation(rname, List(
         ResolvedAst.Attribute(x, ResolvedAst.Type.Unit, ResolvedAst.Interpretation.Set),
         ResolvedAst.Attribute(y, ResolvedAst.Type.Bool, ResolvedAst.Interpretation.Set),
@@ -929,7 +892,7 @@ class TestTyper extends FunSuite {
 
     // NB: Somewhat misleading we use the same identifiers for both columns and variables.
 
-    val root = Root.copy(relations = Map(
+    val root = Root.copy(collections = Map(
       rname -> ResolvedAst.Definition.Relation(rname, List(
         ResolvedAst.Attribute(x, ResolvedAst.Type.Unit, ResolvedAst.Interpretation.Set),
         ResolvedAst.Attribute(y, ResolvedAst.Type.Bool, ResolvedAst.Interpretation.Set),
@@ -971,7 +934,7 @@ class TestTyper extends FunSuite {
           ),
           tpe = ResolvedAst.Type.Function(List(ResolvedAst.Type.Bool), ResolvedAst.Type.Unit), SL)
       ),
-      relations = Map(
+      collections = Map(
         relationName -> ResolvedAst.Definition.Relation(relationName, List(
           ResolvedAst.Attribute(x, ResolvedAst.Type.Unit, ResolvedAst.Interpretation.Set)
         ), SL)
@@ -996,7 +959,7 @@ class TestTyper extends FunSuite {
     val z = ident("z")
     val w = ident("w")
 
-    val root = Root.copy(relations = Map(
+    val root = Root.copy(collections = Map(
       rname -> ResolvedAst.Definition.Relation(rname, List(
         ResolvedAst.Attribute(x, ResolvedAst.Type.Unit, ResolvedAst.Interpretation.Set),
         ResolvedAst.Attribute(y, ResolvedAst.Type.Bool, ResolvedAst.Interpretation.Set),

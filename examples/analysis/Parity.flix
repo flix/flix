@@ -29,6 +29,15 @@ namespace ParityAnalysis {
         case _                            => Parity.Top;
     };
 
+    // and likewise for the greatest lower bound:
+    def glb(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+        case (Parity.Top, _) => e2;
+        case (_, Parity.Top) => e1;
+        case (Parity.Odd, Parity.Odd) => Parity.Odd;
+        case (Parity.Even, Parity.Even) => Parity.Even;
+        case _ => Parity.Bot;
+    }
+
     // we can define monotone operations on lattice elements. Here is addition:
     def plus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Parity.Bot)              => Parity.Bot;
@@ -89,10 +98,10 @@ namespace ParityAnalysis {
         case Parity.Top    => true;
     };
 
-    let Parity<> = (Parity.Bot, leq, ParityAnalysis::lub)
+    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb);
 
     rel SumOp(result: Int, left: Int, right: Int);
-    lat VarPointsTo(localVal: Int, value: Parity<>)
+    rel VarPointsTo(localVal: Int, value: Parity<>); // TODO: rel should become lat
 
     SumOp(3, 1, 2).
     VarPointsTo(1, Parity.Odd).

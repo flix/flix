@@ -212,12 +212,14 @@ object Weeder {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
            |
-            |${consoleCtx.red(s">> Lattice definition must have exactly three components: bot, leq and lub.")}
+            |${consoleCtx.red(s">> Lattice definition must have exactly five components: bot, top, leq, lub and glb.")}
            |
             |${loc.underline}
-           |the first component should be the bottom element,
-           |the second component should be the partial order function,
-           |and the third component should be the least upper bound function.
+           |the 1st component must be the bottom element,
+           |the 2nd component must be the top element,
+           |the 3rd component must be the partial order function,
+           |the 4th component must be the least upper bound function, and
+           |the 5th component must be the greatest upper bound function.
          """.stripMargin
     }
 
@@ -337,7 +339,7 @@ object Weeder {
       case d: ParsedAst.Definition.Value => Definition.compile(d)
       case d: ParsedAst.Definition.Function => Definition.compile(d)
       case d: ParsedAst.Definition.Enum => Definition.compile(d)
-      case d: ParsedAst.Definition.PartialOrder => Definition.compile(d)
+      case d: ParsedAst.Definition.BoundedLattice => Definition.compile(d)
       case d: ParsedAst.Definition.Relation => Definition.compile(d)
     }
 
@@ -393,12 +395,12 @@ object Weeder {
     /**
      * Compiles the given parsed lattice `past` to a weeded lattice definition.
      */
-    def compile(past: ParsedAst.Definition.PartialOrder): Validation[WeededAst.Definition.PartialOrder, WeederError] = {
+    def compile(past: ParsedAst.Definition.BoundedLattice): Validation[WeededAst.Definition.BoundedLattice, WeederError] = {
       // check lattice definition.
       val tpeVal = Type.compile(past.tpe)
       val elmsVal = @@(past.elms.toList.map(Expression.compile))
       @@(tpeVal, elmsVal) flatMap {
-        case (tpe, bot :: leq :: lub :: Nil) => WeededAst.Definition.PartialOrder(tpe, bot, leq, lub, past.loc).toSuccess
+        case (tpe, List(bot, top, leq, lub, glb)) => WeededAst.Definition.BoundedLattice(tpe, bot, top, leq, lub, glb, past.loc).toSuccess
         case _ => IllegalLattice(past.loc).toFailure
       }
     }
