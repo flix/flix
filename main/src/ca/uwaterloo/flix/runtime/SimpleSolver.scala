@@ -197,34 +197,35 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
       case r: Predicate.Body.Relation => {
 
         val defn = sCtx.root.collections(r.name)
-        if (isLat(defn)) {
-          val table = dbLat(r.name)
+        defn match {
+          case _: Collection.Relation =>
+            val table = dbRel(r.name)
 
-          val keyAttr = getKeys(defn)
-          val (keyTerms, valueTerms) = r.terms.splitAt(keyAttr.size)
-
-          val res = table flatMap {
-            case (keys, values) =>
-              unifyRelRow(keys, keyTerms) match {
-                case None => List.empty[Map[String, Value]]
-                case Some(m) => unifyLatRow(values, valueTerms) match {
-                  case None => List.empty[Map[String, Value]]
-                  case Some(m2) =>
-                    extend(env, m2) // TODO: This is incorrect if env/m2 contains lattice variables.
-                }
+            table flatMap {
+              case row => unifyRelRow(row, r.terms) match {
+                case None => List.empty
+                case Some(m) => extend(env, m)
               }
-          }
-
-          res.toList
-        } else {
-          val table = dbRel(r.name)
-
-          table flatMap {
-            case row => unifyRelRow(row, r.terms) match {
-              case None => List.empty
-              case Some(m) => extend(env, m)
             }
-          }
+          case _: Collection.Lattice =>
+            val table = dbLat(r.name)
+
+            val keyAttr = getKeys(defn)
+            val (keyTerms, valueTerms) = r.terms.splitAt(keyAttr.size)
+
+            val res = table flatMap {
+              case (keys, values) =>
+                unifyRelRow(keys, keyTerms) match {
+                  case None => List.empty[Map[String, Value]]
+                  case Some(m) => unifyLatRow(values, valueTerms) match {
+                    case None => List.empty[Map[String, Value]]
+                    case Some(m2) =>
+                      extend(env, m2) // TODO: This is incorrect if env/m2 contains lattice variables.
+                  }
+                }
+            }
+
+            res.toList
         }
       }
 
@@ -429,7 +430,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
    */
   def checkAssertedFact(d: Directive.AssertFact): Validation[Boolean, SolverError] = {
     // TODO
-    (false).toSuccess
+    false.toSuccess
   }
 
   /**
@@ -437,6 +438,6 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
    */
   def checkAssertedRule(d: Directive.AssertRule): Validation[Boolean, SolverError] = {
     // TODO
-    (false).toSuccess
+    false.toSuccess
   }
 }
