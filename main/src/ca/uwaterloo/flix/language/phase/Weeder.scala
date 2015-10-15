@@ -259,6 +259,28 @@ object Weeder {
          """.stripMargin
     }
 
+
+    /**
+     * An error raised to indicate that a lattice attribute is followed by a non-lattice attribute.
+     *
+     * @param loc1 the location where the first lattice attribute occurs.
+     * @param loc2 the location where a following non-lattice attribute occurs.
+     */
+    case class IllegalMixedAttributes(loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.formatSource}")}
+           |
+            |${consoleCtx.red(s">> Illegal non-lattice attribute follows lattice attribute.")}
+           |
+           |The first lattice attribute was here:
+           |${loc1.underline}
+           |The illegal non-lattice attribute was here:
+           |${loc2.underline}
+           |
+            |Tip: Rearrange the attributes or possibly their interpretations.
+         """.stripMargin
+    }
+
     /**
      * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
      *
@@ -470,7 +492,7 @@ object Weeder {
     /**
      * Compiles the given parsed relation `past` to a weeded lattice definition.
      */
-    def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Definition.Relation, WeederError] = {
+    def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Definition.Lattice, WeederError] = {
       // check duplicate attributes.
       val seen = mutable.Map.empty[String, Name.Ident]
       val attributesVal = past.attributes.map {
@@ -493,7 +515,15 @@ object Weeder {
             case WeededAst.Interpretation.Set =>
               (IllegalNonLatticeAttribute(attributes.last.ident.loc): WeederError).toFailure
             case WeededAst.Interpretation.Lattice =>
-              WeededAst.Definition.Relation(past.ident, attributes, past.loc).toSuccess // TODO
+
+              val index = attributes.indexWhere(_.interp == WeededAst.Interpretation.Lattice)
+              val (keys, values) = attributes.splitAt(index)
+
+              // ensure that no non-lattice attribute occurs after `index`.
+              values.find(_.interp == WeededAst.Interpretation.Set) match {
+                case None => WeededAst.Definition.Lattice(past.ident, keys, values, past.loc).toSuccess
+                case Some(attr) => IllegalMixedAttributes(values.head.ident.loc, attr.ident.loc).toFailure
+              }
           }
       }
     }

@@ -101,7 +101,7 @@ namespace ParityAnalysis {
     let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb);
 
     rel SumOp(result: Int, left: Int, right: Int);
-    lat VarPointsTo(localVal: Int, value: Parity);
+    lat VarPointsTo(localVal: Int, value: Parity<>);
 
     SumOp(3, 1, 2).
     VarPointsTo(1, Parity.Odd).

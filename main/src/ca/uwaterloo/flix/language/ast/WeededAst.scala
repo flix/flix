@@ -103,6 +103,17 @@ object WeededAst {
      */
     case class Relation(ident: Name.Ident, attributes: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Definition
 
+    /**
+     * An AST node that represents a lattice definition.
+     *
+     * @param ident the name of the lattice.
+     * @param keys the key attributes of the lattice.
+     * @param values the values attributes of the lattice.
+     * @param loc the source location of the lattice.
+     */
+    case class Lattice(ident: Name.Ident, keys: List[WeededAst.Attribute], values: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Definition
+
+
   }
 
   /**
