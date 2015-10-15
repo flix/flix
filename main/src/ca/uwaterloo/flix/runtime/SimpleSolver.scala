@@ -55,6 +55,11 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
   class DataStore {
 
     /**
+     *
+     */
+    val relations = mutable.Map.empty[Name.Resolved, IndexedRelation]
+
+    /**
      * A map from names to sets of indexes attributes.
      *
      * For example, if the map contains "foo" -> Set(Set(0), Set(1, 2)) then the collection named "foo"
@@ -97,9 +102,23 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
             case _ => // nop
           }
         }
-
       }
     }
+
+    def init(): Unit = {
+      // TODO: initialize relations and lattices.
+    }
+
+    class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Set[Int]]) {
+
+      val store = mutable.Map.empty[Set[Int], Array[Value]]
+
+      def inferredFact(f: Array[Value]): Boolean = {
+        ???
+      }
+
+    }
+
   }
 
   /**
