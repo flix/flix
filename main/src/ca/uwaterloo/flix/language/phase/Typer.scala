@@ -153,7 +153,7 @@ object Typer {
         case e => expect(lubType, e.tpe, rast.lub.loc) map (_ => e)
       }
       val glbVal = Expression.typer(rast.glb, root) flatMap {
-        case e => expect(glbType, e.tpe, rast.lub.loc) map (_ => e)
+        case e => expect(glbType, e.tpe, rast.glb.loc) map (_ => e)
       }
 
       @@(leqVal, botVal, topVal, lubVal, glbVal) map {

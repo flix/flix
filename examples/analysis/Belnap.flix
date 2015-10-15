@@ -37,6 +37,17 @@ namespace Belnap {
     }
 
     /**
+     * Returns the greatest lower bound of `e1` and `e2`.
+     */
+    def glb(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+        case (Belnap.Top, _) => e2;
+        case (_, Belnap.Top) => e1;
+        case (Belnap.True, Belnap.True) => Belnap.True;
+        case (Belnap.False, Belnap.False) => Belnap.False;
+        case _ => Belnap.Bot;
+    }
+
+    /**
      * Over-approximates the logical `and` operator.
      */
     def and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
@@ -65,7 +76,7 @@ namespace Belnap {
                     else
                         Belnap.False
 
-    lat Belnap<> (Belnap.Bot, leq, lub);
+    let Belnap<> = (Belnap.Bot, Belnap.Top, leq, lub, glb);
 
     rel A(k: Int, v: Belnap<>);
     A(0, Belnap.Bot).
