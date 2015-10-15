@@ -324,6 +324,47 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
    * Evaluates the body of the given `rule` under the given initial environment `env0`.
    */
   def evalBody(rule: Rule, env0: Map[String, Value]): Unit = {
+
+    /**
+     * Performs tuple-at-a-time propagation.
+     */
+    def recur(ps: List[TypedAst.Predicate.Body], row: mutable.Map[String, Value]): Unit = ps match {
+      case Nil => evalHead(rule, row.toMap)
+      case Predicate.Body.Relation(name, terms, _, _) :: xs =>
+        val relation = ds.relations(name)
+        val values = terms.map(t => peval(t, row.toMap))
+        val offset2var = terms.zipWithIndex.foldLeft(Map.empty[Int, String]) {
+          case (macc, (Term.Body.Var(ident, _, _), i)) => macc + (i -> ident.name)
+          case (macc, _) => macc
+        }
+
+        for (row2 <- relation.lookup(values.toArray)) {
+          val newRow = row.clone()
+          for (i <- row2.indices) {
+            offset2var.get(i) match {
+              case None => // nop
+              case Some(x) =>
+                newRow += (x -> row2(i))
+            }
+          }
+          recur(xs, newRow)
+        }
+
+      case Predicate.Body.Function(name, terms, _, _) :: xs => ???
+      case Predicate.Body.NotEqual(ident1, ident2, _, _) :: xs =>
+        val value1 = row(ident1.name)
+        val value2 = row(ident2.name)
+        if (value1 == value2) {
+          recur(xs, row)
+        }
+      case Predicate.Body.Read(_, _, _, _) :: xs => ???
+    }
+
+    //  TODO: Ensure that filters occur last ...
+    recur(rule.body, mutable.Map.empty ++ env0)
+
+
+
     /**
      * Extend the given environment `env` according to the given predicate `p`.
      */
