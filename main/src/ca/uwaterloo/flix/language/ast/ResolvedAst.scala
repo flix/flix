@@ -11,7 +11,7 @@ object ResolvedAst {
                   directives: List[ResolvedAst.Directive],
                   enums: Map[Name.Resolved, ResolvedAst.Definition.Enum],
                   lattices: Map[ResolvedAst.Type, ResolvedAst.Definition.BoundedLattice],
-                  collections: Map[Name.Resolved, ResolvedAst.Definition.Collection],
+                  collections: Map[Name.Resolved, ResolvedAst.Collection],
                   facts: List[ResolvedAst.Constraint.Fact],
                   rules: List[ResolvedAst.Constraint.Rule]) extends ResolvedAst
 
@@ -46,11 +46,14 @@ object ResolvedAst {
     case class BoundedLattice(tpe: ResolvedAst.Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, leq: ResolvedAst.Expression,
                               lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Definition
 
-    // TODO: Move this one level out??
-    /**
-     * A common super-type for collections that are either relations or lattices.
-     */
-    sealed trait Collection extends ResolvedAst.Definition
+  }
+
+  /**
+   * A common super-type for collections that are either relations or lattices.
+   */
+  sealed trait Collection extends ResolvedAst.Definition
+
+  object Collection {
 
     /**
      * A resolved AST node representing a relation definition.
@@ -59,7 +62,7 @@ object ResolvedAst {
      * @param attributes the attributes of the relation.
      * @param loc the location.
      */
-    case class Relation(name: Name.Resolved, attributes: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Definition.Collection
+    case class Relation(name: Name.Resolved, attributes: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Collection
 
     /**
      * A resolved AST node representing a lattice definition.
@@ -69,7 +72,7 @@ object ResolvedAst {
      * @param values the values of the lattice.
      * @param loc the location.
      */
-    case class Lattice(name: Name.Resolved, keys: List[ResolvedAst.Attribute], values: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Definition.Collection
+    case class Lattice(name: Name.Resolved, keys: List[ResolvedAst.Attribute], values: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Collection
 
   }
 

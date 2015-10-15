@@ -101,7 +101,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Definition.Relation01") {
-    val rast = ResolvedAst.Definition.Relation(RName, List(
+    val rast = ResolvedAst.Collection.Relation(RName, List(
       ResolvedAst.Attribute(Ident, ResolvedAst.Type.Bool)
     ), SL)
 
@@ -110,7 +110,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Definition.Relation02") {
-    val rast = ResolvedAst.Definition.Relation(RName, List(
+    val rast = ResolvedAst.Collection.Relation(RName, List(
       ResolvedAst.Attribute(Ident, ResolvedAst.Type.Bool),
       ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int),
       ResolvedAst.Attribute(Ident, ResolvedAst.Type.Str)
@@ -127,7 +127,7 @@ class TestTyper extends FunSuite {
     val rname = Name.Resolved(List("Student"))
 
     val root = Root.copy(collections = Map(
-      rname -> ResolvedAst.Definition.Relation(rname, List(
+      rname -> ResolvedAst.Collection.Relation(rname, List(
         ResolvedAst.Attribute(Ident, ResolvedAst.Type.Str),
         ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int)
       ), SL)
@@ -150,7 +150,7 @@ class TestTyper extends FunSuite {
     val z = ident("z")
 
     val root = Root.copy(collections = Map(
-      rname -> ResolvedAst.Definition.Relation(rname, List(
+      rname -> ResolvedAst.Collection.Relation(rname, List(
         ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int),
         ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int),
         ResolvedAst.Attribute(Ident, ResolvedAst.Type.Int)
@@ -860,7 +860,7 @@ class TestTyper extends FunSuite {
     val w = ident("w")
 
     val root = Root.copy(collections = Map(
-      rname -> ResolvedAst.Definition.Relation(rname, List(
+      rname -> ResolvedAst.Collection.Relation(rname, List(
         ResolvedAst.Attribute(x, ResolvedAst.Type.Unit),
         ResolvedAst.Attribute(y, ResolvedAst.Type.Bool),
         ResolvedAst.Attribute(z, ResolvedAst.Type.Int),
@@ -893,7 +893,7 @@ class TestTyper extends FunSuite {
     // NB: Somewhat misleading we use the same identifiers for both columns and variables.
 
     val root = Root.copy(collections = Map(
-      rname -> ResolvedAst.Definition.Relation(rname, List(
+      rname -> ResolvedAst.Collection.Relation(rname, List(
         ResolvedAst.Attribute(x, ResolvedAst.Type.Unit),
         ResolvedAst.Attribute(y, ResolvedAst.Type.Bool),
         ResolvedAst.Attribute(z, ResolvedAst.Type.Int),
@@ -935,7 +935,7 @@ class TestTyper extends FunSuite {
           tpe = ResolvedAst.Type.Function(List(ResolvedAst.Type.Bool), ResolvedAst.Type.Unit), SL)
       ),
       collections = Map(
-        relationName -> ResolvedAst.Definition.Relation(relationName, List(
+        relationName -> ResolvedAst.Collection.Relation(relationName, List(
           ResolvedAst.Attribute(x, ResolvedAst.Type.Unit)
         ), SL)
       ))
@@ -960,7 +960,7 @@ class TestTyper extends FunSuite {
     val w = ident("w")
 
     val root = Root.copy(collections = Map(
-      rname -> ResolvedAst.Definition.Relation(rname, List(
+      rname -> ResolvedAst.Collection.Relation(rname, List(
         ResolvedAst.Attribute(x, ResolvedAst.Type.Unit),
         ResolvedAst.Attribute(y, ResolvedAst.Type.Bool),
         ResolvedAst.Attribute(z, ResolvedAst.Type.Int),

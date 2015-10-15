@@ -288,7 +288,7 @@ object Resolver {
           }
         }
 
-        val collectionsVal = Validation.fold[Name.Resolved, WeededAst.Definition.Collection, Name.Resolved, ResolvedAst.Definition.Collection, ResolverError](syms.relations) {
+        val collectionsVal = Validation.fold[Name.Resolved, WeededAst.Definition.Collection, Name.Resolved, ResolvedAst.Collection, ResolverError](syms.relations) {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
 
@@ -432,12 +432,12 @@ object Resolver {
       }
     }
 
-    def resolve(wast: WeededAst.Definition.Collection, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Collection, ResolverError] = wast match {
+    def resolve(wast: WeededAst.Definition.Collection, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection, ResolverError] = wast match {
       case d: WeededAst.Definition.Relation => resolve2(d, namespace, syms)
       case d: WeededAst.Definition.Lattice => resolve2(d, namespace, syms)
     }
 
-    def resolve2(wast: WeededAst.Definition.Relation, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Relation, ResolverError] = {
+    def resolve2(wast: WeededAst.Definition.Relation, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection.Relation, ResolverError] = {
       val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
 
       val attributesVal = wast.attributes.map {
@@ -446,11 +446,11 @@ object Resolver {
       }
 
       @@(attributesVal) map {
-        case attributes => ResolvedAst.Definition.Relation(name, attributes, wast.loc)
+        case attributes => ResolvedAst.Collection.Relation(name, attributes, wast.loc)
       }
     }
 
-    def resolve2(wast: WeededAst.Definition.Lattice, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Lattice, ResolverError] = {
+    def resolve2(wast: WeededAst.Definition.Lattice, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection.Lattice, ResolverError] = {
       val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
 
       val keysVal = wast.keys.map {
@@ -462,7 +462,7 @@ object Resolver {
       }
 
       @@(@@(keysVal), @@(valuesVal)) map {
-        case (keys, values) => ResolvedAst.Definition.Lattice(name, keys, values, wast.loc)
+        case (keys, values) => ResolvedAst.Collection.Lattice(name, keys, values, wast.loc)
       }
     }
 

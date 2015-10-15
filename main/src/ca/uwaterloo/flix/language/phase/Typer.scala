@@ -165,15 +165,15 @@ object Typer {
     /**
      * Types the given collection definition `rast` under the given AST `root`.
      */
-    def typer(rast: ResolvedAst.Definition.Collection, root: ResolvedAst.Root): Validation[TypedAst.Collection, TypeError] = rast match {
-      case d: ResolvedAst.Definition.Relation => typer2(d, root)
-      case d: ResolvedAst.Definition.Lattice => typer2(d, root)
+    def typer(rast: ResolvedAst.Collection, root: ResolvedAst.Root): Validation[TypedAst.Collection, TypeError] = rast match {
+      case d: ResolvedAst.Collection.Relation => typer2(d, root)
+      case d: ResolvedAst.Collection.Lattice => typer2(d, root)
     }
 
     /**
      * Types the given relation definition `rast` under the given AST `root`.
      */
-    def typer2(rast: ResolvedAst.Definition.Relation, root: ResolvedAst.Root): Validation[TypedAst.Collection.Relation, TypeError] = {
+    def typer2(rast: ResolvedAst.Collection.Relation, root: ResolvedAst.Root): Validation[TypedAst.Collection.Relation, TypeError] = {
       val attributes = rast.attributes map {
         case ResolvedAst.Attribute(ident, tpe) => TypedAst.Attribute(ident, Type.typer(tpe))
       }
@@ -183,7 +183,7 @@ object Typer {
     /**
      * Types the given lattice definition `rast` under the given AST `root`.
      */
-    def typer2(rast: ResolvedAst.Definition.Lattice, root: ResolvedAst.Root): Validation[TypedAst.Collection.Lattice, TypeError] = {
+    def typer2(rast: ResolvedAst.Collection.Lattice, root: ResolvedAst.Root): Validation[TypedAst.Collection.Lattice, TypeError] = {
       val keys = rast.keys map {
         case ResolvedAst.Attribute(ident, tpe) => TypedAst.Attribute(ident, Type.typer(tpe))
       }
@@ -485,7 +485,7 @@ object Typer {
         case ResolvedAst.Predicate.Head.Relation(name, rterms, loc) =>
           // lookup the collection.
           root.collections(name) match {
-            case ResolvedAst.Definition.Relation(_, attributes, _) =>
+            case ResolvedAst.Collection.Relation(_, attributes, _) =>
               // type check the terms against the attributes.
               val termsVal = (rterms zip attributes) map {
                 case (term, ResolvedAst.Attribute(_, tpe)) => Term.typer(term, Type.typer(tpe), root)
@@ -496,7 +496,7 @@ object Typer {
                   TypedAst.Predicate.Head.Relation(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
               }
 
-            case ResolvedAst.Definition.Lattice(_, keys, values, _) =>
+            case ResolvedAst.Collection.Lattice(_, keys, values, _) =>
               // type check the terms against the keys and values.
               // TODO: More checks?
               val termsVal = (rterms zip (keys ::: values)) map {
@@ -540,7 +540,7 @@ object Typer {
         case ResolvedAst.Predicate.Body.Relation(name, rterms, loc) =>
           // lookup the collection.
           root.collections(name) match {
-            case ResolvedAst.Definition.Relation(_, attributes, _) =>
+            case ResolvedAst.Collection.Relation(_, attributes, _) =>
               // type check the terms against the attributes.
               val termsVal = (rterms zip attributes) map {
                 case (term, ResolvedAst.Attribute(_, tpe)) => Term.typer(term, Type.typer(tpe), root)
@@ -549,7 +549,7 @@ object Typer {
               @@(termsVal) map {
                 case terms => TypedAst.Predicate.Body.Relation(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
               }
-            case ResolvedAst.Definition.Lattice(_, keys, values, _) =>
+            case ResolvedAst.Collection.Lattice(_, keys, values, _) =>
               // type check the terms against the attributes.
               // TODO: more checks?
               val termsVal = (rterms zip (keys ::: values)) map {
