@@ -130,6 +130,11 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
        */
       val defaultIndex: Seq[Int] = relation.attributes.zipWithIndex.map(_._2)
 
+      /**
+       * Processes a new inferred fact `f`.
+       *
+       * Returns `true` if the fact was new.
+       */
       def inferredFact(f: Array[Value]): Boolean = {
         val key = (defaultIndex, defaultIndex map f)
 
@@ -139,17 +144,40 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
         newFact(f)
       }
 
+      /**
+       * Updates all indexes and tables with a new fact `f`.
+       */
       def newFact(f: Array[Value]): Boolean = {
         for (idx <- indexes + defaultIndex) {
           val key = (idx, idx map f)
-          val coll = store.getOrElse(key, {
-            val s = mutable.Set.empty[Array[Value]]
-            store(key) = s
-            s
+          val table = store.getOrElse(key, {
+            val newTable = mutable.Set.empty[Array[Value]]
+            store(key) = newTable
+            newTable
           })
-          coll += f
+          table += f
         }
         true
+      }
+
+      /**
+       * Performs a lookup of the given row. The row may contain `null` entries. If so, these are interpreted as free variables.
+       *
+       * Returns a traversable over the matched rows.
+       */
+      def lookup(row: Array[Value]): mutable.Traversable[Array[Value]] = {
+        val idx = row.toSeq.zipWithIndex.collect {
+          case (v, i) if v != null => i
+        }
+        val key = (idx, idx map row)
+
+        if (indexes contains idx) {
+          // use index
+          store(key)
+        } else {
+          // table scan
+          store.head._2
+        }
       }
 
     }
@@ -306,14 +334,20 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
         val defn = sCtx.root.collections(r.name)
         defn match {
           case _: Collection.Relation =>
-            val table = dbRel(r.name)
 
+            val relation = ds.relations(r.name)
+            val values = r.terms.toArray.map(t => peval(t, env.head)) // TODO: FIXME and switch to tuple-at-a-time.
+            relation.lookup(values)
+
+            // OLD implementation ----
+            val table = dbRel(r.name)
             table flatMap {
               case row => unifyRelRow(row, r.terms) match {
                 case None => List.empty
                 case Some(m) => extend(env, m)
               }
             }
+          // OLD implementation ----
           case l: Collection.Lattice =>
             val table = dbLat(r.name)
 
@@ -539,4 +573,15 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     // TODO
     false.toSuccess
   }
+
+  def peval(t: TypedAst.Term.Body, env: Map[String, Value]): Value = t match {
+    case t: TypedAst.Term.Body.Wildcard => null
+    case t: TypedAst.Term.Body.Var =>
+      if (env contains t.ident.name)
+        env(t.ident.name)
+      else
+        null
+    case t: TypedAst.Term.Body.Lit => Interpreter.evalLit(t.lit)
+  }
+
 }
