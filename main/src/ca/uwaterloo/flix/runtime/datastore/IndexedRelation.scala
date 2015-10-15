@@ -87,7 +87,7 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
       store(key).iterator
     } else {
       // table scan
-      table
+      scan
     }
   }
 
