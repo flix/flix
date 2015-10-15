@@ -22,7 +22,7 @@ object TypedAst {
   case class Root(constants: Map[Name.Resolved, TypedAst.Definition.Constant],
                   directives: TypedAst.Directives,
                   lattices: Map[TypedAst.Type, TypedAst.Definition.BoundedLattice],
-                  collections: Map[Name.Resolved, TypedAst.Definition.Collection],
+                  collections: Map[Name.Resolved, TypedAst.Collection],
                   facts: List[TypedAst.Constraint.Fact],
                   rules: List[TypedAst.Constraint.Rule]) extends TypedAst
 
@@ -57,11 +57,14 @@ object TypedAst {
     case class BoundedLattice(tpe: TypedAst.Type, bot: TypedAst.Expression, top: TypedAst.Expression, leq: TypedAst.Expression,
                               lub: TypedAst.Expression, glb: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Definition
 
-    // TODO: Move this one level out??
-    /**
-     * A common super-type for collections that are either relations or lattices.
-     */
-    sealed trait Collection extends TypedAst.Definition
+  }
+
+  /**
+   * A common super-type for collections that are either relations or lattices.
+   */
+  sealed trait Collection
+
+  object Collection {
 
     /**
      * A typed AST node representing a relation definition.
@@ -70,7 +73,7 @@ object TypedAst {
      * @param attributes the attributes of the relation.
      * @param loc the source location.
      */
-    case class Relation(name: Name.Resolved, attributes: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Definition.Collection
+    case class Relation(name: Name.Resolved, attributes: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Collection
 
     /**
      * A typed AST node representing a lattice definition.
@@ -80,9 +83,10 @@ object TypedAst {
      * @param values the keys of the lattice.
      * @param loc the source location.
      */
-    case class Lattice(name: Name.Resolved, keys: List[TypedAst.Attribute], values: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Definition.Collection
+    case class Lattice(name: Name.Resolved, keys: List[TypedAst.Attribute], values: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Collection
 
   }
+
 
   /**
    * A common super-type for typed facts and rules.

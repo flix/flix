@@ -165,7 +165,7 @@ object Typer {
     /**
      * Types the given collection definition `rast` under the given AST `root`.
      */
-    def typer(rast: ResolvedAst.Definition.Collection, root: ResolvedAst.Root): Validation[TypedAst.Definition.Collection, TypeError] = rast match {
+    def typer(rast: ResolvedAst.Definition.Collection, root: ResolvedAst.Root): Validation[TypedAst.Collection, TypeError] = rast match {
       case d: ResolvedAst.Definition.Relation => typer2(d, root)
       case d: ResolvedAst.Definition.Lattice => typer2(d, root)
     }
@@ -173,17 +173,17 @@ object Typer {
     /**
      * Types the given relation definition `rast` under the given AST `root`.
      */
-    def typer2(rast: ResolvedAst.Definition.Relation, root: ResolvedAst.Root): Validation[TypedAst.Definition.Relation, TypeError] = {
+    def typer2(rast: ResolvedAst.Definition.Relation, root: ResolvedAst.Root): Validation[TypedAst.Collection.Relation, TypeError] = {
       val attributes = rast.attributes map {
         case ResolvedAst.Attribute(ident, tpe) => TypedAst.Attribute(ident, Type.typer(tpe))
       }
-      TypedAst.Definition.Relation(rast.name, attributes, rast.loc).toSuccess
+      TypedAst.Collection.Relation(rast.name, attributes, rast.loc).toSuccess
     }
 
     /**
      * Types the given lattice definition `rast` under the given AST `root`.
      */
-    def typer2(rast: ResolvedAst.Definition.Lattice, root: ResolvedAst.Root): Validation[TypedAst.Definition.Lattice, TypeError] = {
+    def typer2(rast: ResolvedAst.Definition.Lattice, root: ResolvedAst.Root): Validation[TypedAst.Collection.Lattice, TypeError] = {
       val keys = rast.keys map {
         case ResolvedAst.Attribute(ident, tpe) => TypedAst.Attribute(ident, Type.typer(tpe))
       }
@@ -191,7 +191,7 @@ object Typer {
         case ResolvedAst.Attribute(ident, tpe) => TypedAst.Attribute(ident, Type.typer(tpe))
       }
 
-      TypedAst.Definition.Lattice(rast.name, keys, values, rast.loc).toSuccess
+      TypedAst.Collection.Lattice(rast.name, keys, values, rast.loc).toSuccess
     }
 
   }

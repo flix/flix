@@ -367,48 +367,46 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     val collection = sCtx.root.collections(directive.name)
 
     collection match {
-      case r: TypedAst.Definition.Relation =>
-        dbRel.get(directive.name) match {
-          case None => // nop
-          case Some(table) =>
-            val cols = r.attributes.map(_.ident.name)
-            val ascii = new AsciiTable().withCols(cols: _*)
-            for (row <- table.sortBy(_.head.toString)) {
-              ascii.mkRow(row map pretty)
-            }
+      case r: TypedAst.Collection.Relation => dbRel.get(directive.name) match {
+        case None => // nop
+        case Some(table) =>
+          val cols = r.attributes.map(_.ident.name)
+          val ascii = new AsciiTable().withCols(cols: _*)
+          for (row <- table.sortBy(_.head.toString)) {
+            ascii.mkRow(row map pretty)
+          }
 
-            Console.println(r.name)
-            ascii.write(System.out)
-            Console.println()
-            Console.println()
-        }
-      case l: TypedAst.Definition.Lattice =>
+          Console.println(r.name)
+          ascii.write(System.out)
+          Console.println()
+          Console.println()
+      }
 
-        dbLat.get(directive.name) match {
-          case None => // nop
-          case Some(table) =>
-            val cols = (l.keys ::: l.values).map(_.ident.name)
-            val ascii = new AsciiTable().withCols(cols: _*)
-            for ((keys, elms) <- table.toSeq.sortBy(_._1.head.toString)) {
-              ascii.mkRow((keys map pretty) ::: (elms map pretty))
-            }
+      case l: TypedAst.Collection.Lattice => dbLat.get(directive.name) match {
+        case None => // nop
+        case Some(table) =>
+          val cols = l.keys.map(_.ident.name) ::: l.values.map(_.ident.name + "<>")
+          val ascii = new AsciiTable().withCols(cols: _*)
+          for ((keys, elms) <- table.toSeq.sortBy(_._1.head.toString)) {
+            ascii.mkRow((keys map pretty) ::: (elms map pretty))
+          }
 
-            Console.println(l.name)
-            ascii.write(System.out)
-            Console.println()
-            Console.println()
-        }
+          Console.println(l.name)
+          ascii.write(System.out)
+          Console.println()
+          Console.println()
+      }
     }
 
   }
 
-  private def isLat(defn: TypedAst.Definition.Collection): Boolean = defn.isInstanceOf[TypedAst.Definition.Lattice]
+  private def isLat(defn: TypedAst.Collection): Boolean = defn.isInstanceOf[TypedAst.Collection.Lattice]
 
-  private def getKeys(defn: TypedAst.Definition.Collection): List[Attribute] =
-    defn.asInstanceOf[TypedAst.Definition.Lattice].keys
+  private def getKeys(defn: TypedAst.Collection): List[Attribute] =
+    defn.asInstanceOf[TypedAst.Collection.Lattice].keys
 
-  private def getLatAttr(defn: TypedAst.Definition.Collection): List[Attribute] =
-    defn.asInstanceOf[TypedAst.Definition.Lattice].values
+  private def getLatAttr(defn: TypedAst.Collection): List[Attribute] =
+    defn.asInstanceOf[TypedAst.Collection.Lattice].values
 
   // TODO: Move somewhere. Decide where
   def pretty(v: Value): String = v match {
