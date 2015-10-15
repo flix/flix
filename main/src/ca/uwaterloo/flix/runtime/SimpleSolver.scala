@@ -54,24 +54,10 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
 
   class DataStore {
 
-    trait Table {
-
-      def getIndices() = ???
-
-      def hasIndices() = ???
-
-      def useIndex(env: Map[String, Value]) = ???
+    def computeIndices(): Unit = {
+      // TODO
     }
 
-    class Relation {
-
-    }
-
-    class Lattice {
-
-    }
-
-    def getTable(name: Name.Resolved): Table = ???
 
   }
 
@@ -89,7 +75,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     for (fact <- sCtx.root.facts) {
       val name = fact.head.asInstanceOf[TypedAst.Predicate.Head.Relation].name // TODO: Cast
       val values = fact.head.asInstanceOf[TypedAst.Predicate.Head.Relation].terms map (term => Interpreter.evalHeadTerm(term, sCtx.root, Map.empty)) // TODO: Cast
-      newFact(name, values)
+      inferredFact(name, values)
     }
 
     // iterate until fixpoint.
@@ -112,55 +98,74 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
   }
 
   /**
-   * Adds the given `row` as a fact in the database for the relation with the given `name`.
-   *
-   * Adds the new fact to the work list if the database was changed.
+   * Processes an inferred `fact` for the relation or lattice with the `name`.
    */
-  def newFact(name: Name.Resolved, row: List[Value]): Unit = {
-    val defn = sCtx.root.collections(name)
+  def inferredFact(name: Name.Resolved, fact: List[Value]): Unit = sCtx.root.collections(name) match {
+    case r: TypedAst.Collection.Relation => inferredRelationFact(r, fact.toArray)
+    case l: TypedAst.Collection.Lattice => inferredLatticeFact(l, fact.toArray)
+  }
 
-    if (isLat(defn)) {
-      // TODO: This assumes that all keys occur before any lattice value.
-
-      val keys = getKeys(defn)
-      val latAttr = getLatAttr(defn)
-      val map = dbLat.getOrElse(name, Map.empty)
-
-      val (ks, vs) = row.splitAt(keys.size)
-
-      map.get(ks) match {
-        case None =>
-          val result = map + (ks -> vs)
-          dbLat += (name -> result)
-          worklist += ((name, row))
-        case Some(vs2) =>
-          var changed = false
-
-          val vs3 = (vs zip vs2 zip latAttr) map {
-            case ((v1, v2), TypedAst.Attribute(_, tpe)) =>
-              val lat = sCtx.root.lattices(tpe)
-              val newLub = Interpreter.eval2(lat.lub, v1, v2, sCtx.root)
-              val isSubsumed = Interpreter.eval2(lat.leq, newLub, v2, sCtx.root).toBool
-
-              changed = changed || !isSubsumed
-              newLub
-          }
-
-          if (changed) {
-            val result = map + (ks -> vs3)
-            dbLat += (name -> result)
-            worklist += ((name, row)) // TODO: Row is incorrect here.
-          }
-      }
-    } else {
-      val table = dbRel.getOrElse(name, List.empty)
-      val rowExists = table.contains(row)
-      if (!rowExists) {
-        dbRel += (name -> (row :: table))
-        worklist += ((name, row))
-      }
+  /**
+   * Processes a new fact `f` for the relation `r`.
+   *
+   * If the fact is new it is added to the worklist together with its dependencies.
+   *
+   * @param r the relation.
+   * @param f the fact.
+   */
+  def inferredRelationFact(r: Collection.Relation, f: Array[Value]): Unit = {
+    val row = f.toList
+    val table = dbRel.getOrElse(r.name, List.empty)
+    val rowExists = table.contains(row)
+    if (!rowExists) {
+      dbRel += (r.name -> (row :: table))
+      worklist += ((r.name, row))
     }
+  }
 
+  /**
+   * Processes a new fact `f` for the lattice `l`.
+   *
+   * If the fact is new it is added to the worklist together with its dependencies.
+   *
+   * @param l the lattice.
+   * @param f the fact.
+   */
+  def inferredLatticeFact(l: Collection.Lattice, f: Array[Value]): Unit = {
+    val defn = l
+    val name = defn.name
+    val row = f.toList
+
+    val keys = getKeys(defn)
+    val latAttr = getLatAttr(defn)
+    val map = dbLat.getOrElse(name, Map.empty)
+
+    val (ks, vs) = row.splitAt(keys.size)
+
+    map.get(ks) match {
+      case None =>
+        val result = map + (ks -> vs)
+        dbLat += (name -> result)
+        worklist += ((name, row))
+      case Some(vs2) =>
+        var changed = false
+
+        val vs3 = (vs zip vs2 zip latAttr) map {
+          case ((v1, v2), TypedAst.Attribute(_, tpe)) =>
+            val lat = sCtx.root.lattices(tpe)
+            val newLub = Interpreter.eval2(lat.lub, v1, v2, sCtx.root)
+            val isSubsumed = Interpreter.eval2(lat.leq, newLub, v2, sCtx.root).toBool
+
+            changed = changed || !isSubsumed
+            newLub
+        }
+
+        if (changed) {
+          val result = map + (ks -> vs3)
+          dbLat += (name -> result)
+          worklist += ((name, row)) // TODO: Row is incorrect here.
+        }
+    }
   }
 
 
@@ -170,7 +175,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
   def evalHead(rule: Rule, env0: Map[String, Value]): Unit = rule.head match {
     case p: Predicate.Head.Relation =>
       val row = p.terms map (t => Interpreter.evalHeadTerm(t, sCtx.root, env0))
-      newFact(p.name, row)
+      inferredFact(p.name, row)
     case p: Predicate.Head.Trace =>
       val row = p.terms map (t => pretty(Interpreter.evalHeadTerm(t, sCtx.root, env0)))
       val out = "Trace(" + row.mkString(", ") + ")"
@@ -424,7 +429,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
    */
   def checkAssertedFact(d: Directive.AssertFact): Validation[Boolean, SolverError] = {
     // TODO
-    ???
+    (false).toSuccess
   }
 
   /**
@@ -432,6 +437,6 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
    */
   def checkAssertedRule(d: Directive.AssertRule): Validation[Boolean, SolverError] = {
     // TODO
-    ???
+    (false).toSuccess
   }
 }
