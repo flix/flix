@@ -131,6 +131,11 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
       val defaultIndex: Seq[Int] = relation.attributes.zipWithIndex.map(_._2)
 
       /**
+       * Returns a traversable of the current rows in the relation.
+       */
+      def table: Traversable[Array[Value]] = scan
+
+      /**
        * Processes a new inferred fact `f`.
        *
        * Returns `true` if the fact was new.
@@ -165,7 +170,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
        *
        * Returns a traversable over the matched rows.
        */
-      def lookup(row: Array[Value]): mutable.Traversable[Array[Value]] = {
+      def lookup(row: Array[Value]): Traversable[Array[Value]] = {
         val idx = row.toSeq.zipWithIndex.collect {
           case (v, i) if v != null => i
         }
@@ -176,9 +181,18 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
           store(key)
         } else {
           // table scan
-          store.head._2
+          table
         }
       }
+
+      /**
+       * Scans through all rows in the table.
+       */
+      // TODO: Improve performance ...
+      def scan: Traversable[Array[Value]] =
+        (for (((idx, key), rows) <- store; if idx == defaultIndex)
+          yield rows).flatten
+
 
     }
 
@@ -191,7 +205,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
    */
   val worklist = mutable.Queue.empty[(Name.Resolved, List[Value])]
 
-  val ds = new DataStore
+  val dataStore = new DataStore
 
   /**
    * Solves the Flix program.
@@ -199,9 +213,9 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
   def solve(): Unit = {
     val t = System.nanoTime()
 
-    ds.computeIndexes()
-    ds.init()
-    println(ds.indexes)
+    dataStore.computeIndexes()
+    dataStore.init()
+    println(dataStore.indexes)
 
     // adds all facts to the database.
     for (fact <- sCtx.root.facts) {
@@ -235,7 +249,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
   def inferredFact(name: Name.Resolved, fact: List[Value]): Unit = sCtx.root.collections(name) match {
     case r: TypedAst.Collection.Relation =>
       inferredRelationFact(r, fact.toArray)
-      ds.relations(name).inferredFact(fact.toArray)
+      dataStore.relations(name).inferredFact(fact.toArray)
 
     case l: TypedAst.Collection.Lattice => inferredLatticeFact(l, fact.toArray)
   }
@@ -331,7 +345,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     def recur(ps: List[TypedAst.Predicate.Body], row: mutable.Map[String, Value]): Unit = ps match {
       case Nil => evalHead(rule, row.toMap)
       case Predicate.Body.Relation(name, terms, _, _) :: xs =>
-        val relation = ds.relations(name)
+        val relation = dataStore.relations(name)
         val values = terms.map(t => peval(t, row.toMap))
         val offset2var = terms.zipWithIndex.foldLeft(Map.empty[Int, String]) {
           case (macc, (Term.Body.Var(ident, _, _), i)) => macc + (i -> ident.name)
@@ -376,7 +390,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
         defn match {
           case _: Collection.Relation =>
 
-            val relation = ds.relations(r.name)
+            val relation = dataStore.relations(r.name)
             val values = r.terms.toArray.map(t => peval(t, env.head)) // TODO: FIXME and switch to tuple-at-a-time.
             relation.lookup(values)
 
@@ -555,20 +569,18 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     val collection = sCtx.root.collections(directive.name)
 
     collection match {
-      case r: TypedAst.Collection.Relation => dbRel.get(directive.name) match {
-        case None => // nop
-        case Some(table) =>
-          val cols = r.attributes.map(_.ident.name)
-          val ascii = new AsciiTable().withCols(cols: _*)
-          for (row <- table.sortBy(_.head.toString)) {
-            ascii.mkRow(row map pretty)
-          }
+      case r: TypedAst.Collection.Relation =>
+        val table = dataStore.relations(directive.name).table
+        val cols = r.attributes.map(_.ident.name)
+        val ascii = new AsciiTable().withCols(cols: _*)
+        for (row <- table.toSeq.sortBy(_.head.toString)) {
+          ascii.mkRow(row.toList map pretty)
+        }
 
-          Console.println(r.name)
-          ascii.write(System.out)
-          Console.println()
-          Console.println()
-      }
+        Console.println(r.name)
+        ascii.write(System.out)
+        Console.println()
+        Console.println()
 
       case l: TypedAst.Collection.Lattice => dbLat.get(directive.name) match {
         case None => // nop
