@@ -14,7 +14,6 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
   assert(lattice.keys.nonEmpty)
 
 
-
   private val split = lattice.keys.length
 
   private val latticeOps: Array[TypedAst.Definition.BoundedLattice] = Array.empty
@@ -37,9 +36,13 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
     store.get(key) match {
       case None =>
       case Some(m) =>
-        val elms2 = m(keys1)
-        if (leq(elms1, elms2))
-          return false
+        m.get(keys1) match {
+          case None =>
+          case Some(elms2) => if (leq(elms1, elms2)) {
+            return false
+          }
+        }
+
     }
 
     newFact(f)
@@ -49,18 +52,20 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
    * Updates all indexes and tables with a new fact `f`.
    */
   private def newFact(f: Array[Value]): Boolean = {
-    val (keys, elms) = f.splitAt(split)
+    val (keys1, elms1) = f.splitAt(split)
 
-    for ((idx, _) <- store.keys) {
+    for (idx <- indexes + defaultIndex) {
       val key = (idx, idx map f)
       store.get(key) match {
         case None =>
           val m = mutable.Map.empty[Array[Value], Array[Value]]
-          m(keys) = elms
+          m(keys1) = elms1
           store(key) = m
         case Some(m) =>
-          val elms2 = m(keys)
-          m(keys) = lub(elms, elms2)
+          m.get(keys1) match {
+            case None => m(keys1) = elms1
+            case Some(elms2) => m(keys1) = lub(elms1, elms2)
+          }
       }
     }
     true
@@ -94,7 +99,15 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
   // TODO: Improve performance ...
   private def scan: Iterator[(Array[Value], Array[Value])] = ???
 
-  def keyMatches(keys: Array[Value], keys2: Array[Value]): Boolean = ???
+  def keyMatches(row: Array[Value], pattern: Array[Value]): Boolean = {
+    for (i <- row.indices) {
+      val pat = pattern(i)
+      if (pat != null && pat != row(i)) {
+        return false
+      }
+    }
+    true
+  }
 
   def elmsMatches(elms: Array[Value], elms2: Array[Value]): Boolean = ???
 
