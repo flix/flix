@@ -8,7 +8,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Term.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Name, TypedAst}
 import ca.uwaterloo.flix.language.backend.phase.Indexer
-import ca.uwaterloo.flix.runtime.datastore.IndexedRelation
+import ca.uwaterloo.flix.runtime.datastore.{DataStore, IndexedLattice, IndexedRelation}
 import ca.uwaterloo.flix.util.{Validation, AsciiTable}
 import ca.uwaterloo.flix.util.Validation._
 
@@ -50,47 +50,21 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
   }
 
   /**
-   *
+   * The primary data store that holds all relations and lattices.
    */
+  val dataStore = new DataStore()
+
+  //  TODO: deprecated
   val dbRel = mutable.Map.empty[Name.Resolved, List[List[Value]]]
 
+  //  TODO: deprecated
   val dbLat = mutable.Map.empty[Name.Resolved, Map[List[Value], List[Value]]]
-
-
-  class DataStore {
-
-    /**
-     *
-     */
-    val relations = mutable.Map.empty[Name.Resolved, IndexedRelation]
-
-    def init(): Unit = {
-      // compute indexes based on the program constraint rules.
-      val indexes = Indexer.index(sCtx.root)
-
-      // initialize all indexed relations and lattices.
-      for ((name, collection) <- sCtx.root.collections) {
-        collection match {
-          case r: Collection.Relation =>
-            relations(name) = new IndexedRelation(r, indexes.getOrElse(name, Set.empty))
-
-          case l: Collection.Lattice => // todo
-
-        }
-      }
-    }
-
-
-  }
-
-  // TODO: Avoid indirection as much as possible.
 
   /**
    * The work list of pending predicate names and their associated values.
    */
   val worklist = mutable.Queue.empty[(Name.Resolved, List[Value])]
 
-  val dataStore = new DataStore
 
   /**
    * Solves the Flix program.
@@ -138,7 +112,14 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
         worklist += ((r.name, fact))
       }
 
-    case l: TypedAst.Collection.Lattice => inferredLatticeFact(l, fact.toArray)
+    case l: TypedAst.Collection.Lattice =>
+      inferredLatticeFact(l, fact.toArray)
+
+      val changed = dataStore.lattices(name).inferredFact(fact.toArray)
+      if (changed) {
+        worklist += ((l.name, fact))
+      }
+
   }
 
   /**
@@ -231,25 +212,29 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
      */
     def recur(ps: List[TypedAst.Predicate.Body], row: mutable.Map[String, Value]): Unit = ps match {
       case Nil => evalHead(rule, row.toMap)
-      case Predicate.Body.Relation(name, terms, _, _) :: xs =>
-        val relation = dataStore.relations(name)
-        val values = terms.map(t => peval(t, row.toMap))
-        val offset2var = terms.zipWithIndex.foldLeft(Map.empty[Int, String]) {
-          case (macc, (Term.Body.Var(ident, _, _), i)) => macc + (i -> ident.name)
-          case (macc, _) => macc
-        }
-
-        for (row2 <- relation.lookup(values.toArray)) {
-          val newRow = row.clone()
-          for (i <- row2.indices) {
-            offset2var.get(i) match {
-              case None => // nop
-              case Some(x) =>
-                newRow += (x -> row2(i))
-            }
+      case Predicate.Body.Relation(name, terms, _, _) :: xs => sCtx.root.collections(name) match {
+        case r: Collection.Relation =>
+          val relation = dataStore.relations(name)
+          val values = terms.map(t => peval(t, row.toMap))
+          val offset2var = terms.zipWithIndex.foldLeft(Map.empty[Int, String]) {
+            case (macc, (Term.Body.Var(ident, _, _), i)) => macc + (i -> ident.name)
+            case (macc, _) => macc
           }
-          recur(xs, newRow)
-        }
+
+          for (row2 <- relation.lookup(values.toArray)) {
+            val newRow = row.clone()
+            for (i <- row2.indices) {
+              offset2var.get(i) match {
+                case None => // nop
+                case Some(x) =>
+                  newRow += (x -> row2(i))
+              }
+            }
+            recur(xs, newRow)
+          }
+
+        case l: Collection.Lattice => ???
+      }
 
       case Predicate.Body.Function(name, terms, _, _) :: xs => ???
       case Predicate.Body.NotEqual(ident1, ident2, _, _) :: xs =>
@@ -261,7 +246,7 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
       case Predicate.Body.Read(_, _, _, _) :: xs => ???
     }
 
-    //  TODO: Ensure that filters occur last ...
+    //  TODO: Sort the body predicates...
     recur(rule.body, mutable.Map.empty ++ env0)
 
 
@@ -514,6 +499,11 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
     false.toSuccess
   }
 
+  /**
+   * Evaluates the given body term `t` to a value.
+   *
+   * Returns `null` if the term is a free variable.
+   */
   def peval(t: TypedAst.Term.Body, env: Map[String, Value]): Value = t match {
     case t: TypedAst.Term.Body.Wildcard => null
     case t: TypedAst.Term.Body.Var =>

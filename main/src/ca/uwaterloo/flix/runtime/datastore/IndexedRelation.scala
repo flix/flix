@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime.datastore
 
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.runtime.Value
+import ca.uwaterloo.flix.runtime.{Solver, Value}
 
 import scala.collection.mutable
 
@@ -17,7 +17,7 @@ import scala.collection.mutable
  * @param relation the relation.
  * @param indexes the indexes.
  */
-class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]]) {
+class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) {
 
   /**
    * A map from keys, i.e. (index, value) pairs, to rows matching the key.
