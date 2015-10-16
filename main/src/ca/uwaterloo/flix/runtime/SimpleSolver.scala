@@ -455,20 +455,19 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
         Console.println()
         Console.println()
 
-      case l: TypedAst.Collection.Lattice => dbLat.get(directive.name) match {
-        case None => // nop
-        case Some(table) =>
-          val cols = l.keys.map(_.ident.name) ::: l.values.map(_.ident.name + "<>")
-          val ascii = new AsciiTable().withCols(cols: _*)
-          for ((keys, elms) <- table.toSeq.sortBy(_._1.head.toString)) {
-            ascii.mkRow((keys map pretty) ::: (elms map pretty))
-          }
+      case l: TypedAst.Collection.Lattice =>
+        val table = dataStore.lattices(directive.name).table
 
-          Console.println(l.name)
-          ascii.write(System.out)
-          Console.println()
-          Console.println()
-      }
+        val cols = l.keys.map(_.ident.name) ::: l.values.map(_.ident.name + "<>")
+        val ascii = new AsciiTable().withCols(cols: _*)
+        for (row <- table.toSeq.sortBy(_.head.toString)) {
+          ascii.mkRow(row.toList map pretty)
+        }
+
+        Console.println(l.name)
+        ascii.write(System.out)
+        Console.println()
+        Console.println()
     }
 
   }

@@ -24,7 +24,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
   private val bottom = latticeOps.map(_.bot)
 
   def table: Iterator[Array[Value]] = scan.map {
-    case (keys, elms) => elms ++ keys
+    case (keys, elms) => (keys.toSeq ++ elms.toSeq).toArray
   }
 
   /**
@@ -100,7 +100,9 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
    * Returns all rows in the relation using a table scan.
    */
   // TODO: Improve performance ...
-  private def scan: Iterator[(Seq[Value], Array[Value])] = ???
+  private def scan: Iterator[(Seq[Value], Array[Value])] = (store map {
+    case (keys, m) => m.toList
+  }).flatten[(Seq[Value], Array[Value])].iterator
 
   def keyMatches(row: Array[Value], pat: Array[Value]): Boolean = {
     for (i <- row.indices) {
