@@ -1,13 +1,14 @@
 package ca.uwaterloo.flix.runtime.datastore
 
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.runtime.{Solver, Value}
+import ca.uwaterloo.flix.runtime.{Interpreter, Solver, Value}
 
 import scala.collection.mutable
 
 class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
   // TODO: Initialize store for all indexes?
-  private val store = mutable.Map.empty[(Seq[Int], Seq[Value]), mutable.Map[Array[Value], Array[Value]]]
+  // TODO: Careful with equality semantics for keys
+  private val store = mutable.Map.empty[(Seq[Int], Seq[Value]), mutable.Map[Seq[Value], Array[Value]]]
 
   // TODO: What if the lattice has only one lattice column????
   private val defaultIndex: Seq[Int] = Seq(0)
@@ -16,7 +17,9 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
 
   private val split = lattice.keys.length
 
-  private val latticeOps: Array[TypedAst.Definition.BoundedLattice] = Array.empty
+  private val latticeOps: Array[TypedAst.Definition.BoundedLattice] = (lattice.values.map {
+    case TypedAst.Attribute(_, tpe) => sCtx.root.lattices(tpe)
+  }).toArray
 
   private val bottom = latticeOps.map(_.bot)
 
@@ -58,7 +61,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
       val key = (idx, idx map f)
       store.get(key) match {
         case None =>
-          val m = mutable.Map.empty[Array[Value], Array[Value]]
+          val m = mutable.Map.empty[Seq[Value], Array[Value]]
           m(keys1) = elms1
           store(key) = m
         case Some(m) =>
@@ -87,9 +90,9 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
     }
 
     resultSet filter {
-      case (keys2, elms2) => keyMatches(keys, keys2) && elmsMatches(elms, elms2)
+      case (keys2, elms2) => keyMatches(keys, keys2.toArray) && elmsMatches(elms, elms2)
     } map {
-      case (keys, elms) => keys ++ elms
+      case (keys, elms) => keys.toArray ++ elms
     }
   }
 
@@ -97,22 +100,40 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
    * Returns all rows in the relation using a table scan.
    */
   // TODO: Improve performance ...
-  private def scan: Iterator[(Array[Value], Array[Value])] = ???
+  private def scan: Iterator[(Seq[Value], Array[Value])] = ???
 
-  def keyMatches(row: Array[Value], pattern: Array[Value]): Boolean = {
+  def keyMatches(row: Array[Value], pat: Array[Value]): Boolean = {
     for (i <- row.indices) {
-      val pat = pattern(i)
-      if (pat != null && pat != row(i)) {
+      val p = pat(i)
+      if (p != null && p != row(i)) {
         return false
       }
     }
     true
   }
 
-  def elmsMatches(elms: Array[Value], elms2: Array[Value]): Boolean = ???
+  // TODO: Careful with lattice values, should not return boolean
+  def elmsMatches(row: Array[Value], pat: Array[Value]): Boolean = {
+    // TODO: so this is incorrect.
+    for (i <- row.indices) {
+      val p = pat(i)
+      if (p != null && p != row(i)) {
+        return false
+      }
+    }
+    true
+  }
 
-  private def leq(a: Array[Value], b: Array[Value]): Boolean = ???
+  private def leq(a: Array[Value], b: Array[Value]): Boolean = {
+    for (i <- a.indices) {
+      val leq = latticeOps(i).leq
+      if (!Interpreter.eval2(leq, a(i), b(i), sCtx.root).toBool)
+        return false
+    }
+    true
+  }
 
-  private def lub(a: Array[Value], b: Array[Value]): Array[Value] = ???
+  private def lub(a: Array[Value], b: Array[Value]): Array[Value] =
+    ???
 
 }
