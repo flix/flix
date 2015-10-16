@@ -84,8 +84,6 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   def solve(): Unit = {
     val t = System.nanoTime()
 
-    dataStore.init()
-
     // adds all facts to the database.
     for (fact <- sCtx.root.facts) {
       val name = fact.head.asInstanceOf[TypedAst.Predicate.Head.Relation].name // TODO: Cast
