@@ -28,23 +28,41 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
    */
   def inferredFact(f: Array[Value]): Boolean = {
     val key = (defaultIndex, defaultIndex map f)
+    val (keys1, elms1) = f.splitAt(split)
 
-    val (keys, elms) = f.splitAt(split)
+    store.get(key) match {
+      case None =>
+      case Some(m) =>
+        val elms2 = m(keys1)
+        if (leq(elms1, elms2))
+          return false
+    }
 
-    store.get(key)
-
-    // TODO: Need to lookup that thing
-    ???
+    newFact(f)
   }
 
+  /**
+   * Updates all indexes and tables with a new fact `f`.
+   */
   private def newFact(f: Array[Value]): Boolean = {
-    // todo
+    val (keys, elms) = f.splitAt(split)
 
-    ???
+    for ((idx, _) <- store.keys) {
+      val key = (idx, idx map f)
+      store.get(key) match {
+        case None =>
+          val m = mutable.Map.empty[Array[Value], Array[Value]]
+          m(keys) = elms
+          store(key) = m
+        case Some(m) =>
+          val elms2 = m(keys)
+          m(keys) = lub(elms, elms2)
+      }
+    }
+    true
   }
 
   def lookup(keys: Array[Value], values: Array[Value]): Iterator[Array[Value]] = {
-
     ???
   }
 
@@ -54,7 +72,9 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
   // TODO: Improve performance ...
   private def scan: Iterator[Array[Value]] = ???
 
-  
+
   private def leq(a: Array[Value], b: Array[Value]): Boolean = ???
+
+  private def lub(a: Array[Value], b: Array[Value]): Array[Value] = ???
 
 }
