@@ -127,13 +127,21 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
   private def leq(a: Array[Value], b: Array[Value]): Boolean = {
     for (i <- a.indices) {
       val leq = latticeOps(i).leq
-      if (!Interpreter.eval2(leq, a(i), b(i), sCtx.root).toBool)
+      val value = Interpreter.eval2(leq, a(i), b(i), sCtx.root)
+      if (!value.toBool)
         return false
     }
     true
   }
 
-  private def lub(a: Array[Value], b: Array[Value]): Array[Value] =
-    ???
+  private def lub(a: Array[Value], b: Array[Value]): Array[Value] = {
+    val result = Array.ofDim[Value](a.length)
+    for (i <- result.indices) {
+      val lub = latticeOps(i).lub
+      val value = Interpreter.eval2(lub, a(i), b(i), sCtx.root)
+      result(i) = value
+    }
+    result
+  }
 
 }
