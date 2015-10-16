@@ -17,10 +17,16 @@ import scala.collection.mutable.ArrayBuffer
 
 object Solver {
 
+  /**
+   * A case class representing a solver context.
+   */
   case class SolverContext(root: TypedAst.Root)
 
 }
 
+/**
+ * A solver based on semi-naive evaluation.
+ */
 class Solver(implicit sCtx: Solver.SolverContext) {
 
   /**
@@ -142,7 +148,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     val rowExists = table.contains(row)
     if (!rowExists) {
       dbRel += (r.name -> (row :: table))
-      worklist += ((r.name, row))
+      //worklist += ((r.name, row))
     }
   }
 
@@ -186,7 +192,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
         if (changed) {
           val result = map + (ks -> vs3)
           dbLat += (name -> result)
-          worklist += ((name, row)) // TODO: Row is incorrect here.
+          //          worklist += ((name, row)) // TODO: Row is incorrect here.
         }
     }
   }
