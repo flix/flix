@@ -50,31 +50,31 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Literal.Int01") {
     val input = Expression.Lit(Literal.Int(-242, loc), Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(-242))(result)
+    assertResult(Value.mkInt(-242))(result)
   }
 
   test("Interpreter - Literal.Int02") {
     val input = Expression.Lit(Literal.Int(-42, loc), Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(-42))(result)
+    assertResult(Value.mkInt(-42))(result)
   }
 
   test("Interpreter - Literal.Int03") {
     val input = Expression.Lit(Literal.Int(0, loc), Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(0))(result)
+    assertResult(Value.mkInt(0))(result)
   }
 
   test("Interpreter - Literal.Int04") {
     val input = Expression.Lit(Literal.Int(98, loc), Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(98))(result)
+    assertResult(Value.mkInt(98))(result)
   }
 
   test("Interpreter - Literal.Int05") {
     val input = Expression.Lit(Literal.Int(91238, loc), Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(91238))(result)
+    assertResult(Value.mkInt(91238))(result)
   }
 
   test("Interpreter - Literal.Str01") {
@@ -113,7 +113,7 @@ class TestInterpreter extends FunSuite {
         Type.Tuple(List(Type.Int, Type.Bool, Type.Str)), loc),
       Type.Tuple(List(Type.Int, Type.Bool, Type.Str)), loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tuple(List(Value.Int(42), Value.mkBool(false), Value.Str("hi"))))(result)
+    assertResult(Value.Tuple(List(Value.mkInt(42), Value.mkBool(false), Value.Str("hi"))))(result)
   }
 
   test("Interpreter - Literal.Tuple02") {
@@ -125,7 +125,7 @@ class TestInterpreter extends FunSuite {
         Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int)))), loc),
       Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int)))), loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tuple(List(Value.Int(4), Value.Tuple(List(Value.Int(12), Value.Int(8))))))(result)
+    assertResult(Value.Tuple(List(Value.mkInt(4), Value.Tuple(List(Value.mkInt(12), Value.mkInt(8))))))(result)
   }
 
   test("Interpreter - Literal.Tag01") {
@@ -147,7 +147,7 @@ class TestInterpreter extends FunSuite {
       Literal.Tuple(List(Literal.Str("James", loc), Literal.Int(42, loc)),
         Type.Tuple(List(Type.Str, Type.Int)), loc), enumTpe, loc), tagTpe, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "NameAndAge", Value.Tuple(List(Value.Str("James"), Value.Int(42)))))(result)
+    assertResult(Value.Tag(name, "NameAndAge", Value.Tuple(List(Value.Str("James"), Value.mkInt(42)))))(result)
   }
 
   test("Interpreter - Literal.Tag03") {
@@ -168,7 +168,7 @@ class TestInterpreter extends FunSuite {
     import ConstantPropTagDefs._
     val input = Expression.Lit(Literal.Tag(name, identV, Literal.Int(0, loc), enumTpe, loc), tagTpeV, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "Val", Value.Int(0)))(result)
+    assertResult(Value.Tag(name, "Val", Value.mkInt(0)))(result)
 
   }
 
@@ -176,14 +176,14 @@ class TestInterpreter extends FunSuite {
     import ConstantPropTagDefs._
     val input = Expression.Lit(Literal.Tag(name, identV, Literal.Int(-240, loc), enumTpe, loc), tagTpeV, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "Val", Value.Int(-240)))(result)
+    assertResult(Value.Tag(name, "Val", Value.mkInt(-240)))(result)
   }
 
   test("Interpreter - Literal.Tag07") {
     import ConstantPropTagDefs._
     val input = Expression.Lit(Literal.Tag(name, identV, Literal.Int(1241, loc), enumTpe, loc), tagTpeV, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "Val", Value.Int(1241)))(result)
+    assertResult(Value.Tag(name, "Val", Value.mkInt(1241)))(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -199,9 +199,9 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - Expression.Var02") {
     val input = Expression.Var(ident01, Type.Int, loc)
-    val env = Map(ident01.name -> Value.Int(5))
+    val env = Map(ident01.name -> Value.mkInt(5))
     val result = Interpreter.eval(input, root, env)
-    assertResult(Value.Int(5))(result)
+    assertResult(Value.mkInt(5))(result)
   }
 
   test("Interpreter - Expression.Var03") {
@@ -237,7 +237,7 @@ class TestInterpreter extends FunSuite {
     val root = Root(Map(name -> const), TypedAst.Directives(List()), Map(), Map(), List(), List())
     val input = Expression.Ref(name, Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(5))(result)
+    assertResult(Value.mkInt(5))(result)
   }
 
   test("Interpreter - Expression.Ref03") {
@@ -290,7 +290,7 @@ class TestInterpreter extends FunSuite {
     // (x => 3)(4)
     val apply = Expression.Apply(lambda, List(Expression.Lit(Literal.Int(4, loc), Type.Int, loc)), Type.Int, loc)
     val value = Interpreter.eval(apply, root)
-    assertResult(Value.Int(3))(value)
+    assertResult(Value.mkInt(3))(value)
   }
 
   test("Interpreter - Expression.Lambda03") {
@@ -305,7 +305,7 @@ class TestInterpreter extends FunSuite {
     // (x => x)(5)
     val apply = Expression.Apply(lambda, List(Expression.Lit(Literal.Int(5, loc), Type.Int, loc)), Type.Int, loc)
     val value = Interpreter.eval(apply, root)
-    assertResult(Value.Int(5))(value)
+    assertResult(Value.mkInt(5))(value)
   }
 
   test("Interpreter - Expression.Lambda04") {
@@ -325,7 +325,7 @@ class TestInterpreter extends FunSuite {
     // (x => 1 + 2)(42)
     val apply = Expression.Apply(lambda, List(Expression.Lit(Literal.Int(42, loc), Type.Int, loc)), Type.Int, loc)
     val value = Interpreter.eval(apply, root)
-    assertResult(Value.Int(3))(value)
+    assertResult(Value.mkInt(3))(value)
   }
 
   test("Interpreter - Expression.Lambda05") {
@@ -345,7 +345,7 @@ class TestInterpreter extends FunSuite {
     // (x => x + 2)(100)
     val apply = Expression.Apply(lambda, List(Expression.Lit(Literal.Int(100, loc), Type.Int, loc)), Type.Int, loc)
     val value = Interpreter.eval(apply, root)
-    assertResult(Value.Int(102))(value)
+    assertResult(Value.mkInt(102))(value)
   }
 
   test("Interpreter - Expression.Lambda06") {
@@ -368,7 +368,7 @@ class TestInterpreter extends FunSuite {
       Expression.Lit(Literal.Int(4, loc), Type.Int, loc)),
       Type.Int, loc)
     val value = Interpreter.eval(apply, root)
-    assertResult(Value.Int(7))(value)
+    assertResult(Value.mkInt(7))(value)
   }
 
   test("Interpreter - Expression.Lambda07") {
@@ -419,7 +419,7 @@ class TestInterpreter extends FunSuite {
       Expression.Lit(Literal.Int(5, loc), Type.Int, loc)),
       Type.Int, loc)
     val value = Interpreter.eval(apply, root)
-    assertResult(Value.Int(49))(value)
+    assertResult(Value.mkInt(49))(value)
   }
 
   test("Interpreter - Expression.Lambda09") {
@@ -445,7 +445,7 @@ class TestInterpreter extends FunSuite {
       List(Expression.Lit(Literal.Int(4, loc), Type.Int, loc)),
       Type.Int, loc)
     val value = Interpreter.eval(apply, root)
-    assertResult(Value.Int(7))(value)
+    assertResult(Value.mkInt(7))(value)
   }
 
   test("Interpreter - Expression.Lambda10") {
@@ -474,7 +474,7 @@ class TestInterpreter extends FunSuite {
       Expression.Lit(Literal.Int(5, loc), Type.Int, loc)),
       Type.Int, loc)
     val value = Interpreter.eval(apply, root)
-    assertResult(Value.Int(6))(value)
+    assertResult(Value.mkInt(6))(value)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -505,7 +505,7 @@ class TestInterpreter extends FunSuite {
       Expression.Lit(Literal.Int(23, loc), Type.Int, loc),
       Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(23))(result)
+    assertResult(Value.mkInt(23))(result)
   }
 
   test("Interpreter - UnaryOperator.UnaryPlus02") {
@@ -514,7 +514,7 @@ class TestInterpreter extends FunSuite {
       Expression.Lit(Literal.Int(-4, loc), Type.Int, loc),
       Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(-4))(result)
+    assertResult(Value.mkInt(-4))(result)
   }
 
   test("Interpreter - UnaryOperator.UnaryMinus03") {
@@ -523,7 +523,7 @@ class TestInterpreter extends FunSuite {
       Expression.Lit(Literal.Int(23, loc), Type.Int, loc),
       Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(-23))(result)
+    assertResult(Value.mkInt(-23))(result)
   }
 
   test("Interpreter - UnaryOperator.UnaryMinus02") {
@@ -532,7 +532,7 @@ class TestInterpreter extends FunSuite {
       Expression.Lit(Literal.Int(-4, loc), Type.Int, loc),
       Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(4))(result)
+    assertResult(Value.mkInt(4))(result)
   }
 
   test("Interpreter - BinaryOperator.Plus01") {
@@ -543,7 +543,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(500))(result)
+    assertResult(Value.mkInt(500))(result)
   }
 
   test("Interpreter - BinaryOperator.Plus02") {
@@ -554,7 +554,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(500))(result)
+    assertResult(Value.mkInt(500))(result)
   }
 
   test("Interpreter - BinaryOperator.Plus03") {
@@ -565,7 +565,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(-300))(result)
+    assertResult(Value.mkInt(-300))(result)
   }
 
   test("Interpreter - BinaryOperator.Plus04") {
@@ -576,7 +576,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(300))(result)
+    assertResult(Value.mkInt(300))(result)
   }
 
   test("Interpreter - BinaryOperator.Plus05") {
@@ -587,7 +587,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(-500))(result)
+    assertResult(Value.mkInt(-500))(result)
   }
 
   test("Interpreter - BinaryOperator.Minus01") {
@@ -598,7 +598,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(300))(result)
+    assertResult(Value.mkInt(300))(result)
   }
 
   test("Interpreter - BinaryOperator.Minus02") {
@@ -609,7 +609,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(-300))(result)
+    assertResult(Value.mkInt(-300))(result)
   }
 
   test("Interpreter - BinaryOperator.Minus03") {
@@ -620,7 +620,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(-500))(result)
+    assertResult(Value.mkInt(-500))(result)
   }
 
   test("Interpreter - BinaryOperator.Minus04") {
@@ -631,7 +631,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(-500))(result)
+    assertResult(Value.mkInt(-500))(result)
   }
 
   test("Interpreter - BinaryOperator.Minus05") {
@@ -642,7 +642,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(-300))(result)
+    assertResult(Value.mkInt(-300))(result)
   }
 
   test("Interpreter - BinaryOperator.Times01") {
@@ -653,7 +653,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(6))(result)
+    assertResult(Value.mkInt(6))(result)
   }
 
   test("Interpreter - BinaryOperator.Times02") {
@@ -664,7 +664,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(6))(result)
+    assertResult(Value.mkInt(6))(result)
   }
 
   test("Interpreter - BinaryOperator.Times03") {
@@ -675,7 +675,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(-6))(result)
+    assertResult(Value.mkInt(-6))(result)
   }
 
   test("Interpreter - BinaryOperator.Times04") {
@@ -686,7 +686,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(-6))(result)
+    assertResult(Value.mkInt(-6))(result)
   }
 
   test("Interpreter - BinaryOperator.Times05") {
@@ -697,7 +697,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(6))(result)
+    assertResult(Value.mkInt(6))(result)
   }
 
   test("Interpreter - BinaryOperator.Divide01") {
@@ -708,7 +708,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(4))(result)
+    assertResult(Value.mkInt(4))(result)
   }
 
   test("Interpreter - BinaryOperator.Divide02") {
@@ -719,7 +719,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(0))(result)
+    assertResult(Value.mkInt(0))(result)
   }
 
   test("Interpreter - BinaryOperator.Divide03") {
@@ -730,7 +730,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(-4))(result)
+    assertResult(Value.mkInt(-4))(result)
   }
 
   test("Interpreter - BinaryOperator.Divide04") {
@@ -741,7 +741,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(0))(result)
+    assertResult(Value.mkInt(0))(result)
   }
 
   test("Interpreter - BinaryOperator.Divide05") {
@@ -752,7 +752,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(4))(result)
+    assertResult(Value.mkInt(4))(result)
   }
 
   test("Interpreter - BinaryOperator.Modulo01") {
@@ -763,7 +763,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(0))(result)
+    assertResult(Value.mkInt(0))(result)
   }
 
   test("Interpreter - BinaryOperator.Modulo02") {
@@ -774,7 +774,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(2))(result)
+    assertResult(Value.mkInt(2))(result)
   }
 
   test("Interpreter - BinaryOperator.Modulo03") {
@@ -785,7 +785,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(-2))(result)
+    assertResult(Value.mkInt(-2))(result)
   }
 
   test("Interpreter - BinaryOperator.Modulo04") {
@@ -796,7 +796,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(2))(result)
+    assertResult(Value.mkInt(2))(result)
   }
 
   test("Interpreter - BinaryOperator.Modulo05") {
@@ -807,7 +807,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc
     )
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(-2))(result)
+    assertResult(Value.mkInt(-2))(result)
   }
 
   test("Interpreter - BinaryOperator.Less01") {
@@ -1344,7 +1344,7 @@ class TestInterpreter extends FunSuite {
     val input = Expression.Let(ident01, Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
       Expression.Lit(Literal.Int(42, loc), Type.Int, loc), Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(42))(result)
+    assertResult(Value.mkInt(42))(result)
   }
 
   test("Interpreter - Expression.Let02") {
@@ -1352,7 +1352,7 @@ class TestInterpreter extends FunSuite {
     val input = Expression.Let(ident01, Expression.Lit(Literal.Int(24, loc), Type.Int, loc),
       Expression.Var(ident01, Type.Int, loc), Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(24))(result)
+    assertResult(Value.mkInt(24))(result)
   }
 
   test("Interpreter - Expression.Let03") {
@@ -1365,7 +1365,7 @@ class TestInterpreter extends FunSuite {
         Type.Int, loc),
       Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(3))(result)
+    assertResult(Value.mkInt(3))(result)
   }
 
   test("Interpreter - Expression.Let04") {
@@ -1396,7 +1396,7 @@ class TestInterpreter extends FunSuite {
         Type.Int, loc),
       Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(13))(result)
+    assertResult(Value.mkInt(13))(result)
   }
 
   test("Interpreter - Expression.Let06") {
@@ -1421,7 +1421,7 @@ class TestInterpreter extends FunSuite {
         Type.Int, loc),
       Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(19))(result)
+    assertResult(Value.mkInt(19))(result)
   }
 
   test("Interpreter - Expression.Let07") {
@@ -1445,7 +1445,7 @@ class TestInterpreter extends FunSuite {
         Type.Int, loc),
       Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(6))(result)
+    assertResult(Value.mkInt(6))(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1457,7 +1457,7 @@ class TestInterpreter extends FunSuite {
     val rules = List((Pattern.Wildcard(Type.Int, loc), Expression.Lit(Literal.Int(11, loc), Type.Int, loc)))
     val input = Expression.Match(Expression.Lit(Literal.Unit(loc), Type.Unit, loc), rules, Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(11))(result)
+    assertResult(Value.mkInt(11))(result)
   }
 
   test("Interpreter - Pattern.Var01") {
@@ -1465,7 +1465,7 @@ class TestInterpreter extends FunSuite {
     val rules = List((Pattern.Var(ident01, Type.Int, loc), Expression.Var(ident01, Type.Int, loc)))
     val input = Expression.Match(Expression.Lit(Literal.Int(3, loc), Type.Int, loc), rules, Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(3))(result)
+    assertResult(Value.mkInt(3))(result)
   }
 
   test("Interpreter - Pattern.Var02") {
@@ -1477,7 +1477,7 @@ class TestInterpreter extends FunSuite {
       Type.Int, loc)))
     val input = Expression.Match(Expression.Lit(Literal.Int(3, loc), Type.Int, loc), rules, Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(14))(result)
+    assertResult(Value.mkInt(14))(result)
   }
 
   test("Interpreter - Pattern.Literal.Unit01") {
@@ -1493,7 +1493,7 @@ class TestInterpreter extends FunSuite {
     val rules = List((Pattern.Lit(Literal.Bool(true, loc), Type.Bool, loc), Expression.Lit(Literal.Int(30, loc), Type.Int, loc)))
     val input = Expression.Match(Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc), rules, Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(30))(result)
+    assertResult(Value.mkInt(30))(result)
   }
 
   test("Interpreter - Pattern.Literal.Bool02") {
@@ -1503,7 +1503,7 @@ class TestInterpreter extends FunSuite {
       (Pattern.Wildcard(Type.Bool, loc), Expression.Lit(Literal.Int(1, loc), Type.Int, loc)))
     val input = Expression.Match(Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc), rules, Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(1))(result)
+    assertResult(Value.mkInt(1))(result)
   }
 
   test("Interpreter - Pattern.Literal.Int01") {
@@ -1511,7 +1511,7 @@ class TestInterpreter extends FunSuite {
     val rules = List((Pattern.Lit(Literal.Int(87, loc), Type.Int, loc), Expression.Lit(Literal.Int(1, loc), Type.Int, loc)))
     val input = Expression.Match(Expression.Lit(Literal.Int(87, loc), Type.Int, loc), rules, Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(1))(result)
+    assertResult(Value.mkInt(1))(result)
   }
 
   test("Interpreter - Pattern.Literal.Int02") {
@@ -1541,7 +1541,7 @@ class TestInterpreter extends FunSuite {
       (Pattern.Wildcard(Type.Str, loc), Expression.Lit(Literal.Int(0, loc), Type.Int, loc)))
     val input = Expression.Match(Expression.Lit(Literal.Str("hello", loc), Type.Str, loc), rules, Type.Str, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(0))(result)
+    assertResult(Value.mkInt(0))(result)
   }
 
   test("Interpreter - Pattern.Literal.Tag01") {
@@ -1652,7 +1652,7 @@ class TestInterpreter extends FunSuite {
         Type.Tuple(List(Type.Str, Type.Bool)), loc), Type.Tuple(List(Type.Str, Type.Bool)), loc),
       rules, Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(2))(result)
+    assertResult(Value.mkInt(2))(result)
   }
 
   test("Interpreter - Pattern.Literal.Tuple02") {
@@ -1674,7 +1674,7 @@ class TestInterpreter extends FunSuite {
       Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int)))), loc),
       rules, Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(24))(result)
+    assertResult(Value.mkInt(24))(result)
   }
 
   test("Interpreter - Pattern.Tag01") {
@@ -1693,7 +1693,7 @@ class TestInterpreter extends FunSuite {
           Type.Tuple(List(Type.Str, Type.Int)), loc), enumTpe, loc), tagTpe, loc),
       rules, Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(42))(result)
+    assertResult(Value.mkInt(42))(result)
   }
 
   test("Interpreter - Pattern.Tag02") {
@@ -1713,7 +1713,7 @@ class TestInterpreter extends FunSuite {
           Type.Tuple(List(Type.Str, Type.Int)), loc), enumTpe, loc), tagTpe, loc),
       rules, Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(42))(result)
+    assertResult(Value.mkInt(42))(result)
   }
 
   test("Interpreter - Pattern.Tag03") {
@@ -1733,7 +1733,7 @@ class TestInterpreter extends FunSuite {
           Type.Tuple(List(Type.Str, Type.Int)), loc), enumTpe, loc), tagTpe, loc),
       rules, Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(0))(result)
+    assertResult(Value.mkInt(0))(result)
   }
 
   test("Interpreter - Pattern.Tag04") {
@@ -1752,7 +1752,7 @@ class TestInterpreter extends FunSuite {
     val input = Expression.Match(
       Expression.Lit(Literal.Tag(name, identT, Literal.Unit(loc), enumTpe, loc), tagTpeT, loc), rules, Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(0))(result)
+    assertResult(Value.mkInt(0))(result)
   }
 
   test("Interpreter - Pattern.Tag05") {
@@ -1771,7 +1771,7 @@ class TestInterpreter extends FunSuite {
     val input = Expression.Match(
       Expression.Lit(Literal.Tag(name, identB, Literal.Unit(loc), enumTpe, loc), tagTpeB, loc), rules, Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(0))(result)
+    assertResult(Value.mkInt(0))(result)
   }
 
   test("Interpreter - Pattern.Tag06") {
@@ -1790,7 +1790,7 @@ class TestInterpreter extends FunSuite {
     val input = Expression.Match(
       Expression.Lit(Literal.Tag(name, identV, Literal.Int(42, loc), enumTpe, loc), tagTpeV, loc), rules, Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(42))(result)
+    assertResult(Value.mkInt(42))(result)
   }
 
   test("Interpreter - Pattern.Tag07") {
@@ -1809,7 +1809,7 @@ class TestInterpreter extends FunSuite {
     val input = Expression.Match(
       Expression.Lit(Literal.Tag(name, identV, Literal.Int(100, loc), enumTpe, loc), tagTpeV, loc), rules, Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(100))(result)
+    assertResult(Value.mkInt(100))(result)
   }
 
   test("Interpreter - Pattern.Tuple01") {
@@ -1822,7 +1822,7 @@ class TestInterpreter extends FunSuite {
       Expression.Lit(Literal.Tuple(List(Literal.Int(5, loc), Literal.Int(6, loc)),
         Type.Tuple(List(Type.Int, Type.Int)), loc), Type.Tuple(List(Type.Int, Type.Int)), loc), rules, Type.Int, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Int(11))(result)
+    assertResult(Value.mkInt(11))(result)
   }
 
   test("Interpreter - Pattern.Tuple02") {
@@ -1893,7 +1893,7 @@ class TestInterpreter extends FunSuite {
       Expression.Lit(Literal.Str("hi", loc), Type.Str, loc)),
       Type.Tuple(List(Type.Int, Type.Bool, Type.Str)), loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tuple(List(Value.Int(42), Value.mkBool(false), Value.Str("hi"))))(result)
+    assertResult(Value.Tuple(List(Value.mkInt(42), Value.mkBool(false), Value.Str("hi"))))(result)
   }
 
   test("Interpreter - Expression.Tuple02") {
@@ -1903,7 +1903,7 @@ class TestInterpreter extends FunSuite {
         Expression.Lit(Literal.Int(8, loc), Type.Int, loc)), Type.Tuple(List(Type.Int, Type.Int)), loc)),
       Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int)))), loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tuple(List(Value.Int(4), Value.Tuple(List(Value.Int(12), Value.Int(8))))))(result)
+    assertResult(Value.Tuple(List(Value.mkInt(4), Value.Tuple(List(Value.mkInt(12), Value.mkInt(8))))))(result)
   }
 
   test("Interpreter - Expression.Tuple03") {
@@ -1931,7 +1931,7 @@ class TestInterpreter extends FunSuite {
         Type.Str, loc)),
       Type.Tuple(List(Type.Int, Type.Bool, Type.Str)), loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tuple(List(Value.Int(42), Value.mkBool(false), Value.Str("hi"))))(result)
+    assertResult(Value.Tuple(List(Value.mkInt(42), Value.mkBool(false), Value.Str("hi"))))(result)
   }
 
   test("Interpreter - Expression.Tag01") {
@@ -1973,7 +1973,7 @@ class TestInterpreter extends FunSuite {
         Type.Int, loc)),
       Type.Tuple(List(Type.Str, Type.Int)), loc), enumTpe, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "NameAndAge", Value.Tuple(List(Value.Str("James"), Value.Int(42)))))(result)
+    assertResult(Value.Tag(name, "NameAndAge", Value.Tuple(List(Value.Str("James"), Value.mkInt(42)))))(result)
   }
 
   test("Interpreter - Expression.Tag03") {
@@ -2001,7 +2001,7 @@ class TestInterpreter extends FunSuite {
         Type.Int, loc),
       enumTpe, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "Val", Value.Int(0)))(result)
+    assertResult(Value.Tag(name, "Val", Value.mkInt(0)))(result)
   }
 
   test("Interpreter - Expression.Tag06") {
@@ -2014,14 +2014,14 @@ class TestInterpreter extends FunSuite {
         Type.Int, loc),
       enumTpe, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "Val", Value.Int(-240)))(result)
+    assertResult(Value.Tag(name, "Val", Value.mkInt(-240)))(result)
   }
 
   test("Interpreter - Expression.Tag07") {
     import ConstantPropTagDefs._
     val input = Expression.Tag(name, identV, Expression.Lit(Literal.Int(1241, loc), Type.Int, loc), enumTpe, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "Val", Value.Int(1241)))(result)
+    assertResult(Value.Tag(name, "Val", Value.mkInt(1241)))(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////

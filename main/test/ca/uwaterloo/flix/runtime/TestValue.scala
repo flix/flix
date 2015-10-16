@@ -49,4 +49,49 @@ class TestValue extends FunSuite {
 
     assert(result == "true")
   }
+
+  test("Value.Int equality") {
+    val i1 = Value.mkInt(0)
+    val i2 = Value.mkInt(-1337)
+    val i3 = Value.mkInt(0)
+    val i4 = Value.mkInt(-1337)
+
+    assert(i1 != i2)
+    assert(i1 == i3)
+    assert(i1 != i4)
+    assert(i2 != i3)
+    assert(i2 == i4)
+    assert(i3 != i4)
+  }
+
+  test("Value.Int hashing") {
+    val set: mutable.Set[Value.Int] = mutable.Set()
+    val i1 = Value.mkInt(42)
+    val i2 = Value.mkInt(42)
+    val i3 = Value.mkInt(0xdeadbeef)
+
+    set += i1
+    assert(set.contains(i1))
+    assert(set.contains(i2))
+    assert(!set.contains(i3))
+
+    set -= i2
+    assert(set.isEmpty)
+
+    set += i1
+    set += i2
+    set += i3
+    assert(set.size == 2)
+  }
+
+  test("Value.Int pattern matching") {
+    val v: Value = Value.mkInt(123456789)
+
+    val result = v match {
+      case Value.Int(i) => s"$i"
+      case _ => "unknown"
+    }
+
+    assert(result == "123456789")
+  }
 }

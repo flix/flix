@@ -2,6 +2,8 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 
+import scala.collection.mutable
+
 sealed trait Value {
   def toBool: Boolean = {
     this.asInstanceOf[Value.Bool].b
@@ -28,18 +30,17 @@ sealed trait Value {
 }
 
 object Value {
-  private val TRUE = new Bool(true)
-  private val FALSE = new Bool(false)
-
-  def mkBool(b: Boolean) = if (b) TRUE else FALSE
-
   case object Unit extends Value
+
+  /***************************************************************************
+   * Value.Bool implementation                                               *
+   ***************************************************************************/
 
   final class Bool private[Value] (val b: scala.Boolean) extends Value {
     override val toString: String = s"Value.Bool($b)"
 
-    override def equals(other: Any): Boolean = other match {
-      case that: Bool => that eq this
+    override def equals(other: Any): scala.Boolean = other match {
+      case that: Value.Bool => that eq this
       case _ => false
     }
 
@@ -47,10 +48,45 @@ object Value {
   }
 
   object Bool {
-    def unapply(b: Bool): Option[scala.Boolean] = Some(b.b)
+    def unapply(v: Value.Bool): Option[scala.Boolean] = Some(v.b)
   }
 
-  case class Int(i: scala.Int) extends Value
+  private val TRUE = new Value.Bool(true)
+  private val FALSE = new Value.Bool(false)
+
+  def mkBool(b: scala.Boolean) = if (b) TRUE else FALSE
+
+  /***************************************************************************
+   * Value.Int implementation                                                *
+   ***************************************************************************/
+
+  final class Int private[Value] (val i: scala.Int) extends Value {
+    override val toString: String = s"Value.Int($i)"
+
+    override def equals(other: Any): scala.Boolean = other match {
+      case that: Value.Int => that eq this
+      case _ => false
+    }
+
+    override val hashCode: scala.Int = i.hashCode
+  }
+
+  object Int {
+    def unapply(v: Value.Int): Option[scala.Int] = Some(v.i)
+  }
+
+  // TODO: Need to use weak (or soft?) references so cache doesn't grow without bound
+  private val intCache = mutable.HashMap[scala.Int, Value.Int]()
+
+  def mkInt(i: scala.Int) = if (intCache.contains(i)) {
+    intCache(i)
+  } else {
+    val ret = new Value.Int(i)
+    intCache(i) = ret
+    ret
+  }
+
+
 
   case class Str(s: java.lang.String) extends Value
 
