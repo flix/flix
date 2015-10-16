@@ -3,8 +3,7 @@ package ca.uwaterloo.flix
 import java.nio.file.Paths
 
 import ca.uwaterloo.flix.language.Compiler
-import ca.uwaterloo.flix.runtime.Solver.SolverContext
-import ca.uwaterloo.flix.runtime.{Solver, SimpleSolver}
+import ca.uwaterloo.flix.runtime.Solver
 import ca.uwaterloo.flix.util.{Shell, Options}
 
 object Main {
@@ -18,7 +17,7 @@ object Main {
     if (ast.nonEmpty) {
       implicit val sCtx = Solver.SolverContext(ast.get)
 
-      val solver = new SimpleSolver()
+      val solver = new Solver()
       solver.solve()
 
       if (args.exists(_.contains("-i"))) {
