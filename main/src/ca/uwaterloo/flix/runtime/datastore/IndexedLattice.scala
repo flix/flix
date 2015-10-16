@@ -5,13 +5,15 @@ import ca.uwaterloo.flix.runtime.{Solver, Value}
 
 import scala.collection.mutable
 
-class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) {
-
+class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
+  // TODO: Initialize store for all indexes?
   private val store = mutable.Map.empty[(Seq[Int], Seq[Value]), mutable.Map[Array[Value], Array[Value]]]
 
   // TODO: What if the lattice has only one lattice column????
   private val defaultIndex: Seq[Int] = Seq(0)
   assert(lattice.keys.nonEmpty)
+
+
 
   private val split = lattice.keys.length
 
@@ -19,7 +21,9 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
 
   private val bottom = latticeOps.map(_.bot)
 
-  def table: Iterator[Array[Value]] = scan
+  def table: Iterator[Array[Value]] = scan.map {
+    case (keys, elms) => elms ++ keys
+  }
 
   /**
    * Processes a new inferred fact `f`.
@@ -62,16 +66,37 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
     true
   }
 
-  def lookup(keys: Array[Value], values: Array[Value]): Iterator[Array[Value]] = {
-    ???
+
+  def lookup(row: Array[Value]): Iterator[Array[Value]] = {
+    val (keys, elms) = row.splitAt(split)
+
+    val idx = keys.toSeq.zipWithIndex.collect {
+      case (v, i) if v != null => i
+    }
+    val key = (idx, idx map row)
+
+    val resultSet = if (indexes contains idx) {
+      store.getOrElse(key, mutable.Map.empty).iterator
+    } else {
+      scan
+    }
+
+    resultSet filter {
+      case (keys2, elms2) => keyMatches(keys, keys2) && elmsMatches(elms, elms2)
+    } map {
+      case (keys, elms) => keys ++ elms
+    }
   }
 
   /**
    * Returns all rows in the relation using a table scan.
    */
   // TODO: Improve performance ...
-  private def scan: Iterator[Array[Value]] = ???
+  private def scan: Iterator[(Array[Value], Array[Value])] = ???
 
+  def keyMatches(keys: Array[Value], keys2: Array[Value]): Boolean = ???
+
+  def elmsMatches(elms: Array[Value], elms2: Array[Value]): Boolean = ???
 
   private def leq(a: Array[Value], b: Array[Value]): Boolean = ???
 

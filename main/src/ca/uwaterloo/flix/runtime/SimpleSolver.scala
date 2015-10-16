@@ -212,29 +212,30 @@ class SimpleSolver(implicit sCtx: Solver.SolverContext) extends Solver {
      */
     def recur(ps: List[TypedAst.Predicate.Body], row: mutable.Map[String, Value]): Unit = ps match {
       case Nil => evalHead(rule, row.toMap)
-      case Predicate.Body.Relation(name, terms, _, _) :: xs => sCtx.root.collections(name) match {
-        case r: Collection.Relation =>
-          val relation = dataStore.relations(name)
-          val values = terms.map(t => peval(t, row.toMap))
-          val offset2var = terms.zipWithIndex.foldLeft(Map.empty[Int, String]) {
-            case (macc, (Term.Body.Var(ident, _, _), i)) => macc + (i -> ident.name)
-            case (macc, _) => macc
-          }
+      case Predicate.Body.Relation(name, terms, _, _) :: xs =>
+        val collection = sCtx.root.collections(name) match {
+          case r: Collection.Relation => dataStore.relations(name)
+          case l: Collection.Lattice => dataStore.lattices(name)
+        }
 
-          for (row2 <- relation.lookup(values.toArray)) {
-            val newRow = row.clone()
-            for (i <- row2.indices) {
-              offset2var.get(i) match {
-                case None => // nop
-                case Some(x) =>
-                  newRow += (x -> row2(i))
-              }
+        val values = terms.map(t => peval(t, row.toMap))
+        val offset2var = terms.zipWithIndex.foldLeft(Map.empty[Int, String]) {
+          case (macc, (Term.Body.Var(ident, _, _), i)) => macc + (i -> ident.name)
+          case (macc, _) => macc
+        }
+
+        for (row2 <- collection.lookup(values.toArray)) {
+          val newRow = row.clone()
+          for (i <- row2.indices) {
+            offset2var.get(i) match {
+              case None => // nop
+              case Some(x) =>
+                newRow += (x -> row2(i))
             }
-            recur(xs, newRow)
           }
+          recur(xs, newRow)
+        }
 
-        case l: Collection.Lattice => ???
-      }
 
       case Predicate.Body.Function(name, terms, _, _) :: xs => ???
       case Predicate.Body.NotEqual(ident1, ident2, _, _) :: xs =>

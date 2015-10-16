@@ -17,8 +17,8 @@ import scala.collection.mutable
  * @param relation the relation.
  * @param indexes the indexes.
  */
-class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) {
-
+class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
+  // TODO: Initialize store for all indexes?
   /**
    * A map from keys, i.e. (index, value) pairs, to rows matching the key.
    */
@@ -80,13 +80,17 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
     }
     val key = (idx, idx map row)
 
-    if (indexes contains idx) {
+    val resultSet = if (indexes contains idx) {
       // use index
-      store(key).iterator
+      store(key).iterator // TODO: Maybe be empty?
     } else {
       // table scan
       scan
     }
+
+    // TODO: Must filter resultSet
+
+    resultSet
   }
 
   /**
