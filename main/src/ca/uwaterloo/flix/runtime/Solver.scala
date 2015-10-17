@@ -101,7 +101,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     val elapsed = System.nanoTime() - t
     println(s"Successfully solved in ${elapsed / 1000000} msec.")
 
-    directives()
+    checkAssertions()
   }
 
   /**
@@ -212,23 +212,6 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     }
   }
 
-  /**
-   * Processes all directives in the program.
-   */
-  def directives(): Unit = {
-    for (directive <- sCtx.root.directives.prints) {
-      print(directive)
-    }
-
-    val assertedFacts = @@(sCtx.root.directives.assertedFacts map checkAssertedFact)
-    if (assertedFacts.hasErrors) {
-      assertedFacts.errors.foreach(e => println(e.format))
-    }
-
-    for (directive <- sCtx.root.directives.assertedRules) {
-      checkAssertedRule(directive)
-    }
-  }
 
   /**
    * Evaluates the given print `directive`.
@@ -279,10 +262,31 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   }
 
   /**
+   * Checks all assertions.
+   */
+  def checkAssertions(): Unit = {
+    for (directive <- sCtx.root.directives.prints) {
+      print(directive)
+    }
+
+    // asserted rules
+    val assertedFacts = @@(sCtx.root.directives.assertedFacts map checkAssertedFact)
+    if (assertedFacts.hasErrors) {
+      assertedFacts.errors.foreach(e => println(e.format))
+    }
+
+    // asserted facts
+    val assertedRules = @@(sCtx.root.directives.assertedRules map checkAssertedRule)
+    if (assertedRules.hasErrors) {
+      assertedRules.errors.foreach(e => println(e.format))
+    }
+  }
+
+  /**
    * Verifies that the given asserted fact `d` holds in the minimal model.
    */
   def checkAssertedFact(d: Directive.AssertFact): Validation[Boolean, SolverError] = {
-    // TODO
+    // TODO: Implement checkAssertedFact.
     false.toSuccess
   }
 
@@ -290,7 +294,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
    * Verifies that the given asserted rule `d` holds in the minimal model.
    */
   def checkAssertedRule(d: Directive.AssertRule): Validation[Boolean, SolverError] = {
-    // TODO
+    // TODO: Implement checkAssertedRule.
     false.toSuccess
   }
 
