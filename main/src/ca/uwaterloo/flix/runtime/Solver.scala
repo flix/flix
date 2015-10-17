@@ -80,6 +80,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
 
     // adds all facts to the database.
     for (fact <- sCtx.root.facts) {
+      // TODO: Call evalHead
       val name = fact.head.asInstanceOf[TypedAst.Predicate.Head.Relation].name // TODO: Cast
       val values = fact.head.asInstanceOf[TypedAst.Predicate.Head.Relation].terms map (term => Interpreter.evalHeadTerm(term, sCtx.root, Map.empty)) // TODO: Cast
       inferredFact(name, values)
