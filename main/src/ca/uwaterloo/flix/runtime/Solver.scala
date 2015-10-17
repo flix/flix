@@ -66,12 +66,6 @@ class Solver(implicit sCtx: Solver.SolverContext) {
    */
   val dataStore = new DataStore()
 
-  //  TODO: deprecated
-  val dbRel = mutable.Map.empty[Name.Resolved, List[List[Value]]]
-
-  //  TODO: deprecated
-  val dbLat = mutable.Map.empty[Name.Resolved, Map[List[Value], List[Value]]]
-
   /**
    * The work list of pending predicate names and their associated values.
    */
@@ -115,86 +109,18 @@ class Solver(implicit sCtx: Solver.SolverContext) {
    */
   def inferredFact(name: Name.Resolved, fact: List[Value]): Unit = sCtx.root.collections(name) match {
     case r: TypedAst.Collection.Relation =>
-      inferredRelationFact(r, fact.toArray)
-
       val changed = dataStore.relations(name).inferredFact(fact.toArray)
       if (changed) {
         worklist += ((r.name, fact))
       }
 
     case l: TypedAst.Collection.Lattice =>
-      inferredLatticeFact(l, fact.toArray)
-
       val changed = dataStore.lattices(name).inferredFact(fact.toArray)
       if (changed) {
         worklist += ((l.name, fact))
       }
 
   }
-
-  /**
-   * Processes a new fact `f` for the relation `r`.
-   *
-   * If the fact is new it is added to the worklist together with its dependencies.
-   *
-   * @param r the relation.
-   * @param f the fact.
-   */
-  def inferredRelationFact(r: Collection.Relation, f: Array[Value]): Unit = {
-    val row = f.toList
-    val table = dbRel.getOrElse(r.name, List.empty)
-    val rowExists = table.contains(row)
-    if (!rowExists) {
-      dbRel += (r.name -> (row :: table))
-      //worklist += ((r.name, row))
-    }
-  }
-
-  /**
-   * Processes a new fact `f` for the lattice `l`.
-   *
-   * If the fact is new it is added to the worklist together with its dependencies.
-   *
-   * @param l the lattice.
-   * @param f the fact.
-   */
-  def inferredLatticeFact(l: Collection.Lattice, f: Array[Value]): Unit = {
-    val defn = l
-    val name = defn.name
-    val row = f.toList
-
-    val keys = l.keys
-    val latAttr = l.values
-    val map = dbLat.getOrElse(name, Map.empty)
-
-    val (ks, vs) = row.splitAt(keys.size)
-
-    map.get(ks) match {
-      case None =>
-        val result = map + (ks -> vs)
-        dbLat += (name -> result)
-        worklist += ((name, row))
-      case Some(vs2) =>
-        var changed = false
-
-        val vs3 = (vs zip vs2 zip latAttr) map {
-          case ((v1, v2), TypedAst.Attribute(_, tpe)) =>
-            val lat = sCtx.root.lattices(tpe)
-            val newLub = Interpreter.eval2(lat.lub, v1, v2, sCtx.root)
-            val isSubsumed = Interpreter.eval2(lat.leq, newLub, v2, sCtx.root).toBool
-
-            changed = changed || !isSubsumed
-            newLub
-        }
-
-        if (changed) {
-          val result = map + (ks -> vs3)
-          dbLat += (name -> result)
-          //          worklist += ((name, row)) // TODO: Row is incorrect here.
-        }
-    }
-  }
-
 
   /**
    * Evaluates the head of the given `rule` under the given environment `env0`.
@@ -259,161 +185,21 @@ class Solver(implicit sCtx: Solver.SolverContext) {
 
     //  TODO: Sort the body predicates...
     recur(rule.body, mutable.Map.empty ++ env0)
-
-
-
-    /**
-     * Extend the given environment `env` according to the given predicate `p`.
-     */
-    // TODO: Use loop instead.
-    def visit(p: TypedAst.Predicate.Body, env: List[Map[String, Value]]): List[Map[String, Value]] = p match {
-      case r: Predicate.Body.Relation => {
-
-        val defn = sCtx.root.collections(r.name)
-        defn match {
-          case _: Collection.Relation =>
-
-            val relation = dataStore.relations(r.name)
-            val values = r.terms.toArray.map(t => peval(t, env.head)) // TODO: FIXME and switch to tuple-at-a-time.
-            relation.lookup(values)
-
-            // OLD implementation ----
-            val table = dbRel(r.name)
-            table flatMap {
-              case row => unifyRelRow(row, r.terms) match {
-                case None => List.empty
-                case Some(m) => extend(env, m)
-              }
-            }
-          // OLD implementation ----
-          case l: Collection.Lattice =>
-            val table = dbLat(r.name)
-
-            val keyAttr = l.keys
-            val (keyTerms, valueTerms) = r.terms.splitAt(keyAttr.size)
-
-            val res = table flatMap {
-              case (keys, values) =>
-                unifyRelRow(keys, keyTerms) match {
-                  case None => List.empty[Map[String, Value]]
-                  case Some(m) => unifyLatRow(values, valueTerms) match {
-                    case None => List.empty[Map[String, Value]]
-                    case Some(m2) =>
-                      extend(env, m2) // TODO: This is incorrect if env/m2 contains lattice variables.
-                  }
-                }
-            }
-
-            res.toList
-        }
-      }
-
-      case r: Predicate.Body.Function =>
-        val f = sCtx.root.constants(r.name)
-        env flatMap {
-          case m =>
-            val result = Interpreter.evalCall(f, r.terms, sCtx.root, m).toBool
-            if (!result)
-              None
-            else
-              Some(m)
-        }
-
-      case Predicate.Body.NotEqual(ident1, ident2, _, _) =>
-        env flatMap {
-          case m =>
-            val v1 = m(ident1.name)
-            val v2 = m(ident2.name)
-            if (v1 == v2)
-              None
-            else
-              Some(m)
-        }
-
-      case Predicate.Body.Read(terms, path, _, _) => ???
-    }
-
-    // fold the environment over every rule in the body.
-    val envs = rule.body.foldLeft(List(env0)) {
-      case (env1, p) => visit(p, env1)
-    }
-
-    // evaluate the head predicate for every satisfying environment. 
-    for (env <- envs) {
-      evalHead(rule, env)
-    }
   }
-
 
   /**
-   * Unifies the given `row` with the given terms.
+   * Evaluates the given body term `t` to a value.
+   *
+   * Returns `null` if the term is a free variable.
    */
-  def unifyRelRow(row: List[Value], terms: List[Body]): Option[Map[String, Value]] = {
-    assert(row.length == terms.length)
-
-    (row zip terms).foldLeft(Option(Map.empty[String, Value])) {
-      case (None, (value, term)) => None
-      case (Some(macc), (value, term)) => term match {
-        case Term.Body.Wildcard(tpe, loc) => Some(macc)
-        case Term.Body.Var(ident, tpe, loc) => macc.get(ident.name) match {
-          case None => Some(macc + (ident.name -> value))
-          case Some(otherValue) =>
-            if (value != otherValue)
-              None
-            else
-              Some(macc)
-        }
-        case Term.Body.Lit(lit, tpe, loc) =>
-          val otherValue = Interpreter.evalLit(lit)
-          if (value != otherValue)
-            None
-          else
-            Some(macc)
-      }
-    }
-  }
-
-  def unifyLatRow(values: List[Value], terms: List[Body]): Option[Map[String, Value]] = {
-    assert(values.length == terms.length)
-
-    (values zip terms).foldLeft(Option(Map.empty[String, Value])) {
-      case (None, (value, term)) => None
-      case (Some(macc), (value, term)) => term match {
-        case Term.Body.Wildcard(tpe, loc) => Some(macc)
-        case Term.Body.Var(ident, tpe, loc) => macc.get(ident.name) match {
-          case None => Some(macc + (ident.name -> value))
-          case Some(otherValue) =>
-            if (value != otherValue)
-              None
-            else
-              Some(macc)
-        }
-        case Term.Body.Lit(lit, tpe, loc) =>
-          // TODO: Has to call leq.
-          ???
-      }
-    }
-  }
-
-
-  /**
-   * Extends the given environments `envs` with the environment `m`.
-   */
-  def extend(envs: List[Map[String, Value]], m: Map[String, Value]): List[Map[String, Value]] = {
-    envs flatMap {
-      case env =>
-        m.foldLeft(Option(env)) {
-          case (None, _) => None
-          case (Some(macc), (key, value)) => macc.get(key) match {
-            case None => Some(macc + (key -> value))
-            case Some(otherValue) =>
-              if (value != otherValue)
-                None
-              else
-                Some(macc)
-          }
-        }
-    }
+  def peval(t: TypedAst.Term.Body, env: Map[String, Value]): Value = t match {
+    case t: TypedAst.Term.Body.Wildcard => null
+    case t: TypedAst.Term.Body.Var =>
+      if (env contains t.ident.name)
+        env(t.ident.name)
+      else
+        null
+    case t: TypedAst.Term.Body.Lit => Interpreter.evalLit(t.lit)
   }
 
   /**
@@ -425,7 +211,6 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       case _ => false
     }
   }
-
 
   /**
    * Processes all directives in the program.
@@ -509,19 +294,5 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     false.toSuccess
   }
 
-  /**
-   * Evaluates the given body term `t` to a value.
-   *
-   * Returns `null` if the term is a free variable.
-   */
-  def peval(t: TypedAst.Term.Body, env: Map[String, Value]): Value = t match {
-    case t: TypedAst.Term.Body.Wildcard => null
-    case t: TypedAst.Term.Body.Var =>
-      if (env contains t.ident.name)
-        env(t.ident.name)
-      else
-        null
-    case t: TypedAst.Term.Body.Lit => Interpreter.evalLit(t.lit)
-  }
 
 }
