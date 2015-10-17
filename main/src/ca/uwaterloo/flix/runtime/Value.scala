@@ -14,10 +14,23 @@ sealed trait Value {
   def toStr: String = {
     this.asInstanceOf[Value.Str].s
   }
+
+  //  TODO: Figure out a place to put all the formatting functions.
+  def pretty: String = this match {
+    case Value.Unit => "()"
+    case Value.Bool(b) => b.toString
+    case Value.Int(i) => i.toString
+    case Value.Str(s) => s.toString
+    case Value.Tag(enum, tag, value) => enum + "." + tag + value.pretty
+    case Value.Tuple(elms) => "(" + (elms map (e => e.pretty)) + ")"
+    case Value.Closure(_, _, _) => ???
+  }
 }
+
 //  TODO: Intern these values.
 
 object Value {
+
   case object Unit extends Value
 
   case class Bool(b: scala.Boolean) extends Value
@@ -31,4 +44,5 @@ object Value {
   case class Tuple(elms: List[Value]) extends Value
 
   case class Closure(formals: List[TypedAst.FormalArg], body: TypedAst.Expression, env: Interpreter.Env) extends Value
+
 }

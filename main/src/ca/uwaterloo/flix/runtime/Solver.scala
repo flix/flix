@@ -130,7 +130,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       val row = p.terms map (t => Interpreter.evalHeadTerm(t, sCtx.root, env0))
       inferredFact(p.name, row)
     case p: Predicate.Head.Trace =>
-      val row = p.terms map (t => pretty(Interpreter.evalHeadTerm(t, sCtx.root, env0)))
+      val row = p.terms map (t => Interpreter.evalHeadTerm(t, sCtx.root, env0).pretty)
       val out = "Trace(" + row.mkString(", ") + ")"
       Console.println(out)
     case p: Predicate.Head.Write => // NOP - used when the fixpoint has been found.
@@ -225,7 +225,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
         val cols = r.attributes.map(_.ident.name)
         val ascii = new AsciiTable().withCols(cols: _*)
         for (row <- table.toSeq.sortBy(_.head.toString)) {
-          ascii.mkRow(row.toList map pretty)
+          ascii.mkRow(row.toList map (_.pretty))
         }
 
         Console.println(r.name)
@@ -239,7 +239,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
         val cols = l.keys.map(_.ident.name) ::: l.values.map(_.ident.name + "<>")
         val ascii = new AsciiTable().withCols(cols: _*)
         for (row <- table.toSeq.sortBy(_.head.toString)) {
-          ascii.mkRow(row.toList map pretty)
+          ascii.mkRow(row.toList map (_.pretty))
         }
 
         Console.println(l.name)
@@ -248,17 +248,6 @@ class Solver(implicit sCtx: Solver.SolverContext) {
         Console.println()
     }
 
-  }
-
-  // TODO: Move somewhere. Decide where
-  def pretty(v: Value): String = v match {
-    case Value.Unit => "()"
-    case Value.Bool(b) => b.toString
-    case Value.Int(i) => i.toString
-    case Value.Str(s) => s.toString
-    case Value.Tag(enum, tag, value) => enum + "." + tag + pretty(value)
-    case Value.Tuple(elms) => "(" + (elms map pretty) + ")"
-    case Value.Closure(_, _, _) => ??? // TODO: WHAT?
   }
 
   /**
