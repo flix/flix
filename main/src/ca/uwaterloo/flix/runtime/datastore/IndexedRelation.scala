@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.runtime.datastore
 
+import java.util
+
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.runtime.{Solver, Value}
 
@@ -18,7 +20,6 @@ import scala.collection.mutable
  * @param indexes the indexes.
  */
 class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
-  // TODO: Initialize store for all indexes?
   /**
    * A map from keys, i.e. (index, value) pairs, to rows matching the key.
    */
@@ -82,13 +83,13 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
 
     val resultSet = if (indexes contains idx) {
       // use index
-      store(key).iterator // TODO: Maybe be empty?
+      store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]]).iterator
     } else {
       // table scan
-      scan
+      scan filter {
+        case row2 => row sameElements row2
+      }
     }
-
-    // TODO: Must filter resultSet
 
     resultSet
   }
