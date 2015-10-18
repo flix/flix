@@ -79,18 +79,23 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
     val idx = row.toSeq.zipWithIndex.collect {
       case (v, i) if v != null => i
     }
-    val key = (idx, idx map row)
+    val key = (idx, idx map row) // TODO: There could be another index suitable for use.
 
     if (indexes contains idx) {
       // use index
       store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]]).iterator
     } else {
       // table scan
-      scan
-      // TODO: Incorrect, but must still filter.
-      //filter {
-      //  case row2 => row sameElements row2
-      //}
+      scan filter {
+        case row2 =>
+          var matches = true
+          for (i <- 0 until row.length) {
+            if (row(i) != null && row(i) != row2(i)) {
+              matches = false
+            }
+          }
+          matches
+      }
     }
   }
 
