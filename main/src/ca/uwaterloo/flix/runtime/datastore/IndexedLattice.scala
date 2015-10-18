@@ -17,11 +17,9 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
 
   private val split = lattice.keys.length
 
-  private val latticeOps: Array[TypedAst.Definition.BoundedLattice] = (lattice.values.map {
+  private val latticeOps: Array[TypedAst.Definition.BoundedLattice] = lattice.values.map {
     case TypedAst.Attribute(_, tpe) => sCtx.root.lattices(tpe)
-  }).toArray
-
-  private val bottom = latticeOps.map(_.bot)
+  }.toArray
 
   def table: Iterator[Array[Value]] = scan.map {
     case (keys, elms) => (keys.toSeq ++ elms.toSeq).toArray
@@ -104,6 +102,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
     case (keys, m) => m.toList
   }).flatten[(Seq[Value], Array[Value])].iterator
 
+
   def keyMatches(row: Array[Value], pat: Array[Value]): Boolean = {
     for (i <- row.indices) {
       val p = pat(i)
@@ -116,7 +115,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
 
   // TODO: Careful with lattice values, should not return boolean
   def elmsMatches(row: Array[Value], pat: Array[Value]): Boolean = {
-    // TODO: so this is incorrect.
+    // TODO: so this is incorrect. Need to use glb.
     for (i <- row.indices) {
       val p = pat(i)
       if (p != null && p != row(i)) {
