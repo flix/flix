@@ -86,9 +86,11 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
       store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]]).iterator
     } else {
       // table scan
-      scan filter {
-        case row2 => row sameElements row2
-      }
+      scan
+      // TODO: Incorrect, but must still filter.
+      //filter {
+      //  case row2 => row sameElements row2
+      //}
     }
   }
 
