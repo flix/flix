@@ -61,6 +61,16 @@ class Solver(implicit sCtx: Solver.SolverContext) {
 
   }
 
+  sealed trait WorkItem
+
+  object WorkItem {
+
+    case class NewRelationalFact() extends WorkItem
+
+    case class NewLatticeFact() extends WorkItem
+
+  }
+
   /**
    * The primary data store that holds all relations and lattices.
    */
@@ -206,6 +216,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   /**
    * Returns all rules where the given `name` occurs in a body predicate of the rule.
    */
+  // TODO: Pass row here..
   def dependencies(name: Name.Resolved): List[TypedAst.Constraint.Rule] = sCtx.root.rules.filter {
     case rule => rule.body.exists {
       case r: Predicate.Body.Relation => name == r.name
