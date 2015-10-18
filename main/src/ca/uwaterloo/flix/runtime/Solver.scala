@@ -117,7 +117,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       case (macc, (name, relation)) => macc + (name -> relation.table.toList.map(_.toList))
     }
 
-    Model(relations, Map.empty)
+    Model(relations, Map.empty) // TODO: Lattices
   }
 
   /**
