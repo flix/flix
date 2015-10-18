@@ -84,7 +84,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   /**
    * Solves the current Flix program.
    */
-  def solve(): Unit = {
+  def solve(): Model = {
     // measure the time elapsed.
     val t = System.nanoTime()
 
@@ -111,6 +111,13 @@ class Solver(implicit sCtx: Solver.SolverContext) {
 
     // verify assertions.
     checkAssertions()
+
+    // construct the model.
+    val relations = dataStore.relations.foldLeft(Map.empty[Name.Resolved, List[List[Value]]]) {
+      case (macc, (name, relation)) => macc + (name -> relation.table.toList.map(_.toList))
+    }
+
+    Model(relations, Map.empty)
   }
 
   /**

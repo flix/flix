@@ -81,7 +81,7 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
     }
     val key = (idx, idx map row)
 
-    val resultSet = if (indexes contains idx) {
+    if (indexes contains idx) {
       // use index
       store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]]).iterator
     } else {
@@ -90,8 +90,6 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
         case row2 => row sameElements row2
       }
     }
-
-    resultSet
   }
 
   /**
