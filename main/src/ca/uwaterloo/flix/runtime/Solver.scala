@@ -71,19 +71,16 @@ class Solver(implicit sCtx: Solver.SolverContext) {
    */
   val worklist = mutable.Queue.empty[(Name.Resolved, List[Value])]
 
-
   /**
-   * Solves the Flix program.
+   * Solves the current Flix program.
    */
   def solve(): Unit = {
+    // measure the time elapsed.
     val t = System.nanoTime()
 
-    // adds all facts to the database.
+    // evaluate all facts.
     for (fact <- sCtx.root.facts) {
-      // TODO: Call evalHead
-      val name = fact.head.asInstanceOf[TypedAst.Predicate.Head.Relation].name // TODO: Cast
-      val values = fact.head.asInstanceOf[TypedAst.Predicate.Head.Relation].terms map (term => Interpreter.evalHeadTerm(term, sCtx.root, Map.empty)) // TODO: Cast
-      inferredFact(name, values)
+      evalHead(fact.head, Map.empty)
     }
 
     // iterate until fixpoint.
@@ -94,14 +91,15 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       // re-evaluate all dependencies.
       val rules = dependencies(name)
       for (rule <- rules) {
-        // TODO: Use `row` as the initial environment to speedup computation.
         evalBody(rule, Map.empty)
       }
     }
 
+    // computed elapsed time.
     val elapsed = System.nanoTime() - t
     println(s"Successfully solved in ${elapsed / 1000000} msec.")
 
+    // verify assertions.
     checkAssertions()
   }
 
@@ -120,13 +118,12 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       if (changed) {
         worklist += ((l.name, fact))
       }
-
   }
 
   /**
-   * Evaluates the head of the given `rule` under the given environment `env0`.
+   * Evaluates the given head predicate `p` under the given environment `env0`.
    */
-  def evalHead(rule: Rule, env0: Map[String, Value]): Unit = rule.head match {
+  def evalHead(p: Predicate.Head, env0: Map[String, Value]): Unit = p match {
     case p: Predicate.Head.Relation =>
       val row = p.terms map (t => Interpreter.evalHeadTerm(t, sCtx.root, env0))
       inferredFact(p.name, row)
@@ -148,7 +145,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
      * Performs tuple-at-a-time propagation.
      */
     def recur(ps: List[TypedAst.Predicate.Body], row: mutable.Map[String, Value]): Unit = ps match {
-      case Nil => evalHead(rule, row.toMap)
+      case Nil => evalHead(rule.head, row.toMap)
       case Predicate.Body.Relation(name, terms, _, _) :: xs =>
         val collection = sCtx.root.collections(name) match {
           case r: Collection.Relation => dataStore.relations(name)
