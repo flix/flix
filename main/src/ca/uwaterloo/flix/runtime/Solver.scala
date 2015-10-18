@@ -156,7 +156,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
           case l: Collection.Lattice => dataStore.lattices(name)
         }
 
-        val values = terms.map(t => peval(t, row.toMap))
+        val values = terms.map(t => eval(t, row.toMap))
         val offset2var = terms.zipWithIndex.foldLeft(Map.empty[Int, String]) {
           case (macc, (Term.Body.Var(ident, _, _), i)) => macc + (i -> ident.name)
           case (macc, _) => macc
@@ -173,7 +173,6 @@ class Solver(implicit sCtx: Solver.SolverContext) {
           }
           recur(xs, newRow)
         }
-
 
       case Predicate.Body.Function(name, terms, _, _) :: xs => ???
       case Predicate.Body.NotEqual(ident1, ident2, _, _) :: xs =>
@@ -194,7 +193,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
    *
    * Returns `null` if the term is a free variable.
    */
-  def peval(t: TypedAst.Term.Body, env: Map[String, Value]): Value = t match {
+  def eval(t: TypedAst.Term.Body, env: Map[String, Value]): Value = t match {
     case t: TypedAst.Term.Body.Wildcard => null
     case t: TypedAst.Term.Body.Var =>
       if (env contains t.ident.name)
