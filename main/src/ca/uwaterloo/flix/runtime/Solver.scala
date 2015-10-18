@@ -69,7 +69,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   /**
    * The work list of pending predicate names and their associated values.
    */
-  val worklist = mutable.Queue.empty[(Name.Resolved, List[Value])]
+  val worklist = mutable.Queue.empty[(Name.Resolved, Array[Value])]
 
   /**
    * Solves the current Flix program.
@@ -106,15 +106,15 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   /**
    * Processes an inferred `fact` for the relation or lattice with the `name`.
    */
-  def inferredFact(name: Name.Resolved, fact: List[Value]): Unit = sCtx.root.collections(name) match {
+  def inferredFact(name: Name.Resolved, fact: Array[Value]): Unit = sCtx.root.collections(name) match {
     case r: TypedAst.Collection.Relation =>
-      val changed = dataStore.relations(name).inferredFact(fact.toArray)
+      val changed = dataStore.relations(name).inferredFact(fact)
       if (changed) {
         worklist += ((r.name, fact))
       }
 
     case l: TypedAst.Collection.Lattice =>
-      val changed = dataStore.lattices(name).inferredFact(fact.toArray)
+      val changed = dataStore.lattices(name).inferredFact(fact)
       if (changed) {
         worklist += ((l.name, fact))
       }
@@ -125,8 +125,12 @@ class Solver(implicit sCtx: Solver.SolverContext) {
    */
   def evalHead(p: Predicate.Head, env0: Map[String, Value]): Unit = p match {
     case p: Predicate.Head.Relation =>
-      val row = p.terms map (t => Interpreter.evalHeadTerm(t, sCtx.root, env0))
-      inferredFact(p.name, row)
+      val terms = p.terms.toArray
+      val fact = Array.ofDim[Value](p.terms.length)
+      for (i <- fact.indices) {
+        fact(i) = Interpreter.evalHeadTerm(terms(i), sCtx.root, env0)
+      }
+      inferredFact(p.name, fact)
     case p: Predicate.Head.Trace =>
       val row = p.terms map (t => Interpreter.evalHeadTerm(t, sCtx.root, env0).pretty)
       val out = "Trace(" + row.mkString(", ") + ")"
