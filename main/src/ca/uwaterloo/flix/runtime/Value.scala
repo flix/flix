@@ -75,7 +75,7 @@ object Value {
     def unapply(v: Value.Int): Option[scala.Int] = Some(v.i)
   }
 
-  // TODO: Need to use weak (or soft?) references so cache doesn't grow without bound
+  // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
   private val intCache = mutable.HashMap[scala.Int, Value.Int]()
 
   def mkInt(i: scala.Int) = if (intCache.contains(i)) {
@@ -86,10 +86,37 @@ object Value {
     ret
   }
 
+  /***************************************************************************
+   * Value.Str implementation                                                *
+   ***************************************************************************/
 
+  final class Str private[Value] (val s: java.lang.String) extends Value {
+    override val toString: String = s"Value.Str($s)"
 
-  case class Str(s: java.lang.String) extends Value
+    override def equals(other: Any): scala.Boolean = other match {
+      case that: Value.Str => that eq this
+      case _ => false
+    }
 
+    override val hashCode: scala.Int = s.hashCode
+  }
+
+  object Str {
+    def unapply(v: Value.Str): Option[java.lang.String] = Some(v.s)
+  }
+
+  // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
+  private val strCache = mutable.HashMap[java.lang.String, Value.Str]()
+
+  def mkStr(s: java.lang.String) = if (strCache.contains(s)) {
+    strCache(s)
+  } else {
+    val ret = new Value.Str(s)
+    strCache(s) = ret
+    ret
+  }
+
+  // TODO(mhyee): Intern the other Values?
   case class Tag(name: Name.Resolved, ident: String, value: Value) extends Value
 
   case class Tuple(elms: List[Value]) extends Value

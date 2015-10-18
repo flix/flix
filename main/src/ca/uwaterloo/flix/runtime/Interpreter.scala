@@ -64,7 +64,7 @@ object Interpreter {
     case Literal.Unit(_) => Value.Unit
     case Literal.Bool(b, _) => Value.mkBool(b)
     case Literal.Int(i, _) => Value.mkInt(i)
-    case Literal.Str(s, _) => Value.Str(s)
+    case Literal.Str(s, _) => Value.mkStr(s)
     case Literal.Tag(name, ident, innerLit, _, _) => Value.Tag(name, ident.name, evalLit(innerLit))
     case Literal.Tuple(elms, _, _) => Value.Tuple(elms.map(evalLit))
   }

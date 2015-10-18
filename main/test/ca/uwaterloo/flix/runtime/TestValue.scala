@@ -94,4 +94,49 @@ class TestValue extends FunSuite {
 
     assert(result == "123456789")
   }
+
+  test("Value.Str equality") {
+    val s1 = Value.mkStr("foo")
+    val s2 = Value.mkStr("bar")
+    val s3 = Value.mkStr("foo")
+    val s4 = Value.mkStr("bar")
+
+    assert(s1 != s2)
+    assert(s1 == s3)
+    assert(s1 != s4)
+    assert(s2 != s3)
+    assert(s2 == s4)
+    assert(s3 != s4)
+  }
+
+  test("Value.Str hashing") {
+    val set: mutable.Set[Value.Str] = mutable.Set()
+    val s1 = Value.mkStr("hello")
+    val s2 = Value.mkStr("hello")
+    val s3 = Value.mkStr("goodbye")
+
+    set += s1
+    assert(set.contains(s1))
+    assert(set.contains(s2))
+    assert(!set.contains(s3))
+
+    set -= s2
+    assert(set.isEmpty)
+
+    set += s1
+    set += s2
+    set += s3
+    assert(set.size == 2)
+  }
+
+  test("Value.Str pattern matching") {
+    val v: Value = Value.mkStr("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+    val result = v match {
+      case Value.Str(s) => s"$s!!!"
+      case _ => "unknown"
+    }
+
+    assert(result == "ABCDEFGHIJKLMNOPQRSTUVWXYZ!!!")
+  }
 }
