@@ -114,10 +114,19 @@ class Solver(implicit sCtx: Solver.SolverContext) {
 
     // construct the model.
     val relations = dataStore.relations.foldLeft(Map.empty[Name.Resolved, List[List[Value]]]) {
-      case (macc, (name, relation)) => macc + (name -> relation.table.toList.map(_.toList))
+      case (macc, (name, relation)) =>
+        val inner = relation.table.toList.map(_.toList)
+        macc + (name -> inner)
+    }
+    val lattices = dataStore.lattices.foldLeft(Map.empty[Name.Resolved, Map[List[Value], List[Value]]]) {
+      case (macc, (name, lattice)) =>
+        val inner = lattice.scan.map {
+          case (keys, values) => (keys.toList, values.toList)
+        }
+        macc + (name -> inner.toMap)
     }
 
-    Model(relations, Map.empty) // TODO: Lattices
+    Model(relations, lattices)
   }
 
   /**

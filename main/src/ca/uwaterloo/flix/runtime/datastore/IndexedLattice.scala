@@ -98,7 +98,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
    * Returns all rows in the relation using a table scan.
    */
   // TODO: Improve performance ...
-  private def scan: Iterator[(Seq[Value], Array[Value])] = (store map {
+  def scan: Iterator[(Seq[Value], Array[Value])] = (store map {
     case (keys, m) => m.toList
   }).flatten[(Seq[Value], Array[Value])].iterator
 
