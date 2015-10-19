@@ -111,7 +111,7 @@ namespace ParityAnalysis {
     VarPointsTo(8, times(Parity.Odd, Parity.Top)).
 
     VarPointsTo(t1, result) :- SumOp(t1, t2, t3), VarPointsTo(t2, v2), VarPointsTo(t3, v3),
-                               isMaybeZero(v2),
+                               isMaybeZero(v3),
                                t1 != t2,
                                result := plus(v2, v3).
 
