@@ -1,20 +1,17 @@
 package ca.uwaterloo.flix.runtime
 
+import ca.uwaterloo.flix.Flix
 import ca.uwaterloo.flix.language.Compiler
-import ca.uwaterloo.flix.language.ast.TypedAst.Collection.Relation
-import ca.uwaterloo.flix.language.ast.TypedAst.Constraint.Rule
 import ca.uwaterloo.flix.language.ast.TypedAst.Term
-import ca.uwaterloo.flix.language.ast.TypedAst.Term.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Name, TypedAst}
-import ca.uwaterloo.flix.language.backend.phase.Indexer
-import ca.uwaterloo.flix.runtime.datastore.{DataStore, IndexedLattice, IndexedRelation}
-import ca.uwaterloo.flix.util.{Validation, AsciiTable}
+import ca.uwaterloo.flix.runtime.datastore.DataStore
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ListBuffer
 
 object Solver {
 
@@ -33,7 +30,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   /**
    * A common super-type for solver errors.
    */
-  sealed trait SolverError {
+  sealed trait SolverError extends Flix.FlixError {
     /**
      * Returns a human readable string representation of the error.
      */
@@ -59,17 +56,6 @@ class Solver(implicit sCtx: Solver.SolverContext) {
          """.stripMargin
     }
 
-
-  }
-
-  sealed trait WorkItem
-
-  object WorkItem {
-
-    case class NewRelationalFact() extends WorkItem
-
-    case class NewLatticeFact() extends WorkItem
-
   }
 
   /**
@@ -80,7 +66,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   /**
    * The work list of pending predicate names and their associated values.
    */
-  val worklist = mutable.Queue.empty[(Name.Resolved, Array[Value])]
+  val worklist = mutable.Queue.empty[(Constraint.Rule, mutable.Map[String, Value])]
 
   /**
    * Solves the current Flix program.
@@ -97,13 +83,8 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     // iterate until fixpoint.
     while (worklist.nonEmpty) {
       // extract fact from the worklist.
-      val (name, row) = worklist.dequeue()
-
-      // re-evaluate all dependencies.
-      val rules = dependencies(name)
-      for (rule <- rules) {
-        evalBody(rule, mutable.Map.empty)
-      }
+      val (rule, env) = worklist.dequeue()
+      evalBody(rule, env)
     }
 
     // computed elapsed time.
@@ -137,13 +118,13 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     case r: TypedAst.Collection.Relation =>
       val changed = dataStore.relations(name).inferredFact(fact)
       if (changed) {
-        worklist += ((r.name, fact))
+        worklist ++= dependencies(r.name, fact)
       }
 
     case l: TypedAst.Collection.Lattice =>
       val changed = dataStore.lattices(name).inferredFact(fact)
       if (changed) {
-        worklist += ((l.name, fact))
+        worklist ++= dependencies(l.name, fact)
       }
   }
 
@@ -254,15 +235,41 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   }
 
   /**
-   * Returns all rules where the given `name` occurs in a body predicate of the rule.
+   * Returns all dependencies of the given `name` along with an environment.
    */
-  // TODO: Pass row here..
-  def dependencies(name: Name.Resolved): List[TypedAst.Constraint.Rule] = sCtx.root.rules.filter {
-    case rule => rule.body.exists {
-      case r: Predicate.Body.Relation => name == r.name
-      case _ => false
+  def dependencies(name: Name.Resolved, fact: Array[Value]): Traversable[(Constraint.Rule, mutable.Map[String, Value])] = {
+    @inline
+    def unify(terms: List[Term.Body], fact: Array[Value]): mutable.Map[String, Value] = {
+      val env = mutable.Map.empty[String, Value]
+      for ((term, value) <- terms zip fact) {
+        term match {
+          case t: Term.Body.Wildcard => // nop
+          case t: Term.Body.Var => env + (t.ident.name -> value)
+          case t: Term.Body.Lit =>
+            val literal = Interpreter.evalLit(t.lit)
+            if (literal != value) {
+              return null
+            }
+        }
+      }
+      env
     }
+
+    val result = ListBuffer.empty[(Constraint.Rule, mutable.Map[String, Value])]
+
+    for (rule <- sCtx.root.rules; body <- rule.collections) {
+      if (name == body.name) {
+        val env = unify(body.terms, fact)
+        if (env != null) {
+          result += ((rule, env))
+        }
+      }
+    }
+
+
+    result
   }
+
 
   /**
    * Checks all assertions.
