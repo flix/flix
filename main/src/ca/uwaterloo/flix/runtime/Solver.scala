@@ -266,7 +266,6 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       }
     }
 
-
     result
   }
 
