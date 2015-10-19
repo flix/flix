@@ -264,52 +264,10 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     }
   }
 
-
-  /**
-   * Evaluates the given print `directive`.
-   */
-  def print(directive: Directive.Print): Unit = {
-    val collection = sCtx.root.collections(directive.name)
-
-    collection match {
-      case r: TypedAst.Collection.Relation =>
-        val table = dataStore.relations(directive.name).table
-        val cols = r.attributes.map(_.ident.name)
-        val ascii = new AsciiTable().withCols(cols: _*)
-        for (row <- table.toSeq.sortBy(_.head.toString)) {
-          ascii.mkRow(row.toList map (_.pretty))
-        }
-
-        Console.println(r.name)
-        ascii.write(System.out)
-        Console.println()
-        Console.println()
-
-      case l: TypedAst.Collection.Lattice =>
-        val table = dataStore.lattices(directive.name).table
-
-        val cols = l.keys.map(_.ident.name) ::: l.values.map(_.ident.name + "<>")
-        val ascii = new AsciiTable().withCols(cols: _*)
-        for (row <- table.toSeq.sortBy(_.head.toString)) {
-          ascii.mkRow(row.toList map (_.pretty))
-        }
-
-        Console.println(l.name)
-        ascii.write(System.out)
-        Console.println()
-        Console.println()
-    }
-
-  }
-
   /**
    * Checks all assertions.
    */
   def checkAssertions(): Unit = {
-    for (directive <- sCtx.root.directives.prints) {
-      print(directive)
-    }
-
     // asserted rules
     val assertedFacts = @@(sCtx.root.directives.assertedFacts map checkAssertedFact)
     if (assertedFacts.hasErrors) {
