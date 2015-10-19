@@ -82,11 +82,19 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
     // Support the case where the exact index does not exist, but some other index can be used.
 
     if (indexes contains idx) {
-      // use index
+      // use exact index
       store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]]).iterator
     } else {
+      // look for useable index
+      val table = indexes.find(idx => idx.forall(i => pat(i) != null)) match {
+        case None => scan // no suitable index. Must scan the entire table.
+        case Some(fidx) =>
+          val key = (fidx, fidx map pat)
+          store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]]).iterator
+      }
+
       // table scan
-      scan filter {
+      table filter {
         case row2 =>
           var matches = true
           for (i <- 0 until pat.length) {
