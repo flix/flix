@@ -34,12 +34,12 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
    * Returns `true` iff the fact did not already exist in the relation.
    */
   def inferredFact(fact: Array[Value]): Boolean = {
+    // check if the fact already exists using the default index.
     val key = (defaultIndex, defaultIndex map fact)
 
-    // check if the fact already exists in the primary index.
-    // if so, no changes are needed and we return false.
-    val table = store.getOrElseUpdate(key, mutable.Set.empty)
-    for (row <- table) {
+    // check if the fact is among the rows returned by the lookup.
+    val resultSet = store.getOrElse(key, mutable.Set.empty)
+    for (row <- resultSet) {
       if (row sameElements fact) {
         return false
       }
