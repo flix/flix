@@ -47,8 +47,12 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
 
     // check if the fact already exists in the primary index.
     // if so, no changes are needed and we return false.
-    if (store contains key)
-      return false
+    val table = store.getOrElseUpdate(key, mutable.Set.empty)
+    for (row <- table) {
+      if (row sameElements f) {
+        return false
+      }
+    }
 
     // otherwise we must add the fact to the relation.
     newFact(f)
