@@ -244,7 +244,8 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       for ((term, value) <- terms zip fact) {
         term match {
           case t: Term.Body.Wildcard => // nop
-          case t: Term.Body.Var => env + (t.ident.name -> value)
+          case t: Term.Body.Var =>
+            env += (t.ident.name -> value)
           case t: Term.Body.Lit =>
             val literal = Interpreter.evalLit(t.lit)
             if (literal != value) {
