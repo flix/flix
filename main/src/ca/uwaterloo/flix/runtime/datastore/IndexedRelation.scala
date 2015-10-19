@@ -76,10 +76,7 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
     val idx = pat.toSeq.zipWithIndex.collect {
       case (v, i) if v != null => i
     }
-    val key = (idx, idx map pat) // TODO: There could be another index suitable for use.
-
-    // TODO: There are actually three cases.
-    // Support the case where the exact index does not exist, but some other index can be used.
+    val key = (idx, idx map pat)
 
     if (indexes contains idx) {
       // use exact index
