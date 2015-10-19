@@ -108,11 +108,19 @@ object TypedAst {
      * @param head the head predicate.
      * @param body the body predicates.
      */
-    // TODO: Equip with bindings: Map[String, TypedAst.Type]
     case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body]) extends TypedAst.Constraint {
 
-      // TODO: Consider these?
-      def filters: List[TypedAst.Predicate.Body.NotEqual] = ???
+      val collections: List[TypedAst.Predicate.Body.Relation] = body collect {
+        case p: TypedAst.Predicate.Body.Relation => p
+      }
+
+      val filters: List[TypedAst.Predicate.Body.Function] = body collect {
+        case p: TypedAst.Predicate.Body.Function => p
+      }
+
+      val disjoint: List[TypedAst.Predicate.Body.NotEqual] = body collect {
+        case p: TypedAst.Predicate.Body.NotEqual => p
+      }
 
     }
 

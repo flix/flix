@@ -103,6 +103,7 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
    * Returns all rows in the relation using a table scan.
    */
   // TODO: Improve performance ...
+  // TODO: Deal with duplicate properly...
   private def scan: Iterator[Array[Value]] = (store map {
     case (_, rows) => rows
   }).toList.flatten.toIterator

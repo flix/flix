@@ -101,7 +101,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       // re-evaluate all dependencies.
       val rules = dependencies(name)
       for (rule <- rules) {
-        evalBody(rule, Map.empty)
+        evalBody(rule, mutable.Map.empty)
       }
     }
 
@@ -169,13 +169,15 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   /**
    * Evaluates the body of the given `rule` under the given initial environment `env0`.
    */
-  def evalBody(rule: Rule, env0: Map[String, Value]): Unit = {
+  def evalBody(rule: Constraint.Rule, env0: mutable.Map[String, Value]): Unit = {
 
     /**
-     * Performs tuple-at-a-time propagation.
+     * Computes the cross product of all collections in the body.
      */
-    def recur(ps: List[TypedAst.Predicate.Body], row: mutable.Map[String, Value]): Unit = ps match {
-      case Nil => evalHead(rule.head, row.toMap)
+    def cross(ps: List[Predicate.Body.Relation], row: mutable.Map[String, Value]): Unit = ps match {
+      case Nil =>
+        // cross product complete, now filter
+        filter(rule.filters, row)
       case Predicate.Body.Relation(name, terms, _, _) :: xs =>
         val collection = sCtx.root.collections(name) match {
           case r: Collection.Relation => dataStore.relations(name)
@@ -197,21 +199,36 @@ class Solver(implicit sCtx: Solver.SolverContext) {
                 newRow += (x -> row2(i))
             }
           }
-          recur(xs, newRow)
+          cross(xs, newRow)
         }
+    }
 
+    /**
+     * Filters the given `row` through all filter functions in the body.
+     */
+    def filter(ps: List[Predicate.Body.Function], row: mutable.Map[String, Value]) = ps match {
+      case Nil =>
+        // filter complete, now check disjointness
+        disjoint(rule.disjoint, row)
       case Predicate.Body.Function(name, terms, _, _) :: xs => ???
+    }
+
+    /**
+     * Filters the given `row` through all disjointness filters in the body.
+     */
+    def disjoint(ps: List[Predicate.Body.NotEqual], row: mutable.Map[String, Value]): Unit = ps match {
+      case Nil =>
+        // rule body complete, evaluate the head.
+        evalHead(rule.head, row.toMap)
       case Predicate.Body.NotEqual(ident1, ident2, _, _) :: xs =>
         val value1 = row(ident1.name)
         val value2 = row(ident2.name)
         if (value1 == value2) {
-          recur(xs, row)
+          disjoint(xs, row)
         }
-      case Predicate.Body.Read(_, _, _, _) :: xs => ???
     }
 
-    //  TODO: Sort the body predicates...
-    recur(rule.body, mutable.Map.empty ++ env0)
+    cross(rule.collections, env0)
   }
 
   /**
