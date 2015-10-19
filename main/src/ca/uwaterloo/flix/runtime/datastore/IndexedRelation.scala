@@ -1,16 +1,12 @@
 package ca.uwaterloo.flix.runtime.datastore
 
-import java.util
-
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.runtime.{Solver, Value}
 
 import scala.collection.mutable
 
 /**
- * A class that stores a relation in an indexed database.
- *
- * The indexes are given as a set of sequences over the column offsets. Offsets start from zero.
+ * A class that stores a relation in an indexed database. An index is a sequence of attribute offsets.
  *
  * For example, if given Set(Seq(1)) then the table has exactly one index on the 1st attribute of the relation.
  * As another example, if given Set(Seq(1, 2), Seq(0, 3)) then the relation has two indexes:
@@ -26,36 +22,31 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
   private val store = mutable.Map.empty[(Seq[Int], Seq[Value]), mutable.Set[Array[Value]]]
 
   /**
-   * The default index which always exists. Currently an index on the first attribute.
+   * The default index which is guaranteed to exist.
    */
   private val defaultIndex: Seq[Int] = Seq(0)
 
   /**
-   * Returns an iterator over all rows currently in the relation.
+   * Processes a new inferred `fact`.
    *
-   * This operation may be slow and should only be used for debugging.
-   */
-  def table: Iterator[Array[Value]] = scan
-
-  /**
-   * Processes a new inferred fact `f`.
+   * Adds the fact to the relation. All entries in the fact must be non-null.
    *
-   * Adds the fact to the relation and returns `true` iff it did not already exist.
+   * Returns `true` iff the fact did not already exist in the relation.
    */
-  def inferredFact(f: Array[Value]): Boolean = {
-    val key = (defaultIndex, defaultIndex map f)
+  def inferredFact(fact: Array[Value]): Boolean = {
+    val key = (defaultIndex, defaultIndex map fact)
 
     // check if the fact already exists in the primary index.
     // if so, no changes are needed and we return false.
     val table = store.getOrElseUpdate(key, mutable.Set.empty)
     for (row <- table) {
-      if (row sameElements f) {
+      if (row sameElements fact) {
         return false
       }
     }
 
     // otherwise we must add the fact to the relation.
-    newFact(f)
+    newFact(fact)
   }
 
   /**
@@ -105,6 +96,13 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
       }
     }
   }
+
+  /**
+   * Returns an iterator over all rows currently in the relation.
+   *
+   * This operation may be slow and should only be used for debugging.
+   */
+  def table: Iterator[Array[Value]] = scan
 
   /**
    * Returns all rows in the relation using a table scan.

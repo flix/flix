@@ -4,6 +4,6 @@ import ca.uwaterloo.flix.runtime.Value
 
 trait IndexedCollection {
 
-  def lookup(row: Array[Value]): Iterator[Array[Value]]
+  def lookup(pat: Array[Value]): Iterator[Array[Value]]
 
 }
