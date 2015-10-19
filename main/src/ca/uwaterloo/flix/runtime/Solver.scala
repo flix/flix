@@ -12,6 +12,7 @@ import ca.uwaterloo.flix.runtime.datastore.{DataStore, IndexedLattice, IndexedRe
 import ca.uwaterloo.flix.util.{Validation, AsciiTable}
 import ca.uwaterloo.flix.util.Validation._
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -206,16 +207,22 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     /**
      * Filters the given `row` through all filter functions in the body.
      */
-    def filter(ps: List[Predicate.Body.Function], row: mutable.Map[String, Value]) = ps match {
+    @tailrec
+    def filter(ps: List[Predicate.Body.Function], row: mutable.Map[String, Value]): Unit = ps match {
       case Nil =>
         // filter complete, now check disjointness
         disjoint(rule.disjoint, row)
-      case Predicate.Body.Function(name, terms, _, _) :: xs => ???
+      case Predicate.Body.Function(name, terms, _, _) :: xs =>
+        val lambda = sCtx.root.constants(name)
+        val result = Interpreter.evalCall(lambda, terms, sCtx.root, row.toMap).toBool
+        if (result)
+          filter(xs, row)
     }
 
     /**
      * Filters the given `row` through all disjointness filters in the body.
      */
+    @tailrec
     def disjoint(ps: List[Predicate.Body.NotEqual], row: mutable.Map[String, Value]): Unit = ps match {
       case Nil =>
         // rule body complete, evaluate the head.
@@ -223,7 +230,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       case Predicate.Body.NotEqual(ident1, ident2, _, _) :: xs =>
         val value1 = row(ident1.name)
         val value2 = row(ident2.name)
-        if (value1 == value2) {
+        if (value1 != value2) {
           disjoint(xs, row)
         }
     }

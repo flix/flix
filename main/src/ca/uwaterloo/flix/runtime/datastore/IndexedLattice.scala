@@ -104,7 +104,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
   }).flatten[(Seq[Value], Array[Value])].iterator
 
 
-  def keyMatches(row: Array[Value], pat: Array[Value]): Boolean = {
+  def keyMatches(pat: Array[Value], row: Array[Value]): Boolean = {
     for (i <- row.indices) {
       val p = pat(i)
       if (p != null && p != row(i)) {
@@ -115,7 +115,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
   }
 
   // TODO: Careful with lattice values, should not return boolean
-  def elmsMatches(row: Array[Value], pat: Array[Value]): Boolean = {
+  def elmsMatches(pat: Array[Value], row: Array[Value]): Boolean = {
     // TODO: so this is incorrect. Need to use glb.
     for (i <- row.indices) {
       val p = pat(i)

@@ -81,6 +81,9 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
     }
     val key = (idx, idx map row) // TODO: There could be another index suitable for use.
 
+    // TODO: There are actually three cases.
+    // Support the case where the exact index does not exist, but some other index can be used.
+
     if (indexes contains idx) {
       // use index
       store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]]).iterator
