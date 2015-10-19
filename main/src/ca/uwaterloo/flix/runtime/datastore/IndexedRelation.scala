@@ -21,6 +21,7 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
   /**
    * A map from keys, i.e. (index, value) pairs, to rows matching the key.
    */
+  // TODO: Maybe change signature to Index -> Key -> Set instead of (Index, Key)
   private val store = mutable.Map.empty[(Seq[Int], Seq[Value]), mutable.Set[Array[Value]]]
 
   /**
