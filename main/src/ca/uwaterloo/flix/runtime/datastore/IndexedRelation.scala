@@ -44,6 +44,7 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
     val resultSet = store.getOrElse(key, mutable.Set.empty)
     for (row <- resultSet) {
       if (util.Arrays.equals(row.asInstanceOf[Array[AnyRef]], fact.asInstanceOf[Array[AnyRef]])) {
+        assert(lookup(fact).nonEmpty) // TODO: use this...
         return false
       }
     }
