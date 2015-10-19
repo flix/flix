@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.runtime.datastore
 
+import java.util
+
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.runtime.{Solver, Value}
 
@@ -40,7 +42,7 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
     // check if the fact is among the rows returned by the lookup.
     val resultSet = store.getOrElse(key, mutable.Set.empty)
     for (row <- resultSet) {
-      if (row sameElements fact) {
+      if (util.Arrays.equals(row.asInstanceOf[Array[AnyRef]], fact.asInstanceOf[Array[AnyRef]])) {
         return false
       }
     }
@@ -53,28 +55,27 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
    * Updates all indexes and tables with a new fact `f`.
    */
   private def newFact(f: Array[Value]): Boolean = {
+    // loop through all the indexes and the default index.
     for (idx <- indexes + defaultIndex) {
       val key = (idx, idx map f)
-      val table = store.getOrElse(key, {
-        val newTable = mutable.Set.empty[Array[Value]]
-        store(key) = newTable
-        newTable
-      })
+      val table = store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]])
       table += f
     }
     true
   }
 
   /**
-   * Performs a lookup of the given row. The row may contain `null` entries. If so, these are interpreted as free variables.
+   * Performs a lookup of the given pattern `pat`. 
    *
-   * Returns a traversable over the matched rows.
+   * The pattern may contain `null` entries. If so, these are interpreted as free variables.
+   *
+   * Returns an iterator over the matched rows.
    */
-  def lookup(row: Array[Value]): Iterator[Array[Value]] = {
-    val idx = row.toSeq.zipWithIndex.collect {
+  def lookup(pat: Array[Value]): Iterator[Array[Value]] = {
+    val idx = pat.toSeq.zipWithIndex.collect {
       case (v, i) if v != null => i
     }
-    val key = (idx, idx map row) // TODO: There could be another index suitable for use.
+    val key = (idx, idx map pat) // TODO: There could be another index suitable for use.
 
     // TODO: There are actually three cases.
     // Support the case where the exact index does not exist, but some other index can be used.
@@ -87,8 +88,8 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
       scan filter {
         case row2 =>
           var matches = true
-          for (i <- 0 until row.length) {
-            if (row(i) != null && row(i) != row2(i)) {
+          for (i <- 0 until pat.length) {
+            if (pat(i) != null && pat(i) != row2(i)) {
               matches = false
             }
           }
@@ -98,18 +99,11 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
   }
 
   /**
-   * Returns an iterator over all rows currently in the relation.
-   *
-   * This operation may be slow and should only be used for debugging.
-   */
-  def table: Iterator[Array[Value]] = scan
-
-  /**
    * Returns all rows in the relation using a table scan.
    */
   // TODO: Improve performance ...
   // TODO: Deal with duplicate properly...
-  private def scan: Iterator[Array[Value]] = (store map {
+  def scan: Iterator[Array[Value]] = (store map {
     case (_, rows) => rows
   }).toList.flatten.toIterator
 
