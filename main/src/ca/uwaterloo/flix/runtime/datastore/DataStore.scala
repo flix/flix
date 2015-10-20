@@ -7,6 +7,9 @@ import ca.uwaterloo.flix.runtime.Solver
 
 import scala.collection.mutable
 
+/**
+ * A class implementing a data store for indexed relations and lattices.
+ */
 class DataStore(implicit sCtx: Solver.SolverContext) {
 
   /**
@@ -20,18 +23,19 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
   val lattices = mutable.Map.empty[Name.Resolved, IndexedLattice]
 
   /**
-   * Initializes the collections.
+   * Initializes the relations and lattices.
    */
-  def init(): Unit = {
-    // compute indexes based on the program constraint rules.
-    val indexes = Indexer.index(sCtx.root)
+  // compute indexes based on the program constraint rules.
+  val indexes = Indexer.index(sCtx.root)
 
-    // initialize all indexed relations and lattices.
-    for ((name, collection) <- sCtx.root.collections) {
-      collection match {
-        case r: Collection.Relation => relations(name) = new IndexedRelation(r, indexes.getOrElse(name, Set.empty))
-        case l: Collection.Lattice => lattices(name) = new IndexedLattice(l, indexes.getOrElse(name, Set.empty))
-      }
+  // initialize all indexed relations and lattices.
+  for ((name, collection) <- sCtx.root.collections) {
+    collection match {
+      case r: Collection.Relation =>
+        relations(name) = new IndexedRelation(r, indexes.getOrElse(name, Set.empty)) //  TODO: Remove getOrElse.
+
+      case l: Collection.Lattice =>
+        lattices(name) = new IndexedLattice(l, indexes.getOrElse(name, Set.empty))
     }
   }
 

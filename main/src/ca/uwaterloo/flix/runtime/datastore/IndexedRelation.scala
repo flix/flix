@@ -1,14 +1,14 @@
 package ca.uwaterloo.flix.runtime.datastore
 
+import java.util
+
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.runtime.{Solver, Value}
 
 import scala.collection.mutable
 
 /**
- * A class that stores a relation in an indexed database.
- *
- * The indexes are given as a set of sequences over the column offsets. Offsets start from zero.
+ * A class that stores a relation in an indexed database. An index is a sequence of attribute offsets.
  *
  * For example, if given Set(Seq(1)) then the table has exactly one index on the 1st attribute of the relation.
  * As another example, if given Set(Seq(1, 2), Seq(0, 3)) then the relation has two indexes:
@@ -17,75 +17,91 @@ import scala.collection.mutable
  * @param relation the relation.
  * @param indexes the indexes.
  */
-class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) {
-
+class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
   /**
    * A map from keys, i.e. (index, value) pairs, to rows matching the key.
    */
+  // TODO: Maybe change signature to Index -> Key -> Set instead of (Index, Key)
   private val store = mutable.Map.empty[(Seq[Int], Seq[Value]), mutable.Set[Array[Value]]]
 
   /**
-   * The default index which always exists. Currently an index on the first attribute.
+   * The default index which is guaranteed to exist.
    */
   private val defaultIndex: Seq[Int] = Seq(0)
 
   /**
-   * Returns an iterator over all rows currently in the relation.
+   * Processes a new inferred `fact`.
    *
-   * This operation may be slow and should only be used for debugging.
-   */
-  def table: Iterator[Array[Value]] = scan
-
-  /**
-   * Processes a new inferred fact `f`.
+   * Adds the fact to the relation. All entries in the fact must be non-null.
    *
-   * Adds the fact to the relation and returns `true` iff it did not already exist.
+   * Returns `true` iff the fact did not already exist in the relation.
    */
-  def inferredFact(f: Array[Value]): Boolean = {
-    val key = (defaultIndex, defaultIndex map f)
+  def inferredFact(fact: Array[Value]): Boolean = {
+    // check if the fact already exists using the default index.
+    val key = (defaultIndex, defaultIndex map fact)
 
-    // check if the fact already exists in the primary index.
-    // if so, no changes are needed and we return false.
-    if (store contains key)
-      return false
+    // check if the fact is among the rows returned by the lookup.
+    val resultSet = store.getOrElse(key, mutable.Set.empty)
+    for (row <- resultSet) {
+      if (util.Arrays.equals(row.asInstanceOf[Array[AnyRef]], fact.asInstanceOf[Array[AnyRef]])) {
+        assert(lookup(fact).nonEmpty) // TODO: use this...
+        return false
+      }
+    }
 
     // otherwise we must add the fact to the relation.
-    newFact(f)
+    newFact(fact)
   }
 
   /**
    * Updates all indexes and tables with a new fact `f`.
    */
   private def newFact(f: Array[Value]): Boolean = {
+    // loop through all the indexes and the default index.
     for (idx <- indexes + defaultIndex) {
       val key = (idx, idx map f)
-      val table = store.getOrElse(key, {
-        val newTable = mutable.Set.empty[Array[Value]]
-        store(key) = newTable
-        newTable
-      })
+      val table = store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]])
       table += f
     }
     true
   }
 
   /**
-   * Performs a lookup of the given row. The row may contain `null` entries. If so, these are interpreted as free variables.
+   * Performs a lookup of the given pattern `pat`. 
    *
-   * Returns a traversable over the matched rows.
+   * The pattern may contain `null` entries. If so, these are interpreted as free variables.
+   *
+   * Returns an iterator over the matched rows.
    */
-  def lookup(row: Array[Value]): Iterator[Array[Value]] = {
-    val idx = row.toSeq.zipWithIndex.collect {
+  def lookup(pat: Array[Value]): Iterator[Array[Value]] = {
+    val idx = pat.toSeq.zipWithIndex.collect {
       case (v, i) if v != null => i
     }
-    val key = (idx, idx map row)
+    val key = (idx, idx map pat)
 
     if (indexes contains idx) {
-      // use index
-      store(key).iterator
+      // use exact index
+      store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]]).iterator
     } else {
+      // look for useable index
+      val table = indexes.find(idx => idx.forall(i => pat(i) != null)) match {
+        case None => scan // no suitable index. Must scan the entire table.
+        case Some(fidx) =>
+          val key = (fidx, fidx map pat)
+          store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]]).iterator
+      }
+
       // table scan
-      scan
+      table filter {
+        case row2 =>
+          var matches = true
+          for (i <- 0 until pat.length) {
+            if (pat(i) != null && pat(i) != row2(i)) {
+              matches = false
+            }
+          }
+          matches
+      }
     }
   }
 
@@ -93,7 +109,8 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
    * Returns all rows in the relation using a table scan.
    */
   // TODO: Improve performance ...
-  private def scan: Iterator[Array[Value]] = (store map {
+  // TODO: Deal with duplicate properly...
+  def scan: Iterator[Array[Value]] = (store map {
     case (_, rows) => rows
   }).toList.flatten.toIterator
 

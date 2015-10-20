@@ -7,6 +7,8 @@ import scala.collection.mutable
 
 object Indexer {
 
+  // TODO: Ensure that everything has at least one index.
+
   /**
    * Returns an index selection strategy based on left-to-right evaluation of constraint rules.
    */
