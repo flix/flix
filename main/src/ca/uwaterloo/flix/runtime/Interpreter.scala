@@ -54,7 +54,7 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => eval(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
-      case Expression.Tag(name, ident, exp, _, _) => Value.Tag(name, ident.name, eval(exp, root, env))
+      case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
       case Expression.Tuple(elms, _, _) => Value.Tuple(elms.map(e => eval(e, root, env)))
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
     }
@@ -65,7 +65,7 @@ object Interpreter {
     case Literal.Bool(b, _) => Value.mkBool(b)
     case Literal.Int(i, _) => Value.mkInt(i)
     case Literal.Str(s, _) => Value.mkStr(s)
-    case Literal.Tag(name, ident, innerLit, _, _) => Value.Tag(name, ident.name, evalLit(innerLit))
+    case Literal.Tag(name, ident, innerLit, _, _) => Value.mkTag(name, ident.name, evalLit(innerLit))
     case Literal.Tuple(elms, _, _) => Value.Tuple(elms.map(evalLit))
   }
 

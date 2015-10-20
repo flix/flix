@@ -37,7 +37,7 @@ object Value {
    ***************************************************************************/
 
   final class Bool private[Value] (val b: scala.Boolean) extends Value {
-    override val toString: String = s"Value.Bool($b)"
+    override val toString: java.lang.String = s"Value.Bool($b)"
 
     override def equals(other: Any): scala.Boolean = other match {
       case that: Value.Bool => that eq this
@@ -61,7 +61,7 @@ object Value {
    ***************************************************************************/
 
   final class Int private[Value] (val i: scala.Int) extends Value {
-    override val toString: String = s"Value.Int($i)"
+    override val toString: java.lang.String = s"Value.Int($i)"
 
     override def equals(other: Any): scala.Boolean = other match {
       case that: Value.Int => that eq this
@@ -91,7 +91,7 @@ object Value {
    ***************************************************************************/
 
   final class Str private[Value] (val s: java.lang.String) extends Value {
-    override val toString: String = s"Value.Str($s)"
+    override val toString: java.lang.String = s"Value.Str($s)"
 
     override def equals(other: Any): scala.Boolean = other match {
       case that: Value.Str => that eq this
@@ -116,11 +116,44 @@ object Value {
     ret
   }
 
-  // TODO(mhyee): Intern the other Values?
-  case class Tag(name: Name.Resolved, ident: String, value: Value) extends Value
+  /***************************************************************************
+   * Value.Tag implementation                                                *
+   ***************************************************************************/
+
+  final class Tag private[Value] (val enum: Name.Resolved, val tag: java.lang.String, val value: Value) extends Value {
+    override val toString: java.lang.String = s"Value.Tag($enum, $tag, $value)"
+
+    override def equals(other: Any): scala.Boolean = other match {
+      case that: Value.Tag => that eq this
+      case _ => false
+    }
+
+    override val hashCode: scala.Int = (enum, tag, value).hashCode
+  }
+
+  object Tag {
+    def unapply(v: Value.Tag): Option[(Name.Resolved, java.lang.String, Value)] = Some((v.enum, v.tag, v.value))
+  }
+
+  // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
+  private val tagCache = mutable.HashMap[(Name.Resolved, java.lang.String, Value), Value.Tag]()
+
+  def mkTag(e: Name.Resolved, t: java.lang.String, v: Value) = {
+    val triple = (e, t, v)
+    if (tagCache.contains(triple)) {
+      tagCache(triple)
+    } else {
+      val ret = new Value.Tag(e, t, v)
+      tagCache(triple) = ret
+      ret
+    }
+  }
+
+  /***************************************************************************
+   * Value.Tuple, Value.Closure implementations                              *
+   ***************************************************************************/
 
   case class Tuple(elms: List[Value]) extends Value
 
   case class Closure(formals: List[TypedAst.FormalArg], body: TypedAst.Expression, env: Interpreter.Env) extends Value
-
 }

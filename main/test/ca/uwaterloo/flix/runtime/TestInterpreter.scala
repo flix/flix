@@ -135,7 +135,7 @@ class TestInterpreter extends FunSuite {
     val enumTpe = Type.Enum(Map("foo.bar.baz" -> tagTpe))
     val input = Expression.Lit(Literal.Tag(name, ident, Literal.Str("hello world", loc), enumTpe, loc), tagTpe, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "baz", Value.mkStr("hello world")))(result)
+    assertResult(Value.mkTag(name, "baz", Value.mkStr("hello world")))(result)
   }
 
   test("Interpreter - Literal.Tag02") {
@@ -147,28 +147,28 @@ class TestInterpreter extends FunSuite {
       Literal.Tuple(List(Literal.Str("James", loc), Literal.Int(42, loc)),
         Type.Tuple(List(Type.Str, Type.Int)), loc), enumTpe, loc), tagTpe, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "NameAndAge", Value.Tuple(List(Value.mkStr("James"), Value.mkInt(42)))))(result)
+    assertResult(Value.mkTag(name, "NameAndAge", Value.Tuple(List(Value.mkStr("James"), Value.mkInt(42)))))(result)
   }
 
   test("Interpreter - Literal.Tag03") {
     import ConstantPropTagDefs._
     val input = Expression.Lit(Literal.Tag(name, identB, Literal.Unit(loc), enumTpe, loc), tagTpeB, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "Bot", Value.Unit))(result)
+    assertResult(Value.mkTag(name, "Bot", Value.Unit))(result)
   }
 
   test("Interpreter - Literal.Tag04") {
     import ConstantPropTagDefs._
     val input = Expression.Lit(Literal.Tag(name, identT, Literal.Unit(loc), enumTpe, loc), tagTpeT, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "Top", Value.Unit))(result)
+    assertResult(Value.mkTag(name, "Top", Value.Unit))(result)
   }
 
   test("Interpreter - Literal.Tag05") {
     import ConstantPropTagDefs._
     val input = Expression.Lit(Literal.Tag(name, identV, Literal.Int(0, loc), enumTpe, loc), tagTpeV, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "Val", Value.mkInt(0)))(result)
+    assertResult(Value.mkTag(name, "Val", Value.mkInt(0)))(result)
 
   }
 
@@ -176,14 +176,14 @@ class TestInterpreter extends FunSuite {
     import ConstantPropTagDefs._
     val input = Expression.Lit(Literal.Tag(name, identV, Literal.Int(-240, loc), enumTpe, loc), tagTpeV, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "Val", Value.mkInt(-240)))(result)
+    assertResult(Value.mkTag(name, "Val", Value.mkInt(-240)))(result)
   }
 
   test("Interpreter - Literal.Tag07") {
     import ConstantPropTagDefs._
     val input = Expression.Lit(Literal.Tag(name, identV, Literal.Int(1241, loc), enumTpe, loc), tagTpeV, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "Val", Value.mkInt(1241)))(result)
+    assertResult(Value.mkTag(name, "Val", Value.mkInt(1241)))(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1955,7 +1955,7 @@ class TestInterpreter extends FunSuite {
         Type.Str, loc),
       enumTpe, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "baz", Value.mkStr("hello world")))(result)
+    assertResult(Value.mkTag(name, "baz", Value.mkStr("hello world")))(result)
   }
 
   test("Interpreter - Expression.Tag02") {
@@ -1973,21 +1973,21 @@ class TestInterpreter extends FunSuite {
         Type.Int, loc)),
       Type.Tuple(List(Type.Str, Type.Int)), loc), enumTpe, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "NameAndAge", Value.Tuple(List(Value.mkStr("James"), Value.mkInt(42)))))(result)
+    assertResult(Value.mkTag(name, "NameAndAge", Value.Tuple(List(Value.mkStr("James"), Value.mkInt(42)))))(result)
   }
 
   test("Interpreter - Expression.Tag03") {
     import ConstantPropTagDefs._
     val input = Expression.Tag(name, identB, Expression.Lit(Literal.Unit(loc), Type.Unit, loc), enumTpe, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "Bot", Value.Unit))(result)
+    assertResult(Value.mkTag(name, "Bot", Value.Unit))(result)
   }
 
   test("Interpreter - Expression.Tag04") {
     import ConstantPropTagDefs._
     val input = Expression.Tag(name, identT, Expression.Lit(Literal.Unit(loc), Type.Unit, loc), enumTpe, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "Top", Value.Unit))(result)
+    assertResult(Value.mkTag(name, "Top", Value.Unit))(result)
   }
 
   test("Interpreter - Expression.Tag05") {
@@ -2001,7 +2001,7 @@ class TestInterpreter extends FunSuite {
         Type.Int, loc),
       enumTpe, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "Val", Value.mkInt(0)))(result)
+    assertResult(Value.mkTag(name, "Val", Value.mkInt(0)))(result)
   }
 
   test("Interpreter - Expression.Tag06") {
@@ -2014,14 +2014,14 @@ class TestInterpreter extends FunSuite {
         Type.Int, loc),
       enumTpe, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "Val", Value.mkInt(-240)))(result)
+    assertResult(Value.mkTag(name, "Val", Value.mkInt(-240)))(result)
   }
 
   test("Interpreter - Expression.Tag07") {
     import ConstantPropTagDefs._
     val input = Expression.Tag(name, identV, Expression.Lit(Literal.Int(1241, loc), Type.Int, loc), enumTpe, loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Tag(name, "Val", Value.mkInt(1241)))(result)
+    assertResult(Value.mkTag(name, "Val", Value.mkInt(1241)))(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////
