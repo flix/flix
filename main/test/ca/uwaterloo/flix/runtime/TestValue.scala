@@ -7,10 +7,10 @@ import org.scalatest.FunSuite
 
 class TestValue extends FunSuite {
   test("Value.Bool equality") {
-    val b1 = Value.mkBool(true)
-    val b2 = Value.mkBool(true)
-    val b3 = Value.mkBool(false)
-    val b4 = Value.mkBool(true)
+    val b1 = Value.True
+    val b2 = Value.True
+    val b3 = Value.False
+    val b4 = Value.True
 
     assert(b1 == b1)
     assert(b1 == b2)
@@ -24,9 +24,9 @@ class TestValue extends FunSuite {
 
   test("Value.Bool hashing") {
     val set: mutable.Set[Value.Bool] = mutable.Set()
-    val b1 = Value.mkBool(true)
-    val b2 = Value.mkBool(true)
-    val b3 = Value.mkBool(false)
+    val b1 = Value.True
+    val b2 = Value.True
+    val b3 = Value.False
 
     set += b1
     assert(set.contains(b1))
@@ -43,7 +43,7 @@ class TestValue extends FunSuite {
   }
 
   test("Value.Bool pattern matching") {
-    val v: Value = Value.mkBool(true)
+    val v: Value = Value.True
 
     val result = v match {
       case Value.Bool(b) => s"$b"
