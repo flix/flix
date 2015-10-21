@@ -65,17 +65,17 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
     val idx = pat.toSeq.zipWithIndex.collect {
       case (v, i) if v != null => i
     }
-    val key = (idx, idx map pat)
 
     if (indexes contains idx) {
       // use exact index
+      val key = indexAndKey(idx, pat)
       store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]]).iterator
     } else {
       // look for useable index
       val table = indexes.find(idx => idx.forall(i => pat(i) != null)) match {
         case None => scan // no suitable index. Must scan the entire table.
         case Some(fidx) =>
-          val key = (fidx, fidx map pat)
+          val key = indexAndKey(fidx, pat)
           store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]]).iterator
       }
 
@@ -85,6 +85,34 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
       }
     }
   }
+
+
+  /**
+   *
+   */
+  @inline
+  private def exactIndex(pat: Array[Value]): Seq[Int] = ???
+
+  /**
+   *
+   */
+  @inline
+  private def approxIndex(pat: Array[Value]): Seq[Int] = ???
+
+  /**
+   * Returns the (index, value) pair which constitutes a key.
+   */
+  @inline
+  private def indexAndKey(idx: Seq[Int], pat: Array[Value]): (Seq[Int], Seq[Value]) = {
+    val a = Array.ofDim[Value](idx.length)
+    var i: Int = 0
+    while (i < idx.length) {
+      a(i) = pat(idx(i))
+      i = i + 1
+    }
+    (idx, a.toSeq)
+  }
+
 
   /**
    * Returns all rows in the relation using a table scan.
