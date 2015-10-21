@@ -1,5 +1,6 @@
 \documentclass[10pt,twocolumn]{article}
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
 
@@ -55,6 +56,19 @@ An atom $A$ is true w.r.t. an interpretation if $A \in I$.
 A conjunction of atoms $A_1, \dots, A_n$ is true w.r.t. an interpretation if each atom is true in the interpretation.
 A ground rule is true if either the body conjunction is false, or the head is true.
 
+A model $M$ of $P$ is an interpretation that makes each ground instance of a each rule in $P$ true and that satisfies the property that if $A_\ell(e_1, \dots) \in M$ and $A_\ell(e_2, \dots) \in M$ then $e_1 = e_2$ for all atoms in $M$.
+
+A model $M_1$ is \emph{minimal} if there is no other model $M_2$ such 
+that $M_2 \subset M_1$ or where $A_\ell(e_1, \dots) \in M_1$ is a ground atom in $M_1$ 
+and $A_\ell(e_2, \dots) \in M_2$ is a ground atom in $M_2$ and $e_2 \sqsubset_\ell e_1$.
+
+%\paragraph{Proof: Existence of a model?}
+
+%\paragraph{Proof: Existence of a finite model?}
+
+%\paragraph{Proof: Existence of a unique least model?}
+
+\paragraph{Example.}
 
 
 
