@@ -88,7 +88,9 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
 
 
   /**
+   * Returns an index matching all the non-null columns in the given pattern `pat`.
    *
+   * Returns `null` if no such exact index exists.
    */
   @inline
   private def exactIndex(pat: Array[Value]): Seq[Int] = ???
