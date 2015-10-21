@@ -49,8 +49,8 @@ predicate symbols occur in $P$ and where the arguments are drawn from the Herbra
 
 An interpretation $I$ of a Flix program $P$ is a subset of the Herbrand Base $\mathcal{B}$ where 
 each ground atom $p_\ell(e, v_1, \dots, v_n)$ satisfies 
-$e \sqsubseteq_\ell v_1$ when $n = 1$, or 
-$e \sqsubseteq_\ell [v_1 \mapsto \dots \mapsto v_n]$ when $n > 1$.
+$e \sqsupseteq_\ell v_1$ when $n = 1$, or 
+$e \sqsupseteq_\ell [v_1 \mapsto \dots \mapsto v_n]$ when $n > 1$.
 
 An atom $A$ is true w.r.t. an interpretation if $A \in I$. 
 A conjunction of atoms $A_1, \dots, A_n$ is true w.r.t. an interpretation if each atom is true in the interpretation.
@@ -69,8 +69,38 @@ and $A_\ell(e_2, \dots) \in M_2$ is a ground atom in $M_2$ and $e_2 \sqsubset_\e
 %\paragraph{Proof: Existence of a unique least model?}
 
 \paragraph{Example.}
-
-
+The Flix program $P$ with constraints:
+\begin{align*}
+    & A_\ell(e_A, \texttt{Even}). \\
+    & A_\ell(e_A, \texttt{Odd}).
+\end{align*}
+and lattice $\ell = (\{\bot, \top, \texttt{Even}, \texttt{Odd}\}, \sqsubseteq, \sqcup, \sqcap)$ has
+the Herbrand Universe $\mathcal{U} = \{\bot, \top, \texttt{Even}, \texttt{Odd}\}$ and 
+the Herbrand Base $\mathcal{B} = $
+%
+\begin{align*}
+    & A_\ell(\bot, \bot), && A_\ell(\bot, \texttt{Even}), \\
+    & A_\ell(\bot, \texttt{Odd}), && A_\ell(\bot, \top), \\
+    & A_\ell(\texttt{Even}, \bot), && A_\ell(\texttt{Even}, \texttt{Odd}), \\
+    & A_\ell(\texttt{Even}, \texttt{Even}), && A_\ell(\texttt{Even}, \top), \\
+    & A_\ell(\texttt{Odd}, \bot), && A_\ell(\texttt{Odd}, \texttt{Odd}), \\
+    & A_\ell(\texttt{Odd}, \texttt{Even}), && A_\ell(\texttt{Odd}, \top), \\
+    & A_\ell(\top, \bot), && A_\ell(\top, \texttt{Even}), \\
+    & A_\ell(\top, \texttt{Odd}), && A_\ell(\top, \top)
+\end{align*}
+%
+An interpretation is a subset of $\mathcal{B}$ such that the lattice ordering is satified. 
+For example,
+%
+\begin{align*}
+    I_1 & = \{ A_\ell(\top, \top) \} \\
+    I_2 & = \{ A_\ell(\top, \top), A_\ell(\top, \texttt{Odd}) \} \\
+    I_3 & = \{ A_\ell(\texttt{Even}, \texttt{Even}), A_\ell(\texttt{Odd}, \texttt{Odd}) \} \\
+    I_4 & = \{ A_\ell(\top, \texttt{Even}), A_\ell(\top, \texttt{Odd}),  A_\ell(\top, \texttt{Top}) \} \\
+    I_5 & = \{ A_\ell(\top, \texttt{Even}), A_\ell(\top, \texttt{Odd}) \}
+\end{align*}
+%
+The interpretation $I_1$ is not a model of $P$ since ...
 
 \end{document}
 
