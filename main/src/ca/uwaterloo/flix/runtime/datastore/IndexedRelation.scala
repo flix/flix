@@ -93,14 +93,7 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
 
       // table scan
       table filter {
-        case row2 =>
-          var matches = true
-          for (i <- 0 until pat.length) {
-            if (pat(i) != null && pat(i) != row2(i)) {
-              matches = false
-            }
-          }
-          matches
+        case row2 => matchRow(pat, row2)
       }
     }
   }
@@ -113,5 +106,24 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
   def scan: Iterator[Array[Value]] = (store map {
     case (_, rows) => rows
   }).toList.flatten.toIterator
+
+
+  /**
+   * Returns `true` if the given pattern `pat` matches the given `row`.
+   *
+   * A pattern matches if all is non-null entries are equal to the row.
+   */
+  @inline
+  def matchRow(pat: Array[Value], row: Array[Value]): Boolean = {
+    var i = 0
+    while (i < pat.length) {
+      val pv = pat(i)
+      if (pv != null)
+        if (pv != row(i))
+          return false
+      i = i + 1
+    }
+    true
+  }
 
 }
