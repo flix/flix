@@ -1,0 +1,63 @@
+\documentclass[10pt,twocolumn]{article}
+\usepackage{amsmath}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+
+ 
+\usepackage{multicol}
+\begin{document}
+
+
+\section{Model-theoretic Semantics}
+
+A Flix program $P = (C, L)$ is a set of constraints $C$ and a set of bounded lattices $L$.
+
+A constraint is a rule $A \Leftarrow A_1, \dots, A_n$ 
+where $A$ is an \emph{atom} (called the \emph{head} of the rule) 
+and $A_1, \dots, A_n$ are atoms (called the \emph{body} of the rule).
+A fact is a rule with an empty body.
+An atom is of the form $p_\ell(e_p, t_1, \dots, t_n)$ where 
+$p$ is a predicate symbol,
+$\ell \in L$ is the lattice associated with $p$,
+$e_p$ is a variable associated with $p$, and 
+$t_1, \dots, t_n$ are terms. 
+A term is either a wildcard variable, a named variable or a constant value\footnote{Note: Flix has no uninterpreted function symbols.}. 
+The possible values are the unit value, the booleans (\texttt{true}, \texttt{false}),
+the integers (-5, 3, 7), tagged unions of values (e.g. \texttt{Tag} $v$) and 
+tuples of values (e.g. $(1, \texttt{true}. 42)$).
+
+A bounded lattice $l \in L$ is a 6-tuple $l = (E, \bot, \top, \sqsubseteq, \sqcup, \sqcap)$ where 
+$E$ is a set of elements $E \subseteq V$,
+$\bot \in E$ is the least element,
+$\top \in E$ is the greatest element,
+$\sqsubseteq$ is the partial order on $E$,
+$\sqcup$ is the least upper bound, and
+$\sqcap$ is the greatest lower bound.
+
+The \emph{Herbrand Universe} $\mathcal{U}$ of a Flix program $P$ is the set of 
+all possible ground terms, i.e. the set of all values $V$.
+The \emph{Herbrand Base} $\mathcal{B}$ of $P$ is the set of all possible ground atoms whose
+predicate symbols occur in $P$ and where the arguments are drawn from the Herbrand Universe.
+
+%\paragraph{Example.}
+%Given the Flix program $P$:
+%\begin{align*}
+%&\textsl{VarPointsTo}(1, Odd()). \\
+%&\textsl{VarPointsTo}(1, Even()).
+%\end{align*}
+
+An interpretation $I$ of a Flix program $P$ is a subset of the Herbrand Base $\mathcal{B}$ where 
+each ground atom $p_\ell(e, v_1, \dots, v_n)$ satisfies 
+$e \sqsubseteq_\ell v_1$ when $n = 1$, or 
+$e \sqsubseteq_\ell [v_1 \mapsto \dots \mapsto v_n]$ when $n > 1$.
+
+An atom $A$ is true w.r.t. an interpretation if $A \in I$. 
+A conjunction of atoms $A_1, \dots, A_n$ is true w.r.t. an interpretation if each atom is true in the interpretation.
+A ground rule is true if either the body conjunction is false, or the head is true.
+
+
+
+
+\end{document}
+
+
