@@ -51,10 +51,8 @@ object Value {
     def unapply(v: Value.Bool): Option[scala.Boolean] = Some(v.b)
   }
 
-  private val TRUE = new Value.Bool(true)
-  private val FALSE = new Value.Bool(false)
-
-  def mkBool(b: scala.Boolean) = if (b) TRUE else FALSE
+  val True = new Value.Bool(true)
+  val False = new Value.Bool(false)
 
   /***************************************************************************
    * Value.Int implementation                                                *

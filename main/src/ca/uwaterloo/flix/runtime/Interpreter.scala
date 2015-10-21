@@ -62,7 +62,7 @@ object Interpreter {
 
   def evalLit(lit: Literal): Value = lit match {
     case Literal.Unit(_) => Value.Unit
-    case Literal.Bool(b, _) => Value.mkBool(b)
+    case Literal.Bool(b, _) => if (b) Value.True else Value.False
     case Literal.Int(i, _) => Value.mkInt(i)
     case Literal.Str(s, _) => Value.mkStr(s)
     case Literal.Tag(name, ident, innerLit, _, _) => Value.mkTag(name, ident.name, evalLit(innerLit))
@@ -70,7 +70,7 @@ object Interpreter {
   }
 
   private def evalUnary(op: UnaryOperator, v: Value): Value = op match {
-    case UnaryOperator.Not => Value.mkBool(!v.toBool)
+    case UnaryOperator.Not => if (v.toBool) Value.False else Value.True
     case UnaryOperator.UnaryPlus => Value.mkInt(+v.toInt)
     case UnaryOperator.UnaryMinus => Value.mkInt(-v.toInt)
   }
@@ -97,14 +97,14 @@ object Interpreter {
     case BinaryOperator.Times => Value.mkInt(v1.toInt * v2.toInt)
     case BinaryOperator.Divide => Value.mkInt(v1.toInt / v2.toInt)
     case BinaryOperator.Modulo => Value.mkInt(v1.toInt % v2.toInt) // TODO: Document semantics of modulo on negative operands
-    case BinaryOperator.Less => Value.mkBool(v1.toInt < v2.toInt)
-    case BinaryOperator.LessEqual => Value.mkBool(v1.toInt <= v2.toInt)
-    case BinaryOperator.Greater => Value.mkBool(v1.toInt > v2.toInt)
-    case BinaryOperator.GreaterEqual => Value.mkBool(v1.toInt >= v2.toInt)
-    case BinaryOperator.Equal => Value.mkBool(v1 == v2)
-    case BinaryOperator.NotEqual => Value.mkBool(v1 != v2)
-    case BinaryOperator.And => Value.mkBool(v1.toBool && v2.toBool)
-    case BinaryOperator.Or => Value.mkBool(v1.toBool || v2.toBool)
+    case BinaryOperator.Less => if (v1.toInt < v2.toInt) Value.True else Value.False
+    case BinaryOperator.LessEqual => if (v1.toInt <= v2.toInt) Value.True else Value.False
+    case BinaryOperator.Greater => if (v1.toInt > v2.toInt) Value.True else Value.False
+    case BinaryOperator.GreaterEqual => if (v1.toInt >= v2.toInt) Value.True else Value.False
+    case BinaryOperator.Equal => if (v1 == v2) Value.True else Value.False
+    case BinaryOperator.NotEqual => if (v1 != v2) Value.True else Value.False
+    case BinaryOperator.And => if (v1.toBool && v2.toBool) Value.True else Value.False
+    case BinaryOperator.Or => if (v1.toBool || v2.toBool) Value.True else Value.False
   }
 
   private def matchRule(rules: List[(Pattern, Expression)], value: Value): Option[(Expression, Env)] = rules match {
