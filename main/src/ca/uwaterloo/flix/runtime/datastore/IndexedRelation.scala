@@ -37,33 +37,23 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
    * Returns `true` iff the fact did not already exist in the relation.
    */
   def inferredFact(fact: Array[Value]): Boolean = {
-    // check if the fact already exists using the default index.
-    val key = (defaultIndex, defaultIndex map fact)
-
-    // check if the fact is among the rows returned by the lookup.
-    val resultSet = store.getOrElse(key, mutable.Set.empty)
-    for (row <- resultSet) {
-      if (util.Arrays.equals(row.asInstanceOf[Array[AnyRef]], fact.asInstanceOf[Array[AnyRef]])) {
-        assert(lookup(fact).nonEmpty) // TODO: use this...
-        return false
-      }
+    if (lookup(fact).isEmpty) {
+      newFact(fact)
+      return true
     }
-
-    // otherwise we must add the fact to the relation.
-    newFact(fact)
+    false
   }
 
   /**
    * Updates all indexes and tables with a new fact `f`.
    */
-  private def newFact(f: Array[Value]): Boolean = {
+  private def newFact(f: Array[Value]): Unit = {
     // loop through all the indexes and the default index.
     for (idx <- indexes + defaultIndex) {
       val key = (idx, idx map f)
       val table = store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]])
       table += f
     }
-    true
   }
 
   /**
