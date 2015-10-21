@@ -39,7 +39,7 @@ A ground term is non-wildcard, non-variable term. That is, the Herbrand Universe
 The \emph{Herbrand Base} $\mathcal{B}$ of $P$ is the set of all possible ground atoms whose
 predicate symbols occur in $P$ and where the arguments are drawn from the Herbrand Universe.
 
-We introduce a lattice on ground atoms. 
+We introduce a partial order on ground atoms. 
 Given two ground atoms $A = p_\ell(v_1, \dots, v_n)$ and $B = p_\ell(v'_1, \dots, v'_n)$ with the same 
 (i) predicate symbol, 
 (ii) associated lattice and 
@@ -52,51 +52,55 @@ A ground atom $A$ is true w.r.t. an interpretation if $\exists A' \in I$ such th
 A conjunction of atoms $A_1, \dots, A_n$ is true w.r.t. an interpretation if each atom is true in the interpretation.
 A ground rule is true if either the body conjunction is false, or the head is true.
 
-A model $M$ of $P$ is an interpretation that makes each ground instance of a each rule in $P$ true and that satisfies the property that if $A_\ell(e_1, \dots) \in M$ and $A_\ell(e_2, \dots) \in M$ then $e_1 = e_2$ for all atoms in $M$.
+A model $M$ of $P$ is an interpretation that makes each ground instance of a each rule in $P$ true.
 
-A model $M_1$ is \emph{minimal} if there is no other model $M_2$ such 
-that $M_2 \subset M_1$ or where $A_\ell(e_1, \dots) \in M_1$ is a ground atom in $M_1$ 
-and $A_\ell(e_2, \dots) \in M_2$ is a ground atom in $M_2$ and $e_2 \sqsubset_\ell e_1$.
+A model is \emph{compact} if there are no two ground atoms $A, A' \in M$ such that $A \neq A'$ and $A \sqsubseteq A'$.
+
+A model $M_1$ is \emph{minimal} if there is no other model $M_2$ 
+such that there exists two ground atoms $A \in M_1$ and $A' \in M_2$ where $A' \sqsubset A$.
+
+\paragraph{Example.}
+The Flix program $P$ with constraints:
+\[
+    A_\ell(\texttt{Even}) \quad A_\ell(\texttt{Odd}) \quad B_\ell(\texttt{Odd})
+\]
+and lattices $\{ \ell = (\bot, \top, \texttt{Even}, \texttt{Odd}\}, \sqsubseteq, \sqcup, \sqcap) \}$ has
+the Herbrand Universe:
+%
+\[
+    \mathcal{U} = \{\bot, \top, \texttt{Even}, \texttt{Odd}\}
+\]
+%
+and the Herbrand Base 
+%
+\begin{align*}
+    \mathcal{B} = \{ & A_\ell(\bot), A_\ell(\texttt{Even}), A_\ell(\texttt{Odd}), A_\ell(\top), \\
+                     & B_\ell(\bot), B_\ell(\texttt{Even}), B_\ell(\texttt{Odd}), B_\ell(\top) \}
+\end{align*}
+%
+An interpretation of $P$ is a subset of $\mathcal{B}$.
+For example,
+%
+\begin{align*}
+    I_1 & = \{ A_\ell(\top) \} \\
+    I_2 & = \{ A_\ell(\top), B_\ell(\bot) \} \\
+    I_3 & = \{ A_\ell(\top), B_\ell(\texttt{Odd}), B_\ell(\top) \} \\
+    I_4 & = \{ A_\ell(\top), B_\ell(\top) \} \\
+    I_5 & = \{ A_\ell(\top), B_\ell(\texttt{Odd}) \}
+\end{align*}
+%
+The interpretation 
+$I_1$ is not a model of $P$ since it does not make $B_\ell(\texttt{Odd})$ true.
+$I_2$ is also not a model of $p$ since it does not make $B_\ell(\texttt{Odd})$ true.
+$I_3$ \emph{is} a model of $p$, but it is not minimal, since it is not compact.
+$I_4$ is a compact model of $p$, but it is not minimal as evidenced by $I_5$. 
+
 
 %\paragraph{Proof: Existence of a model?}
 
 %\paragraph{Proof: Existence of a finite model?}
 
 %\paragraph{Proof: Existence of a unique least model?}
-
-\paragraph{Example.}
-The Flix program $P$ with constraints:
-\begin{align*}
-    & A_\ell(e_A, \texttt{Even}). \\
-    & A_\ell(e_A, \texttt{Odd}).
-\end{align*}
-and lattice $\ell = (\{\bot, \top, \texttt{Even}, \texttt{Odd}\}, \sqsubseteq, \sqcup, \sqcap)$ has
-the Herbrand Universe $\mathcal{U} = \{\bot, \top, \texttt{Even}, \texttt{Odd}\}$ and 
-the Herbrand Base $\mathcal{B} = $
-%
-\begin{align*}
-    & A_\ell(\bot, \bot), && A_\ell(\bot, \texttt{Even}), \\
-    & A_\ell(\bot, \texttt{Odd}), && A_\ell(\bot, \top), \\
-    & A_\ell(\texttt{Even}, \bot), && A_\ell(\texttt{Even}, \texttt{Odd}), \\
-    & A_\ell(\texttt{Even}, \texttt{Even}), && A_\ell(\texttt{Even}, \top), \\
-    & A_\ell(\texttt{Odd}, \bot), && A_\ell(\texttt{Odd}, \texttt{Odd}), \\
-    & A_\ell(\texttt{Odd}, \texttt{Even}), && A_\ell(\texttt{Odd}, \top), \\
-    & A_\ell(\top, \bot), && A_\ell(\top, \texttt{Even}), \\
-    & A_\ell(\top, \texttt{Odd}), && A_\ell(\top, \top)
-\end{align*}
-%
-An interpretation is a subset of $\mathcal{B}$ such that the lattice ordering is satified. 
-For example,
-%
-\begin{align*}
-    I_1 & = \{ A_\ell(\top, \top) \} \\
-    I_2 & = \{ A_\ell(\top, \top), A_\ell(\top, \texttt{Odd}) \} \\
-    I_3 & = \{ A_\ell(\texttt{Even}, \texttt{Even}), A_\ell(\texttt{Odd}, \texttt{Odd}) \} \\
-    I_4 & = \{ A_\ell(\top, \texttt{Even}), A_\ell(\top, \texttt{Odd}),  A_\ell(\top, \texttt{Top}) \} \\
-    I_5 & = \{ A_\ell(\top, \texttt{Even}), A_\ell(\top, \texttt{Odd}) \}
-\end{align*}
-%
-The interpretation $I_1$ is not a model of $P$ since ...
 
 \end{document}
 
