@@ -1,7 +1,5 @@
 package ca.uwaterloo.flix.runtime.datastore
 
-import java.util
-
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.runtime.{Solver, Value}
 
@@ -17,7 +15,7 @@ import scala.collection.mutable
  * @param relation the relation.
  * @param indexes the indexes.
  */
-class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
+final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
   /**
    * A map from keys, i.e. (index, value) pairs, to rows matching the key.
    */
@@ -48,7 +46,7 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
    * Updates all indexes and tables with a new fact `f`.
    */
   private def newFact(f: Array[Value]): Unit = {
-    // loop through all the indexes and the default index.
+    // loop through all the indexes and update the tables.
     for (idx <- indexes + defaultIndex) {
       val key = (idx, idx map f)
       val table = store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]])
@@ -104,7 +102,7 @@ class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[I
    * A pattern matches if all is non-null entries are equal to the row.
    */
   @inline
-  def matchRow(pat: Array[Value], row: Array[Value]): Boolean = {
+  private def matchRow(pat: Array[Value], row: Array[Value]): Boolean = {
     var i = 0
     while (i < pat.length) {
       val pv = pat(i)
