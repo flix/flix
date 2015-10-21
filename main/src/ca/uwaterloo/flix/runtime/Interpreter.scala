@@ -113,12 +113,8 @@ object Interpreter {
 
     expr match {
       case Expression.Lit(literal, _, _) => evalLit(literal)
-      case Expression.Var(ident, _, loc) =>
-        assert(env.contains(ident.name), s"Unbound variable ${ident.name} at ${loc.format}")
-        env(ident.name)
-      case Expression.Ref(name, _, _) =>
-        assert(root.constants.contains(name), s"Expected constant $name to be defined.")
-        eval(root.constants(name).exp, root, env)
+      case Expression.Var(ident, _, loc) => env(ident.name)
+      case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
       case Expression.Lambda(formals, body, _, _) => Value.Closure(formals, body, env)
       case Expression.Apply(exp, args, _, _) =>
         val Value.Closure(formals, body, closureEnv) = evalGeneral(exp, root, env)
