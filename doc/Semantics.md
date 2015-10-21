@@ -2,8 +2,8 @@
 
 ## Model-theoretic Semantics ##
 
-A Flix program is P is a finite set of rules. Rules take the form of horn clauses.
-
+A Flix program P is a finite set of rules. A rule is a horn clause and has the general shape:
+A1 <= A2, ..., An where H, A, and B are predicate symbols. 
 
 A model M of P is an interpretation. 
 
