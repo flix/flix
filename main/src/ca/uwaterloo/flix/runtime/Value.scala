@@ -2,6 +2,8 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 
+import scala.collection.mutable
+
 sealed trait Value {
   def toBool: Boolean = {
     this.asInstanceOf[Value.Bool].b
@@ -27,22 +29,131 @@ sealed trait Value {
   }
 }
 
-//  TODO: Intern these values.
-
 object Value {
-
   case object Unit extends Value
 
-  case class Bool(b: scala.Boolean) extends Value
+  /***************************************************************************
+   * Value.Bool implementation                                               *
+   ***************************************************************************/
 
-  case class Int(i: scala.Int) extends Value
+  final class Bool private[Value] (val b: scala.Boolean) extends Value {
+    override val toString: java.lang.String = s"Value.Bool($b)"
 
-  case class Str(s: java.lang.String) extends Value
+    override def equals(other: Any): scala.Boolean = other match {
+      case that: Value.Bool => that eq this
+      case _ => false
+    }
 
-  case class Tag(name: Name.Resolved, ident: String, value: Value) extends Value
+    override val hashCode: scala.Int = b.hashCode
+  }
+
+  object Bool {
+    def unapply(v: Value.Bool): Option[scala.Boolean] = Some(v.b)
+  }
+
+  private val TRUE = new Value.Bool(true)
+  private val FALSE = new Value.Bool(false)
+
+  def mkBool(b: scala.Boolean) = if (b) TRUE else FALSE
+
+  /***************************************************************************
+   * Value.Int implementation                                                *
+   ***************************************************************************/
+
+  final class Int private[Value] (val i: scala.Int) extends Value {
+    override val toString: java.lang.String = s"Value.Int($i)"
+
+    override def equals(other: Any): scala.Boolean = other match {
+      case that: Value.Int => that eq this
+      case _ => false
+    }
+
+    override val hashCode: scala.Int = i.hashCode
+  }
+
+  object Int {
+    def unapply(v: Value.Int): Option[scala.Int] = Some(v.i)
+  }
+
+  // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
+  private val intCache = mutable.HashMap[scala.Int, Value.Int]()
+
+  def mkInt(i: scala.Int) = if (intCache.contains(i)) {
+    intCache(i)
+  } else {
+    val ret = new Value.Int(i)
+    intCache(i) = ret
+    ret
+  }
+
+  /***************************************************************************
+   * Value.Str implementation                                                *
+   ***************************************************************************/
+
+  final class Str private[Value] (val s: java.lang.String) extends Value {
+    override val toString: java.lang.String = s"Value.Str($s)"
+
+    override def equals(other: Any): scala.Boolean = other match {
+      case that: Value.Str => that eq this
+      case _ => false
+    }
+
+    override val hashCode: scala.Int = s.hashCode
+  }
+
+  object Str {
+    def unapply(v: Value.Str): Option[java.lang.String] = Some(v.s)
+  }
+
+  // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
+  private val strCache = mutable.HashMap[java.lang.String, Value.Str]()
+
+  def mkStr(s: java.lang.String) = if (strCache.contains(s)) {
+    strCache(s)
+  } else {
+    val ret = new Value.Str(s)
+    strCache(s) = ret
+    ret
+  }
+
+  /***************************************************************************
+   * Value.Tag implementation                                                *
+   ***************************************************************************/
+
+  final class Tag private[Value] (val enum: Name.Resolved, val tag: java.lang.String, val value: Value) extends Value {
+    override val toString: java.lang.String = s"Value.Tag($enum, $tag, $value)"
+
+    override def equals(other: Any): scala.Boolean = other match {
+      case that: Value.Tag => that eq this
+      case _ => false
+    }
+
+    override val hashCode: scala.Int = (enum, tag, value).hashCode
+  }
+
+  object Tag {
+    def unapply(v: Value.Tag): Option[(Name.Resolved, java.lang.String, Value)] = Some((v.enum, v.tag, v.value))
+  }
+
+  // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
+  private val tagCache = mutable.HashMap[(Name.Resolved, java.lang.String, Value), Value.Tag]()
+
+  def mkTag(e: Name.Resolved, t: java.lang.String, v: Value) = {
+    val triple = (e, t, v)
+    if (tagCache.contains(triple)) {
+      tagCache(triple)
+    } else {
+      val ret = new Value.Tag(e, t, v)
+      tagCache(triple) = ret
+      ret
+    }
+  }
+
+  /***************************************************************************
+   * Value.Tuple, Value.Closure implementations                              *
+   ***************************************************************************/
 
   case class Tuple(elms: List[Value]) extends Value
 
   case class Closure(formals: List[TypedAst.FormalArg], body: TypedAst.Expression, env: Interpreter.Env) extends Value
-
 }
