@@ -2,15 +2,22 @@
 
 ## Model-theoretic Semantics ##
 
-A Flix program is P is a finite set of rules. 
+A Flix program is P is a finite set of rules. Rules take the form of horn clauses.
 
-A (Herbrand) model M of P is an interpretation. 
+
+A model M of P is an interpretation. 
 
 A model `M1` is equivalent to another model `M2` iff: 
 For every ground fact `p(e, t1, .... , tn)` there exists a ground fact `p(e, t1', ...., tn')` in `M2`. 
 
 A model `M1` is minimal if there exists no other model `M2` such `M1 != M2` 
 and for every `p(e1, v2)` in `M2` and `p(e2, v2)` in `M2`: `e2 <= e1`.  
+
+A constraint `c` is `true` iff:
+
+1. `c = P(e, v).` and P(e, v) is in the model `M`. 
+
+## Operational Semantics ##
 
 ## Language ##
 

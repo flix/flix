@@ -55,10 +55,17 @@
 
 - **PAG - An Efficient Program Analyzer Generator**,
   Florian Martin.
+  _This paper presents a framework for generation of static analyzers. The framework allows users to express
+  user-defined lattices in one DSL, and to express transfer functions over CFG nodes and the lattices in
+  another DSL._
   [Paper.](http://link.springer.com/article/10.1007/s100090050017)
 
 - **Hoopl: A Modular, Reusable Library for Dataflow Analysis and Transformation**,
   Norman Ramsey, Joao Dias and Simon Peyton Jones.
+  _This paper presents a dataflow analysis and transformation framework. 
+  Like PAG, Hoopl, is based on the CFG and allows users to define custom lattices
+  and transfer functions in the Haskell programming language. The framework then
+  computes the least fixpoint and performs the specified transformations._
   [Paper.](http://dl.acm.org/citation.cfm?id=1863539)
 
 
@@ -69,7 +76,8 @@
   [Paper.](https://www.classes.cs.uchicago.edu/archive/2004/fall/32630-1/papers/p237-flanagan.pdf)
   _This paper introduces an intermediate code representation, called A Normal Form, that is useful for optimization._
   
-## Human Error Messages ## 
+## Human Error Messages ##
+
 - **Expressive Diagnostics** in Clang, [URL](http://clang.llvm.org/diagnostics.html)
 
 - **Compiler Errors for Humans** in Elm, [URL](http://elm-lang.org/blog/compiler-errors-for-humans)
