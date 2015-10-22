@@ -3,8 +3,12 @@ namespace Graph_N2048 {
     // N = 2048, P = 4.8828125E-4
 
     rel Edge(x: Int, y: Int);
-    Edge(y, x) :- Edge(x, y).
-    Edge(x, z) :- Edge(x, y), Edge(y, z).
+    rel Reach(x: Int, y: Int);
+
+    Reach(x, y) :- Edge(x, y).
+    Reach(x, y) :- Edge(y, x).
+    Reach(x, z) :- Reach(x, y), Edge(y, z).
+
 
     Edge(2, 364).
     Edge(2, 526).

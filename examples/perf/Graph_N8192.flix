@@ -3,8 +3,12 @@ namespace Graph_N8192 {
     // N = 8192, P = 1.220703125E-4
 
     rel Edge(x: Int, y: Int);
-    Edge(y, x) :- Edge(x, y).
-    Edge(x, z) :- Edge(x, y), Edge(y, z).
+    rel Reach(x: Int, y: Int);
+
+    Reach(x, y) :- Edge(x, y).
+    Reach(x, y) :- Edge(y, x).
+    Reach(x, z) :- Reach(x, y), Edge(y, z).
+
 
     Edge(0, 6530).
     Edge(1, 6683).
