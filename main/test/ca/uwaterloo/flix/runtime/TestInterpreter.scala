@@ -1519,7 +1519,7 @@ class TestInterpreter extends FunSuite {
     val rules = List(
       (Pattern.Lit(Literal.Int(86, loc), Type.Int, loc), Expression.Lit(Literal.Str("foo", loc), Type.Str, loc)),
       (Pattern.Wildcard(Type.Int, loc), Expression.Lit(Literal.Str("bar", loc), Type.Str, loc)))
-    val input = Expression.Match(Expression.Lit(Literal.Int(87, loc), Type.Int, loc), rules, Type.Int, loc)
+    val input = Expression.Match(Expression.Lit(Literal.Int(87, loc), Type.Int, loc), rules, Type.Str, loc)
     val result = Interpreter.eval(input, root)
     assertResult(Value.mkStr("bar"))(result)
   }

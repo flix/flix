@@ -19,74 +19,124 @@ object Interpreter {
    */
   case class InternalRuntimeError(message: String) extends RuntimeException(message)
 
-  /*
-   * Evaluates an `Expression`. Whenever possible, it calls specialized methods
-   * `evalInt` and `evalBool` which avoid creating intermediate `Value`s.
-   *
-   * Specifically, this means Unary, Binary, and IfThenElse expressions are
-   * specialized. All other cases are handled by calling `evalGeneral` (which,
-   * in turn, may call `eval`).
-   *
-   * Subexpressions are evaluated by recursively calling `eval`.
-   */
-  def eval(expr: Expression, root: Root, env: Env = Map()): Value = {
-    /*
-     * If the type of the expression is an Int or Bool, we can use the
-     * specialized Int and Bool evaluators. Otherwise, we use `evalGeneral`.
-     */
-    def doEval(exp: Expression): Value = exp.tpe match {
-      case Type.Int => Value.mkInt(evalInt(exp, root, env))
-      case Type.Bool => if (evalBool(exp, root, env)) Value.True else Value.False
-      case _ => evalGeneral(exp, root, env)
+  def eval(expr: Expression, root: Root, env: Env = Map()): Value = expr.tpe match {
+    case Type.Int => Value.mkInt(evalInt(expr, root, env))
+    case Type.Bool => if (evalBool(expr, root, env)) Value.True else Value.False
+    case Type.Var(_) | Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
+         Type.Lambda(_, _) | Type.Predicate(_) =>
+      evalGeneral(expr, root, env)
+  }
+
+  def evalInt(expr: Expression, root: Root, env: Env = Map()): Int = {
+    def evalUnary(op: UnaryOperator, e: Expression): Int = op match {
+      case UnaryOperator.Not => ???
+      case UnaryOperator.UnaryPlus => +evalInt(e, root, env)
+      case UnaryOperator.UnaryMinus => -evalInt(e, root, env)
     }
 
-    def evalInt(expr: Expression, root: Root, env: Env = Map()): Int = expr match {
-      case Expression.Unary(UnaryOperator.UnaryPlus, e, _, _) => +evalInt(e, root, env)
-      case Expression.Unary(UnaryOperator.UnaryMinus, e, _, _) => -evalInt(e, root, env)
-      case Expression.Binary(BinaryOperator.Plus, e1, e2, _, _) => evalInt(e1, root, env) + evalInt(e2, root, env)
-      case Expression.Binary(BinaryOperator.Minus, e1, e2, _, _) => evalInt(e1, root, env) - evalInt(e2, root, env)
-      case Expression.Binary(BinaryOperator.Times, e1, e2, _, _) => evalInt(e1, root, env) * evalInt(e2, root, env)
-      case Expression.Binary(BinaryOperator.Divide, e1, e2, _, _) => evalInt(e1, root, env) / evalInt(e2, root, env)
-      case Expression.Binary(BinaryOperator.Modulo, e1, e2, _, _) =>
-        // TODO: Document semantics of modulo on negative operands
-        evalInt(e1, root, env) % evalInt(e2, root, env)
-      case _ => evalGeneral(expr, root, env).asInstanceOf[Value.Int].i
-    }
-
-    def evalBool(expr: Expression, root: Root, env: Env = Map()): Boolean = expr match {
-      case Expression.Unary(UnaryOperator.Not, e, _, _) => !evalBool(e, root, env)
-      case Expression.Binary(BinaryOperator.Less, e1, e2, _, _) => evalInt(e1, root, env) < evalInt(e2, root, env)
-      case Expression.Binary(BinaryOperator.LessEqual, e1, e2, _, _) => evalInt(e1, root, env) <= evalInt(e2, root, env)
-      case Expression.Binary(BinaryOperator.Greater, e1, e2, _, _) => evalInt(e1, root, env) > evalInt(e2, root, env)
-      case Expression.Binary(BinaryOperator.GreaterEqual, e1, e2, _, _) => evalInt(e1, root, env) >= evalInt(e2, root, env)
-      case Expression.Binary(BinaryOperator.Equal, e1, e2, _, _) => eval(e1, root, env) == eval(e2, root, env)
-      case Expression.Binary(BinaryOperator.NotEqual, e1, e2, _, _) => eval(e1, root, env) != eval(e2, root, env)
-      case Expression.Binary(BinaryOperator.And, e1, e2, _, _) => evalBool(e1, root, env) && evalBool(e2, root, env)
-      case Expression.Binary(BinaryOperator.Or, e1, e2, _, _) => evalBool(e1, root, env) || evalBool(e2, root, env)
-      case _ => evalGeneral(expr, root, env).asInstanceOf[Value.Bool].b
+    // TODO: Document semantics of modulo on negative operands
+    def evalBinary(op: BinaryOperator, e1: Expression, e2: Expression): Int = op match {
+      case BinaryOperator.Plus => evalInt(e1, root, env) + evalInt(e2, root, env)
+      case BinaryOperator.Minus => evalInt(e1, root, env) - evalInt(e2, root, env)
+      case BinaryOperator.Times => evalInt(e1, root, env) * evalInt(e2, root, env)
+      case BinaryOperator.Divide => evalInt(e1, root, env) / evalInt(e2, root, env)
+      case BinaryOperator.Modulo => evalInt(e1, root, env) % evalInt(e2, root, env)
+      case BinaryOperator.Less => ???
+      case BinaryOperator.LessEqual => ???
+      case BinaryOperator.Greater => ???
+      case BinaryOperator.GreaterEqual => ???
+      case BinaryOperator.Equal => ???
+      case BinaryOperator.NotEqual => ???
+      case BinaryOperator.And => ???
+      case BinaryOperator.Or => ???
     }
 
     expr match {
-      case Expression.Unary(_, _, _, _) => doEval(expr)
-      case Expression.Binary(_, _, _, _, _) => doEval(expr)
-      case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
-        if (evalBool(exp1, root, env)) eval(exp2, root, env) else eval(exp3, root, env)
-      case _ => evalGeneral(expr, root, env)
+      case Expression.Lit(literal, _, _) => evalLit(literal).toInt
+      case Expression.Var(ident, _, loc) => env(ident.name).toInt
+      case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env).toInt
+      case Expression.Lambda(formals, body, _, _) => ???
+      case Expression.Apply(exp, args, _, _) =>
+        val Value.Closure(formals, body, closureEnv) = evalGeneral(exp, root, env)
+        val evalArgs = args.map(x => eval(x, root, env))
+        val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
+        eval(body, root, newEnv).toInt
+      case Expression.Unary(op, exp, _, _) => evalUnary(op, exp)
+      case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, exp1, exp2)
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
+        val cond = evalBool(exp1, root, env)
+        if (cond) eval(exp2, root, env).toInt else eval(exp3, root, env).toInt
+      case Expression.Let(ident, exp1, exp2, _, _) =>
+        // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
+        val newEnv = env + (ident.name -> eval(exp1, root, env))
+        eval(exp2, root, newEnv).toInt
+      case Expression.Match(exp, rules, _, _) =>
+        val value = eval(exp, root, env)
+        matchRule(rules, value) match {
+          case Some((matchExp, matchEnv)) => eval(matchExp, root, env ++ matchEnv).toInt
+          case None => throw new RuntimeException(s"Unmatched value $value.")
+        }
+      case Expression.Tag(name, ident, exp, _, _) => ???
+      case Expression.Tuple(elms, _, _) => ???
+      case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
     }
   }
 
-  /*
-   * A general evaluator of `Expression`s. It is always safe to call
-   * `evalGeneral`, though it may be slower than calling the specialized
-   * `eval`.
-   *
-   * Note that `eval` and `evalGeneral` can be mutually recursive.
-   *
-   * Subexpressions are always evaluated by calling the faster `eval`, with
-   * the exception of evaluating the exp of Apply(exp, args, _, _). `eval` is
-   * not specialized for this case and falls back to calling `evalGeneral`.
-   */
-  private def evalGeneral(expr: Expression, root: Root, env: Env = Map()): Value = {
+  def evalBool(expr: Expression, root: Root, env: Env = Map()): Boolean = {
+    def evalUnary(op: UnaryOperator, e: Expression): Boolean = op match {
+      case UnaryOperator.Not => !evalBool(e, root, env)
+      case UnaryOperator.UnaryPlus => ???
+      case UnaryOperator.UnaryMinus => ???
+    }
+
+    def evalBinary(op: BinaryOperator, e1: Expression, e2: Expression): Boolean = op match {
+      case BinaryOperator.Plus => ???
+      case BinaryOperator.Minus => ???
+      case BinaryOperator.Times => ???
+      case BinaryOperator.Divide => ???
+      case BinaryOperator.Modulo => ???
+      case BinaryOperator.Less => evalInt(e1, root, env) < evalInt(e2, root, env)
+      case BinaryOperator.LessEqual => evalInt(e1, root, env) <= evalInt(e2, root, env)
+      case BinaryOperator.Greater => evalInt(e1, root, env) > evalInt(e2, root, env)
+      case BinaryOperator.GreaterEqual => evalInt(e1, root, env) >= evalInt(e2, root, env)
+      case BinaryOperator.Equal => eval(e1, root, env) == eval(e2, root, env)
+      case BinaryOperator.NotEqual => eval(e1, root, env) != eval(e2, root, env)
+      case BinaryOperator.And => evalBool(e1, root, env) && evalBool(e2, root, env)
+      case BinaryOperator.Or => evalBool(e1, root, env) || evalBool(e2, root, env)
+    }
+
+    expr match {
+      case Expression.Lit(literal, _, _) => evalLit(literal).toBool
+      case Expression.Var(ident, _, loc) => env(ident.name).toBool
+      case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env).toBool
+      case Expression.Lambda(formals, body, _, _) => ???
+      case Expression.Apply(exp, args, _, _) =>
+        val Value.Closure(formals, body, closureEnv) = evalGeneral(exp, root, env)
+        val evalArgs = args.map(x => eval(x, root, env))
+        val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
+        eval(body, root, newEnv).toBool
+      case Expression.Unary(op, exp, _, _) => evalUnary(op, exp)
+      case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, exp1, exp2)
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
+        val cond = evalBool(exp1, root, env)
+        if (cond) eval(exp2, root, env).toBool else eval(exp3, root, env).toBool
+      case Expression.Let(ident, exp1, exp2, _, _) =>
+        // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
+        val newEnv = env + (ident.name -> eval(exp1, root, env))
+        eval(exp2, root, newEnv).toBool
+      case Expression.Match(exp, rules, _, _) =>
+        val value = eval(exp, root, env)
+        matchRule(rules, value) match {
+          case Some((matchExp, matchEnv)) => eval(matchExp, root, env ++ matchEnv).toBool
+          case None => throw new RuntimeException(s"Unmatched value $value.")
+        }
+      case Expression.Tag(name, ident, exp, _, _) => ???
+      case Expression.Tuple(elms, _, _) => ???
+      case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
+    }
+  }
+
+  def evalGeneral(expr: Expression, root: Root, env: Env = Map()): Value = {
     def evalUnary(op: UnaryOperator, v: Value): Value = op match {
       case UnaryOperator.Not => if (v.toBool) Value.False else Value.True
       case UnaryOperator.UnaryPlus => Value.mkInt(+v.toInt)
@@ -122,7 +172,7 @@ object Interpreter {
       case Expression.Unary(op, exp, _, _) => evalUnary(op, eval(exp, root, env))
       case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, eval(exp1, root, env), eval(exp2, root, env))
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
-        val cond = eval(exp1, root, env).toBool
+        val cond = evalBool(exp1, root, env)
         if (cond) eval(exp2, root, env) else eval(exp3, root, env)
       case Expression.Let(ident, exp1, exp2, _, _) =>
         // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
