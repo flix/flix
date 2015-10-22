@@ -17,15 +17,21 @@ import scala.collection.mutable
  */
 final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
   /**
-   * A map from keys, i.e. (index, value) pairs, to rows matching the key.
+   * A map from indexes to keys to rows of values.
    */
-  // TODO: Maybe change signature to Index -> Key -> Set instead of (Index, Key)
-  private val store = mutable.Map.empty[(Seq[Int], Seq[Value]), mutable.Set[Array[Value]]]
+  private val store = mutable.Map.empty[Seq[Int], mutable.Map[Seq[Value], mutable.Set[Array[Value]]]]
 
   /**
    * The default index which is guaranteed to exist.
    */
   private val defaultIndex: Seq[Int] = Seq(0)
+
+  /**
+   * Initialize the store for all indexes.
+   */
+  for (idx <- indexes + defaultIndex) {
+    store(idx) = mutable.Map.empty
+  }
 
   /**
    * Processes a new inferred `fact`.
@@ -48,8 +54,8 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   private def newFact(f: Array[Value]): Unit = {
     // loop through all the indexes and update the tables.
     for (idx <- indexes + defaultIndex) {
-      val key = (idx, idx map f)
-      val table = store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]])
+      val key = idx map f
+      val table = store(idx).getOrElseUpdate(key, mutable.Set.empty[Array[Value]])
       table += f
     }
   }
@@ -67,16 +73,16 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
 
     if (idx != null) {
       // use exact index
-      val key = indexAndKey(idx, pat)
-      store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]]).iterator
+      val key = keyOf(idx, pat)
+      store(idx).getOrElseUpdate(key, mutable.Set.empty).iterator
     } else {
-      // look for useable index
+      // look for usable index
       idx = approxIndex(pat)
 
       val table = if (idx != null) {
         // use suitable index
-        val key = indexAndKey(idx, pat)
-        store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]]).iterator
+        val key = keyOf(idx, pat)
+        store(idx).getOrElseUpdate(key, mutable.Set.empty).iterator
       } else {
         scan // no suitable index. Must scan the entire table.
       }
@@ -118,28 +124,27 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   }
 
   /**
-   * Returns the (index, value) pair which constitutes a key.
+   * Returns the key for the given index `idx` and pattern `pat`.
    */
   @inline
-  private def indexAndKey(idx: Seq[Int], pat: Array[Value]): (Seq[Int], Seq[Value]) = {
+  private def keyOf(idx: Seq[Int], pat: Array[Value]): Seq[Value] = {
     val a = Array.ofDim[Value](idx.length)
     var i: Int = 0
     while (i < idx.length) {
       a(i) = pat(idx(i))
       i = i + 1
     }
-    (idx, a.toSeq)
+    a.toSeq
   }
 
 
   /**
    * Returns all rows in the relation using a table scan.
    */
-  // TODO: Improve performance ...
-  // TODO: Deal with duplicate properly...
-  def scan: Iterator[Array[Value]] = (store map {
-    case (_, rows) => rows
-  }).toList.flatten.toIterator
+  // TODO: Performance of flatten?
+  def scan: Iterator[Array[Value]] = store(defaultIndex).map {
+    case (key, value) => value
+  }.flatten.iterator
 
 
   /**
