@@ -83,10 +83,8 @@ object Interpreter {
    * Note that `eval` and `evalGeneral` can be mutually recursive.
    *
    * Subexpressions are always evaluated by calling the faster `eval`, with
-   * two exceptions: evaluating the exp of Apply(exp, args, _, _) and
-   * evaluating the Apply of a desugared Let expression. `eval` is not
-   * specialized for those cases and falls back to calling `evalGeneral`.
-   * Therefore, in those cases, we call `evalGeneral` directly.
+   * the exception of evaluating the exp of Apply(exp, args, _, _). `eval` is
+   * not specialized for this case and falls back to calling `evalGeneral`.
    */
   private def evalGeneral(expr: Expression, root: Root, env: Env = Map()): Value = {
     def evalUnary(op: UnaryOperator, v: Value): Value = op match {
@@ -126,11 +124,10 @@ object Interpreter {
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
         val cond = eval(exp1, root, env).toBool
         if (cond) eval(exp2, root, env) else eval(exp3, root, env)
-      case Expression.Let(ident, value, body, tpe, loc) =>
+      case Expression.Let(ident, exp1, exp2, _, _) =>
         // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
-        val func = Expression.Lambda(List(FormalArg(ident, value.tpe)), body, Type.Lambda(List(value.tpe), tpe), loc)
-        val desugared = Expression.Apply(func, List(value), tpe, loc)
-        evalGeneral(desugared, root, env)
+        val newEnv = env + (ident.name -> eval(exp1, root, env))
+        eval(exp2, root, newEnv)
       case Expression.Match(exp, rules, _, _) =>
         val value = eval(exp, root, env)
         matchRule(rules, value) match {
