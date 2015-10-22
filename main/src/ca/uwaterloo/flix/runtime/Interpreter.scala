@@ -19,6 +19,13 @@ object Interpreter {
    */
   case class InternalRuntimeError(message: String) extends RuntimeException(message)
 
+  /*
+   * Evaluates an `Expression`. Based on the type of `expr`, call either the
+   * specialized `evalInt` or `evalBool`, or the general `evalGeneral`
+   * evaluator.
+   *
+   * Assumes all input has been type-checked.
+   */
   def eval(expr: Expression, root: Root, env: Env = Map()): Value = expr.tpe match {
     case Type.Int => Value.mkInt(evalInt(expr, root, env))
     case Type.Bool => if (evalBool(expr, root, env)) Value.True else Value.False
@@ -27,11 +34,24 @@ object Interpreter {
       evalGeneral(expr, root, env)
   }
 
+  /*
+   * Evaluates expressions of type `Type.Int`, returning an unwrapped
+   * `scala.Int`. Performs casting as necessary.
+   *
+   * Subexpressions are evaluated by calling specialized eval whenever
+   * possible. For example, subexpressions of int binary expressions must
+   * themselves be int expressions, so we can call `evalInt`. On the other
+   * hand, the condition of an IfThenElse expression must have type bool, so we
+   * call `evalBool`. And if the expression cannot have int or bool type (for
+   * example, the `exp` of Apply(exp, args, _, _), we directly call
+   * `evalGeneral`.
+   */
   def evalInt(expr: Expression, root: Root, env: Env = Map()): Int = {
     def evalUnary(op: UnaryOperator, e: Expression): Int = op match {
-      case UnaryOperator.Not => ???
       case UnaryOperator.UnaryPlus => +evalInt(e, root, env)
       case UnaryOperator.UnaryMinus => -evalInt(e, root, env)
+      case UnaryOperator.Not =>
+        throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int.")
     }
 
     // TODO: Document semantics of modulo on negative operands
@@ -41,21 +61,15 @@ object Interpreter {
       case BinaryOperator.Times => evalInt(e1, root, env) * evalInt(e2, root, env)
       case BinaryOperator.Divide => evalInt(e1, root, env) / evalInt(e2, root, env)
       case BinaryOperator.Modulo => evalInt(e1, root, env) % evalInt(e2, root, env)
-      case BinaryOperator.Less => ???
-      case BinaryOperator.LessEqual => ???
-      case BinaryOperator.Greater => ???
-      case BinaryOperator.GreaterEqual => ???
-      case BinaryOperator.Equal => ???
-      case BinaryOperator.NotEqual => ???
-      case BinaryOperator.And => ???
-      case BinaryOperator.Or => ???
+      case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual |
+           BinaryOperator.Equal | BinaryOperator.NotEqual | BinaryOperator.And | BinaryOperator.Or =>
+        throw new InternalRuntimeError(s"Binary expression $expr does not return an int.")
     }
 
     expr match {
       case Expression.Lit(literal, _, _) => evalLit(literal).toInt
       case Expression.Var(ident, _, loc) => env(ident.name).toInt
       case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env).toInt
-      case Expression.Lambda(formals, body, _, _) => ???
       case Expression.Apply(exp, args, _, _) =>
         val Value.Closure(formals, body, closureEnv) = evalGeneral(exp, root, env)
         val evalArgs = args.map(x => eval(x, root, env))
@@ -76,25 +90,30 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => eval(matchExp, root, env ++ matchEnv).toInt
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
-      case Expression.Tag(name, ident, exp, _, _) => ???
-      case Expression.Tuple(elms, _, _) => ???
+      case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) =>
+        throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int.")
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
     }
   }
 
+  /*
+   * Evaluates expressions of type `Type.Bool`, returning an unwrapped
+   * `scala.Boolean`. Performs casting as necessary.
+   *
+   * Subexpressions are evaluated by calling specialized eval whenever
+   * possible.
+   */
   def evalBool(expr: Expression, root: Root, env: Env = Map()): Boolean = {
     def evalUnary(op: UnaryOperator, e: Expression): Boolean = op match {
       case UnaryOperator.Not => !evalBool(e, root, env)
-      case UnaryOperator.UnaryPlus => ???
-      case UnaryOperator.UnaryMinus => ???
+      case UnaryOperator.UnaryPlus | UnaryOperator.UnaryMinus =>
+        throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
     }
 
     def evalBinary(op: BinaryOperator, e1: Expression, e2: Expression): Boolean = op match {
-      case BinaryOperator.Plus => ???
-      case BinaryOperator.Minus => ???
-      case BinaryOperator.Times => ???
-      case BinaryOperator.Divide => ???
-      case BinaryOperator.Modulo => ???
+      case BinaryOperator.Plus | BinaryOperator.Minus | BinaryOperator.Times | BinaryOperator.Divide |
+           BinaryOperator.Modulo =>
+        throw new InternalRuntimeError(s"Binary expression $expr does not return a boolean.")
       case BinaryOperator.Less => evalInt(e1, root, env) < evalInt(e2, root, env)
       case BinaryOperator.LessEqual => evalInt(e1, root, env) <= evalInt(e2, root, env)
       case BinaryOperator.Greater => evalInt(e1, root, env) > evalInt(e2, root, env)
@@ -109,7 +128,6 @@ object Interpreter {
       case Expression.Lit(literal, _, _) => evalLit(literal).toBool
       case Expression.Var(ident, _, loc) => env(ident.name).toBool
       case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env).toBool
-      case Expression.Lambda(formals, body, _, _) => ???
       case Expression.Apply(exp, args, _, _) =>
         val Value.Closure(formals, body, closureEnv) = evalGeneral(exp, root, env)
         val evalArgs = args.map(x => eval(x, root, env))
@@ -130,12 +148,18 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => eval(matchExp, root, env ++ matchEnv).toBool
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
-      case Expression.Tag(name, ident, exp, _, _) => ???
-      case Expression.Tuple(elms, _, _) => ???
+      case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) =>
+        throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
     }
   }
 
+  /*
+   * A general evaluator of `Expression`s.
+   *
+   * Subexpressions are always evaluated by calling `eval`, which will call the
+   * specialized eval whenever possible.
+   */
   def evalGeneral(expr: Expression, root: Root, env: Env = Map()): Value = {
     def evalUnary(op: UnaryOperator, v: Value): Value = op match {
       case UnaryOperator.Not => if (v.toBool) Value.False else Value.True
