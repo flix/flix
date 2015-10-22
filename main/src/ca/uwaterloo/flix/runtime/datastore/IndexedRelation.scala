@@ -62,21 +62,23 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
    * Returns an iterator over the matched rows.
    */
   def lookup(pat: Array[Value]): Iterator[Array[Value]] = {
-    val idx = pat.toSeq.zipWithIndex.collect {
-      case (v, i) if v != null => i
-    }
 
-    if (indexes contains idx) {
+    var idx = exactIndex(pat)
+
+    if (idx != null) {
       // use exact index
       val key = indexAndKey(idx, pat)
       store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]]).iterator
     } else {
       // look for useable index
-      val table = indexes.find(idx => idx.forall(i => pat(i) != null)) match {
-        case None => scan // no suitable index. Must scan the entire table.
-        case Some(fidx) =>
-          val key = indexAndKey(fidx, pat)
-          store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]]).iterator
+      idx = approxIndex(pat)
+
+      val table = if (idx != null) {
+        // use suitable index
+        val key = indexAndKey(idx, pat)
+        store.getOrElseUpdate(key, mutable.Set.empty[Array[Value]]).iterator
+      } else {
+        scan // no suitable index. Must scan the entire table.
       }
 
       // table scan
@@ -93,13 +95,27 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
    * Returns `null` if no such exact index exists.
    */
   @inline
-  private def exactIndex(pat: Array[Value]): Seq[Int] = ???
+  private def exactIndex(pat: Array[Value]): Seq[Int] = {
+    val idx = pat.toSeq.zipWithIndex.collect {
+      case (v, i) if v != null => i
+    }
+
+    if (indexes contains idx) {
+      return idx
+    }
+    null
+  }
 
   /**
    *
    */
   @inline
-  private def approxIndex(pat: Array[Value]): Seq[Int] = ???
+  private def approxIndex(pat: Array[Value]): Seq[Int] = {
+    indexes.find(idx => idx.forall(i => pat(i) != null)) match {
+      case None => null
+      case Some(idx) => idx
+    }
+  }
 
   /**
    * Returns the (index, value) pair which constitutes a key.
