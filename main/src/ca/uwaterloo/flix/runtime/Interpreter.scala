@@ -69,25 +69,25 @@ object Interpreter {
     expr match {
       case Expression.Lit(literal, _, _) => evalLit(literal).toInt
       case Expression.Var(ident, _, loc) => env(ident.name).toInt
-      case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env).toInt
+      case Expression.Ref(name, _, _) => evalInt(root.constants(name).exp, root, env)
       case Expression.Apply(exp, args, _, _) =>
         val Value.Closure(formals, body, closureEnv) = evalGeneral(exp, root, env)
         val evalArgs = args.map(x => eval(x, root, env))
         val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-        eval(body, root, newEnv).toInt
+        evalInt(body, root, newEnv)
       case Expression.Unary(op, exp, _, _) => evalUnary(op, exp)
       case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, exp1, exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
         val cond = evalBool(exp1, root, env)
-        if (cond) eval(exp2, root, env).toInt else eval(exp3, root, env).toInt
+        if (cond) evalInt(exp2, root, env) else evalInt(exp3, root, env)
       case Expression.Let(ident, exp1, exp2, _, _) =>
         // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
         val newEnv = env + (ident.name -> eval(exp1, root, env))
-        eval(exp2, root, newEnv).toInt
+        evalInt(exp2, root, newEnv)
       case Expression.Match(exp, rules, _, _) =>
         val value = eval(exp, root, env)
         matchRule(rules, value) match {
-          case Some((matchExp, matchEnv)) => eval(matchExp, root, env ++ matchEnv).toInt
+          case Some((matchExp, matchEnv)) => evalInt(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
       case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) =>
@@ -127,25 +127,25 @@ object Interpreter {
     expr match {
       case Expression.Lit(literal, _, _) => evalLit(literal).toBool
       case Expression.Var(ident, _, loc) => env(ident.name).toBool
-      case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env).toBool
+      case Expression.Ref(name, _, _) => evalBool(root.constants(name).exp, root, env)
       case Expression.Apply(exp, args, _, _) =>
         val Value.Closure(formals, body, closureEnv) = evalGeneral(exp, root, env)
         val evalArgs = args.map(x => eval(x, root, env))
         val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-        eval(body, root, newEnv).toBool
+        evalBool(body, root, newEnv)
       case Expression.Unary(op, exp, _, _) => evalUnary(op, exp)
       case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, exp1, exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
         val cond = evalBool(exp1, root, env)
-        if (cond) eval(exp2, root, env).toBool else eval(exp3, root, env).toBool
+        if (cond) evalBool(exp2, root, env) else evalBool(exp3, root, env)
       case Expression.Let(ident, exp1, exp2, _, _) =>
         // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
         val newEnv = env + (ident.name -> eval(exp1, root, env))
-        eval(exp2, root, newEnv).toBool
+        evalBool(exp2, root, newEnv)
       case Expression.Match(exp, rules, _, _) =>
         val value = eval(exp, root, env)
         matchRule(rules, value) match {
-          case Some((matchExp, matchEnv)) => eval(matchExp, root, env ++ matchEnv).toBool
+          case Some((matchExp, matchEnv)) => evalBool(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
       case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) =>
