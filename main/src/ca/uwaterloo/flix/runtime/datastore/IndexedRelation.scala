@@ -68,9 +68,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
    * Returns an iterator over the matched rows.
    */
   def lookup(pat: Array[Value]): Iterator[Array[Value]] = {
-
     var idx = exactIndex(pat)
-
     if (idx != null) {
       // use exact index
       val key = keyOf(idx, pat)
@@ -94,6 +92,19 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
     }
   }
 
+  /**
+   * Returns the key for the given index `idx` and pattern `pat`.
+   */
+  @inline
+  private def keyOf(idx: Seq[Int], pat: Array[Value]): Seq[Value] = {
+    val a = Array.ofDim[Value](idx.length)
+    var i: Int = 0
+    while (i < idx.length) {
+      a(i) = pat(idx(i))
+      i = i + 1
+    }
+    a.toSeq
+  }
 
   /**
    * Returns an index matching all the non-null columns in the given pattern `pat`.
@@ -126,26 +137,12 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   }
 
   /**
-   * Returns the key for the given index `idx` and pattern `pat`.
-   */
-  @inline
-  private def keyOf(idx: Seq[Int], pat: Array[Value]): Seq[Value] = {
-    val a = Array.ofDim[Value](idx.length)
-    var i: Int = 0
-    while (i < idx.length) {
-      a(i) = pat(idx(i))
-      i = i + 1
-    }
-    a.toSeq
-  }
-
-  /**
    * Returns all rows in the relation using a table scan.
    */
-  // TODO: Performance of flatten?
-  def scan: Iterator[Array[Value]] = store(defaultIndex).map {
+  // TODO: Performance
+  def scan: Iterator[Array[Value]] = store(defaultIndex).flatMap {
     case (key, value) => value
-  }.flatten.iterator
+  }.iterator
 
 
   /**
