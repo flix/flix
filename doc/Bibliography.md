@@ -69,6 +69,14 @@
   [Paper.](http://dl.acm.org/citation.cfm?id=1863539)
 
 
+## Other ##
+
+- **Declarative Datalog Debugging for Mere Mortals**,
+  Sven Kohler, Bertram Ludascher and Yannis Smaragdakis.
+  _This paper presents a technique for debugging Datalog programs based on a transformation 
+  that when executed constructs the provenance graph of the original program._
+  [Paper.](https://yanniss.github.io/DeclarativeDebugging.pdf)
+
 ## Optimization ##
 
 - **The Essence of Compiling with Continuations**,
