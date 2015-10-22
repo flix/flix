@@ -51,12 +51,12 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   /**
    * Updates all indexes and tables with a new fact `f`.
    */
-  private def newFact(f: Array[Value]): Unit = {
+  private def newFact(fact: Array[Value]): Unit = {
     // loop through all the indexes and update the tables.
     for (idx <- indexes + defaultIndex) {
-      val key = idx map f
+      val key = keyOf(idx, fact)
       val table = store(idx).getOrElseUpdate(key, mutable.Set.empty[Array[Value]])
-      table += f
+      table += fact
     }
   }
 
@@ -136,7 +136,6 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
     }
     a.toSeq
   }
-
 
   /**
    * Returns all rows in the relation using a table scan.
