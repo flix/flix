@@ -117,9 +117,11 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
    */
   @inline
   private def approxIndex(pat: Array[Value]): Seq[Int] = {
-    indexes.find(idx => idx.forall(i => pat(i) != null)) match {
-      case None => null
-      case Some(idx) => idx
+    (indexes + defaultIndex).find(idx => idx.forall(i => pat(i) != null)) match {
+      case None =>
+        null
+      case Some(idx) =>
+        idx
     }
   }
 
