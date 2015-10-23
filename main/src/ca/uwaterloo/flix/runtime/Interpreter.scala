@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Type, FormalArg, Root}
-import ca.uwaterloo.flix.language.ast.{TypedAst, Name, BinaryOperator, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Type, Term, Root}
+import ca.uwaterloo.flix.language.ast.{TypedAst, BinaryOperator, UnaryOperator}
 
 // TODO: Consider an EvaluationContext
 object Interpreter {
@@ -251,19 +251,15 @@ object Interpreter {
   /**
    * Evaluates the given head term `t` under the given environment `env0`
    */
-  def evalHeadTerm(t: TypedAst.Term.Head, root: TypedAst.Root, env: Map[String, Value]): Value = t match {
-    case TypedAst.Term.Head.Var(x, tpe, loc) => env.get(x.name) match {
-      case None => throw InternalRuntimeError("Unbound variable in head term!")
-      case Some(value) => value
-    }
-    case TypedAst.Term.Head.Lit(lit, tpe, loc) => Interpreter.evalLit(lit)
-    case TypedAst.Term.Head.Apply(name, terms, tpe, loc) =>
-      val f = root.constants(name)
-      val Value.Closure(formals, body, closureEnv) = eval(f.exp, root, env)
+  def evalHeadTerm(t: Term.Head, root: Root, env: Env): Value = t match {
+    case Term.Head.Var(x, _, _) => env(x.name)
+    case Term.Head.Lit(lit, _, _) => evalLit(lit)
+    case Term.Head.Apply(name, terms, _, _) =>
+      val function = root.constants(name)
+      val Value.Closure(formals, body, closureEnv) = eval(function.exp, root, env)
       val evalArgs = terms.map(t => evalHeadTerm(t, root, env))
       val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
       eval(body, root, newEnv)
-
   }
 
   def evalBodyTerm(t: TypedAst.Term.Body, env: Map[String, Value]): Value = t match {
