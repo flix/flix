@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Type, Term, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Definition, Expression, Literal, Pattern, Type, Term, Root}
 import ca.uwaterloo.flix.language.ast.{TypedAst, BinaryOperator, UnaryOperator}
 
 // TODO: Consider an EvaluationContext
@@ -275,11 +275,10 @@ object Interpreter {
     eval(body, root, newEnv)
   }
 
-  def evalCall(d: TypedAst.Definition.Constant, terms: List[TypedAst.Term.Body], root: TypedAst.Root, env: Map[String, Value]): Value = {
-    val Value.Closure(formals, body, closureEnv) = evalGeneral(d.exp, root, env)
+  def evalCall(definition: Definition.Constant, terms: List[Term.Body], root: Root, env: Env): Value = {
+    val Value.Closure(formals, body, closureEnv) = evalGeneral(definition.exp, root, env)
     val evalArgs = terms.map(t => evalBodyTerm(t, env))
     val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
     eval(body, root, newEnv)
   }
-
 }
