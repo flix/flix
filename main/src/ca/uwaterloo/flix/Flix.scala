@@ -25,6 +25,10 @@ object Flix {
   def solve(paths: Traversable[Path]): Validation[Model, FlixError] = {
     val ast = Compiler.compile(paths)
 
+    if (ast.isEmpty) {
+      System.exit(1) // TODO
+    }
+
     implicit val sCtx = Solver.SolverContext(ast.get)
 
     val solver = new Solver()

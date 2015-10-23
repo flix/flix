@@ -358,6 +358,14 @@ object WeededAst {
      */
     case class Error(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
+    /**
+     * An AST node that represents a reference to a JVM static field or method.
+     *
+     * @param name the fully qualified name of the field or method.
+     * @param loc the source location.
+     */
+    case class Native(name: String, loc: SourceLocation) extends WeededAst.Expression
+
   }
 
   /**
@@ -657,12 +665,19 @@ object WeededAst {
     case class Tuple(elms: List[WeededAst.Type]) extends WeededAst.Type
 
     /**
-     * An AST node  that represents a function type.
+     * An AST node that represents a function type.
      *
      * @param args the type of the arguments.
      * @param retTpe the return type.
      */
     case class Function(args: List[WeededAst.Type], retTpe: WeededAst.Type) extends WeededAst.Type
+
+    /**
+     * An AST node that represents a native JVM type.
+     *
+     * @param name the fully qualified name of the type.
+     */
+    case class Native(name: String) extends WeededAst.Type
 
   }
 

@@ -325,6 +325,23 @@ object Weeder {
          """.stripMargin
     }
 
+    /**
+     * An error raised to indicate that a JVM class was not found.
+     *
+     * @param name the fully qualified name of the class.
+     * @param location the location of the syntactic construct.
+     */
+    case class NativeTypeNotFound(name: String, location: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${location.formatSource}")}
+           |
+            |${consoleCtx.red(s">> The class name: '$name' was not found.")}
+           |
+            |${location.underline}
+           |Tip: Check your class path.
+         """.stripMargin
+    }
+
   }
 
   /**
@@ -646,6 +663,30 @@ object Weeder {
         Type.compile(exp.tpe) map {
           case tpe => WeededAst.Expression.Error(tpe, exp.loc)
         }
+
+      // TODO: Move into resolver
+      case exp: ParsedAst.Expression.Native =>
+        val className = exp.name.split('.').dropRight(1).mkString(".")
+        val fieldOrMethodName = exp.name.split('.').last
+
+        try {
+          val clazz = Class.forName(className)
+
+          val fields = clazz.getDeclaredFields.toList.filter {
+            case field => field.getName == fieldOrMethodName
+          }
+
+          val methods = clazz.getDeclaredMethods.toList.filter {
+            case method => method.getName == fieldOrMethodName
+          }
+
+
+
+          WeededAst.Expression.Native(exp.name, exp.loc).toSuccess
+        } catch {
+          case ex: ClassNotFoundException => NativeTypeNotFound(className, exp.loc).toFailure
+        }
+
     }
   }
 
@@ -819,6 +860,14 @@ object Weeder {
       }
       case ParsedAst.Type.Parametric(name, pelms) =>
         Unsupported("Parametric types are not yet supported.", name.loc).toFailure
+      case p@ParsedAst.Type.Native(sp1, name, sp2) => try {
+        // TODO: Move into resolver
+        val clazz = Class.forName(name)
+        WeededAst.Type.Native(name).toSuccess
+      } catch {
+        case e: ClassNotFoundException => NativeTypeNotFound(name, p.loc).toFailure
+      }
+
     }
   }
 

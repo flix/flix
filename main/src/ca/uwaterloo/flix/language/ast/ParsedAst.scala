@@ -782,9 +782,13 @@ object ParsedAst {
     /**
      * An AST node that represents a native JVM type.
      *
+     * @param sp1 the position of the first character in the term.
      * @param name the fully qualified name of the type.
+     * @param sp2 the position of the last character in the term.
      */
-    case class Native(name: String) extends ParsedAst.Type
+    case class Native(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst.Type {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
   }
 

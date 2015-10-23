@@ -395,7 +395,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     rule {
-      atomic("#") ~ JavaName ~ optWS ~> ParsedAst.Type.Native
+      atomic("#") ~ SP ~ JavaName ~ SP ~ optWS ~> ParsedAst.Type.Native
     }
   }
 
