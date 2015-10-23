@@ -2655,4 +2655,68 @@ class TestInterpreter extends FunSuite {
     val result = Interpreter.evalBodyTerm(input, Map())
     assertResult(Value.mkTag(name, "Val", Value.mkInt(1241)))(result)
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // eval2                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("eval2 - 01") {
+    // (x, y) => x + y
+    val lambda = Expression.Lambda(
+      List(FormalArg(ident01, Type.Int), FormalArg(ident02, Type.Int)),
+      Expression.Binary(
+        BinaryOperator.Plus,
+        Expression.Var(ident01, Type.Int, loc),
+        Expression.Var(ident02, Type.Int, loc),
+        Type.Int, loc),
+      Type.Lambda(List(Type.Int, Type.Int), Type.Int), loc)
+
+    // (x, y => x + y)(3, 4)
+    val v1 = Value.mkInt(3)
+    val v2 = Value.mkInt(4)
+    val value = Interpreter.eval2(lambda, v1, v2, root)
+    assertResult(Value.mkInt(7))(value)
+  }
+
+  test("eval2 - 02") {
+    // (x, y) => if (x) then true else y
+    val lambda = Expression.Lambda(
+      List(FormalArg(ident01, Type.Bool), FormalArg(ident02, Type.Bool)),
+      Expression.IfThenElse(
+        Expression.Var(ident01, Type.Bool, loc),
+        Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
+        Expression.Var(ident02, Type.Bool, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(Type.Bool, Type.Bool), Type.Bool), loc)
+
+    // ((x, y) => if (x) then true else y)(false, true)
+    val v1 = Value.False
+    val v2 = Value.True
+    val value = Interpreter.eval2(lambda, v1, v2, root)
+    assertResult(Value.True)(value)
+  }
+
+  test("eval2 - 03") {
+    // x, y => x(y)
+    val lambda = Expression.Lambda(
+      List(FormalArg(ident01, Type.Lambda(List(Type.Int), Type.Int)), FormalArg(ident02, Type.Int)),
+      Expression.Apply(
+        Expression.Var(ident01, Type.Lambda(List(Type.Int), Type.Int), loc),
+        List(Expression.Var(ident02, Type.Int, loc)),
+        Type.Int, loc),
+      Type.Lambda(List(Type.Lambda(List(Type.Int), Type.Int), Type.Int), Type.Int), loc)
+
+    // (x, y => x(y))((x => x + 1), 5)
+    val v1 = Value.Closure(
+      List(FormalArg(ident01, Type.Int)),
+      Expression.Binary(
+        BinaryOperator.Plus,
+        Expression.Var(ident01, Type.Int, loc),
+        Expression.Lit(Literal.Int(1, loc), Type.Int, loc),
+        Type.Int, loc),
+      Map())
+    val v2 = Value.mkInt(5)
+    val value = Interpreter.eval2(lambda, v1, v2, root)
+    assertResult(Value.mkInt(6))(value)
+  }
 }

@@ -256,7 +256,7 @@ object Interpreter {
     case Term.Head.Lit(lit, _, _) => evalLit(lit)
     case Term.Head.Apply(name, terms, _, _) =>
       val function = root.constants(name)
-      val Value.Closure(formals, body, closureEnv) = eval(function.exp, root, env)
+      val Value.Closure(formals, body, closureEnv) = evalGeneral(function.exp, root, env)
       val evalArgs = terms.map(t => evalHeadTerm(t, root, env))
       val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
       eval(body, root, newEnv)
@@ -268,15 +268,15 @@ object Interpreter {
     case Term.Body.Lit(lit, _, _) => evalLit(lit)
   }
 
-  def eval2(lambda: Expression, v1: Value, v2: Value, root: TypedAst.Root): Value = {
-    val Value.Closure(formals, body, closureEnv) = eval(lambda, root, Map.empty)
+  def eval2(lambda: Expression, v1: Value, v2: Value, root: Root): Value = {
+    val Value.Closure(formals, body, closureEnv) = evalGeneral(lambda, root)
     val evalArgs = List(v1, v2)
     val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
     eval(body, root, newEnv)
   }
 
   def evalCall(d: TypedAst.Definition.Constant, terms: List[TypedAst.Term.Body], root: TypedAst.Root, env: Map[String, Value]): Value = {
-    val Value.Closure(formals, body, closureEnv) = eval(d.exp, root, env)
+    val Value.Closure(formals, body, closureEnv) = evalGeneral(d.exp, root, env)
     val evalArgs = terms.map(t => evalBodyTerm(t, env))
     val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
     eval(body, root, newEnv)
