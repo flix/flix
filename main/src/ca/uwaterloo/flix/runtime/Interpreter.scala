@@ -262,10 +262,10 @@ object Interpreter {
       eval(body, root, newEnv)
   }
 
-  def evalBodyTerm(t: TypedAst.Term.Body, env: Map[String, Value]): Value = t match {
-    case TypedAst.Term.Body.Wildcard(_, _) => ???
-    case TypedAst.Term.Body.Var(x, _, _) => env(x.name)
-    case TypedAst.Term.Body.Lit(lit, _, _) => ???
+  def evalBodyTerm(t: Term.Body, env: Env): Value = t match {
+    case Term.Body.Wildcard(_, _) => ???
+    case Term.Body.Var(x, _, _) => env(x.name)
+    case Term.Body.Lit(lit, _, _) => evalLit(lit)
   }
 
   def eval2(lambda: Expression, v1: Value, v2: Value, root: TypedAst.Root): Value = {

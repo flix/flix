@@ -12,15 +12,17 @@ class TestInterpreter extends FunSuite {
   val name01 = Name.Resolved(List("foo.bar"))
   val name02 = Name.Resolved(List("abc.def"))
 
-  val ident01 = Name.Ident(SourcePosition.Unknown, "x", SourcePosition.Unknown)
-  val ident02 = Name.Ident(SourcePosition.Unknown, "y", SourcePosition.Unknown)
-  val ident03 = Name.Ident(SourcePosition.Unknown, "z", SourcePosition.Unknown)
+  def toIdent(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
+
+  val ident01 = toIdent("x")
+  val ident02 = toIdent("y")
+  val ident03 = toIdent("z")
 
   object ConstantPropTagDefs {
     val name = Name.Resolved(List("ConstProp"))
-    val identB = Name.Ident(SourcePosition.Unknown, "Bot", SourcePosition.Unknown)
-    val identV = Name.Ident(SourcePosition.Unknown, "Val", SourcePosition.Unknown)
-    val identT = Name.Ident(SourcePosition.Unknown, "Top", SourcePosition.Unknown)
+    val identB = toIdent("Bot")
+    val identV = toIdent("Val")
+    val identT = toIdent("Top")
 
     val tagTpeB = Type.Tag(name, identB, Type.Unit)
     val tagTpeV = Type.Tag(name, identV, Type.Int)
@@ -2039,8 +2041,6 @@ class TestInterpreter extends FunSuite {
     }
   }
 
-  def toIdent(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
-
   /////////////////////////////////////////////////////////////////////////////
   // evalHeadTerm - Var                                                      //
   /////////////////////////////////////////////////////////////////////////////
@@ -2461,5 +2461,198 @@ class TestInterpreter extends FunSuite {
     val apply = Term.Head.Apply(name02, List(), Type.Bool, loc)
     val value = Interpreter.evalHeadTerm(apply, root, Map())
     assertResult(Value.True)(value)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // evalBodyTerm - Var                                                      //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("evalBodyTerm - Var01") {
+    val input = Term.Body.Lit(Literal.Str("hello", loc), Type.Str, loc)
+    val env = Map(ident01.name -> Value.False)
+    val result = Interpreter.evalBodyTerm(input, env)
+    assertResult(Value.mkStr("hello"))(result)
+  }
+
+  test("evalBodyTerm - Var02") {
+    val input = Term.Body.Var(ident01, Type.Int, loc)
+    val env = Map(ident01.name -> Value.mkInt(5))
+    val result = Interpreter.evalBodyTerm(input, env)
+    assertResult(Value.mkInt(5))(result)
+  }
+
+  test("evalBodyTerm - Var03") {
+    val input = Term.Body.Var(ident01, Type.Bool, loc)
+    val env = Map(ident01.name -> Value.False)
+    val result = Interpreter.evalBodyTerm(input, env)
+    assertResult(Value.False)(result)
+  }
+
+  test("evalBodyTerm - Var04") {
+    val input = Term.Body.Var(ident02, Type.Str, loc)
+    val env = Map(ident01.name -> Value.mkStr("foo"), ident02.name -> Value.mkStr("bar"))
+    val result = Interpreter.evalBodyTerm(input, env)
+    assertResult(Value.mkStr("bar"))(result)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // evalBodyTerm - Literals                                                 //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("evalBodyTerm - Literal.Unit") {
+    val input = Term.Body.Lit(Literal.Unit(loc), Type.Unit, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.Unit)(result)
+  }
+
+  test("evalBodyTerm - Literal.Bool01") {
+    val input = Term.Body.Lit(Literal.Bool(true, loc), Type.Bool, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.True)(result)
+  }
+
+  test("evalBodyTerm - Literal.Bool02") {
+    val input = Term.Body.Lit(Literal.Bool(false, loc), Type.Bool, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.False)(result)
+  }
+
+  test("evalBodyTerm - Literal.Int01") {
+    val input = Term.Body.Lit(Literal.Int(-242, loc), Type.Int, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.mkInt(-242))(result)
+  }
+
+  test("evalBodyTerm - Literal.Int02") {
+    val input = Term.Body.Lit(Literal.Int(-42, loc), Type.Int, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.mkInt(-42))(result)
+  }
+
+  test("evalBodyTerm - Literal.Int03") {
+    val input = Term.Body.Lit(Literal.Int(0, loc), Type.Int, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.mkInt(0))(result)
+  }
+
+  test("evalBodyTerm - Literal.Int04") {
+    val input = Term.Body.Lit(Literal.Int(98, loc), Type.Int, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.mkInt(98))(result)
+  }
+
+  test("evalBodyTerm - Literal.Int05") {
+    val input = Term.Body.Lit(Literal.Int(91238, loc), Type.Int, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.mkInt(91238))(result)
+  }
+
+  test("evalBodyTerm - Literal.Str01") {
+    val input = Term.Body.Lit(Literal.Str("", loc), Type.Str, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.mkStr(""))(result)
+  }
+
+  test("evalBodyTerm - Literal.Str02") {
+    val input = Term.Body.Lit(Literal.Str("Hello World!", loc), Type.Str, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.mkStr("Hello World!"))(result)
+  }
+
+  test("evalBodyTerm - Literal.Str03") {
+    val input = Term.Body.Lit(Literal.Str("asdf", loc), Type.Str, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.mkStr("asdf"))(result)
+  }
+
+  test("evalBodyTerm - Literal.Str04") {
+    val input = Term.Body.Lit(Literal.Str("foobar", loc), Type.Str, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.mkStr("foobar"))(result)
+  }
+
+  test("evalBodyTerm - Literal.Str05") {
+    val input = Term.Body.Lit(Literal.Str("\"\"\"", loc), Type.Str, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.mkStr("\"\"\""))(result)
+  }
+
+  test("evalBodyTerm - Literal.Tuple01") {
+    val input = Term.Body.Lit(
+      Literal.Tuple(List(Literal.Int(42, loc), Literal.Bool(false, loc), Literal.Str("hi", loc)),
+        Type.Tuple(List(Type.Int, Type.Bool, Type.Str)), loc),
+      Type.Tuple(List(Type.Int, Type.Bool, Type.Str)), loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.Tuple(List(Value.mkInt(42), Value.False, Value.mkStr("hi"))))(result)
+  }
+
+  test("evalBodyTerm - Literal.Tuple02") {
+    val input = Term.Body.Lit(
+      Literal.Tuple(List(
+        Literal.Int(4, loc),
+        Literal.Tuple(List(Literal.Int(12, loc), Literal.Int(8, loc)),
+          Type.Tuple(List(Type.Int, Type.Int)), loc)),
+        Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int)))), loc),
+      Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int)))), loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.Tuple(List(Value.mkInt(4), Value.Tuple(List(Value.mkInt(12), Value.mkInt(8))))))(result)
+  }
+
+  test("evalBodyTerm - Literal.Tag01") {
+    val name = Name.Resolved(List("foo", "bar"))
+    val ident = toIdent("baz")
+    val tagTpe = Type.Tag(name, ident, Type.Str)
+    val enumTpe = Type.Enum(Map("foo.bar.baz" -> tagTpe))
+    val input = Term.Body.Lit(Literal.Tag(name, ident, Literal.Str("hello world", loc), enumTpe, loc), tagTpe, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.mkTag(name, "baz", Value.mkStr("hello world")))(result)
+  }
+
+  test("evalBodyTerm - Literal.Tag02") {
+    val name = Name.Resolved(List("Family"))
+    val ident = toIdent("NameAndAge")
+    val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int)))
+    val enumTpe = Type.Enum(Map("Family.NameAndAge" -> tagTpe))
+    val input = Term.Body.Lit(Literal.Tag(name, ident,
+      Literal.Tuple(List(Literal.Str("James", loc), Literal.Int(42, loc)),
+        Type.Tuple(List(Type.Str, Type.Int)), loc), enumTpe, loc), tagTpe, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.mkTag(name, "NameAndAge", Value.Tuple(List(Value.mkStr("James"), Value.mkInt(42)))))(result)
+  }
+
+  test("evalBodyTerm - Literal.Tag03") {
+    import ConstantPropTagDefs._
+    val input = Term.Body.Lit(Literal.Tag(name, identB, Literal.Unit(loc), enumTpe, loc), tagTpeB, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.mkTag(name, "Bot", Value.Unit))(result)
+  }
+
+  test("evalBodyTerm - Literal.Tag04") {
+    import ConstantPropTagDefs._
+    val input = Term.Body.Lit(Literal.Tag(name, identT, Literal.Unit(loc), enumTpe, loc), tagTpeT, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.mkTag(name, "Top", Value.Unit))(result)
+  }
+
+  test("evalBodyTerm - Literal.Tag05") {
+    import ConstantPropTagDefs._
+    val input = Term.Body.Lit(Literal.Tag(name, identV, Literal.Int(0, loc), enumTpe, loc), tagTpeV, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.mkTag(name, "Val", Value.mkInt(0)))(result)
+
+  }
+
+  test("evalBodyTerm - Literal.Tag06") {
+    import ConstantPropTagDefs._
+    val input = Term.Body.Lit(Literal.Tag(name, identV, Literal.Int(-240, loc), enumTpe, loc), tagTpeV, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.mkTag(name, "Val", Value.mkInt(-240)))(result)
+  }
+
+  test("evalBodyTerm - Literal.Tag07") {
+    import ConstantPropTagDefs._
+    val input = Term.Body.Lit(Literal.Tag(name, identV, Literal.Int(1241, loc), enumTpe, loc), tagTpeV, loc)
+    val result = Interpreter.evalBodyTerm(input, Map())
+    assertResult(Value.mkTag(name, "Val", Value.mkInt(1241)))(result)
   }
 }
