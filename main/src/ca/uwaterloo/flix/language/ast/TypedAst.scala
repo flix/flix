@@ -412,11 +412,10 @@ object TypedAst {
      * @param className the fully qualified name of the enclosing class.
      * @param memberName the name of the field.
      * @param field the field itself
+     * @param tpe the type of the field.
      * @param loc the source location.
      */
-    case class NativeField(className: String, memberName: String, field: Field, loc: SourceLocation) extends TypedAst.Expression {
-      override final val tpe: TypedAst.Type = TypedAst.Type.Native(className, null, loc) // TODO: A bit of a hack
-    }
+    case class NativeField(className: String, memberName: String, field: Field, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a native method expression.
@@ -424,11 +423,10 @@ object TypedAst {
      * @param className the fully qualified name of the enclosing class.
      * @param memberName the name of the method.
      * @param method the field itself
+     * @param tpe the type of the method.
      * @param loc the source location.
      */
-    case class NativeMethod(className: String, memberName: String, method: Method, loc: SourceLocation) extends TypedAst.Expression {
-      override final val tpe: TypedAst.Type = TypedAst.Type.Native(className, null, loc) // TODO: A bit of a hack
-    }
+    case class NativeMethod(className: String, memberName: String, method: Method, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
 
   }
 
@@ -816,10 +814,8 @@ object TypedAst {
      * An AST node that represents a native type.
      *
      * @param name the fully qualified name of the type.
-     * @param clazz the class object.
-     * @param loc the source location.
      */
-    case class Native(name: String, clazz: Class[_], loc: SourceLocation) extends TypedAst.Type
+    case class Native(name: String) extends TypedAst.Type
 
   }
 

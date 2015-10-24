@@ -897,8 +897,8 @@ object Resolver {
             case (args, retTpe) => ResolvedAst.Type.Function(args, retTpe)
           }
         case WeededAst.Type.Native(name, loc) => try {
-          val clazz = Class.forName(name)
-          ResolvedAst.Type.Native(name, clazz, loc).toSuccess
+          Class.forName(name)
+          ResolvedAst.Type.Native(name, loc).toSuccess
         } catch {
           case e: ClassNotFoundException => UnresolvedNativeClass(name, loc).toFailure
         }

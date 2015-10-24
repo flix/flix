@@ -461,10 +461,9 @@ object ResolvedAst {
      * An AST node that represents a native type.
      *
      * @param name the fully qualified name of the type.
-     * @param clazz the class object.
      * @param loc the source location.
      */
-    case class Native(name: String, clazz: Class[_], loc: SourceLocation) extends ResolvedAst.Type
+    case class Native(name: String, loc: SourceLocation) extends ResolvedAst.Type
 
   }
 
