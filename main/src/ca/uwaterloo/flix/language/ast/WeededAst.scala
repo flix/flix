@@ -361,10 +361,11 @@ object WeededAst {
     /**
      * An AST node that represents a reference to a JVM static field or method.
      *
-     * @param name the fully qualified name of the field or method.
+     * @param className the fully qualified name of the class.
+     * @param memberName the name of the field or method.
      * @param loc the source location.
      */
-    case class Native(name: String, loc: SourceLocation) extends WeededAst.Expression
+    case class Native(className: String, memberName: String, loc: SourceLocation) extends WeededAst.Expression
 
   }
 
@@ -673,11 +674,12 @@ object WeededAst {
     case class Function(args: List[WeededAst.Type], retTpe: WeededAst.Type) extends WeededAst.Type
 
     /**
-     * An AST node that represents a native JVM type.
+     * An AST node that represents a native type.
      *
      * @param name the fully qualified name of the type.
+     * @param loc the source location.
      */
-    case class Native(name: String) extends WeededAst.Type
+    case class Native(name: String, loc: SourceLocation) extends WeededAst.Type
 
   }
 

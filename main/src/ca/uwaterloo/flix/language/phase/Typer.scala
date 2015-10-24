@@ -425,8 +425,16 @@ object Typer {
               case _ => e
             }
           }
+
         case ResolvedAst.Expression.Error(tpe, loc) =>
           TypedAst.Expression.Error(Type.typer(tpe), loc).toSuccess
+
+        case ResolvedAst.Expression.NativeField(className, memberName, field, loc) =>
+          TypedAst.Expression.NativeField(className, memberName, field, loc).toSuccess
+
+        case ResolvedAst.Expression.NativeMethod(className, memberName, field, loc) =>
+          TypedAst.Expression.NativeMethod(className, memberName, field, loc).toSuccess
+
       }
 
       visit(rast, env)
@@ -665,6 +673,7 @@ object Typer {
         TypedAst.Type.Enum(cases)
       case ResolvedAst.Type.Tuple(elms) => TypedAst.Type.Tuple(elms map typer)
       case ResolvedAst.Type.Function(args, retTpe) => TypedAst.Type.Lambda(args map typer, typer(retTpe))
+      case ResolvedAst.Type.Native(name, clazz, loc) => TypedAst.Type.Native(name, clazz, loc)
     }
 
   }
@@ -729,6 +738,7 @@ object Typer {
     case TypedAst.Type.Lambda(args, retTpe) =>
       "(" + args.map(prettyPrint).mkString(", ") + ") -> " + prettyPrint(retTpe)
     case TypedAst.Type.Predicate(terms) => s"Predicate(${terms map prettyPrint})"
+    case TypedAst.Type.Native(name, clazz, loc) => s"#$clazz"
   }
 
   private def prettyPrint(pat: ResolvedAst.Pattern): String = pat match {

@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
+import java.lang.reflect.{Method, Field}
+
 // TODO: The documentation is not fully consistent with when something is an AST node. "that represents" vs "representing"...
 
 /**
@@ -404,6 +406,30 @@ object TypedAst {
      */
     case class Error(tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
 
+    /**
+     * A typed AST node representing a native field access expression.
+     *
+     * @param className the fully qualified name of the enclosing class.
+     * @param memberName the name of the field.
+     * @param field the field itself
+     * @param loc the source location.
+     */
+    case class NativeField(className: String, memberName: String, field: Field, loc: SourceLocation) extends TypedAst.Expression {
+      override final val tpe: TypedAst.Type = TypedAst.Type.Native(className, null, loc) // TODO: A bit of a hack
+    }
+
+    /**
+     * A typed AST node representing a native method expression.
+     *
+     * @param className the fully qualified name of the enclosing class.
+     * @param memberName the name of the method.
+     * @param method the field itself
+     * @param loc the source location.
+     */
+    case class NativeMethod(className: String, memberName: String, method: Method, loc: SourceLocation) extends TypedAst.Expression {
+      override final val tpe: TypedAst.Type = TypedAst.Type.Native(className, null, loc) // TODO: A bit of a hack
+    }
+
   }
 
   /**
@@ -785,6 +811,15 @@ object TypedAst {
      * @param terms the terms of the predicate.
      */
     case class Predicate(terms: List[TypedAst.Type]) extends TypedAst.Type
+
+    /**
+     * An AST node that represents a native type.
+     *
+     * @param name the fully qualified name of the type.
+     * @param clazz the class object.
+     * @param loc the source location.
+     */
+    case class Native(name: String, clazz: Class[_], loc: SourceLocation) extends TypedAst.Type
 
   }
 

@@ -309,36 +309,19 @@ object Weeder {
     /**
      * An error raised to indicate that a syntactic construct, although successfully parsed, is currently not supported.
      *
-     * @param message the error message.
-     * @param location the location of the syntactic construct.
+     * @param msg the error message.
+     * @param loc the location of the syntactic construct.
      */
-    case class Unsupported(message: String, location: SourceLocation) extends WeederError {
+    case class Unsupported(msg: String, loc: SourceLocation) extends WeederError {
       val format =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${location.formatSource}")}
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.formatSource}")}
            |
-            |${consoleCtx.red(s">> Unsupported feature: $message")}
+            |${consoleCtx.red(s">> Unsupported feature: $msg")}
            |
-            |${location.underline}
+            |${loc.underline}
            |This feature is not yet supported, implemented or considered stable.
            |
             |Tip: Avoid using this feature.
-         """.stripMargin
-    }
-
-    /**
-     * An error raised to indicate that a JVM class was not found.
-     *
-     * @param name the fully qualified name of the class.
-     * @param location the location of the syntactic construct.
-     */
-    case class NativeTypeNotFound(name: String, location: SourceLocation) extends WeederError {
-      val format =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${location.formatSource}")}
-           |
-            |${consoleCtx.red(s">> The class name: '$name' was not found.")}
-           |
-            |${location.underline}
-           |Tip: Check your class path.
          """.stripMargin
     }
 
@@ -664,29 +647,11 @@ object Weeder {
           case tpe => WeededAst.Expression.Error(tpe, exp.loc)
         }
 
-      // TODO: Move into resolver
       case exp: ParsedAst.Expression.Native =>
-        val className = exp.name.split('.').dropRight(1).mkString(".")
-        val fieldOrMethodName = exp.name.split('.').last
-
-        try {
-          val clazz = Class.forName(className)
-
-          val fields = clazz.getDeclaredFields.toList.filter {
-            case field => field.getName == fieldOrMethodName
-          }
-
-          val methods = clazz.getDeclaredMethods.toList.filter {
-            case method => method.getName == fieldOrMethodName
-          }
-
-
-
-          WeededAst.Expression.Native(exp.name, exp.loc).toSuccess
-        } catch {
-          case ex: ClassNotFoundException => NativeTypeNotFound(className, exp.loc).toFailure
-        }
-
+        val split = exp.name.split('.')
+        val clazz = split.dropRight(1).mkString(".")
+        val fieldOrMethod = split.last
+        WeededAst.Expression.Native(clazz, fieldOrMethod, exp.loc).toSuccess
     }
   }
 
@@ -860,14 +825,7 @@ object Weeder {
       }
       case ParsedAst.Type.Parametric(name, pelms) =>
         Unsupported("Parametric types are not yet supported.", name.loc).toFailure
-      case p@ParsedAst.Type.Native(sp1, name, sp2) => try {
-        // TODO: Move into resolver
-        val clazz = Class.forName(name)
-        WeededAst.Type.Native(name).toSuccess
-      } catch {
-        case e: ClassNotFoundException => NativeTypeNotFound(name, p.loc).toFailure
-      }
-
+      case p@ParsedAst.Type.Native(sp1, name, sp2) => WeededAst.Type.Native(name, p.loc).toSuccess
     }
   }
 

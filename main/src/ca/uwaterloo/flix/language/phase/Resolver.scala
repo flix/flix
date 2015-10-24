@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
+import java.lang.reflect.Modifier
+
 import ca.uwaterloo.flix.language.ast.WeededAst.Root
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.Compiler
@@ -176,6 +178,60 @@ object Resolver {
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
            |
             |${consoleCtx.red(s">> Unresolved reference to type '$name'.")}
+           |
+            |${loc.underline}
+         """.stripMargin
+    }
+
+    /**
+     * An error raised to indicate a reference to an unknown native class.
+     *
+     * @param name the fully qualified name of the class.
+     * @param loc the source location of the reference.
+     */
+    // TODO: Test case
+    case class UnresolvedNativeClass(name: String, loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> The class name: '$name' was not found.")}
+           |
+            |${loc.underline}
+           |Tip: Check your class path.
+         """.stripMargin
+    }
+
+    /**
+     * An error raised to indicate a reference to an unknown field or method.
+     *
+     * @param clazz the fully qualified name of the class.
+     * @param member the field or method name.
+     * @param loc the source location of the reference.
+     */
+    // TODO: Test case
+    case class UnresolvedFieldOrMethod(clazz: String, member: String, loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> No static field or method '$member' on '$clazz'.")}
+           |
+            |${loc.underline}
+         """.stripMargin
+    }
+
+    /**
+     * An error raised to indicate a reference to an unknown field or method.
+     *
+     * @param clazz the fully qualified name of the class.
+     * @param member the field or method name.
+     * @param loc the source location of the reference.
+     */
+    // TODO: Test case
+    case class AmbiguousFieldOrMethod(clazz: String, member: String, loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> Ambiguous field or method '$member' on '$clazz'.")}
            |
             |${loc.underline}
          """.stripMargin
@@ -640,6 +696,33 @@ object Resolver {
           Type.resolve(wtype, namespace, syms) map {
             case tpe => ResolvedAst.Expression.Error(tpe, loc)
           }
+
+        case WeededAst.Expression.Native(className, memberName, loc) => try {
+          val clazz = Class.forName(className)
+
+          val fields = clazz.getDeclaredFields.toList.filter {
+            case field => Modifier.isStatic(field.getModifiers) && field.getName == memberName
+          }
+
+          val methods = clazz.getDeclaredMethods.toList.filter {
+            case method => Modifier.isStatic(method.getModifiers) && method.getName == memberName
+          }
+
+          if (fields.isEmpty && methods.isEmpty) {
+            UnresolvedFieldOrMethod(className, memberName, loc).toFailure
+          } else if (fields.size + methods.size > 2) {
+            AmbiguousFieldOrMethod(className, memberName, loc).toFailure
+          } else {
+
+            if (fields.nonEmpty)
+              ResolvedAst.Expression.NativeField(className, memberName, fields.head, loc).toSuccess
+            else
+              ResolvedAst.Expression.NativeMethod(className, memberName, methods.head, loc).toSuccess
+          }
+        } catch {
+          case ex: ClassNotFoundException => UnresolvedNativeClass(className, loc).toFailure
+        }
+
       }
 
       visit(wast, Set.empty)
@@ -813,12 +896,17 @@ object Resolver {
           @@(argsVal, retTypeVal) map {
             case (args, retTpe) => ResolvedAst.Type.Function(args, retTpe)
           }
+        case WeededAst.Type.Native(name, loc) => try {
+          val clazz = Class.forName(name)
+          ResolvedAst.Type.Native(name, clazz, loc).toSuccess
+        } catch {
+          case e: ClassNotFoundException => UnresolvedNativeClass(name, loc).toFailure
+        }
       }
 
       visit(wast)
     }
   }
-
 
   // TODO: Need this?
   def toRName(ident: Name.Ident, namespace: List[String]): Name.Resolved =

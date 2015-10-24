@@ -780,7 +780,7 @@ object ParsedAst {
     case class Parametric(name: Name.Unresolved, elms: Seq[ParsedAst.Type]) extends ParsedAst.Type
 
     /**
-     * An AST node that represents a native JVM type.
+     * An AST node that represents a native type.
      *
      * @param sp1 the position of the first character in the term.
      * @param name the fully qualified name of the type.
