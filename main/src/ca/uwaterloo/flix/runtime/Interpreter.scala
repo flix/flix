@@ -30,7 +30,7 @@ object Interpreter {
     case Type.Int => Value.mkInt(evalInt(expr, root, env))
     case Type.Bool => if (evalBool(expr, root, env)) Value.True else Value.False
     case Type.Var(_) | Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
-         Type.Lambda(_, _) | Type.Predicate(_) =>
+         Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) =>
       evalGeneral(expr, root, env)
   }
 
@@ -90,6 +90,8 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => evalInt(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
+      case Expression.NativeField(className, memberName, field, tpe, loc) => ??? // TODO
+      case Expression.NativeMethod(className, memberName, method, tpe, loc) => ??? // TODO
       case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) =>
         throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int.")
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
@@ -148,6 +150,8 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => evalBool(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
+      case Expression.NativeField(className, memberName, field, tpe, loc) => ??? // TODO
+      case Expression.NativeMethod(classname, memberName, method, tpe, loc) => ??? // TODO
       case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) =>
         throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")

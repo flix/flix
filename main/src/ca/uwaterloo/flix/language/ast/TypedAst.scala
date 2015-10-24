@@ -593,7 +593,13 @@ object TypedAst {
           case (xs, t: TypedAst.Term.Body.Var) => xs + t.ident.name
           case (xs, t: TypedAst.Term.Body.Lit) => xs
         }
-        // TODO: Rest
+        case TypedAst.Predicate.Body.Function(_, terms, _, _) => terms.foldLeft(Set.empty[String]) {
+          case (xs, t: TypedAst.Term.Body.Wildcard) => xs
+          case (xs, t: TypedAst.Term.Body.Var) => xs + t.ident.name
+          case (xs, t: TypedAst.Term.Body.Lit) => xs
+        }
+        case TypedAst.Predicate.Body.NotEqual(x, y, _, _) => Set(x.name, y.name)
+        case TypedAst.Predicate.Body.Read(terms, body, _, _) => ???
       }
     }
 
