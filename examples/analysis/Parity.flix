@@ -103,6 +103,8 @@ namespace ParityAnalysis {
     rel SumOp(result: Int, left: Int, right: Int);
     lat VarPointsTo(localVal: Int, value: Parity<>);
 
+    let #java.lang.String<> = (#java.lang.Character.isLetter, Parity.Top, leq, lub, glb);
+
     SumOp(3, 1, 2).
     VarPointsTo(1, Parity.Odd).
     VarPointsTo(2, Parity.Even).
