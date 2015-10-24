@@ -129,7 +129,7 @@ object Compiler {
 
     val totalTime = parserTime + weederTime + resolverTime + typerTime
 
-    Console.println(s"Compilation successful. Completed in $totalTime msec. (parser: $parserTime msec, weeder: $weederTime msec, resolver: $resolverTime msec, typer: $typerTime msec).")
+    Console.println(s"Completed in $totalTime ms. (parser: $parserTime ms, weeder: $weederTime ms, resolver: $resolverTime ms, typer: $typerTime ms).")
     Some(tast.get)
   }
 
