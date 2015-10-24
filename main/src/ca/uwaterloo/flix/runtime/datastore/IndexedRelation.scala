@@ -26,11 +26,20 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
    */
   private val defaultIndex: Seq[Int] = Seq(0)
 
-  private var numberOfIndexedLookups = 0
+  /**
+   * Records the number of indexed lookups, i.e. exact lookups.
+   */
+  private var indexedLookups = 0
 
-  private var numberOfIndexedScans = 0
+  /**
+   * Records the number of indexed scans, i.e. table scans which can use an index.
+   */
+  private var indexedScans = 0
 
-  private var numberOfFullScans = 0
+  /**
+   * Records the number of full scans, i.e. table scans which cannot use an index.
+   */
+  private var fullScans = 0
 
   /**
    * Initialize the store for all indexes.
@@ -77,19 +86,19 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
     var idx = exactIndex(pat)
     if (idx != null) {
       // use exact index
-      numberOfIndexedLookups += 1
+      indexedLookups += 1
       val key = keyOf(idx, pat)
       store(idx).getOrElseUpdate(key, mutable.Set.empty).iterator
     } else {
       // look for usable index
       idx = approxIndex(pat)
       val table = if (idx != null) {
-        numberOfIndexedScans += 1
+        indexedScans += 1
         // use suitable index
         val key = keyOf(idx, pat)
         store(idx).getOrElseUpdate(key, mutable.Set.empty).iterator
       } else {
-        numberOfFullScans += 1
+        fullScans += 1
         scan // no suitable index. Must scan the entire table.
       }
 
@@ -171,13 +180,24 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
     true
   }
 
-  override def toString: String = {
-    val size = f"${scan.size}%,d"
-    val indexedLookups = f"$numberOfIndexedLookups%,d"
-    val indexedScans = f"$numberOfIndexedScans%,d"
-    val fullScans = f"$numberOfFullScans%,d"
+  /**
+   * Returns the size of the relation.
+   */
+  def getSize: Int = scan.size
 
-    s"${relation.name}(size = $size, indexedLookups = $indexedLookups, indexedScans = $indexedScans, fullScans = $fullScans)"
-  }
+  /**
+   * Returns the number of indexed lookups.
+   */
+  def getNumberOfIndexedLookups: Int = indexedLookups
+
+  /**
+   * Returns the number of indexed scans.
+   */
+  def getNumberOfIndexedScans: Int = indexedScans
+
+  /**
+   * Returns the number of full scans.
+   */
+  def getNumberOfFullScans: Int = fullScans
 
 }
