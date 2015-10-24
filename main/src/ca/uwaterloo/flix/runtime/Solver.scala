@@ -94,6 +94,9 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     // verify assertions.
     checkAssertions()
 
+    // print some statistics.
+    dataStore.stats()
+
     // construct the model.
     val relations = dataStore.relations.foldLeft(Map.empty[Name.Resolved, List[List[Value]]]) {
       case (macc, (name, relation)) =>

@@ -26,6 +26,12 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
    */
   private val defaultIndex: Seq[Int] = Seq(0)
 
+  private var numberOfIndexedLookups = 0
+
+  private var numberOfIndexedScans = 0
+
+  private var numberOfFullScans = 0
+
   /**
    * Initialize the store for all indexes.
    */
@@ -71,17 +77,19 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
     var idx = exactIndex(pat)
     if (idx != null) {
       // use exact index
+      numberOfIndexedLookups += 1
       val key = keyOf(idx, pat)
       store(idx).getOrElseUpdate(key, mutable.Set.empty).iterator
     } else {
       // look for usable index
       idx = approxIndex(pat)
-
       val table = if (idx != null) {
+        numberOfIndexedScans += 1
         // use suitable index
         val key = keyOf(idx, pat)
         store(idx).getOrElseUpdate(key, mutable.Set.empty).iterator
       } else {
+        numberOfFullScans += 1
         scan // no suitable index. Must scan the entire table.
       }
 
@@ -161,6 +169,15 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
       i = i + 1
     }
     true
+  }
+
+  override def toString: String = {
+    val size = f"${scan.size}%,d"
+    val indexedLookups = f"$numberOfIndexedLookups%,d"
+    val indexedScans = f"$numberOfIndexedScans%,d"
+    val fullScans = f"$numberOfFullScans%,d"
+
+    s"${relation.name}(size = $size, indexedLookups = $indexedLookups, indexedScans = $indexedScans, fullScans = $fullScans)"
   }
 
 }

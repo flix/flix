@@ -39,4 +39,10 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
     }
   }
 
+  def stats(): Unit = {
+    for ((name, relation) <- relations) {
+      Console.println(relation)
+    }
+  }
+
 }
