@@ -94,16 +94,20 @@ object WeededAst {
     case class BoundedLattice(tpe: WeededAst.Type, bot: WeededAst.Expression, top: WeededAst.Expression, leq: WeededAst.Expression,
                               lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Definition
 
-    // TODO: Move these one level out?
+
+  }
+
+  /**
+   * A common super-type for collections that are either relations or lattices.
+   */
+  sealed trait Collection extends WeededAst.Definition {
     /**
-     * A common super-type for collections that are either relations or lattices.
+     * The name of `this` collection.
      */
-    sealed trait Collection extends WeededAst.Definition {
-      /**
-       * The name of `this` collection.
-       */
-      def ident: Name.Ident
-    }
+    def ident: Name.Ident
+  }
+
+  object Collection {
 
     /**
      * An AST node that represents a relation definition.
@@ -112,7 +116,7 @@ object WeededAst {
      * @param attributes the attributes of the relation.
      * @param loc the source location of the relation.
      */
-    case class Relation(ident: Name.Ident, attributes: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Definition.Collection
+    case class Relation(ident: Name.Ident, attributes: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Collection
 
     /**
      * An AST node that represents a lattice definition.
@@ -122,8 +126,7 @@ object WeededAst {
      * @param values the values attributes of the lattice.
      * @param loc the source location of the lattice.
      */
-    case class Lattice(ident: Name.Ident, keys: List[WeededAst.Attribute], values: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Definition.Collection
-
+    case class Lattice(ident: Name.Ident, keys: List[WeededAst.Attribute], values: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Collection
 
   }
 
@@ -719,7 +722,4 @@ object WeededAst {
    */
   case class FormalArg(ident: Name.Ident, tpe: WeededAst.Type) extends WeededAst
 
-
 }
-
-// TODO: DOC

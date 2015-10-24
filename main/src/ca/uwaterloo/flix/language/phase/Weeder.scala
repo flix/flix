@@ -467,7 +467,7 @@ object Weeder {
     /**
      * Compiles the given parsed relation `past` to a weeded relation definition.
      */
-    def compile(past: ParsedAst.Definition.Relation): Validation[WeededAst.Definition.Relation, WeederError] = {
+    def compile(past: ParsedAst.Definition.Relation): Validation[WeededAst.Collection.Relation, WeederError] = {
       // check duplicate attributes.
       val seen = mutable.Map.empty[String, Name.Ident]
       val attributesVal = past.attributes.map {
@@ -485,14 +485,14 @@ object Weeder {
       }
 
       @@(attributesVal) map {
-        case attributes => WeededAst.Definition.Relation(past.ident, attributes, past.loc)
+        case attributes => WeededAst.Collection.Relation(past.ident, attributes, past.loc)
       }
     }
 
     /**
      * Compiles the given parsed relation `past` to a weeded lattice definition.
      */
-    def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Definition.Lattice, WeederError] = {
+    def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Collection.Lattice, WeederError] = {
       // TODO: Rewrite so we can get rid of WeededAst.Interpretation.
 
       // check duplicate attributes.
@@ -523,7 +523,7 @@ object Weeder {
 
               // ensure that no non-lattice attribute occurs after `index`.
               values.find(_.interp == WeededAst.Interpretation.Set) match {
-                case None => WeededAst.Definition.Lattice(past.ident, keys, values, past.loc).toSuccess
+                case None => WeededAst.Collection.Lattice(past.ident, keys, values, past.loc).toSuccess
                 case Some(attr) => IllegalMixedAttributes(values.head.ident.loc, attr.ident.loc).toFailure
               }
           }
@@ -649,9 +649,9 @@ object Weeder {
 
       case exp: ParsedAst.Expression.Native =>
         val split = exp.name.split('.')
-        val clazz = split.dropRight(1).mkString(".")
-        val fieldOrMethod = split.last
-        WeededAst.Expression.Native(clazz, fieldOrMethod, exp.loc).toSuccess
+        val className = split.dropRight(1).mkString(".")
+        val memberName = split.last
+        WeededAst.Expression.Native(className, memberName, exp.loc).toSuccess
     }
   }
 
@@ -825,7 +825,8 @@ object Weeder {
       }
       case ParsedAst.Type.Parametric(name, pelms) =>
         Unsupported("Parametric types are not yet supported.", name.loc).toFailure
-      case p@ParsedAst.Type.Native(sp1, name, sp2) => WeededAst.Type.Native(name, p.loc).toSuccess
+      case p@ParsedAst.Type.Native(sp1, name, sp2) =>
+        WeededAst.Type.Native(name, p.loc).toSuccess
     }
   }
 

@@ -251,7 +251,7 @@ object Resolver {
   case class SymbolTable(enums: Map[Name.Resolved, WeededAst.Definition.Enum],
                          constants: Map[Name.Resolved, WeededAst.Definition.Constant],
                          lattices: Map[WeededAst.Type, (List[String], WeededAst.Definition.BoundedLattice)],
-                         relations: Map[Name.Resolved, WeededAst.Definition.Collection],
+                         relations: Map[Name.Resolved, WeededAst.Collection],
                          types: Map[Name.Resolved, WeededAst.Type]) {
 
     // TODO: Cleanup
@@ -284,7 +284,7 @@ object Resolver {
 
     // TODO: Cleanup
     // TODO: Rename: lookupCollection
-    def lookupRelation(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Collection), ResolverError] = {
+    def lookupRelation(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Collection), ResolverError] = {
       val rname = Name.Resolved(
         if (name.parts.size == 1)
           namespace ::: name.parts.head :: Nil
@@ -344,7 +344,7 @@ object Resolver {
           }
         }
 
-        val collectionsVal = Validation.fold[Name.Resolved, WeededAst.Definition.Collection, Name.Resolved, ResolvedAst.Collection, ResolverError](syms.relations) {
+        val collectionsVal = Validation.fold[Name.Resolved, WeededAst.Collection, Name.Resolved, ResolvedAst.Collection, ResolverError](syms.relations) {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
 
@@ -401,7 +401,7 @@ object Resolver {
       case defn@WeededAst.Definition.BoundedLattice(tpe, bot, top, leq, lub, glb, loc) =>
         syms.copy(lattices = syms.lattices + (tpe ->(namespace, defn))).toSuccess
 
-      case defn@WeededAst.Definition.Relation(ident, attributes, loc) =>
+      case defn@WeededAst.Collection.Relation(ident, attributes, loc) =>
         val rname = toRName(ident, namespace)
         syms.relations.get(rname) match {
           case None =>
@@ -412,7 +412,7 @@ object Resolver {
           case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.loc, ident.loc).toFailure
         }
 
-      case defn@WeededAst.Definition.Lattice(ident, keys, values, loc) =>
+      case defn@WeededAst.Collection.Lattice(ident, keys, values, loc) =>
         val rname = toRName(ident, namespace)
         syms.relations.get(rname) match {
           case None =>
@@ -488,12 +488,12 @@ object Resolver {
       }
     }
 
-    def resolve(wast: WeededAst.Definition.Collection, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection, ResolverError] = wast match {
-      case d: WeededAst.Definition.Relation => resolve2(d, namespace, syms)
-      case d: WeededAst.Definition.Lattice => resolve2(d, namespace, syms)
+    def resolve(wast: WeededAst.Collection, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection, ResolverError] = wast match {
+      case d: WeededAst.Collection.Relation => resolve2(d, namespace, syms)
+      case d: WeededAst.Collection.Lattice => resolve2(d, namespace, syms)
     }
 
-    def resolve2(wast: WeededAst.Definition.Relation, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection.Relation, ResolverError] = {
+    def resolve2(wast: WeededAst.Collection.Relation, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection.Relation, ResolverError] = {
       val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
 
       val attributesVal = wast.attributes.map {
@@ -506,7 +506,7 @@ object Resolver {
       }
     }
 
-    def resolve2(wast: WeededAst.Definition.Lattice, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection.Lattice, ResolverError] = {
+    def resolve2(wast: WeededAst.Collection.Lattice, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection.Lattice, ResolverError] = {
       val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
 
       val keysVal = wast.keys.map {
