@@ -251,6 +251,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
             env += (t.ident.name -> value)
           case t: Term.Body.Lit =>
             val literal = Interpreter.evalLit(t.lit)
+            // TODO: Careful about lattice interpretation....
             if (literal != value) {
               return null
             }
