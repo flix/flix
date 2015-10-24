@@ -730,6 +730,7 @@ object Typer {
    */
   private def java2flix(canonicalName: String): TypedAst.Type = canonicalName match {
     case "boolean" => TypedAst.Type.Bool
+    case "int" => TypedAst.Type.Int
     case _ => TypedAst.Type.Native(canonicalName)
   }
 
