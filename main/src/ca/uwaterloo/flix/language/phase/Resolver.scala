@@ -698,31 +698,38 @@ object Resolver {
           }
 
         case WeededAst.Expression.Native(className, memberName, loc) => try {
+          // retrieve class object.
           val clazz = Class.forName(className)
 
+          // retrieve static fields.
           val fields = clazz.getDeclaredFields.toList.filter {
             case field => Modifier.isStatic(field.getModifiers) && field.getName == memberName
           }
 
+          // retrieve static methods.
           val methods = clazz.getDeclaredMethods.toList.filter {
             case method => Modifier.isStatic(method.getModifiers) && method.getName == memberName
           }
 
+          // disambiguate member.
           if (fields.isEmpty && methods.isEmpty) {
+            // at least one field and method share the same name.
             UnresolvedFieldOrMethod(className, memberName, loc).toFailure
           } else if (fields.size + methods.size > 2) {
+            // multiple fields/methods share the same name.
             AmbiguousFieldOrMethod(className, memberName, loc).toFailure
           } else {
-
-            if (fields.nonEmpty)
+            if (fields.nonEmpty) {
+              // resolves to a field.
               ResolvedAst.Expression.NativeField(className, memberName, fields.head, loc).toSuccess
-            else
+            } else {
+              // resolved to a method.
               ResolvedAst.Expression.NativeMethod(className, memberName, methods.head, loc).toSuccess
+            }
           }
         } catch {
           case ex: ClassNotFoundException => UnresolvedNativeClass(className, loc).toFailure
         }
-
       }
 
       visit(wast, Set.empty)
