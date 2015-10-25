@@ -45,19 +45,21 @@ Given two ground atoms $A = p_\ell(v_1, \dots, v_n)$ and $B = p_\ell(v'_1, \dots
 (ii) associated lattice and 
 (iii) number of ground terms, we define their partial order as:
 If $n = 1$ then $A \sqsubseteq B$ when $v_1 \sqsubseteq v_1'$.
-If $n > 1$ then $A \sqsubseteq B$ when $v_1 = v_1' \dots v_{n - 1} = v'_{n - 1}$ and $v_n \sqsubseteq v'_n$
+If $n > 1$ then $A \sqsubseteq B$ when $v_1 = v_1', \dots, v_{n - 1} = v'_{n - 1}$ and $v_n \sqsubseteq v'_n$.
 
 An interpretation $I$ of a Flix program $P$ is a subset of the Herbrand Base $\mathcal{B}$.
 A ground atom $A$ is true w.r.t. an interpretation if $\exists A' \in I$ such that $A \sqsubseteq A'$. 
-A conjunction of atoms $A_1, \dots, A_n$ is true w.r.t. an interpretation if each atom is true in the interpretation.
+A conjunction of atoms $A_1, \cdots, A_n$ is true w.r.t. an interpretation if each atom is true in the interpretation.
 A ground rule is true if either the body conjunction is false, or the head is true.
 
 A model $M$ of $P$ is an interpretation that makes each ground instance of a each rule in $P$ true.
 
-A model is \emph{compact} if there are no two ground atoms $A, A' \in M$ such that $A \neq A'$ and $A \sqsubseteq A'$.
-
-A model $M_1$ is \emph{minimal} if there is no other model $M_2$ 
-such that there exists two ground atoms $A \in M_1$ and $A' \in M_2$ where $A' \sqsubset A$.
+A model is \emph{compact} if it has no two ground atoms $A, A' \in M$ such that $A \sqsubseteq A'$.
+%
+A model is \emph{reduced} if it has no two ground atoms $A, A' \in M$ such that $A \sqsubseteq (A \sqcup A')$.
+%
+Finally, a model $M_1$ is \emph{minimal} if it is compact and reduced, and there is no other model $M_2$ 
+such that there are two ground atoms $A \in M_1$ and $A' \in M_2$ where $A' \sqsubset A$.
 
 \paragraph{Example.}
 The Flix program $P$ with constraints:
@@ -71,7 +73,7 @@ the Herbrand Universe:
     \mathcal{U} = \{\bot, \top, \texttt{Even}, \texttt{Odd}\}
 \]
 %
-and the Herbrand Base 
+and the Herbrand Base: 
 %
 \begin{align*}
     \mathcal{B} = \{ & A_\ell(\bot), A_\ell(\texttt{Even}), A_\ell(\texttt{Odd}), A_\ell(\top), \\
@@ -85,22 +87,27 @@ For example,
     I_1 & = \{ A_\ell(\top) \} \\
     I_2 & = \{ A_\ell(\top), B_\ell(\bot) \} \\
     I_3 & = \{ A_\ell(\top), B_\ell(\texttt{Odd}), B_\ell(\top) \} \\
-    I_4 & = \{ A_\ell(\top), B_\ell(\top) \} \\
-    I_5 & = \{ A_\ell(\top), B_\ell(\texttt{Odd}) \}
+    I_4 & = \{ A_\ell(\texttt{Even}), A_\ell(\texttt{Odd}), B_\ell(\texttt{Odd}) \} \\
+    I_5 & = \{ A_\ell(\top), B_\ell(\top) \} \\
+    I_6 & = \{ A_\ell(\top), B_\ell(\texttt{Odd}) \}
 \end{align*}
 %
 The interpretation 
 $I_1$ is not a model of $P$ since it does not make $B_\ell(\texttt{Odd})$ true.
 $I_2$ is also not a model of $p$ since it does not make $B_\ell(\texttt{Odd})$ true.
-$I_3$ \emph{is} a model of $p$, but it is not minimal, since it is not compact.
-$I_4$ is a compact model of $p$, but it is not minimal as evidenced by $I_5$. 
+$I_3$ is a model of $p$, but it is not compact.
+$I_4$ is a model of $p$, but it is not reduced.
+$I_5$ is a model of $p$, it is compact and reduced, but it is not minimal as evidenced by $I_6$.
 
+%\paragraph{Extension I: Monotone Filter Functions}
 
-%\paragraph{Proof: Existence of a model?}
+%\paragraph{Extension II: Monotone Functions in the Head}
 
-%\paragraph{Proof: Existence of a finite model?}
+%\paragraph{Proof: Existence of a Model.}
 
-%\paragraph{Proof: Existence of a unique least model?}
+%\paragraph{Proof: Existence of a Finite Model.}
+
+%\paragraph{Proof: Existence of a Unique Least Model.}
 
 \end{document}
 
