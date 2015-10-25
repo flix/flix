@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
+import java.lang.reflect.{Method, Field}
+
 // TODO: The documentation is not fully consistent with when something is an AST node. "that represents" vs "representing"...
 
 /**
@@ -404,6 +406,28 @@ object TypedAst {
      */
     case class Error(tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
 
+    /**
+     * A typed AST node representing a native field access expression.
+     *
+     * @param className the fully qualified name of the enclosing class.
+     * @param memberName the name of the field.
+     * @param field the field itself
+     * @param tpe the type of the field.
+     * @param loc the source location.
+     */
+    case class NativeField(className: String, memberName: String, field: Field, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+
+    /**
+     * A typed AST node representing a native method expression.
+     *
+     * @param className the fully qualified name of the enclosing class.
+     * @param memberName the name of the method.
+     * @param method the field itself
+     * @param tpe the type of the method.
+     * @param loc the source location.
+     */
+    case class NativeMethod(className: String, memberName: String, method: Method, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+
   }
 
   /**
@@ -569,7 +593,13 @@ object TypedAst {
           case (xs, t: TypedAst.Term.Body.Var) => xs + t.ident.name
           case (xs, t: TypedAst.Term.Body.Lit) => xs
         }
-        // TODO: Rest
+        case TypedAst.Predicate.Body.Function(_, terms, _, _) => terms.foldLeft(Set.empty[String]) {
+          case (xs, t: TypedAst.Term.Body.Wildcard) => xs
+          case (xs, t: TypedAst.Term.Body.Var) => xs + t.ident.name
+          case (xs, t: TypedAst.Term.Body.Lit) => xs
+        }
+        case TypedAst.Predicate.Body.NotEqual(x, y, _, _) => Set(x.name, y.name)
+        case TypedAst.Predicate.Body.Read(terms, body, _, _) => ???
       }
     }
 
@@ -785,6 +815,13 @@ object TypedAst {
      * @param terms the terms of the predicate.
      */
     case class Predicate(terms: List[TypedAst.Type]) extends TypedAst.Type
+
+    /**
+     * An AST node that represents a native type.
+     *
+     * @param name the fully qualified name of the type.
+     */
+    case class Native(name: String) extends TypedAst.Type
 
   }
 

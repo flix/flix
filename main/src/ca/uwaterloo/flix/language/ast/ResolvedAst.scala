@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
+import java.lang.reflect.{Method, Field}
+
 trait ResolvedAst
 
 // TODO: DOC
@@ -160,6 +162,10 @@ object ResolvedAst {
     case class Ascribe(e: ResolvedAst.Expression, tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Error(tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class NativeField(className: String, memberName: String, field: Field, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class NativeMethod(className: String, memberName: String, method: Method, loc: SourceLocation) extends ResolvedAst.Expression
 
   }
 
@@ -450,6 +456,14 @@ object ResolvedAst {
      * @param retTpe the return type.
      */
     case class Function(args: List[ResolvedAst.Type], retTpe: ResolvedAst.Type) extends ResolvedAst.Type
+
+    /**
+     * An AST node that represents a native type.
+     *
+     * @param name the fully qualified name of the type.
+     * @param loc the source location.
+     */
+    case class Native(name: String, loc: SourceLocation) extends ResolvedAst.Type
 
   }
 

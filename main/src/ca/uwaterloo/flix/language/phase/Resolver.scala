@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
+import java.lang.reflect.Modifier
+
 import ca.uwaterloo.flix.language.ast.WeededAst.Root
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.Compiler
@@ -181,6 +183,60 @@ object Resolver {
          """.stripMargin
     }
 
+    /**
+     * An error raised to indicate a reference to an unknown native class.
+     *
+     * @param name the fully qualified name of the class.
+     * @param loc the source location of the reference.
+     */
+    // TODO: Test case
+    case class UnresolvedNativeClass(name: String, loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> The class name: '$name' was not found.")}
+           |
+            |${loc.underline}
+           |Tip: Check your class path.
+         """.stripMargin
+    }
+
+    /**
+     * An error raised to indicate a reference to an unknown field or method.
+     *
+     * @param clazz the fully qualified name of the class.
+     * @param member the field or method name.
+     * @param loc the source location of the reference.
+     */
+    // TODO: Test case
+    case class UnresolvedFieldOrMethod(clazz: String, member: String, loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> No static field or method '$member' on '$clazz'.")}
+           |
+            |${loc.underline}
+         """.stripMargin
+    }
+
+    /**
+     * An error raised to indicate a reference to an unknown field or method.
+     *
+     * @param clazz the fully qualified name of the class.
+     * @param member the field or method name.
+     * @param loc the source location of the reference.
+     */
+    // TODO: Test case
+    case class AmbiguousFieldOrMethod(clazz: String, member: String, loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> Ambiguous field or method '$member' on '$clazz'.")}
+           |
+            |${loc.underline}
+         """.stripMargin
+    }
+
     // TODO: All kinds of arity errors....
     // TODO: Cyclic stuff.
 
@@ -195,7 +251,7 @@ object Resolver {
   case class SymbolTable(enums: Map[Name.Resolved, WeededAst.Definition.Enum],
                          constants: Map[Name.Resolved, WeededAst.Definition.Constant],
                          lattices: Map[WeededAst.Type, (List[String], WeededAst.Definition.BoundedLattice)],
-                         relations: Map[Name.Resolved, WeededAst.Definition.Collection],
+                         relations: Map[Name.Resolved, WeededAst.Collection],
                          types: Map[Name.Resolved, WeededAst.Type]) {
 
     // TODO: Cleanup
@@ -228,7 +284,7 @@ object Resolver {
 
     // TODO: Cleanup
     // TODO: Rename: lookupCollection
-    def lookupRelation(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Collection), ResolverError] = {
+    def lookupRelation(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Collection), ResolverError] = {
       val rname = Name.Resolved(
         if (name.parts.size == 1)
           namespace ::: name.parts.head :: Nil
@@ -288,7 +344,7 @@ object Resolver {
           }
         }
 
-        val collectionsVal = Validation.fold[Name.Resolved, WeededAst.Definition.Collection, Name.Resolved, ResolvedAst.Collection, ResolverError](syms.relations) {
+        val collectionsVal = Validation.fold[Name.Resolved, WeededAst.Collection, Name.Resolved, ResolvedAst.Collection, ResolverError](syms.relations) {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
 
@@ -345,7 +401,7 @@ object Resolver {
       case defn@WeededAst.Definition.BoundedLattice(tpe, bot, top, leq, lub, glb, loc) =>
         syms.copy(lattices = syms.lattices + (tpe ->(namespace, defn))).toSuccess
 
-      case defn@WeededAst.Definition.Relation(ident, attributes, loc) =>
+      case defn@WeededAst.Collection.Relation(ident, attributes, loc) =>
         val rname = toRName(ident, namespace)
         syms.relations.get(rname) match {
           case None =>
@@ -356,7 +412,7 @@ object Resolver {
           case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.loc, ident.loc).toFailure
         }
 
-      case defn@WeededAst.Definition.Lattice(ident, keys, values, loc) =>
+      case defn@WeededAst.Collection.Lattice(ident, keys, values, loc) =>
         val rname = toRName(ident, namespace)
         syms.relations.get(rname) match {
           case None =>
@@ -432,12 +488,12 @@ object Resolver {
       }
     }
 
-    def resolve(wast: WeededAst.Definition.Collection, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection, ResolverError] = wast match {
-      case d: WeededAst.Definition.Relation => resolve2(d, namespace, syms)
-      case d: WeededAst.Definition.Lattice => resolve2(d, namespace, syms)
+    def resolve(wast: WeededAst.Collection, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection, ResolverError] = wast match {
+      case d: WeededAst.Collection.Relation => resolve2(d, namespace, syms)
+      case d: WeededAst.Collection.Lattice => resolve2(d, namespace, syms)
     }
 
-    def resolve2(wast: WeededAst.Definition.Relation, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection.Relation, ResolverError] = {
+    def resolve2(wast: WeededAst.Collection.Relation, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection.Relation, ResolverError] = {
       val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
 
       val attributesVal = wast.attributes.map {
@@ -450,7 +506,7 @@ object Resolver {
       }
     }
 
-    def resolve2(wast: WeededAst.Definition.Lattice, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection.Lattice, ResolverError] = {
+    def resolve2(wast: WeededAst.Collection.Lattice, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection.Lattice, ResolverError] = {
       val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
 
       val keysVal = wast.keys.map {
@@ -640,6 +696,40 @@ object Resolver {
           Type.resolve(wtype, namespace, syms) map {
             case tpe => ResolvedAst.Expression.Error(tpe, loc)
           }
+
+        case WeededAst.Expression.Native(className, memberName, loc) => try {
+          // retrieve class object.
+          val clazz = Class.forName(className)
+
+          // retrieve static fields.
+          val fields = clazz.getDeclaredFields.toList.filter {
+            case field => Modifier.isStatic(field.getModifiers) && field.getName == memberName
+          }
+
+          // retrieve static methods.
+          val methods = clazz.getDeclaredMethods.toList.filter {
+            case method => Modifier.isStatic(method.getModifiers) && method.getName == memberName
+          }
+
+          // disambiguate member.
+          if (fields.isEmpty && methods.isEmpty) {
+            // at least one field and method share the same name.
+            UnresolvedFieldOrMethod(className, memberName, loc).toFailure
+          } else if (fields.size + methods.size > 2) {
+            // multiple fields/methods share the same name.
+            AmbiguousFieldOrMethod(className, memberName, loc).toFailure
+          } else {
+            if (fields.nonEmpty) {
+              // resolves to a field.
+              ResolvedAst.Expression.NativeField(className, memberName, fields.head, loc).toSuccess
+            } else {
+              // resolved to a method.
+              ResolvedAst.Expression.NativeMethod(className, memberName, methods.head, loc).toSuccess
+            }
+          }
+        } catch {
+          case ex: ClassNotFoundException => UnresolvedNativeClass(className, loc).toFailure
+        }
       }
 
       visit(wast, Set.empty)
@@ -813,12 +903,17 @@ object Resolver {
           @@(argsVal, retTypeVal) map {
             case (args, retTpe) => ResolvedAst.Type.Function(args, retTpe)
           }
+        case WeededAst.Type.Native(name, loc) => try {
+          Class.forName(name)
+          ResolvedAst.Type.Native(name, loc).toSuccess
+        } catch {
+          case e: ClassNotFoundException => UnresolvedNativeClass(name, loc).toFailure
+        }
       }
 
       visit(wast)
     }
   }
-
 
   // TODO: Need this?
   def toRName(ident: Name.Ident, namespace: List[String]): Name.Resolved =

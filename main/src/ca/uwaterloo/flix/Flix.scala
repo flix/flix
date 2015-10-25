@@ -25,6 +25,10 @@ object Flix {
   def solve(paths: Traversable[Path]): Validation[Model, FlixError] = {
     val ast = Compiler.compile(paths)
 
+    if (ast.isEmpty) {
+      System.exit(1) // TODO
+    }
+
     implicit val sCtx = Solver.SolverContext(ast.get)
 
     val solver = new Solver()
@@ -33,8 +37,6 @@ object Flix {
     for (directive <- sCtx.root.directives.prints) {
       print(model, directive)
     }
-
-    printStats(model)
 
     model.toSuccess
   }
@@ -82,18 +84,5 @@ object Flix {
     }
 
   }
-
-  def printStats(model: Model): Unit = {
-    Console.println("Size of relations:")
-    model.relations.foreach {
-      case (name, table) => Console.println(s"$name(${table.length})")
-    }
-
-    Console.println("Size of lattices:")
-    model.lattices.foreach {
-      case (name, map) => Console.println(s"$name(${map.size})")
-    }
-  }
-
 
 }

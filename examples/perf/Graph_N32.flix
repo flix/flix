@@ -3,8 +3,12 @@ namespace Graph_N32 {
     // N = 32, P = 0.03125
 
     rel Edge(x: Int, y: Int);
-    Edge(y, x) :- Edge(x, y).
-    Edge(x, z) :- Edge(x, y), Edge(y, z).
+    rel Reach(x: Int, y: Int);
+
+    Reach(x, y) :- Edge(x, y).
+    Reach(x, y) :- Edge(y, x).
+    Reach(x, z) :- Reach(x, y), Edge(y, z).
+
 
     Edge(1, 20).
     Edge(1, 21).

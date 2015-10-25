@@ -331,4 +331,59 @@ class TestResolver extends FunSuite {
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
   }
 
+  test("UnresolvedNativeClass01") {
+    val input =
+      s"""namespace A {
+         |  val x: #java.lang = 42;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedNativeClass])
+  }
+
+  test("UnresolvedNativeClass02") {
+    val input =
+      s"""namespace A {
+         |  val x: #java.lang.XYZ = 42;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedNativeClass])
+  }
+
+  test("UnresolvedFieldOrMethod01") {
+    val input =
+      s"""namespace A {
+         |  val x: #java.lang.String = #java.lang.String.Foo;
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedFieldOrMethod])
+  }
+
+  test("AmbiguousFieldOrMethod01") {
+    val input =
+      s"""namespace A {
+         |  val x: Bool = #java.lang.Character.codePointBefore
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.AmbiguousFieldOrMethod])
+  }
+
+  test("AmbiguousFieldOrMethod02") {
+    val input =
+      s"""namespace A {
+         |  val x: Int = #java.util.Arrays.binarySearch
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.AmbiguousFieldOrMethod])
+  }
+
 }

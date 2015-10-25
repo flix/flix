@@ -164,7 +164,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def SimpleExpression: Rule1[ParsedAst.Expression] = rule {
-    LetExpression | IfThenElseExpression | MatchExpression | TagExpression | TupleExpression | LiteralExpression | LambdaExpression | VariableExpression | ErrorExpression
+    LetExpression | IfThenElseExpression | MatchExpression | TagExpression | TupleExpression | LiteralExpression | LambdaExpression | VariableExpression | ErrorExpression | NativeExpression
   }
 
   def LiteralExpression: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -225,6 +225,16 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def LambdaExpression: Rule1[ParsedAst.Expression.Lambda] = rule {
     SP ~ atomic("fn") ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Lambda
+  }
+
+  def NativeExpression: Rule1[ParsedAst.Expression.Native] = {
+    def JavaName: Rule1[String] = rule {
+      oneOrMore(LegalIdentifier).separatedBy(".") ~> ((xs: Seq[String]) => xs.mkString("."))
+    }
+
+    rule {
+      SP ~ atomic("#") ~ JavaName ~ SP ~> ParsedAst.Expression.Native
+    }
   }
 
   def ErrorExpression: Rule1[ParsedAst.Expression] = rule {
@@ -368,7 +378,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   // NB: ParametricType must be parsed before AmbiguousType.
   def SimpleType: Rule1[ParsedAst.Type] = rule {
-    ParametricType | AmbiguousType | TupleType
+    ParametricType | NativeType | AmbiguousType | TupleType
   }
 
   def AmbiguousType: Rule1[ParsedAst.Type.Ref] = rule {
@@ -377,6 +387,16 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def ParametricType: Rule1[ParsedAst.Type.Parametric] = rule {
     QName ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ optWS ~> ParsedAst.Type.Parametric
+  }
+
+  def NativeType: Rule1[ParsedAst.Type.Native] = {
+    def JavaName: Rule1[String] = rule {
+      oneOrMore(LegalIdentifier).separatedBy(".") ~> ((xs: Seq[String]) => xs.mkString("."))
+    }
+
+    rule {
+      atomic("#") ~ SP ~ JavaName ~ SP ~ optWS ~> ParsedAst.Type.Native
+    }
   }
 
   def TupleType: Rule1[ParsedAst.Type] = {
