@@ -3,10 +3,17 @@
 \usepackage{amssymb}
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
+\usepackage{titling}
 
- 
-\usepackage{multicol}
+\setlength{\droptitle}{-8em}
+
+\title{The Formal Semantics of Flix}
+\author{Magnus Madsen}
+\date{}
+
 \begin{document}
+
+\maketitle
 
 \section{Model-theoretic Semantics}
 
@@ -20,7 +27,7 @@ An atom is of the form $p_\ell(t_1, \dots, t_n)$ where
 $p$ is a predicate symbol,
 $\ell \in L$ is the lattice associated with $p$, and
 $t_1, \dots, t_n$ are terms. 
-A term is either a wildcard variable, a named variable or a constant value\footnote{Note: Flix has no uninterpreted function symbols.}. 
+A term is either a wildcard variable, a named variable or a constant value. 
 The possible values are the unit value $()$, the booleans (\texttt{true}, \texttt{false}),
 the integers (-5, 3, 7), tagged unions of values (e.g. \texttt{Tag} $v$) and 
 tuples of values (e.g. $(1, \texttt{true}, 42)$).
@@ -46,6 +53,7 @@ Given two ground atoms $A = p_\ell(v_1, \dots, v_n)$ and $B = p_\ell(v'_1, \dots
 (iii) number of ground terms, we define their partial order as:
 If $n = 1$ then $A \sqsubseteq B$ when $v_1 \sqsubseteq v_1'$.
 If $n > 1$ then $A \sqsubseteq B$ when $v_1 = v_1', \dots, v_{n - 1} = v'_{n - 1}$ and $v_n \sqsubseteq v'_n$.
+This definition is implicitely stating that the last term of a ground atom is a lattice element.
 
 An interpretation $I$ of a Flix program $P$ is a subset of the Herbrand Base $\mathcal{B}$.
 A ground atom $A$ is true w.r.t. an interpretation if $\exists A' \in I$ such that $A \sqsubseteq A'$. 
@@ -98,6 +106,39 @@ $I_2$ is also not a model of $p$ since it does not make $B_\ell(\texttt{Odd})$ t
 $I_3$ is a model of $p$, but it is not compact.
 $I_4$ is a model of $p$, but it is not reduced.
 $I_5$ is a model of $p$, it is compact and reduced, but it is not minimal as evidenced by $I_6$.
+
+\paragraph{Example.}
+The Flix program $P$ with constraints:
+\[
+    A_\ell(1, \texttt{Pos}) \quad A_\ell(2, \texttt{Pos}) \quad A_\ell(2, \texttt{Neg})
+\]
+and lattices $\{ \ell = (\bot, \top, \texttt{Neg}, \texttt{Zer}, \texttt{Pos}\}, \sqsubseteq, \sqcup, \sqcap) \}$ has
+the Herbrand Universe:
+%
+\[
+    \mathcal{U} = \{1, 2, \bot, \top, \texttt{Neg}, \texttt{Zer}, \texttt{Pos}\}
+\]
+%
+and the Herbrand Base: 
+%
+\begin{align*}
+    \mathcal{B} = \{ & A_\ell(1, 1), A_\ell(1, 2), A_\ell(1, \bot), A_\ell(1, \top), \cdots \\
+                     & A_\ell(2, 1), A_\ell(2, 2), A_\ell(2, \bot), A_\ell(2, \top), \cdots \\ 
+                     & A_\ell(\bot, 1), A_\ell(\bot, 2), A_\ell(\bot, \bot), A_\ell(\bot, \top), \cdots \\ 
+                     & \cdots \}
+\end{align*}
+%
+An interpretation of $P$ is a subset of $\mathcal{B}$.
+For example,
+%
+\begin{align*}
+    I_1 & = \{ A_\ell(1, \top) \} \\
+    I_2 & = \{ A_\ell(1, \top), A_\ell(2, \top) \} \\
+    I_3 & = \{ A_\ell(1, \texttt{Pos}), A_\ell(1, \texttt{Zer}), A_\ell(2, \top) \} \\
+    I_4 & = \{ A_\ell(1, \texttt{Pos}), A_\ell(2, \top) \}
+\end{align*}
+%
+Here $I_2$, $I_3$ and $I_4$ are models and $I_4$ is minimal.
 
 %\paragraph{Extension I: Monotone Filter Functions}
 
