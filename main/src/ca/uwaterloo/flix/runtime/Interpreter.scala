@@ -90,9 +90,8 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => evalInt(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
-      case Expression.NativeField(className, memberName, field, tpe, loc) => ??? // TODO
-      case Expression.NativeMethod(className, memberName, method, tpe, loc) => ??? // TODO
-      case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) =>
+      case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
+           Expression.NativeField(_, _, _, _, _) | Expression.NativeMethod(_, _, _, _, _) =>
         throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int.")
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
     }
@@ -150,9 +149,8 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => evalBool(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
-      case Expression.NativeField(className, memberName, field, tpe, loc) => ??? // TODO
-      case Expression.NativeMethod(classname, memberName, method, tpe, loc) => ??? // TODO
-      case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) =>
+      case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
+           Expression.NativeField(_, _, _, _, _) | Expression.NativeMethod(_, _, _, _, _) =>
         throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
     }
@@ -212,6 +210,8 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => eval(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
+      case Expression.NativeField(className, memberName, field, tpe, loc) => Value.NativeField(field.get())
+      case Expression.NativeMethod(classname, memberName, method, tpe, loc) => ??? // TODO
       case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
       case Expression.Tuple(elms, _, _) => Value.Tuple(elms.map(e => eval(e, root, env)))
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")

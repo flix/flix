@@ -154,4 +154,12 @@ object Value {
   case class Tuple(elms: List[Value]) extends Value
 
   case class Closure(formals: List[TypedAst.FormalArg], body: TypedAst.Expression, env: Interpreter.Env) extends Value
+
+  /***************************************************************************
+   * Value.NativeField, Value.NativeMethod implementations                   *
+   ***************************************************************************/
+
+  case class NativeField(f: Any) extends Value
+
+  case class NativeMethod(m: Any) extends Value
 }
