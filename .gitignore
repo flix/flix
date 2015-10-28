@@ -1,2 +1,9 @@
-target/
 .idea/
+/api/
+/out/
+/target/
+/*.iml
+/flix.jar
+main/target/
+macro/target
+project/target

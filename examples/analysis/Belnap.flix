@@ -1,0 +1,96 @@
+/**
+ * An implementation of the boolean lattice named for Nuel Belnap.
+ */
+namespace Belnap {
+
+    /**
+     * The boolean lattice.
+     */
+    enum Belnap {
+             case Top,
+
+        case True, case False,
+
+             case Bot
+    }
+
+    /**
+     * Returns `true` iff `e1` is less than or equal to `e2`.
+     */
+    def leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) with {
+        case (Belnap.Bot, _) => true;
+        case (Belnap.True, Belnap.True) => true;
+        case (Belnap.False, Belnap.False) => true;
+        case (_, Belnap.Top) => true;
+        case _ => false;
+    }
+
+    /**
+     * Returns the least upper bound of `e1` and `e2`.
+     */
+    def lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+        case (Belnap.Bot, _) => e2;
+        case (_, Belnap.Bot) => e1;
+        case (Belnap.True, Belnap.True) => Belnap.True;
+        case (Belnap.False, Belnap.False) => Belnap.False;
+        case _ => Belnap.Top;
+    }
+
+    /**
+     * Returns the greatest lower bound of `e1` and `e2`.
+     */
+    def glb(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+        case (Belnap.Top, _) => e2;
+        case (_, Belnap.Top) => e1;
+        case (Belnap.True, Belnap.True) => Belnap.True;
+        case (Belnap.False, Belnap.False) => Belnap.False;
+        case _ => Belnap.Bot;
+    }
+
+    /**
+     * Over-approximates the logical `and` operator.
+     */
+    def and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+        case (Belnap.Bot, _) => Belnap.Bot;
+        case (_, Belnap.Bot) => Belnap.Bot;
+        case (Belnap.True, Belnap.True) => Belnap.True;
+        case (Belnap.False, Belnap.True) => Belnap.False;
+        case (Belnap.True, Belnap.False) => Belnap.False;
+        case (Belnap.False, Belnap.False) => Belnap.False;
+        case _ => Belnap.Top;
+    }
+
+    /**
+     * Over-approximates the logical `or` operator.
+     */
+    def or(e1: Belnap, e2: Belnap): Belnap =
+        if (e1 == Belnap.Bot || e2 == Belnap.Bot)
+            Belnap.Bot
+        else
+            if (e1 == Belnap.Top || e2 == Belnap.Top)
+                Belnap.Top
+            else
+                let answer = (e1 == Belnap.True || e2 == Belnap.True) in
+                    if (answer)
+                        Belnap.True
+                    else
+                        Belnap.False
+
+    let Belnap<> = (Belnap.Bot, Belnap.Top, leq, lub, glb);
+
+    lat A(k: Int, v: Belnap<>);
+    A(0, Belnap.Bot).
+    A(1, Belnap.True).
+    A(2, Belnap.False).
+    A(3, and(Belnap.True, Belnap.False)).
+    A(4, v1 `or` v2) :- A(1, v1), A(2, v2).
+    A(5, Belnap.True).
+    A(5, Belnap.False).
+
+    assert A(3, Belnap.False).
+    assert A(4, Belnap.True).
+    assert A(5, Belnap.Top).
+
+    print A.
+
+}
