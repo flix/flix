@@ -472,6 +472,17 @@ object ParsedAst {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
+    /**
+     * An AST node that represents a reference to a JVM static field or method.
+     *
+     * @param sp1 the position of the first character in the expression.
+     * @param name the fully qualified name of the field or method.
+     * @param sp2 the position of the last character in the expression.
+     */
+    case class Native(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst.Expression {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
   }
 
   /**
@@ -767,6 +778,17 @@ object ParsedAst {
      * @param elms the type of the type parameters.
      */
     case class Parametric(name: Name.Unresolved, elms: Seq[ParsedAst.Type]) extends ParsedAst.Type
+
+    /**
+     * An AST node that represents a native type.
+     *
+     * @param sp1 the position of the first character in the term.
+     * @param name the fully qualified name of the type.
+     * @param sp2 the position of the last character in the term.
+     */
+    case class Native(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst.Type {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
 
   }
 

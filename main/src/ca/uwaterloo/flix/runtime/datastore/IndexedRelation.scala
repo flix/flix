@@ -27,6 +27,21 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   private val defaultIndex: Seq[Int] = Seq(0)
 
   /**
+   * Records the number of indexed lookups, i.e. exact lookups.
+   */
+  private var indexedLookups = 0
+
+  /**
+   * Records the number of indexed scans, i.e. table scans which can use an index.
+   */
+  private var indexedScans = 0
+
+  /**
+   * Records the number of full scans, i.e. table scans which cannot use an index.
+   */
+  private var fullScans = 0
+
+  /**
    * Initialize the store for all indexes.
    */
   for (idx <- indexes + defaultIndex) {
@@ -71,17 +86,19 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
     var idx = exactIndex(pat)
     if (idx != null) {
       // use exact index
+      indexedLookups += 1
       val key = keyOf(idx, pat)
       store(idx).getOrElseUpdate(key, mutable.Set.empty).iterator
     } else {
       // look for usable index
       idx = approxIndex(pat)
-
       val table = if (idx != null) {
+        indexedScans += 1
         // use suitable index
         val key = keyOf(idx, pat)
         store(idx).getOrElseUpdate(key, mutable.Set.empty).iterator
       } else {
+        fullScans += 1
         scan // no suitable index. Must scan the entire table.
       }
 
@@ -162,5 +179,25 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
     }
     true
   }
+
+  /**
+   * Returns the size of the relation.
+   */
+  def getSize: Int = scan.size
+
+  /**
+   * Returns the number of indexed lookups.
+   */
+  def getNumberOfIndexedLookups: Int = indexedLookups
+
+  /**
+   * Returns the number of indexed scans.
+   */
+  def getNumberOfIndexedScans: Int = indexedScans
+
+  /**
+   * Returns the number of full scans.
+   */
+  def getNumberOfFullScans: Int = fullScans
 
 }

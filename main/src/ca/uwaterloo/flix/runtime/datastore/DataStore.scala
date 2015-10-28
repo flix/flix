@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.TypedAst.Collection
 import ca.uwaterloo.flix.language.backend.phase.Indexer
 import ca.uwaterloo.flix.runtime.Solver
+import ca.uwaterloo.flix.util.AsciiTable
 
 import scala.collection.mutable
 
@@ -37,6 +38,20 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
       case l: Collection.Lattice =>
         lattices(name) = new IndexedLattice(l, indexes.getOrElse(name, Set.empty))
     }
+  }
+
+  def stats(): Unit = {
+    val t = new AsciiTable().withCols("Name", "Size", "Indexed Lookups", "Indexed Scans", "Full Scans")
+    for ((name, relation) <- relations) {
+      t.mkRow(List(
+        name,
+        relation.getSize,
+        relation.getNumberOfIndexedLookups,
+        relation.getNumberOfIndexedScans,
+        relation.getNumberOfFullScans
+      ))
+    }
+    t.write(Console.out)
   }
 
 }

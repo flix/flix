@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Type, FormalArg, Root}
-import ca.uwaterloo.flix.language.ast.{TypedAst, Name, BinaryOperator, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Definition, Expression, Literal, Pattern, Type, Term, Root}
+import ca.uwaterloo.flix.language.ast.{TypedAst, BinaryOperator, UnaryOperator}
 
 // TODO: Consider an EvaluationContext
 object Interpreter {
@@ -30,7 +30,7 @@ object Interpreter {
     case Type.Int => Value.mkInt(evalInt(expr, root, env))
     case Type.Bool => if (evalBool(expr, root, env)) Value.True else Value.False
     case Type.Var(_) | Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
-         Type.Lambda(_, _) | Type.Predicate(_) =>
+         Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) =>
       evalGeneral(expr, root, env)
   }
 
@@ -90,6 +90,8 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => evalInt(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
+      case Expression.NativeField(className, memberName, field, tpe, loc) => ??? // TODO
+      case Expression.NativeMethod(className, memberName, method, tpe, loc) => ??? // TODO
       case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) =>
         throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int.")
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
@@ -148,6 +150,8 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => evalBool(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
+      case Expression.NativeField(className, memberName, field, tpe, loc) => ??? // TODO
+      case Expression.NativeMethod(classname, memberName, method, tpe, loc) => ??? // TODO
       case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) =>
         throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
@@ -251,39 +255,34 @@ object Interpreter {
   /**
    * Evaluates the given head term `t` under the given environment `env0`
    */
-  def evalHeadTerm(t: TypedAst.Term.Head, root: TypedAst.Root, env: Map[String, Value]): Value = t match {
-    case TypedAst.Term.Head.Var(x, tpe, loc) => env.get(x.name) match {
-      case None => throw InternalRuntimeError("Unbound variable in head term!")
-      case Some(value) => value
-    }
-    case TypedAst.Term.Head.Lit(lit, tpe, loc) => Interpreter.evalLit(lit)
-    case TypedAst.Term.Head.Apply(name, terms, tpe, loc) =>
-      val f = root.constants(name)
-      val Value.Closure(formals, body, closureEnv) = eval(f.exp, root, env)
+  def evalHeadTerm(t: Term.Head, root: Root, env: Env): Value = t match {
+    case Term.Head.Var(x, _, _) => env(x.name)
+    case Term.Head.Lit(lit, _, _) => evalLit(lit)
+    case Term.Head.Apply(name, terms, _, _) =>
+      val function = root.constants(name)
+      val Value.Closure(formals, body, closureEnv) = evalGeneral(function.exp, root, env)
       val evalArgs = terms.map(t => evalHeadTerm(t, root, env))
       val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
       eval(body, root, newEnv)
-
   }
 
-  def evalBodyTerm(t: TypedAst.Term.Body, env: Map[String, Value]): Value = t match {
-    case TypedAst.Term.Body.Wildcard(_, _) => ???
-    case TypedAst.Term.Body.Var(x, _, _) => env(x.name)
-    case TypedAst.Term.Body.Lit(lit, _, _) => ???
+  def evalBodyTerm(t: Term.Body, env: Env): Value = t match {
+    case Term.Body.Wildcard(_, _) => ???
+    case Term.Body.Var(x, _, _) => env(x.name)
+    case Term.Body.Lit(lit, _, _) => evalLit(lit)
   }
 
-  def eval2(lambda: Expression, v1: Value, v2: Value, root: TypedAst.Root): Value = {
-    val Value.Closure(formals, body, closureEnv) = eval(lambda, root, Map.empty)
+  def eval2(lambda: Expression, v1: Value, v2: Value, root: Root): Value = {
+    val Value.Closure(formals, body, closureEnv) = evalGeneral(lambda, root)
     val evalArgs = List(v1, v2)
     val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
     eval(body, root, newEnv)
   }
 
-  def evalCall(d: TypedAst.Definition.Constant, terms: List[TypedAst.Term.Body], root: TypedAst.Root, env: Map[String, Value]): Value = {
-    val Value.Closure(formals, body, closureEnv) = eval(d.exp, root, env)
+  def evalCall(definition: Definition.Constant, terms: List[Term.Body], root: Root, env: Env): Value = {
+    val Value.Closure(formals, body, closureEnv) = evalGeneral(definition.exp, root, env)
     val evalArgs = terms.map(t => evalBodyTerm(t, env))
     val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
     eval(body, root, newEnv)
   }
-
 }

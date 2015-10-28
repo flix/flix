@@ -425,8 +425,21 @@ object Typer {
               case _ => e
             }
           }
+
         case ResolvedAst.Expression.Error(tpe, loc) =>
           TypedAst.Expression.Error(Type.typer(tpe), loc).toSuccess
+
+        case ResolvedAst.Expression.NativeField(className, memberName, field, loc) =>
+          val tpe = java2flix(field.getType.getCanonicalName)
+          TypedAst.Expression.NativeField(className, memberName, field, tpe, loc).toSuccess
+
+        case ResolvedAst.Expression.NativeMethod(className, memberName, method, loc) =>
+          val args = method.getParameterTypes.toList.map {
+            case clazz => java2flix(clazz.getCanonicalName)
+          }
+          val retTpe = java2flix(method.getReturnType.getCanonicalName)
+          val tpe = TypedAst.Type.Lambda(args, retTpe)
+          TypedAst.Expression.NativeMethod(className, memberName, method, tpe, loc).toSuccess
       }
 
       visit(rast, env)
@@ -665,6 +678,7 @@ object Typer {
         TypedAst.Type.Enum(cases)
       case ResolvedAst.Type.Tuple(elms) => TypedAst.Type.Tuple(elms map typer)
       case ResolvedAst.Type.Function(args, retTpe) => TypedAst.Type.Lambda(args map typer, typer(retTpe))
+      case ResolvedAst.Type.Native(name, loc) => TypedAst.Type.Native(name)
     }
 
   }
@@ -710,6 +724,16 @@ object Typer {
     }
   }
 
+
+  /**
+   * Returns a Flix type corresponding to the given canonical name.
+   */
+  private def java2flix(canonicalName: String): TypedAst.Type = canonicalName match {
+    case "boolean" => TypedAst.Type.Bool
+    case "int" => TypedAst.Type.Int
+    case _ => TypedAst.Type.Native(canonicalName)
+  }
+
   /**
    * Returns a human readable string representation of the given type `tpe`.
    */
@@ -729,6 +753,7 @@ object Typer {
     case TypedAst.Type.Lambda(args, retTpe) =>
       "(" + args.map(prettyPrint).mkString(", ") + ") -> " + prettyPrint(retTpe)
     case TypedAst.Type.Predicate(terms) => s"Predicate(${terms map prettyPrint})"
+    case TypedAst.Type.Native(name) => s"#$name"
   }
 
   private def prettyPrint(pat: ResolvedAst.Pattern): String = pat match {
