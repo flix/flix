@@ -270,8 +270,22 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       })
   }
 
-  def TuplePattern: Rule1[ParsedAst.Pattern.Tuple] = rule {
-    SP ~ "(" ~ oneOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Pattern.Tuple
+  def TuplePattern: Rule1[ParsedAst.Pattern] = {
+    def Unit: Rule1[ParsedAst.Pattern] = rule {
+      SP ~ atomic("()") ~ SP ~> ((sp1: SourcePosition, sp2: SourcePosition) => ParsedAst.Pattern.Lit(sp1, ParsedAst.Literal.Unit(sp1, sp2), sp2))
+    }
+
+    def Singleton: Rule1[ParsedAst.Pattern] = rule {
+      "(" ~ optWS ~ Pattern ~ optWS ~ ")"
+    }
+
+    def Tuple: Rule1[ParsedAst.Pattern] = rule {
+      SP ~ "(" ~ optWS ~ oneOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Pattern.Tuple
+    }
+
+    rule {
+      Unit | Singleton | Tuple
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////

@@ -719,6 +719,13 @@ class TestParser extends FunSuite {
     assertResult(3)(result.elms.size)
   }
 
+  test("Pattern.TaggedTuple01") {
+    val input = "Foo.Bar(x)"
+    val result = new Parser(SourceInput.Str(input)).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Tag]
+    assert(result.p.isInstanceOf[ParsedAst.Pattern.Var])
+  }
+
+
   /////////////////////////////////////////////////////////////////////////////
   // Facts and Rules                                                         //
   /////////////////////////////////////////////////////////////////////////////
