@@ -148,6 +148,22 @@ object Resolver {
       }
     }
 
+    /**
+     * An error raised to indicate a reference to an unknown lattice.
+     *
+     * @param tpe the type that has no associated lattice.
+     * @param loc the source location of the reference.
+     */
+    case class UnresolvedLatticeReference(tpe: WeededAst.Type, loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> Unresolved reference to lattice for the type '$tpe'.")}
+           |
+            |${loc.underline}
+           |Tip: Associate a lattice with the type.
+         """.stripMargin
+    }
 
     /**
      * An error raised to indicate a reference to an unknown relation.
@@ -280,6 +296,11 @@ object Resolver {
         case None => UnresolvedEnumReference(name, namespace, name.loc).toFailure
         case Some(d) => (rname, d).toSuccess
       }
+    }
+
+    def lookupLattice(tpe: WeededAst.Type, loc: SourceLocation): Validation[WeededAst.Definition.BoundedLattice, ResolverError] = {
+      // TODO: How to do this lookup?
+      ???
     }
 
     // TODO: Cleanup
@@ -514,7 +535,9 @@ object Resolver {
       }
 
       val valuesVal = wast.values.map {
-        case WeededAst.Attribute(ident, tpe, _) => Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.Attribute(ident, t))
+        case WeededAst.Attribute(ident, tpe, _) => Type.resolve(tpe, namespace, syms) map {
+          case t => ResolvedAst.Attribute(ident, t)
+        }
       }
 
       @@(@@(keysVal), @@(valuesVal)) map {
