@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
+import java.lang.reflect.Method
+
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 
 import scala.collection.mutable
@@ -159,7 +161,7 @@ object Value {
    * Value.NativeField, Value.NativeMethod implementations                   *
    ***************************************************************************/
 
-  case class NativeField(f: Any) extends Value
+  case class NativeField(field: Any) extends Value
 
-  case class NativeMethod(m: Any) extends Value
+  case class NativeMethod(method: Method) extends Value
 }
