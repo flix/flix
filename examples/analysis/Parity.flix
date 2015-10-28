@@ -129,7 +129,7 @@ namespace ParityAnalysis {
     def foo(i: Int): Bool = #ca.uwaterloo.flix.util.misc.SampleLattice.leq(top, top)
 
     rel R(b: Bool)
-    R(foo(4)).
+    R(foo(42)).
     print R.
 
 

@@ -71,10 +71,15 @@ object Interpreter {
       case Expression.Var(ident, _, loc) => env(ident.name).toInt
       case Expression.Ref(name, _, _) => evalInt(root.constants(name).exp, root, env)
       case Expression.Apply(exp, args, _, _) =>
-        val Value.Closure(formals, body, closureEnv) = evalGeneral(exp, root, env)
         val evalArgs = args.map(x => eval(x, root, env))
-        val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-        evalInt(body, root, newEnv)
+        (evalGeneral(exp, root, env): @unchecked) match {
+          case Value.Closure(formals, body, closureEnv) =>
+            val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
+            evalInt(body, root, newEnv)
+          case Value.NativeMethod(method) =>
+            val nativeArgs = evalArgs.map(_.toObject)
+            method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Integer].intValue
+        }
       case Expression.Unary(op, exp, _, _) => evalUnary(op, exp)
       case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, exp1, exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
@@ -138,11 +143,8 @@ object Interpreter {
             val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
             evalBool(body, root, newEnv)
           case Value.NativeMethod(method) =>
-            val nativeArgs = evalArgs.map(_.asInstanceOf[Value.NativeField].field).toArray
-            // TODO: Getting an exception, wrong number of arguments?
-            val ret = method.invoke(null, nativeArgs).asInstanceOf[java.lang.Boolean].booleanValue()
-            val k = 2
-            ret
+            val nativeArgs = evalArgs.map(_.toObject)
+            method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Boolean].booleanValue
         }
       case Expression.Unary(op, exp, _, _) => evalUnary(op, exp)
       case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, exp1, exp2)
@@ -203,10 +205,15 @@ object Interpreter {
       case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
       case Expression.Lambda(formals, body, _, _) => Value.Closure(formals, body, env)
       case Expression.Apply(exp, args, _, _) =>
-        val Value.Closure(formals, body, closureEnv) = evalGeneral(exp, root, env)
         val evalArgs = args.map(x => eval(x, root, env))
-        val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-        eval(body, root, newEnv)
+        (evalGeneral(exp, root, env): @unchecked) match {
+          case Value.Closure(formals, body, closureEnv) =>
+            val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
+            eval(body, root, newEnv)
+          case Value.NativeMethod(method) =>
+            val nativeArgs = evalArgs.map(_.toObject)
+            Value.Native(method.invoke(null, nativeArgs: _*))
+        }
       case Expression.Unary(op, exp, _, _) => evalUnary(op, eval(exp, root, env))
       case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, eval(exp1, root, env), eval(exp2, root, env))
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
@@ -222,7 +229,7 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => eval(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
-      case Expression.NativeField(_, _, field, _, _) => Value.NativeField(field.get())
+      case Expression.NativeField(_, _, field, _, _) => Value.Native(field.get())
       case Expression.NativeMethod(_, _, method, _, _) => Value.NativeMethod(method)
       case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
       case Expression.Tuple(elms, _, _) => Value.Tuple(elms.map(e => eval(e, root, env)))
@@ -272,10 +279,15 @@ object Interpreter {
     case Term.Head.Lit(lit, _, _) => evalLit(lit)
     case Term.Head.Apply(name, terms, _, _) =>
       val function = root.constants(name)
-      val Value.Closure(formals, body, closureEnv) = evalGeneral(function.exp, root, env)
       val evalArgs = terms.map(t => evalHeadTerm(t, root, env))
-      val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-      eval(body, root, newEnv)
+      (evalGeneral(function.exp, root, env): @unchecked) match {
+        case Value.Closure(formals, body, closureEnv) =>
+          val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
+          eval(body, root, newEnv)
+        case Value.NativeMethod(method) =>
+          val nativeArgs = evalArgs.map(_.toObject)
+          Value.Native(method.invoke(null, nativeArgs: _*))
+      }
   }
 
   def evalBodyTerm(t: Term.Body, env: Env): Value = t match {
@@ -285,16 +297,26 @@ object Interpreter {
   }
 
   def eval2(lambda: Expression, v1: Value, v2: Value, root: Root): Value = {
-    val Value.Closure(formals, body, closureEnv) = evalGeneral(lambda, root)
     val evalArgs = List(v1, v2)
-    val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-    eval(body, root, newEnv)
+    (evalGeneral(lambda, root): @unchecked) match {
+      case Value.Closure(formals, body, closureEnv) =>
+        val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
+        eval(body, root, newEnv)
+      case Value.NativeMethod(method) =>
+        val nativeArgs = evalArgs.map(_.toObject)
+        Value.Native(method.invoke(null, nativeArgs: _*))
+    }
   }
 
   def evalCall(definition: Definition.Constant, terms: List[Term.Body], root: Root, env: Env): Value = {
-    val Value.Closure(formals, body, closureEnv) = evalGeneral(definition.exp, root, env)
     val evalArgs = terms.map(t => evalBodyTerm(t, env))
-    val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-    eval(body, root, newEnv)
+    (evalGeneral(definition.exp, root, env): @unchecked) match {
+      case Value.Closure(formals, body, closureEnv) =>
+        val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
+        eval(body, root, newEnv)
+      case Value.NativeMethod(method) =>
+        val nativeArgs = evalArgs.map(_.toObject)
+        Value.Native(method.invoke(null, nativeArgs: _*))
+    }
   }
 }

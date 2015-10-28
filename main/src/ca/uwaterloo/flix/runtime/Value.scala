@@ -19,6 +19,10 @@ sealed trait Value {
     this.asInstanceOf[Value.Str].s
   }
 
+  def toObject: java.lang.Object = {
+    this.asInstanceOf[Value.Native].field.asInstanceOf[java.lang.Object]
+  }
+
   //  TODO: Figure out a place to put all the formatting functions.
   def pretty: String = this match {
     case Value.Unit => "()"
@@ -158,10 +162,10 @@ object Value {
   case class Closure(formals: List[TypedAst.FormalArg], body: TypedAst.Expression, env: Interpreter.Env) extends Value
 
   /***************************************************************************
-   * Value.NativeField, Value.NativeMethod implementations                   *
+   * Value.Native, Value.NativeMethod implementations                        *
    ***************************************************************************/
 
-  case class NativeField(field: Any) extends Value
+  case class Native(field: Any) extends Value
 
   case class NativeMethod(method: Method) extends Value
 }
