@@ -103,7 +103,7 @@ namespace ParityAnalysis {
     rel SumOp(result: Int, left: Int, right: Int);
     lat VarPointsTo(localVal: Int, value: Parity<>);
 
-    let #java.lang.String<> = (
+    let Str<> = (
         #ca.uwaterloo.flix.util.misc.SampleLattice.BOT,
         #ca.uwaterloo.flix.util.misc.SampleLattice.TOP,
         #ca.uwaterloo.flix.util.misc.SampleLattice.leq,
@@ -125,9 +125,9 @@ namespace ParityAnalysis {
 
     print VarPointsTo.
 
-    val top: #java.lang.String = #ca.uwaterloo.flix.util.misc.SampleLattice.TOP
-    val bot: #java.lang.String = #ca.uwaterloo.flix.util.misc.SampleLattice.BOT
-    def foo(i: Int): Bool = #ca.uwaterloo.flix.util.misc.SampleLattice.leq(top, bot)
+    val top: Str = #ca.uwaterloo.flix.util.misc.SampleLattice.TOP
+    val bot: Str = #ca.uwaterloo.flix.util.misc.SampleLattice.BOT
+    def foo(i: Int): Bool = #ca.uwaterloo.flix.util.misc.SampleLattice.leq(top, "<<top>>")
     def testBool(i: Int): Bool = #ca.uwaterloo.flix.util.misc.SampleLattice.testBool(#java.lang.Boolean.TRUE, false)
 
     rel R(b: Bool)

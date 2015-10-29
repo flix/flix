@@ -22,6 +22,7 @@ sealed trait Value {
   def toJava: java.lang.Object = (this: @unchecked) match {
     case Value.Bool(b) => boolean2Boolean(b)
     case Value.Int(i) => int2Integer(i)
+    case Value.Str(s) => s
     case Value.Native(v) => v
   }
 
