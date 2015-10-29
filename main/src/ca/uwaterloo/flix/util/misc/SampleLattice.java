@@ -14,6 +14,10 @@ public class SampleLattice {
         return b1 && b2;
     }
 
+    public static String concat(String e1, String e2) {
+        return e1 + e2;
+    }
+
     public static String lub(String e1, String e2) {
         return "";
     }

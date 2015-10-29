@@ -35,6 +35,8 @@ sealed trait Value {
     case Value.Tag(enum, tag, value) => enum + "." + tag + value.pretty
     case Value.Tuple(elms) => "(" + (elms map (e => e.pretty)) + ")"
     case Value.Closure(_, _, _) => ???
+    case Value.Native(v) => s"Native($v)"
+    case Value.NativeMethod(m) => ???
   }
 }
 

@@ -130,11 +130,17 @@ namespace ParityAnalysis {
     def foo(i: Int): Bool = #ca.uwaterloo.flix.util.misc.SampleLattice.leq(top, "<<top>>")
     def testBool(i: Int): Bool = #ca.uwaterloo.flix.util.misc.SampleLattice.testBool(#java.lang.Boolean.TRUE, false)
 
+    def concat(i: Int): Str = #ca.uwaterloo.flix.util.misc.SampleLattice.concat(top, "<<bot>>")
+
     rel R(b: Bool)
     R(foo(42)).
 //    R(testBool(4)).
     print R.
 
+    rel S(s: Str)
+    S("hi")
+    S(concat(3))
+    print S.
 
 
 };

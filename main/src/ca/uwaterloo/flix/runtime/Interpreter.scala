@@ -29,7 +29,11 @@ object Interpreter {
   def eval(expr: Expression, root: Root, env: Env = Map()): Value = expr.tpe match {
     case Type.Int => Value.mkInt(evalInt(expr, root, env))
     case Type.Bool => if (evalBool(expr, root, env)) Value.True else Value.False
-    case Type.Var(_) | Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
+    case Type.Str => evalGeneral(expr, root, env) match {
+      case s @ Value.Str(_) => s
+      case Value.Native(v) => Value.mkStr(v.asInstanceOf[String])
+    }
+    case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
          Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) =>
       evalGeneral(expr, root, env)
   }
