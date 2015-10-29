@@ -1,112 +1,109 @@
-//// Basic types
-//// =========
-//(def-type Object Str)
-//(def-type Variable Str)
-//(def-type Location Str)
-//
+namespace SU {
+
 //// Inputs
 //// =========
-//(def-type AddrOf (Set <Variable Object>))
-//(def-type Copy (Set <Variable Variable>))
-//(def-type Store (Set <Location Variable Variable>))
-//(def-type Load (Set <Location Variable Variable>))
-//(def-type CFG (Set <Location Location>))
-//
+  rel AddrOf(variable: Str, object: Str)
+  rel Copy(to: Str, from: Str)
+  rel Store(label: Str, to: Str, from: Str)
+  rel Load(label: Str, to: Str, from: Str)
+  rel CFG(label: Str, to: Str, from: Str)
+
 //// Outputs
 //// =========
-//(def-type Pt (-> Variable (Set Object)))
-//(def-type PtSU (-> <Location Object> (Set Object)))
-//
+  rel Pt(variable: Str, target: Str)
+  rel PtSU(location: Str, object: Str, target: Str)
+
 //// Other types
 //// =========
-//(def-type SULattice (variant ((Top) (Single Object) (Bot))))
-//(def-bot SULattice Bot)
-//(def-leq SULattice (e1 SULattice e2 SULattice)
-//  (match <e1 e2>
-//    (case <Bot _> true)
-//    (case <_ Top> true)
-//    (case <(Single s1) (Single s2)> (== s1 s2))
-//    (case _ false)
-//))
-//(def-lub SULattice (e1 SULattice e2 SULattice)
-//  (match <e1 e2>
-//    (case <Bot e2> e2)
-//    (case <e1 Bot> e1)
-//    (case <(Single s1) (Single s2)> (if (== s1 s2) (Single s1) Top))
-//    (case _ Top)
-//))
-//
-//// Other lattices
-//// =========
-//(def-type SUBefore (-> <Location Object> SULattice))
-//(def-type SUAfter (-> <Location Object> SULattice))
-//(def-type PtH (-> Object (Set Object)))
-//(def-type KillEmpty (Set Location))
-//(def-type KillNot (-> Location (Set Object)))
-//(def-type AllObjects (Set Object))
-//(def-type NonStore (Set Location)) // all locations that are not store instructions (since we don't have stratified negation)
-//
-//
+  enum SULattice {
+    case Top,
+    case Single(Str),
+    case Bottom
+  }
+
+  def leq(e1: SULattice, e2: SULattice): Bool = match (e1, e2) with {
+    case (SULattice.Bottom, _) => true;
+    case (_, SULattice.Top) => true;
+    case (SULattice.Single s1, SULattice.Single s2) => s1 == s2;
+    case _ => false;
+  }
+  def lub(e1: SULattice, e2: SULattice): SULattice = match (e1, e2) with {
+    case (Bottom, e2) => e2;
+    case (e1, Botttom) => e1;
+    case (SULattice.Single s1, SULattice.Single s2) => if (s1 == s2) SULattice.Single(s1) else SULattice.Top;
+    case _ => SULattice.Top;
+  }
+  def glb(e1: SULattice, e2: SULattice): SULattice = match (e1, e2) with {
+    case (Top, e2) => e2;
+    case (e1, Top) => e1;
+    case (SULattice.Single s1, SULattice.Single s2) => if (s1 == s2) SULattice.Single(s1) else SULattice.Bottom;
+    case _ => SULattice.Bottom;
+  }
+  let SULattice<> = (SULattice.Bottom, SULattice.Top, leq, lub, glb);
+
+  lat SUBefore(location: Str, object: Str, target: SULattice<>)
+  lat SUAfter(location: Str, object: Str, target: SULattice<>)
+
+  rel PtH(object: Str, target: Str)
+  rel KillEmpty(location: Str)
+  rel KillNot(location: Str, object: Str)
+  rel AllObjects(object: Str)
+  rel NonStore(location: Str)
+
 //// Rules
 //// =========
 //
 //// AddrOf
 //// ---------
-//// pt(p,a) :- addrOf(p,a).
-//(rule (Pt p {a}) ((AddrOf {<p a>})))
+Pt(p,a) :- AddrOf(p,a).
 //
 //// Copy
 //// ---------
-//// pt(p,a) :- copy(p,q), pt(q,a).
-//(rule (Pt p as) ((Copy {<p q>}) (Pt q as)))
+Pt(p,a) :- Copy(p,q), Pt(q,a).
 //
 //// Store
 //// ---------
-//// su-after(l,a,t) :- store(l,p,q), pt(p,a), pt(q,b), t = SINGLETON(b).
-//(rule (SUAfter <l a> (Single b))
-//  ((Store {<l p q>}) (Pt p {a}) (Pt q {b})))
+def f(x: Str): SULattice = SULattice.Single(x)
+SUAfter(l,a,f(b)) :- Store(l,p,q), Pt(p,a), Pt(q,b).
 //
-//// pt-h(a,b) :- store(l,p,q), pt(p,a), pt(q,b).
-//(rule (PtH a bs)
-//  ((Store {<_ p q>}) (Pt p {a}) (Pt q bs)))
+PtH(a,b) :- Store(l,p,q), Pt(p,a), Pt(q,b).
 //
 //// Load
 //// ---------
-//// pt(p,b) :- load(l,p,q), pt(q,a), ptsu(l,a,b).
-//(rule (Pt p bs)
-//  ((Load {<l p q>}) (Pt q {a}) (PtSU <l a> bs)))
+Pt(p,b) :- Load(l,p,q), Pt(q,a), PtSU(l,a,b).
 //
 //// CFlow
 //// ---------
-////su-before(l2,a,t) :- cfg(l1,l2), su-after(l1,a,t).
-//(rule (SUBefore <l2 a> t) ((CFG {<l1 l2>}) (SUAfter <l1 a> t)))
+SUBefore(l2,a,t) :- CFG(l1,l2), SUAfter(l1,a,t).
 //
 //// Preserve
 //// ---------
 ////su-after(l,a,t) :- su-before(l,a,t), NOT kill(l,a).
-//(rule (SUAfter <l a> t) ((SUBefore <l a> t) (KillEmpty {l})))
-//(rule (SUAfter <l a> t) ((SUBefore <l a> t) (KillNot l {a})))
+SUAfter(l,a,t) :- SUBefore(l,a,t), KillEmpty(l).
+SUAfter(l,a,t) :- SUBefore(l,a,t), KillNot(l,a).
 //
 //// PtSu
 //// ---------
-////ptsu(l,a,b) :- su-before(l,a,t), t = SINGLETON(b).
-//(rule (PtSU <l a> {b}) ((SUBefore <l a> (Single b))))
-//
-////ptsu(l,a,b) :- su-before(l,a,t), t >= TOP, pt-h(a,b).
-//(rule (PtSU <l a> bs) ((SUBefore <l a> Top) (PtH a bs)))
-//
+def filter(e: SULattice, p: Str): Bool = match e with {
+  case SULattice.Bottom => false
+  case SULattice.Single(s) => p == s
+  case SULattice.Top => true
+}
+PtSU(l,a,b) :- filter(t, b), SUBefore(l,a,t), PtH(a,b).
+
 //// Kill
 //// ---------
-//(rule (AllObjects {a}) ((AddrOf {<_ a>})))
+AllObjects(a) :- AddrOf(_,a).
 //// KillEmpty l is true if the kill set of l is the empty set
-//(rule (KillEmpty {l}) ((Store {<l p q>}) (Pt p {a b})))
-//(rule (KillEmpty {l}) ((NonStore {l})))
+KillEmpty(l) :- Store(l,p,q), Pt(p,a), Pt(p,b), notEqual(a,b).
+KillEmpty(l) :- NonStore(l).
 //// the inverse of the kill set of l
-//(rule (KillNot l {a}) ((Store {<l p q>}) (Pt p {b}) (AllObjects {a})) (!= a b))
+def notEqual(a: Str, b: Str): Bool = a != b;
+KillNot(l,a) :- Store(l,p,q), Pt(p,b), AllObjects(a), notEqual(a, b).
 //
 //// NonStore
 //// ---------
-//(rule (NonStore {l}) ((Load {<l _ _>})))
+NonStore(l) :- Load(l,_,_).
 //
 //// Example
 //// =========
@@ -130,46 +127,55 @@
 //// t = *p3  // l8
 //
 //// p = &a
-//(fact (AddrOf {<"p" "a">}))
+AddrOf("p","a").
 //// mb = &b
-//(fact (AddrOf {<"mb" "b">}))
+AddrOf("mb","b").
 //// *p = mb // l1
-//(fact (Store {<"l1" "p" "mb">}))
+Store("l1","p","mb").
 //// q = *p  // l2
-//(fact (Load {<"l2" "q" "p">}))
+Load("l2","q","p").
 //// mc = &c
-//(fact (AddrOf {<"mc" "c">}))
+AddrOf("mc","c").
 //// *p = mc // l3
-//(fact (Store {<"l3" "p" "mc">}))
+Store("l3","p","mc").
 //// r = *p  // l4
-//(fact (Load {<"l4" "r" "p">}))
+Load("l4","r","p").
 //// if(*) {
 //  // p2 = &d
-//(fact (AddrOf {<"p2" "d">}))
+AddrOf("p2","d").
 //  // mf = &f
-//(fact (AddrOf {<"mf" "f">}))
+AddrOf("mf","f").
 //  // *p2 = mf  // l5
-//(fact (Store {<"l5" "p2" "mf">}))
+Store("l5","p2","mf").
 //// }
-//// p3 = phi(p, p2)
-//(fact (Copy {<"p3" "p">}))
-//(fact (Copy {<"p3" "p2">}))
+//// p3 = phi(p, p2).
+Copy("p3","p").
+Copy("p3","p2").
 //// s = *p3 // l6
-//(fact (Load {<"l6" "s" "p3">}))
+Load("l6","s","p3").
 //// me = &e
-//(fact (AddrOf {<"me" "e">}))
+AddrOf("me","e").
 //// *p3 = me // l7
-//(fact (Store {<"l7" "p3" "me">}))
+Store("l7","p3","me").
 //// t = *p3  // l8
-//(fact (Load {<"l8" "t" "p3">}))
+Load("l8","t","p3").
 //
-//(fact (CFG {
-//    <"l1" "l2">
-//    <"l2" "l3">
-//    <"l3" "l4">
-//    <"l4" "l5"> <"l4" "l6">
-//    <"l5" "l6">
-//    <"l6" "l7">
-//    <"l7" "l8">
-//}))
+CFG("l1","l2").
+CFG("l2","l3").
+CFG("l3","l4").
+CFG("l4","l5").
+CFG("l4","l6").
+CFG("l5","l6").
+CFG("l6","l7").
+CFG("l7","l8").
 //
+
+print Pt.
+print PtSU.
+print PtH.
+print KillNot.
+print KillEmpty.
+print SUBefore.
+print SUAfter.
+}
+
