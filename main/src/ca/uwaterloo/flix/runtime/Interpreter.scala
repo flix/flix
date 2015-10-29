@@ -77,7 +77,7 @@ object Interpreter {
             val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
             evalInt(body, root, newEnv)
           case Value.NativeMethod(method) =>
-            val nativeArgs = evalArgs.map(_.toObject)
+            val nativeArgs = evalArgs.map(_.toJava)
             method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Integer].intValue
         }
       case Expression.Unary(op, exp, _, _) => evalUnary(op, exp)
@@ -143,7 +143,7 @@ object Interpreter {
             val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
             evalBool(body, root, newEnv)
           case Value.NativeMethod(method) =>
-            val nativeArgs = evalArgs.map(_.toObject)
+            val nativeArgs = evalArgs.map(_.toJava)
             method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Boolean].booleanValue
         }
       case Expression.Unary(op, exp, _, _) => evalUnary(op, exp)
@@ -211,7 +211,7 @@ object Interpreter {
             val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
             eval(body, root, newEnv)
           case Value.NativeMethod(method) =>
-            val nativeArgs = evalArgs.map(_.toObject)
+            val nativeArgs = evalArgs.map(_.toJava)
             Value.Native(method.invoke(null, nativeArgs: _*))
         }
       case Expression.Unary(op, exp, _, _) => evalUnary(op, eval(exp, root, env))
@@ -285,7 +285,7 @@ object Interpreter {
           val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
           eval(body, root, newEnv)
         case Value.NativeMethod(method) =>
-          val nativeArgs = evalArgs.map(_.toObject)
+          val nativeArgs = evalArgs.map(_.toJava)
           Value.Native(method.invoke(null, nativeArgs: _*))
       }
   }
@@ -303,7 +303,7 @@ object Interpreter {
         val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
         eval(body, root, newEnv)
       case Value.NativeMethod(method) =>
-        val nativeArgs = evalArgs.map(_.toObject)
+        val nativeArgs = evalArgs.map(_.toJava)
         Value.Native(method.invoke(null, nativeArgs: _*))
     }
   }
@@ -315,7 +315,7 @@ object Interpreter {
         val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
         eval(body, root, newEnv)
       case Value.NativeMethod(method) =>
-        val nativeArgs = evalArgs.map(_.toObject)
+        val nativeArgs = evalArgs.map(_.toJava)
         Value.Native(method.invoke(null, nativeArgs: _*))
     }
   }

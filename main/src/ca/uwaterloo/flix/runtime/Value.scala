@@ -19,8 +19,10 @@ sealed trait Value {
     this.asInstanceOf[Value.Str].s
   }
 
-  def toObject: java.lang.Object = {
-    this.asInstanceOf[Value.Native].value.asInstanceOf[java.lang.Object]
+  def toJava: java.lang.Object = (this: @unchecked) match {
+    case Value.Bool(b) => boolean2Boolean(b)
+    case Value.Int(i) => int2Integer(i)
+    case Value.Native(v) => v
   }
 
   //  TODO: Figure out a place to put all the formatting functions.
@@ -165,7 +167,7 @@ object Value {
    * Value.Native, Value.NativeMethod implementations                        *
    ***************************************************************************/
 
-  case class Native(value: Any) extends Value
+  case class Native(value: AnyRef) extends Value
 
   case class NativeMethod(method: Method) extends Value
 }

@@ -126,10 +126,13 @@ namespace ParityAnalysis {
     print VarPointsTo.
 
     val top: #java.lang.String = #ca.uwaterloo.flix.util.misc.SampleLattice.TOP
-    def foo(i: Int): Bool = #ca.uwaterloo.flix.util.misc.SampleLattice.leq(top, top)
+    val bot: #java.lang.String = #ca.uwaterloo.flix.util.misc.SampleLattice.BOT
+    def foo(i: Int): Bool = #ca.uwaterloo.flix.util.misc.SampleLattice.leq(top, bot)
+    def testBool(i: Int): Bool = #ca.uwaterloo.flix.util.misc.SampleLattice.testBool(#java.lang.Boolean.TRUE, false)
 
     rel R(b: Bool)
     R(foo(42)).
+//    R(testBool(4)).
     print R.
 
 
