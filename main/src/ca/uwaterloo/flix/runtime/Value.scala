@@ -20,7 +20,7 @@ sealed trait Value {
   }
 
   def toObject: java.lang.Object = {
-    this.asInstanceOf[Value.Native].field.asInstanceOf[java.lang.Object]
+    this.asInstanceOf[Value.Native].value.asInstanceOf[java.lang.Object]
   }
 
   //  TODO: Figure out a place to put all the formatting functions.
@@ -165,7 +165,7 @@ object Value {
    * Value.Native, Value.NativeMethod implementations                        *
    ***************************************************************************/
 
-  case class Native(field: Any) extends Value
+  case class Native(value: Any) extends Value
 
   case class NativeMethod(method: Method) extends Value
 }
