@@ -23,7 +23,7 @@ sealed trait Value {
     case Value.Bool(b) => b.toString
     case Value.Int(i) => i.toString
     case Value.Str(s) => s.toString
-    case Value.Tag(enum, tag, value) => enum + "." + tag + value.pretty
+    case Value.Tag(enum, tag, value) => enum + "." + tag + "(" + value.pretty + ")"
     case Value.Tuple(elms) => "(" + (elms map (e => e.pretty)) + ")"
     case Value.Closure(_, _, _) => ???
   }
