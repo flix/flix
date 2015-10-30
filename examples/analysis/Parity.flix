@@ -103,14 +103,6 @@ namespace ParityAnalysis {
     rel SumOp(result: Int, left: Int, right: Int);
     lat VarPointsTo(localVal: Int, value: Parity<>);
 
-    let Str<> = (
-        #ca.uwaterloo.flix.util.misc.SampleLattice.BOT,
-        #ca.uwaterloo.flix.util.misc.SampleLattice.TOP,
-        #ca.uwaterloo.flix.util.misc.SampleLattice.leq,
-        #ca.uwaterloo.flix.util.misc.SampleLattice.lub,
-        #ca.uwaterloo.flix.util.misc.SampleLattice.glb
-    );
-
     SumOp(3, 1, 2).
     VarPointsTo(1, Parity.Odd).
     VarPointsTo(2, Parity.Even).
@@ -124,23 +116,4 @@ namespace ParityAnalysis {
                                result := plus(v2, v3).
 
     print VarPointsTo.
-
-    val top: Str = #ca.uwaterloo.flix.util.misc.SampleLattice.TOP
-    val bot: Str = #ca.uwaterloo.flix.util.misc.SampleLattice.BOT
-    def foo(s: Str): Bool = #ca.uwaterloo.flix.util.misc.SampleLattice.leq(top, s)
-    def testBool(b: Bool): Bool = #ca.uwaterloo.flix.util.misc.SampleLattice.testBool(#java.lang.Boolean.TRUE, b)
-    def strlub(i: Int): Str = #ca.uwaterloo.flix.util.misc.SampleLattice.lub(top, "<<bot>>")
-
-    rel R(i: Int, b: Bool)
-    R(1, foo("top")).
-    R(2, foo("<<top>>")).
-    R(3, foo("<<bot>>")).
-    R(4, testBool(true)).
-    R(5, testBool(false)).
-    print R.
-
-    rel S(i: Int, s: Str)
-    S(1, "hi")
-    S(2, strlub(3))
-    print S.
 };
