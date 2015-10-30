@@ -1,7 +1,13 @@
 package ca.uwaterloo.flix.util.misc;
 
+/**
+ * A Java implementation of the Parity lattice.
+ *
+ * See examples/analysis/NativeParity.flix for the actual analysis.
+ */
 public class NativeParity {
 
+    // the parity lattice consists of just four elements:
     public enum Parity {
                 TOP,
         ODD,            EVEN,
@@ -13,15 +19,18 @@ public class NativeParity {
         parity = e;
     }
 
-    public String toString() {
-        return "NativeParity(" + parity + ")";
-    }
-
+    // we create singletons to represent each of the parity elements.
     public static NativeParity TOP = new NativeParity(Parity.TOP);
     public static NativeParity ODD = new NativeParity(Parity.ODD);
     public static NativeParity EVEN = new NativeParity(Parity.EVEN);
     public static NativeParity BOT = new NativeParity(Parity.BOT);
 
+    // for pretty printing NativeParity values.
+    public String toString() {
+        return "NativeParity(" + parity + ")";
+    }
+
+    // unfortunately we don't have pattern-matching in Java.
     public static boolean leq(NativeParity e1, NativeParity e2) {
         return e1 == BOT || e2 == TOP || e1 == e2;
     }
@@ -50,6 +59,7 @@ public class NativeParity {
         }
     }
 
+    // definition of a monotone operation (plus) on lattice elements.
     public static NativeParity plus(NativeParity e1, NativeParity e2) {
         if (e1 == BOT || e2 == BOT) {
             return BOT;
@@ -62,6 +72,7 @@ public class NativeParity {
         }
     }
 
+    // another monotone operation, times.
     public static NativeParity times(NativeParity e1, NativeParity e2) {
         if (e1 == BOT || e2 == BOT) {
             return BOT;
@@ -74,10 +85,12 @@ public class NativeParity {
         }
     }
 
+    // test if a number may be zero.
     public static boolean isMaybeZero(NativeParity e) {
         return e == EVEN || e == TOP;
     }
 
+    // test if a number may be odd.
     public static boolean isMaybeOdd(NativeParity e) {
         return e == ODD || e == TOP;
     }
