@@ -127,20 +127,20 @@ namespace ParityAnalysis {
 
     val top: Str = #ca.uwaterloo.flix.util.misc.SampleLattice.TOP
     val bot: Str = #ca.uwaterloo.flix.util.misc.SampleLattice.BOT
-    def foo(i: Int): Bool = #ca.uwaterloo.flix.util.misc.SampleLattice.leq(top, "<<top>>")
-    def testBool(i: Int): Bool = #ca.uwaterloo.flix.util.misc.SampleLattice.testBool(#java.lang.Boolean.TRUE, false)
+    def foo(s: Str): Bool = #ca.uwaterloo.flix.util.misc.SampleLattice.leq(top, s)
+    def testBool(b: Bool): Bool = #ca.uwaterloo.flix.util.misc.SampleLattice.testBool(#java.lang.Boolean.TRUE, b)
+    def strlub(i: Int): Str = #ca.uwaterloo.flix.util.misc.SampleLattice.lub(top, "<<bot>>")
 
-    def concat(i: Int): Str = #ca.uwaterloo.flix.util.misc.SampleLattice.concat(top, "<<bot>>")
-
-    rel R(b: Bool)
-    R(foo(42)).
-//    R(testBool(4)).
+    rel R(i: Int, b: Bool)
+    R(1, foo("top")).
+    R(2, foo("<<top>>")).
+    R(3, foo("<<bot>>")).
+    R(4, testBool(true)).
+    R(5, testBool(false)).
     print R.
 
-    rel S(s: Str)
-    S("hi")
-    S(concat(3))
+    rel S(i: Int, s: Str)
+    S(1, "hi")
+    S(2, strlub(3))
     print S.
-
-
 };
