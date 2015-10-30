@@ -119,8 +119,10 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
     // TODO: so this is incorrect. Need to use glb.
     for (i <- row.indices) {
       val p = pat(i)
-      if (p != null && p != row(i)) {
-        return false
+      if (p != null) {
+        if (p != row(i)) {
+          throw new RuntimeException("Need to compute GLB")
+        }
       }
     }
     true
