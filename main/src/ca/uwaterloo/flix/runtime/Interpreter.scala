@@ -216,7 +216,15 @@ object Interpreter {
             eval(body, root, newEnv)
           case Value.NativeMethod(method) =>
             val nativeArgs = evalArgs.map(_.toJava)
-            Value.Native(method.invoke(null, nativeArgs: _*))
+            exp.tpe.asInstanceOf[Type.Lambda].retTpe match {
+              case Type.Bool =>
+                if (method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
+              case Type.Int => Value.mkInt(method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Integer].intValue)
+              case Type.Str => Value.mkStr(method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.String])
+              case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
+                   Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) =>
+                Value.Native(method.invoke(null, nativeArgs: _*))
+            }
         }
       case Expression.Unary(op, exp, _, _) => evalUnary(op, eval(exp, root, env))
       case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, eval(exp1, root, env), eval(exp2, root, env))
@@ -290,7 +298,15 @@ object Interpreter {
           eval(body, root, newEnv)
         case Value.NativeMethod(method) =>
           val nativeArgs = evalArgs.map(_.toJava)
-          Value.Native(method.invoke(null, nativeArgs: _*))
+          function.exp.tpe.asInstanceOf[Type.Lambda].retTpe match {
+            case Type.Bool =>
+              if (method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
+            case Type.Int => Value.mkInt(method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Integer].intValue)
+            case Type.Str => Value.mkStr(method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.String])
+            case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
+                 Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) =>
+              Value.Native(method.invoke(null, nativeArgs: _*))
+          }
       }
   }
 
@@ -308,7 +324,15 @@ object Interpreter {
         eval(body, root, newEnv)
       case Value.NativeMethod(method) =>
         val nativeArgs = evalArgs.map(_.toJava)
-        Value.Native(method.invoke(null, nativeArgs: _*))
+        lambda.tpe.asInstanceOf[Type.Lambda].retTpe match {
+          case Type.Bool =>
+            if (method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
+          case Type.Int => Value.mkInt(method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Integer].intValue)
+          case Type.Str => Value.mkStr(method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.String])
+          case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
+               Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) =>
+            Value.Native(method.invoke(null, nativeArgs: _*))
+        }
     }
   }
 
@@ -320,7 +344,15 @@ object Interpreter {
         eval(body, root, newEnv)
       case Value.NativeMethod(method) =>
         val nativeArgs = evalArgs.map(_.toJava)
-        Value.Native(method.invoke(null, nativeArgs: _*))
+        definition.exp.tpe.asInstanceOf[Type.Lambda].retTpe match {
+          case Type.Bool =>
+            if (method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
+          case Type.Int => Value.mkInt(method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Integer].intValue)
+          case Type.Str => Value.mkStr(method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.String])
+          case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
+               Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) =>
+            Value.Native(method.invoke(null, nativeArgs: _*))
+        }
     }
   }
 }
