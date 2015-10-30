@@ -198,7 +198,8 @@ class Solver(implicit sCtx: Solver.SolverContext) {
         disjoint(rule.disjoint, row)
       case Predicate.Body.Function(name, terms, _, _) :: xs =>
         val lambda = sCtx.root.constants(name)
-        val result = Interpreter.evalCall(lambda, terms, sCtx.root, row.toMap).toBool
+        val args = terms.map(t => Interpreter.evalBodyTerm(t, row.toMap))
+        val result = Interpreter.evalCall(lambda.exp, args, sCtx.root, row.toMap).toBool
         if (result)
           filter(xs, row)
     }

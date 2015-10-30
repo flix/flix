@@ -76,14 +76,7 @@ object Interpreter {
       case Expression.Ref(name, _, _) => evalInt(root.constants(name).exp, root, env)
       case Expression.Apply(exp, args, _, _) =>
         val evalArgs = args.map(x => eval(x, root, env))
-        (evalGeneral(exp, root, env): @unchecked) match {
-          case Value.Closure(formals, body, closureEnv) =>
-            val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-            evalInt(body, root, newEnv)
-          case Value.NativeMethod(method) =>
-            val nativeArgs = evalArgs.map(_.toJava)
-            method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Integer].intValue
-        }
+        evalCall(exp, evalArgs, root, env).toInt
       case Expression.Unary(op, exp, _, _) => evalUnary(op, exp)
       case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, exp1, exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
@@ -142,14 +135,7 @@ object Interpreter {
       case Expression.Ref(name, _, _) => evalBool(root.constants(name).exp, root, env)
       case Expression.Apply(exp, args, _, _) =>
         val evalArgs = args.map(x => eval(x, root, env))
-        (evalGeneral(exp, root, env): @unchecked) match {
-          case Value.Closure(formals, body, closureEnv) =>
-            val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-            evalBool(body, root, newEnv)
-          case Value.NativeMethod(method) =>
-            val nativeArgs = evalArgs.map(_.toJava)
-            method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Boolean].booleanValue
-        }
+        evalCall(exp, evalArgs, root, env).toBool
       case Expression.Unary(op, exp, _, _) => evalUnary(op, exp)
       case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, exp1, exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
@@ -210,22 +196,7 @@ object Interpreter {
       case Expression.Lambda(formals, body, _, _) => Value.Closure(formals, body, env)
       case Expression.Apply(exp, args, _, _) =>
         val evalArgs = args.map(x => eval(x, root, env))
-        (evalGeneral(exp, root, env): @unchecked) match {
-          case Value.Closure(formals, body, closureEnv) =>
-            val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-            eval(body, root, newEnv)
-          case Value.NativeMethod(method) =>
-            val nativeArgs = evalArgs.map(_.toJava)
-            exp.tpe.asInstanceOf[Type.Lambda].retTpe match {
-              case Type.Bool =>
-                if (method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
-              case Type.Int => Value.mkInt(method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Integer].intValue)
-              case Type.Str => Value.mkStr(method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.String])
-              case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
-                   Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) =>
-                Value.Native(method.invoke(null, nativeArgs: _*))
-            }
-        }
+        evalCall(exp, evalArgs, root, env)
       case Expression.Unary(op, exp, _, _) => evalUnary(op, eval(exp, root, env))
       case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, eval(exp1, root, env), eval(exp2, root, env))
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
@@ -290,24 +261,9 @@ object Interpreter {
     case Term.Head.Var(x, _, _) => env(x.name)
     case Term.Head.Lit(lit, _, _) => evalLit(lit)
     case Term.Head.Apply(name, terms, _, _) =>
-      val function = root.constants(name)
+      val function = root.constants(name).exp
       val evalArgs = terms.map(t => evalHeadTerm(t, root, env))
-      (evalGeneral(function.exp, root, env): @unchecked) match {
-        case Value.Closure(formals, body, closureEnv) =>
-          val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-          eval(body, root, newEnv)
-        case Value.NativeMethod(method) =>
-          val nativeArgs = evalArgs.map(_.toJava)
-          function.exp.tpe.asInstanceOf[Type.Lambda].retTpe match {
-            case Type.Bool =>
-              if (method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
-            case Type.Int => Value.mkInt(method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Integer].intValue)
-            case Type.Str => Value.mkStr(method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.String])
-            case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
-                 Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) =>
-              Value.Native(method.invoke(null, nativeArgs: _*))
-          }
-      }
+      evalCall(function, evalArgs, root, env)
   }
 
   def evalBodyTerm(t: Term.Body, env: Env): Value = t match {
@@ -316,43 +272,21 @@ object Interpreter {
     case Term.Body.Lit(lit, _, _) => evalLit(lit)
   }
 
-  def eval2(lambda: Expression, v1: Value, v2: Value, root: Root): Value = {
-    val evalArgs = List(v1, v2)
-    (evalGeneral(lambda, root): @unchecked) match {
+  def evalCall(function: Expression, args: List[Value], root: Root, env: Env = Map()): Value =
+    (evalGeneral(function, root, env): @unchecked) match {
       case Value.Closure(formals, body, closureEnv) =>
-        val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
+        val newEnv = closureEnv ++ formals.map(_.ident.name).zip(args).toMap
         eval(body, root, newEnv)
       case Value.NativeMethod(method) =>
-        val nativeArgs = evalArgs.map(_.toJava)
-        lambda.tpe.asInstanceOf[Type.Lambda].retTpe match {
-          case Type.Bool =>
-            if (method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
-          case Type.Int => Value.mkInt(method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Integer].intValue)
-          case Type.Str => Value.mkStr(method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.String])
+        val nativeArgs = args.map(_.toJava)
+        val result = method.invoke(null, nativeArgs: _*)
+        function.tpe.asInstanceOf[Type.Lambda].retTpe match {
+          case Type.Bool => if (result.asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
+          case Type.Int => Value.mkInt(result.asInstanceOf[java.lang.Integer].intValue)
+          case Type.Str => Value.mkStr(result.asInstanceOf[java.lang.String])
           case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
                Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) =>
-            Value.Native(method.invoke(null, nativeArgs: _*))
+            Value.Native(result)
         }
     }
-  }
-
-  def evalCall(definition: Definition.Constant, terms: List[Term.Body], root: Root, env: Env): Value = {
-    val evalArgs = terms.map(t => evalBodyTerm(t, env))
-    (evalGeneral(definition.exp, root, env): @unchecked) match {
-      case Value.Closure(formals, body, closureEnv) =>
-        val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-        eval(body, root, newEnv)
-      case Value.NativeMethod(method) =>
-        val nativeArgs = evalArgs.map(_.toJava)
-        definition.exp.tpe.asInstanceOf[Type.Lambda].retTpe match {
-          case Type.Bool =>
-            if (method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
-          case Type.Int => Value.mkInt(method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.Integer].intValue)
-          case Type.Str => Value.mkStr(method.invoke(null, nativeArgs: _*).asInstanceOf[java.lang.String])
-          case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
-               Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) =>
-            Value.Native(method.invoke(null, nativeArgs: _*))
-        }
-    }
-  }
 }
