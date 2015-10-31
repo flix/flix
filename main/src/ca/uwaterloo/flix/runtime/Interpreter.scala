@@ -29,10 +29,7 @@ object Interpreter {
   def eval(expr: Expression, root: Root, env: Env = Map()): Value = expr.tpe match {
     case Type.Int => Value.mkInt(evalInt(expr, root, env))
     case Type.Bool => if (evalBool(expr, root, env)) Value.True else Value.False
-    case Type.Str => evalGeneral(expr, root, env) match {
-      case s @ Value.Str(_) => s
-      case Value.Native(v) => Value.mkStr(v.asInstanceOf[String])
-    }
+    case Type.Str => evalGeneral(expr, root, env)
     case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
          Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) =>
       evalGeneral(expr, root, env)
@@ -212,7 +209,7 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => eval(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
-      case Expression.NativeField(field, _, _) => Value.Native(field.get())
+      case Expression.NativeField(field, tpe, _) => Value.java2flix(field.get(), tpe)
       case Expression.NativeMethod(method, _, _) => Value.NativeMethod(method)
       case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
       case Expression.Tuple(elms, _, _) => Value.Tuple(elms.map(e => eval(e, root, env)))
@@ -264,8 +261,7 @@ object Interpreter {
       val function = root.constants(name).exp
       val evalArgs = terms.map(t => evalHeadTerm(t, root, env))
       evalCall(function, evalArgs, root, env)
-    case Term.Head.NativeField(field, _, _) =>
-      Value.Native(field.get()) // TODO: Verify
+    case Term.Head.NativeField(field, tpe, _) => Value.java2flix(field.get(), tpe)
   }
 
   def evalBodyTerm(t: Term.Body, env: Env): Value = t match {
@@ -281,14 +277,7 @@ object Interpreter {
         eval(body, root, newEnv)
       case Value.NativeMethod(method) =>
         val nativeArgs = args.map(_.toJava)
-        val result = method.invoke(null, nativeArgs: _*)
-        function.tpe.asInstanceOf[Type.Lambda].retTpe match {
-          case Type.Bool => if (result.asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
-          case Type.Int => Value.mkInt(result.asInstanceOf[java.lang.Integer].intValue)
-          case Type.Str => Value.mkStr(result.asInstanceOf[java.lang.String])
-          case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
-               Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) =>
-            Value.Native(result)
-        }
+        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
+        Value.java2flix(method.invoke(null, nativeArgs: _*), tpe)
     }
 }

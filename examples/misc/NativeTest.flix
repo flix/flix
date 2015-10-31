@@ -193,4 +193,44 @@ namespace NativeTest {
     Strcat(2, testStrcat(2), testStrcat(6), testStrcat(10), testStrcat(14)).
     Strcat(3, testStrcat(3), testStrcat(7), testStrcat(11), testStrcat(15)).
     print Strcat.
+
+    /* Expected result
+       +------+-------+------+-------+------+-------+
+       | b1   | b2    | b3   | b4    | b5   | b6    |
+       +------+-------+------+-------+------+-------+
+       | true | false | true | false | true | false |
+       +------+-------+------+-------+------+-------+
+    */
+    rel BoolVals(b1: Bool, b2: Bool, b3: Bool, b4: Bool, b5: Bool, b6: Bool);
+    BoolVals(#java.lang.Boolean.TRUE,
+             #java.lang.Boolean.FALSE,
+             #ca.uwaterloo.flix.util.misc.NativeTest.TRUE,
+             #ca.uwaterloo.flix.util.misc.NativeTest.FALSE,
+             true,
+             false).
+    print BoolVals.
+
+    /* Expected result
+       +----+----+----+
+       | i1 | i2 | i3 |
+       +----+----+----+
+       | 1  | 1  | 1  |
+       +----+----+----+
+    */
+    rel IntVals(i1: Int, i2: Int, i3: Int);
+    IntVals(#ca.uwaterloo.flix.util.misc.NativeTest.primitiveInt,
+            #ca.uwaterloo.flix.util.misc.NativeTest.boxedInt,
+            1).
+    print IntVals.
+
+    /* Expected result
+       +-------+-------+
+       | s1    | s2    |
+       +-------+-------+
+       | hello | world |
+       +-------+-------+
+    */
+    rel StrVals(s1: Str, s2: Str);
+    StrVals(#ca.uwaterloo.flix.util.misc.NativeTest.hello, "world").
+    print StrVals.
 }
