@@ -17,4 +17,5 @@ public class SampleLattice {
     public static String glb(String e1, String e2) {
         return "";
     }
+
 }
