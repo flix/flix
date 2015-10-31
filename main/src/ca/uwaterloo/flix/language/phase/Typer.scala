@@ -729,8 +729,9 @@ object Typer {
    * Returns a Flix type corresponding to the given canonical name.
    */
   private def java2flix(canonicalName: String): TypedAst.Type = canonicalName match {
-    case "boolean" => TypedAst.Type.Bool
-    case "int" => TypedAst.Type.Int
+    case "boolean" | "java.lang.Boolean" => TypedAst.Type.Bool
+    case "int" | "java.lang.Integer" => TypedAst.Type.Int
+    case "java.lang.String" => TypedAst.Type.Str
     case _ => TypedAst.Type.Native(canonicalName)
   }
 

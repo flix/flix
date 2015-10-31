@@ -129,7 +129,8 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
   private def leq(a: Array[Value], b: Array[Value]): Boolean = {
     for (i <- a.indices) {
       val leq = latticeOps(i).leq
-      val value = Interpreter.eval2(leq, a(i), b(i), sCtx.root)
+      val args = List(a(i), b(i))
+      val value = Interpreter.evalCall(leq, args, sCtx.root)
       if (!value.toBool)
         return false
     }
@@ -140,7 +141,8 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
     val result = Array.ofDim[Value](a.length)
     for (i <- result.indices) {
       val lub = latticeOps(i).lub
-      val value = Interpreter.eval2(lub, a(i), b(i), sCtx.root)
+      val args = List(a(i), b(i))
+      val value = Interpreter.evalCall(lub, args, sCtx.root)
       result(i) = value
     }
     result
