@@ -80,6 +80,23 @@ object Resolver {
     }
 
     /**
+     * An error raised to indicate that the given `name` is illegal as a variable name.
+     *
+     * @param name the invalid name.
+     * @param loc the location of the name.
+     */
+    case class IllegalVariableName(name: String, loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> Illegal uppercase variable name '$name'.")}
+           |
+           |${loc.underline}
+           |A variable name must start with a lowercase letter.
+         """.stripMargin
+    }
+
+    /**
      * An error raised to indicate that the given `name` in the given `namespace` was not found.
      *
      * @param name the unresolved name.
@@ -624,7 +641,13 @@ object Resolver {
 
         case WeededAst.Expression.Lambda(wformals, wbody, wtype, loc) =>
           val formalsVal = @@(wformals map {
-            case WeededAst.FormalArg(ident, tpe) => Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.FormalArg(ident, t))
+            case WeededAst.FormalArg(ident, tpe) => Type.resolve(tpe, namespace, syms) flatMap {
+              case t =>
+                if (ident.name.head.isLower)
+                  ResolvedAst.FormalArg(ident, t).toSuccess
+                else
+                  IllegalVariableName(ident.name, ident.loc).toFailure
+            }
           })
 
           formalsVal flatMap {
@@ -657,8 +680,12 @@ object Resolver {
         case WeededAst.Expression.Let(ident, wvalue, wbody, loc) =>
           val valueVal = visit(wvalue, locals)
           val bodyVal = visit(wbody, locals + ident.name)
-          @@(valueVal, bodyVal) map {
-            case (value, body) => ResolvedAst.Expression.Let(ident, value, body, loc)
+          @@(valueVal, bodyVal) flatMap {
+            case (value, body) =>
+              if (ident.name.head.isLower)
+                ResolvedAst.Expression.Let(ident, value, body, loc).toSuccess
+              else
+                IllegalVariableName(ident.name, loc).toFailure
           }
 
         case WeededAst.Expression.Match(we, wrules, loc) =>
@@ -718,7 +745,11 @@ object Resolver {
     def resolve(wast: WeededAst.Pattern, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Pattern, ResolverError] = {
       def visit(wast: WeededAst.Pattern): Validation[ResolvedAst.Pattern, ResolverError] = wast match {
         case WeededAst.Pattern.Wildcard(location) => ResolvedAst.Pattern.Wildcard(location).toSuccess
-        case WeededAst.Pattern.Var(ident, loc) => ResolvedAst.Pattern.Var(ident, loc).toSuccess
+        case WeededAst.Pattern.Var(ident, loc) =>
+          if (ident.name.head.isLower)
+            ResolvedAst.Pattern.Var(ident, loc).toSuccess
+          else
+            IllegalVariableName(ident.name, loc).toFailure
         case WeededAst.Pattern.Lit(literal, loc) => Literal.resolve(literal, namespace, syms) map {
           case lit => ResolvedAst.Pattern.Lit(lit, loc)
         }
@@ -810,7 +841,11 @@ object Resolver {
        * Performs symbol resolution in the given head term `wast` under the given `namespace`.
        */
       def resolve(wast: WeededAst.Term.Head, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Term.Head, ResolverError] = wast match {
-        case WeededAst.Term.Head.Var(ident, loc) => ResolvedAst.Term.Head.Var(ident, loc).toSuccess
+        case WeededAst.Term.Head.Var(ident, loc) =>
+          if (ident.name.head.isLower)
+            ResolvedAst.Term.Head.Var(ident, loc).toSuccess
+          else
+            IllegalVariableName(ident.name, loc).toFailure
         case WeededAst.Term.Head.Lit(wlit, loc) => Literal.resolve(wlit, namespace, syms) map {
           case lit => ResolvedAst.Term.Head.Lit(lit, loc)
         }
@@ -839,7 +874,11 @@ object Resolver {
        */
       def resolve(wast: WeededAst.Term.Body, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Term.Body, ResolverError] = wast match {
         case WeededAst.Term.Body.Wildcard(loc) => ResolvedAst.Term.Body.Wildcard(loc).toSuccess
-        case WeededAst.Term.Body.Var(ident, loc) => ResolvedAst.Term.Body.Var(ident, loc).toSuccess
+        case WeededAst.Term.Body.Var(ident, loc) =>
+          if (ident.name.head.isLower)
+            ResolvedAst.Term.Body.Var(ident, loc).toSuccess
+          else
+            IllegalVariableName(ident.name, loc).toFailure
         case WeededAst.Term.Body.Lit(wlit, loc) => Literal.resolve(wlit, namespace, syms) map {
           case lit => ResolvedAst.Term.Body.Lit(lit, loc)
         }
