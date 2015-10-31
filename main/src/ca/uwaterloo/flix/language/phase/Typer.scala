@@ -84,6 +84,23 @@ object Typer {
 
     // TODO: Check arity of function calls, predicates, etc.
 
+    /**
+     * An error raised to indicate that a type has no associated lattice.
+     *
+     * @param tpe the type that has no lattice.
+     * @param loc the source location.
+     */
+    case class NoSuchLattice(tpe: TypedAst.Type, loc: SourceLocation) extends TypeError {
+      val format =
+        s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> No lattice declared for '${prettyPrint(tpe)}'.")}
+           |
+            |${loc.underline}
+           |Tip: Associate a lattice with the type.
+         """.stripMargin
+    }
+
   }
 
   /**
@@ -187,11 +204,19 @@ object Typer {
       val keys = rast.keys map {
         case ResolvedAst.Attribute(ident, tpe) => TypedAst.Attribute(ident, Type.typer(tpe))
       }
-      val values = rast.values map {
-        case ResolvedAst.Attribute(ident, tpe) => TypedAst.Attribute(ident, Type.typer(tpe))
+
+      val valuesVal = rast.values map {
+        case a: ResolvedAst.Attribute =>
+          val tpe = Type.typer(a.tpe)
+          (root.lattices.get(a.tpe) match {
+            case None => NoSuchLattice(tpe, a.ident.loc).toFailure
+            case Some(_) => TypedAst.Attribute(a.ident, tpe).toSuccess
+          }): Validation[TypedAst.Attribute, TypeError]
       }
 
-      TypedAst.Collection.Lattice(rast.name, keys, values, rast.loc).toSuccess
+      @@(valuesVal) map {
+        case values => TypedAst.Collection.Lattice(rast.name, keys, values, rast.loc)
+      }
     }
 
   }
