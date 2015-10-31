@@ -804,6 +804,7 @@ object Weeder {
           }
         case term: ParsedAst.Term.Apply => IllegalBodyTerm("Function calls may not occur in body predicates.", term.loc).toFailure
         case term: ParsedAst.Term.Infix => IllegalBodyTerm("Function calls may not occur in body predicates.", term.loc).toFailure
+        case term: ParsedAst.Term.Native => IllegalBodyTerm("Native fields/calls may not occur in body predicates.", term.loc).toFailure // TODO: Allow?
       }
     }
 

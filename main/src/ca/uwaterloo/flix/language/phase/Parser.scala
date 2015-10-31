@@ -470,7 +470,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def IntLiteral: Rule1[ParsedAst.Literal.Int] = rule {
-    SP ~ capture(oneOrMore(CharPredicate.Digit)) ~ SP ~> ParsedAst.Literal.Int
+    SP ~ capture(optional("-") ~ oneOrMore(CharPredicate.Digit)) ~ SP ~> ParsedAst.Literal.Int
   }
 
   def StrLiteral: Rule1[ParsedAst.Literal.Str] = rule {
