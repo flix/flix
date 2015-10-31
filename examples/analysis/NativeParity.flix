@@ -33,7 +33,7 @@ namespace ParityAnalysis {
 
     SumOp(3, 1, 2).
 
-    VarPointsTo(1, #ca.uwaterloo.flix.util.misc.NativeParity.TOP).
+    VarPointsTo(1, #ca.uwaterloo.flix.util.misc.NativeParity.ODD).
     VarPointsTo(2, #ca.uwaterloo.flix.util.misc.NativeParity.EVEN).
 
     VarPointsTo(7, plus(#ca.uwaterloo.flix.util.misc.NativeParity.ODD, #ca.uwaterloo.flix.util.misc.NativeParity.EVEN)).
