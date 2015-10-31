@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import java.lang.reflect.Modifier
+import java.lang.reflect.{Method, Field, Modifier}
 
 import ca.uwaterloo.flix.language.ast.WeededAst.Root
 import ca.uwaterloo.flix.language.ast._
@@ -720,39 +720,11 @@ object Resolver {
             case tpe => ResolvedAst.Expression.Error(tpe, loc)
           }
 
-        case WeededAst.Expression.Native(className, memberName, loc) => try {
-          // retrieve class object.
-          val clazz = Class.forName(className)
-
-          // retrieve static fields.
-          val fields = clazz.getDeclaredFields.toList.filter {
-            case field => Modifier.isStatic(field.getModifiers) && field.getName == memberName
+        case WeededAst.Expression.Native(className, memberName, loc) =>
+          lookupNativeFieldOrMethod(className, memberName, loc) map {
+            case NativeRef.FieldRef(field) => ResolvedAst.Expression.NativeField(field, loc)
+            case NativeRef.MethodRef(method) => ResolvedAst.Expression.NativeMethod(method, loc)
           }
-
-          // retrieve static methods.
-          val methods = clazz.getDeclaredMethods.toList.filter {
-            case method => Modifier.isStatic(method.getModifiers) && method.getName == memberName
-          }
-
-          // disambiguate member.
-          if (fields.isEmpty && methods.isEmpty) {
-            // at least one field and method share the same name.
-            UnresolvedFieldOrMethod(className, memberName, loc).toFailure
-          } else if (fields.size + methods.size > 2) {
-            // multiple fields/methods share the same name.
-            AmbiguousFieldOrMethod(className, memberName, loc).toFailure
-          } else {
-            if (fields.nonEmpty) {
-              // resolves to a field.
-              ResolvedAst.Expression.NativeField(className, memberName, fields.head, loc).toSuccess
-            } else {
-              // resolved to a method.
-              ResolvedAst.Expression.NativeMethod(className, memberName, methods.head, loc).toSuccess
-            }
-          }
-        } catch {
-          case ex: ClassNotFoundException => UnresolvedNativeClass(className, loc).toFailure
-        }
       }
 
       visit(wast, Set.empty)
@@ -874,6 +846,11 @@ object Resolver {
               case args => ResolvedAst.Term.Head.Apply(rname, args.toList, loc)
             }
           }
+        case WeededAst.Term.Head.Native(className, memberName, loc) =>
+          lookupNativeFieldOrMethod(className, memberName, loc) map {
+            case NativeRef.FieldRef(field) => ResolvedAst.Term.Head.NativeField(field, loc)
+            case NativeRef.MethodRef(field) => ??? // TODO
+          }
       }
     }
 
@@ -941,5 +918,51 @@ object Resolver {
   // TODO: Need this?
   def toRName(ident: Name.Ident, namespace: List[String]): Name.Resolved =
     Name.Resolved(namespace ::: ident.name :: Nil)
+
+  // TODO: Doc and more testing
+  sealed trait NativeRef
+
+  object NativeRef {
+
+    case class FieldRef(field: Field) extends NativeRef
+
+    case class MethodRef(method: Method) extends NativeRef
+
+  }
+
+  //  TODO: DOC
+  def lookupNativeFieldOrMethod(className: String, memberName: String, loc: SourceLocation): Validation[NativeRef, ResolverError] = try {
+    // retrieve class object.
+    val clazz = Class.forName(className)
+
+    // retrieve static fields.
+    val fields = clazz.getDeclaredFields.toList.filter {
+      case field => Modifier.isStatic(field.getModifiers) && field.getName == memberName
+    }
+
+    // retrieve static methods.
+    val methods = clazz.getDeclaredMethods.toList.filter {
+      case method => Modifier.isStatic(method.getModifiers) && method.getName == memberName
+    }
+
+    // disambiguate member.
+    if (fields.isEmpty && methods.isEmpty) {
+      // at least one field and method share the same name.
+      UnresolvedFieldOrMethod(className, memberName, loc).toFailure
+    } else if (fields.size + methods.size > 2) {
+      // multiple fields/methods share the same name.
+      AmbiguousFieldOrMethod(className, memberName, loc).toFailure
+    } else {
+      if (fields.nonEmpty) {
+        // resolves to a field.
+        NativeRef.FieldRef(fields.head).toSuccess
+      } else {
+        // resolved to a method.
+        NativeRef.MethodRef(methods.head).toSuccess
+      }
+    }
+  } catch {
+    case ex: ClassNotFoundException => UnresolvedNativeClass(className, loc).toFailure
+  }
 
 }

@@ -429,17 +429,17 @@ object Typer {
         case ResolvedAst.Expression.Error(tpe, loc) =>
           TypedAst.Expression.Error(Type.typer(tpe), loc).toSuccess
 
-        case ResolvedAst.Expression.NativeField(className, memberName, field, loc) =>
+        case ResolvedAst.Expression.NativeField(field, loc) =>
           val tpe = java2flix(field.getType.getCanonicalName)
-          TypedAst.Expression.NativeField(className, memberName, field, tpe, loc).toSuccess
+          TypedAst.Expression.NativeField(field, tpe, loc).toSuccess
 
-        case ResolvedAst.Expression.NativeMethod(className, memberName, method, loc) =>
+        case ResolvedAst.Expression.NativeMethod(method, loc) =>
           val args = method.getParameterTypes.toList.map {
             case clazz => java2flix(clazz.getCanonicalName)
           }
           val retTpe = java2flix(method.getReturnType.getCanonicalName)
           val tpe = TypedAst.Type.Lambda(args, retTpe)
-          TypedAst.Expression.NativeMethod(className, memberName, method, tpe, loc).toSuccess
+          TypedAst.Expression.NativeMethod(method, tpe, loc).toSuccess
       }
 
       visit(rast, env)
@@ -638,6 +638,9 @@ object Typer {
             }
           case _ => IllegalApply(Type.typer(constant.tpe), loc).toFailure
         }
+      case ResolvedAst.Term.Head.NativeField(field, loc) =>
+        val tpe = java2flix(field.getType.getCanonicalName)
+        TypedAst.Term.Head.NativeField(field, tpe, loc).toSuccess
     }
 
     /**

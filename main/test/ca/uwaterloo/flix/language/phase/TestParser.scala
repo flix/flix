@@ -627,19 +627,13 @@ class TestParser extends FunSuite {
     assert(result.get.isInstanceOf[ParsedAst.Expression.Error])
   }
 
-  test("Expression.Native01") {
+  test("Expression.NativeField01") {
     val input = "#java.lang.Integer.MIN_VALUE"
     val result = new Parser(SourceInput.Str(input)).Expression.run().get
     assert(result.isInstanceOf[ParsedAst.Expression.Native])
   }
 
-  test("Expression.Native02") {
-    val input = "#java.lang.Character.charCount"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Expression.Native])
-  }
-
-  test("Expression.Native03") {
+  test("Expression.NativeMethod01") {
     val input = "#java.nio.file.Files.isReadable"
     val result = new Parser(SourceInput.Str(input)).Expression.run().get
     assert(result.isInstanceOf[ParsedAst.Expression.Native])
@@ -950,6 +944,18 @@ class TestParser extends FunSuite {
     val input = "Foo.Bar `plus` Baz.Qux"
     val result = new Parser(SourceInput.Str(input)).Term.run().get
     assert(result.isInstanceOf[ParsedAst.Term.Infix])
+  }
+
+  test("Term.NativeField01") {
+    val input = "#java.lang.Integer.MIN_VALUE"
+    val result = new Parser(SourceInput.Str(input)).Term.run().get
+    assert(result.isInstanceOf[ParsedAst.Term.Native])
+  }
+
+  test("Term.NativeMethod01") {
+    val input = "#java.nio.file.Files.isReadable"
+    val result = new Parser(SourceInput.Str(input)).Term.run().get
+    assert(result.isInstanceOf[ParsedAst.Term.Native])
   }
 
   /////////////////////////////////////////////////////////////////////////////

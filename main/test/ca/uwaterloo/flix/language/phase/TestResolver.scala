@@ -331,7 +331,7 @@ class TestResolver extends FunSuite {
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
   }
 
-  test("UnresolvedLatticeReference01") {
+  ignore("UnresolvedLatticeReference01") {
     val input =
       s"""namespace A {
          |  lat A(x: Int, y: Int<>);
@@ -342,7 +342,7 @@ class TestResolver extends FunSuite {
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedLatticeReference])
   }
 
-  test("UnresolvedLatticeReference02") {
+  ignore("UnresolvedLatticeReference02") {
     val input =
       s"""namespace A {
          |  enum Elm {

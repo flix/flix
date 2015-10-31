@@ -581,6 +581,15 @@ object WeededAst {
        */
       case class Ascribe(term: Head, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Term.Head
 
+      /**
+       * An AST node that represents a reference to a JVM static field or method.
+       *
+       * @param className the fully qualified name of the class.
+       * @param memberName the name of the field or method.
+       * @param loc the source location.
+       */
+      case class Native(className: String, memberName: String, loc: SourceLocation) extends WeededAst.Term.Head
+
     }
 
     /**

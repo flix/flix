@@ -727,6 +727,17 @@ object ParsedAst {
       val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
+    /**
+     * An AST node that represents a reference to a JVM static field or method.
+     *
+     * @param sp1 the position of the first character in the term.
+     * @param name the fully qualified name of the field or method.
+     * @param sp2 the position of the last character in the term.
+     */
+    case class Native(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst.Term {
+      val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
   }
 
   /**

@@ -227,14 +227,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     SP ~ atomic("fn") ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Lambda
   }
 
-  def NativeExpression: Rule1[ParsedAst.Expression.Native] = {
-    def JavaName: Rule1[String] = rule {
-      oneOrMore(LegalIdentifier).separatedBy(".") ~> ((xs: Seq[String]) => xs.mkString("."))
-    }
-
-    rule {
+  def NativeExpression: Rule1[ParsedAst.Expression.Native] = rule {
       SP ~ atomic("#") ~ JavaName ~ SP ~> ParsedAst.Expression.Native
-    }
   }
 
   def ErrorExpression: Rule1[ParsedAst.Expression] = rule {
@@ -346,7 +340,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   // NB: ApplyTerm must be parsed before LiteralTerm which must be parsed before VariableTerm.
   def BaseTerm: Rule1[ParsedAst.Term] = rule {
-    ApplyTerm | ParenTerm | LiteralTerm | WildcardTerm | VariableTerm
+    ApplyTerm | ParenTerm | LiteralTerm | WildcardTerm | VariableTerm | NativeTerm
   }
 
   // TODO: Probably unfold singleton tuples.
@@ -378,6 +372,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     SP ~ SimpleTerm ~ optWS ~ "`" ~ QName ~ "`" ~ optWS ~ SimpleTerm ~ SP ~> ParsedAst.Term.Infix
   }
 
+  def NativeTerm: Rule1[ParsedAst.Term.Native] = rule {
+    SP ~ atomic("#") ~ JavaName ~ SP ~> ParsedAst.Term.Native
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
@@ -403,14 +401,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     QName ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ optWS ~> ParsedAst.Type.Parametric
   }
 
-  def NativeType: Rule1[ParsedAst.Type.Native] = {
-    def JavaName: Rule1[String] = rule {
-      oneOrMore(LegalIdentifier).separatedBy(".") ~> ((xs: Seq[String]) => xs.mkString("."))
-    }
-
-    rule {
-      atomic("#") ~ SP ~ JavaName ~ SP ~ optWS ~> ParsedAst.Type.Native
-    }
+  def NativeType: Rule1[ParsedAst.Type.Native] = rule {
+    atomic("#") ~ SP ~ JavaName ~ SP ~ optWS ~> ParsedAst.Type.Native
   }
 
   def TupleType: Rule1[ParsedAst.Type] = {
@@ -456,6 +448,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   def QName: Rule1[Name.Unresolved] = rule {
     SP ~ oneOrMore(LegalIdentifier).separatedBy(atomic("::")) ~ SP ~>
       ((sp1: SourcePosition, parts: Seq[String], sp2: SourcePosition) => Name.Unresolved(sp1, parts.toList, sp2))
+  }
+
+  def JavaName: Rule1[String] = rule {
+    oneOrMore(LegalIdentifier).separatedBy(".") ~> ((xs: Seq[String]) => xs.mkString("."))
   }
 
   /////////////////////////////////////////////////////////////////////////////

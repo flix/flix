@@ -92,10 +92,10 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => evalInt(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
-      case Expression.NativeField(_, _, field, _, _) =>
+      case Expression.NativeField(field, _, _) =>
         field.get().asInstanceOf[java.lang.Integer].intValue()
       case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
-           Expression.NativeMethod(_, _, _, _, _) =>
+           Expression.NativeMethod(_, _, _) =>
         throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int.")
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
     }
@@ -151,10 +151,10 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => evalBool(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
-      case Expression.NativeField(_, _, field, _, _) =>
+      case Expression.NativeField(field, _, _) =>
         field.get().asInstanceOf[java.lang.Boolean].booleanValue()
       case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
-           Expression.NativeMethod(_, _, _, _, _) =>
+           Expression.NativeMethod(_, _, _) =>
         throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
     }
@@ -212,8 +212,8 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => eval(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
-      case Expression.NativeField(_, _, field, _, _) => Value.Native(field.get())
-      case Expression.NativeMethod(_, _, method, _, _) => Value.NativeMethod(method)
+      case Expression.NativeField(field, _, _) => Value.Native(field.get())
+      case Expression.NativeMethod(method, _, _) => Value.NativeMethod(method)
       case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
       case Expression.Tuple(elms, _, _) => Value.Tuple(elms.map(e => eval(e, root, env)))
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
@@ -264,6 +264,8 @@ object Interpreter {
       val function = root.constants(name).exp
       val evalArgs = terms.map(t => evalHeadTerm(t, root, env))
       evalCall(function, evalArgs, root, env)
+    case Term.Head.NativeField(field, _, _) =>
+      Value.Native(field.get()) // TODO: Verify
   }
 
   def evalBodyTerm(t: Term.Body, env: Env): Value = t match {
