@@ -173,4 +173,17 @@ object Value {
   case class Native(value: AnyRef) extends Value
 
   case class NativeMethod(method: Method) extends Value
+
+  /***************************************************************************
+   * Convert from native values to Flix values                               *
+   ***************************************************************************/
+
+  def java2flix(obj: AnyRef, tpe: TypedAst.Type): Value = tpe match {
+    case TypedAst.Type.Bool => if (obj.asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
+    case TypedAst.Type.Int => Value.mkInt(obj.asInstanceOf[java.lang.Integer].intValue)
+    case TypedAst.Type.Str => Value.mkStr(obj.asInstanceOf[java.lang.String])
+    case TypedAst.Type.Var(_) | TypedAst.Type.Unit | TypedAst.Type.Tag(_, _, _) | TypedAst.Type.Enum(_) |
+         TypedAst.Type.Tuple(_) | TypedAst.Type.Lambda(_, _) | TypedAst.Type.Predicate(_) | TypedAst.Type.Native(_) =>
+      Value.Native(obj)
+  }
 }
