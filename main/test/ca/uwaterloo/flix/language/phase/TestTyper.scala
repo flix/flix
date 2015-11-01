@@ -986,7 +986,7 @@ class TestTyper extends FunSuite {
   // TODO: Test Term.Ascribe.
 
 
-  ignore("NoSuchLattice01") {
+  test("NoSuchLattice01") {
     val input =
       s"""namespace A {
          |  lat A(x: Int, y: Int<>);
@@ -997,7 +997,7 @@ class TestTyper extends FunSuite {
     assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
   }
 
-  ignore("NoSuchLattice02") {
+  test("NoSuchLattice02") {
     val input =
       s"""namespace A {
          |  enum Elm {
