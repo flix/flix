@@ -33,10 +33,10 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
   for ((name, collection) <- sCtx.root.collections) {
     collection match {
       case r: Collection.Relation =>
-        relations(name) = new IndexedRelation(r, indexes.getOrElse(name, Set.empty)) //  TODO: Remove getOrElse.
+        relations(name) = IndexedRelation(r, indexes.getOrElse(name, Set.empty)) //  TODO: Remove getOrElse.
 
       case l: Collection.Lattice =>
-        lattices(name) = new IndexedLattice(l, indexes.getOrElse(name, Set.empty))
+        lattices(name) = new IndexedLattice(l, indexes.getOrElse(name, Set.empty))  //  TODO: Remove getOrElse.
     }
   }
 

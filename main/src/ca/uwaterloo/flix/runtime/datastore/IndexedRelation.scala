@@ -6,6 +6,14 @@ import ca.uwaterloo.flix.runtime.{Solver, Value}
 import scala.collection.mutable
 
 /**
+ * Companion object for the [[IndexedRelation]] class.
+ */
+object IndexedRelation {
+  def apply(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) =
+    new IndexedRelation(relation, indexes, Seq(0))
+}
+
+/**
  * A class that stores a relation in an indexed database. An index is a sequence of attribute offsets.
  *
  * For example, if given Set(Seq(1)) then the table has exactly one index on the 1st attribute of the relation.
@@ -14,18 +22,14 @@ import scala.collection.mutable
  *
  * @param relation the relation.
  * @param indexes the indexes.
+ * @param defaultIndex the default index.
  */
-final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
+final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]], defaultIndex: Seq[Int])(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
 
   /**
    * A map from indexes to keys to rows of values.
    */
   private val store = mutable.Map.empty[Seq[Int], mutable.Map[Seq[Value], mutable.Set[Array[Value]]]]
-
-  /**
-   * The default index which is guaranteed to exist.
-   */
-  private val defaultIndex: Seq[Int] = Seq(0)
 
   /**
    * Records the number of indexed lookups, i.e. exact lookups.
@@ -106,17 +110,24 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   def lookup(pat: Array[Value]): Iterator[Array[Value]] = {
     var idx = exactIndex(pat)
     if (idx != null) {
-      // use exact index
+      // use exact index.
       indexedLookups += 1
       val key = keyOf(idx, pat)
       store(idx).getOrElseUpdate(key, mutable.Set.empty).iterator
     } else {
-      // look for usable index
+      // defensively copy the pattern.
+      val pat2 = pat.clone()
+
+      // look for usable index.
       idx = approxIndex(pat)
       val table = if (idx != null) {
         indexedScans += 1
-        // use suitable index
+        // use suitable index.
         val key = keyOf(idx, pat)
+        // null the entries in the pattern which are already matched.
+        for (i <- idx) {
+          pat2(i) = null
+        }
         store(idx).getOrElseUpdate(key, mutable.Set.empty).iterator
       } else {
         fullScans += 1
@@ -125,7 +136,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
 
       // table scan
       table filter {
-        case row => matchRow(pat, row)
+        case row => matchRow(pat2, row)
       }
     }
   }
