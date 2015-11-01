@@ -483,7 +483,9 @@ object Resolver {
       val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
 
       val casesVal = Validation.fold[String, WeededAst.Type.Tag, String, ResolvedAst.Type.Tag, ResolverError](wast.cases) {
-        (k, tpe) => Type.resolve(tpe, namespace ::: wast.ident.name :: Nil, syms) map (t => k -> t.asInstanceOf[ResolvedAst.Type.Tag])
+        case (k, WeededAst.Type.Tag(tag, wtpe)) => Type.resolve(wtpe, namespace, syms) map {
+          case tpe => k -> ResolvedAst.Type.Tag(name, tag, tpe)
+        }
       }
 
       casesVal map {
