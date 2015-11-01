@@ -196,6 +196,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   @inline
   private def approxIndex(pat: Array[Value]): Int = {
     // Loop through all available indexes looking for the first partially matching index.
+    var result: Int = 0
     for (index <- indexes) {
       var i = 0
       var usable = true
@@ -209,13 +210,14 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
         i = i + 1
       }
 
-      if (usable) {
-        return index
+      // Heuristic: If multiple indexes are usable, choose the one with the most columns.
+      if (Integer.bitCount(result) < Integer.bitCount(index)) {
+        result = index
       }
     }
 
-    // No usable index exists.
-    return 0
+    // Return result
+    return result
   }
 
   /**
