@@ -2,34 +2,48 @@ package ca.uwaterloo.flix.runtime.datastore
 
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.runtime.{Solver, Value}
+import ca.uwaterloo.flix.util.BitOps
 
 import scala.collection.mutable
+import scala.collection.immutable
 
 /**
  * Companion object for the [[IndexedRelation]] class.
  */
 object IndexedRelation {
-  def apply(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) =
-    new IndexedRelation(relation, indexes, Seq(0))
+
+  /**
+   * Constructs a new indexed relation for the given `relation` and `indexes`.
+   */
+  def mk(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) = {
+    // translate indexes into their binary representation.
+    val idx = indexes map {
+      case columns => BitOps.setBits(vec = 0, bits = columns)
+    }
+    // assume a default index on the first column.
+    val defaultIndex = BitOps.setBit(vec = 0, bit = 0)
+
+    new IndexedRelation(relation, idx + defaultIndex, defaultIndex)
+  }
+
 }
 
 /**
- * A class that stores a relation in an indexed database. An index is a sequence of attribute offsets.
+ * A class that stores a relation in an indexed database. An index is a subset of the columns encoded in binary.
  *
- * For example, if given Set(Seq(1)) then the table has exactly one index on the 1st attribute of the relation.
- * As another example, if given Set(Seq(1, 2), Seq(0, 3)) then the relation has two indexes:
- * One index on the 1st and 2nd attributes and another index on the 0th and 3rd column index.
+ * An index on the first column corresponds to 0b0000...0001.
+ * An index on the first and third columns corresponds to 0b0000...0101.
  *
  * @param relation the relation.
  * @param indexes the indexes.
- * @param defaultIndex the default index.
+ * @param default the default index.
  */
-final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]], defaultIndex: Seq[Int])(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
+final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Int], default: Int)(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
 
   /**
    * A map from indexes to keys to rows of values.
    */
-  private val store = mutable.Map.empty[Seq[Int], mutable.Map[Seq[Value], mutable.Set[Array[Value]]]]
+  private val store = mutable.Map.empty[Int, mutable.Map[immutable.Seq[Value], mutable.Set[Array[Value]]]]
 
   /**
    * Records the number of indexed lookups, i.e. exact lookups.
@@ -49,7 +63,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   /**
    * Initialize the store for all indexes.
    */
-  for (idx <- indexes + defaultIndex) {
+  for (idx <- indexes) {
     store(idx) = mutable.Map.empty
   }
 
@@ -93,7 +107,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
    */
   private def newFact(fact: Array[Value]): Unit = {
     // loop through all the indexes and update the tables.
-    for (idx <- indexes + defaultIndex) {
+    for (idx <- indexes + default) {
       val key = keyOf(idx, fact)
       val table = store(idx).getOrElseUpdate(key, mutable.Set.empty[Array[Value]])
       table += fact
@@ -103,40 +117,35 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   /**
    * Performs a lookup of the given pattern `pat`. 
    *
-   * The pattern may contain `null` entries. If so, these are interpreted as free variables.
+   * If the pattern contains `null` entries these are interpreted as free variables.
    *
-   * Returns an iterator over the matched rows.
+   * Returns an iterator over the matching rows.
    */
   def lookup(pat: Array[Value]): Iterator[Array[Value]] = {
+    // Case 1: Check if there is an exact index.
     var idx = exactIndex(pat)
-    if (idx != null) {
-      // use exact index.
+    if (idx != 0) {
+      // An exact index exists. Use it.
       indexedLookups += 1
       val key = keyOf(idx, pat)
       store(idx).getOrElseUpdate(key, mutable.Set.empty).iterator
     } else {
-      // defensively copy the pattern.
-      val pat2 = pat.clone()
-
-      // look for usable index.
+      // Case 2: No exact index available. Check if there is an approximate index.
       idx = approxIndex(pat)
-      val table = if (idx != null) {
+      val table = if (idx != 0) {
+        // Case 2.1: An approximate index exists. Use it.
         indexedScans += 1
-        // use suitable index.
         val key = keyOf(idx, pat)
-        // null the entries in the pattern which are already matched.
-        for (i <- idx) {
-          pat2(i) = null
-        }
         store(idx).getOrElseUpdate(key, mutable.Set.empty).iterator
       } else {
+        // Case 2.2: No usable index. Perform a full table scan.
         fullScans += 1
-        scan // no suitable index. Must scan the entire table.
+        scan
       }
 
-      // table scan
+      // Filter rows returned by a partial index or table scan.
       table filter {
-        case row => matchRow(pat2, row)
+        case row => matchRow(pat, row)
       }
     }
   }
@@ -145,52 +154,74 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
    * Returns the key for the given index `idx` and pattern `pat`.
    */
   @inline
-  private def keyOf(idx: Seq[Int], pat: Array[Value]): Seq[Value] = {
-    val a = Array.ofDim[Value](idx.length)
-    var i: Int = 0
-    while (i < idx.length) {
-      a(i) = pat(idx(i))
-      i = i + 1
+  private def keyOf(idx: Int, pat: Array[Value]): immutable.Seq[Value] = {
+    // The key is a list of values matching the index constructed "backwards".
+    var result: List[Value] = Nil
+    var i = 31
+    while (i >= 0) {
+      if (BitOps.getBit(vec = idx, bit = i)) {
+        // The i'th column is in the index so retrieve the value from the pattern.
+        result = pat(i) :: result
+      }
+      i = i - 1
     }
-    a.toSeq
+    result
   }
 
   /**
    * Returns an index matching all the non-null columns in the given pattern `pat`.
    *
-   * Returns `null` if no such exact index exists.
+   * Returns zero if no such index exists.
    */
   @inline
-  private def exactIndex(pat: Array[Value]): Seq[Int] = {
-    val idx = pat.toSeq.zipWithIndex.collect {
-      case (v, i) if v != null => i
+  private def exactIndex(pat: Array[Value]): Int = {
+    var index = 0
+    var i = 0
+    while (i < pat.length) {
+      if (pat(i) != null) {
+        // The i'th column in the pattern exists, so it should be in the index.
+        index = BitOps.setBit(vec = index, bit = i)
+      }
+      i = i + 1
     }
 
-    if (indexes contains idx) {
-      return idx
-    }
-    null
+    if (indexes contains index) index else 0
   }
 
   /**
    * Returns an approximate index matching all the non-null columns in the given pattern `pat`.
    *
-   * Returns `null` if no index is usable (and thus a full table scan must be performed).
+   * Returns zero if no such index exists.
    */
   @inline
-  private def approxIndex(pat: Array[Value]): Seq[Int] = {
-    (indexes + defaultIndex).find(idx => idx.forall(i => pat(i) != null)) match {
-      case None =>
-        null
-      case Some(idx) =>
-        idx
+  private def approxIndex(pat: Array[Value]): Int = {
+    // Loop through all available indexes looking for the first partially matching index.
+    for (index <- indexes) {
+      var i = 0
+      var usable = true
+      while (i < pat.length) {
+        if (BitOps.getBit(vec = index, i) && pat(i) == null) {
+          // The index requires the i'th column to be non-null, but it is null in the pattern.
+          // Thus this specific index is not usable.
+          usable = false
+          i = pat.length
+        }
+        i = i + 1
+      }
+
+      if (usable) {
+        return index
+      }
     }
+
+    // No usable index exists.
+    return 0
   }
 
   /**
    * Returns all rows in the relation using a table scan.
    */
-  def scan: Iterator[Array[Value]] = store(defaultIndex).iterator.flatMap {
+  def scan: Iterator[Array[Value]] = store(default).iterator.flatMap {
     case (key, value) => value
   }
 
