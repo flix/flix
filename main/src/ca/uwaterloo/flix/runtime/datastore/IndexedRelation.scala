@@ -16,6 +16,7 @@ import scala.collection.mutable
  * @param indexes the indexes.
  */
 final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
+
   /**
    * A map from indexes to keys to rows of values.
    */
@@ -47,6 +48,26 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   for (idx <- indexes + defaultIndex) {
     store(idx) = mutable.Map.empty
   }
+
+  /**
+   * Returns the size of the relation.
+   */
+  def getSize: Int = scan.size
+
+  /**
+   * Returns the number of indexed lookups.
+   */
+  def getNumberOfIndexedLookups: Int = indexedLookups
+
+  /**
+   * Returns the number of indexed scans.
+   */
+  def getNumberOfIndexedScans: Int = indexedScans
+
+  /**
+   * Returns the number of full scans.
+   */
+  def getNumberOfFullScans: Int = fullScans
 
   /**
    * Processes a new inferred `fact`.
@@ -104,7 +125,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
 
       // table scan
       table filter {
-        case row2 => matchRow(pat, row2)
+        case row => matchRow(pat, row)
       }
     }
   }
@@ -141,7 +162,9 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   }
 
   /**
+   * Returns an approximate index matching all the non-null columns in the given pattern `pat`.
    *
+   * Returns `null` if no index is usable (and thus a full table scan must be performed).
    */
   @inline
   private def approxIndex(pat: Array[Value]): Seq[Int] = {
@@ -156,11 +179,9 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   /**
    * Returns all rows in the relation using a table scan.
    */
-  // TODO: Performance
-  def scan: Iterator[Array[Value]] = store(defaultIndex).flatMap {
+  def scan: Iterator[Array[Value]] = store(defaultIndex).iterator.flatMap {
     case (key, value) => value
-  }.iterator
-
+  }
 
   /**
    * Returns `true` if the given pattern `pat` matches the given `row`.
@@ -179,25 +200,5 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
     }
     true
   }
-
-  /**
-   * Returns the size of the relation.
-   */
-  def getSize: Int = scan.size
-
-  /**
-   * Returns the number of indexed lookups.
-   */
-  def getNumberOfIndexedLookups: Int = indexedLookups
-
-  /**
-   * Returns the number of indexed scans.
-   */
-  def getNumberOfIndexedScans: Int = indexedScans
-
-  /**
-   * Returns the number of full scans.
-   */
-  def getNumberOfFullScans: Int = fullScans
 
 }
