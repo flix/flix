@@ -153,7 +153,6 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   /**
    * Returns the key for the given index `idx` and pattern `pat`.
    */
-  @inline
   private def keyOf(idx: Int, pat: Array[Value]): immutable.Seq[Value] = {
     // The key is a list of values matching the index constructed "backwards".
     var result: List[Value] = Nil
@@ -173,7 +172,6 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
    *
    * Returns zero if no such index exists.
    */
-  @inline
   private def exactIndex(pat: Array[Value]): Int = {
     var index = 0
     var i = 0
@@ -193,11 +191,13 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
    *
    * Returns zero if no such index exists.
    */
-  @inline
   private def approxIndex(pat: Array[Value]): Int = {
-    // Loop through all available indexes looking for the first partially matching index.
+    // The result index. Defaults to zero representing that no usable index exists.
     var result: Int = 0
-    for (index <- indexes) {
+    // Loop through all available indexes looking for the first partially matching index.
+    val iterator = indexes.iterator
+    while (iterator.hasNext) {
+      val index = iterator.next()
       var i = 0
       var usable = true
       while (i < pat.length) {
@@ -232,7 +232,6 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
    *
    * A pattern matches if all is non-null entries are equal to the row.
    */
-  @inline
   private def matchRow(pat: Array[Value], row: Array[Value]): Boolean = {
     var i = 0
     while (i < pat.length) {
@@ -242,7 +241,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
           return false
       i = i + 1
     }
-    true
+    return true
   }
 
 }
