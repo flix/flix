@@ -2,90 +2,124 @@ package ca.uwaterloo.flix.runtime.datastore
 
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.runtime.{Interpreter, Solver, Value}
+import ca.uwaterloo.flix.util.BitOps
 
 import scala.collection.mutable
 
-class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
-  // TODO: Initialize store for all indexes?
-  // TODO: Careful with equality semantics for keys
-  private val store = mutable.Map.empty[(Seq[Int], Seq[Value]), mutable.Map[Seq[Value], Array[Value]]]
+/**
+ * Companion object for the [[IndexedLattice]] class.
+ */
+object IndexedLattice {
 
-  // TODO: What if the lattice has only one lattice column????
-  private val defaultIndex: Seq[Int] = Seq(0)
-  assert(lattice.keys.nonEmpty)
+  /**
+   * Constructs a new indexed relation for the given `relation` and `indexes`.
+   */
+  def mk(relation: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) = {
+    // translate indexes into their binary representation.
+    val idx = indexes map {
+      case columns => BitOps.setBits(vec = 0, bits = columns)
+    }
+    // assume a default index on the first column.
+    val defaultIndex = BitOps.setBit(vec = 0, bit = 0)
 
+    new IndexedLattice(relation, idx + defaultIndex, defaultIndex)
+  }
+
+}
+
+class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], default: Int)(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
+  /**
+   * A map from indexes to a map from keys to rows (represented as map from keys to elements).
+   */
+  private val store = mutable.Map.empty[Int, mutable.Map[Key, mutable.Map[Seq[Value], Array[Value]]]]
 
   private val split = lattice.keys.length
+
+  private val numberOfKeys = lattice.keys.length
+
+  private val numberOfElms = lattice.values.length
 
   private val latticeOps: Array[TypedAst.Definition.BoundedLattice] = lattice.values.map {
     case TypedAst.Attribute(_, tpe) => sCtx.root.lattices(tpe)
   }.toArray
 
-
   /**
-   * Processes a new inferred fact `f`.
-   *
-   * Joins the fact into the lattice and returns `true` iff the fact was not subsumed by a previous fact.
+   * Initialize the store for all indexes.
    */
-  def inferredFact(f: Array[Value]): Boolean = {
-    val key = (defaultIndex, defaultIndex map f)
-    val (keys1, elms1) = f.splitAt(split)
-
-    store.get(key) match {
-      case None =>
-      case Some(m) =>
-        m.get(keys1) match {
-          case None =>
-          case Some(elms2) => if (leq(elms1, elms2)) {
-            return false
-          }
-        }
-
-    }
-
-    newFact(f)
+  for (idx <- indexes) {
+    store(idx) = mutable.Map.empty
   }
 
   /**
-   * Updates all indexes and tables with a new fact `f`.
+   * Processes a new inferred `fact`.
+   *
+   * Adds the fact to the relation. All entries in the fact must be non-null.
+   *
+   * Returns `true` iff the fact did not already exist in the relation.
    */
-  private def newFact(f: Array[Value]): Boolean = {
-    val (keys1, elms1) = f.splitAt(split)
+  def inferredFact(fact: Array[Value]): Boolean = {
+    if (lookup(fact).isEmpty) {
+      newFact(fact)
+      return true
+    }
+    false
+  }
 
-    for (idx <- indexes + defaultIndex) {
-      val key = (idx, idx map f)
-      store.get(key) match {
-        case None =>
-          val m = mutable.Map.empty[Seq[Value], Array[Value]]
-          m(keys1) = elms1
-          store(key) = m
-        case Some(m) =>
-          m.get(keys1) match {
-            case None => m(keys1) = elms1
-            case Some(elms2) => m(keys1) = lub(elms1, elms2)
-          }
+  /**
+   * Updates all indexes and tables with a new `fact`.
+   */
+  private def newFact(fact: Array[Value]): Unit = {
+    // loop through all the indexes and update the tables.
+    for (idx <- indexes) {
+      val ikey = keyOf(idx, fact)
+      val table = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
+
+      val elms1 = elmPart(fact)
+      val elms2 = table.getOrElseUpdate(keyPart(fact), elms1)
+
+      table += (keyPart(fact) -> lub(elms1, elms2))
+    }
+  }
+
+  /**
+   * Performs a lookup of the given pattern `pat`. 
+   *
+   * If the pattern contains `null` entries these are interpreted as free variables.
+   * 
+   * If the pattern contains lattice elements then greatest-lower-bound is computed for these.
+   *
+   * Returns an iterator over the matching rows.
+   */
+  def lookup(pat: Array[Value]): Iterator[Array[Value]] = {
+    // check if there is an exact index.
+    var idx = getExactIndex(indexes, pat)
+    val table = if (idx != 0) {
+      // use exact index.
+      val ikey = keyOf(idx, pat)
+      store(idx).getOrElseUpdate(ikey, mutable.Map.empty).iterator
+    } else {
+      // check if there is an approximate index.
+      idx = getApproximateIndex(indexes, pat)
+      val ikey = keyOf(idx, pat)
+      if (idx != 0) {
+        // use approximate index.
+        store(idx).getOrElseUpdate(ikey, mutable.Map.empty).iterator
+      } else {
+        // perform full table scan.
+        scan
       }
     }
-    true
-  }
 
-
-  def lookup(row: Array[Value]): Iterator[Array[Value]] = {
-    val (keys, elms) = row.splitAt(split)
-
-    val idx = keys.toSeq.zipWithIndex.collect {
-      case (v, i) if v != null => i
-    }
-    val key = (idx, idx map row)
-
-    val resultSet = if (indexes contains idx) {
-      store.getOrElse(key, mutable.Map.empty).iterator
-    } else {
-      scan
-    }
-
-    resultSet filter {
-      case (keys2, elms2) => keyMatches(keys, keys2.toArray) && elmsMatches(elms, elms2)
+    table filter {
+      // match the keys
+      case (keys, _) => matchKey(pat, keys.toArray)
+    } map {
+      case (keys, elms) =>
+        val elms2 = elms.clone()
+        // match the elements possibly changing elms2 to their greatest lower bound.
+        if (matchElms(elmPart(pat), elms2)) (keys, elms2) else null
+    } filter {
+      case e => e != null
     } map {
       case (keys, elms) => keys.toArray ++ elms
     }
@@ -94,28 +128,48 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
   /**
    * Returns all rows in the relation using a table scan.
    */
-  // TODO: Improve performance ...
-  // TODO: Careful with duplicates...
-  def scan: Iterator[(Seq[Value], Array[Value])] = (store map {
-    case (keys, m) => m.toList
-  }).flatten[(Seq[Value], Array[Value])].iterator
-
-  def table: Iterator[Array[Value]] = scan.map {
-    case (keys, elms) => (keys.toSeq ++ elms.toSeq).toArray
+  def scan: Iterator[(Seq[Value], Array[Value])] = store(default).iterator.flatMap {
+    case (key, m) => m.iterator
   }
 
-  def keyMatches(pat: Array[Value], row: Array[Value]): Boolean = {
-    for (i <- row.indices) {
-      val p = pat(i)
-      if (p != null && p != row(i)) {
-        return false
-      }
+  /**
+   * Returns the key part of the given array `a`.
+   */
+  def keyPart(a: Array[Value]): Seq[Value] = {
+    a.take(numberOfKeys).toSeq
+  }
+
+  /**
+   * Returns the element part of the given array `a`.
+   */
+  def elmPart(a: Array[Value]): Array[Value] = {
+    val result = new Array[Value](numberOfElms)
+    var i = 0
+    while (i < numberOfElms) {
+      result(i) = a(i + numberOfKeys)
+      i = i + 1
     }
-    true
+    return result
+  }
+
+  /**
+   * Returns `true` iff all non-null entries in the given pattern `pat`
+   * are equal to their corresponding entry in the given `row`.
+   */
+  def matchKey(pat: Array[Value], row: Array[Value]): Boolean = {
+    var i = 0
+    while (i < pat.length) {
+      val pv = pat(i)
+      if (pv != null)
+        if (pv != row(i))
+          return false
+      i = i + 1
+    }
+    return true
   }
 
   // TODO: Careful with lattice values, should not return boolean
-  def elmsMatches(pat: Array[Value], row: Array[Value]): Boolean = {
+  def matchElms(pat: Array[Value], row: Array[Value]): Boolean = {
     // TODO: so this is incorrect. Need to use glb.
     for (i <- row.indices) {
       val p = pat(i)

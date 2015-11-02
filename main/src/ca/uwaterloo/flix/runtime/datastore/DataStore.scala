@@ -31,12 +31,13 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
 
   // initialize all indexed relations and lattices.
   for ((name, collection) <- sCtx.root.collections) {
+    // TODO: Translate indexes here...
     collection match {
       case r: Collection.Relation =>
         relations(name) = IndexedRelation.mk(r, indexes.getOrElse(name, Set.empty)) //  TODO: Remove getOrElse.
 
       case l: Collection.Lattice =>
-        lattices(name) = new IndexedLattice(l, indexes.getOrElse(name, Set.empty))  //  TODO: Remove getOrElse.
+        lattices(name) = IndexedLattice.mk(l, indexes.getOrElse(name, Set.empty)) //  TODO: Remove getOrElse.
     }
   }
 

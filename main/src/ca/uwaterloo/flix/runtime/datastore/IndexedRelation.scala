@@ -103,7 +103,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   }
 
   /**
-   * Updates all indexes and tables with a new fact `f`.
+   * Updates all indexes and tables with a new `fact`.
    */
   private def newFact(fact: Array[Value]): Unit = {
     // loop through all the indexes and update the tables.
