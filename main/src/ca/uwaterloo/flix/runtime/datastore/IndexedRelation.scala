@@ -38,6 +38,7 @@ object IndexedRelation {
  * @param indexes the indexes.
  * @param default the default index.
  */
+// TODO: Specialize?
 final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Int], default: Int)(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
 
   /**
@@ -107,7 +108,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
    */
   private def newFact(fact: Array[Value]): Unit = {
     // loop through all the indexes and update the tables.
-    for (idx <- indexes + default) {
+    for (idx <- indexes) {
       val key = keyOf(idx, fact)
       val table = store(idx).getOrElseUpdate(key, mutable.Set.empty[Array[Value]])
       table += fact
@@ -122,28 +123,28 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
    * Returns an iterator over the matching rows.
    */
   def lookup(pat: Array[Value]): Iterator[Array[Value]] = {
-    // Case 1: Check if there is an exact index.
+    // case 1: Check if there is an exact index.
     var idx = exactIndex(pat)
     if (idx != 0) {
-      // An exact index exists. Use it.
+      // an exact index exists. Use it.
       indexedLookups += 1
       val key = keyOf(idx, pat)
       store(idx).getOrElseUpdate(key, mutable.Set.empty).iterator
     } else {
-      // Case 2: No exact index available. Check if there is an approximate index.
+      // case 2: No exact index available. Check if there is an approximate index.
       idx = approxIndex(pat)
       val table = if (idx != 0) {
-        // Case 2.1: An approximate index exists. Use it.
+        // case 2.1: An approximate index exists. Use it.
         indexedScans += 1
         val key = keyOf(idx, pat)
         store(idx).getOrElseUpdate(key, mutable.Set.empty).iterator
       } else {
-        // Case 2.2: No usable index. Perform a full table scan.
+        // case 2.2: No usable index. Perform a full table scan.
         fullScans += 1
         scan
       }
 
-      // Filter rows returned by a partial index or table scan.
+      // filter rows returned by a partial index or table scan.
       table filter {
         case row => matchRow(pat, row)
       }
@@ -154,12 +155,12 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
    * Returns the key for the given index `idx` and pattern `pat`.
    */
   private def keyOf(idx: Int, pat: Array[Value]): immutable.Seq[Value] = {
-    // The key is a list of values matching the index constructed "backwards".
+    // the key is a list of values matching the index constructed "backwards".
     var result: List[Value] = Nil
     var i = 31
     while (i >= 0) {
       if (BitOps.getBit(vec = idx, bit = i)) {
-        // The i'th column is in the index so retrieve the value from the pattern.
+        // the i'th column is in the index so retrieve the value from the pattern.
         result = pat(i) :: result
       }
       i = i - 1
@@ -177,7 +178,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
     var i = 0
     while (i < pat.length) {
       if (pat(i) != null) {
-        // The i'th column in the pattern exists, so it should be in the index.
+        // the i'th column in the pattern exists, so it should be in the index.
         index = BitOps.setBit(vec = index, bit = i)
       }
       i = i + 1
@@ -192,9 +193,9 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
    * Returns zero if no such index exists.
    */
   private def approxIndex(pat: Array[Value]): Int = {
-    // The result index. Defaults to zero representing that no usable index exists.
+    // the result index. Defaults to zero representing that no usable index exists.
     var result: Int = 0
-    // Loop through all available indexes looking for the first partially matching index.
+    // loop through all available indexes looking for the first partially matching index.
     val iterator = indexes.iterator
     while (iterator.hasNext) {
       val index = iterator.next()
@@ -202,21 +203,21 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
       var usable = true
       while (i < pat.length) {
         if (BitOps.getBit(vec = index, i) && pat(i) == null) {
-          // The index requires the i'th column to be non-null, but it is null in the pattern.
-          // Thus this specific index is not usable.
+          // the index requires the i'th column to be non-null, but it is null in the pattern.
+          // thus this specific index is not usable.
           usable = false
           i = pat.length
         }
         i = i + 1
       }
 
-      // Heuristic: If multiple indexes are usable, choose the one with the most columns.
+      // heuristic: If multiple indexes are usable, choose the one with the most columns.
       if (Integer.bitCount(result) < Integer.bitCount(index)) {
         result = index
       }
     }
 
-    // Return result
+    // return result
     return result
   }
 
