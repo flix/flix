@@ -115,5 +115,7 @@ namespace ParityAnalysis {
                                t1 != t2,
                                result := plus(v2, v3).
 
+    VarPointsTo(9, v) :- VarPointsTo(1, v), VarPointsTo(2, v).
+
     print VarPointsTo.
 };

@@ -112,7 +112,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], de
 
     table filter {
       // match the keys
-      case (keys, _) => matchKey(pat, keys.toArray)
+      case (keys, _) => matchKey(keyPart(pat).toArray, keys.toArray)
     } map {
       case (keys, elms) =>
         val elms2 = elms.clone()
@@ -172,9 +172,10 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], de
   def matchElms(pat: Array[Value], row: Array[Value]): Boolean = {
     // TODO: so this is incorrect. Need to use glb.
     for (i <- row.indices) {
-      val p = pat(i)
-      if (p != null) {
-        if (p != row(i)) {
+      val pv = pat(i)
+      if (pv != null) {
+        val rv = row(i)
+        if (pv != rv) {
           throw new RuntimeException("Need to compute GLB")
         }
       }
