@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.util.misc;
 
 // See examples/misc/NativeTest.flix for the program that uses this native class.
-public class NativeTest {
+public class JavaNative {
 
     public static boolean TRUE = true;
     public static boolean FALSE = false;
