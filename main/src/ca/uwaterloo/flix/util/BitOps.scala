@@ -16,6 +16,11 @@ object BitOps {
   def setBit(vec: Int, bit: Int): Int = vec | (1 << bit)
 
   /**
+   * Returns the given bit vector `vec` with the `bit` unset.
+   */
+  def clearBit(vec: Int, bit: Int): Int = vec & ~(1 << bit)
+
+  /**
    * Returns the given bit vector `vec` with the `bits` set.
    */
   def setBits(vec: Int, bits: Traversable[Int]): Int = {
@@ -24,5 +29,12 @@ object BitOps {
       result = setBit(result, bit)
     }
     result
+  }
+
+  /**
+   * Returns the position (offset) of the least significant bit that is set in the given bit vector `vec`.
+   */
+  def positionOfLeastSignificantBit(vec: Int): Int = {
+    31 - Integer.numberOfLeadingZeros(vec)
   }
 }

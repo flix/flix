@@ -137,6 +137,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   def evalHead(p: Predicate.Head, env0: Map[String, Value]): Unit = p match {
     case p: Predicate.Head.Relation =>
       val terms = p.terms.toArray
+      // TODO: Use new Array instead ofDim.
       val fact = Array.ofDim[Value](p.terms.length)
       for (i <- fact.indices) {
         fact(i) = Interpreter.evalHeadTerm(terms(i), sCtx.root, env0)
