@@ -4,59 +4,12 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.runtime.{Solver, Value}
 import ca.uwaterloo.flix.util.BitOps
 
-import scala.annotation.switch
 import scala.collection.mutable
 
 /**
  * Companion object for the [[IndexedRelation]] class.
  */
 object IndexedRelation {
-
-  /**
-   * A common super-type for keys.
-   */
-  sealed trait Key
-
-  /**
-   * A key with one value.
-   */
-  final class Key1(val v1: Value) extends Key {
-    override def equals(o: scala.Any): Boolean = o match {
-      case that: Key1 => this.v1 == that.v1
-      case _ => false
-    }
-
-    override val hashCode: Int = 3 * v1.hashCode()
-  }
-
-  /**
-   * A key with two values.
-   */
-  final class Key2(val v1: Value, val v2: Value) extends Key {
-    override def equals(o: scala.Any): Boolean = o match {
-      case that: Key2 =>
-        this.v1 == that.v1 &&
-          this.v2 == that.v2
-      case _ => false
-    }
-
-    override val hashCode: Int = 3 * v1.hashCode() + 5 * v2.hashCode()
-  }
-
-  /**
-   * A key with three values.
-   */
-  final class Key3(val v1: Value, val v2: Value, val v3: Value) extends Key {
-    override def equals(o: scala.Any): Boolean = o match {
-      case that: Key3 =>
-        this.v1 == that.v1 &&
-          this.v2 == that.v2 &&
-          this.v3 == that.v3
-      case _ => false
-    }
-
-    override val hashCode: Int = 3 * v1.hashCode() + 5 * v2.hashCode() + 7 * v3.hashCode()
-  }
 
   /**
    * Constructs a new indexed relation for the given `relation` and `indexes`.
@@ -90,7 +43,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   /**
    * A map from indexes to keys to rows of values.
    */
-  private val store = mutable.Map.empty[Int, mutable.Map[IndexedRelation.Key, mutable.Set[Array[Value]]]]
+  private val store = mutable.Map.empty[Int, mutable.Map[Key, mutable.Set[Array[Value]]]]
 
   /**
    * Records the number of indexed lookups, i.e. exact lookups.
@@ -170,7 +123,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
    */
   def lookup(pat: Array[Value]): Iterator[Array[Value]] = {
     // case 1: Check if there is an exact index.
-    var idx = exactIndex(pat)
+    var idx = getExactIndex(indexes, pat)
     if (idx != 0) {
       // an exact index exists. Use it.
       indexedLookups += 1
@@ -178,7 +131,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
       store(idx).getOrElseUpdate(key, mutable.Set.empty).iterator
     } else {
       // case 2: No exact index available. Check if there is an approximate index.
-      idx = approxIndex(pat)
+      idx = getApproximateIndex(indexes, pat)
       val table = if (idx != 0) {
         // case 2.1: An approximate index exists. Use it.
         indexedScans += 1
@@ -195,90 +148,6 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
         case row => matchRow(pat, row)
       }
     }
-  }
-
-  /**
-   * Returns the key for the given index `idx` and pattern `pat`.
-   */
-  private def keyOf(idx: Int, pat: Array[Value]): IndexedRelation.Key = {
-    val columns = Integer.bitCount(idx)
-    val i1 = idx
-    (columns: @switch) match {
-      case 1 =>
-        val c1 = BitOps.positionOfLeastSignificantBit(i1)
-        new IndexedRelation.Key1(pat(c1))
-
-      case 2 =>
-        val c1 = BitOps.positionOfLeastSignificantBit(i1)
-        val i2 = BitOps.clearBit(vec = i1, bit = c1)
-        val c2 = BitOps.positionOfLeastSignificantBit(i2)
-        new IndexedRelation.Key2(pat(c1), pat(c2))
-
-      case 3 =>
-        val c1 = BitOps.positionOfLeastSignificantBit(i1)
-        val i2 = BitOps.clearBit(vec = i1, bit = c1)
-        val c2 = BitOps.positionOfLeastSignificantBit(i2)
-        val i3 = BitOps.clearBit(vec = i2, bit = c2)
-        val c3 = BitOps.positionOfLeastSignificantBit(i3)
-        new IndexedRelation.Key3(pat(c1), pat(c2), pat(c3))
-
-      case _ => throw new RuntimeException("Indexes on more than three keys are currently not supported.")
-    }
-  }
-
-  /**
-   * Returns an index matching all the non-null columns in the given pattern `pat`.
-   *
-   * Returns zero if no such index exists.
-   */
-  private def exactIndex(pat: Array[Value]): Int = {
-    var index = 0
-    var i = 0
-    while (i < pat.length) {
-      if (pat(i) != null) {
-        // the i'th column in the pattern exists, so it should be in the index.
-        index = BitOps.setBit(vec = index, bit = i)
-      }
-      i = i + 1
-    }
-
-    if (indexes contains index) index else 0
-  }
-
-  /**
-   * Returns an approximate index matching all the non-null columns in the given pattern `pat`.
-   *
-   * Returns zero if no such index exists.
-   */
-  private def approxIndex(pat: Array[Value]): Int = {
-    // the result index. Defaults to zero representing that no usable index exists.
-    var result: Int = 0
-    // loop through all available indexes looking for the first partially matching index.
-    val iterator = indexes.iterator
-    while (iterator.hasNext) {
-      val index = iterator.next()
-      var i = 0
-      var usable = true
-      while (i < pat.length) {
-        if (BitOps.getBit(vec = index, bit = i) && pat(i) == null) {
-          // the index requires the i'th column to be non-null, but it is null in the pattern.
-          // thus this specific index is not usable.
-          usable = false
-          i = pat.length
-        }
-        i = i + 1
-      }
-
-      // heuristic: If multiple indexes are usable, choose the one with the most columns.
-      if (usable) {
-        if (Integer.bitCount(result) < Integer.bitCount(index)) {
-          result = index
-        }
-      }
-    }
-
-    // return result
-    return result
   }
 
   /**

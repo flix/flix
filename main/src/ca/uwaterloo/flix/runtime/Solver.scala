@@ -77,7 +77,12 @@ class Solver(implicit sCtx: Solver.SolverContext) {
 
     // evaluate all facts.
     for (fact <- sCtx.root.facts) {
-      evalHead(fact.head, Map.empty)
+      evalHead(fact.head, Map.empty, enqueue = false)
+    }
+
+    // add all rules to the worklist (under empty environments).
+    for (rule <- sCtx.root.rules) {
+      worklist.enqueue((rule, mutable.Map.empty))
     }
 
     // iterate until fixpoint.
@@ -117,16 +122,16 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   /**
    * Processes an inferred `fact` for the relation or lattice with the `name`.
    */
-  def inferredFact(name: Name.Resolved, fact: Array[Value]): Unit = sCtx.root.collections(name) match {
+  def inferredFact(name: Name.Resolved, fact: Array[Value], enqueue: Boolean): Unit = sCtx.root.collections(name) match {
     case r: TypedAst.Collection.Relation =>
       val changed = dataStore.relations(name).inferredFact(fact)
-      if (changed) {
+      if (changed && enqueue) {
         worklist ++= dependencies(r.name, fact)
       }
 
     case l: TypedAst.Collection.Lattice =>
       val changed = dataStore.lattices(name).inferredFact(fact)
-      if (changed) {
+      if (changed && enqueue) {
         worklist ++= dependencies(l.name, fact)
       }
   }
@@ -134,7 +139,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   /**
    * Evaluates the given head predicate `p` under the given environment `env0`.
    */
-  def evalHead(p: Predicate.Head, env0: Map[String, Value]): Unit = p match {
+  def evalHead(p: Predicate.Head, env0: Map[String, Value], enqueue: Boolean): Unit = p match {
     case p: Predicate.Head.Relation =>
       val terms = p.terms.toArray
       // TODO: Use new Array instead ofDim.
@@ -142,7 +147,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       for (i <- fact.indices) {
         fact(i) = Interpreter.evalHeadTerm(terms(i), sCtx.root, env0)
       }
-      inferredFact(p.name, fact)
+      inferredFact(p.name, fact, enqueue)
     case p: Predicate.Head.Trace =>
       val row = p.terms map (t => Interpreter.evalHeadTerm(t, sCtx.root, env0).pretty)
       val out = "Trace(" + row.mkString(", ") + ")"
@@ -212,7 +217,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     def disjoint(ps: List[Predicate.Body.NotEqual], row: mutable.Map[String, Value]): Unit = ps match {
       case Nil =>
         // rule body complete, evaluate the head.
-        evalHead(rule.head, row.toMap)
+        evalHead(rule.head, row.toMap, enqueue = true)
       case Predicate.Body.NotEqual(ident1, ident2, _, _) :: xs =>
         val value1 = row(ident1.name)
         val value2 = row(ident2.name)
