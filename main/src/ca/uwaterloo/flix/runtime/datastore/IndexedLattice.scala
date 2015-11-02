@@ -21,9 +21,6 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
     case TypedAst.Attribute(_, tpe) => sCtx.root.lattices(tpe)
   }.toArray
 
-  def table: Iterator[Array[Value]] = scan.map {
-    case (keys, elms) => (keys.toSeq ++ elms.toSeq).toArray
-  }
 
   /**
    * Processes a new inferred fact `f`.
@@ -103,6 +100,9 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
     case (keys, m) => m.toList
   }).flatten[(Seq[Value], Array[Value])].iterator
 
+  def table: Iterator[Array[Value]] = scan.map {
+    case (keys, elms) => (keys.toSeq ++ elms.toSeq).toArray
+  }
 
   def keyMatches(pat: Array[Value], row: Array[Value]): Boolean = {
     for (i <- row.indices) {
@@ -128,26 +128,35 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]
     true
   }
 
+  /**
+   * Returns `true` iff `a` is pairwise less than or equal to `b`.
+   */
   private def leq(a: Array[Value], b: Array[Value]): Boolean = {
-    for (i <- a.indices) {
+    var i = 0
+    while (i < a.length) {
       val leq = latticeOps(i).leq
-      val args = List(a(i), b(i))
-      val value = Interpreter.evalCall(leq, args, sCtx.root)
-      if (!value.toBool)
+      val value = Interpreter.eval2(leq, a(i), b(i), sCtx.root)
+      if (!value.toBool) {
         return false
+      }
+      i = i + 1
     }
-    true
+    return true
   }
 
+  /**
+   * Returns the pairwise least upper bound of `a` and `b`.
+   */
   private def lub(a: Array[Value], b: Array[Value]): Array[Value] = {
-    val result = Array.ofDim[Value](a.length)
-    for (i <- result.indices) {
+    val result = new Array[Value](a.length)
+    var i = 0
+    while (i < result.length) {
       val lub = latticeOps(i).lub
-      val args = List(a(i), b(i))
-      val value = Interpreter.evalCall(lub, args, sCtx.root)
+      val value = Interpreter.eval2(lub, a(i), b(i), sCtx.root)
       result(i) = value
+      i = i + 1
     }
-    result
+    return result
   }
 
 }

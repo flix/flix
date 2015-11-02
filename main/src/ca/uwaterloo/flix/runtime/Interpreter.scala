@@ -280,4 +280,8 @@ object Interpreter {
         val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
         Value.java2flix(method.invoke(null, nativeArgs: _*), tpe)
     }
+
+  def eval2(function: Expression, arg1: Value, arg2: Value, root: Root): Value =
+    evalCall(function, List(arg1, arg2), root)
+
 }
