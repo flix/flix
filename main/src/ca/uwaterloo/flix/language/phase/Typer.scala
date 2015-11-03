@@ -760,6 +760,7 @@ object Typer {
     case "boolean" | "java.lang.Boolean" => TypedAst.Type.Bool
     case "int" | "java.lang.Integer" => TypedAst.Type.Int
     case "java.lang.String" => TypedAst.Type.Str
+    case "scala.Tuple2" => TypedAst.Type.Tuple(List(TypedAst.Type.Native("java.lang.Object"), TypedAst.Type.Native("java.lang.Object")))
     case _ => TypedAst.Type.Native(canonicalName)
   }
 

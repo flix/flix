@@ -233,4 +233,24 @@ namespace NativeTest {
     rel StrVals(s1: Str, s2: Str);
     StrVals(#ca.uwaterloo.flix.util.misc.JavaNative.hello, "world").
     print StrVals.
+
+    // Fields in a Scala object are compiled as static methods
+    def strTuple2(i: Int): (#java.lang.Object, #java.lang.Object) = #ca.uwaterloo.flix.util.misc.ScalaNative.strTuple2()
+    def mkTuple(t1: Int, t2: Int): (#java.lang.Object, #java.lang.Object) = #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple(t1, t2)
+    def incrementTuple(tpl: (#java.lang.Object, #java.lang.Object)): (#java.lang.Object, #java.lang.Object) = #ca.uwaterloo.flix.util.misc.ScalaNative.incrementTuple(tpl)
+
+    /* Expected result
+       +---------------------------+
+       | t                         |
+       +---------------------------+
+       | (Native(101),Native(201)) |
+       | (Native(5),Native(6))     |
+       | (Native(foo),Native(bar)) |
+       +---------------------------+
+    */
+    rel Tuple(t: (#java.lang.Object, #java.lang.Object));
+    Tuple(strTuple2(1)).
+    Tuple(mkTuple(5, 6)).
+    Tuple(incrementTuple(mkTuple(100, 200))).
+    print Tuple.
 }

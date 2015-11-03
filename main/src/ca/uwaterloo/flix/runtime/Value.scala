@@ -23,7 +23,9 @@ sealed trait Value {
     case Value.Bool(b) => boolean2Boolean(b)
     case Value.Int(i) => int2Integer(i)
     case Value.Str(s) => s
+    case Value.Tuple(List(t1, t2)) => (t1.toJava, t2.toJava)
     case Value.Native(v) => v
+    case Value.Unit | Value.Tag(_) | Value.Tuple(_) | Value.Closure(_, _, _) | Value.NativeMethod(_) => this
   }
 
   //  TODO: Figure out a place to put all the formatting functions.
@@ -32,8 +34,8 @@ sealed trait Value {
     case Value.Bool(b) => b.toString
     case Value.Int(i) => i.toString
     case Value.Str(s) => s.toString
-    case Value.Tag(enum, tag, value) => enum + "." + tag + "(" + value.pretty + ")"
-    case Value.Tuple(elms) => "(" + (elms map (e => e.pretty)) + ")"
+    case Value.Tag(enum, tag, value) => s"$enum.$tag(${value.pretty})"
+    case Value.Tuple(elms) => "(" + elms.map(_.pretty).mkString(",") + ")"
     case Value.Closure(_, _, _) => ???
     case Value.Native(v) => s"Native($v)"
     case Value.NativeMethod(m) => ???
@@ -182,6 +184,9 @@ object Value {
     case TypedAst.Type.Bool => if (obj.asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
     case TypedAst.Type.Int => Value.mkInt(obj.asInstanceOf[java.lang.Integer].intValue)
     case TypedAst.Type.Str => Value.mkStr(obj.asInstanceOf[java.lang.String])
+    case TypedAst.Type.Tuple(List(TypedAst.Type.Native("java.lang.Object"), TypedAst.Type.Native("java.lang.Object"))) =>
+      val tuple = obj.asInstanceOf[(java.lang.Object, java.lang.Object)]
+      Value.Tuple(List(tuple._1, tuple._2).map(t => java2flix(t, TypedAst.Type.Native("java.lang.Object"))))
     case TypedAst.Type.Var(_) | TypedAst.Type.Unit | TypedAst.Type.Tag(_, _, _) | TypedAst.Type.Enum(_) |
          TypedAst.Type.Tuple(_) | TypedAst.Type.Lambda(_, _) | TypedAst.Type.Predicate(_) | TypedAst.Type.Native(_) =>
       Value.Native(obj)
