@@ -247,6 +247,28 @@ class TestSolver extends FunSuite {
 
   test("NotEqual01") {
     val s =
+      """rel A(x: Int);
+        |rel B(x: Int, y: Int);
+        |
+        |A(1). A(2). A(3). A(4).
+        |
+        |B(x, y) :- A(x), A(y), x != y.
+      """.stripMargin
+
+    val model = Flix.fromStrings(s).get
+    val B = model.relations(NameB)
+    assert(B contains List(Value.mkInt(1), Value.mkInt(2)))
+    assert(B contains List(Value.mkInt(1), Value.mkInt(3)))
+    assert(B contains List(Value.mkInt(1), Value.mkInt(4)))
+    assert(B contains List(Value.mkInt(4), Value.mkInt(1)))
+    assert(!(B contains List(Value.mkInt(1), Value.mkInt(1))))
+    assert(!(B contains List(Value.mkInt(2), Value.mkInt(2))))
+    assert(!(B contains List(Value.mkInt(3), Value.mkInt(3))))
+    assert(!(B contains List(Value.mkInt(4), Value.mkInt(4))))
+  }
+
+  test("NotEqual02") {
+    val s =
       """rel A(x: Int, y: Int);
         |rel B(x: Int, y: Int);
         |
@@ -262,7 +284,7 @@ class TestSolver extends FunSuite {
     assert(!(B contains List(Value.mkInt(2), Value.mkInt(2))))
   }
 
-  test("NotEqual02") {
+  test("NotEqual03") {
     val s =
       """rel A(x: Int, y: Int);
         |rel B(x: Int, y: Int);
