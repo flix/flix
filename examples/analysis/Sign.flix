@@ -51,7 +51,7 @@ namespace Sign {
         case _                    => Sign.Bot;
     };
 
-    // TODO: Define lattice
+    let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb);
 
     /**
      * Returns the sum of `e1` and `e2`.
@@ -101,7 +101,21 @@ namespace Sign {
         case _                    => false;
      };
 
+    lat Result(x: Int, v: Sign<>);
 
+    Result(0, Sign.Bot).
+
+    Result(1, Sign.Neg).
+    Result(2, Sign.Zer).
+    Result(3, Sign.Pos).
+
+    Result(4, Sign.Neg).
+    Result(4, Sign.Zer).
+    Result(4, Sign.Pos).
+
+
+
+    print Result;
 
 };
 
