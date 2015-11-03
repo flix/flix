@@ -26,7 +26,7 @@ object Flix {
     val ast = Compiler.compile(paths)
 
     if (ast.isEmpty) {
-      System.exit(1) // TODO
+      throw new RuntimeException()
     }
 
     implicit val sCtx = Solver.SolverContext(ast.get)
