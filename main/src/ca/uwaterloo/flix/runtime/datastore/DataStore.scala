@@ -40,10 +40,10 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
 
     collection match {
       case r: Collection.Relation =>
-        relations(name) = new IndexedRelation(r, idx, default)
+        relations(name) = new IndexedRelation(r, idx + default, default)
 
       case l: Collection.Lattice =>
-        lattices(name) = new IndexedLattice(l, idx, default)
+        lattices(name) = new IndexedLattice(l, idx + default, default)
     }
   }
 
