@@ -4,40 +4,46 @@ import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.TypedAst.Collection
 import ca.uwaterloo.flix.language.backend.phase.Indexer
 import ca.uwaterloo.flix.runtime.Solver
-import ca.uwaterloo.flix.util.AsciiTable
+import ca.uwaterloo.flix.util.{BitOps, AsciiTable}
 
 import scala.collection.mutable
 
 /**
- * A class implementing a data store for indexed relations and lattices.
- */
+  * A class implementing a data store for indexed relations and lattices.
+  */
 class DataStore(implicit sCtx: Solver.SolverContext) {
 
   /**
-   * A map from names to indexed relations.
-   */
+    * A map from names to indexed relations.
+    */
   val relations = mutable.Map.empty[Name.Resolved, IndexedRelation]
 
   /**
-   * A map from names to indexed lattices.
-   */
+    * A map from names to indexed lattices.
+    */
   val lattices = mutable.Map.empty[Name.Resolved, IndexedLattice]
 
   /**
-   * Initializes the relations and lattices.
-   */
+    * Initializes the relations and lattices.
+    */
   // compute indexes based on the program constraint rules.
   val indexes = Indexer.index(sCtx.root)
 
   // initialize all indexed relations and lattices.
   for ((name, collection) <- sCtx.root.collections) {
-    // TODO: Translate indexes here...
+    // translate indexes into their binary representation.
+    val idx = indexes(name) map {
+      case columns => BitOps.setBits(vec = 0, bits = columns)
+    }
+    // assume a default index on the first column.
+    val default = BitOps.setBit(vec = 0, bit = 0)
+
     collection match {
       case r: Collection.Relation =>
-        relations(name) = IndexedRelation.mk(r, indexes.getOrElse(name, Set.empty)) //  TODO: Remove getOrElse.
+        relations(name) = new IndexedRelation(r, idx, default)
 
       case l: Collection.Lattice =>
-        lattices(name) = IndexedLattice.mk(l, indexes.getOrElse(name, Set.empty)) //  TODO: Remove getOrElse.
+        lattices(name) = new IndexedLattice(l, idx, default)
     }
   }
 

@@ -6,27 +6,6 @@ import ca.uwaterloo.flix.util.BitOps
 
 import scala.collection.mutable
 
-/**
-  * Companion object for the [[IndexedLattice]] class.
-  */
-object IndexedLattice {
-
-  /**
-    * Constructs a new indexed relation for the given `relation` and `indexes`.
-    */
-  def mk(relation: TypedAst.Collection.Lattice, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) = {
-    // translate indexes into their binary representation.
-    val idx = indexes map {
-      case columns => BitOps.setBits(vec = 0, bits = columns)
-    }
-    // assume a default index on the first column.
-    val defaultIndex = BitOps.setBit(vec = 0, bit = 0)
-
-    new IndexedLattice(relation, idx + defaultIndex, defaultIndex)
-  }
-
-}
-
 class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], default: Int)(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
   /**
     * A map from indexes to a map from keys to rows (represented as map from keys to elements).

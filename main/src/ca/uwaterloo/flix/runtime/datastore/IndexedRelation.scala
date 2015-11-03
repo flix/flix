@@ -7,27 +7,6 @@ import ca.uwaterloo.flix.util.BitOps
 import scala.collection.mutable
 
 /**
- * Companion object for the [[IndexedRelation]] class.
- */
-object IndexedRelation {
-
-  /**
-   * Constructs a new indexed relation for the given `relation` and `indexes`.
-   */
-  def mk(relation: TypedAst.Collection.Relation, indexes: Set[Seq[Int]])(implicit sCtx: Solver.SolverContext) = {
-    // translate indexes into their binary representation.
-    val idx = indexes map {
-      case columns => BitOps.setBits(vec = 0, bits = columns)
-    }
-    // assume a default index on the first column.
-    val defaultIndex = BitOps.setBit(vec = 0, bit = 0)
-
-    new IndexedRelation(relation, idx + defaultIndex, defaultIndex)
-  }
-
-}
-
-/**
  * A class that stores a relation in an indexed database. An index is a subset of the columns encoded in binary.
  *
  * An index on the first column corresponds to 0b0000...0001.
@@ -37,7 +16,6 @@ object IndexedRelation {
  * @param indexes the indexes.
  * @param default the default index.
  */
-// TODO: Specialize?
 final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Int], default: Int)(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
 
   /**
