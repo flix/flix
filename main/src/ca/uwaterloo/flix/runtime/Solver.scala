@@ -48,7 +48,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
      */
     case class AssertedFactViolated(loc: SourceLocation) extends SolverError {
       val format =
-        s"""${consoleCtx.blue(s"-- SOLVER ERROR -------------------------------------------------- ${loc.formatSource}")}
+        s"""${consoleCtx.blue(s"-- SOLVER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Assertion violated: The asserted fact does not hold in the minimal model!")}
            |
@@ -116,7 +116,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
         macc + (name -> inner.toMap)
     }
 
-    Model(relations, lattices)
+    Model(sCtx.root, relations, lattices)
   }
 
   /**

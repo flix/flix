@@ -11,7 +11,12 @@ package object ast {
   /**
    * A common super-type for sources.
    */
-  sealed trait SourceInput
+  sealed trait SourceInput {
+    val format: String = this match {
+      case SourceInput.File(p) => p.toString
+      case SourceInput.Str(_) => "???"
+    }
+  }
 
   object SourceInput {
 
@@ -66,20 +71,12 @@ package object ast {
    */
   case class SourceLocation(source: SourceInput, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int, line: String) {
 
-    val formatSource: String = source match {
-      case SourceInput.File(p) => p.toString
-      case SourceInput.Str(_) => "???"
-    }
-
     /**
      * Returns a formatted string representation of `this` source location.
      */
-    // TODO Remove?
-    val format: String = source match {
-      case SourceInput.Str(_) => s"<<unknown>>:$beginLine:$beginCol"
-      case SourceInput.File(p) => s"$p:$beginLine:$beginCol"
-    }
+    val format: String = s"${source.format}:$beginLine:$beginCol"
 
+    // TODO: DOC
     def underline(implicit consoleCtx: ConsoleCtx): String = {
       val lineNo = beginLine.toString + "|"
       val line1 = lineNo + line + "\n"
