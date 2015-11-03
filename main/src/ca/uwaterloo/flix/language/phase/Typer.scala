@@ -84,6 +84,23 @@ object Typer {
 
     // TODO: Check arity of function calls, predicates, etc.
 
+    /**
+     * An error raised to indicate that a type has no associated lattice.
+     *
+     * @param tpe the type that has no lattice.
+     * @param loc the source location.
+     */
+    case class NoSuchLattice(tpe: TypedAst.Type, loc: SourceLocation) extends TypeError {
+      val format =
+        s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> No lattice declared for '${prettyPrint(tpe)}'.")}
+           |
+            |${loc.underline}
+           |Tip: Associate a lattice with the type.
+         """.stripMargin
+    }
+
   }
 
   /**
@@ -187,11 +204,19 @@ object Typer {
       val keys = rast.keys map {
         case ResolvedAst.Attribute(ident, tpe) => TypedAst.Attribute(ident, Type.typer(tpe))
       }
-      val values = rast.values map {
-        case ResolvedAst.Attribute(ident, tpe) => TypedAst.Attribute(ident, Type.typer(tpe))
+
+      val valuesVal = rast.values map {
+        case a: ResolvedAst.Attribute =>
+          val tpe = Type.typer(a.tpe)
+          (root.lattices.get(a.tpe) match {
+            case None => NoSuchLattice(tpe, a.ident.loc).toFailure
+            case Some(_) => TypedAst.Attribute(a.ident, tpe).toSuccess
+          }): Validation[TypedAst.Attribute, TypeError]
       }
 
-      TypedAst.Collection.Lattice(rast.name, keys, values, rast.loc).toSuccess
+      @@(valuesVal) map {
+        case values => TypedAst.Collection.Lattice(rast.name, keys, values, rast.loc)
+      }
     }
 
   }
@@ -429,17 +454,17 @@ object Typer {
         case ResolvedAst.Expression.Error(tpe, loc) =>
           TypedAst.Expression.Error(Type.typer(tpe), loc).toSuccess
 
-        case ResolvedAst.Expression.NativeField(className, memberName, field, loc) =>
+        case ResolvedAst.Expression.NativeField(field, loc) =>
           val tpe = java2flix(field.getType.getCanonicalName)
-          TypedAst.Expression.NativeField(className, memberName, field, tpe, loc).toSuccess
+          TypedAst.Expression.NativeField(field, tpe, loc).toSuccess
 
-        case ResolvedAst.Expression.NativeMethod(className, memberName, method, loc) =>
+        case ResolvedAst.Expression.NativeMethod(method, loc) =>
           val args = method.getParameterTypes.toList.map {
             case clazz => java2flix(clazz.getCanonicalName)
           }
           val retTpe = java2flix(method.getReturnType.getCanonicalName)
           val tpe = TypedAst.Type.Lambda(args, retTpe)
-          TypedAst.Expression.NativeMethod(className, memberName, method, tpe, loc).toSuccess
+          TypedAst.Expression.NativeMethod(method, tpe, loc).toSuccess
       }
 
       visit(rast, env)
@@ -638,6 +663,9 @@ object Typer {
             }
           case _ => IllegalApply(Type.typer(constant.tpe), loc).toFailure
         }
+      case ResolvedAst.Term.Head.NativeField(field, loc) =>
+        val tpe = java2flix(field.getType.getCanonicalName)
+        TypedAst.Term.Head.NativeField(field, tpe, loc).toSuccess
     }
 
     /**
@@ -729,8 +757,9 @@ object Typer {
    * Returns a Flix type corresponding to the given canonical name.
    */
   private def java2flix(canonicalName: String): TypedAst.Type = canonicalName match {
-    case "boolean" => TypedAst.Type.Bool
-    case "int" => TypedAst.Type.Int
+    case "boolean" | "java.lang.Boolean" => TypedAst.Type.Bool
+    case "int" | "java.lang.Integer" => TypedAst.Type.Int
+    case "java.lang.String" => TypedAst.Type.Str
     case _ => TypedAst.Type.Native(canonicalName)
   }
 

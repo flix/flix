@@ -10,8 +10,8 @@ object Indexer {
   // TODO: Ensure that everything has at least one index.
 
   /**
-   * Returns an index selection strategy based on left-to-right evaluation of constraint rules.
-   */
+    * Returns an index selection strategy based on left-to-right evaluation of constraint rules.
+    */
   def index(root: TypedAst.Root): Map[Name.Resolved, Set[Seq[Int]]] = {
     val indexes = mutable.Map.empty[Name.Resolved, Set[Seq[Int]]]
 
@@ -50,6 +50,18 @@ object Indexer {
             bound ++= body.freeVars
           case _ => // nop
         }
+      }
+    }
+
+    // ensure every collection has at least one index.
+    for ((name, collection) <- root.collections) {
+      collection match {
+        case r: TypedAst.Collection.Relation =>
+          val idxs = indexes.getOrElse(name, Set.empty)
+          indexes(name) = idxs + Seq(0)
+        case l: TypedAst.Collection.Lattice =>
+          val idxs = indexes.getOrElse(name, Set.empty)
+          indexes(name) = idxs + Seq(0)
       }
     }
 

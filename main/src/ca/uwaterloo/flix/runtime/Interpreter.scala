@@ -29,7 +29,8 @@ object Interpreter {
   def eval(expr: Expression, root: Root, env: Env = Map()): Value = expr.tpe match {
     case Type.Int => Value.mkInt(evalInt(expr, root, env))
     case Type.Bool => if (evalBool(expr, root, env)) Value.True else Value.False
-    case Type.Var(_) | Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
+    case Type.Str => evalGeneral(expr, root, env)
+    case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
          Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) =>
       evalGeneral(expr, root, env)
   }
@@ -71,10 +72,8 @@ object Interpreter {
       case Expression.Var(ident, _, loc) => env(ident.name).toInt
       case Expression.Ref(name, _, _) => evalInt(root.constants(name).exp, root, env)
       case Expression.Apply(exp, args, _, _) =>
-        val Value.Closure(formals, body, closureEnv) = evalGeneral(exp, root, env)
         val evalArgs = args.map(x => eval(x, root, env))
-        val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-        evalInt(body, root, newEnv)
+        evalCall(exp, evalArgs, root, env).toInt
       case Expression.Unary(op, exp, _, _) => evalUnary(op, exp)
       case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, exp1, exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
@@ -90,9 +89,10 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => evalInt(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
-      case Expression.NativeField(className, memberName, field, tpe, loc) => ??? // TODO
-      case Expression.NativeMethod(className, memberName, method, tpe, loc) => ??? // TODO
-      case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) =>
+      case Expression.NativeField(field, _, _) =>
+        field.get().asInstanceOf[java.lang.Integer].intValue()
+      case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
+           Expression.NativeMethod(_, _, _) =>
         throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int.")
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
     }
@@ -131,10 +131,8 @@ object Interpreter {
       case Expression.Var(ident, _, loc) => env(ident.name).toBool
       case Expression.Ref(name, _, _) => evalBool(root.constants(name).exp, root, env)
       case Expression.Apply(exp, args, _, _) =>
-        val Value.Closure(formals, body, closureEnv) = evalGeneral(exp, root, env)
         val evalArgs = args.map(x => eval(x, root, env))
-        val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-        evalBool(body, root, newEnv)
+        evalCall(exp, evalArgs, root, env).toBool
       case Expression.Unary(op, exp, _, _) => evalUnary(op, exp)
       case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, exp1, exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
@@ -150,9 +148,10 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => evalBool(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
-      case Expression.NativeField(className, memberName, field, tpe, loc) => ??? // TODO
-      case Expression.NativeMethod(classname, memberName, method, tpe, loc) => ??? // TODO
-      case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) =>
+      case Expression.NativeField(field, _, _) =>
+        field.get().asInstanceOf[java.lang.Boolean].booleanValue()
+      case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
+           Expression.NativeMethod(_, _, _) =>
         throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
     }
@@ -193,10 +192,8 @@ object Interpreter {
       case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
       case Expression.Lambda(formals, body, _, _) => Value.Closure(formals, body, env)
       case Expression.Apply(exp, args, _, _) =>
-        val Value.Closure(formals, body, closureEnv) = evalGeneral(exp, root, env)
         val evalArgs = args.map(x => eval(x, root, env))
-        val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-        eval(body, root, newEnv)
+        evalCall(exp, evalArgs, root, env)
       case Expression.Unary(op, exp, _, _) => evalUnary(op, eval(exp, root, env))
       case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, eval(exp1, root, env), eval(exp2, root, env))
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
@@ -212,6 +209,8 @@ object Interpreter {
           case Some((matchExp, matchEnv)) => eval(matchExp, root, env ++ matchEnv)
           case None => throw new RuntimeException(s"Unmatched value $value.")
         }
+      case Expression.NativeField(field, tpe, _) => Value.java2flix(field.get(), tpe)
+      case Expression.NativeMethod(method, _, _) => Value.NativeMethod(method)
       case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
       case Expression.Tuple(elms, _, _) => Value.Tuple(elms.map(e => eval(e, root, env)))
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
@@ -259,11 +258,10 @@ object Interpreter {
     case Term.Head.Var(x, _, _) => env(x.name)
     case Term.Head.Lit(lit, _, _) => evalLit(lit)
     case Term.Head.Apply(name, terms, _, _) =>
-      val function = root.constants(name)
-      val Value.Closure(formals, body, closureEnv) = evalGeneral(function.exp, root, env)
+      val function = root.constants(name).exp
       val evalArgs = terms.map(t => evalHeadTerm(t, root, env))
-      val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-      eval(body, root, newEnv)
+      evalCall(function, evalArgs, root, env)
+    case Term.Head.NativeField(field, tpe, _) => Value.java2flix(field.get(), tpe)
   }
 
   def evalBodyTerm(t: Term.Body, env: Env): Value = t match {
@@ -272,17 +270,18 @@ object Interpreter {
     case Term.Body.Lit(lit, _, _) => evalLit(lit)
   }
 
-  def eval2(lambda: Expression, v1: Value, v2: Value, root: Root): Value = {
-    val Value.Closure(formals, body, closureEnv) = evalGeneral(lambda, root)
-    val evalArgs = List(v1, v2)
-    val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-    eval(body, root, newEnv)
-  }
+  def evalCall(function: Expression, args: List[Value], root: Root, env: Env = Map()): Value =
+    (evalGeneral(function, root, env): @unchecked) match {
+      case Value.Closure(formals, body, closureEnv) =>
+        val newEnv = closureEnv ++ formals.map(_.ident.name).zip(args).toMap
+        eval(body, root, newEnv)
+      case Value.NativeMethod(method) =>
+        val nativeArgs = args.map(_.toJava)
+        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
+        Value.java2flix(method.invoke(null, nativeArgs: _*), tpe)
+    }
 
-  def evalCall(definition: Definition.Constant, terms: List[Term.Body], root: Root, env: Env): Value = {
-    val Value.Closure(formals, body, closureEnv) = evalGeneral(definition.exp, root, env)
-    val evalArgs = terms.map(t => evalBodyTerm(t, env))
-    val newEnv = closureEnv ++ formals.map(_.ident.name).zip(evalArgs).toMap
-    eval(body, root, newEnv)
-  }
+  def eval2(function: Expression, arg1: Value, arg2: Value, root: Root): Value =
+    evalCall(function, List(arg1, arg2), root)
+
 }

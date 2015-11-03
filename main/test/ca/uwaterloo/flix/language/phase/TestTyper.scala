@@ -986,6 +986,32 @@ class TestTyper extends FunSuite {
   // TODO: Test Term.Ascribe.
 
 
+  test("NoSuchLattice01") {
+    val input =
+      s"""namespace A {
+         |  lat A(x: Int, y: Int<>);
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
+  }
+
+  test("NoSuchLattice02") {
+    val input =
+      s"""namespace A {
+         |  enum Elm {
+         |    case Foo
+         |  }
+         |
+         |  lat A(x: Int, y: Elm<>);
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
@@ -1040,5 +1066,37 @@ class TestTyper extends FunSuite {
   }
 
   def ident(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
+
+  test("Native Type 01 (Boolean and boolean)") {
+    val input =
+      s"""namespace A {
+         |  val x: Bool = #java.lang.Boolean.TRUE;              // boxed Boolean
+         |  val y: Bool = #java.lang.Boolean.getBoolean("true") // primitive boolean
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.isSuccess)
+  }
+
+  test("Native Type 02 (Integer and int)") {
+    val input =
+      s"""namespace A {
+         |  val x: Int = #java.lang.Integer.decode("42"); // boxed Integer
+         |  val y: Int = #java.lang.Integer.SIZE;         // primitive int
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.isSuccess)
+  }
+
+  test("Native Type 03 (java.lang.String)") {
+    val input =
+      s"""namespace A {
+         |  val x: Str = #ca.uwaterloo.flix.util.misc.SampleLattice.TOP; // java.lang.String
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.isSuccess)
+  }
 
 }

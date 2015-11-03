@@ -1,0 +1,204 @@
+package ca.uwaterloo.flix.runtime
+
+import ca.uwaterloo.flix.util.BitOps
+
+import scala.annotation.switch
+
+package object datastore {
+
+  /**
+   * A common super-type for keys.
+   */
+  sealed trait Key
+
+  /**
+   * A key with one value.
+   */
+  final class Key1(val v1: Value) extends Key {
+    override def equals(o: scala.Any): Boolean = o match {
+      case that: Key1 => this.v1 == that.v1
+      case _ => false
+    }
+
+    override val hashCode: Int = 3 * v1.hashCode()
+  }
+
+  /**
+   * A key with two values.
+   */
+  final class Key2(val v1: Value, val v2: Value) extends Key {
+    override def equals(o: scala.Any): Boolean = o match {
+      case that: Key2 =>
+        this.v1 == that.v1 &&
+          this.v2 == that.v2
+      case _ => false
+    }
+
+    override val hashCode: Int = 3 * v1.hashCode() + 5 * v2.hashCode()
+  }
+
+  /**
+   * A key with three values.
+   */
+  final class Key3(val v1: Value, val v2: Value, val v3: Value) extends Key {
+    override def equals(o: scala.Any): Boolean = o match {
+      case that: Key3 =>
+        this.v1 == that.v1 &&
+          this.v2 == that.v2 &&
+          this.v3 == that.v3
+      case _ => false
+    }
+
+    override val hashCode: Int = 3 * v1.hashCode() + 5 * v2.hashCode() + 7 * v3.hashCode()
+  }
+
+  /**
+   * A key with four values.
+   */
+  final class Key4(val v1: Value, val v2: Value, val v3: Value, val v4: Value) extends Key {
+    override def equals(o: scala.Any): Boolean = o match {
+      case that: Key4 =>
+        this.v1 == that.v1 &&
+          this.v2 == that.v2 &&
+          this.v3 == that.v3 &&
+          this.v4 == that.v4
+      case _ => false
+    }
+
+    override val hashCode: Int = 3 * v1.hashCode() + 5 * v2.hashCode() + 7 * v3.hashCode() + 11 * v4.hashCode()
+  }
+
+  /**
+   * A key with five values.
+   */
+  final class Key5(val v1: Value, val v2: Value, val v3: Value, val v4: Value, val v5: Value) extends Key {
+    override def equals(o: scala.Any): Boolean = o match {
+      case that: Key5 =>
+        this.v1 == that.v1 &&
+          this.v2 == that.v2 &&
+          this.v3 == that.v3 &&
+          this.v4 == that.v4 &&
+          this.v5 == that.v5
+      case _ => false
+    }
+
+    override val hashCode: Int = 3 * v1.hashCode() + 5 * v2.hashCode() + 7 * v3.hashCode() + 11 * v4.hashCode() + 13 * v5.hashCode()
+  }
+
+  /**
+   * Returns an index matching all the non-null columns in the given pattern `pat`.
+   *
+   * An exact index only returns rows that match the pattern.
+   *
+   * Returns zero if no such index exists.
+   */
+  def getExactIndex(indexes: Set[Int], pat: Array[Value]): Int = {
+    var index = 0
+    var i = 0
+    while (i < pat.length) {
+      if (pat(i) != null) {
+        // the i'th column in the pattern is non-null
+        // so it should be in the index.
+        index = BitOps.setBit(vec = index, bit = i)
+      }
+      i = i + 1
+    }
+
+    if (indexes contains index) index else 0
+  }
+
+  /**
+   * Returns an approximate index matching all the non-null columns in the given pattern `pat`.
+   *
+   * An approximate index may returns rows not matching the pattern.
+   *
+   * Returns zero if no such index exists.
+   */
+  def getApproximateIndex(indexes: Set[Int], pat: Array[Value]): Int = {
+    // the result index. Defaults to zero representing that no usable index exists.
+    var result: Int = 0
+    // loop through all available indexes looking for the first partially matching index.
+    val iterator = indexes.iterator
+    while (iterator.hasNext) {
+      val index = iterator.next()
+      var i = 0
+      var usable = true
+      while (i < pat.length) {
+        if (BitOps.getBit(vec = index, bit = i) && pat(i) == null) {
+          // the index requires the i'th column to be non-null, but it is null in the pattern.
+          // thus this specific index is not usable.
+          usable = false
+          i = pat.length
+        }
+        i = i + 1
+      }
+
+      // heuristic: If multiple indexes are usable, choose the one with the most columns.
+      if (usable) {
+        if (Integer.bitCount(result) < Integer.bitCount(index)) {
+          result = index
+        }
+      }
+    }
+
+    // return result
+    return result
+  }
+
+  /**
+   * Returns the key for the given index `idx` and pattern `pat`.
+   *
+   * The pattern must be non-null for all columns in the index.
+   *
+   * @param idx the index (in binary).
+   * @param pat the pattern.
+   */
+  def keyOf(idx: Int, pat: Array[Value]): Key = {
+    val columns = Integer.bitCount(idx)
+    val i1 = idx
+    (columns: @switch) match {
+      case 1 =>
+        val c1 = BitOps.positionOfLeastSignificantBit(i1)
+        new Key1(pat(c1))
+
+      case 2 =>
+        val c1 = BitOps.positionOfLeastSignificantBit(i1)
+        val i2 = BitOps.clearBit(vec = i1, bit = c1)
+        val c2 = BitOps.positionOfLeastSignificantBit(i2)
+        new Key2(pat(c1), pat(c2))
+
+      case 3 =>
+        val c1 = BitOps.positionOfLeastSignificantBit(i1)
+        val i2 = BitOps.clearBit(vec = i1, bit = c1)
+        val c2 = BitOps.positionOfLeastSignificantBit(i2)
+        val i3 = BitOps.clearBit(vec = i2, bit = c2)
+        val c3 = BitOps.positionOfLeastSignificantBit(i3)
+        new Key3(pat(c1), pat(c2), pat(c3))
+
+      case 4 =>
+        val c1 = BitOps.positionOfLeastSignificantBit(i1)
+        val i2 = BitOps.clearBit(vec = i1, bit = c1)
+        val c2 = BitOps.positionOfLeastSignificantBit(i2)
+        val i3 = BitOps.clearBit(vec = i2, bit = c2)
+        val c3 = BitOps.positionOfLeastSignificantBit(i3)
+        val i4 = BitOps.clearBit(vec = i3, bit = c3)
+        val c4 = BitOps.positionOfLeastSignificantBit(i4)
+        new Key4(pat(c1), pat(c2), pat(c3), pat(c4))
+
+      case 5 =>
+        val c1 = BitOps.positionOfLeastSignificantBit(i1)
+        val i2 = BitOps.clearBit(vec = i1, bit = c1)
+        val c2 = BitOps.positionOfLeastSignificantBit(i2)
+        val i3 = BitOps.clearBit(vec = i2, bit = c2)
+        val c3 = BitOps.positionOfLeastSignificantBit(i3)
+        val i4 = BitOps.clearBit(vec = i3, bit = c3)
+        val c4 = BitOps.positionOfLeastSignificantBit(i4)
+        val i5 = BitOps.clearBit(vec = i4, bit = c4)
+        val c5 = BitOps.positionOfLeastSignificantBit(i5)
+        new Key5(pat(c1), pat(c2), pat(c3), pat(c4), pat(c5))
+
+      case _ => throw new RuntimeException("Indexes on more than five keys are currently not supported.")
+    }
+  }
+
+}

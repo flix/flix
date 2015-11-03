@@ -409,24 +409,20 @@ object TypedAst {
     /**
      * A typed AST node representing a native field access expression.
      *
-     * @param className the fully qualified name of the enclosing class.
-     * @param memberName the name of the field.
      * @param field the field itself
      * @param tpe the type of the field.
      * @param loc the source location.
      */
-    case class NativeField(className: String, memberName: String, field: Field, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class NativeField(field: Field, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
      * A typed AST node representing a native method expression.
      *
-     * @param className the fully qualified name of the enclosing class.
-     * @param memberName the name of the method.
      * @param method the field itself
      * @param tpe the type of the method.
      * @param loc the source location.
      */
-    case class NativeMethod(className: String, memberName: String, method: Method, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class NativeMethod(method: Method, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
 
   }
 
@@ -696,6 +692,15 @@ object TypedAst {
        * @param loc the source location.
        */
       case class Apply(name: Name.Resolved, args: List[TypedAst.Term.Head], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Term.Head
+
+      /**
+       * A typed AST node representing a reference to a native JVM static field.
+       *
+       * @param field the field.
+       * @param tpe the type of the field.
+       * @param loc the source location.
+       */
+      case class NativeField(field: Field, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Term.Head
 
     }
 

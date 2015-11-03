@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import java.lang.reflect.Modifier
+import java.lang.reflect.{Method, Field, Modifier}
 
 import ca.uwaterloo.flix.language.ast.WeededAst.Root
 import ca.uwaterloo.flix.language.ast._
@@ -80,6 +80,23 @@ object Resolver {
     }
 
     /**
+     * An error raised to indicate that the given `name` is illegal as a variable name.
+     *
+     * @param name the invalid name.
+     * @param loc the location of the name.
+     */
+    case class IllegalVariableName(name: String, loc: SourceLocation) extends ResolverError {
+      val format =
+        s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc.formatSource}")}
+           |
+            |${consoleCtx.red(s">> Illegal uppercase variable name '$name'.")}
+           |
+           |${loc.underline}
+           |A variable name must start with a lowercase letter.
+         """.stripMargin
+    }
+
+    /**
      * An error raised to indicate that the given `name` in the given `namespace` was not found.
      *
      * @param name the unresolved name.
@@ -147,7 +164,6 @@ object Resolver {
          """.stripMargin
       }
     }
-
 
     /**
      * An error raised to indicate a reference to an unknown relation.
@@ -467,7 +483,9 @@ object Resolver {
       val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
 
       val casesVal = Validation.fold[String, WeededAst.Type.Tag, String, ResolvedAst.Type.Tag, ResolverError](wast.cases) {
-        (k, tpe) => Type.resolve(tpe, namespace ::: wast.ident.name :: Nil, syms) map (t => k -> t.asInstanceOf[ResolvedAst.Type.Tag])
+        case (k, WeededAst.Type.Tag(tag, wtpe)) => Type.resolve(wtpe, namespace, syms) map {
+          case tpe => k -> ResolvedAst.Type.Tag(name, tag, tpe)
+        }
       }
 
       casesVal map {
@@ -514,7 +532,9 @@ object Resolver {
       }
 
       val valuesVal = wast.values.map {
-        case WeededAst.Attribute(ident, tpe, _) => Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.Attribute(ident, t))
+        case WeededAst.Attribute(ident, tpe, _) => Type.resolve(tpe, namespace, syms) map {
+          case t => ResolvedAst.Attribute(ident, t)
+        }
       }
 
       @@(@@(keysVal), @@(valuesVal)) map {
@@ -623,7 +643,13 @@ object Resolver {
 
         case WeededAst.Expression.Lambda(wformals, wbody, wtype, loc) =>
           val formalsVal = @@(wformals map {
-            case WeededAst.FormalArg(ident, tpe) => Type.resolve(tpe, namespace, syms) map (t => ResolvedAst.FormalArg(ident, t))
+            case WeededAst.FormalArg(ident, tpe) => Type.resolve(tpe, namespace, syms) flatMap {
+              case t =>
+                if (ident.name.head.isLower)
+                  ResolvedAst.FormalArg(ident, t).toSuccess
+                else
+                  IllegalVariableName(ident.name, ident.loc).toFailure
+            }
           })
 
           formalsVal flatMap {
@@ -656,8 +682,12 @@ object Resolver {
         case WeededAst.Expression.Let(ident, wvalue, wbody, loc) =>
           val valueVal = visit(wvalue, locals)
           val bodyVal = visit(wbody, locals + ident.name)
-          @@(valueVal, bodyVal) map {
-            case (value, body) => ResolvedAst.Expression.Let(ident, value, body, loc)
+          @@(valueVal, bodyVal) flatMap {
+            case (value, body) =>
+              if (ident.name.head.isLower)
+                ResolvedAst.Expression.Let(ident, value, body, loc).toSuccess
+              else
+                IllegalVariableName(ident.name, loc).toFailure
           }
 
         case WeededAst.Expression.Match(we, wrules, loc) =>
@@ -697,39 +727,11 @@ object Resolver {
             case tpe => ResolvedAst.Expression.Error(tpe, loc)
           }
 
-        case WeededAst.Expression.Native(className, memberName, loc) => try {
-          // retrieve class object.
-          val clazz = Class.forName(className)
-
-          // retrieve static fields.
-          val fields = clazz.getDeclaredFields.toList.filter {
-            case field => Modifier.isStatic(field.getModifiers) && field.getName == memberName
+        case WeededAst.Expression.Native(className, memberName, loc) =>
+          lookupNativeFieldOrMethod(className, memberName, loc) map {
+            case NativeRef.FieldRef(field) => ResolvedAst.Expression.NativeField(field, loc)
+            case NativeRef.MethodRef(method) => ResolvedAst.Expression.NativeMethod(method, loc)
           }
-
-          // retrieve static methods.
-          val methods = clazz.getDeclaredMethods.toList.filter {
-            case method => Modifier.isStatic(method.getModifiers) && method.getName == memberName
-          }
-
-          // disambiguate member.
-          if (fields.isEmpty && methods.isEmpty) {
-            // at least one field and method share the same name.
-            UnresolvedFieldOrMethod(className, memberName, loc).toFailure
-          } else if (fields.size + methods.size > 2) {
-            // multiple fields/methods share the same name.
-            AmbiguousFieldOrMethod(className, memberName, loc).toFailure
-          } else {
-            if (fields.nonEmpty) {
-              // resolves to a field.
-              ResolvedAst.Expression.NativeField(className, memberName, fields.head, loc).toSuccess
-            } else {
-              // resolved to a method.
-              ResolvedAst.Expression.NativeMethod(className, memberName, methods.head, loc).toSuccess
-            }
-          }
-        } catch {
-          case ex: ClassNotFoundException => UnresolvedNativeClass(className, loc).toFailure
-        }
       }
 
       visit(wast, Set.empty)
@@ -745,7 +747,11 @@ object Resolver {
     def resolve(wast: WeededAst.Pattern, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Pattern, ResolverError] = {
       def visit(wast: WeededAst.Pattern): Validation[ResolvedAst.Pattern, ResolverError] = wast match {
         case WeededAst.Pattern.Wildcard(location) => ResolvedAst.Pattern.Wildcard(location).toSuccess
-        case WeededAst.Pattern.Var(ident, loc) => ResolvedAst.Pattern.Var(ident, loc).toSuccess
+        case WeededAst.Pattern.Var(ident, loc) =>
+          if (ident.name.head.isLower)
+            ResolvedAst.Pattern.Var(ident, loc).toSuccess
+          else
+            IllegalVariableName(ident.name, loc).toFailure
         case WeededAst.Pattern.Lit(literal, loc) => Literal.resolve(literal, namespace, syms) map {
           case lit => ResolvedAst.Pattern.Lit(lit, loc)
         }
@@ -837,7 +843,11 @@ object Resolver {
        * Performs symbol resolution in the given head term `wast` under the given `namespace`.
        */
       def resolve(wast: WeededAst.Term.Head, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Term.Head, ResolverError] = wast match {
-        case WeededAst.Term.Head.Var(ident, loc) => ResolvedAst.Term.Head.Var(ident, loc).toSuccess
+        case WeededAst.Term.Head.Var(ident, loc) =>
+          if (ident.name.head.isLower)
+            ResolvedAst.Term.Head.Var(ident, loc).toSuccess
+          else
+            IllegalVariableName(ident.name, loc).toFailure
         case WeededAst.Term.Head.Lit(wlit, loc) => Literal.resolve(wlit, namespace, syms) map {
           case lit => ResolvedAst.Term.Head.Lit(lit, loc)
         }
@@ -851,6 +861,11 @@ object Resolver {
               case args => ResolvedAst.Term.Head.Apply(rname, args.toList, loc)
             }
           }
+        case WeededAst.Term.Head.Native(className, memberName, loc) =>
+          lookupNativeFieldOrMethod(className, memberName, loc) map {
+            case NativeRef.FieldRef(field) => ResolvedAst.Term.Head.NativeField(field, loc)
+            case NativeRef.MethodRef(field) => ??? // TODO
+          }
       }
     }
 
@@ -861,7 +876,11 @@ object Resolver {
        */
       def resolve(wast: WeededAst.Term.Body, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Term.Body, ResolverError] = wast match {
         case WeededAst.Term.Body.Wildcard(loc) => ResolvedAst.Term.Body.Wildcard(loc).toSuccess
-        case WeededAst.Term.Body.Var(ident, loc) => ResolvedAst.Term.Body.Var(ident, loc).toSuccess
+        case WeededAst.Term.Body.Var(ident, loc) =>
+          if (ident.name.head.isLower)
+            ResolvedAst.Term.Body.Var(ident, loc).toSuccess
+          else
+            IllegalVariableName(ident.name, loc).toFailure
         case WeededAst.Term.Body.Lit(wlit, loc) => Literal.resolve(wlit, namespace, syms) map {
           case lit => ResolvedAst.Term.Body.Lit(lit, loc)
         }
@@ -918,5 +937,51 @@ object Resolver {
   // TODO: Need this?
   def toRName(ident: Name.Ident, namespace: List[String]): Name.Resolved =
     Name.Resolved(namespace ::: ident.name :: Nil)
+
+  // TODO: Doc and more testing
+  sealed trait NativeRef
+
+  object NativeRef {
+
+    case class FieldRef(field: Field) extends NativeRef
+
+    case class MethodRef(method: Method) extends NativeRef
+
+  }
+
+  //  TODO: DOC
+  def lookupNativeFieldOrMethod(className: String, memberName: String, loc: SourceLocation): Validation[NativeRef, ResolverError] = try {
+    // retrieve class object.
+    val clazz = Class.forName(className)
+
+    // retrieve static fields.
+    val fields = clazz.getDeclaredFields.toList.filter {
+      case field => Modifier.isStatic(field.getModifiers) && field.getName == memberName
+    }
+
+    // retrieve static methods.
+    val methods = clazz.getDeclaredMethods.toList.filter {
+      case method => Modifier.isStatic(method.getModifiers) && method.getName == memberName
+    }
+
+    // disambiguate member.
+    if (fields.isEmpty && methods.isEmpty) {
+      // at least one field and method share the same name.
+      UnresolvedFieldOrMethod(className, memberName, loc).toFailure
+    } else if (fields.size + methods.size > 2) {
+      // multiple fields/methods share the same name.
+      AmbiguousFieldOrMethod(className, memberName, loc).toFailure
+    } else {
+      if (fields.nonEmpty) {
+        // resolves to a field.
+        NativeRef.FieldRef(fields.head).toSuccess
+      } else {
+        // resolved to a method.
+        NativeRef.MethodRef(methods.head).toSuccess
+      }
+    }
+  } catch {
+    case ex: ClassNotFoundException => UnresolvedNativeClass(className, loc).toFailure
+  }
 
 }

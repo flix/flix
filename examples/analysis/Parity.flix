@@ -103,14 +103,6 @@ namespace ParityAnalysis {
     rel SumOp(result: Int, left: Int, right: Int);
     lat VarPointsTo(localVal: Int, value: Parity<>);
 
-    let #java.lang.String<> = (
-        #ca.uwaterloo.flix.util.misc.SampleLattice.BOT,
-        #ca.uwaterloo.flix.util.misc.SampleLattice.TOP,
-        #ca.uwaterloo.flix.util.misc.SampleLattice.leq,
-        #ca.uwaterloo.flix.util.misc.SampleLattice.lub,
-        #ca.uwaterloo.flix.util.misc.SampleLattice.glb
-    );
-
     SumOp(3, 1, 2).
     VarPointsTo(1, Parity.Odd).
     VarPointsTo(2, Parity.Even).
@@ -123,6 +115,7 @@ namespace ParityAnalysis {
                                t1 != t2,
                                result := plus(v2, v3).
 
-    print VarPointsTo.
+    VarPointsTo(9, v) :- VarPointsTo(1, v), VarPointsTo(2, v).
 
+    print VarPointsTo.
 };

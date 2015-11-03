@@ -30,7 +30,7 @@ namespace Company {
     rel Building(address: Str, department: Str)
     Building("123 Main St", "Sales").
     Building("1600 Pennsylvania Ave", "Administration").
-    Building("321 1st St", "Operations").
+    Building("321 Union Street", "Operations").
 
     rel HeadOfDepartment(name: Str)
     HeadOfDepartment(x) :- Department(_, x).
