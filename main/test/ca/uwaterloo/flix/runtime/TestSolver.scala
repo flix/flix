@@ -193,7 +193,6 @@ class TestSolver extends FunSuite {
         |B(2, 3). B(4, 5).
         |
         |R(x, z) :- A(x, y), B(y, z).
-        |
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
@@ -214,7 +213,6 @@ class TestSolver extends FunSuite {
         |C(3, 7).
         |
         |R(x, w) :- A(x, y), B(y, z), C(z, w).
-        |
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
@@ -235,7 +233,6 @@ class TestSolver extends FunSuite {
         |C(x, z) :- A(x, y), B(y, z).
         |A(x, z) :- C(x, y), B(y, z).
         |B(x, z) :- A(x, y), C(y, z).
-        |
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
@@ -246,6 +243,41 @@ class TestSolver extends FunSuite {
     assert(A contains List(Value.mkInt(1), Value.mkInt(5)))
     assert(B contains List(Value.mkInt(1), Value.mkInt(6)))
     assert(C contains List(Value.mkInt(7), Value.mkInt(6)))
+  }
+
+  test("NotEqual01") {
+    val s =
+      """rel A(x: Int, y: Int);
+        |rel B(x: Int, y: Int);
+        |
+        |A(1, 2).
+        |A(2, 2).
+        |
+        |B(x, y) :- A(x, y), x != y.
+      """.stripMargin
+
+    val model = Flix.fromStrings(s).get
+    val B = model.relations(NameB)
+    assert(B contains List(Value.mkInt(1), Value.mkInt(2)))
+    assert(!(B contains List(Value.mkInt(2), Value.mkInt(2))))
+  }
+
+  test("NotEqual02") {
+    val s =
+      """rel A(x: Int, y: Int);
+        |rel B(x: Int, y: Int);
+        |
+        |A(1, 2).
+        |A(2, 1).
+        |A(2, 3).
+        |
+        |B(x, z) :- A(x, y), A(y, z), x != z.
+      """.stripMargin
+
+    val model = Flix.fromStrings(s).get
+    val B = model.relations(NameB)
+    assert(B contains List(Value.mkInt(1), Value.mkInt(3)))
+    assert(!(B contains List(Value.mkInt(1), Value.mkInt(1))))
   }
 
 }
