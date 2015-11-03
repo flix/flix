@@ -222,6 +222,30 @@ class TestSolver extends FunSuite {
     assert(R contains List(Value.mkInt(1), Value.mkInt(7)))
   }
 
+  test("Cross13") {
+    val s =
+      """rel A(x: Int, y: Int);
+        |rel B(x: Int, y: Int);
+        |rel C(x: Int, y: Int);
+        |
+        |A(1, 2). A(7, 1)
+        |B(2, 3). B(3, 5).
+        |C(3, 4). C(5, 6).
+        |
+        |C(x, z) :- A(x, y), B(y, z).
+        |A(x, z) :- C(x, y), B(y, z).
+        |B(x, z) :- A(x, y), C(y, z).
+        |
+      """.stripMargin
 
+    val model = Flix.fromStrings(s).get
+    val A = model.relations(NameA)
+    val B = model.relations(NameB)
+    val C = model.relations(NameC)
+    assert(C contains List(Value.mkInt(1), Value.mkInt(3)))
+    assert(A contains List(Value.mkInt(1), Value.mkInt(5)))
+    assert(B contains List(Value.mkInt(1), Value.mkInt(6)))
+    assert(C contains List(Value.mkInt(7), Value.mkInt(6)))
+  }
 
 }
