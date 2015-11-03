@@ -3,37 +3,9 @@ package ca.uwaterloo.flix.util
 // TODO: Improve naming
 // TODO Incorporate back into uMonitor.
 // TODO: Write test cases
-sealed trait Validation[+Value, Error] {
+sealed trait Validation[+Value, +Error] {
 
   import Validation._
-
-  /**
-   * The list of errors.
-   */
-  def errors: List[Error]
-
-  /**
-   * Returns `true` iff `this` validation has errors.
-   */
-  // TODO: Need to think harder about how to use hasErrors vs. Success/Failure and when the compiler should bail out.
-  // TODO: DOC
-  def hasErrors = errors.nonEmpty
-
-  // TODO: DOC
-  def isSuccess: Boolean = this match {
-    case v: Success[Value, Error] => true
-    case _ => false
-  }
-
-  // TODO: DOC
-  def isFailure: Boolean = !isSuccess
-
-  // TODO: DOC
-  def get: Value = this match {
-    case Success(value, errors) => value
-    case Failure(errors) => throw new RuntimeException()
-  }
-
 
   /**
    * Returns a [[Success]] containing the result of applying `f` to the value in this validation (if it exists).
@@ -52,7 +24,7 @@ sealed trait Validation[+Value, Error] {
    * Preserves the errors.
    */
   @inline
-  final def flatMap[Output](f: Value => Validation[Output, Error]): Validation[Output, Error] = this match {
+  final def flatMap[Output, A >: Error](f: Value => Validation[Output, A]): Validation[Output, A] = this match {
     case Success(input, errors) => f(input) match {
       case Success(value, otherAlternatives) => Success(value, otherAlternatives ::: errors)
       case Failure(otherAlternatives) => Failure(otherAlternatives ::: errors)
@@ -61,34 +33,33 @@ sealed trait Validation[+Value, Error] {
   }
 
   /**
-   * Returns the result of the function `f` if `this` is a failure. Otherwise returns `this`.
+   * Returns the errors in this [[Success]] or [[Failure]] object.
    */
-  @inline
-  final def onFailure[A >: Value](f: => Validation[A, Error]): Validation[A, Error] = this match {
-    case Success(value, errors) => Success(value, errors)
-    case Failure(errors) => f match {
-      case Success(value, otherAlternatives) => Success(value, otherAlternatives ::: errors)
-      case Failure(otherAlternatives) => Failure(otherAlternatives ::: errors)
-    }
+  def errors: List[Error]
+
+  /**
+   * Returns `true` iff this is a [[Success]] object.
+   */
+  def isSuccess: Boolean = this match {
+    case v: Success[Value, Error] => true
+    case _ => false
   }
 
   /**
-   * Returns `this` if it is successful. Otherwise returns a [[Success]] containing the result of `alt`.
+   * Returns `true` iff this is a [[Failure]] object.
    */
-  @inline
-  def orElse[A >: Value](alt: => A): Validation[A, Error] = this match {
-    case Success(_, _) => this
-    case Failure(errors) => Success(alt, errors)
-  }
+  def isFailure: Boolean = !isSuccess
 
   /**
-   * Returns `this` validation with an error appended.
+   * Returns the value inside `this` [[Success]] object.
+   *
+   * Throws an exception if `this` is a [[Failure]] object.
    */
-  @inline
-  def withAlternative(error: Error): Validation[Value, Error] = this match {
-    case Success(value, errors) => Success(value, errors ::: error :: Nil)
-    case Failure(errors) => Failure(errors ::: error :: Nil)
+  def get: Value = this match {
+    case Success(value, errors) => value
+    case Failure(errors) => throw new RuntimeException("Attempt to retrieve value from Failure.")
   }
+
 
 }
 
@@ -118,7 +89,7 @@ object Validation {
   def fold[K, V, K2, V2, Alternative](m: Map[K, V])(f: (K, V) => Validation[(K2, V2), Alternative]): Validation[Map[K2, V2], Alternative] =
     m.foldLeft(Success(Map.empty[K2, V2], List.empty[Alternative]): Validation[Map[K2, V2], Alternative]) {
       case (macc, (k, v)) => macc flatMap {
-        case ma => f(k ,v) map {
+        case ma => f(k, v) map {
           case ko => ma + ko
         }
       }

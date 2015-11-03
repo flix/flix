@@ -2,14 +2,14 @@ package ca.uwaterloo.flix.language
 
 import java.nio.file.{Files, Path}
 
+import ca.uwaterloo.flix.Flix
 import ca.uwaterloo.flix.language.ast.{SourceInput, TypedAst, ParsedAst}
 import ca.uwaterloo.flix.language.phase.Parser
 import ca.uwaterloo.flix.language.phase._
-import ca.uwaterloo.flix.util.{Validation, AnsiConsole, StopWatch}
+import ca.uwaterloo.flix.util.AnsiConsole
+import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Validation._
 
-import org.parboiled2.ParseError
-
-import scala.io.Source
 import scala.util.{Failure, Success}
 
 /**
@@ -30,11 +30,25 @@ object Compiler {
   /**
    * A common super-type for compilation errors.
    */
-  trait CompilationError {
+  trait CompilationError extends Flix.FlixError {
     /**
      * Returns a human readable string representation of the error.
      */
     def format: String
+  }
+
+  /**
+   * An error raised to indicate a parse error.
+   *
+   * @param msg the error message.
+   * @param src the source input.
+   */
+  case class ParseError(msg: String, src: SourceInput) extends CompilationError {
+    val format =
+      s"""${ConsoleCtx.blue(s"-- PARSE ERROR ------------------------------------------------- ${src.format}")}
+         |
+         |${ConsoleCtx.red(msg)}
+         """.stripMargin
   }
 
   /**
@@ -52,21 +66,38 @@ object Compiler {
   implicit val ConsoleCtx = new AnsiConsole()
 
   /**
-   * Returns the abstract syntax tree of the given `paths`.
+   * Returns the abstract syntax tree of the given string `input`.
    */
-  // TODO: Return validation
-  def parse(paths: Traversable[Path]): ParsedAst.Root = {
-    val asts = paths map parse
-    asts.reduce[ParsedAst.Root] {
-      case (ast1, ast2) => ParsedAst.Root(ast1.declarations ++ ast2.declarations)
+  def parse(source: SourceInput): Validation[ParsedAst.Root, CompilationError] = {
+    val parser = new Parser(source)
+    parser.Root.run() match {
+      case Success(ast) => ast.toSuccess
+      case Failure(e: org.parboiled2.ParseError) => ParseError(parser.formatError(e), source).toFailure
+      case Failure(e) => ParseError(e.getMessage, source).toFailure
+    }
+  }
+
+  /**
+   * Returns the abstract syntax tree of the given `string`.
+   */
+  def parse(string: String): Validation[ParsedAst.Root, CompilationError] =
+    parse(SourceInput.Str(string))
+
+  /**
+   * Returns the abstract syntax tree of the given `strings`.
+   */
+  def parseStrings(strings: Traversable[String]): Validation[ParsedAst.Root, CompilationError] = {
+    @@(strings map parse) map {
+      case asts => asts.reduce[ParsedAst.Root] {
+        case (ast1, ast2) => ParsedAst.Root(ast1.declarations ++ ast2.declarations)
+      }
     }
   }
 
   /**
    * Returns the abstract syntax tree of the given `path`.
    */
-  // TODO: Return validation
-  def parse(path: Path): ParsedAst.Root =
+  def parse(path: Path): Validation[ParsedAst.Root, CompilationError] =
     if (!Files.exists(path))
       throw new RuntimeException(s"Path '$path' does not exist.")
     else if (!Files.isReadable(path))
@@ -77,76 +108,50 @@ object Compiler {
       parse(SourceInput.File(path))
 
   /**
-   * Returns the abstract syntax tree of the given string `input`.
+   * Returns the abstract syntax tree of the given `paths`.
    */
-  // TODO: Return validation
-  def parse(source: SourceInput): ParsedAst.Root = {
-    val parser = new Parser(source)
-    parser.Root.run() match {
-      case Success(ast) => ast
-      case Failure(e: ParseError) => throw new RuntimeException(parser.formatError(e))
-      case Failure(e) => throw new RuntimeException("Unexpected error during parsing run: " + e)
+  def parsePaths(paths: Traversable[Path]): Validation[ParsedAst.Root, CompilationError] = {
+    @@(paths map parse) map {
+      case asts => asts.reduce[ParsedAst.Root] {
+        case (ast1, ast2) => ParsedAst.Root(ast1.declarations ++ ast2.declarations)
+      }
     }
   }
 
   /**
-   * Compiles the source code of the given `path`.
+   * Compiles the given `string`.
    */
-  def compile(path: Path): Option[TypedAst.Root] = compile(List(path))
+  def compile(string: String): Validation[TypedAst.Root, CompilationError] = compileStrings(List(string))
 
   /**
-   * Compiles  the source code of the given `paths`.
+   * Compiles the given `path`.
    */
-  def compile(paths: Traversable[Path]): Option[TypedAst.Root] = {
-    val stopWatch = new StopWatch()
+  def compile(path: Path): Validation[TypedAst.Root, CompilationError] = compilePaths(List(path))
 
-    val past = parse(paths)
-    val parserTime = stopWatch.click() / 1000000
-
-    val wast = Weeder.weed(past)
-    if (wast.hasErrors) {
-      wast.errors.foreach(e => println(e.format))
-      Console.println("Aborting due to previous errors.")
-      return None
+  /**
+   * Compiles the given `strings`.
+   */
+  def compileStrings(strings: Traversable[String]): Validation[TypedAst.Root, CompilationError] = {
+    parseStrings(strings) flatMap {
+      case past => Weeder.weed(past) flatMap {
+        case wast => Resolver.resolve(wast) flatMap {
+          case rast => Typer.typecheck(rast)
+        }
+      }
     }
-    val weederTime = stopWatch.click() / 1000000
-
-    val rast = Resolver.resolve(wast.get)
-    if (rast.hasErrors) {
-      rast.errors.foreach(e => println(e.format))
-      Console.println("Aborting due to previous errors.")
-      return None
-    }
-    val resolverTime = stopWatch.click() / 1000000
-
-    val tast = Typer.typecheck(rast.get)
-    if (tast.hasErrors) {
-      tast.errors.foreach(e => println(e.format))
-      Console.println("Aborting due to previous errors.")
-      return None
-    }
-    val typerTime = stopWatch.click() / 1000000
-
-    val totalTime = parserTime + weederTime + resolverTime + typerTime
-
-    Console.println(s"Completed in $totalTime ms. (parser: $parserTime ms, weeder: $weederTime ms, resolver: $resolverTime ms, typer: $typerTime ms).")
-    Some(tast.get)
   }
 
-  def compile(input: String): Validation[TypedAst.Root, CompilationError] = {
-    val past = parse(SourceInput.Str(input))
-
-    val wast = Weeder.weed(past)
-    if (wast.hasErrors) {
-      return wast.asInstanceOf[Validation[TypedAst.Root, CompilationError]]
+  /**
+   * Compiles the given `paths`.
+   */
+  def compilePaths(paths: Traversable[Path]): Validation[TypedAst.Root, CompilationError] = {
+    parsePaths(paths) flatMap {
+      case past => Weeder.weed(past) flatMap {
+        case wast => Resolver.resolve(wast) flatMap {
+          case rast => Typer.typecheck(rast)
+        }
+      }
     }
-
-    val rast = Resolver.resolve(wast.get)
-    if (rast.hasErrors) {
-      return rast.asInstanceOf[Validation[TypedAst.Root, CompilationError]]
-    }
-
-    Typer.typecheck(rast.get).asInstanceOf[Validation[TypedAst.Root, CompilationError]]
   }
 
 }

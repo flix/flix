@@ -32,7 +32,7 @@ object Typer {
      */
     case class ExpectedType(expected: TypedAst.Type, actual: TypedAst.Type, loc: SourceLocation) extends TypeError {
       val format =
-        s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.formatSource}")}
+        s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Expected type '${prettyPrint(expected)}' but actual type is '${prettyPrint(actual)}'.")}
            |
@@ -50,7 +50,7 @@ object Typer {
      */
     case class ExpectedEqualTypes(tpe1: TypedAst.Type, tpe2: TypedAst.Type, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
       val format =
-        s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc1.formatSource}")}
+        s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Expected equal types '${prettyPrint(tpe1)}' and '${prettyPrint(tpe2)}'.")}
            |
@@ -92,7 +92,7 @@ object Typer {
      */
     case class NoSuchLattice(tpe: TypedAst.Type, loc: SourceLocation) extends TypeError {
       val format =
-        s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.formatSource}")}
+        s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> No lattice declared for '${prettyPrint(tpe)}'.")}
            |

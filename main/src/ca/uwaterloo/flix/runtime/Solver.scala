@@ -48,7 +48,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
      */
     case class AssertedFactViolated(loc: SourceLocation) extends SolverError {
       val format =
-        s"""${consoleCtx.blue(s"-- SOLVER ERROR -------------------------------------------------- ${loc.formatSource}")}
+        s"""${consoleCtx.blue(s"-- SOLVER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Assertion violated: The asserted fact does not hold in the minimal model!")}
            |
@@ -116,7 +116,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
         macc + (name -> inner.toMap)
     }
 
-    Model(relations, lattices)
+    Model(sCtx.root, relations, lattices)
   }
 
   /**
@@ -248,7 +248,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
    * Returns all dependencies of the given `name` along with an environment.
    */
   def dependencies(name: Name.Resolved, fact: Array[Value]): Traversable[(Constraint.Rule, mutable.Map[String, Value])] = {
-    @inline
+
     def unify(terms: List[Term.Body], fact: Array[Value]): mutable.Map[String, Value] = {
       val env = mutable.Map.empty[String, Value]
       for ((term, value) <- terms zip fact) {
@@ -258,7 +258,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
             env += (t.ident.name -> value)
           case t: Term.Body.Lit =>
             val literal = Interpreter.evalLit(t.lit)
-            // TODO: Careful about lattice interpretation....
+            // NB: This assumes that the values are not lattice elements.
             if (literal != value) {
               return null
             }
@@ -269,11 +269,24 @@ class Solver(implicit sCtx: Solver.SolverContext) {
 
     val result = ListBuffer.empty[(Constraint.Rule, mutable.Map[String, Value])]
 
-    for (rule <- sCtx.root.rules; body <- rule.collections) {
-      if (name == body.name) {
-        val env = unify(body.terms, fact)
-        if (env != null) {
-          result += ((rule, env))
+    for (rule <- sCtx.root.rules) {
+      for (body <- rule.collections) {
+        if (name == body.name) {
+          sCtx.root.collections(name) match {
+            case r: TypedAst.Collection.Relation =>
+              // unify all terms with their values.
+              val env = unify(body.terms, fact)
+              if (env != null) {
+                result += ((rule, env))
+              }
+            case l: TypedAst.Collection.Lattice =>
+              // unify only key terms with their values.
+              val numberOfKeys = l.keys.length
+              val env = unify(body.terms.take(numberOfKeys), fact.take(numberOfKeys))
+              if (env != null) {
+                result += ((rule, mutable.Map.empty))
+              }
+          }
         }
       }
     }
@@ -288,15 +301,11 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   def checkAssertions(): Unit = {
     // asserted rules
     val assertedFacts = @@(sCtx.root.directives.assertedFacts map checkAssertedFact)
-    if (assertedFacts.hasErrors) {
-      assertedFacts.errors.foreach(e => println(e.format))
-    }
+    assertedFacts.errors.foreach(e => println(e.format))
 
     // asserted facts
     val assertedRules = @@(sCtx.root.directives.assertedRules map checkAssertedRule)
-    if (assertedRules.hasErrors) {
-      assertedRules.errors.foreach(e => println(e.format))
-    }
+    assertedRules.errors.foreach(e => println(e.format))
   }
 
   /**

@@ -17,12 +17,12 @@ namespace Sign {
      *  according to the partial order of Sign.
      */
     def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) with {
-        case (Bot, x)   => true;
-        case (Neg, Neg) => true;
-        case (Zer, Zer) => true;
-        case (Pos, Pos) => true;
-        case (_, Top)   => true;
-        case _          => false;
+        case (Sign.Bot, x     )   => true;
+        case (Sign.Neg, Sign.Neg) => true;
+        case (Sign.Zer, Sign.Zer) => true;
+        case (Sign.Pos, Sign.Pos) => true;
+        case (_, Sign.Top)        => true;
+        case _                    => false;
     };
 
     /**
@@ -30,12 +30,12 @@ namespace Sign {
      * according to the partial order of Sign.
      */
     def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Bot, _)   => e2;
-        case (_, Bot)   => e1;
-        case (Neg, Neg) => Neg;
-        case (Zer, Zer) => Zer;
-        case (Pos, Pos) => Pos;
-        case _          => Top;
+        case (Sign.Bot, _)        => e2;
+        case (_, Sign.Bot)        => e1;
+        case (Sign.Neg, Sign.Neg) => Sign.Neg;
+        case (Sign.Zer, Sign.Zer) => Sign.Zer;
+        case (Sign.Pos, Sign.Pos) => Sign.Pos;
+        case _                    => Sign.Top;
     };
 
     /**
@@ -43,84 +43,81 @@ namespace Sign {
      *  according to the partial order of Sign.
      */
     def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Top, _)   => e2;
-        case (_, Top)   => e1;
-        case (Neg, Neg) => Neg;
-        case (Zer, Zer) => Zer;
-        case (Pos, Pos) => Pos;
-        case _          => Bot;
+        case (Sign.Top, _)        => e2;
+        case (_, Sign.Top)        => e1;
+        case (Sign.Neg, Sign.Neg) => Sign.Neg;
+        case (Sign.Zer, Sign.Zer) => Sign.Zer;
+        case (Sign.Pos, Sign.Pos) => Sign.Pos;
+        case _                    => Sign.Bot;
     };
 
-    // TODO: Define lattice
+    let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb);
 
     /**
      * Returns the sum of `e1` and `e2`.
      */
     def plus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Bot, _)   => Bot;
-        case (_, Bot)   => Bot;
-        case (Neg, Neg) => Neg;
-        case (Neg, Zer) => Neg;
-        case (Neg, Pos) => Top;
-        case (Zer, Neg) => Neg;
-        case (Zer, Zer) => Zer;
-        case (Zer, Pos) => Pos;
-        case (Pos, Neg) => Top;
-        case (Pos, Zer) => Pos;
-        case (Pos, Pos) => Pos;
-        case _          => Top;
+        case (Sign.Bot, _)        => Sign.Bot;
+        case (_, Sign.Bot)        => Sign.Bot;
+        case (Sign.Neg, Sign.Neg) => Sign.Neg;
+        case (Sign.Neg, Sign.Zer) => Sign.Neg;
+        case (Sign.Neg, Sign.Pos) => Sign.Top;
+        case (Sign.Zer, Sign.Neg) => Sign.Neg;
+        case (Sign.Zer, Sign.Zer) => Sign.Zer;
+        case (Sign.Zer, Sign.Pos) => Sign.Pos;
+        case (Sign.Pos, Sign.Neg) => Sign.Top;
+        case (Sign.Pos, Sign.Zer) => Sign.Pos;
+        case (Sign.Pos, Sign.Pos) => Sign.Pos;
+        case _                    => Sign.Top;
     };
 
     /**
      * Returns the product of `e1` and `e2`.
      */
     def times(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Bot, _)   => Bot;
-        case (_, Bot)   => Bot;
-        case (Neg, Neg) => Pos;
-        case (Neg, Zer) => Zer;
-        case (Neg, Pos) => Neg;
-        case (Zer, Neg) => Zer;
-        case (Zer, Zer) => Zer;
-        case (Zer, Pos) => Zer;
-        case (Pos, Neg) => Neg;
-        case (Pos, Zer) => Zer;
-        case (Pos, Pos) => Pos;
-        case _          => Top;
+        case (Sign.Bot, _)        => Sign.Bot;
+        case (_, Sign.Bot)        => Sign.Bot;
+        case (Sign.Neg, Sign.Neg) => Sign.Pos;
+        case (Sign.Neg, Sign.Zer) => Sign.Zer;
+        case (Sign.Neg, Sign.Pos) => Sign.Neg;
+        case (Sign.Zer, Sign.Neg) => Sign.Zer;
+        case (Sign.Zer, Sign.Zer) => Sign.Zer;
+        case (Sign.Zer, Sign.Pos) => Sign.Zer;
+        case (Sign.Pos, Sign.Neg) => Sign.Neg;
+        case (Sign.Pos, Sign.Zer) => Sign.Zer;
+        case (Sign.Pos, Sign.Pos) => Sign.Pos;
+        case _                    => Sign.Top;
     };
 
     /**
-     * Returns a Fuzzy boolean representing whether `e1` may equal `e2`.
+     * Returns a boolean representing whether `e1` may equal `e2`.
      */
-     def eq(e1: Sign, e2: Sign): Fuzzy = match (e1, e2) with {
-        case (Bot, _)   => Fuzzy.Bot;
-        case (_, Bot)   => Fuzzy.Bot;
-        case (Zer, Zer) => Fuzzy.True;
-        case (Pos, Zer) => Fuzzy.False;
-        case (Neg, Zer) => Fuzzy.False;
-        case (Zer, Pos) => Fuzzy.False;
-        case (Zer, Neg) => Fuzzy.False;
-        case _          => Fuzzy.Top;
+     def isMaybeEq(e1: Sign, e2: Sign): Bool = match (e1, e2) with {
+        case (Sign.Top, _)        => e2 != Sign.Bot;
+        case (_, Sign.Top)        => e1 != Sign.Bot;
+        case (Sign.Neg, Sign.Neg) => true;
+        case (Sign.Zer, Sign.Zer) => true;
+        case (Sign.Pos, Sign.Pos) => true;
+        case _                    => false;
      };
 
-    /**
-     * Returns `true` if `e` may be zero.
-     */
-    def isZero(e: Sign): Bool = match e with {
-        case Zer => true;
-        case Top => true;
-        case _   => false;
-    };
+    lat Result(x: Int, v: Sign<>);
 
-    /**
-     * Returns `true` if `e` maybe non-zero.
-     */
-    def isNonZero(e: Sign): Bool = match e with {
-        case Neg => true;
-        case Pos => true;
-        case Top => true;
-        case _   => false;
-    };
+    Result(0, Sign.Bot).
+
+    Result(1, Sign.Neg).
+    Result(2, Sign.Zer).
+    Result(3, Sign.Pos).
+
+    Result(4, Sign.Neg).
+    Result(4, Sign.Zer).
+    Result(4, Sign.Pos).
+
+    Result(5, plus(v1, v2)) :- isMaybeEq(v1, v2), Result(1, v1), Result(4, v2).
+
+    Error#(v) :- Result(1, v), Result(2, v), Result(3, v), Result(4, v).
+
+    print Result;
 
 };
 

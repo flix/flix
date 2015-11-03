@@ -15,7 +15,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
@@ -30,7 +29,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
@@ -43,7 +41,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
@@ -56,7 +53,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
@@ -71,7 +67,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
@@ -90,7 +85,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
@@ -101,7 +95,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
   }
 
@@ -112,7 +105,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
   }
 
@@ -123,7 +115,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
   }
 
@@ -134,7 +125,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
   }
 
@@ -145,7 +135,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
   }
 
@@ -156,7 +145,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
   }
 
@@ -167,7 +155,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
   }
 
@@ -178,7 +165,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
   }
 
@@ -189,7 +175,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
   }
 
@@ -200,7 +185,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
   }
 
@@ -211,7 +195,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
   }
 
@@ -222,7 +205,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference])
   }
 
@@ -233,7 +215,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference])
   }
 
@@ -249,7 +230,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.isFailure)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
   }
 
@@ -265,7 +245,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.isFailure)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
   }
 
@@ -283,7 +262,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.isFailure)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
   }
 
@@ -294,7 +272,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedRelationReference])
   }
 
@@ -305,7 +282,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedRelationReference])
   }
 
@@ -316,7 +292,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
   }
 
@@ -327,7 +302,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
   }
 
@@ -338,7 +312,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedNativeClass])
   }
 
@@ -349,7 +322,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedNativeClass])
   }
 
@@ -360,7 +332,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedFieldOrMethod])
   }
 
@@ -371,7 +342,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.AmbiguousFieldOrMethod])
   }
 
@@ -382,7 +352,6 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.AmbiguousFieldOrMethod])
   }
 
