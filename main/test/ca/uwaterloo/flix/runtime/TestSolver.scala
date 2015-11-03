@@ -7,6 +7,9 @@ import org.scalatest.FunSuite
 class TestSolver extends FunSuite {
 
   val NameA = Name.Resolved(List("A"))
+  val NameB = Name.Resolved(List("B"))
+  val NameC = Name.Resolved(List("C"))
+  val NameR = Name.Resolved(List("R"))
 
   test("Cross01") {
     val s =
@@ -105,5 +108,79 @@ class TestSolver extends FunSuite {
     val A = model.relations(NameA)
     assert(A contains List(Value.mkInt(1), Value.mkStr("b"), Value.mkInt(3)))
   }
+
+  test("Cross07") {
+    val s =
+      """rel A(x: Int, y: Str, z: Int);
+        |
+        |A(1, "a", 2).
+        |A(2, "a", 3).
+        |A(3, "b", 1).
+        |
+        |A(x, c, y) :- A(y, c, x).
+      """.stripMargin
+
+    val model = Flix.fromStrings(s).get
+    val A = model.relations(NameA)
+    assert(A contains List(Value.mkInt(1), Value.mkStr("b"), Value.mkInt(3)))
+  }
+
+  test("Cross08") {
+    val s =
+      """rel A(x: Int);
+        |rel B(x: Int);
+        |rel R(x: Int);
+        |
+        |A(1). A(2).
+        |B(2). B(3).
+        |
+        |R(x) :- A(x), B(x).
+      """.stripMargin
+
+    val model = Flix.fromStrings(s).get
+    val R = model.relations(NameR)
+    assert(R contains List(Value.mkInt(2)))
+  }
+
+  test("Cross09") {
+    val s =
+      """rel A(x: Int);
+        |rel B(x: Int);
+        |rel C(x: Int);
+        |
+        |rel R(x: Int);
+        |
+        |A(1). A(2). A(3).
+        |B(2). B(3).
+        |C(3).
+        |
+        |R(x) :- A(x), B(x), C(x).
+      """.stripMargin
+
+    val model = Flix.fromStrings(s).get
+    val R = model.relations(NameR)
+    assert(R contains List(Value.mkInt(3)))
+  }
+
+  test("Cross10") {
+    val s =
+      """rel A(x: Int);
+        |rel B(x: Int);
+        |rel C(x: Int);
+        |
+        |rel R(x: Int);
+        |
+        |A(1). A(2). A(3).
+        |B(2). B(3).
+        |C(3).
+        |
+        |R(x) :- C(x), A(x), B(x), B(x), C(x), A(x).
+      """.stripMargin
+
+    val model = Flix.fromStrings(s).get
+    val R = model.relations(NameR)
+    assert(R contains List(Value.mkInt(3)))
+  }
+
 
 }
