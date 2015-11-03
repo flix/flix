@@ -8,11 +8,6 @@ sealed trait Validation[+Value, +Error] {
   import Validation._
 
   /**
-   * The list of errors.
-   */
-  def errors: List[Error]
-
-  /**
    * Returns a [[Success]] containing the result of applying `f` to the value in this validation (if it exists).
    *
    * Preserves the errors.
@@ -40,23 +35,35 @@ sealed trait Validation[+Value, +Error] {
   /**
    * Returns `true` iff `this` validation has errors.
    */
-  // TODO: Need to think harder about how to use hasErrors vs. Success/Failure and when the compiler should bail out.
-  // TODO: DOC
+  // TODO: Avoid using this?
   def hasErrors = errors.nonEmpty
 
-  // TODO: DOC
+  /**
+   * Returns the errors in this [[Success]] or [[Failure]] object.
+   */
+  def errors: List[Error]
+
+  /**
+   * Returns `true` iff this is a [[Success]] object.
+   */
   def isSuccess: Boolean = this match {
     case v: Success[Value, Error] => true
     case _ => false
   }
 
-  // TODO: DOC
+  /**
+   * Returns `true` iff this is a [[Failure]] object.
+   */
   def isFailure: Boolean = !isSuccess
 
-  // TODO: DOC
+  /**
+   * Returns the value inside `this` [[Success]] object.
+   *
+   * Throws an exception if `this` is a [[Failure]] object.
+   */
   def get: Value = this match {
     case Success(value, errors) => value
-    case Failure(errors) => throw new RuntimeException()
+    case Failure(errors) => throw new RuntimeException("Attempt to retrieve value from Failure.")
   }
 
 
@@ -88,7 +95,7 @@ object Validation {
   def fold[K, V, K2, V2, Alternative](m: Map[K, V])(f: (K, V) => Validation[(K2, V2), Alternative]): Validation[Map[K2, V2], Alternative] =
     m.foldLeft(Success(Map.empty[K2, V2], List.empty[Alternative]): Validation[Map[K2, V2], Alternative]) {
       case (macc, (k, v)) => macc flatMap {
-        case ma => f(k ,v) map {
+        case ma => f(k, v) map {
           case ko => ma + ko
         }
       }
