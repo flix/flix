@@ -11,6 +11,67 @@ class TestSolver extends FunSuite {
   val NameC = Name.Resolved(List("C"))
   val NameR = Name.Resolved(List("R"))
 
+  object Parity {
+    val Top = Value.mkTag(Name.Resolved(List("Parity")), "Top", Value.Unit)
+    val Odd = Value.mkTag(Name.Resolved(List("Parity")), "Odd", Value.Unit)
+    val Even = Value.mkTag(Name.Resolved(List("Parity")), "Even", Value.Unit)
+    val Bot = Value.mkTag(Name.Resolved(List("Parity")), "Bot", Value.Unit)
+
+    val Definition =
+      """
+        |    enum Parity {
+        |                  case Top,
+        |        case Odd,          case Even,
+        |                  case Bot
+        |    };
+        |
+        |    def leq(e1: Parity, e2: Parity): Bool = match (e1, e2) with {
+        |        case (Parity.Bot, _)              => true;
+        |        case (Parity.Odd, Parity.Odd)     => true;
+        |        case (Parity.Even, Parity.Even)   => true;
+        |        case (_, Parity.Top)              => true;
+        |        case _                            => false;
+        |    };
+        |
+        |    def lub(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+        |        case (Parity.Bot, _)              => e2;
+        |        case (_, Parity.Bot)              => e1;
+        |        case (Parity.Odd, Parity.Odd)     => Parity.Odd;
+        |        case (Parity.Even, Parity.Even)   => Parity.Even;
+        |        case _                            => Parity.Top;
+        |    };
+        |
+        |    def glb(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+        |        case (Parity.Top, _) => e2;
+        |        case (_, Parity.Top) => e1;
+        |        case (Parity.Odd, Parity.Odd) => Parity.Odd;
+        |        case (Parity.Even, Parity.Even) => Parity.Even;
+        |        case _ => Parity.Bot;
+        |    }
+        |
+        |    def plus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+        |        case (_, Parity.Bot)              => Parity.Bot;
+        |        case (Parity.Bot, _)              => Parity.Bot;
+        |        case (Parity.Odd, Parity.Odd)     => Parity.Even;
+        |        case (Parity.Odd, Parity.Even)    => Parity.Odd;
+        |        case (Parity.Even, Parity.Odd)    => Parity.Odd;
+        |        case (Parity.Even, Parity.Even)   => Parity.Even;
+        |        case _                            => Parity.Top;
+        |    };
+        |
+        |    def isMaybeZero(e: Parity): Bool = match e with {
+        |        case Parity.Bot    => false;
+        |        case Parity.Odd    => false;
+        |        case Parity.Even   => true;
+        |        case Parity.Top    => true;
+        |    };
+        |
+        |    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb);
+      """.stripMargin
+
+  }
+
+
   test("Cross01") {
     val s =
       """rel A(x: Int, y: Int);
@@ -243,6 +304,53 @@ class TestSolver extends FunSuite {
     assert(A contains List(Value.mkInt(1), Value.mkInt(5)))
     assert(B contains List(Value.mkInt(1), Value.mkInt(6)))
     assert(C contains List(Value.mkInt(7), Value.mkInt(6)))
+  }
+
+  test("Lattice01") {
+    val s =
+      """lat A(x: Int, v: Parity<>);
+        |
+        |A(1, Parity.Odd).
+        |A(2, Parity.Even).
+        |A(3, Parity.Top).
+        |
+      """.stripMargin
+
+    val model = Flix.fromStrings(Parity.Definition, s).get
+    val A = model.lattices(NameA)
+    assert(A(List(Value.mkInt(1))).head == Parity.Odd)
+    assert(A(List(Value.mkInt(2))).head == Parity.Even)
+    assert(A(List(Value.mkInt(3))).head == Parity.Top)
+  }
+
+  test("Lattice02") {
+    val s =
+      """lat A(x: Int, v: Parity<>);
+        |
+        |A(1, Parity.Odd).
+        |A(1, Parity.Even).
+        |
+      """.stripMargin
+
+    val model = Flix.fromStrings(Parity.Definition, s).get
+    val A = model.lattices(NameA)
+    assert(A(List(Value.mkInt(1))).head == Parity.Top)
+  }
+
+  test("Lattice03") {
+    val s =
+      """lat A(x: Int, v: Parity<>);
+        |
+        |A(1, Parity.Odd).
+        |A(2, Parity.Even).
+        |
+        |A(3, x) :- A(1,x).
+        |A(3, x) :- A(2,x).
+      """.stripMargin
+
+    val model = Flix.fromStrings(Parity.Definition, s).get
+    val A = model.lattices(NameA)
+    assert(A(List(Value.mkInt(3))).head == Parity.Top)
   }
 
   test("NotEqual01") {
