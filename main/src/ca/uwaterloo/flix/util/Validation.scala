@@ -33,12 +33,6 @@ sealed trait Validation[+Value, +Error] {
   }
 
   /**
-   * Returns `true` iff `this` validation has errors.
-   */
-  // TODO: Avoid using this?
-  def hasErrors = errors.nonEmpty
-
-  /**
    * Returns the errors in this [[Success]] or [[Failure]] object.
    */
   def errors: List[Error]

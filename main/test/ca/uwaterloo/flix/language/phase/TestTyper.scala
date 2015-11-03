@@ -993,7 +993,6 @@ class TestTyper extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
   }
 
@@ -1008,7 +1007,6 @@ class TestTyper extends FunSuite {
          |};
        """.stripMargin
     val result = Compiler.compile(input)
-    assert(result.hasErrors)
     assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
   }
 

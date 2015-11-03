@@ -22,7 +22,7 @@ class TestWeeder extends FunSuite {
     ), SP)
 
     val result = Weeder.Definition.compile(past)
-    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateTag])
   }
 
   test("DuplicateTag02") {
@@ -70,7 +70,7 @@ class TestWeeder extends FunSuite {
     ), SP)
 
     val result = Weeder.Definition.compile(past)
-    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAttribute])
   }
 
   test("DuplicateAttribute02") {
@@ -158,7 +158,7 @@ class TestWeeder extends FunSuite {
     ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SP, ParsedAst.Literal.Unit(SP, SP), SP), SP)
 
     val result = Weeder.Definition.compile(past)
-    assert(result.hasErrors)
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
   }
 
   test("DuplicateFormal02") {

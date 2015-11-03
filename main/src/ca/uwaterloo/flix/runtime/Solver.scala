@@ -301,15 +301,11 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   def checkAssertions(): Unit = {
     // asserted rules
     val assertedFacts = @@(sCtx.root.directives.assertedFacts map checkAssertedFact)
-    if (assertedFacts.hasErrors) {
-      assertedFacts.errors.foreach(e => println(e.format))
-    }
+    assertedFacts.errors.foreach(e => println(e.format))
 
     // asserted facts
     val assertedRules = @@(sCtx.root.directives.assertedRules map checkAssertedRule)
-    if (assertedRules.hasErrors) {
-      assertedRules.errors.foreach(e => println(e.format))
-    }
+    assertedRules.errors.foreach(e => println(e.format))
   }
 
   /**
