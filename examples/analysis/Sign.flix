@@ -90,7 +90,7 @@ namespace Sign {
     };
 
     /**
-     * Returns a Fuzzy boolean representing whether `e1` may equal `e2`.
+     * Returns a boolean representing whether `e1` may equal `e2`.
      */
      def isMaybeEq(e1: Sign, e2: Sign): Bool = match (e1, e2) with {
         case (Sign.Top, _)        => e2 != Sign.Bot;
@@ -113,7 +113,9 @@ namespace Sign {
     Result(4, Sign.Zer).
     Result(4, Sign.Pos).
 
+    Result(5, plus(v1, v2)) :- isMaybeEq(v1, v2), Result(1, v1), Result(4, v2).
 
+    Error#(v) :- Result(1, v), Result(2, v), Result(3, v), Result(4, v).
 
     print Result;
 
