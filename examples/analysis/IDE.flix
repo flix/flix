@@ -55,8 +55,20 @@ namespace IDE {
   def translub(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) with {
     case (Transformer.BotTrans, _) => t2
     case (_, Transformer.BotTrans) => t1
-    case (Transformer.NonBotTrans(a1, b1, c1), Transformer.NonBotTrans(a2, b2, c2)) => ???: Transformer
-//      if(a1 == a2 && b1 == b2) Transformer.NonBotTrans(a1, b1, lub(c1, c2))
+    case (Transformer.NonBotTrans(a1, b1, c1), Transformer.NonBotTrans(a2, b2, c2)) =>
+      if (a1 == a2 && b1 == b2)
+        Transformer.NonBotTrans(a1, b1, lub(c1, c2))
+      else (if (c1 == c2)
+                (if (0 == 0)
+                    Transformer.NonBotTrans(a1, b2, 42)
+                 else
+                    Transformer.NonBotTrans(1, 0, Value.Top)
+                )
+            else
+                (???: Transformer)
+      )
+
+
 //      else if(c1 == c2)
 //          if(0==(b1-b2)%(a2-a1))
 //    //                // is divisible
