@@ -126,6 +126,7 @@ namespace NativeTest {
 
     // Fields in a Scala object are compiled as static methods
     def strTuple2(i: Int): (#java.lang.Object, #java.lang.Object) = #ca.uwaterloo.flix.util.misc.ScalaNative.strTuple2()
+    def tuple6(i: Int): #scala.Tuple6 = #ca.uwaterloo.flix.util.misc.ScalaNative.tuple6()
 
     def mkTuple2(t1: Int, t2: Int): (#java.lang.Object, #java.lang.Object) =
         #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple2(t1, t2)
@@ -143,6 +144,9 @@ namespace NativeTest {
         #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple5(t1, t2, t3, t4, t5)
     def incrTuple5(tpl: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object)): (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
         #ca.uwaterloo.flix.util.misc.ScalaNative.incrTuple5(tpl)
+
+    def reverseTuple6(t: #scala.Tuple6): #scala.Tuple6 =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.reverseTuple6(t)
 
     /* Expected result
        +---+-------+-------+-------+-------+-------+
@@ -307,4 +311,17 @@ namespace NativeTest {
     Tuple5(mkTuple5(0, 0, 0, 0, 0)).
     Tuple5(incrTuple5(mkTuple5(0, 0, 0, 0, 0))).
     print Tuple5.
+
+    /* Expected result
+       +---------------------------------------+
+       | t                                     |
+       +---------------------------------------+
+       | Native((42,(foo,bar),5,1,false,true)) |
+       | Native((true,false,1,5,(foo,bar),42)) |
+       +---------------------------------------+
+    */
+    rel Tuple6(t: #scala.Tuple6);
+    Tuple6(tuple6(0)).
+    Tuple6(reverseTuple6(tuple6(0))).
+    print Tuple6.
 }

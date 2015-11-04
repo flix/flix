@@ -23,7 +23,7 @@ sealed trait Value {
     case Value.Bool(b) => boolean2Boolean(b)
     case Value.Int(i) => int2Integer(i)
     case Value.Str(s) => s
-    case Value.Tuple(elms) =>
+    case Value.Tuple(elms) if (2 to 5).contains(elms.size) =>
       val javaElms = elms.map(_.toJava)
       javaElms.size match {
         case 2 => (javaElms(0), javaElms(1))
@@ -31,9 +31,8 @@ sealed trait Value {
         case 4 => (javaElms(0), javaElms(1), javaElms(2), javaElms(3))
         case 5 => (javaElms(0), javaElms(1), javaElms(2), javaElms(3), javaElms(4))
       }
-    case Value.Tuple(List(t1, t2)) => (t1.toJava, t2.toJava)
     case Value.Native(v) => v
-    case Value.Unit | Value.Tag(_) | Value.Closure(_, _, _) | Value.NativeMethod(_) => this
+    case Value.Unit | Value.Tag(_) | Value.Tuple(_) | Value.Closure(_, _, _) | Value.NativeMethod(_) => this
   }
 
   //  TODO: Figure out a place to put all the formatting functions.
@@ -192,7 +191,7 @@ object Value {
     case Type.Bool => if (obj.asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
     case Type.Int => Value.mkInt(obj.asInstanceOf[java.lang.Integer].intValue)
     case Type.Str => Value.mkStr(obj.asInstanceOf[java.lang.String])
-    case Type.Tuple(elms) if elms.forall(_ == Type.Native("java.lang.Object")) =>
+    case Type.Tuple(elms) if (2 to 5).contains(elms.size) && elms.forall(_ == Type.Native("java.lang.Object")) =>
       def makeTuple(elms: java.lang.Object*): Value.Tuple =
         Value.Tuple(elms.toList.map(t => java2flix(t, Type.Native("java.lang.Object"))))
       elms.size match {
