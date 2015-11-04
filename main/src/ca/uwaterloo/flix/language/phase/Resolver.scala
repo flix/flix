@@ -158,7 +158,7 @@ object Resolver {
             |${consoleCtx.red(s">> Unresolved reference to tag '$tag'.")}
            |
             |${loc.underline}
-           |${consoleCtx.green(s"Did you mean: '${Levenshtein.bestMatch(tag, tags).get}' ?")}
+           |${consoleCtx.green(s"Did you mean: '${Levenshtein.bestMatch(tag, tags).getOrElse("<<no suggestion>>")}' ?")}
            |
             |The enum '${enum.ident}' declares the tags: $formattedTags at '${enum.loc.format}'.
          """.stripMargin
@@ -911,9 +911,13 @@ object Resolver {
           visit(tpe) map (t => ResolvedAst.Type.Tag(Name.Resolved(namespace), tagName, t))
         case WeededAst.Type.Enum(name, wcases) =>
           val casesVal = Validation.fold(wcases) {
-            case (k, v) => resolve(v, name.parts, syms) map (tpe => k -> tpe.asInstanceOf[ResolvedAst.Type.Tag])
+            case (k, WeededAst.Type.Tag(tag, wtpe)) => resolve(wtpe, namespace, syms) map {
+              case tpe => k -> ResolvedAst.Type.Tag(name, tag, tpe)
+            }
           }
-          casesVal map ResolvedAst.Type.Enum
+          casesVal map {
+            case cases => ResolvedAst.Type.Enum(cases)
+          }
         case WeededAst.Type.Tuple(welms) => @@(welms map (e => resolve(e, namespace, syms))) map ResolvedAst.Type.Tuple
         case WeededAst.Type.Function(wargs, wretType) =>
           val argsVal = @@(wargs map visit)
