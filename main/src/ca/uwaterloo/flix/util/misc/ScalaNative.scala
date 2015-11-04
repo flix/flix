@@ -15,4 +15,7 @@ object ScalaNative {
   def incrTuple5(t: (Int, Int, Int, Int, Int)) = (t._1 + 1, t._2 + 1, t._3 + 1, t._4 + 1, t._5 + 1)
 
   def reverseTuple6(t: (Boolean, Boolean, Int, Int, (String, String), Int)) = (t._6, t._5, t._4, t._3, t._2, t._1)
+
+  val set = Set(1, 2, 3)
+  def mapper(s: Set[Int], i: Int) = s.map(_ + i)
 }
