@@ -1,11 +1,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.annotation.Unoptimized
 
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
+import scala.collection.mutable
 import scala.io.Source
 
 // TODO: Parse whitespace more "tightly" to improve source positions.
@@ -228,7 +228,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def NativeExpression: Rule1[ParsedAst.Expression.Native] = rule {
-      SP ~ atomic("#") ~ JavaName ~ SP ~> ParsedAst.Expression.Native
+    SP ~ atomic("#") ~ JavaName ~ SP ~> ParsedAst.Expression.Native
   }
 
   def ErrorExpression: Rule1[ParsedAst.Expression] = rule {
@@ -574,12 +574,33 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Source Positions                                                        //
   /////////////////////////////////////////////////////////////////////////////
-  @Unoptimized
+  /**
+   * Returns a map from offsets to (line, column) number pairs.
+   */
+  def getOffset2PositionMap(): Map[Int, (Int, Int)] = {
+    val result = mutable.Map.empty[Int, (Int, Int)]
+    var line = 1
+    var column = 1
+    for (i <- 0 until input.length) {
+      result(i) = (line, column)
+      if (input.charAt(i) == '\n') {
+        line = line + 1
+        column = 1
+      } else {
+        column = column + 1
+      }
+    }
+    result(input.length) = (line, column)
+    result.toMap
+  }
+
+  val offset2position = getOffset2PositionMap()
+
   def SP: Rule1[SourcePosition] = {
-    val position = Position(cursor, input)
-    val line: String = input.getLine(position.line)
+    val (lineNumber, columnNumber) = offset2position(cursor)
+    val line: String = input.getLine(lineNumber)
     rule {
-      push(SourcePosition(source, position.line, position.column, line))
+      push(SourcePosition(source, lineNumber, columnNumber, line))
     }
   }
 
