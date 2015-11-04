@@ -596,6 +596,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   val offset2position = getOffset2PositionMap()
 
+  // TODO: This is slow. Improve.
   def SP: Rule1[SourcePosition] = {
     val (lineNumber, columnNumber) = offset2position(cursor)
     val line: String = input.getLine(lineNumber)
