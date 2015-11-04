@@ -124,6 +124,26 @@ namespace NativeTest {
         case 15 => #ca.uwaterloo.flix.util.misc.JavaNative.strcat(#ca.uwaterloo.flix.util.misc.JavaNative.world, #ca.uwaterloo.flix.util.misc.JavaNative.world);
     }
 
+    // Fields in a Scala object are compiled as static methods
+    def strTuple2(i: Int): (#java.lang.Object, #java.lang.Object) = #ca.uwaterloo.flix.util.misc.ScalaNative.strTuple2()
+
+    def mkTuple2(t1: Int, t2: Int): (#java.lang.Object, #java.lang.Object) =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple2(t1, t2)
+    def incrTuple2(tpl: (#java.lang.Object, #java.lang.Object)): (#java.lang.Object, #java.lang.Object) =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.incrTuple2(tpl)
+    def mkTuple3(t1: Int, t2: Int, t3: Int): (#java.lang.Object, #java.lang.Object, #java.lang.Object) =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple3(t1, t2, t3)
+    def incrTuple3(tpl: (#java.lang.Object, #java.lang.Object, #java.lang.Object)): (#java.lang.Object, #java.lang.Object, #java.lang.Object) =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.incrTuple3(tpl)
+    def mkTuple4(t1: Int, t2: Int, t3: Int, t4: Int): (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple4(t1, t2, t3, t4)
+    def incrTuple4(tpl: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object)): (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.incrTuple4(tpl)
+    def mkTuple5(t1: Int, t2: Int, t3: Int, t4: Int, t5: Int): (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple5(t1, t2, t3, t4, t5)
+    def incrTuple5(tpl: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object)): (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.incrTuple5(tpl)
+
     /* Expected result
        +---+-------+-------+-------+-------+-------+
        | i | b1    | b2    | b3    | b4    | b5    |
@@ -234,11 +254,6 @@ namespace NativeTest {
     StrVals(#ca.uwaterloo.flix.util.misc.JavaNative.hello, "world").
     print StrVals.
 
-    // Fields in a Scala object are compiled as static methods
-    def strTuple2(i: Int): (#java.lang.Object, #java.lang.Object) = #ca.uwaterloo.flix.util.misc.ScalaNative.strTuple2()
-    def mkTuple(t1: Int, t2: Int): (#java.lang.Object, #java.lang.Object) = #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple(t1, t2)
-    def incrementTuple(tpl: (#java.lang.Object, #java.lang.Object)): (#java.lang.Object, #java.lang.Object) = #ca.uwaterloo.flix.util.misc.ScalaNative.incrementTuple(tpl)
-
     /* Expected result
        +---------------------------+
        | t                         |
@@ -248,9 +263,48 @@ namespace NativeTest {
        | (Native(foo),Native(bar)) |
        +---------------------------+
     */
-    rel Tuple(t: (#java.lang.Object, #java.lang.Object));
-    Tuple(strTuple2(1)).
-    Tuple(mkTuple(5, 6)).
-    Tuple(incrementTuple(mkTuple(100, 200))).
-    print Tuple.
+    rel Tuple2(t: (#java.lang.Object, #java.lang.Object));
+    Tuple2(strTuple2(1)).
+    Tuple2(mkTuple2(5, 6)).
+    Tuple2(incrTuple2(mkTuple2(100, 200))).
+    print Tuple2.
+
+    /* Expected result
+       +---------------------------------+
+       | t                               |
+       +---------------------------------+
+       | (Native(1),Native(2),Native(3)) |
+       | (Native(5),Native(6),Native(7)) |
+       +---------------------------------+
+    */
+    rel Tuple3(t: (#java.lang.Object, #java.lang.Object, #java.lang.Object));
+    Tuple3(mkTuple3(1, 2, 3)).
+    Tuple3(incrTuple3(mkTuple3(4, 5, 6))).
+    print Tuple3.
+
+    /* Expected result
+       +------------------------------------------------+
+       | t                                              |
+       +------------------------------------------------+
+       | (Native(100),Native(99),Native(98),Native(97)) |
+       | (Native(99),Native(98),Native(97),Native(96))  |
+       +------------------------------------------------+
+    */
+    rel Tuple4(t: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object));
+    Tuple4(mkTuple4(99, 98, 97, 96)).
+    Tuple4(incrTuple4(mkTuple4(99, 98, 97, 96))).
+    print Tuple4.
+
+    /* Expected result
+       +-----------------------------------------------------+
+       | t                                                   |
+       +-----------------------------------------------------+
+       | (Native(0),Native(0),Native(0),Native(0),Native(0)) |
+       | (Native(1),Native(1),Native(1),Native(1),Native(1)) |
+       +-----------------------------------------------------+
+    */
+    rel Tuple5(t: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object));
+    Tuple5(mkTuple5(0, 0, 0, 0, 0)).
+    Tuple5(incrTuple5(mkTuple5(0, 0, 0, 0, 0))).
+    print Tuple5.
 }

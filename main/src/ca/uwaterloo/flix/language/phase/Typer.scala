@@ -760,7 +760,11 @@ object Typer {
     case "boolean" | "java.lang.Boolean" => TypedAst.Type.Bool
     case "int" | "java.lang.Integer" => TypedAst.Type.Int
     case "java.lang.String" => TypedAst.Type.Str
-    case "scala.Tuple2" => TypedAst.Type.Tuple(List(TypedAst.Type.Native("java.lang.Object"), TypedAst.Type.Native("java.lang.Object")))
+    case t if t.startsWith("scala.Tuple") =>
+      val matcher = new scala.util.matching.Regex("scala.Tuple([2-5])")
+      val matcher(n) = t
+      val types = List().padTo(n.toInt, TypedAst.Type.Native("java.lang.Object"))
+      TypedAst.Type.Tuple(types)
     case _ => TypedAst.Type.Native(canonicalName)
   }
 

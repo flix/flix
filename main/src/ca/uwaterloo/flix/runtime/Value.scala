@@ -1,9 +1,9 @@
 package ca.uwaterloo.flix.runtime
 
-import java.lang.reflect.Method
-
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
+import ca.uwaterloo.flix.language.ast.TypedAst.Type
 
+import java.lang.reflect.Method
 import scala.collection.mutable
 
 sealed trait Value {
@@ -23,9 +23,17 @@ sealed trait Value {
     case Value.Bool(b) => boolean2Boolean(b)
     case Value.Int(i) => int2Integer(i)
     case Value.Str(s) => s
+    case Value.Tuple(elms) =>
+      val javaElms = elms.map(_.toJava)
+      javaElms.size match {
+        case 2 => (javaElms(0), javaElms(1))
+        case 3 => (javaElms(0), javaElms(1), javaElms(2))
+        case 4 => (javaElms(0), javaElms(1), javaElms(2), javaElms(3))
+        case 5 => (javaElms(0), javaElms(1), javaElms(2), javaElms(3), javaElms(4))
+      }
     case Value.Tuple(List(t1, t2)) => (t1.toJava, t2.toJava)
     case Value.Native(v) => v
-    case Value.Unit | Value.Tag(_) | Value.Tuple(_) | Value.Closure(_, _, _) | Value.NativeMethod(_) => this
+    case Value.Unit | Value.Tag(_) | Value.Closure(_, _, _) | Value.NativeMethod(_) => this
   }
 
   //  TODO: Figure out a place to put all the formatting functions.
@@ -180,15 +188,29 @@ object Value {
    * Convert from native values to Flix values                               *
    ***************************************************************************/
 
-  def java2flix(obj: AnyRef, tpe: TypedAst.Type): Value = tpe match {
-    case TypedAst.Type.Bool => if (obj.asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
-    case TypedAst.Type.Int => Value.mkInt(obj.asInstanceOf[java.lang.Integer].intValue)
-    case TypedAst.Type.Str => Value.mkStr(obj.asInstanceOf[java.lang.String])
-    case TypedAst.Type.Tuple(List(TypedAst.Type.Native("java.lang.Object"), TypedAst.Type.Native("java.lang.Object"))) =>
-      val tuple = obj.asInstanceOf[(java.lang.Object, java.lang.Object)]
-      Value.Tuple(List(tuple._1, tuple._2).map(t => java2flix(t, TypedAst.Type.Native("java.lang.Object"))))
-    case TypedAst.Type.Var(_) | TypedAst.Type.Unit | TypedAst.Type.Tag(_, _, _) | TypedAst.Type.Enum(_) |
-         TypedAst.Type.Tuple(_) | TypedAst.Type.Lambda(_, _) | TypedAst.Type.Predicate(_) | TypedAst.Type.Native(_) =>
+  def java2flix(obj: AnyRef, tpe: Type): Value = tpe match {
+    case Type.Bool => if (obj.asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
+    case Type.Int => Value.mkInt(obj.asInstanceOf[java.lang.Integer].intValue)
+    case Type.Str => Value.mkStr(obj.asInstanceOf[java.lang.String])
+    case Type.Tuple(elms) if elms.forall(_ == Type.Native("java.lang.Object")) =>
+      def makeTuple(elms: java.lang.Object*): Value.Tuple =
+        Value.Tuple(elms.toList.map(t => java2flix(t, Type.Native("java.lang.Object"))))
+      elms.size match {
+        case 2 =>
+          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object)]
+          makeTuple(t._1, t._2)
+        case 3 =>
+          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object)]
+          makeTuple(t._1, t._2, t._3)
+        case 4 =>
+          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
+          makeTuple(t._1, t._2, t._3, t._4)
+        case 5 =>
+          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
+          makeTuple(t._1, t._2, t._3, t._4, t._5)
+    }
+    case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Lambda(_, _) |
+         Type.Predicate(_) | Type.Native(_) =>
       Value.Native(obj)
   }
 }
