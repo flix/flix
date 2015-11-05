@@ -597,7 +597,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   val (cursor2line, cursor2column) = mkLineAndColumnMaps()
 
-  // TODO: This is slow. Improve.
   def SP: Rule1[SourcePosition] = {
     val lineNumber = cursor2line(cursor)
     val columnNumber = cursor2column(cursor)
