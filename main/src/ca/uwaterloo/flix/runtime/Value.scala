@@ -7,17 +7,13 @@ import java.lang.reflect.Method
 import scala.collection.mutable
 
 sealed trait Value {
-  def toBool: Boolean = {
-    this.asInstanceOf[Value.Bool].b
-  }
+  def toBool: Boolean = this.asInstanceOf[Value.Bool].b
 
-  def toInt: Int = {
-    this.asInstanceOf[Value.Int].i
-  }
+  def toInt: Int = this.asInstanceOf[Value.Int].i
 
-  def toStr: String = {
-    this.asInstanceOf[Value.Str].s
-  }
+  def toStr: String = this.asInstanceOf[Value.Str].s
+
+  def toSet: Set[Value] = this.asInstanceOf[Value.Set].elms
 
   def toJava: java.lang.Object = (this: @unchecked) match {
     case Value.Bool(b) => boolean2Boolean(b)
@@ -31,6 +27,7 @@ sealed trait Value {
         case 4 => (javaElms(0), javaElms(1), javaElms(2), javaElms(3))
         case 5 => (javaElms(0), javaElms(1), javaElms(2), javaElms(3), javaElms(4))
       }
+    case Value.Set(elms) => elms.map(_.toJava)
     case Value.Native(v) => v
     case Value.Unit | Value.Tag(_) | Value.Tuple(_) | Value.Closure(_, _, _) | Value.NativeMethod(_) => this
   }
@@ -43,6 +40,7 @@ sealed trait Value {
     case Value.Str(s) => s.toString
     case Value.Tag(enum, tag, value) => s"$enum.$tag(${value.pretty})"
     case Value.Tuple(elms) => "(" + elms.map(_.pretty).mkString(",") + ")"
+    case Value.Set(elms) => "{" + elms.map(_.pretty).mkString(",") + "}"
     case Value.Closure(_, _, _) => ???
     case Value.Native(v) => s"Native($v)"
     case Value.NativeMethod(m) => ???
@@ -168,10 +166,12 @@ object Value {
   }
 
   /***************************************************************************
-   * Value.Tuple, Value.Closure implementations                              *
+   * Value.Tuple, Value.Set, Value.Closure implementations                   *
    ***************************************************************************/
 
   case class Tuple(elms: List[Value]) extends Value
+
+  case class Set(elms: scala.collection.immutable.Set[Value]) extends Value
 
   case class Closure(formals: List[TypedAst.FormalArg], body: TypedAst.Expression, env: Interpreter.Env) extends Value
 
@@ -208,7 +208,9 @@ object Value {
           val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
           makeTuple(t._1, t._2, t._3, t._4, t._5)
     }
-    case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Lambda(_, _) |
+    case Type.Set(elmType) if elmType == Type.Native("java.lang.Object") =>
+      Value.Set(obj.asInstanceOf[scala.collection.immutable.Set[java.lang.Object]].map(e => java2flix(e, elmType)))
+    case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) |
          Type.Predicate(_) | Type.Native(_) =>
       Value.Native(obj)
   }

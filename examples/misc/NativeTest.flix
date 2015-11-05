@@ -324,13 +324,4 @@ namespace NativeTest {
     Tuple6(tuple6(0)).
     Tuple6(reverseTuple6(tuple6(0))).
     print Tuple6.
-
-    def set(i: Int): #scala.collection.immutable.Set = #ca.uwaterloo.flix.util.misc.ScalaNative.set()
-    def mapper(s: #scala.collection.immutable.Set, i: Int): #scala.collection.immutable.Set = #ca.uwaterloo.flix.util.misc.ScalaNative.mapper(s, i)
-
-    rel Set(i: Int, s: #scala.collection.immutable.Set);
-    Set(0, set(1)).
-    Set(1, mapper(set(1), 1)).
-    Set(2, mapper(set(1), 2)).
-    print Set.
 }

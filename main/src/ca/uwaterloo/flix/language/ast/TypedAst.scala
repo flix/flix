@@ -846,9 +846,9 @@ object TypedAst {
     /**
      * An AST node representing a set type.
      *
-     * @param elms the types of the elements.
+     * @param elmType the type of the elements.
      */
-    case class Set(elms: TypedAst.Type) extends TypedAst.Type
+    case class Set(elmType: TypedAst.Type) extends TypedAst.Type
 
     /**
      * An AST node representing a function type.
