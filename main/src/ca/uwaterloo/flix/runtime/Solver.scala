@@ -168,11 +168,11 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     /**
       * Computes the cross product of all collections in the body.
       */
-    def cross(ps: List[Predicate.Body.Relation], row: mutable.Map[String, Value]): Unit = ps match {
+    def cross(ps: List[Predicate.Body.Collection], row: mutable.Map[String, Value]): Unit = ps match {
       case Nil =>
         // cross product complete, now filter
         filter(rule.filters, row)
-      case (p: Predicate.Body.Relation) :: xs =>
+      case (p: Predicate.Body.Collection) :: xs =>
         // lookup the relation or lattice.
         val collection = sCtx.root.collections(p.name) match {
           case r: Collection.Relation => dataStore.relations(p.name)
@@ -196,7 +196,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
           while (i < matchedRow.length) {
             val varName = p.index2var(i)
             if (varName != null)
-              newRow.put(varName, matchedRow(i))
+              newRow.put(varName, matchedRow(i)) // TODO: Don't use put. It returns an option.
             i = i + 1
           }
 
@@ -289,25 +289,21 @@ class Solver(implicit sCtx: Solver.SolverContext) {
 
     val result = ListBuffer.empty[(Constraint.Rule, mutable.Map[String, Value])]
 
-    for (rule <- sCtx.root.rules) {
-      for (body <- rule.collections) {
-        if (name == body.name) {
-          sCtx.root.collections(name) match {
-            case r: TypedAst.Collection.Relation =>
-              // unify all terms with their values.
-              val env = unify(body.terms, fact)
-              if (env != null) {
-                result += ((rule, env))
-              }
-            case l: TypedAst.Collection.Lattice =>
-              // unify only key terms with their values.
-              val numberOfKeys = l.keys.length
-              val env = unify(body.terms.take(numberOfKeys), fact.take(numberOfKeys))
-              if (env != null) {
-                result += ((rule, mutable.Map.empty))
-              }
+    for ((rule, p) <- sCtx.root.dependenciesOf(name)) {
+      sCtx.root.collections(name) match {
+        case r: TypedAst.Collection.Relation =>
+          // unify all terms with their values.
+          val env = unify(p.terms, fact)
+          if (env != null) {
+            result += ((rule, env))
           }
-        }
+        case l: TypedAst.Collection.Lattice =>
+          // unify only key terms with their values.
+          val numberOfKeys = l.keys.length
+          val env = unify(p.terms.take(numberOfKeys), fact.take(numberOfKeys))
+          if (env != null) {
+            result += ((rule, mutable.Map.empty))
+          }
       }
     }
 

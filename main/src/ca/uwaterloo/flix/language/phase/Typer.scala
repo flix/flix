@@ -585,7 +585,7 @@ object Typer {
               }
 
               @@(termsVal) map {
-                case terms => TypedAst.Predicate.Body.Relation(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
+                case terms => TypedAst.Predicate.Body.Collection(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
               }
             case ResolvedAst.Collection.Lattice(_, keys, values, _) =>
               // type check the terms against the attributes.
@@ -595,7 +595,7 @@ object Typer {
               }
 
               @@(termsVal) map {
-                case terms => TypedAst.Predicate.Body.Relation(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
+                case terms => TypedAst.Predicate.Body.Collection(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
               }
           }
 
