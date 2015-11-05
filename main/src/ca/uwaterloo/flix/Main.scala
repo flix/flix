@@ -14,8 +14,6 @@ object Main {
    */
   def main(args: Array[String]): Unit = {
 
-    Thread.sleep(10000)
-
     val t = System.nanoTime()
     val paths = args flatMap getValidPath
 
