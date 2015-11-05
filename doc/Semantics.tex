@@ -2,6 +2,7 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage[english]{babel}
+\usepackage{color}
 \usepackage[utf8]{inputenc}
 \usepackage{titling}
 
@@ -46,14 +47,22 @@ A ground term is non-wildcard, non-variable term. That is, the Herbrand Universe
 The \emph{Herbrand Base} $\mathcal{B}$ of $P$ is the set of all possible ground atoms whose
 predicate symbols occur in $P$ and where the arguments are drawn from the Herbrand Universe.
 
-We introduce a partial order on ground atoms. 
-Given two ground atoms $A = p_\ell(v_1, \dots, v_n)$ and $B = p_\ell(v'_1, \dots, v'_n)$ with the same 
-(i) predicate symbol, 
-(ii) associated lattice and 
-(iii) number of ground terms, we define their partial order as:
-If $n = 1$ then $A \sqsubseteq B$ when $v_1 \sqsubseteq v_1'$.
-If $n > 1$ then $A \sqsubseteq B$ when $v_1 = v_1', \dots, v_{n - 1} = v'_{n - 1}$ and $v_n \sqsubseteq v'_n$.
-This definition is implicitely stating that the last term of a ground atom is a lattice element.
+\textcolor{blue}{
+We define a partition of the Herbrand Base such that two ground atoms 
+$A = p_\ell(v_1, \dots, v_n)$ and $B = p'_{\ell'}(v'_1, \dots, v'_m)$ are in the same subset
+if they have the same predicate symbol (i.e. $p = p'$) and the same number of terms (i.e. $n = m$).
+Notice that all predicate symbols in a subset have the same associated lattice $\ell$.
+For each subset $S$ we introduce a complete lattice $L_S$ on its ground atoms 
+where $L_S = (S, \bot_S, \top_S, \sqsubseteq_S, \sqcup_S, \sqcap_S)$.
+Given two ground atoms $A = p_\ell(v_1, \dots, v_n)$ and $B = p_\ell(v'_1, \dots, v'_n)$ we define their partial order as:
+If $n = 1$ then $A \sqsubseteq_S B$ when $v_1 \sqsubseteq v_1'$.
+If $n > 1$ then $A \sqsubseteq_S B$ when $v_1 = v_1', \dots, v_{n - 1} = v'_{n - 1}$ and $v_n \sqsubseteq v'_n$.
+The other components are defined in a similar way.
+}
+
+\textcolor{blue}{
+What this means is that for any subset in the partion of the Herbrand Base we have a complete lattice on the ground atoms in that subset.
+}
 
 An interpretation $I$ of a Flix program $P$ is a subset of the Herbrand Base $\mathcal{B}$.
 A ground atom $A$ is true w.r.t. an interpretation if $\exists A' \in I$ such that $A \sqsubseteq A'$. 
@@ -62,12 +71,23 @@ A ground rule is true if either the body conjunction is false, or the head is tr
 
 A model $M$ of $P$ is an interpretation that makes each ground instance of a each rule in $P$ true.
 
-A model is \emph{compact} if it has no two ground atoms $A, A' \in M$ such that $A \sqsubseteq A'$.
-%
-A model is \emph{reduced} if it has no two ground atoms $A, A' \in M$ such that $A \sqsubseteq (A \sqcup A')$.
-%
-Finally, a model $M_1$ is \emph{minimal} if it is compact and reduced, and there is no other model $M_2$ 
-such that there are two ground atoms $A \in M_1$ and $A' \in M_2$ where $A' \sqsubset A$.
+\textcolor{blue}{
+A model $M$ is \emph{compact} iff
+(i) every subset $S$ in the partition of $M$ has one unique element, and 
+(ii) this element is non-bottom according the lattice associated with the subset $S$.
+}
+
+\textcolor{blue}{
+We define a partial order $\sqsubseteq_M$ on compact models. 
+Given two compact models $M_1$ and $M_2$ we say that 
+$M_1$ is less than or equal to $M_2$ if for every ground atom $A_1 \in M_1$, associated with the subset $S$,
+there is a ground atom $A_2 \in M_2$, also associated with $S$, such that $A_1 \sqsubseteq_S A_2$.
+}
+
+\textcolor{blue}{
+A model $M$ is minimal if it is compact and there is no other model 
+less than or equal to $M$ according the partial order $\sqsubseteq_M$.
+}
 
 \paragraph{Example.}
 The Flix program $P$ with constraints:
