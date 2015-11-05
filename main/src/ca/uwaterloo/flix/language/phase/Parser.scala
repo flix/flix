@@ -577,8 +577,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /**
    * Returns a map from offsets to (line, column) number pairs.
    */
-  def mkOffset2PositionMap(): mutable.Map[Int, (Int, Int)] = {
-    val result = mutable.Map.empty[Int, (Int, Int)]
+  def mkOffset2PositionMap(): Array[(Int, Int)] = {
+    val result = new Array[(Int, Int)](input.length + 1)
     var line = 1
     var column = 1
     for (i <- 0 until input.length) {
