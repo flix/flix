@@ -544,7 +544,17 @@ object TypedAst {
        * @param loc the source location.
        */
       // TODO: Need better name....could also be a lattice...
-      case class Relation(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class Relation(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Head {
+        /**
+          * Returns the arity of the predicate.
+          */
+        val arity: Int = terms.length
+        /**
+          * Returns the terms as an array.
+          */
+        // TODO: Move this into a more appropiate IR.
+        val termsArray: Array[TypedAst.Term.Head] = terms.toArray
+      }
 
       /**
        * A typed trace predicate that occurs in the head of a rule.
