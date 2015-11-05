@@ -11,8 +11,8 @@ import scala.io.Source
 // TODO: Parse whitespace more "tightly" to improve source positions.
 
 /**
- * A parser for the Flix language.
- */
+  * A parser for the Flix language.
+  */
 class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   /*
@@ -574,15 +574,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Source Positions                                                        //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-   * Returns a map from offsets to (line, column) number pairs.
-   */
-  def mkOffset2PositionMap(): Array[(Int, Int)] = {
-    val result = new Array[(Int, Int)](input.length + 1)
+  def mkLineAndColumnMaps(): (Array[Int], Array[Int]) = {
+    val lines = new Array[Int](input.length + 1)
+    val columns = new Array[Int](input.length + 1)
+
     var line = 1
     var column = 1
     for (i <- 0 until input.length) {
-      result(i) = (line, column)
+      lines(i) = line
+      columns(i) = column
       if (input.charAt(i) == '\n') {
         line = line + 1
         column = 1
@@ -590,14 +590,16 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
         column = column + 1
       }
     }
-    result(input.length) = (line, column)
-    result
+    lines(input.length) = line
+    columns(input.length) = column
+    (lines, columns)
   }
 
-  val offset2position = mkOffset2PositionMap()
+  val (cursor2line, cursor2column) = mkLineAndColumnMaps()
 
   def SP: Rule1[SourcePosition] = {
-    val (lineNumber, columnNumber) = offset2position(cursor)
+    val lineNumber = cursor2line(cursor)
+    val columnNumber = cursor2column(cursor)
     rule {
       push(SourcePosition(source, lineNumber, columnNumber, () => input.getLine(lineNumber)))
     }
