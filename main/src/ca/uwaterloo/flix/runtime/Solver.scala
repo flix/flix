@@ -169,19 +169,27 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       case Nil =>
         // cross product complete, now filter
         filter(rule.filters, row)
-      case Predicate.Body.Relation(name, terms, _, _) :: xs =>
-        val collection = sCtx.root.collections(name) match {
-          case r: Collection.Relation => dataStore.relations(name)
-          case l: Collection.Lattice => dataStore.lattices(name)
+      case (p: Predicate.Body.Relation) :: xs =>
+        // lookup the relation or lattice.
+        val collection = sCtx.root.collections(p.name) match {
+          case r: Collection.Relation => dataStore.relations(p.name)
+          case l: Collection.Lattice => dataStore.lattices(p.name)
         }
 
-        val values = terms.map(t => eval(t, row.toMap))
-        val offset2var = terms.zipWithIndex.foldLeft(Map.empty[Int, String]) {
+        // evaluate all terms in the predicate.
+        val pat = new Array[Value](p.arity)
+        var i = 0
+        while (i < pat.length) {
+          pat(i) = eval(p.termsArray(i), row)
+          i = i + 1
+        }
+
+        val offset2var = p.terms.zipWithIndex.foldLeft(Map.empty[Int, String]) {
           case (macc, (Term.Body.Var(ident, _, _), i)) => macc + (i -> ident.name)
           case (macc, _) => macc
         }
 
-        for (row2 <- collection.lookup(values.toArray)) {
+        for (row2 <- collection.lookup(pat)) {
           val newRow = row.clone()
           for (i <- row2.indices) {
             offset2var.get(i) match {
@@ -198,8 +206,8 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       case Nil => filter(rule.filters, row)
       case Predicate.Body.Loop(name, term, _, _) :: rest =>
         val result = Interpreter.evalHeadTerm(term, sCtx.root, row.toMap)
-        // TODO: Cast to Set and iterate.
-        // TODO: Call loop from cross.
+      // TODO: Cast to Set and iterate.
+      // TODO: Call loop from cross.
     }
 
     /**
@@ -242,7 +250,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
    *
    * Returns `null` if the term is a free variable.
    */
-  def eval(t: TypedAst.Term.Body, env: Map[String, Value]): Value = t match {
+  def eval(t: TypedAst.Term.Body, env: mutable.Map[String, Value]): Value = t match {
     case t: TypedAst.Term.Body.Wildcard => null
     case t: TypedAst.Term.Body.Var =>
       if (env contains t.ident.name)

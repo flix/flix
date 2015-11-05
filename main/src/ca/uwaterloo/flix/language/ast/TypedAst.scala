@@ -610,7 +610,18 @@ object TypedAst {
        * @param tpe the type of the predicate.
        * @param loc the source location.
        */
-      case class Relation(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Relation(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Body {
+        /**
+         * Returns the arity of this collection predicate.
+         */
+        val arity: Int = terms.length
+
+        /**
+         * Returns the terms as an array.
+         */
+        // TODO: Move this into a more appropiate IR.
+        val termsArray: Array[TypedAst.Term.Body] = terms.toArray
+      }
 
       /**
        * A typed functional predicate that occurs in the body of a rule.
