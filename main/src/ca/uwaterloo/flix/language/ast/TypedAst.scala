@@ -807,6 +807,13 @@ object TypedAst {
     case class Tuple(elms: List[TypedAst.Type]) extends TypedAst.Type
 
     /**
+     * An AST node representing a set type.
+     *
+     * @param elms the types of the elements.
+     */
+    case class Set(elms: TypedAst.Type) extends TypedAst.Type
+
+    /**
      * An AST node representing a function type.
      *
      * @param args the type of the arguments.
