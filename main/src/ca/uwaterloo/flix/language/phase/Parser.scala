@@ -577,7 +577,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /**
    * Returns a map from offsets to (line, column) number pairs.
    */
-  def getOffset2PositionMap(): Map[Int, (Int, Int)] = {
+  def mkOffset2PositionMap(): mutable.Map[Int, (Int, Int)] = {
     val result = mutable.Map.empty[Int, (Int, Int)]
     var line = 1
     var column = 1
@@ -591,16 +591,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
     }
     result(input.length) = (line, column)
-    result.toMap
+    result
   }
 
-  val offset2position = getOffset2PositionMap()
+  val offset2position = mkOffset2PositionMap()
 
   def SP: Rule1[SourcePosition] = {
     val (lineNumber, columnNumber) = offset2position(cursor)
-    val line: String = input.getLine(lineNumber)
     rule {
-      push(SourcePosition(source, lineNumber, columnNumber, line))
+      push(SourcePosition(source, lineNumber, columnNumber, () => input.getLine(lineNumber)))
     }
   }
 
