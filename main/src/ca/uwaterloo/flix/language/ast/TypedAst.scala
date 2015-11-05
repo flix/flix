@@ -621,6 +621,21 @@ object TypedAst {
          */
         // TODO: Move this into a more appropiate IR.
         val termsArray: Array[TypedAst.Term.Body] = terms.toArray
+
+        // TODO: Move this into a more appropiate IR.
+        val index2var: Array[String] = {
+          val r = new Array[String](terms.length)
+          var i = 0
+          while (i < r.length) {
+            terms(i) match {
+              case TypedAst.Term.Body.Var(ident, _, _) =>
+                r(i) = ident.name
+              case _ => // nop
+            }
+            i = i + 1
+          }
+          r
+        }
       }
 
       /**

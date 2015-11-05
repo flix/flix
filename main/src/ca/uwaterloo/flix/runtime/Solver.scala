@@ -184,20 +184,19 @@ class Solver(implicit sCtx: Solver.SolverContext) {
           i = i + 1
         }
 
-        val offset2var = p.terms.zipWithIndex.foldLeft(Map.empty[Int, String]) {
-          case (macc, (Term.Body.Var(ident, _, _), i)) => macc + (i -> ident.name)
-          case (macc, _) => macc
-        }
-
-        for (row2 <- collection.lookup(pat)) {
+        // lookup all matching rows.
+        for (matchedRow <- collection.lookup(pat)) {
+          // copy the environment for every row.
           val newRow = row.clone()
-          for (i <- row2.indices) {
-            offset2var.get(i) match {
-              case None => // nop
-              case Some(x) =>
-                newRow += (x -> row2(i))
-            }
+
+          for (i <- matchedRow.indices) {
+            val varName = p.index2var(i)
+            if (varName != null)
+              newRow.put(varName, matchedRow(i))
           }
+
+          // compute the cross product of the remaining
+          // collections under the new environment.
           cross(xs, newRow)
         }
     }
