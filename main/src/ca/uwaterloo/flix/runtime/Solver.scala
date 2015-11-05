@@ -162,6 +162,8 @@ class Solver(implicit sCtx: Solver.SolverContext) {
    */
   def evalBody(rule: Constraint.Rule, env0: mutable.Map[String, Value]): Unit = {
 
+    // TODO: Need a static layout of variables and then implement `row` as an array.
+
     /**
      * Computes the cross product of all collections in the body.
      */
@@ -189,10 +191,12 @@ class Solver(implicit sCtx: Solver.SolverContext) {
           // copy the environment for every row.
           val newRow = row.clone()
 
-          for (i <- matchedRow.indices) {
+          var i = 0
+          while (i < matchedRow.length) {
             val varName = p.index2var(i)
             if (varName != null)
               newRow.put(varName, matchedRow(i))
+            i = i + 1
           }
 
           // compute the cross product of the remaining
