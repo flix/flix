@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.util.misc
 
+import ca.uwaterloo.flix.runtime.Value
+
 object ScalaNative {
   // Note that these values are compiled as a static method
   val strTuple2 = ("foo", "bar")
@@ -15,4 +17,6 @@ object ScalaNative {
   def incrTuple5(t: (Int, Int, Int, Int, Int)) = (t._1 + 1, t._2 + 1, t._3 + 1, t._4 + 1, t._5 + 1)
 
   def reverseTuple6(t: (Boolean, Boolean, Int, Int, (String, String), Int)) = (t._6, t._5, t._4, t._3, t._2, t._1)
+
+  def hi(i: Int): Value.Int = Value.mkInt(i)
 }

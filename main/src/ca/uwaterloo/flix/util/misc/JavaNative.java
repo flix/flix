@@ -1,5 +1,8 @@
 package ca.uwaterloo.flix.util.misc;
 
+import ca.uwaterloo.flix.runtime.Value;
+import ca.uwaterloo.flix.runtime.Value$;
+
 // See examples/misc/NativeTest.flix for the program that uses this native class.
 public class JavaNative {
 
@@ -28,5 +31,9 @@ public class JavaNative {
 
     public static String strcat(String s1, String s2) {
         return s1 + s2;
+    }
+
+    public static Value.Int hi(int i) {
+        return Value$.MODULE$.mkInt(i);
     }
 }
