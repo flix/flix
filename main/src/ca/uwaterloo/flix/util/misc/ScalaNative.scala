@@ -18,5 +18,5 @@ object ScalaNative {
 
   def reverseTuple6(t: (Boolean, Boolean, Int, Int, (String, String), Int)) = (t._6, t._5, t._4, t._3, t._2, t._1)
 
-  def hi(i: Int): Value.Int = Value.mkInt(i)
+  def hi(v: Value.Int, i: Int): Value.Int = Value.mkInt(v.i + i)
 }

@@ -33,7 +33,7 @@ public class JavaNative {
         return s1 + s2;
     }
 
-    public static Value.Int hi(int i) {
-        return Value$.MODULE$.mkInt(i);
+    public static Value.Int hi(Value.Int v, int i) {
+        return Value$.MODULE$.mkInt(v.i() + i);
     }
 }

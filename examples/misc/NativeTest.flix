@@ -325,10 +325,10 @@ namespace NativeTest {
     Tuple6(reverseTuple6(tuple6(0))).
     print Tuple6.
 
-    def scalaHi(i: Int): Int = #ca.uwaterloo.flix.util.misc.ScalaNative.hi(i)
-    def javaHi(i: Int): Int = #ca.uwaterloo.flix.util.misc.JavaNative.hi(i)
+    def scalaHi(i: Int, j: Int): Int = #ca.uwaterloo.flix.util.misc.ScalaNative.hi(i, j)
+    def javaHi(i: Int, j: Int): Int = #ca.uwaterloo.flix.util.misc.JavaNative.hi(i, j)
     rel Ints(i: Int);
-    Ints(scalaHi(3)).
-    Ints(javaHi(4)).
+    Ints(scalaHi(3, 3)).
+    Ints(javaHi(4, 5)).
     print Ints.
 }
