@@ -826,6 +826,11 @@ object Resolver {
         case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
           ResolvedAst.Predicate.Body.NotEqual(ident1, ident2, loc).toSuccess
 
+        case WeededAst.Predicate.Body.Loop(ident, term, loc) =>
+          Term.Head.resolve(term, namespace, syms) map {
+            case term => ResolvedAst.Predicate.Body.Loop(ident, term, loc)
+          }
+
         case WeededAst.Predicate.Body.Read(wterms, wpath, loc) =>
           @@(@@(wterms map (t => Term.Body.resolve(t, namespace, syms))), Term.Body.resolve(wpath, namespace, syms)) map {
             case (terms, path) => ResolvedAst.Predicate.Body.Read(terms, path, loc)

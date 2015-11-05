@@ -596,6 +596,7 @@ object TypedAst {
         }
         case TypedAst.Predicate.Body.NotEqual(x, y, _, _) => Set(x.name, y.name)
         case TypedAst.Predicate.Body.Read(terms, body, _, _) => ???
+        case TypedAst.Predicate.Body.Loop(_, _, _, _) => ???
       }
     }
 
@@ -630,6 +631,16 @@ object TypedAst {
        * @param loc the source location.
        */
       case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Body
+
+      /**
+       * An AST node that represents the special loop predicate.
+       *
+       * @param ident the loop variable.
+       * @param term the set term.
+       * @param tpe the type of the predicate.
+       * @param loc the source location.
+       */
+      case class Loop(ident: Name.Ident, term: TypedAst.Term.Head, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Body
 
       /**
        * A typed read predicate that occurs in the head of a rule.

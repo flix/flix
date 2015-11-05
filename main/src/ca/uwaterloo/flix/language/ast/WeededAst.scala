@@ -516,6 +516,15 @@ object WeededAst {
       case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends WeededAst.Predicate.Body
 
       /**
+       * An AST node that represents the special loop predicate.
+       *
+       * @param ident the loop variable.
+       * @param term the set term.
+       * @param loc the source location.
+       */
+      case class Loop(ident: Name.Ident, term: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Predicate.Body
+
+      /**
        * An AST node that represents the special read predicate.
        *
        * @param terms the terms of the predicate.

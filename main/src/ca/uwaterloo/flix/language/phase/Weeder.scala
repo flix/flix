@@ -717,6 +717,7 @@ object Weeder {
           }
 
         case p: ParsedAst.Predicate.Alias => IllegalHeadPredicate(p.loc).toFailure
+        case p: ParsedAst.Predicate.Loop => IllegalHeadPredicate(p.loc).toFailure
         case p: ParsedAst.Predicate.Read => IllegalHeadPredicate(p.loc).toFailure
         case p: ParsedAst.Predicate.NotEqual => IllegalHeadPredicate(p.loc).toFailure
       }
@@ -736,6 +737,10 @@ object Weeder {
 
         case p: ParsedAst.Predicate.NotEqual =>
           WeededAst.Predicate.Body.NotEqual(p.ident1, p.ident2, p.loc).toSuccess
+
+        case p: ParsedAst.Predicate.Loop => Term.Head.compile(p.term, Map.empty) map {
+          case term => WeededAst.Predicate.Body.Loop(p.ident, term, p.loc)
+        }
 
         case p: ParsedAst.Predicate.Read =>
           @@(p.terms.map(t => Term.Body.compile(t))) flatMap {

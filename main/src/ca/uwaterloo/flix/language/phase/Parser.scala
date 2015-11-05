@@ -294,7 +294,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    FunctionOrRelationPredicate | NotEqualPredicate | TracePredicate | ReadPredicate | WritePredicate | ErrorPredicate | AliasPredicate
+    FunctionOrRelationPredicate | NotEqualPredicate | TracePredicate | ReadPredicate | WritePredicate | ErrorPredicate | AliasPredicate | LoopPredicate
   }
 
   def FunctionOrRelationPredicate: Rule1[ParsedAst.Predicate.FunctionOrRelation] = rule {
@@ -323,6 +323,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def AliasPredicate: Rule1[ParsedAst.Predicate.Alias] = rule {
     SP ~ Ident ~ optWS ~ atomic(":=") ~ optWS ~ Term ~ SP ~> ParsedAst.Predicate.Alias
+  }
+
+  def LoopPredicate: Rule1[ParsedAst.Predicate.Loop] = rule {
+    SP ~ Ident ~ optWS ~ atomic("<-") ~ optWS ~ Term ~ SP ~> ParsedAst.Predicate.Loop
   }
 
   /////////////////////////////////////////////////////////////////////////////

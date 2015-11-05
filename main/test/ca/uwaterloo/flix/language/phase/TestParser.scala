@@ -762,6 +762,12 @@ class TestParser extends FunSuite {
     assertResult(5)(result.get.body.size)
   }
 
+  test("Rule.Loop01") {
+    val input = "P(x, z) :- A(x, y), z <- f(y)."
+    val result = new Parser(SourceInput.Str(input)).RuleDeclaration.run()
+    assert(result.isSuccess)
+  }
+
   test("Predicate.Alias01") {
     val input = "r := 42"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
@@ -778,6 +784,18 @@ class TestParser extends FunSuite {
     val input = "r := f(x, g(y, z))"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
     assert(result.isInstanceOf[ParsedAst.Predicate.Alias])
+  }
+
+  test("Predicate.Loop01") {
+    val input = "y <- f(x)"
+    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Loop])
+  }
+
+  test("Predicate.Loop02") {
+    val input = "x <- f(1, 2, 3)"
+    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Loop])
   }
 
   test("Predicate.Trace01") {

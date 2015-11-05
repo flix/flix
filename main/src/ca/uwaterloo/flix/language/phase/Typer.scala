@@ -612,7 +612,12 @@ object Typer {
           }
 
         case ResolvedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
-          TypedAst.Predicate.Body.NotEqual(ident1, ident2, TypedAst.Type.Bool, loc: SourceLocation).toSuccess
+          TypedAst.Predicate.Body.NotEqual(ident1, ident2, TypedAst.Type.Bool, loc).toSuccess
+
+        case ResolvedAst.Predicate.Body.Loop(ident, rterm, loc) =>
+          Term.typer(rterm, TypedAst.Type.Set(TypedAst.Type.Native("java.lang.Object")), root) map {
+            case term => TypedAst.Predicate.Body.Loop(ident, term, TypedAst.Type.Bool, loc) // TODO: Type
+          }
 
         case ResolvedAst.Predicate.Body.Read(rterms, rpath, loc) =>
           // TODO: This needs to use proper unification
@@ -783,6 +788,7 @@ object Typer {
     case TypedAst.Type.Enum(cases) =>
       s"Enum(${cases.head._2.name})"
     case TypedAst.Type.Tuple(elms) => "(" + elms.map(prettyPrint).mkString(", ") + ")"
+    case TypedAst.Type.Set(elms) => "Set(" + prettyPrint(elms) + ")"
     case TypedAst.Type.Lambda(args, retTpe) =>
       "(" + args.map(prettyPrint).mkString(", ") + ") -> " + prettyPrint(retTpe)
     case TypedAst.Type.Predicate(terms) => s"Predicate(${terms map prettyPrint})"
