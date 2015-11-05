@@ -13,6 +13,8 @@ object Main {
    * The main method.
    */
   def main(args: Array[String]): Unit = {
+
+    val t = System.nanoTime()
     val paths = args flatMap getValidPath
 
     Flix.fromPaths(paths: _*) match {
@@ -22,6 +24,9 @@ object Main {
       case Validation.Failure(errors) =>
         errors.foreach(e => println(e.format))
     }
+
+    val e = (System.nanoTime() - t) / 1000000
+    Console.println(f"Total execution time: $e%,d msec.")
   }
 
   /**

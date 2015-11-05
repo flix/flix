@@ -14,40 +14,40 @@ namespace NativeTest {
     // in testBool, we pass every combination of Flix, Java primitive, and Java boxed booleans.
     def not5(b: Bool): Bool = !b;
     def testBool(i: Int): Bool = match i with {
-        case 0  => #ca.uwaterloo.flix.util.misc.NativeTest.not1(true);
-        case 1  => #ca.uwaterloo.flix.util.misc.NativeTest.not1(#java.lang.Boolean.TRUE);
-        case 2  => #ca.uwaterloo.flix.util.misc.NativeTest.not1(#ca.uwaterloo.flix.util.misc.NativeTest.TRUE);
-        case 3  => #ca.uwaterloo.flix.util.misc.NativeTest.not1(false);
-        case 4  => #ca.uwaterloo.flix.util.misc.NativeTest.not1(#java.lang.Boolean.FALSE);
-        case 5  => #ca.uwaterloo.flix.util.misc.NativeTest.not1(#ca.uwaterloo.flix.util.misc.NativeTest.FALSE);
+        case 0  => #ca.uwaterloo.flix.util.misc.JavaNative.not1(true);
+        case 1  => #ca.uwaterloo.flix.util.misc.JavaNative.not1(#java.lang.Boolean.TRUE);
+        case 2  => #ca.uwaterloo.flix.util.misc.JavaNative.not1(#ca.uwaterloo.flix.util.misc.JavaNative.TRUE);
+        case 3  => #ca.uwaterloo.flix.util.misc.JavaNative.not1(false);
+        case 4  => #ca.uwaterloo.flix.util.misc.JavaNative.not1(#java.lang.Boolean.FALSE);
+        case 5  => #ca.uwaterloo.flix.util.misc.JavaNative.not1(#ca.uwaterloo.flix.util.misc.JavaNative.FALSE);
 
-        case 6  => #ca.uwaterloo.flix.util.misc.NativeTest.not2(true);
-        case 7  => #ca.uwaterloo.flix.util.misc.NativeTest.not2(#java.lang.Boolean.TRUE);
-        case 8  => #ca.uwaterloo.flix.util.misc.NativeTest.not2(#ca.uwaterloo.flix.util.misc.NativeTest.TRUE);
-        case 9  => #ca.uwaterloo.flix.util.misc.NativeTest.not2(false);
-        case 10 => #ca.uwaterloo.flix.util.misc.NativeTest.not2(#java.lang.Boolean.FALSE);
-        case 11 => #ca.uwaterloo.flix.util.misc.NativeTest.not2(#ca.uwaterloo.flix.util.misc.NativeTest.FALSE);
+        case 6  => #ca.uwaterloo.flix.util.misc.JavaNative.not2(true);
+        case 7  => #ca.uwaterloo.flix.util.misc.JavaNative.not2(#java.lang.Boolean.TRUE);
+        case 8  => #ca.uwaterloo.flix.util.misc.JavaNative.not2(#ca.uwaterloo.flix.util.misc.JavaNative.TRUE);
+        case 9  => #ca.uwaterloo.flix.util.misc.JavaNative.not2(false);
+        case 10 => #ca.uwaterloo.flix.util.misc.JavaNative.not2(#java.lang.Boolean.FALSE);
+        case 11 => #ca.uwaterloo.flix.util.misc.JavaNative.not2(#ca.uwaterloo.flix.util.misc.JavaNative.FALSE);
 
-        case 12 => #ca.uwaterloo.flix.util.misc.NativeTest.not3(true);
-        case 13 => #ca.uwaterloo.flix.util.misc.NativeTest.not3(#java.lang.Boolean.TRUE);
-        case 14 => #ca.uwaterloo.flix.util.misc.NativeTest.not3(#ca.uwaterloo.flix.util.misc.NativeTest.TRUE);
-        case 15 => #ca.uwaterloo.flix.util.misc.NativeTest.not3(false);
-        case 16 => #ca.uwaterloo.flix.util.misc.NativeTest.not3(#java.lang.Boolean.FALSE);
-        case 17 => #ca.uwaterloo.flix.util.misc.NativeTest.not3(#ca.uwaterloo.flix.util.misc.NativeTest.FALSE);
+        case 12 => #ca.uwaterloo.flix.util.misc.JavaNative.not3(true);
+        case 13 => #ca.uwaterloo.flix.util.misc.JavaNative.not3(#java.lang.Boolean.TRUE);
+        case 14 => #ca.uwaterloo.flix.util.misc.JavaNative.not3(#ca.uwaterloo.flix.util.misc.JavaNative.TRUE);
+        case 15 => #ca.uwaterloo.flix.util.misc.JavaNative.not3(false);
+        case 16 => #ca.uwaterloo.flix.util.misc.JavaNative.not3(#java.lang.Boolean.FALSE);
+        case 17 => #ca.uwaterloo.flix.util.misc.JavaNative.not3(#ca.uwaterloo.flix.util.misc.JavaNative.FALSE);
 
-        case 18  => #ca.uwaterloo.flix.util.misc.NativeTest.not4(true);
-        case 19 => #ca.uwaterloo.flix.util.misc.NativeTest.not4(#java.lang.Boolean.TRUE);
-        case 20 => #ca.uwaterloo.flix.util.misc.NativeTest.not4(#ca.uwaterloo.flix.util.misc.NativeTest.TRUE);
-        case 21 => #ca.uwaterloo.flix.util.misc.NativeTest.not4(false);
-        case 22 => #ca.uwaterloo.flix.util.misc.NativeTest.not4(#java.lang.Boolean.FALSE);
-        case 23 => #ca.uwaterloo.flix.util.misc.NativeTest.not4(#ca.uwaterloo.flix.util.misc.NativeTest.FALSE);
+        case 18  => #ca.uwaterloo.flix.util.misc.JavaNative.not4(true);
+        case 19 => #ca.uwaterloo.flix.util.misc.JavaNative.not4(#java.lang.Boolean.TRUE);
+        case 20 => #ca.uwaterloo.flix.util.misc.JavaNative.not4(#ca.uwaterloo.flix.util.misc.JavaNative.TRUE);
+        case 21 => #ca.uwaterloo.flix.util.misc.JavaNative.not4(false);
+        case 22 => #ca.uwaterloo.flix.util.misc.JavaNative.not4(#java.lang.Boolean.FALSE);
+        case 23 => #ca.uwaterloo.flix.util.misc.JavaNative.not4(#ca.uwaterloo.flix.util.misc.JavaNative.FALSE);
 
         case 24 => not5(true);
         case 25 => not5(#java.lang.Boolean.TRUE);
-        case 26 => not5(#ca.uwaterloo.flix.util.misc.NativeTest.TRUE);
+        case 26 => not5(#ca.uwaterloo.flix.util.misc.JavaNative.TRUE);
         case 27 => not5(false);
         case 28 => not5(#java.lang.Boolean.FALSE);
-        case 29 => not5(#ca.uwaterloo.flix.util.misc.NativeTest.FALSE);
+        case 29 => not5(#ca.uwaterloo.flix.util.misc.JavaNative.FALSE);
     };
 
     // increment1 to increment4 are native methods that take (and return) primitive or boxed ints.
@@ -55,74 +55,98 @@ namespace NativeTest {
     // in testInt, we pass every combination of Flix, Java primitive, and Java boxed ints.
     def increment5(i: Int): Int = i + 1;
     def testInt(i: Int): Int = match i with {
-        case 0  => #ca.uwaterloo.flix.util.misc.NativeTest.increment1(1);
-        case 1  => #ca.uwaterloo.flix.util.misc.NativeTest.increment1(#ca.uwaterloo.flix.util.misc.NativeTest.primitiveInt);
-        case 2  => #ca.uwaterloo.flix.util.misc.NativeTest.increment1(#ca.uwaterloo.flix.util.misc.NativeTest.boxedInt);
+        case 0  => #ca.uwaterloo.flix.util.misc.JavaNative.increment1(1);
+        case 1  => #ca.uwaterloo.flix.util.misc.JavaNative.increment1(#ca.uwaterloo.flix.util.misc.JavaNative.primitiveInt);
+        case 2  => #ca.uwaterloo.flix.util.misc.JavaNative.increment1(#ca.uwaterloo.flix.util.misc.JavaNative.boxedInt);
 
-        case 3  => #ca.uwaterloo.flix.util.misc.NativeTest.increment2(1);
-        case 4  => #ca.uwaterloo.flix.util.misc.NativeTest.increment2(#ca.uwaterloo.flix.util.misc.NativeTest.primitiveInt);
-        case 5  => #ca.uwaterloo.flix.util.misc.NativeTest.increment2(#ca.uwaterloo.flix.util.misc.NativeTest.boxedInt);
+        case 3  => #ca.uwaterloo.flix.util.misc.JavaNative.increment2(1);
+        case 4  => #ca.uwaterloo.flix.util.misc.JavaNative.increment2(#ca.uwaterloo.flix.util.misc.JavaNative.primitiveInt);
+        case 5  => #ca.uwaterloo.flix.util.misc.JavaNative.increment2(#ca.uwaterloo.flix.util.misc.JavaNative.boxedInt);
 
-        case 6  => #ca.uwaterloo.flix.util.misc.NativeTest.increment3(1);
-        case 7  => #ca.uwaterloo.flix.util.misc.NativeTest.increment3(#ca.uwaterloo.flix.util.misc.NativeTest.primitiveInt);
-        case 8  => #ca.uwaterloo.flix.util.misc.NativeTest.increment3(#ca.uwaterloo.flix.util.misc.NativeTest.boxedInt);
+        case 6  => #ca.uwaterloo.flix.util.misc.JavaNative.increment3(1);
+        case 7  => #ca.uwaterloo.flix.util.misc.JavaNative.increment3(#ca.uwaterloo.flix.util.misc.JavaNative.primitiveInt);
+        case 8  => #ca.uwaterloo.flix.util.misc.JavaNative.increment3(#ca.uwaterloo.flix.util.misc.JavaNative.boxedInt);
 
-        case 9  => #ca.uwaterloo.flix.util.misc.NativeTest.increment4(1);
-        case 10  => #ca.uwaterloo.flix.util.misc.NativeTest.increment4(#ca.uwaterloo.flix.util.misc.NativeTest.primitiveInt);
-        case 11 => #ca.uwaterloo.flix.util.misc.NativeTest.increment4(#ca.uwaterloo.flix.util.misc.NativeTest.boxedInt);
+        case 9  => #ca.uwaterloo.flix.util.misc.JavaNative.increment4(1);
+        case 10  => #ca.uwaterloo.flix.util.misc.JavaNative.increment4(#ca.uwaterloo.flix.util.misc.JavaNative.primitiveInt);
+        case 11 => #ca.uwaterloo.flix.util.misc.JavaNative.increment4(#ca.uwaterloo.flix.util.misc.JavaNative.boxedInt);
 
         case 12 => increment5(1);
-        case 13 => increment5(#ca.uwaterloo.flix.util.misc.NativeTest.primitiveInt);
-        case 14 => increment5(#ca.uwaterloo.flix.util.misc.NativeTest.boxedInt);
+        case 13 => increment5(#ca.uwaterloo.flix.util.misc.JavaNative.primitiveInt);
+        case 14 => increment5(#ca.uwaterloo.flix.util.misc.JavaNative.boxedInt);
     }
 
     // streq compares two strings for equality.
     // in testStreq, we pass combinations of Flix and Java strings.
     def testStreq(i: Int): Bool = match i with {
-        case 0  => #ca.uwaterloo.flix.util.misc.NativeTest.streq("hello", "hello");
-        case 1  => #ca.uwaterloo.flix.util.misc.NativeTest.streq("hello", "world");
-        case 2  => #ca.uwaterloo.flix.util.misc.NativeTest.streq("world", "hello");
-        case 3  => #ca.uwaterloo.flix.util.misc.NativeTest.streq("world", "world");
+        case 0  => #ca.uwaterloo.flix.util.misc.JavaNative.streq("hello", "hello");
+        case 1  => #ca.uwaterloo.flix.util.misc.JavaNative.streq("hello", "world");
+        case 2  => #ca.uwaterloo.flix.util.misc.JavaNative.streq("world", "hello");
+        case 3  => #ca.uwaterloo.flix.util.misc.JavaNative.streq("world", "world");
 
-        case 4  => #ca.uwaterloo.flix.util.misc.NativeTest.streq("hello", #ca.uwaterloo.flix.util.misc.NativeTest.hello);
-        case 5  => #ca.uwaterloo.flix.util.misc.NativeTest.streq("hello", #ca.uwaterloo.flix.util.misc.NativeTest.world);
-        case 6  => #ca.uwaterloo.flix.util.misc.NativeTest.streq("world", #ca.uwaterloo.flix.util.misc.NativeTest.hello);
-        case 7  => #ca.uwaterloo.flix.util.misc.NativeTest.streq("world", #ca.uwaterloo.flix.util.misc.NativeTest.world);
+        case 4  => #ca.uwaterloo.flix.util.misc.JavaNative.streq("hello", #ca.uwaterloo.flix.util.misc.JavaNative.hello);
+        case 5  => #ca.uwaterloo.flix.util.misc.JavaNative.streq("hello", #ca.uwaterloo.flix.util.misc.JavaNative.world);
+        case 6  => #ca.uwaterloo.flix.util.misc.JavaNative.streq("world", #ca.uwaterloo.flix.util.misc.JavaNative.hello);
+        case 7  => #ca.uwaterloo.flix.util.misc.JavaNative.streq("world", #ca.uwaterloo.flix.util.misc.JavaNative.world);
 
-        case 8  => #ca.uwaterloo.flix.util.misc.NativeTest.streq(#ca.uwaterloo.flix.util.misc.NativeTest.hello, "hello");
-        case 9  => #ca.uwaterloo.flix.util.misc.NativeTest.streq(#ca.uwaterloo.flix.util.misc.NativeTest.hello, "world");
-        case 10 => #ca.uwaterloo.flix.util.misc.NativeTest.streq(#ca.uwaterloo.flix.util.misc.NativeTest.world, "hello");
-        case 11 => #ca.uwaterloo.flix.util.misc.NativeTest.streq(#ca.uwaterloo.flix.util.misc.NativeTest.world, "world");
+        case 8  => #ca.uwaterloo.flix.util.misc.JavaNative.streq(#ca.uwaterloo.flix.util.misc.JavaNative.hello, "hello");
+        case 9  => #ca.uwaterloo.flix.util.misc.JavaNative.streq(#ca.uwaterloo.flix.util.misc.JavaNative.hello, "world");
+        case 10 => #ca.uwaterloo.flix.util.misc.JavaNative.streq(#ca.uwaterloo.flix.util.misc.JavaNative.world, "hello");
+        case 11 => #ca.uwaterloo.flix.util.misc.JavaNative.streq(#ca.uwaterloo.flix.util.misc.JavaNative.world, "world");
 
-        case 12 => #ca.uwaterloo.flix.util.misc.NativeTest.streq(#ca.uwaterloo.flix.util.misc.NativeTest.hello, #ca.uwaterloo.flix.util.misc.NativeTest.hello);
-        case 13 => #ca.uwaterloo.flix.util.misc.NativeTest.streq(#ca.uwaterloo.flix.util.misc.NativeTest.hello, #ca.uwaterloo.flix.util.misc.NativeTest.world);
-        case 14 => #ca.uwaterloo.flix.util.misc.NativeTest.streq(#ca.uwaterloo.flix.util.misc.NativeTest.world, #ca.uwaterloo.flix.util.misc.NativeTest.hello);
-        case 15 => #ca.uwaterloo.flix.util.misc.NativeTest.streq(#ca.uwaterloo.flix.util.misc.NativeTest.world, #ca.uwaterloo.flix.util.misc.NativeTest.world);
+        case 12 => #ca.uwaterloo.flix.util.misc.JavaNative.streq(#ca.uwaterloo.flix.util.misc.JavaNative.hello, #ca.uwaterloo.flix.util.misc.JavaNative.hello);
+        case 13 => #ca.uwaterloo.flix.util.misc.JavaNative.streq(#ca.uwaterloo.flix.util.misc.JavaNative.hello, #ca.uwaterloo.flix.util.misc.JavaNative.world);
+        case 14 => #ca.uwaterloo.flix.util.misc.JavaNative.streq(#ca.uwaterloo.flix.util.misc.JavaNative.world, #ca.uwaterloo.flix.util.misc.JavaNative.hello);
+        case 15 => #ca.uwaterloo.flix.util.misc.JavaNative.streq(#ca.uwaterloo.flix.util.misc.JavaNative.world, #ca.uwaterloo.flix.util.misc.JavaNative.world);
     }
 
     // strcat concatenates two strings.
     // in testStrcat, we pass combinations of Flix and Java strings.
     def testStrcat(i: Int): Str = match i with {
-        case 0  => #ca.uwaterloo.flix.util.misc.NativeTest.strcat("hello", "hello");
-        case 1  => #ca.uwaterloo.flix.util.misc.NativeTest.strcat("hello", "world");
-        case 2  => #ca.uwaterloo.flix.util.misc.NativeTest.strcat("world", "hello");
-        case 3  => #ca.uwaterloo.flix.util.misc.NativeTest.strcat("world", "world");
+        case 0  => #ca.uwaterloo.flix.util.misc.JavaNative.strcat("hello", "hello");
+        case 1  => #ca.uwaterloo.flix.util.misc.JavaNative.strcat("hello", "world");
+        case 2  => #ca.uwaterloo.flix.util.misc.JavaNative.strcat("world", "hello");
+        case 3  => #ca.uwaterloo.flix.util.misc.JavaNative.strcat("world", "world");
 
-        case 4  => #ca.uwaterloo.flix.util.misc.NativeTest.strcat("hello", #ca.uwaterloo.flix.util.misc.NativeTest.hello);
-        case 5  => #ca.uwaterloo.flix.util.misc.NativeTest.strcat("hello", #ca.uwaterloo.flix.util.misc.NativeTest.world);
-        case 6  => #ca.uwaterloo.flix.util.misc.NativeTest.strcat("world", #ca.uwaterloo.flix.util.misc.NativeTest.hello);
-        case 7  => #ca.uwaterloo.flix.util.misc.NativeTest.strcat("world", #ca.uwaterloo.flix.util.misc.NativeTest.world);
+        case 4  => #ca.uwaterloo.flix.util.misc.JavaNative.strcat("hello", #ca.uwaterloo.flix.util.misc.JavaNative.hello);
+        case 5  => #ca.uwaterloo.flix.util.misc.JavaNative.strcat("hello", #ca.uwaterloo.flix.util.misc.JavaNative.world);
+        case 6  => #ca.uwaterloo.flix.util.misc.JavaNative.strcat("world", #ca.uwaterloo.flix.util.misc.JavaNative.hello);
+        case 7  => #ca.uwaterloo.flix.util.misc.JavaNative.strcat("world", #ca.uwaterloo.flix.util.misc.JavaNative.world);
 
-        case 8  => #ca.uwaterloo.flix.util.misc.NativeTest.strcat(#ca.uwaterloo.flix.util.misc.NativeTest.hello, "hello");
-        case 9  => #ca.uwaterloo.flix.util.misc.NativeTest.strcat(#ca.uwaterloo.flix.util.misc.NativeTest.hello, "world");
-        case 10 => #ca.uwaterloo.flix.util.misc.NativeTest.strcat(#ca.uwaterloo.flix.util.misc.NativeTest.world, "hello");
-        case 11 => #ca.uwaterloo.flix.util.misc.NativeTest.strcat(#ca.uwaterloo.flix.util.misc.NativeTest.world, "world");
+        case 8  => #ca.uwaterloo.flix.util.misc.JavaNative.strcat(#ca.uwaterloo.flix.util.misc.JavaNative.hello, "hello");
+        case 9  => #ca.uwaterloo.flix.util.misc.JavaNative.strcat(#ca.uwaterloo.flix.util.misc.JavaNative.hello, "world");
+        case 10 => #ca.uwaterloo.flix.util.misc.JavaNative.strcat(#ca.uwaterloo.flix.util.misc.JavaNative.world, "hello");
+        case 11 => #ca.uwaterloo.flix.util.misc.JavaNative.strcat(#ca.uwaterloo.flix.util.misc.JavaNative.world, "world");
 
-        case 12 => #ca.uwaterloo.flix.util.misc.NativeTest.strcat(#ca.uwaterloo.flix.util.misc.NativeTest.hello, #ca.uwaterloo.flix.util.misc.NativeTest.hello);
-        case 13 => #ca.uwaterloo.flix.util.misc.NativeTest.strcat(#ca.uwaterloo.flix.util.misc.NativeTest.hello, #ca.uwaterloo.flix.util.misc.NativeTest.world);
-        case 14 => #ca.uwaterloo.flix.util.misc.NativeTest.strcat(#ca.uwaterloo.flix.util.misc.NativeTest.world, #ca.uwaterloo.flix.util.misc.NativeTest.hello);
-        case 15 => #ca.uwaterloo.flix.util.misc.NativeTest.strcat(#ca.uwaterloo.flix.util.misc.NativeTest.world, #ca.uwaterloo.flix.util.misc.NativeTest.world);
+        case 12 => #ca.uwaterloo.flix.util.misc.JavaNative.strcat(#ca.uwaterloo.flix.util.misc.JavaNative.hello, #ca.uwaterloo.flix.util.misc.JavaNative.hello);
+        case 13 => #ca.uwaterloo.flix.util.misc.JavaNative.strcat(#ca.uwaterloo.flix.util.misc.JavaNative.hello, #ca.uwaterloo.flix.util.misc.JavaNative.world);
+        case 14 => #ca.uwaterloo.flix.util.misc.JavaNative.strcat(#ca.uwaterloo.flix.util.misc.JavaNative.world, #ca.uwaterloo.flix.util.misc.JavaNative.hello);
+        case 15 => #ca.uwaterloo.flix.util.misc.JavaNative.strcat(#ca.uwaterloo.flix.util.misc.JavaNative.world, #ca.uwaterloo.flix.util.misc.JavaNative.world);
     }
+
+    // Fields in a Scala object are compiled as static methods
+    def strTuple2(i: Int): (#java.lang.Object, #java.lang.Object) = #ca.uwaterloo.flix.util.misc.ScalaNative.strTuple2()
+    def tuple6(i: Int): #scala.Tuple6 = #ca.uwaterloo.flix.util.misc.ScalaNative.tuple6()
+
+    def mkTuple2(t1: Int, t2: Int): (#java.lang.Object, #java.lang.Object) =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple2(t1, t2)
+    def incrTuple2(tpl: (#java.lang.Object, #java.lang.Object)): (#java.lang.Object, #java.lang.Object) =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.incrTuple2(tpl)
+    def mkTuple3(t1: Int, t2: Int, t3: Int): (#java.lang.Object, #java.lang.Object, #java.lang.Object) =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple3(t1, t2, t3)
+    def incrTuple3(tpl: (#java.lang.Object, #java.lang.Object, #java.lang.Object)): (#java.lang.Object, #java.lang.Object, #java.lang.Object) =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.incrTuple3(tpl)
+    def mkTuple4(t1: Int, t2: Int, t3: Int, t4: Int): (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple4(t1, t2, t3, t4)
+    def incrTuple4(tpl: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object)): (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.incrTuple4(tpl)
+    def mkTuple5(t1: Int, t2: Int, t3: Int, t4: Int, t5: Int): (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple5(t1, t2, t3, t4, t5)
+    def incrTuple5(tpl: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object)): (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.incrTuple5(tpl)
+
+    def reverseTuple6(t: #scala.Tuple6): #scala.Tuple6 =
+        #ca.uwaterloo.flix.util.misc.ScalaNative.reverseTuple6(t)
 
     /* Expected result
        +---+-------+-------+-------+-------+-------+
@@ -204,8 +228,8 @@ namespace NativeTest {
     rel BoolVals(b1: Bool, b2: Bool, b3: Bool, b4: Bool, b5: Bool, b6: Bool);
     BoolVals(#java.lang.Boolean.TRUE,
              #java.lang.Boolean.FALSE,
-             #ca.uwaterloo.flix.util.misc.NativeTest.TRUE,
-             #ca.uwaterloo.flix.util.misc.NativeTest.FALSE,
+             #ca.uwaterloo.flix.util.misc.JavaNative.TRUE,
+             #ca.uwaterloo.flix.util.misc.JavaNative.FALSE,
              true,
              false).
     print BoolVals.
@@ -218,8 +242,8 @@ namespace NativeTest {
        +----+----+----+
     */
     rel IntVals(i1: Int, i2: Int, i3: Int);
-    IntVals(#ca.uwaterloo.flix.util.misc.NativeTest.primitiveInt,
-            #ca.uwaterloo.flix.util.misc.NativeTest.boxedInt,
+    IntVals(#ca.uwaterloo.flix.util.misc.JavaNative.primitiveInt,
+            #ca.uwaterloo.flix.util.misc.JavaNative.boxedInt,
             1).
     print IntVals.
 
@@ -231,6 +255,73 @@ namespace NativeTest {
        +-------+-------+
     */
     rel StrVals(s1: Str, s2: Str);
-    StrVals(#ca.uwaterloo.flix.util.misc.NativeTest.hello, "world").
+    StrVals(#ca.uwaterloo.flix.util.misc.JavaNative.hello, "world").
     print StrVals.
+
+    /* Expected result
+       +---------------------------+
+       | t                         |
+       +---------------------------+
+       | (Native(101),Native(201)) |
+       | (Native(5),Native(6))     |
+       | (Native(foo),Native(bar)) |
+       +---------------------------+
+    */
+    rel Tuple2(t: (#java.lang.Object, #java.lang.Object));
+    Tuple2(strTuple2(1)).
+    Tuple2(mkTuple2(5, 6)).
+    Tuple2(incrTuple2(mkTuple2(100, 200))).
+    print Tuple2.
+
+    /* Expected result
+       +---------------------------------+
+       | t                               |
+       +---------------------------------+
+       | (Native(1),Native(2),Native(3)) |
+       | (Native(5),Native(6),Native(7)) |
+       +---------------------------------+
+    */
+    rel Tuple3(t: (#java.lang.Object, #java.lang.Object, #java.lang.Object));
+    Tuple3(mkTuple3(1, 2, 3)).
+    Tuple3(incrTuple3(mkTuple3(4, 5, 6))).
+    print Tuple3.
+
+    /* Expected result
+       +------------------------------------------------+
+       | t                                              |
+       +------------------------------------------------+
+       | (Native(100),Native(99),Native(98),Native(97)) |
+       | (Native(99),Native(98),Native(97),Native(96))  |
+       +------------------------------------------------+
+    */
+    rel Tuple4(t: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object));
+    Tuple4(mkTuple4(99, 98, 97, 96)).
+    Tuple4(incrTuple4(mkTuple4(99, 98, 97, 96))).
+    print Tuple4.
+
+    /* Expected result
+       +-----------------------------------------------------+
+       | t                                                   |
+       +-----------------------------------------------------+
+       | (Native(0),Native(0),Native(0),Native(0),Native(0)) |
+       | (Native(1),Native(1),Native(1),Native(1),Native(1)) |
+       +-----------------------------------------------------+
+    */
+    rel Tuple5(t: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object));
+    Tuple5(mkTuple5(0, 0, 0, 0, 0)).
+    Tuple5(incrTuple5(mkTuple5(0, 0, 0, 0, 0))).
+    print Tuple5.
+
+    /* Expected result
+       +---------------------------------------+
+       | t                                     |
+       +---------------------------------------+
+       | Native((42,(foo,bar),5,1,false,true)) |
+       | Native((true,false,1,5,(foo,bar),42)) |
+       +---------------------------------------+
+    */
+    rel Tuple6(t: #scala.Tuple6);
+    Tuple6(tuple6(0)).
+    Tuple6(reverseTuple6(tuple6(0))).
+    print Tuple6.
 }
