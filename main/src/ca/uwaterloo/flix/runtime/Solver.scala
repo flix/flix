@@ -269,20 +269,14 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     */
   def dependencies(name: Name.Resolved, fact: Array[Value]): Traversable[(Constraint.Rule, mutable.Map[String, Value])] = {
 
-    def unify(terms: List[Term.Body], fact: Array[Value]): mutable.Map[String, Value] = {
+    def unify(pat: Array[String], fact: Array[Value]): mutable.Map[String, Value] = {
       val env = mutable.Map.empty[String, Value]
-      for ((term, value) <- terms zip fact) {
-        term match {
-          case t: Term.Body.Wildcard => // nop
-          case t: Term.Body.Var =>
-            env += (t.ident.name -> value)
-          case t: Term.Body.Lit =>
-            val literal = Interpreter.evalLit(t.lit)
-            // NB: This assumes that the values are not lattice elements.
-            if (literal != value) {
-              return null
-            }
-        }
+      var i = 0
+      while (i < pat.length) {
+        val varName = pat(i)
+        if (varName != null)
+          env.update(varName, fact(i))
+        i = i + 1
       }
       env
     }
@@ -293,14 +287,14 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       sCtx.root.collections(name) match {
         case r: TypedAst.Collection.Relation =>
           // unify all terms with their values.
-          val env = unify(p.terms, fact)
+          val env = unify(p.index2var, fact)
           if (env != null) {
             result += ((rule, env))
           }
         case l: TypedAst.Collection.Lattice =>
           // unify only key terms with their values.
           val numberOfKeys = l.keys.length
-          val env = unify(p.terms.take(numberOfKeys), fact.take(numberOfKeys))
+          val env = unify(p.index2var.take(numberOfKeys), fact.take(numberOfKeys))
           if (env != null) {
             result += ((rule, mutable.Map.empty))
           }

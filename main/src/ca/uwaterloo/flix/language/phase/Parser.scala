@@ -445,6 +445,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum | "_") ~ zeroOrMore("'"))
   }
 
+  // TODO: Intern strings?
   def Ident: Rule1[Name.Ident] = rule {
     SP ~ LegalIdentifier ~ SP ~> Name.Ident
   }
