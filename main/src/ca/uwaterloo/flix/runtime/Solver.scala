@@ -194,6 +194,14 @@ class Solver(implicit sCtx: Solver.SolverContext) {
         }
     }
 
+    def loop(ps: List[Predicate.Body.Loop], row: mutable.Map[String, Value]): Unit = ps match {
+      case Nil => filter(rule.filters, row)
+      case Predicate.Body.Loop(name, term, _, _) :: rest =>
+        val result = Interpreter.evalHeadTerm(term, sCtx.root, row.toMap)
+        // TODO: Cast to Set and iterate.
+        // TODO: Call loop from cross.
+    }
+
     /**
      * Filters the given `row` through all filter functions in the body.
      */
