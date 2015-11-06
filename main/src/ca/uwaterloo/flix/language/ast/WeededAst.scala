@@ -644,6 +644,8 @@ object WeededAst {
 
   }
 
+  // TODO: Move type out of AST? and introduce an AnnotatedType.
+
   /**
    * A common super-type for AST nodes that represent types. 
    */
