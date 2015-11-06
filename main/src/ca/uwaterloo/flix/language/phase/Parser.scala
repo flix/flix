@@ -383,18 +383,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
-  // NB: The parser works left-to-right, but the inline code ensures that the
-  // function types are right-associative.
   def Type: Rule1[ParsedAst.Type] = rule {
-    oneOrMore(SimpleType).separatedBy(optWS ~ "->" ~ optWS) ~> ((types: Seq[ParsedAst.Type]) => types match {
-      case xs if xs.size == 1 => xs.head
-      case xs => ParsedAst.Type.Function(xs.dropRight(1).toList, xs.last)
-    })
-  }
-
-  // NB: ParametricType must be parsed before AmbiguousType.
-  def SimpleType: Rule1[ParsedAst.Type] = rule {
-    ParametricType | NativeType | AmbiguousType | TupleType
+    FunctionType | ParametricType | NativeType | AmbiguousType | TupleType
   }
 
   def AmbiguousType: Rule1[ParsedAst.Type.Ref] = rule {
@@ -425,6 +415,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     rule {
       Unit | Singleton | Tuple
     }
+  }
+
+  def FunctionType: Rule1[ParsedAst.Type] = rule {
+    "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~> ParsedAst.Type.Function
   }
 
   /////////////////////////////////////////////////////////////////////////////

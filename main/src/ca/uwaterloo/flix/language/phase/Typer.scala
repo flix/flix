@@ -446,6 +446,12 @@ object Typer {
 
         case ResolvedAst.Expression.Ascribe(re, rtype, loc) =>
           visit(re, env) flatMap {
+            case TypedAst.Expression.NativeField(field, _, _) =>
+              TypedAst.Expression.NativeField(field, Type.typer(rtype), loc).toSuccess
+
+            case TypedAst.Expression.NativeMethod(method, _, _) =>
+              TypedAst.Expression.NativeMethod(method, Type.typer(rtype), loc).toSuccess
+
             case e => expect(Type.typer(rtype), e.tpe, loc) map {
               case _ => e
             }
