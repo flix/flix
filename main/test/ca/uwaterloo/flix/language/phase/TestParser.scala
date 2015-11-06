@@ -982,14 +982,14 @@ class TestParser extends FunSuite {
   test("Type.Function01") {
     val input = "(A) -> B"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
-    assertResult(Seq("A"))(result.formals.head.asInstanceOf[ParsedAst.Type.Ref].name.parts)
-    assertResult(Seq("B"))(result.retTpe.asInstanceOf[ParsedAst.Type.Ref].name.parts)
+    assertResult(Seq("A"))(result.formals.head.asInstanceOf[ParsedAst.Type.Named].name.parts)
+    assertResult(Seq("B"))(result.retTpe.asInstanceOf[ParsedAst.Type.Named].name.parts)
   }
 
   test("Type.Function02") {
     val input = "(A) -> (B) -> C"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
-    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Ref])
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
     assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
   }
 
@@ -997,7 +997,7 @@ class TestParser extends FunSuite {
     val input = "((A) -> B) -> C"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
     assert(result.formals.head.isInstanceOf[ParsedAst.Type.Function])
-    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Ref])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Named])
   }
 
   // TODO Add more tests about functions, and cleanup
@@ -1013,7 +1013,7 @@ class TestParser extends FunSuite {
     val input = "(A)"
     val result = new Parser(SourceInput.Str(input)).Type.run()
     assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Type.Ref])
+    assert(result.get.isInstanceOf[ParsedAst.Type.Named])
   }
 
   test("Type.Tuple03") {

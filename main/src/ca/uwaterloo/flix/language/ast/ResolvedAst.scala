@@ -467,6 +467,13 @@ object ResolvedAst {
     case class Tuple(elms: List[ResolvedAst.Type]) extends ResolvedAst.Type
 
     /**
+     * An AST node representing a set type.
+     *
+     * @param elms the type of the elements.
+     */
+    case class Set(elms: ResolvedAst.Type) extends ResolvedAst.Type
+
+    /**
      * An AST node representing a function type.
      *
      * @param args the argument types.

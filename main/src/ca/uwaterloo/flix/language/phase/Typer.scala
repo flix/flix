@@ -716,6 +716,7 @@ object Typer {
         }
         TypedAst.Type.Enum(cases)
       case ResolvedAst.Type.Tuple(elms) => TypedAst.Type.Tuple(elms map typer)
+      case ResolvedAst.Type.Set(elms) => TypedAst.Type.Set(typer(elms))
       case ResolvedAst.Type.Function(args, retTpe) => TypedAst.Type.Lambda(args map typer, typer(retTpe))
       case ResolvedAst.Type.Native(name, loc) => TypedAst.Type.Native(name)
     }

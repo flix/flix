@@ -765,11 +765,11 @@ object ParsedAst {
     case object Unit extends ParsedAst.Type
 
     /**
-     * An AST node that represent a reference to a type.
+     * An AST node that represent a reference to a named type.
      *
      * @param name the name of the type.
      */
-    case class Ref(name: Name.Unresolved) extends ParsedAst.Type
+    case class Named(name: Name.Unresolved) extends ParsedAst.Type
 
     /**
      * An AST node that represents a tagged type.
