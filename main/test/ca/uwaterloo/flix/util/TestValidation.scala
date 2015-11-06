@@ -99,6 +99,17 @@ class TestValidation extends FunSuite {
     assertResult(Success("OOFOOF", Vector(1, 2, 3, 4, 5, 6, 7, 8, 9)))(result)
   }
 
+  test("flatMap05") {
+    val result = "foo".toSuccess[String, Int].flatMap {
+      case x => Success(x.toUpperCase, Vector(1, 2, 3))
+    }.flatMap {
+      case y => Failure(Vector(4, 5, 6))
+    }.flatMap {
+      case z => Failure(Vector(7, 8, 9))
+    }
+    assertResult(Failure(Vector(1, 2, 3, 4, 5, 6)))(result)
+  }
+
   test("@@(List)01") {
     val result = @@(List(
       "a".toSuccess,
