@@ -446,6 +446,12 @@ object Typer {
 
         case ResolvedAst.Expression.Ascribe(re, rtype, loc) =>
           visit(re, env) flatMap {
+            case TypedAst.Expression.NativeField(field, _, _) =>
+              TypedAst.Expression.NativeField(field, Type.typer(rtype), loc).toSuccess
+
+            case TypedAst.Expression.NativeMethod(method, _, _) =>
+              TypedAst.Expression.NativeMethod(method, Type.typer(rtype), loc).toSuccess
+
             case e => expect(Type.typer(rtype), e.tpe, loc) map {
               case _ => e
             }
@@ -585,7 +591,7 @@ object Typer {
               }
 
               @@(termsVal) map {
-                case terms => TypedAst.Predicate.Body.Relation(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
+                case terms => TypedAst.Predicate.Body.Collection(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
               }
             case ResolvedAst.Collection.Lattice(_, keys, values, _) =>
               // type check the terms against the attributes.
@@ -595,7 +601,7 @@ object Typer {
               }
 
               @@(termsVal) map {
-                case terms => TypedAst.Predicate.Body.Relation(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
+                case terms => TypedAst.Predicate.Body.Collection(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
               }
           }
 
@@ -710,6 +716,7 @@ object Typer {
         }
         TypedAst.Type.Enum(cases)
       case ResolvedAst.Type.Tuple(elms) => TypedAst.Type.Tuple(elms map typer)
+      case ResolvedAst.Type.Set(elms) => TypedAst.Type.Set(typer(elms))
       case ResolvedAst.Type.Function(args, retTpe) => TypedAst.Type.Lambda(args map typer, typer(retTpe))
       case ResolvedAst.Type.Native(name, loc) => TypedAst.Type.Native(name)
     }

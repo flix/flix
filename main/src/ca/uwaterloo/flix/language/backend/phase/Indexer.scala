@@ -22,7 +22,7 @@ object Indexer {
       // iterate through each collection predicate in the body.
       for (body <- constraint.body) {
         body match {
-          case Predicate.Body.Relation(name, pterms, _, _) =>
+          case Predicate.Body.Collection(name, pterms, _, _) =>
             // determine the terms usable for indexing based on whether the predicate refers to a relation or lattice.
             val terms = root.collections(name) match {
               case r: TypedAst.Collection.Relation => pterms
@@ -58,7 +58,7 @@ object Indexer {
       collection match {
         case r: TypedAst.Collection.Relation =>
           val idxs = indexes.getOrElse(name, Set.empty)
-          indexes(name) = idxs + Seq(0)
+          indexes(name) = idxs + Seq(0) // + r.attributes.indices // TODO
         case l: TypedAst.Collection.Lattice =>
           val idxs = indexes.getOrElse(name, Set.empty)
           indexes(name) = idxs + Seq(0)

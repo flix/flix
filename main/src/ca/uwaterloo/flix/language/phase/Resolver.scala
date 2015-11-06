@@ -906,7 +906,7 @@ object Resolver {
     def resolve(wast: WeededAst.Type, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Type, ResolverError] = {
       def visit(wast: WeededAst.Type): Validation[ResolvedAst.Type, ResolverError] = wast match {
         case WeededAst.Type.Unit => ResolvedAst.Type.Unit.toSuccess
-        case WeededAst.Type.Ref(name) => name.parts match {
+        case WeededAst.Type.Named(name) => name.parts match {
           case Seq("Bool") => ResolvedAst.Type.Bool.toSuccess
           case Seq("Int") => ResolvedAst.Type.Int.toSuccess
           case Seq("Str") => ResolvedAst.Type.Str.toSuccess
@@ -924,6 +924,10 @@ object Resolver {
             case cases => ResolvedAst.Type.Enum(cases)
           }
         case WeededAst.Type.Tuple(welms) => @@(welms map (e => resolve(e, namespace, syms))) map ResolvedAst.Type.Tuple
+        case WeededAst.Type.Set(welms) =>
+          resolve(welms, namespace, syms) map {
+            case elms => ResolvedAst.Type.Set(elms)
+          }
         case WeededAst.Type.Function(wargs, wretType) =>
           val argsVal = @@(wargs map visit)
           val retTypeVal = visit(wretType)

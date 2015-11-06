@@ -644,6 +644,8 @@ object WeededAst {
 
   }
 
+  // TODO: Move type out of AST? and introduce an AnnotatedType.
+
   /**
    * A common super-type for AST nodes that represent types. 
    */
@@ -657,11 +659,11 @@ object WeededAst {
     case object Unit extends WeededAst.Type
 
     /**
-     * An AST node that represent a reference to a type.
+     * An AST node that represent a reference to a named type.
      *
      * @param name the name of the type.
      */
-    case class Ref(name: Name.Unresolved) extends WeededAst.Type
+    case class Named(name: Name.Unresolved) extends WeededAst.Type
 
     /**
      * An AST node that represents a tagged type.
@@ -685,6 +687,13 @@ object WeededAst {
      * @param elms the type of the tuple elements.
      */
     case class Tuple(elms: List[WeededAst.Type]) extends WeededAst.Type
+
+    /**
+     * An AST node that represents a set type.
+     *
+     * @param elms the type of the elements.
+     */
+    case class Set(elms: WeededAst.Type) extends WeededAst.Type
 
     /**
      * An AST node that represents a function type.
