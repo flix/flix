@@ -126,13 +126,13 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     case r: TypedAst.Collection.Relation =>
       val changed = dataStore.relations(name).inferredFact(fact)
       if (changed && enqueue) {
-        worklist ++= dependencies(r.name, fact)
+        dependencies(r.name, fact)
       }
 
     case l: TypedAst.Collection.Lattice =>
       val changed = dataStore.lattices(name).inferredFact(fact)
       if (changed && enqueue) {
-        worklist ++= dependencies(l.name, fact)
+        dependencies(l.name, fact)
       }
   }
 
@@ -267,7 +267,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   /**
     * Returns all dependencies of the given `name` along with an environment.
     */
-  def dependencies(name: Name.Resolved, fact: Array[Value]): Traversable[(Constraint.Rule, mutable.Map[String, Value])] = {
+  def dependencies(name: Name.Resolved, fact: Array[Value]): Unit = {
 
     def unify(pat: Array[String], fact: Array[Value]): mutable.Map[String, Value] = {
       val env = mutable.Map.empty[String, Value]
@@ -281,27 +281,23 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       env
     }
 
-    val result = ListBuffer.empty[(Constraint.Rule, mutable.Map[String, Value])]
-
     for ((rule, p) <- sCtx.root.dependenciesOf(name)) {
       sCtx.root.collections(name) match {
         case r: TypedAst.Collection.Relation =>
           // unify all terms with their values.
           val env = unify(p.index2var, fact)
           if (env != null) {
-            result += ((rule, env))
+            worklist += ((rule, env))
           }
         case l: TypedAst.Collection.Lattice =>
           // unify only key terms with their values.
           val numberOfKeys = l.keys.length
           val env = unify(p.index2var.take(numberOfKeys), fact.take(numberOfKeys))
           if (env != null) {
-            result += ((rule, mutable.Map.empty))
+            worklist += ((rule, env))
           }
       }
     }
-
-    result
   }
 
 
