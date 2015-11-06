@@ -1,8 +1,11 @@
 package ca.uwaterloo.flix.util
 
+import scala.collection.mutable
+
 // TODO: Improve naming
 // TODO Incorporate back into uMonitor.
 // TODO: Write test cases
+// TODO: Consider optimizations for thisclass.
 sealed trait Validation[+Value, +Error] {
 
   import Validation._
@@ -26,8 +29,8 @@ sealed trait Validation[+Value, +Error] {
   @inline
   final def flatMap[Output, A >: Error](f: Value => Validation[Output, A]): Validation[Output, A] = this match {
     case Success(input, errors) => f(input) match {
-      case Success(value, otherAlternatives) => Success(value, otherAlternatives ::: errors)
-      case Failure(otherAlternatives) => Failure(otherAlternatives ::: errors)
+      case Success(value, thatErrors) => Success(value, thatErrors ++: errors)
+      case Failure(thatErrors) => Failure(thatErrors ++: errors)
     }
     case Failure(errors) => Failure(errors)
   }
@@ -35,7 +38,7 @@ sealed trait Validation[+Value, +Error] {
   /**
    * Returns the errors in this [[Success]] or [[Failure]] object.
    */
-  def errors: List[Error]
+  def errors: Vector[Error]
 
   /**
    * Returns `true` iff this is a [[Success]] object.
@@ -71,8 +74,8 @@ object Validation {
    * Returns a sequence of successful elements wrapped in [[Success]].
    */
   @inline
-  def fold[In, Out, Alternative](xs: Seq[In], zero: Out)(f: (Out, In) => Validation[Out, Alternative]): Validation[Out, Alternative] = {
-    xs.foldLeft(Success(zero, List.empty[Alternative]): Validation[Out, Alternative]) {
+  def fold[In, Out, Error](xs: Seq[In], zero: Out)(f: (Out, In) => Validation[Out, Error]): Validation[Out, Error] = {
+    xs.foldLeft(Success(zero, Vector.empty[Error]): Validation[Out, Error]) {
       case (acc, a) => acc flatMap {
         case value => f(value, a)
       }
@@ -82,12 +85,10 @@ object Validation {
   /**
    * TODO: DOC
    */
-  // TODO: Consider only folding over value?
-  // TODO: Rename to map
   // TODO: need foldMap, foldMapKeys, foldMapValues
   @inline
-  def fold[K, V, K2, V2, Alternative](m: Map[K, V])(f: (K, V) => Validation[(K2, V2), Alternative]): Validation[Map[K2, V2], Alternative] =
-    m.foldLeft(Success(Map.empty[K2, V2], List.empty[Alternative]): Validation[Map[K2, V2], Alternative]) {
+  def fold[K, V, K2, V2, Error](m: Map[K, V])(f: (K, V) => Validation[(K2, V2), Error]): Validation[Map[K2, V2], Error] =
+    m.foldLeft(Success(Map.empty[K2, V2], Vector.empty[Error]): Validation[Map[K2, V2], Error]) {
       case (macc, (k, v)) => macc flatMap {
         case ma => f(k, v) map {
           case ko => ma + ko
@@ -96,26 +97,22 @@ object Validation {
     }
 
   /**
-   * Flattens a sequence of validations into one validation. Alternatives are concatenated.
+   * Flattens a sequence of validations into one validation. Errors are concatenated.
    *
    * Returns [[Success]] if every element in `xs` is a [[Success]].
    */
-  // TODO: rename to @@?
-  // TODO: Order is wrong
-  // TODO: Prefer lists to Seq?
   @inline
-  def @@[Value, Alternative](xs: Traversable[Validation[Value, Alternative]]): Validation[List[Value], Alternative] = {
-    // TODO: Optimize
-    val zero = Success(List.empty[Value], List.empty[Alternative]): Validation[List[Value], Alternative]
-    xs.foldLeft(zero) {
-      case (Success(value, errors), Success(otherValue, otherAlternatives)) =>
-        Success(value ::: otherValue :: Nil, otherAlternatives ::: errors)
-      case (Success(value, errors), Failure(otherAlternatives)) =>
-        Failure(otherAlternatives ::: errors)
-      case (Failure(errors), Success(otherValue, otherAlternatives)) =>
-        Failure(otherAlternatives ::: errors)
-      case (Failure(errors), Failure(otherAlternatives)) =>
-        Failure(otherAlternatives ::: errors)
+  def @@[Value, Error](xs: Traversable[Validation[Value, Error]]): Validation[List[Value], Error] = {
+    val zero = Success(List.empty[Value], Vector.empty[Error]): Validation[List[Value], Error]
+    xs.foldRight(zero) {
+      case (Success(curValue, curErrors), Success(accValue, accErrors)) =>
+        Success(curValue :: accValue, curErrors ++: accErrors)
+      case (Success(_, curErrors), Failure(accErrors)) =>
+        Failure(curErrors ++: accErrors)
+      case (Failure(curErrors), Success(_, accErrors)) =>
+        Failure(curErrors ++: accErrors)
+      case (Failure(curErrors), Failure(accErrors)) =>
+        Failure(curErrors ++: accErrors)
     }
   }
 
@@ -123,20 +120,20 @@ object Validation {
    * Returns a sequence of values wrapped in a [[Success]] for every [[Success]] in `xs`. Alternatives are concatenated.
    */
   @inline
-  def collect[Value, Alternative](xs: Seq[Validation[Value, Alternative]]): Validation[Seq[Value], Alternative] = {
-    val zero = Success(List.empty[Value], List.empty[Alternative]): Validation[List[Value], Alternative]
+  def collect[Value, Error](xs: Seq[Validation[Value, Error]]): Validation[Seq[Value], Error] = {
+    val zero = Success(List.empty[Value], Vector.empty[Error]): Validation[List[Value], Error]
     xs.foldLeft(zero) {
       case (Success(value, errors), Success(otherValue, otherAlternatives)) =>
-        Success(otherValue :: value, otherAlternatives ::: errors)
+        Success(otherValue :: value, otherAlternatives ++: errors)
 
       case (Success(value, errors), Failure(otherAlternatives)) =>
-        Success(value, otherAlternatives ::: errors)
+        Success(value, otherAlternatives ++: errors)
 
       case (Failure(errors), Success(otherValue, otherAlternatives)) =>
-        Success(List(otherValue), otherAlternatives ::: errors)
+        Success(List(otherValue), otherAlternatives ++: errors)
 
       case (Failure(errors), Failure(otherAlternatives)) =>
-        Success(List.empty, otherAlternatives ::: errors)
+        Success(List.empty, otherAlternatives ++: errors)
     }
   }
 
@@ -148,8 +145,8 @@ object Validation {
   def @@[A, B, X](a: Validation[A, X], b: Validation[B, X]): Validation[(A, B), X] =
     (a, b) match {
       case (Success(valueA, altA), Success(valueB, altB)) =>
-        Success((valueA, valueB), altB ::: altA)
-      case _ => Failure(b.errors ::: a.errors)
+        Success((valueA, valueB), altB ++: altA)
+      case _ => Failure(b.errors ++: a.errors)
     }
 
   /**
@@ -159,8 +156,8 @@ object Validation {
   def @@[A, B, C, X](a: Validation[A, X], b: Validation[B, X], c: Validation[C, X]): Validation[(A, B, C), X] =
     (@@(a, b), c) match {
       case (Success((valueA, valueB), altAB), Success(valueC, altC)) =>
-        Success((valueA, valueB, valueC), altC ::: altAB)
-      case (that, _) => Failure(c.errors ::: that.errors)
+        Success((valueA, valueB, valueC), altC ++: altAB)
+      case (that, _) => Failure(c.errors ++: that.errors)
     }
 
   /**
@@ -171,8 +168,8 @@ object Validation {
                         d: Validation[D, X]): Validation[(A, B, C, D), X] =
     (@@(a, b, c), d) match {
       case (Success((valueA, valueB, valueC), altABC), Success(valueD, altD)) =>
-        Success((valueA, valueB, valueC, valueD), altD ::: altABC)
-      case (that, _) => Failure(d.errors ::: that.errors)
+        Success((valueA, valueB, valueC, valueD), altD ++: altABC)
+      case (that, _) => Failure(d.errors ++: that.errors)
     }
 
   /**
@@ -183,8 +180,8 @@ object Validation {
                            d: Validation[D, X], e: Validation[E, X]): Validation[(A, B, C, D, E), X] =
     (@@(a, b, c, d), e) match {
       case (Success((valueA, valueB, valueC, valueD), altABCD), Success(valueE, altE)) =>
-        Success((valueA, valueB, valueC, valueD, valueE), altE ::: altABCD)
-      case (that, _) => Failure(e.errors ::: that.errors)
+        Success((valueA, valueB, valueC, valueD, valueE), altE ++: altABCD)
+      case (that, _) => Failure(e.errors ++: that.errors)
     }
 
   /**
@@ -195,8 +192,8 @@ object Validation {
                               d: Validation[D, X], e: Validation[E, X], f: Validation[F, X]): Validation[(A, B, C, D, E, F), X] =
     (@@(a, b, c, d, e), f) match {
       case (Success((valueA, valueB, valueC, valueD, valueE), altABCDE), Success(valueF, altF)) =>
-        Success((valueA, valueB, valueC, valueD, valueE, valueF), altF ::: altABCDE)
-      case (that, _) => Failure(f.errors ::: that.errors)
+        Success((valueA, valueB, valueC, valueD, valueE, valueF), altF ++: altABCDE)
+      case (that, _) => Failure(f.errors ++: that.errors)
     }
 
   /**
@@ -208,8 +205,8 @@ object Validation {
                                  g: Validation[G, X]): Validation[(A, B, C, D, E, F, G), X] =
     (@@(a, b, c, d, e, f), g) match {
       case (Success((valueA, valueB, valueC, valueD, valueE, valueF), altABCDEF), Success(valueG, altG)) =>
-        Success((valueA, valueB, valueC, valueD, valueE, valueF, valueG), altG ::: altABCDEF)
-      case (that, _) => Failure(g.errors ::: that.errors)
+        Success((valueA, valueB, valueC, valueD, valueE, valueF, valueG), altG ++: altABCDEF)
+      case (that, _) => Failure(g.errors ++: that.errors)
     }
 
   /**
@@ -221,8 +218,8 @@ object Validation {
                                     g: Validation[G, X], h: Validation[H, X]): Validation[(A, B, C, D, E, F, G, H), X] =
     (@@(a, b, c, d, e, f, g), h) match {
       case (Success((valueA, valueB, valueC, valueD, valueE, valueF, valueG), altABCDEFG), Success(valueH, altH)) =>
-        Success((valueA, valueB, valueC, valueD, valueE, valueF, valueG, valueH), altH ::: altABCDEFG)
-      case (that, _) => Failure(h.errors ::: that.errors)
+        Success((valueA, valueB, valueC, valueD, valueE, valueF, valueG, valueH), altH ++: altABCDEFG)
+      case (that, _) => Failure(h.errors ++: that.errors)
     }
 
   /**
@@ -232,43 +229,33 @@ object Validation {
   def #@[A, B, X](a: Validation[A, X], b: Validation[B, X]): Validation[B, X] =
     (a, b) match {
       case (Success(valueA, altA), Success(valueB, altB)) =>
-        Success(valueB, altB ::: altA)
-      case _ => Failure(b.errors ::: a.errors)
+        Success(valueB, altB ++: altA)
+      case _ => Failure(b.errors ++: a.errors)
     }
-
-  /**
-   * Add implicit `toVal` method.
-   */
-  implicit class ToValidation[+Value](val opt: Option[Value]) {
-    def toSuccessOr[Alternative](alt: => Alternative): Validation[Value, Alternative] = opt match {
-      case None => Failure(List(alt))
-      case Some(value) => Success(value, List.empty)
-    }
-  }
 
   /**
    * Add implicit `toSuccess` method.
    */
   implicit class ToSuccess[+Value](val value: Value) {
-    def toSuccess[R >: Value, Alternative]: Validation[R, Alternative] = Success(value, List.empty)
+    def toSuccess[V >: Value, Error]: Validation[V, Error] = Success(value, Vector.empty)
   }
 
   /**
    * Add implicit `toFailure` method.
    */
-  implicit class ToFailure[+Alternative](val failure: Alternative) {
-    def toFailure[Value, A >: Alternative]: Validation[Value, A] = Failure(List(failure))
+  implicit class ToFailure[+Error](val failure: Error) {
+    def toFailure[Value, E >: Error]: Validation[Value, E] = Failure(Vector(failure))
   }
 
   /**
    * Represents a success `value` and `errors`.
    */
-  case class Success[Value, Alternative](value: Value, errors: List[Alternative]) extends Validation[Value, Alternative]
+  case class Success[Value, Error](value: Value, errors: Vector[Error]) extends Validation[Value, Error]
 
   /**
    * Represents a failure with no value and `errors`.
    */
-  case class Failure[Value, Alternative](errors: List[Alternative]) extends Validation[Value, Alternative]
+  case class Failure[Value, Error](errors: Vector[Error]) extends Validation[Value, Error]
 
 }
 

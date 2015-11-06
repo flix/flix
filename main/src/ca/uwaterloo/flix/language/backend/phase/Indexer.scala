@@ -58,7 +58,7 @@ object Indexer {
       collection match {
         case r: TypedAst.Collection.Relation =>
           val idxs = indexes.getOrElse(name, Set.empty)
-          indexes(name) = idxs + Seq(0) + r.attributes.indices
+          indexes(name) = idxs + Seq(0) // + r.attributes.indices // TODO
         case l: TypedAst.Collection.Lattice =>
           val idxs = indexes.getOrElse(name, Set.empty)
           indexes(name) = idxs + Seq(0)
