@@ -146,6 +146,18 @@ class TestValidation extends FunSuite {
     assertResult(Success(List("a", "b", "c", "d", "e"), Vector("x", "y", "z")))(result)
   }
 
+  test("Collect01") {
+    val result = collect(List(
+      "a".toSuccess,
+      "b".toSuccess,
+      "c".toFailure,
+      "d".toSuccess,
+      "e".toSuccess
+    ))
+
+    assertResult(Success(List("a", "b", "c", "d", "e"), Vector("x", "y", "z")))(result)
+  }
+
   // TODO: Rest
 
 }

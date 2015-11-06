@@ -117,7 +117,7 @@ object Validation {
   }
 
   /**
-   * Returns a sequence of values wrapped in a [[Success]] for every [[Success]] in `xs`. Alternatives are concatenated.
+   * Returns a sequence of values wrapped in a [[Success]] for every [[Success]] in `xs`. Errors are concatenated.
    */
   @inline
   def collect[Value, Error](xs: Seq[Validation[Value, Error]]): Validation[Seq[Value], Error] = {
