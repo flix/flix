@@ -29,8 +29,8 @@ sealed trait Validation[+Value, +Error] {
   @inline
   final def flatMap[Output, A >: Error](f: Value => Validation[Output, A]): Validation[Output, A] = this match {
     case Success(input, errors) => f(input) match {
-      case Success(value, thatErrors) => Success(value, thatErrors ++: errors)
-      case Failure(thatErrors) => Failure(thatErrors ++: errors)
+      case Success(value, thatErrors) => Success(value, errors ++: thatErrors)
+      case Failure(thatErrors) => Failure(errors ++: thatErrors)
     }
     case Failure(errors) => Failure(errors)
   }

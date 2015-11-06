@@ -4,7 +4,6 @@ import ca.uwaterloo.flix.util.Validation._
 
 import org.scalatest.FunSuite
 
-import scala.RuntimeException
 
 class TestValidation extends FunSuite {
 
@@ -61,6 +60,43 @@ class TestValidation extends FunSuite {
       case x => x.toUpperCase
     }
     assertResult(Failure(Vector(ex)))(result)
+  }
+
+  test("flatMap01") {
+    val result = "foo".toSuccess[String, Exception].flatMap {
+      case x => x.toUpperCase.toSuccess
+    }
+    assertResult(Success("FOO", Vector.empty))(result)
+  }
+
+  test("flatMap02") {
+    val result = "foo".toSuccess[String, Exception].flatMap {
+      case x => x.toUpperCase.toSuccess
+    }.flatMap {
+      case y => y.reverse.toSuccess
+    }.flatMap {
+      case z => (z + z).toSuccess
+    }
+    assertResult(Success("OOFOOF", Vector.empty))(result)
+  }
+
+  test("flatMap03") {
+    val ex = new RuntimeException()
+    val result = "foo".toSuccess[String, Exception].flatMap {
+      case x => ex.toFailure
+    }
+    assertResult(Failure(Vector(ex)))(result)
+  }
+
+  test("flatMap04") {
+    val result = "foo".toSuccess[String, Int].flatMap {
+      case x => Success(x.toUpperCase, Vector(1, 2, 3))
+    }.flatMap {
+      case y => Success(y.reverse, Vector(4, 5, 6))
+    }.flatMap {
+      case z => Success(z + z, Vector(7, 8, 9))
+    }
+    assertResult(Success("OOFOOF", Vector(1, 2, 3, 4, 5, 6, 7, 8, 9)))(result)
   }
 
   test("@@(List)01") {
