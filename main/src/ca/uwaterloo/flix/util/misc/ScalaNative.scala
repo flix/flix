@@ -5,6 +5,8 @@ object ScalaNative {
   val strTuple2 = ("foo", "bar")
   val tuple6 = (true, false, 1, 5, ("foo", "bar"), 42)
   val set = Set(1, 2, 3)
+  val setOfTuples = Set((0, "zero"), (1, "un"), (2, "deux"), (3, "trois"), (4, "quatre"), (5, "cinq"))
+  val tupleOfSets = (Set(0, 1, 2, 3), Set("zero", "un", "deux", "trois"), Set("zero", "one", "two", "three"))
 
   def mkTuple2(t1: Int, t2: Int) = (t1, t2)
   def incrTuple2(t: (Int, Int)) = (t._1 + 1, t._2 + 1)

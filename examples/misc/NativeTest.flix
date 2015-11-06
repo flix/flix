@@ -151,12 +151,18 @@ namespace NativeTest {
     def reverseTuple6(t: #scala.Tuple6): #scala.Tuple6 =
         #ca.uwaterloo.flix.util.misc.ScalaNative.reverseTuple6(t)
 
+    // Hack: type ascription for function takes a bogus parameter, because all Flix functions must take one or more args
     def set(i: Int): Set[Int] =
         (#ca.uwaterloo.flix.util.misc.ScalaNative.set: (Int) -> Set[Int])()
     def mkSet(i: Int): Set[Int] =
         (#ca.uwaterloo.flix.util.misc.ScalaNative.mkSet: (Int) -> Set[Int])(i)
     def incrSetBy(s: Set[Int], i: Int): Set[Int] =
         (#ca.uwaterloo.flix.util.misc.ScalaNative.incrSetBy: (Set[Int], Int) -> Set[Int])(s, i)
+
+    def setOfTuples(i: Int): Set[(Int, Str)] =
+        (#ca.uwaterloo.flix.util.misc.ScalaNative.setOfTuples: (Int) -> Set[(Int, Str)])()
+    def tupleOfSets(i: Int): (Set[Int], Set[Str], Set[Str]) =
+        (#ca.uwaterloo.flix.util.misc.ScalaNative.tupleOfSets: (Int) -> (Set[Int], Set[Str], Set[Str]))()
 
     /* Expected result
        +---+-------+-------+-------+-------+-------+
@@ -355,4 +361,26 @@ namespace NativeTest {
     Set(4, incrSetBy(mkSet(4), 10)).
     Set(5, incrSetBy(mkSet(5), 3)).
     print Set.
+
+    /* Expected result (order may be different)
+       +----------------------------------------------------------+
+       | s                                                        |
+       +----------------------------------------------------------+
+       | {(1,un),(0,zero),(3,trois),(5,cinq),(2,deux),(4,quatre)} |
+       +----------------------------------------------------------+
+    */
+    rel SetOfTuples(s: Set[(Int, Str)]);
+    SetOfTuples(setOfTuples(0)).
+    print SetOfTuples.
+
+    /* Expected result (order may be different)
+       +-------------------------------------------------------+
+       | t                                                     |
+       +-------------------------------------------------------+
+       | ({0,1,2,3},{zero,un,deux,trois},{zero,one,two,three}) |
+       +-------------------------------------------------------+
+    */
+    rel TupleOfSets(t: (Set[Int], Set[Str], Set[Str]));
+    TupleOfSets(tupleOfSets(0)).
+    print TupleOfSets.
 }
