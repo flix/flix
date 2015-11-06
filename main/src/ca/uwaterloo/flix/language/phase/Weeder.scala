@@ -717,6 +717,7 @@ object Weeder {
           }
 
         case p: ParsedAst.Predicate.Alias => IllegalHeadPredicate(p.loc).toFailure
+        case p: ParsedAst.Predicate.Loop => IllegalHeadPredicate(p.loc).toFailure
         case p: ParsedAst.Predicate.Read => IllegalHeadPredicate(p.loc).toFailure
         case p: ParsedAst.Predicate.NotEqual => IllegalHeadPredicate(p.loc).toFailure
       }
@@ -736,6 +737,10 @@ object Weeder {
 
         case p: ParsedAst.Predicate.NotEqual =>
           WeededAst.Predicate.Body.NotEqual(p.ident1, p.ident2, p.loc).toSuccess
+
+        case p: ParsedAst.Predicate.Loop => Term.Head.compile(p.term, Map.empty) map {
+          case term => WeededAst.Predicate.Body.Loop(p.ident, term, p.loc)
+        }
 
         case p: ParsedAst.Predicate.Read =>
           @@(p.terms.map(t => Term.Body.compile(t))) flatMap {
@@ -816,7 +821,7 @@ object Weeder {
      */
     def compile(past: ParsedAst.Type): Validation[WeededAst.Type, WeederError] = past match {
       case ParsedAst.Type.Unit => WeededAst.Type.Unit.toSuccess
-      case ParsedAst.Type.Ref(name) => WeededAst.Type.Ref(name).toSuccess
+      case ParsedAst.Type.Named(name) => WeededAst.Type.Named(name).toSuccess
       case ParsedAst.Type.Function(pformals, pret) =>
         val formalTypeVal = @@(pformals map compile)
         val returnTypeVal = compile(pret)
@@ -829,6 +834,8 @@ object Weeder {
       case ParsedAst.Type.Tuple(pelms) => @@(pelms map compile) map {
         case elms => WeededAst.Type.Tuple(elms)
       }
+      case ParsedAst.Type.Parametric(Name.Unresolved(_, List("Set"), _), Seq(tpe)) =>
+        compile(tpe) map WeededAst.Type.Set
       case ParsedAst.Type.Parametric(name, pelms) =>
         Unsupported("Parametric types are not yet supported.", name.loc).toFailure
       case p@ParsedAst.Type.Native(sp1, name, sp2) =>

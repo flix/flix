@@ -303,6 +303,15 @@ object ResolvedAst {
       case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
       /**
+       * An AST node that represents the special loop predicate.
+       *
+       * @param ident the loop variable.
+       * @param term the set term.
+       * @param loc the source location.
+       */
+      case class Loop(ident: Name.Ident, term: ResolvedAst.Term.Head, loc: SourceLocation) extends ResolvedAst.Predicate.Body
+
+      /**
        * A special read predicate that occurs in the body of a rule.
        */
       case class Read(terms: List[ResolvedAst.Term.Body], path: ResolvedAst.Term.Body, loc: SourceLocation) extends ResolvedAst.Predicate.Body
@@ -456,6 +465,13 @@ object ResolvedAst {
      * @param elms the type of the elements.
      */
     case class Tuple(elms: List[ResolvedAst.Type]) extends ResolvedAst.Type
+
+    /**
+     * An AST node representing a set type.
+     *
+     * @param elms the type of the elements.
+     */
+    case class Set(elms: ResolvedAst.Type) extends ResolvedAst.Type
 
     /**
      * An AST node representing a function type.

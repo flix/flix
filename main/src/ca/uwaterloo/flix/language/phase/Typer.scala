@@ -446,6 +446,12 @@ object Typer {
 
         case ResolvedAst.Expression.Ascribe(re, rtype, loc) =>
           visit(re, env) flatMap {
+            case TypedAst.Expression.NativeField(field, _, _) =>
+              TypedAst.Expression.NativeField(field, Type.typer(rtype), loc).toSuccess
+
+            case TypedAst.Expression.NativeMethod(method, _, _) =>
+              TypedAst.Expression.NativeMethod(method, Type.typer(rtype), loc).toSuccess
+
             case e => expect(Type.typer(rtype), e.tpe, loc) map {
               case _ => e
             }
@@ -585,7 +591,7 @@ object Typer {
               }
 
               @@(termsVal) map {
-                case terms => TypedAst.Predicate.Body.Relation(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
+                case terms => TypedAst.Predicate.Body.Collection(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
               }
             case ResolvedAst.Collection.Lattice(_, keys, values, _) =>
               // type check the terms against the attributes.
@@ -595,7 +601,7 @@ object Typer {
               }
 
               @@(termsVal) map {
-                case terms => TypedAst.Predicate.Body.Relation(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
+                case terms => TypedAst.Predicate.Body.Collection(name, terms, TypedAst.Type.Predicate(terms map (_.tpe)), loc)
               }
           }
 
@@ -612,7 +618,12 @@ object Typer {
           }
 
         case ResolvedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
-          TypedAst.Predicate.Body.NotEqual(ident1, ident2, TypedAst.Type.Bool, loc: SourceLocation).toSuccess
+          TypedAst.Predicate.Body.NotEqual(ident1, ident2, TypedAst.Type.Bool, loc).toSuccess
+
+        case ResolvedAst.Predicate.Body.Loop(ident, rterm, loc) =>
+          Term.typer(rterm, TypedAst.Type.Set(TypedAst.Type.Native("java.lang.Object")), root) map {
+            case term => TypedAst.Predicate.Body.Loop(ident, term, TypedAst.Type.Bool, loc) // TODO: Type
+          }
 
         case ResolvedAst.Predicate.Body.Read(rterms, rpath, loc) =>
           // TODO: This needs to use proper unification
@@ -705,6 +716,7 @@ object Typer {
         }
         TypedAst.Type.Enum(cases)
       case ResolvedAst.Type.Tuple(elms) => TypedAst.Type.Tuple(elms map typer)
+      case ResolvedAst.Type.Set(elms) => TypedAst.Type.Set(typer(elms))
       case ResolvedAst.Type.Function(args, retTpe) => TypedAst.Type.Lambda(args map typer, typer(retTpe))
       case ResolvedAst.Type.Native(name, loc) => TypedAst.Type.Native(name)
     }
@@ -784,6 +796,7 @@ object Typer {
     case TypedAst.Type.Enum(cases) =>
       s"Enum(${cases.head._2.name})"
     case TypedAst.Type.Tuple(elms) => "(" + elms.map(prettyPrint).mkString(", ") + ")"
+    case TypedAst.Type.Set(elms) => "Set(" + prettyPrint(elms) + ")"
     case TypedAst.Type.Lambda(args, retTpe) =>
       "(" + args.map(prettyPrint).mkString(", ") + ") -> " + prettyPrint(retTpe)
     case TypedAst.Type.Predicate(terms) => s"Predicate(${terms map prettyPrint})"
