@@ -1631,6 +1631,30 @@ class TestParser extends FunSuite {
     assertResult(UnaryOperator.UnaryMinus)(result)
   }
 
+  test("UnaryOperator.Set.IsEmpty") {
+    val input = "isEmpty?"
+    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    assertResult(UnaryOperator.Set.IsEmpty)(result)
+  }
+
+  test("UnaryOperator.Set.NonEmpty") {
+    val input = "nonEmpty?"
+    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    assertResult(UnaryOperator.Set.NonEmpty)(result)
+  }
+
+  test("UnaryOperator.Set.Singleton") {
+    val input = "singleton?"
+    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    assertResult(UnaryOperator.Set.Singleton)(result)
+  }
+
+  test("UnaryOperator.Set.Size") {
+    val input = "size?"
+    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    assertResult(UnaryOperator.Set.Size)(result)
+  }
+
   test("LogicalOp &&") {
     val input = "&&"
     val result = new Parser(SourceInput.Str(input)).LogicalOp.run().get
@@ -1710,6 +1734,33 @@ class TestParser extends FunSuite {
   }
 
   // TODO: Shift operators
+
+  test("BinarySetOp.Insert (+=)") {
+    val input = "+="
+    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    assertResult(BinaryOperator.Set.Insert)(result)
+  }
+
+  test("BinarySetOp.Remove (-=)") {
+    val input = "-="
+    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    assertResult(BinaryOperator.Set.Remove)(result)
+  }
+
+  test("BinarySetOp.Union (++)") {
+    val input = "++"
+    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    assertResult(BinaryOperator.Set.Union)(result)
+  }
+
+  test("BinarySetOp.Diff (--)") {
+    val input = "--"
+    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    assertResult(BinaryOperator.Set.Difference)(result)
+  }
+
+  // TODO: Consider more set operations?
+
 
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //

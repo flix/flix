@@ -11,8 +11,8 @@ import scala.io.Source
 // TODO: Parse whitespace more "tightly" to improve source positions.
 
 /**
- * A parser for the Flix language.
- */
+  * A parser for the Flix language.
+  */
 class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   /*
@@ -504,7 +504,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   def UnaryOp: Rule1[UnaryOperator] = rule {
     str("!") ~> (() => UnaryOperator.Not) |
       str("+") ~> (() => UnaryOperator.UnaryPlus) |
-      str("-") ~> (() => UnaryOperator.UnaryMinus)
+      str("-") ~> (() => UnaryOperator.UnaryMinus) |
+      atomic("isEmpty?") ~> (() => UnaryOperator.Set.IsEmpty) |
+      atomic("nonEmpty?") ~> (() => UnaryOperator.Set.NonEmpty) |
+      atomic("singleton?") ~> (() => UnaryOperator.Set.Singleton) |
+      atomic("size?") ~> (() => UnaryOperator.Set.Size)
   }
 
   def LogicalOp: Rule1[BinaryOperator] = rule {
@@ -524,7 +528,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   def MultiplicativeOp: Rule1[BinaryOperator] = rule {
     str("*") ~> (() => BinaryOperator.Times) |
       str("/") ~> (() => BinaryOperator.Divide) |
-      str("%") ~> (() => BinaryOperator.Modulo)
+      str("%") ~> (() => BinaryOperator.Modulo) |
+      atomic("+=") ~> (() => BinaryOperator.Set.Insert) |
+      atomic("-=") ~> (() => BinaryOperator.Set.Remove) |
+      atomic("++") ~> (() => BinaryOperator.Set.Union) |
+      atomic("--") ~> (() => BinaryOperator.Set.Difference)
   }
 
   def AdditiveOp: Rule1[BinaryOperator] = rule {
