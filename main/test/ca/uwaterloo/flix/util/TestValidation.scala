@@ -152,10 +152,10 @@ class TestValidation extends FunSuite {
       "b".toSuccess,
       "c".toFailure,
       "d".toSuccess,
-      "e".toSuccess
+      "e".toFailure
     ))
 
-    assertResult(Success(List("a", "b", "c", "d", "e"), Vector("x", "y", "z")))(result)
+    assertResult(Success(List("a", "b", "d"), Vector("c", "e")))(result)
   }
 
   // TODO: Rest

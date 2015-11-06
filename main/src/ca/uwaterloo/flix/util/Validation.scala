@@ -122,18 +122,15 @@ object Validation {
   @inline
   def collect[Value, Error](xs: Seq[Validation[Value, Error]]): Validation[Seq[Value], Error] = {
     val zero = Success(List.empty[Value], Vector.empty[Error]): Validation[List[Value], Error]
-    xs.foldLeft(zero) {
-      case (Success(value, errors), Success(otherValue, otherAlternatives)) =>
-        Success(otherValue :: value, otherAlternatives ++: errors)
-
-      case (Success(value, errors), Failure(otherAlternatives)) =>
-        Success(value, otherAlternatives ++: errors)
-
-      case (Failure(errors), Success(otherValue, otherAlternatives)) =>
-        Success(List(otherValue), otherAlternatives ++: errors)
-
-      case (Failure(errors), Failure(otherAlternatives)) =>
-        Success(List.empty, otherAlternatives ++: errors)
+    xs.foldRight(zero) {
+      case (Success(value, errors), Success(accValue, accErrors)) =>
+        Success(value :: accValue, errors ++: accErrors)
+      case (Success(value, errors), Failure(accErrors)) =>
+        Success(value :: Nil, errors ++: accErrors)
+      case (Failure(errors), Success(accValue, accErrors)) =>
+        Success(accValue, errors ++: accErrors)
+      case (Failure(errors), Failure(accErrors)) =>
+        Success(List.empty, errors ++: accErrors)
     }
   }
 
