@@ -148,10 +148,12 @@ namespace NativeTest {
     def reverseTuple6(t: #scala.Tuple6): #scala.Tuple6 =
         #ca.uwaterloo.flix.util.misc.ScalaNative.reverseTuple6(t)
 
-    def set(i: Int): Set[Int] = (#ca.uwaterloo.flix.util.misc.ScalaNative.set: (Int) -> Set[Int])()
-    def mkSet(i: Int): Set[Int] = (#ca.uwaterloo.flix.util.misc.ScalaNative.mkSet: (Int) -> Set[Int])(i)
-    def incrSetBy(s: Set[Int], i: Int): Set[Int] =
-        (#ca.uwaterloo.flix.util.misc.ScalaNative.incrSetBy: (Set[Int], Int) -> Set[Int])(s, i)
+    def set(i: Int): Set[#java.lang.Object] =
+        (#ca.uwaterloo.flix.util.misc.ScalaNative.set: (Int) -> Set[#java.lang.Object])()
+    def mkSet(i: Int): Set[#java.lang.Object] =
+        (#ca.uwaterloo.flix.util.misc.ScalaNative.mkSet: (Int) -> Set[#java.lang.Object])(i)
+    def incrSetBy(s: Set[#java.lang.Object], i: Int): Set[#java.lang.Object] =
+        (#ca.uwaterloo.flix.util.misc.ScalaNative.incrSetBy: (Set[#java.lang.Object], Int) -> Set[#java.lang.Object])(s, i)
 
     /* Expected result
        +---+-------+-------+-------+-------+-------+
@@ -331,18 +333,18 @@ namespace NativeTest {
     print Tuple6.
 
     /* Expected result (order may be different)
-       +---+-----------------------------+
-       | i | s                           |
-       +---+-----------------------------+
-       | 0 | Native(Set(1, 2, 3))        |
-       | 1 | Native(Set(2, 3, 4))        |
-       | 2 | Native(Set(3, 4, 5))        |
-       | 3 | Native(Set(0, 1, 2, 3))     |
-       | 4 | Native(Set(10, 11, 12, 13)) |
-       | 5 | Native(Set(5, 6, 7, 3, 4))  |
-       +---+-----------------------------+
+       +---+-----------------------------------------------------+
+       | i | s                                                   |
+       +---+-----------------------------------------------------+
+       | 0 | {Native(1),Native(2),Native(3)}                     |
+       | 1 | {Native(2),Native(3),Native(4)}                     |
+       | 2 | {Native(3),Native(4),Native(5)}                     |
+       | 3 | {Native(0),Native(1),Native(2),Native(3)}           |
+       | 4 | {Native(10),Native(11),Native(12),Native(13)}       |
+       | 5 | {Native(6),Native(5),Native(4),Native(3),Native(7)} |
+       +---+-----------------------------------------------------+
     */
-    rel Set(i: Int, s: Set[Int]);
+    rel Set(i: Int, s: Set[#java.lang.Object]);
     Set(0, set(1)).
     Set(1, incrSetBy(set(1), 1)).
     Set(2, incrSetBy(set(1), 2)).
