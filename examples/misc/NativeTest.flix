@@ -148,6 +148,11 @@ namespace NativeTest {
     def reverseTuple6(t: #scala.Tuple6): #scala.Tuple6 =
         #ca.uwaterloo.flix.util.misc.ScalaNative.reverseTuple6(t)
 
+    def set(i: Int): Set[Int] = (#ca.uwaterloo.flix.util.misc.ScalaNative.set: (Int) -> Set[Int])()
+    def mkSet(i: Int): Set[Int] = (#ca.uwaterloo.flix.util.misc.ScalaNative.mkSet: (Int) -> Set[Int])(i)
+    def incrSetBy(s: Set[Int], i: Int): Set[Int] =
+        (#ca.uwaterloo.flix.util.misc.ScalaNative.incrSetBy: (Set[Int], Int) -> Set[Int])(s, i)
+
     /* Expected result
        +---+-------+-------+-------+-------+-------+
        | i | b1    | b2    | b3    | b4    | b5    |
@@ -324,4 +329,25 @@ namespace NativeTest {
     Tuple6(tuple6(0)).
     Tuple6(reverseTuple6(tuple6(0))).
     print Tuple6.
+
+    /* Expected result (order may be different)
+       +---+-----------------------------+
+       | i | s                           |
+       +---+-----------------------------+
+       | 0 | Native(Set(1, 2, 3))        |
+       | 1 | Native(Set(2, 3, 4))        |
+       | 2 | Native(Set(3, 4, 5))        |
+       | 3 | Native(Set(0, 1, 2, 3))     |
+       | 4 | Native(Set(10, 11, 12, 13)) |
+       | 5 | Native(Set(5, 6, 7, 3, 4))  |
+       +---+-----------------------------+
+    */
+    rel Set(i: Int, s: Set[Int]);
+    Set(0, set(1)).
+    Set(1, incrSetBy(set(1), 1)).
+    Set(2, incrSetBy(set(1), 2)).
+    Set(3, mkSet(4)).
+    Set(4, incrSetBy(mkSet(4), 10)).
+    Set(5, incrSetBy(mkSet(5), 3)).
+    print Set.
 }
