@@ -27,6 +27,30 @@ object UnaryOperator {
    */
   case object UnaryMinus extends UnaryOperator
 
+  /**
+   * A common super-type for unary set operations.
+   */
+  sealed trait SetOperator extends UnaryOperator
+
+  object Set {
+
+    /**
+     * A unary operator that returns true if its argument is the empty set.
+     */
+    case object IsEmpty extends UnaryOperator.SetOperator
+
+    /**
+     * A unary operator that returns true if its argument is a non-empty set.
+     */
+    case object NonEmpty extends UnaryOperator.SetOperator
+
+    /**
+     * A unary operator that returns the size of a set.
+     */
+    case object Size extends UnaryOperator.SetOperator
+
+  }
+
 }
 
 /**
@@ -120,5 +144,31 @@ object BinaryOperator {
    * Logical disjunction.
    */
   case object Or extends LogicalOperator
+
+  /**
+   * A common super-type for binary set operators.
+   */
+  sealed trait SetOperator extends BinaryOperator
+
+  object Set {
+
+    case object Insert extends BinaryOperator.SetOperator
+
+    case object Remove extends BinaryOperator.SetOperator
+
+    case object Member extends BinaryOperator.SetOperator
+
+    case object Union extends BinaryOperator.SetOperator
+
+    case object Intersection extends BinaryOperator.SetOperator
+
+    case object Difference extends BinaryOperator.SetOperator
+
+    case object SubsetOf extends BinaryOperator.SetOperator
+
+    case object ProperSubsetOf extends BinaryOperator.SetOperator
+
+  }
+
 
 }

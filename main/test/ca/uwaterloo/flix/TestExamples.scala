@@ -27,7 +27,7 @@ class TestExamples extends FunSuite {
     assert(model.isSuccess)
   }
 
-  test("Constant.flix") {
+  ignore("Constant.flix") {
     val model = Flix.fromPaths(Paths.get("./examples/analysis/Constant.flix"))
     assert(model.isSuccess)
   }
@@ -37,7 +37,7 @@ class TestExamples extends FunSuite {
     assert(model.isSuccess)
   }
 
-  test("IDE.flix") {
+  ignore("IDE.flix") {
     val model = Flix.fromPaths(Paths.get("./examples/analysis/IDE.flix"))
     assert(model.isSuccess)
   }
@@ -81,7 +81,7 @@ class TestExamples extends FunSuite {
     assert(model.isSuccess)
   }
 
-  test("Cards.flix") {
+  ignore("Cards.flix") {
     val model = Flix.fromPaths(Paths.get("./examples/models/Cards.flix"))
     assert(model.isSuccess)
   }
@@ -121,7 +121,7 @@ class TestExamples extends FunSuite {
     assert(model.isSuccess)
   }
 
-  test("University.flix") {
+  ignore("University.flix") {
     val model = Flix.fromPaths(Paths.get("./examples/models/University.flix"))
     assert(model.isSuccess)
   }

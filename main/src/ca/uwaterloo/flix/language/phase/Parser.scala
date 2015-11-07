@@ -11,8 +11,8 @@ import scala.io.Source
 // TODO: Parse whitespace more "tightly" to improve source positions.
 
 /**
-  * A parser for the Flix language.
-  */
+ * A parser for the Flix language.
+ */
 class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   /*
@@ -383,30 +383,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
-  // NB: The parser works left-to-right, but the inline code ensures that the
-  // function types are right-associative.
   def Type: Rule1[ParsedAst.Type] = rule {
-    oneOrMore(SimpleType).separatedBy(optWS ~ "->" ~ optWS) ~> ((types: Seq[ParsedAst.Type]) => types match {
-      case xs if xs.size == 1 => xs.head
-      case xs => ParsedAst.Type.Function(xs.dropRight(1).toList, xs.last)
-    })
+    FunctionType | TupleType | ParametricType | NamedType | NativeType
   }
 
-  // NB: ParametricType must be parsed before AmbiguousType.
-  def SimpleType: Rule1[ParsedAst.Type] = rule {
-    ParametricType | NativeType | AmbiguousType | TupleType
-  }
-
-  def AmbiguousType: Rule1[ParsedAst.Type.Ref] = rule {
-    QName ~> ParsedAst.Type.Ref
-  }
-
-  def ParametricType: Rule1[ParsedAst.Type.Parametric] = rule {
-    QName ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ optWS ~> ParsedAst.Type.Parametric
-  }
-
-  def NativeType: Rule1[ParsedAst.Type.Native] = rule {
-    atomic("#") ~ SP ~ JavaName ~ SP ~ optWS ~> ParsedAst.Type.Native
+  def NamedType: Rule1[ParsedAst.Type.Named] = rule {
+    QName ~> ParsedAst.Type.Named
   }
 
   def TupleType: Rule1[ParsedAst.Type] = {
@@ -427,6 +409,18 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
   }
 
+  def FunctionType: Rule1[ParsedAst.Type] = rule {
+    "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~> ParsedAst.Type.Function
+  }
+
+  def ParametricType: Rule1[ParsedAst.Type.Parametric] = rule {
+    QName ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ optWS ~> ParsedAst.Type.Parametric
+  }
+
+  def NativeType: Rule1[ParsedAst.Type.Native] = rule {
+    atomic("#") ~ SP ~ JavaName ~ SP ~ optWS ~> ParsedAst.Type.Native
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Helpers                                                                 //
   /////////////////////////////////////////////////////////////////////////////
@@ -442,9 +436,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Identifiers & Names                                                     //
   /////////////////////////////////////////////////////////////////////////////
   def LegalIdentifier: Rule1[String] = rule {
-    capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum | "_") ~ zeroOrMore("'"))
+    capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum | "_" | "$") ~ zeroOrMore("'"))
   }
 
+  // TODO: Intern strings?
   def Ident: Rule1[Name.Ident] = rule {
     SP ~ LegalIdentifier ~ SP ~> Name.Ident
   }
