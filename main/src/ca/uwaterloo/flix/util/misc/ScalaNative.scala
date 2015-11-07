@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.util.misc
 
+import ca.uwaterloo.flix.runtime.Value
+
 object ScalaNative {
   // Note that these values are compiled as a static method
   val strTuple2 = ("foo", "bar")
@@ -21,4 +23,6 @@ object ScalaNative {
 
   def mkSet(i: Int) = (0 until i).toSet
   def incrSetBy(s: Set[Int], i: Int) = s.map(_ + i)
+
+  def hi(v: Value.Int, i: Int): Value.Int = Value.mkInt(v.i + i)
 }

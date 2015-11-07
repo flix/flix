@@ -105,17 +105,16 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     // construct the model.
     val relations = dataStore.relations.foldLeft(Map.empty[Name.Resolved, List[List[Value]]]) {
       case (macc, (name, relation)) =>
-        val inner = relation.scan.toList.map(_.toList)
-        macc + (name -> inner)
+        val table = relation.scan.toList.map(_.toList)
+        macc + ((name, table))
     }
     val lattices = dataStore.lattices.foldLeft(Map.empty[Name.Resolved, Map[List[Value], List[Value]]]) {
       case (macc, (name, lattice)) =>
-        val inner = lattice.scan.map {
+        val table = lattice.scan.map {
           case (keys, values) => (keys.toList, values.toList)
         }
-        macc + (name -> inner.toMap)
+        macc + ((name, table.toMap))
     }
-
     Model(sCtx.root, relations, lattices)
   }
 
@@ -171,7 +170,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     def cross(ps: List[Predicate.Body.Collection], row: mutable.Map[String, Value]): Unit = ps match {
       case Nil =>
         // cross product complete, now filter
-        filter(rule.filters, row)
+        loop(rule.loops, row)
       case (p: Predicate.Body.Collection) :: xs =>
         // lookup the relation or lattice.
         val collection = sCtx.root.collections(p.name) match {
@@ -206,10 +205,14 @@ class Solver(implicit sCtx: Solver.SolverContext) {
         }
     }
 
+    /**
+      * Unfolds the given loop predicates `ps` over the initial `row`.
+      */
     def loop(ps: List[Predicate.Body.Loop], row: mutable.Map[String, Value]): Unit = ps match {
       case Nil => filter(rule.filters, row)
       case Predicate.Body.Loop(name, term, _, _) :: rest =>
         val result = Interpreter.evalHeadTerm(term, sCtx.root, row.toMap)
+        ???
       // TODO: Cast to Set and iterate.
       // TODO: Call loop from cross.
     }

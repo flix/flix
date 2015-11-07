@@ -127,6 +127,8 @@ object ResolvedAst {
 
     case class Tuple(elms: List[ResolvedAst.Literal], loc: SourceLocation) extends ResolvedAst.Literal
 
+    case class Set(elms: List[ResolvedAst.Literal], loc: SourceLocation) extends ResolvedAst.Literal
+
   }
 
   sealed trait Expression extends Definition {
@@ -158,6 +160,8 @@ object ResolvedAst {
     case class Tag(name: Name.Resolved, ident: Name.Ident, e: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tuple(elms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Set(elms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Ascribe(e: ResolvedAst.Expression, tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Expression
 

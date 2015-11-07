@@ -276,7 +276,9 @@ object Interpreter {
         val newEnv = closureEnv ++ formals.map(_.ident.name).zip(args).toMap
         eval(body, root, newEnv)
       case Value.NativeMethod(method) =>
-        val nativeArgs = args.map(_.toJava)
+        val nativeArgs = args.zip(method.getParameterTypes.map(_.getCanonicalName)).map { case (arg, typ) =>
+            if (typ.startsWith("ca.uwaterloo.flix.runtime.Value")) arg else arg.toJava
+        }
         val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
         Value.java2flix(method.invoke(null, nativeArgs: _*), tpe)
     }

@@ -15,8 +15,8 @@ object Resolver {
   import ResolverError._
 
   /**
-   * A common super-type for resolver errors.
-   */
+    * A common super-type for resolver errors.
+    */
   sealed trait ResolverError extends Compiler.CompilationError
 
   object ResolverError {
@@ -24,12 +24,12 @@ object Resolver {
     implicit val consoleCtx = Compiler.ConsoleCtx
 
     /**
-     * An error raised to indicate that the given `name` is used for multiple definitions.
-     *
-     * @param name the name.
-     * @param loc1 the location of the first definition.
-     * @param loc2 the location of the second definition.
-     */
+      * An error raised to indicate that the given `name` is used for multiple definitions.
+      *
+      * @param name the name.
+      * @param loc1 the location of the first definition.
+      * @param loc2 the location of the second definition.
+      */
     case class DuplicateDefinition(name: Name.Resolved, loc1: SourceLocation, loc2: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.source.format}")}
@@ -45,11 +45,11 @@ object Resolver {
     }
 
     /**
-     * An error raised to indicate that the given `name` is illegal for a constant definition.
-     *
-     * @param name the invalid name.
-     * @param loc the location of the name.
-     */
+      * An error raised to indicate that the given `name` is illegal for a constant definition.
+      *
+      * @param name the invalid name.
+      * @param loc the location of the name.
+      */
     case class IllegalConstantName(name: String, loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -62,11 +62,11 @@ object Resolver {
     }
 
     /**
-     * An error raised to indicate that the given `name` is illegal for a relation definition.
-     *
-     * @param name the invalid name.
-     * @param loc the location of the name.
-     */
+      * An error raised to indicate that the given `name` is illegal for a relation definition.
+      *
+      * @param name the invalid name.
+      * @param loc the location of the name.
+      */
     // TODO: Rename to illegal collection name.
     case class IllegalRelationName(name: String, loc: SourceLocation) extends ResolverError {
       val format =
@@ -80,11 +80,11 @@ object Resolver {
     }
 
     /**
-     * An error raised to indicate that the given `name` is illegal as a variable name.
-     *
-     * @param name the invalid name.
-     * @param loc the location of the name.
-     */
+      * An error raised to indicate that the given `name` is illegal as a variable name.
+      *
+      * @param name the invalid name.
+      * @param loc the location of the name.
+      */
     case class IllegalVariableName(name: String, loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -97,11 +97,11 @@ object Resolver {
     }
 
     /**
-     * An error raised to indicate that the given `name` in the given `namespace` was not found.
-     *
-     * @param name the unresolved name.
-     * @param namespace the current namespace.
-     */
+      * An error raised to indicate that the given `name` in the given `namespace` was not found.
+      *
+      * @param name the unresolved name.
+      * @param namespace the current namespace.
+      */
     // TODO: Split this into multiple different versions:
     @deprecated
     case class UnresolvedReference(name: Name.Unresolved, namespace: List[String]) extends ResolverError {
@@ -109,12 +109,12 @@ object Resolver {
     }
 
     /**
-     * An error raised to indicate a reference to an unknown constant.
-     *
-     * @param name the unresolved name.
-     * @param namespace the current namespace.
-     * @param loc the source location of the reference.
-     */
+      * An error raised to indicate a reference to an unknown constant.
+      *
+      * @param name the unresolved name.
+      * @param namespace the current namespace.
+      * @param loc the source location of the reference.
+      */
     case class UnresolvedConstantReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -126,12 +126,12 @@ object Resolver {
     }
 
     /**
-     * An error raised to indicate a reference to an unknown enum.
-     *
-     * @param name the unresolved name.
-     * @param namespace the current namespace.
-     * @param loc the source location of the reference.
-     */
+      * An error raised to indicate a reference to an unknown enum.
+      *
+      * @param name the unresolved name.
+      * @param namespace the current namespace.
+      * @param loc the source location of the reference.
+      */
     case class UnresolvedEnumReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -143,12 +143,12 @@ object Resolver {
     }
 
     /**
-     * An error raised to indicate a reference to an unknown tag in an enum.
-     *
-     * @param enum the enum.
-     * @param tag the tag name.
-     * @param loc the source location of the reference.
-     */
+      * An error raised to indicate a reference to an unknown tag in an enum.
+      *
+      * @param enum the enum.
+      * @param tag the tag name.
+      * @param loc the source location of the reference.
+      */
     case class UnresolvedTagReference(enum: WeededAst.Definition.Enum, tag: String, loc: SourceLocation) extends ResolverError {
       val format = {
         val tags = enum.cases.keySet
@@ -166,12 +166,12 @@ object Resolver {
     }
 
     /**
-     * An error raised to indicate a reference to an unknown relation.
-     *
-     * @param name the unresolved name.
-     * @param namespace the current namespace.
-     * @param loc the source location of the reference.
-     */
+      * An error raised to indicate a reference to an unknown relation.
+      *
+      * @param name the unresolved name.
+      * @param namespace the current namespace.
+      * @param loc the source location of the reference.
+      */
     case class UnresolvedRelationReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -183,12 +183,12 @@ object Resolver {
     }
 
     /**
-     * An error raised to indicate a reference to an unknown type.
-     *
-     * @param name the unresolved name.
-     * @param namespace the current namespace.
-     * @param loc the source location of the reference.
-     */
+      * An error raised to indicate a reference to an unknown type.
+      *
+      * @param name the unresolved name.
+      * @param namespace the current namespace.
+      * @param loc the source location of the reference.
+      */
     case class UnresolvedTypeReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -200,11 +200,11 @@ object Resolver {
     }
 
     /**
-     * An error raised to indicate a reference to an unknown native class.
-     *
-     * @param name the fully qualified name of the class.
-     * @param loc the source location of the reference.
-     */
+      * An error raised to indicate a reference to an unknown native class.
+      *
+      * @param name the fully qualified name of the class.
+      * @param loc the source location of the reference.
+      */
     // TODO: Test case
     case class UnresolvedNativeClass(name: String, loc: SourceLocation) extends ResolverError {
       val format =
@@ -218,12 +218,12 @@ object Resolver {
     }
 
     /**
-     * An error raised to indicate a reference to an unknown field or method.
-     *
-     * @param clazz the fully qualified name of the class.
-     * @param member the field or method name.
-     * @param loc the source location of the reference.
-     */
+      * An error raised to indicate a reference to an unknown field or method.
+      *
+      * @param clazz the fully qualified name of the class.
+      * @param member the field or method name.
+      * @param loc the source location of the reference.
+      */
     // TODO: Test case
     case class UnresolvedFieldOrMethod(clazz: String, member: String, loc: SourceLocation) extends ResolverError {
       val format =
@@ -236,12 +236,12 @@ object Resolver {
     }
 
     /**
-     * An error raised to indicate a reference to an unknown field or method.
-     *
-     * @param clazz the fully qualified name of the class.
-     * @param member the field or method name.
-     * @param loc the source location of the reference.
-     */
+      * An error raised to indicate a reference to an unknown field or method.
+      *
+      * @param clazz the fully qualified name of the class.
+      * @param member the field or method name.
+      * @param loc the source location of the reference.
+      */
     // TODO: Test case
     case class AmbiguousFieldOrMethod(clazz: String, member: String, loc: SourceLocation) extends ResolverError {
       val format =
@@ -333,8 +333,8 @@ object Resolver {
 
 
   /**
-   * Resolves all symbols in the given AST `wast`.
-   */
+    * Resolves all symbols in the given AST `wast`.
+    */
   def resolve(wast: WeededAst.Root): Validation[ResolvedAst.Root, ResolverError] = {
     // TODO: Can anyone actually understand this: ??
     val symsVal = Validation.fold[WeededAst.Declaration, SymbolTable, ResolverError](wast.declarations, SymbolTable.empty) {
@@ -376,8 +376,8 @@ object Resolver {
   object Declaration {
 
     /**
-     * Constructs the symbol table for the given definition of `wast`.
-     */
+      * Constructs the symbol table for the given definition of `wast`.
+      */
     def symbolsOf(wast: WeededAst.Declaration, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
       case WeededAst.Declaration.Namespace(Name.Unresolved(sp1, parts, sp2), body, loc) =>
         Validation.fold[WeededAst.Declaration, SymbolTable, ResolverError](body, syms) {
@@ -390,8 +390,8 @@ object Resolver {
     }
 
     /**
-     * Constructs the symbol for the given definition `wast`.
-     */
+      * Constructs the symbol for the given definition `wast`.
+      */
     def symbolsOf(wast: WeededAst.Definition, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
       case defn@WeededAst.Definition.Constant(ident, tpe, e, loc) =>
         val rname = toRName(ident, namespace)
@@ -466,8 +466,8 @@ object Resolver {
   object Definition {
 
     /**
-     * Performs symbol resolution for the given value definition `wast`.
-     */
+      * Performs symbol resolution for the given value definition `wast`.
+      */
     // TODO: Pattern match on wast?
     def resolve(wast: WeededAst.Definition.Constant, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Constant, ResolverError] = {
       val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
@@ -586,8 +586,8 @@ object Resolver {
 
   object Literal {
     /**
-     * Performs symbol resolution in the given literal `wast` under the given `namespace`.
-     */
+      * Performs symbol resolution in the given literal `wast` under the given `namespace`.
+      */
     def resolve(wast: WeededAst.Literal, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Literal, ResolverError] = {
       def visit(wast: WeededAst.Literal): Validation[ResolvedAst.Literal, ResolverError] = wast match {
         case WeededAst.Literal.Unit(loc) => ResolvedAst.Literal.Unit(loc).toSuccess
@@ -607,6 +607,9 @@ object Resolver {
         case WeededAst.Literal.Tuple(welms, loc) => @@(welms map visit) map {
           case elms => ResolvedAst.Literal.Tuple(elms, loc)
         }
+        case WeededAst.Literal.Set(welms, loc) => @@(welms map visit) map {
+          case elms => ResolvedAst.Literal.Set(elms, loc)
+        }
       }
 
       visit(wast)
@@ -616,8 +619,8 @@ object Resolver {
   object Expression {
 
     /**
-     * Performs symbol resolution in the given expression `wast` under the given `namespace`.
-     */
+      * Performs symbol resolution in the given expression `wast` under the given `namespace`.
+      */
     def resolve(wast: WeededAst.Expression, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Expression, ResolverError] = {
       def visit(wast: WeededAst.Expression, locals: Set[String]): Validation[ResolvedAst.Expression, ResolverError] = wast match {
         case WeededAst.Expression.Lit(wlit, loc) => Literal.resolve(wlit, namespace, syms) map {
@@ -717,6 +720,10 @@ object Resolver {
           case elms => ResolvedAst.Expression.Tuple(elms, loc)
         }
 
+        case WeededAst.Expression.Set(welms, loc) => @@(welms map (e => visit(e, locals))) map {
+          case elms => ResolvedAst.Expression.Set(elms, loc)
+        }
+
         case WeededAst.Expression.Ascribe(we, wtype, loc) =>
           @@(visit(we, locals), Type.resolve(wtype, namespace, syms)) map {
             case (e, tpe) => ResolvedAst.Expression.Ascribe(e, tpe, loc)
@@ -742,8 +749,8 @@ object Resolver {
   object Pattern {
 
     /**
-     * Performs symbol resolution in the given pattern `wast` under the given `namespace`.
-     */
+      * Performs symbol resolution in the given pattern `wast` under the given `namespace`.
+      */
     def resolve(wast: WeededAst.Pattern, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Pattern, ResolverError] = {
       def visit(wast: WeededAst.Pattern): Validation[ResolvedAst.Pattern, ResolverError] = wast match {
         case WeededAst.Pattern.Wildcard(location) => ResolvedAst.Pattern.Wildcard(location).toSuccess
@@ -777,8 +784,8 @@ object Resolver {
 
     object Head {
       /**
-       * Performs symbol resolution in the given head predicate `wast` in the given `namespace` with the given symbol table `syms`.
-       */
+        * Performs symbol resolution in the given head predicate `wast` in the given `namespace` with the given symbol table `syms`.
+        */
       def resolve(wast: WeededAst.Predicate.Head, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Head, ResolverError] = wast match {
         // TODO: What if a function symbol occurs in the head?
         case WeededAst.Predicate.Head.Relation(name, wterms, loc) =>
@@ -807,8 +814,8 @@ object Resolver {
 
     object Body {
       /**
-       * Performs symbol resolution in the given body predicate `wast` in the given `namespace` with the given symbol table `syms`.
-       */
+        * Performs symbol resolution in the given body predicate `wast` in the given `namespace` with the given symbol table `syms`.
+        */
       def resolve(wast: WeededAst.Predicate.Body, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Body, ResolverError] = wast match {
         case WeededAst.Predicate.Body.FunctionOrRelation(name, wterms, loc) =>
           val termsVal = @@(wterms map (t => Term.Body.resolve(t, namespace, syms)))
@@ -845,8 +852,8 @@ object Resolver {
     object Head {
 
       /**
-       * Performs symbol resolution in the given head term `wast` under the given `namespace`.
-       */
+        * Performs symbol resolution in the given head term `wast` under the given `namespace`.
+        */
       def resolve(wast: WeededAst.Term.Head, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Term.Head, ResolverError] = wast match {
         case WeededAst.Term.Head.Var(ident, loc) =>
           if (ident.name.head.isLower)
@@ -877,8 +884,8 @@ object Resolver {
     object Body {
 
       /**
-       * Performs symbol resolution in the given body term `wast` under the given `namespace`.
-       */
+        * Performs symbol resolution in the given body term `wast` under the given `namespace`.
+        */
       def resolve(wast: WeededAst.Term.Body, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Term.Body, ResolverError] = wast match {
         case WeededAst.Term.Body.Wildcard(loc) => ResolvedAst.Term.Body.Wildcard(loc).toSuccess
         case WeededAst.Term.Body.Var(ident, loc) =>
@@ -901,8 +908,8 @@ object Resolver {
   object Type {
 
     /**
-     * Performs symbol resolution in the given type `wast` under the given `namespace`.
-     */
+      * Performs symbol resolution in the given type `wast` under the given `namespace`.
+      */
     def resolve(wast: WeededAst.Type, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Type, ResolverError] = {
       def visit(wast: WeededAst.Type): Validation[ResolvedAst.Type, ResolverError] = wast match {
         case WeededAst.Type.Unit => ResolvedAst.Type.Unit.toSuccess
