@@ -128,32 +128,41 @@ namespace NativeTest {
     def strTuple2(i: Int): (#java.lang.Object, #java.lang.Object) = #ca.uwaterloo.flix.util.misc.ScalaNative.strTuple2()
     def tuple6(i: Int): #scala.Tuple6 = #ca.uwaterloo.flix.util.misc.ScalaNative.tuple6()
 
+    // mkTuple2 and incrTuple2 use (#java.lang.Object, #java.lang.Object) because they're being put into a relation
+    // that also has string pairs.
     def mkTuple2(t1: Int, t2: Int): (#java.lang.Object, #java.lang.Object) =
         #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple2(t1, t2)
     def incrTuple2(tpl: (#java.lang.Object, #java.lang.Object)): (#java.lang.Object, #java.lang.Object) =
         #ca.uwaterloo.flix.util.misc.ScalaNative.incrTuple2(tpl)
-    def mkTuple3(t1: Int, t2: Int, t3: Int): (#java.lang.Object, #java.lang.Object, #java.lang.Object) =
-        #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple3(t1, t2, t3)
-    def incrTuple3(tpl: (#java.lang.Object, #java.lang.Object, #java.lang.Object)): (#java.lang.Object, #java.lang.Object, #java.lang.Object) =
-        #ca.uwaterloo.flix.util.misc.ScalaNative.incrTuple3(tpl)
-    def mkTuple4(t1: Int, t2: Int, t3: Int, t4: Int): (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
-        #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple4(t1, t2, t3, t4)
-    def incrTuple4(tpl: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object)): (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
-        #ca.uwaterloo.flix.util.misc.ScalaNative.incrTuple4(tpl)
-    def mkTuple5(t1: Int, t2: Int, t3: Int, t4: Int, t5: Int): (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
-        #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple5(t1, t2, t3, t4, t5)
-    def incrTuple5(tpl: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object)): (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
-        #ca.uwaterloo.flix.util.misc.ScalaNative.incrTuple5(tpl)
+
+    def mkTuple3(t1: Int, t2: Int, t3: Int): (Int, Int, Int) =
+        (#ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple3: (Int, Int, Int) -> (Int, Int, Int))(t1, t2, t3)
+    def incrTuple3(tpl: (Int, Int, Int)): (Int, Int, Int) =
+        (#ca.uwaterloo.flix.util.misc.ScalaNative.incrTuple3: ((Int, Int, Int)) -> (Int, Int, Int))(tpl)
+    def mkTuple4(t1: Int, t2: Int, t3: Int, t4: Int): (Int, Int, Int, Int) =
+        (#ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple4: (Int, Int, Int, Int) -> (Int, Int, Int, Int))(t1, t2, t3, t4)
+    def incrTuple4(tpl: (Int, Int, Int, Int)): (Int, Int, Int, Int) =
+        (#ca.uwaterloo.flix.util.misc.ScalaNative.incrTuple4: ((Int, Int, Int, Int)) -> (Int, Int, Int, Int))(tpl)
+    def mkTuple5(t1: Int, t2: Int, t3: Int, t4: Int, t5: Int): (Int, Int, Int, Int, Int) =
+        (#ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple5: (Int, Int, Int, Int, Int) -> (Int, Int, Int, Int, Int))(t1, t2, t3, t4, t5)
+    def incrTuple5(tpl: (Int, Int, Int, Int, Int)): (Int, Int, Int, Int, Int) =
+        (#ca.uwaterloo.flix.util.misc.ScalaNative.incrTuple5: ((Int, Int, Int, Int, Int)) -> (Int, Int, Int, Int, Int))(tpl)
 
     def reverseTuple6(t: #scala.Tuple6): #scala.Tuple6 =
         #ca.uwaterloo.flix.util.misc.ScalaNative.reverseTuple6(t)
 
-    def set(i: Int): Set[#java.lang.Object] =
-        (#ca.uwaterloo.flix.util.misc.ScalaNative.set: (Int) -> Set[#java.lang.Object])()
-    def mkSet(i: Int): Set[#java.lang.Object] =
-        (#ca.uwaterloo.flix.util.misc.ScalaNative.mkSet: (Int) -> Set[#java.lang.Object])(i)
-    def incrSetBy(s: Set[#java.lang.Object], i: Int): Set[#java.lang.Object] =
-        (#ca.uwaterloo.flix.util.misc.ScalaNative.incrSetBy: (Set[#java.lang.Object], Int) -> Set[#java.lang.Object])(s, i)
+    // Hack: type ascription for function takes a bogus parameter, because all Flix functions must take one or more args
+    def set(i: Int): Set[Int] =
+        (#ca.uwaterloo.flix.util.misc.ScalaNative.set: (Int) -> Set[Int])()
+    def mkSet(i: Int): Set[Int] =
+        (#ca.uwaterloo.flix.util.misc.ScalaNative.mkSet: (Int) -> Set[Int])(i)
+    def incrSetBy(s: Set[Int], i: Int): Set[Int] =
+        (#ca.uwaterloo.flix.util.misc.ScalaNative.incrSetBy: (Set[Int], Int) -> Set[Int])(s, i)
+
+    def setOfTuples(i: Int): Set[(Int, Str)] =
+        (#ca.uwaterloo.flix.util.misc.ScalaNative.setOfTuples: (Int) -> Set[(Int, Str)])()
+    def tupleOfSets(i: Int): (Set[Int], Set[Str], Set[Str]) =
+        (#ca.uwaterloo.flix.util.misc.ScalaNative.tupleOfSets: (Int) -> (Set[Int], Set[Str], Set[Str]))()
 
     /* Expected result
        +---+-------+-------+-------+-------+-------+
@@ -281,40 +290,40 @@ namespace NativeTest {
     print Tuple2.
 
     /* Expected result
-       +---------------------------------+
-       | t                               |
-       +---------------------------------+
-       | (Native(1),Native(2),Native(3)) |
-       | (Native(5),Native(6),Native(7)) |
-       +---------------------------------+
+       +---------+
+       | t       |
+       +---------+
+       | (1,2,3) |
+       | (5,6,7) |
+       +---------+
     */
-    rel Tuple3(t: (#java.lang.Object, #java.lang.Object, #java.lang.Object));
+    rel Tuple3(t: (Int, Int, Int));
     Tuple3(mkTuple3(1, 2, 3)).
     Tuple3(incrTuple3(mkTuple3(4, 5, 6))).
     print Tuple3.
 
     /* Expected result
-       +------------------------------------------------+
-       | t                                              |
-       +------------------------------------------------+
-       | (Native(100),Native(99),Native(98),Native(97)) |
-       | (Native(99),Native(98),Native(97),Native(96))  |
-       +------------------------------------------------+
+       +----------------+
+       | t              |
+       +----------------+
+       | (100,99,98,97) |
+       | (99,98,97,96)  |
+       +----------------+
     */
-    rel Tuple4(t: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object));
+    rel Tuple4(t: (Int, Int, Int, Int));
     Tuple4(mkTuple4(99, 98, 97, 96)).
     Tuple4(incrTuple4(mkTuple4(99, 98, 97, 96))).
     print Tuple4.
 
     /* Expected result
-       +-----------------------------------------------------+
-       | t                                                   |
-       +-----------------------------------------------------+
-       | (Native(0),Native(0),Native(0),Native(0),Native(0)) |
-       | (Native(1),Native(1),Native(1),Native(1),Native(1)) |
-       +-----------------------------------------------------+
+       +-------------+
+       | t           |
+       +-------------+
+       | (0,0,0,0,0) |
+       | (1,1,1,1,1) |
+       +-------------+
     */
-    rel Tuple5(t: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object));
+    rel Tuple5(t: (Int, Int, Int, Int, Int));
     Tuple5(mkTuple5(0, 0, 0, 0, 0)).
     Tuple5(incrTuple5(mkTuple5(0, 0, 0, 0, 0))).
     print Tuple5.
@@ -333,18 +342,18 @@ namespace NativeTest {
     print Tuple6.
 
     /* Expected result (order may be different)
-       +---+-----------------------------------------------------+
-       | i | s                                                   |
-       +---+-----------------------------------------------------+
-       | 0 | {Native(1),Native(2),Native(3)}                     |
-       | 1 | {Native(2),Native(3),Native(4)}                     |
-       | 2 | {Native(3),Native(4),Native(5)}                     |
-       | 3 | {Native(0),Native(1),Native(2),Native(3)}           |
-       | 4 | {Native(10),Native(11),Native(12),Native(13)}       |
-       | 5 | {Native(6),Native(5),Native(4),Native(3),Native(7)} |
-       +---+-----------------------------------------------------+
+       +---+---------------+
+       | i | s             |
+       +---+---------------+
+       | 0 | {1,2,3}       |
+       | 1 | {2,3,4}       |
+       | 2 | {3,4,5}       |
+       | 3 | {0,1,2,3}     |
+       | 4 | {10,11,12,13} |
+       | 5 | {4,5,6,7,3}   |
+       +---+---------------+
     */
-    rel Set(i: Int, s: Set[#java.lang.Object]);
+    rel Set(i: Int, s: Set[Int]);
     Set(0, set(1)).
     Set(1, incrSetBy(set(1), 1)).
     Set(2, incrSetBy(set(1), 2)).
@@ -352,4 +361,26 @@ namespace NativeTest {
     Set(4, incrSetBy(mkSet(4), 10)).
     Set(5, incrSetBy(mkSet(5), 3)).
     print Set.
+
+    /* Expected result (order may be different)
+       +----------------------------------------------------------+
+       | s                                                        |
+       +----------------------------------------------------------+
+       | {(1,un),(0,zero),(3,trois),(5,cinq),(2,deux),(4,quatre)} |
+       +----------------------------------------------------------+
+    */
+    rel SetOfTuples(s: Set[(Int, Str)]);
+    SetOfTuples(setOfTuples(0)).
+    print SetOfTuples.
+
+    /* Expected result (order may be different)
+       +-------------------------------------------------------+
+       | t                                                     |
+       +-------------------------------------------------------+
+       | ({0,1,2,3},{zero,un,deux,trois},{zero,one,two,three}) |
+       +-------------------------------------------------------+
+    */
+    rel TupleOfSets(t: (Set[Int], Set[Str], Set[Str]));
+    TupleOfSets(tupleOfSets(0)).
+    print TupleOfSets.
 }
