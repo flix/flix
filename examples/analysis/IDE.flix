@@ -27,7 +27,12 @@ namespace IDE {
     case _ => e1;
   }
 
-  def glb(e1: Value, e2: Value): Value = ???: Value;
+  def glb(e1: Value, e2: Value): Value = match (e1, e2) with {
+    case (Value.Top, x) => x
+    case (x, Value.Top) => x
+    case (Value.Cst(n1), Value.Cst(n2)) => if(n1 == n2) Value.Cst(n1) else Value.Bot
+    case _ => Value.Bot
+  }
 
   let Value<> = (Value.Bot, Value.Top, leq, lub, glb);
 
@@ -43,7 +48,7 @@ namespace IDE {
       case Value.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
     }
     case (Transformer.NonBotTrans(a2, b2, c2), Transformer.NonBotTrans(a1, b1, c1)) =>
-      Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, lub(sum(prod(c2, a1), b), c1))
+      Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, lub(sum(prod(c2, a1), b1), c1))
   }
 
 //// from paper: f = \l. a*l+b meet c; f(Top) = Top
@@ -58,27 +63,17 @@ namespace IDE {
     case (Transformer.NonBotTrans(a1, b1, c1), Transformer.NonBotTrans(a2, b2, c2)) =>
       if (a1 == a2 && b1 == b2)
         Transformer.NonBotTrans(a1, b1, lub(c1, c2))
-      else (if (c1 == c2)
-                (if (0 == 0)
-                    Transformer.NonBotTrans(a1, b2, 42)
-                 else
-                    Transformer.NonBotTrans(1, 0, Value.Top)
-                )
-            else
-                (???: Transformer)
-      )
-
-
-//      else if(c1 == c2)
-//          if(0==(b1-b2)%(a2-a1))
-//    //                // is divisible
-//            Transformer.NonBotTrans(a1, b2, lub(Value.Cst(a1*(b1-b2)/(a2-a1)+b1), lub(c1, c2)))
-//    //                // is not divisible
-//            else Transformer.NonBotTrans(1, 0, Value.Top)
-//      else ???: Transformer
+     else if(c1 == c2)
+         if(0==(b1-b2)%(a2-a1))
+   //                // is divisible
+           Transformer.NonBotTrans(a1, b2, lub(Value.Cst(a1*(b1-b2)/(a2-a1)+b1), lub(c1, c2)))
+   //                // is not divisible
+           else Transformer.NonBotTrans(1, 0, Value.Top)
+     else ???: Transformer
   }
-  def leqtrans(e1: Transformer, e2: Transformer): Bool = e2 == lubtrans(e1, e2)
-  let Transformer<> = (Transformer.BotTrans, Transformer.TODO, leqtrans, lubtrans, glb);
+  def transleq(e1: Transformer, e2: Transformer): Bool = e2 == translub(e1, e2)
+  def transglb(e1: Transformer, e2: Transformer): Transformer = ???: Transformer
+  let Transformer<> = (Transformer.BotTrans, ???: Transformer, transleq, translub, transglb);
 
 //
 //// Inputs
@@ -206,4 +201,6 @@ EshEndReturn("p","x","n6","x",id) :- Identity(id).
 //// Entrypoint
 JumpFn("zero","smain","zero",id) :- Identity(id).
 ResultProc("main","zero",Value.Top).
+
+print Result.
 }
