@@ -150,6 +150,10 @@ object TypedAst {
         case p: TypedAst.Predicate.Body.Collection => p
       }
 
+      val loops: List[TypedAst.Predicate.Body.Loop] = body collect {
+        case p: TypedAst.Predicate.Body.Loop => p
+      }
+
       val filters: List[TypedAst.Predicate.Body.Function] = body collect {
         case p: TypedAst.Predicate.Body.Function => p
       }

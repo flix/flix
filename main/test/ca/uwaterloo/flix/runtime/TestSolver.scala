@@ -420,7 +420,7 @@ class TestSolver extends FunSuite {
         |A(1).
         |A(2).
         |
-        |B(y) :- A(x), y <- f(x).
+        |B(y) :- A(x), y <- f(x): Set[Int].
       """.stripMargin
 
     val model = Flix.fromStrings(s).get

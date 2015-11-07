@@ -702,9 +702,7 @@ object Typer {
         }
       case ResolvedAst.Term.Head.Ascribe(rterm, rtpe, loc) =>
         val ascribedType = Type.typer(rtpe)
-        expect(ascribedType, tpe, loc) flatMap {
-          case _ => typer(rterm, tpe, root)
-        }
+        typer(rterm, ascribedType, root)
       case ResolvedAst.Term.Head.Apply(name, actuals, loc) =>
         // TODO: This needs to be rewritten
 
@@ -742,9 +740,7 @@ object Typer {
         }
       case ResolvedAst.Term.Body.Ascribe(rterm, rtpe, loc) =>
         val ascribedType = Type.typer(rtpe)
-        expect(ascribedType, tpe, loc) flatMap {
-          case _ => typer(rterm, tpe, root)
-        }
+        typer(rterm, ascribedType, root)
     }
 
   }
