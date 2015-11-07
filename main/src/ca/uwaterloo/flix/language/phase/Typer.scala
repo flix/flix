@@ -819,9 +819,10 @@ object Typer {
     * Returns a Flix type corresponding to the given canonical name.
     */
   private def java2flix(canonicalName: String): TypedAst.Type = canonicalName match {
-    case "boolean" | "java.lang.Boolean" => TypedAst.Type.Bool
-    case "int" | "java.lang.Integer" => TypedAst.Type.Int
-    case "java.lang.String" => TypedAst.Type.Str
+    case "ca.uwaterloo.flix.runtime.Value.Unit$" => TypedAst.Type.Unit
+    case "boolean" | "java.lang.Boolean" | "ca.uwaterloo.flix.runtime.Value.Bool" => TypedAst.Type.Bool
+    case "int" | "java.lang.Integer" | "ca.uwaterloo.flix.runtime.Value.Int" => TypedAst.Type.Int
+    case "java.lang.String" | "ca.uwaterloo.flix.runtime.Value.Str" => TypedAst.Type.Str
     case t if t.matches("scala.Tuple[2-5]") =>
       // Create a list of N TypedAst.Type.Native("java.lang.Object")
       val types = List().padTo(t.last - '0', TypedAst.Type.Native("java.lang.Object"))
