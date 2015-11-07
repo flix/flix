@@ -60,7 +60,7 @@ sealed trait Validation[+Value, +Error] {
    */
   def get: Value = this match {
     case Success(value, errors) => value
-    case Failure(errors) => throw new RuntimeException("Attempt to retrieve value from Failure.")
+    case Failure(errors) => throw new RuntimeException(s"Attempt to retrieve value from Failure. The errors are: ${errors.mkString(", ")}")
   }
 
 
