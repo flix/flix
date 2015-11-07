@@ -281,6 +281,13 @@ object Typer {
         case ResolvedAst.Literal.Tuple(relms, loc) =>
           val elms = relms map visit
           TypedAst.Literal.Tuple(elms, TypedAst.Type.Tuple(elms map (_.tpe)), loc)
+        case ResolvedAst.Literal.Set(relms, loc) =>
+          // TODO: Now this can fail, so the return type needs to be a validation.
+          val elms = relms map visit
+          val tpes = elms map(l => (l.tpe, l.loc))
+          (expectEqual(tpes) map {
+            case tpe => TypedAst.Literal.Set(elms, TypedAst.Type.Set(tpe), loc)
+          }).get
       }
 
       visit(rast)
@@ -476,6 +483,15 @@ object Typer {
         case ResolvedAst.Expression.Tuple(relms, loc) =>
           @@(relms map (e => visit(e, env))) map {
             case elms => TypedAst.Expression.Tuple(elms, TypedAst.Type.Tuple(elms map (_.tpe)), loc)
+          }
+
+        case ResolvedAst.Expression.Set(relms, loc) =>
+          @@(relms map (e => visit(e, env))) flatMap {
+            case elms =>
+              val tpes = elms.map(e => (e.tpe, e.loc))
+              expectEqual(tpes) map {
+                case tpe => TypedAst.Expression.Set(elms, TypedAst.Type.Set(tpe), loc)
+              }
           }
 
         case ResolvedAst.Expression.Ascribe(re, rtype, loc) =>

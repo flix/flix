@@ -566,6 +566,9 @@ object Weeder {
       case plit: ParsedAst.Literal.Tuple => @@(plit.elms map compile) map {
         case elms => WeededAst.Literal.Tuple(elms, plit.loc)
       }
+      case plit: ParsedAst.Literal.Set => @@(plit.elms map compile) map {
+        case elms => WeededAst.Literal.Set(elms, plit.loc)
+      }
     }
   }
 
@@ -645,6 +648,11 @@ object Weeder {
       case exp: ParsedAst.Expression.Tuple =>
         @@(exp.elms map compile) map {
           case elms => WeededAst.Expression.Tuple(elms, exp.loc)
+        }
+
+      case exp: ParsedAst.Expression.Set =>
+        @@(exp.elms map compile) map {
+          case elms => WeededAst.Expression.Set(elms, exp.loc)
         }
 
       case exp: ParsedAst.Expression.Ascribe =>

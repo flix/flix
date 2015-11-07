@@ -594,6 +594,36 @@ class TestParser extends FunSuite {
     assertResult(2)(result.elms.size)
   }
 
+  test("Expression.Set01") {
+    val input = "#{}"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get
+    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+  }
+
+  test("Expression.Set02") {
+    val input = "#{1, 2, 3}"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get
+    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+  }
+
+  test("Expression.Set03") {
+    val input = "#{(1, 2), (2, 3)}"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get
+    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+  }
+
+  test("Expression.Set04") {
+    val input = "#{1 + 2, 3 + 4}"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get
+    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+  }
+
+  test("Expression.Set05") {
+    val input = "#{#{1}, #{2}}"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get
+    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+  }
+
   test("Expression.Var01") {
     val input = "x"
     val result = new Parser(SourceInput.Str(input)).Expression.run()
@@ -1608,6 +1638,30 @@ class TestParser extends FunSuite {
     val input = "(true, 42, \"foo\")"
     val result = new Parser(SourceInput.Str(input)).Literal.run().get
     assert(result.isInstanceOf[ParsedAst.Literal.Tuple])
+  }
+
+  test("Literal.Set01") {
+    val input = "#{}"
+    val result = new Parser(SourceInput.Str(input)).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Set])
+  }
+
+  test("Literal.Set02") {
+    val input = "#{1, 2, 3}"
+    val result = new Parser(SourceInput.Str(input)).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Set])
+  }
+
+  test("Literal.Set03") {
+    val input = "#{(1, 2), (2, 3)}"
+    val result = new Parser(SourceInput.Str(input)).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Set])
+  }
+
+  test("Literal.Set04") {
+    val input = "#{#{1}, #{2}}"
+    val result = new Parser(SourceInput.Str(input)).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Set])
   }
 
   /////////////////////////////////////////////////////////////////////////////

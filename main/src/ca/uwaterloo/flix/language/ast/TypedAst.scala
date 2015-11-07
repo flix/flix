@@ -292,11 +292,19 @@ object TypedAst {
       * A typed AST node representing a tuple literal.
       *
       * @param elms the elements of the tuple.
-      * @param tpe the typed of the tuple.
+      * @param tpe the type of the tuple.
       * @param loc the source location.
       */
     case class Tuple(elms: List[TypedAst.Literal], tpe: TypedAst.Type.Tuple, loc: SourceLocation) extends TypedAst.Literal
 
+    /**
+      * A typed AST node representing a Set literal.
+      *
+      * @param elms the elements of the set.
+      * @param tpe the type of the set.
+      * @param loc the source location.
+      */
+    case class Set(elms: List[TypedAst.Literal], tpe: TypedAst.Type.Set, loc: SourceLocation) extends TypedAst.Literal
   }
 
   sealed trait Expression extends TypedAst {
@@ -431,6 +439,15 @@ object TypedAst {
       * @param loc the source location.
       */
     case class Tuple(elms: List[TypedAst.Expression], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+
+    /**
+      * A typed AST node representing a set expression.
+      *
+      * @param elms the elements of the set.
+      * @param tpe the type of the set.
+      * @param loc the source location.
+      */
+    case class Set(elms: List[TypedAst.Expression], tpe: TypedAst.Type.Set, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing an error expression.
