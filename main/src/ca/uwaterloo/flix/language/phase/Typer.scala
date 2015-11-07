@@ -823,6 +823,7 @@ object Typer {
       // Create a list of N TypedAst.Type.Native("java.lang.Object")
       val types = List().padTo(t.last - '0', TypedAst.Type.Native("java.lang.Object"))
       TypedAst.Type.Tuple(types)
+    case "scala.collection.immutable.Set" => TypedAst.Type.Set(TypedAst.Type.Native("java.lang.Object"))
     case _ => TypedAst.Type.Native(canonicalName)
   }
 
