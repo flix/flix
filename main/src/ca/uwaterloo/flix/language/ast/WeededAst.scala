@@ -95,6 +95,15 @@ object WeededAst {
                               lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Definition
 
 
+    /**
+      * An AST node that represents an index definition.
+      *
+      * @param ident the name of the relation or lattice.
+      * @param indexes the sequence of indexes.
+      * @param loc the source location.
+      */
+    case class Index(ident: Name.Ident, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends WeededAst.Definition
+
   }
 
   /**
@@ -359,7 +368,7 @@ object WeededAst {
       * @param loc the source location.
       */
     case class Set(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
-    
+
     /**
       * An AST node that represents an ascribe expression.
       *

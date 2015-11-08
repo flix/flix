@@ -393,6 +393,7 @@ object Weeder {
     /**
       * Compiles the given parsed definition `past` to a weeded definition.
       */
+    // TODO: Inline all calls into this function...
     def compile(past: ParsedAst.Definition): Validation[WeededAst.Declaration, WeederError] = past match {
       case d: ParsedAst.Definition.Value => Definition.compile(d)
       case d: ParsedAst.Definition.Function => Definition.compile(d)
@@ -400,6 +401,7 @@ object Weeder {
       case d: ParsedAst.Definition.BoundedLattice => Definition.compile(d)
       case d: ParsedAst.Definition.Relation => Definition.compile(d)
       case d: ParsedAst.Definition.Lattice => Definition.compile(d)
+      case d: ParsedAst.Definition.Index => Definition.compile(d)
     }
 
     /**
@@ -528,6 +530,14 @@ object Weeder {
               }
           }
       }
+    }
+
+    /**
+      * Compiles the given parsed index definition `past` to a weeded index definition.
+      */
+    def compile(past: ParsedAst.Definition.Index): Validation[WeededAst.Definition.Index, WeederError] = {
+      // TODO: Check duplicated attributes.
+      WeededAst.Definition.Index(past.ident, past.indexes, past.loc).toSuccess
     }
 
   }

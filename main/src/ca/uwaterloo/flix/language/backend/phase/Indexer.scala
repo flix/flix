@@ -65,8 +65,31 @@ object Indexer {
       }
     }
 
+    // user defined indexes overrides the defaults.
+    for ((name, collection) <- root.collections) {
+      root.indexes.get(name) match {
+        case None => // no user defined index.
+        case Some(index) =>
+          val attributes = collection match {
+            case r: TypedAst.Collection.Relation => r.attributes
+            case l: TypedAst.Collection.Lattice => l.keys
+          }
+
+          indexes(name) = index.indexes.map(idx => idx.map(v => var2offset(v.name, attributes))).toSet
+      }
+    }
+
     // return the result as an immutable map.
     indexes.toMap
   }
 
+  private def var2offset(varName: String, attributes: List[TypedAst.Attribute]): Int = {
+    def rec(xs: List[TypedAst.Attribute], i: Int): Int = xs match {
+      case Nil => throw new RuntimeException() // TODO
+      case y :: ys if varName == y.ident.name => i
+      case y :: ys => rec(ys, i + 1)
+    }
+
+    rec(attributes, 0)
+  }
 }

@@ -120,9 +120,14 @@ object Typer {
       case (tpe, lattice) => Definition.typer(lattice, root) map (defn => Type.typer(tpe) -> defn)
     }
 
-    //relations
+    // relations
     val relationsVal = Validation.fold(root.collections) {
       case (name, relation) => Definition.typer(relation, root) map (defn => name -> defn)
+    }
+
+    // indexes
+    val indexesVal = Validation.fold(root.indexes) {
+      case (name, index) => Definition.typer(index, root) map (defn => name -> defn)
     }
 
     // facts and rules
@@ -130,8 +135,9 @@ object Typer {
     val rulesVal = @@(root.rules.map(rule => Constraint.typer(rule, root)))
 
     // putting it all together
-    @@(constantsVal, directivesVal, latticesVal, relationsVal, factsVal, rulesVal) map {
-      case (constants, directives, lattices, relations, facts, rules) => TypedAst.Root(constants, TypedAst.Directives(directives), lattices, relations, facts, rules)
+    @@(constantsVal, directivesVal, latticesVal, relationsVal, indexesVal, factsVal, rulesVal) map {
+      case (constants, directives, lattices, relations, indexes, facts, rules) =>
+        TypedAst.Root(constants, TypedAst.Directives(directives), lattices, relations, indexes, facts, rules)
     }
   }
 
@@ -219,6 +225,14 @@ object Typer {
       }
     }
 
+    /**
+      * Types the given index definition `rast` under the given AST `root`.
+      */
+    def typer(rast: ResolvedAst.Definition.Index, root: ResolvedAst.Root): Validation[TypedAst.Definition.Index, TypeError] = {
+      // TODO: any checks?
+      TypedAst.Definition.Index(rast.name, rast.indexes, rast.loc).toSuccess
+    }
+
   }
 
   object Constraint {
@@ -284,7 +298,7 @@ object Typer {
         case ResolvedAst.Literal.Set(relms, loc) =>
           // TODO: Now this can fail, so the return type needs to be a validation.
           val elms = relms map visit
-          val tpes = elms map(l => (l.tpe, l.loc))
+          val tpes = elms map (l => (l.tpe, l.loc))
           (expectEqual(tpes) map {
             case tpe => TypedAst.Literal.Set(elms, TypedAst.Type.Set(tpe), loc)
           }).get

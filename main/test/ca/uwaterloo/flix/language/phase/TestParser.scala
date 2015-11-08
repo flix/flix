@@ -169,6 +169,24 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
+  test("Definition.Index01") {
+    val input = "index A({x});"
+    val result = new Parser(SourceInput.Str(input)).IndexDefinition.run()
+    assert(result.isSuccess)
+  }
+
+  test("Definition.Index02") {
+    val input = "index A({x}, {x, y});"
+    val result = new Parser(SourceInput.Str(input)).IndexDefinition.run()
+    assert(result.isSuccess)
+  }
+
+  test("Definition.Index03") {
+    val input = "index A({x}, {y}, {x, w}, {x, y, z, w});"
+    val result = new Parser(SourceInput.Str(input)).IndexDefinition.run()
+    assert(result.isSuccess)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Directives                                                              //
   /////////////////////////////////////////////////////////////////////////////

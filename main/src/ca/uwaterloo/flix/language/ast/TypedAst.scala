@@ -20,6 +20,7 @@ object TypedAst {
     * @param directives a list of directives.
     * @param lattices a map from types to user-specified bounded lattice definitions.
     * @param collections a map from names to lattice or relation definitions.
+    * @param indexes a map from collection names to indexes.
     * @param facts a list of facts.
     * @param rules a list of rules.
     */
@@ -27,6 +28,7 @@ object TypedAst {
                   directives: TypedAst.Directives,
                   lattices: Map[TypedAst.Type, TypedAst.Definition.BoundedLattice],
                   collections: Map[Name.Resolved, TypedAst.Collection],
+                  indexes: Map[Name.Resolved, TypedAst.Definition.Index],
                   facts: List[TypedAst.Constraint.Fact],
                   rules: List[TypedAst.Constraint.Rule]) extends TypedAst {
 
@@ -80,7 +82,7 @@ object TypedAst {
     case class Constant(name: Name.Resolved, exp: TypedAst.Expression, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Definition
 
     /**
-      * A typed AST node representing a partial order definition.
+      * A typed AST node representing a bounded lattice definition.
       *
       * @param tpe the type of the lattice elements.
       * @param bot the bot element.
@@ -92,6 +94,15 @@ object TypedAst {
       */
     case class BoundedLattice(tpe: TypedAst.Type, bot: TypedAst.Expression, top: TypedAst.Expression, leq: TypedAst.Expression,
                               lub: TypedAst.Expression, glb: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Definition
+
+    /**
+      * A typed AST node representing an index definition.
+      *
+      * @param name the name of the collection.
+      * @param indexes the selected indexes.
+      * @param loc the source location.
+      */
+    case class Index(name: Name.Resolved, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends TypedAst.Definition
 
   }
 
@@ -309,6 +320,7 @@ object TypedAst {
       * @param loc the source location.
       */
     case class Set(elms: List[TypedAst.Literal], tpe: TypedAst.Type.Set, loc: SourceLocation) extends TypedAst.Literal
+
   }
 
   sealed trait Expression extends TypedAst {

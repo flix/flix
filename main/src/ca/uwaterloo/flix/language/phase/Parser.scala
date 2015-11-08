@@ -43,7 +43,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Definition: Rule1[ParsedAst.Definition] = rule {
-    ValueDefinition | FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition
+    ValueDefinition | FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition | IndexDefinition
   }
 
   def ValueDefinition: Rule1[ParsedAst.Definition.Value] = rule {
@@ -101,6 +101,16 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def Attributes: Rule1[Seq[ParsedAst.Attribute]] = rule {
     oneOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
+  }
+
+  def IndexDefinition: Rule1[ParsedAst.Definition.Index] = {
+    def Indexes: Rule1[Seq[Name.Ident]] = rule {
+      "{" ~ optWS ~ oneOrMore(Ident).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}"
+    }
+
+    rule {
+      SP ~ atomic("index") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ oneOrMore(Indexes).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.Index
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////

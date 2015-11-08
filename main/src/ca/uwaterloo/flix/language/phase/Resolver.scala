@@ -10,6 +10,7 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.misc.Levenshtein
 
 // TODO: Rename to Namer?
+//  TODO: Maybe this class should be split into two: Symbols and Namer.
 object Resolver {
 
   import ResolverError._
@@ -259,7 +260,7 @@ object Resolver {
   }
 
   object SymbolTable {
-    val empty = SymbolTable(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
+    val empty = SymbolTable(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
   }
 
   // TODO: Come up with a SymbolTable that can give the set of definitions in each namespace.
@@ -268,6 +269,7 @@ object Resolver {
                          constants: Map[Name.Resolved, WeededAst.Definition.Constant],
                          lattices: Map[WeededAst.Type, (List[String], WeededAst.Definition.BoundedLattice)],
                          relations: Map[Name.Resolved, WeededAst.Collection],
+                         indexes: Map[Name.Resolved, WeededAst.Definition.Index],
                          types: Map[Name.Resolved, WeededAst.Type]) {
 
     // TODO: Cleanup
@@ -364,11 +366,16 @@ object Resolver {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
 
+        val collectedIndexes = Validation.fold[Name.Resolved, WeededAst.Definition.Index, Name.Resolved, ResolvedAst.Definition.Index, ResolverError](syms.indexes) {
+          case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
+        }
+
         val collectedFacts = Declaration.collectFacts(wast, syms)
         val collectedRules = Declaration.collectRules(wast, syms)
 
-        @@(collectedConstants, collectedDirectives, collectedEnums, collectedLattices, collectionsVal, collectedFacts, collectedRules) map {
-          case (constants, directives, enums, lattices, collections, facts, rules) => ResolvedAst.Root(constants, directives, enums, lattices, collections, facts, rules)
+        @@(collectedConstants, collectedDirectives, collectedEnums, collectedLattices, collectionsVal, collectedIndexes, collectedFacts, collectedRules) map {
+          case (constants, directives, enums, lattices, collections, indexes, facts, rules) =>
+            ResolvedAst.Root(constants, directives, enums, lattices, collections, indexes, facts, rules)
         }
     }
   }
@@ -438,6 +445,19 @@ object Resolver {
               syms.copy(relations = syms.relations + (rname -> defn)).toSuccess
           case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.loc, ident.loc).toFailure
         }
+
+      case defn@WeededAst.Definition.Index(ident, indexes, loc) =>
+        val rname = toRName(ident, namespace)
+        syms.indexes.get(rname) match {
+          case None =>
+            if (ident.name.head.isLower)
+              IllegalRelationName(ident.name, ident.loc).toFailure
+            else
+              syms.copy(indexes = syms.indexes + (rname -> defn)).toSuccess
+          case Some(otherDefn) => throw new RuntimeException() // TODO
+        }
+
+
     }
 
     def collectFacts(wast: WeededAst.Root, syms: SymbolTable): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = {
@@ -540,6 +560,13 @@ object Resolver {
       @@(@@(keysVal), @@(valuesVal)) map {
         case (keys, values) => ResolvedAst.Collection.Lattice(name, keys, values, wast.loc)
       }
+    }
+
+    def resolve(wast: WeededAst.Definition.Index, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Index, ResolverError] = {
+      val name = Name.Resolved(namespace ::: wast.ident.name :: Nil)
+      // TODO: check that the attributes exists...
+
+      ResolvedAst.Definition.Index(name, wast.indexes, wast.loc).toSuccess
     }
 
   }
