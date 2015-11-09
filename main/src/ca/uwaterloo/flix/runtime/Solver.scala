@@ -195,7 +195,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
           while (i < matchedRow.length) {
             val varName = p.index2var(i)
             if (varName != null)
-              newRow.put(varName, matchedRow(i)) // TODO: Don't use put. It returns an option.
+              newRow.update(varName, matchedRow(i))
             i = i + 1
           }
 
