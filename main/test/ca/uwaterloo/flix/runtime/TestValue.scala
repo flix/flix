@@ -257,4 +257,8 @@ class TestValue extends FunSuite {
     }
     assert(r3 == Value.mkInt(42))
   }
+
+  // TODO(mhyee): toJava
+
+  // TODO(mhyee): java2flix
 }
