@@ -169,6 +169,24 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
+  test("Definition.Index01") {
+    val input = "index A({x});"
+    val result = new Parser(SourceInput.Str(input)).IndexDefinition.run()
+    assert(result.isSuccess)
+  }
+
+  test("Definition.Index02") {
+    val input = "index A({x}, {x, y});"
+    val result = new Parser(SourceInput.Str(input)).IndexDefinition.run()
+    assert(result.isSuccess)
+  }
+
+  test("Definition.Index03") {
+    val input = "index A({x}, {y}, {x, w}, {x, y, z, w});"
+    val result = new Parser(SourceInput.Str(input)).IndexDefinition.run()
+    assert(result.isSuccess)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Directives                                                              //
   /////////////////////////////////////////////////////////////////////////////
@@ -594,6 +612,36 @@ class TestParser extends FunSuite {
     assertResult(2)(result.elms.size)
   }
 
+  test("Expression.Set01") {
+    val input = "#{}"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get
+    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+  }
+
+  test("Expression.Set02") {
+    val input = "#{1, 2, 3}"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get
+    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+  }
+
+  test("Expression.Set03") {
+    val input = "#{(1, 2), (2, 3)}"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get
+    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+  }
+
+  test("Expression.Set04") {
+    val input = "#{1 + 2, 3 + 4}"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get
+    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+  }
+
+  test("Expression.Set05") {
+    val input = "#{#{1}, #{2}}"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get
+    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+  }
+
   test("Expression.Var01") {
     val input = "x"
     val result = new Parser(SourceInput.Str(input)).Expression.run()
@@ -762,6 +810,12 @@ class TestParser extends FunSuite {
     assertResult(5)(result.get.body.size)
   }
 
+  test("Rule.Loop01") {
+    val input = "P(x, z) :- A(x, y), z <- f(y)."
+    val result = new Parser(SourceInput.Str(input)).RuleDeclaration.run()
+    assert(result.isSuccess)
+  }
+
   test("Predicate.Alias01") {
     val input = "r := 42"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
@@ -778,6 +832,18 @@ class TestParser extends FunSuite {
     val input = "r := f(x, g(y, z))"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
     assert(result.isInstanceOf[ParsedAst.Predicate.Alias])
+  }
+
+  test("Predicate.Loop01") {
+    val input = "y <- f(x)"
+    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Loop])
+  }
+
+  test("Predicate.Loop02") {
+    val input = "x <- f(1, 2, 3)"
+    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
+    assert(result.isInstanceOf[ParsedAst.Predicate.Loop])
   }
 
   test("Predicate.Trace01") {
@@ -962,24 +1028,381 @@ class TestParser extends FunSuite {
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   test("Type.Function01") {
-    val input = "A -> B"
+    val input = "(A) -> B"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
-    assertResult(Seq("A"))(result.formals.head.asInstanceOf[ParsedAst.Type.Ref].name.parts)
-    assertResult(Seq("B"))(result.retTpe.asInstanceOf[ParsedAst.Type.Ref].name.parts)
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Named])
   }
 
   test("Type.Function02") {
-    val input = "A -> B -> C"
+    val input = "(A, B) -> C"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
-    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Ref])
-    assert(result.formals.tail.head.isInstanceOf[ParsedAst.Type.Ref])
+    assert(result.formals.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Named])
   }
 
   test("Type.Function03") {
-    val input = "(A -> B) -> C"
+    val input = "((A, B)) -> C"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function04") {
+    val input = "(A) -> (B, C)"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+  }
+
+  test("Type.Function05") {
+    val input = "(A) -> (B) -> C"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function06") {
+    val input = "(A) -> ((B) -> C)"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function07") {
+    val input = "((A) -> B) -> C"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
     assert(result.formals.head.isInstanceOf[ParsedAst.Type.Function])
-    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Ref])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function08") {
+    val input = "(A, B, C) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function09") {
+    val input = "((A, B), C) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals(0).isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.formals(0).asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.formals(1).isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function10") {
+    val input = "(((A, B), C)) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Tuple].elms(0).isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Tuple].elms(0).asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Tuple].elms(1).isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function11") {
+    val input = "(A, (B, C)) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals(0).isInstanceOf[ParsedAst.Type.Named])
+    assert(result.formals(1).isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.formals(1).asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function12") {
+    val input = "((A, (B, C))) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Tuple].elms(0).isInstanceOf[ParsedAst.Type.Named])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Tuple].elms(1).isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Tuple].elms(1).asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function13") {
+    val input = "((A, B, C)) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function14") {
+    val input = "(A, B) -> (C, D)"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+  }
+
+  test("Type.Function15") {
+    val input = "((A, B)) -> (C, D)"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+  }
+
+  test("Type.Function16") {
+    val input = "(A) -> (B, C, D)"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+  }
+
+  test("Type.Function17") {
+    val input = "(A) -> ((B, C), D)"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Tuple].elms(0).isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Tuple].elms(0).asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Tuple].elms(1).isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function18") {
+    val input = "(A) -> (B, (C, D))"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Tuple].elms(0).isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Tuple].elms(1).isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Tuple].elms(1).asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+  }
+
+  test("Type.Function19") {
+    val input = "(A, B) -> (C) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function20") {
+    val input = "(A, B) -> ((C) -> D)"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function21") {
+    val input = "((A, B) -> C) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].formals.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function22") {
+    val input = "((A, B)) -> (C) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function23") {
+    val input = "((A, B)) -> ((C) -> D)"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function24") {
+    val input = "(((A, B)) -> C) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].formals.head.asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function25") {
+    val input = "(A) -> (B, C) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function26") {
+    val input = "(A) -> ((B, C) -> D)"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function27") {
+    val input = "((A) -> (B, C)) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].retTpe.asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function28") {
+    val input = "(A) -> ((B, C)) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function29") {
+    val input = "(A) -> (((B, C)) -> D)"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function30") {
+    val input = "(A) -> (B) -> (C, D)"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+  }
+
+  test("Type.Function31") {
+    val input = "(A) -> ((B) -> (C, D))"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+  }
+
+  test("Type.Function32") {
+    val input = "((A) -> (B)) -> (C, D)"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Tuple])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Tuple].elms.forall(_.isInstanceOf[ParsedAst.Type.Named]))
+  }
+
+  test("Type.Function33") {
+    val input = "(A) -> (B) -> (C) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function34") {
+    val input = "(A) -> ((B) -> (C) -> D)"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function35") {
+    val input = "(A) -> ((B) -> ((C) -> D))"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function36") {
+    val input = "(A) -> (((B) -> (C)) -> D)"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function37") {
+    val input = "((A) -> (B) -> (C)) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function38") {
+    val input = "((A) -> ((B) -> (C))) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function39") {
+    val input = "(((A) -> (B)) -> (C)) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].formals.head.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].formals.head.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.formals.head.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Named])
+  }
+
+  test("Type.Function40") {
+    val input = "(A) -> ((B) -> (C)) -> D"
+    val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[ParsedAst.Type.Function]
+    assert(result.formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Function])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.asInstanceOf[ParsedAst.Type.Function].formals.head.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].formals.head.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
+    assert(result.retTpe.asInstanceOf[ParsedAst.Type.Function].retTpe.isInstanceOf[ParsedAst.Type.Named])
   }
 
   test("Type.Tuple01") {
@@ -993,7 +1416,7 @@ class TestParser extends FunSuite {
     val input = "(A)"
     val result = new Parser(SourceInput.Str(input)).Type.run()
     assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Type.Ref])
+    assert(result.get.isInstanceOf[ParsedAst.Type.Named])
   }
 
   test("Type.Tuple03") {
@@ -1235,6 +1658,30 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Literal.Tuple])
   }
 
+  test("Literal.Set01") {
+    val input = "#{}"
+    val result = new Parser(SourceInput.Str(input)).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Set])
+  }
+
+  test("Literal.Set02") {
+    val input = "#{1, 2, 3}"
+    val result = new Parser(SourceInput.Str(input)).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Set])
+  }
+
+  test("Literal.Set03") {
+    val input = "#{(1, 2), (2, 3)}"
+    val result = new Parser(SourceInput.Str(input)).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Set])
+  }
+
+  test("Literal.Set04") {
+    val input = "#{#{1}, #{2}}"
+    val result = new Parser(SourceInput.Str(input)).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Set])
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Operators                                                               //
   /////////////////////////////////////////////////////////////////////////////
@@ -1254,6 +1701,30 @@ class TestParser extends FunSuite {
     val input = "-"
     val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
     assertResult(UnaryOperator.UnaryMinus)(result)
+  }
+
+  test("UnaryOperator.Set.IsEmpty") {
+    val input = "isEmpty?"
+    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    assertResult(UnaryOperator.Set.IsEmpty)(result)
+  }
+
+  test("UnaryOperator.Set.NonEmpty") {
+    val input = "nonEmpty?"
+    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    assertResult(UnaryOperator.Set.NonEmpty)(result)
+  }
+
+  test("UnaryOperator.Set.Singleton") {
+    val input = "singleton?"
+    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    assertResult(UnaryOperator.Set.Singleton)(result)
+  }
+
+  test("UnaryOperator.Set.Size") {
+    val input = "size?"
+    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    assertResult(UnaryOperator.Set.Size)(result)
   }
 
   test("LogicalOp &&") {
@@ -1335,6 +1806,33 @@ class TestParser extends FunSuite {
   }
 
   // TODO: Shift operators
+
+  test("BinarySetOp.Insert (+=)") {
+    val input = "+="
+    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    assertResult(BinaryOperator.Set.Insert)(result)
+  }
+
+  test("BinarySetOp.Remove (-=)") {
+    val input = "-="
+    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    assertResult(BinaryOperator.Set.Remove)(result)
+  }
+
+  test("BinarySetOp.Union (++)") {
+    val input = "++"
+    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    assertResult(BinaryOperator.Set.Union)(result)
+  }
+
+  test("BinarySetOp.Diff (--)") {
+    val input = "--"
+    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    assertResult(BinaryOperator.Set.Difference)(result)
+  }
+
+  // TODO: Consider more set operations?
+
 
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //

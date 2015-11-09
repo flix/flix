@@ -1,22 +1,22 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.Compiler
-import ca.uwaterloo.flix.language.ast.{WeededAst, SourceLocation, ParsedAst, Name}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation
 import Validation._
 
 import scala.collection.mutable
 
 /**
- * The Weeder phase performs simple syntactic checks and rewritings.
- */
+  * The Weeder phase performs simple syntactic checks and rewritings.
+  */
 object Weeder {
 
   import WeederError._
 
   /**
-   * A common super-type for weeding errors.
-   */
+    * A common super-type for weeding errors.
+    */
   sealed trait WeederError extends Compiler.CompilationError
 
   object WeederError {
@@ -24,12 +24,12 @@ object Weeder {
     implicit val consoleCtx = Compiler.ConsoleCtx
 
     /**
-     * An error raised to indicate that the alias `name` was defined multiple times.
-     *
-     * @param name the name of the variable.
-     * @param loc1 the location of the first declaration.
-     * @param loc2 the location of the second declaration.
-     */
+      * An error raised to indicate that the alias `name` was defined multiple times.
+      *
+      * @param name the name of the variable.
+      * @param loc1 the location of the first declaration.
+      * @param loc2 the location of the second declaration.
+      */
     case class DuplicateAlias(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
@@ -45,12 +45,12 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate that the attribute `name` was declared multiple times.
-     *
-     * @param name the name of the attribute.
-     * @param loc1 the location of the first declaration.
-     * @param loc2 the location of the second declaration.
-     */
+      * An error raised to indicate that the attribute `name` was declared multiple times.
+      *
+      * @param name the name of the attribute.
+      * @param loc1 the location of the first declaration.
+      * @param loc2 the location of the second declaration.
+      */
     case class DuplicateAttribute(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
@@ -66,12 +66,12 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate that the formal argument `name` was declared multiple times.
-     *
-     * @param name the name of the argument.
-     * @param loc1 the location of the first declaration.
-     * @param loc2 the location of the second declaration.
-     */
+      * An error raised to indicate that the formal argument `name` was declared multiple times.
+      *
+      * @param name the name of the argument.
+      * @param loc1 the location of the first declaration.
+      * @param loc2 the location of the second declaration.
+      */
     case class DuplicateFormal(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
@@ -87,12 +87,12 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate that the tag `name` was declared multiple times.
-     *
-     * @param name the name of the tag.
-     * @param loc1 the location of the first declaration.
-     * @param loc2 the location of the second declaration.
-     */
+      * An error raised to indicate that the tag `name` was declared multiple times.
+      *
+      * @param name the name of the tag.
+      * @param loc1 the location of the first declaration.
+      * @param loc2 the location of the second declaration.
+      */
     case class DuplicateTag(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
@@ -108,10 +108,10 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate that a predicate is not allowed in the head of a fact/rule.
-     *
-     * @param loc the location where the illegal predicate occurs.
-     */
+      * An error raised to indicate that a predicate is not allowed in the head of a fact/rule.
+      *
+      * @param loc the location where the illegal predicate occurs.
+      */
     case class IllegalHeadPredicate(loc: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -123,10 +123,10 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate that a predicate is not allowed in the body rule.
-     *
-     * @param loc the location where the illegal predicate occurs.
-     */
+      * An error raised to indicate that a predicate is not allowed in the body rule.
+      *
+      * @param loc the location where the illegal predicate occurs.
+      */
     case class IllegalBodyPredicate(loc: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -138,10 +138,10 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate that a read predicate has too few arguments.
-     *
-     * @param loc the location where the illegal predicate occurs.
-     */
+      * An error raised to indicate that a read predicate has too few arguments.
+      *
+      * @param loc the location where the illegal predicate occurs.
+      */
     case class IllegalReadPredicate(loc: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -154,10 +154,10 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate that a write predicate has too few arguments.
-     *
-     * @param loc the location where the illegal predicate occurs.
-     */
+      * An error raised to indicate that a write predicate has too few arguments.
+      *
+      * @param loc the location where the illegal predicate occurs.
+      */
     case class IllegalWritePredicate(loc: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -170,11 +170,11 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate that an illegal term occurs in a head predicate.
-     *
-     * @param msg the error message.
-     * @param loc the location where the illegal term occurs.
-     */
+      * An error raised to indicate that an illegal term occurs in a head predicate.
+      *
+      * @param msg the error message.
+      * @param loc the location where the illegal term occurs.
+      */
     case class IllegalHeadTerm(msg: String, loc: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -187,11 +187,11 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate that an illegal term occurs in a body predicate.
-     *
-     * @param msg the error message.
-     * @param loc the location where the illegal term occurs.
-     */
+      * An error raised to indicate that an illegal term occurs in a body predicate.
+      *
+      * @param msg the error message.
+      * @param loc the location where the illegal term occurs.
+      */
     case class IllegalBodyTerm(msg: String, loc: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -204,10 +204,10 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate an illegal bounded lattice definition.
-     *
-     * @param loc the location where the illegal definition occurs.
-     */
+      * An error raised to indicate an illegal bounded lattice definition.
+      *
+      * @param loc the location where the illegal definition occurs.
+      */
     case class IllegalBoundedLattice(loc: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -224,10 +224,10 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate an illegal lattice attribute occurring in a relation.
-     *
-     * @param loc the location where the illegal definition occurs.
-     */
+      * An error raised to indicate an illegal lattice attribute occurring in a relation.
+      *
+      * @param loc the location where the illegal definition occurs.
+      */
     case class IllegalLatticeAttributeInRelation(loc: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -242,10 +242,10 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate that the last attribute of a lattice definition does not have a lattice interpretation.
-     *
-     * @param loc the location where the illegal definition occurs.
-     */
+      * An error raised to indicate that the last attribute of a lattice definition does not have a lattice interpretation.
+      *
+      * @param loc the location where the illegal definition occurs.
+      */
     case class IllegalNonLatticeAttribute(loc: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -261,11 +261,11 @@ object Weeder {
 
 
     /**
-     * An error raised to indicate that a lattice attribute is followed by a non-lattice attribute.
-     *
-     * @param loc1 the location where the first lattice attribute occurs.
-     * @param loc2 the location where a following non-lattice attribute occurs.
-     */
+      * An error raised to indicate that a lattice attribute is followed by a non-lattice attribute.
+      *
+      * @param loc1 the location where the first lattice attribute occurs.
+      * @param loc2 the location where a following non-lattice attribute occurs.
+      */
     case class IllegalMixedAttributes(loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
@@ -282,13 +282,13 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
-     *
-     * @param name the name of the variable.
-     *
-     * @param loc1 the location of the first use of the variable.
-     * @param loc2 the location of the second use of the variable.
-     */
+      * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
+      *
+      * @param name the name of the variable.
+      *
+      * @param loc1 the location of the first use of the variable.
+      * @param loc2 the location of the second use of the variable.
+      */
     case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
@@ -307,11 +307,11 @@ object Weeder {
     }
 
     /**
-     * An error raised to indicate that a syntactic construct, although successfully parsed, is currently not supported.
-     *
-     * @param msg the error message.
-     * @param loc the location of the syntactic construct.
-     */
+      * An error raised to indicate that a syntactic construct, although successfully parsed, is currently not supported.
+      *
+      * @param msg the error message.
+      * @param loc the location of the syntactic construct.
+      */
     case class Unsupported(msg: String, loc: SourceLocation) extends WeederError {
       val format =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -328,8 +328,8 @@ object Weeder {
   }
 
   /**
-   * Compiles the given parsed `past` to a weeded ast.
-   */
+    * Compiles the given parsed `past` to a weeded ast.
+    */
   def weed(past: ParsedAst.Root): Validation[WeededAst.Root, WeederError] = {
     @@(past.declarations.map(Declaration.compile)) map WeededAst.Root
   }
@@ -337,8 +337,8 @@ object Weeder {
   object Declaration {
 
     /**
-     * Compiles the given parsed declaration `past` to a weeded declaration.
-     */
+      * Compiles the given parsed declaration `past` to a weeded declaration.
+      */
     def compile(past: ParsedAst.Declaration): Validation[WeededAst.Declaration, WeederError] = past match {
       case d: ParsedAst.Declaration.Namespace => Declaration.compile(d)
       case d: ParsedAst.Declaration.Fact => Declaration.compile(d)
@@ -348,24 +348,24 @@ object Weeder {
     }
 
     /**
-     * Compiles the given parsed namespace declaration `past` to a weeded namespace declaration.
-     */
+      * Compiles the given parsed namespace declaration `past` to a weeded namespace declaration.
+      */
     def compile(past: ParsedAst.Declaration.Namespace): Validation[WeededAst.Declaration.Namespace, WeederError] =
       @@(past.body.map(compile)) map {
         case decls => WeededAst.Declaration.Namespace(past.name, decls, past.loc)
       }
 
     /**
-     * Compiles the given parsed fact `past` to a weeded fact.
-     */
+      * Compiles the given parsed fact `past` to a weeded fact.
+      */
     def compile(past: ParsedAst.Declaration.Fact): Validation[WeededAst.Declaration.Fact, WeederError] =
       Predicate.Head.compile(past.head) map {
         case p => WeededAst.Declaration.Fact(p, past.loc)
       }
 
     /**
-     * Compiles the parsed rule `past` to a weeded rule.
-     */
+      * Compiles the parsed rule `past` to a weeded rule.
+      */
     def compile(past: ParsedAst.Declaration.Rule): Validation[WeededAst.Declaration.Rule, WeederError] = {
       // compute an map from variable names to alias predicates.
       val aliasesVal = Validation.fold[ParsedAst.Predicate.Alias, Map[String, ParsedAst.Predicate.Alias], WeederError](past.aliases, Map.empty) {
@@ -391,8 +391,9 @@ object Weeder {
   object Definition {
 
     /**
-     * Compiles the given parsed definition `past` to a weeded definition.
-     */
+      * Compiles the given parsed definition `past` to a weeded definition.
+      */
+    // TODO: Inline all calls into this function...
     def compile(past: ParsedAst.Definition): Validation[WeededAst.Declaration, WeederError] = past match {
       case d: ParsedAst.Definition.Value => Definition.compile(d)
       case d: ParsedAst.Definition.Function => Definition.compile(d)
@@ -400,19 +401,20 @@ object Weeder {
       case d: ParsedAst.Definition.BoundedLattice => Definition.compile(d)
       case d: ParsedAst.Definition.Relation => Definition.compile(d)
       case d: ParsedAst.Definition.Lattice => Definition.compile(d)
+      case d: ParsedAst.Definition.Index => Definition.compile(d)
     }
 
     /**
-     * Compiles the given parsed value declaration `past` to a weeded definition.
-     */
+      * Compiles the given parsed value declaration `past` to a weeded definition.
+      */
     def compile(past: ParsedAst.Definition.Value): Validation[WeededAst.Definition.Constant, WeederError] =
       @@(Expression.compile(past.e), Type.compile(past.tpe)) map {
         case (exp, tpe) => WeededAst.Definition.Constant(past.ident, exp, tpe, past.loc)
       }
 
     /**
-     * Compiles the given parsed function declaration `past` to a weeded definition.
-     */
+      * Compiles the given parsed function declaration `past` to a weeded definition.
+      */
     def compile(past: ParsedAst.Definition.Function): Validation[WeededAst.Definition.Constant, WeederError] = {
       // check duplicate formals.
       val seen = mutable.Map.empty[String, Name.Ident]
@@ -435,10 +437,10 @@ object Weeder {
     }
 
     /**
-     * Compiles the given parsed enum declaration `past` to a weeded enum definition.
-     *
-     * Returns [[Failure]] if the same tag name occurs twice.
-     */
+      * Compiles the given parsed enum declaration `past` to a weeded enum definition.
+      *
+      * Returns [[Failure]] if the same tag name occurs twice.
+      */
     def compile(past: ParsedAst.Definition.Enum): Validation[WeededAst.Definition.Enum, WeederError] = {
       // check duplicate tags.
       Validation.fold[ParsedAst.Type.Tag, Map[String, WeededAst.Type.Tag], WeederError](past.cases, Map.empty) {
@@ -452,8 +454,8 @@ object Weeder {
     }
 
     /**
-     * Compiles the given parsed lattice `past` to a weeded lattice definition.
-     */
+      * Compiles the given parsed lattice `past` to a weeded lattice definition.
+      */
     def compile(past: ParsedAst.Definition.BoundedLattice): Validation[WeededAst.Definition.BoundedLattice, WeederError] = {
       // check lattice definition.
       val tpeVal = Type.compile(past.tpe)
@@ -465,8 +467,8 @@ object Weeder {
     }
 
     /**
-     * Compiles the given parsed relation `past` to a weeded relation definition.
-     */
+      * Compiles the given parsed relation `past` to a weeded relation definition.
+      */
     def compile(past: ParsedAst.Definition.Relation): Validation[WeededAst.Collection.Relation, WeederError] = {
       // check duplicate attributes.
       val seen = mutable.Map.empty[String, Name.Ident]
@@ -490,8 +492,8 @@ object Weeder {
     }
 
     /**
-     * Compiles the given parsed relation `past` to a weeded lattice definition.
-     */
+      * Compiles the given parsed relation `past` to a weeded lattice definition.
+      */
     def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Collection.Lattice, WeederError] = {
       // TODO: Rewrite so we can get rid of WeededAst.Interpretation.
 
@@ -530,13 +532,21 @@ object Weeder {
       }
     }
 
+    /**
+      * Compiles the given parsed index definition `past` to a weeded index definition.
+      */
+    def compile(past: ParsedAst.Definition.Index): Validation[WeededAst.Definition.Index, WeederError] = {
+      // TODO: Check duplicated attributes.
+      WeededAst.Definition.Index(past.ident, past.indexes, past.loc).toSuccess
+    }
+
   }
 
   object Directive {
 
     /**
-     * Compiles the given parsed directive `past` to a weeded directive.
-     */
+      * Compiles the given parsed directive `past` to a weeded directive.
+      */
     def compile(past: ParsedAst.Directive): Validation[WeededAst.Declaration, WeederError] = past match {
       case d: ParsedAst.Directive.AssertFact => Declaration.compile(d.fact) map {
         case fact => WeededAst.Directive.AssertFact(fact, d.loc)
@@ -551,8 +561,8 @@ object Weeder {
 
   object Literal {
     /**
-     * Compiles the parsed literal `past` to a weeded literal.
-     */
+      * Compiles the parsed literal `past` to a weeded literal.
+      */
     def compile(past: ParsedAst.Literal): Validation[WeededAst.Literal, WeederError] = past match {
       case plit: ParsedAst.Literal.Unit => WeededAst.Literal.Unit(plit.loc).toSuccess
       case plit: ParsedAst.Literal.Bool => plit.lit match {
@@ -566,13 +576,16 @@ object Weeder {
       case plit: ParsedAst.Literal.Tuple => @@(plit.elms map compile) map {
         case elms => WeededAst.Literal.Tuple(elms, plit.loc)
       }
+      case plit: ParsedAst.Literal.Set => @@(plit.elms map compile) map {
+        case elms => WeededAst.Literal.Set(elms, plit.loc)
+      }
     }
   }
 
   object Expression {
     /**
-     * Compiles the parsed expression `past` to a weeded expression.
-     */
+      * Compiles the parsed expression `past` to a weeded expression.
+      */
     def compile(past: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = past match {
       case exp: ParsedAst.Expression.Lit =>
         Literal.compile(exp.lit) map {
@@ -625,7 +638,17 @@ object Weeder {
 
       case exp: ParsedAst.Expression.Infix =>
         @@(compile(exp.e1), compile(exp.e2)) map {
-          case (e1, e2) => WeededAst.Expression.Apply(WeededAst.Expression.Var(exp.name, exp.loc), List(e1, e2), exp.loc)
+          case (e1, e2) => exp.name.parts match {
+            case List("in") => WeededAst.Expression.Binary(BinaryOperator.Set.Member, e1, e2, exp.loc)
+            case List("subsetOf") => WeededAst.Expression.Binary(BinaryOperator.Set.SubsetOf, e1, e2, exp.loc)
+            case List("properSubsetOf") => WeededAst.Expression.Binary(BinaryOperator.Set.ProperSubsetOf, e1, e2, exp.loc)
+            case List("insert") => WeededAst.Expression.Binary(BinaryOperator.Set.Insert, e1, e2, exp.loc)
+            case List("remove") => WeededAst.Expression.Binary(BinaryOperator.Set.Remove, e1, e2, exp.loc)
+            case List("union") => WeededAst.Expression.Binary(BinaryOperator.Set.Union, e1, e2, exp.loc)
+            case List("intersect") => WeededAst.Expression.Binary(BinaryOperator.Set.Intersection, e1, e2, exp.loc)
+            case List("diff") => WeededAst.Expression.Binary(BinaryOperator.Set.Difference, e1, e2, exp.loc)
+            case _ => WeededAst.Expression.Apply(WeededAst.Expression.Var(exp.name, exp.loc), List(e1, e2), exp.loc)
+          }
         }
 
       case exp: ParsedAst.Expression.Tag => compile(exp.e) map {
@@ -635,6 +658,11 @@ object Weeder {
       case exp: ParsedAst.Expression.Tuple =>
         @@(exp.elms map compile) map {
           case elms => WeededAst.Expression.Tuple(elms, exp.loc)
+        }
+
+      case exp: ParsedAst.Expression.Set =>
+        @@(exp.elms map compile) map {
+          case elms => WeededAst.Expression.Set(elms, exp.loc)
         }
 
       case exp: ParsedAst.Expression.Ascribe =>
@@ -657,8 +685,8 @@ object Weeder {
 
   object Pattern {
     /**
-     * Compiles the parsed pattern `past`.
-     */
+      * Compiles the parsed pattern `past`.
+      */
     def compile(past: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = {
       // check non-linear pattern, i.e. duplicate variable occurrence.
       val seen = mutable.Map.empty[String, Name.Ident]
@@ -692,8 +720,8 @@ object Weeder {
     object Head {
 
       /**
-       * Compiles the given parsed predicate `p` to a weeded head predicate.
-       */
+        * Compiles the given parsed predicate `p` to a weeded head predicate.
+        */
       def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Alias] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case p: ParsedAst.Predicate.FunctionOrRelation =>
           @@(p.terms.map(t => Term.Head.compile(t, aliases))) map {
@@ -717,6 +745,7 @@ object Weeder {
           }
 
         case p: ParsedAst.Predicate.Alias => IllegalHeadPredicate(p.loc).toFailure
+        case p: ParsedAst.Predicate.Loop => IllegalHeadPredicate(p.loc).toFailure
         case p: ParsedAst.Predicate.Read => IllegalHeadPredicate(p.loc).toFailure
         case p: ParsedAst.Predicate.NotEqual => IllegalHeadPredicate(p.loc).toFailure
       }
@@ -726,8 +755,8 @@ object Weeder {
     object Body {
 
       /**
-       * Compiles the given parsed predicate `p` to a weeded body predicate.
-       */
+        * Compiles the given parsed predicate `p` to a weeded body predicate.
+        */
       def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
         case p: ParsedAst.Predicate.FunctionOrRelation =>
           @@(p.terms.map(Term.Body.compile)) map {
@@ -736,6 +765,10 @@ object Weeder {
 
         case p: ParsedAst.Predicate.NotEqual =>
           WeededAst.Predicate.Body.NotEqual(p.ident1, p.ident2, p.loc).toSuccess
+
+        case p: ParsedAst.Predicate.Loop => Term.Head.compile(p.term, Map.empty) map {
+          case term => WeededAst.Predicate.Body.Loop(p.ident, term, p.loc)
+        }
 
         case p: ParsedAst.Predicate.Read =>
           @@(p.terms.map(t => Term.Body.compile(t))) flatMap {
@@ -757,8 +790,8 @@ object Weeder {
     object Head {
 
       /**
-       * Compiles the given parsed head term `past` to a weeded term.
-       */
+        * Compiles the given parsed head term `past` to a weeded term.
+        */
       def compile(past: ParsedAst.Term, aliases: Map[String, ParsedAst.Predicate.Alias]): Validation[WeededAst.Term.Head, WeederError] = past match {
         case term: ParsedAst.Term.Wildcard => IllegalHeadTerm("Wildcards may not occur in head predicates.", term.loc).toFailure
         case term: ParsedAst.Term.Var => aliases.get(term.ident.name) match {
@@ -790,8 +823,8 @@ object Weeder {
 
     object Body {
       /**
-       * Compiles the given parsed body term `past` to a weeded term.
-       */
+        * Compiles the given parsed body term `past` to a weeded term.
+        */
       def compile(past: ParsedAst.Term): Validation[WeededAst.Term.Body, WeederError] = past match {
         case term: ParsedAst.Term.Wildcard => WeededAst.Term.Body.Wildcard(term.loc).toSuccess
         case term: ParsedAst.Term.Var => WeededAst.Term.Body.Var(term.ident, term.loc).toSuccess
@@ -812,11 +845,11 @@ object Weeder {
 
   object Type {
     /**
-     * Weeds the given parsed type `past`.
-     */
+      * Weeds the given parsed type `past`.
+      */
     def compile(past: ParsedAst.Type): Validation[WeededAst.Type, WeederError] = past match {
       case ParsedAst.Type.Unit => WeededAst.Type.Unit.toSuccess
-      case ParsedAst.Type.Ref(name) => WeededAst.Type.Ref(name).toSuccess
+      case ParsedAst.Type.Named(name) => WeededAst.Type.Named(name).toSuccess
       case ParsedAst.Type.Function(pformals, pret) =>
         val formalTypeVal = @@(pformals map compile)
         val returnTypeVal = compile(pret)
@@ -829,6 +862,8 @@ object Weeder {
       case ParsedAst.Type.Tuple(pelms) => @@(pelms map compile) map {
         case elms => WeededAst.Type.Tuple(elms)
       }
+      case ParsedAst.Type.Parametric(Name.Unresolved(_, List("Set"), _), Seq(tpe)) =>
+        compile(tpe) map WeededAst.Type.Set
       case ParsedAst.Type.Parametric(name, pelms) =>
         Unsupported("Parametric types are not yet supported.", name.loc).toFailure
       case p@ParsedAst.Type.Native(sp1, name, sp2) =>

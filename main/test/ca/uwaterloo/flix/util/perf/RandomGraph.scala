@@ -23,9 +23,14 @@ object RandomGraph {
     println(s"    // N = $N, P = $P")
     println()
     println(s"    rel Edge(x: Int, y: Int);")
+    println(s"    rel Reach(x: Int, y: Int);")
 
-    println(s"    Edge(y, x) :- Edge(x, y).")
-    println(s"    Edge(x, z) :- Edge(x, y), Edge(y, z).")
+    println(s"    index Edge({x}, {x, y});")
+    println(s"    index Reach({y}, {x, y});")
+
+    println(s"    Reach(x, y) :- Edge(x, y).")
+    println(s"    Reach(x, y) :- Edge(y, x).")
+    println(s"    Reach(x, z) :- Reach(x, y), Edge(y, z).")
     println()
 
     for (i <- 0 until N) {

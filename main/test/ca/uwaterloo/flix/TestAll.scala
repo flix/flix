@@ -3,6 +3,7 @@ package ca.uwaterloo.flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.runtime.{TestSolver, TestValue, TestInterpreter}
+import ca.uwaterloo.flix.util.TestValidation
 
 import org.scalatest.{ParallelTestExecution, Suites}
 
@@ -17,6 +18,7 @@ class TestAll extends Suites(
   new TestValue,
   new TestSolver,
   new TestExamples,
+  new TestValidation,
   new TestMicro) with ParallelTestExecution {
 
 }

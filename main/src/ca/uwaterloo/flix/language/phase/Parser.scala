@@ -43,7 +43,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Definition: Rule1[ParsedAst.Definition] = rule {
-    ValueDefinition | FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition
+    ValueDefinition | FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition | IndexDefinition
   }
 
   def ValueDefinition: Rule1[ParsedAst.Definition.Value] = rule {
@@ -101,6 +101,16 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def Attributes: Rule1[Seq[ParsedAst.Attribute]] = rule {
     oneOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
+  }
+
+  def IndexDefinition: Rule1[ParsedAst.Definition.Index] = {
+    def Indexes: Rule1[Seq[Name.Ident]] = rule {
+      "{" ~ optWS ~ oneOrMore(Ident).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}"
+    }
+
+    rule {
+      SP ~ atomic("index") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ oneOrMore(Indexes).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.Index
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -164,7 +174,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def SimpleExpression: Rule1[ParsedAst.Expression] = rule {
-    LetExpression | IfThenElseExpression | MatchExpression | TagExpression | TupleExpression | LiteralExpression | LambdaExpression | VariableExpression | ErrorExpression | NativeExpression
+    LetExpression | IfThenElseExpression | MatchExpression | TagExpression | TupleExpression | SetExpression | LiteralExpression | LambdaExpression | VariableExpression | ErrorExpression | NativeExpression
   }
 
   def LiteralExpression: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -217,6 +227,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     rule {
       Unit | Singleton | Tuple
     }
+  }
+
+  def SetExpression: Rule1[ParsedAst.Expression.Set] = rule {
+    SP ~ "#{" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Set
   }
 
   def VariableExpression: Rule1[ParsedAst.Expression.Var] = rule {
@@ -294,7 +308,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    FunctionOrRelationPredicate | NotEqualPredicate | TracePredicate | ReadPredicate | WritePredicate | ErrorPredicate | AliasPredicate
+    FunctionOrRelationPredicate | NotEqualPredicate | TracePredicate | ReadPredicate | WritePredicate | ErrorPredicate | AliasPredicate | LoopPredicate
   }
 
   def FunctionOrRelationPredicate: Rule1[ParsedAst.Predicate.FunctionOrRelation] = rule {
@@ -323,6 +337,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def AliasPredicate: Rule1[ParsedAst.Predicate.Alias] = rule {
     SP ~ Ident ~ optWS ~ atomic(":=") ~ optWS ~ Term ~ SP ~> ParsedAst.Predicate.Alias
+  }
+
+  def LoopPredicate: Rule1[ParsedAst.Predicate.Loop] = rule {
+    SP ~ Ident ~ optWS ~ atomic("<-") ~ optWS ~ Term ~ SP ~> ParsedAst.Predicate.Loop
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -379,30 +397,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
-  // NB: The parser works left-to-right, but the inline code ensures that the
-  // function types are right-associative.
   def Type: Rule1[ParsedAst.Type] = rule {
-    oneOrMore(SimpleType).separatedBy(optWS ~ "->" ~ optWS) ~> ((types: Seq[ParsedAst.Type]) => types match {
-      case xs if xs.size == 1 => xs.head
-      case xs => ParsedAst.Type.Function(xs.dropRight(1).toList, xs.last)
-    })
+    FunctionType | TupleType | ParametricType | NamedType | NativeType
   }
 
-  // NB: ParametricType must be parsed before AmbiguousType.
-  def SimpleType: Rule1[ParsedAst.Type] = rule {
-    ParametricType | NativeType | AmbiguousType | TupleType
-  }
-
-  def AmbiguousType: Rule1[ParsedAst.Type.Ref] = rule {
-    QName ~> ParsedAst.Type.Ref
-  }
-
-  def ParametricType: Rule1[ParsedAst.Type.Parametric] = rule {
-    QName ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ optWS ~> ParsedAst.Type.Parametric
-  }
-
-  def NativeType: Rule1[ParsedAst.Type.Native] = rule {
-    atomic("#") ~ SP ~ JavaName ~ SP ~ optWS ~> ParsedAst.Type.Native
+  def NamedType: Rule1[ParsedAst.Type.Named] = rule {
+    QName ~> ParsedAst.Type.Named
   }
 
   def TupleType: Rule1[ParsedAst.Type] = {
@@ -423,6 +423,18 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
   }
 
+  def FunctionType: Rule1[ParsedAst.Type] = rule {
+    "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~> ParsedAst.Type.Function
+  }
+
+  def ParametricType: Rule1[ParsedAst.Type.Parametric] = rule {
+    QName ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ optWS ~> ParsedAst.Type.Parametric
+  }
+
+  def NativeType: Rule1[ParsedAst.Type.Native] = rule {
+    atomic("#") ~ SP ~ JavaName ~ SP ~ optWS ~> ParsedAst.Type.Native
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Helpers                                                                 //
   /////////////////////////////////////////////////////////////////////////////
@@ -438,9 +450,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Identifiers & Names                                                     //
   /////////////////////////////////////////////////////////////////////////////
   def LegalIdentifier: Rule1[String] = rule {
-    capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum | "_") ~ zeroOrMore("'"))
+    capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum | "_" | "$") ~ zeroOrMore("'"))
   }
 
+  // TODO: Intern strings?
   def Ident: Rule1[Name.Ident] = rule {
     SP ~ LegalIdentifier ~ SP ~> Name.Ident
   }
@@ -458,7 +471,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    UnitLiteral | BoolLiteral | IntLiteral | StrLiteral | TagLiteral | TupleLiteral
+    UnitLiteral | BoolLiteral | IntLiteral | StrLiteral | TagLiteral | TupleLiteral | SetLiteral
   }
 
   def UnitLiteral: Rule1[ParsedAst.Literal.Unit] = rule {
@@ -499,13 +512,21 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
   }
 
+  def SetLiteral: Rule1[ParsedAst.Literal.Set] = rule {
+    SP ~ "#{" ~ optWS ~ zeroOrMore(Literal).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Literal.Set
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Operators                                                               //
   /////////////////////////////////////////////////////////////////////////////
   def UnaryOp: Rule1[UnaryOperator] = rule {
     str("!") ~> (() => UnaryOperator.Not) |
       str("+") ~> (() => UnaryOperator.UnaryPlus) |
-      str("-") ~> (() => UnaryOperator.UnaryMinus)
+      str("-") ~> (() => UnaryOperator.UnaryMinus) |
+      atomic("isEmpty?") ~> (() => UnaryOperator.Set.IsEmpty) |
+      atomic("nonEmpty?") ~> (() => UnaryOperator.Set.NonEmpty) |
+      atomic("singleton?") ~> (() => UnaryOperator.Set.Singleton) |
+      atomic("size?") ~> (() => UnaryOperator.Set.Size)
   }
 
   def LogicalOp: Rule1[BinaryOperator] = rule {
@@ -525,7 +546,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   def MultiplicativeOp: Rule1[BinaryOperator] = rule {
     str("*") ~> (() => BinaryOperator.Times) |
       str("/") ~> (() => BinaryOperator.Divide) |
-      str("%") ~> (() => BinaryOperator.Modulo)
+      str("%") ~> (() => BinaryOperator.Modulo) |
+      atomic("+=") ~> (() => BinaryOperator.Set.Insert) |
+      atomic("-=") ~> (() => BinaryOperator.Set.Remove) |
+      atomic("++") ~> (() => BinaryOperator.Set.Union) |
+      atomic("--") ~> (() => BinaryOperator.Set.Difference)
   }
 
   def AdditiveOp: Rule1[BinaryOperator] = rule {

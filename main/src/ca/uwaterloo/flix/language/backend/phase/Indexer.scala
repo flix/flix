@@ -22,7 +22,7 @@ object Indexer {
       // iterate through each collection predicate in the body.
       for (body <- constraint.body) {
         body match {
-          case Predicate.Body.Relation(name, pterms, _, _) =>
+          case Predicate.Body.Collection(name, pterms, _, _) =>
             // determine the terms usable for indexing based on whether the predicate refers to a relation or lattice.
             val terms = root.collections(name) match {
               case r: TypedAst.Collection.Relation => pterms
@@ -58,10 +58,24 @@ object Indexer {
       collection match {
         case r: TypedAst.Collection.Relation =>
           val idxs = indexes.getOrElse(name, Set.empty)
-          indexes(name) = idxs + Seq(0)
+          indexes(name) = idxs + Seq(0) // + r.attributes.indices // TODO
         case l: TypedAst.Collection.Lattice =>
           val idxs = indexes.getOrElse(name, Set.empty)
           indexes(name) = idxs + Seq(0)
+      }
+    }
+
+    // user defined indexes overrides the defaults.
+    for ((name, collection) <- root.collections) {
+      root.indexes.get(name) match {
+        case None => // no user defined index.
+        case Some(index) =>
+          val attributes = collection match {
+            case r: TypedAst.Collection.Relation => r.attributes
+            case l: TypedAst.Collection.Lattice => l.keys
+          }
+
+          indexes(name) = index.indexes.map(idx => idx.map(v => var2offset(v.name, attributes))).toSet
       }
     }
 
@@ -69,4 +83,13 @@ object Indexer {
     indexes.toMap
   }
 
+  private def var2offset(varName: String, attributes: List[TypedAst.Attribute]): Int = {
+    def rec(xs: List[TypedAst.Attribute], i: Int): Int = xs match {
+      case Nil => throw new RuntimeException() // TODO
+      case y :: ys if varName == y.ident.name => i
+      case y :: ys => rec(ys, i + 1)
+    }
+
+    rec(attributes, 0)
+  }
 }

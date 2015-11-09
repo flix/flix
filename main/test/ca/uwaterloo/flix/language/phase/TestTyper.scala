@@ -10,7 +10,7 @@ class TestTyper extends FunSuite {
   // TODO: Consider using real syntax?
 
   val SL = SourceLocation.Unknown
-  val Root = ResolvedAst.Root(Map.empty, List.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty)
+  val Root = ResolvedAst.Root(Map.empty, List.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty)
   val Ident = ident("x")
   val RName = Name.Resolved(List("foo", "bar"))
 
@@ -1097,4 +1097,21 @@ class TestTyper extends FunSuite {
     assert(result.isSuccess)
   }
 
+  test("Native Type 04 (tuples)") {
+    val input =
+      s"""namespace A {
+         |  val a: (#java.lang.Object, #java.lang.Object) = #ca.uwaterloo.flix.util.misc.ScalaNative.strTuple2();
+         |  val b: (#java.lang.Object, #java.lang.Object) = #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple2(1, 2);
+         |  val c: (#java.lang.Object, #java.lang.Object, #java.lang.Object) =
+         |      #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple3(1, 2, 3);
+         |  val d: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
+         |      #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple4(1, 2, 3, 4);
+         |  val e: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
+         |      #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple5(1, 2, 3, 4, 5);
+         |  val z: #scala.Tuple6 = #ca.uwaterloo.flix.util.misc.ScalaNative.tuple6();
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.isSuccess)
+  }
 }
