@@ -51,8 +51,9 @@ object Interpreter {
     def evalUnary(op: UnaryOperator, e: Expression): Int = op match {
       case UnaryOperator.UnaryPlus => +evalInt(e, root, env)
       case UnaryOperator.UnaryMinus => -evalInt(e, root, env)
-      case UnaryOperator.Not =>
-        throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int.")
+      case UnaryOperator.Set.Size => eval(e, root, env).toSet.size
+      case UnaryOperator.Not | UnaryOperator.Set.IsEmpty | UnaryOperator.Set.NonEmpty | UnaryOperator.Set.Singleton =>
+        throw new InternalRuntimeError(s"Unary expression $expr has type ${expr.tpe} instead of Type.Int.")
     }
 
     // TODO: Document semantics of modulo on negative operands
@@ -63,8 +64,11 @@ object Interpreter {
       case BinaryOperator.Divide => evalInt(e1, root, env) / evalInt(e2, root, env)
       case BinaryOperator.Modulo => evalInt(e1, root, env) % evalInt(e2, root, env)
       case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual |
-           BinaryOperator.Equal | BinaryOperator.NotEqual | BinaryOperator.And | BinaryOperator.Or =>
-        throw new InternalRuntimeError(s"Binary expression $expr does not return an int.")
+           BinaryOperator.Equal | BinaryOperator.NotEqual | BinaryOperator.And | BinaryOperator.Or |
+           BinaryOperator.Set.Member | BinaryOperator.Set.SubsetOf | BinaryOperator.Set.ProperSubsetOf |
+           BinaryOperator.Set.Insert | BinaryOperator.Set.Remove | BinaryOperator.Set.Union |
+           BinaryOperator.Set.Intersection | BinaryOperator.Set.Difference =>
+        throw new InternalRuntimeError(s"Binary expression $expr has type ${expr.tpe} instead of Type.Int.")
     }
 
     expr match {
@@ -92,7 +96,7 @@ object Interpreter {
       case Expression.NativeField(field, _, _) =>
         field.get().asInstanceOf[java.lang.Integer].intValue()
       case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
-           Expression.NativeMethod(_, _, _) =>
+           Expression.Set(_, _, _) | Expression.NativeMethod(_, _, _) =>
         throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int.")
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
     }
@@ -108,14 +112,14 @@ object Interpreter {
   def evalBool(expr: Expression, root: Root, env: Env = Map()): Boolean = {
     def evalUnary(op: UnaryOperator, e: Expression): Boolean = op match {
       case UnaryOperator.Not => !evalBool(e, root, env)
-      case UnaryOperator.UnaryPlus | UnaryOperator.UnaryMinus =>
-        throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
+      case UnaryOperator.Set.IsEmpty => eval(e, root, env).toSet.isEmpty
+      case UnaryOperator.Set.NonEmpty => eval(e, root, env).toSet.nonEmpty
+      case UnaryOperator.Set.Singleton => eval(e, root, env).toSet.size == 1
+      case UnaryOperator.UnaryPlus | UnaryOperator.UnaryMinus | UnaryOperator.Set.Size =>
+        throw new InternalRuntimeError(s"Unary expression $expr has type ${expr.tpe} instead of Type.Bool.")
     }
 
     def evalBinary(op: BinaryOperator, e1: Expression, e2: Expression): Boolean = op match {
-      case BinaryOperator.Plus | BinaryOperator.Minus | BinaryOperator.Times | BinaryOperator.Divide |
-           BinaryOperator.Modulo =>
-        throw new InternalRuntimeError(s"Binary expression $expr does not return a boolean.")
       case BinaryOperator.Less => evalInt(e1, root, env) < evalInt(e2, root, env)
       case BinaryOperator.LessEqual => evalInt(e1, root, env) <= evalInt(e2, root, env)
       case BinaryOperator.Greater => evalInt(e1, root, env) > evalInt(e2, root, env)
@@ -124,6 +128,16 @@ object Interpreter {
       case BinaryOperator.NotEqual => eval(e1, root, env) != eval(e2, root, env)
       case BinaryOperator.And => evalBool(e1, root, env) && evalBool(e2, root, env)
       case BinaryOperator.Or => evalBool(e1, root, env) || evalBool(e2, root, env)
+      case BinaryOperator.Set.Member => eval(e2, root, env).toSet contains eval(e1, root, env)
+      case BinaryOperator.Set.SubsetOf => eval(e1, root, env).toSet subsetOf eval(e2, root, env).toSet
+      case BinaryOperator.Set.ProperSubsetOf =>
+        val s1 = eval(e1, root, env).toSet
+        val s2 = eval(e2, root, env).toSet
+        s1.subsetOf(s2) && s1.size < s2.size
+      case BinaryOperator.Plus | BinaryOperator.Minus | BinaryOperator.Times | BinaryOperator.Divide |
+           BinaryOperator.Modulo | BinaryOperator.Set.Insert | BinaryOperator.Set.Remove | BinaryOperator.Set.Union |
+           BinaryOperator.Set.Intersection | BinaryOperator.Set.Difference =>
+        throw new InternalRuntimeError(s"Binary expression $expr has type ${expr.tpe} instead of Type.Bool.")
     }
 
     expr match {
@@ -151,7 +165,7 @@ object Interpreter {
       case Expression.NativeField(field, _, _) =>
         field.get().asInstanceOf[java.lang.Boolean].booleanValue()
       case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
-           Expression.NativeMethod(_, _, _) =>
+           Expression.Set(_, _, _) | Expression.NativeMethod(_, _, _) =>
         throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
     }
@@ -168,6 +182,10 @@ object Interpreter {
       case UnaryOperator.Not => if (v.toBool) Value.False else Value.True
       case UnaryOperator.UnaryPlus => Value.mkInt(+v.toInt)
       case UnaryOperator.UnaryMinus => Value.mkInt(-v.toInt)
+      case UnaryOperator.Set.IsEmpty => if (v.toSet.isEmpty) Value.True else Value.False
+      case UnaryOperator.Set.NonEmpty => if (v.toSet.nonEmpty) Value.True else Value.False
+      case UnaryOperator.Set.Singleton => if (v.toSet.size == 1) Value.True else Value.False
+      case UnaryOperator.Set.Size => Value.mkInt(v.toSet.size)
     }
 
     def evalBinary(op: BinaryOperator, v1: Value, v2: Value): Value = op match {
@@ -184,6 +202,15 @@ object Interpreter {
       case BinaryOperator.NotEqual => if (v1 != v2) Value.True else Value.False
       case BinaryOperator.And => if (v1.toBool && v2.toBool) Value.True else Value.False
       case BinaryOperator.Or => if (v1.toBool || v2.toBool) Value.True else Value.False
+      case BinaryOperator.Set.Member => if (v2.toSet.contains(v1)) Value.True else Value.False
+      case BinaryOperator.Set.SubsetOf => if (v1.toSet.subsetOf(v2.toSet)) Value.True else Value.False
+      case BinaryOperator.Set.ProperSubsetOf =>
+        if (v1.toSet.subsetOf(v2.toSet) && v1.toSet.size < v2.toSet.size) Value.True else Value.False
+      case BinaryOperator.Set.Insert => Value.Set(v1.toSet + v2)
+      case BinaryOperator.Set.Remove => Value.Set(v1.toSet - v2)
+      case BinaryOperator.Set.Union => Value.Set(v1.toSet | v2.toSet)
+      case BinaryOperator.Set.Intersection => Value.Set(v1.toSet & v2.toSet)
+      case BinaryOperator.Set.Difference => Value.Set(v1.toSet &~ v2.toSet)
     }
 
     expr match {
@@ -213,6 +240,7 @@ object Interpreter {
       case Expression.NativeMethod(method, _, _) => Value.NativeMethod(method)
       case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
       case Expression.Tuple(elms, _, _) => Value.Tuple(elms.map(e => eval(e, root, env)))
+      case Expression.Set(elms, _, _) => Value.Set(elms.map(e => eval(e, root, env)).toSet)
       case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
     }
   }
@@ -224,6 +252,7 @@ object Interpreter {
     case Literal.Str(s, _) => Value.mkStr(s)
     case Literal.Tag(name, ident, innerLit, _, _) => Value.mkTag(name, ident.name, evalLit(innerLit))
     case Literal.Tuple(elms, _, _) => Value.Tuple(elms.map(evalLit))
+    case Literal.Set(elms, _, _) => Value.Set(elms.map(evalLit).toSet)
   }
 
   private def matchRule(rules: List[(Pattern, Expression)], value: Value): Option[(Expression, Env)] = rules match {
