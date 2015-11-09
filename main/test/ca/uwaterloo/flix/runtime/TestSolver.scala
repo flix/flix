@@ -306,6 +306,29 @@ class TestSolver extends FunSuite {
     assert(C contains List(Value.mkInt(7), Value.mkInt(6)))
   }
 
+  test("Wildcard01") {
+    val s =
+      """rel A(x: Int, y: Int);
+        |rel B(x: Int, y: Int);
+        |rel C(x: Int, y: Int);
+        |
+        |A(1, 2).
+        |A(3, 4).
+        |
+        |B(5, 6).
+        |B(7, 8).
+        |
+        |C(x, y) :- A(x, _), B(_, y).
+      """.stripMargin
+
+    val model = Flix.fromStrings(s).get
+    val C = model.relations(NameC)
+    assert(C contains List(Value.mkInt(1), Value.mkInt(6)))
+    assert(C contains List(Value.mkInt(1), Value.mkInt(8)))
+    assert(C contains List(Value.mkInt(3), Value.mkInt(6)))
+    assert(C contains List(Value.mkInt(3), Value.mkInt(8)))
+  }
+
   test("Lattice01") {
     val s =
       """lat A(x: Int, v: Parity<>);
