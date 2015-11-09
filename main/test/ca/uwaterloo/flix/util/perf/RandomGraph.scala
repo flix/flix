@@ -25,7 +25,7 @@ object RandomGraph {
     println(s"    rel Edge(x: Int, y: Int);")
     println(s"    rel Reach(x: Int, y: Int);")
 
-    println(s"    index Edge({x, y});")
+    println(s"    index Edge({x}, {x, y});")
     println(s"    index Reach({y}, {x, y});")
 
     println(s"    Reach(x, y) :- Edge(x, y).")

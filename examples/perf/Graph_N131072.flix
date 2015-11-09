@@ -5,7 +5,7 @@ namespace Graph_N131072 {
     rel Edge(x: Int, y: Int);
     rel Reach(x: Int, y: Int);
 
-    index Edge({x, y});
+    index Edge({x}, {x, y});
     index Reach({y}, {x, y});
 
     Reach(x, y) :- Edge(x, y).
