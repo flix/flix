@@ -2,7 +2,11 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.ast.TypedAst.{Definition, Expression, Literal, Pattern, Type, Term, FormalArg, Root}
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.Compiler
 import org.scalatest.FunSuite
+
+// NOTE: When writing a new test, call the parser on a string, and then the interpreter on the resulting AST.
+// Older tests were written before the front-end was completely implemented, so they had to directly construct ASTs.
 
 class TestInterpreter extends FunSuite {
   val root = Root(Map(), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List())
@@ -189,6 +193,48 @@ class TestInterpreter extends FunSuite {
     val input = Expression.Lit(Literal.Tag(name, identV, Literal.Int(1241, loc), enumTpe, loc), tagTpeV, loc)
     val result = Interpreter.eval(input, root)
     assertResult(Value.mkTag(name, "Val", Value.mkInt(1241)))(result)
+  }
+
+  test("Interpreter - Literal.Set01") {
+    val input = Expression.Lit(Literal.Set(List(), Type.Set(Type.Int), loc), Type.Set(Type.Int), loc)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Set(Set()))(result)
+  }
+
+  test("Interpreter - Literal.Set02") {
+    val input = Expression.Lit(Literal.Set(List(), Type.Set(Type.Bool), loc), Type.Set(Type.Bool), loc)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Set(Set()))(result)
+  }
+
+  test("Interpreter - Literal.Set03") {
+    val input = Expression.Lit(Literal.Set(List(
+      Literal.Int(3, loc),
+      Literal.Int(100, loc),
+      Literal.Int(44, loc)
+    ), Type.Set(Type.Int), loc), Type.Set(Type.Int), loc)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Set(Set(3, 100, 44).map(Value.mkInt)))(result)
+  }
+
+  test("Interpreter - Literal.Set04") {
+    val input = Expression.Lit(Literal.Set(List(
+      Literal.Bool(true, loc)
+    ), Type.Set(Type.Bool), loc), Type.Set(Type.Bool), loc)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Set(Set(Value.True)))(result)
+  }
+
+  test("Interpreter - Literal.Set05") {
+    val input = Expression.Lit(Literal.Set(
+      List(Literal.Tuple(List(
+        Literal.Int(3, loc),
+        Literal.Str("three", loc)), Type.Tuple(List(Type.Int, Type.Str)),
+        loc)),
+      Type.Set(Type.Tuple(List(Type.Int, Type.Str))), loc),
+      Type.Set(Type.Tuple(List(Type.Int, Type.Str))), loc)
+    val result = Interpreter.eval(input, root)
+    assertResult(Value.Set(Set(Value.Tuple(List(Value.mkInt(3), Value.mkStr("three"))))))(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -484,7 +530,7 @@ class TestInterpreter extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Expressions - Unary and Binary                                          //
+  // Expressions - Unary                                                     //
   /////////////////////////////////////////////////////////////////////////////
 
   test("Interpreter - UnaryOperator.Not01") {
@@ -523,7 +569,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt(-4))(result)
   }
 
-  test("Interpreter - UnaryOperator.UnaryMinus03") {
+  test("Interpreter - UnaryOperator.UnaryMinus01") {
     val input = Expression.Unary(
       UnaryOperator.UnaryMinus,
       Expression.Lit(Literal.Int(23, loc), Type.Int, loc),
@@ -540,6 +586,80 @@ class TestInterpreter extends FunSuite {
     val result = Interpreter.eval(input, root)
     assertResult(Value.mkInt(4))(result)
   }
+
+  test("Interpreter - UnaryOperator.Set.IsEmpty01") {
+    val input = "val x: Bool = isEmpty? (#{5} `remove` 5)"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.True)(result)
+  }
+
+  test("Interpreter - UnaryOperator.Set.IsEmpty02") {
+    val input = "val x: Bool = isEmpty? #{true}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.False)(result)
+  }
+
+  test("Interpreter - UnaryOperator.Set.NonEmpty01") {
+    val input = "val x: Bool = nonEmpty? (#{5} `remove` 5)"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.False)(result)
+  }
+
+  test("Interpreter - UnaryOperator.Set.NonEmpty02") {
+    val input = "val x: Bool = nonEmpty? #{true}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.True)(result)
+  }
+
+  test("Interpreter - UnaryOperator.Set.Singleton01") {
+    val input = "val x: Bool = singleton? (#{5} `remove` 5)"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.False)(result)
+  }
+
+  test("Interpreter - UnaryOperator.Set.Singleton02") {
+    val input = "val x: Bool = singleton? #{true}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.True)(result)
+  }
+
+  test("Interpreter - UnaryOperator.Set.Singleton03") {
+    val input = "val x: Bool = singleton? #{true, false}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.False)(result)
+  }
+
+  test("Interpreter - UnaryOperator.Set.Size01") {
+    val input = "val x: Int = size? (#{5} `remove` 5)"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(0))(result)
+  }
+
+  test("Interpreter - UnaryOperator.Set.Size02") {
+    val input = "val x: Int = size? #{5, 3, 4, 1}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(4))(result)
+  }
+
+  test("Interpreter - UnaryOperator.Set.Size03") {
+    val input = "val x: Int = size? #{5, 9, 1, 1}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(3))(result)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expressions - Binary                                                    //
+  /////////////////////////////////////////////////////////////////////////////
 
   test("Interpreter - BinaryOperator.Plus01") {
     val input = Expression.Binary(
@@ -1278,6 +1398,202 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.False)(result)
   }
 
+  test("Interpreter - BinaryOperator.Set.Member01") {
+    val input = "val x: Bool = 5 `in` (#{5} `remove` 5)"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.False)(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Member02") {
+    val input = "val x: Bool = 5 `in` #{1, 2, 3}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.False)(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Member03") {
+    val input = "val x: Bool = 5 `in` #{1, 2, 3, 4, 5}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.True)(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.SubsetOf01") {
+    val input = "val x: Bool = #{1, 2, 3, 4, 5} `subsetOf` #{1, 2, 3, 4, 5}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.True)(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.SubsetOf02") {
+    val input = "val x: Bool = #{1, 2, 3} `subsetOf` #{1, 2, 3, 4, 5}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.True)(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.SubsetOf03") {
+    val input = "val x: Bool = #{1, 2, 3, 4, 5, 6} `subsetOf` #{1, 2, 3, 4, 5}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.False)(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.SubsetOf04") {
+    val input = "val x: Bool = #{0, 1, 2, 3} `subsetOf` #{1, 2, 3, 4, 5}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.False)(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.ProperSubsetOf01") {
+    val input = "val x: Bool = #{1, 2, 3, 4, 5} `properSubsetOf` #{1, 2, 3, 4, 5}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.False)(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.ProperSubsetOf02") {
+    val input = "val x: Bool = #{1, 2, 3} `properSubsetOf` #{1, 2, 3, 4, 5}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.True)(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.ProperSubsetOf03") {
+    val input = "val x: Bool = #{1, 2, 3, 4, 5, 6} `properSubsetOf` #{1, 2, 3, 4, 5}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.False)(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.ProperSubsetOf04") {
+    val input = "val x: Bool = #{0, 1, 2, 3} `properSubsetOf` #{1, 2, 3, 4, 5}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.False)(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Insert01") {
+    val input = "val x: Set[Int] = #{1, 2, 3} `insert` 0"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set(0, 1, 2, 3).map(Value.mkInt)))(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Insert02") {
+    val input = "val x: Set[Int] = #{1, 2, 3} `insert` 1"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set(1, 2, 3).map(Value.mkInt)))(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Insert03") {
+    val input = "val x: Set[Int] = #{1, 2, 3} `insert` (1 + 2)"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set(1, 2, 3).map(Value.mkInt)))(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Remove01") {
+    val input = "val x: Set[Int] = #{1, 2, 3} `remove` 0"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set(1, 2, 3).map(Value.mkInt)))(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Remove02") {
+    val input = "val x: Set[Int] = #{1, 2, 3} `remove` 1"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set(2, 3).map(Value.mkInt)))(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Remove03") {
+    val input = "val x: Set[Int] = #{1, 2, 3} `remove` (1 + 2)"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set(1, 2).map(Value.mkInt)))(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Union01") {
+    val input = "val x: Set[Int] = #{1, 2, 3} `union` #{4, 5, 6}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set(1, 2, 3, 4, 5, 6).map(Value.mkInt)))(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Union02") {
+    val input = "val x: Set[Int] = #{1, 2, 3} `union` #{1, 2, 3}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set(1, 2, 3).map(Value.mkInt)))(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Union03") {
+    val input = "val x: Set[Int] = #{1, 2, 3} `union` #{2, 3, 4}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set(1, 2, 3, 4).map(Value.mkInt)))(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Intersection01") {
+    val input = "val x: Set[Int] = #{1, 2, 3} `intersect` #{4, 5, 6}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set()))(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Intersection02") {
+    val input = "val x: Set[Int] = #{1, 2, 3} `intersect` #{1, 2, 3}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set(1, 2, 3).map(Value.mkInt)))(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Intersection03") {
+    val input = "val x: Set[Int] = #{1, 2, 3} `intersect` #{2, 3, 4}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set(2, 3).map(Value.mkInt)))(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Difference01") {
+    val input = "val x: Set[Int] = #{1, 2, 3} `diff` #{1, 2, 3}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set()))(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Difference02") {
+    val input = "val x: Set[Int] = #{1, 2, 3} `diff` #{2, 3}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set(1).map(Value.mkInt)))(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Difference03") {
+    val input = "val x: Set[Int] = #{1, 2, 3} `diff` #{1, 2, 3, 4}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set()))(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Difference04") {
+    val input = "val x: Set[Int] = #{1, 2, 3} `diff` #{0, 1}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set(2, 3).map(Value.mkInt)))(result)
+  }
+
+  test("Interpreter - BinaryOperator.Set.Difference05") {
+    val input = "val x: Set[Int] = #{1, 2, 3} `diff` #{4, 5, 6}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set(1, 2, 3).map(Value.mkInt)))(result)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expressions - If Then Else                                              //
   /////////////////////////////////////////////////////////////////////////////
@@ -1889,7 +2205,7 @@ class TestInterpreter extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Expressions - Tuples and Tags                                           //
+  // Expressions - Tuples, Tags, and Sets                                    //
   /////////////////////////////////////////////////////////////////////////////
 
   test("Interpreter - Expression.Tuple01") {
@@ -2029,6 +2345,33 @@ class TestInterpreter extends FunSuite {
     val result = Interpreter.eval(input, root)
     assertResult(Value.mkTag(name, "Val", Value.mkInt(1241)))(result)
   }
+
+  test("Interpreter - Expression.Set01") {
+    val input = "val x: Set[Int] = #{1, 4, 2}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set(Value.mkInt(1), Value.mkInt(4), Value.mkInt(2))))(result)
+  }
+
+  test("Interpreter - Expression.Set02") {
+    val input = "val x: Set[Int] = #{1 + 2, 3 * 4, 5 - 6}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set(Value.mkInt(-1), Value.mkInt(12), Value.mkInt(3))))(result)
+  }
+
+  test("Interpreter - Expression.Set03") {
+    val input = "val x: Set[(Int, Bool)] = #{(1 + 2, true), (2 + 1, !false), (4 * 7, true), (5, true && false)}"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.Set(Set(
+      Value.Tuple(List(Value.mkInt(3), Value.True)),
+      Value.Tuple(List(Value.mkInt(28), Value.True)),
+      Value.Tuple(List(Value.mkInt(5), Value.False))
+    )))(result)
+  }
+
+  // TODO(mhyee): NativeField
 
   /////////////////////////////////////////////////////////////////////////////
   // Expressions - Error                                                     //
@@ -2655,4 +2998,6 @@ class TestInterpreter extends FunSuite {
     val result = Interpreter.evalBodyTerm(input, Map())
     assertResult(Value.mkTag(name, "Val", Value.mkInt(1241)))(result)
   }
+
+  // TODO(mhyee): evalCall NativeMethod
 }
