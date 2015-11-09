@@ -8,8 +8,9 @@ namespace Graph_N32768 {
     index Edge({x, y});
     index Reach({y}, {x, y});
 
-    Edge(y, x) :- Edge(x, y).
-    Edge(x, z) :- Edge(x, y), Edge(y, z).
+    Reach(x, y) :- Edge(x, y).
+    Reach(x, y) :- Edge(y, x).
+    Reach(x, z) :- Reach(x, y), Edge(y, z).
 
     Edge(0, 9335).
     Edge(0, 27822).
