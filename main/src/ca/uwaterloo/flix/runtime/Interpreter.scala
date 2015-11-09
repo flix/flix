@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.TypedAst.{Definition, Expression, Literal, Pattern, Type, Term, Root}
-import ca.uwaterloo.flix.language.ast.{TypedAst, BinaryOperator, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Type, Term, Root}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, UnaryOperator}
 
 // TODO: Consider an EvaluationContext
 object Interpreter {
