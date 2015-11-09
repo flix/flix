@@ -2371,6 +2371,8 @@ class TestInterpreter extends FunSuite {
     )))(result)
   }
 
+  // TODO(mhyee): NativeField
+
   /////////////////////////////////////////////////////////////////////////////
   // Expressions - Error                                                     //
   /////////////////////////////////////////////////////////////////////////////
@@ -2996,4 +2998,6 @@ class TestInterpreter extends FunSuite {
     val result = Interpreter.evalBodyTerm(input, Map())
     assertResult(Value.mkTag(name, "Val", Value.mkInt(1241)))(result)
   }
+
+  // TODO(mhyee): evalCall NativeMethod
 }
