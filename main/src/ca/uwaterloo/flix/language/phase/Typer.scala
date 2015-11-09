@@ -15,8 +15,8 @@ object Typer {
   import TypeError._
 
   /**
-   * A common super-type for type errors.
-   */
+    * A common super-type for type errors.
+    */
   sealed trait TypeError extends Compiler.CompilationError
 
   object TypeError {
@@ -24,12 +24,12 @@ object Typer {
     implicit val consoleCtx = Compiler.ConsoleCtx
 
     /**
-     * An error raised to indicate a type mismatch between an `expected` and an `actual` type.
-     *
-     * @param expected the expected type.
-     * @param actual the actual type.
-     * @param loc the source location.
-     */
+      * An error raised to indicate a type mismatch between an `expected` and an `actual` type.
+      *
+      * @param expected the expected type.
+      * @param actual the actual type.
+      * @param loc the source location.
+      */
     case class ExpectedType(expected: TypedAst.Type, actual: TypedAst.Type, loc: SourceLocation) extends TypeError {
       val format =
         s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -41,13 +41,13 @@ object Typer {
     }
 
     /**
-     * An error raised to indicate that the two given types `tpe1` and `tpe2` were expected to be equal.
-     *
-     * @param tpe1 the first type.
-     * @param tpe2 the second type.
-     * @param loc1 the source location of the first type.
-     * @param loc2 the source location of the second type.
-     */
+      * An error raised to indicate that the two given types `tpe1` and `tpe2` were expected to be equal.
+      *
+      * @param tpe1 the first type.
+      * @param tpe2 the second type.
+      * @param loc1 the source location of the first type.
+      * @param loc2 the source location of the second type.
+      */
     case class ExpectedEqualTypes(tpe1: TypedAst.Type, tpe2: TypedAst.Type, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
       val format =
         s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc1.source.format}")}
@@ -60,23 +60,23 @@ object Typer {
     }
 
     /**
-     * An error raised to indicate that the given type `tpe` was expected to be a function type.
-     *
-     * @param tpe the erroneous type.
-     * @param loc the source location.
-     */
+      * An error raised to indicate that the given type `tpe` was expected to be a function type.
+      *
+      * @param tpe the erroneous type.
+      * @param loc the source location.
+      */
     // TODO: Pretty print
     case class IllegalApply(tpe: TypedAst.Type, loc: SourceLocation) extends TypeError {
       val format = s"Type Error: The type '${prettyPrint(tpe)}' is not a function type at ${loc.format}.\n"
     }
 
     /**
-     * An error raised to indicate a type mismatch between a pattern `pat` and an expected type `tpe`.
-     *
-     * @param pat the pattern.
-     * @param tpe the type.
-     * @param loc the source location.
-     */
+      * An error raised to indicate a type mismatch between a pattern `pat` and an expected type `tpe`.
+      *
+      * @param pat the pattern.
+      * @param tpe the type.
+      * @param loc the source location.
+      */
     // TODO: Pretty print
     case class IllegalPattern(pat: ResolvedAst.Pattern, tpe: TypedAst.Type, loc: SourceLocation) extends TypeError {
       val format = s"Type Error: Pattern '${prettyPrint(pat)}' does not match expected type '${prettyPrint(tpe)}' at ${loc.format}.\n"
@@ -85,11 +85,11 @@ object Typer {
     // TODO: Check arity of function calls, predicates, etc.
 
     /**
-     * An error raised to indicate that a type has no associated lattice.
-     *
-     * @param tpe the type that has no lattice.
-     * @param loc the source location.
-     */
+      * An error raised to indicate that a type has no associated lattice.
+      *
+      * @param tpe the type that has no lattice.
+      * @param loc the source location.
+      */
     case class NoSuchLattice(tpe: TypedAst.Type, loc: SourceLocation) extends TypeError {
       val format =
         s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -104,8 +104,8 @@ object Typer {
   }
 
   /**
-   * Runs the typer on the entire given AST `rast`.
-   */
+    * Runs the typer on the entire given AST `rast`.
+    */
   def typecheck(root: ResolvedAst.Root): Validation[TypedAst.Root, TypeError] = {
     // constants
     val constantsVal = Validation.fold(root.constants) {
@@ -120,9 +120,14 @@ object Typer {
       case (tpe, lattice) => Definition.typer(lattice, root) map (defn => Type.typer(tpe) -> defn)
     }
 
-    //relations
+    // relations
     val relationsVal = Validation.fold(root.collections) {
       case (name, relation) => Definition.typer(relation, root) map (defn => name -> defn)
+    }
+
+    // indexes
+    val indexesVal = Validation.fold(root.indexes) {
+      case (name, index) => Definition.typer(index, root) map (defn => name -> defn)
     }
 
     // facts and rules
@@ -130,15 +135,16 @@ object Typer {
     val rulesVal = @@(root.rules.map(rule => Constraint.typer(rule, root)))
 
     // putting it all together
-    @@(constantsVal, directivesVal, latticesVal, relationsVal, factsVal, rulesVal) map {
-      case (constants, directives, lattices, relations, facts, rules) => TypedAst.Root(constants, TypedAst.Directives(directives), lattices, relations, facts, rules)
+    @@(constantsVal, directivesVal, latticesVal, relationsVal, indexesVal, factsVal, rulesVal) map {
+      case (constants, directives, lattices, relations, indexes, facts, rules) =>
+        TypedAst.Root(constants, TypedAst.Directives(directives), lattices, relations, indexes, facts, rules)
     }
   }
 
   object Definition {
     /**
-     * Types the given constant definition `rast` under the given AST `root`.
-     */
+      * Types the given constant definition `rast` under the given AST `root`.
+      */
     def typer(rast: ResolvedAst.Definition.Constant, root: ResolvedAst.Root): Validation[TypedAst.Definition.Constant, TypeError] = {
       val declaredType = Type.typer(rast.tpe)
       Expression.typer(rast.exp, root) flatMap {
@@ -149,8 +155,8 @@ object Typer {
     }
 
     /**
-     * Types the given lattice definition `rast` under the given AST `root`.
-     */
+      * Types the given lattice definition `rast` under the given AST `root`.
+      */
     def typer(rast: ResolvedAst.Definition.BoundedLattice, root: ResolvedAst.Root): Validation[TypedAst.Definition.BoundedLattice, TypeError] = {
       val tpe = Type.typer(rast.tpe)
       val leqType = TypedAst.Type.Lambda(args = List(tpe, tpe), retTpe = TypedAst.Type.Bool)
@@ -180,16 +186,16 @@ object Typer {
 
 
     /**
-     * Types the given collection definition `rast` under the given AST `root`.
-     */
+      * Types the given collection definition `rast` under the given AST `root`.
+      */
     def typer(rast: ResolvedAst.Collection, root: ResolvedAst.Root): Validation[TypedAst.Collection, TypeError] = rast match {
       case d: ResolvedAst.Collection.Relation => typer2(d, root)
       case d: ResolvedAst.Collection.Lattice => typer2(d, root)
     }
 
     /**
-     * Types the given relation definition `rast` under the given AST `root`.
-     */
+      * Types the given relation definition `rast` under the given AST `root`.
+      */
     def typer2(rast: ResolvedAst.Collection.Relation, root: ResolvedAst.Root): Validation[TypedAst.Collection.Relation, TypeError] = {
       val attributes = rast.attributes map {
         case ResolvedAst.Attribute(ident, tpe) => TypedAst.Attribute(ident, Type.typer(tpe))
@@ -198,8 +204,8 @@ object Typer {
     }
 
     /**
-     * Types the given lattice definition `rast` under the given AST `root`.
-     */
+      * Types the given lattice definition `rast` under the given AST `root`.
+      */
     def typer2(rast: ResolvedAst.Collection.Lattice, root: ResolvedAst.Root): Validation[TypedAst.Collection.Lattice, TypeError] = {
       val keys = rast.keys map {
         case ResolvedAst.Attribute(ident, tpe) => TypedAst.Attribute(ident, Type.typer(tpe))
@@ -219,20 +225,28 @@ object Typer {
       }
     }
 
+    /**
+      * Types the given index definition `rast` under the given AST `root`.
+      */
+    def typer(rast: ResolvedAst.Definition.Index, root: ResolvedAst.Root): Validation[TypedAst.Definition.Index, TypeError] = {
+      // TODO: any checks?
+      TypedAst.Definition.Index(rast.name, rast.indexes, rast.loc).toSuccess
+    }
+
   }
 
   object Constraint {
 
     /**
-     * Types the given fact `rast` under the given AST `root`.
-     */
+      * Types the given fact `rast` under the given AST `root`.
+      */
     def typer(rast: ResolvedAst.Constraint.Fact, root: ResolvedAst.Root): Validation[TypedAst.Constraint.Fact, TypeError] = {
       Predicate.Head.typer(rast.head, root) map TypedAst.Constraint.Fact
     }
 
     /**
-     * Types the given rule `rast` under the given AST `root`.
-     */
+      * Types the given rule `rast` under the given AST `root`.
+      */
     def typer(rast: ResolvedAst.Constraint.Rule, root: ResolvedAst.Root): Validation[TypedAst.Constraint.Rule, TypeError] = {
       val headVal = Predicate.Head.typer(rast.head, root)
       // TODO: Should check that variables have consistent types?
@@ -247,8 +261,8 @@ object Typer {
   object Directive {
 
     /**
-     * Types the given resolved directive `rast`.
-     */
+      * Types the given resolved directive `rast`.
+      */
     def typer(rast: ResolvedAst.Directive, root: ResolvedAst.Root): Validation[TypedAst.Directive, TypeError] = rast match {
       case ResolvedAst.Directive.AssertFact(fact, loc) => Constraint.typer(fact, root) map {
         case f => TypedAst.Directive.AssertFact(f, loc)
@@ -264,8 +278,8 @@ object Typer {
   object Literal {
 
     /**
-     * Types the given resolved literal `rast`.
-     */
+      * Types the given resolved literal `rast`.
+      */
     def typer(rast: ResolvedAst.Literal, root: ResolvedAst.Root): TypedAst.Literal = {
       def visit(rast: ResolvedAst.Literal): TypedAst.Literal = rast match {
         case ResolvedAst.Literal.Unit(loc) => TypedAst.Literal.Unit(loc)
@@ -281,6 +295,13 @@ object Typer {
         case ResolvedAst.Literal.Tuple(relms, loc) =>
           val elms = relms map visit
           TypedAst.Literal.Tuple(elms, TypedAst.Type.Tuple(elms map (_.tpe)), loc)
+        case ResolvedAst.Literal.Set(relms, loc) =>
+          // TODO: Now this can fail, so the return type needs to be a validation.
+          val elms = relms map visit
+          val tpes = elms map (l => (l.tpe, l.loc))
+          (expectEqual(tpes) map {
+            case tpe => TypedAst.Literal.Set(elms, TypedAst.Type.Set(tpe), loc)
+          }).get
       }
 
       visit(rast)
@@ -290,8 +311,8 @@ object Typer {
   object Expression {
 
     /**
-     * Types the given resolved expression `rast` under the given ast `root` and local environment `env`.
-     */
+      * Types the given resolved expression `rast` under the given ast `root` and local environment `env`.
+      */
     def typer(rast: ResolvedAst.Expression, root: ResolvedAst.Root, env: Map[String, TypedAst.Type] = Map.empty): Validation[TypedAst.Expression, TypeError] = {
       def visit(rast: ResolvedAst.Expression, env: Map[String, TypedAst.Type]): Validation[TypedAst.Expression, TypeError] = rast match {
         case ResolvedAst.Expression.Var(ident, loc) =>
@@ -359,6 +380,17 @@ object Typer {
                 case tpe => TypedAst.Expression.Unary(op, e, tpe, loc)
               }
             }
+
+          case UnaryOperator.Set.IsEmpty | UnaryOperator.Set.NonEmpty | UnaryOperator.Set.Singleton => visit(re, env) map {
+            // TODO: Check that it is actually a set.
+            case e => TypedAst.Expression.Unary(op, e, TypedAst.Type.Bool, loc)
+          }
+
+          case UnaryOperator.Set.Size => visit(re, env) map {
+            // TODO: Check that it is actually a set.
+            case e => TypedAst.Expression.Unary(op, e, TypedAst.Type.Int, loc)
+          }
+
         }
 
         case ResolvedAst.Expression.Binary(op, re1, re2, loc) => op match {
@@ -386,6 +418,29 @@ object Typer {
                 case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Bool, loc)
               }
             }
+          case BinaryOperator.Set.Member => @@(visit(re1, env), visit(re2, env)) flatMap {
+            case (e1, e2) => expect(TypedAst.Type.Set(e1.tpe), e2.tpe, e2.loc) map {
+              case _ => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Bool, loc)
+            }
+          }
+          case BinaryOperator.Set.SubsetOf | BinaryOperator.Set.ProperSubsetOf =>
+            @@(visit(re1, env), visit(re2, env)) flatMap {
+              case (e1, e2) => expectEqual(e1.tpe, e2.tpe, e1.loc, e2.loc) map {
+                case tpe => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Bool, loc)
+              }
+            }
+          case BinaryOperator.Set.Insert | BinaryOperator.Set.Remove => @@(visit(re1, env), visit(re2, env)) flatMap {
+            case (e1, e2) => expect(TypedAst.Type.Set(e2.tpe), e1.tpe, e1.loc) map {
+              case tpe => TypedAst.Expression.Binary(op, e1, e2, tpe, loc)
+            }
+          }
+          case BinaryOperator.Set.Union | BinaryOperator.Set.Intersection | BinaryOperator.Set.Difference =>
+            @@(visit(re1, env), visit(re2, env)) flatMap {
+              case (e1, e2) => expectEqual(e1.tpe, e2.tpe, e1.loc, e2.loc) map {
+                case tpe => TypedAst.Expression.Binary(op, e1, e2, tpe, loc)
+              }
+            }
+
         }
 
         case ResolvedAst.Expression.IfThenElse(re1, re2, re3, loc) =>
@@ -444,6 +499,15 @@ object Typer {
             case elms => TypedAst.Expression.Tuple(elms, TypedAst.Type.Tuple(elms map (_.tpe)), loc)
           }
 
+        case ResolvedAst.Expression.Set(relms, loc) =>
+          @@(relms map (e => visit(e, env))) flatMap {
+            case elms =>
+              val tpes = elms.map(e => (e.tpe, e.loc))
+              expectEqual(tpes) map {
+                case tpe => TypedAst.Expression.Set(elms, TypedAst.Type.Set(tpe), loc)
+              }
+          }
+
         case ResolvedAst.Expression.Ascribe(re, rtype, loc) =>
           visit(re, env) flatMap {
             case TypedAst.Expression.NativeField(field, _, _) =>
@@ -480,10 +544,10 @@ object Typer {
 
   object Pattern {
     /**
-     * Types the given resolved pattern `rast` against the given type `tpe`.
-     *
-     * NB: The Weeder ensures that a variable occurs at most once in a pattern.
-     */
+      * Types the given resolved pattern `rast` against the given type `tpe`.
+      *
+      * NB: The Weeder ensures that a variable occurs at most once in a pattern.
+      */
     def typer(rast: ResolvedAst.Pattern, tpe: TypedAst.Type, root: ResolvedAst.Root): Validation[TypedAst.Pattern, TypeError] = rast match {
       case ResolvedAst.Pattern.Wildcard(loc) =>
         TypedAst.Pattern.Wildcard(tpe, loc).toSuccess
@@ -523,8 +587,8 @@ object Typer {
     object Head {
 
       /**
-       * Types the given head predicate `rast` under the given AST `root`.
-       */
+        * Types the given head predicate `rast` under the given AST `root`.
+        */
       def typer(rast: ResolvedAst.Predicate.Head, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Head, TypeError] = rast match {
         case ResolvedAst.Predicate.Head.Relation(name, rterms, loc) =>
           // lookup the collection.
@@ -578,8 +642,8 @@ object Typer {
 
     object Body {
       /**
-       * Types the given body predicate `rast` under the given AST `root`.
-       */
+        * Types the given body predicate `rast` under the given AST `root`.
+        */
       def typer(rast: ResolvedAst.Predicate.Body, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Body, TypeError] = rast match {
         case ResolvedAst.Predicate.Body.Relation(name, rterms, loc) =>
           // lookup the collection.
@@ -641,8 +705,8 @@ object Typer {
     // TODO: Introduce head/body.
 
     /**
-     * Types the given head term `rast` according to the (declared) type `tpe` under the given AST `root`.
-     */
+      * Types the given head term `rast` according to the (declared) type `tpe` under the given AST `root`.
+      */
     def typer(rast: ResolvedAst.Term.Head, tpe: TypedAst.Type, root: ResolvedAst.Root): Validation[TypedAst.Term.Head, TypeError] = rast match {
       case ResolvedAst.Term.Head.Var(ident, loc) => TypedAst.Term.Head.Var(ident, tpe, loc).toSuccess
       case ResolvedAst.Term.Head.Lit(rlit, loc) =>
@@ -652,9 +716,7 @@ object Typer {
         }
       case ResolvedAst.Term.Head.Ascribe(rterm, rtpe, loc) =>
         val ascribedType = Type.typer(rtpe)
-        expect(ascribedType, tpe, loc) flatMap {
-          case _ => typer(rterm, tpe, root)
-        }
+        typer(rterm, ascribedType, root)
       case ResolvedAst.Term.Head.Apply(name, actuals, loc) =>
         // TODO: This needs to be rewritten
 
@@ -680,8 +742,8 @@ object Typer {
     }
 
     /**
-     * Types the given body term `rast` according to the given type `tpe`. under the given AST `root`.
-     */
+      * Types the given body term `rast` according to the given type `tpe`. under the given AST `root`.
+      */
     def typer(rast: ResolvedAst.Term.Body, tpe: TypedAst.Type, root: ResolvedAst.Root): Validation[TypedAst.Term.Body, TypeError] = rast match {
       case ResolvedAst.Term.Body.Wildcard(loc) => TypedAst.Term.Body.Wildcard(tpe, loc).toSuccess
       case ResolvedAst.Term.Body.Var(ident, loc) => TypedAst.Term.Body.Var(ident, tpe, loc).toSuccess
@@ -692,9 +754,7 @@ object Typer {
         }
       case ResolvedAst.Term.Body.Ascribe(rterm, rtpe, loc) =>
         val ascribedType = Type.typer(rtpe)
-        expect(ascribedType, tpe, loc) flatMap {
-          case _ => typer(rterm, tpe, root)
-        }
+        typer(rterm, ascribedType, root)
     }
 
   }
@@ -702,8 +762,8 @@ object Typer {
   object Type {
 
     /**
-     * Translates a type from the resolved AST into one of the typed AST.
-     */
+      * Translates a type from the resolved AST into one of the typed AST.
+      */
     def typer(rast: ResolvedAst.Type): TypedAst.Type = rast match {
       case ResolvedAst.Type.Unit => TypedAst.Type.Unit
       case ResolvedAst.Type.Bool => TypedAst.Type.Bool
@@ -724,12 +784,12 @@ object Typer {
   }
 
   /**
-   * Returns the given `expected` type wrapped in [[Success]] if it matches the given `actual` type.
-   *
-   * @param expected the expected type.
-   * @param actual the actual type.
-   * @param loc the source location.
-   */
+    * Returns the given `expected` type wrapped in [[Success]] if it matches the given `actual` type.
+    *
+    * @param expected the expected type.
+    * @param actual the actual type.
+    * @param loc the source location.
+    */
   def expect(expected: TypedAst.Type, actual: TypedAst.Type, loc: SourceLocation): Validation[TypedAst.Type, TypeError] =
     if (expected == actual)
       actual.toSuccess
@@ -737,13 +797,13 @@ object Typer {
       ExpectedType(expected, actual, loc).toFailure
 
   /**
-   * Returns the given `tpe` type wrapped in [[Success]] if it matches the given `tpe2` type.
-   *
-   * @param tpe1 the first type.
-   * @param tpe2 the second type.
-   * @param loc1 the source location of the first type.
-   * @param loc2 the source location of the second type.
-   */
+    * Returns the given `tpe` type wrapped in [[Success]] if it matches the given `tpe2` type.
+    *
+    * @param tpe1 the first type.
+    * @param tpe2 the second type.
+    * @param loc1 the source location of the first type.
+    * @param loc2 the source location of the second type.
+    */
   def expectEqual(tpe1: TypedAst.Type, tpe2: TypedAst.Type, loc1: SourceLocation, loc2: SourceLocation): Validation[TypedAst.Type, TypeError] =
     if (tpe1 == tpe2)
       tpe1.toSuccess
@@ -751,8 +811,8 @@ object Typer {
       ExpectedEqualTypes(tpe1, tpe2, loc1, loc2).toFailure
 
   /**
-   * Returns a type wrapped in [[Success]] if all the given `types` are equal.
-   */
+    * Returns a type wrapped in [[Success]] if all the given `types` are equal.
+    */
   def expectEqual(types: List[(TypedAst.Type, SourceLocation)]): Validation[TypedAst.Type, TypeError] = {
     assert(types.nonEmpty)
     val (tpe1, loc1) = types.head
@@ -766,22 +826,24 @@ object Typer {
 
 
   /**
-   * Returns a Flix type corresponding to the given canonical name.
-   */
+    * Returns a Flix type corresponding to the given canonical name.
+    */
   private def java2flix(canonicalName: String): TypedAst.Type = canonicalName match {
-    case "boolean" | "java.lang.Boolean" => TypedAst.Type.Bool
-    case "int" | "java.lang.Integer" => TypedAst.Type.Int
-    case "java.lang.String" => TypedAst.Type.Str
+    case "ca.uwaterloo.flix.runtime.Value.Unit$" => TypedAst.Type.Unit
+    case "boolean" | "java.lang.Boolean" | "ca.uwaterloo.flix.runtime.Value.Bool" => TypedAst.Type.Bool
+    case "int" | "java.lang.Integer" | "ca.uwaterloo.flix.runtime.Value.Int" => TypedAst.Type.Int
+    case "java.lang.String" | "ca.uwaterloo.flix.runtime.Value.Str" => TypedAst.Type.Str
     case t if t.matches("scala.Tuple[2-5]") =>
       // Create a list of N TypedAst.Type.Native("java.lang.Object")
       val types = List().padTo(t.last - '0', TypedAst.Type.Native("java.lang.Object"))
       TypedAst.Type.Tuple(types)
+    case "scala.collection.immutable.Set" => TypedAst.Type.Set(TypedAst.Type.Native("java.lang.Object"))
     case _ => TypedAst.Type.Native(canonicalName)
   }
 
   /**
-   * Returns a human readable string representation of the given type `tpe`.
-   */
+    * Returns a human readable string representation of the given type `tpe`.
+    */
   private def prettyPrint(tpe: TypedAst.Type): String = tpe match {
     case TypedAst.Type.Var(x) => s"Var($x)"
     case TypedAst.Type.Unit => s"()"

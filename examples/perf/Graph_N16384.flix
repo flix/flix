@@ -5,10 +5,12 @@ namespace Graph_N16384 {
     rel Edge(x: Int, y: Int);
     rel Reach(x: Int, y: Int);
 
+    index Edge({x}, {x, y});
+    index Reach({y}, {x, y});
+
     Reach(x, y) :- Edge(x, y).
     Reach(x, y) :- Edge(y, x).
     Reach(x, z) :- Reach(x, y), Edge(y, z).
-
 
     Edge(0, 13244).
     Edge(0, 15633).

@@ -11,8 +11,8 @@ import scala.io.Source
 // TODO: Parse whitespace more "tightly" to improve source positions.
 
 /**
- * A parser for the Flix language.
- */
+  * A parser for the Flix language.
+  */
 class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   /*
@@ -43,7 +43,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Definition: Rule1[ParsedAst.Definition] = rule {
-    ValueDefinition | FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition
+    ValueDefinition | FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition | IndexDefinition
   }
 
   def ValueDefinition: Rule1[ParsedAst.Definition.Value] = rule {
@@ -101,6 +101,16 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def Attributes: Rule1[Seq[ParsedAst.Attribute]] = rule {
     oneOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
+  }
+
+  def IndexDefinition: Rule1[ParsedAst.Definition.Index] = {
+    def Indexes: Rule1[Seq[Name.Ident]] = rule {
+      "{" ~ optWS ~ oneOrMore(Ident).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}"
+    }
+
+    rule {
+      SP ~ atomic("index") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ oneOrMore(Indexes).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.Index
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -164,7 +174,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def SimpleExpression: Rule1[ParsedAst.Expression] = rule {
-    LetExpression | IfThenElseExpression | MatchExpression | TagExpression | TupleExpression | LiteralExpression | LambdaExpression | VariableExpression | ErrorExpression | NativeExpression
+    LetExpression | IfThenElseExpression | MatchExpression | TagExpression | TupleExpression | SetExpression | LiteralExpression | LambdaExpression | VariableExpression | ErrorExpression | NativeExpression
   }
 
   def LiteralExpression: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -217,6 +227,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     rule {
       Unit | Singleton | Tuple
     }
+  }
+
+  def SetExpression: Rule1[ParsedAst.Expression.Set] = rule {
+    SP ~ "#{" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Set
   }
 
   def VariableExpression: Rule1[ParsedAst.Expression.Var] = rule {
@@ -457,7 +471,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    UnitLiteral | BoolLiteral | IntLiteral | StrLiteral | TagLiteral | TupleLiteral
+    UnitLiteral | BoolLiteral | IntLiteral | StrLiteral | TagLiteral | TupleLiteral | SetLiteral
   }
 
   def UnitLiteral: Rule1[ParsedAst.Literal.Unit] = rule {
@@ -498,13 +512,21 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
   }
 
+  def SetLiteral: Rule1[ParsedAst.Literal.Set] = rule {
+    SP ~ "#{" ~ optWS ~ zeroOrMore(Literal).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Literal.Set
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Operators                                                               //
   /////////////////////////////////////////////////////////////////////////////
   def UnaryOp: Rule1[UnaryOperator] = rule {
     str("!") ~> (() => UnaryOperator.Not) |
       str("+") ~> (() => UnaryOperator.UnaryPlus) |
-      str("-") ~> (() => UnaryOperator.UnaryMinus)
+      str("-") ~> (() => UnaryOperator.UnaryMinus) |
+      atomic("isEmpty?") ~> (() => UnaryOperator.Set.IsEmpty) |
+      atomic("nonEmpty?") ~> (() => UnaryOperator.Set.NonEmpty) |
+      atomic("singleton?") ~> (() => UnaryOperator.Set.Singleton) |
+      atomic("size?") ~> (() => UnaryOperator.Set.Size)
   }
 
   def LogicalOp: Rule1[BinaryOperator] = rule {
@@ -524,7 +546,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   def MultiplicativeOp: Rule1[BinaryOperator] = rule {
     str("*") ~> (() => BinaryOperator.Times) |
       str("/") ~> (() => BinaryOperator.Divide) |
-      str("%") ~> (() => BinaryOperator.Modulo)
+      str("%") ~> (() => BinaryOperator.Modulo) |
+      atomic("+=") ~> (() => BinaryOperator.Set.Insert) |
+      atomic("-=") ~> (() => BinaryOperator.Set.Remove) |
+      atomic("++") ~> (() => BinaryOperator.Set.Union) |
+      atomic("--") ~> (() => BinaryOperator.Set.Difference)
   }
 
   def AdditiveOp: Rule1[BinaryOperator] = rule {

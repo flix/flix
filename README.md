@@ -13,7 +13,7 @@ A new programming language for declarative fixpoint computations based on Datalo
     * Block comment start: `/*`. Block comment end: `*/`.
     * Check support `paired braces`, `paired parens`, and `paired brackets`.
     * Add the following keywords: 
-        * `assert`, `case`, `def`, `else`, `enum`, `if`, `in`, `lat`, `let`, `match`,  `namespace`, `print`, `rel`, `val`, `with`.
+        * `assert`, `case`, `def`, `else`, `enum`, `if`, `in`, `index`, `lat`, `let`, `match`,  `namespace`, `print`, `rel`, `val`, `with`.
 - Press `OK`.
 
 ### Vim ###
@@ -31,7 +31,7 @@ if exists("b:current_syntax")
   finish
 endif
 
-syn keyword keywords assert case def else enum if in lat
+syn keyword keywords assert case def else enum if in index lat
 syn keyword keywords let match namespace print rel val with
 
 let b:current_syntax = "flix"

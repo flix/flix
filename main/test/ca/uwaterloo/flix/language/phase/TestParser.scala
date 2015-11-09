@@ -169,6 +169,24 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }
 
+  test("Definition.Index01") {
+    val input = "index A({x});"
+    val result = new Parser(SourceInput.Str(input)).IndexDefinition.run()
+    assert(result.isSuccess)
+  }
+
+  test("Definition.Index02") {
+    val input = "index A({x}, {x, y});"
+    val result = new Parser(SourceInput.Str(input)).IndexDefinition.run()
+    assert(result.isSuccess)
+  }
+
+  test("Definition.Index03") {
+    val input = "index A({x}, {y}, {x, w}, {x, y, z, w});"
+    val result = new Parser(SourceInput.Str(input)).IndexDefinition.run()
+    assert(result.isSuccess)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Directives                                                              //
   /////////////////////////////////////////////////////////////////////////////
@@ -592,6 +610,36 @@ class TestParser extends FunSuite {
     val input = "((1, 2), (x, (4, 5)))"
     val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Tuple]
     assertResult(2)(result.elms.size)
+  }
+
+  test("Expression.Set01") {
+    val input = "#{}"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get
+    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+  }
+
+  test("Expression.Set02") {
+    val input = "#{1, 2, 3}"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get
+    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+  }
+
+  test("Expression.Set03") {
+    val input = "#{(1, 2), (2, 3)}"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get
+    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+  }
+
+  test("Expression.Set04") {
+    val input = "#{1 + 2, 3 + 4}"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get
+    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+  }
+
+  test("Expression.Set05") {
+    val input = "#{#{1}, #{2}}"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get
+    assert(result.isInstanceOf[ParsedAst.Expression.Set])
   }
 
   test("Expression.Var01") {
@@ -1610,6 +1658,30 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Literal.Tuple])
   }
 
+  test("Literal.Set01") {
+    val input = "#{}"
+    val result = new Parser(SourceInput.Str(input)).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Set])
+  }
+
+  test("Literal.Set02") {
+    val input = "#{1, 2, 3}"
+    val result = new Parser(SourceInput.Str(input)).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Set])
+  }
+
+  test("Literal.Set03") {
+    val input = "#{(1, 2), (2, 3)}"
+    val result = new Parser(SourceInput.Str(input)).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Set])
+  }
+
+  test("Literal.Set04") {
+    val input = "#{#{1}, #{2}}"
+    val result = new Parser(SourceInput.Str(input)).Literal.run().get
+    assert(result.isInstanceOf[ParsedAst.Literal.Set])
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Operators                                                               //
   /////////////////////////////////////////////////////////////////////////////
@@ -1629,6 +1701,30 @@ class TestParser extends FunSuite {
     val input = "-"
     val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
     assertResult(UnaryOperator.UnaryMinus)(result)
+  }
+
+  test("UnaryOperator.Set.IsEmpty") {
+    val input = "isEmpty?"
+    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    assertResult(UnaryOperator.Set.IsEmpty)(result)
+  }
+
+  test("UnaryOperator.Set.NonEmpty") {
+    val input = "nonEmpty?"
+    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    assertResult(UnaryOperator.Set.NonEmpty)(result)
+  }
+
+  test("UnaryOperator.Set.Singleton") {
+    val input = "singleton?"
+    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    assertResult(UnaryOperator.Set.Singleton)(result)
+  }
+
+  test("UnaryOperator.Set.Size") {
+    val input = "size?"
+    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    assertResult(UnaryOperator.Set.Size)(result)
   }
 
   test("LogicalOp &&") {
@@ -1710,6 +1806,33 @@ class TestParser extends FunSuite {
   }
 
   // TODO: Shift operators
+
+  test("BinarySetOp.Insert (+=)") {
+    val input = "+="
+    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    assertResult(BinaryOperator.Set.Insert)(result)
+  }
+
+  test("BinarySetOp.Remove (-=)") {
+    val input = "-="
+    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    assertResult(BinaryOperator.Set.Remove)(result)
+  }
+
+  test("BinarySetOp.Union (++)") {
+    val input = "++"
+    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    assertResult(BinaryOperator.Set.Union)(result)
+  }
+
+  test("BinarySetOp.Diff (--)") {
+    val input = "--"
+    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    assertResult(BinaryOperator.Set.Difference)(result)
+  }
+
+  // TODO: Consider more set operations?
+
 
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //

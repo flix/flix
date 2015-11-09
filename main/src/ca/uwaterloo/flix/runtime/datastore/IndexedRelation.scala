@@ -105,7 +105,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
       // an exact index exists. Use it.
       indexedLookups += 1
       val key = keyOf(idx, pat)
-      store(idx).getOrElse(key, Nil).iterator
+      store(idx).getOrElse(key, mutable.ArrayBuffer.empty).iterator
     } else {
       // case 2: No exact index available. Check if there is an approximate index.
       idx = getApproximateIndex(indexes, pat)
@@ -113,7 +113,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
         // case 2.1: An approximate index exists. Use it.
         indexedScans += 1
         val key = keyOf(idx, pat)
-        store(idx).getOrElse(key, Nil).iterator
+        store(idx).getOrElse(key, mutable.ArrayBuffer.empty).iterator
       } else {
         // case 2.2: No usable index. Perform a full table scan.
         fullScans += 1

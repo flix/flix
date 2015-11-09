@@ -189,6 +189,61 @@ class TestWeeder extends FunSuite {
     assertResult(2)(result.errors.size)
   }
 
+  test("Expression.Infix.Member") {
+    val input = "x `in` xs"
+    val past = new Parser(SourceInput.Str(input)).Expression.run().get
+    val result = Weeder.Expression.compile(past).get.asInstanceOf[WeededAst.Expression.Binary]
+    assertResult(BinaryOperator.Set.Member)(result.op)
+  }
+
+  test("Expression.Infix.SubsetOf") {
+    val input = "xs `subsetOf` ys"
+    val past = new Parser(SourceInput.Str(input)).Expression.run().get
+    val result = Weeder.Expression.compile(past).get.asInstanceOf[WeededAst.Expression.Binary]
+    assertResult(BinaryOperator.Set.SubsetOf)(result.op)
+  }
+
+  test("Expression.Infix.ProperSubsetOf") {
+    val input = "xs `properSubsetOf` ys"
+    val past = new Parser(SourceInput.Str(input)).Expression.run().get
+    val result = Weeder.Expression.compile(past).get.asInstanceOf[WeededAst.Expression.Binary]
+    assertResult(BinaryOperator.Set.ProperSubsetOf)(result.op)
+  }
+
+  test("Expression.Infix.Insert") {
+    val input = "xs `insert` y"
+    val past = new Parser(SourceInput.Str(input)).Expression.run().get
+    val result = Weeder.Expression.compile(past).get.asInstanceOf[WeededAst.Expression.Binary]
+    assertResult(BinaryOperator.Set.Insert)(result.op)
+  }
+
+  test("Expression.Infix.Remove") {
+    val input = "xs `remove` y"
+    val past = new Parser(SourceInput.Str(input)).Expression.run().get
+    val result = Weeder.Expression.compile(past).get.asInstanceOf[WeededAst.Expression.Binary]
+    assertResult(BinaryOperator.Set.Remove)(result.op)
+  }
+
+  test("Expression.Infix.Union") {
+    val input = "xs `union` xs"
+    val past = new Parser(SourceInput.Str(input)).Expression.run().get
+    val result = Weeder.Expression.compile(past).get.asInstanceOf[WeededAst.Expression.Binary]
+    assertResult(BinaryOperator.Set.Union)(result.op)
+  }
+
+  test("Expression.Infix.Intersection") {
+    val input = "xs `intersect` ys"
+    val past = new Parser(SourceInput.Str(input)).Expression.run().get
+    val result = Weeder.Expression.compile(past).get.asInstanceOf[WeededAst.Expression.Binary]
+    assertResult(BinaryOperator.Set.Intersection)(result.op)
+  }
+
+  test("Expression.Infix.Difference") {
+    val input = "xs `diff` ys"
+    val past = new Parser(SourceInput.Str(input)).Expression.run().get
+    val result = Weeder.Expression.compile(past).get.asInstanceOf[WeededAst.Expression.Binary]
+    assertResult(BinaryOperator.Set.Difference)(result.op)
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Predicates, Facts and Rules                                             //

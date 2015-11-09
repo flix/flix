@@ -35,15 +35,13 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
     val idx = indexes(name) map {
       case columns => BitOps.setBits(vec = 0, bits = columns)
     }
-    // assume a default index on the first column.
-    val default = BitOps.setBit(vec = 0, bit = 0)
 
     collection match {
       case r: Collection.Relation =>
-        relations(name) = new IndexedRelation(r, idx + default, default)
+        relations(name) = new IndexedRelation(r, idx, idx.head)
 
       case l: Collection.Lattice =>
-        lattices(name) = new IndexedLattice(l, idx + default, default)
+        lattices(name) = new IndexedLattice(l, idx, idx.head)
     }
   }
 

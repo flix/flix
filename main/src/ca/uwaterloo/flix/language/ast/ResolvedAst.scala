@@ -14,6 +14,7 @@ object ResolvedAst {
                   enums: Map[Name.Resolved, ResolvedAst.Definition.Enum],
                   lattices: Map[ResolvedAst.Type, ResolvedAst.Definition.BoundedLattice],
                   collections: Map[Name.Resolved, ResolvedAst.Collection],
+                  indexes: Map[Name.Resolved, ResolvedAst.Definition.Index],
                   facts: List[ResolvedAst.Constraint.Fact],
                   rules: List[ResolvedAst.Constraint.Rule]) extends ResolvedAst
 
@@ -47,6 +48,9 @@ object ResolvedAst {
      */
     case class BoundedLattice(tpe: ResolvedAst.Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, leq: ResolvedAst.Expression,
                               lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Definition
+
+    // TODO: DOC
+    case class Index(name: Name.Resolved, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends ResolvedAst.Definition
 
   }
 
@@ -127,6 +131,8 @@ object ResolvedAst {
 
     case class Tuple(elms: List[ResolvedAst.Literal], loc: SourceLocation) extends ResolvedAst.Literal
 
+    case class Set(elms: List[ResolvedAst.Literal], loc: SourceLocation) extends ResolvedAst.Literal
+
   }
 
   sealed trait Expression extends Definition {
@@ -158,6 +164,8 @@ object ResolvedAst {
     case class Tag(name: Name.Resolved, ident: Name.Ident, e: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tuple(elms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Set(elms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Ascribe(e: ResolvedAst.Expression, tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Expression
 
