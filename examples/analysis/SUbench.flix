@@ -9,8 +9,8 @@
   rel Multi(object: Str)
   rel Phi(label: Str)
   rel Clear(label: Str)
-  rel FIStore(to: Str, from: Str)
-  rel FILoad(to: Str, from: Str)
+  rel FIStore(to: Str, from: Str, unknown: Str)
+  rel FILoad(to: Str, from: Str, unknown: Str)
 
 //// Outputs
 //// =========
@@ -71,12 +71,12 @@ def f(x: Str): SULattice = SULattice.Single(x)
 SUAfter(l,a,f(b)) :- Store(l,p,q), Pt(p,a), Pt(q,b).
 //
 PtH(a,b) :- Store(l,p,q), Pt(p,a), Pt(q,b).
-PtH(a,b) :- FIStore(p,q), Pt(p,a), Pt(q,b).
+PtH(a,b) :- FIStore(p,q,_), Pt(p,a), Pt(q,b).
 //
 //// Load
 //// ---------
 Pt(p,b) :- Load(l,p,q), Pt(q,a), PtSU(l,a,b).
-Pt(p,b) :- FILoad(p,q), Pt(q,a), PtH(a,b).
+Pt(p,b) :- FILoad(p,q,_), Pt(q,a), PtH(a,b).
 //
 //// CFlow
 //// ---------
@@ -115,3 +115,9 @@ KillNot(l,a) :- Store(l,p,q), Pt(p,b), AllObjects(a), notEqual(a, b).
 NonStore(l) :- Load(l,_,_).
 //
 
+rel Foo(v: Str)
+Foo(v) :- Pt(v, "2 <null>").
+
+print PtH.
+print Foo.
+print Pt.
