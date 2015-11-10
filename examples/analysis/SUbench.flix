@@ -98,7 +98,7 @@ def filter(e: SULattice, p: Str): Bool = match e with {
   case SULattice.Top => true
 }
 PtSU(l,a,b) :- filter(t, b), SUBefore(l,a,t), PtH(a,b).
-PtSU(l,a,b) :- Clear(l), PtH(a,b).
+SUAfter(l,a,b) :- Clear(l), PtH(a,b).
 
 //// Kill
 //// ---------
