@@ -17,6 +17,24 @@
   rel Pt(variable: Str, target: Str)
   rel PtSU(location: Str, object: Str, target: Str)
 
+//// Indexes
+//// =========
+  index SUBefore({location, object}, {location}, {object});
+  index SUAfter({location, object}, {location});
+
+  index AddrOf({variable, object})
+  index Copy({to, from}, {from});
+  index Store({label, to, from}, {to}, {from});
+  index Load({label, to, from}, {label}, {from});
+  index CFG({label, to}, {label});
+  index FIStore({to}, {from})
+  index FILoad({from})
+
+  index Pt({variable, target}, {variable});
+  index PtSU({location, object, target}, {location, object});
+  index PtH({object, target}, {object});
+  index KillNot({location, object});
+
 //// Other types
 //// =========
   enum SULattice {
