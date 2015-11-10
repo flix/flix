@@ -16,6 +16,8 @@
 
 \maketitle
 
+The newest version of this document is now available in the Flix paper.
+
 \section{Model-theoretic Semantics}
 
 A Flix program $P = (C, L)$ is a set of constraints $C$ and a set of complete lattices $L$.
@@ -42,7 +44,7 @@ $\sqcup$ is the least upper bound, and
 $\sqcap$ is the greatest lower bound.
 
 The \emph{Herbrand Universe} $\mathcal{U}$ of a Flix program $P$ is the set of all possible ground terms.
-A ground term is non-wildcard, non-variable term. That is, the Herbrand Universe is exactly the set of values.
+A ground term is a non-wildcard, non-variable term. That is, the Herbrand Universe is exactly the set of values.
 
 The \emph{Herbrand Base} $\mathcal{B}$ of $P$ is the set of all possible ground atoms whose
 predicate symbols occur in $P$ and where the arguments are drawn from the Herbrand Universe.
@@ -52,16 +54,15 @@ We define a partition of the Herbrand Base such that two ground atoms
 $A = p_\ell(v_1, \dots, v_n)$ and $B = p'_{\ell'}(v'_1, \dots, v'_m)$ are in the same subset
 if they have the same predicate symbol (i.e. $p = p'$) and the same number of terms (i.e. $n = m$).
 Notice that all predicate symbols in a subset have the same associated lattice $\ell$.
-For each subset $S$ we introduce a complete lattice $L_S$ on its ground atoms 
-where $L_S = (S, \bot_S, \top_S, \sqsubseteq_S, \sqcup_S, \sqcap_S)$.
+For each subset $S$ we introduce a complete lattice $L_S = (S, \bot_S, \top_S, \sqsubseteq_S, \sqcup_S, \sqcap_S)$.
 Given two ground atoms $A = p_\ell(v_1, \dots, v_n)$ and $B = p_\ell(v'_1, \dots, v'_n)$ we define their partial order as:
 If $n = 1$ then $A \sqsubseteq_S B$ when $v_1 \sqsubseteq v_1'$.
 If $n > 1$ then $A \sqsubseteq_S B$ when $v_1 = v_1', \dots, v_{n - 1} = v'_{n - 1}$ and $v_n \sqsubseteq v'_n$.
-The other components are defined in a similar way.
+The other lattice components are defined in a similar way.
 }
 
 \textcolor{blue}{
-What this means is that for any subset in the partion of the Herbrand Base we have a complete lattice on the ground atoms in that subset.
+Intuitively, any subset in the partition of the Herbrand Base has a complete lattice on the ground atoms in that subset.
 }
 
 An interpretation $I$ of a Flix program $P$ is a subset of the Herbrand Base $\mathcal{B}$.
@@ -85,8 +86,7 @@ there is a ground atom $A_2 \in M_2$, also associated with $S$, such that $A_1 \
 }
 
 \textcolor{blue}{
-A model $M$ is minimal if it is compact and there is no other model 
-less than or equal to $M$ according the partial order $\sqsubseteq_M$.
+A model $M$ is \emph{minimal} if it is compact and there is no other model $M'$ such that $M' \sqsubseteq_M M$.
 }
 
 \paragraph{Example.}
@@ -123,9 +123,8 @@ For example,
 The interpretation 
 $I_1$ is not a model of $P$ since it does not make $B_\ell(\texttt{Odd})$ true.
 $I_2$ is also not a model of $p$ since it does not make $B_\ell(\texttt{Odd})$ true.
-$I_3$ is a model of $p$, but it is not compact.
-$I_4$ is a model of $p$, but it is not reduced.
-$I_5$ is a model of $p$, it is compact and reduced, but it is not minimal as evidenced by $I_6$.
+$I_3$ and $I_4$ are models of $p$, but they are not compact.
+$I_5$ is a compact model of $p$, but it is not minimal as evidenced by $I_6$.
 
 \paragraph{Example.}
 The Flix program $P$ with constraints:
