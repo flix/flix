@@ -104,20 +104,12 @@ SUAfter(l,a,b) :- Clear(l), PtH(a,b).
 //// ---------
 AllObjects(a) :- AddrOf(_,a).
 //// KillEmpty l is true if the kill set of l is the empty set
-KillEmpty(l) :- Store(l,p,q), Pt(p,a), Pt(p,b), notEqual(a,b).
+KillEmpty(l) :- Store(l,p,q), Pt(p,a), Pt(p,b), a != b.
 KillEmpty(l) :- NonStore(l).
 //// the inverse of the kill set of l
-def notEqual(a: Str, b: Str): Bool = a != b;
-KillNot(l,a) :- Store(l,p,q), Pt(p,b), AllObjects(a), notEqual(a, b).
+KillNot(l,a) :- Store(l,p,q), Pt(p,b), AllObjects(a), a != b.
 //
 //// NonStore
 //// ---------
 NonStore(l) :- Load(l,_,_).
 //
-
-rel Foo(v: Str)
-Foo(v) :- Pt(v, "2 <null>").
-
-print PtH.
-print Foo.
-print Pt.
