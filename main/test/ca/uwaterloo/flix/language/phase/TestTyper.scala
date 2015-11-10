@@ -1118,6 +1118,4 @@ class TestTyper extends FunSuite {
   // TODO(mhyee): Tuples of Flix types
 
   // TODO(mhyee): Sets of #java.lang.Object, Sets of Flix types
-
-  // TODO(mhyee): Flix values from native code
 }

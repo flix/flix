@@ -188,37 +188,31 @@ object Value {
     * Convert from native values to Flix values                               *
     * **************************************************************************/
 
-  def java2flix(obj: AnyRef, tpe: Type): Value = obj match {
-    case v: Value.Unit.type => v
-    case v: Value.Bool => v
-    case v: Value.Int => v
-    case v: Value.Str => v
-    case _ => tpe match {
-      case Type.Bool => if (obj.asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
-      case Type.Int => Value.mkInt(obj.asInstanceOf[java.lang.Integer].intValue)
-      case Type.Str => Value.mkStr(obj.asInstanceOf[java.lang.String])
-      case Type.Tuple(typs) if (2 to 5).contains(typs.size) =>
-        def makeTuple(elms: java.lang.Object*): Value.Tuple =
-          Value.Tuple(elms.toList.zip(typs).map { case (e, t) => java2flix(e, t) })
-        typs.size match {
-          case 2 =>
-            val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object)]
-            makeTuple(t._1, t._2)
-          case 3 =>
-            val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object)]
-            makeTuple(t._1, t._2, t._3)
-          case 4 =>
-            val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
-            makeTuple(t._1, t._2, t._3, t._4)
-          case 5 =>
-            val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
-            makeTuple(t._1, t._2, t._3, t._4, t._5)
-        }
-      case Type.Set(typ) =>
-        Value.Set(obj.asInstanceOf[scala.collection.immutable.Set[java.lang.Object]].map(e => java2flix(e, typ)))
-      case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) |
-           Type.Predicate(_) | Type.Native(_) =>
-        Value.Native(obj)
-    }
+  def java2flix(obj: AnyRef, tpe: Type): Value = tpe match {
+    case Type.Bool => if (obj.asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
+    case Type.Int => Value.mkInt(obj.asInstanceOf[java.lang.Integer].intValue)
+    case Type.Str => Value.mkStr(obj.asInstanceOf[java.lang.String])
+    case Type.Tuple(typs) if (2 to 5).contains(typs.size) =>
+      def makeTuple(elms: java.lang.Object*): Value.Tuple =
+        Value.Tuple(elms.toList.zip(typs).map { case (e, t) => java2flix(e, t) })
+      typs.size match {
+        case 2 =>
+          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object)]
+          makeTuple(t._1, t._2)
+        case 3 =>
+          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object)]
+          makeTuple(t._1, t._2, t._3)
+        case 4 =>
+          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
+          makeTuple(t._1, t._2, t._3, t._4)
+        case 5 =>
+          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
+          makeTuple(t._1, t._2, t._3, t._4, t._5)
+      }
+    case Type.Set(typ) =>
+      Value.Set(obj.asInstanceOf[scala.collection.immutable.Set[java.lang.Object]].map(e => java2flix(e, typ)))
+    case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) |
+         Type.Predicate(_) | Type.Native(_) =>
+      Value.Native(obj)
   }
 }
