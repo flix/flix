@@ -57,6 +57,20 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
       ))
     }
     t.write(Console.out)
+    Console.out.println()
+
+    Console.out.println(">> Index Hits")
+    val t2 = new AsciiTable().withCols("Relation", "Index", "Hits")
+    val table = relations flatMap {
+      case (name, relation) => relation.getIndexHitCounts.map {
+        case (index, count) => (name, "{" + index.mkString(", ") + "}", count)
+      }
+    }
+    for ((name, index, count) <- table.toList.sortBy(_._3).reverse) {
+      t2.mkRow(List(name, index, count))
+    }
+    t2.write(Console.out)
+    Console.out.println()
   }
 
 }
