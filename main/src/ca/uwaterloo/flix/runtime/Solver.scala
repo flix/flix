@@ -104,9 +104,9 @@ class Solver(implicit sCtx: Solver.SolverContext) {
 
     // print some statistics.
     Console.out.println(">> Rule Evaluation Time")
-    val table = new AsciiTable().withCols("Line", "Rule", "Time (msec)")
+    val table = new AsciiTable().withCols("Line", "Rule", "Hitcount", "Time (msec)")
     for (rule <- sCtx.root.rules.toSeq.sortBy(_.elapsedTime).reverse) {
-      table.mkRow(List(rule.head.loc.beginLine, rule.head.loc.line(), rule.elapsedTime / 1000000))
+      table.mkRow(List(rule.head.loc.beginLine, rule.head.loc.line(), rule.hitcount, rule.elapsedTime / 1000000))
     }
     table.write(Console.out)
     Console.out.println()
@@ -260,6 +260,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     cross(rule.collections, env0)
 
     rule.elapsedTime += System.nanoTime() - t
+    rule.hitcount += 1
   }
 
   /**
