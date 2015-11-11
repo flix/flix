@@ -17,6 +17,24 @@
   rel Pt(variable: Str, target: Str)
   rel PtSU(location: Str, object: Str, target: Str)
 
+//// Indexes
+//// =========
+  index SUBefore({location, object}, {location}, {object});
+  index SUAfter({location, object}, {location});
+
+  index AddrOf({variable, object})
+  index Copy({to, from}, {from});
+  index Store({label, to, from}, {to}, {from});
+  index Load({label, to, from}, {label}, {from});
+  index CFG({label, to}, {label});
+  index FIStore({to}, {from})
+  index FILoad({from})
+
+  index Pt({variable, target}, {variable});
+  index PtSU({location, object, target}, {location, object});
+  index PtH({object, target}, {object});
+  index KillNot({location, object});
+
 //// Other types
 //// =========
   enum SULattice {
@@ -98,26 +116,18 @@ def filter(e: SULattice, p: Str): Bool = match e with {
   case SULattice.Top => true
 }
 PtSU(l,a,b) :- filter(t, b), SUBefore(l,a,t), PtH(a,b).
-PtSU(l,a,b) :- Clear(l), PtH(a,b).
+SUAfter(l,a,b) :- Clear(l), PtH(a,b).
 
 //// Kill
 //// ---------
 AllObjects(a) :- AddrOf(_,a).
 //// KillEmpty l is true if the kill set of l is the empty set
-KillEmpty(l) :- Store(l,p,q), Pt(p,a), Pt(p,b), notEqual(a,b).
+KillEmpty(l) :- Store(l,p,q), Pt(p,a), Pt(p,b), a != b.
 KillEmpty(l) :- NonStore(l).
 //// the inverse of the kill set of l
-def notEqual(a: Str, b: Str): Bool = a != b;
-KillNot(l,a) :- Store(l,p,q), Pt(p,b), AllObjects(a), notEqual(a, b).
+KillNot(l,a) :- Store(l,p,q), Pt(p,b), AllObjects(a), a != b.
 //
 //// NonStore
 //// ---------
 NonStore(l) :- Load(l,_,_).
 //
-
-rel Foo(v: Str)
-Foo(v) :- Pt(v, "2 <null>").
-
-print PtH.
-print Foo.
-print Pt.

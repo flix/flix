@@ -31,7 +31,7 @@ rel LabelPointsTo(b: Str, a: Str, l: Str)
 
 // pt[*](a) contains b
 rel HeapPointsTo(b: Str, a: Str)
-rel HeapPointsToRev(a: Str, b: Str)
+rel PtH(a: Str, b: Str)
 
 StoresToP(l, p) :- Store(l, p, _).
 
@@ -69,13 +69,3 @@ IsTop(a, l) :-
 
 // Uncomment below for equivalent-to-flow-insensitive analysis
 // LabelPointsTo(b, a, l) :- HeapPointsTo(b, a), Load(l, _, _).
-
-HeapPointsToRev(a, b) :- HeapPointsTo(b, a).
-
-rel Foo(v: Str)
-
-Foo(v) :- VarPointsTo("2 <null>", v).
-
-print HeapPointsToRev.
-print Foo.
-print VarPointsTo.

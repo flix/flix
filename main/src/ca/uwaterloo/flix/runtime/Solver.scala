@@ -111,7 +111,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     val lattices = dataStore.lattices.foldLeft(Map.empty[Name.Resolved, Map[List[Value], List[Value]]]) {
       case (macc, (name, lattice)) =>
         val table = lattice.scan.map {
-          case (keys, values) => (keys.toList, values.toList)
+          case (keys, values) => (keys.toArray.toList, values.toList)
         }
         macc + ((name, table.toMap))
     }
@@ -272,10 +272,10 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     */
   def dependencies(name: Name.Resolved, fact: Array[Value]): Unit = {
 
-    def unify(pat: Array[String], fact: Array[Value]): mutable.Map[String, Value] = {
+    def unify(pat: Array[String], fact: Array[Value], limit: Int): mutable.Map[String, Value] = {
       val env = mutable.Map.empty[String, Value]
       var i = 0
-      while (i < pat.length) {
+      while (i < limit) {
         val varName = pat(i)
         if (varName != null)
           env.update(varName, fact(i))
@@ -288,14 +288,14 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       sCtx.root.collections(name) match {
         case r: TypedAst.Collection.Relation =>
           // unify all terms with their values.
-          val env = unify(p.index2var, fact)
+          val env = unify(p.index2var, fact, fact.length)
           if (env != null) {
             worklist += ((rule, env))
           }
         case l: TypedAst.Collection.Lattice =>
           // unify only key terms with their values.
           val numberOfKeys = l.keys.length
-          val env = unify(p.index2var.take(numberOfKeys), fact.take(numberOfKeys))
+          val env = unify(p.index2var, fact, numberOfKeys)
           if (env != null) {
             worklist += ((rule, env))
           }

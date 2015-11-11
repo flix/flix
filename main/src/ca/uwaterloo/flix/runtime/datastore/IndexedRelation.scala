@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.runtime.datastore
 
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.runtime.{Solver, Value}
+import ca.uwaterloo.flix.util.BitOps
 
 import scala.collection.mutable
 
@@ -23,6 +24,11 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   private val store = mutable.Map.empty[Int, mutable.Map[Key, mutable.ArrayBuffer[Array[Value]]]]
 
   /**
+    * A map from indexes to number of successful usages.
+    */
+  private val indexHits = mutable.Map.empty[Int, Int]
+
+  /**
     * Records the number of indexed lookups, i.e. exact lookups.
     */
   private var indexedLookups = 0
@@ -42,12 +48,23 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
     */
   for (idx <- indexes) {
     store(idx) = mutable.Map.empty
+    indexHits(idx) = 0
   }
 
   /**
     * Returns the size of the relation.
     */
   def getSize: Int = scan.size
+
+  /**
+    * Returns the number of indexed lookups.
+    */
+  def getIndexHitCounts: Map[Seq[String], Int] = indexHits.toMap.map {
+    case (idx, count) =>
+      val columns = (0 until 31).filter(n => BitOps.getBit(vec = idx, bit = n))
+      val names = columns map (column => relation.attributes(column).ident.name)
+      names -> count
+  }
 
   /**
     * Returns the number of indexed lookups.
@@ -104,6 +121,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
     if (idx != 0) {
       // an exact index exists. Use it.
       indexedLookups += 1
+      indexHits.update(idx, indexHits(idx) + 1)
       val key = keyOf(idx, pat)
       store(idx).getOrElse(key, mutable.ArrayBuffer.empty).iterator
     } else {
@@ -111,6 +129,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
       idx = getApproximateIndex(indexes, pat)
       val table = if (idx != 0) {
         // case 2.1: An approximate index exists. Use it.
+        indexHits.update(idx, indexHits(idx) + 1)
         indexedScans += 1
         val key = keyOf(idx, pat)
         store(idx).getOrElse(key, mutable.ArrayBuffer.empty).iterator
