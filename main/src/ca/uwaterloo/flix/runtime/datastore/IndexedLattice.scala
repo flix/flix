@@ -117,7 +117,11 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], de
     } filter {
       case e => e != null
     } map {
-      case (keys, elms) => keys.toArray ++ elms // TODO: Optimize
+      case (keys, elms) =>
+        val result = new Array[Value](numberOfKeys + numberOfElms)
+        System.arraycopy(keys.toArray, 0, result, 0, numberOfKeys)
+        System.arraycopy(elms, 0, result, numberOfKeys, numberOfElms)
+        result
     }
   }
 
