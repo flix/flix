@@ -173,6 +173,10 @@ object TypedAst {
         case p: TypedAst.Predicate.Body.NotEqual => p
       }
 
+      // TODO: Refactor so this is not part of the typed ast.
+      var elapsedTime: Long = 0
+      var hitcount: Int = 0
+
     }
 
   }

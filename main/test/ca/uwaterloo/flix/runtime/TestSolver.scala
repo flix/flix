@@ -6,16 +6,16 @@ import org.scalatest.FunSuite
 
 class TestSolver extends FunSuite {
 
-  val NameA = Name.Resolved(List("A"))
-  val NameB = Name.Resolved(List("B"))
-  val NameC = Name.Resolved(List("C"))
-  val NameR = Name.Resolved(List("R"))
+  val NameA = Name.Resolved.mk(List("A"))
+  val NameB = Name.Resolved.mk(List("B"))
+  val NameC = Name.Resolved.mk(List("C"))
+  val NameR = Name.Resolved.mk(List("R"))
 
   object Parity {
-    val Top = Value.mkTag(Name.Resolved(List("Parity")), "Top", Value.Unit)
-    val Odd = Value.mkTag(Name.Resolved(List("Parity")), "Odd", Value.Unit)
-    val Even = Value.mkTag(Name.Resolved(List("Parity")), "Even", Value.Unit)
-    val Bot = Value.mkTag(Name.Resolved(List("Parity")), "Bot", Value.Unit)
+    val Top = Value.mkTag(Name.Resolved.mk(List("Parity")), "Top", Value.Unit)
+    val Odd = Value.mkTag(Name.Resolved.mk(List("Parity")), "Odd", Value.Unit)
+    val Even = Value.mkTag(Name.Resolved.mk(List("Parity")), "Even", Value.Unit)
+    val Bot = Value.mkTag(Name.Resolved.mk(List("Parity")), "Bot", Value.Unit)
 
     val Definition =
       """

@@ -13,8 +13,8 @@ class TestInterpreter extends FunSuite {
 
   val loc = SourceLocation.Unknown
 
-  val name01 = Name.Resolved(List("foo.bar"))
-  val name02 = Name.Resolved(List("abc.def"))
+  val name01 = Name.Resolved.mk(List("foo.bar"))
+  val name02 = Name.Resolved.mk(List("abc.def"))
 
   def toIdent(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
 
@@ -23,7 +23,7 @@ class TestInterpreter extends FunSuite {
   val ident03 = toIdent("z")
 
   object ConstantPropTagDefs {
-    val name = Name.Resolved(List("ConstProp"))
+    val name = Name.Resolved.mk(List("ConstProp"))
     val identB = toIdent("Bot")
     val identV = toIdent("Val")
     val identT = toIdent("Top")
@@ -138,7 +138,7 @@ class TestInterpreter extends FunSuite {
   }
 
   test("Interpreter - Literal.Tag01") {
-    val name = Name.Resolved(List("foo", "bar"))
+    val name = Name.Resolved.mk(List("foo", "bar"))
     val ident = toIdent("baz")
     val tagTpe = Type.Tag(name, ident, Type.Str)
     val enumTpe = Type.Enum(Map("foo.bar.baz" -> tagTpe))
@@ -148,7 +148,7 @@ class TestInterpreter extends FunSuite {
   }
 
   test("Interpreter - Literal.Tag02") {
-    val name = Name.Resolved(List("Family"))
+    val name = Name.Resolved.mk(List("Family"))
     val ident = toIdent("NameAndAge")
     val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int)))
     val enumTpe = Type.Enum(Map("Family.NameAndAge" -> tagTpe))
@@ -274,7 +274,7 @@ class TestInterpreter extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   test("Interpreter - Expression.Ref01") {
-    val name = Name.Resolved(List("foo", "bar", "baz"))
+    val name = Name.Resolved.mk(List("foo", "bar", "baz"))
     val const = Definition.Constant(name, Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Bool, loc)
     val root = Root(Map(name -> const), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List())
     val input = Expression.Lit(Literal.Str("hello", loc), Type.Str, loc)
@@ -283,7 +283,7 @@ class TestInterpreter extends FunSuite {
   }
 
   test("Interpreter - Expression.Ref02") {
-    val name = Name.Resolved(List("foo", "bar", "baz"))
+    val name = Name.Resolved.mk(List("foo", "bar", "baz"))
     val const = Definition.Constant(name, Expression.Lit(Literal.Int(5, loc), Type.Int, loc), Type.Int, loc)
     val root = Root(Map(name -> const), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List())
     val input = Expression.Ref(name, Type.Int, loc)
@@ -292,7 +292,7 @@ class TestInterpreter extends FunSuite {
   }
 
   test("Interpreter - Expression.Ref03") {
-    val name = Name.Resolved(List("foo", "bar", "baz"))
+    val name = Name.Resolved.mk(List("foo", "bar", "baz"))
     val const = Definition.Constant(name, Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Bool, loc)
     val root = Root(Map(name -> const), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List())
     val input = Expression.Ref(name, Type.Bool, loc)
@@ -301,8 +301,8 @@ class TestInterpreter extends FunSuite {
   }
 
   test("Interpreter - Expression.Ref04") {
-    val name01 = Name.Resolved(List("foo", "bar", "baz"))
-    val name02 = Name.Resolved(List("abc", "def", "ghi"))
+    val name01 = Name.Resolved.mk(List("foo", "bar", "baz"))
+    val name02 = Name.Resolved.mk(List("abc", "def", "ghi"))
     val const01 = Definition.Constant(name01, Expression.Lit(Literal.Str("foo", loc), Type.Str, loc), Type.Str, loc)
     val const02 = Definition.Constant(name01, Expression.Lit(Literal.Str("bar", loc), Type.Str, loc), Type.Str, loc)
     val root = Root(Map(name01 -> const01, name02 -> const02), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List())
@@ -1868,7 +1868,7 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - Pattern.Literal.Tag01") {
     // foo.bar.baz "hello world" match { case foo.bar.baz "hello world" => true }
-    val name = Name.Resolved(List("foo", "bar"))
+    val name = Name.Resolved.mk(List("foo", "bar"))
     val ident = toIdent("baz")
     val tagTpe = Type.Tag(name, ident, Type.Str)
     val enumTpe = Type.Enum(Map("foo.bar.baz" -> tagTpe))
@@ -1884,7 +1884,7 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - Pattern.Literal.Tag02") {
     // NameAndAge ("James", 42) match { case NameAndAge ("James", 40) => true; case _ => false }
-    val name = Name.Resolved(List("Family"))
+    val name = Name.Resolved.mk(List("Family"))
     val ident = toIdent("NameAndAge")
     val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int)))
     val enumTpe = Type.Enum(Map("Family.NameAndAge" -> tagTpe))
@@ -2001,7 +2001,7 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - Pattern.Tag01") {
     // NameAndAge ("James", 42) match { case NameAndAge (_, age) => age }
-    val name = Name.Resolved(List("Family"))
+    val name = Name.Resolved.mk(List("Family"))
     val ident = toIdent("NameAndAge")
     val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int)))
     val enumTpe = Type.Enum(Map("Family.NameAndAge" -> tagTpe))
@@ -2020,7 +2020,7 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - Pattern.Tag02") {
     // NameAndAge ("James", 42) match { case NameAndAge ("James", age) => age; case NameAndAge _ => 0 }
-    val name = Name.Resolved(List("Family"))
+    val name = Name.Resolved.mk(List("Family"))
     val ident = toIdent("NameAndAge")
     val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int)))
     val enumTpe = Type.Enum(Map("Family.NameAndAge" -> tagTpe))
@@ -2040,7 +2040,7 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - Pattern.Tag03") {
     // NameAndAge ("John", 42) match { case NameAndAge ("James", age) => age; case NameAndAge _ => 0 }
-    val name = Name.Resolved(List("Family"))
+    val name = Name.Resolved.mk(List("Family"))
     val ident = toIdent("NameAndAge")
     val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int)))
     val enumTpe = Type.Enum(Map("Family.NameAndAge" -> tagTpe))
@@ -2257,7 +2257,7 @@ class TestInterpreter extends FunSuite {
   }
 
   test("Interpreter - Expression.Tag01") {
-    val name = Name.Resolved(List("foo", "bar"))
+    val name = Name.Resolved.mk(List("foo", "bar"))
     val ident = toIdent("baz")
     val tagTpe = Type.Tag(name, ident, Type.Str)
     val enumTpe = Type.Enum(Map("foo.bar.baz" -> tagTpe))
@@ -2281,7 +2281,7 @@ class TestInterpreter extends FunSuite {
   }
 
   test("Interpreter - Expression.Tag02") {
-    val name = Name.Resolved(List("Family"))
+    val name = Name.Resolved.mk(List("Family"))
     val ident = toIdent("NameAndAge")
     val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int)))
     val enumTpe = Type.Enum(Map("Family.NameAndAge" -> tagTpe))
@@ -2520,7 +2520,7 @@ class TestInterpreter extends FunSuite {
   }
 
   test("evalHeadTerm - Literal.Tag01") {
-    val name = Name.Resolved(List("foo", "bar"))
+    val name = Name.Resolved.mk(List("foo", "bar"))
     val ident = toIdent("baz")
     val tagTpe = Type.Tag(name, ident, Type.Str)
     val enumTpe = Type.Enum(Map("foo.bar.baz" -> tagTpe))
@@ -2530,7 +2530,7 @@ class TestInterpreter extends FunSuite {
   }
 
   test("evalHeadTerm - Literal.Tag02") {
-    val name = Name.Resolved(List("Family"))
+    val name = Name.Resolved.mk(List("Family"))
     val ident = toIdent("NameAndAge")
     val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int)))
     val enumTpe = Type.Enum(Map("Family.NameAndAge" -> tagTpe))
@@ -2942,7 +2942,7 @@ class TestInterpreter extends FunSuite {
   }
 
   test("evalBodyTerm - Literal.Tag01") {
-    val name = Name.Resolved(List("foo", "bar"))
+    val name = Name.Resolved.mk(List("foo", "bar"))
     val ident = toIdent("baz")
     val tagTpe = Type.Tag(name, ident, Type.Str)
     val enumTpe = Type.Enum(Map("foo.bar.baz" -> tagTpe))
@@ -2952,7 +2952,7 @@ class TestInterpreter extends FunSuite {
   }
 
   test("evalBodyTerm - Literal.Tag02") {
-    val name = Name.Resolved(List("Family"))
+    val name = Name.Resolved.mk(List("Family"))
     val ident = toIdent("NameAndAge")
     val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int)))
     val enumTpe = Type.Enum(Map("Family.NameAndAge" -> tagTpe))
