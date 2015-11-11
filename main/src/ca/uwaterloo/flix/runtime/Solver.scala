@@ -106,7 +106,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     Console.out.println(">> Rule Evaluation Time")
     val table = new AsciiTable().withCols("Line", "Rule", "Time (msec)")
     for (rule <- sCtx.root.rules.toSeq.sortBy(_.elapsedTime).reverse) {
-      table.mkRow(List(rule.head.loc.line, rule.head.loc.line(), rule.elapsedTime / 1000000))
+      table.mkRow(List(rule.head.loc.beginLine, rule.head.loc.line(), rule.elapsedTime / 1000000))
     }
     table.write(Console.out)
     Console.out.println()
