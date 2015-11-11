@@ -117,7 +117,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], de
     } filter {
       case e => e != null
     } map {
-      case (keys, elms) => keys.toArray ++ elms
+      case (keys, elms) => keys.toArray ++ elms // TODO: Optimize
     }
   }
 
@@ -159,8 +159,8 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], de
     * Returns `true` iff all non-null entries in the given pattern `pat`
     * are equal to their corresponding entry in the given `row`.
     */
+  // TODO: Optimize by changing signature
   def matchKey(pat: Array[Value], row: Array[Value]): Boolean = {
-    assert(pat.length == row.length)
     var i = 0
     while (i < pat.length) {
       val pv = pat(i)
