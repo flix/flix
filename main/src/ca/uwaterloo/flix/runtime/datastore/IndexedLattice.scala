@@ -93,14 +93,14 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], de
     val table = if (idx != 0) {
       // use exact index.
       val ikey = keyOf(idx, pat)
-      store(idx).getOrElseUpdate(ikey, mutable.Map.empty).iterator
+      store(idx).getOrElse(ikey, mutable.Map.empty).iterator
     } else {
       // check if there is an approximate index.
       idx = getApproximateIndex(indexes, pat)
       if (idx != 0) {
         // use approximate index.
         val ikey = keyOf(idx, pat)
-        store(idx).getOrElseUpdate(ikey, mutable.Map.empty).iterator
+        store(idx).getOrElse(ikey, mutable.Map.empty).iterator
       } else {
         // perform full table scan.
         scan
