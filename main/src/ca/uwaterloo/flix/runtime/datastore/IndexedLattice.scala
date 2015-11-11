@@ -69,11 +69,12 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], de
       val ikey = keyOf(idx, fact)
       val table = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
 
-      val elms1 = elmPart(fact)
-      val elms2 = table.getOrElseUpdate(keyPart(fact), elms1)
+      val newElms = elmPart(fact)
+      val oldElms = table.getOrElseUpdate(keyPart(fact), newElms)
 
-      // TODO: Could probably just overwrite elms2.
-      table += ((keyPart(fact), lub(elms1, elms2)))
+      // compute the lub and update oldElms directly.
+      val result = lub(newElms, oldElms)
+      System.arraycopy(result, 0, oldElms, 0, oldElms.length)
     }
   }
 
