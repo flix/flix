@@ -284,8 +284,9 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       env
     }
 
+    val collection = sCtx.root.collections(name)
     for ((rule, p) <- sCtx.root.dependenciesOf(name)) {
-      sCtx.root.collections(name) match {
+      collection match {
         case r: TypedAst.Collection.Relation =>
           // unify all terms with their values.
           val env = unify(p.index2var, fact, fact.length)
