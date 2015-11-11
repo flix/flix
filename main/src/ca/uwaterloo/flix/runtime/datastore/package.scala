@@ -7,91 +7,125 @@ import scala.annotation.switch
 package object datastore {
 
   /**
-   * A common super-type for keys.
-   */
-  sealed trait Key
+    * A common super-type for keys.
+    */
+  sealed trait Key {
 
-  /**
-   * A key with one value.
-   */
-  final class Key1(val v1: Value) extends Key {
-    override def equals(o: scala.Any): Boolean = o match {
-      case that: Key1 => this.v1 == that.v1
-      case _ => false
+    def toArray: Array[Value] = this match {
+      case k: Key1 =>
+        val a = new Array[Value](1)
+        a(0) = k.v0
+        a
+      case k: Key2 =>
+        val a = new Array[Value](2)
+        a(0) = k.v0
+        a(1) = k.v1
+        a
+      case k: Key3 =>
+        val a = new Array[Value](3)
+        a(0) = k.v0
+        a(1) = k.v1
+        a(2) = k.v2
+        a
+      case k: Key4 =>
+        val a = new Array[Value](4)
+        a(0) = k.v0
+        a(1) = k.v1
+        a(2) = k.v2
+        a(3) = k.v3
+        a
+      case k: Key5 =>
+        val a = new Array[Value](5)
+        a(0) = k.v0
+        a(1) = k.v1
+        a(2) = k.v2
+        a(3) = k.v3
+        a(4) = k.v3
+        a
     }
-
-    override val hashCode: Int = 3 * v1.hashCode()
   }
 
   /**
-   * A key with two values.
-   */
-  final class Key2(val v1: Value, val v2: Value) extends Key {
+    * A key with one value.
+    */
+  final class Key1(val v0: Value) extends Key {
+    override def equals(o: scala.Any): Boolean = o match {
+      case that: Key1 => this.v0 == that.v0
+      case _ => false
+    }
+
+    override val hashCode: Int = 3 * v0.hashCode()
+  }
+
+  /**
+    * A key with two values.
+    */
+  final class Key2(val v0: Value, val v1: Value) extends Key {
     override def equals(o: scala.Any): Boolean = o match {
       case that: Key2 =>
-        this.v1 == that.v1 &&
+        this.v0 == that.v0 &&
+          this.v1 == that.v1
+      case _ => false
+    }
+
+    override val hashCode: Int = 3 * v0.hashCode() + 5 * v1.hashCode()
+  }
+
+  /**
+    * A key with three values.
+    */
+  final class Key3(val v0: Value, val v1: Value, val v2: Value) extends Key {
+    override def equals(o: scala.Any): Boolean = o match {
+      case that: Key3 =>
+        this.v0 == that.v0 &&
+          this.v1 == that.v1 &&
           this.v2 == that.v2
       case _ => false
     }
 
-    override val hashCode: Int = 3 * v1.hashCode() + 5 * v2.hashCode()
+    override val hashCode: Int = 3 * v0.hashCode() + 5 * v1.hashCode() + 7 * v2.hashCode()
   }
 
   /**
-   * A key with three values.
-   */
-  final class Key3(val v1: Value, val v2: Value, val v3: Value) extends Key {
+    * A key with four values.
+    */
+  final class Key4(val v0: Value, val v1: Value, val v2: Value, val v3: Value) extends Key {
     override def equals(o: scala.Any): Boolean = o match {
-      case that: Key3 =>
-        this.v1 == that.v1 &&
+      case that: Key4 =>
+        this.v0 == that.v0 &&
+          this.v1 == that.v1 &&
           this.v2 == that.v2 &&
           this.v3 == that.v3
       case _ => false
     }
 
-    override val hashCode: Int = 3 * v1.hashCode() + 5 * v2.hashCode() + 7 * v3.hashCode()
+    override val hashCode: Int = 3 * v0.hashCode() + 5 * v1.hashCode() + 7 * v2.hashCode() + 11 * v3.hashCode()
   }
 
   /**
-   * A key with four values.
-   */
-  final class Key4(val v1: Value, val v2: Value, val v3: Value, val v4: Value) extends Key {
+    * A key with five values.
+    */
+  final class Key5(val v0: Value, val v1: Value, val v2: Value, val v3: Value, val v4: Value) extends Key {
     override def equals(o: scala.Any): Boolean = o match {
-      case that: Key4 =>
-        this.v1 == that.v1 &&
+      case that: Key5 =>
+        this.v0 == that.v0 &&
+          this.v1 == that.v1 &&
           this.v2 == that.v2 &&
           this.v3 == that.v3 &&
           this.v4 == that.v4
       case _ => false
     }
 
-    override val hashCode: Int = 3 * v1.hashCode() + 5 * v2.hashCode() + 7 * v3.hashCode() + 11 * v4.hashCode()
+    override val hashCode: Int = 3 * v0.hashCode() + 5 * v1.hashCode() + 7 * v2.hashCode() + 11 * v3.hashCode() + 13 * v4.hashCode()
   }
 
   /**
-   * A key with five values.
-   */
-  final class Key5(val v1: Value, val v2: Value, val v3: Value, val v4: Value, val v5: Value) extends Key {
-    override def equals(o: scala.Any): Boolean = o match {
-      case that: Key5 =>
-        this.v1 == that.v1 &&
-          this.v2 == that.v2 &&
-          this.v3 == that.v3 &&
-          this.v4 == that.v4 &&
-          this.v5 == that.v5
-      case _ => false
-    }
-
-    override val hashCode: Int = 3 * v1.hashCode() + 5 * v2.hashCode() + 7 * v3.hashCode() + 11 * v4.hashCode() + 13 * v5.hashCode()
-  }
-
-  /**
-   * Returns an index matching all the non-null columns in the given pattern `pat`.
-   *
-   * An exact index only returns rows that match the pattern.
-   *
-   * Returns zero if no such index exists.
-   */
+    * Returns an index matching all the non-null columns in the given pattern `pat`.
+    *
+    * An exact index only returns rows that match the pattern.
+    *
+    * Returns zero if no such index exists.
+    */
   def getExactIndex(indexes: Set[Int], pat: Array[Value]): Int = {
     var index = 0
     var i = 0
@@ -108,12 +142,12 @@ package object datastore {
   }
 
   /**
-   * Returns an approximate index matching all the non-null columns in the given pattern `pat`.
-   *
-   * An approximate index may returns rows not matching the pattern.
-   *
-   * Returns zero if no such index exists.
-   */
+    * Returns an approximate index matching all the non-null columns in the given pattern `pat`.
+    *
+    * An approximate index may returns rows not matching the pattern.
+    *
+    * Returns zero if no such index exists.
+    */
   def getApproximateIndex(indexes: Set[Int], pat: Array[Value]): Int = {
     // the result index. Defaults to zero representing that no usable index exists.
     var result: Int = 0
@@ -146,13 +180,13 @@ package object datastore {
   }
 
   /**
-   * Returns the key for the given index `idx` and pattern `pat`.
-   *
-   * The pattern must be non-null for all columns in the index.
-   *
-   * @param idx the index (in binary).
-   * @param pat the pattern.
-   */
+    * Returns the key for the given index `idx` and pattern `pat`.
+    *
+    * The pattern must be non-null for all columns in the index.
+    *
+    * @param idx the index (in binary).
+    * @param pat the pattern.
+    */
   def keyOf(idx: Int, pat: Array[Value]): Key = {
     val columns = Integer.bitCount(idx)
     val i1 = idx

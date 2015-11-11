@@ -111,7 +111,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     val lattices = dataStore.lattices.foldLeft(Map.empty[Name.Resolved, Map[List[Value], List[Value]]]) {
       case (macc, (name, lattice)) =>
         val table = lattice.scan.map {
-          case (keys, values) => (keys.toList, values.toList)
+          case (keys, values) => (keys.toArray.toList, values.toList)
         }
         macc + ((name, table.toMap))
     }
