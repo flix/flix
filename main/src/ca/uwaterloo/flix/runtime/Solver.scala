@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Term
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Name, TypedAst}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{AsciiTable, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.annotation.tailrec
@@ -102,6 +102,15 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     // print some statistics.
     dataStore.stats()
 
+    // print some statistics.
+    Console.out.println(">> Rule Evaluation Time")
+    val table = new AsciiTable().withCols("Line", "Rule", "Time (msec)")
+    for (rule <- sCtx.root.rules.toSeq.sortBy(_.elapsedTime).reverse) {
+      table.mkRow(List(rule.head.loc.line, rule.head.loc.line(), rule.elapsedTime / 1000000))
+    }
+    table.write(Console.out)
+    Console.out.println()
+
     // construct the model.
     val relations = dataStore.relations.foldLeft(Map.empty[Name.Resolved, List[List[Value]]]) {
       case (macc, (name, relation)) =>
@@ -160,10 +169,9 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   /**
     * Evaluates the body of the given `rule` under the given initial environment `env0`.
     */
+  // TODO: Need a static layout of variables and then implement `row` as an array.
   def evalBody(rule: Constraint.Rule, env0: mutable.Map[String, Value]): Unit = {
-
-    // TODO: Need a static layout of variables and then implement `row` as an array.
-
+    val t = System.nanoTime()
     /**
       * Computes the cross product of all collections in the body.
       */
@@ -250,6 +258,8 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     }
 
     cross(rule.collections, env0)
+
+    rule.elapsedTime += System.nanoTime() - t
   }
 
   /**

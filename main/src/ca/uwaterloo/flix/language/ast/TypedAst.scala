@@ -173,6 +173,9 @@ object TypedAst {
         case p: TypedAst.Predicate.Body.NotEqual => p
       }
 
+      // TODO: Remove in the future.
+      var elapsedTime: Long = 0
+
     }
 
   }
