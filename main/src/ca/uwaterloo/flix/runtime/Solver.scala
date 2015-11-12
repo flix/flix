@@ -66,7 +66,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   /**
     * The work list of pending predicate names and their associated values.
     */
-  val worklist = mutable.Queue.empty[(Constraint.Rule, mutable.Map[String, Value])]
+  val worklist = new mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, Value])]
 
   /**
     * Solves the current Flix program.
@@ -82,13 +82,13 @@ class Solver(implicit sCtx: Solver.SolverContext) {
 
     // add all rules to the worklist (under empty environments).
     for (rule <- sCtx.root.rules) {
-      worklist.enqueue((rule, mutable.Map.empty))
+      worklist.push((rule, mutable.Map.empty))
     }
 
     // iterate until fixpoint.
     while (worklist.nonEmpty) {
       // extract fact from the worklist.
-      val (rule, env) = worklist.dequeue()
+      val (rule, env) = worklist.pop()
       evalBody(rule, env)
     }
 
