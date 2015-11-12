@@ -270,11 +270,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     */
   def eval(t: TypedAst.Term.Body, env: mutable.Map[String, Value]): Value = t match {
     case t: TypedAst.Term.Body.Wildcard => null
-    case t: TypedAst.Term.Body.Var =>
-      if (env contains t.ident.name)
-        env(t.ident.name)
-      else
-        null
+    case t: TypedAst.Term.Body.Var => env.getOrElse(t.ident.name, null)
     case t: TypedAst.Term.Body.Lit => Interpreter.evalLit(t.lit)
   }
 
