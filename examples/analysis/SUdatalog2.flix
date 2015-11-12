@@ -5,7 +5,7 @@
   rel Copy(to: Str, from: Str)
   rel Store(label: Str, to: Str, from: Str)
   rel Load(label: Str, to: Str, from: Str)
-  rel CFG(label: Str, to: Str, from: Str)
+  rel CFG(label: Str, to: Str)
   rel Multi(object: Str)
   rel Phi(label: Str)
   rel Clear(label: Str)
@@ -94,5 +94,5 @@ IsTop(a, l) :- Phi(l), IsTop(a, lpred), CFG(lpred, l).
 IsTop(a, l) :- Clear(l), AddrOf(_, a).
 
 HeapPointsTo(a, b) :- StoreVar(p, a, _), VarPointsTo(b, p).
-HeapPointsTo(a, b) :- FIStore(p, q), VarPointsTo(a, p), VarPointsTo(b, q).
-VarPointsTo(a, p) :- FILoad(p, q), VarPointsTo(b, q), HeapPointsTo(b, a).
+HeapPointsTo(a, b) :- FIStore(p, q, _), VarPointsTo(a, p), VarPointsTo(b, q).
+VarPointsTo(a, p) :- FILoad(p, q, _), VarPointsTo(b, q), HeapPointsTo(b, a).

@@ -5,7 +5,7 @@
   rel Copy(to: Str, from: Str)
   rel Store(label: Str, to: Str, from: Str)
   rel Load(label: Str, to: Str, from: Str)
-  rel CFG(label: Str, to: Str, from: Str)
+  rel CFG(label: Str, to: Str)
   rel Multi(object: Str)
   rel Phi(label: Str)
   rel Clear(label: Str)
@@ -116,7 +116,7 @@ def filter(e: SULattice, p: Str): Bool = match e with {
   case SULattice.Top => true
 }
 PtSU(l,a,b) :- filter(t, b), SUBefore(l,a,t), PtH(a,b).
-SUAfter(l,a,b) :- Clear(l), PtH(a,b).
+SUAfter(l,a,f(b)) :- Clear(l), PtH(a,b).
 
 //// Kill
 //// ---------

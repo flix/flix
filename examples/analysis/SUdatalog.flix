@@ -5,7 +5,7 @@
   rel Copy(to: Str, from: Str)
   rel Store(label: Str, to: Str, from: Str)
   rel Load(label: Str, to: Str, from: Str)
-  rel CFG(label: Str, to: Str, from: Str)
+  rel CFG(label: Str, to: Str)
   rel Multi(object: Str)
   rel Phi(label: Str)
   rel Clear(label: Str)
