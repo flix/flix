@@ -274,10 +274,16 @@ object Interpreter {
       case _ => null
     }
     case (Pattern.Tuple(pats, _, _), Value.Tuple(vals)) =>
-      val envs = pats.zip(vals).map { case (p, v) => unify(p, v) }.collect { case e if e != null => e }
-      if (pats.size == envs.size)
-        envs.foldLeft(mutable.Map.empty: Env) { case (acc, newEnv) => acc ++= newEnv }
-      else null
+      val result: Env = mutable.Map.empty
+      val length = pats.length
+      var i = 0
+      while (i < length) {
+        val env = unify(pats(i), vals(i))
+        if (env == null) return null
+        result ++= env
+        i = i + 1
+      }
+      result
     case _ => null
   }
 
