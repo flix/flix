@@ -3,6 +3,8 @@ package ca.uwaterloo.flix.runtime
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Type, Term, Root}
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, UnaryOperator}
 
+import scala.collection.mutable
+
 // TODO: Consider an EvaluationContext
 object Interpreter {
 
@@ -283,13 +285,13 @@ object Interpreter {
   /**
    * Evaluates the given head term `t` under the given environment `env0`
    */
-  def evalHeadTerm(t: Term.Head, root: Root, env: Env): Value = t match {
+  def evalHeadTerm(t: Term.Head, root: Root, env: mutable.Map[String, Value]): Value = t match {
     case Term.Head.Var(x, _, _) => env(x.name)
     case Term.Head.Lit(lit, _, _) => evalLit(lit)
     case Term.Head.Apply(name, terms, _, _) =>
       val function = root.constants(name).exp
       val evalArgs = terms.map(t => evalHeadTerm(t, root, env))
-      evalCall(function, evalArgs, root, env)
+      evalCall(function, evalArgs, root, env.toMap)
     case Term.Head.NativeField(field, tpe, _) => Value.java2flix(field.get(), tpe)
   }
 

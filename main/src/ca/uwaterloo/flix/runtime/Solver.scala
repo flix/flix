@@ -77,7 +77,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
 
     // evaluate all facts.
     for (fact <- sCtx.root.facts) {
-      evalHead(fact.head, Map.empty, enqueue = false)
+      evalHead(fact.head, mutable.Map.empty, enqueue = false)
     }
 
     // add all rules to the worklist (under empty environments).
@@ -147,7 +147,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   /**
     * Evaluates the given head predicate `p` under the given environment `env0`.
     */
-  def evalHead(p: Predicate.Head, env0: Map[String, Value], enqueue: Boolean): Unit = p match {
+  def evalHead(p: Predicate.Head, env0: mutable.Map[String, Value], enqueue: Boolean): Unit = p match {
     case p: Predicate.Head.Relation =>
       val terms = p.termsArray
       val fact = new Array[Value](p.arity)
@@ -219,7 +219,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     def loop(ps: List[Predicate.Body.Loop], row: mutable.Map[String, Value]): Unit = ps match {
       case Nil => filter(rule.filters, row)
       case Predicate.Body.Loop(name, term, _, _) :: rest =>
-        val result = Interpreter.evalHeadTerm(term, sCtx.root, row.toMap)
+        val result = Interpreter.evalHeadTerm(term, sCtx.root, row)
         ???
       // TODO: Cast to Set and iterate.
       // TODO: Call loop from cross.
@@ -248,7 +248,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     def disjoint(ps: List[Predicate.Body.NotEqual], row: mutable.Map[String, Value]): Unit = ps match {
       case Nil =>
         // rule body complete, evaluate the head.
-        evalHead(rule.head, row.toMap, enqueue = true)
+        evalHead(rule.head, row, enqueue = true)
       case Predicate.Body.NotEqual(ident1, ident2, _, _) :: xs =>
         val value1 = row(ident1.name)
         val value2 = row(ident2.name)

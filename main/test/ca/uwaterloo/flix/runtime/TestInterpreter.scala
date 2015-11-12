@@ -5,6 +5,8 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.Compiler
 import org.scalatest.FunSuite
 
+import scala.collection.mutable
+
 // NOTE: When writing a new test, call the parser on a string, and then the interpreter on the resulting AST.
 // Older tests were written before the front-end was completely implemented, so they had to directly construct ASTs.
 
@@ -2390,28 +2392,28 @@ class TestInterpreter extends FunSuite {
 
   test("evalHeadTerm - Var01") {
     val input = Term.Head.Lit(Literal.Str("hello", loc), Type.Str, loc)
-    val env = Map(ident01.name -> Value.False)
+    val env = mutable.Map.empty[String, Value] + (ident01.name -> Value.False)
     val result = Interpreter.evalHeadTerm(input, root, env)
     assertResult(Value.mkStr("hello"))(result)
   }
 
   test("evalHeadTerm - Var02") {
     val input = Term.Head.Var(ident01, Type.Int, loc)
-    val env = Map(ident01.name -> Value.mkInt(5))
+    val env = mutable.Map.empty[String, Value] + (ident01.name -> Value.mkInt(5))
     val result = Interpreter.evalHeadTerm(input, root, env)
     assertResult(Value.mkInt(5))(result)
   }
 
   test("evalHeadTerm - Var03") {
     val input = Term.Head.Var(ident01, Type.Bool, loc)
-    val env = Map(ident01.name -> Value.False)
+    val env = mutable.Map.empty[String, Value] + (ident01.name -> Value.False)
     val result = Interpreter.evalHeadTerm(input, root, env)
     assertResult(Value.False)(result)
   }
 
   test("evalHeadTerm - Var04") {
     val input = Term.Head.Var(ident02, Type.Str, loc)
-    val env = Map(ident01.name -> Value.mkStr("foo"), ident02.name -> Value.mkStr("bar"))
+    val env = mutable.Map.empty[String, Value] + (ident01.name -> Value.mkStr("foo"), ident02.name -> Value.mkStr("bar"))
     val result = Interpreter.evalHeadTerm(input, root, env)
     assertResult(Value.mkStr("bar"))(result)
   }
@@ -2422,79 +2424,79 @@ class TestInterpreter extends FunSuite {
 
   test("evalHeadTerm - Literal.Unit") {
     val input = Term.Head.Lit(Literal.Unit(loc), Type.Unit, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.Unit)(result)
   }
 
   test("evalHeadTerm - Literal.Bool01") {
     val input = Term.Head.Lit(Literal.Bool(true, loc), Type.Bool, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.True)(result)
   }
 
   test("evalHeadTerm - Literal.Bool02") {
     val input = Term.Head.Lit(Literal.Bool(false, loc), Type.Bool, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.False)(result)
   }
 
   test("evalHeadTerm - Literal.Int01") {
     val input = Term.Head.Lit(Literal.Int(-242, loc), Type.Int, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.mkInt(-242))(result)
   }
 
   test("evalHeadTerm - Literal.Int02") {
     val input = Term.Head.Lit(Literal.Int(-42, loc), Type.Int, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.mkInt(-42))(result)
   }
 
   test("evalHeadTerm - Literal.Int03") {
     val input = Term.Head.Lit(Literal.Int(0, loc), Type.Int, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.mkInt(0))(result)
   }
 
   test("evalHeadTerm - Literal.Int04") {
     val input = Term.Head.Lit(Literal.Int(98, loc), Type.Int, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.mkInt(98))(result)
   }
 
   test("evalHeadTerm - Literal.Int05") {
     val input = Term.Head.Lit(Literal.Int(91238, loc), Type.Int, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.mkInt(91238))(result)
   }
 
   test("evalHeadTerm - Literal.Str01") {
     val input = Term.Head.Lit(Literal.Str("", loc), Type.Str, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.mkStr(""))(result)
   }
 
   test("evalHeadTerm - Literal.Str02") {
     val input = Term.Head.Lit(Literal.Str("Hello World!", loc), Type.Str, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.mkStr("Hello World!"))(result)
   }
 
   test("evalHeadTerm - Literal.Str03") {
     val input = Term.Head.Lit(Literal.Str("asdf", loc), Type.Str, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.mkStr("asdf"))(result)
   }
 
   test("evalHeadTerm - Literal.Str04") {
     val input = Term.Head.Lit(Literal.Str("foobar", loc), Type.Str, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.mkStr("foobar"))(result)
   }
 
   test("evalHeadTerm - Literal.Str05") {
     val input = Term.Head.Lit(Literal.Str("\"\"\"", loc), Type.Str, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.mkStr("\"\"\""))(result)
   }
 
@@ -2503,7 +2505,7 @@ class TestInterpreter extends FunSuite {
       Literal.Tuple(List(Literal.Int(42, loc), Literal.Bool(false, loc), Literal.Str("hi", loc)),
         Type.Tuple(List(Type.Int, Type.Bool, Type.Str)), loc),
       Type.Tuple(List(Type.Int, Type.Bool, Type.Str)), loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.Tuple(List(Value.mkInt(42), Value.False, Value.mkStr("hi"))))(result)
   }
 
@@ -2515,7 +2517,7 @@ class TestInterpreter extends FunSuite {
           Type.Tuple(List(Type.Int, Type.Int)), loc)),
         Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int)))), loc),
       Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int)))), loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.Tuple(List(Value.mkInt(4), Value.Tuple(List(Value.mkInt(12), Value.mkInt(8))))))(result)
   }
 
@@ -2525,7 +2527,7 @@ class TestInterpreter extends FunSuite {
     val tagTpe = Type.Tag(name, ident, Type.Str)
     val enumTpe = Type.Enum(Map("foo.bar.baz" -> tagTpe))
     val input = Term.Head.Lit(Literal.Tag(name, ident, Literal.Str("hello world", loc), enumTpe, loc), tagTpe, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.mkTag(name, "baz", Value.mkStr("hello world")))(result)
   }
 
@@ -2537,28 +2539,28 @@ class TestInterpreter extends FunSuite {
     val input = Term.Head.Lit(Literal.Tag(name, ident,
       Literal.Tuple(List(Literal.Str("James", loc), Literal.Int(42, loc)),
         Type.Tuple(List(Type.Str, Type.Int)), loc), enumTpe, loc), tagTpe, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.mkTag(name, "NameAndAge", Value.Tuple(List(Value.mkStr("James"), Value.mkInt(42)))))(result)
   }
 
   test("evalHeadTerm - Literal.Tag03") {
     import ConstantPropTagDefs._
     val input = Term.Head.Lit(Literal.Tag(name, identB, Literal.Unit(loc), enumTpe, loc), tagTpeB, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.mkTag(name, "Bot", Value.Unit))(result)
   }
 
   test("evalHeadTerm - Literal.Tag04") {
     import ConstantPropTagDefs._
     val input = Term.Head.Lit(Literal.Tag(name, identT, Literal.Unit(loc), enumTpe, loc), tagTpeT, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.mkTag(name, "Top", Value.Unit))(result)
   }
 
   test("evalHeadTerm - Literal.Tag05") {
     import ConstantPropTagDefs._
     val input = Term.Head.Lit(Literal.Tag(name, identV, Literal.Int(0, loc), enumTpe, loc), tagTpeV, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.mkTag(name, "Val", Value.mkInt(0)))(result)
 
   }
@@ -2566,14 +2568,14 @@ class TestInterpreter extends FunSuite {
   test("evalHeadTerm - Literal.Tag06") {
     import ConstantPropTagDefs._
     val input = Term.Head.Lit(Literal.Tag(name, identV, Literal.Int(-240, loc), enumTpe, loc), tagTpeV, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.mkTag(name, "Val", Value.mkInt(-240)))(result)
   }
 
   test("evalHeadTerm - Literal.Tag07") {
     import ConstantPropTagDefs._
     val input = Term.Head.Lit(Literal.Tag(name, identV, Literal.Int(1241, loc), enumTpe, loc), tagTpeV, loc)
-    val result = Interpreter.evalHeadTerm(input, root, Map())
+    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
     assertResult(Value.mkTag(name, "Val", Value.mkInt(1241)))(result)
   }
 
@@ -2590,7 +2592,7 @@ class TestInterpreter extends FunSuite {
 
     // foo.bar()
     val apply = Term.Head.Apply(name01, List(), Type.Bool, loc)
-    val value = Interpreter.evalHeadTerm(apply, root, Map())
+    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
     assertResult(Value.False)(value)
   }
 
@@ -2604,7 +2606,7 @@ class TestInterpreter extends FunSuite {
 
     // foo.bar(4)
     val apply = Term.Head.Apply(name01, List(Term.Head.Lit(Literal.Int(4, loc), Type.Int, loc)), Type.Int, loc)
-    val value = Interpreter.evalHeadTerm(apply, root, Map())
+    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
     assertResult(Value.mkInt(3))(value)
   }
 
@@ -2618,7 +2620,7 @@ class TestInterpreter extends FunSuite {
 
     // foo.bar(5)
     val apply = Term.Head.Apply(name01, List(Term.Head.Lit(Literal.Int(5, loc), Type.Int, loc)), Type.Int, loc)
-    val value = Interpreter.evalHeadTerm(apply, root, Map())
+    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
     assertResult(Value.mkInt(5))(value)
   }
 
@@ -2637,7 +2639,7 @@ class TestInterpreter extends FunSuite {
 
     // foo.bar(42)
     val apply = Term.Head.Apply(name01, List(Term.Head.Lit(Literal.Int(42, loc), Type.Int, loc)), Type.Int, loc)
-    val value = Interpreter.evalHeadTerm(apply, root, Map())
+    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
     assertResult(Value.mkInt(3))(value)
   }
 
@@ -2656,7 +2658,7 @@ class TestInterpreter extends FunSuite {
 
     // foo.bar(100)
     val apply = Term.Head.Apply(name01, List(Term.Head.Lit(Literal.Int(100, loc), Type.Int, loc)), Type.Int, loc)
-    val value = Interpreter.evalHeadTerm(apply, root, Map())
+    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
     assertResult(Value.mkInt(102))(value)
   }
 
@@ -2678,7 +2680,7 @@ class TestInterpreter extends FunSuite {
       Term.Head.Lit(Literal.Int(3, loc), Type.Int, loc),
       Term.Head.Lit(Literal.Int(4, loc), Type.Int, loc)),
       Type.Int, loc)
-    val value = Interpreter.evalHeadTerm(apply, root, Map())
+    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
     assertResult(Value.mkInt(7))(value)
   }
 
@@ -2700,7 +2702,7 @@ class TestInterpreter extends FunSuite {
       Term.Head.Lit(Literal.Bool(false, loc), Type.Bool, loc),
       Term.Head.Lit(Literal.Bool(true, loc), Type.Bool, loc)),
       Type.Bool, loc)
-    val value = Interpreter.evalHeadTerm(apply, root, Map())
+    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
     assertResult(Value.True)(value)
   }
 
@@ -2727,7 +2729,7 @@ class TestInterpreter extends FunSuite {
       Term.Head.Lit(Literal.Int(42, loc), Type.Int, loc),
       Term.Head.Lit(Literal.Int(5, loc), Type.Int, loc)),
       Type.Int, loc)
-    val value = Interpreter.evalHeadTerm(apply, root, Map())
+    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
     assertResult(Value.mkInt(49))(value)
   }
 
@@ -2755,7 +2757,7 @@ class TestInterpreter extends FunSuite {
       name01,
       List(Term.Head.Lit(Literal.Int(4, loc), Type.Int, loc)),
       Type.Int, loc)
-    val value = Interpreter.evalHeadTerm(apply, root, Map())
+    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
     assertResult(Value.mkInt(7))(value)
   }
 
@@ -2784,7 +2786,7 @@ class TestInterpreter extends FunSuite {
     val apply = Term.Head.Apply(name01, List(Term.Head.Var(ident03, Type.Lambda(List(Type.Int), Type.Int), loc),
       Term.Head.Lit(Literal.Int(5, loc), Type.Int, loc)),
       Type.Int, loc)
-    val value = Interpreter.evalHeadTerm(apply, root, Map(ident03.name -> closure))
+    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty[String, Value] + (ident03.name -> closure))
     assertResult(Value.mkInt(6))(value)
   }
 
@@ -2802,7 +2804,7 @@ class TestInterpreter extends FunSuite {
 
     // abc.def()
     val apply = Term.Head.Apply(name02, List(), Type.Bool, loc)
-    val value = Interpreter.evalHeadTerm(apply, root, Map())
+    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
     assertResult(Value.True)(value)
   }
 
