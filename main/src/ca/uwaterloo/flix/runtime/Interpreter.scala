@@ -315,6 +315,14 @@ object Interpreter {
     }
 
   def eval2(function: Expression, arg1: Value, arg2: Value, root: Root): Value =
-    evalCall(function, List(arg1, arg2), root)
-
+    (evalGeneral(function, root): @unchecked) match {
+      case Value.Closure(formals, body, closureEnv) =>
+        val newEnv = closureEnv.clone()
+        newEnv.update(formals(0).ident.name, arg1)
+        newEnv.update(formals(1).ident.name, arg2)
+        eval(body, root, newEnv)
+      case Value.NativeMethod(method) =>
+        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
+        Value.java2flix(method.invoke(null, arg1.toJava, arg2.toJava), tpe)
+    }
 }
