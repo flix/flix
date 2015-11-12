@@ -17,6 +17,24 @@
   rel Pt(variable: Str, target: Str)
   rel PtSU(location: Str, object: Str, target: Str)
 
+//// Indexes
+//// =========
+  index AddrOf({variable, object});
+  index Copy({to, from}, {from});
+  index Store({label, to, from}, {to});
+  index Load({label, from}, {from});
+  index CFG({label, to});
+  index FIStore({to}, {from});
+
+  index StoresToP({l, p}, {p});
+  index MayWrite({c, l});
+  index Weak({a, l}, {a});
+  index IsTop({a, l}, {a});
+
+  index HeapPointsTo({b, a}, {b});
+  index StoreVar({p, a, l}, {p, a}, {a, l}, {p}, {a});
+  index LoadSet({a, l});
+
 
 rel StoresToP(l: Str, p: Str)
 rel MayWrite(c: Str, l: Str)
