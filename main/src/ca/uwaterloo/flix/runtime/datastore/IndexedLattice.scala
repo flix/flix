@@ -72,6 +72,13 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], de
       val newElms = elmPart(fact)
       val oldElms = table.getOrElseUpdate(keyPart(fact), newElms)
 
+      // if the oldElms did not exist (i.e. it was equal to bottom)
+      // then newElms == oldElms and we can return here.
+      if (newElms eq oldElms) {
+        // bottom element replaced by newElms.
+        return
+      }
+
       // compute the lub and update oldElms directly.
       val result = lub(newElms, oldElms)
       System.arraycopy(result, 0, oldElms, 0, oldElms.length)
@@ -151,13 +158,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], de
     * Returns the element part of the given array `a`.
     */
   def elmPart(a: Array[Value]): Array[Value] = {
-    val result = new Array[Value](numberOfElms)
-    var i = 0
-    while (i < numberOfElms) {
-      result(i) = a(i + numberOfKeys)
-      i = i + 1
-    }
-    return result
+    return util.Arrays.copyOfRange(a, numberOfKeys, a.length)
   }
 
   /**
