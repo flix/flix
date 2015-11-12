@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.runtime
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Type, Term, Root}
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, UnaryOperator}
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 // TODO: Consider an EvaluationContext
@@ -91,10 +92,9 @@ object Interpreter {
         evalInt(exp2, root, newEnv)
       case Expression.Match(exp, rules, _, _) =>
         val value = eval(exp, root, env)
-        matchRule(rules, value) match {
-          case Some((matchExp, matchEnv)) => evalInt(matchExp, root, env ++ matchEnv)
-          case None => throw new RuntimeException(s"Unmatched value $value.")
-        }
+        val result = matchRule(rules, value)
+        if (result != null) evalInt(result._1, root, env ++ result._2)
+        else throw new RuntimeException(s"Unmatched value $value.")
       case Expression.NativeField(field, _, _) =>
         field.get().asInstanceOf[java.lang.Integer].intValue()
       case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
@@ -160,10 +160,9 @@ object Interpreter {
         evalBool(exp2, root, newEnv)
       case Expression.Match(exp, rules, _, _) =>
         val value = eval(exp, root, env)
-        matchRule(rules, value) match {
-          case Some((matchExp, matchEnv)) => evalBool(matchExp, root, env ++ matchEnv)
-          case None => throw new RuntimeException(s"Unmatched value $value.")
-        }
+        val result = matchRule(rules, value)
+        if (result != null) evalBool(result._1, root, env ++ result._2)
+        else throw new RuntimeException(s"Unmatched value $value.")
       case Expression.NativeField(field, _, _) =>
         field.get().asInstanceOf[java.lang.Boolean].booleanValue()
       case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
@@ -234,10 +233,9 @@ object Interpreter {
         eval(exp2, root, newEnv)
       case Expression.Match(exp, rules, _, _) =>
         val value = eval(exp, root, env)
-        matchRule(rules, value) match {
-          case Some((matchExp, matchEnv)) => eval(matchExp, root, env ++ matchEnv)
-          case None => throw new RuntimeException(s"Unmatched value $value.")
-        }
+        val result = matchRule(rules, value)
+        if (result != null) eval(result._1, root, env ++ result._2)
+        else throw new RuntimeException(s"Unmatched value $value.")
       case Expression.NativeField(field, tpe, _) => Value.java2flix(field.get(), tpe)
       case Expression.NativeMethod(method, _, _) => Value.NativeMethod(method)
       case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
@@ -257,28 +255,30 @@ object Interpreter {
     case Literal.Set(elms, _, _) => Value.Set(elms.map(evalLit).toSet)
   }
 
-  private def matchRule(rules: List[(Pattern, Expression)], value: Value): Option[(Expression, Env)] = rules match {
-    case (pattern, exp) :: rest => unify(pattern, value) match {
-      case Some(env) => Some((exp, env))
-      case None => matchRule(rest, value)
-    }
-    case Nil => None
+  // Returns `null` if there is no match.
+  @tailrec private def matchRule(rules: List[(Pattern, Expression)], value: Value): (Expression, Env) = rules match {
+    case (pattern, exp) :: rest =>
+      val env = unify(pattern, value)
+      if (env != null) (exp, env)
+      else matchRule(rest, value)
+    case Nil => null
   }
 
-  private def unify(pattern: Pattern, value: Value): Option[Env] = (pattern, value) match {
-    case (Pattern.Wildcard(_, _), _) => Some(mutable.Map.empty)
-    case (Pattern.Var(ident, _, _), _) => Some(mutable.Map(ident.name -> value))
-    case (Pattern.Lit(lit, _, _), _) if evalLit(lit) == value => Some(mutable.Map.empty)
+  // Returns `null` if unification fails.
+  private def unify(pattern: Pattern, value: Value): Env = (pattern, value) match {
+    case (Pattern.Wildcard(_, _), _) => mutable.Map.empty
+    case (Pattern.Var(ident, _, _), _) => mutable.Map(ident.name -> value)
+    case (Pattern.Lit(lit, _, _), _) if evalLit(lit) == value => mutable.Map.empty
     case (Pattern.Tag(name1, ident1, innerPat, _, _), v) => v match {
       case v: Value.Tag if name1 == v.enum && ident1.name == v.tag => unify(innerPat, v.value)
-      case _ => None
+      case _ => null
     }
     case (Pattern.Tuple(pats, _, _), Value.Tuple(vals)) =>
-      val envs = pats.zip(vals).map { case (p, v) => unify(p, v) }.collect { case Some(e) => e }
+      val envs = pats.zip(vals).map { case (p, v) => unify(p, v) }.collect { case e if e != null => e }
       if (pats.size == envs.size)
-        Some(envs.foldLeft(mutable.Map.empty: Env) { case (acc, newEnv) => acc ++= newEnv })
-      else None
-    case _ => None
+        envs.foldLeft(mutable.Map.empty: Env) { case (acc, newEnv) => acc ++= newEnv }
+      else null
+    case _ => null
   }
 
   // TODO: Need to come up with some more clean interfaces
