@@ -134,7 +134,7 @@ object Value {
       case _ => false
     }
 
-    override val hashCode: scala.Int = (enum, tag, value).hashCode
+    override val hashCode: scala.Int = 41 * (41 * (41 + enum.hashCode) + tag.hashCode) + value.hashCode
   }
 
   // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
