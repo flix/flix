@@ -93,7 +93,7 @@ PtH(a,b) :- FIStore(p,q,_), Pt(p,a), Pt(q,b).
 //
 //// Load
 //// ---------
-Pt(p,b) :- Load(l,p,q), Pt(q,a), PtSU(l,a,b).
+Pt(p,b) :- Load(l,p,q), Pt(q,a), filter(t, b), SUBefore(l,a,t), PtH(a,b).
 Pt(p,b) :- FILoad(p,q,_), Pt(q,a), PtH(a,b).
 //
 //// CFlow
@@ -115,7 +115,7 @@ def filter(e: SULattice, p: Str): Bool = match e with {
   case SULattice.Single(s) => p == s
   case SULattice.Top => true
 }
-PtSU(l,a,b) :- filter(t, b), SUBefore(l,a,t), PtH(a,b).
+//PtSU(l,a,b) :- filter(t, b), SUBefore(l,a,t), PtH(a,b).
 SUAfter(l,a,f(b)) :- Clear(l), PtH(a,b).
 
 //// Kill
