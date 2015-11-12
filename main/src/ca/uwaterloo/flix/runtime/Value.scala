@@ -16,9 +16,9 @@ sealed trait Value {
   def toSet: Set[Value] = this.asInstanceOf[Value.Set].elms
 
   def toJava: java.lang.Object = (this: @unchecked) match {
-    case Value.Bool(b) => boolean2Boolean(b)
-    case Value.Int(i) => int2Integer(i)
-    case Value.Str(s) => s
+    case v: Value.Bool => boolean2Boolean(v.b)
+    case v: Value.Int => int2Integer(v.i)
+    case v: Value.Str => v.s
     case Value.Tuple(elms) if (2 to 5).contains(elms.size) =>
       val javaElms = elms.map(_.toJava)
       javaElms.size match {
@@ -29,16 +29,17 @@ sealed trait Value {
       }
     case Value.Set(elms) => elms.map(_.toJava)
     case Value.Native(v) => v
-    case Value.Unit | Value.Tag(_) | Value.Tuple(_) | Value.Closure(_, _, _) | Value.NativeMethod(_) => this
+    case v: Value.Tag => this
+    case Value.Unit | Value.Tuple(_) | Value.Closure(_, _, _) | Value.NativeMethod(_) => this
   }
 
   //  TODO: Figure out a place to put all the formatting functions.
   def pretty: String = this match {
     case Value.Unit => "()"
-    case Value.Bool(b) => b.toString
-    case Value.Int(i) => i.toString
-    case Value.Str(s) => s.toString
-    case Value.Tag(enum, tag, value) => s"$enum.$tag(${value.pretty})"
+    case v: Value.Bool => v.b.toString
+    case v: Value.Int => v.i.toString
+    case v: Value.Str => v.s.toString
+    case v: Value.Tag => s"${v.enum}.${v.tag}(${v.value.pretty})"
     case Value.Tuple(elms) => "(" + elms.map(_.pretty).mkString(",") + ")"
     case Value.Set(elms) => "{" + elms.map(_.pretty).mkString(",") + "}"
     case Value.Closure(_, _, _) => ???
@@ -66,10 +67,6 @@ object Value {
     override val hashCode: scala.Int = b.hashCode
   }
 
-  object Bool {
-    def unapply(v: Value.Bool): Option[scala.Boolean] = Some(v.b)
-  }
-
   val True = new Value.Bool(true)
   val False = new Value.Bool(false)
 
@@ -86,10 +83,6 @@ object Value {
     }
 
     override val hashCode: scala.Int = i.hashCode
-  }
-
-  object Int {
-    def unapply(v: Value.Int): Option[scala.Int] = Some(v.i)
   }
 
   // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
@@ -118,10 +111,6 @@ object Value {
     override val hashCode: scala.Int = s.hashCode
   }
 
-  object Str {
-    def unapply(v: Value.Str): Option[java.lang.String] = Some(v.s)
-  }
-
   // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
   private val strCache = mutable.HashMap[java.lang.String, Value.Str]()
 
@@ -146,10 +135,6 @@ object Value {
     }
 
     override val hashCode: scala.Int = (enum, tag, value).hashCode
-  }
-
-  object Tag {
-    def unapply(v: Value.Tag): Option[(Name.Resolved, java.lang.String, Value)] = Some((v.enum, v.tag, v.value))
   }
 
   // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound

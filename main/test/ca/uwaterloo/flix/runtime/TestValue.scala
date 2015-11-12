@@ -46,7 +46,7 @@ class TestValue extends FunSuite {
     val v: Value = Value.True
 
     val result = v match {
-      case Value.Bool(b) => s"$b"
+      case v: Value.Bool => s"${v.b}"
       case _ => "unknown"
     }
 
@@ -96,7 +96,7 @@ class TestValue extends FunSuite {
     val v: Value = Value.mkInt(123456789)
 
     val result = v match {
-      case Value.Int(i) => s"$i"
+      case v: Value.Int => s"${v.i}"
       case _ => "unknown"
     }
 
@@ -146,7 +146,7 @@ class TestValue extends FunSuite {
     val v: Value = Value.mkStr("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
     val result = v match {
-      case Value.Str(s) => s"$s!!!"
+      case v: Value.Str => s"${v.s}!!!"
       case _ => "unknown"
     }
 
@@ -240,19 +240,19 @@ class TestValue extends FunSuite {
     val v: Value = Value.mkTag(Name.Resolved.mk(List("foo", "bar")), "aaa", Value.mkInt(42))
 
     val r1 = v match {
-      case Value.Tag(enum, tag, value) => enum
+      case v: Value.Tag => v.enum
       case _ => Name.Resolved.mk(List("hi"))
     }
     assert(r1 == Name.Resolved.mk(List("foo", "bar")))
 
     val r2 = v match {
-      case Value.Tag(enum, tag, value) => tag
+      case v: Value.Tag => v.tag
       case _ => "???"
     }
     assert(r2 == "aaa")
 
     val r3 = v match {
-      case Value.Tag(enum, tag, value) => value
+      case v: Value.Tag => v.value
       case _ => Value.Unit
     }
     assert(r3 == Value.mkInt(42))

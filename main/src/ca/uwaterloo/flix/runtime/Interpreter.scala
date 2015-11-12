@@ -269,8 +269,10 @@ object Interpreter {
     case (Pattern.Wildcard(_, _), _) => Some(Map())
     case (Pattern.Var(ident, _, _), _) => Some(Map(ident.name -> value))
     case (Pattern.Lit(lit, _, _), _) if evalLit(lit) == value => Some(Map())
-    case (Pattern.Tag(name1, ident1, innerPat, _, _), Value.Tag(name2, ident2, innerVal))
-      if name1 == name2 && ident1.name == ident2 => unify(innerPat, innerVal)
+    case (Pattern.Tag(name1, ident1, innerPat, _, _), v) => v match {
+      case v: Value.Tag if name1 == v.enum && ident1.name == v.tag => unify(innerPat, v.value)
+      case _ => None
+    }
     case (Pattern.Tuple(pats, _, _), Value.Tuple(vals)) =>
       val envs = pats.zip(vals).map { case (p, v) => unify(p, v) }.collect { case Some(e) => e }
       if (pats.size == envs.size)
