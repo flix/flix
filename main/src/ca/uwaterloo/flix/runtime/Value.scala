@@ -159,7 +159,7 @@ object Value {
 
   case class Set(elms: scala.collection.immutable.Set[Value]) extends Value
 
-  case class Closure(formals: List[TypedAst.FormalArg], body: TypedAst.Expression, env: Interpreter.Env) extends Value
+  case class Closure(formals: List[TypedAst.FormalArg], body: TypedAst.Expression, env: mutable.Map[String, Value]) extends Value
 
   /** *************************************************************************
     * Value.Native, Value.NativeMethod implementations                        *

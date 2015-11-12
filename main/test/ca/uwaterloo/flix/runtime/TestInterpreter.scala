@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.runtime
 import ca.uwaterloo.flix.language.ast.TypedAst.{Definition, Expression, Literal, Pattern, Type, Term, FormalArg, Root}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.Compiler
+import ca.uwaterloo.flix.runtime.Interpreter.Env
 import org.scalatest.FunSuite
 
 import scala.collection.mutable
@@ -245,28 +246,28 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - Expression.Var01") {
     val input = Expression.Lit(Literal.Str("hello", loc), Type.Str, loc)
-    val env = Map(ident01.name -> Value.False)
+    val env: Env = mutable.Map(ident01.name -> Value.False)
     val result = Interpreter.eval(input, root, env)
     assertResult(Value.mkStr("hello"))(result)
   }
 
   test("Interpreter - Expression.Var02") {
     val input = Expression.Var(ident01, Type.Int, loc)
-    val env = Map(ident01.name -> Value.mkInt(5))
+    val env: Env = mutable.Map(ident01.name -> Value.mkInt(5))
     val result = Interpreter.eval(input, root, env)
     assertResult(Value.mkInt(5))(result)
   }
 
   test("Interpreter - Expression.Var03") {
     val input = Expression.Var(ident01, Type.Bool, loc)
-    val env = Map(ident01.name -> Value.False)
+    val env: Env = mutable.Map(ident01.name -> Value.False)
     val result = Interpreter.eval(input, root, env)
     assertResult(Value.False)(result)
   }
 
   test("Interpreter - Expression.Var04") {
     val input = Expression.Var(ident02, Type.Str, loc)
-    val env = Map(ident01.name -> Value.mkStr("foo"), ident02.name -> Value.mkStr("bar"))
+    val env: Env = mutable.Map(ident01.name -> Value.mkStr("foo"), ident02.name -> Value.mkStr("bar"))
     val result = Interpreter.eval(input, root, env)
     assertResult(Value.mkStr("bar"))(result)
   }
@@ -321,7 +322,7 @@ class TestInterpreter extends FunSuite {
     // () => false
     val lambda = Expression.Lambda(
       List(), Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Lambda(List(), Type.Bool), loc)
-    val expected = Value.Closure(lambda.args, lambda.body, Map())
+    val expected = Value.Closure(lambda.args, lambda.body, mutable.Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
 
@@ -336,7 +337,7 @@ class TestInterpreter extends FunSuite {
     val lambda = Expression.Lambda(
       List(FormalArg(ident01, Type.Int)), Expression.Lit(Literal.Int(3, loc), Type.Int, loc),
       Type.Lambda(List(Type.Int), Type.Int), loc)
-    val expected = Value.Closure(lambda.args, lambda.body, Map())
+    val expected = Value.Closure(lambda.args, lambda.body, mutable.Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
 
@@ -351,7 +352,7 @@ class TestInterpreter extends FunSuite {
     val lambda = Expression.Lambda(
       List(FormalArg(ident01, Type.Int)), Expression.Var(ident01, Type.Int, loc),
       Type.Lambda(List(Type.Int), Type.Int), loc)
-    val expected = Value.Closure(lambda.args, lambda.body, Map())
+    val expected = Value.Closure(lambda.args, lambda.body, mutable.Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
 
@@ -371,7 +372,7 @@ class TestInterpreter extends FunSuite {
         Expression.Lit(Literal.Int(2, loc), Type.Int, loc),
         Type.Int, loc),
       Type.Lambda(List(Type.Int), Type.Int), loc)
-    val expected = Value.Closure(lambda.args, lambda.body, Map())
+    val expected = Value.Closure(lambda.args, lambda.body, mutable.Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
 
@@ -391,7 +392,7 @@ class TestInterpreter extends FunSuite {
         Expression.Lit(Literal.Int(2, loc), Type.Int, loc),
         Type.Int, loc),
       Type.Lambda(List(Type.Int), Type.Int), loc)
-    val expected = Value.Closure(lambda.args, lambda.body, Map())
+    val expected = Value.Closure(lambda.args, lambda.body, mutable.Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
 
@@ -411,7 +412,7 @@ class TestInterpreter extends FunSuite {
         Expression.Var(ident02, Type.Int, loc),
         Type.Int, loc),
       Type.Lambda(List(Type.Int, Type.Int), Type.Int), loc)
-    val expected = Value.Closure(lambda.args, lambda.body, Map())
+    val expected = Value.Closure(lambda.args, lambda.body, mutable.Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
 
@@ -434,7 +435,7 @@ class TestInterpreter extends FunSuite {
         Expression.Var(ident02, Type.Bool, loc),
         Type.Bool, loc),
       Type.Lambda(List(Type.Bool, Type.Bool), Type.Bool), loc)
-    val expected = Value.Closure(lambda.args, lambda.body, Map())
+    val expected = Value.Closure(lambda.args, lambda.body, mutable.Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
 
@@ -461,7 +462,7 @@ class TestInterpreter extends FunSuite {
           Type.Int, loc),
         Type.Int, loc),
       Type.Lambda(List(Type.Int, Type.Int, Type.Int), Type.Int), loc)
-    val expected = Value.Closure(lambda.args, lambda.body, Map())
+    val expected = Value.Closure(lambda.args, lambda.body, mutable.Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
 
@@ -488,7 +489,7 @@ class TestInterpreter extends FunSuite {
           Type.Int, loc),
         Type.Lambda(List(Type.Int), Type.Int), loc),
       Type.Lambda(List(Type.Int), Type.Lambda(List(Type.Int), Type.Int)), loc)
-    val expected = Value.Closure(lambda.args, lambda.body, Map())
+    val expected = Value.Closure(lambda.args, lambda.body, mutable.Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
 
@@ -511,7 +512,7 @@ class TestInterpreter extends FunSuite {
         List(Expression.Var(ident02, Type.Int, loc)),
         Type.Int, loc),
       Type.Lambda(List(Type.Lambda(List(Type.Int), Type.Int), Type.Int), Type.Int), loc)
-    val expected = Value.Closure(lambda.args, lambda.body, Map())
+    val expected = Value.Closure(lambda.args, lambda.body, mutable.Map())
     val closure = Interpreter.eval(lambda, root)
     assertResult(expected)(closure)
 
@@ -2780,7 +2781,7 @@ class TestInterpreter extends FunSuite {
         Expression.Lit(Literal.Int(1, loc), Type.Int, loc),
         Type.Int, loc),
       Type.Lambda(List(Type.Int), Type.Int), loc)
-    val closure = Interpreter.eval(innerLambda, root, Map())
+    val closure = Interpreter.eval(innerLambda, root, mutable.Map())
 
     // foo.bar((x => x + 1), 5)
     val apply = Term.Head.Apply(name01, List(Term.Head.Var(ident03, Type.Lambda(List(Type.Int), Type.Int), loc),
@@ -2814,28 +2815,28 @@ class TestInterpreter extends FunSuite {
 
   test("evalBodyTerm - Var01") {
     val input = Term.Body.Lit(Literal.Str("hello", loc), Type.Str, loc)
-    val env = Map(ident01.name -> Value.False)
+    val env: Env = mutable.Map(ident01.name -> Value.False)
     val result = Interpreter.evalBodyTerm(input, env)
     assertResult(Value.mkStr("hello"))(result)
   }
 
   test("evalBodyTerm - Var02") {
     val input = Term.Body.Var(ident01, Type.Int, loc)
-    val env = Map(ident01.name -> Value.mkInt(5))
+    val env: Env = mutable.Map(ident01.name -> Value.mkInt(5))
     val result = Interpreter.evalBodyTerm(input, env)
     assertResult(Value.mkInt(5))(result)
   }
 
   test("evalBodyTerm - Var03") {
     val input = Term.Body.Var(ident01, Type.Bool, loc)
-    val env = Map(ident01.name -> Value.False)
+    val env: Env = mutable.Map(ident01.name -> Value.False)
     val result = Interpreter.evalBodyTerm(input, env)
     assertResult(Value.False)(result)
   }
 
   test("evalBodyTerm - Var04") {
     val input = Term.Body.Var(ident02, Type.Str, loc)
-    val env = Map(ident01.name -> Value.mkStr("foo"), ident02.name -> Value.mkStr("bar"))
+    val env: Env = mutable.Map(ident01.name -> Value.mkStr("foo"), ident02.name -> Value.mkStr("bar"))
     val result = Interpreter.evalBodyTerm(input, env)
     assertResult(Value.mkStr("bar"))(result)
   }
@@ -2846,79 +2847,79 @@ class TestInterpreter extends FunSuite {
 
   test("evalBodyTerm - Literal.Unit") {
     val input = Term.Body.Lit(Literal.Unit(loc), Type.Unit, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.Unit)(result)
   }
 
   test("evalBodyTerm - Literal.Bool01") {
     val input = Term.Body.Lit(Literal.Bool(true, loc), Type.Bool, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.True)(result)
   }
 
   test("evalBodyTerm - Literal.Bool02") {
     val input = Term.Body.Lit(Literal.Bool(false, loc), Type.Bool, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.False)(result)
   }
 
   test("evalBodyTerm - Literal.Int01") {
     val input = Term.Body.Lit(Literal.Int(-242, loc), Type.Int, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.mkInt(-242))(result)
   }
 
   test("evalBodyTerm - Literal.Int02") {
     val input = Term.Body.Lit(Literal.Int(-42, loc), Type.Int, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.mkInt(-42))(result)
   }
 
   test("evalBodyTerm - Literal.Int03") {
     val input = Term.Body.Lit(Literal.Int(0, loc), Type.Int, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.mkInt(0))(result)
   }
 
   test("evalBodyTerm - Literal.Int04") {
     val input = Term.Body.Lit(Literal.Int(98, loc), Type.Int, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.mkInt(98))(result)
   }
 
   test("evalBodyTerm - Literal.Int05") {
     val input = Term.Body.Lit(Literal.Int(91238, loc), Type.Int, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.mkInt(91238))(result)
   }
 
   test("evalBodyTerm - Literal.Str01") {
     val input = Term.Body.Lit(Literal.Str("", loc), Type.Str, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.mkStr(""))(result)
   }
 
   test("evalBodyTerm - Literal.Str02") {
     val input = Term.Body.Lit(Literal.Str("Hello World!", loc), Type.Str, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.mkStr("Hello World!"))(result)
   }
 
   test("evalBodyTerm - Literal.Str03") {
     val input = Term.Body.Lit(Literal.Str("asdf", loc), Type.Str, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.mkStr("asdf"))(result)
   }
 
   test("evalBodyTerm - Literal.Str04") {
     val input = Term.Body.Lit(Literal.Str("foobar", loc), Type.Str, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.mkStr("foobar"))(result)
   }
 
   test("evalBodyTerm - Literal.Str05") {
     val input = Term.Body.Lit(Literal.Str("\"\"\"", loc), Type.Str, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.mkStr("\"\"\""))(result)
   }
 
@@ -2927,7 +2928,7 @@ class TestInterpreter extends FunSuite {
       Literal.Tuple(List(Literal.Int(42, loc), Literal.Bool(false, loc), Literal.Str("hi", loc)),
         Type.Tuple(List(Type.Int, Type.Bool, Type.Str)), loc),
       Type.Tuple(List(Type.Int, Type.Bool, Type.Str)), loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.Tuple(List(Value.mkInt(42), Value.False, Value.mkStr("hi"))))(result)
   }
 
@@ -2939,7 +2940,7 @@ class TestInterpreter extends FunSuite {
           Type.Tuple(List(Type.Int, Type.Int)), loc)),
         Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int)))), loc),
       Type.Tuple(List(Type.Int, Type.Tuple(List(Type.Int, Type.Int)))), loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.Tuple(List(Value.mkInt(4), Value.Tuple(List(Value.mkInt(12), Value.mkInt(8))))))(result)
   }
 
@@ -2949,7 +2950,7 @@ class TestInterpreter extends FunSuite {
     val tagTpe = Type.Tag(name, ident, Type.Str)
     val enumTpe = Type.Enum(Map("foo.bar.baz" -> tagTpe))
     val input = Term.Body.Lit(Literal.Tag(name, ident, Literal.Str("hello world", loc), enumTpe, loc), tagTpe, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.mkTag(name, "baz", Value.mkStr("hello world")))(result)
   }
 
@@ -2961,28 +2962,28 @@ class TestInterpreter extends FunSuite {
     val input = Term.Body.Lit(Literal.Tag(name, ident,
       Literal.Tuple(List(Literal.Str("James", loc), Literal.Int(42, loc)),
         Type.Tuple(List(Type.Str, Type.Int)), loc), enumTpe, loc), tagTpe, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.mkTag(name, "NameAndAge", Value.Tuple(List(Value.mkStr("James"), Value.mkInt(42)))))(result)
   }
 
   test("evalBodyTerm - Literal.Tag03") {
     import ConstantPropTagDefs._
     val input = Term.Body.Lit(Literal.Tag(name, identB, Literal.Unit(loc), enumTpe, loc), tagTpeB, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.mkTag(name, "Bot", Value.Unit))(result)
   }
 
   test("evalBodyTerm - Literal.Tag04") {
     import ConstantPropTagDefs._
     val input = Term.Body.Lit(Literal.Tag(name, identT, Literal.Unit(loc), enumTpe, loc), tagTpeT, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.mkTag(name, "Top", Value.Unit))(result)
   }
 
   test("evalBodyTerm - Literal.Tag05") {
     import ConstantPropTagDefs._
     val input = Term.Body.Lit(Literal.Tag(name, identV, Literal.Int(0, loc), enumTpe, loc), tagTpeV, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.mkTag(name, "Val", Value.mkInt(0)))(result)
 
   }
@@ -2990,14 +2991,14 @@ class TestInterpreter extends FunSuite {
   test("evalBodyTerm - Literal.Tag06") {
     import ConstantPropTagDefs._
     val input = Term.Body.Lit(Literal.Tag(name, identV, Literal.Int(-240, loc), enumTpe, loc), tagTpeV, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.mkTag(name, "Val", Value.mkInt(-240)))(result)
   }
 
   test("evalBodyTerm - Literal.Tag07") {
     import ConstantPropTagDefs._
     val input = Term.Body.Lit(Literal.Tag(name, identV, Literal.Int(1241, loc), enumTpe, loc), tagTpeV, loc)
-    val result = Interpreter.evalBodyTerm(input, Map())
+    val result = Interpreter.evalBodyTerm(input, mutable.Map())
     assertResult(Value.mkTag(name, "Val", Value.mkInt(1241)))(result)
   }
 

@@ -8,7 +8,7 @@ import scala.collection.mutable
 // TODO: Consider an EvaluationContext
 object Interpreter {
 
-  type Env = Map[String, Value]
+  type Env = mutable.Map[String, Value]
 
   // TODO: Use this exception:
 
@@ -28,7 +28,7 @@ object Interpreter {
    *
    * Assumes all input has been type-checked.
    */
-  def eval(expr: Expression, root: Root, env: Env = Map()): Value = expr.tpe match {
+  def eval(expr: Expression, root: Root, env: Env = mutable.Map.empty): Value = expr.tpe match {
     case Type.Int => Value.mkInt(evalInt(expr, root, env))
     case Type.Bool => if (evalBool(expr, root, env)) Value.True else Value.False
     case Type.Str => evalGeneral(expr, root, env)
@@ -49,7 +49,7 @@ object Interpreter {
    * example, the `exp` of Apply(exp, args, _, _), we directly call
    * `evalGeneral`.
    */
-  def evalInt(expr: Expression, root: Root, env: Env = Map()): Int = {
+  def evalInt(expr: Expression, root: Root, env: Env = mutable.Map.empty): Int = {
     def evalUnary(op: UnaryOperator, e: Expression): Int = op match {
       case UnaryOperator.UnaryPlus => +evalInt(e, root, env)
       case UnaryOperator.UnaryMinus => -evalInt(e, root, env)
@@ -111,7 +111,7 @@ object Interpreter {
    * Subexpressions are evaluated by calling specialized eval whenever
    * possible.
    */
-  def evalBool(expr: Expression, root: Root, env: Env = Map()): Boolean = {
+  def evalBool(expr: Expression, root: Root, env: Env = mutable.Map.empty): Boolean = {
     def evalUnary(op: UnaryOperator, e: Expression): Boolean = op match {
       case UnaryOperator.Not => !evalBool(e, root, env)
       case UnaryOperator.Set.IsEmpty => eval(e, root, env).toSet.isEmpty
@@ -179,7 +179,7 @@ object Interpreter {
    * Subexpressions are always evaluated by calling `eval`, which will call the
    * specialized eval whenever possible.
    */
-  def evalGeneral(expr: Expression, root: Root, env: Env = Map()): Value = {
+  def evalGeneral(expr: Expression, root: Root, env: Env = mutable.Map.empty): Value = {
     def evalUnary(op: UnaryOperator, v: Value): Value = op match {
       case UnaryOperator.Not => if (v.toBool) Value.False else Value.True
       case UnaryOperator.UnaryPlus => Value.mkInt(+v.toInt)
@@ -266,9 +266,9 @@ object Interpreter {
   }
 
   private def unify(pattern: Pattern, value: Value): Option[Env] = (pattern, value) match {
-    case (Pattern.Wildcard(_, _), _) => Some(Map())
-    case (Pattern.Var(ident, _, _), _) => Some(Map(ident.name -> value))
-    case (Pattern.Lit(lit, _, _), _) if evalLit(lit) == value => Some(Map())
+    case (Pattern.Wildcard(_, _), _) => Some(mutable.Map.empty)
+    case (Pattern.Var(ident, _, _), _) => Some(mutable.Map(ident.name -> value))
+    case (Pattern.Lit(lit, _, _), _) if evalLit(lit) == value => Some(mutable.Map.empty)
     case (Pattern.Tag(name1, ident1, innerPat, _, _), v) => v match {
       case v: Value.Tag if name1 == v.enum && ident1.name == v.tag => unify(innerPat, v.value)
       case _ => None
@@ -276,7 +276,7 @@ object Interpreter {
     case (Pattern.Tuple(pats, _, _), Value.Tuple(vals)) =>
       val envs = pats.zip(vals).map { case (p, v) => unify(p, v) }.collect { case Some(e) => e }
       if (pats.size == envs.size)
-        Some(envs.foldLeft(Map[String, Value]()) { case (acc, newEnv) => acc ++ newEnv })
+        Some(envs.foldLeft(mutable.Map.empty: Env) { case (acc, newEnv) => acc ++= newEnv })
       else None
     case _ => None
   }
@@ -293,7 +293,7 @@ object Interpreter {
     case Term.Head.Apply(name, terms, _, _) =>
       val function = root.constants(name).exp
       val evalArgs = terms.map(t => evalHeadTerm(t, root, env))
-      evalCall(function, evalArgs, root, env.toMap)
+      evalCall(function, evalArgs, root, env)
     case Term.Head.NativeField(field, tpe, _) => Value.java2flix(field.get(), tpe)
   }
 
@@ -303,7 +303,7 @@ object Interpreter {
     case Term.Body.Lit(lit, _, _) => evalLit(lit)
   }
 
-  def evalCall(function: Expression, args: List[Value], root: Root, env: Env = Map()): Value =
+  def evalCall(function: Expression, args: List[Value], root: Root, env: Env = mutable.Map.empty): Value =
     (evalGeneral(function, root, env): @unchecked) match {
       case Value.Closure(formals, body, closureEnv) =>
         val newEnv = closureEnv ++ formals.map(_.ident.name).zip(args).toMap
