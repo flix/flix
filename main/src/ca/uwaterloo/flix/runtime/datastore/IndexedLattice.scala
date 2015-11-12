@@ -158,13 +158,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], de
     * Returns the element part of the given array `a`.
     */
   def elmPart(a: Array[Value]): Array[Value] = {
-    val result = new Array[Value](numberOfElms)
-    var i = 0
-    while (i < numberOfElms) {
-      result(i) = a(i + numberOfKeys)
-      i = i + 1
-    }
-    return result
+    return util.Arrays.copyOfRange(a, numberOfKeys, a.length)
   }
 
   /**
