@@ -259,32 +259,33 @@ object Interpreter {
   // Returns `null` if there is no match.
   @tailrec private def matchRule(rules: List[(Pattern, Expression)], value: Value): (Expression, Env) = rules match {
     case (pattern, exp) :: rest =>
-      val env = unify(pattern, value)
-      if (env != null) (exp, env)
+      val env: Env = mutable.Map.empty
+      val result = unify(pattern, value, env)
+      if (result) (exp, env)
       else matchRule(rest, value)
     case Nil => null
   }
 
-  // Returns `null` if unification fails.
-  private def unify(pattern: Pattern, value: Value): Env = (pattern, value) match {
-    case (Pattern.Wildcard(_, _), _) => mutable.Map.empty
-    case (Pattern.Var(ident, _, _), _) => mutable.Map(ident.name -> value)
-    case (Pattern.Lit(lit, _, _), _) if evalLit(lit) == value => mutable.Map.empty
+  // Returns `false` if unification fails. Updates the environment map in place.
+  private def unify(pattern: Pattern, value: Value, env: Env): Boolean = (pattern, value) match {
+    case (Pattern.Wildcard(_, _), _) => true
+    case (Pattern.Var(ident, _, _), _) =>
+      env.update(ident.name, value)
+      true
+    case (Pattern.Lit(lit, _, _), _) if evalLit(lit) == value => true
     case (Pattern.Tag(name1, ident1, innerPat, _, _), v) => v match {
-      case v: Value.Tag if name1 == v.enum && ident1.name == v.tag => unify(innerPat, v.value)
-      case _ => null
+      case v: Value.Tag if name1 == v.enum && ident1.name == v.tag => unify(innerPat, v.value, env)
+      case _ => false
     }
     case (Pattern.Tuple(pats, _, _), Value.Tuple(vals)) =>
-      val result: Env = mutable.Map.empty
       var i = 0
       while (i < pats.length) {
-        val env = unify(pats(i), vals(i))
-        if (env == null) return null
-        result ++= env
+        val result = unify(pats(i), vals(i), env)
+        if (!result) return false
         i = i + 1
       }
-      result
-    case _ => null
+      true
+    case _ => false
   }
 
   // TODO: Need to come up with some more clean interfaces
