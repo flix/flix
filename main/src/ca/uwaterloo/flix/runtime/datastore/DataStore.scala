@@ -41,7 +41,7 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
         relations(name) = new IndexedRelation(r, idx, idx.head)
 
       case l: Collection.Lattice =>
-        lattices(name) = new IndexedLattice(l, idx, idx.head)
+        lattices(name) = new IndexedLattice(l, idx)
     }
   }
 
