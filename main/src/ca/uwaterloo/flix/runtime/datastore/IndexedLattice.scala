@@ -46,36 +46,36 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
     * Returns `true` iff the fact did not already exist in the relation.
     */
   def inferredFact(fact: Array[Value]): Boolean = {
-    val idx = getApproximateIndex(indexes, fact)
-    assert(idx != 0)
-
-    // Lookup the lattice map (create it, if it doesn't exist).
-    val ikey = keyOf(idx, fact)
-    val map = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
-    val key = keyPart(fact)
-
-    // Lookup the old element (create it, if it doesn't exist).
-    val newElm = elmPart(fact)
-    val oldElm = map.getOrElseUpdate(key, newElm)
-
-    // Case 1: The old element is implicitly bottom.
-    if (newElm eq oldElm) {
+    val matches = lookup(fact)
+    if (matches.isEmpty) {
+      newFact(fact)
       return true
+    } else {
+      val oldFact = matches.next()
+      if (!leq(elmPart(fact), elmPart(oldFact))) {
+        newFact(fact)
+        return true
+      }
     }
+    return false
+  }
 
-    // Case 2: The new element is subsumed by the old element.
-    if (leq(newElm, oldElm)) {
-      return false
-    }
-
-    // Case 3: Compute the least upper bound and update *all* indexes.
-    val result = lub(newElm, oldElm)
+  /**
+   * Updates all indexes and tables with a new `fact`.
+   */
+  private def newFact(fact: Array[Value]): Unit = {
+    // loop through all the indexes and update the tables.
     for (idx <- indexes) {
       val ikey = keyOf(idx, fact)
-      val map = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
-      map(key) = result
+      val table = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
+
+      val newElms = elmPart(fact)
+      val oldElms = table.getOrElseUpdate(keyPart(fact), newElms)
+
+      // compute the lub and update oldElms directly.
+      val result = lub(newElms, oldElms)
+      System.arraycopy(result, 0, oldElms, 0, oldElms.length)
     }
-    return true
   }
 
   /**
