@@ -8,7 +8,7 @@ import scala.collection.mutable
 
 import java.util
 
-class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], default: Int)(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
+class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
   /**
     * A map from indexes to a map from keys to rows (represented as map from keys to elements).
     */
@@ -46,43 +46,36 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], de
     * Returns `true` iff the fact did not already exist in the relation.
     */
   def inferredFact(fact: Array[Value]): Boolean = {
-    val matches = lookup(fact)
-    if (matches.isEmpty) {
-      newFact(fact)
-      return true
-    } else {
-      val oldFact = matches.next()
-      if (!leq(elmPart(fact), elmPart(oldFact))) {
-        newFact(fact)
-        return true
-      }
-    }
-    return false
-  }
+    val idx = getApproximateIndex(indexes, fact)
+    assert(idx != 0)
 
-  /**
-    * Updates all indexes and tables with a new `fact`.
-    */
-  private def newFact(fact: Array[Value]): Unit = {
-    // loop through all the indexes and update the tables.
+    // Lookup the lattice map (create it, if it doesn't exist).
+    val ikey = keyOf(idx, fact)
+    val map = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
+    val key = keyPart(fact)
+
+    // Lookup the old element (create it, if it doesn't exist).
+    val newElm = elmPart(fact)
+    val oldElm = map.getOrElseUpdate(key, newElm)
+
+    // Case 1: The old element is implicitly bottom.
+    if (newElm eq oldElm) {
+      return true
+    }
+
+    // Case 2: The new element is subsumed by the old element.
+    if (leq(newElm, oldElm)) {
+      return false
+    }
+
+    // Case 3: Compute the least upper bound and update *all* indexes.
+    val result = lub(newElm, oldElm)
     for (idx <- indexes) {
       val ikey = keyOf(idx, fact)
-      val table = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
-
-      val newElms = elmPart(fact)
-      val oldElms = table.getOrElseUpdate(keyPart(fact), newElms)
-
-      // if the oldElms did not exist (i.e. it was equal to bottom)
-      // then newElms == oldElms and we can return here.
-      if (newElms eq oldElms) {
-        // bottom element replaced by newElms.
-        return
-      }
-
-      // compute the lub and update oldElms directly.
-      val result = lub(newElms, oldElms)
-      System.arraycopy(result, 0, oldElms, 0, oldElms.length)
+      val map = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
+      map(key) = result
     }
+    return true
   }
 
   /**
@@ -136,7 +129,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], de
   /**
     * Returns all rows in the relation using a table scan.
     */
-  def scan: Iterator[(Key, Array[Value])] = store(default).iterator.flatMap {
+  def scan: Iterator[(Key, Array[Value])] = store(indexes.head).iterator.flatMap {
     case (key, m) => m.iterator
   }
 
@@ -214,9 +207,16 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], de
     var i = 0
     while (i < a.length) {
       val leq = latticeOps(i).leq
-      val value = Interpreter.eval2(leq, a(i), b(i), sCtx.root)
-      if (!value.toBool) {
-        return false
+      val v1: Value = a(i)
+      val v2: Value = b(i)
+
+      // if v1 and v2 are equal we do not need to compute leq.
+      if (v1 ne v2) {
+        // v1 and v2 are different, must compute leq.
+        val value = Interpreter.eval2(leq, v1, v2, sCtx.root)
+        if (!value.toBool) {
+          return false
+        }
       }
       i = i + 1
     }
