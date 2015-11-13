@@ -276,9 +276,8 @@ object Interpreter {
     }
     case (Pattern.Tuple(pats, _, _), Value.Tuple(vals)) =>
       val result: Env = mutable.Map.empty
-      val length = pats.length
       var i = 0
-      while (i < length) {
+      while (i < pats.length) {
         val env = unify(pats(i), vals(i))
         if (env == null) return null
         result ++= env
