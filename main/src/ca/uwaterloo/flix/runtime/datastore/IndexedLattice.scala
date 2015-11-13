@@ -32,6 +32,13 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
   }.toArray
 
   /**
+   * The bottom element(s).
+   */
+  private val Bottom: Array[Value] = latticeOps map {
+    case l => Interpreter.eval(l.bot, sCtx.root)
+  }
+
+  /**
     * Initialize the store for all indexes.
     */
   for (idx <- indexes) {
@@ -46,36 +53,33 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
     * Returns `true` iff the fact did not already exist in the relation.
     */
   def inferredFact(fact: Array[Value]): Boolean = {
-    val matches = lookup(fact)
-    if (matches.isEmpty) {
-      newFact(fact)
-      return true
-    } else {
-      val oldFact = matches.next()
-      if (!leq(elmPart(fact), elmPart(oldFact))) {
-        newFact(fact)
-        return true
+    // Get the index on every column.
+    val pat = util.Arrays.copyOfRange(fact, 0, numberOfKeys)
+    val idx = getExactIndex(indexes, pat)
+    assert(idx != 0)
+
+    // Lookup the lattice map (create it, if it doesn't exist).
+    val ikey = keyOf(idx, fact)
+    val map = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
+    val key = keyPart(fact)
+
+    // Lookup the old element (create it, if it doesn't exist).
+    val newElm = elmPart(fact)
+    val oldElm = map.getOrElseUpdate(key, Bottom)
+
+    // Compute the lub and check if it is subsumed by the old element.
+    val result = lub(newElm, oldElm)
+    if (!leq(result, oldElm)) {
+      // Update all indexes.
+      for (idx <- indexes) {
+        val ikey = keyOf(idx, fact)
+        val map = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
+        map(key) = result
       }
+      return true
     }
+
     return false
-  }
-
-  /**
-   * Updates all indexes and tables with a new `fact`.
-   */
-  private def newFact(fact: Array[Value]): Unit = {
-    // loop through all the indexes and update the tables.
-    for (idx <- indexes) {
-      val ikey = keyOf(idx, fact)
-      val table = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
-
-      val newElms = elmPart(fact)
-      val oldElms = table.getOrElseUpdate(keyPart(fact), newElms)
-
-      // compute the lub and update oldElms directly.
-      val result = lub(newElms, oldElms)
-      System.arraycopy(result, 0, oldElms, 0, oldElms.length)
-    }
   }
 
   /**
