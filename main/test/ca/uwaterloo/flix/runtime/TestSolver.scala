@@ -306,6 +306,26 @@ class TestSolver extends FunSuite {
     assert(C contains List(Value.mkInt(7), Value.mkInt(6)))
   }
 
+  test("Cross14") {
+    val s =
+      """rel A(x: Int);
+        |rel B(y: Int);
+        |rel C(z: Int);
+        |
+        |rel R(x: Int);
+        |
+        |A(1). A(2).
+        |// B empty
+        |C(1). C(2).
+        |
+        |R(x) :- A(x), B(x), C(x).
+      """.stripMargin
+
+    val model = Flix.fromStrings(s).get
+    val R = model.relations(NameR)
+    assert(R.isEmpty)
+  }
+
   test("Wildcard01") {
     val s =
       """rel A(x: Int, y: Int);
