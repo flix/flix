@@ -453,7 +453,7 @@ class TestSolver extends FunSuite {
     assert(!(B contains List(Value.mkInt(1), Value.mkInt(1))))
   }
 
-  test("Loop01") {
+  ignore("Loop01") {
     val s =
       """rel A(x: Int);
         |rel B(x: Int);

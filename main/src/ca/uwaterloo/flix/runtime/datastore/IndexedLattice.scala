@@ -32,6 +32,13 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
   }.toArray
 
   /**
+   * The bottom element(s).
+   */
+  private val Bottom: Array[Value] = latticeOps map {
+    case l => Interpreter.eval(l.bot, sCtx.root)
+  }
+
+  /**
     * Initialize the store for all indexes.
     */
   for (idx <- indexes) {
@@ -46,7 +53,9 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
     * Returns `true` iff the fact did not already exist in the relation.
     */
   def inferredFact(fact: Array[Value]): Boolean = {
-    val idx = getApproximateIndex(indexes, fact)
+    // Get the index on every column.
+    val pat = util.Arrays.copyOfRange(fact, 0, numberOfKeys)
+    val idx = getExactIndex(indexes, pat)
     assert(idx != 0)
 
     // Lookup the lattice map (create it, if it doesn't exist).
@@ -56,26 +65,21 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
 
     // Lookup the old element (create it, if it doesn't exist).
     val newElm = elmPart(fact)
-    val oldElm = map.getOrElseUpdate(key, newElm)
+    val oldElm = map.getOrElseUpdate(key, Bottom)
 
-    // Case 1: The old element is implicitly bottom.
-    if (newElm eq oldElm) {
+    // Compute the lub and check if it is subsumed by the old element.
+    val result = lub(newElm, oldElm)
+    if (!leq(result, oldElm)) {
+      // Update all indexes.
+      for (idx <- indexes) {
+        val ikey = keyOf(idx, fact)
+        val map = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
+        map(key) = result
+      }
       return true
     }
 
-    // Case 2: The new element is subsumed by the old element.
-    if (leq(newElm, oldElm)) {
-      return false
-    }
-
-    // Case 3: Compute the least upper bound and update *all* indexes.
-    val result = lub(newElm, oldElm)
-    for (idx <- indexes) {
-      val ikey = keyOf(idx, fact)
-      val map = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
-      map(key) = result
-    }
-    return true
+    return false
   }
 
   /**
