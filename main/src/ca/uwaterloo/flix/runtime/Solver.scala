@@ -106,7 +106,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     Console.out.println(">> Rule Evaluation Time")
     val table = new AsciiTable().withCols("Line", "Rule", "Hitcount", "Time (msec)", "Time/Hit (usec)")
     for (rule <- sCtx.root.rules.toSeq.sortBy(_.elapsedTime).reverse) {
-      table.mkRow(List(rule.head.loc.beginLine, rule.head.loc.line(), rule.hitcount, rule.elapsedTime / 1000000,  (rule.elapsedTime / rule.hitcount) / 1000))
+      table.mkRow(List(rule.head.loc.beginLine, rule.head.loc.line(), rule.hitcount, rule.elapsedTime / 1000000, (rule.elapsedTime / rule.hitcount) / 1000))
     }
     table.write(Console.out)
     Console.out.println()
@@ -172,95 +172,96 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   // TODO: Need a static layout of variables and then implement `row` as an array.
   def evalBody(rule: Constraint.Rule, env0: mutable.Map[String, Value]): Unit = {
     val t = System.nanoTime()
-    /**
-      * Computes the cross product of all collections in the body.
-      */
-    def cross(ps: List[Predicate.Body.Collection], row: mutable.Map[String, Value]): Unit = ps match {
-      case Nil =>
-        // cross product complete, now filter
-        loop(rule.loops, row)
-      case (p: Predicate.Body.Collection) :: xs =>
-        // lookup the relation or lattice.
-        val collection = sCtx.root.collections(p.name) match {
-          case r: Collection.Relation => dataStore.relations(p.name)
-          case l: Collection.Lattice => dataStore.lattices(p.name)
-        }
 
-        // evaluate all terms in the predicate.
-        val pat = new Array[Value](p.arity)
-        var i = 0
-        while (i < pat.length) {
-          pat(i) = eval(p.termsArray(i), row)
-          i = i + 1
-        }
-
-        // lookup all matching rows.
-        for (matchedRow <- collection.lookup(pat)) {
-          // copy the environment for every row.
-          val newRow = row.clone()
-
-          var i = 0
-          while (i < matchedRow.length) {
-            val varName = p.index2var(i)
-            if (varName != null)
-              newRow.update(varName, matchedRow(i))
-            i = i + 1
-          }
-
-          // compute the cross product of the remaining
-          // collections under the new environment.
-          cross(xs, newRow)
-        }
-    }
-
-    /**
-      * Unfolds the given loop predicates `ps` over the initial `row`.
-      */
-    def loop(ps: List[Predicate.Body.Loop], row: mutable.Map[String, Value]): Unit = ps match {
-      case Nil => filter(rule.filters, row)
-      case Predicate.Body.Loop(name, term, _, _) :: rest =>
-        val result = Interpreter.evalHeadTerm(term, sCtx.root, row)
-        ???
-      // TODO: Cast to Set and iterate.
-      // TODO: Call loop from cross.
-    }
-
-    /**
-      * Filters the given `row` through all filter functions in the body.
-      */
-    @tailrec
-    def filter(ps: List[Predicate.Body.Function], row: mutable.Map[String, Value]): Unit = ps match {
-      case Nil =>
-        // filter complete, now check disjointness
-        disjoint(rule.disjoint, row)
-      case Predicate.Body.Function(name, terms, _, _) :: xs =>
-        val lambda = sCtx.root.constants(name)
-        val args = terms.map(t => Interpreter.evalBodyTerm(t, row.toMap))
-        val result = Interpreter.evalCall(lambda.exp, args, sCtx.root, row.toMap).toBool
-        if (result)
-          filter(xs, row)
-    }
-
-    /**
-      * Filters the given `row` through all disjointness filters in the body.
-      */
-    @tailrec
-    def disjoint(ps: List[Predicate.Body.NotEqual], row: mutable.Map[String, Value]): Unit = ps match {
-      case Nil =>
-        // rule body complete, evaluate the head.
-        evalHead(rule.head, row, enqueue = true)
-      case Predicate.Body.NotEqual(ident1, ident2, _, _) :: xs =>
-        val value1 = row(ident1.name)
-        val value2 = row(ident2.name)
-        if (value1 != value2) {
-          disjoint(xs, row)
-        }
-    }
-
-    cross(rule.collections, env0)
+    cross(rule, rule.collections, env0)
 
     rule.elapsedTime += System.nanoTime() - t
     rule.hitcount += 1
+  }
+
+  /**
+    * Computes the cross product of all collections in the body.
+    */
+  def cross(rule: Constraint.Rule, ps: List[Predicate.Body.Collection], row: mutable.Map[String, Value]): Unit = ps match {
+    case Nil =>
+      // cross product complete, now filter
+      loop(rule, rule.loops, row)
+    case (p: Predicate.Body.Collection) :: xs =>
+      // lookup the relation or lattice.
+      val collection = sCtx.root.collections(p.name) match {
+        case r: Collection.Relation => dataStore.relations(p.name)
+        case l: Collection.Lattice => dataStore.lattices(p.name)
+      }
+
+      // evaluate all terms in the predicate.
+      val pat = new Array[Value](p.arity)
+      var i = 0
+      while (i < pat.length) {
+        pat(i) = eval(p.termsArray(i), row)
+        i = i + 1
+      }
+
+      // lookup all matching rows.
+      for (matchedRow <- collection.lookup(pat)) {
+        // copy the environment for every row.
+        val newRow = row.clone()
+
+        var i = 0
+        while (i < matchedRow.length) {
+          val varName = p.index2var(i)
+          if (varName != null)
+            newRow.update(varName, matchedRow(i))
+          i = i + 1
+        }
+
+        // compute the cross product of the remaining
+        // collections under the new environment.
+        cross(rule, xs, newRow)
+      }
+  }
+
+  /**
+    * Unfolds the given loop predicates `ps` over the initial `row`.
+    */
+  def loop(rule: Constraint.Rule, ps: List[Predicate.Body.Loop], row: mutable.Map[String, Value]): Unit = ps match {
+    case Nil => filter(rule, rule.filters, row)
+    case Predicate.Body.Loop(name, term, _, _) :: rest =>
+      val result = Interpreter.evalHeadTerm(term, sCtx.root, row)
+      ???
+    // TODO: Cast to Set and iterate.
+    // TODO: Call loop from cross.
+  }
+
+  /**
+    * Filters the given `row` through all filter functions in the body.
+    */
+  @tailrec
+  private def filter(rule: Constraint.Rule, ps: List[Predicate.Body.Function], row: mutable.Map[String, Value]): Unit = ps match {
+    case Nil =>
+      // filter complete, now check disjointness
+      disjoint(rule, rule.disjoint, row)
+    case Predicate.Body.Function(name, terms, _, _) :: xs =>
+      val lambda = sCtx.root.constants(name)
+      val args = terms.map(t => Interpreter.evalBodyTerm(t, row.toMap))
+      val result = Interpreter.evalCall(lambda.exp, args, sCtx.root, row.toMap).toBool
+      if (result)
+        filter(rule, xs, row)
+  }
+
+  /**
+    * Filters the given `row` through all disjointness filters in the body.
+    */
+  @tailrec
+  private def disjoint(rule: Constraint.Rule, ps: List[Predicate.Body.NotEqual], row: mutable.Map[String, Value]): Unit = ps match {
+    case Nil =>
+      // rule body complete, evaluate the head.
+      evalHead(rule.head, row, enqueue = true)
+    case Predicate.Body.NotEqual(ident1, ident2, _, _) :: xs =>
+      val value1 = row(ident1.name)
+      val value2 = row(ident2.name)
+      if (value1 != value2) {
+        disjoint(rule, xs, row)
+      }
   }
 
   /**
