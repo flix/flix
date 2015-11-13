@@ -313,7 +313,12 @@ object Interpreter {
   def evalCall(function: Expression, args: List[Value], root: Root, env: Env = mutable.Map.empty): Value =
     (evalGeneral(function, root, env): @unchecked) match {
       case Value.Closure(formals, body, closureEnv) =>
-        val newEnv = closureEnv ++ formals.map(_.ident.name).zip(args).toMap
+        val newEnv = closureEnv.clone()
+        var i = 0
+        while (i < formals.length) {
+          newEnv.update(formals(i).ident.name, args(i))
+          i = i + 1
+        }
         eval(body, root, newEnv)
       case Value.NativeMethod(method) =>
         val nativeArgs = args.map(_.toJava)
