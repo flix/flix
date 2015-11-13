@@ -72,16 +72,12 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], de
       val newElms = elmPart(fact)
       val oldElms = table.getOrElseUpdate(keyPart(fact), newElms)
 
-      // if the oldElms did not exist (i.e. it was equal to bottom)
-      // then newElms == oldElms and we can return here.
-      if (newElms eq oldElms) {
-        // bottom element replaced by newElms.
-        return
+      // if newElms and oldElms are different we must compute their lub.
+      if (newElms ne oldElms) {
+        // compute the lub and update oldElms directly.
+        val result = lub(newElms, oldElms)
+        System.arraycopy(result, 0, oldElms, 0, oldElms.length)
       }
-
-      // compute the lub and update oldElms directly.
-      val result = lub(newElms, oldElms)
-      System.arraycopy(result, 0, oldElms, 0, oldElms.length)
     }
   }
 
@@ -214,9 +210,16 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int], de
     var i = 0
     while (i < a.length) {
       val leq = latticeOps(i).leq
-      val value = Interpreter.eval2(leq, a(i), b(i), sCtx.root)
-      if (!value.toBool) {
-        return false
+      val v1: Value = a(i)
+      val v2: Value = b(i)
+
+      // if v1 and v2 are equal we do not need to compute leq.
+      if (v1 ne v2) {
+        // v1 and v2 are different, must compute leq.
+        val value = Interpreter.eval2(leq, v1, v2, sCtx.root)
+        if (!value.toBool) {
+          return false
+        }
       }
       i = i + 1
     }
