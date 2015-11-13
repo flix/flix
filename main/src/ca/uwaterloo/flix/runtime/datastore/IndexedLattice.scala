@@ -191,7 +191,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
         if (rv != pv) {
           val lattice = latticeOps(i)
           val bot = Interpreter.eval(lattice.bot, sCtx.root)
-          val glb = Interpreter.eval2(lattice.glb, pv, rv, sCtx.root)
+          val glb = Interpreter.evalCall2(lattice.glb, pv, rv, sCtx.root)
 
           if (bot == glb)
             return false
@@ -217,7 +217,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
       // if v1 and v2 are equal we do not need to compute leq.
       if (v1 ne v2) {
         // v1 and v2 are different, must compute leq.
-        val value = Interpreter.eval2(leq, v1, v2, sCtx.root)
+        val value = Interpreter.evalCall2(leq, v1, v2, sCtx.root)
         if (!value.toBool) {
           return false
         }
@@ -235,7 +235,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
     var i = 0
     while (i < result.length) {
       val lub = latticeOps(i).lub
-      val value = Interpreter.eval2(lub, a(i), b(i), sCtx.root)
+      val value = Interpreter.evalCall2(lub, a(i), b(i), sCtx.root)
       result(i) = value
       i = i + 1
     }

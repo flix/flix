@@ -320,7 +320,18 @@ object Interpreter {
         Value.java2flix(method.invoke(null, nativeArgs: _*), tpe)
     }
 
-  def eval2(function: Expression, arg1: Value, arg2: Value, root: Root): Value =
+  def evalCall1(function: Expression, arg: Value, root: Root): Value =
+    (evalGeneral(function, root): @unchecked) match {
+      case Value.Closure(formals, body, closureEnv) =>
+        val newEnv = closureEnv.clone()
+        newEnv.update(formals(0).ident.name, arg)
+        eval(body, root, newEnv)
+      case Value.NativeMethod(method) =>
+        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
+        Value.java2flix(method.invoke(null, arg.toJava), tpe)
+    }
+
+  def evalCall2(function: Expression, arg1: Value, arg2: Value, root: Root): Value =
     (evalGeneral(function, root): @unchecked) match {
       case Value.Closure(formals, body, closureEnv) =>
         val newEnv = closureEnv.clone()
@@ -330,5 +341,47 @@ object Interpreter {
       case Value.NativeMethod(method) =>
         val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
         Value.java2flix(method.invoke(null, arg1.toJava, arg2.toJava), tpe)
+    }
+
+  def evalCall3(function: Expression, arg1: Value, arg2: Value, arg3: Value, root: Root): Value =
+    (evalGeneral(function, root): @unchecked) match {
+      case Value.Closure(formals, body, closureEnv) =>
+        val newEnv = closureEnv.clone()
+        newEnv.update(formals(0).ident.name, arg1)
+        newEnv.update(formals(1).ident.name, arg2)
+        newEnv.update(formals(2).ident.name, arg3)
+        eval(body, root, newEnv)
+      case Value.NativeMethod(method) =>
+        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
+        Value.java2flix(method.invoke(null, arg1.toJava, arg2.toJava, arg3.toJava), tpe)
+    }
+
+  def evalCall4(function: Expression, arg1: Value, arg2: Value, arg3: Value, arg4: Value, root: Root): Value =
+    (evalGeneral(function, root): @unchecked) match {
+      case Value.Closure(formals, body, closureEnv) =>
+        val newEnv = closureEnv.clone()
+        newEnv.update(formals(0).ident.name, arg1)
+        newEnv.update(formals(1).ident.name, arg2)
+        newEnv.update(formals(2).ident.name, arg3)
+        newEnv.update(formals(3).ident.name, arg4)
+        eval(body, root, newEnv)
+      case Value.NativeMethod(method) =>
+        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
+        Value.java2flix(method.invoke(null, arg1.toJava, arg2.toJava, arg3.toJava, arg4.toJava), tpe)
+    }
+
+  def evalCall5(function: Expression, arg1: Value, arg2: Value, arg3: Value, arg4: Value, arg5: Value, root: Root): Value =
+    (evalGeneral(function, root): @unchecked) match {
+      case Value.Closure(formals, body, closureEnv) =>
+        val newEnv = closureEnv.clone()
+        newEnv.update(formals(0).ident.name, arg1)
+        newEnv.update(formals(1).ident.name, arg2)
+        newEnv.update(formals(2).ident.name, arg3)
+        newEnv.update(formals(3).ident.name, arg4)
+        newEnv.update(formals(4).ident.name, arg5)
+        eval(body, root, newEnv)
+      case Value.NativeMethod(method) =>
+        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
+        Value.java2flix(method.invoke(null, arg1.toJava, arg2.toJava, arg3.toJava, arg4.toJava, arg5.toJava), tpe)
     }
 }
