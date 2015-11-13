@@ -68,9 +68,13 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
       return false
     }
 
-    // Case 3: Compute the least upper bound and overwrite the current value.
+    // Case 3: Compute the least upper bound and update *all* indexes.
     val result = lub(newElm, oldElm)
-    System.arraycopy(result, 0, oldElm, 0, result.length)
+    for (idx <- indexes) {
+      val ikey = keyOf(idx, fact)
+      val map = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
+      map(key) = result
+    }
     return true
   }
 
