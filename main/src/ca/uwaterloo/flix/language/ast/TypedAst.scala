@@ -391,7 +391,10 @@ object TypedAst {
       * @param tpe the return type of the function.
       * @param loc the source location.
       */
-    case class Apply(exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Apply(exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression {
+      // TODO: Move
+      val argsAsArray: Array[TypedAst.Expression] = args.toArray
+    }
 
     /**
       * A typed AST node representing a unary expression.
@@ -739,7 +742,10 @@ object TypedAst {
         * @param tpe the type of the predicate.
         * @param loc the source location.
         */
-      case class Function(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Function(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body {
+        // TODO: Move
+        val termsAsArray: Array[TypedAst.Term.Body] = terms.toArray
+      }
 
       /**
         * A typed not equal predicate that occurs in the body of a rule.
@@ -821,7 +827,10 @@ object TypedAst {
         * @param tpe the type of the term.
         * @param loc the source location.
         */
-      case class Apply(name: Name.Resolved, args: List[TypedAst.Term.Head], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Term.Head
+      case class Apply(name: Name.Resolved, args: List[TypedAst.Term.Head], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Term.Head {
+        // TODO: Move
+        val argsAsArray: Array[TypedAst.Term.Head] = args.toArray
+      }
 
       /**
         * A typed AST node representing a reference to a native JVM static field.

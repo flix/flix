@@ -54,9 +54,14 @@ object Interpreter {
     case Expression.Lit(literal, _, _) => evalLit(literal).toInt
     case Expression.Var(ident, _, loc) => env(ident.name).toInt
     case Expression.Ref(name, _, _) => evalInt(root.constants(name).exp, root, env)
-    case Expression.Apply(exp, args, _, _) =>
-      val evalArgs = args.map(x => eval(x, root, env)) // TODO: args is a list
-      evalCall(exp, evalArgs, root, env).toInt
+    case apply: Expression.Apply =>
+      val evalArgs = new Array[Value](apply.argsAsArray.length)
+      var i = 0
+      while (i < evalArgs.length) {
+        evalArgs(i) = eval(apply.argsAsArray(i), root, env)
+        i = i + 1
+      }
+      evalCall(apply.exp, evalArgs, root, env).toInt
     case Expression.Unary(op, exp, _, _) => evalIntUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => evalIntBinary(op, exp1, exp2, root, env)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
@@ -113,9 +118,14 @@ object Interpreter {
     case Expression.Lit(literal, _, _) => evalLit(literal).toBool
     case Expression.Var(ident, _, loc) => env(ident.name).toBool
     case Expression.Ref(name, _, _) => evalBool(root.constants(name).exp, root, env)
-    case Expression.Apply(exp, args, _, _) =>
-      val evalArgs = args.map(x => eval(x, root, env)) // TODO: args is a list
-      evalCall(exp, evalArgs, root, env).toBool
+    case apply: Expression.Apply =>
+      val evalArgs = new Array[Value](apply.argsAsArray.length)
+      var i = 0
+      while (i < evalArgs.length) {
+        evalArgs(i) = eval(apply.argsAsArray(i), root, env)
+        i = i + 1
+      }
+      evalCall(apply.exp, evalArgs, root, env).toBool
     case Expression.Unary(op, exp, _, _) => evalBoolUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => evalBoolBinary(op, exp1, exp2, root, env)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
@@ -188,9 +198,14 @@ object Interpreter {
         i = i + 1
       }
       Value.Closure(formals, exp.body, env.clone())
-    case Expression.Apply(exp, args, _, _) =>
-      val evalArgs = args.map(x => eval(x, root, env)) // TODO: args is a list
-      evalCall(exp, evalArgs, root, env)
+    case apply: Expression.Apply =>
+      val evalArgs = new Array[Value](apply.argsAsArray.length)
+      var i = 0
+      while (i < evalArgs.length) {
+        evalArgs(i) = eval(apply.argsAsArray(i), root, env)
+        i = i + 1
+      }
+      evalCall(apply.exp, evalArgs, root, env)
     case Expression.Unary(op, exp, _, _) => evalGeneralUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, exp1, exp2, root, env)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
@@ -324,9 +339,14 @@ object Interpreter {
   def evalHeadTerm(t: Term.Head, root: Root, env: mutable.Map[String, Value]): Value = t match {
     case Term.Head.Var(x, _, _) => env(x.name)
     case Term.Head.Lit(lit, _, _) => evalLit(lit)
-    case Term.Head.Apply(name, terms, _, _) =>
-      val function = root.constants(name).exp
-      val evalArgs = terms.map(t => evalHeadTerm(t, root, env)) // TODO: terms is a list
+    case term: Term.Head.Apply =>
+      val function = root.constants(term.name).exp
+      val evalArgs = new Array[Value](term.argsAsArray.length)
+      var i = 0
+      while (i < evalArgs.length) {
+        evalArgs(i) = evalHeadTerm(term.argsAsArray(i), root, env)
+        i = i + 1
+      }
       evalCall(function, evalArgs, root, env)
     case Term.Head.NativeField(field, tpe, _) => Value.java2flix(field.get(), tpe)
   }
@@ -337,17 +357,22 @@ object Interpreter {
     case Term.Body.Lit(lit, _, _) => evalLit(lit)
   }
 
-  def evalCall(function: Expression, args: List[Value], root: Root, env: Env = mutable.Map.empty): Value =
+  def evalCall(function: Expression, args: Array[Value], root: Root, env: Env = mutable.Map.empty): Value =
     (evalGeneral(function, root, env): @unchecked) match {
       case Value.Closure(formals, body, closureEnv) =>
         var i = 0
         while (i < formals.length) {
-          closureEnv.update(formals(i), args(i)) // TODO: args is a list
+          closureEnv.update(formals(i), args(i))
           i = i + 1
         }
         eval(body, root, closureEnv)
       case Value.NativeMethod(method) =>
-        val nativeArgs = args.map(_.toJava) // TODO: args is a list
+        val nativeArgs = new Array[java.lang.Object](args.length)
+        var i = 0
+        while (i < args.length) {
+          nativeArgs(i) = args(i).toJava
+          i = i + 1
+        }
         val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
         Value.java2flix(method.invoke(null, nativeArgs: _*), tpe)
     }
