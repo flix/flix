@@ -39,21 +39,21 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
   }
 
   /**
-    * The Leq operator(s).
+    * The Leq operator(s). Must be defined as Flix functions.
     */
   private val Leq: Array[Value.Closure] = latticeOps map {
     case l => Interpreter.eval(l.leq, sCtx.root).asInstanceOf[Value.Closure]
   }
 
   /**
-    * The Lub operator(s).
+    * The Lub operator(s). Must be defined as Flix functions.
     */
   private val Lub: Array[Value.Closure] = latticeOps map {
     case l => Interpreter.eval(l.lub, sCtx.root).asInstanceOf[Value.Closure]
   }
 
   /**
-    * The Glb operator(s).
+    * The Glb operator(s). Must be defined as Flix functions.
     */
   private val Glb: Array[Value.Closure] = latticeOps map {
     case l => Interpreter.eval(l.glb, sCtx.root).asInstanceOf[Value.Closure]

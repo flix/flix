@@ -129,7 +129,7 @@ object Interpreter {
       val value = eval(exp, root, env)
       val result = matchRule(rules, value)
       if (result != null)
-        evalBool(result._1, root, env ++ result._2)
+        evalBool(result._1, root, env ++ result._2) // TODO: Slow?
       else
         throw new RuntimeException(s"Unmatched value $value.")
     case Expression.NativeField(field, _, _) =>
@@ -181,13 +181,13 @@ object Interpreter {
     case Expression.Var(ident, _, loc) => env(ident.name)
     case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
     case exp: Expression.Lambda =>
-      val args = new Array[String](exp.argsAsArray.length)
+      val formals = new Array[String](exp.argsAsArray.length)
       var i = 0
-      while (i < args.length) {
-        args(i) = exp.argsAsArray(i).ident.name
+      while (i < formals.length) {
+        formals(i) = exp.argsAsArray(i).ident.name
         i = i + 1
       }
-      Value.Closure(args, exp.body, env.clone())
+      Value.Closure(formals, exp.body, env.clone())
     case Expression.Apply(exp, args, _, _) =>
       val evalArgs = args.map(x => eval(x, root, env))
       evalCall(exp, evalArgs, root, env)
@@ -204,7 +204,7 @@ object Interpreter {
       val value = eval(exp, root, env)
       val result = matchRule(rules, value)
       if (result != null)
-        eval(result._1, root, env ++ result._2)
+        eval(result._1, root, env ++ result._2) // TODO: Slow?
       else
         throw new RuntimeException(s"Unmatched value $value.")
     case Expression.NativeField(field, tpe, _) => Value.java2flix(field.get(), tpe)
@@ -218,7 +218,6 @@ object Interpreter {
         i = i + 1
       }
       Value.Tuple(elms)
-
     case Expression.Set(elms, _, _) => Value.Set(elms.map(e => eval(e, root, env)).toSet)
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
   }
@@ -334,13 +333,12 @@ object Interpreter {
   def evalCall(function: Expression, args: List[Value], root: Root, env: Env = mutable.Map.empty): Value =
     (evalGeneral(function, root, env): @unchecked) match {
       case Value.Closure(formals, body, closureEnv) =>
-        val newEnv = closureEnv.clone()
         var i = 0
         while (i < formals.length) {
-          newEnv.update(formals(i), args(i))
+          closureEnv.update(formals(i), args(i))
           i = i + 1
         }
-        eval(body, root, newEnv)
+        eval(body, root, closureEnv)
       case Value.NativeMethod(method) =>
         val nativeArgs = args.map(_.toJava)
         val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
