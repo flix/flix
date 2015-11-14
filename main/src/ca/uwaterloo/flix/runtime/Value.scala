@@ -168,15 +168,7 @@ object Value {
 
     override def equals(obj: scala.Any): Boolean = obj match {
       case that: Value.Tuple =>
-        if (this.elms.length != that.elms.length)
-          return false
-        var i = 0
-        while (i < this.elms.length) {
-          if (this.elms(i) != that.elms(i))
-            return false
-          i = i + 1
-        }
-        true
+        util.Arrays.equals(this.elms.asInstanceOf[Array[AnyRef]], that.elms.asInstanceOf[Array[AnyRef]])
       case _ => false
     }
 
@@ -190,15 +182,8 @@ object Value {
 
     override def equals(obj: scala.Any): Boolean = obj match {
       case that: Value.Closure =>
-        if (this.formals.length != that.formals.length || this.body != that.body || this.env != that.env)
-          return false
-        var i = 0
-        while (i < this.formals.length) {
-          if (this.formals(i) != that.formals(i))
-            return false
-          i = i + 1
-        }
-        true
+        util.Arrays.equals(this.formals.asInstanceOf[Array[AnyRef]], that.formals.asInstanceOf[Array[AnyRef]]) &&
+          this.body == that.body && this.env == that.env
       case _ => false
     }
 
