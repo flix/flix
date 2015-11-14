@@ -163,10 +163,11 @@ object Value {
     * Value.Tuple, Value.Set, Value.Closure implementations                   *
     * **************************************************************************/
 
-  case class Tuple(elms: Array[Value]) extends Value {
+  final case class Tuple(elms: Array[Value]) extends Value {
+    override def toString: java.lang.String = s"Value.Tuple(Array(${elms.mkString(",")}))"
 
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: Value.Tuple => {
+      case that: Value.Tuple =>
         if (this.elms.length != that.elms.length)
           return false
         var i = 0
@@ -175,26 +176,43 @@ object Value {
             return false
           i = i + 1
         }
-        return true
-      }
+        true
       case _ => false
     }
 
-    override def hashCode(): scala.Int = util.Arrays.hashCode(elms.asInstanceOf[Array[AnyRef]])
+    override def hashCode: scala.Int = util.Arrays.hashCode(elms.asInstanceOf[Array[AnyRef]])
   }
 
   case class Set(elms: scala.collection.immutable.Set[Value]) extends Value
 
-  // TODO: Override equals and hashCode?
-  case class Closure(formals: Array[String], body: TypedAst.Expression, env: mutable.Map[String, Value]) extends Value
+  final case class Closure(formals: Array[String], body: TypedAst.Expression, env: mutable.Map[String, Value]) extends Value {
+    override def toString: java.lang.String = s"Value.Closure(Array(${formals.mkString(",")}), $body, $env)"
+
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: Value.Closure =>
+        if (this.formals.length != that.formals.length || this.body != that.body || this.env != that.env)
+          return false
+        var i = 0
+        while (i < this.formals.length) {
+          if (this.formals(i) != that.formals(i))
+            return false
+          i = i + 1
+        }
+        true
+      case _ => false
+    }
+
+    override def hashCode: scala.Int =
+      41 * (41 * (41 + util.Arrays.hashCode(formals.asInstanceOf[Array[AnyRef]])) + body.hashCode) + env.hashCode
+  }
 
   /** *************************************************************************
     * Value.Native, Value.NativeMethod implementations                        *
     * **************************************************************************/
 
-  case class Native(value: AnyRef) extends Value
+  final case class Native(value: AnyRef) extends Value
 
-  case class NativeMethod(method: Method) extends Value
+  final case class NativeMethod(method: Method) extends Value
 
   /** *************************************************************************
     * Convert from native values to Flix values                               *
