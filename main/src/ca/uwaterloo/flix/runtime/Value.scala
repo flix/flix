@@ -218,7 +218,7 @@ object Value {
     * Convert from native values to Flix values                               *
     * **************************************************************************/
 
-  private def makeTuple(typs: List[Type], elms: java.lang.Object*): Value.Tuple = {
+  private def makeTuple(typs: Array[Type], elms: java.lang.Object*): Value.Tuple = {
     val tupleElms = new Array[Value](elms.length)
     var i = 0
     while (i < elms.length) {
@@ -232,19 +232,19 @@ object Value {
     case Type.Bool => if (obj.asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
     case Type.Int => Value.mkInt(obj.asInstanceOf[java.lang.Integer].intValue)
     case Type.Str => Value.mkStr(obj.asInstanceOf[java.lang.String])
-    case Type.Tuple(typs) => typs.size match {
+    case typs: Type.Tuple => typs.asArray.length match {
       case 2 =>
         val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object)]
-        makeTuple(typs, t._1, t._2)
+        makeTuple(typs.asArray, t._1, t._2)
       case 3 =>
         val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object)]
-        makeTuple(typs, t._1, t._2, t._3)
+        makeTuple(typs.asArray, t._1, t._2, t._3)
       case 4 =>
         val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
-        makeTuple(typs, t._1, t._2, t._3, t._4)
+        makeTuple(typs.asArray, t._1, t._2, t._3, t._4)
       case 5 =>
         val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
-        makeTuple(typs, t._1, t._2, t._3, t._4, t._5)
+        makeTuple(typs.asArray, t._1, t._2, t._3, t._4, t._5)
       case _ => Value.Native(obj)
     }
     case Type.Set(typ) =>

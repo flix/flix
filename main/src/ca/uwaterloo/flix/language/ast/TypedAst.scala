@@ -462,6 +462,7 @@ object TypedAst {
       * @param loc the source location.
       */
     case class Tuple(elms: List[TypedAst.Expression], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression {
+      // TODO: Move
       val asArray: Array[TypedAst.Expression] = elms.toArray
     }
 
@@ -930,7 +931,10 @@ object TypedAst {
       *
       * @param elms the types of the elements.
       */
-    case class Tuple(elms: List[TypedAst.Type]) extends TypedAst.Type
+    case class Tuple(elms: List[TypedAst.Type]) extends TypedAst.Type {
+      // TODO: Move
+      val asArray: Array[TypedAst.Type] = elms.toArray
+    }
 
     /**
       * An AST node representing a set type.
