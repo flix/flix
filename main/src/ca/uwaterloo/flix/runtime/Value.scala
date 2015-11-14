@@ -22,8 +22,8 @@ sealed trait Value {
     case v: Value.Bool => boolean2Boolean(v.b)
     case v: Value.Int => int2Integer(v.i)
     case v: Value.Str => v.s
-    case Value.Tuple(elms) if 2 <= elms.size && elms.size <= 5 =>
-      val javaElms = new Array[java.lang.Object](elms.size)
+    case Value.Tuple(elms) if 2 <= elms.length && elms.length <= 5 =>
+      val javaElms = new Array[java.lang.Object](elms.length)
       var i = 0
       while (i < javaElms.length) {
         javaElms(i) = elms(i).toJava
@@ -219,13 +219,13 @@ object Value {
     * **************************************************************************/
 
   private def makeTuple(typs: List[Type], elms: java.lang.Object*): Value.Tuple = {
-    val tupleElms: ListBuffer[Value] = mutable.ListBuffer()
+    val tupleElms = new Array[Value](elms.length)
     var i = 0
     while (i < elms.length) {
-      tupleElms += java2flix(elms(i), typs(i))
+      tupleElms(i) = java2flix(elms(i), typs(i))
       i = i + 1
     }
-    Value.Tuple(tupleElms.toArray)
+    Value.Tuple(tupleElms)
   }
 
   def java2flix(obj: AnyRef, tpe: Type): Value = tpe match {
