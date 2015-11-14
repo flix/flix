@@ -19,8 +19,8 @@
 
 //// Indexes
 //// =========
-  index SUBefore({location, object}, {location}, {object});
-  index SUAfter({location, object}, {location});
+  index SUBefore({location, object}, {location});
+  index SUAfter({location, object});
 
   index AddrOf({variable, object})
   index Copy({to, from}, {from});
