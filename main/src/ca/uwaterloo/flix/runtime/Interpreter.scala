@@ -128,8 +128,10 @@ object Interpreter {
     case Expression.Match(exp, rules, _, _) =>
       val value = eval(exp, root, env)
       val result = matchRule(rules, value)
-      if (result != null) evalBool(result._1, root, env ++ result._2)
-      else throw new RuntimeException(s"Unmatched value $value.")
+      if (result != null)
+        evalBool(result._1, root, env ++ result._2)
+      else
+        throw new RuntimeException(s"Unmatched value $value.")
     case Expression.NativeField(field, _, _) =>
       field.get().asInstanceOf[java.lang.Boolean].booleanValue()
     case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
@@ -178,7 +180,14 @@ object Interpreter {
     case Expression.Lit(literal, _, _) => evalLit(literal)
     case Expression.Var(ident, _, loc) => env(ident.name)
     case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
-    case Expression.Lambda(formals, body, _, _) => Value.Closure(formals, body, env)
+    case exp: Expression.Lambda =>
+      val args = new Array[String](exp.argsAsArray.length)
+      var i = 0
+      while (i < args.length) {
+        args(i) = exp.argsAsArray(i).ident.name
+        i = i + 1
+      }
+      Value.Closure(args, exp.body, env.clone())
     case Expression.Apply(exp, args, _, _) =>
       val evalArgs = args.map(x => eval(x, root, env))
       evalCall(exp, evalArgs, root, env)
@@ -194,12 +203,22 @@ object Interpreter {
     case Expression.Match(exp, rules, _, _) =>
       val value = eval(exp, root, env)
       val result = matchRule(rules, value)
-      if (result != null) eval(result._1, root, env ++ result._2)
-      else throw new RuntimeException(s"Unmatched value $value.")
+      if (result != null)
+        eval(result._1, root, env ++ result._2)
+      else
+        throw new RuntimeException(s"Unmatched value $value.")
     case Expression.NativeField(field, tpe, _) => Value.java2flix(field.get(), tpe)
     case Expression.NativeMethod(method, _, _) => Value.NativeMethod(method)
     case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
-    case Expression.Tuple(elms, _, _) => Value.Tuple(elms.map(e => eval(e, root, env)))
+    case exp: Expression.Tuple =>
+      val elms = new Array[Value](exp.asArray.length)
+      var i = 0
+      while (i < elms.length) {
+        elms(i) = eval(exp.asArray(i), root, env)
+        i = i + 1
+      }
+      Value.Tuple(elms)
+
     case Expression.Set(elms, _, _) => Value.Set(elms.map(e => eval(e, root, env)).toSet)
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
   }
@@ -252,7 +271,7 @@ object Interpreter {
     case Literal.Int(i, _) => Value.mkInt(i)
     case Literal.Str(s, _) => Value.mkStr(s)
     case Literal.Tag(name, ident, innerLit, _, _) => Value.mkTag(name, ident.name, evalLit(innerLit))
-    case Literal.Tuple(elms, _, _) => Value.Tuple(elms.map(evalLit))
+    case Literal.Tuple(elms, _, _) => Value.Tuple(elms.map(evalLit).toArray) // TODO: Slow
     case Literal.Set(elms, _, _) => Value.Set(elms.map(evalLit).toSet)
   }
 
@@ -261,8 +280,10 @@ object Interpreter {
     case (pattern, exp) :: rest =>
       val env: Env = mutable.Map.empty
       val result = unify(pattern, value, env)
-      if (result) (exp, env)
-      else matchRule(rest, value)
+      if (result)
+        (exp, env)
+      else
+        matchRule(rest, value)
     case Nil => null
   }
 
@@ -277,10 +298,10 @@ object Interpreter {
       case v: Value.Tag if name1 == v.enum && ident1.name == v.tag => unify(innerPat, v.value, env)
       case _ => false
     }
-    case (Pattern.Tuple(pats, _, _), Value.Tuple(vals)) =>
+    case (p: Pattern.Tuple, Value.Tuple(vals)) =>
       var i = 0
-      while (i < pats.length) {
-        val result = unify(pats(i), vals(i), env)
+      while (i < p.asArray.length) {
+        val result = unify(p.asArray(i), vals(i), env)
         if (!result) return false
         i = i + 1
       }
@@ -316,7 +337,7 @@ object Interpreter {
         val newEnv = closureEnv.clone()
         var i = 0
         while (i < formals.length) {
-          newEnv.update(formals(i).ident.name, args(i))
+          newEnv.update(formals(i), args(i))
           i = i + 1
         }
         eval(body, root, newEnv)
@@ -326,68 +347,11 @@ object Interpreter {
         Value.java2flix(method.invoke(null, nativeArgs: _*), tpe)
     }
 
-  def evalCall1(function: Expression, arg: Value, root: Root): Value =
-    (evalGeneral(function, root): @unchecked) match {
-      case Value.Closure(formals, body, closureEnv) =>
-        val newEnv = closureEnv.clone()
-        newEnv.update(formals(0).ident.name, arg)
-        eval(body, root, newEnv)
-      case Value.NativeMethod(method) =>
-        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
-        Value.java2flix(method.invoke(null, arg.toJava), tpe)
-    }
+  def eval2(closure: Value.Closure, arg1: Value, arg2: Value, root: Root): Value = {
+    val env = closure.env
+    env.update(closure.formals(0), arg1)
+    env.update(closure.formals(1), arg2)
+    eval(closure.body, root, env)
+  }
 
-  def evalCall2(function: Expression, arg1: Value, arg2: Value, root: Root): Value =
-    (evalGeneral(function, root): @unchecked) match {
-      case Value.Closure(formals, body, closureEnv) =>
-        val newEnv = closureEnv.clone()
-        newEnv.update(formals(0).ident.name, arg1)
-        newEnv.update(formals(1).ident.name, arg2)
-        eval(body, root, newEnv)
-      case Value.NativeMethod(method) =>
-        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
-        Value.java2flix(method.invoke(null, arg1.toJava, arg2.toJava), tpe)
-    }
-
-  def evalCall3(function: Expression, arg1: Value, arg2: Value, arg3: Value, root: Root): Value =
-    (evalGeneral(function, root): @unchecked) match {
-      case Value.Closure(formals, body, closureEnv) =>
-        val newEnv = closureEnv.clone()
-        newEnv.update(formals(0).ident.name, arg1)
-        newEnv.update(formals(1).ident.name, arg2)
-        newEnv.update(formals(2).ident.name, arg3)
-        eval(body, root, newEnv)
-      case Value.NativeMethod(method) =>
-        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
-        Value.java2flix(method.invoke(null, arg1.toJava, arg2.toJava, arg3.toJava), tpe)
-    }
-
-  def evalCall4(function: Expression, arg1: Value, arg2: Value, arg3: Value, arg4: Value, root: Root): Value =
-    (evalGeneral(function, root): @unchecked) match {
-      case Value.Closure(formals, body, closureEnv) =>
-        val newEnv = closureEnv.clone()
-        newEnv.update(formals(0).ident.name, arg1)
-        newEnv.update(formals(1).ident.name, arg2)
-        newEnv.update(formals(2).ident.name, arg3)
-        newEnv.update(formals(3).ident.name, arg4)
-        eval(body, root, newEnv)
-      case Value.NativeMethod(method) =>
-        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
-        Value.java2flix(method.invoke(null, arg1.toJava, arg2.toJava, arg3.toJava, arg4.toJava), tpe)
-    }
-
-  def evalCall5(function: Expression, arg1: Value, arg2: Value, arg3: Value, arg4: Value, arg5: Value, root: Root): Value =
-    (evalGeneral(function, root): @unchecked) match {
-      case Value.Closure(formals, body, closureEnv) =>
-        val newEnv = closureEnv.clone()
-        newEnv.update(formals(0).ident.name, arg1)
-        newEnv.update(formals(1).ident.name, arg2)
-        newEnv.update(formals(2).ident.name, arg3)
-        newEnv.update(formals(3).ident.name, arg4)
-        newEnv.update(formals(4).ident.name, arg5)
-        eval(body, root, newEnv)
-      case Value.NativeMethod(method) =>
-        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
-        Value.java2flix(method.invoke(null, arg1.toJava, arg2.toJava, arg3.toJava, arg4.toJava, arg5.toJava), tpe)
-    }
 }

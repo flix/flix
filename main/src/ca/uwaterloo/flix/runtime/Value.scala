@@ -7,6 +7,8 @@ import java.lang.reflect.Method
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+import java.util
+
 sealed trait Value {
   def toBool: Boolean = this.asInstanceOf[Value.Bool].b
 
@@ -161,11 +163,30 @@ object Value {
     * Value.Tuple, Value.Set, Value.Closure implementations                   *
     * **************************************************************************/
 
-  case class Tuple(elms: List[Value]) extends Value
+  case class Tuple(elms: Array[Value]) extends Value {
+
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: Value.Tuple => {
+        if (this.elms.length != that.elms.length)
+          return false
+        var i = 0
+        while (i < this.elms.length) {
+          if (this.elms(i) != that.elms(i))
+            return false
+          i = i + 1
+        }
+        return true
+      }
+      case _ => false
+    }
+
+    override def hashCode(): scala.Int = util.Arrays.hashCode(elms.asInstanceOf[Array[AnyRef]])
+  }
 
   case class Set(elms: scala.collection.immutable.Set[Value]) extends Value
 
-  case class Closure(formals: List[TypedAst.FormalArg], body: TypedAst.Expression, env: mutable.Map[String, Value]) extends Value
+  // TODO: Override equals and hashCode?
+  case class Closure(formals: Array[String], body: TypedAst.Expression, env: mutable.Map[String, Value]) extends Value
 
   /** *************************************************************************
     * Value.Native, Value.NativeMethod implementations                        *
@@ -186,7 +207,7 @@ object Value {
       tupleElms += java2flix(elms(i), typs(i))
       i = i + 1
     }
-    Value.Tuple(tupleElms.toList)
+    Value.Tuple(tupleElms.toArray)
   }
 
   def java2flix(obj: AnyRef, tpe: Type): Value = tpe match {

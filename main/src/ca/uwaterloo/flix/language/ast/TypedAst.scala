@@ -375,7 +375,10 @@ object TypedAst {
       * @param tpe the type of the entire function.
       * @param loc the source location.
       */
-    case class Lambda(args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: TypedAst.Type.Lambda, loc: SourceLocation) extends TypedAst.Expression
+    case class Lambda(args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: TypedAst.Type.Lambda, loc: SourceLocation) extends TypedAst.Expression {
+      // TODO: Move
+      val argsAsArray: Array[TypedAst.FormalArg] = args.toArray
+    }
 
     /**
       * A typed AST node representing a function call.
@@ -458,7 +461,9 @@ object TypedAst {
       * @param tpe the type of the tuple.
       * @param loc the source location.
       */
-    case class Tuple(elms: List[TypedAst.Expression], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Tuple(elms: List[TypedAst.Expression], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression {
+      val asArray: Array[TypedAst.Expression] = elms.toArray
+    }
 
     /**
       * A typed AST node representing a set expression.
@@ -576,7 +581,10 @@ object TypedAst {
       * @param tpe the type of the tuple.
       * @param loc the source location.
       */
-    case class Tuple(elms: List[TypedAst.Pattern], tpe: TypedAst.Type.Tuple, loc: SourceLocation) extends TypedAst.Pattern
+    case class Tuple(elms: List[TypedAst.Pattern], tpe: TypedAst.Type.Tuple, loc: SourceLocation) extends TypedAst.Pattern {
+      // TODO: Move
+      val asArray: Array[TypedAst.Pattern] = elms.toArray
+    }
 
   }
 

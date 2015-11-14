@@ -32,10 +32,31 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
   }.toArray
 
   /**
-   * The bottom element(s).
-   */
-  private val Bottom: Array[Value] = latticeOps map {
+    * The bottom element(s).
+    */
+  private val Bot: Array[Value] = latticeOps map {
     case l => Interpreter.eval(l.bot, sCtx.root)
+  }
+
+  /**
+    * The Leq operator(s).
+    */
+  private val Leq: Array[Value.Closure] = latticeOps map {
+    case l => Interpreter.eval(l.leq, sCtx.root).asInstanceOf[Value.Closure]
+  }
+
+  /**
+    * The Lub operator(s).
+    */
+  private val Lub: Array[Value.Closure] = latticeOps map {
+    case l => Interpreter.eval(l.lub, sCtx.root).asInstanceOf[Value.Closure]
+  }
+
+  /**
+    * The Glb operator(s).
+    */
+  private val Glb: Array[Value.Closure] = latticeOps map {
+    case l => Interpreter.eval(l.glb, sCtx.root).asInstanceOf[Value.Closure]
   }
 
   /**
@@ -65,7 +86,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
 
     // Lookup the old element (create it, if it doesn't exist).
     val newElm = elmPart(fact)
-    val oldElm = map.getOrElseUpdate(key, Bottom)
+    val oldElm = map.getOrElseUpdate(key, Bot)
 
     // Compute the lub and check if it is subsumed by the old element.
     val result = lub(newElm, oldElm)
@@ -189,9 +210,8 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
         val rv = row(i)
 
         if (rv != pv) {
-          val lattice = latticeOps(i)
-          val bot = Interpreter.eval(lattice.bot, sCtx.root)
-          val glb = Interpreter.evalCall2(lattice.glb, pv, rv, sCtx.root)
+          val bot = Bot(i)
+          val glb = Interpreter.eval2(Glb(i), pv, rv, sCtx.root)
 
           if (bot == glb)
             return false
@@ -210,14 +230,13 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
   private def leq(a: Array[Value], b: Array[Value]): Boolean = {
     var i = 0
     while (i < a.length) {
-      val leq = latticeOps(i).leq
       val v1: Value = a(i)
       val v2: Value = b(i)
 
       // if v1 and v2 are equal we do not need to compute leq.
       if (v1 ne v2) {
         // v1 and v2 are different, must compute leq.
-        val value = Interpreter.evalCall2(leq, v1, v2, sCtx.root)
+        val value = Interpreter.eval2(Leq(i), v1, v2, sCtx.root)
         if (!value.toBool) {
           return false
         }
@@ -234,9 +253,16 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
     val result = new Array[Value](a.length)
     var i = 0
     while (i < result.length) {
-      val lub = latticeOps(i).lub
-      val value = Interpreter.evalCall2(lub, a(i), b(i), sCtx.root)
-      result(i) = value
+      val v1: Value = a(i)
+      val v2: Value = b(i)
+
+      if (v1 eq Bot(i))
+        result(i) = v2
+      else if (v2 eq Bot(i))
+        result(i) = v1
+      else
+        result(i) = Interpreter.eval2(Lub(i), v1, v2, sCtx.root)
+
       i = i + 1
     }
     return result
