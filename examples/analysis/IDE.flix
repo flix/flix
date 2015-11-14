@@ -93,7 +93,6 @@ namespace IDE {
  lat SummaryFn(node: Str, infact: Str, outfact: Str, transformer: Transformer<>);
  lat ResultProc(proc: Str, fact: Str, value: Value<>);
  rel InProc(proc: Str, node: Str);
- lat Identity(transformer: Transformer<>);
 //
 //// Output
 //// ===========
@@ -118,8 +117,7 @@ JumpFn(d1,m,d3,compose(caller,summary)) :-
 //// call-to-start
 def nonbottom(t: Transformer): Bool = t != Transformer.BotTrans
 
-JumpFn(d3,start,d3,id) :-
-  Identity(id),
+JumpFn(d3,start,d3,id()) :-
   JumpFn(d1,call,d2,nonbottom1), CallGraph(call,target),
   EshCallStart(call,d2,target,d3,nonbottom2), StartNode(target,start),
   nonbottom(nonbottom1), nonbottom(nonbottom2).
@@ -139,7 +137,7 @@ ResultProc(proc,dp,apply(cs,v)) :-
 //
 //// Rules for Example (constant propagation) from IDE paper
 //// ===========
-Identity(Transformer.NonBotTrans(1,0,Value.Bot)).
+def id(): Transformer = Transformer.NonBotTrans(1,0,Value.Bot)
 //
 //(fact (CFG {
 CFG("smain","n1").
@@ -167,39 +165,39 @@ EndNode("p","ep").
 CallGraph("n1","p").
 CallGraph("n6","p").
 //
-EshIntra(n,"zero","zero",id) :- CFG(n,_), Identity(id).
+EshIntra(n,"zero","zero",id()) :- CFG(n,_).
 //
 EshIntra("smain","zero","x",Transformer.BotTrans).
-EshIntra("n2","x","x",id) :- Identity(id).
-EshIntra("n3","x","x",id) :- Identity(id).
+EshIntra("n2","x","x",id()).
+EshIntra("n3","x","x",id()).
 //
-EshIntra("sp","a","a",id) :- Identity(id).
-EshIntra("sp","x","x",id) :- Identity(id).
-EshIntra("n4","a","a",id) :- Identity(id).
-EshIntra("n4","x","x",id) :- Identity(id).
+EshIntra("sp","a","a",id()).
+EshIntra("sp","x","x",id()).
+EshIntra("n4","a","a",id()).
+EshIntra("n4","x","x",id()).
 EshIntra("n5","a","a",Transformer.NonBotTrans(1,-2,Value.Bot)).
-EshIntra("n5","x","x",id) :- Identity(id).
-EshIntra("n6","a","a",id) :- Identity(id).
-EshIntra("n7","a","a",id) :- Identity(id).
-EshIntra("n7","x","x",id) :- Identity(id).
+EshIntra("n5","x","x",id()).
+EshIntra("n6","a","a",id()).
+EshIntra("n7","a","a",id()).
+EshIntra("n7","x","x",id()).
 EshIntra("n8","a","a",Transformer.NonBotTrans(1,2,Value.Bot)).
-EshIntra("n8","x","x",id) :- Identity(id).
-EshIntra("n9","a","a",id) :- Identity(id).
+EshIntra("n8","x","x",id()).
+EshIntra("n9","a","a",id()).
 EshIntra("n9","a","x",Transformer.NonBotTrans(-2,5,Value.Bot)).
 //
-EshCallStart(call,"zero",target,"zero",id) :- CallGraph(call,target), Identity(id).
-EshEndReturn(target,"zero",call,"zero",id) :- CallGraph(call,target), Identity(id).
+EshCallStart(call,"zero",target,"zero",id()) :- CallGraph(call,target).
+EshEndReturn(target,"zero",call,"zero",id()) :- CallGraph(call,target).
 //
 EshCallStart("n1","zero","p","a",Transformer.NonBotTrans(0,7,Value.Bot)).
-EshCallStart("n1","x","p","x",id) :- Identity(id).
-EshEndReturn("p","x","n1","x",id) :- Identity(id).
+EshCallStart("n1","x","p","x",id()).
+EshEndReturn("p","x","n1","x",id()).
 //
-EshCallStart("n6","a","p","a",id) :- Identity(id).
-EshCallStart("n6","x","p","x",id) :- Identity(id).
-EshEndReturn("p","x","n6","x",id) :- Identity(id).
+EshCallStart("n6","a","p","a",id()).
+EshCallStart("n6","x","p","x",id()).
+EshEndReturn("p","x","n6","x",id()).
 //
 //// Entrypoint
-JumpFn("zero","smain","zero",id) :- Identity(id).
+JumpFn("zero","smain","zero",id()).
 ResultProc("main","zero",Value.Top).
 
 print Result.
