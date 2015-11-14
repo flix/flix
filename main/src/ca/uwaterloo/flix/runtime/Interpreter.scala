@@ -55,7 +55,7 @@ object Interpreter {
     case Expression.Var(ident, _, loc) => env(ident.name).toInt
     case Expression.Ref(name, _, _) => evalInt(root.constants(name).exp, root, env)
     case Expression.Apply(exp, args, _, _) =>
-      val evalArgs = args.map(x => eval(x, root, env))
+      val evalArgs = args.map(x => eval(x, root, env)) // TODO: args is a list
       evalCall(exp, evalArgs, root, env).toInt
     case Expression.Unary(op, exp, _, _) => evalIntUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => evalIntBinary(op, exp1, exp2, root, env)
@@ -114,7 +114,7 @@ object Interpreter {
     case Expression.Var(ident, _, loc) => env(ident.name).toBool
     case Expression.Ref(name, _, _) => evalBool(root.constants(name).exp, root, env)
     case Expression.Apply(exp, args, _, _) =>
-      val evalArgs = args.map(x => eval(x, root, env))
+      val evalArgs = args.map(x => eval(x, root, env)) // TODO: args is a list
       evalCall(exp, evalArgs, root, env).toBool
     case Expression.Unary(op, exp, _, _) => evalBoolUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => evalBoolBinary(op, exp1, exp2, root, env)
@@ -189,7 +189,7 @@ object Interpreter {
       }
       Value.Closure(formals, exp.body, env.clone())
     case Expression.Apply(exp, args, _, _) =>
-      val evalArgs = args.map(x => eval(x, root, env))
+      val evalArgs = args.map(x => eval(x, root, env)) // TODO: args is a list
       evalCall(exp, evalArgs, root, env)
     case Expression.Unary(op, exp, _, _) => evalGeneralUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, exp1, exp2, root, env)
@@ -319,7 +319,7 @@ object Interpreter {
     case Term.Head.Lit(lit, _, _) => evalLit(lit)
     case Term.Head.Apply(name, terms, _, _) =>
       val function = root.constants(name).exp
-      val evalArgs = terms.map(t => evalHeadTerm(t, root, env))
+      val evalArgs = terms.map(t => evalHeadTerm(t, root, env)) // TODO: terms is a list
       evalCall(function, evalArgs, root, env)
     case Term.Head.NativeField(field, tpe, _) => Value.java2flix(field.get(), tpe)
   }
@@ -335,12 +335,12 @@ object Interpreter {
       case Value.Closure(formals, body, closureEnv) =>
         var i = 0
         while (i < formals.length) {
-          closureEnv.update(formals(i), args(i))
+          closureEnv.update(formals(i), args(i)) // TODO: args is a list
           i = i + 1
         }
         eval(body, root, closureEnv)
       case Value.NativeMethod(method) =>
-        val nativeArgs = args.map(_.toJava)
+        val nativeArgs = args.map(_.toJava) // TODO: args is a list
         val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
         Value.java2flix(method.invoke(null, nativeArgs: _*), tpe)
     }
