@@ -270,7 +270,14 @@ object Interpreter {
     case Literal.Int(i, _) => Value.mkInt(i)
     case Literal.Str(s, _) => Value.mkStr(s)
     case Literal.Tag(name, ident, innerLit, _, _) => Value.mkTag(name, ident.name, evalLit(innerLit))
-    case Literal.Tuple(elms, _, _) => Value.Tuple(elms.map(evalLit).toArray) // TODO: Slow
+    case tpl: Literal.Tuple =>
+      val lits = new Array[Value](tpl.asArray.length)
+      var i = 0
+      while (i < lits.length) {
+        lits(i) = evalLit(tpl.asArray(i))
+        i = i + 1
+      }
+      Value.Tuple(lits)
     case Literal.Set(elms, _, _) => Value.Set(elms.map(evalLit).toSet)
   }
 

@@ -314,7 +314,10 @@ object TypedAst {
       * @param tpe the type of the tuple.
       * @param loc the source location.
       */
-    case class Tuple(elms: List[TypedAst.Literal], tpe: TypedAst.Type.Tuple, loc: SourceLocation) extends TypedAst.Literal
+    case class Tuple(elms: List[TypedAst.Literal], tpe: TypedAst.Type.Tuple, loc: SourceLocation) extends TypedAst.Literal {
+      // TODO: Move
+      val asArray: Array[TypedAst.Literal] = elms.toArray
+    }
 
     /**
       * A typed AST node representing a Set literal.
