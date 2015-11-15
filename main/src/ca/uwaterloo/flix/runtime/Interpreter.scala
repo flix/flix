@@ -318,7 +318,7 @@ object Interpreter {
   // Bad things will happen if `pattern` does not unify with `value`.
   private def unify(pattern: Pattern, value: Value, env: Env): Unit = pattern match {
     case Pattern.Var(ident, _, _) => env.update(ident.name, value)
-    case Pattern.Tag(name, ident, innerPat, _, _) => unify(innerPat, value.asInstanceOf[Value.Tag].value, env)
+    case Pattern.Tag(_, _, innerPat, _, _) => unify(innerPat, value.asInstanceOf[Value.Tag].value, env)
     case p: Pattern.Tuple =>
       val elms = value.asInstanceOf[Value.Tuple].elms
       var i = 0
@@ -331,8 +331,6 @@ object Interpreter {
 
   // Returns `true` if `pattern` can unify with `value`. Returns `false` otherwise.
   private def canUnify(pattern: Pattern, value: Value): Boolean = pattern match {
-    case Pattern.Wildcard(_, _) |
-         Pattern.Var(_, _, _) => true
     case Pattern.Lit(lit, _, _) => evalLit(lit) == value
     case Pattern.Tag(name, ident, innerPat, _, _) => value match {
       case v: Value.Tag if name == v.enum && ident.name == v.tag => canUnify(innerPat, v.value)
@@ -349,6 +347,7 @@ object Interpreter {
         true
       case _ => false
     }
+    case Pattern.Wildcard(_, _) | Pattern.Var(_, _, _) => true
   }
 
   // TODO: Need to come up with some more clean interfaces
