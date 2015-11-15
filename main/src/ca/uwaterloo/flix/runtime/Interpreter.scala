@@ -71,11 +71,14 @@ object Interpreter {
       // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
       val newEnv = env + (ident.name -> eval(exp1, root, env))
       evalInt(exp2, root, newEnv)
-    case Expression.Match(exp, rules, _, _) =>
-      val value = eval(exp, root, env)
-      val result = matchRule(rules, value)
-      if (result != null) evalInt(result._1, root, env ++ result._2)
-      else throw new RuntimeException(s"Unmatched value $value.")
+    case m: Expression.Match =>
+      val value = eval(m.exp, root, env)
+      val newEnv = env.clone()
+      val result = matchRule(m.rulesAsArray, value, newEnv)
+      if (result != null)
+        evalInt(result, root, newEnv)
+      else
+        throw new RuntimeException(s"Unmatched value $value.")
     case Expression.NativeField(field, _, _) =>
       field.get().asInstanceOf[java.lang.Integer].intValue()
     case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
@@ -135,11 +138,12 @@ object Interpreter {
       // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
       val newEnv = env + (ident.name -> eval(exp1, root, env))
       evalBool(exp2, root, newEnv)
-    case Expression.Match(exp, rules, _, _) =>
-      val value = eval(exp, root, env)
-      val result = matchRule(rules, value)
+    case m: Expression.Match =>
+      val value = eval(m.exp, root, env)
+      val newEnv = env.clone()
+      val result = matchRule(m.rulesAsArray, value, newEnv)
       if (result != null)
-        evalBool(result._1, root, env ++ result._2) // TODO: Slow?
+        evalBool(result, root, newEnv)
       else
         throw new RuntimeException(s"Unmatched value $value.")
     case Expression.NativeField(field, _, _) =>
@@ -215,11 +219,12 @@ object Interpreter {
       // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
       val newEnv = env + (ident.name -> eval(exp1, root, env))
       eval(exp2, root, newEnv)
-    case Expression.Match(exp, rules, _, _) =>
-      val value = eval(exp, root, env)
-      val result = matchRule(rules, value)
+    case m: Expression.Match =>
+      val value = eval(m.exp, root, env)
+      val newEnv = env.clone()
+      val result = matchRule(m.rulesAsArray, value, newEnv)
       if (result != null)
-        eval(result._1, root, env ++ result._2) // TODO: Slow?
+        eval(result, root, newEnv)
       else
         throw new RuntimeException(s"Unmatched value $value.")
     case Expression.NativeField(field, tpe, _) => Value.java2flix(field.get(), tpe)
@@ -296,38 +301,54 @@ object Interpreter {
     case Literal.Set(elms, _, _) => Value.Set(elms.map(evalLit).toSet)
   }
 
-  // Returns `null` if there is no match.
-  @tailrec private def matchRule(rules: List[(Pattern, Expression)], value: Value): (Expression, Env) = rules match {
-    case (pattern, exp) :: rest =>
-      val env: Env = mutable.Map.empty
-      val result = unify(pattern, value, env)
-      if (result)
-        (exp, env)
-      else
-        matchRule(rest, value)
-    case Nil => null
+  private def matchRule(rules: Array[(Pattern, Expression)], value: Value, env: Env): Expression = {
+    var i = 0
+    while (i < rules.length) {
+      val rule = rules(i)
+      if (canUnify(rule._1, value)) {
+        unify(rule._1, value, env)
+        return rule._2
+      }
+      i = i + 1
+    }
+    null
   }
 
-  // Returns `false` if unification fails. Updates the environment map in place.
-  private def unify(pattern: Pattern, value: Value, env: Env): Boolean = (pattern, value) match {
-    case (Pattern.Wildcard(_, _), _) => true
-    case (Pattern.Var(ident, _, _), _) =>
-      env.update(ident.name, value)
-      true
-    case (Pattern.Lit(lit, _, _), _) if evalLit(lit) == value => true
-    case (Pattern.Tag(name1, ident1, innerPat, _, _), v) => v match {
-      case v: Value.Tag if name1 == v.enum && ident1.name == v.tag => unify(innerPat, v.value, env)
-      case _ => false
-    }
-    case (p: Pattern.Tuple, Value.Tuple(vals)) =>
+  // Assuming `pattern` can unify with `value`, updates the given `env`.
+  // Bad things will happen if `pattern` does not unify with `value`.
+  private def unify(pattern: Pattern, value: Value, env: Env): Unit = pattern match {
+    case Pattern.Var(ident, _, _) => env.update(ident.name, value)
+    case Pattern.Tag(name, ident, innerPat, _, _) => unify(innerPat, value.asInstanceOf[Value.Tag].value, env)
+    case p: Pattern.Tuple =>
+      val elms = value.asInstanceOf[Value.Tuple].elms
       var i = 0
       while (i < p.asArray.length) {
-        val result = unify(p.asArray(i), vals(i), env)
-        if (!result) return false
+        unify(p.asArray(i), elms(i), env)
         i = i + 1
       }
-      true
-    case _ => false
+    case Pattern.Wildcard(_, _) | Pattern.Lit(_, _, _) => Unit
+  }
+
+  // Returns `true` if `pattern` can unify with `value`. Returns `false` otherwise.
+  private def canUnify(pattern: Pattern, value: Value): Boolean = pattern match {
+    case Pattern.Wildcard(_, _) |
+         Pattern.Var(_, _, _) => true
+    case Pattern.Lit(lit, _, _) => evalLit(lit) == value
+    case Pattern.Tag(name, ident, innerPat, _, _) => value match {
+      case v: Value.Tag if name == v.enum && ident.name == v.tag => canUnify(innerPat, v.value)
+      case _ => false
+    }
+    case p: Pattern.Tuple => value match {
+      case Value.Tuple(elms) =>
+        var i = 0
+        while (i < p.asArray.length) {
+          val result = canUnify(p.asArray(i), elms(i))
+          if (!result) return false
+          i = i + 1
+        }
+        true
+      case _ => false
+    }
   }
 
   // TODO: Need to come up with some more clean interfaces

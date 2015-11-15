@@ -447,7 +447,10 @@ object TypedAst {
       * @param tpe the type of the match expression (which is equivalent to the type of each rule).
       * @param loc the source location.
       */
-    case class Match(exp: TypedAst.Expression, rules: List[(TypedAst.Pattern, TypedAst.Expression)], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Match(exp: TypedAst.Expression, rules: List[(TypedAst.Pattern, TypedAst.Expression)], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression {
+      // TODO: Move
+      val rulesAsArray: Array[(TypedAst.Pattern, TypedAst.Expression)] = rules.toArray
+    }
 
     /**
       * A typed AST node representing a tagged expression.
