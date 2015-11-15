@@ -900,6 +900,8 @@ object TypedAst {
 
   object Type {
 
+    case object Any extends TypedAst.Type
+
     /**
       * A type variable.
       */
