@@ -7,6 +7,8 @@ import java.lang.reflect.Method
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+import java.util
+
 sealed trait Value {
   def toBool: Boolean = this.asInstanceOf[Value.Bool].b
 
@@ -20,19 +22,14 @@ sealed trait Value {
     case v: Value.Bool => boolean2Boolean(v.b)
     case v: Value.Int => int2Integer(v.i)
     case v: Value.Str => v.s
-    case Value.Tuple(elms) if 2 <= elms.size && elms.size <= 5 =>
-      val javaElms = new Array[java.lang.Object](elms.size)
-      var i = 0
-      while (i < javaElms.length) {
-        javaElms(i) = elms(i).toJava
-        i = i + 1
-      }
-      javaElms.length match {
-        case 2 => (javaElms(0), javaElms(1))
-        case 3 => (javaElms(0), javaElms(1), javaElms(2))
-        case 4 => (javaElms(0), javaElms(1), javaElms(2), javaElms(3))
-        case 5 => (javaElms(0), javaElms(1), javaElms(2), javaElms(3), javaElms(4))
-      }
+    case Value.Tuple(elms) if elms.length == 2 =>
+      (elms(0).toJava, elms(1).toJava)
+    case Value.Tuple(elms) if elms.length == 3 =>
+      (elms(0).toJava, elms(1).toJava, elms(2).toJava)
+    case Value.Tuple(elms) if elms.length == 4 =>
+      (elms(0).toJava, elms(1).toJava, elms(2).toJava, elms(3).toJava)
+    case Value.Tuple(elms) if elms.length == 5 =>
+      (elms(0).toJava, elms(1).toJava, elms(2).toJava, elms(3).toJava, elms(4).toJava)
     case Value.Set(elms) => elms.map(_.toJava)
     case Value.Native(v) => v
     case v: Value.Tag => this
@@ -161,53 +158,82 @@ object Value {
     * Value.Tuple, Value.Set, Value.Closure implementations                   *
     * **************************************************************************/
 
-  case class Tuple(elms: List[Value]) extends Value
+  final case class Tuple(elms: Array[Value]) extends Value {
+    override def toString: java.lang.String = s"Value.Tuple(Array(${elms.mkString(",")}))"
+
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: Value.Tuple =>
+        util.Arrays.equals(this.elms.asInstanceOf[Array[AnyRef]], that.elms.asInstanceOf[Array[AnyRef]])
+      case _ => false
+    }
+
+    override def hashCode: scala.Int = util.Arrays.hashCode(elms.asInstanceOf[Array[AnyRef]])
+  }
 
   case class Set(elms: scala.collection.immutable.Set[Value]) extends Value
 
-  case class Closure(formals: List[TypedAst.FormalArg], body: TypedAst.Expression, env: mutable.Map[String, Value]) extends Value
+  final case class Closure(formals: Array[String], body: TypedAst.Expression, env: mutable.Map[String, Value]) extends Value {
+    override def toString: java.lang.String = s"Value.Closure(Array(${formals.mkString(",")}), $body, $env)"
+
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: Value.Closure =>
+        util.Arrays.equals(this.formals.asInstanceOf[Array[AnyRef]], that.formals.asInstanceOf[Array[AnyRef]]) &&
+          this.body == that.body && this.env == that.env
+      case _ => false
+    }
+
+    override def hashCode: scala.Int =
+      41 * (41 * (41 + util.Arrays.hashCode(formals.asInstanceOf[Array[AnyRef]])) + body.hashCode) + env.hashCode
+  }
 
   /** *************************************************************************
     * Value.Native, Value.NativeMethod implementations                        *
     * **************************************************************************/
 
-  case class Native(value: AnyRef) extends Value
+  final case class Native(value: AnyRef) extends Value
 
-  case class NativeMethod(method: Method) extends Value
+  final case class NativeMethod(method: Method) extends Value
 
   /** *************************************************************************
     * Convert from native values to Flix values                               *
     * **************************************************************************/
 
-  private def makeTuple(typs: List[Type], elms: java.lang.Object*): Value.Tuple = {
-    val tupleElms: ListBuffer[Value] = mutable.ListBuffer()
-    var i = 0
-    while (i < elms.length) {
-      tupleElms += java2flix(elms(i), typs(i))
-      i = i + 1
-    }
-    Value.Tuple(tupleElms.toList)
-  }
-
   def java2flix(obj: AnyRef, tpe: Type): Value = tpe match {
     case Type.Bool => if (obj.asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
     case Type.Int => Value.mkInt(obj.asInstanceOf[java.lang.Integer].intValue)
     case Type.Str => Value.mkStr(obj.asInstanceOf[java.lang.String])
-    case Type.Tuple(typs) => typs.size match {
-      case 2 =>
-        val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object)]
-        makeTuple(typs, t._1, t._2)
-      case 3 =>
-        val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object)]
-        makeTuple(typs, t._1, t._2, t._3)
-      case 4 =>
-        val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
-        makeTuple(typs, t._1, t._2, t._3, t._4)
-      case 5 =>
-        val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
-        makeTuple(typs, t._1, t._2, t._3, t._4, t._5)
-      case _ => Value.Native(obj)
-    }
+    case typs: Type.Tuple =>
+      val typsArray = typs.asArray
+      val tupleElms = new Array[Value](typsArray.length)
+      typsArray.length match {
+        case 2 =>
+          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object)]
+          tupleElms(0) = java2flix(t._1, typsArray(0))
+          tupleElms(1) = java2flix(t._2, typsArray(1))
+          Value.Tuple(tupleElms)
+        case 3 =>
+          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object)]
+          tupleElms(0) = java2flix(t._1, typsArray(0))
+          tupleElms(1) = java2flix(t._2, typsArray(1))
+          tupleElms(2) = java2flix(t._3, typsArray(2))
+          Value.Tuple(tupleElms)
+        case 4 =>
+          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
+          tupleElms(0) = java2flix(t._1, typsArray(0))
+          tupleElms(1) = java2flix(t._2, typsArray(1))
+          tupleElms(2) = java2flix(t._3, typsArray(2))
+          tupleElms(3) = java2flix(t._4, typsArray(3))
+          Value.Tuple(tupleElms)
+        case 5 =>
+          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
+          tupleElms(0) = java2flix(t._1, typsArray(0))
+          tupleElms(1) = java2flix(t._2, typsArray(1))
+          tupleElms(2) = java2flix(t._3, typsArray(2))
+          tupleElms(3) = java2flix(t._4, typsArray(3))
+          tupleElms(4) = java2flix(t._5, typsArray(4))
+          Value.Tuple(tupleElms)
+        case _ => Value.Native(obj)
+      }
     case Type.Set(typ) =>
       Value.Set(obj.asInstanceOf[scala.collection.immutable.Set[java.lang.Object]].map(e => java2flix(e, typ)))
     case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Set(_) | Type.Lambda(_, _) |

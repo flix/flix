@@ -54,9 +54,14 @@ object Interpreter {
     case Expression.Lit(literal, _, _) => evalLit(literal).toInt
     case Expression.Var(ident, _, loc) => env(ident.name).toInt
     case Expression.Ref(name, _, _) => evalInt(root.constants(name).exp, root, env)
-    case Expression.Apply(exp, args, _, _) =>
-      val evalArgs = args.map(x => eval(x, root, env))
-      evalCall(exp, evalArgs, root, env).toInt
+    case apply: Expression.Apply =>
+      val evalArgs = new Array[Value](apply.argsAsArray.length)
+      var i = 0
+      while (i < evalArgs.length) {
+        evalArgs(i) = eval(apply.argsAsArray(i), root, env)
+        i = i + 1
+      }
+      evalCall(apply.exp, evalArgs, root, env).toInt
     case Expression.Unary(op, exp, _, _) => evalIntUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => evalIntBinary(op, exp1, exp2, root, env)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
@@ -66,11 +71,14 @@ object Interpreter {
       // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
       val newEnv = env + (ident.name -> eval(exp1, root, env))
       evalInt(exp2, root, newEnv)
-    case Expression.Match(exp, rules, _, _) =>
-      val value = eval(exp, root, env)
-      val result = matchRule(rules, value)
-      if (result != null) evalInt(result._1, root, env ++ result._2)
-      else throw new RuntimeException(s"Unmatched value $value.")
+    case m: Expression.Match =>
+      val value = eval(m.exp, root, env)
+      val newEnv = env.clone()
+      val result = matchRule(m.rulesAsArray, value, newEnv)
+      if (result != null)
+        evalInt(result, root, newEnv)
+      else
+        throw new RuntimeException(s"Unmatched value $value.")
     case Expression.NativeField(field, _, _) =>
       field.get().asInstanceOf[java.lang.Integer].intValue()
     case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
@@ -113,9 +121,14 @@ object Interpreter {
     case Expression.Lit(literal, _, _) => evalLit(literal).toBool
     case Expression.Var(ident, _, loc) => env(ident.name).toBool
     case Expression.Ref(name, _, _) => evalBool(root.constants(name).exp, root, env)
-    case Expression.Apply(exp, args, _, _) =>
-      val evalArgs = args.map(x => eval(x, root, env))
-      evalCall(exp, evalArgs, root, env).toBool
+    case apply: Expression.Apply =>
+      val evalArgs = new Array[Value](apply.argsAsArray.length)
+      var i = 0
+      while (i < evalArgs.length) {
+        evalArgs(i) = eval(apply.argsAsArray(i), root, env)
+        i = i + 1
+      }
+      evalCall(apply.exp, evalArgs, root, env).toBool
     case Expression.Unary(op, exp, _, _) => evalBoolUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => evalBoolBinary(op, exp1, exp2, root, env)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
@@ -125,11 +138,14 @@ object Interpreter {
       // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
       val newEnv = env + (ident.name -> eval(exp1, root, env))
       evalBool(exp2, root, newEnv)
-    case Expression.Match(exp, rules, _, _) =>
-      val value = eval(exp, root, env)
-      val result = matchRule(rules, value)
-      if (result != null) evalBool(result._1, root, env ++ result._2)
-      else throw new RuntimeException(s"Unmatched value $value.")
+    case m: Expression.Match =>
+      val value = eval(m.exp, root, env)
+      val newEnv = env.clone()
+      val result = matchRule(m.rulesAsArray, value, newEnv)
+      if (result != null)
+        evalBool(result, root, newEnv)
+      else
+        throw new RuntimeException(s"Unmatched value $value.")
     case Expression.NativeField(field, _, _) =>
       field.get().asInstanceOf[java.lang.Boolean].booleanValue()
     case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
@@ -178,10 +194,22 @@ object Interpreter {
     case Expression.Lit(literal, _, _) => evalLit(literal)
     case Expression.Var(ident, _, loc) => env(ident.name)
     case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
-    case Expression.Lambda(formals, body, _, _) => Value.Closure(formals, body, env)
-    case Expression.Apply(exp, args, _, _) =>
-      val evalArgs = args.map(x => eval(x, root, env))
-      evalCall(exp, evalArgs, root, env)
+    case exp: Expression.Lambda =>
+      val formals = new Array[String](exp.argsAsArray.length)
+      var i = 0
+      while (i < formals.length) {
+        formals(i) = exp.argsAsArray(i).ident.name
+        i = i + 1
+      }
+      Value.Closure(formals, exp.body, env.clone())
+    case apply: Expression.Apply =>
+      val evalArgs = new Array[Value](apply.argsAsArray.length)
+      var i = 0
+      while (i < evalArgs.length) {
+        evalArgs(i) = eval(apply.argsAsArray(i), root, env)
+        i = i + 1
+      }
+      evalCall(apply.exp, evalArgs, root, env)
     case Expression.Unary(op, exp, _, _) => evalGeneralUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, exp1, exp2, root, env)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
@@ -191,15 +219,25 @@ object Interpreter {
       // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
       val newEnv = env + (ident.name -> eval(exp1, root, env))
       eval(exp2, root, newEnv)
-    case Expression.Match(exp, rules, _, _) =>
-      val value = eval(exp, root, env)
-      val result = matchRule(rules, value)
-      if (result != null) eval(result._1, root, env ++ result._2)
-      else throw new RuntimeException(s"Unmatched value $value.")
+    case m: Expression.Match =>
+      val value = eval(m.exp, root, env)
+      val newEnv = env.clone()
+      val result = matchRule(m.rulesAsArray, value, newEnv)
+      if (result != null)
+        eval(result, root, newEnv)
+      else
+        throw new RuntimeException(s"Unmatched value $value.")
     case Expression.NativeField(field, tpe, _) => Value.java2flix(field.get(), tpe)
     case Expression.NativeMethod(method, _, _) => Value.NativeMethod(method)
     case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
-    case Expression.Tuple(elms, _, _) => Value.Tuple(elms.map(e => eval(e, root, env)))
+    case exp: Expression.Tuple =>
+      val elms = new Array[Value](exp.asArray.length)
+      var i = 0
+      while (i < elms.length) {
+        elms(i) = eval(exp.asArray(i), root, env)
+        i = i + 1
+      }
+      Value.Tuple(elms)
     case Expression.Set(elms, _, _) => Value.Set(elms.map(e => eval(e, root, env)).toSet)
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
   }
@@ -252,40 +290,64 @@ object Interpreter {
     case Literal.Int(i, _) => Value.mkInt(i)
     case Literal.Str(s, _) => Value.mkStr(s)
     case Literal.Tag(name, ident, innerLit, _, _) => Value.mkTag(name, ident.name, evalLit(innerLit))
-    case Literal.Tuple(elms, _, _) => Value.Tuple(elms.map(evalLit))
+    case tpl: Literal.Tuple =>
+      val lits = new Array[Value](tpl.asArray.length)
+      var i = 0
+      while (i < lits.length) {
+        lits(i) = evalLit(tpl.asArray(i))
+        i = i + 1
+      }
+      Value.Tuple(lits)
     case Literal.Set(elms, _, _) => Value.Set(elms.map(evalLit).toSet)
   }
 
-  // Returns `null` if there is no match.
-  @tailrec private def matchRule(rules: List[(Pattern, Expression)], value: Value): (Expression, Env) = rules match {
-    case (pattern, exp) :: rest =>
-      val env: Env = mutable.Map.empty
-      val result = unify(pattern, value, env)
-      if (result) (exp, env)
-      else matchRule(rest, value)
-    case Nil => null
+  private def matchRule(rules: Array[(Pattern, Expression)], value: Value, env: Env): Expression = {
+    var i = 0
+    while (i < rules.length) {
+      val rule = rules(i)
+      if (canUnify(rule._1, value)) {
+        unify(rule._1, value, env)
+        return rule._2
+      }
+      i = i + 1
+    }
+    null
   }
 
-  // Returns `false` if unification fails. Updates the environment map in place.
-  private def unify(pattern: Pattern, value: Value, env: Env): Boolean = (pattern, value) match {
-    case (Pattern.Wildcard(_, _), _) => true
-    case (Pattern.Var(ident, _, _), _) =>
-      env.update(ident.name, value)
-      true
-    case (Pattern.Lit(lit, _, _), _) if evalLit(lit) == value => true
-    case (Pattern.Tag(name1, ident1, innerPat, _, _), v) => v match {
-      case v: Value.Tag if name1 == v.enum && ident1.name == v.tag => unify(innerPat, v.value, env)
-      case _ => false
-    }
-    case (Pattern.Tuple(pats, _, _), Value.Tuple(vals)) =>
+  // Assuming `pattern` can unify with `value`, updates the given `env`.
+  // Bad things will happen if `pattern` does not unify with `value`.
+  private def unify(pattern: Pattern, value: Value, env: Env): Unit = pattern match {
+    case Pattern.Var(ident, _, _) => env.update(ident.name, value)
+    case Pattern.Tag(_, _, innerPat, _, _) => unify(innerPat, value.asInstanceOf[Value.Tag].value, env)
+    case p: Pattern.Tuple =>
+      val elms = value.asInstanceOf[Value.Tuple].elms
       var i = 0
-      while (i < pats.length) {
-        val result = unify(pats(i), vals(i), env)
-        if (!result) return false
+      while (i < p.asArray.length) {
+        unify(p.asArray(i), elms(i), env)
         i = i + 1
       }
-      true
-    case _ => false
+    case Pattern.Wildcard(_, _) | Pattern.Lit(_, _, _) => Unit
+  }
+
+  // Returns `true` if `pattern` can unify with `value`. Returns `false` otherwise.
+  private def canUnify(pattern: Pattern, value: Value): Boolean = pattern match {
+    case Pattern.Lit(lit, _, _) => evalLit(lit) == value
+    case Pattern.Tag(name, ident, innerPat, _, _) => value match {
+      case v: Value.Tag if name == v.enum && ident.name == v.tag => canUnify(innerPat, v.value)
+      case _ => false
+    }
+    case p: Pattern.Tuple => value match {
+      case Value.Tuple(elms) =>
+        var i = 0
+        while (i < p.asArray.length) {
+          val result = canUnify(p.asArray(i), elms(i))
+          if (!result) return false
+          i = i + 1
+        }
+        true
+      case _ => false
+    }
+    case Pattern.Wildcard(_, _) | Pattern.Var(_, _, _) => true
   }
 
   // TODO: Need to come up with some more clean interfaces
@@ -297,9 +359,14 @@ object Interpreter {
   def evalHeadTerm(t: Term.Head, root: Root, env: mutable.Map[String, Value]): Value = t match {
     case Term.Head.Var(x, _, _) => env(x.name)
     case Term.Head.Lit(lit, _, _) => evalLit(lit)
-    case Term.Head.Apply(name, terms, _, _) =>
-      val function = root.constants(name).exp
-      val evalArgs = terms.map(t => evalHeadTerm(t, root, env))
+    case term: Term.Head.Apply =>
+      val function = root.constants(term.name).exp
+      val evalArgs = new Array[Value](term.argsAsArray.length)
+      var i = 0
+      while (i < evalArgs.length) {
+        evalArgs(i) = evalHeadTerm(term.argsAsArray(i), root, env)
+        i = i + 1
+      }
       evalCall(function, evalArgs, root, env)
     case Term.Head.NativeField(field, tpe, _) => Value.java2flix(field.get(), tpe)
   }
@@ -310,84 +377,31 @@ object Interpreter {
     case Term.Body.Lit(lit, _, _) => evalLit(lit)
   }
 
-  def evalCall(function: Expression, args: List[Value], root: Root, env: Env = mutable.Map.empty): Value =
+  def evalCall(function: Expression, args: Array[Value], root: Root, env: Env = mutable.Map.empty): Value =
     (evalGeneral(function, root, env): @unchecked) match {
       case Value.Closure(formals, body, closureEnv) =>
-        val newEnv = closureEnv.clone()
         var i = 0
         while (i < formals.length) {
-          newEnv.update(formals(i).ident.name, args(i))
+          closureEnv.update(formals(i), args(i))
           i = i + 1
         }
-        eval(body, root, newEnv)
+        eval(body, root, closureEnv)
       case Value.NativeMethod(method) =>
-        val nativeArgs = args.map(_.toJava)
+        val nativeArgs = new Array[java.lang.Object](args.length)
+        var i = 0
+        while (i < args.length) {
+          nativeArgs(i) = args(i).toJava
+          i = i + 1
+        }
         val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
         Value.java2flix(method.invoke(null, nativeArgs: _*), tpe)
     }
 
-  def evalCall1(function: Expression, arg: Value, root: Root): Value =
-    (evalGeneral(function, root): @unchecked) match {
-      case Value.Closure(formals, body, closureEnv) =>
-        val newEnv = closureEnv.clone()
-        newEnv.update(formals(0).ident.name, arg)
-        eval(body, root, newEnv)
-      case Value.NativeMethod(method) =>
-        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
-        Value.java2flix(method.invoke(null, arg.toJava), tpe)
-    }
+  def eval2(closure: Value.Closure, arg1: Value, arg2: Value, root: Root): Value = {
+    val env = closure.env
+    env.update(closure.formals(0), arg1)
+    env.update(closure.formals(1), arg2)
+    eval(closure.body, root, env)
+  }
 
-  def evalCall2(function: Expression, arg1: Value, arg2: Value, root: Root): Value =
-    (evalGeneral(function, root): @unchecked) match {
-      case Value.Closure(formals, body, closureEnv) =>
-        val newEnv = closureEnv.clone()
-        newEnv.update(formals(0).ident.name, arg1)
-        newEnv.update(formals(1).ident.name, arg2)
-        eval(body, root, newEnv)
-      case Value.NativeMethod(method) =>
-        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
-        Value.java2flix(method.invoke(null, arg1.toJava, arg2.toJava), tpe)
-    }
-
-  def evalCall3(function: Expression, arg1: Value, arg2: Value, arg3: Value, root: Root): Value =
-    (evalGeneral(function, root): @unchecked) match {
-      case Value.Closure(formals, body, closureEnv) =>
-        val newEnv = closureEnv.clone()
-        newEnv.update(formals(0).ident.name, arg1)
-        newEnv.update(formals(1).ident.name, arg2)
-        newEnv.update(formals(2).ident.name, arg3)
-        eval(body, root, newEnv)
-      case Value.NativeMethod(method) =>
-        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
-        Value.java2flix(method.invoke(null, arg1.toJava, arg2.toJava, arg3.toJava), tpe)
-    }
-
-  def evalCall4(function: Expression, arg1: Value, arg2: Value, arg3: Value, arg4: Value, root: Root): Value =
-    (evalGeneral(function, root): @unchecked) match {
-      case Value.Closure(formals, body, closureEnv) =>
-        val newEnv = closureEnv.clone()
-        newEnv.update(formals(0).ident.name, arg1)
-        newEnv.update(formals(1).ident.name, arg2)
-        newEnv.update(formals(2).ident.name, arg3)
-        newEnv.update(formals(3).ident.name, arg4)
-        eval(body, root, newEnv)
-      case Value.NativeMethod(method) =>
-        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
-        Value.java2flix(method.invoke(null, arg1.toJava, arg2.toJava, arg3.toJava, arg4.toJava), tpe)
-    }
-
-  def evalCall5(function: Expression, arg1: Value, arg2: Value, arg3: Value, arg4: Value, arg5: Value, root: Root): Value =
-    (evalGeneral(function, root): @unchecked) match {
-      case Value.Closure(formals, body, closureEnv) =>
-        val newEnv = closureEnv.clone()
-        newEnv.update(formals(0).ident.name, arg1)
-        newEnv.update(formals(1).ident.name, arg2)
-        newEnv.update(formals(2).ident.name, arg3)
-        newEnv.update(formals(3).ident.name, arg4)
-        newEnv.update(formals(4).ident.name, arg5)
-        eval(body, root, newEnv)
-      case Value.NativeMethod(method) =>
-        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
-        Value.java2flix(method.invoke(null, arg1.toJava, arg2.toJava, arg3.toJava, arg4.toJava, arg5.toJava), tpe)
-    }
 }

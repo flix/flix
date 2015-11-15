@@ -240,9 +240,14 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     case Nil =>
       // filter complete, now check disjointness
       disjoint(rule, rule.disjoint, row)
-    case Predicate.Body.Function(name, terms, _, _) :: xs =>
-      val lambda = sCtx.root.constants(name)
-      val args = terms.map(t => Interpreter.evalBodyTerm(t, row))
+    case (pred: Predicate.Body.Function) :: xs =>
+      val lambda = sCtx.root.constants(pred.name)
+      val args = new Array[Value](pred.termsAsArray.length)
+      var i = 0
+      while (i < args.length) {
+        args(i) = Interpreter.evalBodyTerm(pred.termsAsArray(i), row)
+        i = i + 1
+      }
       val result = Interpreter.evalCall(lambda.exp, args, sCtx.root, row).toBool
       if (result)
         filter(rule, xs, row)

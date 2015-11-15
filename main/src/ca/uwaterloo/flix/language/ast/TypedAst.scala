@@ -314,7 +314,10 @@ object TypedAst {
       * @param tpe the type of the tuple.
       * @param loc the source location.
       */
-    case class Tuple(elms: List[TypedAst.Literal], tpe: TypedAst.Type.Tuple, loc: SourceLocation) extends TypedAst.Literal
+    case class Tuple(elms: List[TypedAst.Literal], tpe: TypedAst.Type.Tuple, loc: SourceLocation) extends TypedAst.Literal {
+      // TODO: Move
+      val asArray: Array[TypedAst.Literal] = elms.toArray
+    }
 
     /**
       * A typed AST node representing a Set literal.
@@ -375,7 +378,10 @@ object TypedAst {
       * @param tpe the type of the entire function.
       * @param loc the source location.
       */
-    case class Lambda(args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: TypedAst.Type.Lambda, loc: SourceLocation) extends TypedAst.Expression
+    case class Lambda(args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: TypedAst.Type.Lambda, loc: SourceLocation) extends TypedAst.Expression {
+      // TODO: Move
+      val argsAsArray: Array[TypedAst.FormalArg] = args.toArray
+    }
 
     /**
       * A typed AST node representing a function call.
@@ -385,7 +391,10 @@ object TypedAst {
       * @param tpe the return type of the function.
       * @param loc the source location.
       */
-    case class Apply(exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Apply(exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression {
+      // TODO: Move
+      val argsAsArray: Array[TypedAst.Expression] = args.toArray
+    }
 
     /**
       * A typed AST node representing a unary expression.
@@ -438,7 +447,10 @@ object TypedAst {
       * @param tpe the type of the match expression (which is equivalent to the type of each rule).
       * @param loc the source location.
       */
-    case class Match(exp: TypedAst.Expression, rules: List[(TypedAst.Pattern, TypedAst.Expression)], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Match(exp: TypedAst.Expression, rules: List[(TypedAst.Pattern, TypedAst.Expression)], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression {
+      // TODO: Move
+      val rulesAsArray: Array[(TypedAst.Pattern, TypedAst.Expression)] = rules.toArray
+    }
 
     /**
       * A typed AST node representing a tagged expression.
@@ -458,7 +470,10 @@ object TypedAst {
       * @param tpe the type of the tuple.
       * @param loc the source location.
       */
-    case class Tuple(elms: List[TypedAst.Expression], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Tuple(elms: List[TypedAst.Expression], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression {
+      // TODO: Move
+      val asArray: Array[TypedAst.Expression] = elms.toArray
+    }
 
     /**
       * A typed AST node representing a set expression.
@@ -576,7 +591,10 @@ object TypedAst {
       * @param tpe the type of the tuple.
       * @param loc the source location.
       */
-    case class Tuple(elms: List[TypedAst.Pattern], tpe: TypedAst.Type.Tuple, loc: SourceLocation) extends TypedAst.Pattern
+    case class Tuple(elms: List[TypedAst.Pattern], tpe: TypedAst.Type.Tuple, loc: SourceLocation) extends TypedAst.Pattern {
+      // TODO: Move
+      val asArray: Array[TypedAst.Pattern] = elms.toArray
+    }
 
   }
 
@@ -727,7 +745,10 @@ object TypedAst {
         * @param tpe the type of the predicate.
         * @param loc the source location.
         */
-      case class Function(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Function(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body {
+        // TODO: Move
+        val termsAsArray: Array[TypedAst.Term.Body] = terms.toArray
+      }
 
       /**
         * A typed not equal predicate that occurs in the body of a rule.
@@ -809,7 +830,10 @@ object TypedAst {
         * @param tpe the type of the term.
         * @param loc the source location.
         */
-      case class Apply(name: Name.Resolved, args: List[TypedAst.Term.Head], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Term.Head
+      case class Apply(name: Name.Resolved, args: List[TypedAst.Term.Head], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Term.Head {
+        // TODO: Move
+        val argsAsArray: Array[TypedAst.Term.Head] = args.toArray
+      }
 
       /**
         * A typed AST node representing a reference to a native JVM static field.
@@ -922,7 +946,10 @@ object TypedAst {
       *
       * @param elms the types of the elements.
       */
-    case class Tuple(elms: List[TypedAst.Type]) extends TypedAst.Type
+    case class Tuple(elms: List[TypedAst.Type]) extends TypedAst.Type {
+      // TODO: Move
+      val asArray: Array[TypedAst.Type] = elms.toArray
+    }
 
     /**
       * An AST node representing a set type.
