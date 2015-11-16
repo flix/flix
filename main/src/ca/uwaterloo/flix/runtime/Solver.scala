@@ -226,10 +226,12 @@ class Solver(implicit sCtx: Solver.SolverContext) {
   def loop(rule: Constraint.Rule, ps: List[Predicate.Body.Loop], row: mutable.Map[String, Value]): Unit = ps match {
     case Nil => filter(rule, rule.filters, row)
     case Predicate.Body.Loop(name, term, _, _) :: rest =>
-      val result = Interpreter.evalHeadTerm(term, sCtx.root, row)
-      ???
-    // TODO: Cast to Set and iterate.
-    // TODO: Call loop from cross.
+      val result = Interpreter.evalHeadTerm(term, sCtx.root, row).toSet
+      for (x <- result) {
+        val newRow = row.clone()
+        newRow.update(name.name, x)
+        loop(rule, rest, row)
+      }
   }
 
   /**
