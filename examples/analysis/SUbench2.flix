@@ -94,7 +94,7 @@ PtH(a,b) :- FIStore(p,q,_), Pt(p,a), Pt(q,b).
 //
 //// Load
 //// ---------
-Pt(p,b) :- Load(l,p,q), Pt(q,a), filter(t, b), SUBefore(l,a,t), PtH(a,b).
+Pt(p,b) :- Load(l,p,q), Pt(q,a), filter(t, b), PtH(a,b), SUBefore(l,a,t).
 Pt(p,b) :- FILoad(p,q,_), Pt(q,a), PtH(a,b).
 //
 //// CFlow
@@ -104,7 +104,7 @@ SUBefore(l2,a,t) :- CFG(l1,l2), SUAfter(l1,a,t).
 //// Preserve
 //// ---------
 ////su-after(l,a,t) :- su-before(l,a,t), NOT kill(l,a).
-SUAfter(l,a,t) :- SUBefore(l,a,t), KillEmpty(l).
+//SUAfter(l,a,t) :- SUBefore(l,a,t), KillEmpty(l).
 //SUAfter(l,a,t) :- SUBefore(l,a,t), KillNot(l,a).
 def killNot(a: Str, e: SULattice): Bool = match e with {
   case SULattice.Bottom => false
@@ -129,8 +129,8 @@ SUAfter(l,a,f(b)) :- Clear(l), PtH(a,b).
 //// ---------
 AllObjects(a) :- AddrOf(_,a).
 //// KillEmpty l is true if the kill set of l is the empty set
-KillEmpty(l) :- Store(l,p,q), Pt(p,a), Pt(p,b), a != b.
-KillEmpty(l) :- NonStore(l).
+//KillEmpty(l) :- Store(l,p,q), Pt(p,a), Pt(p,b), a != b.
+//KillEmpty(l) :- NonStore(l).
 //// the inverse of the kill set of l
 //KillNot(l,a) :- Store(l,p,q), Pt(p,b), AllObjects(a), a != b.
 Kill(l,f(b)) :- Store(l,p,q), Pt(p,b).

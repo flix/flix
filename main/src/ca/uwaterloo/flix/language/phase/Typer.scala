@@ -685,7 +685,7 @@ object Typer {
           TypedAst.Predicate.Body.NotEqual(ident1, ident2, TypedAst.Type.Bool, loc).toSuccess
 
         case ResolvedAst.Predicate.Body.Loop(ident, rterm, loc) =>
-          Term.typer(rterm, TypedAst.Type.Set(TypedAst.Type.Native("java.lang.Object")), root) map {
+          Term.typer(rterm, TypedAst.Type.Any, root) map {
             case term => TypedAst.Predicate.Body.Loop(ident, term, TypedAst.Type.Bool, loc) // TODO: Type
           }
 
@@ -791,7 +791,9 @@ object Typer {
     * @param loc the source location.
     */
   def expect(expected: TypedAst.Type, actual: TypedAst.Type, loc: SourceLocation): Validation[TypedAst.Type, TypeError] =
-    if (expected == actual)
+    if (expected == TypedAst.Type.Any)
+      actual.toSuccess
+    else if (expected == actual)
       actual.toSuccess
     else
       ExpectedType(expected, actual, loc).toFailure
@@ -844,6 +846,7 @@ object Typer {
     * Returns a human readable string representation of the given type `tpe`.
     */
   private def prettyPrint(tpe: TypedAst.Type): String = tpe match {
+    case TypedAst.Type.Any => "Any"
     case TypedAst.Type.Var(x) => s"Var($x)"
     case TypedAst.Type.Unit => s"()"
     case TypedAst.Type.Bool => s"Bool"
