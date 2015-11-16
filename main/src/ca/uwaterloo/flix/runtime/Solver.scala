@@ -230,7 +230,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       for (x <- result) {
         val newRow = row.clone()
         newRow.update(name.name, x)
-        loop(rule, rest, row)
+        loop(rule, rest, newRow)
       }
   }
 
