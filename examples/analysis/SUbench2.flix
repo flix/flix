@@ -71,7 +71,6 @@
   //rel KillNot(location: Str, object: Str)
   lat Kill(location: Str, kill: SULattice<>)
   rel AllObjects(object: Str)
-  rel NonStore(location: Str)
 
 //// Rules
 //// =========
@@ -133,9 +132,7 @@ AllObjects(a) :- AddrOf(_,a).
 //KillEmpty(l) :- NonStore(l).
 //// the inverse of the kill set of l
 //KillNot(l,a) :- Store(l,p,q), Pt(p,b), AllObjects(a), a != b.
+def top(e: Int): SULattice = SULattice.Top;
 Kill(l,f(b)) :- Store(l,p,q), Pt(p,b).
-//
-//// NonStore
-//// ---------
-NonStore(l) :- Load(l,_,_).
-//
+Kill(l, top(42)) :- Load(l,_,_).
+
