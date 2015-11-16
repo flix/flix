@@ -1,0 +1,30 @@
+storestop(L, P) :- store(L, P, _).
+
+varpointsto(A, P) :- addrof(P, A).
+varpointsto(A, P) :- varpointsto(A, Q), copy(P, Q).
+varpointsto(B, P) :- labelpointsto(B, A, L), varpointsto(A, Q), load(L, P, Q).
+varpointsto(B, P) :- istop(A, L), varpointsto(A, Q), load(L, P, Q), heappointsto(B, A).
+
+labelpointsto(B, A, L) :- varpointsto(A, P), varpointsto(B, Q), store(L, P, Q).
+
+maywrite(C, L) :- varpointsto(C, P), storestop(L, P).
+weak(A, L) :- multi(A), maywrite(A, L).
+weak(A, L) :- maywrite(C, L), C != A, labelpointsto(_, A, LPRED), cfg(LPRED, L).
+weak(A, L) :- maywrite(C, L), C != A, istop(A, LPRED), cfg(LPRED, L).
+labelpointsto(B, A, L) :- weak(A, L), labelpointsto(B, A, LPRED), cfg(LPRED, L).
+istop(A, L) :- weak(A, L), istop(A, LPRED), cfg(LPRED, L).
+
+labelpointsto(B, A, L) :- phi(L), labelpointsto(B, A, LPRED), cfg(LPRED, L).
+istop(A, L) :- phi(L), istop(A, LPRED), cfg(LPRED, L).
+
+labelpointsto(B, A, L) :- clear(L), heappointsto(B, A).
+istop(A, L) :- clear(L), heappointsto(_, A).
+
+heappointsto(B, A) :- labelpointsto(B, A, L), storestop(L, _).
+heappointsto(B, A) :- fistore(P, Q, _), varpointsto(A, P), varpointsto(B, Q).
+varpointsto(A, P) :- fiload(P, Q, _), varpointsto(B, Q), heappointsto(A, B).
+
+istop(A, L) :-
+    labelpointsto(C, A, L),
+    labelpointsto(D, A, L),
+    C != D.
