@@ -83,7 +83,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val A = model.relations(NameA)
+    val A = model.relations(NameA).toList
     assert(A contains List(Value.mkInt(1), Value.mkInt(3)))
   }
 
@@ -100,7 +100,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val A = model.relations(NameA)
+    val A = model.relations(NameA).toList
     assert(A contains List(Value.mkInt(1), Value.mkInt(5)))
     assert(A contains List(Value.mkInt(1), Value.mkInt(5)))
   }
@@ -117,7 +117,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val A = model.relations(NameA)
+    val A = model.relations(NameA).toList
     assert(A contains List(Value.mkInt(2), Value.mkInt(2)))
   }
 
@@ -133,7 +133,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val A = model.relations(NameA)
+    val A = model.relations(NameA).toList
     assert(A contains List(Value.mkInt(1), Value.mkStr("a"), Value.mkInt(3)))
   }
 
@@ -150,7 +150,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val A = model.relations(NameA)
+    val A = model.relations(NameA).toList
     assert(A contains List(Value.mkInt(2), Value.mkStr("b"), Value.mkInt(2)))
   }
 
@@ -166,7 +166,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val A = model.relations(NameA)
+    val A = model.relations(NameA).toList
     assert(A contains List(Value.mkInt(1), Value.mkStr("b"), Value.mkInt(3)))
   }
 
@@ -182,7 +182,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val A = model.relations(NameA)
+    val A = model.relations(NameA).toList
     assert(A contains List(Value.mkInt(1), Value.mkStr("b"), Value.mkInt(3)))
   }
 
@@ -199,7 +199,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val R = model.relations(NameR)
+    val R = model.relations(NameR).toList
     assert(R contains List(Value.mkInt(2)))
   }
 
@@ -219,7 +219,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val R = model.relations(NameR)
+    val R = model.relations(NameR).toList
     assert(R contains List(Value.mkInt(3)))
   }
 
@@ -239,7 +239,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val R = model.relations(NameR)
+    val R = model.relations(NameR).toList
     assert(R contains List(Value.mkInt(3)))
   }
 
@@ -257,7 +257,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val R = model.relations(NameR)
+    val R = model.relations(NameR).toList
     assert(R contains List(Value.mkInt(3), Value.mkInt(5)))
   }
 
@@ -277,7 +277,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val R = model.relations(NameR)
+    val R = model.relations(NameR).toList
     assert(R contains List(Value.mkInt(1), Value.mkInt(7)))
   }
 
@@ -297,9 +297,9 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val A = model.relations(NameA)
-    val B = model.relations(NameB)
-    val C = model.relations(NameC)
+    val A = model.relations(NameA).toList
+    val B = model.relations(NameB).toList
+    val C = model.relations(NameC).toList
     assert(C contains List(Value.mkInt(1), Value.mkInt(3)))
     assert(A contains List(Value.mkInt(1), Value.mkInt(5)))
     assert(B contains List(Value.mkInt(1), Value.mkInt(6)))
@@ -322,7 +322,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val R = model.relations(NameR)
+    val R = model.relations(NameR).toList
     assert(R.isEmpty)
   }
 
@@ -342,7 +342,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val C = model.relations(NameC)
+    val C = model.relations(NameC).toList
     assert(C contains List(Value.mkInt(1), Value.mkInt(6)))
     assert(C contains List(Value.mkInt(1), Value.mkInt(8)))
     assert(C contains List(Value.mkInt(3), Value.mkInt(6)))
@@ -360,7 +360,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(Parity.Definition, s).get
-    val A = model.lattices(NameA)
+    val A = model.lattices(NameA).toMap
     assert(A(List(Value.mkInt(1))).head == Parity.Odd)
     assert(A(List(Value.mkInt(2))).head == Parity.Even)
     assert(A(List(Value.mkInt(3))).head == Parity.Top)
@@ -376,7 +376,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(Parity.Definition, s).get
-    val A = model.lattices(NameA)
+    val A = model.lattices(NameA).toMap
     assert(A(List(Value.mkInt(1))).head == Parity.Top)
   }
 
@@ -392,7 +392,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(Parity.Definition, s).get
-    val A = model.lattices(NameA)
+    val A = model.lattices(NameA).toMap
     assert(A(List(Value.mkInt(3))).head == Parity.Top)
   }
 
@@ -407,7 +407,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val B = model.relations(NameB)
+    val B = model.relations(NameB).toList
     assert(B contains List(Value.mkInt(1), Value.mkInt(2)))
     assert(B contains List(Value.mkInt(1), Value.mkInt(3)))
     assert(B contains List(Value.mkInt(1), Value.mkInt(4)))
@@ -430,7 +430,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val B = model.relations(NameB)
+    val B = model.relations(NameB).toList
     assert(B contains List(Value.mkInt(1), Value.mkInt(2)))
     assert(!(B contains List(Value.mkInt(2), Value.mkInt(2))))
   }
@@ -448,7 +448,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val B = model.relations(NameB)
+    val B = model.relations(NameB).toList
     assert(B contains List(Value.mkInt(1), Value.mkInt(3)))
     assert(!(B contains List(Value.mkInt(1), Value.mkInt(1))))
   }
@@ -467,7 +467,7 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = Flix.fromStrings(s).get
-    val B = model.relations(NameB)
+    val B = model.relations(NameB).toList
     assert(B contains List(Value.mkInt(1), Value.mkInt(3)))
     assert(!(B contains List(Value.mkInt(1), Value.mkInt(1))))
   }
