@@ -85,11 +85,19 @@ class Solver(implicit sCtx: Solver.SolverContext) {
       worklist.push((rule, mutable.Map.empty))
     }
 
+    var i = 0
+
     // iterate until fixpoint.
     while (worklist.nonEmpty) {
       // extract fact from the worklist.
       val (rule, env) = worklist.pop()
       evalBody(rule, env)
+
+      if (i == 5000000) {
+        dataStore.stats()
+        i = 0
+      }
+      i = i + 1
     }
 
     // computed elapsed time.
