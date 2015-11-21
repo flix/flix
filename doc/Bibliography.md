@@ -89,3 +89,5 @@
 - **Expressive Diagnostics** in Clang, [URL](http://clang.llvm.org/diagnostics.html)
 
 - **Compiler Errors for Humans** in Elm, [URL](http://elm-lang.org/blog/compiler-errors-for-humans)
+
+- **Compilers as Assistants** in Elm, [URL](http://elm-lang.org/blog/compilers-as-assistants)
