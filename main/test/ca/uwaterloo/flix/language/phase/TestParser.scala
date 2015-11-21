@@ -1685,45 +1685,52 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Operators                                                               //
   /////////////////////////////////////////////////////////////////////////////
-  test("UnaryOp !") {
+  test("Operator.Unary !") {
     val input = "!"
-    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    val parser = new Parser(SourceInput.Str(input))
+    val result = parser.__run(parser.Operator.Unary).get
     assertResult(UnaryOperator.Not)(result)
   }
 
-  test("UnaryOp +") {
+  test("Operator.Unary +") {
     val input = "+"
-    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    val parser = new Parser(SourceInput.Str(input))
+    val result = parser.__run(parser.Operator.Unary).get
     assertResult(UnaryOperator.UnaryPlus)(result)
   }
 
-  test("UnaryOp -") {
+  test("Operator.Unary -") {
     val input = "-"
-    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    val parser = new Parser(SourceInput.Str(input))
+    val result = parser.__run(parser.Operator.Unary).get
     assertResult(UnaryOperator.UnaryMinus)(result)
   }
 
-  test("UnaryOperator.Set.IsEmpty") {
+  test("Operator.Unary.Set.IsEmpty") {
     val input = "isEmpty?"
-    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    val parser = new Parser(SourceInput.Str(input))
+    val result = parser.__run(parser.Operator.Unary).get
     assertResult(UnaryOperator.Set.IsEmpty)(result)
   }
 
-  test("UnaryOperator.Set.NonEmpty") {
+  test("Operator.Unary.Set.NonEmpty") {
     val input = "nonEmpty?"
-    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    val parser = new Parser(SourceInput.Str(input))
+    val result = parser.__run(parser.Operator.Unary).get
     assertResult(UnaryOperator.Set.NonEmpty)(result)
   }
 
-  test("UnaryOperator.Set.Singleton") {
+  test("Operator.Unary.Set.Singleton") {
     val input = "singleton?"
-    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    val parser = new Parser(SourceInput.Str(input))
+    val result = parser.__run(parser.Operator.Unary).get
     assertResult(UnaryOperator.Set.Singleton)(result)
   }
 
-  test("UnaryOperator.Set.Size") {
+  test("Operator.Unary.Set.Size") {
     val input = "size?"
-    val result = new Parser(SourceInput.Str(input)).UnaryOp.run().get
+    val parser = new Parser(SourceInput.Str(input))
+    val result = parser.__run(parser.Operator.Unary).get
     assertResult(UnaryOperator.Set.Size)(result)
   }
 

@@ -5,14 +5,13 @@ import ca.uwaterloo.flix.language.ast._
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
-import scala.collection.mutable
 import scala.io.Source
 
 // TODO: Parse whitespace more "tightly" to improve source positions.
 
 /**
-  * A parser for the Flix language.
-  */
+ * A parser for the Flix language.
+ */
 class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   /*
@@ -162,7 +161,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def UnaryExpression: Rule1[ParsedAst.Expression] = rule {
-    (SP ~ UnaryOp ~ optWS ~ UnaryExpression ~ SP ~> ParsedAst.Expression.Unary) | AscribeExpression
+    (SP ~ Operator.Unary ~ optWS ~ UnaryExpression ~ SP ~> ParsedAst.Expression.Unary) | AscribeExpression
   }
 
   def AscribeExpression: Rule1[ParsedAst.Expression] = rule {
@@ -519,15 +518,23 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Operators                                                               //
   /////////////////////////////////////////////////////////////////////////////
-  def UnaryOp: Rule1[UnaryOperator] = rule {
-    str("!") ~> (() => UnaryOperator.Not) |
-      str("+") ~> (() => UnaryOperator.UnaryPlus) |
-      str("-") ~> (() => UnaryOperator.UnaryMinus) |
-      atomic("isEmpty?") ~> (() => UnaryOperator.Set.IsEmpty) |
-      atomic("nonEmpty?") ~> (() => UnaryOperator.Set.NonEmpty) |
-      atomic("singleton?") ~> (() => UnaryOperator.Set.Singleton) |
-      atomic("size?") ~> (() => UnaryOperator.Set.Size)
+  object Operator {
+
+    /**
+     * Parses a unary operator.
+     */
+    def Unary: Rule1[UnaryOperator] = rule {
+      str("!") ~> (() => UnaryOperator.Not) |
+        str("+") ~> (() => UnaryOperator.UnaryPlus) |
+        str("-") ~> (() => UnaryOperator.UnaryMinus) |
+        atomic("isEmpty?") ~> (() => UnaryOperator.Set.IsEmpty) |
+        atomic("nonEmpty?") ~> (() => UnaryOperator.Set.NonEmpty) |
+        atomic("singleton?") ~> (() => UnaryOperator.Set.Singleton) |
+        atomic("size?") ~> (() => UnaryOperator.Set.Size)
+    }
+
   }
+
 
   def LogicalOp: Rule1[BinaryOperator] = rule {
     str("&&") ~> (() => BinaryOperator.And) |
