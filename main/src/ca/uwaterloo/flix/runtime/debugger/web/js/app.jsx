@@ -9,16 +9,42 @@ var PointsTo = {
     ]
 };
 
+var SumOp = {
+    attributes: ["localVal", "value"],
+    rows: [
+        [1, "Buba"],
+    ]
+};
+
+var Indexes = {
+    rows: [
+        ["{a}", "423422423"],
+        ["{a, b, c}", "423423432423"]
+    ]
+};
+
 var Relations = ["SumOp"];
 var Lattices = ["VarPointsTo"];
 
+/**
+ * Main Application entry point.
+ */
 var App = React.createClass({
+
+    getInitiateState: function () {
+        return {};
+    },
+
+    changePage: function (page) {
+        console.log(page)
+    },
+
     render: function () {
         return (
             <div>
-                <Menu relations={Relations} lattices={Lattices}/>
-                <Head name="VarPointsTo"/>
-                <Table table={PointsTo}/>
+                <Menu changePage={this.changePage} relations={Relations} lattices={Lattices}/>
+
+                <RelationPage name="VarPointsTo" table={PointsTo}/>
             </div>
         );
     }
@@ -29,6 +55,7 @@ var App = React.createClass({
  */
 var Menu = React.createClass({
     propTypes: {
+        changePage: React.PropTypes.func.isRequired,
         relations: React.PropTypes.array.isRequired,
         lattices: React.PropTypes.array.isRequired
     },
@@ -47,14 +74,18 @@ var Menu = React.createClass({
                                 Minimal Model <span className="caret"></span>
                             </a>
                             <ul className="dropdown-menu">
-                                {this.props.relations.map(function (relation) {
-                                    return <li key={relation}><a href="">{relation}</a></li>
+                                {this.props.relations.map(relation => {
+                                    return <li key={relation} onClick={() => this.props.changePage({relation})}>
+                                        <a href="#">{relation}</a>
+                                    </li>
                                 })}
 
                                 <li role="separator" className="divider"></li>
 
-                                {this.props.lattices.map(function (lattice) {
-                                    return <li key={lattice}><a href="">{lattice}</a></li>
+                                {this.props.lattices.map(lattice => {
+                                    return <li key={lattice}>
+                                        <a href="#">{lattice}</a>
+                                    </li>
                                 })}
                             </ul>
                         </li>
@@ -85,6 +116,24 @@ var Menu = React.createClass({
                     </ul>
                 </div>
             </nav>
+        );
+    }
+});
+
+/**
+ * Relation page.
+ */
+var RelationPage = React.createClass({
+    propTypes: {
+        name: React.PropTypes.string.isRequired,
+        table: React.PropTypes.object.isRequired
+    },
+    render: function () {
+        return (
+            <div>
+                <Head name={this.props.name}/>
+                <Table table={this.props.table}/>
+            </div>
         );
     }
 });
