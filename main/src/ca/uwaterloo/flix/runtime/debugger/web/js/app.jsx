@@ -16,12 +16,23 @@ var SumOp = {
     ]
 };
 
-var Indexes = {
-    rows: [
-        ["{a}", "423422423"],
-        ["{a, b, c}", "423423432423"]
-    ]
-};
+var Indexes = [
+    {
+        collection: "/Pt",
+        index: "{variable, target}",
+        hits: 2439278
+    },
+    {
+        collection: "/CFG",
+        index: "{label} ",
+        hits: 959689
+    },
+    {
+        collection: "/Phi",
+        index: "{label} ",
+        hits: 959565
+    }
+];
 
 var Queries = [
     {
@@ -74,22 +85,13 @@ var App = React.createClass({
         );
     },
 
-    IndexesPage: function () {
-        return (
-            <div>
-                <Head name="Performance / Indexes"/>
-            </div>
-        );
-    },
-
-
     render: function () {
         var page = null;
         var pageName = this.state.page.name;
         if (pageName === "performance/phases") {
             page = this.PhasesPage()
         } else if (pageName === "performance/indexes") {
-            page = this.IndexesPage()
+            page = <IndexesPage />
         } else if (pageName === "performance/queries") {
             page = <QueriesPage />
         } else {
@@ -194,6 +196,27 @@ var RelationPage = React.createClass({
             <div>
                 <Head name={this.props.name}/>
                 <Table table={this.props.table}/>
+            </div>
+        );
+    }
+});
+
+/**
+ * Indexes page.
+ */
+var IndexesPage = React.createClass({
+    render: function () {
+        var table = {
+            columns: ["Collection", "Index", "Hits"],
+            rows: Indexes.map(row =>
+                    [row["collection"], row["index"], row["hits"]]
+            )
+        };
+
+        return (
+            <div>
+                <Head name="Performance / Indexes"/>
+                <Table table={table}/>
             </div>
         );
     }
