@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Flix (localhost: 9123)</title>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="css/bootstrap.css">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="css/bootstrap-theme.css">
+
+    <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js"></script> -->
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="js/bootstrap.js"></script>
+
+    <style type="text/css">
+        #page {
+            margin-left: auto;
+            margin-right: auto;
+            width: 80vw;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="page">
+
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="#">Flix Debugger</a>
+            </div>
+
+            <ul class="nav navbar-nav">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Minimal Model <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="">/ParityAnalysis::SumOp</a></li>
+                        <li role="separator" class="divider"></li>
+                        <li><a href="">/ParityAnalysis::VarPointsTo</a></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <ul class="nav navbar-nav">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Performance <span
+                            class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="">Phases</a></li>
+                        <li><a href="">Indexes</a></li>
+                        <li><a href="">Queries</a></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#"><span class="glyphicon glyphicon-refresh"></span> Reload</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <h1>/ParityAnalysis::VarPointsTo</h1>
+    </div>
+
+    <table class="table table-striped table-condensed">
+        <thead>
+        <tr>
+            <th>localVal</th>
+            <th>value<></th>
+        </tr>
+        </thead>
+        <tr>
+            <td>1</td>
+            <td>/ParityAnalysis::Parity.Odd(())</td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>/ParityAnalysis::Parity.Even(())</td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td>/ParityAnalysis::Parity.Odd(())</td>
+        </tr>
+        <tr>
+            <td>7</td>
+            <td> /ParityAnalysis::Parity.Odd(())</td>
+        </tr>
+        <tr>
+            <td>8</td>
+            <td>/ParityAnalysis::Parity.Top(())</td>
+        </tr>
+    </table>
+
+
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Panel title</h3>
+        </div>
+        <div class="panel-body">
+            Panel content
+        </div>
+    </div>
+
+
+</div>
+
+</body>
+</html>
