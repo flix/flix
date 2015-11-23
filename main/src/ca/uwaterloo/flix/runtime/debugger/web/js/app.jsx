@@ -69,7 +69,6 @@ var Queries = [
     }
 ];
 
-var Running = true;
 
 var Relations = [
     {name: "Multi", size: 148},
@@ -89,7 +88,13 @@ var Relations = [
     {name: "Phi", size: 2702}
 ];
 
-var Lattices = ["VarPointsTo"];
+var Lattices = [
+    {name: "SUBefore", size: 609793},
+    {name: "SUBefore", size: 605760},
+    {name: "Kill", size: 1571}
+];
+
+var Running = true;
 
 /**
  * Main Application entry point.
@@ -116,7 +121,7 @@ var App = React.createClass({
         } else if (pageName === "relation") {
             page = <RelationPage name="VarPointsTo" table={PointsTo}/>
         } else {
-            page = <LandingPage relations={Relations}/>
+            page = <LandingPage relations={Relations} lattices={Lattices}/>
         }
 
         return (
@@ -164,8 +169,9 @@ var Menu = React.createClass({
                                 <li role="separator" className="divider"></li>
 
                                 {this.props.lattices.map(lattice => {
-                                    return <li key={lattice}>
-                                        <a href="#">{lattice}</a>
+                                    var name = lattice.name;
+                                    return <li key={name}>
+                                        <a href="#">{name}</a>
                                     </li>
                                 })}
                             </ul>
@@ -212,7 +218,8 @@ var Menu = React.createClass({
  */
 var LandingPage = React.createClass({
     propTypes: {
-        relations: React.PropTypes.array.isRequired
+        relations: React.PropTypes.array.isRequired,
+        lattices: React.PropTypes.array.isRequired
     },
 
     render: function () {
@@ -239,13 +246,13 @@ var LandingPage = React.createClass({
                         <h3>Lattices</h3>
 
                         <div className="list-group">
-                            <a href="#" className="list-group-item">
-                                Cras justo odio  <span
-                                className="badge">543543</span>
-                            </a>
-                            <a href="#" className="list-group-item">Dapibus ac facilisis in <span
-                                className="badge">543543</span></a>
-
+                            {this.props.lattices.map(lattice => {
+                                return (
+                                    <a href="#" className="list-group-item">
+                                        {lattice.name} <span className="badge">{lattice.size}</span>
+                                    </a>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
