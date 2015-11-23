@@ -4,12 +4,12 @@ import java.io.{IOException, ByteArrayOutputStream}
 import java.net.InetSocketAddress
 import java.util.concurrent.Executors
 
+import ca.uwaterloo.flix.runtime.Solver
 import com.sun.net.httpserver.{HttpServer, HttpExchange, HttpHandler}
-import org.json4s.JsonAST.{JString, JValue}
+import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
 
-class RestServer {
-
+class RestServer(solver: Solver) {
 
   /**
    * A collection of static resources included in the Jar.
@@ -144,8 +144,11 @@ class RestServer {
     }
   }
 
-  class StateHandler extends JsonHandler {
-    def json: JValue = JString("Hello World!")
+  class RelationsHandler extends JsonHandler {
+
+    def json: JValue = JArray(solver.dataStore.relations.map {
+      case (name, relation) => JObject(List(JField(name.parts.mkString("::"), JString("foo"))))
+    }.toList)
   }
 
   /**
@@ -158,7 +161,7 @@ class RestServer {
     val server = HttpServer.create(new InetSocketAddress(9090), 0) // TODO: port
 
     // mount ajax handlers.
-    server.createContext("/api/status", new StateHandler())
+    server.createContext("/api/relations", new RelationsHandler())
 
     // mount file handler.
     server.createContext("/", new FileHandler())

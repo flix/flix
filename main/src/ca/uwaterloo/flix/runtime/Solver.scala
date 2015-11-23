@@ -74,7 +74,7 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     */
   def solve(): Model = {
 
-    val restServer =  new RestServer()
+    val restServer =  new RestServer(this)
     restServer.start()
 
     // measure the time elapsed.
