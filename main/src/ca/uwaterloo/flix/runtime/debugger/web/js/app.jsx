@@ -280,22 +280,30 @@ var StatusIcon = React.createClass({
         if (status === "inprogress") {
             return (
                 <li className="bg-info">
-                    <a href="#"><span className="glyphicon glyphicon-time"></span> Running</a>
+                    <a href="#">
+                        <span className="glyphicon glyphicon-time"></span> <strong>Running</strong>
+                    </a>
                 </li>)
         } else if (status === "completed") {
             return (
                 <li className="bg-success">
-                    <a href="#"><span className="glyphicon glyphicon-ok-circle"></span> Completed</a>
+                    <a href="#">
+                        <span className="glyphicon glyphicon-ok-circle"></span> <strong>Completed</strong>
+                    </a>
                 </li>)
         } else if (status === "crashed") {
             return (
                 <li className="bg-danger">
-                    <a href="#"><span className="glyphicon glyphicon-warning-sign"></span> Crashed</a>
+                    <a href="#">
+                        <span className="glyphicon glyphicon-warning-sign"></span> <strong>Crashed</strong>
+                    </a>
                 </li>)
         } else {
             return (
                 <li className="bg-warning">
-                    <a href="#"><span className="glyphicon glyphicon-question-sign"></span> Connection Lost</a>
+                    <a href="#">
+                        <span className="glyphicon glyphicon-question-sign"></span> <strong>Connection Lost</strong>
+                    </a>
                 </li>)
         }
     }
@@ -411,7 +419,7 @@ var Table = React.createClass({
     },
     render: function () {
         return (
-            <table className="table table-striped table-condense">
+            <table className="table table-striped table-condense table-hover">
                 <TableHeader columns={this.props.table.columns}/>
                 <TableBody rows={this.props.table.rows}/>
             </table>
