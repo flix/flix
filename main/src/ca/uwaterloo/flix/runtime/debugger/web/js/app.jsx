@@ -9,10 +9,73 @@ var PointsTo = {
     ]
 };
 
+var Relations = ["SumOp"];
+var Lattices = ["VarPointsTo"];
+
 var App = React.createClass({
     render: function () {
         return (
-            <Table table={PointsTo}/>
+            <div>
+                <Menu relations={Relations} lattices={Lattices}/>
+                <Head name="VarPointsTo"/>
+                <Table table={PointsTo}/>
+            </div>
+        );
+    }
+});
+
+/**
+ * Menu component.
+ */
+var Menu = React.createClass({
+    propTypes: {
+        relations: React.PropTypes.array.isRequired,
+        lattices: React.PropTypes.array.isRequired
+    },
+
+    render: function () {
+        return (
+            <nav className="navbar navbar-default">
+                <div className="navbar-header">
+                    <a className="navbar-brand" href="#">Flix Debugger</a>
+                </div>
+
+                <ul className="nav navbar-nav">
+                    <li className="dropdown">
+                        <a href="#" className="dropdown-toggle" data-toggle="dropdown">
+                            Minimal Model <span className="caret"></span>
+                        </a>
+                        <ul className="dropdown-menu">
+                            {this.props.relations.map(function (relation) {
+                                return <li key={relation}><a href="">{relation}</a></li>
+                            })}
+
+                            <li role="separator" className="divider"></li>
+
+                            {this.props.lattices.map(function (lattice) {
+                                return <li key={lattice}><a href="">{lattice}</a></li>
+                            })}
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        );
+    }
+});
+
+
+/**
+ * Head component.
+ */
+var Head = React.createClass({
+    propTypes: {
+        name: React.PropTypes.string.isRequired
+    },
+    render: function () {
+        return (
+            <div className="page-header">
+                <h1>{this.props.name}</h1>
+            </div>
         );
     }
 });
@@ -92,7 +155,6 @@ var TableRow = React.createClass({
         );
     }
 });
-
 
 
 /**
