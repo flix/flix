@@ -9,13 +9,6 @@ var PointsTo = {
     ]
 };
 
-var SumOp = {
-    columns: ["localVal", "value"],
-    rows: [
-        [1, "Buba"],
-    ]
-};
-
 var Phases = [
     {
         phase: "Parsing",
@@ -193,13 +186,24 @@ var Menu = React.createClass({
                             </a>
                             <ul className="dropdown-menu">
                                 <li>
-                                    <a href="#" onClick={() => this.props.changePage({name: "performance/phases"})}>Phases</a>
-                                </li>
-                                <li>
                                     <a href="#" onClick={() => this.props.changePage({name: "performance/indexes"})}>Indexes</a>
                                 </li>
                                 <li>
                                     <a href="#" onClick={() => this.props.changePage({name: "performance/queries"})}>Queries</a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <ul className="nav navbar-nav">
+                        <li className="dropdown">
+                            <a href="#" className="dropdown-toggle" data-toggle="dropdown">
+                                Compiler
+                                <className className="caret"></className>
+                            </a>
+                            <ul className="dropdown-menu">
+                                <li>
+                                    <a href="#" onClick={() => this.props.changePage({name: "performance/phases"})}>Phases</a>
                                 </li>
                             </ul>
                         </li>
