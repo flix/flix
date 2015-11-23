@@ -143,6 +143,12 @@ var Menu = React.createClass({
         lattices: React.PropTypes.array.isRequired
     },
 
+    changePageRelation: function (relation) {
+        return function () {
+            this.props.changePage({name: "relation"})
+        }.bind(this)
+    },
+
     render: function () {
         return (
             <nav className="navbar navbar-default">
@@ -161,7 +167,7 @@ var Menu = React.createClass({
                             <ul className="dropdown-menu">
                                 {this.props.relations.map(relation => {
                                     var name = relation.name;
-                                    return <li key={name} onClick={() => this.props.changePage({name})}>
+                                    return <li key={name} onClick={this.changePageRelation({name})}>
                                         <a href="#">{name}</a>
                                     </li>
                                 })}
