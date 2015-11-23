@@ -1,7 +1,9 @@
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.language.frontend
 
-import ca.uwaterloo.flix.language.ast.ParsedAst.Literal
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.frontend.ast.ParsedAst
+import ca.uwaterloo.flix.language.frontend.ast.ParsedAst.Literal
+import ca.uwaterloo.flix.language.frontend.phase.Parser
 
 import org.scalatest.FunSuite
 

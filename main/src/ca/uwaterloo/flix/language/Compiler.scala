@@ -3,8 +3,9 @@ package ca.uwaterloo.flix.language
 import java.nio.file.{Files, Path}
 
 import ca.uwaterloo.flix.Flix
-import ca.uwaterloo.flix.language.ast.{SourceInput, TypedAst, ParsedAst}
-import ca.uwaterloo.flix.language.phase.Parser
+import ca.uwaterloo.flix.language.ast.{SourceInput, TypedAst}
+import ca.uwaterloo.flix.language.frontend.ast.ParsedAst
+import ca.uwaterloo.flix.language.frontend.phase.Parser
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.util.AnsiConsole
 import ca.uwaterloo.flix.util.Validation

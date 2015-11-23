@@ -1,6 +1,7 @@
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.language.frontend.phase
 
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.frontend.ast.ParsedAst
 
 import org.parboiled2._
 
