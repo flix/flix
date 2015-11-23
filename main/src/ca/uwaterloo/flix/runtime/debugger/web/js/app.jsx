@@ -94,7 +94,7 @@ var Lattices = [
     {name: "Kill", size: 1571}
 ];
 
-var Status = "inprogress";
+var Status = "completed";
 
 
 /**
@@ -275,28 +275,29 @@ var StatusIcon = React.createClass({
     },
 
     render: function () {
-        var result = null;
-
         var status = this.props.status;
-        if (status === "inprogress") {
-            result = (<li className="bg-info">
-                <a href="#"><span className="glyphicon glyphicon-time"></span> In Progress</a>
-            </li>)
-        } else if (status === "crashed") {
-            result = (<li className="bg-danger">
-                <a href="#"><span className="glyphicon glyphicon-warning-sign"></span> Crashed</a>
-            </li>)
-        } else if (status === "completed") {
-            result = (<li className="bg-success">
-                <a href="#"><span className="glyphicon glyphicon-ok-circle"></span> Completed</a>
-            </li>)
-        } else {
-            result = (<li className="bg-warning">
-                <a href="#"><span className="glyphicon glyphicon-question-sign"></span> Connection Lost</a>
-            </li>)
-        }
 
-        return result;
+        if (status === "inprogress") {
+            return (
+                <li className="bg-info">
+                    <a href="#"><span className="glyphicon glyphicon-time"></span> Running</a>
+                </li>)
+        } else if (status === "completed") {
+            return (
+                <li className="bg-success">
+                    <a href="#"><span className="glyphicon glyphicon-ok-circle"></span> Completed</a>
+                </li>)
+        } else if (status === "crashed") {
+            return (
+                <li className="bg-danger">
+                    <a href="#"><span className="glyphicon glyphicon-warning-sign"></span> Crashed</a>
+                </li>)
+        } else {
+            return (
+                <li className="bg-warning">
+                    <a href="#"><span className="glyphicon glyphicon-question-sign"></span> Connection Lost</a>
+                </li>)
+        }
     }
 });
 
