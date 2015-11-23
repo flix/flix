@@ -6,6 +6,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Term
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Name, TypedAst}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
+import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.util.{AsciiTable, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
@@ -72,6 +73,10 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     * Solves the current Flix program.
     */
   def solve(): Model = {
+
+    val restServer =  new RestServer()
+    restServer.start()
+
     // measure the time elapsed.
     val t = System.nanoTime()
 
