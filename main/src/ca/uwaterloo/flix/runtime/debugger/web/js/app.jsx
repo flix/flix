@@ -56,8 +56,8 @@ var Queries = [
 
     {
         rule: "SUAfter(l,a,t) :- SUBefore(l,a,t), Phi(l). ",
-        hitcount: 956864,
-        time: 6597,
+        hitcount: 9564,
+        time: 97,
         location: "115"
     },
 
@@ -68,6 +68,8 @@ var Queries = [
         location: "113"
     }
 ];
+
+var Running = true
 
 var Relations = ["SumOp"];
 var Lattices = ["VarPointsTo"];
@@ -85,18 +87,6 @@ var App = React.createClass({
         this.setState({page: page})
     },
 
-    defaultPage: function () {
-        return (   <RelationPage name="VarPointsTo" table={PointsTo}/>);
-    },
-
-    PhasesPage: function () {
-        return (
-            <div>
-                <Head name="Performance / Phases"/>
-            </div>
-        );
-    },
-
     render: function () {
         var page = null;
         var pageName = this.state.page.name;
@@ -106,13 +96,15 @@ var App = React.createClass({
             page = <IndexesPage />
         } else if (pageName === "performance/queries") {
             page = <QueriesPage />
+        } else if (pageName === "relation") {
+            page = <RelationPage name="VarPointsTo" table={PointsTo}/>
         } else {
-            page = this.defaultPage();
+            page = <LandingPage/>
         }
 
         return (
             <div>
-                <Menu changePage={this.changePage} relations={Relations} lattices={Lattices}/>
+                <Menu changePage={this.changePage} running={Running} relations={Relations} lattices={Lattices}/>
                 {page}
             </div>
         );
@@ -134,7 +126,9 @@ var Menu = React.createClass({
             <nav className="navbar navbar-default">
                 <div className="container-fluid">
                     <div className="navbar-header">
-                        <a className="navbar-brand" href="#">Flix Debugger</a>
+                        <a className="navbar-brand" href="#" onClick={() => this.props.changePage({name: "default"})}>
+                            Flix Debugger
+                        </a>
                     </div>
 
                     <ul className="nav navbar-nav">
@@ -191,6 +185,19 @@ var Menu = React.createClass({
                     </ul>
                 </div>
             </nav>
+        );
+    }
+});
+
+/**
+ * Landing page.
+ */
+var LandingPage = React.createClass({
+    render: function () {
+        return (
+            <div>
+                <Head name="Flix Debugger"/>
+            </div>
         );
     }
 });
