@@ -1,5 +1,5 @@
 var PointsTo = {
-    attributes: ["localVal", "value"],
+    columns: ["localVal", "value"],
     rows: [
         [1, "/ParityAnalysis::Parity.Odd(())"],
         [2, "/ParityAnalysis::Parity.Even(())"],
@@ -10,7 +10,7 @@ var PointsTo = {
 };
 
 var SumOp = {
-    attributes: ["localVal", "value"],
+    columns: ["localVal", "value"],
     rows: [
         [1, "Buba"],
     ]
@@ -22,6 +22,29 @@ var Indexes = {
         ["{a, b, c}", "423423432423"]
     ]
 };
+
+var Queries = [
+    {
+        rule: "SUBefore(l2,a,t) :- CFG(l1,l2), SUAfter(l1,a,t).",
+        hitcount: 959690,
+        time: 8714,
+        location: "101"
+    },
+
+    {
+        rule: "SUAfter(l,a,t) :- SUBefore(l,a,t), Phi(l). ",
+        hitcount: 956864,
+        time: 6597,
+        location: "115"
+    },
+
+    {
+        rule: "SUAfter(l,a,t) :- SUBefore(l,a,t), killNot(a, k), Kill(l,k). ",
+        hitcount: 958449,
+        time: 5562,
+        location: "113"
+    }
+];
 
 var Relations = ["SumOp"];
 var Lattices = ["VarPointsTo"];
@@ -59,13 +82,6 @@ var App = React.createClass({
         );
     },
 
-    QueriesPage: function () {
-        return (
-            <div>
-                <Head name="Performance / Queries"/>
-            </div>
-        );
-    },
 
     render: function () {
         var page = null;
@@ -75,7 +91,7 @@ var App = React.createClass({
         } else if (pageName === "performance/indexes") {
             page = this.IndexesPage()
         } else if (pageName === "performance/queries") {
-            page = this.QueriesPage()
+            page = <QueriesPage />
         } else {
             page = this.defaultPage();
         }
@@ -183,6 +199,27 @@ var RelationPage = React.createClass({
     }
 });
 
+/**
+ * Queries page.
+ */
+var QueriesPage = React.createClass({
+    render: function () {
+        var table = {
+            columns: ["Source Location", "Rule", "Hitcount", "Total Time (msec)", "Time / Operation (usec)"],
+            rows: Queries.map(row =>
+                    [row["location"], row["rule"], row["hitcount"], row["time"], 1000 * row["time"] / row["hitcount"]]
+            )
+        };
+
+        return (
+            <div>
+                <Head name="Performance / Queries"/>
+                <Table table={table}/>
+            </div>
+        );
+    }
+});
+
 
 /**
  * Head component.
@@ -206,14 +243,14 @@ var Head = React.createClass({
 var Table = React.createClass({
     propTypes: {
         table: React.PropTypes.shape({
-            attributes: React.PropTypes.array.isRequired,
+            columns: React.PropTypes.array.isRequired,
             rows: React.PropTypes.array.isRequired
         })
     },
     render: function () {
         return (
             <table className="table table-striped table-condense">
-                <TableHeader attributes={this.props.table.attributes}/>
+                <TableHeader columns={this.props.table.columns}/>
                 <TableBody rows={this.props.table.rows}/>
             </table>
         );
@@ -225,14 +262,14 @@ var Table = React.createClass({
  */
 var TableHeader = React.createClass({
     propTypes: {
-        attributes: React.PropTypes.array.isRequired
+        columns: React.PropTypes.array.isRequired
     },
     render: function () {
         return (
             <thead>
             <tr>
-                {this.props.attributes.map(function (attribute) {
-                    return <th key={attribute}>{attribute}</th>
+                {this.props.columns.map(function (column) {
+                    return <th key={column}>{column}</th>
                 })}
             </tr>
             </thead>
@@ -269,7 +306,7 @@ var TableRow = React.createClass({
         return (
             <tr>
                 {this.props.row.map(function (elm) {
-                    return <td key={elm}>{elm}</td>
+                    return <td>{elm}</td>
                 })}
             </tr>
         );
