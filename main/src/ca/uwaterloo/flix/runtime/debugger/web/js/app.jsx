@@ -16,6 +16,18 @@ var SumOp = {
     ]
 };
 
+var Phases = [
+    {
+        phase: "Parsing",
+        time: 243
+    },
+    {
+        phase: "Typing",
+        time: 2543
+    }
+
+];
+
 var Indexes = [
     {
         collection: "/Pt",
@@ -89,7 +101,7 @@ var App = React.createClass({
         var page = null;
         var pageName = this.state.page.name;
         if (pageName === "performance/phases") {
-            page = this.PhasesPage()
+            page = <PhasesPage />
         } else if (pageName === "performance/indexes") {
             page = <IndexesPage />
         } else if (pageName === "performance/queries") {
@@ -196,6 +208,27 @@ var RelationPage = React.createClass({
             <div>
                 <Head name={this.props.name}/>
                 <Table table={this.props.table}/>
+            </div>
+        );
+    }
+});
+
+/**
+ * Phases page.
+ */
+var PhasesPage = React.createClass({
+    render: function () {
+        var table = {
+            columns: ["Name", "Time"],
+            rows: Phases.map(row =>
+                    [row["phase"], row["time"]]
+            )
+        };
+
+        return (
+            <div>
+                <Head name="Performance / Phases"/>
+                <Table table={table}/>
             </div>
         );
     }
