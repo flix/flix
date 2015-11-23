@@ -196,7 +196,7 @@ var LandingPage = React.createClass({
     render: function () {
         return (
             <div>
-                <Head name="Welcome to the Flix Debugger! :-)"/>
+                <Head name="Welcome to the Flix Debugger!"/>
 
                 <div className="row">
                     <div className="col-xs-6">
