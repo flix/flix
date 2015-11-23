@@ -69,9 +69,26 @@ var Queries = [
     }
 ];
 
-var Running = true
+var Running = true;
 
-var Relations = ["SumOp"];
+var Relations = [
+    {name: "Multi", size: 148},
+    {name: "AddrOf", size: 915},
+    {name: "KillEmpty", size: 0},
+    {name: "PtSU", size: 0},
+    {name: "PtH", size: 811},
+    {name: "AllObjects", size: 915},
+    {name: "FILoad", size: 8},
+    {name: "Copy", size: 481},
+    {name: "Store", size: 316},
+    {name: "CFG", size: 4525},
+    {name: "Pt", size: 14103},
+    {name: "Clear", size: 225},
+    {name: "FIStore", size: 69},
+    {name: "Load", size: 2139},
+    {name: "Phi", size: 2702}
+];
+
 var Lattices = ["VarPointsTo"];
 
 /**
@@ -99,7 +116,7 @@ var App = React.createClass({
         } else if (pageName === "relation") {
             page = <RelationPage name="VarPointsTo" table={PointsTo}/>
         } else {
-            page = <LandingPage/>
+            page = <LandingPage relations={Relations}/>
         }
 
         return (
@@ -138,8 +155,9 @@ var Menu = React.createClass({
                             </a>
                             <ul className="dropdown-menu">
                                 {this.props.relations.map(relation => {
-                                    return <li key={relation} onClick={() => this.props.changePage({relation})}>
-                                        <a href="#">{relation}</a>
+                                    var name = relation.name;
+                                    return <li key={name} onClick={() => this.props.changePage({name})}>
+                                        <a href="#">{name}</a>
                                     </li>
                                 })}
 
@@ -193,6 +211,10 @@ var Menu = React.createClass({
  * Landing page.
  */
 var LandingPage = React.createClass({
+    propTypes: {
+        relations: React.PropTypes.array.isRequired
+    },
+
     render: function () {
         return (
             <div>
@@ -203,20 +225,14 @@ var LandingPage = React.createClass({
                         <h3>Relations</h3>
 
                         <div className="list-group">
-                            <a href="#" className="list-group-item">
-                                Cras justo odio <span
-                                className="badge">543543</span>
-                            </a>
-                            <a href="#" className="list-group-item">Dapibus ac facilisis in <span
-                                className="badge">543543</span></a>
-                            <a href="#" className="list-group-item">Morbi leo risus <span
-                                className="badge">543543</span></a>
-                            <a href="#" className="list-group-item">Porta ac consectetur ac <span
-                                className="badge">543543</span></a>
-                            <a href="#" className="list-group-item">Vestibulum at eros <span
-                                className="badge">543543</span></a>
+                            {this.props.relations.map(relation => {
+                                return (
+                                    <a href="#" className="list-group-item">
+                                        {relation.name} <span className="badge">{relation.size}</span>
+                                    </a>
+                                );
+                            })}
                         </div>
-
                     </div>
 
                     <div className="col-xs-6">
