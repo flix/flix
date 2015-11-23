@@ -332,14 +332,16 @@ var RelationPage = React.createClass({
 });
 
 var BarChart = React.createClass({
+
     componentDidMount: function () {
-
-
         var randomScalingFactor = function () {
             return Math.round(Math.random() * 100)
         };
+
+        var labels = ["Parser", "Weeder", "Resolver", "Typer", "Indexer", "Solver"];
+
         var barChartData = {
-            labels: ["January", "February", "March", "April", "May", "June", "July"],
+            labels: labels,
             datasets: [
                 {
                     fillColor: "rgba(151,187,205,0.5)",
@@ -349,22 +351,21 @@ var BarChart = React.createClass({
                     data: [randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor()]
                 }
             ]
-        }
-
+        };
 
         console.log("hello world")
-        var ctx = this.canvasRef.getContext("2d");
-        this.myLine = new Chart(ctx).Bar(barChartData, {
+        var ctx = this.canvas.getContext("2d");
+        this.line = new Chart(ctx).Bar(barChartData, {
             responsive: false
         });
     },
 
     componentWillUnmount: function () {
-        this.myLine.destroy();
+        this.line.destroy();
     },
 
     render: function () {
-        return <canvas width="600" height="400" ref={(ref) => this.canvasRef = ref}/>
+        return <canvas width="600" height="400" ref={(ref) => this.canvas = ref}/>
     }
 });
 
