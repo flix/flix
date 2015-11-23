@@ -36,28 +36,54 @@ var Menu = React.createClass({
     render: function () {
         return (
             <nav className="navbar navbar-default">
-                <div className="navbar-header">
-                    <a className="navbar-brand" href="#">Flix Debugger</a>
+                <div className="container-fluid">
+                    <div className="navbar-header">
+                        <a className="navbar-brand" href="#">Flix Debugger</a>
+                    </div>
+
+                    <ul className="nav navbar-nav">
+                        <li className="dropdown">
+                            <a href="#" className="dropdown-toggle" data-toggle="dropdown">
+                                Minimal Model <span className="caret"></span>
+                            </a>
+                            <ul className="dropdown-menu">
+                                {this.props.relations.map(function (relation) {
+                                    return <li key={relation}><a href="">{relation}</a></li>
+                                })}
+
+                                <li role="separator" className="divider"></li>
+
+                                {this.props.lattices.map(function (lattice) {
+                                    return <li key={lattice}><a href="">{lattice}</a></li>
+                                })}
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <ul className="nav navbar-nav">
+                        <li className="dropdown">
+                            <a href="#" className="dropdown-toggle" data-toggle="dropdown">
+                                Performance
+                                <className className="caret"></className>
+                            </a>
+                            <ul className="dropdown-menu">
+                                <li><a href="">Phases</a></li>
+                                <li><a href="">Indexes</a></li>
+                                <li><a href="">Queries</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <ul className="nav navbar-nav navbar-right">
+                        <li className="bg-success">
+                            <a href="#"><span className="glyphicon glyphicon-fire"></span> Running</a>
+                        </li>
+
+                        <li>
+                            <a href="#"> <span className="glyphicon glyphicon-refresh"></span> Refresh</a>
+                        </li>
+                    </ul>
                 </div>
-
-                <ul className="nav navbar-nav">
-                    <li className="dropdown">
-                        <a href="#" className="dropdown-toggle" data-toggle="dropdown">
-                            Minimal Model <span className="caret"></span>
-                        </a>
-                        <ul className="dropdown-menu">
-                            {this.props.relations.map(function (relation) {
-                                return <li key={relation}><a href="">{relation}</a></li>
-                            })}
-
-                            <li role="separator" className="divider"></li>
-
-                            {this.props.lattices.map(function (lattice) {
-                                return <li key={lattice}><a href="">{lattice}</a></li>
-                            })}
-                        </ul>
-                    </li>
-                </ul>
             </nav>
         );
     }
