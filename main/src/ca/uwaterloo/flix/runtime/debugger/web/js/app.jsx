@@ -196,7 +196,43 @@ var LandingPage = React.createClass({
     render: function () {
         return (
             <div>
-                <Head name="Flix Debugger"/>
+                <Head name="Welcome to the Flix Debugger! :-)"/>
+
+                <div className="row">
+                    <div className="col-xs-6">
+                        <h3>Relations</h3>
+
+                        <div className="list-group">
+                            <a href="#" className="list-group-item">
+                                Cras justo odio <span
+                                className="badge">543543</span>
+                            </a>
+                            <a href="#" className="list-group-item">Dapibus ac facilisis in <span
+                                className="badge">543543</span></a>
+                            <a href="#" className="list-group-item">Morbi leo risus <span
+                                className="badge">543543</span></a>
+                            <a href="#" className="list-group-item">Porta ac consectetur ac <span
+                                className="badge">543543</span></a>
+                            <a href="#" className="list-group-item">Vestibulum at eros <span
+                                className="badge">543543</span></a>
+                        </div>
+
+                    </div>
+
+                    <div className="col-xs-6">
+                        <h3>Lattices</h3>
+
+                        <div className="list-group">
+                            <a href="#" className="list-group-item">
+                                Cras justo odio  <span
+                                className="badge">543543</span>
+                            </a>
+                            <a href="#" className="list-group-item">Dapibus ac facilisis in <span
+                                className="badge">543543</span></a>
+
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }
