@@ -14,6 +14,8 @@ object Main {
    */
   def main(args: Array[String]): Unit = {
 
+    // TODO: Commandline arguments.
+
     val t = System.nanoTime()
     val paths = args flatMap getValidPath
 

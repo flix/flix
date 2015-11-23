@@ -8,12 +8,8 @@ import ca.uwaterloo.flix.language.frontend.phase.Parser
 import org.scalatest.FunSuite
 
 // TODO: Cleanup names. Numbering and remove the Parser. prefix.
-// TODO: Write custom assert which will actually print the parse error...
-// TODO:  Allow fields on case objects.
 
 class TestParser extends FunSuite {
-
-  val SL = SourceLocation.Unknown
 
   /////////////////////////////////////////////////////////////////////////////
   // Root                                                                    //
@@ -1689,158 +1685,172 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("Operator.Unary !") {
     val input = "!"
-    val parser = new Parser(SourceInput.Str(input))
+    val parser = mkParser(input)
     val result = parser.__run(parser.Operator.Unary).get
     assertResult(UnaryOperator.Not)(result)
   }
 
   test("Operator.Unary +") {
     val input = "+"
-    val parser = new Parser(SourceInput.Str(input))
+    val parser = mkParser(input)
     val result = parser.__run(parser.Operator.Unary).get
     assertResult(UnaryOperator.UnaryPlus)(result)
   }
 
   test("Operator.Unary -") {
     val input = "-"
-    val parser = new Parser(SourceInput.Str(input))
+    val parser = mkParser(input)
     val result = parser.__run(parser.Operator.Unary).get
     assertResult(UnaryOperator.UnaryMinus)(result)
   }
 
   test("Operator.Unary.Set.IsEmpty") {
     val input = "isEmpty?"
-    val parser = new Parser(SourceInput.Str(input))
+    val parser = mkParser(input)
     val result = parser.__run(parser.Operator.Unary).get
     assertResult(UnaryOperator.Set.IsEmpty)(result)
   }
 
   test("Operator.Unary.Set.NonEmpty") {
     val input = "nonEmpty?"
-    val parser = new Parser(SourceInput.Str(input))
+    val parser = mkParser(input)
     val result = parser.__run(parser.Operator.Unary).get
     assertResult(UnaryOperator.Set.NonEmpty)(result)
   }
 
   test("Operator.Unary.Set.Singleton") {
     val input = "singleton?"
-    val parser = new Parser(SourceInput.Str(input))
+    val parser = mkParser(input)
     val result = parser.__run(parser.Operator.Unary).get
     assertResult(UnaryOperator.Set.Singleton)(result)
   }
 
   test("Operator.Unary.Set.Size") {
     val input = "size?"
-    val parser = new Parser(SourceInput.Str(input))
+    val parser = mkParser(input)
     val result = parser.__run(parser.Operator.Unary).get
     assertResult(UnaryOperator.Set.Size)(result)
   }
 
-  test("LogicalOp &&") {
+  test("Operator.Binary.LogicalOp &&") {
     val input = "&&"
-    val result = new Parser(SourceInput.Str(input)).LogicalOp.run().get
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
     assertResult(BinaryOperator.And)(result)
   }
 
-  test("LogicalOp ||") {
+  test("Operator.Binary.LogicalOp ||") {
     val input = "||"
-    val result = new Parser(SourceInput.Str(input)).LogicalOp.run().get
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
     assertResult(BinaryOperator.Or)(result)
   }
 
-  test("ComparisonOp <") {
+  test("Operator.Binary.ComparisonOp <") {
     val input = "<"
-    val result = new Parser(SourceInput.Str(input)).ComparisonOp.run().get
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.ComparisonOp).get
     assertResult(BinaryOperator.Less)(result)
   }
 
-  test("ComparisonOp <=") {
+  test("Operator.Binary.ComparisonOp <=") {
     val input = "<="
-    val result = new Parser(SourceInput.Str(input)).ComparisonOp.run().get
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.ComparisonOp).get
     assertResult(BinaryOperator.LessEqual)(result)
   }
 
-  test("ComparisonOp >") {
+  test("Operator.Binary.ComparisonOp >") {
     val input = ">"
-    val result = new Parser(SourceInput.Str(input)).ComparisonOp.run().get
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.ComparisonOp).get
     assertResult(BinaryOperator.Greater)(result)
   }
 
-  test("ComparisonOp >=") {
+  test("Operator.Binary.ComparisonOp >=") {
     val input = ">="
-    val result = new Parser(SourceInput.Str(input)).ComparisonOp.run().get
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.ComparisonOp).get
     assertResult(BinaryOperator.GreaterEqual)(result)
   }
 
-  test("ComparisonOp ==") {
+  test("Operator.Binary.ComparisonOp ==") {
     val input = "=="
-    val result = new Parser(SourceInput.Str(input)).ComparisonOp.run().get
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.ComparisonOp).get
     assertResult(BinaryOperator.Equal)(result)
   }
 
-  test("ComparisonOp !=") {
+  test("Operator.Binary.ComparisonOp !=") {
     val input = "!="
-    val result = new Parser(SourceInput.Str(input)).ComparisonOp.run().get
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.ComparisonOp).get
     assertResult(BinaryOperator.NotEqual)(result)
   }
 
-  test("MultiplicativeOp *") {
+  test("Operator.Binary.MultiplicativeOp *") {
     val input = "*"
-    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.MultiplicativeOp).get
     assertResult(BinaryOperator.Times)(result)
   }
 
-  test("MultiplicativeOp /") {
+  test("Operator.Binary.MultiplicativeOp /") {
     val input = "/"
-    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.MultiplicativeOp).get
     assertResult(BinaryOperator.Divide)(result)
   }
 
-  test("MultiplicativeOp %") {
+  test("Operator.Binary.MultiplicativeOp %") {
     val input = "%"
-    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.MultiplicativeOp).get
     assertResult(BinaryOperator.Modulo)(result)
   }
 
-  test("AdditiveOp +") {
-    val input = "+"
-    val result = new Parser(SourceInput.Str(input)).AdditiveOp.run().get
-    assertResult(BinaryOperator.Plus)(result)
-  }
-
-  test("AdditiveOp -") {
-    val input = "-"
-    val result = new Parser(SourceInput.Str(input)).AdditiveOp.run().get
-    assertResult(BinaryOperator.Minus)(result)
-  }
-
-  // TODO: Shift operators
-
-  test("BinarySetOp.Insert (+=)") {
+  test("Operator.Binary.Set.Insert +=") {
     val input = "+="
-    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.MultiplicativeOp).get
     assertResult(BinaryOperator.Set.Insert)(result)
   }
 
-  test("BinarySetOp.Remove (-=)") {
+  test("Operator.Binary.Set.Remove -=") {
     val input = "-="
-    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.MultiplicativeOp).get
     assertResult(BinaryOperator.Set.Remove)(result)
   }
 
-  test("BinarySetOp.Union (++)") {
+  test("Operator.Binary.Set.Union ++") {
     val input = "++"
-    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.MultiplicativeOp).get
     assertResult(BinaryOperator.Set.Union)(result)
   }
 
-  test("BinarySetOp.Diff (--)") {
+  test("Operator.Binary.Set.Diff --") {
     val input = "--"
-    val result = new Parser(SourceInput.Str(input)).MultiplicativeOp.run().get
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.MultiplicativeOp).get
     assertResult(BinaryOperator.Set.Difference)(result)
   }
 
-  // TODO: Consider more set operations?
+  test("Operator.Binary.AdditiveOp +") {
+    val input = "+"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.AdditiveOp).get
+    assertResult(BinaryOperator.Plus)(result)
+  }
+
+  test("Operator.Binary.AdditiveOp -") {
+    val input = "-"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.AdditiveOp).get
+    assertResult(BinaryOperator.Minus)(result)
+  }
+
 
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1916,4 +1926,8 @@ class TestParser extends FunSuite {
     assert(result.isSuccess)
   }
 
+  /**
+   * Returns a parser for the given string `s`.
+   */
+  private def mkParser(s: String): Parser = new Parser(SourceInput.Str(s))
 }
