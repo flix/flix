@@ -94,27 +94,7 @@ var Lattices = [
     {name: "Kill", size: 1571}
 ];
 
-var Running = true;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+var Status = "inprogress";
 
 
 /**
@@ -147,7 +127,7 @@ var App = React.createClass({
 
         return (
             <div>
-                <Menu changePage={this.changePage} running={Running} relations={Relations} lattices={Lattices}/>
+                <Menu changePage={this.changePage} status={Status} relations={Relations} lattices={Lattices}/>
                 {page}
             </div>
         );
@@ -191,7 +171,7 @@ var Menu = React.createClass({
                                     return <li key={name} onClick={this.changePageRelation({name})}>
                                         <a href="#">{name}</a>
                                     </li>
-                                })}
+                                    })}
 
                                 <li role="separator" className="divider"></li>
 
@@ -200,7 +180,7 @@ var Menu = React.createClass({
                                     return <li key={name}>
                                         <a href="#">{name}</a>
                                     </li>
-                                })}
+                                    })}
                             </ul>
                         </li>
                     </ul>
@@ -226,13 +206,11 @@ var Menu = React.createClass({
                     </ul>
 
                     <ul className="nav navbar-nav navbar-right">
-                        <li className="bg-success">
-                            <a href="#"><span className="glyphicon glyphicon-fire"></span> Running</a>
-                        </li>
-
                         <li>
                             <a href="#"> <span className="glyphicon glyphicon-refresh"></span> Refresh</a>
                         </li>
+
+                        <StatusIcon status={Status}/>
                     </ul>
                 </div>
             </nav>
@@ -261,11 +239,11 @@ var LandingPage = React.createClass({
                         <div className="list-group">
                             {this.props.relations.map(relation => {
                                 return (
-                                    <a href="#" className="list-group-item">
-                                        {relation.name} <span className="badge">{relation.size}</span>
-                                    </a>
-                                );
-                            })}
+                                <a href="#" className="list-group-item">
+                                    {relation.name} <span className="badge">{relation.size}</span>
+                                </a>
+                                    );
+                                })}
                         </div>
                     </div>
 
@@ -275,16 +253,50 @@ var LandingPage = React.createClass({
                         <div className="list-group">
                             {this.props.lattices.map(lattice => {
                                 return (
-                                    <a href="#" className="list-group-item">
-                                        {lattice.name} <span className="badge">{lattice.size}</span>
-                                    </a>
-                                );
-                            })}
+                                <a href="#" className="list-group-item">
+                                    {lattice.name} <span className="badge">{lattice.size}</span>
+                                </a>
+                                    );
+                                })}
                         </div>
                     </div>
                 </div>
             </div>
         );
+    }
+});
+
+/**
+ * Status component.
+ */
+var StatusIcon = React.createClass({
+    propTypes: {
+        status: React.PropTypes.string.isRequired
+    },
+
+    render: function () {
+        var result = null;
+
+        var status = this.props.status;
+        if (status === "inprogress") {
+            result = (<li className="bg-info">
+                <a href="#"><span className="glyphicon glyphicon-time"></span> In Progress</a>
+            </li>)
+        } else if (status === "crashed") {
+            result = (<li className="bg-danger">
+                <a href="#"><span className="glyphicon glyphicon-warning-sign"></span> Crashed</a>
+            </li>)
+        } else if (status === "completed") {
+            result = (<li className="bg-success">
+                <a href="#"><span className="glyphicon glyphicon-ok-circle"></span> Completed</a>
+            </li>)
+        } else {
+            result = (<li className="bg-warning">
+                <a href="#"><span className="glyphicon glyphicon-question-sign"></span> Connection Lost</a>
+            </li>)
+        }
+
+        return result;
     }
 });
 
@@ -314,7 +326,7 @@ var PhasesPage = React.createClass({
         var table = {
             columns: ["Name", "Time"],
             rows: Phases.map(row =>
-                    [row["phase"], row["time"]]
+                [row["phase"], row["time"]]
             )
         };
 
@@ -335,7 +347,7 @@ var IndexesPage = React.createClass({
         var table = {
             columns: ["Collection", "Index", "Hits"],
             rows: Indexes.map(row =>
-                    [row["collection"], row["index"], row["hits"]]
+                [row["collection"], row["index"], row["hits"]]
             )
         };
 
@@ -356,7 +368,7 @@ var QueriesPage = React.createClass({
         var table = {
             columns: ["Source Location", "Rule", "Hitcount", "Total Time (msec)", "Time / Operation (usec)"],
             rows: Queries.map(row =>
-                    [row["location"], row["rule"], row["hitcount"], row["time"], 1000 * row["time"] / row["hitcount"]]
+                [row["location"], row["rule"], row["hitcount"], row["time"], 1000 * row["time"] / row["hitcount"]]
             )
         };
 
@@ -419,7 +431,7 @@ var TableHeader = React.createClass({
             <tr>
                 {this.props.columns.map(function (column) {
                     return <th key={column}>{column}</th>
-                })}
+                    })}
             </tr>
             </thead>
         );
@@ -438,7 +450,7 @@ var TableBody = React.createClass({
             <tbody>
             {this.props.rows.map(function (row) {
                 return <TableRow key={row} row={row}/>
-            })}
+                })}
             </tbody>
         );
     }
@@ -456,7 +468,7 @@ var TableRow = React.createClass({
             <tr>
                 {this.props.row.map(function (elm) {
                     return <td>{elm}</td>
-                })}
+                    })}
             </tr>
         );
     }
