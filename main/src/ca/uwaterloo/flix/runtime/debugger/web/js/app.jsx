@@ -356,13 +356,12 @@ var barChartData = {
 }
 
 
-var MyComponent = React.createClass({
+var BarChart = React.createClass({
     componentDidMount: function () {
         console.log("hello world")
         var ctx = this.canvasRef.getContext("2d");
         this.myLine = new Chart(ctx).Bar(barChartData, {
-            responsive: true,
-            width: 600
+            responsive: false
         });
     },
 
@@ -371,7 +370,7 @@ var MyComponent = React.createClass({
     },
 
     render: function () {
-        return <canvas ref={(ref) => this.canvasRef = ref}/>
+        return <canvas width="600" height="400" ref={(ref) => this.canvasRef = ref}/>
     }
 });
 
@@ -392,7 +391,7 @@ var PhasesPage = React.createClass({
                 <Head name="Performance / Phases"/>
                 <Table table={table}/>
 
-                <MyComponent/>
+                <BarChart/>
             </div>
         );
     }
