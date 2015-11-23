@@ -31,20 +31,59 @@ var Lattices = ["VarPointsTo"];
  */
 var App = React.createClass({
 
-    getInitiateState: function () {
-        return {};
+    getInitialState: function () {
+        return {page: {name: "default"}};
     },
 
     changePage: function (page) {
-        console.log(page)
+        this.setState({page: page})
+    },
+
+    defaultPage: function () {
+        return (   <RelationPage name="VarPointsTo" table={PointsTo}/>);
+    },
+
+    PhasesPage: function () {
+        return (
+            <div>
+                <Head name="Performance / Phases"/>
+            </div>
+        );
+    },
+
+    IndexesPage: function () {
+        return (
+            <div>
+                <Head name="Performance / Indexes"/>
+            </div>
+        );
+    },
+
+    QueriesPage: function () {
+        return (
+            <div>
+                <Head name="Performance / Queries"/>
+            </div>
+        );
     },
 
     render: function () {
+        var page = null;
+        var pageName = this.state.page.name;
+        if (pageName === "performance/phases") {
+            page = this.PhasesPage()
+        } else if (pageName === "performance/indexes") {
+            page = this.IndexesPage()
+        } else if (pageName === "performance/queries") {
+            page = this.QueriesPage()
+        } else {
+            page = this.defaultPage();
+        }
+
         return (
             <div>
                 <Menu changePage={this.changePage} relations={Relations} lattices={Lattices}/>
-
-                <RelationPage name="VarPointsTo" table={PointsTo}/>
+                {page}
             </div>
         );
     }
@@ -98,9 +137,15 @@ var Menu = React.createClass({
                                 <className className="caret"></className>
                             </a>
                             <ul className="dropdown-menu">
-                                <li><a href="">Phases</a></li>
-                                <li><a href="">Indexes</a></li>
-                                <li><a href="">Queries</a></li>
+                                <li>
+                                    <a href="#" onClick={() => this.props.changePage({name: "performance/phases"})}>Phases</a>
+                                </li>
+                                <li>
+                                    <a href="#" onClick={() => this.props.changePage({name: "performance/indexes"})}>Indexes</a>
+                                </li>
+                                <li>
+                                    <a href="#" onClick={() => this.props.changePage({name: "performance/queries"})}>Queries</a>
+                                </li>
                             </ul>
                         </li>
                     </ul>
