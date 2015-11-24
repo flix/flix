@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.runtime.debugger
 
 import java.io.{IOException, ByteArrayOutputStream}
 import java.net.InetSocketAddress
+import java.nio.file.{Paths, Files}
 import java.util.concurrent.Executors
 
 import ca.uwaterloo.flix.runtime.Solver
@@ -15,18 +16,26 @@ class RestServer(solver: Solver) {
    * A collection of static resources included in the Jar.
    */
   val StaticResources = Set[String](
-//    // HTML
-//    "/web/index.html",
-//
-//    // Stylesheet
-//    "/web/css/stylesheet.css",
-//
-//    // JavaScript
-//    "/web/js/app.js",
-//    "/web/js/lib/jquery.min.js",
-//    "/web/js/lib/lodash.min.js",
-//    "/web/js/lib/moment.min.js",
-//    "/web/js/lib/react.min.js"
+    // HTML
+    "/web/index.html",
+
+    // Stylesheet
+    "/web/css/bootstrap.min.css",
+    "/web/css/bootstrap-theme.min.css",
+
+    // JavaScript
+    "/web/js/app.js",
+    "/web/js/lib/jquery.min.js",
+    "/web/js/lib/bootstrap.min.js",
+    "/web/js/lib/react.min.js",
+    "/web/js/lib/react-dom.min.js",
+    "/web/js/lib/chart.min.js",
+    "/web/js/lib/numeral.min.js",
+
+    // Fonts
+    "/web/fonts/glyphicons-halflings-regular.woff2",
+    "/web/fonts/glyphicons-halflings-regular.woff",
+    "/web/fonts/glyphicons-halflings-regular.ttf"
   )
 
   /**
@@ -44,7 +53,10 @@ class RestServer(solver: Solver) {
      */
     def loadResources(resources: Set[String]): Map[String, LoadedResource] = StaticResources.foldLeft(Map.empty[String, LoadedResource]) {
       case (m, path) =>
-        val inputStream = getClass.getResourceAsStream(path)
+
+        val root = "main/src/ca/uwaterloo/flix/runtime/debugger"
+
+        val inputStream = Files.newInputStream(Paths.get(root + path)) // TODO: Switch on whether we are in a packaged jar.
 
         if (inputStream == null) {
           throw new IOException(s"Unable to load static resource '$path'.")
@@ -76,6 +88,9 @@ class RestServer(solver: Solver) {
       case p if p.endsWith(".jsx") => "text/javascript; charset=utf-8"
       case p if p.endsWith(".html") => "text/html; charset=utf-8"
       case p if p.endsWith(".png") => "image/png"
+      case p if p.endsWith(".ttf") => "font/opentype"
+      case p if p.endsWith(".woff") => "font/woff"
+      case p if p.endsWith(".woff2") => "font/woff2"
       case _ =>
         // TODO logger.error(s"Unknown mimetype for path $path")
         throw new RuntimeException(s"Unknown mimetype for path $path")
@@ -161,13 +176,13 @@ class RestServer(solver: Solver) {
    */
   class GetCompilerPhases extends JsonHandler {
     def json: JValue = JArray(List(
-      JObject(List(JField("name", JString("Parser")), JField("time", JInt(243)))),
+      JObject(List(JField("name", JString("Parser")), JField("time", JInt(322)))),
       JObject(List(JField("name", JString("Weeder")), JField("time", JInt(231)))),
       JObject(List(JField("name", JString("Namer")), JField("time", JInt(86)))),
       JObject(List(JField("name", JString("Linker")), JField("time", JInt(243)))),
       JObject(List(JField("name", JString("Typer")), JField("time", JInt(467)))),
       JObject(List(JField("name", JString("Normalizer")), JField("time", JInt(357)))),
-      JObject(List(JField("name", JString("Emitter")), JField("time", JInt(412))))
+      JObject(List(JField("name", JString("Emitter")), JField("time", JInt(322))))
     ))
   }
 
@@ -182,7 +197,7 @@ class RestServer(solver: Solver) {
     // bind to the requested port.
     val server = HttpServer.create(new InetSocketAddress(port), 0) // TODO: port
 
-    Console.println("Attached debugger to localhost:" + port)
+    Console.println("Attached debugger to http://localhost:" + port + "/")
 
     // mount ajax handlers.
     server.createContext("/relations", new GetRelations())

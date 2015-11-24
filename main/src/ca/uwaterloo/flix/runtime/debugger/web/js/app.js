@@ -11,15 +11,6 @@ var PointsTo = {
 
 };
 
-var Phases = [
-    {phase: "Parser", time: 243},
-    {phase: "Weeder", time: 231},
-    {phase: "Namer", time: 86},
-    {phase: "Linker", time: 24},
-    {phase: "Typer", time: 467},
-    {phase: "Normalizer", time: 412},
-    {phase: "Emitter", time: 357}
-];
 
 var Rules = [
     {
@@ -544,28 +535,29 @@ var IndexesPage = React.createClass({displayName: "IndexesPage",
 var PhasesPage = React.createClass({displayName: "PhasesPage",
 
     getInitialState: function () {
-        return {data: []};
+        return {phases: []};
     },
 
     componentDidMount: function () {
         this.tick();
-        // setInterval(this.tick, REFRESH_INTERVAL * 1000);
     },
 
     tick: function () {
         $.ajax({
             method: "GET", dataType: 'json', url: URL + '/compiler/phases', success: function (data) {
-                this.setState({data: data});
+                this.setState({phases: data});
+                console.log("Got result");
+                console.log(data);
             }.bind(this),
             error: function () {
-                console.log("Error") //  TODO
+                console.log("Error"); //  TODO
             }.bind(this)
         });
     },
 
     render: function () {
-        var labels = Phases.map(o => o["phase"]);
-        var data = Phases.map(o => o["time"]);
+        var labels = this.state.phases.map(o => o.name);
+        var data = this.state.phases.map(o => o.time);
 
         return (
             React.createElement("div", null, 
@@ -574,11 +566,11 @@ var PhasesPage = React.createClass({displayName: "PhasesPage",
                 React.createElement("div", {className: "panel panel-default"}, 
                     React.createElement("div", {className: "panel-body"}, 
                         "The graph below shows the amount of time spent in various phases of the compiler." + ' ' +
-                        "The time is reported in miliseconds."
+                        "The time is reported in miliseconds. length is ", this.state.phases.length
                     )
                 ), 
 
-                React.createElement(BarChart, {width: 600, height: 400, labels: labels, data: data})
+                React.createElement(BarChart, {key: Math.random(), width: 600, height: 400, labels: labels, data: data})
             )
         );
     }
@@ -701,6 +693,7 @@ var BarChart = React.createClass({displayName: "BarChart",
     },
 
     componentWillUnmount: function () {
+        console.log("Unmounting")
         this.chart.destroy();
     },
 

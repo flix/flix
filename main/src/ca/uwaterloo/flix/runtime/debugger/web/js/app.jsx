@@ -11,15 +11,6 @@ var PointsTo = {
 
 };
 
-var Phases = [
-    {phase: "Parser", time: 243},
-    {phase: "Weeder", time: 231},
-    {phase: "Namer", time: 86},
-    {phase: "Linker", time: 24},
-    {phase: "Typer", time: 467},
-    {phase: "Normalizer", time: 412},
-    {phase: "Emitter", time: 357}
-];
 
 var Rules = [
     {
@@ -544,28 +535,29 @@ var IndexesPage = React.createClass({
 var PhasesPage = React.createClass({
 
     getInitialState: function () {
-        return {data: []};
+        return {phases: []};
     },
 
     componentDidMount: function () {
         this.tick();
-        // setInterval(this.tick, REFRESH_INTERVAL * 1000);
     },
 
     tick: function () {
         $.ajax({
             method: "GET", dataType: 'json', url: URL + '/compiler/phases', success: function (data) {
-                this.setState({data: data});
+                this.setState({phases: data});
+                console.log("Got result");
+                console.log(data);
             }.bind(this),
             error: function () {
-                console.log("Error") //  TODO
+                console.log("Error"); //  TODO
             }.bind(this)
         });
     },
 
     render: function () {
-        var labels = Phases.map(o => o["phase"]);
-        var data = Phases.map(o => o["time"]);
+        var labels = this.state.phases.map(o => o.name);
+        var data = this.state.phases.map(o => o.time);
 
         return (
             <div>
@@ -578,7 +570,8 @@ var PhasesPage = React.createClass({
                     </div>
                 </div>
 
-                <BarChart width={600} height={400} labels={labels} data={data}/>
+                <!-- The use of Date.now() is necessary to ensure that the component is always recreated. -->
+                <BarChart key={Math.random()} width={600} height={400} labels={labels} data={data}/>
             </div>
         );
     }
@@ -701,6 +694,7 @@ var BarChart = React.createClass({
     },
 
     componentWillUnmount: function () {
+        console.log("Unmounting")
         this.chart.destroy();
     },
 
