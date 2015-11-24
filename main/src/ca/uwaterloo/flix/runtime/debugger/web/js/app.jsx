@@ -1,5 +1,5 @@
 var PointsTo = {
-    columns: ["localVal", "value"],
+    cols: ["localVal", "value"],
     rows: [
         [1, "/ParityAnalysis::Parity.Odd(())"],
         [2, "/ParityAnalysis::Parity.Even(())"],
@@ -391,7 +391,8 @@ var BarChart = React.createClass({
 var IndexUsagePage = React.createClass({
     render: function () {
         var table = {
-            columns: ["Collection", "Index", "Index Hits"],
+            cols: ["Collection", "Index", "Index Hits"],
+            align: ["left", "left", "right"],
             rows: Indexes.map(row =>
                     [row["collection"], row["index"], numeral(row["hits"]).format('0,0')]
             )
@@ -419,7 +420,7 @@ var IndexUsagePage = React.createClass({
 var QueriesPage = React.createClass({
     render: function () {
         var table = {
-            columns: ["Source Location", "Rule", "Hitcount", "Total Time (msec)", "Time / Operation (usec)"],
+            cols: ["Source Location", "Rule", "Hitcount", "Total Time (msec)", "Time / Operation (usec)"],
             rows: Queries.map(row =>
                     [row["location"], row["rule"], row["hitcount"], row["time"], 1000 * row["time"] / row["hitcount"]]
             )
@@ -465,15 +466,16 @@ var PhasesPage = React.createClass({
 var Table = React.createClass({
     propTypes: {
         table: React.PropTypes.shape({
-            columns: React.PropTypes.array.isRequired,
-            rows: React.PropTypes.array.isRequired
+            cols: React.PropTypes.array.isRequired,
+            rows: React.PropTypes.array.isRequired,
+            align: React.PropTypes.array.isRequired
         })
     },
     render: function () {
         return (
             <table className="table table-striped table-condense table-hover">
-                <TableHeader columns={this.props.table.columns}/>
-                <TableBody rows={this.props.table.rows}/>
+                <TableHeader table={this.props.table}/>
+                <TableBody table={this.props.table}/>
             </table>
         );
     }
@@ -483,16 +485,14 @@ var Table = React.createClass({
  * Table Header component.
  */
 var TableHeader = React.createClass({
-    propTypes: {
-        columns: React.PropTypes.array.isRequired
-    },
     render: function () {
         return (
             <thead>
             <tr>
-                {this.props.columns.map(function (column) {
-                    return <th key={column}>{column}</th>
-                })}
+                {this.props.table.cols.map(function (col, idx) {
+                    var className = getAlignment(this.props.table.align[idx]);
+                    return <th className={className}>{col}</th>
+                }.bind(this))}
             </tr>
             </thead>
         );
@@ -503,15 +503,12 @@ var TableHeader = React.createClass({
  * Table Body component.
  */
 var TableBody = React.createClass({
-    propTypes: {
-        rows: React.PropTypes.array.isRequired
-    },
     render: function () {
         return (
             <tbody>
-            {this.props.rows.map(function (row) {
-                return <TableRow key={row} row={row}/>
-            })}
+            {this.props.table.rows.map(function (row) {
+                return <TableRow align={this.props.table.align} row={row}/>
+            }.bind(this))}
             </tbody>
         );
     }
@@ -522,18 +519,30 @@ var TableBody = React.createClass({
  */
 var TableRow = React.createClass({
     propTypes: {
-        row: React.PropTypes.array.isRequired
+        row: React.PropTypes.array.isRequired,
+        align: React.PropTypes.array.isRequired
     },
     render: function () {
         return (
             <tr>
-                {this.props.row.map(function (elm) {
-                    return <td>{elm}</td>
-                })}
+                {this.props.row.map(function (elm, idx) {
+                    var className = getAlignment(this.props.align[idx]);
+                    return <td className={className}>{elm}</td>
+                }.bind(this))}
             </tr>
         );
     }
 });
+
+function getAlignment(text) {
+    if (text === "left") {
+        return "text-left";
+    } else if (text === "center") {
+        return "text-center";
+    } else {
+        return "text-right";
+    }
+}
 
 /**
  * Chart.js global options.

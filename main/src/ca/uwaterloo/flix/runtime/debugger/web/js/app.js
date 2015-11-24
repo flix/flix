@@ -1,5 +1,5 @@
 var PointsTo = {
-    columns: ["localVal", "value"],
+    cols: ["localVal", "value"],
     rows: [
         [1, "/ParityAnalysis::Parity.Odd(())"],
         [2, "/ParityAnalysis::Parity.Even(())"],
@@ -184,7 +184,8 @@ var Menu = React.createClass({displayName: "Menu",
                             ), 
                             React.createElement("ul", {className: "dropdown-menu"}, 
                                 React.createElement("li", null, 
-                                    React.createElement("a", {href: "#", onClick: () => this.props.changePage({name: "performance/indexusage"})}, "Index Usage")
+                                    React.createElement("a", {href: "#", onClick: () => this.props.changePage({name: "performance/indexusage"})}, "Index" + ' ' +
+                                        "Usage")
                                 ), 
                                 React.createElement("li", null, 
                                     React.createElement("a", {href: "#", onClick: () => this.props.changePage({name: "performance/queries"})}, "Queries")
@@ -390,7 +391,8 @@ var BarChart = React.createClass({displayName: "BarChart",
 var IndexUsagePage = React.createClass({displayName: "IndexUsagePage",
     render: function () {
         var table = {
-            columns: ["Collection", "Index", "Hits"],
+            cols: ["Collection", "Index", "Index Hits"],
+            align: ["left", "left", "right"],
             rows: Indexes.map(row =>
                     [row["collection"], row["index"], numeral(row["hits"]).format('0,0')]
             )
@@ -418,7 +420,7 @@ var IndexUsagePage = React.createClass({displayName: "IndexUsagePage",
 var QueriesPage = React.createClass({displayName: "QueriesPage",
     render: function () {
         var table = {
-            columns: ["Source Location", "Rule", "Hitcount", "Total Time (msec)", "Time / Operation (usec)"],
+            cols: ["Source Location", "Rule", "Hitcount", "Total Time (msec)", "Time / Operation (usec)"],
             rows: Queries.map(row =>
                     [row["location"], row["rule"], row["hitcount"], row["time"], 1000 * row["time"] / row["hitcount"]]
             )
@@ -464,15 +466,16 @@ var PhasesPage = React.createClass({displayName: "PhasesPage",
 var Table = React.createClass({displayName: "Table",
     propTypes: {
         table: React.PropTypes.shape({
-            columns: React.PropTypes.array.isRequired,
-            rows: React.PropTypes.array.isRequired
+            cols: React.PropTypes.array.isRequired,
+            rows: React.PropTypes.array.isRequired,
+            align: React.PropTypes.array.isRequired
         })
     },
     render: function () {
         return (
             React.createElement("table", {className: "table table-striped table-condense table-hover"}, 
-                React.createElement(TableHeader, {columns: this.props.table.columns}), 
-                React.createElement(TableBody, {rows: this.props.table.rows})
+                React.createElement(TableHeader, {table: this.props.table}), 
+                React.createElement(TableBody, {table: this.props.table})
             )
         );
     }
@@ -482,16 +485,14 @@ var Table = React.createClass({displayName: "Table",
  * Table Header component.
  */
 var TableHeader = React.createClass({displayName: "TableHeader",
-    propTypes: {
-        columns: React.PropTypes.array.isRequired
-    },
     render: function () {
         return (
             React.createElement("thead", null, 
             React.createElement("tr", null, 
-                this.props.columns.map(function (column) {
-                    return React.createElement("th", {key: column}, column)
-                })
+                this.props.table.cols.map(function (col, idx) {
+                    var className = getAlignment(this.props.table.align[idx]);
+                    return React.createElement("th", {className: className}, col)
+                }.bind(this))
             )
             )
         );
@@ -502,15 +503,12 @@ var TableHeader = React.createClass({displayName: "TableHeader",
  * Table Body component.
  */
 var TableBody = React.createClass({displayName: "TableBody",
-    propTypes: {
-        rows: React.PropTypes.array.isRequired
-    },
     render: function () {
         return (
             React.createElement("tbody", null, 
-            this.props.rows.map(function (row) {
-                return React.createElement(TableRow, {key: row, row: row})
-            })
+            this.props.table.rows.map(function (row) {
+                return React.createElement(TableRow, {align: this.props.table.align, row: row})
+            }.bind(this))
             )
         );
     }
@@ -521,18 +519,30 @@ var TableBody = React.createClass({displayName: "TableBody",
  */
 var TableRow = React.createClass({displayName: "TableRow",
     propTypes: {
-        row: React.PropTypes.array.isRequired
+        row: React.PropTypes.array.isRequired,
+        align: React.PropTypes.array.isRequired
     },
     render: function () {
         return (
             React.createElement("tr", null, 
-                this.props.row.map(function (elm) {
-                    return React.createElement("td", null, elm)
-                })
+                this.props.row.map(function (elm, idx) {
+                    var className = getAlignment(this.props.align[idx]);
+                    return React.createElement("td", {className: className}, elm)
+                }.bind(this))
             )
         );
     }
 });
+
+function getAlignment(text) {
+    if (text === "left") {
+        return "text-left";
+    } else if (text === "center") {
+        return "text-center";
+    } else {
+        return "text-right";
+    }
+}
 
 /**
  * Chart.js global options.
