@@ -96,9 +96,6 @@ var Snapshots = [
     }
 ];
 
-var Status = "completed";
-
-
 var URL = "http://" + window.location.hostname + ":9090";
 
 /**
@@ -107,7 +104,7 @@ var URL = "http://" + window.location.hostname + ":9090";
 var App = React.createClass({
 
     getInitialState: function () {
-        return {page: {name: "default"}, relations: [], lattices: []};
+        return {page: {name: "default"}, status: "running", relations: [], lattices: []};
     },
 
     componentDidMount: function () {
@@ -134,11 +131,10 @@ var App = React.createClass({
         this.setState({page: page})
     },
 
-
     onError: function (msg) {
-        // TODO
         console.log(msg);
-        alert(msg);
+        this.setState({status: "connectionLost"}); // TODO: Better names for status.
+        alert("Debugger lost connection to Flix.");
     },
 
     render: function () {
@@ -161,7 +157,10 @@ var App = React.createClass({
 
         return (
             <div>
-                <Menu changePage={this.changePage} status={Status} relations={this.state.relations} lattices={this.state.lattices}/>
+                <Menu changePage={this.changePage}
+                      status={this.state.status}
+                      relations={this.state.relations}
+                      lattices={this.state.lattices}/>
                 {page}
             </div>
         );
@@ -175,7 +174,8 @@ var Menu = React.createClass({
     propTypes: {
         changePage: React.PropTypes.func.isRequired,
         relations: React.PropTypes.array.isRequired,
-        lattices: React.PropTypes.array.isRequired
+        lattices: React.PropTypes.array.isRequired,
+        status: React.PropTypes.string.isRequired
     },
 
     changePageRelation: function (relation) {
@@ -260,7 +260,7 @@ var Menu = React.createClass({
                             <a href="#"> <span className="glyphicon glyphicon-refresh"></span> Refresh</a>
                         </li>
 
-                        <StatusIcon status={Status}/>
+                        <StatusIcon status={this.props.status}/>
                     </ul>
                 </div>
             </nav>
@@ -319,8 +319,8 @@ var LandingPage = React.createClass({
                             {this.props.relations.map(relation => {
                                 return (
                                     <a href="#" className="list-group-item">
-                                        {relation.name} <span
-                                        className="badge">{numeral(relation.size).format('0,0')}</span>
+                                        {relation.name}
+                                        <span className="badge">{numeral(relation.size).format('0,0')}</span>
                                     </a>
                                 );
                             })}
@@ -332,7 +332,8 @@ var LandingPage = React.createClass({
                             {this.props.lattices.map(lattice => {
                                 return (
                                     <a href="#" className="list-group-item">
-                                        {lattice.name} <span className="badge">{lattice.size}</span>
+                                        {lattice.name}
+                                        <span className="badge">{numeral(lattice.size).format('0,0')}</span>
                                     </a>
                                 );
                             })}
@@ -355,7 +356,7 @@ var StatusIcon = React.createClass({
     render: function () {
         var status = this.props.status;
 
-        if (status === "inprogress") {
+        if (status === "running") {
             return (
                 <li className="bg-info">
                     <a href="#">
@@ -378,9 +379,9 @@ var StatusIcon = React.createClass({
                 </li>)
         } else {
             return (
-                <li className="bg-warning">
+                <li className="bg-danger">
                     <a href="#">
-                        <span className="glyphicon glyphicon-question-sign"></span> <strong>Connection Lost</strong>
+                        <span className="glyphicon glyphicon-question-sign"></span> <strong>No Connection</strong>
                     </a>
                 </li>)
         }

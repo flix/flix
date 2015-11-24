@@ -96,9 +96,6 @@ var Snapshots = [
     }
 ];
 
-var Status = "completed";
-
-
 var URL = "http://" + window.location.hostname + ":9090";
 
 /**
@@ -107,7 +104,7 @@ var URL = "http://" + window.location.hostname + ":9090";
 var App = React.createClass({displayName: "App",
 
     getInitialState: function () {
-        return {page: {name: "default"}, relations: [], lattices: []};
+        return {page: {name: "default"}, status: "running", relations: [], lattices: []};
     },
 
     componentDidMount: function () {
@@ -134,11 +131,10 @@ var App = React.createClass({displayName: "App",
         this.setState({page: page})
     },
 
-
     onError: function (msg) {
-        // TODO
         console.log(msg);
-        alert(msg);
+        this.setState({status: "connectionLost"}); // TODO: Better names for status.
+        alert("Debugger lost connection to Flix.");
     },
 
     render: function () {
@@ -161,7 +157,10 @@ var App = React.createClass({displayName: "App",
 
         return (
             React.createElement("div", null, 
-                React.createElement(Menu, {changePage: this.changePage, status: Status, relations: this.state.relations, lattices: this.state.lattices}), 
+                React.createElement(Menu, {changePage: this.changePage, 
+                      status: this.state.status, 
+                      relations: this.state.relations, 
+                      lattices: this.state.lattices}), 
                 page
             )
         );
@@ -175,7 +174,8 @@ var Menu = React.createClass({displayName: "Menu",
     propTypes: {
         changePage: React.PropTypes.func.isRequired,
         relations: React.PropTypes.array.isRequired,
-        lattices: React.PropTypes.array.isRequired
+        lattices: React.PropTypes.array.isRequired,
+        status: React.PropTypes.string.isRequired
     },
 
     changePageRelation: function (relation) {
@@ -260,7 +260,7 @@ var Menu = React.createClass({displayName: "Menu",
                             React.createElement("a", {href: "#"}, " ", React.createElement("span", {className: "glyphicon glyphicon-refresh"}), " Refresh")
                         ), 
 
-                        React.createElement(StatusIcon, {status: Status})
+                        React.createElement(StatusIcon, {status: this.props.status})
                     )
                 )
             )
@@ -319,8 +319,8 @@ var LandingPage = React.createClass({displayName: "LandingPage",
                             this.props.relations.map(relation => {
                                 return (
                                     React.createElement("a", {href: "#", className: "list-group-item"}, 
-                                        relation.name, " ", React.createElement("span", {
-                                        className: "badge"}, numeral(relation.size).format('0,0'))
+                                        relation.name, 
+                                        React.createElement("span", {className: "badge"}, numeral(relation.size).format('0,0'))
                                     )
                                 );
                             })
@@ -332,7 +332,8 @@ var LandingPage = React.createClass({displayName: "LandingPage",
                             this.props.lattices.map(lattice => {
                                 return (
                                     React.createElement("a", {href: "#", className: "list-group-item"}, 
-                                        lattice.name, " ", React.createElement("span", {className: "badge"}, lattice.size)
+                                        lattice.name, 
+                                        React.createElement("span", {className: "badge"}, numeral(lattice.size).format('0,0'))
                                     )
                                 );
                             })
@@ -355,7 +356,7 @@ var StatusIcon = React.createClass({displayName: "StatusIcon",
     render: function () {
         var status = this.props.status;
 
-        if (status === "inprogress") {
+        if (status === "running") {
             return (
                 React.createElement("li", {className: "bg-info"}, 
                     React.createElement("a", {href: "#"}, 
@@ -380,7 +381,7 @@ var StatusIcon = React.createClass({displayName: "StatusIcon",
             return (
                 React.createElement("li", {className: "bg-warning"}, 
                     React.createElement("a", {href: "#"}, 
-                        React.createElement("span", {className: "glyphicon glyphicon-question-sign"}), " ", React.createElement("strong", null, "Connection Lost")
+                        React.createElement("span", {className: "glyphicon glyphicon-question-sign"}), " ", React.createElement("strong", null, "No Connection")
                     )
                 ))
         }
