@@ -112,6 +112,24 @@ var Lattices = [
     {name: "Kill", size: 1571}
 ];
 
+var Snapshots = [
+    {
+        time: 1448397245,
+        facts: 4325345,
+        memory: 5654
+    },
+    {
+        time: 1448397280,
+        facts: 43257675,
+        memory: 6654
+    },
+    {
+        time: 1458397245,
+        facts: 53257675,
+        memory: 7654
+    }
+];
+
 var Status = "completed";
 
 
@@ -281,11 +299,24 @@ var LandingPage = React.createClass({
     },
 
     render: function () {
+        var zero = Snapshots[0].time ;
+        var labels = Snapshots.map(s => (s.time - zero) / 1000);
+        var facts = Snapshots.map(s => s.facts);
+        var memory = Snapshots.map(s => s.memory);
+
         return (
             <div>
                 <PageHead name="Welcome to the Flix Debugger!"/>
 
                 <div className="row">
+                    <div className="col-xs-6">
+                        <h4>Total Facts</h4>
+                        <LineChart width={600} height={250} labels={labels} data={facts}/>
+
+                        <h4>Total Memory Usage</h4>
+                        <LineChart width={600} height={250} labels={labels} data={memory}/>
+                    </div>
+
                     <div className="col-xs-6">
                         <h3>Relations</h3>
 
@@ -298,11 +329,8 @@ var LandingPage = React.createClass({
                                 );
                             })}
                         </div>
-                    </div>
 
-                    <div className="col-xs-6">
                         <h3>Lattices</h3>
-
 
                         <div className="list-group">
                             {this.props.lattices.map(lattice => {
@@ -618,6 +646,47 @@ var BarChart = React.createClass({
 
         var ctx = this.canvas.getContext("2d");
         this.chart = new Chart(ctx).Bar(barChartData);
+    },
+
+    componentWillUnmount: function () {
+        this.chart.destroy();
+    },
+
+    render: function () {
+        return <canvas width={this.props.width} height={this.props.height} ref={(ref) => this.canvas = ref}/>
+    }
+});
+
+
+/**
+ * A LineChart component based on Chart.js
+ */
+var LineChart = React.createClass({
+    propTypes: {
+        labels: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+        data: React.PropTypes.arrayOf(React.PropTypes.number).isRequired,
+        width: React.PropTypes.number.isRequired,
+        height: React.PropTypes.number.isRequired
+    },
+
+    componentDidMount: function () {
+        var lineChartData = {
+            labels: this.props.labels,
+            datasets: [
+                {
+                    fillColor: "rgba(151,187,205,0.2)",
+                    strokeColor: "rgba(151,187,205,1)",
+                    pointColor: "rgba(151,187,205,1)",
+                    pointStrokeColor: "#fff",
+                    pointHighlightFill: "#fff",
+                    pointHighlightStroke: "rgba(151,187,205,1)",
+                    data: this.props.data
+                }
+            ]
+        };
+
+        var ctx = this.canvas.getContext("2d");
+        this.chart = new Chart(ctx).Line(lineChartData);
     },
 
     componentWillUnmount: function () {
