@@ -168,6 +168,12 @@ var App = React.createClass({displayName: "App",
         this.setState({page: page})
     },
 
+    onError: function (msg) {
+        // TODO
+        console.log(msg);
+        alert(msg);
+    },
+
     render: function () {
         var page = null;
         var pageName = this.state.page.name;
@@ -179,7 +185,7 @@ var App = React.createClass({displayName: "App",
         } else if (pageName === "performance/indexes") {
             page = React.createElement(IndexesPage, null)
         } else if (pageName === "compiler/phases") {
-            page = React.createElement(PhasesPage, null)
+            page = React.createElement(PhasesPage, {notifyConnectionError: this.onError})
         } else if (pageName === "relation") {
             page = React.createElement(RelationPage, {name: "VarPointsTo", table: PointsTo})
         } else {
@@ -533,6 +539,9 @@ var IndexesPage = React.createClass({displayName: "IndexesPage",
  * Phases page.
  */
 var PhasesPage = React.createClass({displayName: "PhasesPage",
+    propTypes: {
+        notifyConnectionError: React.PropTypes.func.isRequired
+    },
 
     getInitialState: function () {
         return {phases: []};
@@ -549,15 +558,16 @@ var PhasesPage = React.createClass({displayName: "PhasesPage",
                 console.log("Got result");
                 console.log(data);
             }.bind(this),
-            error: function () {
-                console.log("Error"); //  TODO
-            }.bind(this)
+            error: this.props.notifyConnectionError
         });
     },
 
     render: function () {
         var labels = this.state.phases.map(o => o.name);
         var data = this.state.phases.map(o => o.time);
+
+        // NB: The use of key = Math.random() is necessary to ensure that the component
+        // is always recreated whenever the data is changes.
 
         return (
             React.createElement("div", null, 
@@ -566,7 +576,7 @@ var PhasesPage = React.createClass({displayName: "PhasesPage",
                 React.createElement("div", {className: "panel panel-default"}, 
                     React.createElement("div", {className: "panel-body"}, 
                         "The graph below shows the amount of time spent in various phases of the compiler." + ' ' +
-                        "The time is reported in miliseconds. length is ", this.state.phases.length
+                        "The time is reported in miliseconds."
                     )
                 ), 
 

@@ -168,6 +168,12 @@ var App = React.createClass({
         this.setState({page: page})
     },
 
+    onError: function (msg) {
+        // TODO
+        console.log(msg);
+        alert(msg);
+    },
+
     render: function () {
         var page = null;
         var pageName = this.state.page.name;
@@ -179,7 +185,7 @@ var App = React.createClass({
         } else if (pageName === "performance/indexes") {
             page = <IndexesPage />
         } else if (pageName === "compiler/phases") {
-            page = <PhasesPage />
+            page = <PhasesPage notifyConnectionError={this.onError}/>
         } else if (pageName === "relation") {
             page = <RelationPage name="VarPointsTo" table={PointsTo}/>
         } else {
@@ -533,6 +539,9 @@ var IndexesPage = React.createClass({
  * Phases page.
  */
 var PhasesPage = React.createClass({
+    propTypes: {
+        notifyConnectionError: React.PropTypes.func.isRequired
+    },
 
     getInitialState: function () {
         return {phases: []};
@@ -549,15 +558,16 @@ var PhasesPage = React.createClass({
                 console.log("Got result");
                 console.log(data);
             }.bind(this),
-            error: function () {
-                console.log("Error"); //  TODO
-            }.bind(this)
+            error: this.props.notifyConnectionError
         });
     },
 
     render: function () {
         var labels = this.state.phases.map(o => o.name);
         var data = this.state.phases.map(o => o.time);
+
+        // NB: The use of key = Math.random() is necessary to ensure that the component
+        // is always recreated whenever the data is changes.
 
         return (
             <div>
@@ -570,7 +580,6 @@ var PhasesPage = React.createClass({
                     </div>
                 </div>
 
-                <!-- The use of Date.now() is necessary to ensure that the component is always recreated. -->
                 <BarChart key={Math.random()} width={600} height={400} labels={labels} data={data}/>
             </div>
         );
