@@ -172,6 +172,18 @@ class RestServer(solver: Solver) {
   }
 
   /**
+   * Returns the name and size of all lattices.
+   */
+  class GetLattices extends JsonHandler {
+    def json: JValue = JArray(solver.dataStore.lattices.toList.map {
+      case (name, lattice) => JObject(List(
+        JField("name", JString(name.toString)),
+        JField("size", JInt(lattice.getSize))
+      ))
+    })
+  }
+
+  /**
    * Returns the time spent in each compiler phase.
    */
   class GetCompilerPhases extends JsonHandler {
@@ -201,6 +213,7 @@ class RestServer(solver: Solver) {
 
     // mount ajax handlers.
     server.createContext("/relations", new GetRelations())
+    server.createContext("/lattices", new GetLattices())
     server.createContext("/compiler/phases", new GetCompilerPhases())
 
     // mount file handler.

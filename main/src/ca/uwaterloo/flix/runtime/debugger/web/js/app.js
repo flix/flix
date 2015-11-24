@@ -98,38 +98,12 @@ var Relations = [{
     "name": "/AllObjects",
     "size": 915
 }, {
-    "name": "/FILoad",
-    "size": 8
-}, {
-    "name": "/Copy",
-    "size": 481
-}, {
-    "name": "/Store",
-    "size": 316
-}, {
-    "name": "/CFG",
-    "size": 4525
-}, {
-    "name": "/Pt",
-    "size": 1062
-}, {
-    "name": "/Clear",
-    "size": 225
-}, {
-    "name": "/FIStore",
-    "size": 69
-}, {
-    "name": "/Load",
-    "size": 2139
-}, {
     "name": "/Phi",
     "size": 2702
 }]
 
 var Lattices = [
     {name: "SUBefore", size: 609793},
-    {name: "SUBefore", size: 605760},
-    {name: "Kill", size: 1571}
 ];
 
 var Snapshots = [
@@ -161,7 +135,7 @@ var URL = "http://" + window.location.hostname + ":9090";
 var App = React.createClass({displayName: "App",
 
     getInitialState: function () {
-        return {page: {name: "default"}, relations: []};
+        return {page: {name: "default"}, relations: [], lattices: []};
     },
 
     componentDidMount: function () {
@@ -172,6 +146,13 @@ var App = React.createClass({displayName: "App",
         $.ajax({
             method: "GET", dataType: 'json', url: URL + '/relations', success: function (data) {
                 this.setState({relations: data});
+            }.bind(this),
+            error: this.onError
+        });
+
+        $.ajax({
+            method: "GET", dataType: 'json', url: URL + '/lattices', success: function (data) {
+                this.setState({lattices: data});
             }.bind(this),
             error: this.onError
         });
@@ -203,7 +184,7 @@ var App = React.createClass({displayName: "App",
         } else if (pageName === "relation") {
             page = React.createElement(RelationPage, {name: "VarPointsTo", table: PointsTo})
         } else {
-            page = React.createElement(LandingPage, {relations: this.state.relations, lattices: Lattices})
+            page = React.createElement(LandingPage, {relations: this.state.relations, lattices: this.state.lattices})
         }
 
         return (
@@ -366,7 +347,8 @@ var LandingPage = React.createClass({displayName: "LandingPage",
                             this.props.relations.map(relation => {
                                 return (
                                     React.createElement("a", {href: "#", className: "list-group-item"}, 
-                                        relation.name, " ", React.createElement("span", {className: "badge"}, numeral(relation.size).format('0,0'))
+                                        relation.name, " ", React.createElement("span", {
+                                        className: "badge"}, numeral(relation.size).format('0,0'))
                                     )
                                 );
                             })
