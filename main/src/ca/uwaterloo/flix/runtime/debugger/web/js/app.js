@@ -60,24 +60,6 @@ var Predicates = [
     }
 ];
 
-var Indexes = [
-    {
-        collection: "/Pt",
-        index: "{variable, target}",
-        hits: 2439278
-    },
-    {
-        collection: "/CFG",
-        index: "{label} ",
-        hits: 959689
-    },
-    {
-        collection: "/Phi",
-        index: "{label} ",
-        hits: 959565
-    }
-];
-
 var Snapshots = [
     {
         time: 1448397245,
@@ -379,7 +361,7 @@ var StatusIcon = React.createClass({displayName: "StatusIcon",
                 ))
         } else {
             return (
-                React.createElement("li", {className: "bg-warning"}, 
+                React.createElement("li", {className: "bg-danger"}, 
                     React.createElement("a", {href: "#"}, 
                         React.createElement("span", {className: "glyphicon glyphicon-question-sign"}), " ", React.createElement("strong", null, "No Connection")
                     )
@@ -480,12 +462,28 @@ var PredicatesPage = React.createClass({displayName: "PredicatesPage",
  * Indexes page.
  */
 var IndexesPage = React.createClass({displayName: "IndexesPage",
+    propTypes: {
+        notifyConnectionError: React.PropTypes.func.isRequired
+    },
+
+    getInitialState: function () {
+        return {indexes: []};
+    },
+
+    componentDidMount: function () {
+        $.ajax({
+            method: "GET", dataType: 'json', url: URL + '/performance/indexes', success: function (data) {
+                this.setState({indexes: data});
+            }.bind(this),
+            error: this.props.notifyConnectionError
+        });
+    },
+
     render: function () {
         var table = {
-            cols: ["Collection", "Index", "Index Hits"],
+            cols: ["Name", "Index", "Index Hits"],
             align: ["left", "left", "right"],
-            rows: Indexes.map(row =>
-                    [row["collection"], row["index"], numeral(row["hits"]).format('0,0')]
+            rows: this.state.indexes.map(row => [row.name, row.index, numeral(row["hits"]).format('0,0')]
             )
         };
 
@@ -495,7 +493,7 @@ var IndexesPage = React.createClass({displayName: "IndexesPage",
 
                 React.createElement("div", {className: "panel panel-default"}, 
                     React.createElement("div", {className: "panel-body"}, 
-                        "The table below shows the usage of indexes of each relation and lattice."
+                        "The table shows the usage of indexes in each relation and lattice."
                     )
                 ), 
 

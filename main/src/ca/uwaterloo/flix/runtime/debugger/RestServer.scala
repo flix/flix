@@ -195,6 +195,19 @@ class RestServer(solver: Solver) {
   }
 
   /**
+   * Returns the indexes and their statistics.
+   */
+  class GetIndexes extends JsonHandler {
+    def json: JValue = JArray(solver.dataStore.indexStats.map {
+      case (name, index, hits) => JObject(List(
+        JField("name", JString(name)),
+        JField("index", JString(index)),
+        JField("hits", JInt(hits))
+      ))
+    })
+  }
+
+  /**
    * Returns the time spent in each compiler phase.
    */
   class GetCompilerPhases extends JsonHandler {
@@ -227,8 +240,8 @@ class RestServer(solver: Solver) {
     for ((name, relation) <- solver.dataStore.relations) {
       server.createContext("/relation/" + name, new ViewRelation(relation))
     }
-
     server.createContext("/lattices", new GetLattices())
+    server.createContext("/performance/indexes", new GetIndexes())
     server.createContext("/compiler/phases", new GetCompilerPhases())
 
     // mount file handler.

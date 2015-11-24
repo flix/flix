@@ -83,4 +83,10 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
     Console.out.println()
   }
 
+  def indexStats: List[(String, String, Int)] = relations.flatMap {
+    case (name, relation) => relation.getIndexHitCounts.map {
+      case (index, count) => (name.toString, "{" + index.mkString(", ") + "}", count)
+    }
+  }.toSeq.sortBy(_._3).reverse.toList
+
 }
