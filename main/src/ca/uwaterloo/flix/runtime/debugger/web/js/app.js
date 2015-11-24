@@ -436,7 +436,14 @@ var PhasesPage = React.createClass({displayName: "PhasesPage",
 
         return (
             React.createElement("div", null, 
-                React.createElement(PageHead, {name: "Performance / Phases"}), 
+                React.createElement(PageHead, {name: "Compiler / Phases"}), 
+
+                React.createElement("div", {className: "panel panel-default"}, 
+                    React.createElement("div", {className: "panel-body"}, 
+                        "The graph below shows the amount of time spent in various phases of the compiler." + ' ' +
+                        "The time is reported in miliseconds."
+                    )
+                ), 
 
                 React.createElement(BarChart, {width: 600, height: 400, labels: labels, data: data})
             )

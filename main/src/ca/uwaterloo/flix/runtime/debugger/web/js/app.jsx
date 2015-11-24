@@ -436,7 +436,14 @@ var PhasesPage = React.createClass({
 
         return (
             <div>
-                <PageHead name="Performance / Phases"/>
+                <PageHead name="Compiler / Phases"/>
+
+                <div className="panel panel-default">
+                    <div className="panel-body">
+                        The graph below shows the amount of time spent in various phases of the compiler.
+                        The time is reported in miliseconds.
+                    </div>
+                </div>
 
                 <BarChart width={600} height={400} labels={labels} data={data}/>
             </div>
