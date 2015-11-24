@@ -10,15 +10,13 @@ var PointsTo = {
 };
 
 var Phases = [
-    {
-        phase: "Parsing",
-        time: 243
-    },
-    {
-        phase: "Typing",
-        time: 2543
-    }
-
+    {phase: "Parser", time: 243},
+    {phase: "Weeder", time: 231},
+    {phase: "Namer", time: 86},
+    {phase: "Linker", time: 24},
+    {phase: "Typer", time: 467},
+    {phase: "Normalizer", time: 412},
+    {phase: "Emitter", time: 357}
 ];
 
 var Indexes = [
@@ -164,7 +162,7 @@ var Menu = React.createClass({
                                     return <li key={name} onClick={this.changePageRelation({name})}>
                                         <a href="#">{name}</a>
                                     </li>
-                                    })}
+                                })}
 
                                 <li role="separator" className="divider"></li>
 
@@ -173,7 +171,7 @@ var Menu = React.createClass({
                                     return <li key={name}>
                                         <a href="#">{name}</a>
                                     </li>
-                                    })}
+                                })}
                             </ul>
                         </li>
                     </ul>
@@ -223,6 +221,22 @@ var Menu = React.createClass({
 });
 
 /**
+ * PageHead component.
+ */
+var PageHead = React.createClass({
+    propTypes: {
+        name: React.PropTypes.string.isRequired
+    },
+    render: function () {
+        return (
+            <div className="page-header">
+                <h1>{this.props.name}</h1>
+            </div>
+        );
+    }
+});
+
+/**
  * Landing page.
  */
 var LandingPage = React.createClass({
@@ -234,7 +248,7 @@ var LandingPage = React.createClass({
     render: function () {
         return (
             <div>
-                <Head name="Welcome to the Flix Debugger!"/>
+                <PageHead name="Welcome to the Flix Debugger!"/>
 
                 <div className="row">
                     <div className="col-xs-6">
@@ -243,27 +257,26 @@ var LandingPage = React.createClass({
                         <div className="list-group">
                             {this.props.relations.map(relation => {
                                 return (
-                                <a href="#" className="list-group-item">
-                                    {relation.name} <span className="badge">{relation.size}</span>
-                                </a>
-                                    );
-                                })}
+                                    <a href="#" className="list-group-item">
+                                        {relation.name} <span className="badge">{relation.size}</span>
+                                    </a>
+                                );
+                            })}
                         </div>
                     </div>
 
                     <div className="col-xs-6">
                         <h3>Lattices</h3>
 
-                        <BarChart/>
 
                         <div className="list-group">
                             {this.props.lattices.map(lattice => {
                                 return (
-                                <a href="#" className="list-group-item">
-                                    {lattice.name} <span className="badge">{lattice.size}</span>
-                                </a>
-                                    );
-                                })}
+                                    <a href="#" className="list-group-item">
+                                        {lattice.name} <span className="badge">{lattice.size}</span>
+                                    </a>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -326,71 +339,48 @@ var RelationPage = React.createClass({
     render: function () {
         return (
             <div>
-                <Head name={this.props.name}/>
+                <PageHead name={this.props.name}/>
                 <Table table={this.props.table}/>
             </div>
         );
     }
 });
 
+/**
+ * A BarChart component based on Chart.js
+ */
 var BarChart = React.createClass({
+    propTypes: {
+        labels: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+        data: React.PropTypes.arrayOf(React.PropTypes.number).isRequired,
+        width: React.PropTypes.number.isRequired,
+        height: React.PropTypes.number.isRequired
+    },
 
     componentDidMount: function () {
-        var randomScalingFactor = function () {
-            return Math.round(Math.random() * 100)
-        };
-
-        var labels = ["Parser", "Weeder", "Resolver", "Typer", "Indexer", "Solver"];
-
         var barChartData = {
-            labels: labels,
+            labels: this.props.labels,
             datasets: [
                 {
                     fillColor: "rgba(151,187,205,0.5)",
                     strokeColor: "rgba(151,187,205,0.8)",
                     highlightFill: "rgba(151,187,205,0.75)",
                     highlightStroke: "rgba(151,187,205,1)",
-                    data: [randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor()]
+                    data: this.props.data
                 }
             ]
         };
 
-        console.log("hello world")
         var ctx = this.canvas.getContext("2d");
-        this.line = new Chart(ctx).Bar(barChartData, {
-            responsive: false
-        });
+        this.chart = new Chart(ctx).Bar(barChartData);
     },
 
     componentWillUnmount: function () {
-        this.line.destroy();
+        this.chart.destroy();
     },
 
     render: function () {
-        return <canvas width="600" height="400" ref={(ref) => this.canvas = ref}/>
-    }
-});
-
-/**
- * Phases page.
- */
-var PhasesPage = React.createClass({
-    render: function () {
-        var table = {
-            columns: ["Name", "Time"],
-            rows: Phases.map(row =>
-                [row["phase"], row["time"]]
-            )
-        };
-
-        return (
-            <div>
-                <Head name="Performance / Phases"/>
-                <Table table={table}/>
-
-                <BarChart/>
-            </div>
-        );
+        return <canvas width={this.props.width} height={this.props.height} ref={(ref) => this.canvas = ref}/>
     }
 });
 
@@ -402,13 +392,13 @@ var IndexesPage = React.createClass({
         var table = {
             columns: ["Collection", "Index", "Hits"],
             rows: Indexes.map(row =>
-                [row["collection"], row["index"], row["hits"]]
+                    [row["collection"], row["index"], row["hits"]]
             )
         };
 
         return (
             <div>
-                <Head name="Performance / Indexes"/>
+                <PageHead name="Performance / Indexes"/>
                 <Table table={table}/>
             </div>
         );
@@ -423,31 +413,32 @@ var QueriesPage = React.createClass({
         var table = {
             columns: ["Source Location", "Rule", "Hitcount", "Total Time (msec)", "Time / Operation (usec)"],
             rows: Queries.map(row =>
-                [row["location"], row["rule"], row["hitcount"], row["time"], 1000 * row["time"] / row["hitcount"]]
+                    [row["location"], row["rule"], row["hitcount"], row["time"], 1000 * row["time"] / row["hitcount"]]
             )
         };
 
         return (
             <div>
-                <Head name="Performance / Queries"/>
+                <PageHead name="Performance / Queries"/>
                 <Table table={table}/>
             </div>
         );
     }
 });
 
-
 /**
- * Head component.
+ * Phases page.
  */
-var Head = React.createClass({
-    propTypes: {
-        name: React.PropTypes.string.isRequired
-    },
+var PhasesPage = React.createClass({
     render: function () {
+        var labels = Phases.map(o => o["phase"]);
+        var data = Phases.map(o => o["time"]);
+
         return (
-            <div className="page-header">
-                <h1>{this.props.name}</h1>
+            <div>
+                <PageHead name="Performance / Phases"/>
+
+                <BarChart width={600} height={400} labels={labels} data={data}/>
             </div>
         );
     }
@@ -486,7 +477,7 @@ var TableHeader = React.createClass({
             <tr>
                 {this.props.columns.map(function (column) {
                     return <th key={column}>{column}</th>
-                    })}
+                })}
             </tr>
             </thead>
         );
@@ -505,7 +496,7 @@ var TableBody = React.createClass({
             <tbody>
             {this.props.rows.map(function (row) {
                 return <TableRow key={row} row={row}/>
-                })}
+            })}
             </tbody>
         );
     }
@@ -523,11 +514,17 @@ var TableRow = React.createClass({
             <tr>
                 {this.props.row.map(function (elm) {
                     return <td>{elm}</td>
-                    })}
+                })}
             </tr>
         );
     }
 });
+
+/**
+ * Chart.js global options.
+ */
+Chart.defaults.global.animation = false;
+Chart.defaults.global.responsive = false;
 
 
 /**

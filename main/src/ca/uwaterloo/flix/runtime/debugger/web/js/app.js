@@ -10,15 +10,13 @@ var PointsTo = {
 };
 
 var Phases = [
-    {
-        phase: "Parsing",
-        time: 243
-    },
-    {
-        phase: "Typing",
-        time: 2543
-    }
-
+    {phase: "Parser", time: 243},
+    {phase: "Weeder", time: 231},
+    {phase: "Namer", time: 86},
+    {phase: "Linker", time: 24},
+    {phase: "Typer", time: 467},
+    {phase: "Normalizer", time: 412},
+    {phase: "Emitter", time: 357}
 ];
 
 var Indexes = [
@@ -164,7 +162,7 @@ var Menu = React.createClass({displayName: "Menu",
                                     return React.createElement("li", {key: name, onClick: this.changePageRelation({name})}, 
                                         React.createElement("a", {href: "#"}, name)
                                     )
-                                    }), 
+                                }), 
 
                                 React.createElement("li", {role: "separator", className: "divider"}), 
 
@@ -173,7 +171,7 @@ var Menu = React.createClass({displayName: "Menu",
                                     return React.createElement("li", {key: name}, 
                                         React.createElement("a", {href: "#"}, name)
                                     )
-                                    })
+                                })
                             )
                         )
                     ), 
@@ -223,6 +221,22 @@ var Menu = React.createClass({displayName: "Menu",
 });
 
 /**
+ * PageHead component.
+ */
+var PageHead = React.createClass({displayName: "PageHead",
+    propTypes: {
+        name: React.PropTypes.string.isRequired
+    },
+    render: function () {
+        return (
+            React.createElement("div", {className: "page-header"}, 
+                React.createElement("h1", null, this.props.name)
+            )
+        );
+    }
+});
+
+/**
  * Landing page.
  */
 var LandingPage = React.createClass({displayName: "LandingPage",
@@ -234,7 +248,7 @@ var LandingPage = React.createClass({displayName: "LandingPage",
     render: function () {
         return (
             React.createElement("div", null, 
-                React.createElement(Head, {name: "Welcome to the Flix Debugger!"}), 
+                React.createElement(PageHead, {name: "Welcome to the Flix Debugger!"}), 
 
                 React.createElement("div", {className: "row"}, 
                     React.createElement("div", {className: "col-xs-6"}, 
@@ -243,27 +257,26 @@ var LandingPage = React.createClass({displayName: "LandingPage",
                         React.createElement("div", {className: "list-group"}, 
                             this.props.relations.map(relation => {
                                 return (
-                                React.createElement("a", {href: "#", className: "list-group-item"}, 
-                                    relation.name, " ", React.createElement("span", {className: "badge"}, relation.size)
-                                )
-                                    );
-                                })
+                                    React.createElement("a", {href: "#", className: "list-group-item"}, 
+                                        relation.name, " ", React.createElement("span", {className: "badge"}, relation.size)
+                                    )
+                                );
+                            })
                         )
                     ), 
 
                     React.createElement("div", {className: "col-xs-6"}, 
                         React.createElement("h3", null, "Lattices"), 
 
-                        React.createElement(BarChart, null), 
 
                         React.createElement("div", {className: "list-group"}, 
                             this.props.lattices.map(lattice => {
                                 return (
-                                React.createElement("a", {href: "#", className: "list-group-item"}, 
-                                    lattice.name, " ", React.createElement("span", {className: "badge"}, lattice.size)
-                                )
-                                    );
-                                })
+                                    React.createElement("a", {href: "#", className: "list-group-item"}, 
+                                        lattice.name, " ", React.createElement("span", {className: "badge"}, lattice.size)
+                                    )
+                                );
+                            })
                         )
                     )
                 )
@@ -326,71 +339,48 @@ var RelationPage = React.createClass({displayName: "RelationPage",
     render: function () {
         return (
             React.createElement("div", null, 
-                React.createElement(Head, {name: this.props.name}), 
+                React.createElement(PageHead, {name: this.props.name}), 
                 React.createElement(Table, {table: this.props.table})
             )
         );
     }
 });
 
+/**
+ * A BarChart component based on Chart.js
+ */
 var BarChart = React.createClass({displayName: "BarChart",
+    propTypes: {
+        labels: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+        data: React.PropTypes.arrayOf(React.PropTypes.number).isRequired,
+        width: React.PropTypes.number.isRequired,
+        height: React.PropTypes.number.isRequired
+    },
 
     componentDidMount: function () {
-        var randomScalingFactor = function () {
-            return Math.round(Math.random() * 100)
-        };
-
-        var labels = ["Parser", "Weeder", "Resolver", "Typer", "Indexer", "Solver"];
-
         var barChartData = {
-            labels: labels,
+            labels: this.props.labels,
             datasets: [
                 {
                     fillColor: "rgba(151,187,205,0.5)",
                     strokeColor: "rgba(151,187,205,0.8)",
                     highlightFill: "rgba(151,187,205,0.75)",
                     highlightStroke: "rgba(151,187,205,1)",
-                    data: [randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor()]
+                    data: this.props.data
                 }
             ]
         };
 
-        console.log("hello world")
         var ctx = this.canvas.getContext("2d");
-        this.line = new Chart(ctx).Bar(barChartData, {
-            responsive: false
-        });
+        this.chart = new Chart(ctx).Bar(barChartData);
     },
 
     componentWillUnmount: function () {
-        this.line.destroy();
+        this.chart.destroy();
     },
 
     render: function () {
-        return React.createElement("canvas", {width: "600", height: "400", ref: (ref) => this.canvas = ref})
-    }
-});
-
-/**
- * Phases page.
- */
-var PhasesPage = React.createClass({displayName: "PhasesPage",
-    render: function () {
-        var table = {
-            columns: ["Name", "Time"],
-            rows: Phases.map(row =>
-                [row["phase"], row["time"]]
-            )
-        };
-
-        return (
-            React.createElement("div", null, 
-                React.createElement(Head, {name: "Performance / Phases"}), 
-                React.createElement(Table, {table: table}), 
-
-                React.createElement(BarChart, null)
-            )
-        );
+        return React.createElement("canvas", {width: this.props.width, height: this.props.height, ref: (ref) => this.canvas = ref})
     }
 });
 
@@ -402,13 +392,13 @@ var IndexesPage = React.createClass({displayName: "IndexesPage",
         var table = {
             columns: ["Collection", "Index", "Hits"],
             rows: Indexes.map(row =>
-                [row["collection"], row["index"], row["hits"]]
+                    [row["collection"], row["index"], row["hits"]]
             )
         };
 
         return (
             React.createElement("div", null, 
-                React.createElement(Head, {name: "Performance / Indexes"}), 
+                React.createElement(PageHead, {name: "Performance / Indexes"}), 
                 React.createElement(Table, {table: table})
             )
         );
@@ -423,31 +413,32 @@ var QueriesPage = React.createClass({displayName: "QueriesPage",
         var table = {
             columns: ["Source Location", "Rule", "Hitcount", "Total Time (msec)", "Time / Operation (usec)"],
             rows: Queries.map(row =>
-                [row["location"], row["rule"], row["hitcount"], row["time"], 1000 * row["time"] / row["hitcount"]]
+                    [row["location"], row["rule"], row["hitcount"], row["time"], 1000 * row["time"] / row["hitcount"]]
             )
         };
 
         return (
             React.createElement("div", null, 
-                React.createElement(Head, {name: "Performance / Queries"}), 
+                React.createElement(PageHead, {name: "Performance / Queries"}), 
                 React.createElement(Table, {table: table})
             )
         );
     }
 });
 
-
 /**
- * Head component.
+ * Phases page.
  */
-var Head = React.createClass({displayName: "Head",
-    propTypes: {
-        name: React.PropTypes.string.isRequired
-    },
+var PhasesPage = React.createClass({displayName: "PhasesPage",
     render: function () {
+        var labels = Phases.map(o => o["phase"]);
+        var data = Phases.map(o => o["time"]);
+
         return (
-            React.createElement("div", {className: "page-header"}, 
-                React.createElement("h1", null, this.props.name)
+            React.createElement("div", null, 
+                React.createElement(PageHead, {name: "Performance / Phases"}), 
+
+                React.createElement(BarChart, {width: 600, height: 400, labels: labels, data: data})
             )
         );
     }
@@ -486,7 +477,7 @@ var TableHeader = React.createClass({displayName: "TableHeader",
             React.createElement("tr", null, 
                 this.props.columns.map(function (column) {
                     return React.createElement("th", {key: column}, column)
-                    })
+                })
             )
             )
         );
@@ -505,7 +496,7 @@ var TableBody = React.createClass({displayName: "TableBody",
             React.createElement("tbody", null, 
             this.props.rows.map(function (row) {
                 return React.createElement(TableRow, {key: row, row: row})
-                })
+            })
             )
         );
     }
@@ -523,11 +514,17 @@ var TableRow = React.createClass({displayName: "TableRow",
             React.createElement("tr", null, 
                 this.props.row.map(function (elm) {
                     return React.createElement("td", null, elm)
-                    })
+                })
             )
         );
     }
 });
+
+/**
+ * Chart.js global options.
+ */
+Chart.defaults.global.animation = false;
+Chart.defaults.global.responsive = false;
 
 
 /**
