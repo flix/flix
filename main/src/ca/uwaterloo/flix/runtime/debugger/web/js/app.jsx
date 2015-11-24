@@ -21,25 +21,7 @@ var Phases = [
     {phase: "Emitter", time: 357}
 ];
 
-var Indexes = [
-    {
-        collection: "/Pt",
-        index: "{variable, target}",
-        hits: 2439278
-    },
-    {
-        collection: "/CFG",
-        index: "{label} ",
-        hits: 959689
-    },
-    {
-        collection: "/Phi",
-        index: "{label} ",
-        hits: 959565
-    }
-];
-
-var Queries = [
+var Rules = [
     {
         rule: "SUBefore(l2,a,t) :- CFG(l1,l2), SUAfter(l1,a,t).",
         hitcount: 959690,
@@ -62,7 +44,8 @@ var Queries = [
     }
 ];
 
-var Predicate = [
+
+var Predicates = [
     {
         name: "Multi",
         size: 148,
@@ -85,6 +68,25 @@ var Predicate = [
         fullScans: 225
     }
 ];
+
+var Indexes = [
+    {
+        collection: "/Pt",
+        index: "{variable, target}",
+        hits: 2439278
+    },
+    {
+        collection: "/CFG",
+        index: "{label} ",
+        hits: 959689
+    },
+    {
+        collection: "/Phi",
+        index: "{label} ",
+        hits: 959565
+    }
+];
+
 
 var Relations = [
     {name: "Multi", size: 148},
@@ -129,14 +131,15 @@ var App = React.createClass({
     render: function () {
         var page = null;
         var pageName = this.state.page.name;
-        if (pageName === "performance/phases") {
+
+        if (pageName === "performance/rules") {
+            page = <RulesPage />
+        } else if (pageName === "performance/predicates") {
+            page = <PredicatesPage />
+        } else if (pageName === "performance/indexes") {
+            page = <IndexesPage />
+        } else if (pageName === "compiler/phases") {
             page = <PhasesPage />
-        } else if (pageName === "performance/lookups") {
-            page = <LookupPage />
-        } else if (pageName === "performance/indexusage") {
-            page = <IndexUsagePage />
-        } else if (pageName === "performance/queries") {
-            page = <QueriesPage />
         } else if (pageName === "relation") {
             page = <RelationPage name="VarPointsTo" table={PointsTo}/>
         } else {
@@ -211,14 +214,14 @@ var Menu = React.createClass({
                             </a>
                             <ul className="dropdown-menu">
                                 <li>
-                                    <a href="#" onClick={() => this.props.changePage({name: "performance/indexusage"})}>Index
-                                        Usage</a>
+                                    <a href="#"
+                                       onClick={() => this.props.changePage({name: "performance/rules"})}>Rules</a>
                                 </li>
                                 <li>
-                                    <a href="#" onClick={() => this.props.changePage({name: "performance/lookups"})}>Lookups</a>
+                                    <a href="#" onClick={() => this.props.changePage({name: "performance/predicates"})}>Predicates</a>
                                 </li>
                                 <li>
-                                    <a href="#" onClick={() => this.props.changePage({name: "performance/queries"})}>Queries</a>
+                                    <a href="#" onClick={() => this.props.changePage({name: "performance/indexes"})}>Indexes</a>
                                 </li>
                             </ul>
                         </li>
@@ -232,7 +235,8 @@ var Menu = React.createClass({
                             </a>
                             <ul className="dropdown-menu">
                                 <li>
-                                    <a href="#" onClick={() => this.props.changePage({name: "performance/phases"})}>Phases</a>
+                                    <a href="#"
+                                       onClick={() => this.props.changePage({name: "compiler/phases"})}>Phases</a>
                                 </li>
                             </ul>
                         </li>
@@ -378,116 +382,13 @@ var RelationPage = React.createClass({
 });
 
 /**
- * A BarChart component based on Chart.js
+ * Rules page.
  */
-var BarChart = React.createClass({
-    propTypes: {
-        labels: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-        data: React.PropTypes.arrayOf(React.PropTypes.number).isRequired,
-        width: React.PropTypes.number.isRequired,
-        height: React.PropTypes.number.isRequired
-    },
-
-    componentDidMount: function () {
-        var barChartData = {
-            labels: this.props.labels,
-            datasets: [
-                {
-                    fillColor: "rgba(151,187,205,0.5)",
-                    strokeColor: "rgba(151,187,205,0.8)",
-                    highlightFill: "rgba(151,187,205,0.75)",
-                    highlightStroke: "rgba(151,187,205,1)",
-                    data: this.props.data
-                }
-            ]
-        };
-
-        var ctx = this.canvas.getContext("2d");
-        this.chart = new Chart(ctx).Bar(barChartData);
-    },
-
-    componentWillUnmount: function () {
-        this.chart.destroy();
-    },
-
-    render: function () {
-        return <canvas width={this.props.width} height={this.props.height} ref={(ref) => this.canvas = ref}/>
-    }
-});
-
-
-/**
- * Lookup page.
- */
-var LookupPage = React.createClass({
-    render: function () {
-        var table = {
-            cols: ["Name", "Size", "Indexed Lookups", "Indexed Scans", "Full Scans"],
-            align: ["left", "right", "right", "right", "right"],
-            rows: Predicate.map(row => [
-                    row["name"],
-                    numeral(row["size"]).format('0,0'),
-                    numeral(row["indexedLookups"]).format('0,0'),
-                    numeral(row["indexedScans"]).format('0,0'),
-                    numeral(row["fullScans"]).format('0,0')
-                ]
-            )
-        };
-
-        return (
-            <div>
-                <PageHead name="Performance / Lookups"/>
-
-                <div className="panel panel-default">
-                    <div className="panel-body">
-                        The table below shows the lookup in each relation.
-                    </div>
-                </div>
-
-                <Table table={table}/>
-            </div>
-        );
-    }
-});
-
-
-/**
- * IndexUsage page.
- */
-var IndexUsagePage = React.createClass({
-    render: function () {
-        var table = {
-            cols: ["Collection", "Index", "Index Hits"],
-            align: ["left", "left", "right"],
-            rows: Indexes.map(row =>
-                    [row["collection"], row["index"], numeral(row["hits"]).format('0,0')]
-            )
-        };
-
-        return (
-            <div>
-                <PageHead name="Performance / Index Usage"/>
-
-                <div className="panel panel-default">
-                    <div className="panel-body">
-                        The table below shows the index usage of every collection.
-                    </div>
-                </div>
-
-                <Table table={table}/>
-            </div>
-        );
-    }
-});
-
-/**
- * Queries page.
- */
-var QueriesPage = React.createClass({
+var RulesPage = React.createClass({
     render: function () {
         var table = {
             cols: ["Location", "Rule", "Hits", "Total Time (msec)", "Query Time (msec/op)", "Throughput (ops/msec)"],
-            rows: Queries.map(row => [
+            rows: Rules.map(row => [
                     row["location"],
                     row["rule"],
                     numeral(row["hitcount"]).format('0,0'),
@@ -501,11 +402,74 @@ var QueriesPage = React.createClass({
 
         return (
             <div>
-                <PageHead name="Performance / Queries"/>
+                <PageHead name="Performance / Rules"/>
 
                 <div className="panel panel-default">
                     <div className="panel-body">
-                        The table below shows the most time consuming queries.
+                        The table below shows the time consumed by each rule.
+                    </div>
+                </div>
+
+                <Table table={table}/>
+            </div>
+        );
+    }
+});
+
+/**
+ * Predicates page.
+ */
+var PredicatesPage = React.createClass({
+    render: function () {
+        var table = {
+            cols: ["Name", "Size", "Indexed Lookups", "Indexed Scans", "Full Scans"],
+            align: ["left", "right", "right", "right", "right"],
+            rows: Predicates.map(row => [
+                    row["name"],
+                    numeral(row["size"]).format('0,0'),
+                    numeral(row["indexedLookups"]).format('0,0'),
+                    numeral(row["indexedScans"]).format('0,0'),
+                    numeral(row["fullScans"]).format('0,0')
+                ]
+            )
+        };
+
+        return (
+            <div>
+                <PageHead name="Performance / Predicates"/>
+
+                <div className="panel panel-default">
+                    <div className="panel-body">
+                        The table below shows the time consumed by lookups for each predicate.
+                    </div>
+                </div>
+
+                <Table table={table}/>
+            </div>
+        );
+    }
+});
+
+/**
+ * Indexes page.
+ */
+var IndexesPage = React.createClass({
+    render: function () {
+        var table = {
+            cols: ["Collection", "Index", "Index Hits"],
+            align: ["left", "left", "right"],
+            rows: Indexes.map(row =>
+                    [row["collection"], row["index"], numeral(row["hits"]).format('0,0')]
+            )
+        };
+
+        return (
+            <div>
+                <PageHead name="Performance / Indexes"/>
+
+                <div className="panel panel-default">
+                    <div className="panel-body">
+                        The table below shows the usage of indexes of each relation and lattice.
                     </div>
                 </div>
 
@@ -626,6 +590,44 @@ function getAlignment(text) {
 Chart.defaults.global.animation = false;
 Chart.defaults.global.responsive = false;
 
+
+/**
+ * A BarChart component based on Chart.js
+ */
+var BarChart = React.createClass({
+    propTypes: {
+        labels: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+        data: React.PropTypes.arrayOf(React.PropTypes.number).isRequired,
+        width: React.PropTypes.number.isRequired,
+        height: React.PropTypes.number.isRequired
+    },
+
+    componentDidMount: function () {
+        var barChartData = {
+            labels: this.props.labels,
+            datasets: [
+                {
+                    fillColor: "rgba(151,187,205,0.5)",
+                    strokeColor: "rgba(151,187,205,0.8)",
+                    highlightFill: "rgba(151,187,205,0.75)",
+                    highlightStroke: "rgba(151,187,205,1)",
+                    data: this.props.data
+                }
+            ]
+        };
+
+        var ctx = this.canvas.getContext("2d");
+        this.chart = new Chart(ctx).Bar(barChartData);
+    },
+
+    componentWillUnmount: function () {
+        this.chart.destroy();
+    },
+
+    render: function () {
+        return <canvas width={this.props.width} height={this.props.height} ref={(ref) => this.canvas = ref}/>
+    }
+});
 
 /**
  * Render app when the page is ready.

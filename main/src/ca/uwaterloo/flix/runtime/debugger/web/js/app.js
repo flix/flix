@@ -21,25 +21,7 @@ var Phases = [
     {phase: "Emitter", time: 357}
 ];
 
-var Indexes = [
-    {
-        collection: "/Pt",
-        index: "{variable, target}",
-        hits: 2439278
-    },
-    {
-        collection: "/CFG",
-        index: "{label} ",
-        hits: 959689
-    },
-    {
-        collection: "/Phi",
-        index: "{label} ",
-        hits: 959565
-    }
-];
-
-var Queries = [
+var Rules = [
     {
         rule: "SUBefore(l2,a,t) :- CFG(l1,l2), SUAfter(l1,a,t).",
         hitcount: 959690,
@@ -62,7 +44,8 @@ var Queries = [
     }
 ];
 
-var Predicate = [
+
+var Predicates = [
     {
         name: "Multi",
         size: 148,
@@ -85,6 +68,25 @@ var Predicate = [
         fullScans: 225
     }
 ];
+
+var Indexes = [
+    {
+        collection: "/Pt",
+        index: "{variable, target}",
+        hits: 2439278
+    },
+    {
+        collection: "/CFG",
+        index: "{label} ",
+        hits: 959689
+    },
+    {
+        collection: "/Phi",
+        index: "{label} ",
+        hits: 959565
+    }
+];
+
 
 var Relations = [
     {name: "Multi", size: 148},
@@ -129,14 +131,15 @@ var App = React.createClass({displayName: "App",
     render: function () {
         var page = null;
         var pageName = this.state.page.name;
-        if (pageName === "performance/phases") {
+
+        if (pageName === "performance/rules") {
+            page = React.createElement(RulesPage, null)
+        } else if (pageName === "performance/predicates") {
+            page = React.createElement(PredicatesPage, null)
+        } else if (pageName === "performance/indexes") {
+            page = React.createElement(IndexesPage, null)
+        } else if (pageName === "compiler/phases") {
             page = React.createElement(PhasesPage, null)
-        } else if (pageName === "performance/lookups") {
-            page = React.createElement(LookupPage, null)
-        } else if (pageName === "performance/indexusage") {
-            page = React.createElement(IndexUsagePage, null)
-        } else if (pageName === "performance/queries") {
-            page = React.createElement(QueriesPage, null)
         } else if (pageName === "relation") {
             page = React.createElement(RelationPage, {name: "VarPointsTo", table: PointsTo})
         } else {
@@ -211,14 +214,14 @@ var Menu = React.createClass({displayName: "Menu",
                             ), 
                             React.createElement("ul", {className: "dropdown-menu"}, 
                                 React.createElement("li", null, 
-                                    React.createElement("a", {href: "#", onClick: () => this.props.changePage({name: "performance/indexusage"})}, "Index" + ' ' +
-                                        "Usage")
+                                    React.createElement("a", {href: "#", 
+                                       onClick: () => this.props.changePage({name: "performance/rules"})}, "Rules")
                                 ), 
                                 React.createElement("li", null, 
-                                    React.createElement("a", {href: "#", onClick: () => this.props.changePage({name: "performance/lookups"})}, "Lookups")
+                                    React.createElement("a", {href: "#", onClick: () => this.props.changePage({name: "performance/predicates"})}, "Predicates")
                                 ), 
                                 React.createElement("li", null, 
-                                    React.createElement("a", {href: "#", onClick: () => this.props.changePage({name: "performance/queries"})}, "Queries")
+                                    React.createElement("a", {href: "#", onClick: () => this.props.changePage({name: "performance/indexes"})}, "Indexes")
                                 )
                             )
                         )
@@ -232,7 +235,8 @@ var Menu = React.createClass({displayName: "Menu",
                             ), 
                             React.createElement("ul", {className: "dropdown-menu"}, 
                                 React.createElement("li", null, 
-                                    React.createElement("a", {href: "#", onClick: () => this.props.changePage({name: "performance/phases"})}, "Phases")
+                                    React.createElement("a", {href: "#", 
+                                       onClick: () => this.props.changePage({name: "compiler/phases"})}, "Phases")
                                 )
                             )
                         )
@@ -378,116 +382,13 @@ var RelationPage = React.createClass({displayName: "RelationPage",
 });
 
 /**
- * A BarChart component based on Chart.js
+ * Rules page.
  */
-var BarChart = React.createClass({displayName: "BarChart",
-    propTypes: {
-        labels: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-        data: React.PropTypes.arrayOf(React.PropTypes.number).isRequired,
-        width: React.PropTypes.number.isRequired,
-        height: React.PropTypes.number.isRequired
-    },
-
-    componentDidMount: function () {
-        var barChartData = {
-            labels: this.props.labels,
-            datasets: [
-                {
-                    fillColor: "rgba(151,187,205,0.5)",
-                    strokeColor: "rgba(151,187,205,0.8)",
-                    highlightFill: "rgba(151,187,205,0.75)",
-                    highlightStroke: "rgba(151,187,205,1)",
-                    data: this.props.data
-                }
-            ]
-        };
-
-        var ctx = this.canvas.getContext("2d");
-        this.chart = new Chart(ctx).Bar(barChartData);
-    },
-
-    componentWillUnmount: function () {
-        this.chart.destroy();
-    },
-
-    render: function () {
-        return React.createElement("canvas", {width: this.props.width, height: this.props.height, ref: (ref) => this.canvas = ref})
-    }
-});
-
-
-/**
- * Lookup page.
- */
-var LookupPage = React.createClass({displayName: "LookupPage",
-    render: function () {
-        var table = {
-            cols: ["Name", "Size", "Indexed Lookups", "Indexed Scans", "Full Scans"],
-            align: ["left", "right", "right", "right", "right"],
-            rows: Predicate.map(row => [
-                    row["name"],
-                    numeral(row["size"]).format('0,0'),
-                    numeral(row["indexedLookups"]).format('0,0'),
-                    numeral(row["indexedScans"]).format('0,0'),
-                    numeral(row["fullScans"]).format('0,0')
-                ]
-            )
-        };
-
-        return (
-            React.createElement("div", null, 
-                React.createElement(PageHead, {name: "Performance / Lookups"}), 
-
-                React.createElement("div", {className: "panel panel-default"}, 
-                    React.createElement("div", {className: "panel-body"}, 
-                        "The table below shows the lookup in each relation."
-                    )
-                ), 
-
-                React.createElement(Table, {table: table})
-            )
-        );
-    }
-});
-
-
-/**
- * IndexUsage page.
- */
-var IndexUsagePage = React.createClass({displayName: "IndexUsagePage",
-    render: function () {
-        var table = {
-            cols: ["Collection", "Index", "Index Hits"],
-            align: ["left", "left", "right"],
-            rows: Indexes.map(row =>
-                    [row["collection"], row["index"], numeral(row["hits"]).format('0,0')]
-            )
-        };
-
-        return (
-            React.createElement("div", null, 
-                React.createElement(PageHead, {name: "Performance / Index Usage"}), 
-
-                React.createElement("div", {className: "panel panel-default"}, 
-                    React.createElement("div", {className: "panel-body"}, 
-                        "The table below shows the index usage of every collection."
-                    )
-                ), 
-
-                React.createElement(Table, {table: table})
-            )
-        );
-    }
-});
-
-/**
- * Queries page.
- */
-var QueriesPage = React.createClass({displayName: "QueriesPage",
+var RulesPage = React.createClass({displayName: "RulesPage",
     render: function () {
         var table = {
             cols: ["Location", "Rule", "Hits", "Total Time (msec)", "Query Time (msec/op)", "Throughput (ops/msec)"],
-            rows: Queries.map(row => [
+            rows: Rules.map(row => [
                     row["location"],
                     row["rule"],
                     numeral(row["hitcount"]).format('0,0'),
@@ -501,11 +402,74 @@ var QueriesPage = React.createClass({displayName: "QueriesPage",
 
         return (
             React.createElement("div", null, 
-                React.createElement(PageHead, {name: "Performance / Queries"}), 
+                React.createElement(PageHead, {name: "Performance / Rules"}), 
 
                 React.createElement("div", {className: "panel panel-default"}, 
                     React.createElement("div", {className: "panel-body"}, 
-                        "The table below shows the most time consuming queries."
+                        "The table below shows the time consumed by each rule."
+                    )
+                ), 
+
+                React.createElement(Table, {table: table})
+            )
+        );
+    }
+});
+
+/**
+ * Predicates page.
+ */
+var PredicatesPage = React.createClass({displayName: "PredicatesPage",
+    render: function () {
+        var table = {
+            cols: ["Name", "Size", "Indexed Lookups", "Indexed Scans", "Full Scans"],
+            align: ["left", "right", "right", "right", "right"],
+            rows: Predicates.map(row => [
+                    row["name"],
+                    numeral(row["size"]).format('0,0'),
+                    numeral(row["indexedLookups"]).format('0,0'),
+                    numeral(row["indexedScans"]).format('0,0'),
+                    numeral(row["fullScans"]).format('0,0')
+                ]
+            )
+        };
+
+        return (
+            React.createElement("div", null, 
+                React.createElement(PageHead, {name: "Performance / Predicates"}), 
+
+                React.createElement("div", {className: "panel panel-default"}, 
+                    React.createElement("div", {className: "panel-body"}, 
+                        "The table below shows the time consumed by lookups for each predicate."
+                    )
+                ), 
+
+                React.createElement(Table, {table: table})
+            )
+        );
+    }
+});
+
+/**
+ * Indexes page.
+ */
+var IndexesPage = React.createClass({displayName: "IndexesPage",
+    render: function () {
+        var table = {
+            cols: ["Collection", "Index", "Index Hits"],
+            align: ["left", "left", "right"],
+            rows: Indexes.map(row =>
+                    [row["collection"], row["index"], numeral(row["hits"]).format('0,0')]
+            )
+        };
+
+        return (
+            React.createElement("div", null, 
+                React.createElement(PageHead, {name: "Performance / Indexes"}), 
+
+                React.createElement("div", {className: "panel panel-default"}, 
+                    React.createElement("div", {className: "panel-body"}, 
+                        "The table below shows the usage of indexes of each relation and lattice."
                     )
                 ), 
 
@@ -626,6 +590,44 @@ function getAlignment(text) {
 Chart.defaults.global.animation = false;
 Chart.defaults.global.responsive = false;
 
+
+/**
+ * A BarChart component based on Chart.js
+ */
+var BarChart = React.createClass({displayName: "BarChart",
+    propTypes: {
+        labels: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+        data: React.PropTypes.arrayOf(React.PropTypes.number).isRequired,
+        width: React.PropTypes.number.isRequired,
+        height: React.PropTypes.number.isRequired
+    },
+
+    componentDidMount: function () {
+        var barChartData = {
+            labels: this.props.labels,
+            datasets: [
+                {
+                    fillColor: "rgba(151,187,205,0.5)",
+                    strokeColor: "rgba(151,187,205,0.8)",
+                    highlightFill: "rgba(151,187,205,0.75)",
+                    highlightStroke: "rgba(151,187,205,1)",
+                    data: this.props.data
+                }
+            ]
+        };
+
+        var ctx = this.canvas.getContext("2d");
+        this.chart = new Chart(ctx).Bar(barChartData);
+    },
+
+    componentWillUnmount: function () {
+        this.chart.destroy();
+    },
+
+    render: function () {
+        return React.createElement("canvas", {width: this.props.width, height: this.props.height, ref: (ref) => this.canvas = ref})
+    }
+});
 
 /**
  * Render app when the page is ready.
