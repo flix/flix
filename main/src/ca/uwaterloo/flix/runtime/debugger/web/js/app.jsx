@@ -420,14 +420,14 @@ var IndexUsagePage = React.createClass({
 var QueriesPage = React.createClass({
     render: function () {
         var table = {
-            cols: ["Location", "Rule", "Hits", "Total Time (msec)", "Query Time (msec/op)", "Throughput (ops/sec)"],
+            cols: ["Location", "Rule", "Hits", "Total Time (msec)", "Query Time (msec/op)", "Throughput (ops/msec)"],
             rows: Queries.map(row => [
                     row["location"],
                     row["rule"],
                     numeral(row["hitcount"]).format('0,0'),
                     numeral(row["time"]).format('0,0') + " msec",
                     numeral(row["time"] / row["hitcount"]).format('0.0000') + " msec/op",
-                    numeral(row["hitcount"] / row["time"]).format('0,0') + " ops/s"
+                    numeral(row["hitcount"] / row["time"]).format('0,0') + " ops/msec"
                 ]
             ),
             align: ["left", "left", "right", "right", "right"]
