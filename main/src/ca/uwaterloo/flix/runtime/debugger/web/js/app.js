@@ -89,50 +89,50 @@ var Indexes = [
 
 
 var Relations = [{
-    "name":"/Multi",
-    "size":148
-},{
-    "name":"/AddrOf",
-    "size":915
-},{
-    "name":"/KillEmpty",
-    "size":0
-},{
-    "name":"/PtSU",
-    "size":0
-},{
-    "name":"/PtH",
-    "size":4
-},{
-    "name":"/AllObjects",
-    "size":915
-},{
-    "name":"/FILoad",
-    "size":8
-},{
-    "name":"/Copy",
-    "size":481
-},{
-    "name":"/Store",
-    "size":316
-},{
-    "name":"/CFG",
-    "size":4525
-},{
-    "name":"/Pt",
-    "size":1062
-},{
-    "name":"/Clear",
-    "size":225
-},{
-    "name":"/FIStore",
-    "size":69
-},{
-    "name":"/Load",
-    "size":2139
-},{
-    "name":"/Phi",
-    "size":2702
+    "name": "/Multi",
+    "size": 148
+}, {
+    "name": "/AddrOf",
+    "size": 915
+}, {
+    "name": "/KillEmpty",
+    "size": 0
+}, {
+    "name": "/PtSU",
+    "size": 0
+}, {
+    "name": "/PtH",
+    "size": 4
+}, {
+    "name": "/AllObjects",
+    "size": 915
+}, {
+    "name": "/FILoad",
+    "size": 8
+}, {
+    "name": "/Copy",
+    "size": 481
+}, {
+    "name": "/Store",
+    "size": 316
+}, {
+    "name": "/CFG",
+    "size": 4525
+}, {
+    "name": "/Pt",
+    "size": 1062
+}, {
+    "name": "/Clear",
+    "size": 225
+}, {
+    "name": "/FIStore",
+    "size": 69
+}, {
+    "name": "/Load",
+    "size": 2139
+}, {
+    "name": "/Phi",
+    "size": 2702
 }]
 
 var Lattices = [
@@ -161,6 +161,8 @@ var Snapshots = [
 
 var Status = "completed";
 
+
+var URL = "http://" + window.location.hostname + ":9090";
 
 /**
  * Main Application entry point.
@@ -328,7 +330,7 @@ var LandingPage = React.createClass({displayName: "LandingPage",
     },
 
     render: function () {
-        var zero = Snapshots[0].time ;
+        var zero = Snapshots[0].time;
         var labels = Snapshots.map(s => (s.time - zero) / 1000);
         var facts = Snapshots.map(s => s.facts);
         var memory = Snapshots.map(s => s.memory);
@@ -540,6 +542,27 @@ var IndexesPage = React.createClass({displayName: "IndexesPage",
  * Phases page.
  */
 var PhasesPage = React.createClass({displayName: "PhasesPage",
+
+    getInitialState: function () {
+        return {data: []};
+    },
+
+    componentDidMount: function () {
+        this.tick();
+        // setInterval(this.tick, REFRESH_INTERVAL * 1000);
+    },
+
+    tick: function () {
+        $.ajax({
+            method: "GET", dataType: 'json', url: URL + '/compiler/phases', success: function (data) {
+                this.setState({data: data});
+            }.bind(this),
+            error: function () {
+                console.log("Error") //  TODO
+            }.bind(this)
+        });
+    },
+
     render: function () {
         var labels = Phases.map(o => o["phase"]);
         var data = Phases.map(o => o["time"]);
