@@ -366,7 +366,7 @@ var LandingPage = React.createClass({displayName: "LandingPage",
                             this.props.relations.map(relation => {
                                 return (
                                     React.createElement("a", {href: "#", className: "list-group-item"}, 
-                                        relation.name, " ", React.createElement("span", {className: "badge"}, relation.size)
+                                        relation.name, " ", React.createElement("span", {className: "badge"}, numeral(relation.size).format('0,0'))
                                     )
                                 );
                             })
