@@ -64,11 +64,26 @@ var Queries = [
 
 var Predicate = [
     {
-        rule: "SUBefore(l2,a,t) :- CFG(l1,l2), SUAfter(l1,a,t).",
-        hitcount: 959690,
-        time: 8714,
-        location: "101"
+        name: "Multi",
+        size: 148,
+        indexedLookups: 957011,
+        indexedScans: 0,
+        fullScans: 0
     },
+    {
+        name: "AddrOf",
+        size: 915,
+        indexedLookups: 915,
+        indexedScans: 0,
+        fullScans: 0
+    },
+    {
+        name: "PtH",
+        size: 811,
+        indexedLookups: 218386,
+        indexedScans: 0,
+        fullScans: 225
+    }
 ];
 
 var Relations = [
@@ -98,25 +113,6 @@ var Lattices = [
 var Status = "completed";
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * Main Application entry point.
  */
@@ -135,6 +131,8 @@ var App = React.createClass({
         var pageName = this.state.page.name;
         if (pageName === "performance/phases") {
             page = <PhasesPage />
+        } else if (pageName === "performance/lookups") {
+            page = <LookupPage />
         } else if (pageName === "performance/indexusage") {
             page = <IndexUsagePage />
         } else if (pageName === "performance/queries") {
@@ -215,6 +213,9 @@ var Menu = React.createClass({
                                 <li>
                                     <a href="#" onClick={() => this.props.changePage({name: "performance/indexusage"})}>Index
                                         Usage</a>
+                                </li>
+                                <li>
+                                    <a href="#" onClick={() => this.props.changePage({name: "performance/lookups"})}>Lookups</a>
                                 </li>
                                 <li>
                                     <a href="#" onClick={() => this.props.changePage({name: "performance/queries"})}>Queries</a>
@@ -413,6 +414,42 @@ var BarChart = React.createClass({
         return <canvas width={this.props.width} height={this.props.height} ref={(ref) => this.canvas = ref}/>
     }
 });
+
+
+/**
+ * Lookup page.
+ */
+var LookupPage = React.createClass({
+    render: function () {
+        var table = {
+            cols: ["Name", "Size", "Indexed Lookups", "Indexed Scans", "Full Scans"],
+            align: ["left", "right", "right", "right", "right"],
+            rows: Predicate.map(row => [
+                    row["name"],
+                    numeral(row["size"]).format('0,0'),
+                    numeral(row["indexedLookups"]).format('0,0'),
+                    numeral(row["indexedScans"]).format('0,0'),
+                    numeral(row["fullScans"]).format('0,0')
+                ]
+            )
+        };
+
+        return (
+            <div>
+                <PageHead name="Performance / Lookups"/>
+
+                <div className="panel panel-default">
+                    <div className="panel-body">
+                        The table below shows the lookup in each relation.
+                    </div>
+                </div>
+
+                <Table table={table}/>
+            </div>
+        );
+    }
+});
+
 
 /**
  * IndexUsage page.

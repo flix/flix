@@ -64,11 +64,26 @@ var Queries = [
 
 var Predicate = [
     {
-        rule: "SUBefore(l2,a,t) :- CFG(l1,l2), SUAfter(l1,a,t).",
-        hitcount: 959690,
-        time: 8714,
-        location: "101"
+        name: "Multi",
+        size: 148,
+        indexedLookups: 957011,
+        indexedScans: 0,
+        fullScans: 0
     },
+    {
+        name: "AddrOf",
+        size: 915,
+        indexedLookups: 915,
+        indexedScans: 0,
+        fullScans: 0
+    },
+    {
+        name: "PtH",
+        size: 811,
+        indexedLookups: 218386,
+        indexedScans: 0,
+        fullScans: 225
+    }
 ];
 
 var Relations = [
@@ -98,25 +113,6 @@ var Lattices = [
 var Status = "completed";
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * Main Application entry point.
  */
@@ -135,6 +131,8 @@ var App = React.createClass({displayName: "App",
         var pageName = this.state.page.name;
         if (pageName === "performance/phases") {
             page = React.createElement(PhasesPage, null)
+        } else if (pageName === "performance/lookups") {
+            page = React.createElement(LookupPage, null)
         } else if (pageName === "performance/indexusage") {
             page = React.createElement(IndexUsagePage, null)
         } else if (pageName === "performance/queries") {
@@ -215,6 +213,9 @@ var Menu = React.createClass({displayName: "Menu",
                                 React.createElement("li", null, 
                                     React.createElement("a", {href: "#", onClick: () => this.props.changePage({name: "performance/indexusage"})}, "Index" + ' ' +
                                         "Usage")
+                                ), 
+                                React.createElement("li", null, 
+                                    React.createElement("a", {href: "#", onClick: () => this.props.changePage({name: "performance/lookups"})}, "Lookups")
                                 ), 
                                 React.createElement("li", null, 
                                     React.createElement("a", {href: "#", onClick: () => this.props.changePage({name: "performance/queries"})}, "Queries")
@@ -413,6 +414,42 @@ var BarChart = React.createClass({displayName: "BarChart",
         return React.createElement("canvas", {width: this.props.width, height: this.props.height, ref: (ref) => this.canvas = ref})
     }
 });
+
+
+/**
+ * Lookup page.
+ */
+var LookupPage = React.createClass({displayName: "LookupPage",
+    render: function () {
+        var table = {
+            cols: ["Name", "Size", "Indexed Lookups", "Indexed Scans", "Full Scans"],
+            align: ["left", "right", "right", "right", "right"],
+            rows: Predicate.map(row => [
+                    row["name"],
+                    numeral(row["size"]).format('0,0'),
+                    numeral(row["indexedLookups"]).format('0,0'),
+                    numeral(row["indexedScans"]).format('0,0'),
+                    numeral(row["fullScans"]).format('0,0')
+                ]
+            )
+        };
+
+        return (
+            React.createElement("div", null, 
+                React.createElement(PageHead, {name: "Performance / Lookups"}), 
+
+                React.createElement("div", {className: "panel panel-default"}, 
+                    React.createElement("div", {className: "panel-body"}, 
+                        "The table below shows the lookup in each relation."
+                    )
+                ), 
+
+                React.createElement(Table, {table: table})
+            )
+        );
+    }
+});
+
 
 /**
  * IndexUsage page.
