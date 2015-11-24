@@ -254,6 +254,8 @@ var LandingPage = React.createClass({
                     <div className="col-xs-6">
                         <h3>Lattices</h3>
 
+                        <BarChart/>
+
                         <div className="list-group">
                             {this.props.lattices.map(lattice => {
                                 return (
