@@ -106,8 +106,8 @@ var App = React.createClass({
         var pageName = this.state.page.name;
         if (pageName === "performance/phases") {
             page = <PhasesPage />
-        } else if (pageName === "performance/indexes") {
-            page = <IndexesPage />
+        } else if (pageName === "performance/indexusage") {
+            page = <IndexUsagePage />
         } else if (pageName === "performance/queries") {
             page = <QueriesPage />
         } else if (pageName === "relation") {
@@ -184,7 +184,8 @@ var Menu = React.createClass({
                             </a>
                             <ul className="dropdown-menu">
                                 <li>
-                                    <a href="#" onClick={() => this.props.changePage({name: "performance/indexes"})}>Indexes</a>
+                                    <a href="#" onClick={() => this.props.changePage({name: "performance/indexusage"})}>Index
+                                        Usage</a>
                                 </li>
                                 <li>
                                     <a href="#" onClick={() => this.props.changePage({name: "performance/queries"})}>Queries</a>
@@ -385,20 +386,27 @@ var BarChart = React.createClass({
 });
 
 /**
- * Indexes page.
+ * IndexUsage page.
  */
-var IndexesPage = React.createClass({
+var IndexUsagePage = React.createClass({
     render: function () {
         var table = {
-            columns: ["Collection", "Index", "Hits"],
+            columns: ["Collection", "Index", "Index Hits"],
             rows: Indexes.map(row =>
-                    [row["collection"], row["index"], row["hits"]]
+                    [row["collection"], row["index"], numeral(row["hits"]).format('0,0')]
             )
         };
 
         return (
             <div>
-                <PageHead name="Performance / Indexes"/>
+                <PageHead name="Performance / Index Usage"/>
+
+                <div className="panel panel-default">
+                    <div className="panel-body">
+                        The table below shows the index usage of every collection.
+                    </div>
+                </div>
+
                 <Table table={table}/>
             </div>
         );

@@ -106,8 +106,8 @@ var App = React.createClass({displayName: "App",
         var pageName = this.state.page.name;
         if (pageName === "performance/phases") {
             page = React.createElement(PhasesPage, null)
-        } else if (pageName === "performance/indexes") {
-            page = React.createElement(IndexesPage, null)
+        } else if (pageName === "performance/indexusage") {
+            page = React.createElement(IndexUsagePage, null)
         } else if (pageName === "performance/queries") {
             page = React.createElement(QueriesPage, null)
         } else if (pageName === "relation") {
@@ -184,7 +184,7 @@ var Menu = React.createClass({displayName: "Menu",
                             ), 
                             React.createElement("ul", {className: "dropdown-menu"}, 
                                 React.createElement("li", null, 
-                                    React.createElement("a", {href: "#", onClick: () => this.props.changePage({name: "performance/indexes"})}, "Indexes")
+                                    React.createElement("a", {href: "#", onClick: () => this.props.changePage({name: "performance/indexusage"})}, "Index Usage")
                                 ), 
                                 React.createElement("li", null, 
                                     React.createElement("a", {href: "#", onClick: () => this.props.changePage({name: "performance/queries"})}, "Queries")
@@ -385,20 +385,27 @@ var BarChart = React.createClass({displayName: "BarChart",
 });
 
 /**
- * Indexes page.
+ * IndexUsage page.
  */
-var IndexesPage = React.createClass({displayName: "IndexesPage",
+var IndexUsagePage = React.createClass({displayName: "IndexUsagePage",
     render: function () {
         var table = {
             columns: ["Collection", "Index", "Hits"],
             rows: Indexes.map(row =>
-                    [row["collection"], row["index"], row["hits"]]
+                    [row["collection"], row["index"], numeral(row["hits"]).format('0,0')]
             )
         };
 
         return (
             React.createElement("div", null, 
-                React.createElement(PageHead, {name: "Performance / Indexes"}), 
+                React.createElement(PageHead, {name: "Performance / Index Usage"}), 
+
+                React.createElement("div", {className: "panel panel-default"}, 
+                    React.createElement("div", {className: "panel-body"}, 
+                        "The table below shows the index usage of every collection."
+                    )
+                ), 
+
                 React.createElement(Table, {table: table})
             )
         );
