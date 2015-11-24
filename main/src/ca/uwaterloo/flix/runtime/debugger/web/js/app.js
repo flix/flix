@@ -420,15 +420,29 @@ var IndexUsagePage = React.createClass({displayName: "IndexUsagePage",
 var QueriesPage = React.createClass({displayName: "QueriesPage",
     render: function () {
         var table = {
-            cols: ["Source Location", "Rule", "Hitcount", "Total Time (msec)", "Time / Operation (usec)"],
-            rows: Queries.map(row =>
-                    [row["location"], row["rule"], row["hitcount"], row["time"], 1000 * row["time"] / row["hitcount"]]
-            )
+            cols: ["Location", "Rule", "Hits", "Total Time (msec)", "Query Time (msec/op)", "Throughput (ops/sec)"],
+            rows: Queries.map(row => [
+                    row["location"],
+                    row["rule"],
+                    numeral(row["hitcount"]).format('0,0'),
+                    numeral(row["time"]).format('0,0') + " msec",
+                    numeral(row["time"] / row["hitcount"]).format('0.0000') + " msec/op",
+                    numeral(row["hitcount"] / row["time"]).format('0,0') + " ops/s"
+                ]
+            ),
+            align: ["left", "left", "right", "right", "right"]
         };
 
         return (
             React.createElement("div", null, 
                 React.createElement(PageHead, {name: "Performance / Queries"}), 
+
+                React.createElement("div", {className: "panel panel-default"}, 
+                    React.createElement("div", {className: "panel-body"}, 
+                        "The table below shows the most time consuming queries."
+                    )
+                ), 
+
                 React.createElement(Table, {table: table})
             )
         );
@@ -468,7 +482,7 @@ var Table = React.createClass({displayName: "Table",
         table: React.PropTypes.shape({
             cols: React.PropTypes.array.isRequired,
             rows: React.PropTypes.array.isRequired,
-            align: React.PropTypes.array.isRequired
+            align: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
         })
     },
     render: function () {
@@ -518,10 +532,6 @@ var TableBody = React.createClass({displayName: "TableBody",
  * Table Row component.
  */
 var TableRow = React.createClass({displayName: "TableRow",
-    propTypes: {
-        row: React.PropTypes.array.isRequired,
-        align: React.PropTypes.array.isRequired
-    },
     render: function () {
         return (
             React.createElement("tr", null, 

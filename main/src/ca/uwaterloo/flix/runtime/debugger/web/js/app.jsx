@@ -420,15 +420,29 @@ var IndexUsagePage = React.createClass({
 var QueriesPage = React.createClass({
     render: function () {
         var table = {
-            cols: ["Source Location", "Rule", "Hitcount", "Total Time (msec)", "Time / Operation (usec)"],
-            rows: Queries.map(row =>
-                    [row["location"], row["rule"], row["hitcount"], row["time"], 1000 * row["time"] / row["hitcount"]]
-            )
+            cols: ["Location", "Rule", "Hits", "Total Time (msec)", "Query Time (msec/op)", "Throughput (ops/sec)"],
+            rows: Queries.map(row => [
+                    row["location"],
+                    row["rule"],
+                    numeral(row["hitcount"]).format('0,0'),
+                    numeral(row["time"]).format('0,0') + " msec",
+                    numeral(row["time"] / row["hitcount"]).format('0.0000') + " msec/op",
+                    numeral(row["hitcount"] / row["time"]).format('0,0') + " ops/s"
+                ]
+            ),
+            align: ["left", "left", "right", "right", "right"]
         };
 
         return (
             <div>
                 <PageHead name="Performance / Queries"/>
+
+                <div className="panel panel-default">
+                    <div className="panel-body">
+                        The table below shows the most time consuming queries.
+                    </div>
+                </div>
+
                 <Table table={table}/>
             </div>
         );
@@ -468,7 +482,7 @@ var Table = React.createClass({
         table: React.PropTypes.shape({
             cols: React.PropTypes.array.isRequired,
             rows: React.PropTypes.array.isRequired,
-            align: React.PropTypes.array.isRequired
+            align: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
         })
     },
     render: function () {
@@ -518,10 +532,6 @@ var TableBody = React.createClass({
  * Table Row component.
  */
 var TableRow = React.createClass({
-    propTypes: {
-        row: React.PropTypes.array.isRequired,
-        align: React.PropTypes.array.isRequired
-    },
     render: function () {
         return (
             <tr>
