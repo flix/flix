@@ -110,7 +110,12 @@ var App = React.createClass({displayName: "App",
     },
 
     changePage: function (page) {
-        this.setState({page: page})
+        this.setState({page: page});
+    },
+
+    refreshPage: function () {
+        console.log("reload page, but how?"); // TODO
+        this.forceUpdate();
     },
 
     onError: function (msg) {
@@ -140,6 +145,7 @@ var App = React.createClass({displayName: "App",
         return (
             React.createElement("div", null, 
                 React.createElement(Menu, {changePage: this.changePage, 
+                      refreshPage: this.refreshPage, 
                       status: this.state.status, 
                       relations: this.state.relations, 
                       lattices: this.state.lattices}), 
@@ -155,6 +161,7 @@ var App = React.createClass({displayName: "App",
 var Menu = React.createClass({displayName: "Menu",
     propTypes: {
         changePage: React.PropTypes.func.isRequired,
+        refreshPage: React.PropTypes.func.isRequired,
         relations: React.PropTypes.array.isRequired,
         lattices: React.PropTypes.array.isRequired,
         status: React.PropTypes.string.isRequired
@@ -230,8 +237,9 @@ var Menu = React.createClass({displayName: "Menu",
                             ), 
                             React.createElement("ul", {className: "dropdown-menu"}, 
                                 React.createElement("li", null, 
-                                    React.createElement("a", {href: "#", 
-                                       onClick: () => this.props.changePage({name: "compiler/phases"})}, "Phases")
+                                    React.createElement("a", {href: "#", onClick: () => this.props.changePage({name: "compiler/phases"})}, 
+                                        "Phases"
+                                    )
                                 )
                             )
                         )
@@ -239,7 +247,9 @@ var Menu = React.createClass({displayName: "Menu",
 
                     React.createElement("ul", {className: "nav navbar-nav navbar-right"}, 
                         React.createElement("li", null, 
-                            React.createElement("a", {href: "#"}, " ", React.createElement("span", {className: "glyphicon glyphicon-refresh"}), " Refresh")
+                            React.createElement("a", {href: "#", onClick: this.props.refreshPage}, 
+                                React.createElement("span", {className: "glyphicon glyphicon-refresh"}), " Refresh"
+                            )
                         ), 
 
                         React.createElement(StatusIcon, {status: this.props.status})

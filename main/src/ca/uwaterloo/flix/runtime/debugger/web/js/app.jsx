@@ -110,7 +110,11 @@ var App = React.createClass({
     },
 
     changePage: function (page) {
-        this.setState({page: page})
+        this.setState({page: page});
+    },
+
+    refreshPage: function () {
+        console.log("reload page, but how?"); // TODO
     },
 
     onError: function (msg) {
@@ -140,6 +144,7 @@ var App = React.createClass({
         return (
             <div>
                 <Menu changePage={this.changePage}
+                      refreshPage={this.refreshPage}
                       status={this.state.status}
                       relations={this.state.relations}
                       lattices={this.state.lattices}/>
@@ -155,6 +160,7 @@ var App = React.createClass({
 var Menu = React.createClass({
     propTypes: {
         changePage: React.PropTypes.func.isRequired,
+        refreshPage: React.PropTypes.func.isRequired,
         relations: React.PropTypes.array.isRequired,
         lattices: React.PropTypes.array.isRequired,
         status: React.PropTypes.string.isRequired
@@ -230,8 +236,9 @@ var Menu = React.createClass({
                             </a>
                             <ul className="dropdown-menu">
                                 <li>
-                                    <a href="#"
-                                       onClick={() => this.props.changePage({name: "compiler/phases"})}>Phases</a>
+                                    <a href="#" onClick={() => this.props.changePage({name: "compiler/phases"})}>
+                                        Phases
+                                    </a>
                                 </li>
                             </ul>
                         </li>
@@ -239,7 +246,9 @@ var Menu = React.createClass({
 
                     <ul className="nav navbar-nav navbar-right">
                         <li>
-                            <a href="#"> <span className="glyphicon glyphicon-refresh"></span> Refresh</a>
+                            <a href="#" onClick={this.props.refreshPage}>
+                                <span className="glyphicon glyphicon-refresh"></span> Refresh
+                            </a>
                         </li>
 
                         <StatusIcon status={this.props.status}/>
