@@ -78,34 +78,6 @@ var Indexes = [
     }
 ];
 
-
-var Relations = [{
-    "name": "/Multi",
-    "size": 148
-}, {
-    "name": "/AddrOf",
-    "size": 915
-}, {
-    "name": "/KillEmpty",
-    "size": 0
-}, {
-    "name": "/PtSU",
-    "size": 0
-}, {
-    "name": "/PtH",
-    "size": 4
-}, {
-    "name": "/AllObjects",
-    "size": 915
-}, {
-    "name": "/Phi",
-    "size": 2702
-}]
-
-var Lattices = [
-    {name: "SUBefore", size: 609793},
-];
-
 var Snapshots = [
     {
         time: 1448397245,
@@ -182,7 +154,7 @@ var App = React.createClass({displayName: "App",
         } else if (pageName === "compiler/phases") {
             page = React.createElement(PhasesPage, {notifyConnectionError: this.onError})
         } else if (pageName === "relation") {
-            page = React.createElement(RelationPage, {name: "VarPointsTo", table: PointsTo})
+            page = React.createElement(RelationPage, {name: this.state.page.relation, table: PointsTo})
         } else {
             page = React.createElement(LandingPage, {relations: this.state.relations, lattices: this.state.lattices})
         }
@@ -208,7 +180,7 @@ var Menu = React.createClass({displayName: "Menu",
 
     changePageRelation: function (relation) {
         return function () {
-            this.props.changePage({name: "relation"})
+            this.props.changePage({name: "relation", relation: relation});
         }.bind(this)
     },
 
@@ -230,7 +202,7 @@ var Menu = React.createClass({displayName: "Menu",
                             React.createElement("ul", {className: "dropdown-menu"}, 
                                 this.props.relations.map(relation => {
                                     var name = relation.name;
-                                    return React.createElement("li", {key: name, onClick: this.changePageRelation({name})}, 
+                                    return React.createElement("li", {key: name, onClick: this.changePageRelation(name)}, 
                                         React.createElement("a", {href: "#"}, name)
                                     )
                                 }), 
@@ -701,7 +673,6 @@ var BarChart = React.createClass({displayName: "BarChart",
     },
 
     componentWillUnmount: function () {
-        console.log("Unmounting")
         this.chart.destroy();
     },
 

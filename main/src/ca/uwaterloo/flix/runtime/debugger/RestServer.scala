@@ -5,7 +5,9 @@ import java.net.InetSocketAddress
 import java.nio.file.{Paths, Files}
 import java.util.concurrent.Executors
 
+import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.runtime.Solver
+import ca.uwaterloo.flix.runtime.datastore.IndexedRelation
 import com.sun.net.httpserver.{HttpServer, HttpExchange, HttpHandler}
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
@@ -172,6 +174,15 @@ class RestServer(solver: Solver) {
   }
 
   /**
+   * Returns the name and size of all relations.
+   */
+  class ViewRelation(name: IndexedRelation) extends JsonHandler {
+    def json: JValue = JObject(List(
+      JField("name", JString("Hello WORLD")) // TODO
+    ))
+  }
+
+  /**
    * Returns the name and size of all lattices.
    */
   class GetLattices extends JsonHandler {
@@ -213,6 +224,10 @@ class RestServer(solver: Solver) {
 
     // mount ajax handlers.
     server.createContext("/relations", new GetRelations())
+    for ((name, relation) <- solver.dataStore.relations) {
+      server.createContext("/relation/" + name, new ViewRelation(relation))
+    }
+
     server.createContext("/lattices", new GetLattices())
     server.createContext("/compiler/phases", new GetCompilerPhases())
 

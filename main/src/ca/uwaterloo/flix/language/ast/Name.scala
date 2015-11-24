@@ -80,7 +80,7 @@ object Name {
     /**
      * Returns a human readable string representation of the resolved name.
      */
-    override val toString: String = "/" + parts.mkString("::")
+    override val toString: String = parts.mkString("::")
   }
 
 }
