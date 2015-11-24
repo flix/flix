@@ -157,6 +157,21 @@ class RestServer(solver: Solver) {
   }
 
   /**
+   * Returns the time spent in each compiler phase.
+   */
+  class GetCompilerPhases extends JsonHandler {
+    def json: JValue = JArray(List(
+      JObject(List(JField("name", JString("Parser")), JField("time", JInt(243)))),
+      JObject(List(JField("name", JString("Weeder")), JField("time", JInt(231)))),
+      JObject(List(JField("name", JString("Namer")), JField("time", JInt(86)))),
+      JObject(List(JField("name", JString("Linker")), JField("time", JInt(243)))),
+      JObject(List(JField("name", JString("Typer")), JField("time", JInt(467)))),
+      JObject(List(JField("name", JString("Normalizer")), JField("time", JInt(357)))),
+      JObject(List(JField("name", JString("Emitter")), JField("time", JInt(412))))
+    ))
+  }
+
+  /**
    * Bootstraps the internal http server.
    */
   def start(): Unit = try {
@@ -167,10 +182,11 @@ class RestServer(solver: Solver) {
     // bind to the requested port.
     val server = HttpServer.create(new InetSocketAddress(port), 0) // TODO: port
 
-    Console.println("Debugger attached to: localhost:" + port)
+    Console.println("Attached debugger to localhost:" + port)
 
     // mount ajax handlers.
     server.createContext("/relations", new GetRelations())
+    server.createContext("/compiler/phases", new GetCompilerPhases())
 
     // mount file handler.
     server.createContext("/", new FileHandler())
