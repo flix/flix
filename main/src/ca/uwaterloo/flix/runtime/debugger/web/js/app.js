@@ -6,7 +6,9 @@ var PointsTo = {
         [3, "/ParityAnalysis::Parity.Odd(())"],
         [7, "/ParityAnalysis::Parity.Odd(())"],
         [8, "/ParityAnalysis::Parity.Top(())"]
-    ]
+    ],
+    align: ["left", "left", "left"]
+
 };
 
 var Phases = [
@@ -60,6 +62,14 @@ var Queries = [
     }
 ];
 
+var Predicate = [
+    {
+        rule: "SUBefore(l2,a,t) :- CFG(l1,l2), SUAfter(l1,a,t).",
+        hitcount: 959690,
+        time: 8714,
+        location: "101"
+    },
+];
 
 var Relations = [
     {name: "Multi", size: 148},
@@ -86,6 +96,25 @@ var Lattices = [
 ];
 
 var Status = "completed";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /**
@@ -420,14 +449,14 @@ var IndexUsagePage = React.createClass({displayName: "IndexUsagePage",
 var QueriesPage = React.createClass({displayName: "QueriesPage",
     render: function () {
         var table = {
-            cols: ["Location", "Rule", "Hits", "Total Time (msec)", "Query Time (msec/op)", "Throughput (ops/sec)"],
+            cols: ["Location", "Rule", "Hits", "Total Time (msec)", "Query Time (msec/op)", "Throughput (ops/msec)"],
             rows: Queries.map(row => [
                     row["location"],
                     row["rule"],
                     numeral(row["hitcount"]).format('0,0'),
                     numeral(row["time"]).format('0,0') + " msec",
                     numeral(row["time"] / row["hitcount"]).format('0.0000') + " msec/op",
-                    numeral(row["hitcount"] / row["time"]).format('0,0') + " ops/s"
+                    numeral(row["hitcount"] / row["time"]).format('0,0') + " ops/msec"
                 ]
             ),
             align: ["left", "left", "right", "right", "right"]

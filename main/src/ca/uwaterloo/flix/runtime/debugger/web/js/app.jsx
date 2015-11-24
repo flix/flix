@@ -6,7 +6,9 @@ var PointsTo = {
         [3, "/ParityAnalysis::Parity.Odd(())"],
         [7, "/ParityAnalysis::Parity.Odd(())"],
         [8, "/ParityAnalysis::Parity.Top(())"]
-    ]
+    ],
+    align: ["left", "left", "left"]
+
 };
 
 var Phases = [
@@ -60,6 +62,14 @@ var Queries = [
     }
 ];
 
+var Predicate = [
+    {
+        rule: "SUBefore(l2,a,t) :- CFG(l1,l2), SUAfter(l1,a,t).",
+        hitcount: 959690,
+        time: 8714,
+        location: "101"
+    },
+];
 
 var Relations = [
     {name: "Multi", size: 148},
@@ -86,6 +96,25 @@ var Lattices = [
 ];
 
 var Status = "completed";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /**
