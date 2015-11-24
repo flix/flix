@@ -144,11 +144,16 @@ class RestServer(solver: Solver) {
     }
   }
 
-  class RelationsHandler extends JsonHandler {
-
-    def json: JValue = JArray(solver.dataStore.relations.map {
-      case (name, relation) => JObject(List(JField(name.parts.mkString("::"), JString("foo"))))
-    }.toList)
+  /**
+   * Returns the name and size of all relations.
+   */
+  class GetRelations extends JsonHandler {
+    def json: JValue = JArray(solver.dataStore.relations.toList.map {
+      case (name, relation) => JObject(List(
+        JField("name", JString(name.toString)),
+        JField("size", JInt(relation.getSize))
+      ))
+    })
   }
 
   /**
@@ -157,11 +162,15 @@ class RestServer(solver: Solver) {
   def start(): Unit = try {
     //  TODO logger.trace("Starting WebServer.")
 
+    val port = 9090
+
     // bind to the requested port.
-    val server = HttpServer.create(new InetSocketAddress(9090), 0) // TODO: port
+    val server = HttpServer.create(new InetSocketAddress(port), 0) // TODO: port
+
+    Console.println("Debugger attached to: localhost:" + port)
 
     // mount ajax handlers.
-    server.createContext("/api/relations", new RelationsHandler())
+    server.createContext("/relations", new GetRelations())
 
     // mount file handler.
     server.createContext("/", new FileHandler())

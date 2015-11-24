@@ -88,23 +88,52 @@ var Indexes = [
 ];
 
 
-var Relations = [
-    {name: "Multi", size: 148},
-    {name: "AddrOf", size: 915},
-    {name: "KillEmpty", size: 0},
-    {name: "PtSU", size: 0},
-    {name: "PtH", size: 811},
-    {name: "AllObjects", size: 915},
-    {name: "FILoad", size: 8},
-    {name: "Copy", size: 481},
-    {name: "Store", size: 316},
-    {name: "CFG", size: 4525},
-    {name: "Pt", size: 14103},
-    {name: "Clear", size: 225},
-    {name: "FIStore", size: 69},
-    {name: "Load", size: 2139},
-    {name: "Phi", size: 2702}
-];
+var Relations = [{
+    "name":"/Multi",
+    "size":148
+},{
+    "name":"/AddrOf",
+    "size":915
+},{
+    "name":"/KillEmpty",
+    "size":0
+},{
+    "name":"/PtSU",
+    "size":0
+},{
+    "name":"/PtH",
+    "size":4
+},{
+    "name":"/AllObjects",
+    "size":915
+},{
+    "name":"/FILoad",
+    "size":8
+},{
+    "name":"/Copy",
+    "size":481
+},{
+    "name":"/Store",
+    "size":316
+},{
+    "name":"/CFG",
+    "size":4525
+},{
+    "name":"/Pt",
+    "size":1062
+},{
+    "name":"/Clear",
+    "size":225
+},{
+    "name":"/FIStore",
+    "size":69
+},{
+    "name":"/Load",
+    "size":2139
+},{
+    "name":"/Phi",
+    "size":2702
+}]
 
 var Lattices = [
     {name: "SUBefore", size: 609793},
