@@ -161,12 +161,26 @@ var URL = "http://" + window.location.hostname + ":9090";
 var App = React.createClass({displayName: "App",
 
     getInitialState: function () {
-        return {page: {name: "default"}};
+        return {page: {name: "default"}, relations: []};
+    },
+
+    componentDidMount: function () {
+        this.tick();
+    },
+
+    tick: function () {
+        $.ajax({
+            method: "GET", dataType: 'json', url: URL + '/relations', success: function (data) {
+                this.setState({relations: data});
+            }.bind(this),
+            error: this.onError
+        });
     },
 
     changePage: function (page) {
         this.setState({page: page})
     },
+
 
     onError: function (msg) {
         // TODO
@@ -189,7 +203,7 @@ var App = React.createClass({displayName: "App",
         } else if (pageName === "relation") {
             page = React.createElement(RelationPage, {name: "VarPointsTo", table: PointsTo})
         } else {
-            page = React.createElement(LandingPage, {relations: Relations, lattices: Lattices})
+            page = React.createElement(LandingPage, {relations: this.state.relations, lattices: Lattices})
         }
 
         return (
@@ -555,8 +569,6 @@ var PhasesPage = React.createClass({displayName: "PhasesPage",
         $.ajax({
             method: "GET", dataType: 'json', url: URL + '/compiler/phases', success: function (data) {
                 this.setState({phases: data});
-                console.log("Got result");
-                console.log(data);
             }.bind(this),
             error: this.props.notifyConnectionError
         });
@@ -656,6 +668,9 @@ var TableRow = React.createClass({displayName: "TableRow",
     }
 });
 
+/**
+ * Returns the CSS alignment string corresponding to the given alignment.
+ */
 function getAlignment(text) {
     if (text === "left") {
         return "text-left";
