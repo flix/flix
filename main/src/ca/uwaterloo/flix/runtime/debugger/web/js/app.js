@@ -115,7 +115,14 @@ var App = React.createClass({displayName: "App",
 
     refreshPage: function () {
         console.log("reload page, but how?"); // TODO
-        this.forceUpdate();
+
+        this.callbacks.forEach(f => f())
+    },
+
+    callbacks: [],
+
+    registerUpdateCallback: function (fn) {
+        this.callbacks.push(fn);
     },
 
     onError: function (msg) {
@@ -133,7 +140,7 @@ var App = React.createClass({displayName: "App",
         } else if (pageName === "performance/predicates") {
             page = React.createElement(PredicatesPage, null)
         } else if (pageName === "performance/indexes") {
-            page = React.createElement(IndexesPage, null)
+            page = React.createElement(IndexesPage, {registerUpdateCallback: this.registerUpdateCallback})
         } else if (pageName === "compiler/phases") {
             page = React.createElement(PhasesPage, {notifyConnectionError: this.onError})
         } else if (pageName === "relation") {
@@ -473,6 +480,7 @@ var PredicatesPage = React.createClass({displayName: "PredicatesPage",
  */
 var IndexesPage = React.createClass({displayName: "IndexesPage",
     propTypes: {
+        registerUpdateCallback: React.PropTypes.func.isRequired,
         notifyConnectionError: React.PropTypes.func.isRequired
     },
 
@@ -481,6 +489,11 @@ var IndexesPage = React.createClass({displayName: "IndexesPage",
     },
 
     componentDidMount: function () {
+        this.tick();
+        this.props.registerUpdateCallback(this.tick); // TODO: Unregister
+    },
+
+    tick: function () {
         $.ajax({
             method: "GET", dataType: 'json', url: URL + '/performance/indexes', success: function (data) {
                 this.setState({indexes: data});
