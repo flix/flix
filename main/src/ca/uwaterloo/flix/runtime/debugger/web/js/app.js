@@ -189,7 +189,7 @@ var App = React.createClass({displayName: "App",
 
         return (
             React.createElement("div", null, 
-                React.createElement(Menu, {changePage: this.changePage, status: Status, relations: Relations, lattices: Lattices}), 
+                React.createElement(Menu, {changePage: this.changePage, status: Status, relations: this.state.relations, lattices: this.state.lattices}), 
                 page
             )
         );
@@ -426,7 +426,8 @@ var RelationPage = React.createClass({displayName: "RelationPage",
     render: function () {
         return (
             React.createElement("div", null, 
-                React.createElement(PageHead, {name: this.props.name}), 
+                React.createElement(PageHead, {name: "Relation / " + this.props.name}), 
+
                 React.createElement(Table, {table: this.props.table})
             )
         );
