@@ -342,6 +342,10 @@ var RelationPage = React.createClass({displayName: "RelationPage",
         this.tick();
     },
 
+    componentWillReceiveProps: function () {
+        this.tick();
+    },
+
     tick: function () {
         $.ajax({
             method: "GET", dataType: 'json', url: URL + '/relation/' + this.props.name, success: function (data) {
@@ -350,7 +354,6 @@ var RelationPage = React.createClass({displayName: "RelationPage",
             error: this.props.notifyConnectionError
         });
     },
-
 
     render: function () {
         return (

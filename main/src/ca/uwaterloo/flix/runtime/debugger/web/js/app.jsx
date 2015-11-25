@@ -342,6 +342,10 @@ var RelationPage = React.createClass({
         this.tick();
     },
 
+    componentWillReceiveProps: function () {
+        this.tick();
+    },
+
     tick: function () {
         $.ajax({
             method: "GET", dataType: 'json', url: URL + '/relation/' + this.props.name, success: function (data) {
