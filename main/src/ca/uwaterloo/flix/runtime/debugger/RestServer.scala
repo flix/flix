@@ -7,7 +7,7 @@ import java.util.concurrent.Executors
 
 import ca.uwaterloo.flix.language.ast.{TypedAst, Name}
 import ca.uwaterloo.flix.runtime.Solver
-import ca.uwaterloo.flix.runtime.datastore.IndexedRelation
+import ca.uwaterloo.flix.runtime.datastore.{IndexedLattice, IndexedRelation}
 import com.sun.net.httpserver.{HttpServer, HttpExchange, HttpHandler}
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
@@ -174,13 +174,24 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns the name and size of all relations.
+   *
    */
   class ViewRelation(collection: TypedAst.Collection.Relation, relation: IndexedRelation) extends JsonHandler {
     def json: JValue = JObject(
       JField("cols", JArray(collection.attributes.map(a => JString(a.ident.name)))),
       JField("rows", JArray(relation.scan.toList.map {
         case row => JArray(row.toList.map(e => JString(e.pretty)))
+      })))
+  }
+
+  /**
+   *
+   */
+  class ViewLattice(collection: TypedAst.Collection.Lattice, relation: IndexedLattice) extends JsonHandler {
+    def json: JValue = JObject(
+      JField("cols", JArray(collection.keys.map(a => JString(a.ident.name)) ::: collection.values.map(a => JString(a.ident.name)))),
+      JField("rows", JArray(relation.scan.toList.map {
+        case (key, elms) => JArray(key.toArray.map(k => JString(k.pretty)).toList ::: elms.map(e => JString(e.pretty)).toList)
       })))
   }
 
@@ -288,6 +299,9 @@ class RestServer(solver: Solver) {
       server.createContext("/relation/" + name, new ViewRelation(solver.sCtx.root.collections(name).asInstanceOf[TypedAst.Collection.Relation], relation))
     }
     server.createContext("/lattices", new GetLattices())
+    for ((name, lattice) <- solver.dataStore.lattices) {
+      server.createContext("/lattice/" + name, new ViewLattice(solver.sCtx.root.collections(name).asInstanceOf[TypedAst.Collection.Lattice], lattice))
+    }
     server.createContext("/snapshots", new GetSnapshots())
     server.createContext("/performance/rules", new GetRules())
     server.createContext("/performance/predicates", new GetPredicates())
