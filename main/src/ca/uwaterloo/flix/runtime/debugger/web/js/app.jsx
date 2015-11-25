@@ -1,17 +1,3 @@
-var PointsTo = {
-    cols: ["localVal", "value"],
-    rows: [
-        [1, "/ParityAnalysis::Parity.Odd(())"],
-        [2, "/ParityAnalysis::Parity.Even(())"],
-        [3, "/ParityAnalysis::Parity.Odd(())"],
-        [7, "/ParityAnalysis::Parity.Odd(())"],
-        [8, "/ParityAnalysis::Parity.Top(())"]
-    ],
-    align: ["left", "left", "left"]
-
-};
-
-
 var Snapshots = [
     {
         time: 1448397245,
@@ -96,7 +82,7 @@ var App = React.createClass({
         } else if (pageName === "compiler/phases") {
             page = <PhasesPage notifyConnectionError={this.onError}/>
         } else if (pageName === "relation") {
-            page = <RelationPage name={this.state.page.relation} table={PointsTo}/>
+            page = <RelationPage name={this.state.page.relation} notifyConnectionError={this.onError}/>
         } else {
             page = <LandingPage relations={this.state.relations} lattices={this.state.lattices}/>
         }
@@ -345,14 +331,32 @@ var StatusIcon = React.createClass({
 var RelationPage = React.createClass({
     propTypes: {
         name: React.PropTypes.string.isRequired,
-        table: React.PropTypes.object.isRequired
+        notifyConnectionError: React.PropTypes.func.isRequired
     },
+
+    getInitialState: function () {
+        return {table: {cols: [], rows: []}};
+    },
+
+    componentDidMount: function () {
+        this.tick();
+    },
+
+    tick: function () {
+        $.ajax({
+            method: "GET", dataType: 'json', url: URL + '/relation/' + this.props.name, success: function (data) {
+                this.setState({table: data});
+            }.bind(this),
+            error: this.props.notifyConnectionError
+        });
+    },
+
     render: function () {
         return (
             <div>
                 <PageHead name={"Relation / " + this.props.name}/>
 
-                <Table table={this.props.table}/>
+                <Table table={this.state.table}/>
             </div>
         );
     }
@@ -579,8 +583,7 @@ var Table = React.createClass({
     propTypes: {
         table: React.PropTypes.shape({
             cols: React.PropTypes.array.isRequired,
-            rows: React.PropTypes.array.isRequired,
-            align: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
+            rows: React.PropTypes.array.isRequired
         })
     },
     render: function () {
@@ -602,7 +605,7 @@ var TableHeader = React.createClass({
             <thead>
             <tr>
                 {this.props.table.cols.map(function (col, idx) {
-                    var className = getAlignment(this.props.table.align[idx]);
+                    var className = getAlignment(idx, this.props.table.align);
                     return <th className={className}>{col}</th>
                 }.bind(this))}
             </tr>
@@ -634,7 +637,7 @@ var TableRow = React.createClass({
         return (
             <tr>
                 {this.props.row.map(function (elm, idx) {
-                    var className = getAlignment(this.props.align[idx]);
+                    var className = getAlignment(idx, this.props.align);
                     return <td className={className}>{elm}</td>
                 }.bind(this))}
             </tr>
@@ -645,7 +648,12 @@ var TableRow = React.createClass({
 /**
  * Returns the CSS alignment string corresponding to the given alignment.
  */
-function getAlignment(text) {
+function getAlignment(idx, align) {
+    if (typeof align !== "array") {
+        return "text-left";
+    }
+
+    var text = align[idx];
     if (text === "left") {
         return "text-left";
     } else if (text === "center") {

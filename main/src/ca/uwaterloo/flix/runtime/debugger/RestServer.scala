@@ -5,7 +5,7 @@ import java.net.InetSocketAddress
 import java.nio.file.{Paths, Files}
 import java.util.concurrent.Executors
 
-import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.{TypedAst, Name}
 import ca.uwaterloo.flix.runtime.Solver
 import ca.uwaterloo.flix.runtime.datastore.IndexedRelation
 import com.sun.net.httpserver.{HttpServer, HttpExchange, HttpHandler}
@@ -176,10 +176,12 @@ class RestServer(solver: Solver) {
   /**
    * Returns the name and size of all relations.
    */
-  class ViewRelation(name: IndexedRelation) extends JsonHandler {
-    def json: JValue = JObject(List(
-      JField("name", JString("Hello WORLD")) // TODO
-    ))
+  class ViewRelation(collection: TypedAst.Collection.Relation, relation: IndexedRelation) extends JsonHandler {
+    def json: JValue = JObject(
+      JField("cols", JArray(collection.attributes.map(a => JString(a.ident.name)))),
+      JField("rows", JArray(relation.scan.toList.map {
+        case row => JArray(row.toList.map(e => JString(e.toString)))
+      })))
   }
 
   /**
@@ -267,7 +269,7 @@ class RestServer(solver: Solver) {
     // mount ajax handlers.
     server.createContext("/relations", new GetRelations())
     for ((name, relation) <- solver.dataStore.relations) {
-      server.createContext("/relation/" + name, new ViewRelation(relation))
+      server.createContext("/relation/" + name, new ViewRelation(solver.sCtx.root.collections(name).asInstanceOf[TypedAst.Collection.Relation], relation))
     }
     server.createContext("/lattices", new GetLattices())
     server.createContext("/performance/rules", new GetRules())

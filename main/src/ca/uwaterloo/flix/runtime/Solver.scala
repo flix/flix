@@ -26,7 +26,7 @@ object Solver {
 /**
   * A solver based on semi-naive evaluation.
   */
-class Solver(implicit sCtx: Solver.SolverContext) {
+class Solver(implicit val sCtx: Solver.SolverContext) {
 
   /**
     * A common super-type for solver errors.

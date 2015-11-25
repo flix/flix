@@ -1,17 +1,3 @@
-var PointsTo = {
-    cols: ["localVal", "value"],
-    rows: [
-        [1, "/ParityAnalysis::Parity.Odd(())"],
-        [2, "/ParityAnalysis::Parity.Even(())"],
-        [3, "/ParityAnalysis::Parity.Odd(())"],
-        [7, "/ParityAnalysis::Parity.Odd(())"],
-        [8, "/ParityAnalysis::Parity.Top(())"]
-    ],
-    align: ["left", "left", "left"]
-
-};
-
-
 var Snapshots = [
     {
         time: 1448397245,
@@ -96,7 +82,7 @@ var App = React.createClass({displayName: "App",
         } else if (pageName === "compiler/phases") {
             page = React.createElement(PhasesPage, {notifyConnectionError: this.onError})
         } else if (pageName === "relation") {
-            page = React.createElement(RelationPage, {name: this.state.page.relation, table: PointsTo})
+            page = React.createElement(RelationPage, {name: this.state.page.relation, notifyConnectionError: this.onError})
         } else {
             page = React.createElement(LandingPage, {relations: this.state.relations, lattices: this.state.lattices})
         }
@@ -345,14 +331,33 @@ var StatusIcon = React.createClass({displayName: "StatusIcon",
 var RelationPage = React.createClass({displayName: "RelationPage",
     propTypes: {
         name: React.PropTypes.string.isRequired,
-        table: React.PropTypes.object.isRequired
+        notifyConnectionError: React.PropTypes.func.isRequired
     },
+
+    getInitialState: function () {
+        return {table: {cols: [], rows: []}};
+    },
+
+    componentDidMount: function () {
+        this.tick();
+    },
+
+    tick: function () {
+        $.ajax({
+            method: "GET", dataType: 'json', url: URL + '/relation/' + this.props.name, success: function (data) {
+                this.setState({table: data});
+            }.bind(this),
+            error: this.props.notifyConnectionError
+        });
+    },
+
+
     render: function () {
         return (
             React.createElement("div", null, 
                 React.createElement(PageHead, {name: "Relation / " + this.props.name}), 
 
-                React.createElement(Table, {table: this.props.table})
+                React.createElement(Table, {table: this.state.table})
             )
         );
     }
@@ -579,8 +584,7 @@ var Table = React.createClass({displayName: "Table",
     propTypes: {
         table: React.PropTypes.shape({
             cols: React.PropTypes.array.isRequired,
-            rows: React.PropTypes.array.isRequired,
-            align: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
+            rows: React.PropTypes.array.isRequired
         })
     },
     render: function () {
@@ -602,7 +606,7 @@ var TableHeader = React.createClass({displayName: "TableHeader",
             React.createElement("thead", null, 
             React.createElement("tr", null, 
                 this.props.table.cols.map(function (col, idx) {
-                    var className = getAlignment(this.props.table.align[idx]);
+                    var className = getAlignment(idx, this.props.table.align);
                     return React.createElement("th", {className: className}, col)
                 }.bind(this))
             )
@@ -634,7 +638,7 @@ var TableRow = React.createClass({displayName: "TableRow",
         return (
             React.createElement("tr", null, 
                 this.props.row.map(function (elm, idx) {
-                    var className = getAlignment(this.props.align[idx]);
+                    var className = getAlignment(idx, this.props.align);
                     return React.createElement("td", {className: className}, elm)
                 }.bind(this))
             )
@@ -645,7 +649,12 @@ var TableRow = React.createClass({displayName: "TableRow",
 /**
  * Returns the CSS alignment string corresponding to the given alignment.
  */
-function getAlignment(text) {
+function getAlignment(idx, align) {
+    if (typeof align !== "array") {
+        return "text-left";
+    }
+
+    var text = align[idx];
     if (text === "left") {
         return "text-left";
     } else if (text === "center") {
