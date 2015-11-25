@@ -1,21 +1,3 @@
-var Snapshots = [
-    {
-        time: 1448397245,
-        facts: 4325345,
-        memory: 5654
-    },
-    {
-        time: 1448397280,
-        facts: 43257675,
-        memory: 6654
-    },
-    {
-        time: 1458397245,
-        facts: 53257675,
-        memory: 7654
-    }
-];
-
 var URL = "http://" + window.location.hostname + ":9090";
 
 /**
@@ -82,9 +64,11 @@ var App = React.createClass({
         } else if (pageName === "compiler/phases") {
             page = <PhasesPage notifyConnectionError={this.onError}/>
         } else if (pageName === "relation") {
-            page = <RelationPage key={this.state.page.relation} name={this.state.page.relation} notifyConnectionError={this.onError}/>
+            page = <RelationPage key={this.state.page.relation} name={this.state.page.relation}
+                                 notifyConnectionError={this.onError}/>
         } else {
-            page = <LandingPage relations={this.state.relations} lattices={this.state.lattices}/>
+            page = <LandingPage relations={this.state.relations} lattices={this.state.lattices}
+                                notifyConnectionError={this.onError}/>
         }
 
         return (
@@ -227,14 +211,36 @@ var PageHead = React.createClass({
 var LandingPage = React.createClass({
     propTypes: {
         relations: React.PropTypes.array.isRequired,
-        lattices: React.PropTypes.array.isRequired
+        lattices: React.PropTypes.array.isRequired,
+        notifyConnectionError: React.PropTypes.func.isRequired
     },
 
+    getInitialState: function () {
+        return {snapshots: []};
+    },
+
+    componentDidMount: function () {
+        this.tick();
+    },
+
+    tick: function () {
+        $.ajax({
+            method: "GET", dataType: 'json', url: URL + '/snapshots/' + this.props.name, success: function (data) {
+                this.setState({snapshots: data});
+            }.bind(this),
+            error: this.props.notifyConnectionError
+        });
+    },
+
+
     render: function () {
-        var zero = Snapshots[0].time;
-        var labels = Snapshots.map(s => (s.time - zero) / 1000);
-        var facts = Snapshots.map(s => s.facts);
-        var memory = Snapshots.map(s => s.memory);
+        if (this.state.snapshots.length == 0) {
+            return <div></div>
+        }
+
+        var labels = this.state.snapshots.map(s => s.time);
+        var facts = this.state.snapshots.map(s => s.facts);
+        var memory = this.state.snapshots.map(s => s.memory);
 
         return (
             <div>
@@ -340,11 +346,6 @@ var RelationPage = React.createClass({
 
     componentDidMount: function () {
         this.tick();
-    },
-
-    // TODO: Or use key?
-    componentWillReceiveProps: function () {
-      //  this.tick();
     },
 
     tick: function () {

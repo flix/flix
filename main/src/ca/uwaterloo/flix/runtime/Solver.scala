@@ -69,6 +69,27 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     */
   val worklist = new mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, Value])]
 
+  class Monitor extends Thread {
+
+    val e = System.nanoTime()
+
+    case class Snapshot(time: Long, worklist: Int, memory: Long)
+
+    var snapshots = List.empty[Snapshot]
+
+    override def run(): Unit = {
+      while(!Thread.currentThread().isInterrupted) {
+        val usedMemory = (Runtime.getRuntime.totalMemory() - Runtime.getRuntime.freeMemory()) / (1024 * 1024)
+        snapshots ::= Snapshot(System.nanoTime() - e, worklist.size, usedMemory)
+        Thread.sleep(1000)
+      }
+    }
+
+  }
+
+  val monitor = new Monitor()
+  monitor.start()
+
   /**
     * Solves the current Flix program.
     */
@@ -108,6 +129,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     // computed elapsed time.
     val elapsed = System.nanoTime() - t
     println(s"Successfully solved in ${elapsed / 1000000} msec.")
+
+    monitor.interrupt()
 
     // verify assertions.
     checkAssertions()

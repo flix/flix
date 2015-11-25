@@ -196,6 +196,21 @@ class RestServer(solver: Solver) {
     })
   }
 
+
+  /**
+   * Returns the current snapshots.
+   */
+  class GetSnapshots extends JsonHandler {
+    def json: JValue = JArray(solver.monitor.snapshots.reverse.map {
+      case solver.monitor.Snapshot(time, worklist, memory) =>
+        JObject(List(
+          JField("time", JInt(time / 1000000)),
+          JField("facts", JInt(worklist)),
+          JField("memory", JInt(memory))
+        ))
+    })
+  }
+
   /**
    * Returns the rules and their statistics.
    */
@@ -272,6 +287,7 @@ class RestServer(solver: Solver) {
       server.createContext("/relation/" + name, new ViewRelation(solver.sCtx.root.collections(name).asInstanceOf[TypedAst.Collection.Relation], relation))
     }
     server.createContext("/lattices", new GetLattices())
+    server.createContext("/snapshots", new GetSnapshots())
     server.createContext("/performance/rules", new GetRules())
     server.createContext("/performance/predicates", new GetPredicates())
     server.createContext("/performance/indexes", new GetIndexes())
