@@ -82,7 +82,7 @@ var App = React.createClass({displayName: "App",
         } else if (pageName === "compiler/phases") {
             page = React.createElement(PhasesPage, {notifyConnectionError: this.onError})
         } else if (pageName === "relation") {
-            page = React.createElement(RelationPage, {name: this.state.page.relation, notifyConnectionError: this.onError})
+            page = React.createElement(RelationPage, {key: this.state.page.relation, name: this.state.page.relation, notifyConnectionError: this.onError})
         } else {
             page = React.createElement(LandingPage, {relations: this.state.relations, lattices: this.state.lattices})
         }
@@ -342,8 +342,9 @@ var RelationPage = React.createClass({displayName: "RelationPage",
         this.tick();
     },
 
+    // TODO: Or use key?
     componentWillReceiveProps: function () {
-        this.tick();
+      //  this.tick();
     },
 
     tick: function () {
