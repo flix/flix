@@ -46,6 +46,13 @@ var App = React.createClass({displayName: "App",
      * Retrieve the list of relations and lattices when the component is mounted.
      */
     componentDidMount: function () {
+        this.refresh();
+    },
+
+    /**
+     * Refreshes the relations and lattices.
+     */
+    refresh: function () {
         // retrieve relations
         Common.ajax(URL + '/relations', this.notifyConnectionError, data => {
             this.setState({relations: data})
@@ -68,6 +75,9 @@ var App = React.createClass({displayName: "App",
      * Triggers a page refresh.
      */
     refreshPage: function () {
+        // refresh this component
+        this.refresh();
+
         // loop through each refreshable component and call it.
         this.refreshable.forEach(f => f())
     },
