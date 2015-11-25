@@ -195,6 +195,20 @@ class RestServer(solver: Solver) {
   }
 
   /**
+   * Returns the rules and their statistics.
+   */
+  class GetRules extends JsonHandler {
+    def json: JValue = JArray(solver.getRuleStats.map {
+      case (rule, hits, time) => JObject(List(
+        JField("rule", JString(rule.head.loc.line())),
+        JField("loc", JString(rule.head.loc.format)),
+        JField("hits", JInt(hits)),
+        JField("time", JInt(time / 1000000L))
+      ))
+    })
+  }
+
+  /**
    * Returns the predicates and their statistics.
    */
   class GetPredicates extends JsonHandler {
@@ -256,6 +270,7 @@ class RestServer(solver: Solver) {
       server.createContext("/relation/" + name, new ViewRelation(relation))
     }
     server.createContext("/lattices", new GetLattices())
+    server.createContext("/performance/rules", new GetRules())
     server.createContext("/performance/predicates", new GetPredicates())
     server.createContext("/performance/indexes", new GetIndexes())
     server.createContext("/compiler/phases", new GetCompilerPhases())

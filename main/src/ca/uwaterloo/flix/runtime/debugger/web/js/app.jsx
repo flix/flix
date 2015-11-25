@@ -12,30 +12,6 @@ var PointsTo = {
 };
 
 
-var Rules = [
-    {
-        rule: "SUBefore(l2,a,t) :- CFG(l1,l2), SUAfter(l1,a,t).",
-        hitcount: 959690,
-        time: 8714,
-        location: "101"
-    },
-
-    {
-        rule: "SUAfter(l,a,t) :- SUBefore(l,a,t), Phi(l). ",
-        hitcount: 9564,
-        time: 97,
-        location: "115"
-    },
-
-    {
-        rule: "SUAfter(l,a,t) :- SUBefore(l,a,t), killNot(a, k), Kill(l,k). ",
-        hitcount: 958449,
-        time: 5562,
-        location: "113"
-    }
-];
-
-
 var Snapshots = [
     {
         time: 1448397245,
@@ -112,13 +88,13 @@ var App = React.createClass({
         var pageName = this.state.page.name;
 
         if (pageName === "performance/rules") {
-            page = <RulesPage />
+            page = <RulesPage notifyConnectionError={this.onError}/>
         } else if (pageName === "performance/predicates") {
-            page = <PredicatesPage notifyConnectionError={this.onError} />
+            page = <PredicatesPage notifyConnectionError={this.onError}/>
         } else if (pageName === "performance/indexes") {
             page = <IndexesPage registerUpdateCallback={this.registerUpdateCallback}/>
         } else if (pageName === "compiler/phases") {
-            page = <PhasesPage notifyConnectionError={this.onError} />
+            page = <PhasesPage notifyConnectionError={this.onError}/>
         } else if (pageName === "relation") {
             page = <RelationPage name={this.state.page.relation} table={PointsTo}/>
         } else {
@@ -386,16 +362,39 @@ var RelationPage = React.createClass({
  * Rules page.
  */
 var RulesPage = React.createClass({
+    propTypes: {
+        registerUpdateCallback: React.PropTypes.func.isRequired,
+        notifyConnectionError: React.PropTypes.func.isRequired
+    },
+
+    getInitialState: function () {
+        return {rules: []};
+    },
+
+    componentDidMount: function () {
+        this.tick();
+    },
+
+    tick: function () {
+        $.ajax({
+            method: "GET", dataType: 'json', url: URL + '/performance/rules', success: function (data) {
+                this.setState({rules: data});
+            }.bind(this),
+            error: this.props.notifyConnectionError
+        });
+    },
+
+
     render: function () {
         var table = {
             cols: ["Location", "Rule", "Hits", "Total Time (msec)", "Query Time (msec/op)", "Throughput (ops/msec)"],
-            rows: Rules.map(row => [
-                    row["location"],
-                    row["rule"],
-                    numeral(row["hitcount"]).format('0,0'),
-                    numeral(row["time"]).format('0,0') + " msec",
-                    numeral(row["time"] / row["hitcount"]).format('0.0000') + " msec/op",
-                    numeral(row["hitcount"] / row["time"]).format('0,0') + " ops/msec"
+            rows: this.state.rules.map(row => [
+                    row.loc,
+                    row.rule,
+                    numeral(row.hits).format('0,0'),
+                    numeral(row.time).format('0,0') + " msec",
+                    numeral(row.time / row.hits).format('0.0000') + " msec/op",
+                    numeral(row.hits / row.time).format('0,0') + " ops/msec"
                 ]
             ),
             align: ["left", "left", "right", "right", "right"]

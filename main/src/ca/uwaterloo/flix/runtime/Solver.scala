@@ -140,6 +140,12 @@ class Solver(implicit sCtx: Solver.SolverContext) {
     Model(sCtx.root, relations, lattices)
   }
 
+  // TODO: Move
+  def getRuleStats: List[(TypedAst.Constraint.Rule, Int, Long)] =
+    sCtx.root.rules.toSeq.sortBy(_.elapsedTime).reverse.map {
+      case r => (r, r.hitcount, r.elapsedTime)
+    }.toList
+
   /**
     * Processes an inferred `fact` for the relation or lattice with the `name`.
     */
