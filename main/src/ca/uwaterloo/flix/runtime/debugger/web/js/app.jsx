@@ -255,13 +255,13 @@ var LandingPage = React.createClass({
                 <div className="row">
                     <div className="col-xs-6">
                         <h4>Worklist ({currentQueuelength})</h4>
-                        <LineChart width={600} height={250} labels={labels} data={queue}/>
+                        <LineChart width={600} height={250} labels={labels} data={queue} theme="blue"/>
 
                         <h4>Total Facts ({currentNumberOfacts})</h4>
-                        <LineChart width={600} height={250} labels={labels} data={facts}/>
+                        <LineChart width={600} height={250} labels={labels} data={facts} theme="magenta"/>
 
                         <h4>Memory Usage ({currentMemoryUsage} MB)</h4>
-                        <LineChart width={600} height={250} labels={labels} data={memory}/>
+                        <LineChart width={600} height={250} labels={labels} data={memory} theme="orangered"/>
                     </div>
 
                     <div className="col-xs-6">
@@ -736,19 +736,18 @@ var LineChart = React.createClass({
     },
 
     componentDidMount: function () {
+        var dataset = LineChart.getBlueDataSet(this.props.data);
+
+        if (this.props.theme === "magenta") {
+            dataset = LineChart.getMagentaDataSet(this.props.data);
+        }
+        if (this.props.theme === "orangered") {
+            dataset = LineChart.getOrangeRedDataSet(this.props.data);
+        }
+
         var lineChartData = {
             labels: this.props.labels,
-            datasets: [
-                {
-                    fillColor: "rgba(151,187,205,0.2)",
-                    strokeColor: "rgba(151,187,205,1)",
-                    pointColor: "rgba(151,187,205,1)",
-                    pointStrokeColor: "#fff",
-                    pointHighlightFill: "#fff",
-                    pointHighlightStroke: "rgba(151,187,205,1)",
-                    data: this.props.data
-                }
-            ]
+            datasets: [dataset]
         };
 
         var ctx = this.canvas.getContext("2d");
@@ -763,6 +762,42 @@ var LineChart = React.createClass({
         return <canvas width={this.props.width} height={this.props.height} ref={(ref) => this.canvas = ref}/>
     }
 });
+
+LineChart.getBlueDataSet = function (data) {
+    return {
+        fillColor: "rgba(151,187,205,0.2)",
+        strokeColor: "rgba(151,187,205,1)",
+        pointColor: "rgba(151,187,205,1)",
+        pointStrokeColor: "#fff",
+        pointHighlightFill: "#fff",
+        pointHighlightStroke: "rgba(151,187,205,1)",
+        data: data
+    }
+};
+
+LineChart.getMagentaDataSet = function (data) {
+    return {
+        fillColor: "rgb(243, 234, 245)",
+        strokeColor: "rgb(195, 151, 205)",
+        pointColor: "rgb(195, 151, 205)",
+        pointStrokeColor: "#fff",
+        pointHighlightFill: "#fff",
+        pointHighlightStroke: "rgb(243, 234, 245)",
+        data: data
+    }
+};
+
+LineChart.getOrangeRedDataSet = function (data) {
+    return {
+        fillColor: "rgb(245, 234, 234)",
+        strokeColor: "rgb(205, 152, 151)",
+        pointColor: "rgb(205, 152, 151)",
+        pointStrokeColor: "#fff",
+        pointHighlightFill: "#fff",
+        pointHighlightStroke: "rgb(245, 234, 234)",
+        data: data
+    }
+};
 
 /**
  * Render app when the page is ready.

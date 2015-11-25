@@ -255,13 +255,13 @@ var LandingPage = React.createClass({displayName: "LandingPage",
                 React.createElement("div", {className: "row"}, 
                     React.createElement("div", {className: "col-xs-6"}, 
                         React.createElement("h4", null, "Worklist (", currentQueuelength, ")"), 
-                        React.createElement(LineChart, {width: 600, height: 250, labels: labels, data: queue}), 
+                        React.createElement(LineChart, {width: 600, height: 250, labels: labels, data: queue, theme: "blue"}), 
 
                         React.createElement("h4", null, "Total Facts (", currentNumberOfacts, ")"), 
-                        React.createElement(LineChart, {width: 600, height: 250, labels: labels, data: facts}), 
+                        React.createElement(LineChart, {width: 600, height: 250, labels: labels, data: facts, theme: "magenta"}), 
 
                         React.createElement("h4", null, "Memory Usage (", currentMemoryUsage, " MB)"), 
-                        React.createElement(LineChart, {width: 600, height: 250, labels: labels, data: memory})
+                        React.createElement(LineChart, {width: 600, height: 250, labels: labels, data: memory, theme: "orangered"})
                     ), 
 
                     React.createElement("div", {className: "col-xs-6"}, 
@@ -736,19 +736,18 @@ var LineChart = React.createClass({displayName: "LineChart",
     },
 
     componentDidMount: function () {
+        var dataset = LineChart.getBlueDataSet(this.props.data);
+
+        if (this.props.theme === "magenta") {
+            dataset = LineChart.getMagentaDataSet(this.props.data);
+        }
+        if (this.props.theme === "orangered") {
+            dataset = LineChart.getOrangeRedDataSet(this.props.data);
+        }
+
         var lineChartData = {
             labels: this.props.labels,
-            datasets: [
-                {
-                    fillColor: "rgba(151,187,205,0.2)",
-                    strokeColor: "rgba(151,187,205,1)",
-                    pointColor: "rgba(151,187,205,1)",
-                    pointStrokeColor: "#fff",
-                    pointHighlightFill: "#fff",
-                    pointHighlightStroke: "rgba(151,187,205,1)",
-                    data: this.props.data
-                }
-            ]
+            datasets: [dataset]
         };
 
         var ctx = this.canvas.getContext("2d");
@@ -763,6 +762,42 @@ var LineChart = React.createClass({displayName: "LineChart",
         return React.createElement("canvas", {width: this.props.width, height: this.props.height, ref: (ref) => this.canvas = ref})
     }
 });
+
+LineChart.getBlueDataSet = function (data) {
+    return {
+        fillColor: "rgba(151,187,205,0.2)",
+        strokeColor: "rgba(151,187,205,1)",
+        pointColor: "rgba(151,187,205,1)",
+        pointStrokeColor: "#fff",
+        pointHighlightFill: "#fff",
+        pointHighlightStroke: "rgba(151,187,205,1)",
+        data: data
+    }
+};
+
+LineChart.getMagentaDataSet = function (data) {
+    return {
+        fillColor: "rgb(243, 234, 245)",
+        strokeColor: "rgb(195, 151, 205)",
+        pointColor: "rgb(195, 151, 205)",
+        pointStrokeColor: "#fff",
+        pointHighlightFill: "#fff",
+        pointHighlightStroke: "rgb(243, 234, 245)",
+        data: data
+    }
+};
+
+LineChart.getOrangeRedDataSet = function (data) {
+    return {
+        fillColor: "rgb(245, 234, 234)",
+        strokeColor: "rgb(205, 152, 151)",
+        pointColor: "rgb(205, 152, 151)",
+        pointStrokeColor: "#fff",
+        pointHighlightFill: "#fff",
+        pointHighlightStroke: "rgb(245, 234, 234)",
+        data: data
+    }
+};
 
 /**
  * Render app when the page is ready.
