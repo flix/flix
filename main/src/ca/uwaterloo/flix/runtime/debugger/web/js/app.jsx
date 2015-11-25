@@ -48,7 +48,6 @@ var App = React.createClass({
     onError: function (msg) {
         console.log(msg);
         this.setState({status: "connectionLost"}); // TODO: Better names for status.
-        alert("Debugger lost connection to Flix.");
     },
 
     render: function () {
@@ -68,7 +67,8 @@ var App = React.createClass({
                                  notifyConnectionError={this.onError}/>
         } else {
             page = <LandingPage relations={this.state.relations} lattices={this.state.lattices}
-                                notifyConnectionError={this.onError}/>
+                                notifyConnectionError={this.onError}
+                                changePage={this.changePage}/>
         }
 
         return (
@@ -212,6 +212,7 @@ var LandingPage = React.createClass({
     propTypes: {
         relations: React.PropTypes.array.isRequired,
         lattices: React.PropTypes.array.isRequired,
+        changePage: React.PropTypes.func.isRequired,
         notifyConnectionError: React.PropTypes.func.isRequired
     },
 
@@ -256,7 +257,8 @@ var LandingPage = React.createClass({
 
                     <div className="panel panel-default">
                         <div className="panel-body">
-                            The Flix debugger is a web-based interface to track the progress of the fixpoint computation.
+                            The Flix debugger is a web-based interface to track the progress of the fixpoint
+                            computation.
                         </div>
                     </div>
 
@@ -277,7 +279,8 @@ var LandingPage = React.createClass({
                         <div className="list-group">
                             {this.props.relations.map(relation => {
                                 return (
-                                    <a href="#" className="list-group-item">
+                                    <a href="#" className="list-group-item"
+                                       onClick={() => this.props.changePage({name: "relation", relation: relation.name})}>
                                         {relation.name}
                                         <span className="badge">{numeral(relation.size).format('0,0')}</span>
                                     </a>
@@ -290,7 +293,8 @@ var LandingPage = React.createClass({
                         <div className="list-group">
                             {this.props.lattices.map(lattice => {
                                 return (
-                                    <a href="#" className="list-group-item">
+                                    <a href="#" className="list-group-item"
+                                       onClick={() => this.props.changePage({name: "lattice", relation: lattice.name})}>
                                         {lattice.name}
                                         <span className="badge">{numeral(lattice.size).format('0,0')}</span>
                                     </a>

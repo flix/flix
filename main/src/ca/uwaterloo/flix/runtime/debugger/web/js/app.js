@@ -48,7 +48,6 @@ var App = React.createClass({displayName: "App",
     onError: function (msg) {
         console.log(msg);
         this.setState({status: "connectionLost"}); // TODO: Better names for status.
-        alert("Debugger lost connection to Flix.");
     },
 
     render: function () {
@@ -68,7 +67,8 @@ var App = React.createClass({displayName: "App",
                                  notifyConnectionError: this.onError})
         } else {
             page = React.createElement(LandingPage, {relations: this.state.relations, lattices: this.state.lattices, 
-                                notifyConnectionError: this.onError})
+                                notifyConnectionError: this.onError, 
+                                changePage: this.changePage})
         }
 
         return (
@@ -212,6 +212,7 @@ var LandingPage = React.createClass({displayName: "LandingPage",
     propTypes: {
         relations: React.PropTypes.array.isRequired,
         lattices: React.PropTypes.array.isRequired,
+        changePage: React.PropTypes.func.isRequired,
         notifyConnectionError: React.PropTypes.func.isRequired
     },
 
@@ -256,7 +257,8 @@ var LandingPage = React.createClass({displayName: "LandingPage",
 
                     React.createElement("div", {className: "panel panel-default"}, 
                         React.createElement("div", {className: "panel-body"}, 
-                            "The Flix debugger is a web-based interface to track the progress of the fixpoint computation."
+                            "The Flix debugger is a web-based interface to track the progress of the fixpoint" + ' ' +
+                            "computation."
                         )
                     ), 
 
@@ -277,7 +279,8 @@ var LandingPage = React.createClass({displayName: "LandingPage",
                         React.createElement("div", {className: "list-group"}, 
                             this.props.relations.map(relation => {
                                 return (
-                                    React.createElement("a", {href: "#", className: "list-group-item"}, 
+                                    React.createElement("a", {href: "#", className: "list-group-item", 
+                                       onClick: () => this.props.changePage({name: "relation", relation: relation.name})}, 
                                         relation.name, 
                                         React.createElement("span", {className: "badge"}, numeral(relation.size).format('0,0'))
                                     )
@@ -290,7 +293,8 @@ var LandingPage = React.createClass({displayName: "LandingPage",
                         React.createElement("div", {className: "list-group"}, 
                             this.props.lattices.map(lattice => {
                                 return (
-                                    React.createElement("a", {href: "#", className: "list-group-item"}, 
+                                    React.createElement("a", {href: "#", className: "list-group-item", 
+                                       onClick: () => this.props.changePage({name: "lattice", relation: lattice.name})}, 
                                         lattice.name, 
                                         React.createElement("span", {className: "badge"}, numeral(lattice.size).format('0,0'))
                                     )
