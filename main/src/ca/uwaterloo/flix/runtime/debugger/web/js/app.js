@@ -519,39 +519,60 @@ var LatticePage = React.createClass({displayName: "LatticePage",
  */
 var RulesPage = React.createClass({displayName: "RulesPage",
     propTypes: {
-        registerUpdateCallback: React.PropTypes.func.isRequired,
+        registerRefreshCallback: React.PropTypes.func.isRequired,
+        unregisterRefreshCallback: React.PropTypes.func.isRequired,
         notifyConnectionError: React.PropTypes.func.isRequired
     },
 
+    /**
+     * The state is an array of rules where a rule is a {location, rule, hits, time}-object.
+     */
     getInitialState: function () {
         return {rules: []};
     },
 
+    /**
+     * Refresh the AJAX data on mount. Register the component as refreshable.
+     */
     componentDidMount: function () {
-        this.tick();
+        this.refresh();
+        this.props.registerRefreshCallback(this.refresh);
     },
 
-    tick: function () {
-        $.ajax({
-            method: "GET", dataType: 'json', url: URL + '/performance/rules', success: function (data) {
-                this.setState({rules: data});
-            }.bind(this),
-            error: this.props.notifyConnectionError
+    /**
+     * Un-register the component as refreshable.
+     */
+    componentWillUnmount: function () {
+        this.props.unregisterRefreshCallback(this.refresh);
+    },
+
+    /**
+     * Retrieves JSON data from the server.
+     */
+    refresh: function () {
+        Common.ajax(URL + '/performance/rules', this.notifyConnectionError, data => {
+            this.setState({rules: data})
         });
     },
 
-
+    /**
+     * Renders the component.
+     */
     render: function () {
         var table = {
             cols: ["Location", "Rule", "Hits", "Total Time (msec)", "Query Time (msec/op)", "Throughput (ops/msec)"],
-            rows: this.state.rules.map(row => [
-                    row.loc,
-                    row.rule,
-                    numeral(row.hits).format('0,0'),
-                    numeral(row.time).format('0,0') + " msec",
-                    numeral(row.time / row.hits).format('0.0000') + " msec/op",
-                    numeral(row.hits / row.time).format('0,0') + " ops/msec"
-                ]
+            rows: this.state.rules.map(row => {
+
+                    var row = [
+                        row.loc,
+                        row.rule,
+                        numeral(row.hits).format('0,0'),
+                        numeral(row.time).format('0,0') + " msec",
+                        numeral(row.time / row.hits).format('0.0000') + " msec/op",
+                        numeral(row.hits / row.time).format('0,0') + " ops/msec"
+                    ];
+                    return row;
+                }
             ),
             align: ["left", "left", "right", "right", "right"]
         };
