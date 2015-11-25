@@ -195,6 +195,21 @@ class RestServer(solver: Solver) {
   }
 
   /**
+   * Returns the predicates and their statistics.
+   */
+  class GetPredicates extends JsonHandler {
+    def json: JValue = JArray(solver.dataStore.predicateStats.map {
+      case (name, size, indexedLookups, indexedScans, fullScans) => JObject(List(
+        JField("name", JString(name)),
+        JField("size", JInt(size)),
+        JField("indexedLookups", JInt(indexedLookups)),
+        JField("indexedScans", JInt(indexedScans)),
+        JField("fullScans", JInt(fullScans))
+      ))
+    })
+  }
+
+  /**
    * Returns the indexes and their statistics.
    */
   class GetIndexes extends JsonHandler {
@@ -241,6 +256,7 @@ class RestServer(solver: Solver) {
       server.createContext("/relation/" + name, new ViewRelation(relation))
     }
     server.createContext("/lattices", new GetLattices())
+    server.createContext("/performance/predicates", new GetPredicates())
     server.createContext("/performance/indexes", new GetIndexes())
     server.createContext("/compiler/phases", new GetCompilerPhases())
 

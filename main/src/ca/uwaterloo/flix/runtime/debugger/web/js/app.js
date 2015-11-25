@@ -36,30 +36,6 @@ var Rules = [
 ];
 
 
-var Predicates = [
-    {
-        name: "Multi",
-        size: 148,
-        indexedLookups: 957011,
-        indexedScans: 0,
-        fullScans: 0
-    },
-    {
-        name: "AddrOf",
-        size: 915,
-        indexedLookups: 915,
-        indexedScans: 0,
-        fullScans: 0
-    },
-    {
-        name: "PtH",
-        size: 811,
-        indexedLookups: 218386,
-        indexedScans: 0,
-        fullScans: 225
-    }
-];
-
 var Snapshots = [
     {
         time: 1448397245,
@@ -138,7 +114,7 @@ var App = React.createClass({displayName: "App",
         if (pageName === "performance/rules") {
             page = React.createElement(RulesPage, null)
         } else if (pageName === "performance/predicates") {
-            page = React.createElement(PredicatesPage, null)
+            page = React.createElement(PredicatesPage, {notifyConnectionError: this.onError})
         } else if (pageName === "performance/indexes") {
             page = React.createElement(IndexesPage, {registerUpdateCallback: this.registerUpdateCallback})
         } else if (pageName === "compiler/phases") {
@@ -445,11 +421,33 @@ var RulesPage = React.createClass({displayName: "RulesPage",
  * Predicates page.
  */
 var PredicatesPage = React.createClass({displayName: "PredicatesPage",
+    propTypes: {
+        registerUpdateCallback: React.PropTypes.func.isRequired,
+        notifyConnectionError: React.PropTypes.func.isRequired
+    },
+
+    getInitialState: function () {
+        return {predicates: []};
+    },
+
+    componentDidMount: function () {
+        this.tick();
+    },
+
+    tick: function () {
+        $.ajax({
+            method: "GET", dataType: 'json', url: URL + '/performance/predicates', success: function (data) {
+                this.setState({predicates: data});
+            }.bind(this),
+            error: this.props.notifyConnectionError
+        });
+    },
+
     render: function () {
         var table = {
             cols: ["Name", "Size", "Indexed Lookups", "Indexed Scans", "Full Scans"],
             align: ["left", "right", "right", "right", "right"],
-            rows: Predicates.map(row => [
+            rows: this.state.predicates.map(row => [
                     row["name"],
                     numeral(row["size"]).format('0,0'),
                     numeral(row["indexedLookups"]).format('0,0'),

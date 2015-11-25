@@ -9,23 +9,23 @@ import ca.uwaterloo.flix.util.{BitOps, AsciiTable}
 import scala.collection.mutable
 
 /**
-  * A class implementing a data store for indexed relations and lattices.
-  */
+ * A class implementing a data store for indexed relations and lattices.
+ */
 class DataStore(implicit sCtx: Solver.SolverContext) {
 
   /**
-    * A map from names to indexed relations.
-    */
+   * A map from names to indexed relations.
+   */
   val relations = mutable.Map.empty[Name.Resolved, IndexedRelation]
 
   /**
-    * A map from names to indexed lattices.
-    */
+   * A map from names to indexed lattices.
+   */
   val lattices = mutable.Map.empty[Name.Resolved, IndexedLattice]
 
   /**
-    * Initializes the relations and lattices.
-    */
+   * Initializes the relations and lattices.
+   */
   // compute indexes based on the program constraint rules.
   val indexes = Indexer.index(sCtx.root)
 
@@ -82,6 +82,15 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
     t3.write(Console.out)
     Console.out.println()
   }
+
+  def predicateStats: List[(String, Int, Int, Int, Int)] = relations.map {
+    case (name, relation) => (
+      name.toString,
+      relation.getSize,
+      relation.getNumberOfIndexedLookups,
+      relation.getNumberOfIndexedScans,
+      relation.getNumberOfFullScans)
+  }.toSeq.sortBy(_._3).reverse.toList
 
   def indexStats: List[(String, String, Int)] = relations.flatMap {
     case (name, relation) => relation.getIndexHitCounts.map {
