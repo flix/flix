@@ -60,14 +60,14 @@ var App = React.createClass({
     /**
      * Triggers a page change.
      */
-    triggerPageChange: function (page) {
+    changePage: function (page) {
         this.setState({page: page});
     },
 
     /**
      * Triggers a page refresh.
      */
-    triggerPageRefresh: function () {
+    refreshPage: function () {
         // loop through each refreshable component and call it.
         this.refreshable.forEach(f => f())
     },
@@ -104,7 +104,7 @@ var App = React.createClass({
         // the page component to render (defaults to the landing page).
         var page = <LandingPage relations={this.state.relations}
                                 lattices={this.state.lattices}
-                                changePage={this.triggerPageChange}
+                                changePage={this.changePage}
                                 registerRefreshCallback={this.registerRefreshCallback}
                                 unregisterRefreshCallback={this.unregisterRefreshCallback}
                                 notifyConnectionError={this.notifyConnectionError}/>;
@@ -147,8 +147,8 @@ var App = React.createClass({
 
         return (
             <div>
-                <Menu changePage={this.triggerPageChange}
-                      refreshPage={this.triggerPageRefresh}
+                <Menu changePage={this.changePage}
+                      refreshPage={this.refreshPage}
                       status={this.state.status}
                       relations={this.state.relations}
                       lattices={this.state.lattices}/>
@@ -170,13 +170,9 @@ var Menu = React.createClass({
         status: React.PropTypes.string.isRequired
     },
 
-    //  TODO: Remove
-    changePageRelation: function (relation) {
-        return function () {
-            this.props.changePage({name: "relation", relation: relation});
-        }.bind(this)
-    },
-
+    /**
+     * Renders the menu component.
+     */
     render: function () {
         return (
             <nav className="navbar navbar-default">
@@ -195,7 +191,8 @@ var Menu = React.createClass({
                             <ul className="dropdown-menu">
                                 {this.props.relations.map(relation => {
                                     var name = relation.name;
-                                    return <li key={name} onClick={this.changePageRelation(name)}>
+                                    return <li key={name}
+                                               onClick={() => this.props.changePage({name: "relation", relation: name})}>
                                         <a href="#">{name}</a>
                                     </li>
                                 })}
@@ -220,15 +217,14 @@ var Menu = React.createClass({
                                 <className className="caret"></className>
                             </a>
                             <ul className="dropdown-menu">
-                                <li>
-                                    <a href="#"
-                                       onClick={() => this.props.changePage({name: "performance/rules"})}>Rules</a>
+                                <li onClick={() => this.props.changePage({name: "performance/rules"})}>
+                                    <a href="#">Rules</a>
                                 </li>
-                                <li>
-                                    <a href="#" onClick={() => this.props.changePage({name: "performance/predicates"})}>Predicates</a>
+                                <li onClick={() => this.props.changePage({name: "performance/predicates"})}>
+                                    <a href="#">Predicates</a>
                                 </li>
-                                <li>
-                                    <a href="#" onClick={() => this.props.changePage({name: "performance/indexes"})}>Indexes</a>
+                                <li onClick={() => this.props.changePage({name: "performance/indexes"})}>
+                                    <a href="#">Indexes</a>
                                 </li>
                             </ul>
                         </li>
@@ -241,18 +237,16 @@ var Menu = React.createClass({
                                 <className className="caret"></className>
                             </a>
                             <ul className="dropdown-menu">
-                                <li>
-                                    <a href="#" onClick={() => this.props.changePage({name: "compiler/phases"})}>
-                                        Phases
-                                    </a>
+                                <li onClick={() => this.props.changePage({name: "compiler/phases"})}>
+                                    <a href="#"> Phases </a>
                                 </li>
                             </ul>
                         </li>
                     </ul>
 
                     <ul className="nav navbar-nav navbar-right">
-                        <li>
-                            <a href="#" onClick={this.props.refreshPage}>
+                        <li onClick={this.props.refreshPage}>
+                            <a href="#">
                                 <span className="glyphicon glyphicon-refresh"></span> Refresh
                             </a>
                         </li>
@@ -266,23 +260,7 @@ var Menu = React.createClass({
 });
 
 /**
- * PageHead component.
- */
-var PageHead = React.createClass({
-    propTypes: {
-        name: React.PropTypes.string.isRequired
-    },
-    render: function () {
-        return (
-            <div className="page-header">
-                <h1>{this.props.name}</h1>
-            </div>
-        );
-    }
-});
-
-/**
- * Landing page.
+ * The landing page component.
  */
 var LandingPage = React.createClass({
     propTypes: {
@@ -327,7 +305,9 @@ var LandingPage = React.createClass({
 
         return (
             <div>
-                <PageHead name="Welcome to the Flix Debugger!"/>
+                <div className="page-header">
+                    <h1>Welcome to the Flix Debugger</h1>
+                </div>
 
                 <div className="row">
 
@@ -456,7 +436,9 @@ var RelationPage = React.createClass({
     render: function () {
         return (
             <div>
-                <PageHead name={"Relation / " + this.props.name}/>
+                <div className="page-header">
+                    <h1>{"Relation / " + this.props.name}</h1>
+                </div>
 
                 <Table table={this.state.table}/>
             </div>
@@ -494,7 +476,9 @@ var LatticePage = React.createClass({
     render: function () {
         return (
             <div>
-                <PageHead name={"Lattice / " + this.props.name}/>
+                <div className="page-header">
+                    <h1>{"Lattice / " + this.props.name}</h1>
+                </div>
 
                 <Table table={this.state.table}/>
             </div>
@@ -546,7 +530,9 @@ var RulesPage = React.createClass({
 
         return (
             <div>
-                <PageHead name="Performance / Rules"/>
+                <div className="page-header">
+                    <h1>Performance / Rules</h1>
+                </div>
 
                 <div className="panel panel-default">
                     <div className="panel-body">
@@ -602,7 +588,9 @@ var PredicatesPage = React.createClass({
 
         return (
             <div>
-                <PageHead name="Performance / Predicates"/>
+                <div className="page-header">
+                    <h1>Performance / Predicates</h1>
+                </div>
 
                 <div className="panel panel-default">
                     <div className="panel-body">
@@ -653,7 +641,9 @@ var IndexesPage = React.createClass({
 
         return (
             <div>
-                <PageHead name="Performance / Indexes"/>
+                <div className="page-header">
+                    <h1>Performance / Indexes</h1>
+                </div>
 
                 <div className="panel panel-default">
                     <div className="panel-body">
@@ -701,7 +691,9 @@ var PhasesPage = React.createClass({
 
         return (
             <div>
-                <PageHead name="Compiler / Phases"/>
+                <div className="page-header">
+                    <h1>Compiler / Phases</h1>
+                </div>
 
                 <div className="panel panel-default">
                     <div className="panel-body">
