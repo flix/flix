@@ -638,33 +638,50 @@ var PredicatesPage = React.createClass({displayName: "PredicatesPage",
 var IndexesPage = React.createClass({displayName: "IndexesPage",
     propTypes: {
         registerRefreshCallback: React.PropTypes.func.isRequired,
+        unregisterRefreshCallback: React.PropTypes.func.isRequired,
         notifyConnectionError: React.PropTypes.func.isRequired
     },
 
+    /**
+     * The state is an array of indexes where an index is a {name, index, hits} object.
+     * @returns {{indexes: Array}}
+     */
     getInitialState: function () {
         return {indexes: []};
     },
 
+    /**
+     * Refresh the AJAX data on mount. Register the component as refreshable.
+     */
     componentDidMount: function () {
-        this.tick();
-        this.props.registerRefreshCallback(this.tick); // TODO: Unregister
+        this.refresh();
+        this.props.registerRefreshCallback(this.refresh);
     },
 
-    tick: function () {
-        $.ajax({
-            method: "GET", dataType: 'json', url: URL + '/performance/indexes', success: function (data) {
-                this.setState({indexes: data});
-            }.bind(this),
-            error: this.props.notifyConnectionError
+    /**
+     * Un-register the component as refreshable.
+     */
+    componentWillUnmount: function () {
+        this.props.unregisterRefreshCallback(this.refresh);
+    },
+
+    /**
+     * Retrieves JSON data from the server.
+     */
+    refresh: function () {
+        Common.ajax(URL + '/performance/indexes', this.notifyConnectionError, data => {
+            this.setState({indexes: data})
         });
     },
 
+    /**
+     * Render the component.
+     */
     render: function () {
         var table = {
             cols: ["Name", "Index", "Index Hits"],
             align: ["left", "left", "right"],
-            rows: this.state.indexes.map(row => [row.name, row.index, numeral(row["hits"]).format('0,0')]
-            )
+            rows: this.state.indexes.map(row => [row.name, row.index, numeral(row["hits"]).format('0,0')])
         };
 
         return (
@@ -690,9 +707,9 @@ var IndexesPage = React.createClass({displayName: "IndexesPage",
  */
 var PhasesPage = React.createClass({displayName: "PhasesPage",
     propTypes: {
-        notifyConnectionError: React.PropTypes.func.isRequired,
         registerRefreshCallback: React.PropTypes.func.isRequired,
-        unregisterRefreshCallback: React.PropTypes.func.isRequired
+        unregisterRefreshCallback: React.PropTypes.func.isRequired,
+        notifyConnectionError: React.PropTypes.func.isRequired
     },
 
     /**
