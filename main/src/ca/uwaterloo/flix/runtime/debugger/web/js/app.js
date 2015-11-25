@@ -690,32 +690,48 @@ var IndexesPage = React.createClass({displayName: "IndexesPage",
  */
 var PhasesPage = React.createClass({displayName: "PhasesPage",
     propTypes: {
-        notifyConnectionError: React.PropTypes.func.isRequired
+        notifyConnectionError: React.PropTypes.func.isRequired,
+        registerRefreshCallback: React.PropTypes.func.isRequired,
+        unregisterRefreshCallback: React.PropTypes.func.isRequired
     },
 
+    /**
+     * The state is an array of phases where a phase is {name, time} object.
+     */
     getInitialState: function () {
         return {phases: []};
     },
 
+    /**
+     * Refresh the AJAX data on mount. Register the component as refreshable.
+     */
     componentDidMount: function () {
-        this.tick();
+        this.refresh();
+        this.props.registerRefreshCallback(this.refresh);
     },
 
-    tick: function () {
-        $.ajax({
-            method: "GET", dataType: 'json', url: URL + '/compiler/phases', success: function (data) {
-                this.setState({phases: data});
-            }.bind(this),
-            error: this.props.notifyConnectionError
+    /**
+     * Un-register the component as refreshable.
+     */
+    componentWillUnmount: function () {
+        this.props.unregisterRefreshCallback(this.refresh);
+    },
+
+    /**
+     * Retrieves JSON data from the server.
+     */
+    refresh: function () {
+        Common.ajax(URL + '/compiler/phases', this.notifyConnectionError, data => {
+            this.setState({phases: data})
         });
     },
 
+    /**
+     * Render the component.
+     */
     render: function () {
         var labels = this.state.phases.map(o => o.name);
-        var data = this.state.phases.map(o => o.time);
-
-        // NB: The use of key = Math.random() is necessary to ensure that the component
-        // is always recreated whenever the data is changes.
+        var time = this.state.phases.map(o => o.time);
 
         return (
             React.createElement("div", null, 
@@ -725,19 +741,18 @@ var PhasesPage = React.createClass({displayName: "PhasesPage",
 
                 React.createElement("div", {className: "panel panel-default"}, 
                     React.createElement("div", {className: "panel-body"}, 
-                        "The graph below shows the amount of time spent in various phases of the compiler." + ' ' +
-                        "The time is reported in miliseconds."
+                        "The graph below shows the amount of time spent in various phases of the compiler."
                     )
                 ), 
 
-                React.createElement(BarChart, {key: Math.random(), width: 600, height: 400, labels: labels, data: data})
+                React.createElement(BarChart, {key: Math.random(), width: 600, height: 400, labels: labels, data: time})
             )
         );
     }
 });
 
 /**
- * Table component.
+ * A table component.
  */
 var Table = React.createClass({displayName: "Table",
     propTypes: {
