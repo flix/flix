@@ -205,7 +205,7 @@ var Menu = React.createClass({
                                                onClick={() => this.props.changePage({name: "relation", relation: name})}>
                                         <a href="#">{name}</a>
                                     </li>
-                                })}
+                                    })}
 
                                 <li role="separator" className="divider"></li>
 
@@ -215,7 +215,7 @@ var Menu = React.createClass({
                                                onClick={() => this.props.changePage({name: "lattice", lattice: name})}>
                                         <a href="#">{name}</a>
                                     </li>
-                                })}
+                                    })}
                             </ul>
                         </li>
                     </ul>
@@ -406,13 +406,13 @@ var LandingPage = React.createClass({
                         <div className="list-group">
                             {this.props.relations.map(relation => {
                                 return (
-                                    <a href="#" className="list-group-item"
-                                       onClick={() => this.props.changePage({name: "relation", relation: relation.name})}>
-                                        {relation.name}
-                                        <span className="badge">{numeral(relation.size).format('0,0')}</span>
-                                    </a>
-                                );
-                            })}
+                                <a href="#" className="list-group-item"
+                                   onClick={() => this.props.changePage({name: "relation", relation: relation.name})}>
+                                    {relation.name}
+                                    <span className="badge">{numeral(relation.size).format('0,0')}</span>
+                                </a>
+                                    );
+                                })}
                         </div>
 
                         <h3>Lattices</h3>
@@ -420,13 +420,13 @@ var LandingPage = React.createClass({
                         <div className="list-group">
                             {this.props.lattices.map(lattice => {
                                 return (
-                                    <a href="#" className="list-group-item"
-                                       onClick={() => this.props.changePage({name: "lattice", lattice: lattice.name})}>
-                                        {lattice.name}
-                                        <span className="badge">{numeral(lattice.size).format('0,0')}</span>
-                                    </a>
-                                );
-                            })}
+                                <a href="#" className="list-group-item"
+                                   onClick={() => this.props.changePage({name: "lattice", lattice: lattice.name})}>
+                                    {lattice.name}
+                                    <span className="badge">{numeral(lattice.size).format('0,0')}</span>
+                                </a>
+                                    );
+                                })}
                         </div>
                     </div>
                 </div>
@@ -737,7 +737,7 @@ var PhasesPage = React.createClass({
 });
 
 /**
- * Table component.
+ * A table component.
  */
 var Table = React.createClass({
     propTypes: {
@@ -757,17 +757,15 @@ var Table = React.createClass({
 });
 
 /**
- * Table Header component.
+ * A table header component.
  */
 var TableHeader = React.createClass({
     render: function () {
         return (
             <thead>
             <tr>
-                {this.props.table.cols.map(function (col, idx) {
-                    var className = getAlignment(idx, this.props.table.align);
-                    return <th className={className}>{col}</th>
-                }.bind(this))}
+                {this.props.table.cols.map((col, idx) => <th
+                    className={getAlignment(idx, this.props.table.align)}>{col}</th>)}
             </tr>
             </thead>
         );
@@ -775,31 +773,26 @@ var TableHeader = React.createClass({
 });
 
 /**
- * Table Body component.
+ * A table body component.
  */
 var TableBody = React.createClass({
     render: function () {
         return (
             <tbody>
-            {this.props.table.rows.map(function (row) {
-                return <TableRow align={this.props.table.align} row={row}/>
-            }.bind(this))}
+            {this.props.table.rows.map(row => <TableRow align={this.props.table.align} row={row}/>)}
             </tbody>
         );
     }
 });
 
 /**
- * Table Row component.
+ * A table row component.
  */
 var TableRow = React.createClass({
     render: function () {
         return (
             <tr>
-                {this.props.row.map(function (elm, idx) {
-                    var className = getAlignment(idx, this.props.align);
-                    return <td className={className}>{elm}</td>
-                }.bind(this))}
+                {this.props.row.map((elm, idx) =>  <td className={getAlignment(idx, this.props.align)}>{elm}</td>)}
             </tr>
         );
     }
@@ -841,6 +834,9 @@ var BarChart = React.createClass({
         height: React.PropTypes.number.isRequired
     },
 
+    /**
+     * Draw the bar chart once the canvas element has been created.
+     */
     componentDidMount: function () {
         var barChartData = {
             labels: this.props.labels,
@@ -859,10 +855,18 @@ var BarChart = React.createClass({
         this.chart = new Chart(ctx).Bar(barChartData);
     },
 
+    /**
+     * Release the resources associated with the bar chart.
+     */
     componentWillUnmount: function () {
         this.chart.destroy();
     },
 
+    /**
+     * Render the bar chart.
+     *
+     * NB: The canvas element must be re-created before a bar chart can be redrawn.
+     */
     render: function () {
         return <canvas width={this.props.width} height={this.props.height} ref={(ref) => this.canvas = ref}/>
     }
@@ -880,6 +884,9 @@ var LineChart = React.createClass({
         height: React.PropTypes.number.isRequired
     },
 
+    /**
+     * Draw the line chart once the canvas element has been created.
+     */
     componentDidMount: function () {
         var dataset = LineChart.getBlueDataSet(this.props.data);
 
@@ -899,15 +906,26 @@ var LineChart = React.createClass({
         this.chart = new Chart(ctx).Line(lineChartData);
     },
 
+    /**
+     * Release the resources associated with the line chart.
+     */
     componentWillUnmount: function () {
         this.chart.destroy();
     },
 
+    /**
+     * Render the line chart.
+     *
+     * NB: The canvas element must be re-created before a line chart can be redrawn.
+     */
     render: function () {
         return <canvas width={this.props.width} height={this.props.height} ref={(ref) => this.canvas = ref}/>
     }
 });
 
+/**
+ * Returns a data set colored blue.
+ */
 LineChart.getBlueDataSet = function (data) {
     return {
         fillColor: "rgba(151,187,205,0.2)",
@@ -920,6 +938,9 @@ LineChart.getBlueDataSet = function (data) {
     }
 };
 
+/**
+ * Returns a data set colored magenta.
+ */
 LineChart.getMagentaDataSet = function (data) {
     return {
         fillColor: "rgb(243, 234, 245)",
@@ -932,6 +953,9 @@ LineChart.getMagentaDataSet = function (data) {
     }
 };
 
+/**
+ * Returns a data set colored orangered.
+ */
 LineChart.getOrangeRedDataSet = function (data) {
     return {
         fillColor: "rgb(245, 234, 234)",
@@ -945,7 +969,7 @@ LineChart.getOrangeRedDataSet = function (data) {
 };
 
 /**
- * Render app when the page is ready.
+ * Mount the App component when the document has loaded.
  */
 $(document).ready(function () {
     var root = document.getElementById("container");
