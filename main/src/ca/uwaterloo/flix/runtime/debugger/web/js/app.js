@@ -238,8 +238,8 @@ var LandingPage = React.createClass({displayName: "LandingPage",
             return React.createElement("div", null)
         }
 
-        var zero = this.state.snapshots[0].time;
-        var labels = this.state.snapshots.map(s => (s.time - zero) / 1000);
+        var labels = this.state.snapshots.map(s => Math.round(s.time / 1000));
+        var queue = this.state.snapshots.map(s => s.queue);
         var facts = this.state.snapshots.map(s => s.facts);
         var memory = this.state.snapshots.map(s => s.memory);
 
@@ -249,10 +249,13 @@ var LandingPage = React.createClass({displayName: "LandingPage",
 
                 React.createElement("div", {className: "row"}, 
                     React.createElement("div", {className: "col-xs-6"}, 
+                        React.createElement("h4", null, "Worklist"), 
+                        React.createElement(LineChart, {width: 600, height: 250, labels: labels, data: queue}), 
+
                         React.createElement("h4", null, "Total Facts"), 
                         React.createElement(LineChart, {width: 600, height: 250, labels: labels, data: facts}), 
 
-                        React.createElement("h4", null, "Total Memory Usage"), 
+                        React.createElement("h4", null, "Memory Usage"), 
                         React.createElement(LineChart, {width: 600, height: 250, labels: labels, data: memory})
                     ), 
 

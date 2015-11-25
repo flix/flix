@@ -202,10 +202,11 @@ class RestServer(solver: Solver) {
    */
   class GetSnapshots extends JsonHandler {
     def json: JValue = JArray(solver.monitor.snapshots.reverse.map {
-      case solver.monitor.Snapshot(time, worklist, memory) =>
+      case solver.monitor.Snapshot(time, facts, queue, memory) =>
         JObject(List(
           JField("time", JInt(time / 1000000)),
-          JField("facts", JInt(worklist)),
+          JField("facts", JInt(facts)),
+          JField("queue", JInt(queue)),
           JField("memory", JInt(memory))
         ))
     })
@@ -220,7 +221,7 @@ class RestServer(solver: Solver) {
         JField("rule", JString(rule.head.loc.line())),
         JField("loc", JString(rule.head.loc.format)),
         JField("hits", JInt(hits)),
-        JField("time", JInt(time / 1000000L))
+        JField("time", JInt(time / 1000000))
       ))
     })
   }

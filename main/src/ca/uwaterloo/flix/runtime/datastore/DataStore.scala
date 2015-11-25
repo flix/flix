@@ -83,6 +83,17 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
     Console.out.println()
   }
 
+  def totalFacts: Int = {
+    var result: Int = 0
+    for ((name, relation) <- relations) {
+      result += relation.getSize
+    }
+    for ((name, lattices) <- lattices) {
+      result += lattices.getSize
+    }
+    return result
+  }
+
   def predicateStats: List[(String, Int, Int, Int, Int)] = relations.map {
     case (name, relation) => (
       name.toString,

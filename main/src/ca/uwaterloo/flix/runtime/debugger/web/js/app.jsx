@@ -238,7 +238,8 @@ var LandingPage = React.createClass({
             return <div></div>
         }
 
-        var labels = this.state.snapshots.map(s => s.time);
+        var labels = this.state.snapshots.map(s => Math.round(s.time / 1000));
+        var queue = this.state.snapshots.map(s => s.queue);
         var facts = this.state.snapshots.map(s => s.facts);
         var memory = this.state.snapshots.map(s => s.memory);
 
@@ -248,10 +249,13 @@ var LandingPage = React.createClass({
 
                 <div className="row">
                     <div className="col-xs-6">
+                        <h4>Worklist</h4>
+                        <LineChart width={600} height={250} labels={labels} data={queue}/>
+
                         <h4>Total Facts</h4>
                         <LineChart width={600} height={250} labels={labels} data={facts}/>
 
-                        <h4>Total Memory Usage</h4>
+                        <h4>Memory Usage</h4>
                         <LineChart width={600} height={250} labels={labels} data={memory}/>
                     </div>
 

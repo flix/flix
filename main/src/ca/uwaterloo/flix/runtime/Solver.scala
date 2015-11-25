@@ -17,24 +17,24 @@ import scala.collection.mutable.ListBuffer
 object Solver {
 
   /**
-    * A case class representing a solver context.
-    */
+   * A case class representing a solver context.
+   */
   case class SolverContext(root: TypedAst.Root)
 
 }
 
 /**
-  * A solver based on semi-naive evaluation.
-  */
+ * A solver based on semi-naive evaluation.
+ */
 class Solver(implicit val sCtx: Solver.SolverContext) {
 
   /**
-    * A common super-type for solver errors.
-    */
+   * A common super-type for solver errors.
+   */
   sealed trait SolverError extends Flix.FlixError {
     /**
-      * Returns a human readable string representation of the error.
-      */
+     * Returns a human readable string representation of the error.
+     */
     def format: String
   }
 
@@ -43,10 +43,10 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     implicit val consoleCtx = Compiler.ConsoleCtx
 
     /**
-      * An error raised to indicate that the asserted fact does not hold in the minimal model.
-      *
-      * @param loc the location of the asserted fact.
-      */
+     * An error raised to indicate that the asserted fact does not hold in the minimal model.
+     *
+     * @param loc the location of the asserted fact.
+     */
     case class AssertedFactViolated(loc: SourceLocation) extends SolverError {
       val format =
         s"""${consoleCtx.blue(s"-- SOLVER ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -60,29 +60,36 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-    * The primary data store that holds all relations and lattices.
-    */
+   * The primary data store that holds all relations and lattices.
+   */
   val dataStore = new DataStore()
 
   /**
-    * The work list of pending predicate names and their associated values.
-    */
+   * The work list of pending predicate names and their associated values.
+   */
   val worklist = new mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, Value])]
 
   class Monitor extends Thread {
 
     val e = System.nanoTime()
 
-    case class Snapshot(time: Long, worklist: Int, memory: Long)
+    case class Snapshot(time: Long, facts: Int, worklist: Int, memory: Long)
 
     var snapshots = List.empty[Snapshot]
 
-    override def run(): Unit = {
-      while(!Thread.currentThread().isInterrupted) {
-        val usedMemory = (Runtime.getRuntime.totalMemory() - Runtime.getRuntime.freeMemory()) / (1024 * 1024)
-        snapshots ::= Snapshot(System.nanoTime() - e, worklist.size, usedMemory)
+    def takeSnapshot(): Unit = {
+      val usedMemory = (Runtime.getRuntime.totalMemory() - Runtime.getRuntime.freeMemory()) / (1024 * 1024)
+      snapshots ::= Snapshot(System.nanoTime() - e, dataStore.totalFacts, worklist.size, usedMemory)
+    }
+
+    override def run(): Unit = try {
+      while (!Thread.currentThread().isInterrupted) {
+        takeSnapshot()
         Thread.sleep(1000)
       }
+    } catch {
+      case e: InterruptedException =>
+        takeSnapshot()
     }
 
   }
@@ -91,11 +98,11 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   monitor.start()
 
   /**
-    * Solves the current Flix program.
-    */
+   * Solves the current Flix program.
+   */
   def solve(): Model = {
 
-    val restServer =  new RestServer(this)
+    val restServer = new RestServer(this)
     restServer.start() //  TODO
 
     // measure the time elapsed.
@@ -170,8 +177,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     }.toList
 
   /**
-    * Processes an inferred `fact` for the relation or lattice with the `name`.
-    */
+   * Processes an inferred `fact` for the relation or lattice with the `name`.
+   */
   def inferredFact(name: Name.Resolved, fact: Array[Value], enqueue: Boolean): Unit = sCtx.root.collections(name) match {
     case r: TypedAst.Collection.Relation =>
       val changed = dataStore.relations(name).inferredFact(fact)
@@ -187,8 +194,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-    * Evaluates the given head predicate `p` under the given environment `env0`.
-    */
+   * Evaluates the given head predicate `p` under the given environment `env0`.
+   */
   def evalHead(p: Predicate.Head, env0: mutable.Map[String, Value], enqueue: Boolean): Unit = p match {
     case p: Predicate.Head.Relation =>
       val terms = p.termsArray
@@ -209,8 +216,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
 
 
   /**
-    * Evaluates the body of the given `rule` under the given initial environment `env0`.
-    */
+   * Evaluates the body of the given `rule` under the given initial environment `env0`.
+   */
   // TODO: Need a static layout of variables and then implement `row` as an array.
   def evalBody(rule: Constraint.Rule, env0: mutable.Map[String, Value]): Unit = {
     val t = System.nanoTime()
@@ -222,8 +229,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-    * Computes the cross product of all collections in the body.
-    */
+   * Computes the cross product of all collections in the body.
+   */
   def cross(rule: Constraint.Rule, ps: List[Predicate.Body.Collection], row: mutable.Map[String, Value]): Unit = ps match {
     case Nil =>
       // cross product complete, now filter
@@ -263,8 +270,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-    * Unfolds the given loop predicates `ps` over the initial `row`.
-    */
+   * Unfolds the given loop predicates `ps` over the initial `row`.
+   */
   def loop(rule: Constraint.Rule, ps: List[Predicate.Body.Loop], row: mutable.Map[String, Value]): Unit = ps match {
     case Nil => filter(rule, rule.filters, row)
     case Predicate.Body.Loop(name, term, _, _) :: rest =>
@@ -277,8 +284,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-    * Filters the given `row` through all filter functions in the body.
-    */
+   * Filters the given `row` through all filter functions in the body.
+   */
   @tailrec
   private def filter(rule: Constraint.Rule, ps: List[Predicate.Body.Function], row: mutable.Map[String, Value]): Unit = ps match {
     case Nil =>
@@ -298,8 +305,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-    * Filters the given `row` through all disjointness filters in the body.
-    */
+   * Filters the given `row` through all disjointness filters in the body.
+   */
   @tailrec
   private def disjoint(rule: Constraint.Rule, ps: List[Predicate.Body.NotEqual], row: mutable.Map[String, Value]): Unit = ps match {
     case Nil =>
@@ -314,10 +321,10 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-    * Evaluates the given body term `t` to a value.
-    *
-    * Returns `null` if the term is a free variable.
-    */
+   * Evaluates the given body term `t` to a value.
+   *
+   * Returns `null` if the term is a free variable.
+   */
   def eval(t: TypedAst.Term.Body, env: mutable.Map[String, Value]): Value = t match {
     case t: TypedAst.Term.Body.Wildcard => null
     case t: TypedAst.Term.Body.Var => env.getOrElse(t.ident.name, null)
@@ -325,8 +332,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-    * Returns all dependencies of the given `name` along with an environment.
-    */
+   * Returns all dependencies of the given `name` along with an environment.
+   */
   def dependencies(name: Name.Resolved, fact: Array[Value]): Unit = {
 
     def unify(pat: Array[String], fact: Array[Value], limit: Int): mutable.Map[String, Value] = {
@@ -363,8 +370,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
 
 
   /**
-    * Checks all assertions.
-    */
+   * Checks all assertions.
+   */
   def checkAssertions(): Unit = {
     // asserted rules
     val assertedFacts = @@(sCtx.root.directives.assertedFacts map checkAssertedFact)
@@ -376,16 +383,16 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-    * Verifies that the given asserted fact `d` holds in the minimal model.
-    */
+   * Verifies that the given asserted fact `d` holds in the minimal model.
+   */
   def checkAssertedFact(d: Directive.AssertFact): Validation[Boolean, SolverError] = {
     // TODO: Implement checkAssertedFact.
     false.toSuccess
   }
 
   /**
-    * Verifies that the given asserted rule `d` holds in the minimal model.
-    */
+   * Verifies that the given asserted rule `d` holds in the minimal model.
+   */
   def checkAssertedRule(d: Directive.AssertRule): Validation[Boolean, SolverError] = {
     // TODO: Implement checkAssertedRule.
     false.toSuccess
