@@ -80,7 +80,7 @@ var App = React.createClass({
     },
 
     /**
-     * Unregisters a refreshable component.
+     * Un-registers a refreshable component.
      */
     unregisterRefreshCallback: function (fn) {
         this.refreshable = this.refreshable.filter(x => x != fn);
@@ -267,6 +267,9 @@ var StatusLine = React.createClass({
         status: React.PropTypes.string.isRequired
     },
 
+    /**
+     * Renders the status line.
+     */
     render: function () {
         var status = this.props.status;
 
@@ -316,27 +319,43 @@ var LandingPage = React.createClass({
         notifyConnectionError: React.PropTypes.func.isRequired
     },
 
+    /**
+     * The state of this component consists of an array of snapshots.
+     */
     getInitialState: function () {
         return {snapshots: []};
     },
 
+    /**
+     * Refresh the AJAX data on mount. Register the component as refreshable.
+     */
     componentDidMount: function () {
-        this.tick();
+        this.refresh();
+        this.props.registerRefreshCallback(this.refresh);
     },
 
-    tick: function () {
-        $.ajax({
-            method: "GET", dataType: 'json', url: URL + '/snapshots/' + this.props.name, success: function (data) {
-                this.setState({snapshots: data});
-            }.bind(this),
-            error: this.props.notifyConnectionError
+    /**
+     * Un-register the component as refreshable.
+     */
+    componentWillUnmount: function () {
+        this.props.unregisterRefreshCallback(this.refresh);
+    },
+
+    /**
+     * Retrieves JSON data from the server.
+     */
+    refresh: function () {
+        Common.ajax(URL + '/snapshots/', this.notifyConnectionError, data => {
+            this.setState({snapshots: data});
         });
     },
 
-
+    /**
+     * Renders the landing page.
+     */
     render: function () {
         if (this.state.snapshots.length == 0) {
-            return <div></div>
+            return <div>Loading ...</div>
         }
 
         var labels = this.state.snapshots.map(s => Math.round(s.time / 1000));
@@ -357,22 +376,18 @@ var LandingPage = React.createClass({
 
                 <div className="row">
 
-                    <div className="panel panel-default">
-                        <div className="panel-body">
-                            The Flix debugger is a web-based interface to track the progress of the fixpoint
-                            computation.
-                        </div>
-                    </div>
-
                     <div className="col-xs-6">
                         <h3>Worklist ({currentQueuelength})</h3>
-                        <LineChart width={600} height={250} labels={labels} data={queue} theme="blue"/>
+                        <LineChart key={Math.random()} width={600} height={250} labels={labels} data={queue}
+                                   theme="blue"/>
 
                         <h3>Total Facts ({currentNumberOfacts})</h3>
-                        <LineChart width={600} height={250} labels={labels} data={facts} theme="magenta"/>
+                        <LineChart key={Math.random()} width={600} height={250} labels={labels} data={facts}
+                                   theme="magenta"/>
 
                         <h3>Memory Usage ({currentMemoryUsage} MB)</h3>
-                        <LineChart width={600} height={250} labels={labels} data={memory} theme="orangered"/>
+                        <LineChart key={Math.random()} width={600} height={250} labels={labels} data={memory}
+                                   theme="orangered"/>
                     </div>
 
                     <div className="col-xs-6">
