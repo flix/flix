@@ -579,37 +579,56 @@ var RulesPage = React.createClass({
  */
 var PredicatesPage = React.createClass({
     propTypes: {
-        registerUpdateCallback: React.PropTypes.func.isRequired,
+        registerRefreshCallback: React.PropTypes.func.isRequired,
+        unregisterRefreshCallback: React.PropTypes.func.isRequired,
         notifyConnectionError: React.PropTypes.func.isRequired
     },
 
+    /**
+     * The state is an array of predicates where a predicate is a
+     * {name, size, indexedLookups, indexedScans, fullScans} object.
+     */
     getInitialState: function () {
         return {predicates: []};
     },
 
+    /**
+     * Refresh the AJAX data on mount. Register the component as refreshable.
+     */
     componentDidMount: function () {
-        this.tick();
+        this.refresh();
+        this.props.registerRefreshCallback(this.refresh);
     },
 
-    tick: function () {
-        $.ajax({
-            method: "GET", dataType: 'json', url: URL + '/performance/predicates', success: function (data) {
-                this.setState({predicates: data});
-            }.bind(this),
-            error: this.props.notifyConnectionError
+    /**
+     * Un-register the component as refreshable.
+     */
+    componentWillUnmount: function () {
+        this.props.unregisterRefreshCallback(this.refresh);
+    },
+
+    /**
+     * Retrieves JSON data from the server.
+     */
+    refresh: function () {
+        Common.ajax(URL + '/performance/predicates', this.notifyConnectionError, data => {
+            this.setState({predicates: data})
         });
     },
 
+    /**
+     * Renders the component.
+     */
     render: function () {
         var table = {
             cols: ["Name", "Size", "Indexed Lookups", "Indexed Scans", "Full Scans"],
             align: ["left", "right", "right", "right", "right"],
             rows: this.state.predicates.map(row => [
                     row["name"],
-                    numeral(row["size"]).format('0,0'),
-                    numeral(row["indexedLookups"]).format('0,0'),
-                    numeral(row["indexedScans"]).format('0,0'),
-                    numeral(row["fullScans"]).format('0,0')
+                    numeral(row.size).format('0,0'),
+                    numeral(row.indexedLookups).format('0,0'),
+                    numeral(row.indexedScans).format('0,0'),
+                    numeral(row.fullScans).format('0,0')
                 ]
             )
         };
@@ -675,7 +694,7 @@ var IndexesPage = React.createClass({
     },
 
     /**
-     * Render the component.
+     * Renders the component.
      */
     render: function () {
         var table = {
@@ -744,7 +763,7 @@ var PhasesPage = React.createClass({
     },
 
     /**
-     * Render the component.
+     * Renders the component.
      */
     render: function () {
         var labels = this.state.phases.map(o => o.name);
