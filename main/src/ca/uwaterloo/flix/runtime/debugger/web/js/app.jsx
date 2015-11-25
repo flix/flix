@@ -41,26 +41,18 @@ var App = React.createClass({
      * Retrieve the list of relations and lattices when the component is mounted.
      */
     componentDidMount: function () {
+        // retrieve relations
         Common.ajax(URL + '/relations', this.onError, data => {
             this.setState({relations: data})
         });
 
-        //$.ajax({
-        //    method: "GET", dataType: 'json', url: URL + '/relations', success: function (data) {
-        //        this.setState({relations: data});
-        //    }.bind(this),
-        //    error: this.onError
-        //});
-
-        $.ajax({
-            method: "GET", dataType: 'json', url: URL + '/lattices', success: function (data) {
-                this.setState({lattices: data});
-            }.bind(this),
-            error: this.onError
+        // retrieve lattices
+        Common.ajax(URL + '/lattices', this.onError, data => {
+            this.setState({lattices: data})
         });
     },
 
-    changePage: function (page) {
+    triggerPageChange: function (page) {
         this.setState({page: page});
     },
 
@@ -81,33 +73,45 @@ var App = React.createClass({
         this.setState({status: "connectionLost"}); // TODO: Better names for status.
     },
 
+    /**
+     * Renders the application.
+     */
     render: function () {
-        var page = null;
+        // the name of the page.
         var pageName = this.state.page.name;
 
+        // the page component to render (defaults to the landing page).
+        var page = <LandingPage relations={this.state.relations} lattices={this.state.lattices}
+                                notifyConnectionError={this.onError}
+                                changePage={this.triggerPageChange}/>
+
+        // select the page component based on the page name.
+        if (pageName === "relation") {
+            page = <RelationPage key={this.state.page.relation}
+                                 name={this.state.page.relation}
+                                 notifyConnectionError={this.onError}/>
+        }
+        if (pageName === "lattice") {
+            page = <LatticePage key={this.state.page.lattice}
+                                name={this.state.page.lattice}
+                                notifyConnectionError={this.onError}/>
+        }
         if (pageName === "performance/rules") {
             page = <RulesPage notifyConnectionError={this.onError}/>
-        } else if (pageName === "performance/predicates") {
+        }
+        if (pageName === "performance/predicates") {
             page = <PredicatesPage notifyConnectionError={this.onError}/>
-        } else if (pageName === "performance/indexes") {
+        }
+        if (pageName === "performance/indexes") {
             page = <IndexesPage registerUpdateCallback={this.registerUpdateCallback}/>
-        } else if (pageName === "compiler/phases") {
+        }
+        if (pageName === "compiler/phases") {
             page = <PhasesPage notifyConnectionError={this.onError}/>
-        } else if (pageName === "relation") {
-            page = <RelationPage key={this.state.page.relation} name={this.state.page.relation}
-                                 notifyConnectionError={this.onError}/>
-        } else if (pageName === "lattice") {
-            page = <LatticePage key={this.state.page.lattice} name={this.state.page.lattice}
-                                notifyConnectionError={this.onError}/>
-        } else {
-            page = <LandingPage relations={this.state.relations} lattices={this.state.lattices}
-                                notifyConnectionError={this.onError}
-                                changePage={this.changePage}/>
         }
 
         return (
             <div>
-                <Menu changePage={this.changePage}
+                <Menu changePage={this.triggerPageChange}
                       refreshPage={this.refreshPage}
                       status={this.state.status}
                       relations={this.state.relations}
