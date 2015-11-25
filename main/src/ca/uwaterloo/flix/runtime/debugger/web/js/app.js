@@ -1,25 +1,56 @@
-var URL = "http://" + window.location.hostname + ":9090";
+/**
+ * The URL to the REST API server.
+ */
+var URL = "http://" + window.location.hostname + ":" + window.location.port;
 
 /**
- * Main Application entry point.
+ * A collection of common functionality.
+ */
+var Common = {};
+
+/**
+ * Triggers an AJAX request to the given URL.
+ */
+Common.ajax = function (url, failure, success) {
+    $.ajax({method: "GET", dataType: 'json', url: url, success: success, error: failure});
+};
+
+/**
+ * Main Application.
  */
 var App = React.createClass({displayName: "App",
 
+    /**
+     * The initial state of the application consists of:
+     *
+     * - A page object with the name of the page (and optionally the relation/lattice).
+     * - A status string representing the status of the debugger/solver.
+     * - An array of relation names (used in the menu and on the landing page).
+     * - An array of lattices names (used in the menu and on the landing page).
+     */
     getInitialState: function () {
-        return {page: {name: "default"}, status: "running", relations: [], lattices: []};
+        return {
+            page: {name: "default"},
+            status: "running",
+            relations: [],
+            lattices: []
+        };
     },
 
+    /**
+     * Retrieve the list of relations and lattices when the component is mounted.
+     */
     componentDidMount: function () {
-        this.tick();
-    },
-
-    tick: function () {
-        $.ajax({
-            method: "GET", dataType: 'json', url: URL + '/relations', success: function (data) {
-                this.setState({relations: data});
-            }.bind(this),
-            error: this.onError
+        Common.ajax(URL + '/relations', this.onError, data => {
+            this.setState({relations: data})
         });
+
+        //$.ajax({
+        //    method: "GET", dataType: 'json', url: URL + '/relations', success: function (data) {
+        //        this.setState({relations: data});
+        //    }.bind(this),
+        //    error: this.onError
+        //});
 
         $.ajax({
             method: "GET", dataType: 'json', url: URL + '/lattices', success: function (data) {
@@ -67,7 +98,7 @@ var App = React.createClass({displayName: "App",
                                  notifyConnectionError: this.onError})
         } else if (pageName === "lattice") {
             page = React.createElement(LatticePage, {key: this.state.page.lattice, name: this.state.page.lattice, 
-                                 notifyConnectionError: this.onError})
+                                notifyConnectionError: this.onError})
         } else {
             page = React.createElement(LandingPage, {relations: this.state.relations, lattices: this.state.lattices, 
                                 notifyConnectionError: this.onError, 
