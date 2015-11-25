@@ -21,6 +21,11 @@ Common.ajax = function (url, failure, success) {
 var App = React.createClass({displayName: "App",
 
     /**
+     * An array of currently registered refreshable components.
+     */
+    refreshable: [],
+
+    /**
      * The initial state of the application consists of:
      *
      * - A page object with the name of the page (and optionally the relation/lattice).
@@ -42,35 +47,51 @@ var App = React.createClass({displayName: "App",
      */
     componentDidMount: function () {
         // retrieve relations
-        Common.ajax(URL + '/relations', this.onError, data => {
+        Common.ajax(URL + '/relations', this.notifyConnectionError, data => {
             this.setState({relations: data})
         });
 
         // retrieve lattices
-        Common.ajax(URL + '/lattices', this.onError, data => {
+        Common.ajax(URL + '/lattices', this.notifyConnectionError, data => {
             this.setState({lattices: data})
         });
     },
 
+    /**
+     * Triggers a page change.
+     */
     triggerPageChange: function (page) {
         this.setState({page: page});
     },
 
-    refreshPage: function () {
-        console.log("reload page, but how?"); // TODO
-
+    /**
+     * Triggers a page refresh.
+     */
+    triggerPageRefresh: function () {
+        // loop through each refreshable component and call it.
         this.refreshable.forEach(f => f())
     },
 
-    refreshable: [],
-
+    /**
+     * Registers a refreshable component.
+     */
     registerRefreshCallback: function (fn) {
         this.refreshable.push(fn);
     },
 
-    onError: function (msg) {
-        console.log(msg);
-        this.setState({status: "connectionLost"}); // TODO: Better names for status.
+    /**
+     * Unregisters a refreshable component.
+     */
+    unregisterRefreshCallback: function (fn) {
+        this.refreshable = this.refreshable.filter(x => x != fn);
+    },
+
+    /**
+     * Notifies the application component that an AJAX communication has occurred.
+     */
+    notifyConnectionError: function () {
+        // update the status to indicate that an error has occurred.
+        this.setState({status: "connectionError"});
     },
 
     /**
@@ -81,38 +102,53 @@ var App = React.createClass({displayName: "App",
         var pageName = this.state.page.name;
 
         // the page component to render (defaults to the landing page).
-        var page = React.createElement(LandingPage, {relations: this.state.relations, lattices: this.state.lattices, 
-                                notifyConnectionError: this.onError, 
-                                changePage: this.triggerPageChange})
+        var page = React.createElement(LandingPage, {relations: this.state.relations, 
+                                lattices: this.state.lattices, 
+                                changePage: this.triggerPageChange, 
+                                registerRefreshCallback: this.registerRefreshCallback, 
+                                unregisterRefreshCallback: this.unregisterRefreshCallback, 
+                                notifyConnectionError: this.notifyConnectionError});
 
         // select the page component based on the page name.
         if (pageName === "relation") {
             page = React.createElement(RelationPage, {key: this.state.page.relation, 
                                  name: this.state.page.relation, 
-                                 notifyConnectionError: this.onError})
+                                 registerRefreshCallback: this.registerRefreshCallback, 
+                                 unregisterRefreshCallback: this.unregisterRefreshCallback, 
+                                 notifyConnectionError: this.notifyConnectionError});
         }
         if (pageName === "lattice") {
             page = React.createElement(LatticePage, {key: this.state.page.lattice, 
                                 name: this.state.page.lattice, 
-                                notifyConnectionError: this.onError})
+                                registerRefreshCallback: this.registerRefreshCallback, 
+                                unregisterRefreshCallback: this.unregisterRefreshCallback, 
+                                notifyConnectionError: this.notifyConnectionError});
         }
         if (pageName === "performance/rules") {
-            page = React.createElement(RulesPage, {notifyConnectionError: this.onError})
+            page = React.createElement(RulesPage, {registerRefreshCallback: this.registerRefreshCallback, 
+                              unregisterRefreshCallback: this.unregisterRefreshCallback, 
+                              notifyConnectionError: this.notifyConnectionError});
         }
         if (pageName === "performance/predicates") {
-            page = React.createElement(PredicatesPage, {notifyConnectionError: this.onError})
+            page = React.createElement(PredicatesPage, {registerRefreshCallback: this.registerRefreshCallback, 
+                                   unregisterRefreshCallback: this.unregisterRefreshCallback, 
+                                   notifyConnectionError: this.notifyConnectionError});
         }
         if (pageName === "performance/indexes") {
-            page = React.createElement(IndexesPage, {registerRefreshCallback: this.registerRefreshCallback})
+            page = React.createElement(IndexesPage, {registerRefreshCallback: this.registerRefreshCallback, 
+                                unregisterRefreshCallback: this.unregisterRefreshCallback, 
+                                notifyConnectionError: this.notifyConnectionError});
         }
         if (pageName === "compiler/phases") {
-            page = React.createElement(PhasesPage, {notifyConnectionError: this.onError})
+            page = React.createElement(PhasesPage, {registerRefreshCallback: this.registerRefreshCallback, 
+                               unregisterRefreshCallback: this.unregisterRefreshCallback, 
+                               notifyConnectionError: this.notifyConnectionError});
         }
 
         return (
             React.createElement("div", null, 
                 React.createElement(Menu, {changePage: this.triggerPageChange, 
-                      refreshPage: this.refreshPage, 
+                      refreshPage: this.triggerPageRefresh, 
                       status: this.state.status, 
                       relations: this.state.relations, 
                       lattices: this.state.lattices}), 
@@ -585,7 +621,7 @@ var PredicatesPage = React.createClass({displayName: "PredicatesPage",
  */
 var IndexesPage = React.createClass({displayName: "IndexesPage",
     propTypes: {
-        registerUpdateCallback: React.PropTypes.func.isRequired,
+        registerRefreshCallback: React.PropTypes.func.isRequired,
         notifyConnectionError: React.PropTypes.func.isRequired
     },
 
@@ -595,7 +631,7 @@ var IndexesPage = React.createClass({displayName: "IndexesPage",
 
     componentDidMount: function () {
         this.tick();
-        this.props.registerUpdateCallback(this.tick); // TODO: Unregister
+        this.props.registerRefreshCallback(this.tick); // TODO: Unregister
     },
 
     tick: function () {
