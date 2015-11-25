@@ -243,19 +243,24 @@ var LandingPage = React.createClass({
         var facts = this.state.snapshots.map(s => s.facts);
         var memory = this.state.snapshots.map(s => s.memory);
 
+        var last = this.state.snapshots[this.state.snapshots.length - 1];
+        var currentQueuelength = numeral(last.queue).format('0,0');
+        var currentNumberOfacts = numeral(last.facts).format('0,0');
+        var currentMemoryUsage = numeral(last.memory).format('0,0');
+
         return (
             <div>
                 <PageHead name="Welcome to the Flix Debugger!"/>
 
                 <div className="row">
                     <div className="col-xs-6">
-                        <h4>Worklist</h4>
+                        <h4>Worklist ({currentQueuelength})</h4>
                         <LineChart width={600} height={250} labels={labels} data={queue}/>
 
-                        <h4>Total Facts</h4>
+                        <h4>Total Facts ({currentNumberOfacts})</h4>
                         <LineChart width={600} height={250} labels={labels} data={facts}/>
 
-                        <h4>Memory Usage</h4>
+                        <h4>Memory Usage ({currentMemoryUsage} MB)</h4>
                         <LineChart width={600} height={250} labels={labels} data={memory}/>
                     </div>
 

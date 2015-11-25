@@ -243,19 +243,24 @@ var LandingPage = React.createClass({displayName: "LandingPage",
         var facts = this.state.snapshots.map(s => s.facts);
         var memory = this.state.snapshots.map(s => s.memory);
 
+        var last = this.state.snapshots[this.state.snapshots.length - 1];
+        var currentQueuelength = numeral(last.queue).format('0,0');
+        var currentNumberOfacts = numeral(last.facts).format('0,0');
+        var currentMemoryUsage = numeral(last.memory).format('0,0');
+
         return (
             React.createElement("div", null, 
                 React.createElement(PageHead, {name: "Welcome to the Flix Debugger!"}), 
 
                 React.createElement("div", {className: "row"}, 
                     React.createElement("div", {className: "col-xs-6"}, 
-                        React.createElement("h4", null, "Worklist"), 
+                        React.createElement("h4", null, "Worklist (", currentQueuelength, ")"), 
                         React.createElement(LineChart, {width: 600, height: 250, labels: labels, data: queue}), 
 
-                        React.createElement("h4", null, "Total Facts"), 
+                        React.createElement("h4", null, "Total Facts (", currentNumberOfacts, ")"), 
                         React.createElement(LineChart, {width: 600, height: 250, labels: labels, data: facts}), 
 
-                        React.createElement("h4", null, "Memory Usage"), 
+                        React.createElement("h4", null, "Memory Usage (", currentMemoryUsage, " MB)"), 
                         React.createElement(LineChart, {width: 600, height: 250, labels: labels, data: memory})
                     ), 
 
