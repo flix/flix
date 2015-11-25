@@ -253,14 +253,21 @@ var LandingPage = React.createClass({
                 <PageHead name="Welcome to the Flix Debugger!"/>
 
                 <div className="row">
+
+                    <div className="panel panel-default">
+                        <div className="panel-body">
+                            The Flix debugger is a web-based interface to track the progress of the fixpoint computation.
+                        </div>
+                    </div>
+
                     <div className="col-xs-6">
-                        <h4>Worklist ({currentQueuelength})</h4>
+                        <h3>Worklist ({currentQueuelength})</h3>
                         <LineChart width={600} height={250} labels={labels} data={queue} theme="blue"/>
 
-                        <h4>Total Facts ({currentNumberOfacts})</h4>
+                        <h3>Total Facts ({currentNumberOfacts})</h3>
                         <LineChart width={600} height={250} labels={labels} data={facts} theme="magenta"/>
 
-                        <h4>Memory Usage ({currentMemoryUsage} MB)</h4>
+                        <h3>Memory Usage ({currentMemoryUsage} MB)</h3>
                         <LineChart width={600} height={250} labels={labels} data={memory} theme="orangered"/>
                     </div>
 

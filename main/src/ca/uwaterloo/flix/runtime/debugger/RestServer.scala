@@ -180,7 +180,7 @@ class RestServer(solver: Solver) {
     def json: JValue = JObject(
       JField("cols", JArray(collection.attributes.map(a => JString(a.ident.name)))),
       JField("rows", JArray(relation.scan.toList.map {
-        case row => JArray(row.toList.map(e => JString(e.toString)))
+        case row => JArray(row.toList.map(e => JString(e.pretty)))
       })))
   }
 
