@@ -59,13 +59,13 @@ var App = React.createClass({displayName: "App",
     refreshPage: function () {
         console.log("reload page, but how?"); // TODO
 
-        this.callbacks.forEach(f => f())
+        this.refreshable.forEach(f => f())
     },
 
-    callbacks: [],
+    refreshable: [],
 
-    registerUpdateCallback: function (fn) {
-        this.callbacks.push(fn);
+    registerRefreshCallback: function (fn) {
+        this.refreshable.push(fn);
     },
 
     onError: function (msg) {
@@ -103,7 +103,7 @@ var App = React.createClass({displayName: "App",
             page = React.createElement(PredicatesPage, {notifyConnectionError: this.onError})
         }
         if (pageName === "performance/indexes") {
-            page = React.createElement(IndexesPage, {registerUpdateCallback: this.registerUpdateCallback})
+            page = React.createElement(IndexesPage, {registerRefreshCallback: this.registerRefreshCallback})
         }
         if (pageName === "compiler/phases") {
             page = React.createElement(PhasesPage, {notifyConnectionError: this.onError})

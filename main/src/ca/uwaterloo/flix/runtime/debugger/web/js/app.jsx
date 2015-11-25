@@ -21,6 +21,11 @@ Common.ajax = function (url, failure, success) {
 var App = React.createClass({
 
     /**
+     * An array of currently registered refreshable components.
+     */
+    refreshable: [],
+
+    /**
      * The initial state of the application consists of:
      *
      * - A page object with the name of the page (and optionally the relation/lattice).
@@ -59,17 +64,19 @@ var App = React.createClass({
     refreshPage: function () {
         console.log("reload page, but how?"); // TODO
 
-        this.callbacks.forEach(f => f())
+        this.refreshable.forEach(f => f())
     },
 
-    callbacks: [],
 
-    registerUpdateCallback: function (fn) {
-        this.callbacks.push(fn);
+    registerRefreshCallback: function (fn) {
+        this.refreshable.push(fn);
     },
 
-    onError: function (msg) {
-        console.log(msg);
+    unregisterRefreshCallback: function (fn) {
+        this.refreshable = this.refreshable.filter(x => x != fn);
+    },
+
+    onError: function () {
         this.setState({status: "connectionLost"}); // TODO: Better names for status.
     },
 
@@ -83,30 +90,30 @@ var App = React.createClass({
         // the page component to render (defaults to the landing page).
         var page = <LandingPage relations={this.state.relations} lattices={this.state.lattices}
                                 notifyConnectionError={this.onError}
-                                changePage={this.triggerPageChange}/>
+                                changePage={this.triggerPageChange}/>;
 
         // select the page component based on the page name.
         if (pageName === "relation") {
             page = <RelationPage key={this.state.page.relation}
                                  name={this.state.page.relation}
-                                 notifyConnectionError={this.onError}/>
+                                 notifyConnectionError={this.onError}/>;
         }
         if (pageName === "lattice") {
             page = <LatticePage key={this.state.page.lattice}
                                 name={this.state.page.lattice}
-                                notifyConnectionError={this.onError}/>
+                                notifyConnectionError={this.onError}/>;
         }
         if (pageName === "performance/rules") {
-            page = <RulesPage notifyConnectionError={this.onError}/>
+            page = <RulesPage notifyConnectionError={this.onError}/>;
         }
         if (pageName === "performance/predicates") {
-            page = <PredicatesPage notifyConnectionError={this.onError}/>
+            page = <PredicatesPage notifyConnectionError={this.onError}/>;
         }
         if (pageName === "performance/indexes") {
-            page = <IndexesPage registerUpdateCallback={this.registerUpdateCallback}/>
+            page = <IndexesPage registerUpdateCallback={this.registerRefreshCallback}/>;
         }
         if (pageName === "compiler/phases") {
-            page = <PhasesPage notifyConnectionError={this.onError}/>
+            page = <PhasesPage notifyConnectionError={this.onError}/>;
         }
 
         return (
