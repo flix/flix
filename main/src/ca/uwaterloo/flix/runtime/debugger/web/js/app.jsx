@@ -65,6 +65,9 @@ var App = React.createClass({
         } else if (pageName === "relation") {
             page = <RelationPage key={this.state.page.relation} name={this.state.page.relation}
                                  notifyConnectionError={this.onError}/>
+        } else if (pageName === "lattice") {
+            page = <LatticePage key={this.state.page.lattice} name={this.state.page.lattice}
+                                 notifyConnectionError={this.onError}/>
         } else {
             page = <LandingPage relations={this.state.relations} lattices={this.state.lattices}
                                 notifyConnectionError={this.onError}
@@ -96,6 +99,7 @@ var Menu = React.createClass({
         status: React.PropTypes.string.isRequired
     },
 
+    //  TODO: Remove
     changePageRelation: function (relation) {
         return function () {
             this.props.changePage({name: "relation", relation: relation});
@@ -129,7 +133,8 @@ var Menu = React.createClass({
 
                                 {this.props.lattices.map(lattice => {
                                     var name = lattice.name;
-                                    return <li key={name}>
+                                    return <li key={name}
+                                               onClick={() => this.props.changePage({name: "lattice", lattice: name})}>
                                         <a href="#">{name}</a>
                                     </li>
                                 })}
@@ -294,7 +299,7 @@ var LandingPage = React.createClass({
                             {this.props.lattices.map(lattice => {
                                 return (
                                     <a href="#" className="list-group-item"
-                                       onClick={() => this.props.changePage({name: "lattice", relation: lattice.name})}>
+                                       onClick={() => this.props.changePage({name: "lattice", lattice: lattice.name})}>
                                         {lattice.name}
                                         <span className="badge">{numeral(lattice.size).format('0,0')}</span>
                                     </a>
@@ -381,6 +386,44 @@ var RelationPage = React.createClass({
         return (
             <div>
                 <PageHead name={"Relation / " + this.props.name}/>
+
+                <Table table={this.state.table}/>
+            </div>
+        );
+    }
+});
+
+
+/**
+ * Lattice page.
+ */
+var LatticePage = React.createClass({
+    propTypes: {
+        name: React.PropTypes.string.isRequired,
+        notifyConnectionError: React.PropTypes.func.isRequired
+    },
+
+    getInitialState: function () {
+        return {table: {cols: [], rows: []}};
+    },
+
+    componentDidMount: function () {
+        this.tick();
+    },
+
+    tick: function () {
+        $.ajax({
+            method: "GET", dataType: 'json', url: URL + '/lattice/' + this.props.name, success: function (data) {
+                this.setState({table: data});
+            }.bind(this),
+            error: this.props.notifyConnectionError
+        });
+    },
+
+    render: function () {
+        return (
+            <div>
+                <PageHead name={"Lattice / " + this.props.name}/>
 
                 <Table table={this.state.table}/>
             </div>

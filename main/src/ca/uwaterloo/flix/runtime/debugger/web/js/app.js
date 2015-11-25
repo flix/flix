@@ -65,6 +65,9 @@ var App = React.createClass({displayName: "App",
         } else if (pageName === "relation") {
             page = React.createElement(RelationPage, {key: this.state.page.relation, name: this.state.page.relation, 
                                  notifyConnectionError: this.onError})
+        } else if (pageName === "lattice") {
+            page = React.createElement(LatticePage, {key: this.state.page.lattice, name: this.state.page.lattice, 
+                                 notifyConnectionError: this.onError})
         } else {
             page = React.createElement(LandingPage, {relations: this.state.relations, lattices: this.state.lattices, 
                                 notifyConnectionError: this.onError, 
@@ -96,6 +99,7 @@ var Menu = React.createClass({displayName: "Menu",
         status: React.PropTypes.string.isRequired
     },
 
+    //  TODO: Remove
     changePageRelation: function (relation) {
         return function () {
             this.props.changePage({name: "relation", relation: relation});
@@ -129,7 +133,8 @@ var Menu = React.createClass({displayName: "Menu",
 
                                 this.props.lattices.map(lattice => {
                                     var name = lattice.name;
-                                    return React.createElement("li", {key: name}, 
+                                    return React.createElement("li", {key: name, 
+                                               onClick: () => this.props.changePage({name: "lattice", lattice: name})}, 
                                         React.createElement("a", {href: "#"}, name)
                                     )
                                 })
@@ -294,7 +299,7 @@ var LandingPage = React.createClass({displayName: "LandingPage",
                             this.props.lattices.map(lattice => {
                                 return (
                                     React.createElement("a", {href: "#", className: "list-group-item", 
-                                       onClick: () => this.props.changePage({name: "lattice", relation: lattice.name})}, 
+                                       onClick: () => this.props.changePage({name: "lattice", lattice: lattice.name})}, 
                                         lattice.name, 
                                         React.createElement("span", {className: "badge"}, numeral(lattice.size).format('0,0'))
                                     )
@@ -381,6 +386,44 @@ var RelationPage = React.createClass({displayName: "RelationPage",
         return (
             React.createElement("div", null, 
                 React.createElement(PageHead, {name: "Relation / " + this.props.name}), 
+
+                React.createElement(Table, {table: this.state.table})
+            )
+        );
+    }
+});
+
+
+/**
+ * Lattice page.
+ */
+var LatticePage = React.createClass({displayName: "LatticePage",
+    propTypes: {
+        name: React.PropTypes.string.isRequired,
+        notifyConnectionError: React.PropTypes.func.isRequired
+    },
+
+    getInitialState: function () {
+        return {table: {cols: [], rows: []}};
+    },
+
+    componentDidMount: function () {
+        this.tick();
+    },
+
+    tick: function () {
+        $.ajax({
+            method: "GET", dataType: 'json', url: URL + '/lattice/' + this.props.name, success: function (data) {
+                this.setState({table: data});
+            }.bind(this),
+            error: this.props.notifyConnectionError
+        });
+    },
+
+    render: function () {
+        return (
+            React.createElement("div", null, 
+                React.createElement(PageHead, {name: "Lattice / " + this.props.name}), 
 
                 React.createElement(Table, {table: this.state.table})
             )
