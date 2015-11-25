@@ -251,13 +251,57 @@ var Menu = React.createClass({displayName: "Menu",
                             )
                         ), 
 
-                        React.createElement(StatusIcon, {status: this.props.status})
+                        React.createElement(StatusLine, {status: this.props.status})
                     )
                 )
             )
         );
     }
 });
+
+/**
+ * The status line component.
+ */
+var StatusLine = React.createClass({displayName: "StatusLine",
+    propTypes: {
+        status: React.PropTypes.string.isRequired
+    },
+
+    render: function () {
+        var status = this.props.status;
+
+        if (status === "running") {
+            return (
+                React.createElement("li", {className: "bg-info"}, 
+                    React.createElement("a", {href: "#"}, 
+                        React.createElement("span", {className: "glyphicon glyphicon-time"}), " ", React.createElement("strong", null, "Running")
+                    )
+                ))
+        } else if (status === "completed") {
+            return (
+                React.createElement("li", {className: "bg-success"}, 
+                    React.createElement("a", {href: "#"}, 
+                        React.createElement("span", {className: "glyphicon glyphicon-ok-circle"}), " ", React.createElement("strong", null, "Completed")
+                    )
+                ))
+        } else if (status === "crashed") {
+            return (
+                React.createElement("li", {className: "bg-danger"}, 
+                    React.createElement("a", {href: "#"}, 
+                        React.createElement("span", {className: "glyphicon glyphicon-warning-sign"}), " ", React.createElement("strong", null, "Crashed")
+                    )
+                ))
+        } else {
+            return (
+                React.createElement("li", {className: "bg-danger"}, 
+                    React.createElement("a", {href: "#"}, 
+                        React.createElement("span", {className: "glyphicon glyphicon-question-sign"}), " ", React.createElement("strong", null, "No Connection")
+                    )
+                ))
+        }
+    }
+});
+
 
 /**
  * The landing page component.
@@ -267,6 +311,8 @@ var LandingPage = React.createClass({displayName: "LandingPage",
         relations: React.PropTypes.array.isRequired,
         lattices: React.PropTypes.array.isRequired,
         changePage: React.PropTypes.func.isRequired,
+        registerRefreshCallback: React.PropTypes.func.isRequired,
+        unregisterRefreshCallback: React.PropTypes.func.isRequired,
         notifyConnectionError: React.PropTypes.func.isRequired
     },
 
@@ -361,49 +407,6 @@ var LandingPage = React.createClass({displayName: "LandingPage",
                 )
             )
         );
-    }
-});
-
-/**
- * Status component.
- */
-var StatusIcon = React.createClass({displayName: "StatusIcon",
-    propTypes: {
-        status: React.PropTypes.string.isRequired
-    },
-
-    render: function () {
-        var status = this.props.status;
-
-        if (status === "running") {
-            return (
-                React.createElement("li", {className: "bg-info"}, 
-                    React.createElement("a", {href: "#"}, 
-                        React.createElement("span", {className: "glyphicon glyphicon-time"}), " ", React.createElement("strong", null, "Running")
-                    )
-                ))
-        } else if (status === "completed") {
-            return (
-                React.createElement("li", {className: "bg-success"}, 
-                    React.createElement("a", {href: "#"}, 
-                        React.createElement("span", {className: "glyphicon glyphicon-ok-circle"}), " ", React.createElement("strong", null, "Completed")
-                    )
-                ))
-        } else if (status === "crashed") {
-            return (
-                React.createElement("li", {className: "bg-danger"}, 
-                    React.createElement("a", {href: "#"}, 
-                        React.createElement("span", {className: "glyphicon glyphicon-warning-sign"}), " ", React.createElement("strong", null, "Crashed")
-                    )
-                ))
-        } else {
-            return (
-                React.createElement("li", {className: "bg-danger"}, 
-                    React.createElement("a", {href: "#"}, 
-                        React.createElement("span", {className: "glyphicon glyphicon-question-sign"}), " ", React.createElement("strong", null, "No Connection")
-                    )
-                ))
-        }
     }
 });
 

@@ -251,13 +251,57 @@ var Menu = React.createClass({
                             </a>
                         </li>
 
-                        <StatusIcon status={this.props.status}/>
+                        <StatusLine status={this.props.status}/>
                     </ul>
                 </div>
             </nav>
         );
     }
 });
+
+/**
+ * The status line component.
+ */
+var StatusLine = React.createClass({
+    propTypes: {
+        status: React.PropTypes.string.isRequired
+    },
+
+    render: function () {
+        var status = this.props.status;
+
+        if (status === "running") {
+            return (
+                <li className="bg-info">
+                    <a href="#">
+                        <span className="glyphicon glyphicon-time"></span> <strong>Running</strong>
+                    </a>
+                </li>)
+        } else if (status === "completed") {
+            return (
+                <li className="bg-success">
+                    <a href="#">
+                        <span className="glyphicon glyphicon-ok-circle"></span> <strong>Completed</strong>
+                    </a>
+                </li>)
+        } else if (status === "crashed") {
+            return (
+                <li className="bg-danger">
+                    <a href="#">
+                        <span className="glyphicon glyphicon-warning-sign"></span> <strong>Crashed</strong>
+                    </a>
+                </li>)
+        } else {
+            return (
+                <li className="bg-danger">
+                    <a href="#">
+                        <span className="glyphicon glyphicon-question-sign"></span> <strong>No Connection</strong>
+                    </a>
+                </li>)
+        }
+    }
+});
+
 
 /**
  * The landing page component.
@@ -267,6 +311,8 @@ var LandingPage = React.createClass({
         relations: React.PropTypes.array.isRequired,
         lattices: React.PropTypes.array.isRequired,
         changePage: React.PropTypes.func.isRequired,
+        registerRefreshCallback: React.PropTypes.func.isRequired,
+        unregisterRefreshCallback: React.PropTypes.func.isRequired,
         notifyConnectionError: React.PropTypes.func.isRequired
     },
 
@@ -361,49 +407,6 @@ var LandingPage = React.createClass({
                 </div>
             </div>
         );
-    }
-});
-
-/**
- * Status component.
- */
-var StatusIcon = React.createClass({
-    propTypes: {
-        status: React.PropTypes.string.isRequired
-    },
-
-    render: function () {
-        var status = this.props.status;
-
-        if (status === "running") {
-            return (
-                <li className="bg-info">
-                    <a href="#">
-                        <span className="glyphicon glyphicon-time"></span> <strong>Running</strong>
-                    </a>
-                </li>)
-        } else if (status === "completed") {
-            return (
-                <li className="bg-success">
-                    <a href="#">
-                        <span className="glyphicon glyphicon-ok-circle"></span> <strong>Completed</strong>
-                    </a>
-                </li>)
-        } else if (status === "crashed") {
-            return (
-                <li className="bg-danger">
-                    <a href="#">
-                        <span className="glyphicon glyphicon-warning-sign"></span> <strong>Crashed</strong>
-                    </a>
-                </li>)
-        } else {
-            return (
-                <li className="bg-danger">
-                    <a href="#">
-                        <span className="glyphicon glyphicon-question-sign"></span> <strong>No Connection</strong>
-                    </a>
-                </li>)
-        }
     }
 });
 
