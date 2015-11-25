@@ -342,6 +342,7 @@ var RelationPage = React.createClass({
         this.tick();
     },
 
+    // TODO: Or use key?
     componentWillReceiveProps: function () {
         this.tick();
     },
