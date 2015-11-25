@@ -671,7 +671,7 @@ var TableRow = React.createClass({
  * Returns the CSS alignment string corresponding to the given alignment.
  */
 function getAlignment(idx, align) {
-    if (typeof align !== "array") {
+    if (align === undefined) {
         return "text-left";
     }
 

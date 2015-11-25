@@ -253,14 +253,21 @@ var LandingPage = React.createClass({displayName: "LandingPage",
                 React.createElement(PageHead, {name: "Welcome to the Flix Debugger!"}), 
 
                 React.createElement("div", {className: "row"}, 
+
+                    React.createElement("div", {className: "panel panel-default"}, 
+                        React.createElement("div", {className: "panel-body"}, 
+                            "The Flix debugger is a web-based interface to track the progress of the fixpoint computation."
+                        )
+                    ), 
+
                     React.createElement("div", {className: "col-xs-6"}, 
-                        React.createElement("h4", null, "Worklist (", currentQueuelength, ")"), 
+                        React.createElement("h3", null, "Worklist (", currentQueuelength, ")"), 
                         React.createElement(LineChart, {width: 600, height: 250, labels: labels, data: queue, theme: "blue"}), 
 
-                        React.createElement("h4", null, "Total Facts (", currentNumberOfacts, ")"), 
+                        React.createElement("h3", null, "Total Facts (", currentNumberOfacts, ")"), 
                         React.createElement(LineChart, {width: 600, height: 250, labels: labels, data: facts, theme: "magenta"}), 
 
-                        React.createElement("h4", null, "Memory Usage (", currentMemoryUsage, " MB)"), 
+                        React.createElement("h3", null, "Memory Usage (", currentMemoryUsage, " MB)"), 
                         React.createElement(LineChart, {width: 600, height: 250, labels: labels, data: memory, theme: "orangered"})
                     ), 
 
@@ -664,7 +671,7 @@ var TableRow = React.createClass({displayName: "TableRow",
  * Returns the CSS alignment string corresponding to the given alignment.
  */
 function getAlignment(idx, align) {
-    if (typeof align !== "array") {
+    if (align === undefined) {
         return "text-left";
     }
 
