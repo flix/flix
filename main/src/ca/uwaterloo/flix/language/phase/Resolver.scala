@@ -338,6 +338,8 @@ object Resolver {
     * Resolves all symbols in the given AST `wast`.
     */
   def resolve(wast: WeededAst.Root): Validation[ResolvedAst.Root, ResolverError] = {
+    val b = System.nanoTime()
+
     // TODO: Can anyone actually understand this: ??
     val symsVal = Validation.fold[WeededAst.Declaration, SymbolTable, ResolverError](wast.declarations, SymbolTable.empty) {
       case (msyms, d) => Declaration.symbolsOf(d, List.empty, msyms)
@@ -375,7 +377,8 @@ object Resolver {
 
         @@(collectedConstants, collectedDirectives, collectedEnums, collectedLattices, collectionsVal, collectedIndexes, collectedFacts, collectedRules) map {
           case (constants, directives, enums, lattices, collections, indexes, facts, rules) =>
-            ResolvedAst.Root(constants, directives, enums, lattices, collections, indexes, facts, rules)
+            val e = System.nanoTime()
+            ResolvedAst.Root(constants, directives, enums, lattices, collections, indexes, facts, rules, wast.time.copy(resolver = e - b))
         }
     }
   }

@@ -281,13 +281,10 @@ class RestServer(solver: Solver) {
     */
   class GetCompilerPhases extends JsonHandler {
     def json: JValue = JArray(List(
-      JObject(List(JField("name", JString("Parser")), JField("time", JInt(322)))),
-      JObject(List(JField("name", JString("Weeder")), JField("time", JInt(231)))),
-      JObject(List(JField("name", JString("Namer")), JField("time", JInt(86)))),
-      JObject(List(JField("name", JString("Linker")), JField("time", JInt(243)))),
-      JObject(List(JField("name", JString("Typer")), JField("time", JInt(467)))),
-      JObject(List(JField("name", JString("Normalizer")), JField("time", JInt(357)))),
-      JObject(List(JField("name", JString("Emitter")), JField("time", JInt(322))))
+      JObject(List(JField("name", JString("Parser")), JField("time", JInt(solver.sCtx.root.time.parser / 1000000)))),
+      JObject(List(JField("name", JString("Weeder")), JField("time", JInt(solver.sCtx.root.time.weeder / 1000000)))),
+      JObject(List(JField("name", JString("Resolver")), JField("time", JInt(solver.sCtx.root.time.resolver / 1000000)))),
+      JObject(List(JField("name", JString("Typer")), JField("time", JInt(solver.sCtx.root.time.typer / 1000000))))
     ))
   }
 

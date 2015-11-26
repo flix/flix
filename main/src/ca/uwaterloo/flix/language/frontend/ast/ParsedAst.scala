@@ -15,8 +15,9 @@ object ParsedAst {
    * The AST root node.
    *
    * @param declarations the declarations in the AST.
+   * @param time the time spent in each compiler phase.
    */
-  case class Root(declarations: Seq[ParsedAst.Declaration]) extends ParsedAst
+  case class Root(declarations: Seq[ParsedAst.Declaration], time: Time) extends ParsedAst
 
   /**
    * A common super-type for AST nodes that represent declarations.

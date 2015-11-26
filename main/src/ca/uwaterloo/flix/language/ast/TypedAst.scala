@@ -23,6 +23,7 @@ object TypedAst {
     * @param indexes a map from collection names to indexes.
     * @param facts a list of facts.
     * @param rules a list of rules.
+    * @param time the time spent in each compiler phase.
     */
   case class Root(constants: Map[Name.Resolved, TypedAst.Definition.Constant],
                   directives: TypedAst.Directives,
@@ -30,7 +31,8 @@ object TypedAst {
                   collections: Map[Name.Resolved, TypedAst.Collection],
                   indexes: Map[Name.Resolved, TypedAst.Definition.Index],
                   facts: List[TypedAst.Constraint.Fact],
-                  rules: List[TypedAst.Constraint.Rule]) extends TypedAst {
+                  rules: List[TypedAst.Constraint.Rule],
+                  time: Time) extends TypedAst {
 
     /**
       * Computes map of the dependencies between collection predicates.

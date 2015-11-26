@@ -27,7 +27,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Root                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Root: Rule1[ParsedAst.Root] = rule {
-    optWS ~ zeroOrMore(Declaration).separatedBy(optWS) ~ optWS ~ EOI ~> ParsedAst.Root
+    push(System.nanoTime()) ~ optWS ~ zeroOrMore(Declaration).separatedBy(optWS) ~ optWS ~ push(System.nanoTime()) ~ EOI ~>
+      ((b: Long, decls: Seq[ParsedAst.Declaration], e: Long) => ParsedAst.Root(decls, Time(e - b, 0, 0, 0)))
   }
 
   /////////////////////////////////////////////////////////////////////////////

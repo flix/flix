@@ -107,6 +107,8 @@ object Typer {
     * Runs the typer on the entire given AST `rast`.
     */
   def typecheck(root: ResolvedAst.Root): Validation[TypedAst.Root, TypeError] = {
+    val b = System.nanoTime()
+
     // constants
     val constantsVal = Validation.fold(root.constants) {
       case (name, constant) => Definition.typer(constant, root) map (defn => name -> defn)
@@ -137,7 +139,8 @@ object Typer {
     // putting it all together
     @@(constantsVal, directivesVal, latticesVal, relationsVal, indexesVal, factsVal, rulesVal) map {
       case (constants, directives, lattices, relations, indexes, facts, rules) =>
-        TypedAst.Root(constants, TypedAst.Directives(directives), lattices, relations, indexes, facts, rules)
+        val e = System.nanoTime()
+        TypedAst.Root(constants, TypedAst.Directives(directives), lattices, relations, indexes, facts, rules, root.time.copy(typer = e - b))
     }
   }
 
