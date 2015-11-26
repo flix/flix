@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix
 
-import java.nio.file.{Path, InvalidPathException, Files, Paths}
+import java.nio.file.{Files, Paths, InvalidPathException}
 
 import ca.uwaterloo.flix.util.{Debugger, Options, Validation}
 
@@ -12,20 +12,33 @@ object Main {
   /**
    * The main method.
    */
-  def main(args: Array[String]): Unit = {
+  def main(argv: Array[String]): Unit = {
 
-    // TODO: Commandline arguments.
+    val paths = argv.filter(p => p.endsWith(".flix") || p.endsWith(".flix.zip")).toList
+    val args = argv.filter(a => a.startsWith("-"))
 
-    val t = System.nanoTime()
-    val paths = args flatMap getValidPath
+    // check that each path is valid.
+    for (path <- paths) {
+      if (!isValidPath(path)) {
+        Console.println(s"Error: '$path' is not a valid path.")
+        System.exit(1)
+      }
+    }
 
-    val debugger = args.exists(a => a == "-d" || a == "--debugger")
-
+    // check that each argument is valid.
     var options = Options.Default
-    if (debugger)
-      options = options.copy(debugger = Debugger.Enabled)
+    for (arg <- args) {
+      arg match {
+        case "-d" => options = options.copy(debugger = Debugger.Enabled)
+        case "--debugger" => options = options.copy(debugger = Debugger.Enabled)
+        case _ =>
+          Console.println(s"Error: '$arg' is not a valid argument.")
+          System.exit(1)
+      }
+    }
 
-    Flix.mkPath(paths, options) match {
+    // run flix
+    Flix.mkPath(paths map (s => Paths.get(s)), options) match {
       case Validation.Success(model, errors) =>
         errors.foreach(e => println(e.format))
         model.print()
@@ -33,25 +46,16 @@ object Main {
         errors.foreach(e => println(e.format))
     }
 
-    val e = (System.nanoTime() - t) / 1000000
-    Console.println(f"Total execution time: $e%,d msec.")
   }
 
   /**
-   * Optionally returns the given path `s` if it is a valid path.
+   * Returns `true` iff the given string `s` is a path to a readable file.
    */
-  private def getValidPath(s: String): Option[Path] = try {
+  private def isValidPath(s: String): Boolean = try {
     val path = Paths.get(s)
-    if (!Files.exists(path) || !Files.isRegularFile(path)) {
-      if (!s.startsWith("-")) {
-        Console.println(s"Skipping $s. Not a valid path.")
-      }
-      None
-    }
-    else
-      Some(path)
+    Files.exists(path) && Files.isRegularFile(path) && Files.isReadable(path)
   } catch {
-    case e: InvalidPathException => None
+    case e: InvalidPathException => false
   }
 
 }

@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.frontend.phase
 
+import java.util.zip.ZipFile
+
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.frontend.ast.ParsedAst
 
@@ -20,7 +22,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
    */
   override val input: ParserInput = source match {
     case SourceInput.Str(str) => str
-    case SourceInput.File(path) => Source.fromFile(path.toFile).getLines().mkString("\n")
+    case SourceInput.TxtFile(path) => Source.fromFile(path.toFile).getLines().mkString("\n") // TODO: Slow
+    case SourceInput.ZipFile(path) =>
+      val file = new ZipFile(path.toFile)
+      val entry = file.entries().nextElement()
+      val inputStream = file.getInputStream(entry)
+      Source.fromInputStream(inputStream).getLines().mkString("\n") // TODO: Slow
   }
 
   /////////////////////////////////////////////////////////////////////////////

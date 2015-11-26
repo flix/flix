@@ -105,8 +105,12 @@ object Compiler {
       throw new RuntimeException(s"Path '$path' is not readable.")
     else if (!Files.isRegularFile(path))
       throw new RuntimeException(s"Path '$path' is not a regular file.")
-    else
-      parse(SourceInput.File(path))
+    else {
+      if (path.getFileName.toString.endsWith(".flix.zip"))
+        parse(SourceInput.ZipFile(path))
+      else
+        parse(SourceInput.TxtFile(path))
+    }
 
   /**
    * Returns the abstract syntax tree of the given `paths`.

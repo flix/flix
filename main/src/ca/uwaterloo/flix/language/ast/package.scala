@@ -11,7 +11,8 @@ package object ast {
     */
   sealed trait SourceInput {
     def format: String = this match {
-      case SourceInput.File(p) => p.getFileName.toString
+      case SourceInput.TxtFile(p) => p.getFileName.toString
+      case SourceInput.ZipFile(p) => p.getFileName.toString
       case SourceInput.Str(_) => "???"
     }
   }
@@ -26,7 +27,12 @@ package object ast {
     /**
       * An source that is backed by a regular file.
       */
-    case class File(path: Path) extends SourceInput
+    case class TxtFile(path: Path) extends SourceInput
+
+    /**
+     * An source that is backed by a zip file.
+     */
+    case class ZipFile(path: Path) extends SourceInput
 
   }
 
