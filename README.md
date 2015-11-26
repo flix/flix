@@ -1,6 +1,6 @@
-# Flix: Programming with Fixpoints #
+# Flix: Programming with Fixed Points #
 
-A new programming language for declarative fixpoint computations based on Datalog.
+A new programming language for declarative fixed-point computations based on Datalog.
 
 ## Syntax Highlighting ##
 
