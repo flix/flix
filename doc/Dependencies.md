@@ -1,6 +1,6 @@
-# Libraries #
+# Dependencies #
 
-The purpose of this file is document the dependecies of Flix and their license.
+Flix depends on the following libraries:
 
 | Library                                              | License                     |
 | ---------------------------------------------------- | --------------------------- |
@@ -8,3 +8,6 @@ The purpose of this file is document the dependecies of Flix and their license.
 | [Parboiled2](https://github.com/sirthias/parboiled2) | Apache License, Version 2.0 |
 | [ScalaTest](http://www.scalatest.org/)               | Apache License, Version 2.0 |
 | [Shapeless](https://github.com/milessabin/shapeless) | Apache License, Version 2.0 |
+
+And uses the Levenshtein implementation 
+from [Wikipedia](https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance#Scala).
