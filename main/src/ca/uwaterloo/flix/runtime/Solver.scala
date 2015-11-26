@@ -39,6 +39,16 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   val monitor = new Monitor(this)
 
   /**
+   * Returns the number of elements in the worklist.
+   */
+  def getQueueSize = worklist.length
+
+  /**
+   * Returns the number of facts in the database.
+   */
+  def getNumberOfFacts: Int = dataStore.totalFacts
+
+  /**
    * Solves the current Flix program.
    */
   def solve(): Model = {

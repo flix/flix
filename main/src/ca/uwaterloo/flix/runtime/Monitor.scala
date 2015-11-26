@@ -53,8 +53,8 @@ class Monitor(solver: Solver) {
 
     def run(): Unit = {
       val elapsedTime = System.nanoTime() - zero
-      val queueSize = solver.worklist.size
-      val totalFacts = solver.dataStore.totalFacts
+      val queueSize = solver.getQueueSize
+      val totalFacts = solver.getNumberOfFacts
       val totalMemoryInBytes = Runtime.getRuntime.totalMemory()
       val totalFreeMemoryInBytes = Runtime.getRuntime.freeMemory()
       val usedMemoryInMegaBytes = (totalMemoryInBytes - totalFreeMemoryInBytes) / (1024 * 1024)
