@@ -11,7 +11,7 @@ package object ast {
     */
   sealed trait SourceInput {
     def format: String = this match {
-      case SourceInput.File(p) => p.toString
+      case SourceInput.File(p) => p.getFileName.toString
       case SourceInput.Str(_) => "???"
     }
   }

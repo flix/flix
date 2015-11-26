@@ -892,7 +892,7 @@ var TableHeader = React.createClass({displayName: "TableHeader",
 var TableBody = React.createClass({displayName: "TableBody",
     render: function () {
         return (
-            React.createElement("tbody", null, 
+            React.createElement("tbody", {className: "monospaced"}, 
             this.props.table.rows.map(row => React.createElement(TableRow, {align: this.props.table.align, row: row}))
             )
         );
