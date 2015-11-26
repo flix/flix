@@ -46,6 +46,7 @@ var App = React.createClass({
      * Retrieve the list of relations and lattices when the component is mounted.
      */
     componentDidMount: function () {
+        document.title = "Flix (" + window.location.host + ")";
         this.refresh();
     },
 
@@ -333,10 +334,10 @@ var LandingPage = React.createClass({
     },
 
     /**
-     * The state of this component consists of an array of snapshots.
+     * The state of this component consists of an array of data samples.
      */
     getInitialState: function () {
-        return {snapshots: []};
+        return {telemetry: []};
     },
 
     /**
@@ -358,8 +359,8 @@ var LandingPage = React.createClass({
      * Retrieves JSON data from the server.
      */
     refresh: function () {
-        Common.ajax(URL + '/snapshots/', this.notifyConnectionError, data => {
-            this.setState({snapshots: data});
+        Common.ajax(URL + '/telemetry/', this.notifyConnectionError, data => {
+            this.setState({telemetry: data});
         });
     },
 
@@ -367,16 +368,16 @@ var LandingPage = React.createClass({
      * Renders the landing page.
      */
     render: function () {
-        if (this.state.snapshots.length == 0) {
+        if (this.state.telemetry.length == 0) {
             return <div>Loading ...</div>
         }
 
-        var labels = this.state.snapshots.map(s => Math.round(s.time / 1000));
-        var queue = this.state.snapshots.map(s => s.queue);
-        var facts = this.state.snapshots.map(s => s.facts);
-        var memory = this.state.snapshots.map(s => s.memory);
+        var labels = this.state.telemetry.map(s => Math.round(s.time / 1000));
+        var queue = this.state.telemetry.map(s => s.queue);
+        var facts = this.state.telemetry.map(s => s.facts);
+        var memory = this.state.telemetry.map(s => s.memory);
 
-        var last = this.state.snapshots[this.state.snapshots.length - 1];
+        var last = this.state.telemetry[this.state.telemetry.length - 1];
         var currentQueuelength = numeral(last.queue).format('0,0');
         var currentNumberOfacts = numeral(last.facts).format('0,0');
         var currentMemoryUsage = numeral(last.memory).format('0,0');

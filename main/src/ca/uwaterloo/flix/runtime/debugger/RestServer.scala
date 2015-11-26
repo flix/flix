@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime.debugger
 
 import java.io.{IOException, ByteArrayOutputStream}
-import java.net.InetSocketAddress
+import java.net.{BindException, InetSocketAddress}
 import java.nio.file.{Paths, Files}
 import java.util.concurrent.Executors
 
@@ -16,6 +16,16 @@ import org.json4s.native.JsonMethods
  * A built-in HTTP REST server that provides a JSON interface to debugging facilities of Flix.
  */
 class RestServer(solver: Solver) {
+
+  /**
+   * The minimum port number to bind to.
+   */
+  val MinPort = 8000;
+
+  /**
+   * The maximum port number to bind to.
+   */
+  val MaxPort = 8100;
 
   /**
    * A collection of static resources included in the Jar.
@@ -300,16 +310,14 @@ class RestServer(solver: Solver) {
   /**
    * Bootstraps the internal http server.
    */
-  def start(): Unit = try {
-
-    val port = 9090
-
-    // bind to the requested port.
-    val server = HttpServer.create(new InetSocketAddress(port), 0) // TODO: port
-
-    Console.println("Attached debugger to http://localhost:" + port + "/")
+  def start(): Unit = {
+    // initialize server.
+    val server = newServer(MinPort, MaxPort)
+    val port = server.getAddress.getPort
+    Console.println(s"Attached debugger to http://localhost:$port/.")
 
     // mount ajax handlers.
+    server.createContext("/status", new GetStatus())
     server.createContext("/relations", new GetRelations())
     for ((name, relation) <- solver.dataStore.relations) {
       server.createContext("/relation/" + name, new ListRelation(solver.sCtx.root.collections(name).asInstanceOf[TypedAst.Collection.Relation], relation))
@@ -318,8 +326,7 @@ class RestServer(solver: Solver) {
     for ((name, lattice) <- solver.dataStore.lattices) {
       server.createContext("/lattice/" + name, new ListLattice(solver.sCtx.root.collections(name).asInstanceOf[TypedAst.Collection.Lattice], lattice))
     }
-    server.createContext("/status", new GetStatus())
-    server.createContext("/snapshots", new GetTelemetry())
+    server.createContext("/telemetry", new GetTelemetry())
     server.createContext("/performance/rules", new GetRulePerformance())
     server.createContext("/performance/predicates", new GetPredicatePerformance())
     server.createContext("/performance/indexes", new GetIndexPerformance())
@@ -333,12 +340,23 @@ class RestServer(solver: Solver) {
 
     // start server.
     server.start()
-  } catch {
-    case e: IOException =>
-      // TODO
-      // logger.error(s"Unable to start web server. The REST API will not be available. Error: ${e.getMessage}", e)
-      e.printStackTrace()
   }
 
+  /**
+   * Returns a new HttpServer bound to a port between the given `minPort` and `maxPort`.
+   */
+  private def newServer(minPort: Int, maxPort: Int): HttpServer = {
+    assert(minPort <= maxPort)
+
+    for (port <- minPort to maxPort) {
+      try {
+        return HttpServer.create(new InetSocketAddress(port), 0)
+      } catch {
+        case e: BindException => // nop - try next port.
+      }
+    }
+
+    throw new IOException(s"Unable to find an available port between $minPort and $maxPort.")
+  }
 
 }
