@@ -1101,6 +1101,7 @@ class TestTyper extends FunSuite {
     val input =
       s"""namespace A {
          |  val a: (#java.lang.Object, #java.lang.Object) = #ca.uwaterloo.flix.util.misc.ScalaNative.strTuple2();
+         |
          |  val b: (#java.lang.Object, #java.lang.Object) = #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple2(1, 2);
          |  val c: (#java.lang.Object, #java.lang.Object, #java.lang.Object) =
          |      #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple3(1, 2, 3);
@@ -1108,14 +1109,43 @@ class TestTyper extends FunSuite {
          |      #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple4(1, 2, 3, 4);
          |  val e: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
          |      #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple5(1, 2, 3, 4, 5);
+         |
          |  val z: #scala.Tuple6 = #ca.uwaterloo.flix.util.misc.ScalaNative.tuple6();
+         |
+         |  val b2: (Int, Int) = (#ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple2: (Int, Int) -> (Int, Int))(1, 2);
+         |  val c2: (Int, Int, Int) =
+         |      (#ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple3: (Int, Int, Int) -> (Int, Int, Int))(1, 2, 3);
+         |  val d2: (Int, Int, Int, Int) =
+         |      (#ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple4: (Int, Int, Int, Int) -> (Int, Int, Int, Int))(1, 2, 3, 4);
+         |  val e2: (Int, Int, Int, Int, Int) =
+         |      (#ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple5: (Int, Int, Int, Int, Int) -> (Int, Int, Int, Int, Int))(1, 2, 3, 4, 5);
          |};
        """.stripMargin
     val result = Compiler.compile(input)
     assert(result.isSuccess)
   }
 
-  // TODO(mhyee): Tuples of Flix types
+  test("Native Type 05 (sets)") {
+    val input =
+      s"""namespace A{
+         |  val a: Set[#java.lang.Object] = #ca.uwaterloo.flix.util.misc.ScalaNative.set();
+         |  val b: Set[Int] = (#ca.uwaterloo.flix.util.misc.ScalaNative.set: (Int) -> Set[Int])();
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.isSuccess)
+  }
 
-  // TODO(mhyee): Sets of #java.lang.Object, Sets of Flix types
+  test("Native Type 06 (nested tuples and sets)") {
+    val input =
+      s"""namespace A{
+         |  val a: Set[(Int, Str)] =
+         |    (#ca.uwaterloo.flix.util.misc.ScalaNative.setOfTuples: (Int) -> Set[(Int, Str)])();
+         |  val b: (Set[Int], Set[Str], Set[Str]) =
+         |    (#ca.uwaterloo.flix.util.misc.ScalaNative.tupleOfSets: (Int) -> (Set[Int], Set[Str], Set[Str]))();
+         |};
+       """.stripMargin
+    val result = Compiler.compile(input)
+    assert(result.isSuccess)
+  }
 }
