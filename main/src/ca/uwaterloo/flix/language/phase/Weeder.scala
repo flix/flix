@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.frontend.ast.ParsedAst
 import ca.uwaterloo.flix.util.Validation
 import Validation._
 
@@ -331,7 +332,12 @@ object Weeder {
     * Compiles the given parsed `past` to a weeded ast.
     */
   def weed(past: ParsedAst.Root): Validation[WeededAst.Root, WeederError] = {
-    @@(past.declarations.map(Declaration.compile)) map WeededAst.Root
+    val b = System.nanoTime()
+    @@(past.declarations.map(Declaration.compile)) map {
+      case decls =>
+        val e = System.nanoTime()
+        WeededAst.Root(decls, past.time.copy(weeder = e - b))
+    }
   }
 
   object Declaration {

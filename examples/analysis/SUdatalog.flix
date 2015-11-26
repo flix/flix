@@ -5,7 +5,7 @@
   rel Copy(to: Str, from: Str)
   rel Store(label: Str, to: Str, from: Str)
   rel Load(label: Str, to: Str, from: Str)
-  rel CFG(label: Str, to: Str, from: Str)
+  rel CFG(label: Str, to: Str)
   rel Multi(object: Str)
   rel Phi(label: Str)
   rel Clear(label: Str)
@@ -16,6 +16,24 @@
 //// =========
   rel Pt(variable: Str, target: Str)
   rel PtSU(location: Str, object: Str, target: Str)
+
+//// Indexes
+//// =========
+  index AddrOf({variable, object});
+  index Copy({from});
+  index Store({to, from});
+  index Load({label, from});
+  index CFG({label, to});
+  index FIStore({to}, {from});
+
+  index StoresToP({l}, {p});
+  index MayWrite({c, l}, {c});
+  index Weak({a, l}, {a});
+  index IsTop({a, l}, {a});
+
+  index VarPointsTo({a, p}, {a}, {p});
+  index LabelPointsTo({b, a, l}, {a, l}, {a}, {l});
+  index HeapPointsTo({b, a}, {a});
 
 
 rel StoresToP(l: Str, p: Str)
@@ -31,7 +49,7 @@ rel LabelPointsTo(b: Str, a: Str, l: Str)
 
 // pt[*](a) contains b
 rel HeapPointsTo(b: Str, a: Str)
-rel HeapPointsToRev(a: Str, b: Str)
+rel PtH(a: Str, b: Str)
 
 StoresToP(l, p) :- Store(l, p, _).
 
@@ -69,13 +87,3 @@ IsTop(a, l) :-
 
 // Uncomment below for equivalent-to-flow-insensitive analysis
 // LabelPointsTo(b, a, l) :- HeapPointsTo(b, a), Load(l, _, _).
-
-HeapPointsToRev(a, b) :- HeapPointsTo(b, a).
-
-rel Foo(v: Str)
-
-Foo(v) :- VarPointsTo("2 <null>", v).
-
-print HeapPointsToRev.
-print Foo.
-print VarPointsTo.

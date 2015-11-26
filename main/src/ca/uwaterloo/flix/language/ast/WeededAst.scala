@@ -11,8 +11,9 @@ object WeededAst {
     * The AST root node.
     *
     * @param declarations the declarations in the AST.
+    * @param time the time spent in each compiler phase.
     */
-  case class Root(declarations: List[WeededAst.Declaration]) extends WeededAst
+  case class Root(declarations: List[WeededAst.Declaration], time: Time) extends WeededAst
 
   /**
     * A common super-type for AST nodes that represents declarations.

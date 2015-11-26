@@ -383,12 +383,4 @@ namespace NativeTest {
     rel TupleOfSets(t: (Set[Int], Set[Str], Set[Str]));
     TupleOfSets(tupleOfSets(0)).
     print TupleOfSets.
-
-    // TODO(mhyee): clean up
-    def scalaHi(i: Int, j: Int): Int = #ca.uwaterloo.flix.util.misc.ScalaNative.hi(i, j)
-    def javaHi(i: Int, j: Int): Int = #ca.uwaterloo.flix.util.misc.JavaNative.hi(i, j)
-    rel Ints(i: Int);
-    Ints(scalaHi(3, 3)).
-    Ints(javaHi(4, 5)).
-    print Ints.
 }

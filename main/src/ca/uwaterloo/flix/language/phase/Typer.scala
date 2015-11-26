@@ -107,6 +107,8 @@ object Typer {
     * Runs the typer on the entire given AST `rast`.
     */
   def typecheck(root: ResolvedAst.Root): Validation[TypedAst.Root, TypeError] = {
+    val b = System.nanoTime()
+
     // constants
     val constantsVal = Validation.fold(root.constants) {
       case (name, constant) => Definition.typer(constant, root) map (defn => name -> defn)
@@ -137,7 +139,8 @@ object Typer {
     // putting it all together
     @@(constantsVal, directivesVal, latticesVal, relationsVal, indexesVal, factsVal, rulesVal) map {
       case (constants, directives, lattices, relations, indexes, facts, rules) =>
-        TypedAst.Root(constants, TypedAst.Directives(directives), lattices, relations, indexes, facts, rules)
+        val e = System.nanoTime()
+        TypedAst.Root(constants, TypedAst.Directives(directives), lattices, relations, indexes, facts, rules, root.time.copy(typer = e - b))
     }
   }
 
@@ -685,7 +688,7 @@ object Typer {
           TypedAst.Predicate.Body.NotEqual(ident1, ident2, TypedAst.Type.Bool, loc).toSuccess
 
         case ResolvedAst.Predicate.Body.Loop(ident, rterm, loc) =>
-          Term.typer(rterm, TypedAst.Type.Set(TypedAst.Type.Native("java.lang.Object")), root) map {
+          Term.typer(rterm, TypedAst.Type.Any, root) map {
             case term => TypedAst.Predicate.Body.Loop(ident, term, TypedAst.Type.Bool, loc) // TODO: Type
           }
 
@@ -791,7 +794,9 @@ object Typer {
     * @param loc the source location.
     */
   def expect(expected: TypedAst.Type, actual: TypedAst.Type, loc: SourceLocation): Validation[TypedAst.Type, TypeError] =
-    if (expected == actual)
+    if (expected == TypedAst.Type.Any)
+      actual.toSuccess
+    else if (expected == actual)
       actual.toSuccess
     else
       ExpectedType(expected, actual, loc).toFailure
@@ -829,10 +834,9 @@ object Typer {
     * Returns a Flix type corresponding to the given canonical name.
     */
   private def java2flix(canonicalName: String): TypedAst.Type = canonicalName match {
-    case "ca.uwaterloo.flix.runtime.Value.Unit$" => TypedAst.Type.Unit
-    case "boolean" | "java.lang.Boolean" | "ca.uwaterloo.flix.runtime.Value.Bool" => TypedAst.Type.Bool
-    case "int" | "java.lang.Integer" | "ca.uwaterloo.flix.runtime.Value.Int" => TypedAst.Type.Int
-    case "java.lang.String" | "ca.uwaterloo.flix.runtime.Value.Str" => TypedAst.Type.Str
+    case "boolean" | "java.lang.Boolean" => TypedAst.Type.Bool
+    case "int" | "java.lang.Integer" => TypedAst.Type.Int
+    case "java.lang.String" => TypedAst.Type.Str
     case t if t.matches("scala.Tuple[2-5]") =>
       // Create a list of N TypedAst.Type.Native("java.lang.Object")
       val types = List().padTo(t.last - '0', TypedAst.Type.Native("java.lang.Object"))
@@ -845,6 +849,7 @@ object Typer {
     * Returns a human readable string representation of the given type `tpe`.
     */
   private def prettyPrint(tpe: TypedAst.Type): String = tpe match {
+    case TypedAst.Type.Any => "Any"
     case TypedAst.Type.Var(x) => s"Var($x)"
     case TypedAst.Type.Unit => s"()"
     case TypedAst.Type.Bool => s"Bool"

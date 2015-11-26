@@ -61,6 +61,7 @@ class AsciiTable {
       case _: Double => Align.Right
       case _: Float => Align.Right
       case _: Int => Align.Right
+      case _: Long => Align.Right
       case _ => Align.Left
     }
     this

@@ -16,7 +16,8 @@ object ResolvedAst {
                   collections: Map[Name.Resolved, ResolvedAst.Collection],
                   indexes: Map[Name.Resolved, ResolvedAst.Definition.Index],
                   facts: List[ResolvedAst.Constraint.Fact],
-                  rules: List[ResolvedAst.Constraint.Rule]) extends ResolvedAst
+                  rules: List[ResolvedAst.Constraint.Rule],
+                  time: Time) extends ResolvedAst
 
   sealed trait Definition
 

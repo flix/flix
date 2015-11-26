@@ -3,8 +3,9 @@ package ca.uwaterloo.flix.language
 import java.nio.file.{Files, Path}
 
 import ca.uwaterloo.flix.Flix
-import ca.uwaterloo.flix.language.ast.{SourceInput, TypedAst, ParsedAst}
-import ca.uwaterloo.flix.language.phase.Parser
+import ca.uwaterloo.flix.language.ast.{SourceInput, TypedAst}
+import ca.uwaterloo.flix.language.frontend.ast.ParsedAst
+import ca.uwaterloo.flix.language.frontend.phase.Parser
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.util.AnsiConsole
 import ca.uwaterloo.flix.util.Validation
@@ -89,7 +90,7 @@ object Compiler {
   def parseStrings(strings: Traversable[String]): Validation[ParsedAst.Root, CompilationError] = {
     @@(strings map parse) map {
       case asts => asts.reduce[ParsedAst.Root] {
-        case (ast1, ast2) => ParsedAst.Root(ast1.declarations ++ ast2.declarations)
+        case (ast1, ast2) => ParsedAst.Root(ast1.declarations ++ ast2.declarations, ast1.time) // TODO: Merge trees differently due to time
       }
     }
   }
@@ -113,7 +114,7 @@ object Compiler {
   def parsePaths(paths: Traversable[Path]): Validation[ParsedAst.Root, CompilationError] = {
     @@(paths map parse) map {
       case asts => asts.reduce[ParsedAst.Root] {
-        case (ast1, ast2) => ParsedAst.Root(ast1.declarations ++ ast2.declarations)
+        case (ast1, ast2) => ParsedAst.Root(ast1.declarations ++ ast2.declarations, ast1.time) // TODO: Merge trees differently due to time
       }
     }
   }

@@ -14,6 +14,8 @@ object Main {
    */
   def main(args: Array[String]): Unit = {
 
+    // TODO: Commandline arguments.
+
     val t = System.nanoTime()
     val paths = args flatMap getValidPath
 
@@ -34,8 +36,10 @@ object Main {
    */
   private def getValidPath(s: String): Option[Path] = try {
     val path = Paths.get(s)
-    if (!Files.exists(path) || !Files.isRegularFile(path))
+    if (!Files.exists(path) || !Files.isRegularFile(path)) {
+      Console.println(s"Skipping $s. Not a valid path.")
       None
+    }
     else
       Some(path)
   } catch {

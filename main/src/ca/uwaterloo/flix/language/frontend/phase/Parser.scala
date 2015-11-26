@@ -1,18 +1,18 @@
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.language.frontend.phase
 
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.frontend.ast.ParsedAst
 
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
-import scala.collection.mutable
 import scala.io.Source
 
 // TODO: Parse whitespace more "tightly" to improve source positions.
 
 /**
-  * A parser for the Flix language.
-  */
+ * A parser for the Flix language.
+ */
 class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   /*
@@ -27,7 +27,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Root                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Root: Rule1[ParsedAst.Root] = rule {
-    optWS ~ zeroOrMore(Declaration).separatedBy(optWS) ~ optWS ~ EOI ~> ParsedAst.Root
+    push(System.nanoTime()) ~ optWS ~ zeroOrMore(Declaration).separatedBy(optWS) ~ optWS ~ push(System.nanoTime()) ~ EOI ~>
+      ((b: Long, decls: Seq[ParsedAst.Declaration], e: Long) => ParsedAst.Root(decls, Time(e - b, 0, 0, 0)))
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -142,19 +143,19 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def LogicalExpression: Rule1[ParsedAst.Expression] = rule {
-    ComparisonExpression ~ optional(optWS ~ SP ~ LogicalOp ~ optWS ~ ComparisonExpression ~ SP ~> ParsedAst.Expression.Binary)
+    ComparisonExpression ~ optional(optWS ~ SP ~ Operator.LogicalOp ~ optWS ~ ComparisonExpression ~ SP ~> ParsedAst.Expression.Binary)
   }
 
   def ComparisonExpression: Rule1[ParsedAst.Expression] = rule {
-    AdditiveExpression ~ optional(optWS ~ SP ~ ComparisonOp ~ optWS ~ AdditiveExpression ~ SP ~> ParsedAst.Expression.Binary)
+    AdditiveExpression ~ optional(optWS ~ SP ~ Operator.ComparisonOp ~ optWS ~ AdditiveExpression ~ SP ~> ParsedAst.Expression.Binary)
   }
 
   def AdditiveExpression: Rule1[ParsedAst.Expression] = rule {
-    MultiplicativeExpression ~ zeroOrMore(optWS ~ SP ~ AdditiveOp ~ optWS ~ MultiplicativeExpression ~ SP ~> ParsedAst.Expression.Binary)
+    MultiplicativeExpression ~ zeroOrMore(optWS ~ SP ~ Operator.AdditiveOp ~ optWS ~ MultiplicativeExpression ~ SP ~> ParsedAst.Expression.Binary)
   }
 
   def MultiplicativeExpression: Rule1[ParsedAst.Expression] = rule {
-    InfixExpression ~ zeroOrMore(optWS ~ SP ~ MultiplicativeOp ~ optWS ~ InfixExpression ~ SP ~> ParsedAst.Expression.Binary)
+    InfixExpression ~ zeroOrMore(optWS ~ SP ~ Operator.MultiplicativeOp ~ optWS ~ InfixExpression ~ SP ~> ParsedAst.Expression.Binary)
   }
 
   def InfixExpression: Rule1[ParsedAst.Expression] = rule {
@@ -162,7 +163,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def UnaryExpression: Rule1[ParsedAst.Expression] = rule {
-    (SP ~ UnaryOp ~ optWS ~ UnaryExpression ~ SP ~> ParsedAst.Expression.Unary) | AscribeExpression
+    (SP ~ Operator.Unary ~ optWS ~ UnaryExpression ~ SP ~> ParsedAst.Expression.Unary) | AscribeExpression
   }
 
   def AscribeExpression: Rule1[ParsedAst.Expression] = rule {
@@ -519,44 +520,66 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Operators                                                               //
   /////////////////////////////////////////////////////////////////////////////
-  def UnaryOp: Rule1[UnaryOperator] = rule {
-    str("!") ~> (() => UnaryOperator.Not) |
-      str("+") ~> (() => UnaryOperator.UnaryPlus) |
-      str("-") ~> (() => UnaryOperator.UnaryMinus) |
-      atomic("isEmpty?") ~> (() => UnaryOperator.Set.IsEmpty) |
-      atomic("nonEmpty?") ~> (() => UnaryOperator.Set.NonEmpty) |
-      atomic("singleton?") ~> (() => UnaryOperator.Set.Singleton) |
-      atomic("size?") ~> (() => UnaryOperator.Set.Size)
+  object Operator {
+
+    /**
+     * Parses a unary operator.
+     */
+    def Unary: Rule1[UnaryOperator] = rule {
+      atomic("!") ~> (() => UnaryOperator.Not) |
+        atomic("+") ~> (() => UnaryOperator.UnaryPlus) |
+        atomic("-") ~> (() => UnaryOperator.UnaryMinus) |
+        // set operators
+        atomic("isEmpty?") ~> (() => UnaryOperator.Set.IsEmpty) |
+        atomic("nonEmpty?") ~> (() => UnaryOperator.Set.NonEmpty) |
+        atomic("singleton?") ~> (() => UnaryOperator.Set.Singleton) |
+        atomic("size?") ~> (() => UnaryOperator.Set.Size)
+    }
+
+    /**
+     * Parses a logical operator.
+     */
+    def LogicalOp: Rule1[BinaryOperator] = rule {
+      atomic("&&") ~> (() => BinaryOperator.And) |
+        atomic("||") ~> (() => BinaryOperator.Or)
+    }
+
+    /**
+     * Parses a comparison operator.
+     */
+    def ComparisonOp: Rule1[BinaryOperator] = rule {
+      atomic("<=") ~> (() => BinaryOperator.LessEqual) |
+        atomic(">=") ~> (() => BinaryOperator.GreaterEqual) |
+        atomic("<") ~> (() => BinaryOperator.Less) |
+        atomic(">") ~> (() => BinaryOperator.Greater) |
+        atomic("==") ~> (() => BinaryOperator.Equal) |
+        atomic("!=") ~> (() => BinaryOperator.NotEqual)
+    }
+
+    /**
+     * Parses a multiplicative operator.
+     */
+    def MultiplicativeOp: Rule1[BinaryOperator] = rule {
+      atomic("*") ~> (() => BinaryOperator.Times) |
+        atomic("/") ~> (() => BinaryOperator.Divide) |
+        atomic("%") ~> (() => BinaryOperator.Modulo) |
+        // set operators
+        atomic("+=") ~> (() => BinaryOperator.Set.Insert) |
+        atomic("-=") ~> (() => BinaryOperator.Set.Remove) |
+        atomic("++") ~> (() => BinaryOperator.Set.Union) |
+        atomic("--") ~> (() => BinaryOperator.Set.Difference)
+    }
+
+    /**
+     * Parses an additive operator.
+     */
+    def AdditiveOp: Rule1[BinaryOperator] = rule {
+      atomic("+") ~> (() => BinaryOperator.Plus) |
+        atomic("-") ~> (() => BinaryOperator.Minus)
+    }
+
   }
 
-  def LogicalOp: Rule1[BinaryOperator] = rule {
-    str("&&") ~> (() => BinaryOperator.And) |
-      str("||") ~> (() => BinaryOperator.Or)
-  }
-
-  def ComparisonOp: Rule1[BinaryOperator] = rule {
-    str("<=") ~> (() => BinaryOperator.LessEqual) |
-      str(">=") ~> (() => BinaryOperator.GreaterEqual) |
-      str("<") ~> (() => BinaryOperator.Less) |
-      str(">") ~> (() => BinaryOperator.Greater) |
-      str("==") ~> (() => BinaryOperator.Equal) |
-      str("!=") ~> (() => BinaryOperator.NotEqual)
-  }
-
-  def MultiplicativeOp: Rule1[BinaryOperator] = rule {
-    str("*") ~> (() => BinaryOperator.Times) |
-      str("/") ~> (() => BinaryOperator.Divide) |
-      str("%") ~> (() => BinaryOperator.Modulo) |
-      atomic("+=") ~> (() => BinaryOperator.Set.Insert) |
-      atomic("-=") ~> (() => BinaryOperator.Set.Remove) |
-      atomic("++") ~> (() => BinaryOperator.Set.Union) |
-      atomic("--") ~> (() => BinaryOperator.Set.Difference)
-  }
-
-  def AdditiveOp: Rule1[BinaryOperator] = rule {
-    str("+") ~> (() => BinaryOperator.Plus) |
-      str("-") ~> (() => BinaryOperator.Minus)
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //

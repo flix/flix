@@ -46,7 +46,7 @@ class TestValue extends FunSuite {
     val v: Value = Value.True
 
     val result = v match {
-      case Value.Bool(b) => s"$b"
+      case v: Value.Bool => s"${v.b}"
       case _ => "unknown"
     }
 
@@ -96,7 +96,7 @@ class TestValue extends FunSuite {
     val v: Value = Value.mkInt(123456789)
 
     val result = v match {
-      case Value.Int(i) => s"$i"
+      case v: Value.Int => s"${v.i}"
       case _ => "unknown"
     }
 
@@ -146,7 +146,7 @@ class TestValue extends FunSuite {
     val v: Value = Value.mkStr("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
     val result = v match {
-      case Value.Str(s) => s"$s!!!"
+      case v: Value.Str => s"${v.s}!!!"
       case _ => "unknown"
     }
 
@@ -154,8 +154,8 @@ class TestValue extends FunSuite {
   }
 
   test("Value.Tag equality") {
-    val name1 = Name.Resolved(List("foo", "bar"))
-    val name2 = Name.Resolved(List("abc", "def"))
+    val name1 = Name.Resolved.mk(List("foo", "bar"))
+    val name2 = Name.Resolved.mk(List("abc", "def"))
     val t1 = Value.mkTag(name1, "aaa", Value.mkInt(42))
     val t2 = Value.mkTag(name1, "aaa", Value.mkInt(10))
     val t3 = Value.mkTag(name1, "zzz", Value.mkInt(42))
@@ -204,8 +204,8 @@ class TestValue extends FunSuite {
 
   test("Value.Tag hashing") {
     val set: mutable.Set[Value.Tag] = mutable.Set()
-    val name1 = Name.Resolved(List("foo", "bar"))
-    val name2 = Name.Resolved(List("abc", "def"))
+    val name1 = Name.Resolved.mk(List("foo", "bar"))
+    val name2 = Name.Resolved.mk(List("abc", "def"))
     val t1 = Value.mkTag(name1, "aaa", Value.mkInt(42))
     val t2 = Value.mkTag(name1, "aaa", Value.mkInt(10))
     val t3 = Value.mkTag(name1, "zzz", Value.mkInt(42))
@@ -237,22 +237,22 @@ class TestValue extends FunSuite {
   }
 
   test("Value.Tag pattern matching") {
-    val v: Value = Value.mkTag(Name.Resolved(List("foo", "bar")), "aaa", Value.mkInt(42))
+    val v: Value = Value.mkTag(Name.Resolved.mk(List("foo", "bar")), "aaa", Value.mkInt(42))
 
     val r1 = v match {
-      case Value.Tag(enum, tag, value) => enum
-      case _ => Name.Resolved(List("hi"))
+      case v: Value.Tag => v.enum
+      case _ => Name.Resolved.mk(List("hi"))
     }
-    assert(r1 == Name.Resolved(List("foo", "bar")))
+    assert(r1 == Name.Resolved.mk(List("foo", "bar")))
 
     val r2 = v match {
-      case Value.Tag(enum, tag, value) => tag
+      case v: Value.Tag => v.tag
       case _ => "???"
     }
     assert(r2 == "aaa")
 
     val r3 = v match {
-      case Value.Tag(enum, tag, value) => value
+      case v: Value.Tag => v.value
       case _ => Value.Unit
     }
     assert(r3 == Value.mkInt(42))

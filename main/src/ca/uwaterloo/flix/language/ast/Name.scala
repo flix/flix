@@ -2,6 +2,8 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.util.SmartHash
 
+import scala.collection.mutable
+
 object Name {
 
   /**
@@ -42,18 +44,43 @@ object Name {
     override val toString: String = "?" + parts.mkString("::")
   }
 
+
+  /**
+   * Companion object for the [[Resolved]] class.
+   */
+  object Resolved {
+
+    private val cache = mutable.HashMap.empty[List[String], Resolved]
+
+    def mk(parts: List[String]): Resolved = {
+      cache.getOrElseUpdate(parts, new Resolved(parts))
+    }
+  }
+
   /**
    * Represents a resolved name.
    *
    * @param parts the parts of the name.
    */
-  // TODO: intern
-  case class Resolved(parts: List[String]) extends SmartHash {
+  final class Resolved private(val parts: List[String]) {
+
+    /**
+     * Returns `true` if this resolved name is equal to `obj` resolved name.
+     */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: Resolved => this eq that
+      case _ => false
+    }
+
+    /**
+     * Returns the hash code of this resolved name.
+     */
+    override val hashCode: Int = parts.hashCode()
+
     /**
      * Returns a human readable string representation of the resolved name.
      */
-    override val toString: String = "/" + parts.mkString("::")
+    override val toString: String = parts.mkString("::")
   }
-
 
 }

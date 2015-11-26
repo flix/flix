@@ -10,9 +10,9 @@ class TestTyper extends FunSuite {
   // TODO: Consider using real syntax?
 
   val SL = SourceLocation.Unknown
-  val Root = ResolvedAst.Root(Map.empty, List.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty)
+  val Root = ResolvedAst.Root(Map.empty, List.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty, new Time(0, 0, 0, 0))
   val Ident = ident("x")
-  val RName = Name.Resolved(List("foo", "bar"))
+  val RName = Name.Resolved.mk(List("foo", "bar"))
 
   /////////////////////////////////////////////////////////////////////////////
   // Definitions                                                             //
@@ -124,7 +124,7 @@ class TestTyper extends FunSuite {
   // Constraints                                                             //
   /////////////////////////////////////////////////////////////////////////////
   test("Constraint.Fact01") {
-    val rname = Name.Resolved(List("Student"))
+    val rname = Name.Resolved.mk(List("Student"))
 
     val root = Root.copy(collections = Map(
       rname -> ResolvedAst.Collection.Relation(rname, List(
@@ -144,7 +144,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Constraint.Rule01") {
-    val rname = Name.Resolved(List("Edge"))
+    val rname = Name.Resolved.mk(List("Edge"))
     val x = ident("x")
     val y = ident("y")
     val z = ident("z")
@@ -207,7 +207,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Literal.Tag") {
-    val enumName = Name.Resolved(List("foo", "bar", "baz"))
+    val enumName = Name.Resolved.mk(List("foo", "bar", "baz"))
     val tagName = ident("Qux")
     val literal = ResolvedAst.Literal.Unit(SL)
     val rast = ResolvedAst.Literal.Tag(enumName, tagName, literal, SL)
@@ -270,7 +270,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Ref01") {
-    val rname = Name.Resolved(List("foo", "bar"))
+    val rname = Name.Resolved.mk(List("foo", "bar"))
     val rast = ResolvedAst.Expression.Ref(rname, SL)
 
     val root = Root.copy(constants = Map(
@@ -285,7 +285,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Ref02") {
-    val rname = Name.Resolved(List("foo", "bar"))
+    val rname = Name.Resolved.mk(List("foo", "bar"))
     val rast = ResolvedAst.Expression.Ref(rname, SL)
 
     val root = Root.copy(constants = Map(
@@ -632,7 +632,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Tag01") {
-    val enumName = Name.Resolved(List("Foo", "Bar"))
+    val enumName = Name.Resolved.mk(List("Foo", "Bar"))
     val tagName = ident("Qux")
     val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL), SL)
 
@@ -648,7 +648,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Tag02") {
-    val enumName = Name.Resolved(List("Foo", "Bar"))
+    val enumName = Name.Resolved.mk(List("Foo", "Bar"))
     val tagName = ident("C")
     val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
 
@@ -672,7 +672,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Tag.TypeError") {
-    val enumName = Name.Resolved(List("Foo", "Bar"))
+    val enumName = Name.Resolved.mk(List("Foo", "Bar"))
     val tagName = ident("A")
     val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
 
@@ -853,7 +853,7 @@ class TestTyper extends FunSuite {
   // Predicates & Terms                                                      //
   /////////////////////////////////////////////////////////////////////////////
   test("Predicate.Head01") {
-    val rname = Name.Resolved(List("foo", "bar"))
+    val rname = Name.Resolved.mk(List("foo", "bar"))
     val x = ident("x")
     val y = ident("y")
     val z = ident("z")
@@ -884,7 +884,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Predicate.Head02") {
-    val rname = Name.Resolved(List("foo", "bar"))
+    val rname = Name.Resolved.mk(List("foo", "bar"))
     val x = ident("x")
     val y = ident("y")
     val z = ident("z")
@@ -917,8 +917,8 @@ class TestTyper extends FunSuite {
   }
 
   test("Predicate.Head03") {
-    val relationName = Name.Resolved(List("foo", "bar"))
-    val functionName = Name.Resolved(List("foo", "baz"))
+    val relationName = Name.Resolved.mk(List("foo", "bar"))
+    val functionName = Name.Resolved.mk(List("foo", "baz"))
     val x = ident("x")
 
     // NB: Somewhat misleading we use the same identifiers for both columns and variables.
@@ -953,7 +953,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Predicate.Body01") {
-    val rname = Name.Resolved(List("foo", "bar"))
+    val rname = Name.Resolved.mk(List("foo", "bar"))
     val x = ident("x")
     val y = ident("y")
     val z = ident("z")
@@ -1148,6 +1148,4 @@ class TestTyper extends FunSuite {
     val result = Compiler.compile(input)
     assert(result.isSuccess)
   }
-
-  // TODO(mhyee): Flix values from native code
 }

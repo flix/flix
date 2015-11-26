@@ -9,23 +9,23 @@ import ca.uwaterloo.flix.util.{BitOps, AsciiTable}
 import scala.collection.mutable
 
 /**
-  * A class implementing a data store for indexed relations and lattices.
-  */
+ * A class implementing a data store for indexed relations and lattices.
+ */
 class DataStore(implicit sCtx: Solver.SolverContext) {
 
   /**
-    * A map from names to indexed relations.
-    */
+   * A map from names to indexed relations.
+   */
   val relations = mutable.Map.empty[Name.Resolved, IndexedRelation]
 
   /**
-    * A map from names to indexed lattices.
-    */
+   * A map from names to indexed lattices.
+   */
   val lattices = mutable.Map.empty[Name.Resolved, IndexedLattice]
 
   /**
-    * Initializes the relations and lattices.
-    */
+   * Initializes the relations and lattices.
+   */
   // compute indexes based on the program constraint rules.
   val indexes = Indexer.index(sCtx.root)
 
@@ -41,7 +41,7 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
         relations(name) = new IndexedRelation(r, idx, idx.head)
 
       case l: Collection.Lattice =>
-        lattices(name) = new IndexedLattice(l, idx, idx.head)
+        lattices(name) = new IndexedLattice(l, idx)
     }
   }
 
@@ -57,6 +57,56 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
       ))
     }
     t.write(Console.out)
+    Console.out.println()
+
+    val t2 = new AsciiTable().withCols("Name", "Size")
+    for ((name, lattice) <- lattices) {
+      t2.mkRow(List(
+        name,
+        lattice.scan.length
+      ))
+    }
+    t2.write(Console.out)
+    Console.out.println()
+
+    Console.out.println(">> Index Hits")
+    val t3 = new AsciiTable().withCols("Relation", "Index", "Hits")
+    val table = relations flatMap {
+      case (name, relation) => relation.getIndexHitCounts.map {
+        case (index, count) => (name, "{" + index.mkString(", ") + "}", count)
+      }
+    }
+    for ((name, index, count) <- table.toList.sortBy(_._3).reverse) {
+      t3.mkRow(List(name, index, count))
+    }
+    t3.write(Console.out)
+    Console.out.println()
   }
+
+  def totalFacts: Int = {
+    var result: Int = 0
+    for ((name, relation) <- relations) {
+      result += relation.getSize
+    }
+    for ((name, lattices) <- lattices) {
+      result += lattices.getSize
+    }
+    return result
+  }
+
+  def predicateStats: List[(String, Int, Int, Int, Int)] = relations.map {
+    case (name, relation) => (
+      name.toString,
+      relation.getSize,
+      relation.getNumberOfIndexedLookups,
+      relation.getNumberOfIndexedScans,
+      relation.getNumberOfFullScans)
+  }.toSeq.sortBy(_._3).reverse.toList
+
+  def indexStats: List[(String, String, Int)] = relations.flatMap {
+    case (name, relation) => relation.getIndexHitCounts.map {
+      case (index, count) => (name.toString, "{" + index.mkString(", ") + "}", count)
+    }
+  }.toSeq.sortBy(_._3).reverse.toList
 
 }

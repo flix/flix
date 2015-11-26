@@ -5,6 +5,9 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Type
 
 import java.lang.reflect.Method
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
+import java.util
 
 sealed trait Value {
   def toBool: Boolean = this.asInstanceOf[Value.Bool].b
@@ -16,29 +19,30 @@ sealed trait Value {
   def toSet: Set[Value] = this.asInstanceOf[Value.Set].elms
 
   def toJava: java.lang.Object = (this: @unchecked) match {
-    case Value.Bool(b) => boolean2Boolean(b)
-    case Value.Int(i) => int2Integer(i)
-    case Value.Str(s) => s
-    case Value.Tuple(elms) if (2 to 5).contains(elms.size) =>
-      val javaElms = elms.map(_.toJava)
-      javaElms.size match {
-        case 2 => (javaElms(0), javaElms(1))
-        case 3 => (javaElms(0), javaElms(1), javaElms(2))
-        case 4 => (javaElms(0), javaElms(1), javaElms(2), javaElms(3))
-        case 5 => (javaElms(0), javaElms(1), javaElms(2), javaElms(3), javaElms(4))
-      }
+    case v: Value.Bool => boolean2Boolean(v.b)
+    case v: Value.Int => int2Integer(v.i)
+    case v: Value.Str => v.s
+    case Value.Tuple(elms) if elms.length == 2 =>
+      (elms(0).toJava, elms(1).toJava)
+    case Value.Tuple(elms) if elms.length == 3 =>
+      (elms(0).toJava, elms(1).toJava, elms(2).toJava)
+    case Value.Tuple(elms) if elms.length == 4 =>
+      (elms(0).toJava, elms(1).toJava, elms(2).toJava, elms(3).toJava)
+    case Value.Tuple(elms) if elms.length == 5 =>
+      (elms(0).toJava, elms(1).toJava, elms(2).toJava, elms(3).toJava, elms(4).toJava)
     case Value.Set(elms) => elms.map(_.toJava)
     case Value.Native(v) => v
-    case Value.Unit | Value.Tag(_) | Value.Tuple(_) | Value.Closure(_, _, _) | Value.NativeMethod(_) => this
+    case v: Value.Tag => this
+    case Value.Unit | Value.Tuple(_) | Value.Closure(_, _, _) | Value.NativeMethod(_) => this
   }
 
   //  TODO: Figure out a place to put all the formatting functions.
   def pretty: String = this match {
     case Value.Unit => "()"
-    case Value.Bool(b) => b.toString
-    case Value.Int(i) => i.toString
-    case Value.Str(s) => s.toString
-    case Value.Tag(enum, tag, value) => s"$enum.$tag(${value.pretty})"
+    case v: Value.Bool => v.b.toString
+    case v: Value.Int => v.i.toString
+    case v: Value.Str => v.s.toString
+    case v: Value.Tag => s"${v.enum}.${v.tag}(${v.value.pretty})"
     case Value.Tuple(elms) => "(" + elms.map(_.pretty).mkString(",") + ")"
     case Value.Set(elms) => "{" + elms.map(_.pretty).mkString(",") + "}"
     case Value.Closure(_, _, _) => ???
@@ -66,10 +70,6 @@ object Value {
     override val hashCode: scala.Int = b.hashCode
   }
 
-  object Bool {
-    def unapply(v: Value.Bool): Option[scala.Boolean] = Some(v.b)
-  }
-
   val True = new Value.Bool(true)
   val False = new Value.Bool(false)
 
@@ -86,10 +86,6 @@ object Value {
     }
 
     override val hashCode: scala.Int = i.hashCode
-  }
-
-  object Int {
-    def unapply(v: Value.Int): Option[scala.Int] = Some(v.i)
   }
 
   // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
@@ -118,10 +114,6 @@ object Value {
     override val hashCode: scala.Int = s.hashCode
   }
 
-  object Str {
-    def unapply(v: Value.Str): Option[java.lang.String] = Some(v.s)
-  }
-
   // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
   private val strCache = mutable.HashMap[java.lang.String, Value.Str]()
 
@@ -145,11 +137,7 @@ object Value {
       case _ => false
     }
 
-    override val hashCode: scala.Int = (enum, tag, value).hashCode
-  }
-
-  object Tag {
-    def unapply(v: Value.Tag): Option[(Name.Resolved, java.lang.String, Value)] = Some((v.enum, v.tag, v.value))
+    override val hashCode: scala.Int = 41 * (41 * (41 + enum.hashCode) + tag.hashCode) + value.hashCode
   }
 
   // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
@@ -170,55 +158,86 @@ object Value {
     * Value.Tuple, Value.Set, Value.Closure implementations                   *
     * **************************************************************************/
 
-  case class Tuple(elms: List[Value]) extends Value
+  final case class Tuple(elms: Array[Value]) extends Value {
+    override def toString: java.lang.String = s"Value.Tuple(Array(${elms.mkString(",")}))"
+
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: Value.Tuple =>
+        util.Arrays.equals(this.elms.asInstanceOf[Array[AnyRef]], that.elms.asInstanceOf[Array[AnyRef]])
+      case _ => false
+    }
+
+    override def hashCode: scala.Int = util.Arrays.hashCode(elms.asInstanceOf[Array[AnyRef]])
+  }
 
   case class Set(elms: scala.collection.immutable.Set[Value]) extends Value
 
-  case class Closure(formals: List[TypedAst.FormalArg], body: TypedAst.Expression, env: Interpreter.Env) extends Value
+  final case class Closure(formals: Array[String], body: TypedAst.Expression, env: mutable.Map[String, Value]) extends Value {
+    override def toString: java.lang.String = s"Value.Closure(Array(${formals.mkString(",")}), $body, $env)"
+
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: Value.Closure =>
+        util.Arrays.equals(this.formals.asInstanceOf[Array[AnyRef]], that.formals.asInstanceOf[Array[AnyRef]]) &&
+          this.body == that.body && this.env == that.env
+      case _ => false
+    }
+
+    override def hashCode: scala.Int =
+      41 * (41 * (41 + util.Arrays.hashCode(formals.asInstanceOf[Array[AnyRef]])) + body.hashCode) + env.hashCode
+  }
 
   /** *************************************************************************
     * Value.Native, Value.NativeMethod implementations                        *
     * **************************************************************************/
 
-  case class Native(value: AnyRef) extends Value
+  final case class Native(value: AnyRef) extends Value
 
-  case class NativeMethod(method: Method) extends Value
+  final case class NativeMethod(method: Method) extends Value
 
   /** *************************************************************************
     * Convert from native values to Flix values                               *
     * **************************************************************************/
 
-  def java2flix(obj: AnyRef, tpe: Type): Value = obj match {
-    case v: Value.Unit.type => v
-    case v: Value.Bool => v
-    case v: Value.Int => v
-    case v: Value.Str => v
-    case _ => tpe match {
-      case Type.Bool => if (obj.asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
-      case Type.Int => Value.mkInt(obj.asInstanceOf[java.lang.Integer].intValue)
-      case Type.Str => Value.mkStr(obj.asInstanceOf[java.lang.String])
-      case Type.Tuple(typs) if (2 to 5).contains(typs.size) =>
-        def makeTuple(elms: java.lang.Object*): Value.Tuple =
-          Value.Tuple(elms.toList.zip(typs).map { case (e, t) => java2flix(e, t) })
-        typs.size match {
-          case 2 =>
-            val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object)]
-            makeTuple(t._1, t._2)
-          case 3 =>
-            val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object)]
-            makeTuple(t._1, t._2, t._3)
-          case 4 =>
-            val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
-            makeTuple(t._1, t._2, t._3, t._4)
-          case 5 =>
-            val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
-            makeTuple(t._1, t._2, t._3, t._4, t._5)
-        }
-      case Type.Set(typ) =>
-        Value.Set(obj.asInstanceOf[scala.collection.immutable.Set[java.lang.Object]].map(e => java2flix(e, typ)))
-      case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) |
-           Type.Predicate(_) | Type.Native(_) =>
-        Value.Native(obj)
-    }
+  def java2flix(obj: AnyRef, tpe: Type): Value = tpe match {
+    case Type.Bool => if (obj.asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
+    case Type.Int => Value.mkInt(obj.asInstanceOf[java.lang.Integer].intValue)
+    case Type.Str => Value.mkStr(obj.asInstanceOf[java.lang.String])
+    case typs: Type.Tuple =>
+      val typsArray = typs.asArray
+      val tupleElms = new Array[Value](typsArray.length)
+      typsArray.length match {
+        case 2 =>
+          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object)]
+          tupleElms(0) = java2flix(t._1, typsArray(0))
+          tupleElms(1) = java2flix(t._2, typsArray(1))
+          Value.Tuple(tupleElms)
+        case 3 =>
+          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object)]
+          tupleElms(0) = java2flix(t._1, typsArray(0))
+          tupleElms(1) = java2flix(t._2, typsArray(1))
+          tupleElms(2) = java2flix(t._3, typsArray(2))
+          Value.Tuple(tupleElms)
+        case 4 =>
+          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
+          tupleElms(0) = java2flix(t._1, typsArray(0))
+          tupleElms(1) = java2flix(t._2, typsArray(1))
+          tupleElms(2) = java2flix(t._3, typsArray(2))
+          tupleElms(3) = java2flix(t._4, typsArray(3))
+          Value.Tuple(tupleElms)
+        case 5 =>
+          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
+          tupleElms(0) = java2flix(t._1, typsArray(0))
+          tupleElms(1) = java2flix(t._2, typsArray(1))
+          tupleElms(2) = java2flix(t._3, typsArray(2))
+          tupleElms(3) = java2flix(t._4, typsArray(3))
+          tupleElms(4) = java2flix(t._5, typsArray(4))
+          Value.Tuple(tupleElms)
+        case _ => Value.Native(obj)
+      }
+    case Type.Set(typ) =>
+      Value.Set(obj.asInstanceOf[scala.collection.immutable.Set[java.lang.Object]].map(e => java2flix(e, typ)))
+    case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Set(_) | Type.Lambda(_, _) |
+         Type.Predicate(_) | Type.Native(_) =>
+      Value.Native(obj)
   }
 }
