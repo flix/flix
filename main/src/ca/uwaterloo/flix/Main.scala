@@ -43,7 +43,9 @@ object Main {
   private def getValidPath(s: String): Option[Path] = try {
     val path = Paths.get(s)
     if (!Files.exists(path) || !Files.isRegularFile(path)) {
-      Console.println(s"Skipping $s. Not a valid path.")
+      if (!s.startsWith("-")) {
+        Console.println(s"Skipping $s. Not a valid path.")
+      }
       None
     }
     else
