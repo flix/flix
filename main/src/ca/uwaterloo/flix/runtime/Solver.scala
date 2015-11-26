@@ -43,10 +43,10 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
    */
   def solve(): Model = {
 
+    monitor.start()
+
     val restServer = new RestServer(this)
     restServer.start() //  TODO
-
-    monitor.start()
 
     // measure the time elapsed.
     val t = System.nanoTime()
@@ -72,7 +72,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     val elapsed = System.nanoTime() - t
     println(s"Successfully solved in ${elapsed / 1000000} msec.")
 
-    monitor.interrupt()
+    monitor.stop()
 
     // print some statistics.
     dataStore.stats()

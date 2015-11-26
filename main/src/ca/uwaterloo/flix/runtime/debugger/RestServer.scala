@@ -6,7 +6,7 @@ import java.nio.file.{Paths, Files}
 import java.util.concurrent.Executors
 
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.runtime.Solver
+import ca.uwaterloo.flix.runtime.{Monitor, Solver}
 import ca.uwaterloo.flix.runtime.datastore.{IndexedLattice, IndexedRelation}
 
 import com.sun.net.httpserver.{HttpServer, HttpExchange, HttpHandler}
@@ -246,12 +246,12 @@ class RestServer(solver: Solver) {
    * Returns a list of telemetry samples.
    */
   class GetTelemetry extends JsonHandler {
-    def json: JValue = JArray(solver.monitor.telemetry.reverse.map {
-      case solver.monitor.DataSample(time, facts, queue, memory) =>
+    def json: JValue = JArray(solver.monitor.getTelemetry.reverse.map {
+      case Monitor.Sample(time, queue, facts, memory) =>
         JObject(List(
           JField("time", JInt(time / 1000000)),
-          JField("facts", JInt(facts)),
           JField("queue", JInt(queue)),
+          JField("facts", JInt(facts)),
           JField("memory", JInt(memory))
         ))
     })
