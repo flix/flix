@@ -25,7 +25,7 @@ object Main {
     if (debugger)
       options = options.copy(debugger = Debugger.Enabled)
 
-    Flix.mkPath(paths) match {
+    Flix.mkPath(paths, options) match {
       case Validation.Success(model, errors) =>
         errors.foreach(e => println(e.format))
         model.print()
