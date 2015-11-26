@@ -39,6 +39,12 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   val monitor = new Monitor(this)
 
   /**
+   * The current state of the solver.
+   */
+  @volatile
+  var paused: Boolean = false
+
+  /**
    * Returns the number of elements in the worklist.
    */
   def getQueueSize = worklist.length
@@ -47,6 +53,23 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
    * Returns the number of facts in the database.
    */
   def getNumberOfFacts: Int = dataStore.totalFacts
+
+  /**
+   * Pauses the solver.
+   *
+   * The state of database might be pre-fixedpoint.
+   */
+  def pause(): Unit = synchronized {
+    paused = true
+  }
+
+  /**
+   * Resumes the fixpoint computation.
+   */
+  def resume(): Unit = synchronized {
+    paused = false
+    notify()
+  }
 
   /**
    * Solves the current Flix program.
@@ -58,7 +81,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     val restServer = new RestServer(this)
     restServer.start() //  TODO
 
-    val shell = new Shell()
+    val shell = new Shell(this)
     shell.start()
 
     // measure the time elapsed.
@@ -76,6 +99,11 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
 
     // iterate until fixpoint.
     while (worklist.nonEmpty) {
+      if (paused) {
+        synchronized {
+          wait()
+        }
+      }
       // extract fact from the worklist.
       val (rule, env) = worklist.pop()
       evalBody(rule, env)

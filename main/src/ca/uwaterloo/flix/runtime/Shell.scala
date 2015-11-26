@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.util.Version
 
-class Shell() extends Thread {
+class Shell(solver: Solver) extends Thread {
 
   /**
    * A common super-type for input commands.
@@ -80,7 +80,7 @@ class Shell() extends Thread {
    * Parses the string `line` into a command.
    */
   private def parse(line: String): Input = line match {
-    case null => Input.Exit
+    case null => Input.Abort
     case "" => Input.Nop
     case "exit" | "quit" => Input.Exit
     case "pause" => Input.Pause
@@ -95,13 +95,27 @@ class Shell() extends Thread {
    */
   private def execute(cmd: Input): Unit = cmd match {
     case Input.Nop => // nop
-    case Input.Pause => ???
-    case Input.Unpause => ???
-    case Input.Exit => ???
+
+    case Input.Pause =>
+      Console.println("Fixpoint computation paused.")
+      solver.pause()
+
+    case Input.Unpause =>
+      Console.println("Fixpoint computation resumed.")
+      solver.resume()
+
+    case Input.Exit =>
+
     case Input.Abort =>
       System.exit(1)
+
     case Input.Help =>
       Console.println("Available commands:")
+      Console.println("  pause      -- pauses the fixpoint computation.")
+      Console.println("  resume     -- resumes the fixpoint computation.")
+      Console.println("  exit       -- graceful shutdown.")
+      Console.println("  abort      -- immediate shutdown.")
+
     case Input.Unknown(s) => Console.println(s"Illegal command '$s'. Try `help'.")
   }
 
