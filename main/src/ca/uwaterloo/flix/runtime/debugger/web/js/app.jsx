@@ -627,7 +627,7 @@ var RulesPage = React.createClass({
 
                 <div className="panel panel-default">
                     <div className="panel-body">
-                        The table below shows the time consumed by each rule.
+                        The table shows the number of miliseconds spent in evaluation of each rule.
                     </div>
                 </div>
 
@@ -704,7 +704,7 @@ var PredicatesPage = React.createClass({
 
                 <div className="panel panel-default">
                     <div className="panel-body">
-                        The table below shows the time consumed by lookups for each predicate.
+                        The table shows the number of miliseconds spent in evaluation of each predicate.
                     </div>
                 </div>
 
@@ -774,7 +774,7 @@ var IndexesPage = React.createClass({
 
                 <div className="panel panel-default">
                     <div className="panel-body">
-                        The table shows the usage of indexes in each relation and lattice.
+                        The table shows the usage of indexes for each relation and lattice.
                     </div>
                 </div>
 

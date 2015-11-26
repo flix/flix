@@ -210,7 +210,7 @@ var Menu = React.createClass({displayName: "Menu",
                                                onClick: () => this.props.changePage({name: "relation", relation: name})}, 
                                         React.createElement("a", {href: "#"}, name)
                                     )
-                                    }), 
+                                }), 
 
                                 React.createElement("li", {role: "separator", className: "divider"}), 
 
@@ -220,7 +220,7 @@ var Menu = React.createClass({displayName: "Menu",
                                                onClick: () => this.props.changePage({name: "lattice", lattice: name})}, 
                                         React.createElement("a", {href: "#"}, name)
                                     )
-                                    })
+                                })
                             )
                         )
                     ), 
@@ -409,13 +409,13 @@ var LandingPage = React.createClass({displayName: "LandingPage",
                         React.createElement("div", {className: "list-group"}, 
                             this.props.relations.map(relation => {
                                 return (
-                                React.createElement("a", {href: "#", className: "list-group-item", 
-                                   onClick: () => this.props.changePage({name: "relation", relation: relation.name})}, 
-                                    relation.name, 
-                                    React.createElement("span", {className: "badge"}, numeral(relation.size).format('0,0'))
-                                )
-                                    );
-                                })
+                                    React.createElement("a", {href: "#", className: "list-group-item", 
+                                       onClick: () => this.props.changePage({name: "relation", relation: relation.name})}, 
+                                        relation.name, 
+                                        React.createElement("span", {className: "badge"}, numeral(relation.size).format('0,0'))
+                                    )
+                                );
+                            })
                         ), 
 
                         React.createElement("h3", null, "Lattices"), 
@@ -423,13 +423,13 @@ var LandingPage = React.createClass({displayName: "LandingPage",
                         React.createElement("div", {className: "list-group"}, 
                             this.props.lattices.map(lattice => {
                                 return (
-                                React.createElement("a", {href: "#", className: "list-group-item", 
-                                   onClick: () => this.props.changePage({name: "lattice", lattice: lattice.name})}, 
-                                    lattice.name, 
-                                    React.createElement("span", {className: "badge"}, numeral(lattice.size).format('0,0'))
-                                )
-                                    );
-                                })
+                                    React.createElement("a", {href: "#", className: "list-group-item", 
+                                       onClick: () => this.props.changePage({name: "lattice", lattice: lattice.name})}, 
+                                        lattice.name, 
+                                        React.createElement("span", {className: "badge"}, numeral(lattice.size).format('0,0'))
+                                    )
+                                );
+                            })
                         )
                     )
                 )
@@ -627,7 +627,7 @@ var RulesPage = React.createClass({displayName: "RulesPage",
 
                 React.createElement("div", {className: "panel panel-default"}, 
                     React.createElement("div", {className: "panel-body"}, 
-                        "The table below shows the time consumed by each rule."
+                        "The table shows the number of miliseconds spent in evaluation of each rule."
                     )
                 ), 
 
@@ -704,7 +704,7 @@ var PredicatesPage = React.createClass({displayName: "PredicatesPage",
 
                 React.createElement("div", {className: "panel panel-default"}, 
                     React.createElement("div", {className: "panel-body"}, 
-                        "The table below shows the time consumed by lookups for each predicate."
+                        "The table shows the number of miliseconds spent in evaluation of each predicate."
                     )
                 ), 
 
@@ -774,7 +774,7 @@ var IndexesPage = React.createClass({displayName: "IndexesPage",
 
                 React.createElement("div", {className: "panel panel-default"}, 
                     React.createElement("div", {className: "panel-body"}, 
-                        "The table shows the usage of indexes in each relation and lattice."
+                        "The table shows the usage of indexes for each relation and lattice."
                     )
                 ), 
 
@@ -840,7 +840,7 @@ var PhasesPage = React.createClass({displayName: "PhasesPage",
 
                 React.createElement("div", {className: "panel panel-default"}, 
                     React.createElement("div", {className: "panel-body"}, 
-                        "The graph below shows the amount of time spent in various phases of the compiler."
+                        "The graph shows the number of miliseconds spent in each phase of the compiler."
                     )
                 ), 
 
