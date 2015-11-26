@@ -5,27 +5,31 @@ import java.net.{BindException, InetSocketAddress}
 import java.nio.file.{Paths, Files}
 import java.util.concurrent.Executors
 
-import ca.uwaterloo.flix.language.ast.{TypedAst, Name}
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.runtime.Solver
 import ca.uwaterloo.flix.runtime.datastore.{IndexedLattice, IndexedRelation}
+
 import com.sun.net.httpserver.{HttpServer, HttpExchange, HttpHandler}
+
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
 
 /**
  * A built-in HTTP REST server that provides a JSON interface to debugging facilities of Flix.
+ *
+ * Usage of this class may incur additional solver overhead.
  */
 class RestServer(solver: Solver) {
 
   /**
    * The minimum port number to bind to.
    */
-  val MinPort = 8000;
+  val MinPort = 8000
 
   /**
    * The maximum port number to bind to.
    */
-  val MaxPort = 8100;
+  val MaxPort = 8100
 
   /**
    * A collection of static resources included in the Jar.

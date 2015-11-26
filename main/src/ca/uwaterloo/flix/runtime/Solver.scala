@@ -1,18 +1,13 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.Flix
-import ca.uwaterloo.flix.language.Compiler
-import ca.uwaterloo.flix.language.ast.TypedAst.Term
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Name, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
-import ca.uwaterloo.flix.util.{AsciiTable, Validation}
-import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.AsciiTable
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 object Solver {
 
@@ -29,37 +24,6 @@ object Solver {
 class Solver(implicit val sCtx: Solver.SolverContext) {
 
   /**
-   * A common super-type for solver errors.
-   */
-  sealed trait SolverError extends Flix.FlixError {
-    /**
-     * Returns a human readable string representation of the error.
-     */
-    def format: String
-  }
-
-  object SolverError {
-
-    implicit val consoleCtx = Compiler.ConsoleCtx
-
-    /**
-     * An error raised to indicate that the asserted fact does not hold in the minimal model.
-     *
-     * @param loc the location of the asserted fact.
-     */
-    case class AssertedFactViolated(loc: SourceLocation) extends SolverError {
-      val format =
-        s"""${consoleCtx.blue(s"-- SOLVER ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-            |${consoleCtx.red(s">> Assertion violated: The asserted fact does not hold in the minimal model!")}
-           |
-           |${loc.underline}
-         """.stripMargin
-    }
-
-  }
-
-  /**
    * The primary data store that holds all relations and lattices.
    */
   val dataStore = new DataStore()
@@ -69,33 +33,10 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
    */
   val worklist = new mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, Value])]
 
-  class Monitor extends Thread {
-
-    val e = System.nanoTime()
-
-    case class DataSample(time: Long, facts: Int, worklist: Int, memory: Long)
-
-    var telemetry = List.empty[DataSample]
-
-    def takeSnapshot(): Unit = {
-      val usedMemory = (Runtime.getRuntime.totalMemory() - Runtime.getRuntime.freeMemory()) / (1024 * 1024)
-      telemetry ::= DataSample(System.nanoTime() - e, dataStore.totalFacts, worklist.size, usedMemory)
-    }
-
-    override def run(): Unit = try {
-      while (!Thread.currentThread().isInterrupted) {
-        takeSnapshot()
-        Thread.sleep(1000) // TODO: Need to use a schedyled thread poool
-      }
-    } catch {
-      case e: InterruptedException =>
-        takeSnapshot()
-    }
-
-  }
-
-  val monitor = new Monitor()
-  monitor.start()
+  /**
+   * The runtime performance monitor.
+   */
+  val monitor = new Monitor(this)
 
   /**
    * Solves the current Flix program.
@@ -104,6 +45,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
 
     val restServer = new RestServer(this)
     restServer.start() //  TODO
+
+    monitor.start()
 
     // measure the time elapsed.
     val t = System.nanoTime()
@@ -118,19 +61,11 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       worklist.push((rule, mutable.Map.empty))
     }
 
-    var i = 0
-
     // iterate until fixpoint.
     while (worklist.nonEmpty) {
       // extract fact from the worklist.
       val (rule, env) = worklist.pop()
       evalBody(rule, env)
-
-      if (i == 5000000) {
-        dataStore.stats()
-        i = 0
-      }
-      i = i + 1
     }
 
     // computed elapsed time.
@@ -138,9 +73,6 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     println(s"Successfully solved in ${elapsed / 1000000} msec.")
 
     monitor.interrupt()
-
-    // verify assertions.
-    checkAssertions()
 
     // print some statistics.
     dataStore.stats()
@@ -218,7 +150,6 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
    * Evaluates the body of the given `rule` under the given initial environment `env0`.
    */
-  // TODO: Need a static layout of variables and then implement `row` as an array.
   def evalBody(rule: Constraint.Rule, env0: mutable.Map[String, Value]): Unit = {
     val t = System.nanoTime()
 
@@ -367,36 +298,5 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       }
     }
   }
-
-
-  /**
-   * Checks all assertions.
-   */
-  def checkAssertions(): Unit = {
-    // asserted rules
-    val assertedFacts = @@(sCtx.root.directives.assertedFacts map checkAssertedFact)
-    assertedFacts.errors.foreach(e => println(e.format))
-
-    // asserted facts
-    val assertedRules = @@(sCtx.root.directives.assertedRules map checkAssertedRule)
-    assertedRules.errors.foreach(e => println(e.format))
-  }
-
-  /**
-   * Verifies that the given asserted fact `d` holds in the minimal model.
-   */
-  def checkAssertedFact(d: Directive.AssertFact): Validation[Boolean, SolverError] = {
-    // TODO: Implement checkAssertedFact.
-    false.toSuccess
-  }
-
-  /**
-   * Verifies that the given asserted rule `d` holds in the minimal model.
-   */
-  def checkAssertedRule(d: Directive.AssertRule): Validation[Boolean, SolverError] = {
-    // TODO: Implement checkAssertedRule.
-    false.toSuccess
-  }
-
 
 }
