@@ -54,6 +54,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   /**
     * Returns the size of the relation.
     */
+  // TODO: Optimize
   def getSize: Int = scan.size
 
   /**

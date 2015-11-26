@@ -69,6 +69,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
   /**
    * Returns the size of the relation.
    */
+  // TODO: Optimize
   def getSize: Int = scan.size
 
   /**
