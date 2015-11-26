@@ -34,7 +34,7 @@ object Interpreter {
     case Type.Bool => if (evalBool(expr, root, env)) Value.True else Value.False
     case Type.Str => evalGeneral(expr, root, env)
     case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
-         Type.Set(_) | Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) =>
+         Type.Set(_) | Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) | Type.Any =>
       evalGeneral(expr, root, env)
   }
 
@@ -80,7 +80,7 @@ object Interpreter {
       else
         throw new RuntimeException(s"Unmatched value $value.")
     case Expression.NativeField(field, _, _) =>
-      field.get().asInstanceOf[java.lang.Integer].intValue()
+      field.get(null).asInstanceOf[java.lang.Integer].intValue()
     case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
          Expression.Set(_, _, _) | Expression.NativeMethod(_, _, _) =>
       throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int.")
@@ -147,7 +147,7 @@ object Interpreter {
       else
         throw new RuntimeException(s"Unmatched value $value.")
     case Expression.NativeField(field, _, _) =>
-      field.get().asInstanceOf[java.lang.Boolean].booleanValue()
+      field.get(null).asInstanceOf[java.lang.Boolean].booleanValue()
     case Expression.Lambda(_, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
          Expression.Set(_, _, _) | Expression.NativeMethod(_, _, _) =>
       throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
@@ -227,7 +227,7 @@ object Interpreter {
         eval(result, root, newEnv)
       else
         throw new RuntimeException(s"Unmatched value $value.")
-    case Expression.NativeField(field, tpe, _) => Value.java2flix(field.get(), tpe)
+    case Expression.NativeField(field, tpe, _) => Value.java2flix(field.get(null), tpe)
     case Expression.NativeMethod(method, _, _) => Value.NativeMethod(method)
     case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
     case exp: Expression.Tuple =>
@@ -368,7 +368,7 @@ object Interpreter {
         i = i + 1
       }
       evalCall(function, evalArgs, root, env)
-    case Term.Head.NativeField(field, tpe, _) => Value.java2flix(field.get(), tpe)
+    case Term.Head.NativeField(field, tpe, _) => Value.java2flix(field.get(null), tpe)
   }
 
   def evalBodyTerm(t: Term.Body, env: Env): Value = t match {

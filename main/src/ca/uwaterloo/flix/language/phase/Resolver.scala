@@ -104,7 +104,7 @@ object Resolver {
       * @param namespace the current namespace.
       */
     // TODO: Split this into multiple different versions:
-    @deprecated
+    @deprecated("", "")
     case class UnresolvedReference(name: Name.Unresolved, namespace: List[String]) extends ResolverError {
       val format: String = s"Error: Unresolved reference to '$name' in namespace '${namespace.mkString("::")}' at: ${name.loc.format}\n"
     }
