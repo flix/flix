@@ -15,8 +15,8 @@ import org.json4s.native.JsonMethods
 class RestServer(solver: Solver) {
 
   /**
-   * A collection of static resources included in the Jar.
-   */
+    * A collection of static resources included in the Jar.
+    */
   val StaticResources = Set[String](
     // HTML
     "/web/index.html",
@@ -41,18 +41,18 @@ class RestServer(solver: Solver) {
   )
 
   /**
-   * A simple http handler which serves static resources.
-   */
+    * A simple http handler which serves static resources.
+    */
   class FileHandler extends HttpHandler {
 
     /**
-     * A loaded resources is an array of bytes and its associated mimetype.
-     */
+      * A loaded resources is an array of bytes and its associated mimetype.
+      */
     case class LoadedResource(bytes: Array[Byte], mimetype: String)
 
     /**
-     * Immediately loads all the given `resources` into memory.
-     */
+      * Immediately loads all the given `resources` into memory.
+      */
     def loadResources(resources: Set[String]): Map[String, LoadedResource] = StaticResources.foldLeft(Map.empty[String, LoadedResource]) {
       case (m, path) =>
 
@@ -77,13 +77,13 @@ class RestServer(solver: Solver) {
     }
 
     /**
-     * All resources are loaded upon startup.
-     */
+      * All resources are loaded upon startup.
+      */
     val LoadedResources: Map[String, LoadedResource] = loadResources(StaticResources)
 
     /**
-     * Returns the mime-type corresponding to the given `path`.
-     */
+      * Returns the mime-type corresponding to the given `path`.
+      */
     def mimetypeOf(path: String): String = path match {
       case p if p.endsWith(".css") => "text/css"
       case p if p.endsWith(".js") => "text/javascript; charset=utf-8"
@@ -99,8 +99,8 @@ class RestServer(solver: Solver) {
     }
 
     /**
-     * Handles every incoming http request.
-     */
+      * Handles every incoming http request.
+      */
     def handle(t: HttpExchange): Unit = try {
       // construct the local path
       val requestPath = t.getRequestURI.getPath
@@ -137,17 +137,17 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * A simple http handler which serves JSON.
-   */
+    * A simple http handler which serves JSON.
+    */
   abstract class JsonHandler extends HttpHandler {
     /**
-     * An abstract method which returns the JSON object to be sent.
-     */
+      * An abstract method which returns the JSON object to be sent.
+      */
     def json: JValue
 
     /**
-     * Handles every incoming http request.
-     */
+      * Handles every incoming http request.
+      */
     def handle(t: HttpExchange): Unit = {
       t.getResponseHeaders.add("Content-Type", "application/javascript")
 
@@ -162,8 +162,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns the name and size of all relations.
-   */
+    * Returns the name and size of all relations.
+    */
   class GetRelations extends JsonHandler {
     def json: JValue = JArray(solver.dataStore.relations.toList.map {
       case (name, relation) => JObject(List(
@@ -174,8 +174,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   *
-   */
+    *
+    */
   class ViewRelation(collection: TypedAst.Collection.Relation, relation: IndexedRelation) extends JsonHandler {
     def json: JValue = JObject(
       JField("cols", JArray(collection.attributes.map(a => JString(a.ident.name)))),
@@ -185,8 +185,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   *
-   */
+    *
+    */
   class ViewLattice(collection: TypedAst.Collection.Lattice, relation: IndexedLattice) extends JsonHandler {
     def json: JValue = JObject(
       JField("cols", JArray(collection.keys.map(a => JString(a.ident.name)) ::: collection.values.map(a => JString(a.ident.name)))),
@@ -196,8 +196,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns the name and size of all lattices.
-   */
+    * Returns the name and size of all lattices.
+    */
   class GetLattices extends JsonHandler {
     def json: JValue = JArray(solver.dataStore.lattices.toList.map {
       case (name, lattice) => JObject(List(
@@ -207,10 +207,21 @@ class RestServer(solver: Solver) {
     })
   }
 
+  /**
+    * Returns the current snapshots.
+    */
+  class GetStatus extends JsonHandler {
+    def json: JValue = JObject(List(
+      if (solver.worklist.nonEmpty)
+        JField("status", JString("running"))
+      else
+        JField("status", JString("complete"))
+    ))
+  }
 
   /**
-   * Returns the current snapshots.
-   */
+    * Returns the current snapshots.
+    */
   class GetSnapshots extends JsonHandler {
     def json: JValue = JArray(solver.monitor.snapshots.reverse.map {
       case solver.monitor.Snapshot(time, facts, queue, memory) =>
@@ -224,8 +235,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns the rules and their statistics.
-   */
+    * Returns the rules and their statistics.
+    */
   class GetRules extends JsonHandler {
     def json: JValue = JArray(solver.getRuleStats.map {
       case (rule, hits, time) => JObject(List(
@@ -238,8 +249,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns the predicates and their statistics.
-   */
+    * Returns the predicates and their statistics.
+    */
   class GetPredicates extends JsonHandler {
     def json: JValue = JArray(solver.dataStore.predicateStats.map {
       case (name, size, indexedLookups, indexedScans, fullScans) => JObject(List(
@@ -253,8 +264,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns the indexes and their statistics.
-   */
+    * Returns the indexes and their statistics.
+    */
   class GetIndexes extends JsonHandler {
     def json: JValue = JArray(solver.dataStore.indexStats.map {
       case (name, index, hits) => JObject(List(
@@ -266,8 +277,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns the time spent in each compiler phase.
-   */
+    * Returns the time spent in each compiler phase.
+    */
   class GetCompilerPhases extends JsonHandler {
     def json: JValue = JArray(List(
       JObject(List(JField("name", JString("Parser")), JField("time", JInt(322)))),
@@ -281,8 +292,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Bootstraps the internal http server.
-   */
+    * Bootstraps the internal http server.
+    */
   def start(): Unit = try {
     //  TODO logger.trace("Starting WebServer.")
 
@@ -302,6 +313,7 @@ class RestServer(solver: Solver) {
     for ((name, lattice) <- solver.dataStore.lattices) {
       server.createContext("/lattice/" + name, new ViewLattice(solver.sCtx.root.collections(name).asInstanceOf[TypedAst.Collection.Lattice], lattice))
     }
+    server.createContext("/status", new GetStatus())
     server.createContext("/snapshots", new GetSnapshots())
     server.createContext("/performance/rules", new GetRules())
     server.createContext("/performance/predicates", new GetPredicates())

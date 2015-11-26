@@ -62,6 +62,11 @@ var App = React.createClass({displayName: "App",
         Common.ajax(URL + '/lattices', this.notifyConnectionError, data => {
             this.setState({lattices: data})
         });
+
+        // retrieve status
+        Common.ajax(URL + '/status', this.notifyConnectionError, data => {
+            this.setState({status: data.status})
+        });
     },
 
     /**
@@ -283,35 +288,33 @@ var StatusLine = React.createClass({displayName: "StatusLine",
     render: function () {
         var status = this.props.status;
 
-        if (status === "running") {
-            return (
-                React.createElement("li", {className: "bg-info"}, 
-                    React.createElement("a", {href: "#"}, 
-                        React.createElement("span", {className: "glyphicon glyphicon-time"}), " ", React.createElement("strong", null, "Running")
-                    )
-                ))
-        } else if (status === "completed") {
-            return (
-                React.createElement("li", {className: "bg-success"}, 
-                    React.createElement("a", {href: "#"}, 
-                        React.createElement("span", {className: "glyphicon glyphicon-ok-circle"}), " ", React.createElement("strong", null, "Completed")
-                    )
-                ))
-        } else if (status === "crashed") {
-            return (
-                React.createElement("li", {className: "bg-danger"}, 
-                    React.createElement("a", {href: "#"}, 
-                        React.createElement("span", {className: "glyphicon glyphicon-warning-sign"}), " ", React.createElement("strong", null, "Crashed")
-                    )
-                ))
-        } else {
-            return (
-                React.createElement("li", {className: "bg-danger"}, 
-                    React.createElement("a", {href: "#"}, 
-                        React.createElement("span", {className: "glyphicon glyphicon-question-sign"}), " ", React.createElement("strong", null, "No Connection")
-                    )
-                ))
+        var text = null;
+        var icon = null;
+        var className = null;
+
+        switch (status) {
+            case "running":
+                text = "Running";
+                icon = "glyphicon glyphicon-time";
+                className = "bg-info";
+                break;
+            case "complete":
+                text = "Complete";
+                icon = "glyphicon glyphicon-ok-circle";
+                className = "bg-success";
+                break;
+            default:
+                text = "No Connection";
+                icon = "glyphicon glyphicon-question-sign";
+                className = "bg-danger"
         }
+
+        return (
+            React.createElement("li", {className: className}, 
+                React.createElement("a", {href: "#"}, 
+                    React.createElement("span", {className: icon}), " ", React.createElement("strong", null, text)
+                )
+            ))
     }
 });
 
@@ -387,11 +390,11 @@ var LandingPage = React.createClass({displayName: "LandingPage",
                 React.createElement("div", {className: "row"}, 
 
                     React.createElement("div", {className: "col-xs-6"}, 
-                        React.createElement("h3", null, "Worklist (", currentQueuelength, ")"), 
+                        React.createElement("h3", null, "Worklist (", currentQueuelength, " items)"), 
                         React.createElement(LineChart, {key: Math.random(), width: 600, height: 250, labels: labels, data: queue, 
                                    theme: "blue"}), 
 
-                        React.createElement("h3", null, "Total Facts (", currentNumberOfacts, ")"), 
+                        React.createElement("h3", null, "Database (", currentNumberOfacts, " facts)"), 
                         React.createElement(LineChart, {key: Math.random(), width: 600, height: 250, labels: labels, data: facts, 
                                    theme: "magenta"}), 
 

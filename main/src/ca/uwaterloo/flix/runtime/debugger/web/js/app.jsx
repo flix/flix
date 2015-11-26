@@ -62,6 +62,11 @@ var App = React.createClass({
         Common.ajax(URL + '/lattices', this.notifyConnectionError, data => {
             this.setState({lattices: data})
         });
+
+        // retrieve status
+        Common.ajax(URL + '/status', this.notifyConnectionError, data => {
+            this.setState({status: data.status})
+        });
     },
 
     /**
@@ -283,35 +288,33 @@ var StatusLine = React.createClass({
     render: function () {
         var status = this.props.status;
 
-        if (status === "running") {
-            return (
-                <li className="bg-info">
-                    <a href="#">
-                        <span className="glyphicon glyphicon-time"></span> <strong>Running</strong>
-                    </a>
-                </li>)
-        } else if (status === "completed") {
-            return (
-                <li className="bg-success">
-                    <a href="#">
-                        <span className="glyphicon glyphicon-ok-circle"></span> <strong>Completed</strong>
-                    </a>
-                </li>)
-        } else if (status === "crashed") {
-            return (
-                <li className="bg-danger">
-                    <a href="#">
-                        <span className="glyphicon glyphicon-warning-sign"></span> <strong>Crashed</strong>
-                    </a>
-                </li>)
-        } else {
-            return (
-                <li className="bg-danger">
-                    <a href="#">
-                        <span className="glyphicon glyphicon-question-sign"></span> <strong>No Connection</strong>
-                    </a>
-                </li>)
+        var text = null;
+        var icon = null;
+        var className = null;
+
+        switch (status) {
+            case "running":
+                text = "Running";
+                icon = "glyphicon glyphicon-time";
+                className = "bg-info";
+                break;
+            case "complete":
+                text = "Complete";
+                icon = "glyphicon glyphicon-ok-circle";
+                className = "bg-success";
+                break;
+            default:
+                text = "No Connection";
+                icon = "glyphicon glyphicon-question-sign";
+                className = "bg-danger"
         }
+
+        return (
+            <li className={className}>
+                <a href="#">
+                    <span className={icon}></span> <strong>{text}</strong>
+                </a>
+            </li>)
     }
 });
 
@@ -387,11 +390,11 @@ var LandingPage = React.createClass({
                 <div className="row">
 
                     <div className="col-xs-6">
-                        <h3>Worklist ({currentQueuelength})</h3>
+                        <h3>Worklist ({currentQueuelength} items)</h3>
                         <LineChart key={Math.random()} width={600} height={250} labels={labels} data={queue}
                                    theme="blue"/>
 
-                        <h3>Total Facts ({currentNumberOfacts})</h3>
+                        <h3>Database ({currentNumberOfacts} facts)</h3>
                         <LineChart key={Math.random()} width={600} height={250} labels={labels} data={facts}
                                    theme="magenta"/>
 
