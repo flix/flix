@@ -441,6 +441,8 @@ var LandingPage = React.createClass({displayName: "LandingPage",
 var RelationPage = React.createClass({displayName: "RelationPage",
     propTypes: {
         name: React.PropTypes.string.isRequired,
+        registerRefreshCallback: React.PropTypes.func.isRequired,
+        unregisterRefreshCallback: React.PropTypes.func.isRequired,
         notifyConnectionError: React.PropTypes.func.isRequired
     },
 
@@ -481,26 +483,45 @@ var RelationPage = React.createClass({displayName: "RelationPage",
 var LatticePage = React.createClass({displayName: "LatticePage",
     propTypes: {
         name: React.PropTypes.string.isRequired,
+        registerRefreshCallback: React.PropTypes.func.isRequired,
+        unregisterRefreshCallback: React.PropTypes.func.isRequired,
         notifyConnectionError: React.PropTypes.func.isRequired
     },
 
+    /**
+     * The state is an object which holds an array of columns (strings) and rows (arrays of strings).
+     */
     getInitialState: function () {
         return {table: {cols: [], rows: []}};
     },
 
+    /**
+     * Refresh the AJAX data on mount. Register the component as refreshable.
+     */
     componentDidMount: function () {
-        this.tick();
+        this.refresh();
+        this.props.registerRefreshCallback(this.refresh);
     },
 
-    tick: function () {
-        $.ajax({
-            method: "GET", dataType: 'json', url: URL + '/lattice/' + this.props.name, success: function (data) {
-                this.setState({table: data});
-            }.bind(this),
-            error: this.props.notifyConnectionError
+    /**
+     * Un-register the component as refreshable.
+     */
+    componentWillUnmount: function () {
+        this.props.unregisterRefreshCallback(this.refresh);
+    },
+
+    /**
+     * Retrieves JSON data from the server.
+     */
+    refresh: function () {
+        Common.ajax(URL + '/lattice/' + this.props.name, this.notifyConnectionError, data => {
+            this.setState({table: data})
         });
     },
 
+    /**
+     * Renders the component.
+     */
     render: function () {
         return (
             React.createElement("div", null, 
