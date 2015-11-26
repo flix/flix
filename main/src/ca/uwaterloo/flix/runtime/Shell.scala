@@ -12,37 +12,42 @@ class Shell(solver: Solver) extends Thread {
   object Input {
 
     /**
-     * The no-operation command.
+     * Does literally nothing.
      */
     case object Nop extends Input
 
     /**
-     * The help command.
+     * Prints information about the available commands.
      */
     case object Help extends Input
 
     /**
-     * The pause command.
+     * Prints some basic status information about the fixpoint computation.
+     */
+    case object Status extends Input
+
+    /**
+     * Pauses the fixpoint computation.
      */
     case object Pause extends Input
 
     /**
-     * The un-pause command.
+     * Resumes the fixpoint computation.
      */
     case object Unpause extends Input
 
     /**
-     * The exit command.
+     * Gracefully terminates Flix.
      */
     case object Exit extends Input
 
     /**
-     * The abort command.
+     * Immediately and brutally terminates Flix.
      */
     case object Abort extends Input
 
     /**
-     * An unknown command.
+     * A command that was not unknown. Possibly a typo.
      */
     case class Unknown(line: String) extends Input
 
@@ -82,11 +87,12 @@ class Shell(solver: Solver) extends Thread {
   private def parse(line: String): Input = line match {
     case null => Input.Abort
     case "" => Input.Nop
-    case "exit" | "quit" => Input.Exit
+    case "help" => Input.Help
+    case "status" => Input.Status
     case "pause" => Input.Pause
     case "resume" | "unpause" | "continue" => Input.Unpause
+    case "exit" | "quit" => Input.Exit
     case "abort" => Input.Abort
-    case "help" => Input.Help
     case _ => Input.Unknown(line)
   }
 
@@ -95,6 +101,9 @@ class Shell(solver: Solver) extends Thread {
    */
   private def execute(cmd: Input): Unit = cmd match {
     case Input.Nop => // nop
+
+    case Input.Status =>
+      Console.println(s"Queue Size: ${solver.getQueueSize}, Total Facts: ${solver.getNumberOfFacts}.")
 
     case Input.Pause =>
       Console.println("Fixpoint computation paused.")
@@ -111,12 +120,13 @@ class Shell(solver: Solver) extends Thread {
 
     case Input.Help =>
       Console.println("Available commands:")
+      Console.println("  status     -- prints basic info about the fixpoint computation.")
       Console.println("  pause      -- pauses the fixpoint computation.")
       Console.println("  resume     -- resumes the fixpoint computation.")
       Console.println("  exit       -- graceful shutdown.")
       Console.println("  abort      -- immediate shutdown.")
 
-    case Input.Unknown(s) => Console.println(s"Illegal command '$s'. Try `help'.")
+    case Input.Unknown(s) => Console.println(s"Unknown command '$s'. Try `help'.")
   }
 
   /**
