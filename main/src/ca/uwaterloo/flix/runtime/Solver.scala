@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
-import ca.uwaterloo.flix.util.AsciiTable
+import ca.uwaterloo.flix.util.{Debugger, Options, AsciiTable}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -14,7 +14,7 @@ object Solver {
   /**
    * A case class representing a solver context.
    */
-  case class SolverContext(root: TypedAst.Root)
+  case class SolverContext(root: TypedAst.Root, options: Options)
 
 }
 
@@ -56,8 +56,6 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
 
   /**
    * Pauses the solver.
-   *
-   * The state of database might be pre-fixedpoint.
    */
   def pause(): Unit = synchronized {
     paused = true
@@ -76,13 +74,15 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
    */
   def solve(): Model = {
 
-    monitor.start()
+    if (sCtx.options.debugger == Debugger.Enabled) {
+      monitor.start()
 
-    val restServer = new RestServer(this)
-    restServer.start() //  TODO
+      val restServer = new RestServer(this)
+      restServer.start()
 
-    val shell = new Shell(this)
-    shell.start()
+      val shell = new Shell(this)
+      shell.start()
+    }
 
     // measure the time elapsed.
     val t = System.nanoTime()
@@ -113,7 +113,9 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     val elapsed = System.nanoTime() - t
     println(s"Successfully solved in ${elapsed / 1000000} msec.")
 
-    monitor.stop()
+    if (sCtx.options.debugger == Debugger.Enabled) {
+      monitor.stop()
+    }
 
     // print some statistics.
     dataStore.stats()

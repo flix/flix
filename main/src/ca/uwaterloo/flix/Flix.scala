@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Directive
 import ca.uwaterloo.flix.runtime.{Model, Solver}
-import ca.uwaterloo.flix.util.{AsciiTable, Validation}
+import ca.uwaterloo.flix.util.{Options, AsciiTable, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 object Flix {
@@ -24,21 +24,35 @@ object Flix {
   /**
    * Solves the given Flix program.
    *
-   * @param strings a sequence of strings representing the Flix program.
+   * @param input a sequence strings representing the Flix program.
+   * @param options the options.
    * @return the minimal model.
    */
-  def fromStrings(strings: String*): Validation[Model, FlixError] = Compiler.compileStrings(strings) map {
-    case ast => new Solver()(Solver.SolverContext(ast)).solve()
+  def mkStr(input: Seq[String], options: Options = Options.Default): Validation[Model, FlixError] = Compiler.compileStrings(input) map {
+    case ast => new Solver()(Solver.SolverContext(ast, options)).solve()
   }
 
   /**
    * Solves the given Flix program.
    *
-   * @param paths a sequence of paths representing the Flix program.
+   * @param input a sequence of paths representing the Flix program.
+   * @param options the options.
    * @return the minimal model.
    */
-  def fromPaths(paths: Path*): Validation[Model, FlixError] = Compiler.compilePaths(paths) map {
-    case ast => new Solver()(Solver.SolverContext(ast)).solve()
+  def mkPath(input: Seq[Path], options: Options = Options.Default): Validation[Model, FlixError] = Compiler.compilePaths(input) map {
+    case ast => new Solver()(Solver.SolverContext(ast, options)).solve()
   }
+
+  /**
+   * Alias for [[mkStr]] with one input and default options.
+   */
+  def mkStr(input: String): Validation[Model, FlixError] =
+    mkStr(Seq(input))
+
+  /**
+   * Alias for [[mkPath]] with one input and default options.
+   */
+  def mkPath(input: Path): Validation[Model, FlixError] =
+    mkPath(Seq(input))
 
 }

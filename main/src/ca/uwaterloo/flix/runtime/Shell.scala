@@ -114,6 +114,7 @@ class Shell(solver: Solver) extends Thread {
       solver.resume()
 
     case Input.Exit =>
+      Thread.currentThread().interrupt()
 
     case Input.Abort =>
       System.exit(1)

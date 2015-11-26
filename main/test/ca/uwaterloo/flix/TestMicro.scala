@@ -13,7 +13,7 @@ class TestMicro extends FunSuite {
         |
       """.stripMargin
 
-    Flix.fromStrings(s)
+    Flix.mkStr(s)
   }
 
 }
