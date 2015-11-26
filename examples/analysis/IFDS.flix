@@ -1,4 +1,7 @@
 namespace IFDS {
+
+// TODO: Ondrej can we clean this up?
+
 //// Inputs
 //// ===========
 rel EshIntra(node: Str, factin: Str, factout: Str)

@@ -7,19 +7,6 @@ import org.scalatest.FunSuite
 class TestExamples extends FunSuite {
 
   /////////////////////////////////////////////////////////////////////////////
-  // Algorithms                                                              //
-  /////////////////////////////////////////////////////////////////////////////
-  test("Cyclic.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/algorithms/Cyclic.flix"))
-    assert(model.isSuccess)
-  }
-
-  test("Reachability.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/algorithms/Reachability.flix"))
-    assert(model.isSuccess)
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
   // Analysis                                                                //
   /////////////////////////////////////////////////////////////////////////////
   test("Belnap.flix") {

@@ -1,4 +1,7 @@
 namespace IDE {
+
+// TODO: Ondrej can we clean this up?
+
   enum Value {
     case Top,
     case Cst(Int),

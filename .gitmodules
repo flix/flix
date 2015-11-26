@@ -1,3 +1,0 @@
-[submodule "examples/analysis/subench"]
-	path = examples/analysis/subench
-	url = gitlab@git.uwaterloo.ca:olhotak/subench.git
