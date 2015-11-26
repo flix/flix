@@ -446,28 +446,47 @@ var RelationPage = React.createClass({
         notifyConnectionError: React.PropTypes.func.isRequired
     },
 
+    /**
+     * The state is an object which holds an array of columns (strings) and rows (arrays of strings).
+     */
     getInitialState: function () {
         return {table: {cols: [], rows: []}};
     },
 
+    /**
+     * Refresh the AJAX data on mount. Register the component as refreshable.
+     */
     componentDidMount: function () {
-        this.tick();
+        this.refresh();
+        this.props.registerRefreshCallback(this.refresh);
     },
 
-    tick: function () {
-        $.ajax({
-            method: "GET", dataType: 'json', url: URL + '/relation/' + this.props.name, success: function (data) {
-                this.setState({table: data});
-            }.bind(this),
-            error: this.props.notifyConnectionError
+    /**
+     * Un-register the component as refreshable.
+     */
+    componentWillUnmount: function () {
+        this.props.unregisterRefreshCallback(this.refresh);
+    },
+
+    /**
+     * Retrieves JSON data from the server.
+     */
+    refresh: function () {
+        Common.ajax(URL + '/relation/' + this.props.name, this.notifyConnectionError, data => {
+            this.setState({table: data})
         });
     },
 
+    /**
+     * Renders this component.
+     */
     render: function () {
+        var numberOfFacts = numeral(this.state.table.rows.length).format('0,0');
+
         return (
             <div>
                 <div className="page-header">
-                    <h1>{"Relation / " + this.props.name}</h1>
+                    <h1>{"Relation / " + this.props.name} ({numberOfFacts})</h1>
                 </div>
 
                 <Table table={this.state.table}/>
@@ -523,10 +542,12 @@ var LatticePage = React.createClass({
      * Renders the component.
      */
     render: function () {
+        var numberOfFacts = numeral(this.state.table.rows.length).format('0,0');
+
         return (
             <div>
                 <div className="page-header">
-                    <h1>{"Lattice / " + this.props.name}</h1>
+                    <h1>{"Lattice / " + this.props.name} ({numberOfFacts})</h1>
                 </div>
 
                 <Table table={this.state.table}/>

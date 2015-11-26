@@ -446,28 +446,47 @@ var RelationPage = React.createClass({displayName: "RelationPage",
         notifyConnectionError: React.PropTypes.func.isRequired
     },
 
+    /**
+     * The state is an object which holds an array of columns (strings) and rows (arrays of strings).
+     */
     getInitialState: function () {
         return {table: {cols: [], rows: []}};
     },
 
+    /**
+     * Refresh the AJAX data on mount. Register the component as refreshable.
+     */
     componentDidMount: function () {
-        this.tick();
+        this.refresh();
+        this.props.registerRefreshCallback(this.refresh);
     },
 
-    tick: function () {
-        $.ajax({
-            method: "GET", dataType: 'json', url: URL + '/relation/' + this.props.name, success: function (data) {
-                this.setState({table: data});
-            }.bind(this),
-            error: this.props.notifyConnectionError
+    /**
+     * Un-register the component as refreshable.
+     */
+    componentWillUnmount: function () {
+        this.props.unregisterRefreshCallback(this.refresh);
+    },
+
+    /**
+     * Retrieves JSON data from the server.
+     */
+    refresh: function () {
+        Common.ajax(URL + '/relation/' + this.props.name, this.notifyConnectionError, data => {
+            this.setState({table: data})
         });
     },
 
+    /**
+     * Renders this component.
+     */
     render: function () {
+        var numberOfFacts = numeral(this.state.table.rows.length).format('0,0');
+
         return (
             React.createElement("div", null, 
                 React.createElement("div", {className: "page-header"}, 
-                    React.createElement("h1", null, "Relation / " + this.props.name)
+                    React.createElement("h1", null, "Relation / " + this.props.name, " (", numberOfFacts, ")")
                 ), 
 
                 React.createElement(Table, {table: this.state.table})
@@ -523,10 +542,12 @@ var LatticePage = React.createClass({displayName: "LatticePage",
      * Renders the component.
      */
     render: function () {
+        var numberOfFacts = numeral(this.state.table.rows.length).format('0,0');
+
         return (
             React.createElement("div", null, 
                 React.createElement("div", {className: "page-header"}, 
-                    React.createElement("h1", null, "Lattice / " + this.props.name)
+                    React.createElement("h1", null, "Lattice / " + this.props.name, " (", numberOfFacts, ")")
                 ), 
 
                 React.createElement(Table, {table: this.state.table})
