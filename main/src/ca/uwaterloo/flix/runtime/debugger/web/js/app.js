@@ -560,18 +560,15 @@ var RulesPage = React.createClass({displayName: "RulesPage",
      */
     render: function () {
         var table = {
-            cols: ["Location", "Rule", "Hits", "Total Time (msec)", "Query Time (msec/op)", "Throughput (ops/msec)"],
+            cols: ["Location", "Rule", "Hits", "Total Time (msec)", "Latency (msec/op)", "Throughput (ops/msec)"],
             rows: this.state.rules.map(row => {
-
-                    var row = [
-                        row.loc,
-                        row.rule,
-                        numeral(row.hits).format('0,0'),
-                        numeral(row.time).format('0,0') + " msec",
-                        numeral(row.time / row.hits).format('0.0000') + " msec/op",
-                        numeral(row.hits / row.time).format('0,0') + " ops/msec"
-                    ];
-                    return row;
+                    var location = row.loc;
+                    var rule = row.rule;
+                    var hits = numeral(row.hits).format('0,0');
+                    var time = numeral(row.time).format('0,0') + " msec";
+                    var latency = numeral(row.time / row.hits).format('0.0000') + " msec/op";
+                    var throughput = numeral(row.hits / row.time).format('0,0') + " ops/msec";
+                    return [location, rule, hits, time, latency, throughput];
                 }
             ),
             align: ["left", "left", "right", "right", "right"]
