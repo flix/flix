@@ -12,11 +12,14 @@ import com.sun.net.httpserver.{HttpServer, HttpExchange, HttpHandler}
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
 
+/**
+ * A built-in HTTP REST server that provides a JSON interface to debugging facilities of Flix.
+ */
 class RestServer(solver: Solver) {
 
   /**
-    * A collection of static resources included in the Jar.
-    */
+   * A collection of static resources included in the Jar.
+   */
   val StaticResources = Set[String](
     // HTML
     "/web/index.html",
@@ -41,31 +44,36 @@ class RestServer(solver: Solver) {
   )
 
   /**
-    * A simple http handler which serves static resources.
-    */
+   * A simple http handler which serves static resources.
+   */
   class FileHandler extends HttpHandler {
 
     /**
-      * A loaded resources is an array of bytes and its associated mimetype.
-      */
+     * A loaded resources is an array of bytes and its associated mimetype.
+     */
     case class LoadedResource(bytes: Array[Byte], mimetype: String)
 
     /**
-      * Immediately loads all the given `resources` into memory.
-      */
+     * Immediately loads all the given `resources` into memory.
+     */
     def loadResources(resources: Set[String]): Map[String, LoadedResource] = StaticResources.foldLeft(Map.empty[String, LoadedResource]) {
       case (m, path) =>
 
-        val root = "main/src/ca/uwaterloo/flix/runtime/debugger"
-
-        val inputStream = Files.newInputStream(Paths.get(root + path)) // TODO: Switch on whether we are in a packaged jar.
+        // load the resource from the source directory (if it exists).
+        // otherwise load the resource from the JAR.
+        val localPath = Paths.get("main/src/ca/uwaterloo/flix/runtime/debugger" + path)
+        val inputStream =
+          if (Files.exists(localPath))
+            Files.newInputStream(localPath)
+          else
+            getClass.getResourceAsStream(path)
 
         if (inputStream == null) {
           throw new IOException(s"Unable to load static resource '$path'.")
         }
 
+        // load the file.
         val buffer = new ByteArrayOutputStream()
-
         var byte = inputStream.read()
         while (byte != -1) {
           buffer.write(byte)
@@ -73,17 +81,16 @@ class RestServer(solver: Solver) {
         }
 
         m + (path -> LoadedResource(buffer.toByteArray, mimetypeOf(path)))
-
     }
 
     /**
-      * All resources are loaded upon startup.
-      */
+     * All resources are loaded upon startup.
+     */
     val LoadedResources: Map[String, LoadedResource] = loadResources(StaticResources)
 
     /**
-      * Returns the mime-type corresponding to the given `path`.
-      */
+     * Returns the mime-type corresponding to the given `path`.
+     */
     def mimetypeOf(path: String): String = path match {
       case p if p.endsWith(".css") => "text/css"
       case p if p.endsWith(".js") => "text/javascript; charset=utf-8"
@@ -94,13 +101,12 @@ class RestServer(solver: Solver) {
       case p if p.endsWith(".woff") => "font/woff"
       case p if p.endsWith(".woff2") => "font/woff2"
       case _ =>
-        // TODO logger.error(s"Unknown mimetype for path $path")
         throw new RuntimeException(s"Unknown mimetype for path $path")
     }
 
     /**
-      * Handles every incoming http request.
-      */
+     * Handles every incoming http request.
+     */
     def handle(t: HttpExchange): Unit = try {
       // construct the local path
       val requestPath = t.getRequestURI.getPath
@@ -128,26 +134,23 @@ class RestServer(solver: Solver) {
           t.close()
       }
     } catch {
-      case e: RuntimeException =>
-        e.printStackTrace()
-      // TODO
-      // logger.error("Unknown error during http exchange.", e)
+      case e: RuntimeException => throw new RuntimeException("Exception in RestServer.", e)
     }
 
   }
 
   /**
-    * A simple http handler which serves JSON.
-    */
+   * A simple http handler which serves JSON.
+   */
   abstract class JsonHandler extends HttpHandler {
     /**
-      * An abstract method which returns the JSON object to be sent.
-      */
+     * An abstract method which returns the JSON object to be sent.
+     */
     def json: JValue
 
     /**
-      * Handles every incoming http request.
-      */
+     * Handles every incoming http request.
+     */
     def handle(t: HttpExchange): Unit = {
       t.getResponseHeaders.add("Content-Type", "application/javascript")
 
@@ -162,54 +165,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-    * Returns the name and size of all relations.
-    */
-  class GetRelations extends JsonHandler {
-    def json: JValue = JArray(solver.dataStore.relations.toList.map {
-      case (name, relation) => JObject(List(
-        JField("name", JString(name.toString)),
-        JField("size", JInt(relation.getSize))
-      ))
-    })
-  }
-
-  /**
-    *
-    */
-  class ViewRelation(collection: TypedAst.Collection.Relation, relation: IndexedRelation) extends JsonHandler {
-    def json: JValue = JObject(
-      JField("cols", JArray(collection.attributes.map(a => JString(a.ident.name)))),
-      JField("rows", JArray(relation.scan.toList.map {
-        case row => JArray(row.toList.map(e => JString(e.pretty)))
-      })))
-  }
-
-  /**
-    *
-    */
-  class ViewLattice(collection: TypedAst.Collection.Lattice, relation: IndexedLattice) extends JsonHandler {
-    def json: JValue = JObject(
-      JField("cols", JArray(collection.keys.map(a => JString(a.ident.name)) ::: collection.values.map(a => JString(a.ident.name)))),
-      JField("rows", JArray(relation.scan.toList.map {
-        case (key, elms) => JArray(key.toArray.map(k => JString(k.pretty)).toList ::: elms.map(e => JString(e.pretty)).toList)
-      })))
-  }
-
-  /**
-    * Returns the name and size of all lattices.
-    */
-  class GetLattices extends JsonHandler {
-    def json: JValue = JArray(solver.dataStore.lattices.toList.map {
-      case (name, lattice) => JObject(List(
-        JField("name", JString(name.toString)),
-        JField("size", JInt(lattice.getSize))
-      ))
-    })
-  }
-
-  /**
-    * Returns the current snapshots.
-    */
+   * Returns the current status of the computation.
+   */
   class GetStatus extends JsonHandler {
     def json: JValue = JObject(List(
       if (solver.worklist.nonEmpty)
@@ -220,11 +177,63 @@ class RestServer(solver: Solver) {
   }
 
   /**
-    * Returns the current snapshots.
-    */
-  class GetSnapshots extends JsonHandler {
-    def json: JValue = JArray(solver.monitor.snapshots.reverse.map {
-      case solver.monitor.Snapshot(time, facts, queue, memory) =>
+   * Returns the name and size of all relations.
+   */
+  class GetRelations extends JsonHandler {
+    def json: JValue = JArray(solver.dataStore.relations.toList.map {
+      case (name, relation) => JObject(List(
+        JField("name", JString(name.toString)),
+        JField("size", JInt(relation.getSize))
+      ))
+    })
+  }
+
+  /**
+   * Returns the name and size of all lattices.
+   */
+  class GetLattices extends JsonHandler {
+    def json: JValue = JArray(solver.dataStore.lattices.toList.map {
+      case (name, lattice) => JObject(List(
+        JField("name", JString(name.toString)),
+        JField("size", JInt(lattice.getSize))
+      ))
+    })
+  }
+
+  /**
+   * Returns all the rows in the relation.
+   *
+   * @param ast the AST declaration of the relation.
+   * @param relation a reference to the datastore backing the relation.
+   */
+  class ListRelation(ast: TypedAst.Collection.Relation, relation: IndexedRelation) extends JsonHandler {
+    def json: JValue = JObject(
+      JField("cols", JArray(ast.attributes.map(a => JString(a.ident.name)))),
+      JField("rows", JArray(relation.scan.toList.map {
+        case row => JArray(row.toList.map(e => JString(e.pretty)))
+      })))
+  }
+
+  /**
+   * Returns all the rows in the lattice.
+   *
+   * @param ast the AST declaration of the lattice.
+   * @param relation a reference to the datastore backing the lattice.
+   */
+  class ListLattice(ast: TypedAst.Collection.Lattice, relation: IndexedLattice) extends JsonHandler {
+    def json: JValue = JObject(
+      JField("cols", JArray(ast.keys.map(a => JString(a.ident.name)) ::: ast.values.map(a => JString(a.ident.name)))),
+      JField("rows", JArray(relation.scan.toList.map {
+        case (key, elms) => JArray(key.toArray.map(k => JString(k.pretty)).toList ::: elms.map(e => JString(e.pretty)).toList)
+      })))
+  }
+
+  /**
+   * Returns a list of telemetry samples.
+   */
+  class GetTelemetry extends JsonHandler {
+    def json: JValue = JArray(solver.monitor.telemetry.reverse.map {
+      case solver.monitor.DataSample(time, facts, queue, memory) =>
         JObject(List(
           JField("time", JInt(time / 1000000)),
           JField("facts", JInt(facts)),
@@ -235,9 +244,9 @@ class RestServer(solver: Solver) {
   }
 
   /**
-    * Returns the rules and their statistics.
-    */
-  class GetRules extends JsonHandler {
+   * Returns rule performance statistics.
+   */
+  class GetRulePerformance extends JsonHandler {
     def json: JValue = JArray(solver.getRuleStats.map {
       case (rule, hits, time) => JObject(List(
         JField("rule", JString(rule.head.loc.line())),
@@ -249,9 +258,9 @@ class RestServer(solver: Solver) {
   }
 
   /**
-    * Returns the predicates and their statistics.
-    */
-  class GetPredicates extends JsonHandler {
+   * Returns predicate performance statistics.
+   */
+  class GetPredicatePerformance extends JsonHandler {
     def json: JValue = JArray(solver.dataStore.predicateStats.map {
       case (name, size, indexedLookups, indexedScans, fullScans) => JObject(List(
         JField("name", JString(name)),
@@ -264,9 +273,9 @@ class RestServer(solver: Solver) {
   }
 
   /**
-    * Returns the indexes and their statistics.
-    */
-  class GetIndexes extends JsonHandler {
+   * Returns index performance statistics.
+   */
+  class GetIndexPerformance extends JsonHandler {
     def json: JValue = JArray(solver.dataStore.indexStats.map {
       case (name, index, hits) => JObject(List(
         JField("name", JString(name)),
@@ -277,9 +286,9 @@ class RestServer(solver: Solver) {
   }
 
   /**
-    * Returns the time spent in each compiler phase.
-    */
-  class GetCompilerPhases extends JsonHandler {
+   * Returns compiler performance statistics.
+   */
+  class GetCompilerPhasePerformance extends JsonHandler {
     def json: JValue = JArray(List(
       JObject(List(JField("name", JString("Parser")), JField("time", JInt(solver.sCtx.root.time.parser / 1000000)))),
       JObject(List(JField("name", JString("Weeder")), JField("time", JInt(solver.sCtx.root.time.weeder / 1000000)))),
@@ -289,10 +298,9 @@ class RestServer(solver: Solver) {
   }
 
   /**
-    * Bootstraps the internal http server.
-    */
+   * Bootstraps the internal http server.
+   */
   def start(): Unit = try {
-    //  TODO logger.trace("Starting WebServer.")
 
     val port = 9090
 
@@ -304,18 +312,18 @@ class RestServer(solver: Solver) {
     // mount ajax handlers.
     server.createContext("/relations", new GetRelations())
     for ((name, relation) <- solver.dataStore.relations) {
-      server.createContext("/relation/" + name, new ViewRelation(solver.sCtx.root.collections(name).asInstanceOf[TypedAst.Collection.Relation], relation))
+      server.createContext("/relation/" + name, new ListRelation(solver.sCtx.root.collections(name).asInstanceOf[TypedAst.Collection.Relation], relation))
     }
     server.createContext("/lattices", new GetLattices())
     for ((name, lattice) <- solver.dataStore.lattices) {
-      server.createContext("/lattice/" + name, new ViewLattice(solver.sCtx.root.collections(name).asInstanceOf[TypedAst.Collection.Lattice], lattice))
+      server.createContext("/lattice/" + name, new ListLattice(solver.sCtx.root.collections(name).asInstanceOf[TypedAst.Collection.Lattice], lattice))
     }
     server.createContext("/status", new GetStatus())
-    server.createContext("/snapshots", new GetSnapshots())
-    server.createContext("/performance/rules", new GetRules())
-    server.createContext("/performance/predicates", new GetPredicates())
-    server.createContext("/performance/indexes", new GetIndexes())
-    server.createContext("/compiler/phases", new GetCompilerPhases())
+    server.createContext("/snapshots", new GetTelemetry())
+    server.createContext("/performance/rules", new GetRulePerformance())
+    server.createContext("/performance/predicates", new GetPredicatePerformance())
+    server.createContext("/performance/indexes", new GetIndexPerformance())
+    server.createContext("/compiler/phases", new GetCompilerPhasePerformance())
 
     // mount file handler.
     server.createContext("/", new FileHandler())

@@ -210,7 +210,7 @@ var Menu = React.createClass({
                                                onClick={() => this.props.changePage({name: "relation", relation: name})}>
                                         <a href="#">{name}</a>
                                     </li>
-                                    })}
+                                })}
 
                                 <li role="separator" className="divider"></li>
 
@@ -220,7 +220,7 @@ var Menu = React.createClass({
                                                onClick={() => this.props.changePage({name: "lattice", lattice: name})}>
                                         <a href="#">{name}</a>
                                     </li>
-                                    })}
+                                })}
                             </ul>
                         </li>
                     </ul>
@@ -409,13 +409,13 @@ var LandingPage = React.createClass({
                         <div className="list-group">
                             {this.props.relations.map(relation => {
                                 return (
-                                <a href="#" className="list-group-item"
-                                   onClick={() => this.props.changePage({name: "relation", relation: relation.name})}>
-                                    {relation.name}
-                                    <span className="badge">{numeral(relation.size).format('0,0')}</span>
-                                </a>
-                                    );
-                                })}
+                                    <a href="#" className="list-group-item"
+                                       onClick={() => this.props.changePage({name: "relation", relation: relation.name})}>
+                                        {relation.name}
+                                        <span className="badge">{numeral(relation.size).format('0,0')}</span>
+                                    </a>
+                                );
+                            })}
                         </div>
 
                         <h3>Lattices</h3>
@@ -423,13 +423,13 @@ var LandingPage = React.createClass({
                         <div className="list-group">
                             {this.props.lattices.map(lattice => {
                                 return (
-                                <a href="#" className="list-group-item"
-                                   onClick={() => this.props.changePage({name: "lattice", lattice: lattice.name})}>
-                                    {lattice.name}
-                                    <span className="badge">{numeral(lattice.size).format('0,0')}</span>
-                                </a>
-                                    );
-                                })}
+                                    <a href="#" className="list-group-item"
+                                       onClick={() => this.props.changePage({name: "lattice", lattice: lattice.name})}>
+                                        {lattice.name}
+                                        <span className="badge">{numeral(lattice.size).format('0,0')}</span>
+                                    </a>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -840,7 +840,7 @@ var PhasesPage = React.createClass({
 
                 <div className="panel panel-default">
                     <div className="panel-body">
-                        The graph below shows the amount of time spent in various phases of the compiler.
+                        The graph shows the number of miliseconds spent in each phase of the compiler.
                     </div>
                 </div>
 
