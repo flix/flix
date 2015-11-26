@@ -862,7 +862,7 @@ var Table = React.createClass({displayName: "Table",
     },
     render: function () {
         return (
-            React.createElement("table", {className: "table table-striped table-condense table-hover"}, 
+            React.createElement("table", {className: "table table-condense table-hover"}, 
                 React.createElement(TableHeader, {table: this.props.table}), 
                 React.createElement(TableBody, {table: this.props.table})
             )
