@@ -10,12 +10,12 @@ lazy val dependencies = Seq(
   "org.json4s" %% "json4s-native" % "3.2.11"
 )
 
-lazy val root = (project in file("main"))
+lazy val flix = (project in file("."))
   .settings(commonSettings: _*)
   .settings(
     name := "flix",
-    scalaSource in Compile := baseDirectory.value / "src",
-    scalaSource in Test :=  baseDirectory.value / "test",
+    scalaSource in Compile := baseDirectory.value / "main" / "src",
+    scalaSource in Test :=  baseDirectory.value / "main" / "test",
     scalacOptions ++= Seq("-unchecked", "-deprecation"),
     libraryDependencies ++= dependencies
   )
