@@ -58,6 +58,9 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     val restServer = new RestServer(this)
     restServer.start() //  TODO
 
+    val shell = new Shell()
+    shell.start()
+
     // measure the time elapsed.
     val t = System.nanoTime()
 
