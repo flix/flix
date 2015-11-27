@@ -237,7 +237,7 @@ object Value {
     case Type.Set(typ) =>
       Value.Set(obj.asInstanceOf[scala.collection.immutable.Set[java.lang.Object]].map(e => java2flix(e, typ)))
     case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Set(_) | Type.Lambda(_, _) |
-         Type.Predicate(_) | Type.Native(_) =>
+         Type.Predicate(_) | Type.Native(_) | Type.Any =>
       Value.Native(obj)
   }
 }

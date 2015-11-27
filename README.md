@@ -1,10 +1,39 @@
-# Flix: Programming with Fixpoints #
+# Flix: Programming with Fixed Points #
 
-A new programming language for declarative fixpoint computations based on Datalog.
+A new programming language for declarative fixed-point computations based on Datalog.
 
 ## Syntax Highlighting ##
 
-### Intellij IDEA ###
+### IntelliJ IDEA ###
+
+Locate your IntelliJ config directory. Depending on the version, it could be
+something like `~/.IdeaIC14/config`. Then create the file
+`$INTELLIJCONFIG/filetypes/Flix.xml` with the content:
+
+```
+<filetype binary="false" description="The Flix Language" name="Flix">
+  <highlighting>
+    <options>
+      <option name="LINE_COMMENT" value="//" />
+      <option name="COMMENT_START" value="/*" />
+      <option name="COMMENT_END" value="*/" />
+      <option name="HEX_PREFIX" value="" />
+      <option name="NUM_POSTFIXES" value="" />
+      <option name="HAS_BRACES" value="true" />
+      <option name="HAS_BRACKETS" value="true" />
+      <option name="HAS_PARENS" value="true" />
+    </options>
+    <keywords keywords="assert;case;def;else;enum;if;in;index;lat;let;match;namespace;print;rel;type;val;with" ignore_case="false" />
+  </highlighting>
+  <extensionMap>
+    <mapping ext="flix" />
+  </extensionMap>
+```
+
+Restart IntelliJ IDEA.
+
+If syntax highlighting doesn't work, then follow these steps:
+
 - Go to `File > Settings > Editor > File Types`.
 - Press the "green plus" icon on the right to add a new filetype.
 - Enter the following:
