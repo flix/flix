@@ -4,6 +4,4 @@
 /target/
 /*.iml
 /flix.jar
-main/target/
-macro/target
 project/target
