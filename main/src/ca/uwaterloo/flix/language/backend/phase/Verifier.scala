@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.language.backend.phase
 
 object Verifier {
 //
