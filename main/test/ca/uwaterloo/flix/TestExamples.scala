@@ -37,6 +37,7 @@ class TestExamples extends FunSuite {
         |    A(8, Belnap.True `xor` Belnap.False).
         |}
       """.stripMargin
+
     val model = Flix.mkStr(List(input1, input2)).get
 
     val Belnap = Name.Resolved.mk(List("Belnap", "Belnap"))
@@ -55,6 +56,43 @@ class TestExamples extends FunSuite {
     assertResult(List(Fls))(A(List(Value.mkInt(6))))
     assertResult(List(Tru))(A(List(Value.mkInt(7))))
     assertResult(List(Tru))(A(List(Value.mkInt(8))))
+  }
+
+  test("Parity.flix") {
+    val input1 = Source.fromFile("./examples/domains/Parity.flix").getLines().mkString("\n")
+    val input2 =
+      """namespace Parity {
+        |    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb);
+        |    lat A(k: Int, v: Parity<>);
+        |
+        |    A(1, Parity.Odd).
+        |    A(2, Parity.Even).
+        |
+        |    A(3, Parity.Odd).
+        |    A(3, Parity.Even).
+        |
+        |    A(4, x) :- A(1, x), A(2, x).
+        |
+        |    A(5, Parity.Odd `plus` Parity.Even).
+        |
+        |    A(6, Parity.Odd `plus` Parity.Odd).
+        |
+        |    A(7, Parity.Odd `times` Parity.Even).
+        |
+        |    A(8, Parity.Odd `times` Parity.Odd).
+        |}
+      """.stripMargin
+
+    val model = Flix.mkStr(List(input1, input2)).get
+
+    val Parity = Name.Resolved.mk(List("Parity", "Parity"))
+
+    val Odd = Value.mkTag(Parity, "Odd", Value.Unit)
+    val Evn = Value.mkTag(Parity, "Even", Value.Unit)
+    val Top = Value.mkTag(Parity, "Top", Value.Unit)
+
+    val A = model.lattices(Name.Resolved.mk(List("Parity", "A"))).toMap
+
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -80,10 +118,7 @@ class TestExamples extends FunSuite {
     assert(model.isSuccess)
   }
 
-  test("Parity.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/analysis/Parity.flix"))
-    assert(model.isSuccess)
-  }
+
 
   test("Sign.flix") {
     val model = Flix.mkPath(Paths.get("./examples/analysis/Sign.flix"))
