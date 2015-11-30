@@ -1851,7 +1851,88 @@ class TestParser extends FunSuite {
     assertResult(BinaryOperator.Minus)(result)
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Annotations                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Annotation @strict") {
+    val input = "@strict"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Annotation).get
+    assert(result.isInstanceOf[ParsedAst.Annotation])
+  }
 
+  test("Annotation @mono") {
+    val input = "@mono"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Annotation).get
+    assert(result.isInstanceOf[ParsedAst.Annotation])
+  }
+
+  test("Annotation.AnnotatedFunction01") {
+    val input =
+      """@strict
+        |fn f(x: Int): Int = x
+      """.stripMargin
+    val parser = mkParser(input)
+    val result = parser.__run(parser.FunctionDefinition)
+    assert(result.get.isInstanceOf[ParsedAst.Definition.Function])
+  }
+
+  test("Annotation.AnnotatedFunction02") {
+    val input =
+      """@mono
+        |fn f(x: Int): Int = x
+      """.stripMargin
+    val parser = mkParser(input)
+    val result = parser.__run(parser.FunctionDefinition).get
+    assert(result.isInstanceOf[ParsedAst.Definition.Function])
+  }
+
+  test("Annotation.AnnotatedFunction03") {
+    val input =
+      """@strict @mono
+        |fn f(x: Int): Int = x
+      """.stripMargin
+    val parser = mkParser(input)
+    val result = parser.__run(parser.FunctionDefinition).get
+    assert(result.isInstanceOf[ParsedAst.Definition.Function])
+  }
+
+  test("Annotation.AnnotatedParameter01") {
+    val input =
+      """fn f(x: @strict Int): Int = x
+      """.stripMargin
+    val parser = mkParser(input)
+    val result = parser.__run(parser.FunctionDefinition).get
+    assert(result.isInstanceOf[ParsedAst.Definition.Function])
+  }
+
+  test("Annotation.AnnotatedParameter02") {
+    val input =
+      """fn f(x: @mono Int): Int = x
+      """.stripMargin
+    val parser = mkParser(input)
+    val result = parser.__run(parser.FunctionDefinition).get
+    assert(result.isInstanceOf[ParsedAst.Definition.Function])
+  }
+
+  test("Annotation.AnnotatedParameter03") {
+    val input =
+      """fn f(x: @strict @mono Int): Int = x
+      """.stripMargin
+    val parser = mkParser(input)
+    val result = parser.__run(parser.FunctionDefinition).get
+    assert(result.isInstanceOf[ParsedAst.Definition.Function])
+  }
+
+  test("Annotation.AnnotatedParameter04") {
+    val input =
+      """fn f(x: @strict Int, y: Int, z: @mono Int): Int = x
+      """.stripMargin
+    val parser = mkParser(input)
+    val result = parser.__run(parser.FunctionDefinition).get
+    assert(result.isInstanceOf[ParsedAst.Definition.Function])
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //
@@ -1925,8 +2006,6 @@ class TestParser extends FunSuite {
     val result = new Parser(SourceInput.Str(input)).MultiLineComment.run()
     assert(result.isSuccess)
   }
-
-  // TODO: Test annotations.
 
 
   /**

@@ -425,7 +425,7 @@ object Weeder {
       // check duplicate formals.
       val seen = mutable.Map.empty[String, Name.Ident]
       val formalsVal = @@(past.formals.map {
-        case ParsedAst.FormalArg(ident, tpe) => seen.get(ident.name) match {
+        case ParsedAst.FormalArg(ident, annotations, tpe) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> ident)
             Type.compile(tpe) map (t => WeededAst.FormalArg(ident, t))
@@ -608,7 +608,7 @@ object Weeder {
 
       case exp: ParsedAst.Expression.Lambda =>
         val argsVal = @@(exp.formals map {
-          case ParsedAst.FormalArg(ident, tpe) => Type.compile(tpe) map (t => WeededAst.FormalArg(ident, t))
+          case ParsedAst.FormalArg(ident, annotations, tpe) => Type.compile(tpe) map (t => WeededAst.FormalArg(ident, t))
         })
         @@(argsVal, Type.compile(exp.tpe), compile(exp.body)) map {
           case (args, tpe, body) => WeededAst.Expression.Lambda(args, body, tpe, exp.loc)

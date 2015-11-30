@@ -894,9 +894,12 @@ object ParsedAst {
    * An AST node representing a formal argument of a function.
    *
    * @param ident the name of the argument.
+   * @param annotations a sequence of annotations associated with the formal argument.
    * @param tpe the type of the argument.
    */
-  case class FormalArg(ident: Name.Ident, tpe: ParsedAst.Type) extends ParsedAst
+  case class FormalArg(ident: Name.Ident, annotations: Seq[ParsedAst.Annotation], tpe: ParsedAst.Type) extends ParsedAst
+
+  // TODO: Should the annotations be placed on the type instead?
 
   /**
    * An AST node representing an annotation.

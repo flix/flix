@@ -457,7 +457,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Argument: Rule1[ParsedAst.FormalArg] = rule {
-    Ident ~ ":" ~ optWS ~ Type ~> ParsedAst.FormalArg
+    Ident ~ ":" ~ optWS ~ zeroOrMore(Annotation).separatedBy(WS) ~ optWS ~ Type ~> ParsedAst.FormalArg
   }
 
   /////////////////////////////////////////////////////////////////////////////
