@@ -116,7 +116,10 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       val solverTime = elapsed / 1000000
       val initialFacts = sCtx.root.facts.size
       val totalFacts = dataStore.numberOfFacts
-      println(s"Solved in $solverTime msec. Initial Facts: $initialFacts. Total Facts: $totalFacts.")
+      val throughput = totalFacts / (solverTime / 1000)
+      Console.println(f"Successfully solved in $solverTime%,d msec.")
+      Console.println(f"Initial Facts: $initialFacts%,d. Total Facts: $totalFacts%,d.")
+      Console.println(f"Throughput: $throughput%,d facts per second.")
     }
 
     if (sCtx.options.debugger == Debugger.Enabled) {
