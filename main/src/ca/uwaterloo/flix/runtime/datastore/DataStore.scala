@@ -45,45 +45,10 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
     }
   }
 
-  def stats(): Unit = {
-    val t = new AsciiTable().withCols("Name", "Size", "Indexed Lookups", "Indexed Scans", "Full Scans")
-    for ((name, relation) <- relations) {
-      t.mkRow(List(
-        name,
-        relation.getSize,
-        relation.getNumberOfIndexedLookups,
-        relation.getNumberOfIndexedScans,
-        relation.getNumberOfFullScans
-      ))
-    }
-    t.write(Console.out)
-    Console.out.println()
-
-    val t2 = new AsciiTable().withCols("Name", "Size")
-    for ((name, lattice) <- lattices) {
-      t2.mkRow(List(
-        name,
-        lattice.scan.length
-      ))
-    }
-    t2.write(Console.out)
-    Console.out.println()
-
-    Console.out.println(">> Index Hits")
-    val t3 = new AsciiTable().withCols("Relation", "Index", "Hits")
-    val table = relations flatMap {
-      case (name, relation) => relation.getIndexHitCounts.map {
-        case (index, count) => (name, "{" + index.mkString(", ") + "}", count)
-      }
-    }
-    for ((name, index, count) <- table.toList.sortBy(_._3).reverse) {
-      t3.mkRow(List(name, index, count))
-    }
-    t3.write(Console.out)
-    Console.out.println()
-  }
-
-  def totalFacts: Int = {
+  /**
+   * Returns the total number of facts in the datastore.
+   */
+  def numberOfFacts: Int = {
     var result: Int = 0
     for ((name, relation) <- relations) {
       result += relation.getSize
@@ -94,6 +59,12 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
     return result
   }
 
+  def indexStats: List[(String, String, Int)] = relations.flatMap {
+    case (name, relation) => relation.getIndexHitCounts.map {
+      case (index, count) => (name.toString, "{" + index.mkString(", ") + "}", count)
+    }
+  }.toSeq.sortBy(_._3).reverse.toList
+
   def predicateStats: List[(String, Int, Int, Int, Int)] = relations.map {
     case (name, relation) => (
       name.toString,
@@ -101,12 +72,6 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
       relation.getNumberOfIndexedLookups,
       relation.getNumberOfIndexedScans,
       relation.getNumberOfFullScans)
-  }.toSeq.sortBy(_._3).reverse.toList
-
-  def indexStats: List[(String, String, Int)] = relations.flatMap {
-    case (name, relation) => relation.getIndexHitCounts.map {
-      case (index, count) => (name.toString, "{" + index.mkString(", ") + "}", count)
-    }
   }.toSeq.sortBy(_._3).reverse.toList
 
 }

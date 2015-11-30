@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
-import ca.uwaterloo.flix.util.{Debugger, Options, AsciiTable}
+import ca.uwaterloo.flix.util.{Verbosity, Debugger, Options, AsciiTable}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -52,7 +52,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
    * Returns the number of facts in the database.
    */
-  def getNumberOfFacts: Int = dataStore.totalFacts
+  def getNumberOfFacts: Int = dataStore.numberOfFacts
 
   /**
    * Pauses the solver.
@@ -111,23 +111,17 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
 
     // computed elapsed time.
     val elapsed = System.nanoTime() - t
-    println(s"Successfully solved in ${elapsed / 1000000} msec.")
+
+    if (sCtx.options.verbosity != Verbosity.Silent) {
+      val solverTime = elapsed / 1000000
+      val initialFacts = sCtx.root.facts.size
+      val totalFacts = dataStore.numberOfFacts
+      println(s"Solved in $solverTime msec. Initial Facts: $initialFacts. Total Facts: $totalFacts.")
+    }
 
     if (sCtx.options.debugger == Debugger.Enabled) {
       monitor.stop()
     }
-
-    // print some statistics.
-    dataStore.stats()
-
-    // print some statistics.
-    Console.out.println(">> Rule Evaluation Time")
-    val table = new AsciiTable().withCols("Line", "Rule", "Hitcount", "Time (msec)", "Time/Hit (usec)")
-    for (rule <- sCtx.root.rules.toSeq.sortBy(_.elapsedTime).reverse) {
-      table.mkRow(List(rule.head.loc.beginLine, rule.head.loc.line(), rule.hitcount, rule.elapsedTime / 1000000, (rule.elapsedTime / rule.hitcount) / 1000))
-    }
-    table.write(Console.out)
-    Console.out.println()
 
     // construct the model.
     val relations = dataStore.relations.foldLeft(Map.empty[Name.Resolved, Iterator[List[Value]]]) {
