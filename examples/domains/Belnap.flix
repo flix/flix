@@ -76,18 +76,15 @@ namespace Belnap {
      * Over-approximates the logical `or` operator.
      */
     @strict @mono
-    fn or(e1: Belnap, e2: Belnap): Belnap =
-        if (e1 == Belnap.Bot || e2 == Belnap.Bot)
-            Belnap.Bot
-        else
-            if (e1 == Belnap.Top || e2 == Belnap.Top)
-                Belnap.Top
-            else
-                let answer = (e1 == Belnap.True || e2 == Belnap.True) in
-                    if (answer)
-                        Belnap.True
-                    else
-                        Belnap.False
+    fn or(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+        case (Belnap.Bot, _)                => Belnap.Bot
+        case (_, Belnap.Bot)                => Belnap.Bot
+        case (Belnap.True, Belnap.True)     => Belnap.True
+        case (Belnap.True, Belnap.False)    => Belnap.True
+        case (Belnap.False, Belnap.True)    => Belnap.True
+        case (Belnap.False, Belnap.False)   => Belnap.False
+        case _                              => Belnap.Top
+    }
 
     /**
      * Over-approximates the logical `xor` operator.
