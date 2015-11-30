@@ -50,6 +50,7 @@ namespace Belnap {
     /**
      * Over-approximates the logical `not` operator.
      */
+    @strict @mono
     fn not(e: Belnap): Belnap = match e with {
         case Belnap.Bot     => Belnap.Bot
         case Belnap.True    => Belnap.False
@@ -60,6 +61,7 @@ namespace Belnap {
     /**
      * Over-approximates the logical `and` operator.
      */
+    @strict @mono
     fn and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot;
         case (_, Belnap.Bot)                => Belnap.Bot;
@@ -73,6 +75,7 @@ namespace Belnap {
     /**
      * Over-approximates the logical `or` operator.
      */
+    @strict @mono
     fn or(e1: Belnap, e2: Belnap): Belnap =
         if (e1 == Belnap.Bot || e2 == Belnap.Bot)
             Belnap.Bot
@@ -89,6 +92,7 @@ namespace Belnap {
     /**
      * Over-approximates the logical `xor` operator.
      */
+    @strict @mono
     fn xor(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot

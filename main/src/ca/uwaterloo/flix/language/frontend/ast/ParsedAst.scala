@@ -99,13 +99,14 @@ object ParsedAst {
      * An AST node that represents a function definition.
      *
      * @param sp1 the position of the first character in the definition.
+     * @param annotations the annotations associated with the function.
      * @param ident the name of the function.
      * @param formals the formals (i.e. parameters and their types).
      * @param tpe the return type.
      * @param body the body expression of the function.
      * @param sp2 the position of the last character in the definition.
      */
-    case class Function(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
+    case class Function(sp1: SourcePosition, annotations: Seq[ParsedAst.Annotation], ident: Name.Ident, formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -896,5 +897,14 @@ object ParsedAst {
    * @param tpe the type of the argument.
    */
   case class FormalArg(ident: Name.Ident, tpe: ParsedAst.Type) extends ParsedAst
+
+  /**
+   * An AST node representing an annotation.
+   *
+   * @param sp1 the position of the first character in the annotation.
+   * @param name the name of the annotation.
+   * @param sp2 the position of the last character in the annotation.
+   */
+  case class Annotation(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst
 
 }

@@ -58,8 +58,14 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     SP ~ atomic("val") ~ WS ~ Ident ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Value
   }
 
-  def FunctionDefinition: Rule1[ParsedAst.Definition.Function] = rule {
-    SP ~ (atomic("def") | atomic("fn")) ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ ArgumentList ~ optWS ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Function
+  def FunctionDefinition: Rule1[ParsedAst.Definition.Function] = {
+    def Annotations: Rule1[Seq[ParsedAst.Annotation]] = rule {
+      zeroOrMore(Annotation).separatedBy(WS)
+    }
+
+    rule {
+      SP ~ Annotations ~ optWS ~ (atomic("def") | atomic("fn")) ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ ArgumentList ~ optWS ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Function
+    }
   }
 
   def EnumDefinition: Rule1[ParsedAst.Definition.Enum] = {
@@ -473,6 +479,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def JavaName: Rule1[String] = rule {
     oneOrMore(LegalIdentifier).separatedBy(".") ~> ((xs: Seq[String]) => xs.mkString("."))
+  }
+
+  def Annotation: Rule1[ParsedAst.Annotation] = rule {
+    SP ~ atomic("@") ~ LegalIdentifier ~ SP ~> ParsedAst.Annotation
   }
 
   /////////////////////////////////////////////////////////////////////////////

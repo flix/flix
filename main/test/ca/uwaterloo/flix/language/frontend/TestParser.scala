@@ -1926,6 +1926,9 @@ class TestParser extends FunSuite {
     assert(result.isSuccess)
   }
 
+  // TODO: Test annotations.
+
+
   /**
    * Returns a parser for the given string `s`.
    */
