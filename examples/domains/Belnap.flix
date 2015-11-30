@@ -4,47 +4,45 @@
 namespace Belnap {
 
     /**
-     * The boolean lattice.
+     * The elements of the boolean lattice.
      */
     enum Belnap {
-             case Top,
-
-        case True, case False,
-
-             case Bot
+                  case Top,
+        case True,         case False,
+                  case Bot
     }
 
     /**
      * Returns `true` iff `e1` is less than or equal to `e2`.
      */
     fn leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) with {
-        case (Belnap.Bot, _)                => true;
-        case (Belnap.True, Belnap.True)     => true;
-        case (Belnap.False, Belnap.False)   => true;
-        case (_, Belnap.Top)                => true;
-        case _                              => false;
+        case (Belnap.Bot, _)                => true
+        case (Belnap.True, Belnap.True)     => true
+        case (Belnap.False, Belnap.False)   => true
+        case (_, Belnap.Top)                => true
+        case _                              => false
     }
 
     /**
      * Returns the least upper bound of `e1` and `e2`.
      */
     fn lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
-        case (Belnap.Bot, x)                => x;
-        case (x, Belnap.Bot)                => x;
-        case (Belnap.True, Belnap.True)     => Belnap.True;
-        case (Belnap.False, Belnap.False)   => Belnap.False;
-        case _                              => Belnap.Top;
+        case (Belnap.Bot, x)                => x
+        case (x, Belnap.Bot)                => x
+        case (Belnap.True, Belnap.True)     => Belnap.True
+        case (Belnap.False, Belnap.False)   => Belnap.False
+        case _                              => Belnap.Top
     }
 
     /**
      * Returns the greatest lower bound of `e1` and `e2`.
      */
     fn glb(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
-        case (Belnap.Top, x)                => x;
-        case (x, Belnap.Top)                => x;
-        case (Belnap.True, Belnap.True)     => Belnap.True;
-        case (Belnap.False, Belnap.False)   => Belnap.False;
-        case _                              => Belnap.Bot;
+        case (Belnap.Top, x)                => x
+        case (x, Belnap.Top)                => x
+        case (Belnap.True, Belnap.True)     => Belnap.True
+        case (Belnap.False, Belnap.False)   => Belnap.False
+        case _                              => Belnap.Bot
     }
 
     /**
@@ -63,13 +61,13 @@ namespace Belnap {
      */
     @strict @mono
     fn and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
-        case (Belnap.Bot, _)                => Belnap.Bot;
-        case (_, Belnap.Bot)                => Belnap.Bot;
-        case (Belnap.True, Belnap.True)     => Belnap.True;
-        case (Belnap.False, Belnap.True)    => Belnap.False;
-        case (Belnap.True, Belnap.False)    => Belnap.False;
-        case (Belnap.False, Belnap.False)   => Belnap.False;
-        case _                              => Belnap.Top;
+        case (Belnap.Bot, _)                => Belnap.Bot
+        case (_, Belnap.Bot)                => Belnap.Bot
+        case (Belnap.True, Belnap.True)     => Belnap.True
+        case (Belnap.False, Belnap.True)    => Belnap.False
+        case (Belnap.True, Belnap.False)    => Belnap.False
+        case (Belnap.False, Belnap.False)   => Belnap.False
+        case _                              => Belnap.Top
     }
 
     /**
