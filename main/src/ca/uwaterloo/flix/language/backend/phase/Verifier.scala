@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.backend.phase
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourcePosition, Name, SourceLocation, TypedAst}
 
 object Verifier {
 
@@ -11,18 +11,18 @@ object Verifier {
   object Theorems {
 
     /**
-     * Partial Order Theorems.
-     */
+      * Partial Order Theorems.
+      */
     object PartialOrder {
 
       /**
-       * Reflexivity: \forall x. x <= x.
-       */
+        * Reflexivity: \forall x. x <= x.
+        */
       case class Reflexivity(lattice: TypedAst.Definition.BoundedLattice) {
         val exp = {
-          val leq = lattice.leq
-          val args = List(TypedAst.Expression.Var(???, ???, ???), TypedAst.Expression.Var(???, ???, ???))
-          TypedAst.Expression.Apply(leq, args, TypedAst.Type.Bool, SourceLocation.Unknown)
+          val (tpe, leq) = (lattice.tpe, lattice.leq)
+
+          leq(mkVar("x", tpe), mkVar("x", tpe))
         }
       }
 
@@ -37,6 +37,18 @@ object Verifier {
 
   def theorems: Map[TypedAst.Definition.BoundedLattice, Set[Property]] = ???
 
+  /**
+    * Returns a typed AST node that represents a variable of the given `name` and with the given type `tpe`.
+    */
+  private def mkVar(name: String, tpe: TypedAst.Type): TypedAst.Expression.Var =
+    TypedAst.Expression.Var(Name.Ident(SourcePosition.Unknown, "x", SourcePosition.Unknown), tpe, SourceLocation.Unknown)
+
+  implicit class Exp2Call(val e: TypedAst.Expression) {
+    def apply(e1: TypedAst.Expression): TypedAst.Expression = ???
+
+    def apply(e1: TypedAst.Expression, e2: TypedAst.Expression): TypedAst.Expression =
+      TypedAst.Expression.Apply(e, List(e1, e2), ???, SourceLocation.Unknown) // TODO: What is the tpe?
+  }
 
   //  /**
   //   * Anti-symmetri: ?x, y. x ? y ? x ? y ? x = y
