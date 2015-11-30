@@ -59,7 +59,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def FunctionDefinition: Rule1[ParsedAst.Definition.Function] = rule {
-    SP ~ atomic("def") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ ArgumentList ~ optWS ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Function
+    SP ~ (atomic("def") | atomic("fn")) ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ ArgumentList ~ optWS ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Function
   }
 
   def EnumDefinition: Rule1[ParsedAst.Definition.Enum] = {
