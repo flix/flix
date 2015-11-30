@@ -84,6 +84,13 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       shell.start()
     }
 
+    val constants = sCtx.root.constants.foldLeft(Map.empty[Name.Resolved, Value]) {
+      case (macc, (name, constant)) => constant.exp match {
+        case e: TypedAst.Expression.Lambda if e.args == Nil => macc + (name -> Interpreter.eval(e.body, sCtx.root))
+        case _ => macc
+      }
+    }
+
     // measure the time elapsed.
     val t = System.nanoTime()
 
@@ -116,7 +123,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       val solverTime = elapsed / 1000000
       val initialFacts = sCtx.root.facts.size
       val totalFacts = dataStore.numberOfFacts
-      val throughput = totalFacts / (solverTime / 1000)
+      val throughput = (1000 * totalFacts) / (solverTime + 1)
       Console.println(f"Successfully solved in $solverTime%,d msec.")
       Console.println(f"Initial Facts: $initialFacts%,d. Total Facts: $totalFacts%,d.")
       Console.println(f"Throughput: $throughput%,d facts per second.")
@@ -139,7 +146,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         }
         macc + ((name, table))
     }
-    Model(sCtx.root, relations, lattices)
+    Model(sCtx.root, constants, relations, lattices)
   }
 
   // TODO: Move

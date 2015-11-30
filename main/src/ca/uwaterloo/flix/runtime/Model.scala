@@ -8,10 +8,14 @@ import ca.uwaterloo.flix.util.AsciiTable
  * A case class representing the minimal model.
  *
  * @param root the Flix program.
+ * @param constants the constant functions in the model.
  * @param relations the relational facts in the model.
  * @param lattices the lattice facts in the model.
  */
-case class Model(root: TypedAst.Root, relations: Map[Name.Resolved, Iterator[List[Value]]], lattices: Map[Name.Resolved, Iterator[(List[Value], List[Value])]]) {
+case class Model(root: TypedAst.Root,
+                 constants: Map[Name.Resolved, Value],
+                 relations: Map[Name.Resolved, Iterator[List[Value]]],
+                 lattices: Map[Name.Resolved, Iterator[(List[Value], List[Value])]]) {
 
   /**
    * Evaluates all print directives in the program.

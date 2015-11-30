@@ -80,12 +80,18 @@ class TestParser extends FunSuite {
   }
 
   test("Definition.Function01") {
-    val input = "def foo(x: Int): Int = 42"
+    val input = "def foo(): Int = 42"
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Function])
   }
 
   test("Definition.Function02") {
+    val input = "def foo(x: Int): Int = 42"
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Function])
+  }
+
+  test("Definition.Function03") {
     val input = "def foo(x: Int, y: Int, z: Int): Int = x + y + z"
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Function])
