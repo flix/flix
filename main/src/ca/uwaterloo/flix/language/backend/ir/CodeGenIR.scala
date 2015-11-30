@@ -17,7 +17,7 @@ object CodeGenIR {
 
   object Definition {
 
-    case class Function(name: Name.Resolved, args: List[LocalVar], body: CodeGenIR.Expression, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Definition
+    case class Function(name: Name.Resolved, args: List[ArgVar], body: CodeGenIR.Expression, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Definition
 
   }
 
@@ -52,11 +52,10 @@ object CodeGenIR {
 
     case class Set(elms: List[CodeGenIR.Expression], tpe: CodeGenIR.Type.Set, loc: SourceLocation) extends CodeGenIR.Expression
 
-    case class Error(tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+
+    case class Error(loc: SourceLocation) extends CodeGenIR.Expression
 
   }
-
-  // TODO: String
 
   sealed trait Type
 
@@ -69,6 +68,8 @@ object CodeGenIR {
     // TODO: Function
 
   }
+
+  case class ArgVar(offset: Int) extends CodeGenIR
 
   case class LocalVar(offset: Int) extends CodeGenIR
 
