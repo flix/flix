@@ -23,27 +23,39 @@ class TestExamples extends FunSuite {
         |    A(1, Belnap.True).
         |    A(2, Belnap.False).
         |
-        |    A(3, and(Belnap.True, Belnap.False)).
-        |    A(4, v1 `or` v2) :- A(1, v1), A(2, v2).
-        |    A(5, Belnap.True).
-        |    A(5, Belnap.False).
+        |    A(3, Belnap.True).
+        |    A(3, Belnap.False).
         |
-        |assert A(3, Belnap.False).
-        |assert A(4, Belnap.True).
-        |assert A(5, Belnap.Top).
+        |    A(4, x) :- A(1, x), A(2, x).
         |
-        |print A.
+        |    A(5, not(Belnap.False)).
+        |
+        |    A(6, Belnap.True `and` Belnap.False).
+        |
+        |    A(7, Belnap.True `or` Belnap.False).
+        |
+        |    A(8, Belnap.True `xor` Belnap.False).
         |}
       """.stripMargin
     val model = Flix.mkStr(List(input1, input2)).get
+
     val Belnap = Name.Resolved.mk(List("Belnap", "Belnap"))
+
+    val Tru = Value.mkTag(Belnap, "True", Value.Unit)
+    val Fls = Value.mkTag(Belnap, "False", Value.Unit)
+    val Top = Value.mkTag(Belnap, "Top", Value.Unit)
 
     val A = model.lattices(Name.Resolved.mk(List("Belnap", "A"))).toMap
 
-    assertResult(List(Value.mkTag(Belnap, "True", Value.Unit)))(A(List(Value.mkInt(1))))
-    assertResult(List(Value.mkTag(Belnap, "False", Value.Unit)))(A(List(Value.mkInt(2))))
+    assertResult(List(Tru))(A(List(Value.mkInt(1))))
+    assertResult(List(Fls))(A(List(Value.mkInt(2))))
+    assertResult(List(Top))(A(List(Value.mkInt(3))))
+    assertResult(None)(A.get(List(Value.mkInt(4))))
+    assertResult(List(Tru))(A(List(Value.mkInt(5))))
+    assertResult(List(Fls))(A(List(Value.mkInt(6))))
+    assertResult(List(Tru))(A(List(Value.mkInt(7))))
+    assertResult(List(Tru))(A(List(Value.mkInt(8))))
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Misc                                                                    //

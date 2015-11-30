@@ -1,5 +1,5 @@
 /**
- * An implementation of the boolean lattice named for Nuel Belnap.
+ * An implementation of the four-valued boolean lattice named for Nuel Belnap.
  */
 namespace Belnap {
 
@@ -17,53 +17,63 @@ namespace Belnap {
     /**
      * Returns `true` iff `e1` is less than or equal to `e2`.
      */
-    def leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) with {
-        case (Belnap.Bot, _) => true;
-        case (Belnap.True, Belnap.True) => true;
-        case (Belnap.False, Belnap.False) => true;
-        case (_, Belnap.Top) => true;
-        case _ => false;
+    fn leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) with {
+        case (Belnap.Bot, _)                => true;
+        case (Belnap.True, Belnap.True)     => true;
+        case (Belnap.False, Belnap.False)   => true;
+        case (_, Belnap.Top)                => true;
+        case _                              => false;
     }
 
     /**
      * Returns the least upper bound of `e1` and `e2`.
      */
-    def lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
-        case (Belnap.Bot, _) => e2;
-        case (_, Belnap.Bot) => e1;
-        case (Belnap.True, Belnap.True) => Belnap.True;
-        case (Belnap.False, Belnap.False) => Belnap.False;
-        case _ => Belnap.Top;
+    fn lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+        case (Belnap.Bot, x)                => x;
+        case (x, Belnap.Bot)                => x;
+        case (Belnap.True, Belnap.True)     => Belnap.True;
+        case (Belnap.False, Belnap.False)   => Belnap.False;
+        case _                              => Belnap.Top;
     }
 
     /**
      * Returns the greatest lower bound of `e1` and `e2`.
      */
-    def glb(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
-        case (Belnap.Top, _) => e2;
-        case (_, Belnap.Top) => e1;
-        case (Belnap.True, Belnap.True) => Belnap.True;
-        case (Belnap.False, Belnap.False) => Belnap.False;
-        case _ => Belnap.Bot;
+    fn glb(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+        case (Belnap.Top, x)                => x;
+        case (x, Belnap.Top)                => x;
+        case (Belnap.True, Belnap.True)     => Belnap.True;
+        case (Belnap.False, Belnap.False)   => Belnap.False;
+        case _                              => Belnap.Bot;
+    }
+
+    /**
+     * Over-approximates the logical `not` operator.
+     */
+    fn not(e: Belnap): Belnap = match e with {
+        case Belnap.Bot     => Belnap.Bot
+        case Belnap.True    => Belnap.False
+        case Belnap.False   => Belnap.True
+        case Belnap.Top     => Belnap.Top
     }
 
     /**
      * Over-approximates the logical `and` operator.
      */
-    def and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
-        case (Belnap.Bot, _) => Belnap.Bot;
-        case (_, Belnap.Bot) => Belnap.Bot;
-        case (Belnap.True, Belnap.True) => Belnap.True;
-        case (Belnap.False, Belnap.True) => Belnap.False;
-        case (Belnap.True, Belnap.False) => Belnap.False;
-        case (Belnap.False, Belnap.False) => Belnap.False;
-        case _ => Belnap.Top;
+    fn and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+        case (Belnap.Bot, _)                => Belnap.Bot;
+        case (_, Belnap.Bot)                => Belnap.Bot;
+        case (Belnap.True, Belnap.True)     => Belnap.True;
+        case (Belnap.False, Belnap.True)    => Belnap.False;
+        case (Belnap.True, Belnap.False)    => Belnap.False;
+        case (Belnap.False, Belnap.False)   => Belnap.False;
+        case _                              => Belnap.Top;
     }
 
     /**
      * Over-approximates the logical `or` operator.
      */
-    def or(e1: Belnap, e2: Belnap): Belnap =
+    fn or(e1: Belnap, e2: Belnap): Belnap =
         if (e1 == Belnap.Bot || e2 == Belnap.Bot)
             Belnap.Bot
         else
@@ -76,6 +86,17 @@ namespace Belnap {
                     else
                         Belnap.False
 
-
+    /**
+     * Over-approximates the logical `xor` operator.
+     */
+    fn xor(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+        case (Belnap.Bot, _)                => Belnap.Bot
+        case (_, Belnap.Bot)                => Belnap.Bot
+        case (Belnap.True, Belnap.False)    => Belnap.True
+        case (Belnap.False, Belnap.True)    => Belnap.True
+        case (Belnap.True, Belnap.True)     => Belnap.False
+        case (Belnap.False, Belnap.False)   => Belnap.False
+        case _                              => Belnap.Top
+    }
 
 }
