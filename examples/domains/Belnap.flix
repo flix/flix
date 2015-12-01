@@ -8,7 +8,9 @@ namespace Belnap {
      */
     enum Belnap {
                   case Top,
+
         case True,         case False,
+
                   case Bot
     }
 

@@ -1,5 +1,5 @@
 /**
- * An implementation of the parity lattice.
+ * An implementation of the parity abstract domain.
  */
 namespace Parity {
 
@@ -8,7 +8,9 @@ namespace Parity {
      */
     enum Parity {
                   case Top,
+
         case Odd,          case Even,
+
                   case Bot
     }
 
