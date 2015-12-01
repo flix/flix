@@ -215,19 +215,70 @@ namespace Sign {
      }
 
     /**
+      * Over-approximates `bitwise left shift`.
+      */
+     @strict @mono
+     fn leftShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+         case (Sign.Bot, _)          => Sign.Bot
+         case (_, Sign.Bot)          => Sign.Bot
+         case (Sign.Neg, Sign.Neg)   => Sign.Bot
+         case (Sign.Neg, Sign.Zer)   => Sign.Neg
+         case (Sign.Neg, Sign.Pos)   => Sign.Top
+         case (Sign.Zer, Sign.Neg)   => Sign.Bot
+         case (Sign.Zer, Sign.Zer)   => Sign.Zer
+         case (Sign.Zer, Sign.Pos)   => Sign.Zer
+         case (Sign.Pos, Sign.Neg)   => Sign.Bot
+         case (Sign.Pos, Sign.Zer)   => Sign.Pos
+         case (Sign.Pos, Sign.Pos)   => Sign.Top
+         case _                      => Sign.Top
+     }
+
+    /**
+      * Over-approximates `bitwise right shift`.
+      */
+     @strict @mono
+     fn rightShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+         case (Sign.Bot, _)          => Sign.Bot
+         case (_, Sign.Bot)          => Sign.Bot
+         case (Sign.Neg, Sign.Neg)   => Sign.Bot
+         case (Sign.Neg, Sign.Zer)   => Sign.Neg
+         case (Sign.Neg, Sign.Pos)   => Sign.Pos
+         case (Sign.Zer, Sign.Neg)   => Sign.Bot
+         case (Sign.Zer, Sign.Zer)   => Sign.Zer
+         case (Sign.Zer, Sign.Pos)   => Sign.Zer
+         case (Sign.Pos, Sign.Neg)   => Sign.Bot
+         case (Sign.Pos, Sign.Zer)   => Sign.Pos
+         case (Sign.Pos, Sign.Pos)   => Sign.Top
+         case _                      => Sign.Top
+     }
+
+    /**
+      * Over-approximates `equal`.
+      */
+    @strict @mono
+    fn eq(e1: Sign, e2: Sign): Belnap::Belnap = ???: Belnap::Belnap
+
+    /**
+      * Over-approximates `not equal`.
+      */
+    @strict @mono
+    fn neq(e1: Sign, e2: Sign): Belnap::Belnap = ???: Belnap::Belnap
+
+    /**
+      * Over-approximates `less than`.
+      */
+    @strict @mono
+    fn less(e1: Sign, e2: Sign): Belnap::Belnap = ???: Belnap::Belnap
+
+    /**
       * Over-approximates `less than or equal`.
       */
+    @strict @mono
     fn lessEqual(e1: Sign, e2: Sign): Belnap::Belnap = ???: Belnap::Belnap
 
-     // TODO: more operations:
-     // left shift <<
-     // right shift >>
-     // less than, etc.
-     //
-
-    // TODO: What about Eq/Neq with usage of Belnap?
-
     // TODO: @associative @commutative
+
+    // TODO: Rename mono to monotone?
 };
 
 
