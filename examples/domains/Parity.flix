@@ -48,6 +48,7 @@ namespace Parity {
     /**
      * Over-approximates integer `addition`.
      */
+    @strict @mono
     fn plus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Parity.Bot)              => Parity.Bot
         case (Parity.Bot, _)              => Parity.Bot
@@ -61,6 +62,7 @@ namespace Parity {
     /**
      * Over-approximates integer `subtraction`.
      */
+    @strict @mono
     fn minus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Parity.Bot)              => Parity.Bot
         case (Parity.Bot, _)              => Parity.Bot
@@ -74,6 +76,7 @@ namespace Parity {
     /**
      * Over-approximates integer `multiplication`.
      */
+    @strict @mono
     fn times(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Parity.Bot)              => Parity.Bot
         case (Parity.Bot, _)              => Parity.Bot
@@ -87,15 +90,17 @@ namespace Parity {
     /**
      * Over-approximates integer `division`.
      */
-     fn divide(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        case (_, Parity.Bot)              => Parity.Bot
-        case (Parity.Bot, _)              => Parity.Bot
-        case _                            => Parity.Top
-     }
+    @strict @mono
+    fn divide(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+       case (_, Parity.Bot)              => Parity.Bot
+       case (Parity.Bot, _)              => Parity.Bot
+       case _                            => Parity.Top
+    }
 
     /**
      * Over-approximates integer `modulus`.
      */
+    @strict @mono
     fn modulo(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
        case (_, Parity.Bot)              => Parity.Bot
        case (Parity.Bot, _)              => Parity.Bot
@@ -109,6 +114,7 @@ namespace Parity {
     /**
      * Over-approximates integer `bitwise or`.
      */
+    @strict @mono
     fn or(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Parity.Bot)              => Parity.Bot
       case (Parity.Bot, _)              => Parity.Bot
@@ -122,7 +128,7 @@ namespace Parity {
     /**
      * Over-approximates integer `bitwise and`.
      */
-    // TODO: Add commutative annotation?
+    @strict @mono
     fn and(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
        case (_, Parity.Bot)              => Parity.Bot
        case (Parity.Bot, _)              => Parity.Bot
@@ -136,6 +142,7 @@ namespace Parity {
     /**
      * Over-approximates integer `bitwise xor`.
      */
+    @strict @mono
     fn xor(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Parity.Bot)              => Parity.Bot
       case (Parity.Bot, _)              => Parity.Bot
@@ -149,6 +156,7 @@ namespace Parity {
     /**
      * Over-approximates integer `bitwise left shift`.
      */
+    @strict @mono
     fn leftShift(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Parity.Bot)              => Parity.Bot
       case (Parity.Bot, _)              => Parity.Bot
@@ -162,10 +170,13 @@ namespace Parity {
     /**
      * Over-approximates integer `bitwise right shift`.
      */
+    @strict @mono
     fn rightShift(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Parity.Bot)              => Parity.Bot
       case (Parity.Bot, _)              => Parity.Bot
       case _                            => Parity.Top
     }
+
+    // TODO: Add commutative annotation?
 
 }
