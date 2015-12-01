@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.backend.phase
 
+import ca.uwaterloo.flix.language.ast.TypedAst.Expression.Var
 import ca.uwaterloo.flix.language.ast.{SourcePosition, Name, SourceLocation, TypedAst}
 
 object Verifier {
@@ -15,6 +16,8 @@ object Verifier {
       */
     object PartialOrder {
 
+      // TODO: Use UTF8 symbols?
+
       /**
         * Reflexivity: \forall x. x <= x.
         */
@@ -29,8 +32,25 @@ object Verifier {
       def antiSymmetry(lattice: TypedAst.Definition.BoundedLattice): TypedAst.Expression =
         ???
 
-      def transitivity(lattice: TypedAst.Definition.BoundedLattice): TypedAst.Expression =
-        ???
+      /**
+        * Transitivity: \forall x, y, z. x <= y /\ y <= z ==> x <= z
+        */
+      case class Transitivity(lattice: TypedAst.Definition.BoundedLattice) {
+        val exp = {
+          // extract lattice components.
+          val TypedAst.Definition.BoundedLattice(tpe, bot, top, leq, lub, glb, loc) = lattice
+
+          val ⊑ = leq
+          // val TypedAst.Definition.BoundedLattice(tpe, ⊥, ⊤, ⊑, ⊔, ⊓, loc) = lattice
+
+          // declare the variables and their types.
+          val (x, y, z) = (mkVar("x", tpe), mkVar("y", tpe), mkVar("z", tpe))
+
+
+          (x ⊑ y) ∧ (y ⊑ z) → (x ⊑ z)
+        }
+      }
+
     }
 
   }
@@ -43,11 +63,19 @@ object Verifier {
   private def mkVar(name: String, tpe: TypedAst.Type): TypedAst.Expression.Var =
     TypedAst.Expression.Var(Name.Ident(SourcePosition.Unknown, "x", SourcePosition.Unknown), tpe, SourceLocation.Unknown)
 
-  implicit class Exp2Call(val e: TypedAst.Expression) {
+  implicit class RichExp(val e: TypedAst.Expression) {
     def apply(e1: TypedAst.Expression): TypedAst.Expression = ???
 
     def apply(e1: TypedAst.Expression, e2: TypedAst.Expression): TypedAst.Expression =
       TypedAst.Expression.Apply(e, List(e1, e2), ???, SourceLocation.Unknown) // TODO: What is the tpe?
+
+    def ∧(that: TypedAst.Expression): TypedAst.Expression = ???
+
+    def →(that: TypedAst.Expression): TypedAst.Expression = ???
+
+    def ⊑(that: TypedAst.Expression): TypedAst.Expression = ???
+
+    def ⊔(that: TypedAst.Expression): TypedAst.Expression = ???
   }
 
   //  /**
