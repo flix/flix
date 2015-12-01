@@ -112,7 +112,18 @@ namespace Parity {
     }
 
     /**
-     * Over-approximates integer `bitwise or`.
+     * Over-approximates `bitwise negation`.
+     */
+    @strict @mono
+    fn negate(e: Parity): Parity = match e with {
+        case Parity.Bot     =>  Parity.Bot
+        case Parity.Odd     =>  Parity.Even
+        case Parity.Even    =>  Parity.Odd
+        case Parity.Top     =>  Parity.Top
+    }
+
+    /**
+     * Over-approximates `bitwise or`.
      */
     @strict @mono
     fn or(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
@@ -126,7 +137,7 @@ namespace Parity {
     }
 
     /**
-     * Over-approximates integer `bitwise and`.
+     * Over-approximates `bitwise and`.
      */
     @strict @mono
     fn and(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
@@ -140,7 +151,7 @@ namespace Parity {
     }
 
     /**
-     * Over-approximates integer `bitwise xor`.
+     * Over-approximates `bitwise xor`.
      */
     @strict @mono
     fn xor(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
@@ -154,7 +165,7 @@ namespace Parity {
     }
 
     /**
-     * Over-approximates integer `bitwise left shift`.
+     * Over-approximates `bitwise left shift`.
      */
     @strict @mono
     fn leftShift(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
@@ -168,7 +179,7 @@ namespace Parity {
     }
 
     /**
-     * Over-approximates integer `bitwise right shift`.
+     * Over-approximates `bitwise right shift`.
      */
     @strict @mono
     fn rightShift(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
