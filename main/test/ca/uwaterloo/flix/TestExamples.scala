@@ -111,29 +111,44 @@ class TestExamples extends FunSuite {
         |    let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb);
         |    lat A(k: Int, v: Sign<>);
         |
+        |    A(1, Sign.Neg).
+        |    A(2, Sign.Zer).
+        |    A(3, Sign.Pos).
         |
+        |    A(4, Sign.Neg).
+        |    A(4, Sign.Zer).
+        |    A(4, Sign.Pos).
+        |
+        |    A(5, x) :- A(1, x), A(2, x), A(3, x).
+        |
+        |    A(6, Sign.Zer `plus` Sign.Pos).
+        |    A(7, Sign.Neg `plus` Sign.Pos).
+        |
+        |    A(8, Sign.Zer `times` Sign.Pos).
+        |    A(9, Sign.Neg `times` Sign.Neg).
         |}
       """.stripMargin
 
-//
-//
-//    Result(0, Sign.Bot).
-//
-//      Result(1, Sign.Neg).
-//      Result(2, Sign.Zer).
-//      Result(3, Sign.Pos).
-//
-//      Result(4, Sign.Neg).
-//      Result(4, Sign.Zer).
-//      Result(4, Sign.Pos).
-//
-//      Result(5, plus(v1, v2)) :- isMaybeEq(v1, v2), Result(1, v1), Result(4, v2).
-//
-//      Error#(v) :- Result(1, v), Result(2, v), Result(3, v), Result(4, v).
-//
-//      print Result;
-
     val model = Flix.mkStr(List(input1, input2, input3)).get
+
+    val Sign = Name.Resolved.mk(List("Sign", "Sign"))
+
+    val Neg = Value.mkTag(Sign, "Neg", Value.Unit)
+    val Zer = Value.mkTag(Sign, "Zer", Value.Unit)
+    val Pos = Value.mkTag(Sign, "Pos", Value.Unit)
+    val Top = Value.mkTag(Sign, "Top", Value.Unit)
+
+    val A = model.lattices(Name.Resolved.mk(List("Sign", "A"))).toMap
+
+    assertResult(List(Neg))(A(List(Value.mkInt(1))))
+    assertResult(List(Zer))(A(List(Value.mkInt(2))))
+    assertResult(List(Pos))(A(List(Value.mkInt(3))))
+    assertResult(List(Top))(A(List(Value.mkInt(4))))
+    assertResult(None)(A.get(List(Value.mkInt(5))))
+    assertResult(List(Pos))(A(List(Value.mkInt(6))))
+    assertResult(List(Top))(A(List(Value.mkInt(7))))
+    assertResult(List(Zer))(A(List(Value.mkInt(8))))
+    assertResult(List(Pos))(A(List(Value.mkInt(9))))
   }
 
   /////////////////////////////////////////////////////////////////////////////
