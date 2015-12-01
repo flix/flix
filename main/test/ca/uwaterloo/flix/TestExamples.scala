@@ -93,6 +93,28 @@ class TestExamples extends FunSuite {
 
     val A = model.lattices(Name.Resolved.mk(List("Parity", "A"))).toMap
 
+    assertResult(List(Odd))(A(List(Value.mkInt(1))))
+    assertResult(List(Evn))(A(List(Value.mkInt(2))))
+    assertResult(List(Top))(A(List(Value.mkInt(3))))
+    assertResult(None)(A.get(List(Value.mkInt(4))))
+    assertResult(List(Odd))(A(List(Value.mkInt(5))))
+    assertResult(List(Evn))(A(List(Value.mkInt(6))))
+    assertResult(List(Evn))(A(List(Value.mkInt(7))))
+    assertResult(List(Odd))(A(List(Value.mkInt(8))))
+  }
+
+  test("Sign.flix") {
+    val input1 = Source.fromFile("./examples/domains/Sign.flix").getLines().mkString("\n")
+    val input2 =
+      """namespace Sign {
+        |    let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb);
+        |    lat A(k: Int, v: Sign<>);
+        |
+        |
+        |}
+      """.stripMargin
+
+    val model = Flix.mkStr(List(input1, input2)).get
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -115,13 +137,6 @@ class TestExamples extends FunSuite {
 
   test("Interval.flix") {
     val model = Flix.mkPath(Paths.get("./examples/analysis/Interval.flix"))
-    assert(model.isSuccess)
-  }
-
-
-
-  test("Sign.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/analysis/Sign.flix"))
     assert(model.isSuccess)
   }
 
