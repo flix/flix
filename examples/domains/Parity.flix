@@ -98,6 +98,13 @@ namespace Parity {
         case _                            => Parity.Top
      }
 
-     // TODO: more operations.
+     // TODO: more operations:
+     // modulo
+     // bitwise and, or, xor
+     // less than, etc.
+     // eq ==, !=
+     // left shift <<
+     // right shift >>
+     //
 
 }
