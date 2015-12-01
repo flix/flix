@@ -47,9 +47,11 @@ object Verifier {
           val (x, y, z) = (mkVar("x", tpe), mkVar("y", tpe), mkVar("z", tpe))
 
 
-          (x ⊑ y) ∧ (y ⊑ z) → (x ⊑ z)
+          ∀(x, y, z) :- (x ⊑ y) ∧ (y ⊑ z) → (x ⊑ z)
         }
       }
+
+      def ∀(x: Any, y: Any, z: Any): TypedAst.Expression = ???
 
     }
 
@@ -76,6 +78,8 @@ object Verifier {
     def ⊑(that: TypedAst.Expression): TypedAst.Expression = ???
 
     def ⊔(that: TypedAst.Expression): TypedAst.Expression = ???
+
+    def :-(that: TypedAst.Expression): TypedAst.Expression = ???
   }
 
   //  /**
