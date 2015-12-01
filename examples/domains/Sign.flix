@@ -160,124 +160,147 @@ namespace Sign {
     /**
       * Over-approximates `bitwise or`.
       */
-     @strict @mono
-     fn or(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-         case (Sign.Bot, _)          => Sign.Bot
-         case (_, Sign.Bot)          => Sign.Bot
-         case (Sign.Neg, Sign.Neg)   => Sign.Neg
-         case (Sign.Neg, Sign.Zer)   => Sign.Neg
-         case (Sign.Neg, Sign.Pos)   => Sign.Neg
-         case (Sign.Zer, Sign.Neg)   => Sign.Neg
-         case (Sign.Zer, Sign.Zer)   => Sign.Zer
-         case (Sign.Zer, Sign.Pos)   => Sign.Pos
-         case (Sign.Pos, Sign.Neg)   => Sign.Neg
-         case (Sign.Pos, Sign.Zer)   => Sign.Pos
-         case (Sign.Pos, Sign.Pos)   => Sign.Pos
-         case _                      => Sign.Top
-     }
+    @strict @mono
+    fn or(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+        case (Sign.Bot, _)          => Sign.Bot
+        case (_, Sign.Bot)          => Sign.Bot
+        case (Sign.Neg, Sign.Neg)   => Sign.Neg
+        case (Sign.Neg, Sign.Zer)   => Sign.Neg
+        case (Sign.Neg, Sign.Pos)   => Sign.Neg
+        case (Sign.Zer, Sign.Neg)   => Sign.Neg
+        case (Sign.Zer, Sign.Zer)   => Sign.Zer
+        case (Sign.Zer, Sign.Pos)   => Sign.Pos
+        case (Sign.Pos, Sign.Neg)   => Sign.Neg
+        case (Sign.Pos, Sign.Zer)   => Sign.Pos
+        case (Sign.Pos, Sign.Pos)   => Sign.Pos
+        case _                      => Sign.Top
+    }
 
     /**
       * Over-approximates `bitwise and`.
       */
-     @strict @mono
-     fn and(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-         case (Sign.Bot, _)          => Sign.Bot
-         case (_, Sign.Bot)          => Sign.Bot
-         case (Sign.Neg, Sign.Neg)   => Sign.Top
-         case (Sign.Neg, Sign.Zer)   => Sign.Zer
-         case (Sign.Neg, Sign.Pos)   => Sign.Top
-         case (Sign.Zer, Sign.Neg)   => Sign.Zer
-         case (Sign.Zer, Sign.Zer)   => Sign.Zer
-         case (Sign.Zer, Sign.Pos)   => Sign.Zer
-         case (Sign.Pos, Sign.Neg)   => Sign.Top
-         case (Sign.Pos, Sign.Zer)   => Sign.Zer
-         case (Sign.Pos, Sign.Pos)   => Sign.Top
-         case _                      => Sign.Top
-     }
+    @strict @mono
+    fn and(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+        case (Sign.Bot, _)          => Sign.Bot
+        case (_, Sign.Bot)          => Sign.Bot
+        case (Sign.Neg, Sign.Neg)   => Sign.Top
+        case (Sign.Neg, Sign.Zer)   => Sign.Zer
+        case (Sign.Neg, Sign.Pos)   => Sign.Top
+        case (Sign.Zer, Sign.Neg)   => Sign.Zer
+        case (Sign.Zer, Sign.Zer)   => Sign.Zer
+        case (Sign.Zer, Sign.Pos)   => Sign.Zer
+        case (Sign.Pos, Sign.Neg)   => Sign.Top
+        case (Sign.Pos, Sign.Zer)   => Sign.Zer
+        case (Sign.Pos, Sign.Pos)   => Sign.Top
+        case _                      => Sign.Top
+    }
 
     /**
       * Over-approximates `bitwise xor`.
       */
-     @strict @mono @associative @commutative
-     fn xor(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-         case (Sign.Bot, _)          => Sign.Bot
-         case (_, Sign.Bot)          => Sign.Bot
-         case (Sign.Neg, Sign.Neg)   => Sign.Top
-         case (Sign.Neg, Sign.Zer)   => Sign.Neg
-         case (Sign.Neg, Sign.Pos)   => Sign.Neg
-         case (Sign.Zer, Sign.Neg)   => Sign.Neg
-         case (Sign.Zer, Sign.Zer)   => Sign.Zer
-         case (Sign.Zer, Sign.Pos)   => Sign.Pos
-         case (Sign.Pos, Sign.Neg)   => Sign.Neg
-         case (Sign.Pos, Sign.Zer)   => Sign.Pos
-         case (Sign.Pos, Sign.Pos)   => Sign.Top
-         case _                      => Sign.Top
-     }
+    @strict @mono @associative @commutative
+    fn xor(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+        case (Sign.Bot, _)          => Sign.Bot
+        case (_, Sign.Bot)          => Sign.Bot
+        case (Sign.Neg, Sign.Neg)   => Sign.Top
+        case (Sign.Neg, Sign.Zer)   => Sign.Neg
+        case (Sign.Neg, Sign.Pos)   => Sign.Neg
+        case (Sign.Zer, Sign.Neg)   => Sign.Neg
+        case (Sign.Zer, Sign.Zer)   => Sign.Zer
+        case (Sign.Zer, Sign.Pos)   => Sign.Pos
+        case (Sign.Pos, Sign.Neg)   => Sign.Neg
+        case (Sign.Pos, Sign.Zer)   => Sign.Pos
+        case (Sign.Pos, Sign.Pos)   => Sign.Top
+        case _                      => Sign.Top
+    }
 
     /**
       * Over-approximates `bitwise left shift`.
       */
-     @strict @mono
-     fn leftShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-         case (Sign.Bot, _)          => Sign.Bot
-         case (_, Sign.Bot)          => Sign.Bot
-         case (Sign.Neg, Sign.Neg)   => Sign.Bot
-         case (Sign.Neg, Sign.Zer)   => Sign.Neg
-         case (Sign.Neg, Sign.Pos)   => Sign.Top
-         case (Sign.Zer, Sign.Neg)   => Sign.Bot
-         case (Sign.Zer, Sign.Zer)   => Sign.Zer
-         case (Sign.Zer, Sign.Pos)   => Sign.Zer
-         case (Sign.Pos, Sign.Neg)   => Sign.Bot
-         case (Sign.Pos, Sign.Zer)   => Sign.Pos
-         case (Sign.Pos, Sign.Pos)   => Sign.Top
-         case _                      => Sign.Top
-     }
+    @strict @mono
+    fn leftShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+        case (Sign.Bot, _)          => Sign.Bot
+        case (_, Sign.Bot)          => Sign.Bot
+        case (Sign.Neg, Sign.Neg)   => Sign.Bot
+        case (Sign.Neg, Sign.Zer)   => Sign.Neg
+        case (Sign.Neg, Sign.Pos)   => Sign.Top
+        case (Sign.Zer, Sign.Neg)   => Sign.Bot
+        case (Sign.Zer, Sign.Zer)   => Sign.Zer
+        case (Sign.Zer, Sign.Pos)   => Sign.Zer
+        case (Sign.Pos, Sign.Neg)   => Sign.Bot
+        case (Sign.Pos, Sign.Zer)   => Sign.Pos
+        case (Sign.Pos, Sign.Pos)   => Sign.Top
+        case _                      => Sign.Top
+    }
 
     /**
       * Over-approximates `bitwise right shift`.
       */
-     @strict @mono
-     fn rightShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-         case (Sign.Bot, _)          => Sign.Bot
-         case (_, Sign.Bot)          => Sign.Bot
-         case (Sign.Neg, Sign.Neg)   => Sign.Bot
-         case (Sign.Neg, Sign.Zer)   => Sign.Neg
-         case (Sign.Neg, Sign.Pos)   => Sign.Pos
-         case (Sign.Zer, Sign.Neg)   => Sign.Bot
-         case (Sign.Zer, Sign.Zer)   => Sign.Zer
-         case (Sign.Zer, Sign.Pos)   => Sign.Zer
-         case (Sign.Pos, Sign.Neg)   => Sign.Bot
-         case (Sign.Pos, Sign.Zer)   => Sign.Pos
-         case (Sign.Pos, Sign.Pos)   => Sign.Top
-         case _                      => Sign.Top
-     }
+    @strict @mono
+    fn rightShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+        case (Sign.Bot, _)          => Sign.Bot
+        case (_, Sign.Bot)          => Sign.Bot
+        case (Sign.Neg, Sign.Neg)   => Sign.Bot
+        case (Sign.Neg, Sign.Zer)   => Sign.Neg
+        case (Sign.Neg, Sign.Pos)   => Sign.Pos
+        case (Sign.Zer, Sign.Neg)   => Sign.Bot
+        case (Sign.Zer, Sign.Zer)   => Sign.Zer
+        case (Sign.Zer, Sign.Pos)   => Sign.Zer
+        case (Sign.Pos, Sign.Neg)   => Sign.Bot
+        case (Sign.Pos, Sign.Zer)   => Sign.Pos
+        case (Sign.Pos, Sign.Pos)   => Sign.Top
+        case _                      => Sign.Top
+    }
 
     /**
       * Over-approximates `equal`.
       */
     @strict @mono
-    fn eq(e1: Sign, e2: Sign): Belnap::Belnap = ???: Belnap::Belnap
+    fn eq(e1: Sign, e2: Sign): Belnap::Belnap = match (e1, e2) with {
+        case (Sign.Bot, _)          => Belnap::Belnap.Bot
+        case (_, Sign.Bot)          => Belnap::Belnap.Bot
+        case (Sign.Neg, Sign.Neg)   => Belnap::Belnap.Top
+        case (Sign.Neg, Sign.Zer)   => Belnap::Belnap.False
+        case (Sign.Neg, Sign.Pos)   => Belnap::Belnap.False
+        case (Sign.Zer, Sign.Neg)   => Belnap::Belnap.False
+        case (Sign.Zer, Sign.Zer)   => Belnap::Belnap.True
+        case (Sign.Zer, Sign.Pos)   => Belnap::Belnap.False
+        case (Sign.Pos, Sign.Neg)   => Belnap::Belnap.False
+        case (Sign.Pos, Sign.Zer)   => Belnap::Belnap.False
+        case (Sign.Pos, Sign.Pos)   => Belnap::Belnap.Top
+        case _                      => Belnap::Belnap.Top
+    }
 
     /**
       * Over-approximates `not equal`.
       */
     @strict @mono
-    fn neq(e1: Sign, e2: Sign): Belnap::Belnap = ???: Belnap::Belnap
+    fn neq(e1: Sign, e2: Sign): Belnap::Belnap = Belnap::not(eq(e1, e2))
 
     /**
       * Over-approximates `less than`.
       */
     @strict @mono
-    fn less(e1: Sign, e2: Sign): Belnap::Belnap = ???: Belnap::Belnap
+    fn less(e1: Sign, e2: Sign): Belnap::Belnap = match (e1, e2) with {
+        case (Sign.Bot, _)          => Belnap::Belnap.Bot
+        case (_, Sign.Bot)          => Belnap::Belnap.Bot
+        case (Sign.Neg, Sign.Zer)   => Belnap::Belnap.True
+        case (Sign.Neg, Sign.Pos)   => Belnap::Belnap.True
+        case (Sign.Zer, Sign.Pos)   => Belnap::Belnap.True
+        case (Sign.Pos, Sign.Neg)   => Belnap::Belnap.False
+        case (Sign.Pos, Sign.Zer)   => Belnap::Belnap.False
+        case (Sign.Zer, Sign.Neg)   => Belnap::Belnap.False
+        case _                      => Belnap::Belnap.Top
+    }
+
 
     /**
       * Over-approximates `less than or equal`.
       */
     @strict @mono
-    fn lessEqual(e1: Sign, e2: Sign): Belnap::Belnap = ???: Belnap::Belnap
+    fn lessEqual(e1: Sign, e2: Sign): Belnap::Belnap = Belnap::or(e1 `less` e2, e1 `eq` e2)
 
     // TODO: @associative @commutative
-
     // TODO: Rename mono to monotone?
 };
 
