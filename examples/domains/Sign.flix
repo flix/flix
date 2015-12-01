@@ -169,12 +169,33 @@ namespace Sign {
          case (Sign.Neg, Sign.Pos)   => Sign.Neg
          case (Sign.Zer, Sign.Neg)   => Sign.Neg
          case (Sign.Zer, Sign.Zer)   => Sign.Zer
-         case (Sign.Zer, Sign.Pos)   => ???
-         case (Sign.Pos, Sign.Neg)   => ???
-         case (Sign.Pos, Sign.Zer)   => ???
-         case (Sign.Pos, Sign.Pos)   => ???
+         case (Sign.Zer, Sign.Pos)   => Sign.Pos
+         case (Sign.Pos, Sign.Neg)   => Sign.Neg
+         case (Sign.Pos, Sign.Zer)   => Sign.Pos
+         case (Sign.Pos, Sign.Pos)   => Sign.Pos
          case _                      => Sign.Top
      }
+
+    /**
+      * Over-approximates `bitwise and`.
+      */
+     @strict @mono
+     fn and(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+         case (Sign.Bot, _)          => Sign.Bot
+         case (_, Sign.Bot)          => Sign.Bot
+         case (Sign.Neg, Sign.Neg)   => Sign.Top
+         case (Sign.Neg, Sign.Zer)   => Sign.Zer
+         case (Sign.Neg, Sign.Pos)   => Sign.Top
+         case (Sign.Zer, Sign.Neg)   => Sign.Zer
+         case (Sign.Zer, Sign.Zer)   => Sign.Zer
+         case (Sign.Zer, Sign.Pos)   => Sign.Zer
+         case (Sign.Pos, Sign.Neg)   => Sign.Top
+         case (Sign.Pos, Sign.Zer)   => Sign.Zer
+         case (Sign.Pos, Sign.Pos)   => Sign.Top
+         case _                      => Sign.Top
+     }
+
+
 
      // TODO: more operations:
      // bitwise and, or, xor
