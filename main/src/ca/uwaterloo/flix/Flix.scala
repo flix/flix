@@ -21,6 +21,8 @@ object Flix {
     def format: String
   }
 
+  // TODO: Consider unifying these, such that you can give an arbitrary sequence of strings and files.
+
   /**
    * Solves the given Flix program.
    *

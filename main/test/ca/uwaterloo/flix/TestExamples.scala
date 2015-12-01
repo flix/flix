@@ -105,7 +105,8 @@ class TestExamples extends FunSuite {
 
   test("Sign.flix") {
     val input1 = Source.fromFile("./examples/domains/Sign.flix").getLines().mkString("\n")
-    val input2 =
+    val input2 = Source.fromFile("./examples/domains/Belnap.flix").getLines().mkString("\n")
+    val input3 =
       """namespace Sign {
         |    let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb);
         |    lat A(k: Int, v: Sign<>);
@@ -132,7 +133,7 @@ class TestExamples extends FunSuite {
 //
 //      print Result;
 
-    val model = Flix.mkStr(List(input1, input2)).get
+    val model = Flix.mkStr(List(input1, input2, input3)).get
   }
 
   /////////////////////////////////////////////////////////////////////////////

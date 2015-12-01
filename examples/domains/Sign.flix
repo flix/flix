@@ -198,7 +198,7 @@ namespace Sign {
     /**
       * Over-approximates `bitwise xor`.
       */
-     @strict @mono
+     @strict @mono @associative @commutative
      fn xor(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
          case (Sign.Bot, _)          => Sign.Bot
          case (_, Sign.Bot)          => Sign.Bot
@@ -214,15 +214,20 @@ namespace Sign {
          case _                      => Sign.Top
      }
 
+    /**
+      * Over-approximates `less than or equal`.
+      */
+    fn lessEqual(e1: Sign, e2: Sign): Belnap::Belnap = ???: Belnap::Belnap
+
      // TODO: more operations:
-     // bitwise and, or, xor
-     // less than, etc.
      // left shift <<
      // right shift >>
+     // less than, etc.
      //
 
     // TODO: What about Eq/Neq with usage of Belnap?
 
+    // TODO: @associative @commutative
 };
 
 
