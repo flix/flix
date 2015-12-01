@@ -28,7 +28,7 @@ namespace Parity {
     /**
      * Returns the least upper bound of `e1` and `e2`.
      */
-    @associative @commutative
+    @commutative @associative
     fn lub(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (Parity.Bot, x)              => x
         case (x, Parity.Bot)              => x
@@ -40,7 +40,7 @@ namespace Parity {
     /**
      * Returns the greatest lower bound of `e1` and `e2`.
      */
-    @associative @commutative
+    @commutative @associative
     fn glb(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (Parity.Top, x)                => x
         case (x, Parity.Top)                => x
@@ -52,7 +52,7 @@ namespace Parity {
     /**
      * Over-approximates integer `addition`.
      */
-    @strict @monotone @associative @commutative
+    @strict @monotone @commutative @associative
     fn plus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Parity.Bot)              => Parity.Bot
         case (Parity.Bot, _)              => Parity.Bot
@@ -80,7 +80,7 @@ namespace Parity {
     /**
      * Over-approximates integer `multiplication`.
      */
-    @strict @monotone @associative @commutative
+    @strict @monotone @commutative @associative
     fn times(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Parity.Bot)              => Parity.Bot
         case (Parity.Bot, _)              => Parity.Bot
@@ -129,7 +129,7 @@ namespace Parity {
     /**
      * Over-approximates `bitwise or`.
      */
-    @strict @monotone @associative @commutative
+    @strict @monotone @commutative @associative
     fn or(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Parity.Bot)              => Parity.Bot
       case (Parity.Bot, _)              => Parity.Bot
@@ -143,7 +143,7 @@ namespace Parity {
     /**
      * Over-approximates `bitwise and`.
      */
-    @strict @monotone @associative @commutative
+    @strict @monotone @commutative @associative
     fn and(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
        case (_, Parity.Bot)              => Parity.Bot
        case (Parity.Bot, _)              => Parity.Bot
@@ -157,7 +157,7 @@ namespace Parity {
     /**
      * Over-approximates `bitwise xor`.
      */
-    @strict @monotone @associative @commutative
+    @strict @monotone @commutative @associative
     fn xor(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Parity.Bot)              => Parity.Bot
       case (Parity.Bot, _)              => Parity.Bot

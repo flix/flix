@@ -17,7 +17,7 @@ namespace Belnap {
     /**
      * Returns `true` iff `e1` is less than or equal to `e2`.
      */
-    @associative @commutative
+    @commutative @associative
     fn leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) with {
         case (Belnap.Bot, _)                => true
         case (Belnap.True, Belnap.True)     => true
@@ -29,7 +29,7 @@ namespace Belnap {
     /**
      * Returns the least upper bound of `e1` and `e2`.
      */
-    @associative @commutative
+    @commutative @associative
     fn lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, x)                => x
         case (x, Belnap.Bot)                => x
@@ -41,7 +41,7 @@ namespace Belnap {
     /**
      * Returns the greatest lower bound of `e1` and `e2`.
      */
-    @associative @commutative
+    @commutative @associative
     fn glb(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Top, x)                => x
         case (x, Belnap.Top)                => x
@@ -64,7 +64,7 @@ namespace Belnap {
     /**
      * Over-approximates the logical `and` operator.
      */
-    @strict @monotone @associative @commutative
+    @strict @monotone @commutative @associative
     fn and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot
@@ -78,7 +78,7 @@ namespace Belnap {
     /**
      * Over-approximates the logical `or` operator.
      */
-    @strict @monotone @associative @commutative
+    @strict @monotone @commutative @associative
     fn or(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot
@@ -92,7 +92,7 @@ namespace Belnap {
     /**
      * Over-approximates the logical `xor` operator.
      */
-    @strict @monotone @associative @commutative
+    @strict @monotone @commutative @associative
     fn xor(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot
