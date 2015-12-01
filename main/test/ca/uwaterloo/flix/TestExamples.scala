@@ -114,6 +114,24 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
+//
+//
+//    Result(0, Sign.Bot).
+//
+//      Result(1, Sign.Neg).
+//      Result(2, Sign.Zer).
+//      Result(3, Sign.Pos).
+//
+//      Result(4, Sign.Neg).
+//      Result(4, Sign.Zer).
+//      Result(4, Sign.Pos).
+//
+//      Result(5, plus(v1, v2)) :- isMaybeEq(v1, v2), Result(1, v1), Result(4, v2).
+//
+//      Error#(v) :- Result(1, v), Result(2, v), Result(3, v), Result(4, v).
+//
+//      print Result;
+
     val model = Flix.mkStr(List(input1, input2)).get
   }
 
