@@ -192,4 +192,6 @@ namespace Parity {
 
     // TODO: Add commutative annotation?
 
+    // TODO: What about Eq/Neq with usage of Belnap?
+
 }

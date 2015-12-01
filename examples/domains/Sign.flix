@@ -130,7 +130,7 @@ namespace Sign {
      * Over-approximates integer `modulus`.
      */
     @strict @mono
-    fn modulo(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+    fn modulo(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Sign.Bot, _)          => Sign.Bot
         case (_, Sign.Bot)          => Sign.Bot
         case (Sign.Neg, Sign.Neg)   => Sign.Bot
@@ -145,14 +145,30 @@ namespace Sign {
         case _                      => Sign.Top
     }
 
+    /**
+     * Over-approximates `bitwise negation`.
+     */
+    @strict @mono
+    fn negate(e: Sign): Sign = match e with {
+        case Sign.Bot => Sign.Bot
+        case Sign.Neg => Sign.Pos
+        case Sign.Zer => Sign.Zer
+        case Sign.Pos => Sign.Neg
+        case Sign.Top => Sign.Top
+    }
+
+
+
+
      // TODO: more operations:
-     // modulo
      // bitwise and, or, xor
      // less than, etc.
      // eq ==, !=
      // left shift <<
      // right shift >>
      //
+
+    // TODO: What about Eq/Neq with usage of Belnap?
 
 };
 
