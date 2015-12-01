@@ -87,22 +87,29 @@ namespace Parity {
     /**
      * Over-approximates integer `division`.
      */
-     // TODO: Verify
      fn divide(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Parity.Bot)              => Parity.Bot
         case (Parity.Bot, _)              => Parity.Bot
+        case _                            => Parity.Top
+     }
+
+    /**
+     * Over-approximates integer `modulus`.
+     */
+     fn modulo(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+        case (_, Parity.Bot)              => Parity.Bot
+        case (Parity.Bot, _)              => Parity.Bot
         case (Parity.Odd, Parity.Odd)     => Parity.Top
-        case (Parity.Odd, Parity.Even)    => Parity.Even
         case (Parity.Even, Parity.Odd)    => Parity.Top
+        case (Parity.Odd, Parity.Even)    => Parity.Odd
         case (Parity.Even, Parity.Even)   => Parity.Even
         case _                            => Parity.Top
      }
 
+
+
      // TODO: more operations:
-     // modulo
      // bitwise and, or, xor
-     // less than, etc.
-     // eq ==, !=
      // left shift <<
      // right shift >>
      //
