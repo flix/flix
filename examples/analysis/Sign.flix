@@ -119,6 +119,16 @@ namespace Sign {
 
     print Result;
 
+    // + - * /
+     // TODO: more operations:
+     // modulo
+     // bitwise and, or, xor
+     // less than, etc.
+     // eq ==, !=
+     // left shift <<
+     // right shift >>
+     //
+
 };
 
 
