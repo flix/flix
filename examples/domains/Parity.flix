@@ -195,7 +195,7 @@ namespace Parity {
     /**
       * Over-approximates `equal`.
       */
-    @strict @monotone
+    @strict @monotone @commutative
     fn eq(e1: Parity, e2: Parity): Belnap::Belnap = match (e1, e2) with {
         case (Parity.Bot, _)            => Belnap::Belnap.Bot
         case (_, Parity.Bot)            => Belnap::Belnap.Bot
@@ -207,7 +207,7 @@ namespace Parity {
     /**
       * Over-approximates `not equal`.
       */
-    @strict @monotone
+    @strict @monotone @commutative
     fn neq(e1: Parity, e2: Parity): Belnap::Belnap = Belnap::not(eq(e1, e2))
 
     /**
