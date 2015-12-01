@@ -110,7 +110,40 @@ namespace Sign {
     /**
      * Over-approximates integer `division`.
      */
+    @strict @mono
+    fn divide(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+        case (Sign.Bot, _)          => Sign.Bot
+        case (_, Sign.Bot)          => Sign.Bot
+        case (Sign.Neg, Sign.Neg)   => Sign.Top
+        case (Sign.Neg, Sign.Zer)   => Sign.Bot
+        case (Sign.Neg, Sign.Pos)   => Sign.Top
+        case (Sign.Zer, Sign.Neg)   => Sign.Zer
+        case (Sign.Zer, Sign.Zer)   => Sign.Zer
+        case (Sign.Zer, Sign.Pos)   => Sign.Zer
+        case (Sign.Pos, Sign.Neg)   => Sign.Top
+        case (Sign.Pos, Sign.Zer)   => Sign.Bot
+        case (Sign.Pos, Sign.Pos)   => Sign.Top
+        case _                      => Sign.Top
+    }
 
+    /**
+     * Over-approximates integer `modulus`.
+     */
+    @strict @mono
+    fn modulo(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+        case (Sign.Bot, _)          => Sign.Bot
+        case (_, Sign.Bot)          => Sign.Bot
+        case (Sign.Neg, Sign.Neg)   => Sign.Bot
+        case (Sign.Neg, Sign.Zer)   => Sign.Bot
+        case (Sign.Neg, Sign.Pos)   => Sign.Top
+        case (Sign.Zer, Sign.Neg)   => Sign.Bot
+        case (Sign.Zer, Sign.Zer)   => Sign.Bot
+        case (Sign.Zer, Sign.Pos)   => Sign.Zer
+        case (Sign.Pos, Sign.Neg)   => Sign.Bot
+        case (Sign.Pos, Sign.Zer)   => Sign.Bot
+        case (Sign.Pos, Sign.Pos)   => Sign.Top
+        case _                      => Sign.Top
+    }
 
      // TODO: more operations:
      // modulo
