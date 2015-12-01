@@ -293,7 +293,6 @@ namespace Sign {
         case _                      => Belnap::Belnap.Top
     }
 
-
     /**
       * Over-approximates `less than or equal`.
       */
@@ -302,7 +301,4 @@ namespace Sign {
 
     // TODO: @associative @commutative
     // TODO: Rename mono to monotone?
-};
-
-
-
+}

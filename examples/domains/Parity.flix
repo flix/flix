@@ -28,6 +28,7 @@ namespace Parity {
     /**
      * Returns the least upper bound of `e1` and `e2`.
      */
+    @associative @commutative
     fn lub(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (Parity.Bot, x)              => x
         case (x, Parity.Bot)              => x
@@ -39,6 +40,7 @@ namespace Parity {
     /**
      * Returns the greatest lower bound of `e1` and `e2`.
      */
+    @associative @commutative
     fn glb(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (Parity.Top, x)                => x
         case (x, Parity.Top)                => x
@@ -50,7 +52,7 @@ namespace Parity {
     /**
      * Over-approximates integer `addition`.
      */
-    @strict @mono
+    @strict @monotone @associative @commutative
     fn plus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Parity.Bot)              => Parity.Bot
         case (Parity.Bot, _)              => Parity.Bot
@@ -64,7 +66,7 @@ namespace Parity {
     /**
      * Over-approximates integer `subtraction`.
      */
-    @strict @mono
+    @strict @monotone
     fn minus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Parity.Bot)              => Parity.Bot
         case (Parity.Bot, _)              => Parity.Bot
@@ -78,7 +80,7 @@ namespace Parity {
     /**
      * Over-approximates integer `multiplication`.
      */
-    @strict @mono
+    @strict @monotone @associative @commutative
     fn times(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Parity.Bot)              => Parity.Bot
         case (Parity.Bot, _)              => Parity.Bot
@@ -92,7 +94,7 @@ namespace Parity {
     /**
      * Over-approximates integer `division`.
      */
-    @strict @mono
+    @strict @monotone
     fn divide(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
        case (_, Parity.Bot)              => Parity.Bot
        case (Parity.Bot, _)              => Parity.Bot
@@ -102,7 +104,7 @@ namespace Parity {
     /**
      * Over-approximates integer `modulus`.
      */
-    @strict @mono
+    @strict @monotone
     fn modulo(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
        case (_, Parity.Bot)              => Parity.Bot
        case (Parity.Bot, _)              => Parity.Bot
@@ -116,7 +118,7 @@ namespace Parity {
     /**
      * Over-approximates `bitwise negation`.
      */
-    @strict @mono
+    @strict @monotone
     fn negate(e: Parity): Parity = match e with {
         case Parity.Bot     =>  Parity.Bot
         case Parity.Odd     =>  Parity.Even
@@ -127,7 +129,7 @@ namespace Parity {
     /**
      * Over-approximates `bitwise or`.
      */
-    @strict @mono
+    @strict @monotone @associative @commutative
     fn or(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Parity.Bot)              => Parity.Bot
       case (Parity.Bot, _)              => Parity.Bot
@@ -141,7 +143,7 @@ namespace Parity {
     /**
      * Over-approximates `bitwise and`.
      */
-    @strict @mono
+    @strict @monotone @associative @commutative
     fn and(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
        case (_, Parity.Bot)              => Parity.Bot
        case (Parity.Bot, _)              => Parity.Bot
@@ -155,7 +157,7 @@ namespace Parity {
     /**
      * Over-approximates `bitwise xor`.
      */
-    @strict @mono
+    @strict @monotone @associative @commutative
     fn xor(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Parity.Bot)              => Parity.Bot
       case (Parity.Bot, _)              => Parity.Bot
@@ -169,7 +171,7 @@ namespace Parity {
     /**
      * Over-approximates `bitwise left shift`.
      */
-    @strict @mono
+    @strict @monotone
     fn leftShift(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Parity.Bot)              => Parity.Bot
       case (Parity.Bot, _)              => Parity.Bot
@@ -183,15 +185,45 @@ namespace Parity {
     /**
      * Over-approximates `bitwise right shift`.
      */
-    @strict @mono
+    @strict @monotone
     fn rightShift(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Parity.Bot)              => Parity.Bot
       case (Parity.Bot, _)              => Parity.Bot
       case _                            => Parity.Top
     }
 
-    // TODO: Add commutative annotation?
+    /**
+      * Over-approximates `equal`.
+      */
+    @strict @monotone
+    fn eq(e1: Parity, e2: Parity): Belnap::Belnap = match (e1, e2) with {
+        case (Parity.Bot, _)            => Belnap::Belnap.Bot
+        case (_, Parity.Bot)            => Belnap::Belnap.Bot
+        case (Parity.Odd, Parity.Even)  => Belnap::Belnap.False
+        case (Parity.Even, Parity.Odd)  => Belnap::Belnap.False
+        case _                          => Belnap::Belnap.Top
+    }
 
-    // TODO: What about Eq/Neq with usage of Belnap?
+    /**
+      * Over-approximates `not equal`.
+      */
+    @strict @monotone
+    fn neq(e1: Parity, e2: Parity): Belnap::Belnap = Belnap::not(eq(e1, e2))
+
+    /**
+      * Over-approximates `less than`.
+      */
+    @strict @monotone
+    fn less(e1: Parity, e2: Parity): Belnap::Belnap = match (e1, e2) with {
+        case (Parity.Bot, _)            => Belnap::Belnap.Bot
+        case (_, Parity.Bot)            => Belnap::Belnap.Bot
+        case _                          => Belnap::Belnap.Top
+    }
+
+    /**
+      * Over-approximates `less than or equal`.
+      */
+    @strict @monotone
+    fn lessEqual(e1: Parity, e2: Parity): Belnap::Belnap = Belnap::or(e1 `less` e2, e1 `eq` e2)
 
 }

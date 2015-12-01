@@ -60,7 +60,8 @@ class TestExamples extends FunSuite {
 
   test("Parity.flix") {
     val input1 = Source.fromFile("./examples/domains/Parity.flix").getLines().mkString("\n")
-    val input2 =
+    val input2 = Source.fromFile("./examples/domains/Belnap.flix").getLines().mkString("\n")
+    val input3 =
       """namespace Parity {
         |    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb);
         |    lat A(k: Int, v: Parity<>);
@@ -83,7 +84,7 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val model = Flix.mkStr(List(input1, input2)).get
+    val model = Flix.mkStr(List(input1, input2, input3)).get
 
     val Parity = Name.Resolved.mk(List("Parity", "Parity"))
 

@@ -877,5 +877,6 @@ object Weeder {
     }
   }
 
+  // TODO: Parse annotations.
 
 }
