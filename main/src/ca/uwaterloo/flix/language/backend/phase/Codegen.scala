@@ -4,18 +4,9 @@ import org.objectweb.asm._
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.util.CheckClassAdapter
 
-object CodeGen {
+object Codegen {
 
-  /* Generates code for:
-
-     package ca.uwaterloo.flix;
-     public class TestAsm {
-       public static int f() {
-         return 3 + 4;
-       }
-     }
-   */
-  def gencode(): Array[Byte] = {
+  def genTestAsm(): Array[Byte] = {
     val cw = new ClassWriter(0)
     val cv = new CheckClassAdapter(cw)
     var mv: MethodVisitor = null

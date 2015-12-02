@@ -2,13 +2,14 @@ package ca.uwaterloo.flix
 
 import java.nio.file.{Files, Paths}
 
-import ca.uwaterloo.flix.language.backend.phase.CodeGen
+import ca.uwaterloo.flix.language.backend.phase.Codegen
 
+// Entry point (test harness) for the code generator
 object CodeGenMain {
 
   def main(argv: Array[String]): Unit = {
     // Create the byte array.
-    val code = CodeGen.gencode()
+    val code = Codegen.genTestAsm()
 
     // Write to a class file, for debugging.
     Files.write(Paths.get("FlixBytecode.class"), code)
