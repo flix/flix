@@ -9,13 +9,12 @@ object Codegen {
   def genTestAsm(): Array[Byte] = {
     val cw = new ClassWriter(0)
     val cv = new CheckClassAdapter(cw)
-    var mv: MethodVisitor = null
 
     cv.visit(V1_7, ACC_PUBLIC + ACC_SUPER, "ca/uwaterloo/flix/TestAsm", null, "java/lang/Object", null)
 
     // Constructor
     {
-      mv = cv.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null)
+      val mv = cv.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null)
       mv.visitCode()
       mv.visitVarInsn(ALOAD, 0)
       mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
@@ -25,7 +24,7 @@ object Codegen {
     }
     // f
     {
-      mv = cv.visitMethod(ACC_PUBLIC + ACC_STATIC, "f", "()I", null, null)
+      val mv = cv.visitMethod(ACC_PUBLIC + ACC_STATIC, "f", "()I", null, null)
       mv.visitCode()
       mv.visitInsn(ICONST_3)
       mv.visitInsn(ICONST_4)
@@ -39,4 +38,32 @@ object Codegen {
     cw.toByteArray
   }
 
+}
+
+class Codegen {
+  private val classWriter = new ClassWriter(0)
+  private val visitor = new CheckClassAdapter(classWriter)
+
+  lazy val bytecode: Array[Byte] = {
+    // Initialize the visitor to create "public class ca.uwaterloo.flix.TestAsm extends java.lang.Object"
+    // with no generic types and no interfaces
+    visitor.visit(V1_7, ACC_PUBLIC + ACC_SUPER, "ca/uwaterloo/flix/TestAsm", null, "java/lang/Object", null)
+
+    // Generate the constructor for the class
+    {
+      val mv = visitor.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null)
+      mv.visitCode()
+      mv.visitVarInsn(ALOAD, 0)
+      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
+      mv.visitInsn(RETURN)
+      mv.visitMaxs(1, 1)
+      mv.visitEnd()
+    }
+
+    // TODO: Generate code for each of the methods
+
+    // Finish the traversal and convert to a byte array
+    visitor.visitEnd()
+    classWriter.toByteArray
+  }
 }
