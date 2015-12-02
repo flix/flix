@@ -1,12 +1,14 @@
 package ca.uwaterloo.flix.language.backend.phase
 
+import ca.uwaterloo.flix.language.backend.ir.CodeGenIR.{Definition}
+
 import org.objectweb.asm._
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.util.CheckClassAdapter
 
 object Codegen {
   def genTestAsm(): Array[Byte] = {
-    val cw = new ClassWriter(0)
+    val cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
     val cv = new CheckClassAdapter(cw)
 
     cv.visit(V1_7, ACC_PUBLIC + ACC_SUPER, "ca/uwaterloo/flix/TestAsm", null, "java/lang/Object", null)
@@ -41,13 +43,14 @@ object Codegen {
 // TODO: What other pieces of the interface/pipeline do we need?
 // How is Codegen called? Where do we put the generated methods? How are the generated methods called?
 // TODO: Constructor should take a list of (Flix) functions? Does it need anything else? Flix file = class name?
-class Codegen {
+class Codegen(name: String, definitions: List[Definition]) {
+  private val functions = definitions.collect { case f: Definition.Function => f }
+
   private val classWriter = new ClassWriter(0)
   // Note: CheckClassAdapter requires us to manually calculate maxs and frames
   private val visitor = new CheckClassAdapter(classWriter)
 
-  // TODO: generateMethod needs to take a (Flix) function, so it can get the name, signature, and body expression
-  def generateMethod(): Unit = {
+  def generateMethod(function: Definition.Function): Unit = {
     val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, "f", "()V", null, null)
     mv.visitCode()
 
@@ -75,7 +78,8 @@ class Codegen {
       mv.visitEnd()
     }
 
-    // TODO: Generate code for each of the Flix functions
+    // Generate code for each of the Flix functions
+    functions.foreach(generateMethod)
 
     // Finish the traversal and convert to a byte array
     visitor.visitEnd()
