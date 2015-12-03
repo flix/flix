@@ -47,13 +47,13 @@ object Codegen {
    * For now, we put all definitions in a single class: ca.uwaterloo.flix.runtime.compiled.FlixDefinitions.
    * The Flix function A::B::C::foo is compiled as the method A$B$C$foo.
    */
-  def compile(definitions: List[Definition]): Array[Byte] = {
+  def compile(definitions: List[Definition], className: String = "FlixDefinitions"): Array[Byte] = {
     val functions = definitions.collect { case f: Definition.Function => f }
     val classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
     val visitor = new CheckClassAdapter(classWriter)
 
     // Initialize the visitor to create a class
-    visitor.visit(V1_7, ACC_PUBLIC + ACC_SUPER, "ca/uwaterloo/flix/runtime/compiled/FlixDefinitions", null, "java/lang/Object", null)
+    visitor.visit(V1_7, ACC_PUBLIC + ACC_SUPER, "ca/uwaterloo/flix/runtime/compiled/" + className, null, "java/lang/Object", null)
 
     // Generate the constructor for the class
     compileConstructor(visitor)
