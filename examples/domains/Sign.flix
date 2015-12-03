@@ -162,7 +162,7 @@ namespace Sign {
     fn negate(e: Sign): Sign = match e with {
         case Sign.Bot => Sign.Bot
         case Sign.Neg => Sign.Pos
-        case Sign.Zer => Sign.Zer
+        case Sign.Zer => Sign.Neg
         case Sign.Pos => Sign.Neg
         case Sign.Top => Sign.Top
     }
