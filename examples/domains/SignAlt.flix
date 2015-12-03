@@ -157,7 +157,7 @@ namespace SignAlt {
      * Over-approximates integer `modulus`.
      */
     @strict @monotone
-    fn divide(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+    fn modulo(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Sign.Bot, _)          => Sign.Bot
         case (_, Sign.Bot)          => Sign.Bot
         case (Sign.Neg, Sign.Neg)   => Sign.Bot
@@ -241,6 +241,76 @@ namespace SignAlt {
         case  _                     => Sign.Top
     }
 
+    /**
+      * Over-approximates `bitwise left shift`.
+      */
+    @strict @monotone
+    fn leftShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+       case (Sign.Bot, _)          => Sign.Bot
+       case (_, Sign.Bot)          => Sign.Bot
+       case (Sign.Neg, Sign.Neg)   => Sign.Bot
+       case (Sign.Neg, Sign.Zer)   => Sign.Neg
+       case (Sign.Neg, Sign.Pos)   => Sign.Top
+       case (Sign.Zer, Sign.Neg)   => Sign.Bot
+       case (Sign.Zer, Sign.Zer)   => Sign.Zer
+       case (Sign.Zer, Sign.Pos)   => Sign.Zer
+       case (Sign.Pos, Sign.Neg)   => Sign.Bot
+       case (Sign.Pos, Sign.Zer)   => Sign.Pos
+       case (Sign.Pos, Sign.Pos)   => Sign.Top
+       case  _                     => Sign.Top
+   }
 
+    /**
+     * Over-approximates `bitwise right shift`.
+     */
+    @strict @monotone
+    fn rightShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+        case (Sign.Bot, _)          => Sign.Bot
+        case (_, Sign.Bot)          => Sign.Bot
+        case (Sign.Neg, Sign.Neg)   => Sign.Bot
+        case (Sign.Neg, Sign.Zer)   => Sign.Neg
+        case (Sign.Neg, Sign.Pos)   => Sign.Top
+        case (Sign.Zer, Sign.Neg)   => Sign.Bot
+        case (Sign.Zer, Sign.Zer)   => Sign.Zer
+        case (Sign.Zer, Sign.Pos)   => Sign.Zer
+        case (Sign.Pos, Sign.Neg)   => Sign.Bot
+        case (Sign.Pos, Sign.Zer)   => Sign.Pos
+        case (Sign.Pos, Sign.Pos)   => Sign.Pos
+        case  _                     => Sign.Top
+    }
+
+    /**
+     * Over-approximates `equal`.
+     */
+    @strict @monotone @commutative
+    fn eq(e1: Sign, e2: Sign): Belnap::Belnap = match (e1, e2) with {
+        case (Sign.Bot, _)          => Belnap::Belnap.Bot
+        case (_, Sign.Bot)          => Belnap::Belnap.Bot
+        case (Sign.Zer, Sign.Zer)   => Belnap::Belnap.True
+        case _                      => Belnap::Belnap.Top
+    }
+
+    /**
+     * Over-approximates `not equal`.
+     */
+    @strict @monotone @commutative
+    fn neq(e1: Sign, e2: Sign): Belnap::Belnap = Belnap::not(eq(e1, e2))
+
+    /**
+     * Over-approximates `less than`.
+     */
+    @strict @monotone
+    fn less(e1: Sign, e2: Sign): Belnap::Belnap = match (e1, e2) with {
+        case (Sign.Bot, _)          => Belnap::Belnap.Bot
+        case (_, Sign.Bot)          => Belnap::Belnap.Bot
+        case (Sign.Zer, Sign.Zer)   => Belnap::Belnap.False
+        case _                      => Belnap::Belnap.Top
+    }
+
+    /**
+     * Over-approximates `less than or equal`.
+     */
+    @strict @monotone
+    fn lessEqual(e1: Sign, e2: Sign): Belnap::Belnap = Belnap::or(e1 `less` e2, e1 `eq` e2)
 
 }
