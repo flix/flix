@@ -17,7 +17,6 @@ namespace Belnap {
     /**
      * Returns `true` iff `e1` is less than or equal to `e2`.
      */
-    @commutative @associative
     fn leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) with {
         case (Belnap.Bot, _)                => true
         case (Belnap.True, Belnap.True)     => true

@@ -1,48 +1,49 @@
+/**
+ * An implementation of the constant propagation lattice.
+ */
 namespace Constant {
 
-    enum Element {
-        case Top,
-        case Constant(Int),
-        case Bot
-    };
+    /**
+     * The elements of the constant propagation lattice.
+     */
+    enum Constant {
+          case Top,
 
-    def leq(e1: Element, e2: element): Bool = match (e1, e2) with {
-        case (Element.Bot, _) => true;
-        case (Element.Constant(n1), Element.Constant(n2)) => n1 <= n2;
-        case (_, Element.Top) => true;
-        case _ => false;
-    };
+        case Cst(Int),
 
-    def lub(e1: Element, e2: Element): Element = match (e1, e2) with {
-        case (Element.Bot, _) => e2;
-        case (_, Element.Bot) => e1;
-        case (Element.Constant(n1), Element.Constant(n2)) => if (n1 == n2) e1 else Element.Top;
-        case _ => Element.Top;
-    };
+          case Bot
+    }
 
-    def sum(e1: Element, e2: Element): Element = match (e1, e2) with {
-        case (Element.Bot, _) => Element.Bot;
-        case (_, Element.Bot) => Element.Bot;
-        case (Element.Constant(n1), Element.Constant(n2)) => Element.Constant(n1 + n2);
-        case _ => Element.Top;
-    };
+    /**
+     * Returns `true` iff `e1` is less than or equal to `e2`.
+     */
+    fn leq(e1: Constant, e2: Constant): Bool = match (e1, e2) with {
+        case (Constant.Bot, _)                      => true
+        case (Constant.Cst(n1), Constant.Cst(n2))   => n1 == n2
+        case (_, Constant.Top)                      => true
+        case _                                      => false
+    }
 
-    def maybeEven(e: Element): Bool = match e with {
-        case Element.Bot => false;
-        case Element.Constant(n) => (n % 2) == 0;
-        case Element.Top => true;
-    };
+    /**
+     * Returns the least upper bound of `e1` and `e2`.
+     */
+    @commutative @associative
+    fn lub(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+        case (Constant.Bot, x)                      => x;
+        case (x, Constant.Bot)                      => x;
+        case (Constant.Cst(n1), Constant.Cst(n2))   => if (n1 == n2) e1 else Constant.Top
+        case _                                      => Constant.Top;
+    }
 
-    // TODO: Define lattice and use these:
-
-    rel A(x: Element<>)
-    A(Element.Constant(42)).
-    A(Element.Constant(56)).
-    //A should be Element.Top
-    //A(Element.Top) :- true
-
-    rel B(x: Element<>)
-    B(sum(Element.Constant(1), Element.Constant(41))).
-    //B(Element.Constant(42)) :- true
+    /**
+     * Returns the greatest lower bound of `e1` and `e2`.
+     */
+    @commutative @associative
+    fn glb(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+        case (Constant.Top, x)                      => x
+        case (x, Constant.Top)                      => x
+        case (Constant.Cst(n1), Constant.Cst(n2))   => if (n1 == n2) e1 else Constant.Bot
+        case _                                      => Constant.Bot
+    }
 
 }
