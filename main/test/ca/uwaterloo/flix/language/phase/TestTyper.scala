@@ -436,13 +436,13 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Unary02") {
-    val rast = ResolvedAst.Expression.Unary(UnaryOperator.UnaryPlus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
+    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Plus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
     val result = Typer.Expression.typer(rast, Root)
     assertResult(TypedAst.Type.Int)(result.get.tpe)
   }
 
   test("Expression.Unary03") {
-    val rast = ResolvedAst.Expression.Unary(UnaryOperator.UnaryMinus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
+    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Minus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
     val result = Typer.Expression.typer(rast, Root)
     assertResult(TypedAst.Type.Int)(result.get.tpe)
   }
@@ -454,13 +454,13 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Unary.NonIntegerValue01") {
-    val rast = ResolvedAst.Expression.Unary(UnaryOperator.UnaryPlus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL), SL)
+    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Plus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL), SL)
     val result = Typer.Expression.typer(rast, Root)
     assert(result.isFailure)
   }
 
   test("Expression.Unary.NonIntegerValue02") {
-    val rast = ResolvedAst.Expression.Unary(UnaryOperator.UnaryMinus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL), SL)
+    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Minus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL), SL)
     val result = Typer.Expression.typer(rast, Root)
     assert(result.isFailure)
   }

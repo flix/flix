@@ -88,8 +88,8 @@ object Interpreter {
   }
 
   private def evalIntUnary(op: UnaryOperator, e: Expression, root: Root, env: Env): Int = op match {
-    case UnaryOperator.UnaryPlus => +evalInt(e, root, env)
-    case UnaryOperator.UnaryMinus => -evalInt(e, root, env)
+    case UnaryOperator.Plus => +evalInt(e, root, env)
+    case UnaryOperator.Minus => -evalInt(e, root, env)
     case UnaryOperator.Set.Size => eval(e, root, env).toSet.size
     case UnaryOperator.Not | UnaryOperator.Set.IsEmpty | UnaryOperator.Set.NonEmpty | UnaryOperator.Set.Singleton =>
       throw new InternalRuntimeError(s"Type of unary expression is not Type.Int.")
@@ -159,7 +159,7 @@ object Interpreter {
     case UnaryOperator.Set.IsEmpty => eval(e, root, env).toSet.isEmpty
     case UnaryOperator.Set.NonEmpty => eval(e, root, env).toSet.nonEmpty
     case UnaryOperator.Set.Singleton => eval(e, root, env).toSet.size == 1
-    case UnaryOperator.UnaryPlus | UnaryOperator.UnaryMinus | UnaryOperator.Set.Size =>
+    case UnaryOperator.Plus | UnaryOperator.Minus | UnaryOperator.Set.Size =>
       throw new InternalRuntimeError(s"Type of unary expression is not Type.Bool.")
   }
 
@@ -246,8 +246,8 @@ object Interpreter {
     val v = eval(e, root, env)
     op match {
       case UnaryOperator.Not => if (v.toBool) Value.False else Value.True
-      case UnaryOperator.UnaryPlus => Value.mkInt(+v.toInt)
-      case UnaryOperator.UnaryMinus => Value.mkInt(-v.toInt)
+      case UnaryOperator.Plus => Value.mkInt(+v.toInt)
+      case UnaryOperator.Minus => Value.mkInt(-v.toInt)
       case UnaryOperator.Set.IsEmpty => if (v.toSet.isEmpty) Value.True else Value.False
       case UnaryOperator.Set.NonEmpty => if (v.toSet.nonEmpty) Value.True else Value.False
       case UnaryOperator.Set.Singleton => if (v.toSet.size == 1) Value.True else Value.False

@@ -380,13 +380,13 @@ class TestParser extends FunSuite {
   test("Expression.UnaryExp01") {
     val input = "+ 1"
     val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Unary]
-    assertResult(UnaryOperator.UnaryPlus)(result.op)
+    assertResult(UnaryOperator.Plus)(result.op)
   }
 
   test("Expression.UnaryExp02") {
     val input = "- 1"
     val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Unary]
-    assertResult(UnaryOperator.UnaryMinus)(result.op)
+    assertResult(UnaryOperator.Minus)(result.op)
   }
 
   test("Expression.UnaryExp03") {
@@ -1700,14 +1700,21 @@ class TestParser extends FunSuite {
     val input = "+"
     val parser = mkParser(input)
     val result = parser.__run(parser.Operator.Unary).get
-    assertResult(UnaryOperator.UnaryPlus)(result)
+    assertResult(UnaryOperator.Plus)(result)
   }
 
   test("Operator.Unary -") {
     val input = "-"
     val parser = mkParser(input)
     val result = parser.__run(parser.Operator.Unary).get
-    assertResult(UnaryOperator.UnaryMinus)(result)
+    assertResult(UnaryOperator.Minus)(result)
+  }
+
+  test("Operator.Unary ~") {
+    val input = "~"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.Unary).get
+    assertResult(UnaryOperator.Negate)(result)
   }
 
   test("Operator.Unary.Set.IsEmpty") {
@@ -1750,6 +1757,20 @@ class TestParser extends FunSuite {
     val parser = mkParser(input)
     val result = parser.__run(parser.Operator.LogicalOp).get
     assertResult(BinaryOperator.Or)(result)
+  }
+
+  test("Operator.Binary.LogicalOp &") {
+    val input = "&"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
+    assertResult(BinaryOperator.BitwiseAnd)(result)
+  }
+
+  test("Operator.Binary.LogicalOp |") {
+    val input = "|"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
+    assertResult(BinaryOperator.BitwiseOr)(result)
   }
 
   test("Operator.Binary.ComparisonOp <") {

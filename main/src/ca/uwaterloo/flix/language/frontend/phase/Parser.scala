@@ -544,8 +544,9 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
      */
     def Unary: Rule1[UnaryOperator] = rule {
       atomic("!") ~> (() => UnaryOperator.Not) |
-        atomic("+") ~> (() => UnaryOperator.UnaryPlus) |
-        atomic("-") ~> (() => UnaryOperator.UnaryMinus) |
+        atomic("+") ~> (() => UnaryOperator.Plus) |
+        atomic("-") ~> (() => UnaryOperator.Minus) |
+        atomic("~") ~> (() => UnaryOperator.Negate) |
         // set operators
         atomic("isEmpty?") ~> (() => UnaryOperator.Set.IsEmpty) |
         atomic("nonEmpty?") ~> (() => UnaryOperator.Set.NonEmpty) |
@@ -558,7 +559,9 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
      */
     def LogicalOp: Rule1[BinaryOperator] = rule {
       atomic("&&") ~> (() => BinaryOperator.And) |
-        atomic("||") ~> (() => BinaryOperator.Or)
+        atomic("||") ~> (() => BinaryOperator.Or) |
+        atomic("&") ~> (() => BinaryOperator.BitwiseAnd) |
+        atomic("|") ~> (() => BinaryOperator.BitwiseOr)
     }
 
     /**

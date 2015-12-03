@@ -20,12 +20,17 @@ object UnaryOperator {
   /**
     * Unary plus.
     */
-  case object UnaryPlus extends UnaryOperator
+  case object Plus extends UnaryOperator
 
   /**
     * Unary minus.
     */
-  case object UnaryMinus extends UnaryOperator
+  case object Minus extends UnaryOperator
+
+  /**
+   * Bitwise negate.
+   */
+  case object Negate extends UnaryOperator
 
   /**
     * A common super-type for unary set operations.
@@ -149,6 +154,16 @@ object BinaryOperator {
     * Logical disjunction.
     */
   case object Or extends LogicalOperator
+
+  /**
+   * Bitwise and.
+   */
+  case object BitwiseAnd extends LogicalOperator
+
+  /**
+   * Bitwise or.
+   */
+  case object BitwiseOr extends LogicalOperator
 
   /**
     * A common super-type for binary set operators.

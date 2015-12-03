@@ -556,7 +556,7 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - UnaryOperator.UnaryPlus01") {
     val input = Expression.Unary(
-      UnaryOperator.UnaryPlus,
+      UnaryOperator.Plus,
       Expression.Lit(Literal.Int(23, loc), Type.Int, loc),
       Type.Int, loc)
     val result = Interpreter.eval(input, root)
@@ -565,7 +565,7 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - UnaryOperator.UnaryPlus02") {
     val input = Expression.Unary(
-      UnaryOperator.UnaryPlus,
+      UnaryOperator.Plus,
       Expression.Lit(Literal.Int(-4, loc), Type.Int, loc),
       Type.Int, loc)
     val result = Interpreter.eval(input, root)
@@ -574,7 +574,7 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - UnaryOperator.UnaryMinus01") {
     val input = Expression.Unary(
-      UnaryOperator.UnaryMinus,
+      UnaryOperator.Minus,
       Expression.Lit(Literal.Int(23, loc), Type.Int, loc),
       Type.Int, loc)
     val result = Interpreter.eval(input, root)
@@ -583,7 +583,7 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - UnaryOperator.UnaryMinus02") {
     val input = Expression.Unary(
-      UnaryOperator.UnaryMinus,
+      UnaryOperator.Minus,
       Expression.Lit(Literal.Int(-4, loc), Type.Int, loc),
       Type.Int, loc)
     val result = Interpreter.eval(input, root)
@@ -2334,7 +2334,7 @@ class TestInterpreter extends FunSuite {
     val input = Expression.Tag(name, identV,
       // -240
       Expression.Unary(
-        UnaryOperator.UnaryMinus,
+        UnaryOperator.Minus,
         Expression.Lit(Literal.Int(240, loc), Type.Int, loc),
         Type.Int, loc),
       enumTpe, loc)

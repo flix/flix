@@ -377,7 +377,7 @@ object Typer {
                 case tpe => TypedAst.Expression.Unary(op, e, tpe, loc)
               }
             }
-          case UnaryOperator.UnaryPlus | UnaryOperator.UnaryMinus =>
+          case UnaryOperator.Plus | UnaryOperator.Minus =>
             visit(re, env) flatMap {
               case e => expect(TypedAst.Type.Int, e.tpe, loc) map {
                 case tpe => TypedAst.Expression.Unary(op, e, tpe, loc)

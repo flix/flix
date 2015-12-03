@@ -14,7 +14,7 @@ object PartialEvaluator {
   def eval(e: TypedAst.Expression, k: TypedAst.Expression => TypedAst.Expression): TypedAst.Expression = e match {
     case Lit(literal, tpe, loc) => k(e)
 
-    case Unary(UnaryOperator.UnaryMinus, exp, _, _) => eval(exp, e => e match {
+    case Unary(UnaryOperator.Minus, exp, _, _) => eval(exp, e => e match {
       case Lit(Literal.Int(i, loc2), tpe, loc1) => k(Lit(Literal.Int(-i, loc2), tpe, loc1))
     })
 
