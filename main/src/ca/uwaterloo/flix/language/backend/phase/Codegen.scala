@@ -9,39 +9,6 @@ import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.util.CheckClassAdapter
 
 object Codegen {
-  // Example code that will be deleted later
-  def genTestAsm(): Array[Byte] = {
-    val cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
-    val cv = new CheckClassAdapter(cw)
-
-    cv.visit(V1_7, ACC_PUBLIC + ACC_SUPER, "ca/uwaterloo/flix/TestAsm", null, "java/lang/Object", null)
-
-    // Constructor
-    {
-      val mv = cv.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null)
-      mv.visitCode()
-      mv.visitVarInsn(ALOAD, 0)
-      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
-      mv.visitInsn(RETURN)
-      mv.visitMaxs(1, 1)
-      mv.visitEnd()
-    }
-    // f
-    {
-      val mv = cv.visitMethod(ACC_PUBLIC + ACC_STATIC, "f", "()I", null, null)
-      mv.visitCode()
-      mv.visitInsn(ICONST_3)
-      mv.visitInsn(ICONST_4)
-      mv.visitInsn(IADD)
-      mv.visitInsn(IRETURN)
-      mv.visitMaxs(2, 0)
-      mv.visitEnd()
-    }
-    cv.visitEnd()
-
-    cw.toByteArray
-  }
-
   /*
    * Given a list of Flix definitions, compile the definitions to bytecode and put them in a JVM class.
    * For now, we put all definitions in a single class: ca.uwaterloo.flix.runtime.compiled.FlixDefinitions.

@@ -21,8 +21,8 @@ class TestCodegen extends FunSuite {
       }
     }
 
-    val code = Codegen.compile(definitions)
-    val clazz = Loader(compiledClassName, code)
+    lazy val code = Codegen.compile(definitions)
+    lazy val clazz = Loader(compiledClassName, code)
 
     // Write to a class file, for debugging.
     def dumpBytecode(path: String = "FlixBytecode.class"): Unit = {
