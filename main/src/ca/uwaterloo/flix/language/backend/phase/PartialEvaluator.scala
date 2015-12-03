@@ -4,6 +4,8 @@ import ca.uwaterloo.flix.language.ast.{UnaryOperator, BinaryOperator, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression._
 import ca.uwaterloo.flix.language.ast.TypedAst.Literal
 
+// TODO: Look into symbolic evaluation.
+
 object PartialEvaluator {
 
   def eval(e: TypedAst.Expression): TypedAst.Expression =

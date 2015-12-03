@@ -5,11 +5,25 @@ import ca.uwaterloo.flix.language.ast.{SourcePosition, Name, SourceLocation, Typ
 
 object Verifier {
 
+  def main(args: Array[String]): Unit = {
+
+  }
+
   sealed trait Property {
     val exp: TypedAst.Expression
   }
 
   object Theorems {
+
+    case class Commutativity(op: TypedAst.Expression) {
+      val formula = {
+
+        val f = Formula.BinOp("f")
+        val (x, y, z) = (mkVar("x", ???), mkVar("y", ???), mkVar("z", ???))
+
+        f(x, y) === f(y, x)
+      }
+    }
 
     /**
       * Partial Order Theorems.
@@ -22,11 +36,13 @@ object Verifier {
         * Reflexivity: \forall x. x <= x.
         */
       case class Reflexivity(lattice: TypedAst.Definition.BoundedLattice) {
-        val exp = {
-          val (tpe, leq) = (lattice.tpe, lattice.leq)
 
-          leq(mkVar("x", tpe), mkVar("x", tpe))
+        val formula = {
+          val x = Formula.Var("x")
+
+          x ⊑ x
         }
+
       }
 
       def antiSymmetry(lattice: TypedAst.Definition.BoundedLattice): TypedAst.Expression =
@@ -40,18 +56,17 @@ object Verifier {
           // extract lattice components.
           val TypedAst.Definition.BoundedLattice(tpe, bot, top, leq, lub, glb, loc) = lattice
 
-          val ⊑ = leq
+          //val ⊑ = leq
           // val TypedAst.Definition.BoundedLattice(tpe, ⊥, ⊤, ⊑, ⊔, ⊓, loc) = lattice
 
           // declare the variables and their types.
           val (x, y, z) = (mkVar("x", tpe), mkVar("y", tpe), mkVar("z", tpe))
 
 
-          ∀(x, y, z) :- (x ⊑ y) ∧ (y ⊑ z) → (x ⊑ z)
+          (x ⊑ y) ∧ (y ⊑ z) → (x ⊑ z)
         }
       }
 
-      def ∀(x: Any, y: Any, z: Any): TypedAst.Expression = ???
 
     }
 
@@ -62,24 +77,47 @@ object Verifier {
   /**
     * Returns a typed AST node that represents a variable of the given `name` and with the given type `tpe`.
     */
-  private def mkVar(name: String, tpe: TypedAst.Type): TypedAst.Expression.Var =
-    TypedAst.Expression.Var(Name.Ident(SourcePosition.Unknown, "x", SourcePosition.Unknown), tpe, SourceLocation.Unknown)
+  private def mkVar(name: String, tpe: TypedAst.Type): Formula.Var =
+    ???
 
-  implicit class RichExp(val e: TypedAst.Expression) {
+  sealed trait Formula
+
+  object Formula {
+
+    // TODO: probably need to carry a type.
+
+    case class BinOp(name: String) extends Formula {
+      def apply(f1: Formula, f2: Formula): Formula = ???
+
+    }
+
+    case class Var(name: String) extends Formula
+
+    case class Leq(f1: Formula, f2: Formula) extends Formula
+
+    case class Lub(f1: Formula, f2: Formula) extends Formula
+
+  }
+
+  def ∀(x: Any): Formula = ???
+
+  implicit class RichFormula(val f: Formula) {
     def apply(e1: TypedAst.Expression): TypedAst.Expression = ???
 
     def apply(e1: TypedAst.Expression, e2: TypedAst.Expression): TypedAst.Expression =
-      TypedAst.Expression.Apply(e, List(e1, e2), ???, SourceLocation.Unknown) // TODO: What is the tpe?
+      TypedAst.Expression.Apply(???, List(e1, e2), ???, SourceLocation.Unknown) // TODO: What is the tpe?
 
-    def ∧(that: TypedAst.Expression): TypedAst.Expression = ???
+    def ∧(that: Formula): Formula = ???
 
-    def →(that: TypedAst.Expression): TypedAst.Expression = ???
+    def →(that: Formula): Formula = ???
 
-    def ⊑(that: TypedAst.Expression): TypedAst.Expression = ???
+    def ⊑(that: Formula): Formula = Formula.Leq(f, that)
 
-    def ⊔(that: TypedAst.Expression): TypedAst.Expression = ???
+    def ⊔(that: Formula): Formula = Formula.Lub(f, that)
 
-    def :-(that: TypedAst.Expression): TypedAst.Expression = ???
+    def ===(that: Formula): Formula = ???
+
+    def :-(that: Formula): Formula = ???
   }
 
   //  /**
