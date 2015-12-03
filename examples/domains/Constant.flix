@@ -76,7 +76,7 @@ namespace Constant {
     /**
      * Over-approximates integer `multiplication`.
      */
-    @strict @monotone
+    @strict @monotone @commutative @associative
     fn times(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
         case (Constant.Bot, _)                      => Constant.Bot
         case (_, Constant.Bot)                      => Constant.Bot
