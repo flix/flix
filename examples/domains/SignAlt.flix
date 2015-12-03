@@ -69,5 +69,13 @@ namespace SignAlt {
         case _                      => Sign.Bot
     }
 
+    /**
+     * Lifts a regular number into the (alternative) sign domain.
+     */
+    fn lift(i: Int): Sign =
+        if (i == 0) Sign.Zer else
+            if (i < 0) Sign.Neg else
+                Sign.Pos
+
 
 }
