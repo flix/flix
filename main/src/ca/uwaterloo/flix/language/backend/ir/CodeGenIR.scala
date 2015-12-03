@@ -48,13 +48,13 @@ object CodeGenIR {
 
 
     /**
-      * An AST node that represents a literal integer expression.
+      * An AST node that represents a constant integer literal
       *
       * @param value the integer value.
       * @param tpe the type of the integer.
       * @param loc the source location of the integer.
       */
-    case class Int(value: scala.Int, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+    case class Const(value: scala.Int, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
 
 
     case class Var(localVar: CodeGenIR.LocalVar, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression

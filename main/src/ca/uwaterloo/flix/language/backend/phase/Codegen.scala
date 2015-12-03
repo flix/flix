@@ -98,7 +98,7 @@ object Codegen {
   }
 
   def compileExpression(visitor: MethodVisitor, expr: Expression): Unit = expr match {
-    case Int(i, tpe, loc) => i match {
+    case Const(i, tpe, loc) => i match {
       case -1 => visitor.visitInsn(ICONST_M1)
       case 0 => visitor.visitInsn(ICONST_0)
       case 1 => visitor.visitInsn(ICONST_1)
