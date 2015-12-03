@@ -1759,18 +1759,39 @@ class TestParser extends FunSuite {
     assertResult(BinaryOperator.Or)(result)
   }
 
-  test("Operator.Binary.LogicalOp &") {
+  test("Operator.Binary.Bitwise &") {
     val input = "&"
     val parser = mkParser(input)
     val result = parser.__run(parser.Operator.LogicalOp).get
     assertResult(BinaryOperator.BitwiseAnd)(result)
   }
 
-  test("Operator.Binary.LogicalOp |") {
+  test("Operator.Binary.Bitwise |") {
     val input = "|"
     val parser = mkParser(input)
     val result = parser.__run(parser.Operator.LogicalOp).get
     assertResult(BinaryOperator.BitwiseOr)(result)
+  }
+
+  test("Operator.Binary.Bitwise ^") {
+    val input = "^"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
+    assertResult(BinaryOperator.BitwiseXor)(result)
+  }
+
+  test("Operator.Binary.Bitwise <<") {
+    val input = "<<"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
+    assertResult(BinaryOperator.BitwiseLeftShift)(result)
+  }
+
+  test("Operator.Binary.Bitwise >>") {
+    val input = ">>"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
+    assertResult(BinaryOperator.BitwiseRightShift)(result)
   }
 
   test("Operator.Binary.ComparisonOp <") {

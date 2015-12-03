@@ -561,7 +561,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       atomic("&&") ~> (() => BinaryOperator.And) |
         atomic("||") ~> (() => BinaryOperator.Or) |
         atomic("&") ~> (() => BinaryOperator.BitwiseAnd) |
-        atomic("|") ~> (() => BinaryOperator.BitwiseOr)
+        atomic("|") ~> (() => BinaryOperator.BitwiseOr)  |
+        atomic("^") ~> (() => BinaryOperator.BitwiseXor) |
+        atomic("<<") ~> (() => BinaryOperator.BitwiseLeftShift) |
+        atomic(">>") ~> (() => BinaryOperator.BitwiseRightShift)
     }
 
     /**

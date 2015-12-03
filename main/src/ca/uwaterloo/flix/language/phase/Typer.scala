@@ -383,6 +383,12 @@ object Typer {
                 case tpe => TypedAst.Expression.Unary(op, e, tpe, loc)
               }
             }
+          case UnaryOperator.Negate =>
+            visit(re, env) flatMap {
+              case e => expect(TypedAst.Type.Int, e.tpe, loc) map {
+                case tpe => TypedAst.Expression.Unary(op, e, tpe, loc)
+              }
+            }
 
           case UnaryOperator.Set.IsEmpty | UnaryOperator.Set.NonEmpty | UnaryOperator.Set.Singleton => visit(re, env) map {
             // TODO: Check that it is actually a set.
@@ -419,6 +425,12 @@ object Typer {
             @@(visit(re1, env), visit(re2, env)) flatMap {
               case (e1, e2) => @@(expect(TypedAst.Type.Bool, e1.tpe, e1.loc), expect(TypedAst.Type.Bool, e2.tpe, e2.loc)) map {
                 case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Bool, loc)
+              }
+            }
+          case _: BitwiseOperator =>
+            @@(visit(re1, env), visit(re2, env)) flatMap {
+              case (e1, e2) => @@(expect(TypedAst.Type.Int, e1.tpe, e1.loc), expect(TypedAst.Type.Int, e2.tpe, e2.loc)) map {
+                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Int, loc)
               }
             }
           case BinaryOperator.Set.Member => @@(visit(re1, env), visit(re2, env)) flatMap {
