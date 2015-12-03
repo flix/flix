@@ -152,13 +152,53 @@ class TestExamples extends FunSuite {
     assertResult(List(Pos))(A(List(Value.mkInt(9))))
   }
 
+  test("Constant.flix") {
+    val input1 = Source.fromFile("./examples/domains/Constant.flix").getLines().mkString("\n")
+    val input2 = Source.fromFile("./examples/domains/Belnap.flix").getLines().mkString("\n")
+    val input3 =
+      """namespace Constant {
+        |    let Constant<> = (Constant.Bot, Constant.Top, leq, lub, glb);
+        |    lat A(k: Int, v: Constant<>);
+        |
+        |    A(0, Constant.Cst(0))
+        |    A(1, Constant.Cst(1))
+        |    A(2, Constant.Cst(2))
+        |
+        |    A(3, x) :- A(0, x).
+        |    A(3, x) :- A(1, x).
+        |    A(3, x) :- A(2, x).
+        |
+        |    A(4, x) :- A(0, x), A(1, x), A(2, x).
+        |
+        |    A(5, x `plus` y)  :- A(0, x), A(2, y).
+        |    A(6, x `times` y) :- A(1, x), A(2, y).
+        |}
+      """.stripMargin
+
+    val model = Flix.mkStr(List(input1, input2, input3)).get
+
+    val Constant = Name.Resolved.mk(List("Constant", "Constant"))
+
+    val Zer = Value.mkTag(Constant, "Cst", Value.mkInt(0))
+    val One = Value.mkTag(Constant, "Cst", Value.mkInt(1))
+    val Two = Value.mkTag(Constant, "Cst", Value.mkInt(2))
+    val Top = Value.mkTag(Constant, "Top", Value.Unit)
+
+    val A = model.lattices(Name.Resolved.mk(List("Constant", "A"))).toMap
+
+    assertResult(List(Zer))(A(List(Value.mkInt(0))))
+    assertResult(List(One))(A(List(Value.mkInt(1))))
+    assertResult(List(Two))(A(List(Value.mkInt(2))))
+    assertResult(List(Top))(A(List(Value.mkInt(3))))
+    assertResult(None)(A.get(List(Value.mkInt(4))))
+    assertResult(List(Two))(A(List(Value.mkInt(5))))
+    assertResult(List(Two))(A(List(Value.mkInt(6))))
+  }
+
+
   /////////////////////////////////////////////////////////////////////////////
   // Misc                                                                    //
   /////////////////////////////////////////////////////////////////////////////
-  ignore("Constant.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/analysis/Constant.flix"))
-    assert(model.isSuccess)
-  }
 
   ignore("IDE.flix") {
     val model = Flix.mkPath(Paths.get("./examples/analysis/IDE.flix"))
