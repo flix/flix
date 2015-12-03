@@ -77,5 +77,80 @@ namespace SignAlt {
             if (i < 0) Sign.Neg else
                 Sign.Pos
 
+    /**
+     * Over-approximates integer `addition`.
+     */
+    @strict @monotone @commutative @associative
+    fn plus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+        case (Sign.Bot, _)          => Sign.Bot
+        case (_, Sign.Bot)          => Sign.Bot
+        case (Sign.Neg, Sign.Neg)   => Sign.Neg
+        case (Sign.Neg, Sign.Zer)   => Sign.Neg
+        case (Sign.Neg, Sign.Pos)   => Sign.Top
+        case (Sign.Zer, Sign.Neg)   => Sign.Neg
+        case (Sign.Zer, Sign.Zer)   => Sign.Zer
+        case (Sign.Zer, Sign.Pos)   => Sign.Pos
+        case (Sign.Pos, Sign.Neg)   => Sign.Top
+        case (Sign.Pos, Sign.Zer)   => Sign.Pos
+        case (Sign.Pos, Sign.Pos)   => Sign.Pos
+        case  _                     => Sign.Top
+    }
+
+    /**
+     * Over-approximates integer `subtraction`.
+     */
+    @strict @monotone
+    fn minus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+        case (Sign.Bot, _)          => Sign.Bot
+        case (_, Sign.Bot)          => Sign.Bot
+        case (Sign.Neg, Sign.Neg)   => Sign.Top
+        case (Sign.Neg, Sign.Zer)   => Sign.Neg
+        case (Sign.Neg, Sign.Pos)   => Sign.Neg
+        case (Sign.Zer, Sign.Neg)   => Sign.Pos
+        case (Sign.Zer, Sign.Zer)   => Sign.Zer
+        case (Sign.Zer, Sign.Pos)   => Sign.Neg
+        case (Sign.Pos, Sign.Neg)   => Sign.Pos
+        case (Sign.Pos, Sign.Zer)   => Sign.Pos
+        case (Sign.Pos, Sign.Pos)   => Sign.Top
+        case  _                     => Sign.Top
+    }
+
+    /**
+     * Over-approximates integer `multiplication`.
+     */
+    @strict @monotone
+    fn times(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+        case (Sign.Bot, _)          => Sign.Bot
+        case (_, Sign.Bot)          => Sign.Bot
+        case (Sign.Neg, Sign.Neg)   => Sign.Pos
+        case (Sign.Neg, Sign.Zer)   => Sign.Zer
+        case (Sign.Neg, Sign.Pos)   => Sign.Neg
+        case (Sign.Zer, Sign.Neg)   => Sign.Zer
+        case (Sign.Zer, Sign.Zer)   => Sign.Zer
+        case (Sign.Zer, Sign.Pos)   => Sign.Zer
+        case (Sign.Pos, Sign.Neg)   => Sign.Neg
+        case (Sign.Pos, Sign.Zer)   => Sign.Zer
+        case (Sign.Pos, Sign.Pos)   => Sign.Pos
+        case  _                     => Sign.Top
+    }
+
+    /**
+     * Over-approximates integer `division`.
+     */
+    @strict @monotone
+    fn divide(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+        case (Sign.Bot, _)          => Sign.Bot
+        case (_, Sign.Bot)          => Sign.Bot
+        case (Sign.Neg, Sign.Neg)   => Sign.Pos
+        case (Sign.Neg, Sign.Zer)   => Sign.Bot
+        case (Sign.Neg, Sign.Pos)   => Sign.Neg
+        case (Sign.Zer, Sign.Neg)   => Sign.Zer
+        case (Sign.Zer, Sign.Zer)   => Sign.Bot
+        case (Sign.Zer, Sign.Pos)   => Sign.Zer
+        case (Sign.Pos, Sign.Neg)   => Sign.Neg
+        case (Sign.Pos, Sign.Zer)   => Sign.Bot
+        case (Sign.Pos, Sign.Pos)   => Sign.Pos
+        case  _                     => Sign.Top
+    }
 
 }
