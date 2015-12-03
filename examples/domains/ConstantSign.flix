@@ -62,12 +62,31 @@ namespace ConstantSign {
         case (ConstSign.Pos, ConstSign.Cst(n)) =>
             if (n > 0) ConstSign.Pos else ConstSign.Top
 
-        case (ConstSign.Neg, ConstSign.Neg)            => ConstSign.Neg
-        case (ConstSign.Neg, ConstSign.Pos)            => ConstSign.Top
-        case (ConstSign.Pos, ConstSign.Neg)            => ConstSign.Top
-        case (ConstSign.Pos, ConstSign.Pos)            => ConstSign.Pos
+        case (ConstSign.Neg, ConstSign.Neg)             => ConstSign.Neg
+        case (ConstSign.Neg, ConstSign.Pos)             => ConstSign.Top
+        case (ConstSign.Pos, ConstSign.Neg)             => ConstSign.Top
+        case (ConstSign.Pos, ConstSign.Pos)             => ConstSign.Pos
 
         case _                                          => ConstSign.Top
+    }
+
+    /**
+     * Returns the greatest lower bound of `e1` and `e2`.
+     */
+    @commutative @associative
+    fn glb(e1: ConstSign, e2: ConstSign): ConstSign = match (e1, e2) with {
+        case (ConstSign.Top, x)                         => x
+        case (x, ConstSign.Top)                         => x
+
+        case (ConstSign.Neg, ConstSign.Neg)             => ConstSign.Neg
+        case (ConstSign.Neg, ConstSign.Pos)             => ConstSign.Bot
+        case (ConstSign.Pos, ConstSign.Neg)             => ConstSign.Bot
+        case (ConstSign.Pos, ConstSign.Pos)             => ConstSign.Pos
+
+        //case (ConstSign.Cst(n1), ConstSign.Cst(n2)) =>
+        //    if ()
+
+        case _ => ConstSign.Bot
     }
 
     // TODO ...
