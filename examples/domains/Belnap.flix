@@ -51,6 +51,11 @@ namespace Belnap {
     }
 
     /**
+     * Lifts a regular boolean into the Belnap domain.
+     */
+    fn lift(b: Bool): Belnap = if (b) Belnap.True else Belnap.False
+
+    /**
      * Over-approximates the logical `not` operator.
      */
     @strict @monotone

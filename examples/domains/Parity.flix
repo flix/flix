@@ -50,6 +50,11 @@ namespace Parity {
     }
 
     /**
+     * Lifts a regular integer into the Parity domain.
+     */
+    def lift(i: Int): Parity = if (i % 2 != 0) Parity.Odd else Parity.Even
+
+    /**
      * Over-approximates integer `addition`.
      */
     @strict @monotone @commutative @associative
