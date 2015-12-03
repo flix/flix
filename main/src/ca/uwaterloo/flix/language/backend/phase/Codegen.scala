@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.backend.phase
 
-import ca.uwaterloo.flix.language.ast.UnaryOperator
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, UnaryOperator}
 import ca.uwaterloo.flix.language.backend.ir.CodeGenIR.{Definition, Expression}
 import ca.uwaterloo.flix.language.backend.ir.CodeGenIR.Expression._
 
@@ -131,7 +131,37 @@ object Codegen {
         case UnaryOperator.Set.Size => ???
       }
 
-    case Binary(op, exp1, exp2, tpe, loc) => ???
+    case Binary(op, exp1, exp2, tpe, loc) =>
+      compileExpression(visitor, exp1)
+      compileExpression(visitor, exp2)
+      op match {
+        case BinaryOperator.Plus => visitor.visitInsn(IADD)
+        case BinaryOperator.Minus => visitor.visitInsn(ISUB)
+        case BinaryOperator.Times => visitor.visitInsn(IMUL)
+        case BinaryOperator.Divide => visitor.visitInsn(IDIV)
+        case BinaryOperator.Modulo => visitor.visitInsn(IREM)
+        case BinaryOperator.Less => ???
+        case BinaryOperator.LessEqual => ???
+        case BinaryOperator.Greater => ???
+        case BinaryOperator.GreaterEqual => ???
+        case BinaryOperator.Equal => ???
+        case BinaryOperator.NotEqual => ???
+        case BinaryOperator.And => ???
+        case BinaryOperator.Or => ???
+        case BinaryOperator.BitwiseAnd => visitor.visitInsn(IAND)
+        case BinaryOperator.BitwiseOr => visitor.visitInsn(IOR)
+        case BinaryOperator.BitwiseXor => visitor.visitInsn(IXOR)
+        case BinaryOperator.BitwiseLeftShift => visitor.visitInsn(ISHL)
+        case BinaryOperator.BitwiseRightShift => visitor.visitInsn(ISHR)
+        case BinaryOperator.Set.Member => ???
+        case BinaryOperator.Set.SubsetOf => ???
+        case BinaryOperator.Set.ProperSubsetOf => ???
+        case BinaryOperator.Set.Insert => ???
+        case BinaryOperator.Set.Remove => ???
+        case BinaryOperator.Set.Union => ???
+        case BinaryOperator.Set.Intersection => ???
+        case BinaryOperator.Set.Difference => ???
+      }
 
     case IfThenElse(exp1, exp2, exp3, tpe, loc) => ???
     case Tag(tag, exp, tpe, loc) => ???
