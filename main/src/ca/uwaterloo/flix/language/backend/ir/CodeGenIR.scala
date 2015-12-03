@@ -54,7 +54,7 @@ object CodeGenIR {
       * @param tpe the type of the integer.
       * @param loc the source location of the integer.
       */
-    case class Int(value: Int, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+    case class Int(value: scala.Int, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
 
 
     case class Var(localVar: CodeGenIR.LocalVar, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression

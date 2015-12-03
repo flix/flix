@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.backend.phase
 
+import ca.uwaterloo.flix.language.ast.UnaryOperator
 import ca.uwaterloo.flix.language.backend.ir.CodeGenIR.{Definition, Expression}
 import ca.uwaterloo.flix.language.backend.ir.CodeGenIR.Expression._
 
@@ -84,29 +85,41 @@ object Codegen {
    * The Flix function A::B::C::foo is compiled as the method A$B$C$foo.
    */
   def compileFunction(visitor: ClassVisitor, function: Definition.Function): Unit = {
-    // TODO: Proper signature
-    val tpe = function.tpe
-
-    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, function.name.decorate, "()V", null, null)
+    // TODO: Proper signature, for the first attempt we'll only support type () => Int
+    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, function.name.decorate, "()I", null, null)
     mv.visitCode()
 
     // Compile the method body
     compileExpression(mv, function.body)
 
-    mv.visitInsn(RETURN)  // TODO: Proper return instruction
-    mv.visitMaxs(0, 0)    // TODO: Calculate maxs
+    mv.visitInsn(IRETURN)     // TODO: Proper return instruction
+    mv.visitMaxs(999, 999)    // TODO: Calculate maxs
     mv.visitEnd()
   }
 
-  def compileExpression(visitor: MethodVisitor, exp: Expression): Unit = exp match {
-    case Int(i, tpe, loc) => ???
-    case Var(localVar, tpe, loc) => ???
+  def compileExpression(visitor: MethodVisitor, expr: Expression): Unit = expr match {
+    case Int(i, tpe, loc) => i match {
+      case -1 => visitor.visitInsn(ICONST_M1)
+      case 0 => visitor.visitInsn(ICONST_0)
+      case 1 => visitor.visitInsn(ICONST_1)
+      case 2 => visitor.visitInsn(ICONST_2)
+      case 3 => visitor.visitInsn(ICONST_3)
+      case 4 => visitor.visitInsn(ICONST_4)
+      case 5 => visitor.visitInsn(ICONST_5)
+      case _ if Byte.MinValue <= i && i <= Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i)
+      case _ if Short.MinValue <= i && i <= Short.MaxValue => visitor.visitIntInsn(SIPUSH, i)
+      case _ => visitor.visitIntInsn(LDC, i)
+    }
+
+    case Var(v, tpe, loc) => ???
     case Apply(name, args, tpe, loc) => ???
-    case Let(localVar, exp1, exp2, tpe, loc) => ???
+    case Let(v, exp1, exp2, tpe, loc) => ???
+
     case Unary(op, exp, tpe, loc) => ???
     case Binary(op, exp1, exp2, tpe, loc) => ???
+
     case IfThenElse(exp1, exp2, exp3, tpe, loc) => ???
-    case Tag(tag, tpe, loc) => ???
+    case Tag(tag, exp, tpe, loc) => ???
     case Tuple(elms, tpe, loc) => ???
     case Set(elms, tpe, loc) => ???
     case ElementAt(exp1, exp2, tpe, loc) => ???
