@@ -115,7 +115,22 @@ object Codegen {
     case Apply(name, args, tpe, loc) => ???
     case Let(v, exp1, exp2, tpe, loc) => ???
 
-    case Unary(op, exp, tpe, loc) => ???
+    case Unary(op, exp, tpe, loc) =>
+      compileExpression(visitor, exp)
+      op match {
+        case UnaryOperator.Not => ???
+        case UnaryOperator.Plus => // Unary plus is a nop
+        case UnaryOperator.Minus => visitor.visitInsn(INEG)
+        case UnaryOperator.Negate =>
+          // Note that ~bbbb = bbbb ^ 1111, and since the JVM uses two's complement, -1 = 0xFFFFFFFF, so ~x = x ^ -1
+          visitor.visitInsn(ICONST_M1)
+          visitor.visitInsn(IXOR)
+        case UnaryOperator.Set.IsEmpty => ???
+        case UnaryOperator.Set.NonEmpty => ???
+        case UnaryOperator.Set.Singleton => ???
+        case UnaryOperator.Set.Size => ???
+      }
+
     case Binary(op, exp1, exp2, tpe, loc) => ???
 
     case IfThenElse(exp1, exp2, exp3, tpe, loc) => ???
