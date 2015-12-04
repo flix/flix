@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.backend.phase
 
 import java.nio.file.{Paths, Files}
 
-import ca.uwaterloo.flix.language.ast.{Name,SourceLocation}
+import ca.uwaterloo.flix.language.ast.{UnaryOperator, Name, SourceLocation}
 import ca.uwaterloo.flix.language.backend.ir.CodeGenIR._
 import ca.uwaterloo.flix.language.backend.ir.CodeGenIR.Expression._
 import ca.uwaterloo.flix.language.backend.ir.CodeGenIR.Definition.Function
@@ -241,7 +241,81 @@ class TestCodegen extends FunSuite {
     assertResult(Int.MaxValue)(result06)
   }
 
-  // TODO: Tests for unary int operations
+  /////////////////////////////////////////////////////////////////////////////
+  // Unary operators                                                         //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Codegen - Unary.Plus01") {
+    val name = Name.Resolved.mk(List("foo", "bar", "f"))
+    val definition = Function(name, args = List(),
+      body = Unary(UnaryOperator.Plus, Const(42, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate, List()).asInstanceOf[Int]
+
+    assertResult(42)(result)
+  }
+
+  test("Codegen - Unary.Plus02") {
+    val name = Name.Resolved.mk(List("foo", "bar", "f"))
+    val definition = Function(name, args = List(),
+      body = Unary(UnaryOperator.Plus, Const(-42, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate, List()).asInstanceOf[Int]
+
+    assertResult(-42)(result)
+  }
+
+  test("Codegen - Unary.Minus01") {
+    val name = Name.Resolved.mk(List("foo", "bar", "f"))
+    val definition = Function(name, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(42, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate, List()).asInstanceOf[Int]
+
+    assertResult(-42)(result)
+  }
+
+  test("Codegen - Unary.Minus02") {
+    val name = Name.Resolved.mk(List("foo", "bar", "f"))
+    val definition = Function(name, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(-42, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate, List()).asInstanceOf[Int]
+
+    assertResult(42)(result)
+  }
+
+  test("Codegen - Unary.Negate01") {
+    val name = Name.Resolved.mk(List("foo", "bar", "f"))
+    val definition = Function(name, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(42, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate, List()).asInstanceOf[Int]
+
+    assertResult(~42)(result)
+  }
+
+  test("Codegen - Unary.Negate02") {
+    val name = Name.Resolved.mk(List("foo", "bar", "f"))
+    val definition = Function(name, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(-42, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate, List()).asInstanceOf[Int]
+
+    assertResult(~(-42))(result)
+  }
 
   // TODO: Tests for binary int operations
 }
