@@ -54,6 +54,7 @@ object CodeGenIR {
       * @param tpe the type of the integer.
       * @param loc the source location of the integer.
       */
+    // TODO: We currently only support 32 bit ints. Larger (smaller) values will overflow (underflow).
     case class Const(value: scala.Int, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
 
 

@@ -75,7 +75,7 @@ object Codegen {
       case 5 => visitor.visitInsn(ICONST_5)
       case _ if Byte.MinValue <= i && i <= Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i)
       case _ if Short.MinValue <= i && i <= Short.MaxValue => visitor.visitIntInsn(SIPUSH, i)
-      case _ => visitor.visitIntInsn(LDC, i)
+      case _ => visitor.visitLdcInsn(i)
     }
 
     case Var(v, tpe, loc) => ???
