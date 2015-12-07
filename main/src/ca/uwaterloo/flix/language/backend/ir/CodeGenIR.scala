@@ -18,7 +18,16 @@ object CodeGenIR {
 
   object Definition {
 
-    case class Function(name: Name.Resolved, args: List[ArgVar], body: CodeGenIR.Expression, tpe: CodeGenIR.Type.Lambda, loc: SourceLocation) extends CodeGenIR.Definition
+    /**
+     * An AST node that represents the definition of a function.
+     *
+     * @param name the resolved name of the function.
+     * @param args the arguments of the function, for debugging purposes.
+     * @param body the expression body of the function.
+     * @param tpe the (lambda) type of the function.
+     * @param loc the source location of the function definition.
+     */
+    case class Function(name: Name.Resolved, args: List[String], body: CodeGenIR.Expression, tpe: CodeGenIR.Type.Lambda, loc: SourceLocation) extends CodeGenIR.Definition
 
   }
 
@@ -48,7 +57,7 @@ object CodeGenIR {
 
 
     /**
-      * An AST node that represents a constant integer literal
+      * An AST node that represents a constant integer literal.
       *
       * @param value the integer value.
       * @param tpe the type of the integer.
@@ -57,7 +66,13 @@ object CodeGenIR {
     // TODO: We currently only support 32 bit ints. Larger (smaller) values will overflow (underflow).
     case class Const(value: scala.Int, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
 
-
+    /**
+     * An AST node that represents a reference to a variable. The variable can be a parameter or local variable.
+     *
+     * @param localVar the local variable being referenced.
+     * @param tpe the type of the variable.
+     * @param loc the source location of the variable.
+     */
     case class Var(localVar: CodeGenIR.LocalVar, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
 
 
@@ -156,9 +171,13 @@ object CodeGenIR {
 
   }
 
-  case class ArgVar(offset: Int) extends CodeGenIR
-
-  case class LocalVar(offset: Int) extends CodeGenIR
+  /**
+   * A local variable that is being referenced.
+   *
+   * @param offset the (0-based) local variable slot in the JVM method.
+   * @param name the name of the variable, for debugging purposes
+   */
+  case class LocalVar(offset: Int, name: String) extends CodeGenIR
 
 
 }
