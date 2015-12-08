@@ -52,18 +52,19 @@ namespace ConstantSign {
     //            if (n1 < 0 && n2 < 0)   => ConstSign.Neg
     //            if _                    => ConstSign.Top
     //        }
+        // TODO: there was a bug here, where < and > where used without <=.
 
         case (ConstSign.Cst(n), ConstSign.Neg) =>
-            if (n < 0) ConstSign.Neg else ConstSign.Top
+            if (n <= 0) ConstSign.Neg else ConstSign.Top
 
         case (ConstSign.Neg, ConstSign.Cst(n)) =>
-            if (n < 0) ConstSign.Neg else ConstSign.Top
+            if (n <= 0) ConstSign.Neg else ConstSign.Top
 
         case (ConstSign.Cst(n), ConstSign.Pos) =>
-            if (n > 0) ConstSign.Pos else ConstSign.Top
+            if (n >= 0) ConstSign.Pos else ConstSign.Top
 
         case (ConstSign.Pos, ConstSign.Cst(n)) =>
-            if (n > 0) ConstSign.Pos else ConstSign.Top
+            if (n >= 0) ConstSign.Pos else ConstSign.Top
 
         case (ConstSign.Neg, ConstSign.Neg)             => ConstSign.Neg
         case (ConstSign.Neg, ConstSign.Pos)             => ConstSign.Top
