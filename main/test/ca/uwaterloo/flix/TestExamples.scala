@@ -207,17 +207,19 @@ class TestExamples extends FunSuite {
         |    A(2, ConstSign.Cst(0))
         |    A(3, ConstSign.Cst(1))
         |
-        |    A(4, x) :- A(1, x).
-        |    A(4, x) :- A(2, x).
-        |    A(4, x) :- A(3, x).
+        |    A(4, x) :- A(1, x). // 4 -> top
+        |    A(4, x) :- A(2, x). // 4 -> top
+        |    A(4, x) :- A(3, x). // 4 -> top
         |
-        |    A(5, x) :- A(2, x).
-        |    A(5, x) :- A(3, x).
+        |    A(5, x) :- A(2, x). // 5 -> pos
+        |    A(5, x) :- A(3, x). // 5 -> pos
         |
-        |    A(6, x) :- A(1, x), A(2, x).
-        |    A(7, x) :- A(2, x), A(3, x).
+        |    A(6, x) :- A(1, x), A(2, x). // 6 -> bot
+        |    A(7, x) :- A(2, x), A(3, x). // 7 -> bot
         |
-        |    A(8, x) :- A(2, x), A(3, x).
+        |    A(8, x) :- A(4, x), A(5, x). // 8 -> pos
+        |
+        |    A(9, x `times` y) :- A(1, x), A(1, y). // 9 -> 1
         |}
       """.stripMargin
 
@@ -240,10 +242,8 @@ class TestExamples extends FunSuite {
     assertResult(List(Pos))(A(List(Value.mkInt(5))))
     assertResult(None)(A.get(List(Value.mkInt(6))))
     assertResult(None)(A.get(List(Value.mkInt(7))))
-
-    //assertResult(None)(A.get(List(Value.mkInt(4))))
-    //assertResult(List(Two))(A(List(Value.mkInt(5))))
-    //assertResult(List(Two))(A(List(Value.mkInt(6))))
+    assertResult(List(Pos))(A(List(Value.mkInt(8))))
+    assertResult(List(One))(A(List(Value.mkInt(9))))
   }
 
   /////////////////////////////////////////////////////////////////////////////
