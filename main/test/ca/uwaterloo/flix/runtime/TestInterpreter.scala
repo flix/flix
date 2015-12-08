@@ -590,6 +590,20 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt(4))(result)
   }
 
+  test("Interpreter - UnaryOperator.UnaryNegate01") {
+    val input = "val x: Int = ~42"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(~42))(result)
+  }
+
+  test("Interpreter - UnaryOperator.UnaryNegate02") {
+    val input = "val x: Int = ~~42"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(42))(result)
+  }
+
   test("Interpreter - UnaryOperator.Set.IsEmpty01") {
     val input = "val x: Bool = isEmpty? (#{5} `remove` 5)"
     val tree = Compiler.compile(input).get.constants.head._2.exp
@@ -937,6 +951,118 @@ class TestInterpreter extends FunSuite {
     )
     val result = Interpreter.eval(input, root)
     assertResult(Value.mkInt(-2))(result)
+  }
+
+  test("Interpreter - BinaryOperator.BitwiseAnd01") {
+    val input = "val x: Int = 42 & 65535"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(42 & 65535))(result)
+  }
+
+  test("Interpreter - BinaryOperator.BitwiseAnd02") {
+    val input = "val x: Int = 42 & 0"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(42 & 0))(result)
+  }
+
+  test("Interpreter - BinaryOperator.BitwiseAnd03") {
+    val input = "val x: Int = 42 & 42"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(42 & 42))(result)
+  }
+
+  test("Interpreter - BinaryOperator.BitwiseOr01") {
+    val input = "val x: Int = 42 | 65535"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(42 | 65535))(result)
+  }
+
+  test("Interpreter - BinaryOperator.BitwiseOr02") {
+    val input = "val x: Int = 42 | 0"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(42 | 0))(result)
+  }
+
+  test("Interpreter - BinaryOperator.BitwiseOr03") {
+    val input = "val x: Int = 42 | 42"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(42 | 42))(result)
+  }
+
+  test("Interpreter - BinaryOperator.BitwiseXor01") {
+    val input = "val x: Int = 42 ^ 65535"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(42 ^ 65535))(result)
+  }
+
+  test("Interpreter - BinaryOperator.BitwiseXor02") {
+    val input = "val x: Int = 42 ^ 0"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(42 ^ 0))(result)
+  }
+
+  test("Interpreter - BinaryOperator.BitwiseXor03") {
+    val input = "val x: Int = 42 ^ 42"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(42 ^ 42))(result)
+  }
+
+  test("Interpreter - BinaryOperator.BitwiseLeftShift01") {
+    val input = "val x: Int = 4 << 0"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(4 << 0))(result)
+  }
+
+  test("Interpreter - BinaryOperator.BitwiseLeftShift02") {
+    val input = "val x: Int = 4 << 14"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(4 << 14))(result)
+  }
+
+  test("Interpreter - BinaryOperator.BitwiseLeftShift03") {
+    val input = "val x: Int = 4 << 29"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(4 << 29))(result)
+  }
+
+  test("Interpreter - BinaryOperator.BitwiseLeftShift04") {
+    val input = "val x: Int = 4 << 30"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(4 << 30))(result)
+  }
+
+  test("Interpreter - BinaryOperator.BitwiseRightShift01") {
+    val input = "val x: Int = 12345 >> 20"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(12345 >> 20))(result)
+  }
+
+  test("Interpreter - BinaryOperator.BitwiseRightShift02") {
+    val input = "val x: Int = 12345 >> 10"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(12345 >> 10))(result)
+  }
+
+  test("Interpreter - BinaryOperator.BitwiseRightShift03") {
+    val input = "val x: Int = 12345 >> 0"
+    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(12345 >> 0))(result)
   }
 
   test("Interpreter - BinaryOperator.Less01") {
