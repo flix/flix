@@ -307,4 +307,38 @@ namespace ConstantSign {
         case _                      => Belnap::Belnap.Top
     }
 
+    /**
+      * Over-approximates `not equal`.
+      */
+    @strict @monotone @commutative
+    fn neq(e1: ConstSign, e2: ConstSign): Belnap::Belnap = Belnap::not(eq(e1, e2))
+
+    /**
+      * Over-approximates `less than`.
+      */
+    @strict @monotone
+    fn less(e1: ConstSign, e2: ConstSign): Belnap::Belnap = match (e1, e2) with {
+        case (ConstSign.Bot, _)                         => Belnap::Belnap.Bot
+        case (_, ConstSign.Bot)                         => Belnap::Belnap.Bot
+        case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => Belnap::lift(n1 < n2)
+
+        case (ConstSign.Cst(n1), ConstSign.Neg)         =>
+            if (n1 > 0) Belnap::Belnap.False else Belnap::Belnap.Top
+        case (ConstSign.Neg, ConstSign.Cst(n1))         =>
+            if (n1 > 0) Belnap::Belnap.True else Belnap::Belnap.Top
+
+        case (ConstSign.Cst(n1), ConstSign.Pos)         =>
+            if (n1 < 0) Belnap::Belnap.True else Belnap::Belnap.Top
+        case (ConstSign.Pos, ConstSign.Cst(n1))         =>
+            if (n1 < 0) Belnap::Belnap.False else Belnap::Belnap.Top
+
+        case _                                          => Belnap::Belnap.Top
+    }
+
+    /**
+      * Over-approximates `less than or equal`.
+      */
+    @strict @monotone
+    fn lessEqual(e1: ConstSign, e2: ConstSign): Belnap::Belnap = Belnap::or(e1 `less` e2, e1 `eq` e2)
+
 }
