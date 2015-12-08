@@ -283,7 +283,36 @@ namespace ConstantSign {
         case _                                          => ConstSign.Top
     }
 
-    // TODO: leftShift and rightShift
+    /**
+      * Over-approximates `bitwise left shift`.
+      */
+    @strict @monotone
+    fn leftShift(e1: ConstSign, e2: ConstSign): ConstSign = match (e1, e2) with {
+        case (ConstSign.Bot, _)                         => ConstSign.Bot
+        case (_, ConstSign.Bot)                         => ConstSign.Bot
+        case (_, ConstSign.Neg)                         => ConstSign.Bot
+        case (ConstSign.Cst(0), _)                      => ConstSign.Cst(0)
+        case (x, ConstSign.Cst(0))                      => x
+        case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => ConstSign.Cst(n1 << n2)
+        case _                                          => ConstSign.Top
+    }
+
+    /**
+      * Over-approximates `bitwise right shift`.
+      */
+    @strict @monotone
+    fn rightShift(e1: ConstSign, e2: ConstSign): ConstSign = match (e1, e2) with {
+        case (ConstSign.Bot, _)                         => ConstSign.Bot
+        case (_, ConstSign.Bot)                         => ConstSign.Bot
+        case (_, ConstSign.Neg)                         => ConstSign.Bot
+        case (ConstSign.Cst(0), _)                      => ConstSign.Cst(0)
+        case (x, ConstSign.Cst(0))                      => x
+        case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => ConstSign.Cst(n1 >> n2)
+        case (ConstSign.Neg, ConstSign.Cst(n1))         =>
+            if (n1 > 0) ConstSign.Pos else ConstSign.Bot
+        case (ConstSign.Pos, _)                         => ConstSign.Pos
+        case _                                          => ConstSign.Top
+    }
 
     /**
       * Over-approximates `equal`.
