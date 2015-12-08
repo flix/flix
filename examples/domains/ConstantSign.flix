@@ -209,7 +209,7 @@ namespace ConstantSign {
      */
     @strict @monotone
     fn negate(e: ConstSign): ConstSign = match e with {
-        case ConstSign.Bot      => ConstSign.Neg
+        case ConstSign.Bot      => ConstSign.Bot
         case ConstSign.Cst(n)   => ConstSign.Cst(~ n)
         case ConstSign.Neg      => ConstSign.Pos
         case ConstSign.Pos      => ConstSign.Neg
@@ -246,15 +246,15 @@ namespace ConstantSign {
         case (ConstSign.Bot, _)                         => ConstSign.Bot
         case (_, ConstSign.Bot)                         => ConstSign.Bot
         case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => ConstSign.Cst(n1 & n2)
-        case (x, ConstSign.Pos)                         => x
-        case (ConstSign.Pos, x)                         => x
+        case (x, ConstSign.Pos)                         => ConstSign.Pos
+        case (ConstSign.Pos, x)                         => ConstSign.Pos
         case (ConstSign.Cst(n1), ConstSign.Neg)         =>
             if (n1 < 0) ConstSign.Neg else ConstSign.Pos
         case (ConstSign.Neg, ConstSign.Cst(n1))         =>
             if (n1 < 0) ConstSign.Neg else ConstSign.Pos
         case (ConstSign.Neg, ConstSign.Neg)             => ConstSign.Neg
-        case (ConstSign.Neg, ConstSign.Pos)             => ConstSign.Neg
-        case (ConstSign.Pos, ConstSign.Neg)             => ConstSign.Neg
+        case (ConstSign.Neg, ConstSign.Pos)             => ConstSign.Pos
+        case (ConstSign.Pos, ConstSign.Neg)             => ConstSign.Pos
         case (ConstSign.Pos, ConstSign.Pos)             => ConstSign.Pos
 
         case _                                          => ConstSign.Top
@@ -269,13 +269,13 @@ namespace ConstantSign {
         case (_, ConstSign.Bot)                         => ConstSign.Bot
         case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => ConstSign.Cst(n1 ^ n2)
         case (ConstSign.Cst(n1), ConstSign.Neg)         =>
-            if (n1 >= 0) ConstSign.Neg else ConstSign.Top
+            if (n1 >= 0) ConstSign.Neg else ConstSign.Pos
         case (ConstSign.Neg, ConstSign.Cst(n1))         =>
-            if (n1 >= 0) ConstSign.Neg else ConstSign.Top
+            if (n1 >= 0) ConstSign.Neg else ConstSign.Pos
         case (ConstSign.Cst(n1), ConstSign.Pos)         =>
-            if (n1 < 0) ConstSign.Neg else ConstSign.Top
+            if (n1 < 0) ConstSign.Neg else ConstSign.Pos
         case (ConstSign.Pos, ConstSign.Cst(n1))         =>
-            if (n1 < 0) ConstSign.Neg else ConstSign.Top
+            if (n1 < 0) ConstSign.Neg else ConstSign.Pos
         case (ConstSign.Neg, ConstSign.Neg)             => ConstSign.Pos
         case (ConstSign.Neg, ConstSign.Pos)             => ConstSign.Neg
         case (ConstSign.Pos, ConstSign.Neg)             => ConstSign.Neg
@@ -322,18 +322,15 @@ namespace ConstantSign {
         case (ConstSign.Bot, _)                         => Belnap::Belnap.Bot
         case (_, ConstSign.Bot)                         => Belnap::Belnap.Bot
         case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => Belnap::lift(n1 == n2)
-
         case (ConstSign.Cst(n1), ConstSign.Neg)         =>
             if (n1 > 0) Belnap::Belnap.False else Belnap::Belnap.Top
         case (ConstSign.Neg, ConstSign.Cst(n1))         =>
             if (n1 > 0) Belnap::Belnap.False else Belnap::Belnap.Top
-
         case (ConstSign.Cst(n1), ConstSign.Pos)         =>
             if (n1 < 0) Belnap::Belnap.False else Belnap::Belnap.Top
         case (ConstSign.Pos, ConstSign.Cst(n1))         =>
             if (n1 < 0) Belnap::Belnap.False else Belnap::Belnap.Top
-
-        case _                      => Belnap::Belnap.Top
+        case _                                          => Belnap::Belnap.Top
     }
 
     /**
@@ -350,17 +347,14 @@ namespace ConstantSign {
         case (ConstSign.Bot, _)                         => Belnap::Belnap.Bot
         case (_, ConstSign.Bot)                         => Belnap::Belnap.Bot
         case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => Belnap::lift(n1 < n2)
-
         case (ConstSign.Cst(n1), ConstSign.Neg)         =>
             if (n1 > 0) Belnap::Belnap.False else Belnap::Belnap.Top
         case (ConstSign.Neg, ConstSign.Cst(n1))         =>
             if (n1 > 0) Belnap::Belnap.True else Belnap::Belnap.Top
-
         case (ConstSign.Cst(n1), ConstSign.Pos)         =>
             if (n1 < 0) Belnap::Belnap.True else Belnap::Belnap.Top
         case (ConstSign.Pos, ConstSign.Cst(n1))         =>
             if (n1 < 0) Belnap::Belnap.False else Belnap::Belnap.Top
-
         case _                                          => Belnap::Belnap.Top
     }
 
