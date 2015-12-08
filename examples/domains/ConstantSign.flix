@@ -40,10 +40,10 @@ namespace ConstantSign {
         case (x, ConstSign.Bot)                         => x
 
         case (ConstSign.Cst(n1), ConstSign.Cst(n2)) =>
-            if (n1 == n2)           ConstSign.Cst(n1) else
-            if (n1 > 0 && n2 > 0)   ConstSign.Pos else
-            if (n1 < 0 && n2 < 0)   ConstSign.Neg else
-                                    ConstSign.Top
+            if (n1 == n2)               ConstSign.Cst(n1) else
+            (if (n1 >= 0 && n2 >= 0)     ConstSign.Pos else
+            (if (n1 <= 0 && n2 <= 0)     ConstSign.Neg else
+                                        ConstSign.Top))
 
     // TODO: Implement switch expression
     //        switch {
