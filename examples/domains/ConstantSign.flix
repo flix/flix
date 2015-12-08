@@ -224,16 +224,12 @@ namespace ConstantSign {
         case (ConstSign.Bot, _)                         => ConstSign.Bot
         case (_, ConstSign.Bot)                         => ConstSign.Bot
         case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => ConstSign.Cst(n1 | n2)
-
         case (ConstSign.Cst(n1), ConstSign.Neg)         => ConstSign.Neg
         case (ConstSign.Neg, ConstSign.Cst(n1))         => ConstSign.Neg
-
         case (ConstSign.Cst(n1), ConstSign.Pos)         =>
             if (n1 < 0) ConstSign.Neg else ConstSign.Pos
-
         case (ConstSign.Pos, ConstSign.Cst(n1))         =>
             if (n1 < 0) ConstSign.Neg else ConstSign.Pos
-
         case (ConstSign.Neg, ConstSign.Neg)             => ConstSign.Neg
         case (ConstSign.Neg, ConstSign.Pos)             => ConstSign.Neg
         case (ConstSign.Pos, ConstSign.Neg)             => ConstSign.Neg
@@ -241,5 +237,52 @@ namespace ConstantSign {
 
         case _                                          => ConstSign.Top
     }
+
+    /**
+      * Over-approximates `bitwise and`.
+      */
+    @strict @monotone @commutative @associative
+    fn and(e1: ConstSign, e2: ConstSign): ConstSign = match (e1, e2) with {
+        case (ConstSign.Bot, _)                         => ConstSign.Bot
+        case (_, ConstSign.Bot)                         => ConstSign.Bot
+        case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => ConstSign.Cst(n1 & n2)
+        case (x, ConstSign.Pos)                         => x
+        case (ConstSign.Pos, x)                         => x
+        case (ConstSign.Cst(n1), ConstSign.Neg)         =>
+            if (n1 < 0) ConstSign.Neg else ConstSign.Pos
+        case (ConstSign.Neg, ConstSign.Cst(n1))         =>
+            if (n1 < 0) ConstSign.Neg else ConstSign.Pos
+        case (ConstSign.Neg, ConstSign.Neg)             => ConstSign.Neg
+        case (ConstSign.Neg, ConstSign.Pos)             => ConstSign.Neg
+        case (ConstSign.Pos, ConstSign.Neg)             => ConstSign.Neg
+        case (ConstSign.Pos, ConstSign.Pos)             => ConstSign.Pos
+
+        case _                                          => ConstSign.Top
+    }
+
+    /**
+      * Over-approximates `bitwise xor`.
+      */
+    @strict @monotone @commutative @associative
+    fn xor(e1: ConstSign, e2: ConstSign): ConstSign = match (e1, e2) with {
+        case (ConstSign.Bot, _)                         => ConstSign.Bot
+        case (_, ConstSign.Bot)                         => ConstSign.Bot
+        case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => ConstSign.Cst(n1 ^ n2)
+        case (ConstSign.Cst(n1), ConstSign.Neg)         =>
+            if (n1 >= 0) ConstSign.Neg else ConstSign.Top
+        case (ConstSign.Neg, ConstSign.Cst(n1))         =>
+            if (n1 >= 0) ConstSign.Neg else ConstSign.Top
+        case (ConstSign.Cst(n1), ConstSign.Pos)         =>
+            if (n1 < 0) ConstSign.Neg else ConstSign.Top
+        case (ConstSign.Pos, ConstSign.Cst(n1))         =>
+            if (n1 < 0) ConstSign.Neg else ConstSign.Top
+        case (ConstSign.Neg, ConstSign.Neg)             => ConstSign.Pos
+        case (ConstSign.Neg, ConstSign.Pos)             => ConstSign.Neg
+        case (ConstSign.Pos, ConstSign.Neg)             => ConstSign.Neg
+        case (ConstSign.Pos, ConstSign.Pos)             => ConstSign.Pos
+        case _                                          => ConstSign.Top
+    }
+
+
 
 }
