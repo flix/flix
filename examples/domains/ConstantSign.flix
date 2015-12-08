@@ -283,6 +283,28 @@ namespace ConstantSign {
         case _                                          => ConstSign.Top
     }
 
+    // TODO: leftShift and rightShift
 
+    /**
+      * Over-approximates `equal`.
+      */
+    @strict @monotone @commutative
+    fn eq(e1: ConstSign, e2: ConstSign): Belnap::Belnap = match (e1, e2) with {
+        case (ConstSign.Bot, _)                         => Belnap::Belnap.Bot
+        case (_, ConstSign.Bot)                         => Belnap::Belnap.Bot
+        case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => Belnap::lift(n1 == n2)
+
+        case (ConstSign.Cst(n1), ConstSign.Neg)         =>
+            if (n1 > 0) Belnap::Belnap.False else Belnap::Belnap.Top
+        case (ConstSign.Neg, ConstSign.Cst(n1))         =>
+            if (n1 > 0) Belnap::Belnap.False else Belnap::Belnap.Top
+
+        case (ConstSign.Cst(n1), ConstSign.Pos)         =>
+            if (n1 < 0) Belnap::Belnap.False else Belnap::Belnap.Top
+        case (ConstSign.Pos, ConstSign.Cst(n1))         =>
+            if (n1 < 0) Belnap::Belnap.False else Belnap::Belnap.Top
+
+        case _                      => Belnap::Belnap.Top
+    }
 
 }
