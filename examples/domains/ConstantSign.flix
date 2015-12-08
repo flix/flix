@@ -138,7 +138,7 @@ namespace ConstantSign {
     /**
      * Over-approximates integer `multiplication`.
      */
-    @strict @monotone
+    @strict @monotone @commutative @associative
     fn times(e1: ConstSign, e2: ConstSign): ConstSign = match (e1, e2) with {
         case (ConstSign.Bot, _)                         => ConstSign.Bot
         case (_, ConstSign.Bot)                         => ConstSign.Bot
