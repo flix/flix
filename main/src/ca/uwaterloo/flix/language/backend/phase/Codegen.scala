@@ -52,8 +52,9 @@ object Codegen {
    * The Flix function A::B::C::foo is compiled as the method A$B$C$foo.
    */
   def compileFunction(visitor: ClassVisitor, function: Definition.Function): Unit = {
-    // TODO: Proper signature, for the first attempt we'll only support type () => Int
-    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, function.name.decorate, "()I", null, null)
+    // TODO: Properly handle types. Start implementing other types (e.g. bool)
+    // TODO: How are complex types represented?
+    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, function.name.decorate, function.descriptor, null, null)
     mv.visitCode()
 
     // Compile the method body
@@ -77,8 +78,7 @@ object Codegen {
       case _ if Short.MinValue <= i && i <= Short.MaxValue => visitor.visitIntInsn(SIPUSH, i)
       case _ => visitor.visitLdcInsn(i)
     }
-
-    case Var(v, tpe, loc) => ???
+    case Var(v, tpe, loc) => visitor.visitVarInsn(ILOAD, v.offset)
     case Apply(name, args, tpe, loc) => ???
     case Let(v, exp1, exp2, tpe, loc) => ???
 
@@ -129,7 +129,6 @@ object Codegen {
         case BinaryOperator.Set.Intersection => ???
         case BinaryOperator.Set.Difference => ???
       }
-
     case IfThenElse(exp1, exp2, exp3, tpe, loc) => ???
     case Tag(tag, exp, tpe, loc) => ???
     case Tuple(elms, tpe, loc) => ???

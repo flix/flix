@@ -27,7 +27,10 @@ object CodeGenIR {
      * @param tpe the (lambda) type of the function.
      * @param loc the source location of the function definition.
      */
-    case class Function(name: Name.Resolved, args: List[String], body: CodeGenIR.Expression, tpe: CodeGenIR.Type.Lambda, loc: SourceLocation) extends CodeGenIR.Definition
+    case class Function(name: Name.Resolved, args: List[String], body: CodeGenIR.Expression, tpe: CodeGenIR.Type.Lambda, loc: SourceLocation) extends CodeGenIR.Definition {
+      // TODO: Properly convert the function type. For now we only support returning Int and taking 0 or more Int args.
+      val descriptor: String = s"""(${"I" * tpe.args.size })I"""
+    }
 
   }
 
@@ -67,7 +70,7 @@ object CodeGenIR {
     case class Const(value: scala.Int, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
 
     /**
-     * An AST node that represents a reference to a variable. The variable can be a parameter or local variable.
+     * A typed AST node representing a local variable expression (i.e. a parameter or let-bound variable).
      *
      * @param localVar the local variable being referenced.
      * @param tpe the type of the variable.
