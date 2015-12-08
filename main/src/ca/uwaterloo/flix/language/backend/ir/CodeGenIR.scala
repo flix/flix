@@ -78,7 +78,14 @@ object CodeGenIR {
      */
     case class Var(localVar: CodeGenIR.LocalVar, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
 
-
+    /**
+     * A typed AST node representing a function call.
+     *
+     * @param name the name of the function being called.
+     * @param args the function arguments.
+     * @param tpe the return type of the function.
+     * @param loc the source location.
+     */
     case class Apply(name: Name.Resolved, args: List[CodeGenIR.Expression], tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
 
     /**

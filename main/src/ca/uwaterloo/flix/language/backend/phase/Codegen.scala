@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.backend.phase
 
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{Name, BinaryOperator, UnaryOperator}
 import ca.uwaterloo.flix.language.backend.ir.CodeGenIR.{Definition, Expression}
 import ca.uwaterloo.flix.language.backend.ir.CodeGenIR.Expression._
 
@@ -9,24 +9,30 @@ import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.util.CheckClassAdapter
 
 object Codegen {
+
+  case class Context(definitions: List[Definition], clazz: String = "ca/uwaterloo/flix/runtime/compiled/FlixDefinitions") {
+    val functions = definitions.collect { case f: Definition.Function => f }
+    val getFunction = functions.map { f => (f.name, f) }.toMap
+  }
+
   /*
    * Given a list of Flix definitions, compile the definitions to bytecode and put them in a JVM class.
    * For now, we put all definitions in a single class: ca.uwaterloo.flix.runtime.compiled.FlixDefinitions.
    * The Flix function A::B::C::foo is compiled as the method A$B$C$foo.
    */
-  def compile(definitions: List[Definition], className: String = "FlixDefinitions"): Array[Byte] = {
-    val functions = definitions.collect { case f: Definition.Function => f }
+  def compile(context: Context): Array[Byte] = {
+    val functions = context.functions
     val classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
     val visitor = new CheckClassAdapter(classWriter)
 
     // Initialize the visitor to create a class
-    visitor.visit(V1_7, ACC_PUBLIC + ACC_SUPER, "ca/uwaterloo/flix/runtime/compiled/" + className, null, "java/lang/Object", null)
+    visitor.visit(V1_7, ACC_PUBLIC + ACC_SUPER, context.clazz, null, "java/lang/Object", null)
 
     // Generate the constructor for the class
-    compileConstructor(visitor)
+    compileConstructor(context, visitor)
 
     // Generate code for each of the Flix functions
-    functions.foreach { f => compileFunction(visitor, f) }
+    functions.foreach(compileFunction(context, visitor))
 
     // Finish the traversal and convert to a byte array
     visitor.visitEnd()
@@ -36,7 +42,7 @@ object Codegen {
   /*
    * Generate the constructor. Takes a ClassVisitor (that has already been initialized).
    */
-  def compileConstructor(visitor: ClassVisitor): Unit = {
+  def compileConstructor(context: Context, visitor: ClassVisitor): Unit = {
     val mv = visitor.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null)
     mv.visitCode()
     mv.visitVarInsn(ALOAD, 0)
@@ -51,21 +57,21 @@ object Codegen {
    * Takes a ClassVisitor (that has already been initialized).
    * The Flix function A::B::C::foo is compiled as the method A$B$C$foo.
    */
-  def compileFunction(visitor: ClassVisitor, function: Definition.Function): Unit = {
+  def compileFunction(context: Context, visitor: ClassVisitor)(function: Definition.Function): Unit = {
     // TODO: Properly handle types. Start implementing other types (e.g. bool)
     // TODO: How are complex types represented?
     val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, function.name.decorate, function.descriptor, null, null)
     mv.visitCode()
 
     // Compile the method body
-    compileExpression(mv, function.body)
+    compileExpression(context, mv)(function.body)
 
     mv.visitInsn(IRETURN)     // TODO: Proper return instruction
     mv.visitMaxs(999, 999)    // TODO: Calculate maxs
     mv.visitEnd()
   }
 
-  def compileExpression(visitor: MethodVisitor, expr: Expression): Unit = expr match {
+  def compileExpression(context: Context, visitor: MethodVisitor)(expr: Expression): Unit = expr match {
     case Const(i, tpe, loc) => i match {
       case -1 => visitor.visitInsn(ICONST_M1)
       case 0 => visitor.visitInsn(ICONST_0)
@@ -79,13 +85,15 @@ object Codegen {
       case _ => visitor.visitLdcInsn(i)
     }
     case Var(v, tpe, loc) => visitor.visitVarInsn(ILOAD, v.offset)
-    case Apply(name, args, tpe, loc) => ???
+    case Apply(name, args, tpe, loc) =>
+      args.foreach(compileExpression(context, visitor))
+      visitor.visitMethodInsn(INVOKESTATIC, context.clazz, name.decorate, context.getFunction(name).descriptor, false)
     case Let(v, exp1, exp2, tpe, loc) =>
-      compileExpression(visitor, exp1)
+      compileExpression(context, visitor)(exp1)
       visitor.visitVarInsn(ISTORE, v.offset)
-      compileExpression(visitor, exp2)
+      compileExpression(context, visitor)(exp2)
     case Unary(op, exp, tpe, loc) =>
-      compileExpression(visitor, exp)
+      compileExpression(context, visitor)(exp)
       op match {
         case UnaryOperator.Not => ???
         case UnaryOperator.Plus => // Unary plus is a nop
@@ -99,10 +107,9 @@ object Codegen {
         case UnaryOperator.Set.Singleton => ???
         case UnaryOperator.Set.Size => ???
       }
-
     case Binary(op, exp1, exp2, tpe, loc) =>
-      compileExpression(visitor, exp1)
-      compileExpression(visitor, exp2)
+      compileExpression(context, visitor)(exp1)
+      compileExpression(context, visitor)(exp2)
       op match {
         case BinaryOperator.Plus => visitor.visitInsn(IADD)
         case BinaryOperator.Minus => visitor.visitInsn(ISUB)
