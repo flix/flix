@@ -81,7 +81,15 @@ object CodeGenIR {
 
     case class Apply(name: Name.Resolved, args: List[CodeGenIR.Expression], tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
 
-
+    /**
+     * A typed AST node representing a let expression.
+     *
+     * @param localVar the bound variable.
+     * @param exp1 the value of the bound variable.
+     * @param exp2 the body expression in which the bound variable is visible.
+     * @param tpe the type of the expression (which is equivalent to the type of the body expression).
+     * @param loc the source location.
+     */
     case class Let(localVar: CodeGenIR.LocalVar, exp1: CodeGenIR.Expression, exp2: CodeGenIR.Expression, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
 
     /**

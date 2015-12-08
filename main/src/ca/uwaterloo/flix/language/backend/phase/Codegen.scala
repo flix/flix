@@ -80,8 +80,10 @@ object Codegen {
     }
     case Var(v, tpe, loc) => visitor.visitVarInsn(ILOAD, v.offset)
     case Apply(name, args, tpe, loc) => ???
-    case Let(v, exp1, exp2, tpe, loc) => ???
-
+    case Let(v, exp1, exp2, tpe, loc) =>
+      compileExpression(visitor, exp1)
+      visitor.visitVarInsn(ISTORE, v.offset)
+      compileExpression(visitor, exp2)
     case Unary(op, exp, tpe, loc) =>
       compileExpression(visitor, exp)
       op match {

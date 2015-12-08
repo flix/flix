@@ -285,6 +285,94 @@ class TestCodegen extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Let expression                                                          //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Codegen - Let01") {
+    val name = Name.Resolved.mk(List("foo", "bar", "f"))
+    val definition = Function(name, args = List(),
+      body = Let(LocalVar(0, "x"), Const(42, Type.Int32, loc),
+        Const(-1, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(-1)(result)
+  }
+
+  test("Codegen - Let02") {
+    val name = Name.Resolved.mk(List("foo", "bar", "f"))
+    val definition = Function(name, args = List(),
+      body = Let(LocalVar(0, "x"), Const(42, Type.Int32, loc),
+        Var(LocalVar(0, "x"), Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(42)(result)
+  }
+
+  test("Codegen - Let03") {
+    val name = Name.Resolved.mk(List("foo", "bar", "f"))
+    val definition = Function(name, args = List(),
+      body = Let(LocalVar(0, "x"), Const(1337, Type.Int32, loc),
+        Let(LocalVar(1, "y"), Const(-101010, Type.Int32, loc),
+          Let(LocalVar(2, "z"), Const(42, Type.Int32, loc),
+            Var(LocalVar(1, "y"), Type.Int32, loc),
+            Type.Int32, loc),
+          Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(-101010)(result)
+  }
+
+  test("Codegen - Let04") {
+    val name = Name.Resolved.mk(List("foo", "bar", "f"))
+    val definition = Function(name, args = List("a", "b", "c"),
+      body = Let(LocalVar(3, "x"), Const(1337, Type.Int32, loc),
+        Let(LocalVar(4, "y"), Const(-101010, Type.Int32, loc),
+          Let(LocalVar(5, "z"), Const(42, Type.Int32, loc),
+            Var(LocalVar(4, "y"), Type.Int32, loc),
+            Type.Int32, loc),
+          Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Int32, Type.Int32, Type.Int32), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate,
+      List(Integer.TYPE, Integer.TYPE, Integer.TYPE),
+      List(-1337, 101010, -42).map(_.asInstanceOf[Object]))
+
+    assertResult(-101010)(result)
+  }
+
+  test("Codegen - Let05") {
+    val name = Name.Resolved.mk(List("foo", "bar", "f"))
+    val definition = Function(name, args = List("a", "b", "c"),
+      body = Let(LocalVar(3, "x"), Const(1337, Type.Int32, loc),
+        Let(LocalVar(4, "y"), Const(-101010, Type.Int32, loc),
+          Let(LocalVar(5, "z"), Const(42, Type.Int32, loc),
+            Var(LocalVar(0, "a"), Type.Int32, loc),
+            Type.Int32, loc),
+          Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Int32, Type.Int32, Type.Int32), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate,
+      List(Integer.TYPE, Integer.TYPE, Integer.TYPE),
+      List(-1337, 101010, -42).map(_.asInstanceOf[Object]))
+
+    assertResult(-1337)(result)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Unary operators                                                         //
   /////////////////////////////////////////////////////////////////////////////
 
