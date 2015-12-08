@@ -23,8 +23,8 @@ namespace ConstantSign {
     fn leq(e1: ConstSign, e2: ConstSign): Bool = match (e1, e2) with {
         case (ConstSign.Bot, _)                         => true
         case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => n1 == n2
-        case (ConstSign.Cst(n), ConstSign.Neg)          => n < 0
-        case (ConstSign.Cst(n), ConstSign.Pos)          => n > 0
+        case (ConstSign.Cst(n), ConstSign.Neg)          => n <= 0
+        case (ConstSign.Cst(n), ConstSign.Pos)          => n >= 0
         case (ConstSign.Neg, ConstSign.Neg)             => true
         case (ConstSign.Pos, ConstSign.Pos)             => true
         case (_, ConstSign.Top)                         => true
