@@ -90,6 +90,7 @@ object Interpreter {
   private def evalIntUnary(op: UnaryOperator, e: Expression, root: Root, env: Env): Int = op match {
     case UnaryOperator.Plus => +evalInt(e, root, env)
     case UnaryOperator.Minus => -evalInt(e, root, env)
+    case UnaryOperator.Negate => ~evalInt(e, root, env)
     case UnaryOperator.Set.Size => eval(e, root, env).toSet.size
     case UnaryOperator.Not | UnaryOperator.Set.IsEmpty | UnaryOperator.Set.NonEmpty | UnaryOperator.Set.Singleton =>
       throw new InternalRuntimeError(s"Type of unary expression is not Type.Int.")
@@ -102,6 +103,11 @@ object Interpreter {
     case BinaryOperator.Times => evalInt(e1, root, env) * evalInt(e2, root, env)
     case BinaryOperator.Divide => evalInt(e1, root, env) / evalInt(e2, root, env)
     case BinaryOperator.Modulo => evalInt(e1, root, env) % evalInt(e2, root, env)
+    case BinaryOperator.BitwiseAnd => evalInt(e1, root, env) & evalInt(e2, root, env)
+    case BinaryOperator.BitwiseOr => evalInt(e1, root, env) | evalInt(e2, root, env)
+    case BinaryOperator.BitwiseXor => evalInt(e1, root, env) ^ evalInt(e2, root, env)
+    case BinaryOperator.BitwiseLeftShift => evalInt(e1, root, env) << evalInt(e2, root, env)
+    case BinaryOperator.BitwiseRightShift => evalInt(e1, root, env) >> evalInt(e2, root, env)
     case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual |
          BinaryOperator.Equal | BinaryOperator.NotEqual | BinaryOperator.And | BinaryOperator.Or |
          BinaryOperator.Set.Member | BinaryOperator.Set.SubsetOf | BinaryOperator.Set.ProperSubsetOf |
@@ -159,7 +165,7 @@ object Interpreter {
     case UnaryOperator.Set.IsEmpty => eval(e, root, env).toSet.isEmpty
     case UnaryOperator.Set.NonEmpty => eval(e, root, env).toSet.nonEmpty
     case UnaryOperator.Set.Singleton => eval(e, root, env).toSet.size == 1
-    case UnaryOperator.Plus | UnaryOperator.Minus | UnaryOperator.Set.Size =>
+    case UnaryOperator.Plus | UnaryOperator.Minus | UnaryOperator.Negate | UnaryOperator.Set.Size =>
       throw new InternalRuntimeError(s"Type of unary expression is not Type.Bool.")
   }
 
@@ -179,8 +185,10 @@ object Interpreter {
       val s2 = eval(e2, root, env).toSet
       s1.subsetOf(s2) && s1.size < s2.size
     case BinaryOperator.Plus | BinaryOperator.Minus | BinaryOperator.Times | BinaryOperator.Divide |
-         BinaryOperator.Modulo | BinaryOperator.Set.Insert | BinaryOperator.Set.Remove | BinaryOperator.Set.Union |
-         BinaryOperator.Set.Intersection | BinaryOperator.Set.Difference =>
+         BinaryOperator.Modulo | BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor |
+         BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift | BinaryOperator.Set.Insert |
+         BinaryOperator.Set.Remove | BinaryOperator.Set.Union | BinaryOperator.Set.Intersection |
+         BinaryOperator.Set.Difference =>
       throw new InternalRuntimeError(s"Type of binary expression is not Type.Bool.")
   }
 
@@ -211,7 +219,7 @@ object Interpreter {
       }
       evalCall(apply.exp, evalArgs, root, env)
     case Expression.Unary(op, exp, _, _) => evalGeneralUnary(op, exp, root, env)
-    case Expression.Binary(op, exp1, exp2, _, _) => evalBinary(op, exp1, exp2, root, env)
+    case Expression.Binary(op, exp1, exp2, _, _) => evalGeneralBinary(op, exp1, exp2, root, env)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
       val cond = evalBool(exp1, root, env)
       if (cond) eval(exp2, root, env) else eval(exp3, root, env)
@@ -248,6 +256,7 @@ object Interpreter {
       case UnaryOperator.Not => if (v.toBool) Value.False else Value.True
       case UnaryOperator.Plus => Value.mkInt(+v.toInt)
       case UnaryOperator.Minus => Value.mkInt(-v.toInt)
+      case UnaryOperator.Negate => Value.mkInt(~v.toInt)
       case UnaryOperator.Set.IsEmpty => if (v.toSet.isEmpty) Value.True else Value.False
       case UnaryOperator.Set.NonEmpty => if (v.toSet.nonEmpty) Value.True else Value.False
       case UnaryOperator.Set.Singleton => if (v.toSet.size == 1) Value.True else Value.False
@@ -255,7 +264,7 @@ object Interpreter {
     }
   }
 
-  private def evalBinary(op: BinaryOperator, e1: Expression, e2: Expression, root: Root, env: Env): Value = {
+  private def evalGeneralBinary(op: BinaryOperator, e1: Expression, e2: Expression, root: Root, env: Env): Value = {
     val v1 = eval(e1, root, env)
     val v2 = eval(e2, root, env)
     op match {
@@ -272,6 +281,11 @@ object Interpreter {
       case BinaryOperator.NotEqual => if (v1 != v2) Value.True else Value.False
       case BinaryOperator.And => if (v1.toBool && v2.toBool) Value.True else Value.False
       case BinaryOperator.Or => if (v1.toBool || v2.toBool) Value.True else Value.False
+      case BinaryOperator.BitwiseAnd => Value.mkInt(v1.toInt & v2.toInt)
+      case BinaryOperator.BitwiseOr => Value.mkInt(v1.toInt | v2.toInt)
+      case BinaryOperator.BitwiseXor => Value.mkInt(v1.toInt ^ v2.toInt)
+      case BinaryOperator.BitwiseLeftShift => Value.mkInt(v1.toInt << v2.toInt)
+      case BinaryOperator.BitwiseRightShift => Value.mkInt(v1.toInt >> v2.toInt)
       case BinaryOperator.Set.Member => if (v2.toSet.contains(v1)) Value.True else Value.False
       case BinaryOperator.Set.SubsetOf => if (v1.toSet.subsetOf(v2.toSet)) Value.True else Value.False
       case BinaryOperator.Set.ProperSubsetOf =>
