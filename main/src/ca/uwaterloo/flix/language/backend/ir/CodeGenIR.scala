@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.backend.ir
 import ca.uwaterloo.flix.language.ast.{Name, BinaryOperator, SourceLocation, UnaryOperator}
 import ca.uwaterloo.flix.runtime.Value
 
-// TODO: Rename?
+// TODO: Rename this to: ReducedIR
 sealed trait CodeGenIR
 
 object CodeGenIR {
@@ -24,7 +24,31 @@ object CodeGenIR {
 
   sealed trait Expression
 
+  // TODO: Consider whether we want Exp8, Exp16, Exp32, Exp64 or if that information is associated with the type?
+
   object Expression {
+
+    case class LoadBool(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+
+    case class LoadInt8(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+    case class LoadInt16(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+    case class LoadInt32(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+
+    case class LoadUInt8(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+    case class LoadUInt16(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+    case class LoadUInt32(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+
+    case class StoreBool(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+
+    case class StoreInt8(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+    case class StoreInt16(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+    case class StoreInt32(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+
+    case class StoreUInt8(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+    case class StoreUInt16(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+    case class StoreUInt32(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+
+
 
     /**
       * An AST node that represents a literal integer expression.
