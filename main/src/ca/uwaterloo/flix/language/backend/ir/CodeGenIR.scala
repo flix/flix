@@ -28,26 +28,23 @@ object CodeGenIR {
 
   object Expression {
 
+    // NB: Offset is *always* in bits.
+
     case class LoadBool(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
 
     case class LoadInt8(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+
     case class LoadInt16(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+
     case class LoadInt32(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
 
-    case class LoadUInt8(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
-    case class LoadUInt16(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
-    case class LoadUInt32(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+    case class StoreBool(e: CodeGenIR.Expression, offset: Int, v: CodeGenIR.Expression) extends CodeGenIR.Expression
 
-    case class StoreBool(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+    case class StoreInt8(e: CodeGenIR.Expression, offset: Int, v: CodeGenIR.Expression) extends CodeGenIR.Expression
 
-    case class StoreInt8(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
-    case class StoreInt16(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
-    case class StoreInt32(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+    case class StoreInt16(e: CodeGenIR.Expression, offset: Int, v: CodeGenIR.Expression) extends CodeGenIR.Expression
 
-    case class StoreUInt8(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
-    case class StoreUInt16(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
-    case class StoreUInt32(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
-
+    case class StoreInt32(e: CodeGenIR.Expression, offset: Int, v: CodeGenIR.Expression) extends CodeGenIR.Expression
 
 
     /**
@@ -100,16 +97,17 @@ object CodeGenIR {
       */
     case class IfThenElse(exp1: CodeGenIR.Expression, exp2: CodeGenIR.Expression, exp3: CodeGenIR.Expression, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
 
-    case class Tag(tag: TagName, exp: CodeGenIR.Expression, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+    case class Tag(name: Name.Resolved, tag: String, exp: CodeGenIR.Expression, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+
+    // THIS RETURNS A BOOLEAN
+    case class TagOf(exp: CodeGenIR.Expression, name: Name.Resolved, tag: String, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
 
     case class Tuple(elms: List[CodeGenIR.Expression], tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
 
-    case class Set(elms: List[CodeGenIR.Expression], tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
-
     // TODO: ElementAt( (1,2), 0) = 1
-    case class ElementAt(exp1: CodeGenIR.Expression, exp2: CodeGenIR.Expression, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+    case class TupleAt(base: CodeGenIR.Expression, offset: Int, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
 
-    case class DerefTag() extends CodeGenIR.Expression
+    case class Set(elms: List[CodeGenIR.Expression], tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
 
     case class Error(loc: SourceLocation) extends CodeGenIR.Expression
 
@@ -147,68 +145,12 @@ object CodeGenIR {
       */
     case object Int64 extends CodeGenIR.Type
 
-    /**
-      * The type of 8-bit unsigned integers.
-      */
-    case object UInt8 extends CodeGenIR.Type
+    case class Tag(name: Name.Resolved, ident: Name.Ident, tpe: CodeGenIR.Type) extends CodeGenIR.Type
 
-    /**
-      * The type of 16-bit unsigned integers.
-      */
-    case object UInt16 extends CodeGenIR.Type
+    case class Enum(cases: Map[String, CodeGenIR.Type.Tag]) extends CodeGenIR.Type
 
-    /**
-      * The type of 32-bit unsigned integers.
-      */
-    case object UInt32 extends CodeGenIR.Type
-
-    /**
-      * The type of 64-bit unsigned integers.
-      */
-    case object UInt64 extends CodeGenIR.Type
-
-    /**
-      * The type of a binary encoded tagged value.
-      *
-      * @param tag the tag name as a byte.
-      * @param tpe the tagged type.
-      */
-    case class Tag(tag: Byte, tpe: CodeGenIR.Type) extends CodeGenIR.Type
-
-    /**
-      * The type of a binary encoded tuple.
-      */
     case class Tuple(elms: List[CodeGenIR.Type]) extends CodeGenIR.Type
 
-
-    /**
-      *
-      */
-    case object StrRef extends CodeGenIR.Type
-
-    /**
-      *
-      */
-    case object TagRef extends CodeGenIR.Type
-
-    /**
-      *
-      */
-    case object TupleRef extends CodeGenIR.Type
-
-    /**
-      *
-      */
-    case object SetRef extends CodeGenIR.Type
-
-    /**
-      *
-      */
-    case object MapRef extends CodeGenIR.Type
-
-    /**
-      *
-      */
     case class Lambda(args: List[CodeGenIR.Type], retTpe: CodeGenIR.Type) extends CodeGenIR.Type
 
   }
@@ -217,6 +159,5 @@ object CodeGenIR {
 
   case class LocalVar(offset: Int) extends CodeGenIR
 
-  case class TagName(x: Int) extends CodeGenIR
 
 }
