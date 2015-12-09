@@ -72,6 +72,14 @@ object Codegen {
   }
 
   def compileExpression(context: Context, visitor: MethodVisitor)(expr: Expression): Unit = expr match {
+    case LoadBool(exp, offset) => ???
+    case LoadInt8(exp, offset) => ???
+    case LoadInt16(exp, offset) => ???
+    case LoadInt32(exp, offset) => ???
+    case StoreBool(exp, offset, v) => ???
+    case StoreInt8(exp, offset, v) => ???
+    case StoreInt16(exp, offset, v) => ???
+    case StoreInt32(exp, offset, v) => ???
     case Const(i, tpe, loc) => i match {
       case -1 => visitor.visitInsn(ICONST_M1)
       case 0 => visitor.visitInsn(ICONST_0)
@@ -139,11 +147,11 @@ object Codegen {
         case BinaryOperator.Set.Difference => ???
       }
     case IfThenElse(exp1, exp2, exp3, tpe, loc) => ???
-    case Tag(tag, exp, tpe, loc) => ???
+    case Tag(name, tag, exp, tpe, loc) => ???
+    case TagOf(exp, name, tag, tpe, loc) => ???
     case Tuple(elms, tpe, loc) => ???
+    case TupleAt(base, offset, tpe, loc) => ???
     case Set(elms, tpe, loc) => ???
-    case ElementAt(exp1, exp2, tpe, loc) => ???
-    case DerefTag() => ???
     case Error(loc) => ???
   }
 }
