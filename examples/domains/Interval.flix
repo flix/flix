@@ -121,10 +121,77 @@ namespace Interval {
     /**
      * Over-approximates integer `modulus`.
      */
-    @strict @monotone @commutative @associative
+    @strict @monotone
     fn modulo(e1: Interval, e2: Interval): Interval = ???: Interval // TODO: Hard
 
+    /**
+     * Over-approximates `bitwise negation`.
+     */
+    @strict @monotone
+    fn negate(e: Interval): Interval = match e with {
+        case Interval.Bot           => Interval.Bot
+        case Interval.Range(b, e)   =>
+            ???: Interval // TODO
+        case Interval.Top           => Interval.Top
+    }
+
+    // TODO, or, and, xor, leftShift, rightShift.
+
+    /**
+      * Over-approximates `equal`.
+      */
+    @strict @monotone @commutative
+    fn eq(e1: Interval, e2: Interval): Belnap::Belnap = match (e1, e2) with {
+        case (Interval.Bot, _)                                  => Belnap::Belnap.Bot
+        case (_, Interval.Bot)                                  => Belnap::Belnap.Bot
+        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
+            if ((b1 == e1) && ((e1 == b2) && (b2 == e2))) // TODO: Parser // TODO: Switch
+                Belnap::Belnap.True
+             else
+                if (e1 < b2 || e2 < b1)
+                    Belnap::Belnap.False
+                else
+                    Belnap::Belnap.Top
+        case _                                                  => Belnap::Belnap.Top
+    }
+
+    // TODO: Consider moving neq and lessEq.
+
+    /**
+      * Over-approximates `not equal`.
+      */
+    @strict @monotone @commutative
+    fn neq(e1: Interval, e2: Interval): Belnap::Belnap = Belnap::not(eq(e1, e2))
+
+    /**
+      * Over-approximates `less than`.
+      */
+    @strict @monotone
+    fn less(e1: Interval, e2: Interval): Belnap::Belnap = match (e1, e2) with {
+        case (Interval.Bot, _)                                  => Belnap::Belnap.Bot
+        case (_, Interval.Bot)                                  => Belnap::Belnap.Bot
+        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
+            if (e1 < b2)
+                Belnap::Belnap.True
+            else
+                if (e2 < b1)
+                    Belnap::Belnap.False
+                else
+                    Belnap::Belnap.Top
+
+        case _                                                  => Belnap::Belnap.Top
+    }
+
+    /**
+      * Over-approximates `less than or equal`.
+      */
+    @strict @monotone
+    fn lessEqual(e1: Interval, e2: Interval): Belnap::Belnap = Belnap::or(e1 `less` e2, e1 `eq` e2)
+
+
 }
+
+// TODO: Import
 
 // TODO
 namespace Math {
