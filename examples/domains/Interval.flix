@@ -109,14 +109,28 @@ namespace Interval {
     fn divide(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Interval.Bot, _)                                  => Interval.Bot
         case (_, Interval.Bot)                                  => Interval.Bot
-        case (_, Interval.Range(_, 0))                          => Interval.Top
-        case (_, Interval.Range(0, _))                          => Interval.Top
+        case (_, Interval.Range(0, 0))                          => Interval.Bot
         case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
-            Interval.Range(b1 / e2, e1 / b2)
+            if (b2 <= 0 && 0 <= e2)
+                Interval.Top
+            else
+                Interval.Range(b1 / e2, e1 / b2)
         case _                                                  => Interval.Top
     }
 
-
+    /**
+     * Over-approximates integer `modulus`.
+     */
+    @strict @monotone @commutative @associative
+    fn modulo(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
+        case (Interval.Bot, _)                                  => Interval.Bot
+        case (_, Interval.Bot)                                  => Interval.Bot
+        case (_, Interval.Range(0, 0))                          => Interval.Bot
+        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
+            // TODO: Division by zero
+            Interval.Range(b1 % e2, e1 % b2)
+        case _                                                  => Interval.Top
+    }
 
 }
 
