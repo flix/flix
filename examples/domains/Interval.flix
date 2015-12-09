@@ -41,6 +41,9 @@ namespace Interval {
         case _                                                  => Interval.Top
     }
 
+    // TODO: Widen
+    // TODO: Narrow
+
     /**
      * Returns the greatest lower bound of `e1` and `e2`.
      */
@@ -62,6 +65,57 @@ namespace Interval {
      * Lifts a regular integer into the interval domain.
      */
     fn lift(i: Int): Interval = Interval.Range(i, i)
+
+    /**
+     * Over-approximates integer `addition`.
+     */
+    @strict @monotone @commutative @associative
+    fn plus(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
+        case (Interval.Bot, _)                                  => Interval.Bot
+        case (_, Interval.Bot)                                  => Interval.Bot
+        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
+            Interval.Range(b1 + b2, e1 + e2)
+        case _                                                  => Interval.Top
+    }
+
+    /**
+     * Over-approximates integer `subtraction`.
+     */
+    @strict @monotone
+    fn minus(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
+        case (Interval.Bot, _)                                  => Interval.Bot
+        case (_, Interval.Bot)                                  => Interval.Bot
+        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
+            Interval.Range(b1 - e2, e1 - b2)
+        case _                                                  => Interval.Top
+    }
+
+    /**
+     * Over-approximates integer `multiplication`.
+     */
+    @strict @monotone @commutative @associative
+    fn times(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
+        case (Interval.Bot, _)                                  => Interval.Bot
+        case (_, Interval.Bot)                                  => Interval.Bot
+        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
+            Interval.Range(b1 * b2, e1 * e2)
+        case _                                                  => Interval.Top
+    }
+
+    /**
+     * Over-approximates integer `division`.
+     */
+    @strict @monotone @commutative @associative
+    fn divide(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
+        case (Interval.Bot, _)                                  => Interval.Bot
+        case (_, Interval.Bot)                                  => Interval.Bot
+        case (_, Interval.Range(_, 0))                          => Interval.Top
+        case (_, Interval.Range(0, _))                          => Interval.Top
+        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
+            Interval.Range(b1 / e2, e1 / b2)
+        case _                                                  => Interval.Top
+    }
+
 
 
 }
