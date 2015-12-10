@@ -19,7 +19,7 @@ class TestCodegen extends FunSuite {
   val loc = SourceLocation.Unknown
   val compiledClassName = "ca.uwaterloo.flix.runtime.compiled.FlixDefinitions"
 
-  class CompiledCode(definitions: List[Definition]) {
+  class CompiledCode(definitions: List[Definition], debug: Boolean = false) {
     object Loader extends ClassLoader {
       def apply(name: String, b: Array[Byte]): Class[_] = {
         defineClass(name, b, 0, b.length)
@@ -27,6 +27,7 @@ class TestCodegen extends FunSuite {
     }
 
     val code = Codegen.compile(new Codegen.Context(definitions, compiledClassName.replace(".", "/")))
+    if (debug) dumpBytecode()
     val clazz = Loader(compiledClassName, code)
 
     // Write to a class file, for debugging.
@@ -44,7 +45,7 @@ class TestCodegen extends FunSuite {
   // Int constants                                                           //
   /////////////////////////////////////////////////////////////////////////////
 
-  test("Codegen - Int01") {
+  test("Codegen - Const01") {
     val definition = Function(name, args = List(),
       body = Const(42, Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
@@ -55,7 +56,7 @@ class TestCodegen extends FunSuite {
     assertResult(42)(result)
   }
 
-  test("Codegen - Int02") {
+  test("Codegen - Const02") {
     // Constants -1 to 5 (inclusive) each have their own instruction
 
     val name_m1 = Name.Resolved.mk(List("foo", "bar", "f_m1"))
@@ -107,7 +108,7 @@ class TestCodegen extends FunSuite {
     assertResult(5)(result_5)
   }
 
-  test("Codegen - Int03") {
+  test("Codegen - Const03") {
     // Test some constants that are loaded with a BIPUSH, i.e. i <- [Byte.MinValue, -1) UNION (5, Byte,MaxValue]
 
     val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
@@ -153,7 +154,7 @@ class TestCodegen extends FunSuite {
     assertResult(Byte.MaxValue)(result06)
   }
 
-  test("Codegen - Int04") {
+  test("Codegen - Const04") {
     // Test some constants that are loaded with an SIPUSH, i.e. i <- [Short.MinValue, Byte.MinValue) UNION (Byte.MaxValue, Short,MaxValue]
 
     val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
@@ -199,7 +200,7 @@ class TestCodegen extends FunSuite {
     assertResult(Short.MaxValue)(result06)
   }
 
-  test("Codegen - Int05") {
+  test("Codegen - Const05") {
     // Test some constants that are loaded with an LDC, i.e. i <- [Int.MinValue, Short.MinValue) UNION (Short.MaxValue, Int,MaxValue]
 
     val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
@@ -245,7 +246,7 @@ class TestCodegen extends FunSuite {
     assertResult(Int.MaxValue)(result06)
   }
 
-  test("Codegen - Int06") {
+  test("Codegen - Const06") {
     val definition = Function(name, args = List(),
       body = Const(1, Type.Bool, loc),
       Type.Lambda(List(), Type.Bool), loc)
@@ -256,7 +257,7 @@ class TestCodegen extends FunSuite {
     assertResult(true)(result)
   }
 
-  test("Codegen - Int07") {
+  test("Codegen - Const07") {
     val definition = Function(name, args = List(),
       body = Const(1, Type.Int8, loc),
       Type.Lambda(List(), Type.Int8), loc)
@@ -267,7 +268,7 @@ class TestCodegen extends FunSuite {
     assertResult(1)(result)
   }
 
-  test("Codegen - Int08") {
+  test("Codegen - Const08") {
     val definition = Function(name, args = List(),
       body = Const(1, Type.Int16, loc),
       Type.Lambda(List(), Type.Int16), loc)
@@ -278,7 +279,7 @@ class TestCodegen extends FunSuite {
     assertResult(1)(result)
   }
 
-  test("Codegen - Int09") {
+  test("Codegen - Const09") {
     val definition = Function(name, args = List(),
       body = Const(1, Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
@@ -289,7 +290,7 @@ class TestCodegen extends FunSuite {
     assertResult(1)(result)
   }
 
-  test("Codegen - Int10") {
+  test("Codegen - Const10") {
     val definition = Function(name, args = List(),
       body = Const(123456789123456789L, Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
@@ -610,6 +611,28 @@ class TestCodegen extends FunSuite {
   // Unary operators                                                         //
   /////////////////////////////////////////////////////////////////////////////
 
+  test("Codegen - Unary.Not01") {
+    val definition = Function(name, args = List(),
+      body = Unary(UnaryOperator.Not, Const(0, Type.Bool, loc), Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Unary.Not02") {
+    val definition = Function(name, args = List(),
+      body = Unary(UnaryOperator.Not, Const(1, Type.Bool, loc), Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
   test("Codegen - Unary.Plus01") {
     val definition = Function(name, args = List(),
       body = Unary(UnaryOperator.Plus, Const(42, Type.Int32, loc), Type.Int32, loc),
@@ -679,6 +702,118 @@ class TestCodegen extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Binary operators                                                        //
   /////////////////////////////////////////////////////////////////////////////
+
+  test("Codegen - Binary.And01") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.And,
+        Const(1, Type.Bool, loc),
+        Const(1, Type.Bool, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.And02") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.And,
+        Const(1, Type.Bool, loc),
+        Const(0, Type.Bool, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.And03") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.And,
+        Const(0, Type.Bool, loc),
+        Const(0, Type.Bool, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.And04") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.And,
+        Const(0, Type.Bool, loc),
+        Const(1, Type.Bool, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.Or01") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Or,
+        Const(1, Type.Bool, loc),
+        Const(1, Type.Bool, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.Or02") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Or,
+        Const(1, Type.Bool, loc),
+        Const(0, Type.Bool, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.Or03") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Or,
+        Const(0, Type.Bool, loc),
+        Const(0, Type.Bool, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.Or04") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Or,
+        Const(0, Type.Bool, loc),
+        Const(1, Type.Bool, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
 
   test("Codegen - Binary.Plus01") {
     val definition = Function(name, args = List(),
@@ -1252,5 +1387,509 @@ class TestCodegen extends FunSuite {
     val result = code.call(name.decorate)
 
     assertResult(12345 >> 0)(result)
+  }
+
+  test("Codegen - Binary.Less01") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Less,
+        Const(12, Type.Int32, loc),
+        Const(3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.Less02") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Less,
+        Const(3, Type.Int32, loc),
+        Const(12, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.Less03") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Less,
+        Const(3, Type.Int32, loc),
+        Const(3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.Less04") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Less,
+        Const(-12, Type.Int32, loc),
+        Const(-3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.Less05") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Less,
+        Const(-3, Type.Int32, loc),
+        Const(-12, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.Less06") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Less,
+        Const(-3, Type.Int32, loc),
+        Const(-3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.LessEqual01") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.LessEqual,
+        Const(12, Type.Int32, loc),
+        Const(3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.LessEqual02") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.LessEqual,
+        Const(3, Type.Int32, loc),
+        Const(12, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.LessEqual03") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.LessEqual,
+        Const(3, Type.Int32, loc),
+        Const(3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.LessEqual04") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.LessEqual,
+        Const(-12, Type.Int32, loc),
+        Const(-3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.LessEqual05") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.LessEqual,
+        Const(-3, Type.Int32, loc),
+        Const(-12, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.LessEqual06") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.LessEqual,
+        Const(-3, Type.Int32, loc),
+        Const(-3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.Greater01") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Greater,
+        Const(12, Type.Int32, loc),
+        Const(3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.Greater02") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Greater,
+        Const(3, Type.Int32, loc),
+        Const(12, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.Greater03") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Greater,
+        Const(3, Type.Int32, loc),
+        Const(3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.Greater04") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Greater,
+        Const(-12, Type.Int32, loc),
+        Const(-3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.Greater05") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Greater,
+        Const(-3, Type.Int32, loc),
+        Const(-12, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.Greater06") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Greater,
+        Const(-3, Type.Int32, loc),
+        Const(-3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.GreaterEqual01") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.GreaterEqual,
+        Const(12, Type.Int32, loc),
+        Const(3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.GreaterEqual02") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.GreaterEqual,
+        Const(3, Type.Int32, loc),
+        Const(12, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.GreaterEqual03") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.GreaterEqual,
+        Const(3, Type.Int32, loc),
+        Const(3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.GreaterEqual04") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.GreaterEqual,
+        Const(-12, Type.Int32, loc),
+        Const(-3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.GreaterEqual05") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.GreaterEqual,
+        Const(-3, Type.Int32, loc),
+        Const(-12, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.GreaterEqual06") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.GreaterEqual,
+        Const(-3, Type.Int32, loc),
+        Const(-3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.Equal01") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Equal,
+        Const(12, Type.Int32, loc),
+        Const(3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.Equal02") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Equal,
+        Const(3, Type.Int32, loc),
+        Const(12, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.Equal03") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Equal,
+        Const(3, Type.Int32, loc),
+        Const(3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.Equal04") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Equal,
+        Const(-12, Type.Int32, loc),
+        Const(-3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.Equal05") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Equal,
+        Const(-3, Type.Int32, loc),
+        Const(-12, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.Equal06") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Equal,
+        Const(-3, Type.Int32, loc),
+        Const(-3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.NotEqual01") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.NotEqual,
+        Const(12, Type.Int32, loc),
+        Const(3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.NotEqual02") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.NotEqual,
+        Const(3, Type.Int32, loc),
+        Const(12, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.NotEqual03") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.NotEqual,
+        Const(3, Type.Int32, loc),
+        Const(3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.NotEqual04") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.NotEqual,
+        Const(-12, Type.Int32, loc),
+        Const(-3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.NotEqual05") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.NotEqual,
+        Const(-3, Type.Int32, loc),
+        Const(-12, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.NotEqual06") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.NotEqual,
+        Const(-3, Type.Int32, loc),
+        Const(-3, Type.Int32, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate)
+
+    assertResult(false)(result)
   }
 }

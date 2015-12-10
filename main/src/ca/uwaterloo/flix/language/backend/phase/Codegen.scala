@@ -40,9 +40,9 @@ object Codegen {
   }
 
   /*
-   * Generate the constructor. Takes a ClassVisitor (that has already been initialized).
+   * Generate the constructor. Takes a Context and a ClassVisitor (that has already been initialized).
    */
-  def compileConstructor(context: Context, visitor: ClassVisitor): Unit = {
+  private def compileConstructor(context: Context, visitor: ClassVisitor): Unit = {
     val mv = visitor.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null)
     mv.visitCode()
     mv.visitVarInsn(ALOAD, 0)
@@ -54,10 +54,10 @@ object Codegen {
 
   /*
    * Given a definition for a Flix function, generate bytecode.
-   * Takes a ClassVisitor (that has already been initialized).
+   * Takes a Context and a ClassVisitor (that has already been initialized).
    * The Flix function A::B::C::foo is compiled as the method A$B$C$foo.
    */
-  def compileFunction(context: Context, visitor: ClassVisitor)(function: Definition.Function): Unit = {
+  private def compileFunction(context: Context, visitor: ClassVisitor)(function: Definition.Function): Unit = {
     // TODO: Debug information
     val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, function.name.decorate, function.descriptor, null, null)
     mv.visitCode()
@@ -81,7 +81,7 @@ object Codegen {
     mv.visitEnd()
   }
 
-  def compileExpression(context: Context, visitor: MethodVisitor)(expr: Expression): Unit = expr match {
+  private def compileExpression(context: Context, visitor: MethodVisitor)(expr: Expression): Unit = expr match {
     case LoadBool(exp, offset) => ???
     case LoadInt8(exp, offset) => ???
     case LoadInt16(exp, offset) => ???
@@ -90,19 +90,7 @@ object Codegen {
     case StoreInt8(exp, offset, v) => ???
     case StoreInt16(exp, offset, v) => ???
     case StoreInt32(exp, offset, v) => ???
-    case Const(i, tpe, loc) => i match {
-      case -1 => visitor.visitInsn(ICONST_M1)
-      case 0 => visitor.visitInsn(ICONST_0)
-      case 1 => visitor.visitInsn(ICONST_1)
-      case 2 => visitor.visitInsn(ICONST_2)
-      case 3 => visitor.visitInsn(ICONST_3)
-      case 4 => visitor.visitInsn(ICONST_4)
-      case 5 => visitor.visitInsn(ICONST_5)
-      case _ if Byte.MinValue <= i && i <= Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i.toInt)
-      case _ if Short.MinValue <= i && i <= Short.MaxValue => visitor.visitIntInsn(SIPUSH, i.toInt)
-      case _ if Int.MinValue <= i && i <= Int.MaxValue => visitor.visitLdcInsn(i.toInt)
-      case _ => visitor.visitLdcInsn(i)
-    }
+    case Const(i, tpe, loc) => compileConst(visitor)(i)
     case Var(v, tpe, loc) => visitor.visitVarInsn(ILOAD, v.offset)
     case Apply(name, args, tpe, loc) =>
       args.foreach(compileExpression(context, visitor))
@@ -111,38 +99,149 @@ object Codegen {
       compileExpression(context, visitor)(exp1)
       visitor.visitVarInsn(ISTORE, v.offset)
       compileExpression(context, visitor)(exp2)
-    case Unary(op, exp, tpe, loc) =>
-      compileExpression(context, visitor)(exp)
-      op match {
-        case UnaryOperator.Not => ???
-        case UnaryOperator.Plus => // Unary plus is a nop
-        case UnaryOperator.Minus => visitor.visitInsn(INEG)
-        case UnaryOperator.Negate =>
-          // Note that ~bbbb = bbbb ^ 1111, and since the JVM uses two's complement, -1 = 0xFFFFFFFF, so ~x = x ^ -1
-          visitor.visitInsn(ICONST_M1)
-          visitor.visitInsn(IXOR)
-        case UnaryOperator.Set.IsEmpty => ???
-        case UnaryOperator.Set.NonEmpty => ???
-        case UnaryOperator.Set.Singleton => ???
-        case UnaryOperator.Set.Size => ???
-      }
-    case Binary(op, exp1, exp2, tpe, loc) =>
-      compileExpression(context, visitor)(exp1)
-      compileExpression(context, visitor)(exp2)
+    case Unary(op, exp, tpe, loc) => compileUnaryExpression(context, visitor)(op, exp)
+    case Binary(op, exp1, exp2, tpe, loc) => compileBinaryExpression(context, visitor)(op, exp1, exp2)
+    case IfThenElse(exp1, exp2, exp3, tpe, loc) => ???
+    case Tag(name, tag, exp, tpe, loc) => ???
+    case TagOf(exp, name, tag, tpe, loc) => ???
+    case Tuple(elms, tpe, loc) => ???
+    case TupleAt(base, offset, tpe, loc) => ???
+    case Set(elms, tpe, loc) => ???
+    case Error(loc) => ???
+  }
+
+  private def compileConst(visitor: MethodVisitor)(i: Long): Unit = i match {
+    case -1 => visitor.visitInsn(ICONST_M1)
+    case 0 => visitor.visitInsn(ICONST_0)
+    case 1 => visitor.visitInsn(ICONST_1)
+    case 2 => visitor.visitInsn(ICONST_2)
+    case 3 => visitor.visitInsn(ICONST_3)
+    case 4 => visitor.visitInsn(ICONST_4)
+    case 5 => visitor.visitInsn(ICONST_5)
+    case _ if Byte.MinValue <= i && i <= Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i.toInt)
+    case _ if Short.MinValue <= i && i <= Short.MaxValue => visitor.visitIntInsn(SIPUSH, i.toInt)
+    case _ if Int.MinValue <= i && i <= Int.MaxValue => visitor.visitLdcInsn(i.toInt)
+    case _ => visitor.visitLdcInsn(i)
+  }
+
+  private def compileUnaryExpression(context: Context, visitor: MethodVisitor)(op: UnaryOperator, expr: Expression): Unit = {
+    compileExpression(context, visitor)(expr)
+    op match {
+      case UnaryOperator.Not =>
+        val condElse = new Label()
+        val condEnd = new Label()
+        visitor.visitJumpInsn(IFNE, condElse)
+        visitor.visitInsn(ICONST_1)
+        visitor.visitJumpInsn(GOTO, condEnd)
+        visitor.visitLabel(condElse)
+        visitor.visitInsn(ICONST_0)
+        visitor.visitLabel(condEnd)
+      case UnaryOperator.Plus => // Unary plus is a nop
+      case UnaryOperator.Minus => visitor.visitInsn(INEG)
+      case UnaryOperator.Negate =>
+        // Note that ~bbbb = bbbb ^ 1111, and since the JVM uses two's complement, -1 = 0xFFFFFFFF, so ~x = x ^ -1
+        visitor.visitInsn(ICONST_M1)
+        visitor.visitInsn(IXOR)
+      case UnaryOperator.Set.IsEmpty => ???
+      case UnaryOperator.Set.NonEmpty => ???
+      case UnaryOperator.Set.Singleton => ???
+      case UnaryOperator.Set.Size => ???
+    }
+  }
+
+  // TODO: Clean up comparison operations (and boolean unary not)
+  // At the very least, factor out common code. Or simply IfThenElse, see: http://www.cs.indiana.edu/~dyb/pubs/ddcg.pdf
+  // Binary operations And and Or are handled first because of short-circuit evaluation
+  private def compileBinaryExpression(context: Context, visitor: MethodVisitor)(op: BinaryOperator, expr1: Expression, expr2: Expression): Unit = op match {
+    case BinaryOperator.And =>
+      val andFalseBranch = new Label()
+      val andEnd = new Label()
+      compileExpression(context, visitor)(expr1)
+      visitor.visitJumpInsn(IFEQ, andFalseBranch)
+      compileExpression(context, visitor)(expr2)
+      visitor.visitJumpInsn(IFEQ, andFalseBranch)
+      visitor.visitInsn(ICONST_1)
+      visitor.visitJumpInsn(GOTO, andEnd)
+      visitor.visitLabel(andFalseBranch)
+      visitor.visitInsn(ICONST_0)
+      visitor.visitLabel(andEnd)
+    case BinaryOperator.Or =>
+      val orTrueBranch = new Label()
+      val orFalseBranch = new Label()
+      val orEnd = new Label()
+      compileExpression(context, visitor)(expr1)
+      visitor.visitJumpInsn(IFNE, orTrueBranch)
+      compileExpression(context, visitor)(expr2)
+      visitor.visitJumpInsn(IFEQ, orFalseBranch)
+      visitor.visitLabel(orTrueBranch)
+      visitor.visitInsn(ICONST_1)
+      visitor.visitJumpInsn(GOTO, orEnd)
+      visitor.visitLabel(orFalseBranch)
+      visitor.visitInsn(ICONST_0)
+      visitor.visitLabel(orEnd)
+    case _ =>
+      compileExpression(context, visitor)(expr1)
+      compileExpression(context, visitor)(expr2)
       op match {
         case BinaryOperator.Plus => visitor.visitInsn(IADD)
         case BinaryOperator.Minus => visitor.visitInsn(ISUB)
         case BinaryOperator.Times => visitor.visitInsn(IMUL)
         case BinaryOperator.Divide => visitor.visitInsn(IDIV)
         case BinaryOperator.Modulo => visitor.visitInsn(IREM)
-        case BinaryOperator.Less => ???
-        case BinaryOperator.LessEqual => ???
-        case BinaryOperator.Greater => ???
-        case BinaryOperator.GreaterEqual => ???
-        case BinaryOperator.Equal => ???
-        case BinaryOperator.NotEqual => ???
-        case BinaryOperator.And => ???
-        case BinaryOperator.Or => ???
+        case BinaryOperator.Less =>
+          val condElse = new Label()
+          val condEnd = new Label()
+          visitor.visitJumpInsn(IF_ICMPGE, condElse)
+          visitor.visitInsn(ICONST_1)
+          visitor.visitJumpInsn(GOTO, condEnd)
+          visitor.visitLabel(condElse)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitLabel(condEnd)
+        case BinaryOperator.LessEqual =>
+          val condElse = new Label()
+          val condEnd = new Label()
+          visitor.visitJumpInsn(IF_ICMPGT, condElse)
+          visitor.visitInsn(ICONST_1)
+          visitor.visitJumpInsn(GOTO, condEnd)
+          visitor.visitLabel(condElse)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitLabel(condEnd)
+        case BinaryOperator.Greater =>
+          val condElse = new Label()
+          val condEnd = new Label()
+          visitor.visitJumpInsn(IF_ICMPLE, condElse)
+          visitor.visitInsn(ICONST_1)
+          visitor.visitJumpInsn(GOTO, condEnd)
+          visitor.visitLabel(condElse)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitLabel(condEnd)
+        case BinaryOperator.GreaterEqual =>
+          val condElse = new Label()
+          val condEnd = new Label()
+          visitor.visitJumpInsn(IF_ICMPLT, condElse)
+          visitor.visitInsn(ICONST_1)
+          visitor.visitJumpInsn(GOTO, condEnd)
+          visitor.visitLabel(condElse)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitLabel(condEnd)
+        case BinaryOperator.Equal =>
+          val condElse = new Label()
+          val condEnd = new Label()
+          visitor.visitJumpInsn(IF_ICMPNE, condElse)
+          visitor.visitInsn(ICONST_1)
+          visitor.visitJumpInsn(GOTO, condEnd)
+          visitor.visitLabel(condElse)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitLabel(condEnd)
+        case BinaryOperator.NotEqual =>
+          val condElse = new Label()
+          val condEnd = new Label()
+          visitor.visitJumpInsn(IF_ICMPEQ, condElse)
+          visitor.visitInsn(ICONST_1)
+          visitor.visitJumpInsn(GOTO, condEnd)
+          visitor.visitLabel(condElse)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitLabel(condEnd)
         case BinaryOperator.BitwiseAnd => visitor.visitInsn(IAND)
         case BinaryOperator.BitwiseOr => visitor.visitInsn(IOR)
         case BinaryOperator.BitwiseXor => visitor.visitInsn(IXOR)
@@ -156,13 +255,7 @@ object Codegen {
         case BinaryOperator.Set.Union => ???
         case BinaryOperator.Set.Intersection => ???
         case BinaryOperator.Set.Difference => ???
+        case BinaryOperator.And | BinaryOperator.Or => ??? // TODO: This is an internal error as cases were already handled.
       }
-    case IfThenElse(exp1, exp2, exp3, tpe, loc) => ???
-    case Tag(name, tag, exp, tpe, loc) => ???
-    case TagOf(exp, name, tag, tpe, loc) => ???
-    case Tuple(elms, tpe, loc) => ???
-    case TupleAt(base, offset, tpe, loc) => ???
-    case Set(elms, tpe, loc) => ???
-    case Error(loc) => ???
   }
 }
