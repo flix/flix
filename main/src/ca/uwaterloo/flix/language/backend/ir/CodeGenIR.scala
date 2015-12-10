@@ -28,8 +28,7 @@ object CodeGenIR {
      * @param loc the source location of the function definition.
      */
     case class Function(name: Name.Resolved, args: List[String], body: CodeGenIR.Expression, tpe: CodeGenIR.Type.Lambda, loc: SourceLocation) extends CodeGenIR.Definition {
-      // TODO: Properly convert the function type. For now we only support returning Int and taking 0 or more Int args.
-      val descriptor: String = s"""(${"I" * tpe.args.size })I"""
+      val descriptor = tpe.descriptor
     }
 
   }
@@ -61,13 +60,13 @@ object CodeGenIR {
 
     /**
       * An AST node that represents a constant integer literal.
+      * Note that calling this case class "Int" conflicts with scala.Int.
       *
       * @param value the integer value.
       * @param tpe the type of the integer.
       * @param loc the source location of the integer.
       */
-    // TODO: We currently only support 32 bit ints. Larger (smaller) values will overflow (underflow).
-    case class Const(value: scala.Int, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+    case class Const(value: Long, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
 
     /**
      * A typed AST node representing a local variable expression (i.e. a parameter or let-bound variable).
@@ -150,42 +149,76 @@ object CodeGenIR {
   /**
     * A common super-type for types.
     */
-  sealed trait Type
+  sealed trait Type {
+    val descriptor: String
+  }
 
   object Type {
 
     /**
       * The type of booleans.
+      * Maps to a JVM boolean, even though all boolean operations are done as int operations.
       */
-    case object Bool extends CodeGenIR.Type
+    case object Bool extends CodeGenIR.Type {
+      override val descriptor = "Z"
+    }
 
     /**
       * The type of 8-bit signed integers.
+      * Maps to a JVM int because Flix doesn't have bytes.
       */
-    case object Int8 extends CodeGenIR.Type
+    case object Int8 extends CodeGenIR.Type {
+      override val descriptor = "I"
+    }
 
     /**
       * The type of 16-bit signed integers.
+      * Maps to a JVM int because Flix doesn't have shorts.
       */
-    case object Int16 extends CodeGenIR.Type
+    case object Int16 extends CodeGenIR.Type {
+      override val descriptor = "I"
+    }
 
     /**
       * The type of 32-bit signed integers.
+      * Maps to a JVM int.
       */
-    case object Int32 extends CodeGenIR.Type
+    case object Int32 extends CodeGenIR.Type {
+      // Maps to a JVM int
+      override val descriptor = "I"
+    }
 
     /**
       * The type of 64-bit signed integers.
+      * Maps to a JVM long.
       */
-    case object Int64 extends CodeGenIR.Type
+    case object Int64 extends CodeGenIR.Type {
+      override val descriptor = "J"
+    }
 
-    case class Tag(name: Name.Resolved, ident: Name.Ident, tpe: CodeGenIR.Type) extends CodeGenIR.Type
+    case class Tag(name: Name.Resolved, ident: Name.Ident, tpe: CodeGenIR.Type) extends CodeGenIR.Type {
+      // Maps to a Flix tag
+      override val descriptor = ???
+    }
 
-    case class Enum(cases: Map[String, CodeGenIR.Type.Tag]) extends CodeGenIR.Type
+    case class Enum(cases: Map[String, CodeGenIR.Type.Tag]) extends CodeGenIR.Type {
+      // Maps to a Flix enum
+      override val descriptor = ???
+    }
 
-    case class Tuple(elms: List[CodeGenIR.Type]) extends CodeGenIR.Type
+    case class Tuple(elms: List[CodeGenIR.Type]) extends CodeGenIR.Type {
+      // Maps to a Scala tuple
+      override val descriptor = ???
+    }
 
-    case class Lambda(args: List[CodeGenIR.Type], retTpe: CodeGenIR.Type) extends CodeGenIR.Type
+    case class Set(elmTyp: CodeGenIR.Type) extends CodeGenIR.Type {
+      // Maps to a Scala set
+      override val descriptor = ???
+    }
+
+    case class Lambda(args: List[CodeGenIR.Type], retTpe: CodeGenIR.Type) extends CodeGenIR.Type {
+      override val descriptor = s"""(${ args.map(_.descriptor).mkString })${retTpe.descriptor}"""
+    }
 
   }
 

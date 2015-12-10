@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.backend.phase
 
 import ca.uwaterloo.flix.language.ast.{Name, BinaryOperator, UnaryOperator}
-import ca.uwaterloo.flix.language.backend.ir.CodeGenIR.{Definition, Expression}
+import ca.uwaterloo.flix.language.backend.ir.CodeGenIR.{Definition, Expression, Type => IRType}
 import ca.uwaterloo.flix.language.backend.ir.CodeGenIR.Expression._
 
 import org.objectweb.asm._
@@ -58,16 +58,26 @@ object Codegen {
    * The Flix function A::B::C::foo is compiled as the method A$B$C$foo.
    */
   def compileFunction(context: Context, visitor: ClassVisitor)(function: Definition.Function): Unit = {
-    // TODO: Properly handle types. Start implementing other types (e.g. bool)
-    // TODO: How are complex types represented?
+    // TODO: Debug information
     val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, function.name.decorate, function.descriptor, null, null)
     mv.visitCode()
 
     // Compile the method body
     compileExpression(context, mv)(function.body)
 
-    mv.visitInsn(IRETURN)     // TODO: Proper return instruction
-    mv.visitMaxs(999, 999)    // TODO: Calculate maxs
+    // Return the value. No integer casts since bool is returned as int, and Flix treats Int8, Int16, and Int32 as int.
+    function.tpe.retTpe match {
+      case IRType.Bool | IRType.Int8 | IRType.Int16 | IRType.Int32 => mv.visitInsn(IRETURN)
+      case IRType.Int64 => mv.visitInsn(LRETURN)
+      case IRType.Tag(name, ident, tpe) => ???
+      case IRType.Enum(cases) => ???
+      case IRType.Tuple(elms) => ???
+      case IRType.Set(elmType) => ???
+      case IRType.Lambda(args, retTpe) => ???
+    }
+
+    // Dummy large numbers so the bytecode checker can run. Afterwards, the library calculates the proper maxes.
+    mv.visitMaxs(999, 999)
     mv.visitEnd()
   }
 
@@ -88,8 +98,9 @@ object Codegen {
       case 3 => visitor.visitInsn(ICONST_3)
       case 4 => visitor.visitInsn(ICONST_4)
       case 5 => visitor.visitInsn(ICONST_5)
-      case _ if Byte.MinValue <= i && i <= Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i)
-      case _ if Short.MinValue <= i && i <= Short.MaxValue => visitor.visitIntInsn(SIPUSH, i)
+      case _ if Byte.MinValue <= i && i <= Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i.toInt)
+      case _ if Short.MinValue <= i && i <= Short.MaxValue => visitor.visitIntInsn(SIPUSH, i.toInt)
+      case _ if Int.MinValue <= i && i <= Int.MaxValue => visitor.visitLdcInsn(i.toInt)
       case _ => visitor.visitLdcInsn(i)
     }
     case Var(v, tpe, loc) => visitor.visitVarInsn(ILOAD, v.offset)

@@ -245,6 +245,61 @@ class TestCodegen extends FunSuite {
     assertResult(Int.MaxValue)(result06)
   }
 
+  test("Codegen - Int06") {
+    val definition = Function(name, args = List(),
+      body = Const(1, Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate, List())
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Int07") {
+    val definition = Function(name, args = List(),
+      body = Const(1, Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate, List())
+
+    assertResult(1)(result)
+  }
+
+  test("Codegen - Int08") {
+    val definition = Function(name, args = List(),
+      body = Const(1, Type.Int16, loc),
+      Type.Lambda(List(), Type.Int16), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate, List())
+
+    assertResult(1)(result)
+  }
+
+  test("Codegen - Int09") {
+    val definition = Function(name, args = List(),
+      body = Const(1, Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate, List())
+
+    assertResult(1)(result)
+  }
+
+  test("Codegen - Int10") {
+    val definition = Function(name, args = List(),
+      body = Const(123456789123456789L, Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name.decorate, List())
+
+    assertResult(123456789123456789L)(result)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Variables                                                               //
   /////////////////////////////////////////////////////////////////////////////
