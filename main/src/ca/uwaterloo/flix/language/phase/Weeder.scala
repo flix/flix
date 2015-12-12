@@ -46,6 +46,27 @@ object Weeder {
     }
 
     /**
+      * An error raised to indicate that the annotation `name` was used multiple times.
+      *
+      * @param name the name of the attribute.
+      * @param loc1 the location of the first use.
+      * @param loc2 the location of the second use.
+      */
+    case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
+           |
+            |${consoleCtx.red(s">> Duplicate annotation '$name'.")}
+           |
+            |First definition was here:
+           |${loc1.underline}
+           |Second definition was here:
+           |${loc2.underline}
+           |Tip: Remove one of the annotations.
+         """.stripMargin
+    }
+
+    /**
       * An error raised to indicate that the attribute `name` was declared multiple times.
       *
       * @param name the name of the attribute.
@@ -260,6 +281,22 @@ object Weeder {
          """.stripMargin
     }
 
+    /**
+      * An error raised to indicate the presence of an illegal annotation.
+      *
+      * @param name the name of the illegal annotation.
+      * @param loc the location of the annotation.
+      */
+    case class IllegalAnnotation(name: String, loc: SourceLocation) extends WeederError {
+      val format =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> Illegal annotation '$name'.")}
+           |
+           |${loc.underline}
+           |
+         """.stripMargin
+    }
 
     /**
       * An error raised to indicate that a lattice attribute is followed by a non-lattice attribute.
@@ -422,6 +459,10 @@ object Weeder {
       * Compiles the given parsed function declaration `past` to a weeded definition.
       */
     def compile(past: ParsedAst.Definition.Function): Validation[WeededAst.Definition.Constant, WeederError] = {
+      val annotationsVal = Annotations.compile(past.annotations)
+
+      // TODO: Need to move certain annotations to each lattice valued argument...?
+
       // check duplicate formals.
       val seen = mutable.Map.empty[String, Name.Ident]
       val formalsVal = @@(past.formals.map {
@@ -430,13 +471,13 @@ object Weeder {
             seen += (ident.name -> ident)
             Type.compile(tpe) map (t => WeededAst.FormalArg(ident, t))
           case Some(otherIdent) =>
-            (DuplicateFormal(ident.name, otherIdent.loc, ident.loc): WeederError).toFailure
+            DuplicateFormal(ident.name, otherIdent.loc, ident.loc).toFailure
         }
       })
 
-      @@(formalsVal, Expression.compile(past.body), Type.compile(past.tpe)) map {
-        case (args, body, retType) =>
-          val exp = WeededAst.Expression.Lambda(args, body, retType, past.body.loc)
+      @@(annotationsVal, formalsVal, Expression.compile(past.body), Type.compile(past.tpe)) map {
+        case (anns, args, body, retType) =>
+          val exp = WeededAst.Expression.Lambda(anns, args, body, retType, past.body.loc)
           val tpe = WeededAst.Type.Function(args map (_.tpe), retType)
           WeededAst.Definition.Constant(past.ident, exp, tpe, past.loc)
       }
@@ -485,10 +526,10 @@ object Weeder {
             interp match {
               case i: ParsedAst.Interpretation.Set => Type.compile(interp.tpe) map (tpe => WeededAst.Attribute(ident, tpe, WeededAst.Interpretation.Set))
               case i: ParsedAst.Interpretation.Lattice =>
-                (IllegalLatticeAttributeInRelation(ident.loc): WeederError).toFailure
+                IllegalLatticeAttributeInRelation(ident.loc).toFailure
             }
           case Some(otherIdent) =>
-            (DuplicateAttribute(ident.name, otherIdent.loc, ident.loc): WeederError).toFailure
+            DuplicateAttribute(ident.name, otherIdent.loc, ident.loc).toFailure
         }
       }
 
@@ -514,7 +555,7 @@ object Weeder {
               case i: ParsedAst.Interpretation.Lattice => Type.compile(interp.tpe) map (tpe => WeededAst.Attribute(ident, tpe, WeededAst.Interpretation.Lattice))
             }
           case Some(otherIdent) =>
-            (DuplicateAttribute(ident.name, otherIdent.loc, ident.loc): WeederError).toFailure
+            DuplicateAttribute(ident.name, otherIdent.loc, ident.loc).toFailure
         }
       }
 
@@ -523,7 +564,7 @@ object Weeder {
           // the last attribute of a lattice definition must have a lattice interpretation.
           attributes.last.interp match {
             case WeededAst.Interpretation.Set =>
-              (IllegalNonLatticeAttribute(attributes.last.ident.loc): WeederError).toFailure
+              IllegalNonLatticeAttribute(attributes.last.ident.loc).toFailure
             case WeededAst.Interpretation.Lattice =>
 
               val index = attributes.indexWhere(_.interp == WeededAst.Interpretation.Lattice)
@@ -611,7 +652,7 @@ object Weeder {
           case ParsedAst.FormalArg(ident, annotations, tpe) => Type.compile(tpe) map (t => WeededAst.FormalArg(ident, t))
         })
         @@(argsVal, Type.compile(exp.tpe), compile(exp.body)) map {
-          case (args, tpe, body) => WeededAst.Expression.Lambda(args, body, tpe, exp.loc)
+          case (args, tpe, body) => WeededAst.Expression.Lambda(Ast.Annotations(List.empty), args, body, tpe, exp.loc)
         }
 
       case exp: ParsedAst.Expression.Unary =>
@@ -877,6 +918,39 @@ object Weeder {
     }
   }
 
-  // TODO: Parse annotations.
+  object Annotations {
+    /**
+      * Weeds the given sequence of parsed annotation `xs`.
+      */
+    def compile(xs: Seq[ParsedAst.Annotation]): Validation[Ast.Annotations, WeederError] = {
+      // track seen annotations.
+      val seen = mutable.Map.empty[String, ParsedAst.Annotation]
+
+      // loop through each annotation.
+      val result = xs.toList map {
+        case x => seen.get(x.name) match {
+          case None =>
+            seen += (x.name -> x)
+            Annotations.compile(x)
+          case Some(otherAnn) =>
+            DuplicateAnnotation(x.name, otherAnn.loc, x.loc).toFailure
+        }
+      }
+      @@(result) map Ast.Annotations
+    }
+
+    /**
+      * Weeds the given parsed annotation `past`.
+      */
+    def compile(past: ParsedAst.Annotation): Validation[Ast.Annotation, WeederError] = past.name match {
+      case "associative" => Ast.Annotation.Associative(past.loc).toSuccess
+      case "commutative" => Ast.Annotation.Commutative(past.loc).toSuccess
+      case "monotone" => Ast.Annotation.Monotone(past.loc).toSuccess
+      case "strict" => Ast.Annotation.Strict(past.loc).toSuccess
+      case "unchecked" => Ast.Annotation.Unchecked(past.loc).toSuccess
+      case "unsafe" => Ast.Annotation.Unsafe(past.loc).toSuccess
+      case _ => IllegalAnnotation(past.name, past.loc).toFailure
+    }
+  }
 
 }

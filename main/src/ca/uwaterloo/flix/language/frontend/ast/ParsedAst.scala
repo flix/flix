@@ -501,17 +501,6 @@ object ParsedAst {
     }
 
     /**
-     * An AST node that represents an error expression.
-     *
-     * @param sp1 the position of the first character in the expression.
-     * @param tpe the type of the error expression.
-     * @param sp2 the position of the last character in the expression.
-     */
-    case class Error(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
      * An AST node that represents a reference to a JVM static field or method.
      *
      * @param sp1 the position of the first character in the expression.
@@ -522,6 +511,17 @@ object ParsedAst {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
+    /**
+      * An AST node that represents an error expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param tpe the type of the error expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Error(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+    // TODO: Add print
   }
 
   /**
@@ -908,6 +908,8 @@ object ParsedAst {
    * @param name the name of the annotation.
    * @param sp2 the position of the last character in the annotation.
    */
-  case class Annotation(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst
+  case class Annotation(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst {
+    def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+  }
 
 }

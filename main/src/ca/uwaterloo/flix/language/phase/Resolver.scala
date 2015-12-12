@@ -674,7 +674,7 @@ object Resolver {
             case (lambda, args) => ResolvedAst.Expression.Apply(lambda, args, loc)
           }
 
-        case WeededAst.Expression.Lambda(wformals, wbody, wtype, loc) =>
+        case WeededAst.Expression.Lambda(annotations, wformals, wbody, wtype, loc) =>
           val formalsVal = @@(wformals map {
             case WeededAst.FormalArg(ident, tpe) => Type.resolve(tpe, namespace, syms) flatMap {
               case t =>
@@ -689,7 +689,7 @@ object Resolver {
             case formals =>
               val bindings = formals map (_.ident.name)
               @@(Type.resolve(wtype, namespace, syms), visit(wbody, locals ++ bindings)) map {
-                case (tpe, body) => ResolvedAst.Expression.Lambda(formals, tpe, body, loc)
+                case (tpe, body) => ResolvedAst.Expression.Lambda(annotations, formals, tpe, body, loc)
               }
           }
 

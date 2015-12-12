@@ -375,12 +375,13 @@ object TypedAst {
     /**
       * A typed AST node representing a lambda abstraction.
       *
+      * @param annotations the annotations.
       * @param args the formal arguments.
       * @param body the body expression of the lambda.
       * @param tpe the type of the entire function.
       * @param loc the source location.
       */
-    case class Lambda(args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: TypedAst.Type.Lambda, loc: SourceLocation) extends TypedAst.Expression {
+    case class Lambda(annotations: Ast.Annotations, args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: TypedAst.Type.Lambda, loc: SourceLocation) extends TypedAst.Expression {
       // TODO: Move
       val argsAsArray: Array[TypedAst.FormalArg] = args.toArray
     }

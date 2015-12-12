@@ -280,12 +280,13 @@ object WeededAst {
     /**
       * An AST node that represents a lambda expressions.
       *
+      * @param annotations the annotations.
       * @param formals the formal arguments.
       * @param body the body expression.
       * @param retTpe the declared return type.
       * @param loc the source location.
       */
-    case class Lambda(formals: List[WeededAst.FormalArg], body: WeededAst.Expression, retTpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+    case class Lambda(annotations: Ast.Annotations, formals: List[WeededAst.FormalArg], body: WeededAst.Expression, retTpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
     /**
       * An AST node that represents a call expression.

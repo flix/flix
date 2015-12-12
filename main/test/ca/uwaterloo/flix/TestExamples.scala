@@ -262,7 +262,7 @@ class TestExamples extends FunSuite {
 
   test("Interval.flix") {
     val model = Flix.mkPath(Paths.get("./examples/domains/Interval.flix"))
-    assert(model.isSuccess)
+    model.get
   }
 
   /////////////////////////////////////////////////////////////////////////////

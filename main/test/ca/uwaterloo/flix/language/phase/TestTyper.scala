@@ -53,6 +53,7 @@ class TestTyper extends FunSuite {
 
     // fn (x: Unit): Unit = ()
     val exp = ResolvedAst.Expression.Lambda(
+      Ast.Annotations(List.empty),
       formals = List(ResolvedAst.FormalArg(x, ResolvedAst.Type.Unit)),
       retTpe = ResolvedAst.Type.Unit,
       body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL), SL)
@@ -69,6 +70,7 @@ class TestTyper extends FunSuite {
 
     // fn (x: Int): Int = x
     val exp = ResolvedAst.Expression.Lambda(
+      Ast.Annotations(List.empty),
       formals = List(ResolvedAst.FormalArg(x, ResolvedAst.Type.Int)),
       retTpe = ResolvedAst.Type.Int,
       body = ResolvedAst.Expression.Var(x, SL), SL)
@@ -303,6 +305,7 @@ class TestTyper extends FunSuite {
     val x = ident("x")
 
     val rast = ResolvedAst.Expression.Lambda(
+      Ast.Annotations(List.empty),
       formals = List(ResolvedAst.FormalArg(x, ResolvedAst.Type.Int)),
       retTpe = ResolvedAst.Type.Unit,
       body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL)
@@ -320,6 +323,7 @@ class TestTyper extends FunSuite {
     val w = ident("w")
 
     val rast = ResolvedAst.Expression.Lambda(
+      Ast.Annotations(List.empty),
       formals = List(
         ResolvedAst.FormalArg(x, ResolvedAst.Type.Unit),
         ResolvedAst.FormalArg(y, ResolvedAst.Type.Bool),
@@ -348,6 +352,7 @@ class TestTyper extends FunSuite {
     val w = ident("w")
 
     val rast = ResolvedAst.Expression.Lambda(
+      Ast.Annotations(List.empty),
       formals = List(
         ResolvedAst.FormalArg(x, ResolvedAst.Type.Unit),
         ResolvedAst.FormalArg(y, ResolvedAst.Type.Bool),
@@ -367,6 +372,7 @@ class TestTyper extends FunSuite {
     val rast = ResolvedAst.Expression.Apply(
       lambda =
         ResolvedAst.Expression.Lambda(
+          Ast.Annotations(List.empty),
           formals = List(ResolvedAst.FormalArg(x, ResolvedAst.Type.Int)),
           retTpe = ResolvedAst.Type.Unit,
           body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL)
@@ -385,6 +391,7 @@ class TestTyper extends FunSuite {
     val rast = ResolvedAst.Expression.Apply(
       lambda =
         ResolvedAst.Expression.Lambda(
+          Ast.Annotations(List.empty),
           formals = List(
             ResolvedAst.FormalArg(x, ResolvedAst.Type.Bool),
             ResolvedAst.FormalArg(y, ResolvedAst.Type.Int),
@@ -411,6 +418,7 @@ class TestTyper extends FunSuite {
     val rast = ResolvedAst.Expression.Apply(
       lambda =
         ResolvedAst.Expression.Lambda(
+          Ast.Annotations(List.empty),
           formals = List(
             ResolvedAst.FormalArg(x, ResolvedAst.Type.Bool),
             ResolvedAst.FormalArg(y, ResolvedAst.Type.Int),
@@ -928,6 +936,7 @@ class TestTyper extends FunSuite {
         functionName -> ResolvedAst.Definition.Constant(
           name = functionName,
           exp = ResolvedAst.Expression.Lambda(
+            Ast.Annotations(List.empty),
             formals = List(ResolvedAst.FormalArg(x, ResolvedAst.Type.Bool)),
             retTpe = ResolvedAst.Type.Unit,
             body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL), SL

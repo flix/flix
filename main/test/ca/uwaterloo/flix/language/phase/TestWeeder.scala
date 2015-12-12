@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.frontend.ast.ParsedAst
 import ca.uwaterloo.flix.language.frontend.phase.Parser
@@ -155,26 +156,26 @@ class TestWeeder extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   ignore("DuplicateFormal01") {
     // TODO
-//    val past = ParsedAst.Definition.Function(SP, Ident, Seq(
-//      ParsedAst.FormalArg(ident("x"), ParsedAst.Type.Unit),
-//      ParsedAst.FormalArg(ident("x"), ParsedAst.Type.Unit)
-//    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SP, ParsedAst.Literal.Unit(SP, SP), SP), SP)
-//
-//    val result = Weeder.Definition.compile(past)
-//    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
+    //    val past = ParsedAst.Definition.Function(SP, Ident, Seq(
+    //      ParsedAst.FormalArg(ident("x"), ParsedAst.Type.Unit),
+    //      ParsedAst.FormalArg(ident("x"), ParsedAst.Type.Unit)
+    //    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SP, ParsedAst.Literal.Unit(SP, SP), SP), SP)
+    //
+    //    val result = Weeder.Definition.compile(past)
+    //    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
   }
 
   ignore("DuplicateFormal02") {
     // TODO
-//    val past = ParsedAst.Definition.Function(SP, Ident, Seq(
-//      ParsedAst.FormalArg(ident("x"), ParsedAst.Type.Unit),
-//      ParsedAst.FormalArg(ident("y"), ParsedAst.Type.Unit),
-//      ParsedAst.FormalArg(ident("x"), ParsedAst.Type.Unit),
-//      ParsedAst.FormalArg(ident("x"), ParsedAst.Type.Unit)
-//    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SP, ParsedAst.Literal.Unit(SP, SP), SP), SP)
-//
-//    val result = Weeder.Definition.compile(past)
-//    assertResult(2)(result.errors.size)
+    //    val past = ParsedAst.Definition.Function(SP, Ident, Seq(
+    //      ParsedAst.FormalArg(ident("x"), ParsedAst.Type.Unit),
+    //      ParsedAst.FormalArg(ident("y"), ParsedAst.Type.Unit),
+    //      ParsedAst.FormalArg(ident("x"), ParsedAst.Type.Unit),
+    //      ParsedAst.FormalArg(ident("x"), ParsedAst.Type.Unit)
+    //    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SP, ParsedAst.Literal.Unit(SP, SP), SP), SP)
+    //
+    //    val result = Weeder.Definition.compile(past)
+    //    assertResult(2)(result.errors.size)
   }
 
   test("NonLinearPattern01") {
@@ -401,6 +402,44 @@ class TestWeeder extends FunSuite {
     val result = Weeder.Declaration.compile(past)
     assert(result.isInstanceOf[WeededAst.Declaration.Fact])
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Annotations                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("DuplicateAnnotation01") {
+    val input =
+      """@strict @strict
+        |fn foo(x: Int): Int = 42
+        |
+      """.stripMargin
+    val result = Flix.mkStr(input)
+
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAnnotation])
+  }
+
+  test("DuplicateAnnotation02") {
+    val input =
+      """@strict @monotone @strict @monotone
+        |fn foo(x: Int): Int = 42
+        |
+      """.stripMargin
+    val result = Flix.mkStr(input)
+
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAnnotation])
+  }
+
+  test("IllegalAnnotation01") {
+    val input =
+      """@foobar
+        |fn foo(x: Int): Int = 42
+        |
+      """.stripMargin
+    val result = Flix.mkStr(input)
+
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalAnnotation])
+  }
+
 
   def ident(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
 

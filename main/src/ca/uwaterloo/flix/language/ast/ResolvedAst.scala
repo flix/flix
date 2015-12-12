@@ -148,7 +148,7 @@ object ResolvedAst {
 
     case class Lit(literal: ResolvedAst.Literal, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Lambda(formals: List[FormalArg], retTpe: ResolvedAst.Type, body: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Lambda(annotations: Ast.Annotations, formals: List[FormalArg], retTpe: ResolvedAst.Type, body: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Apply(lambda: ResolvedAst.Expression, args: Seq[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 

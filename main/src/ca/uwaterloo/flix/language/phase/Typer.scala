@@ -332,7 +332,7 @@ object Typer {
           TypedAst.Expression.Lit(lit, lit.tpe, loc).toSuccess
 
         // TODO: Peer review
-        case ResolvedAst.Expression.Lambda(rargs, rtpe, rbody, loc) =>
+        case ResolvedAst.Expression.Lambda(annotations, rargs, rtpe, rbody, loc) =>
           // compile formal arguments
           val args = rargs map {
             case ResolvedAst.FormalArg(ident, t) => TypedAst.FormalArg(ident, Type.typer(t))
@@ -347,7 +347,7 @@ object Typer {
           // type body
           visit(rbody, env1) flatMap {
             case body => expect(tpe, body.tpe, loc) map {
-              case _ => TypedAst.Expression.Lambda(args, body, TypedAst.Type.Lambda(args map (_.tpe), tpe), loc)
+              case _ => TypedAst.Expression.Lambda(annotations, args, body, TypedAst.Type.Lambda(args map (_.tpe), tpe), loc)
             }
           }
 
@@ -740,7 +740,7 @@ object Typer {
         // Instead we should focus on the type of the constant, which should be Function.
 
         constant.exp match {
-          case ResolvedAst.Expression.Lambda(formals, retTpe, _, loc2) =>
+          case ResolvedAst.Expression.Lambda(annotations, formals, retTpe, _, loc2) =>
             // type arguments with the declared formals.
             val argsVal = (actuals zip formals) map {
               case (term, ResolvedAst.FormalArg(_, termType)) => Term.typer(term, Type.typer(termType), root)

@@ -1909,8 +1909,8 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Annotation])
   }
 
-  test("Annotation @mono") {
-    val input = "@mono"
+  test("Annotation @monotone") {
+    val input = "@monotone"
     val parser = mkParser(input)
     val result = parser.__run(parser.Annotation).get
     assert(result.isInstanceOf[ParsedAst.Annotation])
@@ -1928,7 +1928,7 @@ class TestParser extends FunSuite {
 
   test("Annotation.AnnotatedFunction02") {
     val input =
-      """@mono
+      """@monotone
         |fn f(x: Int): Int = x
       """.stripMargin
     val parser = mkParser(input)
@@ -1938,7 +1938,17 @@ class TestParser extends FunSuite {
 
   test("Annotation.AnnotatedFunction03") {
     val input =
-      """@strict @mono
+      """@strict @monotone
+        |fn f(x: Int): Int = x
+      """.stripMargin
+    val parser = mkParser(input)
+    val result = parser.__run(parser.FunctionDefinition).get
+    assert(result.isInstanceOf[ParsedAst.Definition.Function])
+  }
+
+  test("Annotation.AnnotatedFunction04") {
+    val input =
+      """@strict @monotone @commutative @associative @unsafe @unchecked
         |fn f(x: Int): Int = x
       """.stripMargin
     val parser = mkParser(input)
@@ -1957,7 +1967,7 @@ class TestParser extends FunSuite {
 
   test("Annotation.AnnotatedParameter02") {
     val input =
-      """fn f(x: @mono Int): Int = x
+      """fn f(x: @monotone Int): Int = x
       """.stripMargin
     val parser = mkParser(input)
     val result = parser.__run(parser.FunctionDefinition).get
@@ -1966,7 +1976,7 @@ class TestParser extends FunSuite {
 
   test("Annotation.AnnotatedParameter03") {
     val input =
-      """fn f(x: @strict @mono Int): Int = x
+      """fn f(x: @strict @monotone Int): Int = x
       """.stripMargin
     val parser = mkParser(input)
     val result = parser.__run(parser.FunctionDefinition).get
@@ -1975,7 +1985,7 @@ class TestParser extends FunSuite {
 
   test("Annotation.AnnotatedParameter04") {
     val input =
-      """fn f(x: @strict Int, y: Int, z: @mono Int): Int = x
+      """fn f(x: @strict Int, y: Int, z: @monotone Int): Int = x
       """.stripMargin
     val parser = mkParser(input)
     val result = parser.__run(parser.FunctionDefinition).get

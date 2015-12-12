@@ -321,6 +321,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Lambda01") {
     // () => false
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(), Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Lambda(List(), Type.Bool), loc)
     val expected = Value.Closure(lambda.args.map(_.ident.name).toArray, lambda.body, mutable.Map())
     val closure = Interpreter.eval(lambda, root)
@@ -335,6 +336,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Lambda02") {
     // x => 3
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Int)), Expression.Lit(Literal.Int(3, loc), Type.Int, loc),
       Type.Lambda(List(Type.Int), Type.Int), loc)
     val expected = Value.Closure(lambda.args.map(_.ident.name).toArray, lambda.body, mutable.Map())
@@ -350,6 +352,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Lambda03") {
     // x => x
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Int)), Expression.Var(ident01, Type.Int, loc),
       Type.Lambda(List(Type.Int), Type.Int), loc)
     val expected = Value.Closure(lambda.args.map(_.ident.name).toArray, lambda.body, mutable.Map())
@@ -365,6 +368,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Lambda04") {
     // x => 1 + 2
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Int)),
       Expression.Binary(
         BinaryOperator.Plus,
@@ -385,6 +389,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Lambda05") {
     // x => x + 2
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Int)),
       Expression.Binary(
         BinaryOperator.Plus,
@@ -405,6 +410,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Lambda06") {
     // (x, y) => x + y
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Int), FormalArg(ident02, Type.Int)),
       Expression.Binary(
         BinaryOperator.Plus,
@@ -428,6 +434,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Lambda07") {
     // (x, y) => if (x) then true else y
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Bool), FormalArg(ident02, Type.Bool)),
       Expression.IfThenElse(
         Expression.Var(ident01, Type.Bool, loc),
@@ -451,6 +458,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Lambda08") {
     // (x, y, z) => x + (y + z)
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Int), FormalArg(ident02, Type.Int), FormalArg(ident03, Type.Int)),
       Expression.Binary(
         BinaryOperator.Plus,
@@ -479,8 +487,10 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Lambda09") {
     // x => (y => x + y)
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Int)),
       Expression.Lambda(
+        Ast.Annotations(List.empty),
         List(FormalArg(ident02, Type.Int)),
         Expression.Binary(
           BinaryOperator.Plus,
@@ -506,6 +516,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Lambda10") {
     // x, y => x(y)
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Lambda(List(Type.Int), Type.Int)), FormalArg(ident02, Type.Int)),
       Expression.Apply(
         Expression.Var(ident01, Type.Lambda(List(Type.Int), Type.Int), loc),
@@ -519,6 +530,7 @@ class TestInterpreter extends FunSuite {
     // (x, y => x(y))((x => x + 1), 5)
     val apply = Expression.Apply(lambda, List(
       Expression.Lambda(
+        Ast.Annotations(List.empty),
         List(FormalArg(ident01, Type.Int)),
         Expression.Binary(
           BinaryOperator.Plus,
@@ -2713,6 +2725,7 @@ class TestInterpreter extends FunSuite {
   test("evalHeadTerm - Apply01") {
     // def foo.bar = () => false
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(), Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Lambda(List(), Type.Bool), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
     val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),new Time(0, 0, 0, 0))
@@ -2726,6 +2739,7 @@ class TestInterpreter extends FunSuite {
   test("evalHeadTerm - Apply02") {
     // def foo.bar = x => 3
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Int)), Expression.Lit(Literal.Int(3, loc), Type.Int, loc),
       Type.Lambda(List(Type.Int), Type.Int), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
@@ -2740,6 +2754,7 @@ class TestInterpreter extends FunSuite {
   test("evalHeadTerm - Apply03") {
     // def foo.bar = x => x
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Int)), Expression.Var(ident01, Type.Int, loc),
       Type.Lambda(List(Type.Int), Type.Int), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
@@ -2754,6 +2769,7 @@ class TestInterpreter extends FunSuite {
   test("evalHeadTerm - Apply04") {
     // def foo.bar = x => 1 + 2
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Int)),
       Expression.Binary(
         BinaryOperator.Plus,
@@ -2773,6 +2789,7 @@ class TestInterpreter extends FunSuite {
   test("evalHeadTerm - Apply05") {
     // def foo.bar = x => x + 2
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Int)),
       Expression.Binary(
         BinaryOperator.Plus,
@@ -2792,6 +2809,7 @@ class TestInterpreter extends FunSuite {
   test("evalHeadTerm - Apply06") {
     // def foo.bar = (x, y) => x + y
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Int), FormalArg(ident02, Type.Int)),
       Expression.Binary(
         BinaryOperator.Plus,
@@ -2814,6 +2832,7 @@ class TestInterpreter extends FunSuite {
   test("evalHeadTerm - Apply07") {
     // def foo.bar = (x, y) => if (x) then true else y
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Bool), FormalArg(ident02, Type.Bool)),
       Expression.IfThenElse(
         Expression.Var(ident01, Type.Bool, loc),
@@ -2836,6 +2855,7 @@ class TestInterpreter extends FunSuite {
   test("evalHeadTerm - Apply08") {
     // def foo.bar = (x, y, z) => x + (y + z)
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Int), FormalArg(ident02, Type.Int), FormalArg(ident03, Type.Int)),
       Expression.Binary(
         BinaryOperator.Plus,
@@ -2863,8 +2883,10 @@ class TestInterpreter extends FunSuite {
   test("evalHeadTerm - Apply09") {
     // def foo.bar = x => (y => x + y)
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Int)),
       Expression.Lambda(
+        Ast.Annotations(List.empty),
         List(FormalArg(ident02, Type.Int)),
         Expression.Binary(
           BinaryOperator.Plus,
@@ -2891,6 +2913,7 @@ class TestInterpreter extends FunSuite {
   test("evalHeadTerm - Apply10") {
     // def foo.bar = x, y => x(y)
     val lambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Lambda(List(Type.Int), Type.Int)), FormalArg(ident02, Type.Int)),
       Expression.Apply(
         Expression.Var(ident01, Type.Lambda(List(Type.Int), Type.Int), loc),
@@ -2900,6 +2923,7 @@ class TestInterpreter extends FunSuite {
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
     val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),new Time(0, 0, 0, 0))
     val innerLambda = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Int)),
       Expression.Binary(
         BinaryOperator.Plus,
@@ -2921,8 +2945,10 @@ class TestInterpreter extends FunSuite {
     // def foo.bar = () => false
     // def abc.def = () => true
     val lambda01 = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(), Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Lambda(List(), Type.Bool), loc)
     val lambda02 = Expression.Lambda(
+      Ast.Annotations(List.empty),
       List(), Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc), Type.Lambda(List(), Type.Bool), loc)
     val definition01 = Definition.Constant(name01, lambda01, Type.Lambda(List(), Type.Bool), loc)
     val definition02 = Definition.Constant(name02, lambda02, Type.Lambda(List(), Type.Bool), loc)
