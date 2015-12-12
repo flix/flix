@@ -5,74 +5,60 @@ import ca.uwaterloo.flix.language.ast.{SourcePosition, Name, SourceLocation, Typ
 
 object Verifier {
 
-  def main(args: Array[String]): Unit = {
+  abstract class Property(tpe: TypedAst.Type) {
+    val x = mkVar("x", tpe)
+    val y = mkVar("y", tpe)
+    val z = mkVar("y", tpe)
 
-  }
-
-  sealed trait Property {
-    val exp: TypedAst.Expression
+    val property: Formula
   }
 
   object Theorems {
 
     case class Commutativity(op: TypedAst.Expression) {
-      val formula = {
+      val (x, y) = (mkVar("x", op.tpe), mkVar("y", op.tpe))
+      val f: Formula.Lambda = ???
 
-        val f = Formula.BinOp("f")
-        val (x, y, z) = (mkVar("x", ???), mkVar("y", ???), mkVar("z", ???))
-
-        f(x, y) === f(y, x)
-      }
+      val property = ∀(x, y)(f(x, y) ≡ f(y, x))
     }
 
     /**
-      * Partial Order Theorems.
+      * Properties of Partial Orders.
       */
     object PartialOrder {
 
-      // TODO: Use UTF8 symbols?
-
       /**
-        * Reflexivity: \forall x. x <= x.
+        * Reflexivity.
         */
-      case class Reflexivity(lattice: TypedAst.Definition.BoundedLattice) {
-
-        val formula = {
-          val x = Formula.Var("x")
-
-          x ⊑ x
-        }
-
+      case class Reflexivity(lattice: TypedAst.Definition.BoundedLattice) extends Property(lattice.tpe) {
+        val property = ∀(x)(x ⊑ x)
       }
 
-      def antiSymmetry(lattice: TypedAst.Definition.BoundedLattice): TypedAst.Expression =
-        ???
-
       /**
-        * Transitivity: \forall x, y, z. x <= y /\ y <= z ==> x <= z
+        * Anti-symmetry.
         */
-      case class Transitivity(lattice: TypedAst.Definition.BoundedLattice) {
-        val exp = {
-          // extract lattice components.
-          val TypedAst.Definition.BoundedLattice(tpe, bot, top, leq, lub, glb, loc) = lattice
-
-          //val ⊑ = leq
-          // val TypedAst.Definition.BoundedLattice(tpe, ⊥, ⊤, ⊑, ⊔, ⊓, loc) = lattice
-
-          // declare the variables and their types.
-          val (x, y, z) = (mkVar("x", tpe), mkVar("y", tpe), mkVar("z", tpe))
-
-
-          (x ⊑ y) ∧ (y ⊑ z) → (x ⊑ z)
-        }
+      case class AntiSymmetry(lattice: TypedAst.Definition.BoundedLattice) extends Property(lattice.tpe) {
+        val property = ∀(x, y)((x ⊑ y) ∧ (y ⊑ x)) → (x ≡ y)
       }
 
+      /**
+        * Transitivity.
+        */
+      case class Transitivity(lattice: TypedAst.Definition.BoundedLattice) extends Property(lattice.tpe) {
+        val property = ∀(x, y, z)(((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z))
+      }
+
+    }
+
+    /**
+      * Properties of Join Semi Lattices.
+      */
+    object JoinSemiLattice {
 
     }
 
   }
 
-  def theorems: Map[TypedAst.Definition.BoundedLattice, Set[Property]] = ???
 
   /**
     * Returns a typed AST node that represents a variable of the given `name` and with the given type `tpe`.
@@ -93,47 +79,37 @@ object Verifier {
 
     case class Var(name: String) extends Formula
 
+    case class Lambda() extends Formula {
+      def apply(that: Formula): Formula = ???
+
+      def apply(e1: Formula, e2: Formula): Formula = ???
+    }
+
+    case class Implication(f1: Formula, f2: Formula) extends Formula
+
     case class Leq(f1: Formula, f2: Formula) extends Formula
 
     case class Lub(f1: Formula, f2: Formula) extends Formula
 
   }
 
-  def ∀(x: Any): Formula = ???
+  def ∀(x: Formula.Var*)(f: Formula): Formula = ???
 
-  implicit class RichFormula(val f: Formula) {
-    def apply(e1: TypedAst.Expression): TypedAst.Expression = ???
+  implicit class RichFormula(val thiz: Formula) {
 
-    def apply(e1: TypedAst.Expression, e2: TypedAst.Expression): TypedAst.Expression =
-      TypedAst.Expression.Apply(???, List(e1, e2), ???, SourceLocation.Unknown) // TODO: What is the tpe?
 
     def ∧(that: Formula): Formula = ???
 
-    def →(that: Formula): Formula = ???
+    def →(that: Formula): Formula = Formula.Implication(thiz, that)
 
-    def ⊑(that: Formula): Formula = Formula.Leq(f, that)
+    def ⊑(that: Formula): Formula = Formula.Leq(thiz, that)
 
-    def ⊔(that: Formula): Formula = Formula.Lub(f, that)
+    def ⊔(that: Formula): Formula = Formula.Lub(thiz, that)
 
-    def ===(that: Formula): Formula = ???
+    def ≡(that: Formula): Formula = ???
 
-    def :-(that: Formula): Formula = ???
   }
 
-  //  /**
-  //   * Anti-symmetri: ?x, y. x ? y ? x ? y ? x = y
-  //   */
-  //  def antiSymmetri(leq: Term.Abs): Term.Abs =
-  //    Term.Abs('x, leq.typ, Term.Abs('y, leq.typ,
-  //      (leq.call('x, 'y) && leq.call('y, 'x)) ==> (Term.Var('x) === Term.Var('y))))
-  //
-  //  /**
-  //   * Transitivity: ?x, y, z. x ? y ? y ? z ? x ? z.
-  //   */
-  //  def transitivity(leq: Term.Abs): Term.Abs =
-  //    Term.Abs('x, leq.typ, Term.Abs('y, leq.typ, Term.Abs('z, leq.typ,
-  //      (leq.call('x, 'y) && leq.call('y, 'z)) ==> leq.call('x, 'z))))
-  //
   //  /**
   //   * Least Element: ?x. ? ? x.
   //   */

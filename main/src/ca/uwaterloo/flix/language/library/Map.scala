@@ -15,7 +15,7 @@ object Map {
 
 
   case class ToList(loc: SourceLocation) {
-    val tpe = TypedAst.Type.Lambda(List(), ???)
+    val tpe = TypedAst.Type.Lambda(???, ???)
   }
 
 }
