@@ -963,6 +963,8 @@ object TypedAst {
       */
     case class Set(elmType: TypedAst.Type) extends TypedAst.Type
 
+    case class Lst(elmType: TypedAst.Type) extends TypedAst.Type
+
     /**
       * An AST node representing a function type.
       *
