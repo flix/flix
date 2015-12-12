@@ -37,7 +37,15 @@ object UnaryOperator {
     */
   sealed trait SetOperator extends UnaryOperator
 
+  // TODO: Trace
+  // fn Debug::abort[A](a: A)
+  // fn Debug::print[A](a: A)
+  // fn Debug::time[A](a: A)
+  // fn Debug::trace[A](a: A)
+
   // TODO: Option
+  // map, flatMap
+  // None, Some
 
   // TODO: List
   // head
