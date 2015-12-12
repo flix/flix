@@ -95,10 +95,10 @@ object UnaryOperator {
   //    // TODO: Pattern matching can simplify this, e.g.:
   //
   //    match xs with {
-  //      case #{} => // empty set
-  //      case #{x} => // singleton with variable x
-  //      case #{42} => singleton with literao 42
-  //      case #{x, 42, y, rest...} => // set with two elements x and y, and 42, and rest...
+  //      case #Set{} => // empty set
+  //      case #Set{x} => // singleton with variable x
+  //      case #Set{42} => singleton with literao 42
+  //      case #Set{x, 42, y, rest...} => // set with two elements x and y, and 42, and rest...
   //    }
   //
   //    // queries
@@ -107,7 +107,10 @@ object UnaryOperator {
   //    fn isSingleton[A](xs: Set[A]): Bool = ...
   //    fn nonEmpty[A](xs: Set[A]): Bool = ...
   //
-  //    head / tail, or conj.
+  //    fn head(xs: Set[A]): A
+  //    fn tail(xs: Set[A]): A
+  //
+  //    fn conj(xs: Set[A]): (A, Set[A])
   //
   //    fn size[A](xs: Set[A]): Int = ...
   //    fn in[A](a: A, Set[A]): Bool = ...
@@ -116,7 +119,6 @@ object UnaryOperator {
   //
   //    fn isSubsetOf[A](xs: Set[A], ys: Set[A]): Bool = ...
   //    fn isProperSubsetOf[A](xs: Set[A], ys: Set[A]): Bool = ...
-  //    // TODO: super sets?
   //
   //    // construction
   //    fn empty(): Set[A] = ???
@@ -125,19 +127,19 @@ object UnaryOperator {
   //    fn delete(a: A, xs: Set[A]): Set[A] = ???
   //
   //    // combine
-  //    fn union(xs:
-  //    fn intersect
-  //    fn diff
+  //    fn union[A](xs: Set[A], ys: Set[A]): Set[A] = ...
+  //    fn intersection[A](xs: Set[A], ys: Set[A]): Set[A] = ...
+  //    fn difference[A](xs: Set[A], ys: Set[A]): Set[A] = ...
   //
-  //    // filter
-  //    fn filter
-  //    fn partition
+  //    // filter/select/where?
+  //    fn filter[A](xs: Set[A], f: A => Bool): Set[A] = ???
+  //    fn partition[A](xs: Set[A], f: A => Bool): (Set[A], Set[A]) = ???
   //
   //    // map
-  //    fn map
+  //    fn map[A, B](xs: Set[A], f: A => B): Set[B] = ???
   //
-  //    fn foldLeft
-  //    fn foldRight
+  //    fn foldLeft[A, B](xs: Set[A], b: B, f: (A, B => B)): B
+  //    fn foldRight[A, B](xs: Set[A], b: B, f: (A, B => B)): B
   //
   //    fn toList[A](xs: Set[A]): List[A] = ...
   //    fn toMap[A, B](xs: Set[(A, B)]: Map[A, B] = ...
