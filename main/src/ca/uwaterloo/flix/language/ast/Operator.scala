@@ -37,6 +37,85 @@ object UnaryOperator {
     */
   sealed trait SetOperator extends UnaryOperator
 
+  // TODO: List
+  // head
+  // last
+  // tail, init
+  // null
+  // length
+  // map
+  // reverse
+  //
+  // -+ ,++
+  // count
+  // drop
+  // dropRight
+  // dropWhile
+  // exists
+  // filter
+  // filterNot
+  // fold
+  // foldLeft
+  // foldRight
+  // reduce
+  // head
+  // tail
+  // map
+  // flatMap
+  // all, every
+  // toMap
+  // take
+  // drop
+  // splitAt
+  // takeWhile
+  // dropWhile
+  // isPrefixOf
+  // isSuffixOf
+  // in/elm/has
+  // find
+  // findIndex
+  // zip
+  // unzip
+
+  // deleteBy
+  // groupBy
+
+  // TODO: Map
+  // - getOrElse
+  // - ++ (merge)
+  // - removeKey
+  // - foldValues
+  // - isEmpty
+  // - filterKeys/filterValues/exists/find/fold
+  // - forall
+  // - groupBy
+  // - size
+  // - member/notMembet
+  // - lookup
+  // - empty
+  // - singleton
+  // - insert
+  // - delete
+  // - update
+  // - delete
+  // - leftUnion
+  // - difference
+  // - intersection?
+  // - map
+  // - mapWithKey
+  // - mapKeys
+  // foldLeft/foldRigyht, foldLeftWithKey, foldRightWithKey
+  // - elms
+  // - keys
+  // - toList
+  // - fromList
+  // filter/filterWithKey
+  // paritition, partitionWithKey
+  // isSubmapOf
+  // isProperSubmapOf
+
+
+
   object Set {
 
     /**
