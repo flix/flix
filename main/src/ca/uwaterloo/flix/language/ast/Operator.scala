@@ -28,14 +28,16 @@ object UnaryOperator {
   case object Minus extends UnaryOperator
 
   /**
-   * Bitwise negate.
-   */
+    * Bitwise negate.
+    */
   case object Negate extends UnaryOperator
 
   /**
     * A common super-type for unary set operations.
     */
   sealed trait SetOperator extends UnaryOperator
+
+  // TODO: Option
 
   // TODO: List
   // head
@@ -79,6 +81,49 @@ object UnaryOperator {
 
   // deleteBy
   // groupBy
+
+  // namespace Set {
+  //
+  //    // queries
+  //    fn null?(xs: Set[A]): Bool = ...
+  //    fn isEmpty(xs: Set[A]): Bool = ...
+  //    fn isSingleton(xs: Set[A]): Bool = ...
+  //    fn nonEmpty(xs: Set[A]): Bool = ...
+  //
+  //    fn size(xs: Set[A]): Int = ...
+  //    fn in(a: A, Set[A]): Bool = ...
+  //    fn memberOf(a: A, Set[A]): Bool = ...
+  //    fn notMemberOf(a: A, Set[A]): Bool = ...
+  //
+  //    fn isSubsetOf(xs: Set[A], ys: Set[A]): Bool = ...
+  //    fn isProperSubsetOf(xs: Set[A], ys: Set[A]): Bool = ...
+  //    // TODO: super sets?
+  //
+  //    // construction
+  //    fn empty(): Set[A] = ???
+  //    fn singleton(a: A): Set[A] = ???
+  //    fn insert(a: A, xs: Set[A]): Set[A] = ???
+  //    fn delete(a: A, xs: Set[A]): Set[A] = ???
+  //
+  //    // combine
+  //    fn union
+  //    fn intersect
+  //    fn diff
+  //
+  //    // filter
+  //    fn filter
+  //    fn partition
+  //
+  //    // map
+  //    fn map
+  //
+  //    fn foldLeft
+  //    fn foldRight
+  //
+  //    fn toList
+  //    
+  // }
+
 
   // TODO: Map
   // - getOrElse
