@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.backend.phase
 import java.nio.file.{Paths, Files}
 
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, UnaryOperator, Name, SourceLocation}
-import ca.uwaterloo.flix.language.backend.ir.ReducedIR._
+import ca.uwaterloo.flix.language.backend.ir.ReducedIR.{Definition, LocalVar, Type}
 import ca.uwaterloo.flix.language.backend.ir.ReducedIR.Expression._
 import ca.uwaterloo.flix.language.backend.ir.ReducedIR.Definition.Function
 
@@ -17,7 +17,7 @@ class TestCodegen extends FunSuite {
   val name03 = Name.Resolved.mk(List("foo", "bar", "h"))
 
   val loc = SourceLocation.Unknown
-  val compiledClassName = "ca.uwaterloo.flix.runtime.compiled.FlixDefinitions"
+  val compiledClassName = "ca.uwaterloo.flix.compiled.FlixDefinitions"
 
   class CompiledCode(definitions: List[Definition], debug: Boolean = false) {
     object Loader extends ClassLoader {

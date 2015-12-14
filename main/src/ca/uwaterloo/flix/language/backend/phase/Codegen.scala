@@ -1,16 +1,17 @@
 package ca.uwaterloo.flix.language.backend.phase
 
+import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.{Name, BinaryOperator, UnaryOperator}
-import ca.uwaterloo.flix.language.backend.ir.ReducedIR.{Definition, Expression, Type => IRType}
+import ca.uwaterloo.flix.language.backend.ir.ReducedIR.{Definition, Expression, Type}
 import ca.uwaterloo.flix.language.backend.ir.ReducedIR.Expression._
 
-import org.objectweb.asm._
+import org.objectweb.asm.{ClassVisitor, ClassWriter, MethodVisitor, Label}
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.util.CheckClassAdapter
 
 object Codegen {
 
-  case class Context(definitions: List[Definition], clazz: String = "ca/uwaterloo/flix/runtime/compiled/FlixDefinitions") {
+  case class Context(definitions: List[Definition], clazz: String = "ca/uwaterloo/flix/compiled/FlixDefinitions") {
     val functions = definitions.collect { case f: Definition.Function => f }
     val getFunction = functions.map { f => (f.name, f) }.toMap
   }
@@ -67,13 +68,13 @@ object Codegen {
 
     // Return the value. No integer casts since bool is returned as int, and Flix treats Int8, Int16, and Int32 as int.
     function.tpe.retTpe match {
-      case IRType.Bool | IRType.Int8 | IRType.Int16 | IRType.Int32 => mv.visitInsn(IRETURN)
-      case IRType.Int64 => mv.visitInsn(LRETURN)
-      case IRType.Tag(name, ident, tpe) => ???
-      case IRType.Enum(cases) => ???
-      case IRType.Tuple(elms) => ???
-      case IRType.Set(elmType) => ???
-      case IRType.Lambda(args, retTpe) => ???
+      case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 => mv.visitInsn(IRETURN)
+      case Type.Int64 => mv.visitInsn(LRETURN)
+      case Type.Tag(name, ident, tpe) => ???
+      case Type.Enum(cases) => ???
+      case Type.Tuple(elms) => ???
+      case Type.Set(elmType) => ???
+      case Type.Lambda(args, retTpe) => ???
     }
 
     // Dummy large numbers so the bytecode checker can run. Afterwards, the library calculates the proper maxes.
@@ -110,6 +111,9 @@ object Codegen {
     case Error(loc) => ???
   }
 
+  /*
+   * Generate code to load a constant. Uses the minimal number of instructions necessary.
+   */
   private def compileConst(visitor: MethodVisitor)(i: Long): Unit = i match {
     case -1 => visitor.visitInsn(ICONST_M1)
     case 0 => visitor.visitInsn(ICONST_0)
@@ -150,7 +154,7 @@ object Codegen {
   }
 
   // TODO: Clean up comparison operations (and boolean unary not)
-  // At the very least, factor out common code. Or simply IfThenElse, see: http://www.cs.indiana.edu/~dyb/pubs/ddcg.pdf
+  // At the very least, factor out common code. Or simplify IfThenElse, see: http://www.cs.indiana.edu/~dyb/pubs/ddcg.pdf
   // Binary operations And and Or are handled first because of short-circuit evaluation
   private def compileBinaryExpression(context: Context, visitor: MethodVisitor)(op: BinaryOperator, expr1: Expression, expr2: Expression): Unit = op match {
     case BinaryOperator.And =>
@@ -255,7 +259,8 @@ object Codegen {
         case BinaryOperator.Set.Union => ???
         case BinaryOperator.Set.Intersection => ???
         case BinaryOperator.Set.Difference => ???
-        case BinaryOperator.And | BinaryOperator.Or => ??? // TODO: This is an internal error as cases were already handled.
+        case BinaryOperator.And | BinaryOperator.Or =>
+          throw new InternalCompilerError("BinaryOperator.And and BinaryOperator.Or should already have been handled.")
       }
   }
 }

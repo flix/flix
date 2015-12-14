@@ -7,12 +7,6 @@ sealed trait ReducedIR
 
 object ReducedIR {
 
-  case class ValuePool(strings: StringPool) {
-    def valueOf(int: Int, tpe: ReducedIR.Type): Value = ???
-  }
-
-  case class StringPool(xs: Array[String])
-
   sealed trait Definition
 
   object Definition {
@@ -55,7 +49,6 @@ object ReducedIR {
     case class StoreInt16(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.Expression
 
     case class StoreInt32(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.Expression
-
 
     /**
       * An AST node that represents a constant integer literal.
@@ -146,7 +139,8 @@ object ReducedIR {
   }
 
   /**
-    * A common super-type for types.
+    * A common super-type for types, which map to JVM types.
+    * `descriptor` is the internal name of the JVM type.
     */
   sealed trait Type {
     val descriptor: String
@@ -228,6 +222,5 @@ object ReducedIR {
    * @param name the name of the variable, for debugging purposes
    */
   case class LocalVar(offset: Int, name: String) extends ReducedIR
-
 
 }
