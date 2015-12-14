@@ -1,8 +1,8 @@
 package ca.uwaterloo.flix.language.backend.phase
 
 import ca.uwaterloo.flix.language.ast.{Name, BinaryOperator, UnaryOperator}
-import ca.uwaterloo.flix.language.backend.ir.CodeGenIR.{Definition, Expression, Type => IRType}
-import ca.uwaterloo.flix.language.backend.ir.CodeGenIR.Expression._
+import ca.uwaterloo.flix.language.backend.ir.ReducedIR.{Definition, Expression, Type => IRType}
+import ca.uwaterloo.flix.language.backend.ir.ReducedIR.Expression._
 
 import org.objectweb.asm._
 import org.objectweb.asm.Opcodes._

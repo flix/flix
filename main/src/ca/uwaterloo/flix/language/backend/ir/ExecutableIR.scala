@@ -161,7 +161,7 @@ object ExecutableIR {
 
   object Expression {
 
-    case class Interp(e: CodeGenIR.Expression)
+    case class Interp(e: ReducedIR.Expression)
 
     case class Compiled(args: Array[ExecutableIR.FormalArg], body: ExecutableIR.Expression, tpe: Type.Lambda, loc: SourceLocation) extends ExecutableIR.Expression {
       var compiled: Any = ??? // TODO: Link with generated code.

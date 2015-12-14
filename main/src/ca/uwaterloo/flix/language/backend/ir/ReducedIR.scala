@@ -3,13 +3,12 @@ package ca.uwaterloo.flix.language.backend.ir
 import ca.uwaterloo.flix.language.ast.{Name, BinaryOperator, SourceLocation, UnaryOperator}
 import ca.uwaterloo.flix.runtime.Value
 
-// TODO: Rename this to: ReducedIR
-sealed trait CodeGenIR
+sealed trait ReducedIR
 
-object CodeGenIR {
+object ReducedIR {
 
   case class ValuePool(strings: StringPool) {
-    def valueOf(int: Int, tpe: CodeGenIR.Type): Value = ???
+    def valueOf(int: Int, tpe: ReducedIR.Type): Value = ???
   }
 
   case class StringPool(xs: Array[String])
@@ -27,7 +26,7 @@ object CodeGenIR {
      * @param tpe the (lambda) type of the function.
      * @param loc the source location of the function definition.
      */
-    case class Function(name: Name.Resolved, args: List[String], body: CodeGenIR.Expression, tpe: CodeGenIR.Type.Lambda, loc: SourceLocation) extends CodeGenIR.Definition {
+    case class Function(name: Name.Resolved, args: List[String], body: ReducedIR.Expression, tpe: ReducedIR.Type.Lambda, loc: SourceLocation) extends ReducedIR.Definition {
       val descriptor = tpe.descriptor
     }
 
@@ -41,21 +40,21 @@ object CodeGenIR {
 
     // NB: Offset is *always* in bits.
 
-    case class LoadBool(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+    case class LoadBool(e: ReducedIR.Expression, offset: Int) extends ReducedIR.Expression
 
-    case class LoadInt8(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+    case class LoadInt8(e: ReducedIR.Expression, offset: Int) extends ReducedIR.Expression
 
-    case class LoadInt16(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+    case class LoadInt16(e: ReducedIR.Expression, offset: Int) extends ReducedIR.Expression
 
-    case class LoadInt32(e: CodeGenIR.Expression, offset: Int) extends CodeGenIR.Expression
+    case class LoadInt32(e: ReducedIR.Expression, offset: Int) extends ReducedIR.Expression
 
-    case class StoreBool(e: CodeGenIR.Expression, offset: Int, v: CodeGenIR.Expression) extends CodeGenIR.Expression
+    case class StoreBool(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.Expression
 
-    case class StoreInt8(e: CodeGenIR.Expression, offset: Int, v: CodeGenIR.Expression) extends CodeGenIR.Expression
+    case class StoreInt8(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.Expression
 
-    case class StoreInt16(e: CodeGenIR.Expression, offset: Int, v: CodeGenIR.Expression) extends CodeGenIR.Expression
+    case class StoreInt16(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.Expression
 
-    case class StoreInt32(e: CodeGenIR.Expression, offset: Int, v: CodeGenIR.Expression) extends CodeGenIR.Expression
+    case class StoreInt32(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.Expression
 
 
     /**
@@ -66,7 +65,7 @@ object CodeGenIR {
       * @param tpe the type of the integer.
       * @param loc the source location of the integer.
       */
-    case class Const(value: Long, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+    case class Const(value: Long, tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
     /**
      * A typed AST node representing a local variable expression (i.e. a parameter or let-bound variable).
@@ -75,7 +74,7 @@ object CodeGenIR {
      * @param tpe the type of the variable.
      * @param loc the source location of the variable.
      */
-    case class Var(localVar: CodeGenIR.LocalVar, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+    case class Var(localVar: ReducedIR.LocalVar, tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
     /**
      * A typed AST node representing a function call.
@@ -85,7 +84,7 @@ object CodeGenIR {
      * @param tpe the return type of the function.
      * @param loc the source location.
      */
-    case class Apply(name: Name.Resolved, args: List[CodeGenIR.Expression], tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+    case class Apply(name: Name.Resolved, args: List[ReducedIR.Expression], tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
     /**
      * A typed AST node representing a let expression.
@@ -96,7 +95,7 @@ object CodeGenIR {
      * @param tpe the type of the expression (which is equivalent to the type of the body expression).
      * @param loc the source location.
      */
-    case class Let(localVar: CodeGenIR.LocalVar, exp1: CodeGenIR.Expression, exp2: CodeGenIR.Expression, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+    case class Let(localVar: ReducedIR.LocalVar, exp1: ReducedIR.Expression, exp2: ReducedIR.Expression, tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
     /**
       * An AST node that represents a unary expression.
@@ -106,7 +105,7 @@ object CodeGenIR {
       * @param tpe the type of the expression.
       * @param loc the source location of the expression.
       */
-    case class Unary(op: UnaryOperator, exp: CodeGenIR.Expression, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+    case class Unary(op: UnaryOperator, exp: ReducedIR.Expression, tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
     /**
       * An AST node that represents a binary expression.
@@ -117,7 +116,7 @@ object CodeGenIR {
       * @param tpe the type of the expression.
       * @param loc the source location of the expression.
       */
-    case class Binary(op: BinaryOperator, exp1: CodeGenIR.Expression, exp2: CodeGenIR.Expression, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+    case class Binary(op: BinaryOperator, exp1: ReducedIR.Expression, exp2: ReducedIR.Expression, tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
     /**
       * An AST node that represents an if-then-else expression.
@@ -128,21 +127,21 @@ object CodeGenIR {
       * @param tpe the type of the consequent and alternative expression.
       * @param loc the source location of the expression.
       */
-    case class IfThenElse(exp1: CodeGenIR.Expression, exp2: CodeGenIR.Expression, exp3: CodeGenIR.Expression, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+    case class IfThenElse(exp1: ReducedIR.Expression, exp2: ReducedIR.Expression, exp3: ReducedIR.Expression, tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
-    case class Tag(name: Name.Resolved, tag: String, exp: CodeGenIR.Expression, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+    case class Tag(name: Name.Resolved, tag: String, exp: ReducedIR.Expression, tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
     // THIS RETURNS A BOOLEAN
-    case class TagOf(exp: CodeGenIR.Expression, name: Name.Resolved, tag: String, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+    case class TagOf(exp: ReducedIR.Expression, name: Name.Resolved, tag: String, tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
-    case class Tuple(elms: List[CodeGenIR.Expression], tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+    case class Tuple(elms: List[ReducedIR.Expression], tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
     // TODO: ElementAt( (1,2), 0) = 1
-    case class TupleAt(base: CodeGenIR.Expression, offset: Int, tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+    case class TupleAt(base: ReducedIR.Expression, offset: Int, tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
-    case class Set(elms: List[CodeGenIR.Expression], tpe: CodeGenIR.Type, loc: SourceLocation) extends CodeGenIR.Expression
+    case class Set(elms: List[ReducedIR.Expression], tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
-    case class Error(loc: SourceLocation) extends CodeGenIR.Expression
+    case class Error(loc: SourceLocation) extends ReducedIR.Expression
 
   }
 
@@ -159,7 +158,7 @@ object CodeGenIR {
       * The type of booleans.
       * Maps to a JVM boolean, even though all boolean operations are done as int operations.
       */
-    case object Bool extends CodeGenIR.Type {
+    case object Bool extends ReducedIR.Type {
       override val descriptor = "Z"
     }
 
@@ -167,7 +166,7 @@ object CodeGenIR {
       * The type of 8-bit signed integers.
       * Maps to a JVM int because Flix doesn't have bytes.
       */
-    case object Int8 extends CodeGenIR.Type {
+    case object Int8 extends ReducedIR.Type {
       override val descriptor = "I"
     }
 
@@ -175,7 +174,7 @@ object CodeGenIR {
       * The type of 16-bit signed integers.
       * Maps to a JVM int because Flix doesn't have shorts.
       */
-    case object Int16 extends CodeGenIR.Type {
+    case object Int16 extends ReducedIR.Type {
       override val descriptor = "I"
     }
 
@@ -183,7 +182,7 @@ object CodeGenIR {
       * The type of 32-bit signed integers.
       * Maps to a JVM int.
       */
-    case object Int32 extends CodeGenIR.Type {
+    case object Int32 extends ReducedIR.Type {
       // Maps to a JVM int
       override val descriptor = "I"
     }
@@ -192,31 +191,31 @@ object CodeGenIR {
       * The type of 64-bit signed integers.
       * Maps to a JVM long.
       */
-    case object Int64 extends CodeGenIR.Type {
+    case object Int64 extends ReducedIR.Type {
       override val descriptor = "J"
     }
 
-    case class Tag(name: Name.Resolved, ident: Name.Ident, tpe: CodeGenIR.Type) extends CodeGenIR.Type {
+    case class Tag(name: Name.Resolved, ident: Name.Ident, tpe: ReducedIR.Type) extends ReducedIR.Type {
       // Maps to a Flix tag
       override val descriptor = ???
     }
 
-    case class Enum(cases: Map[String, CodeGenIR.Type.Tag]) extends CodeGenIR.Type {
+    case class Enum(cases: Map[String, ReducedIR.Type.Tag]) extends ReducedIR.Type {
       // Maps to a Flix enum
       override val descriptor = ???
     }
 
-    case class Tuple(elms: List[CodeGenIR.Type]) extends CodeGenIR.Type {
+    case class Tuple(elms: List[ReducedIR.Type]) extends ReducedIR.Type {
       // Maps to a Scala tuple
       override val descriptor = ???
     }
 
-    case class Set(elmTyp: CodeGenIR.Type) extends CodeGenIR.Type {
+    case class Set(elmTyp: ReducedIR.Type) extends ReducedIR.Type {
       // Maps to a Scala set
       override val descriptor = ???
     }
 
-    case class Lambda(args: List[CodeGenIR.Type], retTpe: CodeGenIR.Type) extends CodeGenIR.Type {
+    case class Lambda(args: List[ReducedIR.Type], retTpe: ReducedIR.Type) extends ReducedIR.Type {
       override val descriptor = s"""(${ args.map(_.descriptor).mkString })${retTpe.descriptor}"""
     }
 
@@ -228,7 +227,7 @@ object CodeGenIR {
    * @param offset the (0-based) local variable slot in the JVM method.
    * @param name the name of the variable, for debugging purposes
    */
-  case class LocalVar(offset: Int, name: String) extends CodeGenIR
+  case class LocalVar(offset: Int, name: String) extends ReducedIR
 
 
 }
