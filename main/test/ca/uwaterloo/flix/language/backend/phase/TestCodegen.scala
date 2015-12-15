@@ -1892,4 +1892,245 @@ class TestCodegen extends FunSuite {
 
     assertResult(false)(result)
   }
+
+  test("Codegen - IfThenElse01") {
+    val definition = Function(name, args = List(),
+      body = IfThenElse(Const(0, Type.Bool, loc),
+        Binary(BinaryOperator.Plus, Const(42, Type.Int32, loc), Const(10, Type.Int32, loc), Type.Int32, loc),
+        Binary(BinaryOperator.Minus, Const(42, Type.Int32, loc), Const(10, Type.Int32, loc), Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(32)(result)
+  }
+
+  test("Codegen - IfThenElse02") {
+    val definition = Function(name, args = List(),
+      body = IfThenElse(Const(1, Type.Bool, loc),
+        Binary(BinaryOperator.Plus, Const(42, Type.Int32, loc), Const(10, Type.Int32, loc), Type.Int32, loc),
+        Binary(BinaryOperator.Minus, Const(42, Type.Int32, loc), Const(10, Type.Int32, loc), Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(52)(result)
+  }
+
+  test("Codegen - IfThenElse03") {
+    val definition = Function(name, args = List("x"),
+      body = IfThenElse(Var(LocalVar(0, "x"), Type.Bool, loc),
+        IfThenElse(Const(0, Type.Bool, loc), Const(1, Type.Int32, loc), Const(2, Type.Int32, loc), Type.Int32, loc),
+        IfThenElse(Const(1, Type.Bool, loc), Const(3, Type.Int32, loc), Const(4, Type.Int32, loc), Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Bool), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(java.lang.Boolean.TYPE), List(true).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(java.lang.Boolean.TYPE), List(false).map(_.asInstanceOf[Object]))
+
+    assertResult(2)(result01)
+    assertResult(3)(result02)
+  }
+
+  test("Codegen - IfThenElse04") {
+    val definition = Function(name, args = List("x"),
+      body = IfThenElse(
+        IfThenElse(
+          Unary(UnaryOperator.Not, Var(LocalVar(0, "x"), Type.Bool, loc), Type.Bool, loc),
+          Const(1, Type.Bool, loc),
+          Const(0, Type.Bool, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Bool), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(java.lang.Boolean.TYPE), List(true).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(java.lang.Boolean.TYPE), List(false).map(_.asInstanceOf[Object]))
+
+    assertResult(5678)(result01)
+    assertResult(1234)(result02)
+  }
+
+  test("Codegen - IfThenElse05") {
+    val definition = Function(name, args = List("x", "y"),
+      body = IfThenElse(
+        Binary(BinaryOperator.And,
+          Var(LocalVar(0, "x"), Type.Bool, loc),
+          Var(LocalVar(1, "y"), Type.Bool, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Bool, Type.Bool), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(java.lang.Boolean.TYPE, java.lang.Boolean.TYPE),
+      List(true, true).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(java.lang.Boolean.TYPE, java.lang.Boolean.TYPE),
+      List(false, true).map(_.asInstanceOf[Object]))
+    val result03 = code.call(name, List(java.lang.Boolean.TYPE, java.lang.Boolean.TYPE),
+      List(true, false).map(_.asInstanceOf[Object]))
+    val result04 = code.call(name, List(java.lang.Boolean.TYPE, java.lang.Boolean.TYPE),
+      List(false, false).map(_.asInstanceOf[Object]))
+
+    assertResult(1234)(result01)
+    assertResult(5678)(result02)
+    assertResult(5678)(result03)
+    assertResult(5678)(result04)
+  }
+
+  test("Codegen - IfThenElse06") {
+    val definition = Function(name, args = List("x", "y"),
+      body = IfThenElse(
+        Binary(BinaryOperator.Or,
+          Var(LocalVar(0, "x"), Type.Bool, loc),
+          Var(LocalVar(1, "y"), Type.Bool, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Bool, Type.Bool), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(java.lang.Boolean.TYPE, java.lang.Boolean.TYPE),
+      List(true, true).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(java.lang.Boolean.TYPE, java.lang.Boolean.TYPE),
+      List(false, true).map(_.asInstanceOf[Object]))
+    val result03 = code.call(name, List(java.lang.Boolean.TYPE, java.lang.Boolean.TYPE),
+      List(true, false).map(_.asInstanceOf[Object]))
+    val result04 = code.call(name, List(java.lang.Boolean.TYPE, java.lang.Boolean.TYPE),
+      List(false, false).map(_.asInstanceOf[Object]))
+
+    assertResult(1234)(result01)
+    assertResult(1234)(result02)
+    assertResult(1234)(result03)
+    assertResult(5678)(result04)
+  }
+
+  test("Codegen - IfThenElse07") {
+    val definition = Function(name, args = List("x", "y"),
+      body = IfThenElse(
+        Binary(BinaryOperator.Less,
+          Var(LocalVar(0, "x"), Type.Int32, loc),
+          Var(LocalVar(1, "y"), Type.Int32, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 24).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 5).map(_.asInstanceOf[Object]))
+
+    assertResult(1234)(result01)
+    assertResult(5678)(result02)
+  }
+
+  test("Codegen - IfThenElse08") {
+    val definition = Function(name, args = List("x", "y"),
+      body = IfThenElse(
+        Binary(BinaryOperator.LessEqual,
+          Var(LocalVar(0, "x"), Type.Int32, loc),
+          Var(LocalVar(1, "y"), Type.Int32, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 5).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 2).map(_.asInstanceOf[Object]))
+
+    assertResult(1234)(result01)
+    assertResult(5678)(result02)
+  }
+
+  test("Codegen - IfThenElse09") {
+    val definition = Function(name, args = List("x", "y"),
+      body = IfThenElse(
+        Binary(BinaryOperator.Greater,
+          Var(LocalVar(0, "x"), Type.Int32, loc),
+          Var(LocalVar(1, "y"), Type.Int32, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(24, 5).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 5).map(_.asInstanceOf[Object]))
+
+    assertResult(1234)(result01)
+    assertResult(5678)(result02)
+  }
+
+  test("Codegen - IfThenElse10") {
+    val definition = Function(name, args = List("x", "y"),
+      body = IfThenElse(
+        Binary(BinaryOperator.GreaterEqual,
+          Var(LocalVar(0, "x"), Type.Int32, loc),
+          Var(LocalVar(1, "y"), Type.Int32, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 5).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(2, 5).map(_.asInstanceOf[Object]))
+
+    assertResult(1234)(result01)
+    assertResult(5678)(result02)
+  }
+
+  test("Codegen - IfThenElse11") {
+    val definition = Function(name, args = List("x", "y"),
+      body = IfThenElse(
+        Binary(BinaryOperator.Equal,
+          Var(LocalVar(0, "x"), Type.Int32, loc),
+          Var(LocalVar(1, "y"), Type.Int32, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 5).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(2, 5).map(_.asInstanceOf[Object]))
+
+    assertResult(1234)(result01)
+    assertResult(5678)(result02)
+  }
+
+  test("Codegen - IfThenElse12") {
+    val definition = Function(name, args = List("x", "y"),
+      body = IfThenElse(
+        Binary(BinaryOperator.NotEqual,
+          Var(LocalVar(0, "x"), Type.Int32, loc),
+          Var(LocalVar(1, "y"), Type.Int32, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(2, 5).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 5).map(_.asInstanceOf[Object]))
+
+    assertResult(1234)(result01)
+    assertResult(5678)(result02)
+  }
 }

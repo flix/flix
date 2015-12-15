@@ -107,7 +107,16 @@ object Codegen {
       compileExpression(context, visitor)(exp2)
     case Unary(op, exp, tpe, loc) => compileUnaryExpression(context, visitor)(op, exp)
     case Binary(op, exp1, exp2, tpe, loc) => compileBinaryExpression(context, visitor)(op, exp1, exp2)
-    case IfThenElse(exp1, exp2, exp3, tpe, loc) => ???
+    case IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+      val ifElse = new Label()
+      val ifEnd = new Label()
+      compileExpression(context, visitor)(exp1)
+      visitor.visitJumpInsn(IFEQ, ifElse)
+      compileExpression(context, visitor)(exp2)
+      visitor.visitJumpInsn(GOTO, ifEnd)
+      visitor.visitLabel(ifElse)
+      compileExpression(context, visitor)(exp3)
+      visitor.visitLabel(ifEnd)
     case Tag(name, tag, exp, tpe, loc) => ???
     case TagOf(exp, name, tag, tpe, loc) => ???
     case Tuple(elms, tpe, loc) => ???
