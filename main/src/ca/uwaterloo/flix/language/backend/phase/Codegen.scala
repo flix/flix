@@ -16,6 +16,11 @@ object Codegen {
     val getFunction = functions.map { f => (f.name, f) }.toMap
   }
 
+  /**
+   * Decorate (mangle) a Name.Resolved to get the internal JVM name.
+   */
+  def decorate(name: Name.Resolved): String = name.parts.mkString("$")
+
   /*
    * Given a list of Flix definitions, compile the definitions to bytecode and put them in a JVM class.
    * For now, we put all definitions in a single class: ca.uwaterloo.flix.runtime.compiled.FlixDefinitions.
@@ -60,7 +65,7 @@ object Codegen {
    */
   private def compileFunction(context: Context, visitor: ClassVisitor)(function: Definition.Function): Unit = {
     // TODO: Debug information
-    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, function.name.decorate, function.descriptor, null, null)
+    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, decorate(function.name), function.descriptor, null, null)
     mv.visitCode()
 
     // Compile the method body
@@ -95,7 +100,7 @@ object Codegen {
     case Var(v, tpe, loc) => visitor.visitVarInsn(ILOAD, v.offset)
     case Apply(name, args, tpe, loc) =>
       args.foreach(compileExpression(context, visitor))
-      visitor.visitMethodInsn(INVOKESTATIC, context.clazz, name.decorate, context.getFunction(name).descriptor, false)
+      visitor.visitMethodInsn(INVOKESTATIC, context.clazz, decorate(name), context.getFunction(name).descriptor, false)
     case Let(v, exp1, exp2, tpe, loc) =>
       compileExpression(context, visitor)(exp1)
       visitor.visitVarInsn(ISTORE, v.offset)
