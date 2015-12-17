@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.backend.phase
 
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
-import ca.uwaterloo.flix.language.ast.{Name, BinaryOperator, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{Name, UnaryOperator, BinaryOperator, ComparisonOperator}
 import ca.uwaterloo.flix.language.backend.ir.ReducedIR.{Definition, Expression, Type}
 import ca.uwaterloo.flix.language.backend.ir.ReducedIR.Expression._
 
@@ -96,6 +96,7 @@ object Codegen {
     case StoreInt8(exp, offset, v) => ???
     case StoreInt16(exp, offset, v) => ???
     case StoreInt32(exp, offset, v) => ???
+
     case Const(i, tpe, loc) => compileConst(visitor)(i)
     case Var(v, tpe, loc) => visitor.visitVarInsn(ILOAD, v.offset)
     case Apply(name, args, tpe, loc) =>
@@ -167,8 +168,6 @@ object Codegen {
     }
   }
 
-  // TODO: Clean up comparison operations (and boolean unary not)
-  // At the very least, factor out common code. Or simplify IfThenElse, see: http://www.cs.indiana.edu/~dyb/pubs/ddcg.pdf
   // Binary operations And and Or are handled first because of short-circuit evaluation
   private def compileBinaryExpression(context: Context, visitor: MethodVisitor)(op: BinaryOperator, expr1: Expression, expr2: Expression): Unit = op match {
     case BinaryOperator.And =>
@@ -206,65 +205,31 @@ object Codegen {
         case BinaryOperator.Times => visitor.visitInsn(IMUL)
         case BinaryOperator.Divide => visitor.visitInsn(IDIV)
         case BinaryOperator.Modulo => visitor.visitInsn(IREM)
-        case BinaryOperator.Less =>
+
+        case o: ComparisonOperator =>
           val condElse = new Label()
           val condEnd = new Label()
-          visitor.visitJumpInsn(IF_ICMPGE, condElse)
+          val cmp = o match {
+            case BinaryOperator.Less => IF_ICMPGE
+            case BinaryOperator.LessEqual => IF_ICMPGT
+            case BinaryOperator.Greater => IF_ICMPLE
+            case BinaryOperator.GreaterEqual => IF_ICMPLT
+            case BinaryOperator.Equal => IF_ICMPNE
+            case BinaryOperator.NotEqual => IF_ICMPEQ
+          }
+          visitor.visitJumpInsn(cmp, condElse)
           visitor.visitInsn(ICONST_1)
           visitor.visitJumpInsn(GOTO, condEnd)
           visitor.visitLabel(condElse)
           visitor.visitInsn(ICONST_0)
           visitor.visitLabel(condEnd)
-        case BinaryOperator.LessEqual =>
-          val condElse = new Label()
-          val condEnd = new Label()
-          visitor.visitJumpInsn(IF_ICMPGT, condElse)
-          visitor.visitInsn(ICONST_1)
-          visitor.visitJumpInsn(GOTO, condEnd)
-          visitor.visitLabel(condElse)
-          visitor.visitInsn(ICONST_0)
-          visitor.visitLabel(condEnd)
-        case BinaryOperator.Greater =>
-          val condElse = new Label()
-          val condEnd = new Label()
-          visitor.visitJumpInsn(IF_ICMPLE, condElse)
-          visitor.visitInsn(ICONST_1)
-          visitor.visitJumpInsn(GOTO, condEnd)
-          visitor.visitLabel(condElse)
-          visitor.visitInsn(ICONST_0)
-          visitor.visitLabel(condEnd)
-        case BinaryOperator.GreaterEqual =>
-          val condElse = new Label()
-          val condEnd = new Label()
-          visitor.visitJumpInsn(IF_ICMPLT, condElse)
-          visitor.visitInsn(ICONST_1)
-          visitor.visitJumpInsn(GOTO, condEnd)
-          visitor.visitLabel(condElse)
-          visitor.visitInsn(ICONST_0)
-          visitor.visitLabel(condEnd)
-        case BinaryOperator.Equal =>
-          val condElse = new Label()
-          val condEnd = new Label()
-          visitor.visitJumpInsn(IF_ICMPNE, condElse)
-          visitor.visitInsn(ICONST_1)
-          visitor.visitJumpInsn(GOTO, condEnd)
-          visitor.visitLabel(condElse)
-          visitor.visitInsn(ICONST_0)
-          visitor.visitLabel(condEnd)
-        case BinaryOperator.NotEqual =>
-          val condElse = new Label()
-          val condEnd = new Label()
-          visitor.visitJumpInsn(IF_ICMPEQ, condElse)
-          visitor.visitInsn(ICONST_1)
-          visitor.visitJumpInsn(GOTO, condEnd)
-          visitor.visitLabel(condElse)
-          visitor.visitInsn(ICONST_0)
-          visitor.visitLabel(condEnd)
+
         case BinaryOperator.BitwiseAnd => visitor.visitInsn(IAND)
         case BinaryOperator.BitwiseOr => visitor.visitInsn(IOR)
         case BinaryOperator.BitwiseXor => visitor.visitInsn(IXOR)
         case BinaryOperator.BitwiseLeftShift => visitor.visitInsn(ISHL)
         case BinaryOperator.BitwiseRightShift => visitor.visitInsn(ISHR)
+
         case BinaryOperator.Set.Member => ???
         case BinaryOperator.Set.SubsetOf => ???
         case BinaryOperator.Set.ProperSubsetOf => ???
@@ -273,6 +238,7 @@ object Codegen {
         case BinaryOperator.Set.Union => ???
         case BinaryOperator.Set.Intersection => ???
         case BinaryOperator.Set.Difference => ???
+
         case BinaryOperator.And | BinaryOperator.Or =>
           throw new InternalCompilerError("BinaryOperator.And and BinaryOperator.Or should already have been handled.")
       }

@@ -81,7 +81,7 @@ sealed trait ComparisonOperator extends BinaryOperator
 /**
   * A common super-type for equality operators
   */
-sealed trait EqualityOperator extends BinaryOperator
+sealed trait EqualityOperator extends ComparisonOperator
 
 /**
   * A common super-type for logical operators.
