@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.backend.phase
 
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.{Name, UnaryOperator, BinaryOperator, ComparisonOperator}
-import ca.uwaterloo.flix.language.backend.ir.ReducedIR.{Definition, Expression, Type}
+import ca.uwaterloo.flix.language.backend.ir.ReducedIR.{LoadExpression, StoreExpression, Definition, Expression, Type}
 import ca.uwaterloo.flix.language.backend.ir.ReducedIR.Expression._
 
 import org.objectweb.asm.{ClassVisitor, ClassWriter, MethodVisitor, Label}
@@ -26,6 +26,7 @@ object Codegen {
    * For now, we put all definitions in a single class: ca.uwaterloo.flix.runtime.compiled.FlixDefinitions.
    * The Flix function A::B::C::foo is compiled as the method A$B$C$foo.
    */
+  // TODO: How exactly do we want to treat longs? Right now functions can take and return longs, but all operations are done on ints.
   def compile(context: Context): Array[Byte] = {
     val functions = context.functions
     val classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
@@ -88,15 +89,30 @@ object Codegen {
   }
 
   private def compileExpression(context: Context, visitor: MethodVisitor)(expr: Expression): Unit = expr match {
-    case LoadBool(exp, offset) => ???
-    case LoadInt8(exp, offset) => ???
-    case LoadInt16(exp, offset) => ???
-    case LoadInt32(exp, offset) => ???
-    case StoreBool(exp, offset, v) => ???
-    case StoreInt8(exp, offset, v) => ???
-    case StoreInt16(exp, offset, v) => ???
-    case StoreInt32(exp, offset, v) => ???
+    case load: LoadExpression =>
+      // (e >> offset).toInt & mask
+      compileExpression(context, visitor)(load.e)
+      compileConst(visitor)(load.offset)
+      visitor.visitInsn(LSHR)
+      visitor.visitInsn(L2I)
+      compileConst(visitor)(load.mask)
+      visitor.visitInsn(IAND)
 
+    case store: StoreExpression =>
+      // (e & mask') | (v << offset)    where mask' = ~(mask << offset)
+      compileExpression(context, visitor)(store.e)
+      compileConst(visitor)(store.mask, isLong = true)
+      visitor.visitInsn(LAND)
+      compileExpression(context, visitor)(store.v)
+      visitor.visitInsn(I2L)
+      // Bitwise and with 0x00000000FFFFFFFF to mask out the sign extension
+      compileConst(visitor)(0xFFFFFFFFL, isLong = true)
+      visitor.visitInsn(LAND)
+      compileConst(visitor)(store.offset)
+      visitor.visitInsn(LSHL)
+      visitor.visitInsn(LOR)
+
+    case Const(i, Type.Int64, loc) => compileConst(visitor)(i, isLong = true)
     case Const(i, tpe, loc) => compileConst(visitor)(i)
     case Var(v, tpe, loc) => visitor.visitVarInsn(ILOAD, v.offset)
     case Apply(name, args, tpe, loc) =>
@@ -127,20 +143,32 @@ object Codegen {
   }
 
   /*
-   * Generate code to load a constant. Uses the minimal number of instructions necessary.
+   * Generate code to load a constant.
+   *
+   * Uses the smallest number of bytes necessary, e.g. ICONST_0 takes 1 byte to load a 0, but BIPUSH 7 takes 2 bytes to
+   * load a 7, and SIPUSH 200 takes 3 bytes to load a 200. However, note that values on the stack normally take up 4
+   * bytes. The exception is if we set `isLong` to true, in which case a cast will be performed if necessary.
+   *
+   * This is needed because sometimes we need the operands to be a long and two (int) values are popped from the
+   * stack (and concatenated to form a long).
    */
-  private def compileConst(visitor: MethodVisitor)(i: Long): Unit = i match {
-    case -1 => visitor.visitInsn(ICONST_M1)
-    case 0 => visitor.visitInsn(ICONST_0)
-    case 1 => visitor.visitInsn(ICONST_1)
-    case 2 => visitor.visitInsn(ICONST_2)
-    case 3 => visitor.visitInsn(ICONST_3)
-    case 4 => visitor.visitInsn(ICONST_4)
-    case 5 => visitor.visitInsn(ICONST_5)
-    case _ if Byte.MinValue <= i && i <= Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i.toInt)
-    case _ if Short.MinValue <= i && i <= Short.MaxValue => visitor.visitIntInsn(SIPUSH, i.toInt)
-    case _ if Int.MinValue <= i && i <= Int.MaxValue => visitor.visitLdcInsn(i.toInt)
-    case _ => visitor.visitLdcInsn(i)
+  private def compileConst(visitor: MethodVisitor)(i: Long, isLong: Boolean = false): Unit = {
+    i match {
+      case -1 => visitor.visitInsn(ICONST_M1)
+      case 0 => visitor.visitInsn(ICONST_0)
+      case 1 => visitor.visitInsn(ICONST_1)
+      case 2 => visitor.visitInsn(ICONST_2)
+      case 3 => visitor.visitInsn(ICONST_3)
+      case 4 => visitor.visitInsn(ICONST_4)
+      case 5 => visitor.visitInsn(ICONST_5)
+      case _ if Byte.MinValue <= i && i <= Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i.toInt)
+      case _ if Short.MinValue <= i && i <= Short.MaxValue => visitor.visitIntInsn(SIPUSH, i.toInt)
+      case _ if Int.MinValue <= i && i <= Int.MaxValue => visitor.visitLdcInsn(i.toInt)
+      case _ =>
+        visitor.visitLdcInsn(i)
+        if (!isLong) visitor.visitInsn(L2I)
+    }
+    if (Int.MinValue <= i && i <= Int.MaxValue && isLong) visitor.visitInsn(I2L)
   }
 
   private def compileUnaryExpression(context: Context, visitor: MethodVisitor)(op: UnaryOperator, expr: Expression): Unit = {
@@ -161,6 +189,7 @@ object Codegen {
         // Note that ~bbbb = bbbb ^ 1111, and since the JVM uses two's complement, -1 = 0xFFFFFFFF, so ~x = x ^ -1
         visitor.visitInsn(ICONST_M1)
         visitor.visitInsn(IXOR)
+
       case UnaryOperator.Set.IsEmpty => ???
       case UnaryOperator.Set.NonEmpty => ???
       case UnaryOperator.Set.Singleton => ???
@@ -205,7 +234,6 @@ object Codegen {
         case BinaryOperator.Times => visitor.visitInsn(IMUL)
         case BinaryOperator.Divide => visitor.visitInsn(IDIV)
         case BinaryOperator.Modulo => visitor.visitInsn(IREM)
-
         case o: ComparisonOperator =>
           val condElse = new Label()
           val condEnd = new Label()
@@ -223,7 +251,6 @@ object Codegen {
           visitor.visitLabel(condElse)
           visitor.visitInsn(ICONST_0)
           visitor.visitLabel(condEnd)
-
         case BinaryOperator.BitwiseAnd => visitor.visitInsn(IAND)
         case BinaryOperator.BitwiseOr => visitor.visitInsn(IOR)
         case BinaryOperator.BitwiseXor => visitor.visitInsn(IXOR)

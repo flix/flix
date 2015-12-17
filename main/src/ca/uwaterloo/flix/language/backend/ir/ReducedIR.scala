@@ -28,30 +28,105 @@ object ReducedIR {
 
   sealed trait Expression
 
+  sealed trait LoadExpression extends Expression {
+    val e: ReducedIR.Expression
+    val offset: Int
+    val mask: Long
+  }
+
+  sealed trait StoreExpression extends Expression {
+    val e: ReducedIR.Expression
+    val offset: Int
+    val v: ReducedIR.Expression
+    val mask: Long
+  }
+
   // TODO: Consider whether we want Exp8, Exp16, Exp32, Exp64 or if that information is associated with the type?
 
   object Expression {
 
-    // NB: Offset is *always* in bits.
-
-    case class LoadBool(e: ReducedIR.Expression, offset: Int) extends ReducedIR.Expression
-
-    case class LoadInt8(e: ReducedIR.Expression, offset: Int) extends ReducedIR.Expression
-
-    case class LoadInt16(e: ReducedIR.Expression, offset: Int) extends ReducedIR.Expression
-
-    case class LoadInt32(e: ReducedIR.Expression, offset: Int) extends ReducedIR.Expression
-
-    case class StoreBool(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.Expression
-
-    case class StoreInt8(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.Expression
-
-    case class StoreInt16(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.Expression
-
-    case class StoreInt32(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.Expression
+    /**
+      * An AST node representing a value (of type Bool) loaded from an Int64.
+      *
+      * @param e the expression, returning an Int64, that the value is loaded from.
+      * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
+      */
+    case class LoadBool(e: ReducedIR.Expression, offset: Int) extends ReducedIR.LoadExpression {
+      val mask = 0x1L
+    }
 
     /**
-      * An AST node that represents a constant integer literal.
+     * An AST node representing a value (of type Int8) loaded from an Int64.
+     *
+     * @param e the expression, returning an Int64, that the value is loaded from.
+     * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
+     */
+    case class LoadInt8(e: ReducedIR.Expression, offset: Int) extends ReducedIR.LoadExpression {
+      val mask = 0xFFL
+    }
+
+    /**
+     * An AST node representing a value (of type Int16) loaded from an Int64.
+     *
+     * @param e the expression, returning an Int64, that the value is loaded from.
+     * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
+     */
+    case class LoadInt16(e: ReducedIR.Expression, offset: Int) extends ReducedIR.LoadExpression {
+      val mask = 0xFFFFL
+    }
+
+    /**
+     * An AST node representing a value (of type Bool) loaded from an Int64.
+     *
+     * @param e the expression, returning an Int32, that the value is loaded from.
+     * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
+     */
+    case class LoadInt32(e: ReducedIR.Expression, offset: Int) extends ReducedIR.LoadExpression {
+      val mask = 0xFFFFFFFFL
+    }
+
+    /**
+      * An AST node representing a value (of type Bool) to be stored into an Int64
+      * @param e the expression, returning an Int64, that the value is stored into.
+      * @param offset the offset (in bits) from the least significant bit that the value is stored into.
+      * @param v the value to be stored.
+     */
+    case class StoreBool(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.StoreExpression {
+      val mask = ~(0x1L << offset)
+    }
+
+    /**
+     * An AST node representing a value (of type Int8) to be stored into an Int64
+     * @param e the expression, returning an Int64, that the value is stored into.
+     * @param offset the offset (in bits) from the least significant bit that the value is stored into.
+     * @param v the value to be stored.
+     */
+    case class StoreInt8(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.StoreExpression {
+      val mask = ~(0xFFL << offset)
+    }
+
+    /**
+     * An AST node representing a value (of type Int16) to be stored into an Int64
+     * @param e the expression, returning an Int64, that the value is stored into.
+     * @param offset the offset (in bits) from the least significant bit that the value is stored into.
+     * @param v the value to be stored.
+     */
+    case class StoreInt16(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.StoreExpression {
+      val mask = ~(0xFFFFL << offset)
+    }
+
+    /**
+     * An AST node representing a value (of type Int32) to be stored into an Int64
+     * @param e the expression, returning an Int64, that the value is stored into.
+     * @param offset the offset (in bits) from the least significant bit that the value is stored into.
+     * @param v the value to be stored.
+     */
+    case class StoreInt32(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.StoreExpression {
+      val mask = ~(0xFFFFFFFFL << offset)
+    }
+
+    /**
+      * A typed AST node representing a constant integer literal.
       * Note that calling this case class "Int" conflicts with scala.Int.
       *
       * @param value the integer value.
@@ -61,37 +136,37 @@ object ReducedIR {
     case class Const(value: Long, tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
     /**
-     * A typed AST node representing a local variable expression (i.e. a parameter or let-bound variable).
-     *
-     * @param localVar the local variable being referenced.
-     * @param tpe the type of the variable.
-     * @param loc the source location of the variable.
-     */
+      * A typed AST node representing a local variable expression (i.e. a parameter or let-bound variable).
+      *
+      * @param localVar the local variable being referenced.
+      * @param tpe the type of the variable.
+      * @param loc the source location of the variable.
+      */
     case class Var(localVar: ReducedIR.LocalVar, tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
     /**
-     * A typed AST node representing a function call.
-     *
-     * @param name the name of the function being called.
-     * @param args the function arguments.
-     * @param tpe the return type of the function.
-     * @param loc the source location.
-     */
+      * A typed AST node representing a function call.
+      *
+      * @param name the name of the function being called.
+      * @param args the function arguments.
+      * @param tpe the return type of the function.
+      * @param loc the source location.
+      */
     case class Apply(name: Name.Resolved, args: List[ReducedIR.Expression], tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
     /**
-     * A typed AST node representing a let expression.
-     *
-     * @param localVar the bound variable.
-     * @param exp1 the value of the bound variable.
-     * @param exp2 the body expression in which the bound variable is visible.
-     * @param tpe the type of the expression (which is equivalent to the type of the body expression).
-     * @param loc the source location.
-     */
+      * A typed AST node representing a let expression.
+      *
+      * @param localVar the bound variable.
+      * @param exp1 the value of the bound variable.
+      * @param exp2 the body expression in which the bound variable is visible.
+      * @param tpe the type of the expression (which is equivalent to the type of the body expression).
+      * @param loc the source location.
+      */
     case class Let(localVar: ReducedIR.LocalVar, exp1: ReducedIR.Expression, exp2: ReducedIR.Expression, tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
     /**
-      * An AST node that represents a unary expression.
+      * A typed AST node representing a unary expression.
       *
       * @param op the unary operator.
       * @param exp the expression.
@@ -101,7 +176,7 @@ object ReducedIR {
     case class Unary(op: UnaryOperator, exp: ReducedIR.Expression, tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
     /**
-      * An AST node that represents a binary expression.
+      * A typed AST node representing a binary expression.
       *
       * @param op the binary operator.
       * @param exp1 the left expression.
@@ -112,7 +187,7 @@ object ReducedIR {
     case class Binary(op: BinaryOperator, exp1: ReducedIR.Expression, exp2: ReducedIR.Expression, tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
     /**
-      * An AST node that represents an if-then-else expression.
+      * A typed AST node representing an if-then-else expression.
       *
       * @param exp1 the conditional expression.
       * @param exp2 the consequent expression.
@@ -121,6 +196,8 @@ object ReducedIR {
       * @param loc the source location of the expression.
       */
     case class IfThenElse(exp1: ReducedIR.Expression, exp2: ReducedIR.Expression, exp3: ReducedIR.Expression, tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
+
+
 
     case class Tag(name: Name.Resolved, tag: String, exp: ReducedIR.Expression, tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
@@ -149,7 +226,7 @@ object ReducedIR {
   object Type {
 
     /**
-      * The type of booleans.
+      * The type of booleans, i.e. a 1-bit integer.
       * Maps to a JVM boolean, even though all boolean operations are done as int operations.
       */
     case object Bool extends ReducedIR.Type {
@@ -189,6 +266,8 @@ object ReducedIR {
       override val descriptor = "J"
     }
 
+
+
     case class Tag(name: Name.Resolved, ident: Name.Ident, tpe: ReducedIR.Type) extends ReducedIR.Type {
       // Maps to a Flix tag
       override val descriptor = ???
@@ -219,7 +298,7 @@ object ReducedIR {
    * A local variable that is being referenced.
    *
    * @param offset the (0-based) local variable slot in the JVM method.
-   * @param name the name of the variable, for debugging purposes
+   * @param name the name of the variable, for debugging purposes.
    */
   case class LocalVar(offset: Int, name: String) extends ReducedIR
 

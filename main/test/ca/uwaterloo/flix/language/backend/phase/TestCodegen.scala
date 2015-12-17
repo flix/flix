@@ -43,6 +43,318 @@ class TestCodegen extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Loading (unpacking bits)                                                //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Codegen - LoadBool - 01") {
+    // Binary number is: 0000000000000000000000000000000000000000000000000000000000000000
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadBool(Const(0, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    for (i <- 0 until 64) {
+      val code = new CompiledCode(List(definition(i)))
+      val result = code.call(name, List())
+      assertResult(false)(result)
+    }
+  }
+
+  test("Codegen - LoadBool - 02") {
+    // Binary number is: 1111111111111111111111111111111111111111111111111111111111111111
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadBool(Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    for (i <- 0 until 64) {
+      val code = new CompiledCode(List(definition(i)))
+      val result = code.call(name, List())
+      assertResult(true)(result)
+    }
+  }
+
+  test("Codegen - LoadBool - 03") {
+    // Binary number is: 1001100110011001100110011001100110011001100110011001100110011001
+    // So the bits that are set are i = 0, 3, 4, 7, ..., i.e. i % 4 == 0 or i % 4 == 3
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadBool(Const(0x9999999999999999L, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    for (i <- 0 until 64) {
+      val code = new CompiledCode(List(definition(i)))
+      val result = code.call(name, List())
+      assertResult(i % 4 == 0 || i % 4 == 3)(result)
+    }
+  }
+
+  test("Codegen - LoadInt8 - 01") {
+    // Binary number is: 0000000000000000000000000000000000000000000000000000000000000000
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt8(Const(0, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 8) {
+      val code = new CompiledCode(List(definition(i * 8)))
+      val result = code.call(name, List())
+      assertResult(0)(result)
+    }
+  }
+
+  test("Codegen - LoadInt8 - 02") {
+    // Binary number is: 1111111111111111111111111111111111111111111111111111111111111111
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt8(Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 8) {
+      val code = new CompiledCode(List(definition(i * 8)))
+      val result = code.call(name, List())
+      assertResult(0xFF)(result)
+    }
+  }
+
+  test("Codegen - LoadInt8 - 03") {
+    // Binary number is: 1010101110101011101010111010101110101011101010111010101110101011
+    // So every 8 bits looks like 10101011 = 0xAB
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt8(Const(0xABABABABABABABABL, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 8) {
+      val code = new CompiledCode(List(definition(i * 8)))
+      val result = code.call(name, List())
+      assertResult(0xAB)(result)
+    }
+  }
+
+  test("Codegen - LoadInt16 - 01") {
+    // Binary number is: 0000000000000000000000000000000000000000000000000000000000000000
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt16(Const(0, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 4) {
+      val code = new CompiledCode(List(definition(i * 16)))
+      val result = code.call(name, List())
+      assertResult(0)(result)
+    }
+  }
+
+  test("Codegen - LoadInt16 - 02") {
+    // Binary number is: 1111111111111111111111111111111111111111111111111111111111111111
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt16(Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 4) {
+      val code = new CompiledCode(List(definition(i * 16)))
+      val result = code.call(name, List())
+      assertResult(0xFFFF)(result)
+    }
+  }
+
+  test("Codegen - LoadInt16 - 03") {
+    // Binary number is: 1100101011111110110010101111111011001010111111101100101011111110
+    // So every 16 bits looks like 1100101011111110 = 0xCAFE
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt16(Const(0xCAFECAFECAFECAFEL, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 4) {
+      val code = new CompiledCode(List(definition(i * 16)))
+      val result = code.call(name, List())
+      assertResult(0xCAFE)(result)
+    }
+  }
+
+  test("Codegen - LoadInt32 - 01") {
+    // Binary number is: 0000000000000000000000000000000000000000000000000000000000000000
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt32(Const(0, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 2) {
+      val code = new CompiledCode(List(definition(i * 32)))
+      val result = code.call(name, List())
+      assertResult(0)(result)
+    }
+  }
+
+  test("Codegen - LoadInt32 - 02") {
+    // Binary number is: 1111111111111111111111111111111111111111111111111111111111111111
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt32(Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 2) {
+      val code = new CompiledCode(List(definition(i * 32)))
+      val result = code.call(name, List())
+      assertResult(0xFFFFFFFF)(result)
+    }
+  }
+
+  test("Codegen - LoadInt32 - 03") {
+    // Binary number is: 1101111010101101101111101110111111011110101011011011111011101111
+    // So every 32 bits looks like 11011110101011011011111011101111 = 0xDEADBEEF
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt32(Const(0xDEADBEEFDEADBEEFL, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 2) {
+      val code = new CompiledCode(List(definition(i * 32)))
+      val result = code.call(name, List())
+      assertResult(0xDEADBEEF)(result)
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Storing (packing bits)                                                  //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Codegen - StoreBool - 01") {
+    val tru = Const(1, Type.Bool, loc)
+    val definition = Function(name, args = List(),
+      StoreBool(Const(0, Type.Int64, loc), 42, tru),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+    assertResult(1L << 42)(result)
+  }
+
+  test("Codegen - StoreBool - 02") {
+    val tru = Const(1, Type.Bool, loc)
+    val definition = Function(name, args = List(),
+      body = StoreBool(StoreBool(StoreBool(StoreBool(StoreBool(StoreBool(
+        Const(1230000, Type.Int64, loc), 2, tru), 5, tru), 10, tru), 12, tru), 49, tru), 61, tru),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+    assertResult((1L << 2) | (1L << 5) | (1L << 10) | (1L << 12) | (1L << 49) | (1L << 61) | 1230000L)(result)
+  }
+
+  test("Codegen - StoreBool - 03") {
+    val tru = Const(1, Type.Bool, loc)
+    def definition(offset: Int) = Function(name, args = List(),
+      body = StoreBool(Const(0, Type.Int64, loc), offset, tru),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    for (i <- 0 until 64) {
+      val code = new CompiledCode(List(definition(i)))
+      val result = code.call(name, List())
+      assertResult(1L << i)(result)
+    }
+  }
+
+  test("Codegen - StoreInt8 - 01") {
+    val v = Const(0xAB, Type.Int8, loc)
+    val definition = Function(name, args = List(),
+      StoreInt8(Const(0, Type.Int64, loc), 40, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+    assertResult(0xABL << 40)(result)
+  }
+
+  test("Codegen - StoreInt8 - 02") {
+    val v = Const(0xAB, Type.Int8, loc)
+    val definition = Function(name, args = List(),
+      body = StoreInt8(StoreInt8(StoreInt8(StoreInt8(
+        Const(123, Type.Int64, loc), 16, v), 32, v), 40, v), 56, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+    assertResult((0xABL << 16) | (0xABL << 32) | (0xABL << 40) | (0xABL << 56) | 123)(result)
+  }
+
+  test("Codegen - StoreInt8 - 03") {
+    val v = Const(0xFF, Type.Int8, loc)
+    def definition(offset: Int) = Function(name, args = List(),
+      body = StoreInt8(Const(0, Type.Int64, loc), offset, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    for (i <- 0 until 8) {
+      val code = new CompiledCode(List(definition(i * 8)))
+      val result = code.call(name, List())
+      assertResult(0xFFL << (i * 8))(result)
+    }
+  }
+
+  test("Codegen - StoreInt16 - 01") {
+    val v = Const(0xCAFE, Type.Int16, loc)
+    val definition = Function(name, args = List(),
+      StoreInt16(Const(0, Type.Int64, loc), 48, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+    assertResult(0xCAFEL << 48)(result)
+  }
+
+  test("Codegen - StoreInt16 - 02") {
+    val v = Const(0xCAFE, Type.Int16, loc)
+    val definition = Function(name, args = List(),
+      body = StoreInt16(StoreInt16(
+        Const(123L << 16, Type.Int64, loc), 0, v), 32, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+    assertResult((0xCAFEL << 0) | (0xCAFEL << 32) | (123L << 16))(result)
+  }
+
+  test("Codegen - StoreInt16 - 03") {
+    val v = Const(0xFFFF, Type.Int16, loc)
+    def definition(offset: Int) = Function(name, args = List(),
+      body = StoreInt16(Const(0, Type.Int64, loc), offset, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    for (i <- 0 until 4) {
+      val code = new CompiledCode(List(definition(i * 16)))
+      val result = code.call(name, List())
+      assertResult(0xFFFFL << (i * 16))(result)
+    }
+  }
+
+  test("Codegen - StoreInt32 - 01") {
+    val v = Const(0xDEADBEEF, Type.Int32, loc)
+    val definition = Function(name, args = List(),
+      StoreInt32(Const(0, Type.Int64, loc), 0, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+    assertResult(0xDEADBEEFL << 0)(result)
+  }
+
+  test("Codegen - StoreInt32 - 02") {
+    val v = Const(0xDEADBEEF, Type.Int32, loc)
+    val definition = Function(name, args = List(),
+      body = StoreInt32(
+        Const(123, Type.Int64, loc), 32, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+    assertResult((0xDEADBEEFL << 32) | 123)(result)
+  }
+
+  test("Codegen - StoreInt32 - 03") {
+    val v = Const(0xFFFFFFFF, Type.Int32, loc)
+    def definition(offset: Int) = Function(name, args = List(),
+      body = StoreInt32(Const(0, Type.Int64, loc), offset, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    for (i <- 0 until 2) {
+      val code = new CompiledCode(List(definition(i * 32)))
+      val result = code.call(name, List())
+      assertResult(0xFFFFFFFFL << (i * 32))(result)
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Int constants                                                           //
   /////////////////////////////////////////////////////////////////////////////
 
