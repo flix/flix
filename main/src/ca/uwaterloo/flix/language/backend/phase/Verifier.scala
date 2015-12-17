@@ -84,8 +84,14 @@ object Verifier {
       }
 
       /**
-        * The least upper bound must be an upper bound.
+        * The lub must be an upper bound.
         */
+      case class UpperBound(lattice: TypedAst.Definition.BoundedLattice) extends Property {
+        val (x, y) = ('x.ofType(lattice.tpe), 'y.ofType(lattice.tpe))
+
+        val property = ∀(x, y)((x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y)))
+      }
+
 
 
     }
@@ -206,13 +212,6 @@ object Verifier {
 
   }
 
-  //  /**
-  //   * Upper Bound: ?x, y. x ? (x ? y) ? y ? (x ? y).
-  //   */
-  //  def upperBound(leq: Term.Abs, lub: Term.Abs): Term.Abs =
-  //    Term.Abs('x, leq.typ, Term.Abs('y, leq.typ,
-  //      leq.call('x, lub.call('x, 'y)) && leq.call('y, lub.call('x, 'y))))
-  //
   //  /**
   //   * Least Upper Bound: ?x, y, z. x ? z ? y ? z ? x ? y ? z.
   //   */
