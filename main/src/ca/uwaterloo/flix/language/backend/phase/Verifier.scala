@@ -1,7 +1,9 @@
 package ca.uwaterloo.flix.language.backend.phase
 
+import ca.uwaterloo.flix.Flix.FlixError
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression.Var
 import ca.uwaterloo.flix.language.ast.{SourcePosition, Name, SourceLocation, TypedAst}
+import ca.uwaterloo.flix.runtime.Value
 
 object Verifier {
 
@@ -55,6 +57,67 @@ object Verifier {
       */
     object JoinSemiLattice {
 
+      /**
+        * The least element must be bottom.
+        */
+      case class LeastElement(lattice: TypedAst.Definition.BoundedLattice) extends Property(lattice.tpe) {
+        val property = ∀(x)(lattice.bot ⊑ x)
+      }
+
+      /**
+        * The least upper bound must be an upper bound.
+        */
+
+    }
+
+  }
+
+  // TODO
+  case class Header(s: String, s2: String)
+
+  case object BlankLine
+
+  case class Line(s: Any)
+
+  case class Red(s: String)
+
+  case class Location(s: Any)
+
+  sealed trait VerifierError extends FlixError
+
+  object VerifierError {
+
+    /**
+      * An error raised to indicate that a partial order is not reflexive.
+      *
+      * @param prop the violated property.
+      * @param elm the element that violates the property.
+      * @param loc the location of the partial order `leq`.
+      */
+    case class NonReflexivity(lat: TypedAst.Definition.BoundedLattice, prop: Property, elm: Value, loc: SourceLocation) extends VerifierError {
+      val format = "" // TODO
+      //      val format =
+      //        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
+      //           |
+      //            |${consoleCtx.red(s">> Duplicate definition of the variable '$name'.")}
+      //           |
+      //            |First definition was here:
+      //           |${loc1.underline}
+      //           |Second definition was here:
+      //           |${loc2.underline}
+      //           |Tip: Consider renaming or removing one of the aliases.
+      //         """.stripMargin
+
+      val format2 = List(
+        Header("VERIFICATION ERROR", loc.source.format),
+        BlankLine,
+        Line(Red(s">> Reflexivity violated for $lat.")),
+        BlankLine,
+        Line(s"The element $elm does not satisfy x <= x."),
+        BlankLine,
+        Line("The partial order was defined here:"),
+        Location(loc)
+      )
     }
 
   }
@@ -94,6 +157,10 @@ object Verifier {
   }
 
   def ∀(x: Formula.Var*)(f: Formula): Formula = ???
+
+  implicit class RichExp(val thiz: TypedAst.Expression) {
+    def ⊑(that: Formula): Formula = ???
+  }
 
   implicit class RichFormula(val thiz: Formula) {
 
