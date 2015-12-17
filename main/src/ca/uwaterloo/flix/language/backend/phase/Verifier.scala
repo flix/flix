@@ -1,27 +1,38 @@
 package ca.uwaterloo.flix.language.backend.phase
 
 import ca.uwaterloo.flix.Flix.FlixError
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression.Var
-import ca.uwaterloo.flix.language.ast.{SourcePosition, Name, SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 import ca.uwaterloo.flix.runtime.Value
 
 object Verifier {
 
-  abstract class Property(tpe: TypedAst.Type) {
-    val x = mkVar("x", tpe)
-    val y = mkVar("y", tpe)
-    val z = mkVar("y", tpe)
+  sealed trait Property
 
-    val property: Formula
-  }
+  object Property {
 
-  object Theorems {
+    /**
+      * Properties of Binary Operators.
+      */
+    object BinaryOperator {
 
-    case class Commutativity(op: TypedAst.Expression) {
-      val (x, y) = (mkVar("x", op.tpe), mkVar("y", op.tpe))
-      val f: Formula.Lambda = ???
+      /**
+        * Associativity.
+        */
+      case class Associativity(op: TypedAst.Expression) extends Property {
+        val (f, x, y, z) = (op.lam, 'x.ofType(op.tpe), 'y.ofType(op.tpe), 'z.ofType(op.tpe))
 
-      val property = ∀(x, y)(f(x, y) ≡ f(y, x))
+        val property = ∀(x, y, z)(f(f(x, y), z) ≡ f(x, f(y, z)))
+      }
+
+      /**
+        * Commutativity.
+        */
+      case class Commutativity(op: TypedAst.Expression.Binary) extends Property {
+        val (f, x, y) = (op.lam, 'x.ofType(op.tpe), 'y.ofType(op.tpe))
+
+        val property = ∀(x, y)(f(x, y) ≡ f(y, x))
+      }
+
     }
 
     /**
@@ -32,21 +43,27 @@ object Verifier {
       /**
         * Reflexivity.
         */
-      case class Reflexivity(lattice: TypedAst.Definition.BoundedLattice) extends Property(lattice.tpe) {
+      case class Reflexivity(lattice: TypedAst.Definition.BoundedLattice) extends Property {
+        val x = 'x.ofType(lattice.tpe)
+
         val property = ∀(x)(x ⊑ x)
       }
 
       /**
         * Anti-symmetry.
         */
-      case class AntiSymmetry(lattice: TypedAst.Definition.BoundedLattice) extends Property(lattice.tpe) {
+      case class AntiSymmetry(lattice: TypedAst.Definition.BoundedLattice) extends Property {
+        val (x, y) = ('x.ofType(lattice.tpe), 'y.ofType(lattice.tpe))
+
         val property = ∀(x, y)((x ⊑ y) ∧ (y ⊑ x)) → (x ≡ y)
       }
 
       /**
         * Transitivity.
         */
-      case class Transitivity(lattice: TypedAst.Definition.BoundedLattice) extends Property(lattice.tpe) {
+      case class Transitivity(lattice: TypedAst.Definition.BoundedLattice) extends Property {
+        val (x, y, z) = ('x.ofType(lattice.tpe), 'y.ofType(lattice.tpe), 'z.ofType(lattice.tpe))
+
         val property = ∀(x, y, z)(((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z))
       }
 
@@ -60,13 +77,16 @@ object Verifier {
       /**
         * The least element must be bottom.
         */
-      case class LeastElement(lattice: TypedAst.Definition.BoundedLattice) extends Property(lattice.tpe) {
+      case class LeastElement(lattice: TypedAst.Definition.BoundedLattice) extends Property {
+        val x = 'x.ofType(lattice.tpe)
+
         val property = ∀(x)(lattice.bot ⊑ x)
       }
 
       /**
         * The least upper bound must be an upper bound.
         */
+
 
     }
 
@@ -113,7 +133,7 @@ object Verifier {
         BlankLine,
         Line(Red(s">> Reflexivity violated for $lat.")),
         BlankLine,
-        Line(s"The element $elm does not satisfy x <= x."),
+        Line(s"The element $elm does not satisfy x <= x."), // TODO: Consider custom formatter? How to color elm red?
         BlankLine,
         Line("The partial order was defined here:"),
         Location(loc)
@@ -129,6 +149,9 @@ object Verifier {
   private def mkVar(name: String, tpe: TypedAst.Type): Formula.Var =
     ???
 
+  private def mkLam(e: TypedAst.Expression): Formula.Lambda =
+    ???
+
   sealed trait Formula
 
   object Formula {
@@ -142,7 +165,7 @@ object Verifier {
 
     case class Var(name: String) extends Formula
 
-    case class Lambda() extends Formula {
+    case class Lambda(e: TypedAst.Expression) extends Formula {
       def apply(that: Formula): Formula = ???
 
       def apply(e1: Formula, e2: Formula): Formula = ???
@@ -158,8 +181,14 @@ object Verifier {
 
   def ∀(x: Formula.Var*)(f: Formula): Formula = ???
 
+  implicit class RichSymbol(val thiz: Symbol) {
+    def ofType(tpe: TypedAst.Type): Formula.Var = ???
+  }
+
   implicit class RichExp(val thiz: TypedAst.Expression) {
     def ⊑(that: Formula): Formula = ???
+
+    def lam: Formula.Lambda = ???
   }
 
   implicit class RichFormula(val thiz: Formula) {
@@ -177,14 +206,6 @@ object Verifier {
 
   }
 
-  //  /**
-  //   * Least Element: ?x. ? ? x.
-  //   */
-  //  def leastElement(leq: Term.Abs, bot: Value): Term.Abs =
-  //    Term.Abs('x, leq.typ,
-  //      leq.call(bot.toTerm, 'x))
-  //
-  //
   //  /**
   //   * Upper Bound: ?x, y. x ? (x ? y) ? y ? (x ? y).
   //   */
