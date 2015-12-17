@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.backend.phase
 
 import ca.uwaterloo.flix.Flix.FlixError
+import ca.uwaterloo.flix.language.ast.Ast.Annotation
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 import ca.uwaterloo.flix.runtime.Value
 
@@ -9,6 +10,23 @@ object Verifier {
   sealed trait Property
 
   object Property {
+
+    /**
+      * Properties of Unary Operators.
+      */
+    object UnaryOperator {
+
+      /**
+        * Strictness of a unary function.
+        */
+      case class Strictness(op: TypedAst.Expression.Lambda, lat: TypedAst.Definition.BoundedLattice) extends Property {
+        val (f, x) = (op.lam, 'x.ofType(op.args.head.tpe))
+
+        val property = f(lat.bot.value) ≡ ???
+      }
+
+      // TODO: Monotone
+    }
 
     /**
       * Properties of Binary Operators.
@@ -27,11 +45,27 @@ object Verifier {
       /**
         * Commutativity.
         */
-      case class Commutativity(op: TypedAst.Expression.Binary) extends Property {
+      case class Commutativity(op: TypedAst.Expression) extends Property {
         val (f, x, y) = (op.lam, 'x.ofType(op.tpe), 'y.ofType(op.tpe))
 
         val property = ∀(x, y)(f(x, y) ≡ f(y, x))
       }
+
+      // TODO: Strictness.
+      //
+      //  /**
+      //   * Monotone: ?x1, x2. x1 ? x2 ? f(x1) ? f(x2).
+      //   */
+      //  def monotone1(f: Term.Abs, leq: Term.Abs): Term.Abs =
+      //    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ,
+      //      leq.call('x1, 'x2) ==> leq.call(f.call('x1), f.call('x2))))
+      //
+      //  /**
+      //   * Monotone: ?x1, x2, y1, y2. x1 ? x2 ? y1 ? y2 ? f(x1, y1) ? f(x2, y2).
+      //   */
+      //  def monotone2(f: Term.Abs, leq: Term.Abs): Term.Abs =
+      //    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ, Term.Abs('y1, leq.typ, Term.Abs('y2, leq.typ,
+      //      (leq.call('x1, 'x2) && leq.call('y1, 'y2)) ==> leq.call(f.call('x1, 'y1), f.call('x2, 'y2))))))
 
     }
 
@@ -67,6 +101,25 @@ object Verifier {
         val property = ∀(x, y, z)(((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z))
       }
 
+      /**
+        * Ascending Chain Condition
+        */
+      //  /**
+      //   * Non-Negative: ?x. f(x) > 0.
+      //   */
+      //  def nonNegative(h: Term.Abs): Term.Abs =
+      //    Term.Abs('x, h.typ,
+      //      Term.BinaryOp(BinaryOperator.Greater, h.call('x), Term.Int(0)))
+      //
+      //  /**
+      //   * Stricly-Decreasing: ?x, y. x ? y ? x != y ? f(x) > f(y).
+      //   */
+      //  def strictlyDecreasing(h: Term.Abs, leq: Term.Abs): Term.Abs =
+      //    Term.Abs('x, h.typ, Term.Abs('y, h.typ,
+      //      (leq.call('x, 'y) && (Term.Var('x) !== Term.Var('y))) ==>
+      //        Term.BinaryOp(BinaryOperator.Greater, h.call('x), h.call('y))))
+
+
     }
 
     /**
@@ -93,21 +146,18 @@ object Verifier {
       }
 
 
+      //  /**
+      //   * Least Upper Bound: ?x, y, z. x ? z ? y ? z ? x ? y ? z.
+      //   */
+      //  def leastUpperBound(leq: Term.Abs, lub: Term.Abs): Term.Abs =
+      //    Term.Abs('x, leq.typ, Term.Abs('y, leq.typ, Term.Abs('z, leq.typ,
+      //      (leq.call('x, 'z) && leq.call('y, 'z)) ==> leq.call(lub.call('x, 'y), 'z))))
+      //
+      //
 
     }
 
   }
-
-  // TODO
-  case class Header(s: String, s2: String)
-
-  case object BlankLine
-
-  case class Line(s: Any)
-
-  case class Red(s: String)
-
-  case class Location(s: Any)
 
   sealed trait VerifierError extends FlixError
 
@@ -149,16 +199,10 @@ object Verifier {
   }
 
 
-  /**
-    * Returns a typed AST node that represents a variable of the given `name` and with the given type `tpe`.
-    */
-  private def mkVar(name: String, tpe: TypedAst.Type): Formula.Var =
-    ???
+  sealed trait Formula {
+    // TODO: override toString
 
-  private def mkLam(e: TypedAst.Expression): Formula.Lambda =
-    ???
-
-  sealed trait Formula
+  }
 
   object Formula {
 
@@ -195,10 +239,11 @@ object Verifier {
     def ⊑(that: Formula): Formula = ???
 
     def lam: Formula.Lambda = ???
+
+    def value: Formula = ???
   }
 
   implicit class RichFormula(val thiz: Formula) {
-
 
     def ∧(that: Formula): Formula = ???
 
@@ -212,41 +257,54 @@ object Verifier {
 
   }
 
-  //  /**
-  //   * Least Upper Bound: ?x, y, z. x ? z ? y ? z ? x ? y ? z.
-  //   */
-  //  def leastUpperBound(leq: Term.Abs, lub: Term.Abs): Term.Abs =
-  //    Term.Abs('x, leq.typ, Term.Abs('y, leq.typ, Term.Abs('z, leq.typ,
-  //      (leq.call('x, 'z) && leq.call('y, 'z)) ==> leq.call(lub.call('x, 'y), 'z))))
-  //
-  //
-  //  /**
-  //   * Non-Negative: ?x. f(x) > 0.
-  //   */
-  //  def nonNegative(h: Term.Abs): Term.Abs =
-  //    Term.Abs('x, h.typ,
-  //      Term.BinaryOp(BinaryOperator.Greater, h.call('x), Term.Int(0)))
-  //
-  //  /**
-  //   * Stricly-Decreasing: ?x, y. x ? y ? x != y ? f(x) > f(y).
-  //   */
-  //  def strictlyDecreasing(h: Term.Abs, leq: Term.Abs): Term.Abs =
-  //    Term.Abs('x, h.typ, Term.Abs('y, h.typ,
-  //      (leq.call('x, 'y) && (Term.Var('x) !== Term.Var('y))) ==>
-  //        Term.BinaryOp(BinaryOperator.Greater, h.call('x), h.call('y))))
-  //
-  //  /**
-  //   * Monotone: ?x1, x2. x1 ? x2 ? f(x1) ? f(x2).
-  //   */
-  //  def monotone1(f: Term.Abs, leq: Term.Abs): Term.Abs =
-  //    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ,
-  //      leq.call('x1, 'x2) ==> leq.call(f.call('x1), f.call('x2))))
-  //
-  //  /**
-  //   * Monotone: ?x1, x2, y1, y2. x1 ? x2 ? y1 ? y2 ? f(x1, y1) ? f(x2, y2).
-  //   */
-  //  def monotone2(f: Term.Abs, leq: Term.Abs): Term.Abs =
-  //    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ, Term.Abs('y1, leq.typ, Term.Abs('y2, leq.typ,
-  //      (leq.call('x1, 'x2) && leq.call('y1, 'y2)) ==> leq.call(f.call('x1, 'y1), f.call('x2, 'y2))))))
+
+  // TODO
+  case class Header(s: String, s2: String)
+
+  case object BlankLine
+
+  case class Line(s: Any)
+
+  case class Red(s: String)
+
+  case class Location(s: Any)
+
+  def doStuff(root: TypedAst.Root): Unit = {
+
+    val partialOrderProperties = lattices(root) flatMap {
+      case l => List(
+        Property.PartialOrder.Reflexivity(l),
+        Property.PartialOrder.AntiSymmetry(l),
+        Property.PartialOrder.Transitivity(l)
+      )
+    }
+
+    val latticeProperties = lattices(root) flatMap {
+      case l => List(
+        Property.JoinSemiLattice.LeastElement(l)
+      )
+    }
+
+    val functionProperties = lambdas(root) flatMap {
+      case f if f.annotations.isUnchecked => Nil
+      case f => f.annotations.annotations.collect {
+        case Annotation.Associative(loc) => Property.BinaryOperator.Associativity(f)
+        case Annotation.Commutative(loc) => Property.BinaryOperator.Commutativity(f)
+        case Annotation.Strict(loc) =>
+          if (f.args.length == 1)
+            Property.UnaryOperator.Strictness(f, ???)
+          else ???
+      }
+    }
+
+    val properties = partialOrderProperties ++ functionProperties
+
+    properties.foreach(p => Console.println(p.toString))
+  }
+
+  def lattices(root: TypedAst.Root): List[TypedAst.Definition.BoundedLattice] = ???
+
+  def lambdas(root: TypedAst.Root): List[TypedAst.Expression.Lambda] = ???
+
 
 }
