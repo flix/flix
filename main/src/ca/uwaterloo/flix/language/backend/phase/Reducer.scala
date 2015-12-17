@@ -1,16 +1,16 @@
 package ca.uwaterloo.flix.language.backend.phase
 
-import ca.uwaterloo.flix.language.backend.ir.{ReducedIR, SimplifiedIR}
+import ca.uwaterloo.flix.language.backend.ir.{ReducedIR, SimplifiedAst}
 
 object Reducer {
 
-  object Literals {
-
-  }
+  // This phase: Introduce bit packing etc?
+  // Inline things?
+  // Apply partial evaluation.
 
   object Expressions {
 
-    def reduce(tast: SimplifiedIR.Expression): ReducedIR.Expression = tast match {
+    def reduce(tast: SimplifiedAst.Expression): ReducedIR.Expression = tast match {
       case _ => ???
     }
 
