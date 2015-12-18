@@ -6,8 +6,14 @@ import ca.uwaterloo.flix.runtime.Value
 
 object FList {
 
+  /**
+    * The underlying list datatype. In the future we will implement our own list.
+    */
   type ListType = scala.collection.immutable.List
 
+  /**
+    * A common super-type for all list operations.
+    */
   sealed trait ListOperator
 
   // TODO: Careful with occurs check. Probably need a Type.ForAll(X, Type)
@@ -39,6 +45,8 @@ object FList {
     def ~>(that: Type): Type = Lambda(List(thiz._1, thiz._2, thiz._3), that)
   }
 
+  // TODO: cons, head, tail
+
   /////////////////////////////////////////////////////////////////////////////
   // Queries                                                                 //
   /////////////////////////////////////////////////////////////////////////////
@@ -56,7 +64,19 @@ object FList {
     val tpe = Lst(A) ~> Int
   }
 
-  // TODO: cons, head, tail
+  /**
+    * The `isPrefixOf : (List[A], List[A]) => Bool` function.
+    */
+  object IsPrefixOf extends ListOperator {
+    val tpe = (Lst(A), Lst(A)) ~> Bool
+  }
+
+  /**
+    * The `isSuffixOf : (List[A], List[A]) => Bool` function.
+    */
+  object IsSuffixOf extends ListOperator {
+    val tpe = (Lst(A), Lst(A)) ~> Bool
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Transformations                                                         //
@@ -81,14 +101,6 @@ object FList {
   object Reverse {
     val tpe = Lst(A) ~> Lst(A)
   }
-
-  /**
-    * The `filter : (List[A], A => Bool) => List[A]` function.
-    */
-  object Filter {
-    val tpe = (Lst(A), A ~> Bool) ~> Lst(A)
-  }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Folds                                                                   //
@@ -141,24 +153,49 @@ object FList {
   /////////////////////////////////////////////////////////////////////////////
   // Sub Lists                                                               //
   /////////////////////////////////////////////////////////////////////////////
-  // take
-  // drop
-  // takeWhile
-  // dropWhile
+  /**
+    * The `filter : (List[A], A => Bool) => List[A]` function.
+    */
+  object Filter {
+    val tpe = (Lst(A), A ~> Bool) ~> Lst(A)
+  }
 
-  // -+ ,++
+  /**
+    * The `take : (List[A], Int) => List[A]` function.
+    */
+  object Take {
+    val tpe = (Lst(A), Int) ~> Lst(A)
+  }
+
+  /**
+    * The `takeWhile : (List[A], A => Bool) => List[A]` function.
+    */
+  object TakeWhile {
+    val tpe = (Lst(A), A ~> Bool) ~> Lst(A)
+  }
+
+  /**
+    * The `drop : (List[A], Int) => List[A]` function.
+    */
+  object Drop {
+    val tpe = (Lst(A), Int) ~> Lst(A)
+  }
+
+  /**
+    * The `dropWhile : (List[A], A => Bool) => List[A]` function.
+    */
+  object DropWhile {
+    val tpe = (Lst(A), A ~> Bool) ~> Lst(A)
+  }
+
+
   // count
-  // drop
-  // dropRight
-  // dropWhile
 
   // reduce
   // head
   // tail
   // toMap
   // splitAt
-  // isPrefixOf
-  // isSuffixOf
   // in/elm/has
   // find
   // findIndex
