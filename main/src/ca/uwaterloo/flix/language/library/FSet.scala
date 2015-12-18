@@ -1,5 +1,8 @@
 package ca.uwaterloo.flix.language.library
 
+import ca.uwaterloo.flix.language.ast.TypedAst.Type
+import ca.uwaterloo.flix.language.ast.TypedAst.Type._
+
 object FSet {
 
   // TODO: Allow syntax for: variableName.length() --> length(variableName). "postfix call"
@@ -9,9 +12,6 @@ object FSet {
   // foo::bar::baz(qux) <--> quux.foo::bar::baz.
   // aSet.Set::has(athing) --> Set::has(aSet, athing).
   // TODO: Allow postfix calls without ()?
-
-  // namespace Set {
-  //
   //    // TODO: Pattern matching can simplify this, e.g.:
   //
   //    match xs with {
@@ -20,6 +20,34 @@ object FSet {
   //      case #Set{42} => singleton with literao 42
   //      case #Set{x, 42, y, rest...} => // set with two elements x and y, and 42, and rest...
   //    }
+
+  /**
+    * A common super-type for all set operations.
+    */
+  sealed trait SetOperator
+
+  val A = Type.Var("A")
+  val B = Type.Var("B")
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Basic Operations                                                        //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `memberOf : (A, Set[A]) => Bool` function.
+    */
+  object MemberOf extends SetOperator {
+    val tpe = (A, Set(A)) ~> Bool
+  }
+
+  /**
+    * The `isSubsetOf : (Set[A], Set[A]) => Bool` function.
+    */
+  object IsSubsetOf extends SetOperator {
+    val tpe = (Set(A), Set(A)) ~> Bool
+  }
+
+  //    fn isProperSubsetOf[A](xs: Set[A], ys: Set[A]): Bool = ...
+
   //
   //    // queries
   //    fn null[A](xs: Set[A]): Bool = ...
@@ -37,8 +65,7 @@ object FSet {
   //    fn memberOf[A](a: A, Set[A]): Bool = ...
   //    fn notMemberOf[A](a: A, Set[A]): Bool = ...
   //
-  //    fn isSubsetOf[A](xs: Set[A], ys: Set[A]): Bool = ...
-  //    fn isProperSubsetOf[A](xs: Set[A], ys: Set[A]): Bool = ...
+
   //
   //    // construction
   //    fn empty(): Set[A] = ???

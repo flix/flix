@@ -53,10 +53,10 @@ object FList {
   }
 
   /**
-    * The `memberOf : (List[A], A) => Bool` function.
+    * The `memberOf : (A, List[A]) => Bool` function.
     */
   object MemberOf extends ListOperator {
-    val tpe = (Lst(A), A) ~> Bool
+    val tpe = (A, Lst(A)) ~> Bool
   }
 
   /**
