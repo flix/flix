@@ -2,12 +2,12 @@ package ca.uwaterloo.flix.language.library
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Type._
-import ca.uwaterloo.flix.runtime.{Interpreter, Value}
+import ca.uwaterloo.flix.runtime.Value
 
 object FList {
 
   /**
-    * The underlying list datatype. In the future we will implement our own list.
+    * The underlying list data type. In the future we will implement our own list.
     */
   type ListType = scala.collection.immutable.List
 
@@ -25,13 +25,7 @@ object FList {
     case IsNil => Value.mkBool(args(0).asInstanceOf[ListType].isEmpty)
     case Length => Value.mkInt(args(0).asInstanceOf[ListType].length)
 
-    case Map =>
-      val xs = args(0).asInstanceOf[ListType]
-      val f = args(1).asInstanceOf[Value.Closure]
-      // TODO: Need access to interpreter.
-      ???
-
-    case All => Value.mkBool(args(0).asInstanceOf[ListType].foldLeft(true) {
+    case And => Value.mkBool(args(0).asInstanceOf[ListType].foldLeft(true) {
       case (acc, x) => acc && x.asInstanceOf[Value.Bool].b
     })
 
@@ -83,10 +77,17 @@ object FList {
   }
 
   /**
-    * The `append : (List[A], List[A]) => List[A]` function.
+    * The `memberOf : (List[A], A) => Bool` function.
     */
-  object Append extends ListOperator {
-    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
+  object MemberOf extends ListOperator {
+    val tpe = (Lst(A), A) ~> Bool
+  }
+
+  /**
+    * The `find : (List[A], A => Bool) => Opt[A]` function.
+    */
+  object Find extends ListOperator {
+    val tpe = (Lst(A), A ~> Bool) ~> Opt(A)
   }
 
   /**
@@ -97,9 +98,23 @@ object FList {
   }
 
   /**
+    * The `append : (List[A], List[A]) => List[A]` function.
+    */
+  object Append extends ListOperator {
+    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
+  }
+
+  /**
     * The `isPrefixOf : (List[A], List[A]) => Bool` function.
     */
   object IsPrefixOf extends ListOperator {
+    val tpe = (Lst(A), Lst(A)) ~> Bool
+  }
+
+  /**
+    * The `isInfixOf : (List[A], List[A]) => Bool` function.
+    */
+  object isInfixOf extends ListOperator {
     val tpe = (Lst(A), Lst(A)) ~> Bool
   }
 
@@ -261,15 +276,14 @@ object FList {
     val tpe = Lst(A) ~> Set(A)
   }
 
-
-  // count
-  // splitAt
-  // in/elm/has
-  // find
-  // findIndex
-  // zip
-  // unzip
-  // deleteBy
-  // groupBy
+  /////////////////////////////////////////////////////////////////////////////
+  // Grouping                                                                //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `groupBy : (List[A], (A, A) => Bool) => List[List[A]]` function.
+    */
+  object GroupBy {
+    val tpe = (Lst(A), (A, A) ~> Bool) ~> Lst(Lst(A))
+  }
 
 }
