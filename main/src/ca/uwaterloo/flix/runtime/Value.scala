@@ -73,6 +73,8 @@ object Value {
   val True = new Value.Bool(true)
   val False = new Value.Bool(false)
 
+  def mkBool(b: Boolean): Bool = if (b) True else False
+
   /** *************************************************************************
     * Value.Int implementation                                                *
     * **************************************************************************/

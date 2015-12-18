@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.library
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Type._
-import ca.uwaterloo.flix.runtime.Value
+import ca.uwaterloo.flix.runtime.{Interpreter, Value}
 
 object FList {
 
@@ -22,8 +22,18 @@ object FList {
   // Evaluation                                                              //
   /////////////////////////////////////////////////////////////////////////////
   def eval(f: ListOperator, args: Array[Value]): Value = f match {
-    case IsEmpty => if (args(0).asInstanceOf[ListType].isEmpty) Value.True else Value.False
+    case IsNil => Value.mkBool(args(0).asInstanceOf[ListType].isEmpty)
     case Length => Value.mkInt(args(0).asInstanceOf[ListType].length)
+
+    case Map =>
+      val xs = args(0).asInstanceOf[ListType]
+      val f = args(1).asInstanceOf[Value.Closure]
+      // TODO: Need access to interpreter.
+      ???
+
+    case All => Value.mkBool(args(0).asInstanceOf[ListType].foldLeft(true) {
+      case (acc, x) => acc && x.asInstanceOf[Value.Bool].b
+    })
 
   }
 
@@ -45,16 +55,38 @@ object FList {
     def ~>(that: Type): Type = Lambda(List(thiz._1, thiz._2, thiz._3), that)
   }
 
-  // TODO: cons, head, tail
+  implicit def tuple2type(tuple: (Type, Type)): Type = Type.Tuple(List(tuple._1, tuple._2))
 
   /////////////////////////////////////////////////////////////////////////////
-  // Queries                                                                 //
+  // Basic Operations                                                        //
   /////////////////////////////////////////////////////////////////////////////
+
   /**
-    * The `isEmpty : List[A] => Bool` function.
+    * The `isNil : List[A] => Bool` function.
     */
-  object IsEmpty extends ListOperator {
+  object IsNil extends ListOperator {
     val tpe = Lst(A) ~> Bool
+  }
+
+  /**
+    * The `head : List[A] => A` function.
+    */
+  object Head extends ListOperator {
+    val tpe = Lst(A) ~> A
+  }
+
+  /**
+    * The `tail : List[A] => List[A]` function.
+    */
+  object Tail extends ListOperator {
+    val tpe = Lst(A) ~> Lst(A)
+  }
+
+  /**
+    * The `append : (List[A], List[A]) => List[A]` function.
+    */
+  object Append extends ListOperator {
+    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
   }
 
   /**
@@ -84,7 +116,7 @@ object FList {
   /**
     * The `map : (List[A], A => B) => List[B]` function.
     */
-  object Map {
+  object Map extends ListOperator {
     val tpe = (Lst(A), A ~> B) ~> Lst(B)
   }
 
@@ -126,28 +158,42 @@ object FList {
     * The `exists : (List[A], A => Bool) => Bool` function.
     */
   object Exists {
-    val tpe = Type.Lambda(List(Type.Lst(Type.Var("A")), Type.Lambda(List(Type.Var("A")), Type.Bool)), Type.Bool)
+    val tpe = (Lst(A), A ~> Bool) ~> Bool
   }
 
   /**
     * The `forall : (List[A], A => Bool) => Bool` function.
     */
   object Forall {
-    val tpe = Type.Lambda(List(Type.Lst(Type.Var("A")), Type.Lambda(List(Type.Var("A")), Type.Bool)), Type.Bool)
+    val tpe = (Lst(A), A ~> Bool) ~> Bool
   }
 
   /**
-    * The `all : List[Bool] => Bool` function.
+    * The `and : List[Bool] => Bool` function.
     */
-  object All {
-    val tpe = Type.Lambda(List(Type.Lst(Type.Bool)), Type.Bool)
+  object And extends ListOperator {
+    val tpe = Lst(Bool) ~> Bool
   }
 
   /**
-    * The `any : List[Bool] => Bool` function.
+    * The `or : List[Bool] => Bool` function.
     */
-  object Any {
-    val tpe = Type.Lambda(List(Type.Lst(Type.Bool)), Type.Bool)
+  object Or {
+    val tpe = Lst(Bool) ~> Bool
+  }
+
+  /**
+    * The `reduceLeft : (List[A], (A, A) => A) => A` function.
+    */
+  object ReduceLeft {
+    val tpe = (Lst(A), (A, A) ~> A) ~> A
+  }
+
+  /**
+    * The `reduceRight : (List[A], (A, A) => A) => A` function.
+    */
+  object ReduceRight {
+    val tpe = (Lst(A), (A, A) ~> A) ~> A
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -188,13 +234,35 @@ object FList {
     val tpe = (Lst(A), A ~> Bool) ~> Lst(A)
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Zipping                                                                 //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `zip : (List[A], List[B]) => List[(A, B)]` function.
+    */
+  object Zip {
+    val tpe = (Lst(A), Lst(B)) ~> Lst((A, B))
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Conversions                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `toMap : List[(A, B)] => Map[A, B]` function.
+    */
+  object ToMap {
+    val tpe = Lst((A, B)) ~> Type.Map(A, B)
+  }
+
+  /**
+    * The `toSet : List[A] => Set[A]` function.
+    */
+  object ToSet {
+    val tpe = Lst(A) ~> Set(A)
+  }
+
 
   // count
-
-  // reduce
-  // head
-  // tail
-  // toMap
   // splitAt
   // in/elm/has
   // find

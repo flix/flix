@@ -956,6 +956,10 @@ object TypedAst {
       val asArray: Array[TypedAst.Type] = elms.toArray
     }
 
+    case class Opt(elmType: TypedAst.Type) extends TypedAst.Type
+
+    case class Lst(elmType: TypedAst.Type) extends TypedAst.Type
+
     /**
       * An AST node representing a set type.
       *
@@ -963,7 +967,8 @@ object TypedAst {
       */
     case class Set(elmType: TypedAst.Type) extends TypedAst.Type
 
-    case class Lst(elmType: TypedAst.Type) extends TypedAst.Type
+    case class Map(key: TypedAst.Type, value: TypedAst.Type) extends TypedAst.Type
+
 
     /**
       * An AST node representing a function type.
