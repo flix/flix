@@ -944,7 +944,7 @@ object TypedAst {
       *
       * @param cases a map from tag names to tag types.
       */
-    case class Enum(cases: Map[String, TypedAst.Type.Tag]) extends TypedAst.Type
+    case class Enum(cases: scala.collection.immutable.Map[String, TypedAst.Type.Tag]) extends TypedAst.Type
 
     /**
       * An AST node representing a tuple type.

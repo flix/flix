@@ -7,11 +7,6 @@ import ca.uwaterloo.flix.runtime.Value
 object FList {
 
   /**
-    * The underlying list data type. In the future we will implement our own list.
-    */
-  type ListType = scala.collection.immutable.List
-
-  /**
     * A common super-type for all list operations.
     */
   sealed trait ListOperator
@@ -24,10 +19,10 @@ object FList {
   /////////////////////////////////////////////////////////////////////////////
   // TODO: Move
   def eval(f: ListOperator, args: Array[Value]): Value = f match {
-    case IsNil => Value.mkBool(args(0).asInstanceOf[ListType].isEmpty)
-    case Length => Value.mkInt(args(0).asInstanceOf[ListType].length)
+    case IsNil => Value.mkBool(args(0).asInstanceOf[List[Value]].isEmpty)
+    case Length => Value.mkInt(args(0).asInstanceOf[List[Value]].length)
 
-    case And => Value.mkBool(args(0).asInstanceOf[ListType].foldLeft(true) {
+    case And => Value.mkBool(args(0).asInstanceOf[List[Value]].foldLeft(true) {
       case (acc, x) => acc && x.asInstanceOf[Value.Bool].b
     })
 
