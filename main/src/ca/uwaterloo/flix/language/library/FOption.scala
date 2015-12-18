@@ -1,20 +1,33 @@
 package ca.uwaterloo.flix.language.library
 
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.TypedAst.Type
+import ca.uwaterloo.flix.language.ast.TypedAst.Type._
 
 object FOption {
-  // TODO: Option
-  // map, flatMap
-  // None, Some
 
-  object Map {
-    val tpe: TypedAst.Type = TypedAst.Type.Lambda(
-      ???, ???
-    )
+  /**
+    * A common super-type for all option operations.
+    */
+  sealed trait OptOperator
+
+  val A = Type.Var("A")
+  val B = Type.Var("B")
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Basic Operations                                                        //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `map : (Opt[A], A => B) => Opt[B]` function.
+    */
+  object Map extends OptOperator {
+    val tpe = (Opt(A), A ~> B) ~> Opt(B)
   }
 
-  object FlatMap {
-
+  /**
+    * The `flatMap : (Opt[A], A => Opt[B]) => Opt[B]` function.
+    */
+  object FlatMap extends OptOperator {
+    val tpe = (Opt(A), A ~> Opt(B)) ~> Opt(B)
   }
 
 }

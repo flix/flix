@@ -16,11 +16,13 @@ object FList {
     */
   sealed trait ListOperator
 
-  // TODO: Careful with occurs check. Probably need a Type.ForAll(X, Type)
+  val A = Type.Var("A")
+  val B = Type.Var("B")
 
   /////////////////////////////////////////////////////////////////////////////
   // Evaluation                                                              //
   /////////////////////////////////////////////////////////////////////////////
+  // TODO: Move
   def eval(f: ListOperator, args: Array[Value]): Value = f match {
     case IsNil => Value.mkBool(args(0).asInstanceOf[ListType].isEmpty)
     case Length => Value.mkInt(args(0).asInstanceOf[ListType].length)
@@ -32,29 +34,8 @@ object FList {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Mini Type DSL                                                           //
-  /////////////////////////////////////////////////////////////////////////////
-  val A = Type.Var("A")
-  val B = Type.Var("A")
-
-  implicit class RichType(thiz: Type) {
-    def ~>(that: Type): Type = Lambda(List(thiz), that)
-  }
-
-  implicit class RichTuple2(thiz: (Type, Type)) {
-    def ~>(that: Type): Type = Lambda(List(thiz._1, thiz._2), that)
-  }
-
-  implicit class RichTuple3(thiz: (Type, Type, Type)) {
-    def ~>(that: Type): Type = Lambda(List(thiz._1, thiz._2, thiz._3), that)
-  }
-
-  implicit def tuple2type(tuple: (Type, Type)): Type = Type.Tuple(List(tuple._1, tuple._2))
-
-  /////////////////////////////////////////////////////////////////////////////
   // Basic Operations                                                        //
   /////////////////////////////////////////////////////////////////////////////
-
   /**
     * The `isNil : List[A] => Bool` function.
     */
