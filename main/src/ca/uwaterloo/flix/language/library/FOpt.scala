@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.library
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Type._
 
-object FOption {
+object FOpt {
 
   /**
     * A common super-type for all option operations.
