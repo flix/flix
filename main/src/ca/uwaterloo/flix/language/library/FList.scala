@@ -1,10 +1,49 @@
 package ca.uwaterloo.flix.language.library
 
+import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Type._
 import ca.uwaterloo.flix.runtime.Value
 
 object FList {
+
+  /**
+    * All list operations.
+    */
+  val Ops = List(
+    "List::isNil" -> IsNil,
+    "List::head" -> Head,
+    "List::tail" -> Tail,
+    "List::memberOf" -> MemberOf,
+    "List::find" -> Find,
+    "List::length" -> Length,
+    "List::append" -> Append,
+    "List::isPrefixOf" -> IsPrefixOf,
+    "List::isInfixOf" -> IsInfixOf,
+    "List::isSuffixOf" -> IsSuffixOf,
+    "List::map" -> Map,
+    "List::flatMap" -> FlatMap,
+    "List::reverse" -> Reverse,
+    "List::foldLeft" -> FoldLeft,
+    "List::foldRight" -> FoldRight,
+    "List::exists" -> Exists,
+    "List::forall" -> Forall,
+    "List::and" -> And,
+    "List::or" -> Or,
+    "List::reduceLeft" -> ReduceLeft,
+    "List::reduceRight" -> ReduceRight,
+    "List::filter" -> Filter,
+    "List::take" -> Take,
+    "List::takeWhile" -> TakeWhile,
+    "List::drop" -> Drop,
+    "List::dropWhile" -> DropWhile,
+    "List::zip" -> Zip,
+    "List::toMap" -> ToMap,
+    "List::toSet" -> ToSet,
+    "List::groupBy" -> GroupBy
+  ).map {
+    case (name, op) => Name.Resolved.mk(name) -> op
+  }.toMap
 
   /**
     * A common super-type for all list operations.
@@ -90,7 +129,7 @@ object FList {
   /**
     * The `isInfixOf : (List[A], List[A]) => Bool` function.
     */
-  object isInfixOf extends ListOperator {
+  object IsInfixOf extends ListOperator {
     val tpe = (Lst(A), Lst(A)) ~> Bool
   }
 

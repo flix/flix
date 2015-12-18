@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.library
 
+import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Type._
 
@@ -22,6 +23,15 @@ object FSet {
   //    }
 
   /**
+    * All set operations.
+    */
+  val Ops = List(
+    "Set:memberOf" -> MemberOf
+  ).map {
+    case (name, op) => Name.Resolved.mk(name) -> op
+  }.toMap
+
+  /**
     * A common super-type for all set operations.
     */
   sealed trait SetOperator
@@ -32,6 +42,13 @@ object FSet {
   /////////////////////////////////////////////////////////////////////////////
   // Basic Operations                                                        //
   /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `isEmpty : Set[A] => Bool` function.
+    */
+  object isEmpty extends SetOperator {
+    val tpe = Set(A) ~> Bool
+  }
+
   /**
     * The `memberOf : (A, Set[A]) => Bool` function.
     */
@@ -46,12 +63,14 @@ object FSet {
     val tpe = (Set(A), Set(A)) ~> Bool
   }
 
-  //    fn isProperSubsetOf[A](xs: Set[A], ys: Set[A]): Bool = ...
+  /**
+    * The `isProperSubsetOf : (Set[A], Set[A]) => Bool` function.
+    */
+  object IsProperSubsetOf extends SetOperator {
+    val tpe = (Set(A), Set(A)) ~> Bool
+  }
 
-  //
-  //    // queries
-  //    fn null[A](xs: Set[A]): Bool = ...
-  //    fn isEmpty[A](xs: Set[A]): Bool = ...
+
   //    fn isSingleton[A](xs: Set[A]): Bool = ...
   //    fn nonEmpty[A](xs: Set[A]): Bool = ...
   //
@@ -65,32 +84,102 @@ object FSet {
   //    fn memberOf[A](a: A, Set[A]): Bool = ...
   //    fn notMemberOf[A](a: A, Set[A]): Bool = ...
   //
-
   //
   //    // construction
   //    fn empty(): Set[A] = ???
   //    fn singleton(a: A): Set[A] = ???
   //    fn insert(a: A, xs: Set[A]): Set[A] = ???
   //    fn delete(a: A, xs: Set[A]): Set[A] = ???
-  //
-  //    // combine
-  //    fn union[A](xs: Set[A], ys: Set[A]): Set[A] = ...
-  //    fn intersection[A](xs: Set[A], ys: Set[A]): Set[A] = ...
-  //    fn difference[A](xs: Set[A], ys: Set[A]): Set[A] = ...
-  //
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Combine                                                                 //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `union : (Set[A], Set[A]) => Set[A]` function.
+    */
+  object Union extends SetOperator {
+    val tpe = (Set(A), Set(A)) ~> Set(A)
+  }
+
+  /**
+    * The `intersection : (Set[A], Set[A]) => Set[A]` function.
+    */
+  object Intersection extends SetOperator {
+    val tpe = (Set(A), Set(A)) ~> Set(A)
+  }
+
+  /**
+    * The `difference : (Set[A], Set[A]) => Set[A]` function.
+    */
+  object Difference extends SetOperator {
+    val tpe = (Set(A), Set(A)) ~> Set(A)
+  }
+
+
   //    // filter/select/where?
   //    fn filter[A](xs: Set[A], f: A => Bool): Set[A] = ???
-  //    fn partition[A](xs: Set[A], f: A => Bool): (Set[A], Set[A]) = ???
   //
   //    // map
   //    fn map[A, B](xs: Set[A], f: A => B): Set[B] = ???
   //
-  //    fn foldLeft[A, B](xs: Set[A], b: B, f: (A, B => B)): B
-  //    fn foldRight[A, B](xs: Set[A], b: B, f: (A, B => B)): B
-  //
-  //    fn toList[A](xs: Set[A]): List[A] = ...
-  //    fn toMap[A, B](xs: Set[(A, B)]: Map[A, B] = ...
-  //
   // }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Maps                                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `map : (Set[A], A => B) => Set[B]` function.
+    */
+  object Map extends SetOperator {
+    val tpe = (Set(A), A ~> B) ~> Set(B)
+  }
+
+  /**
+    * The `flatMap : (Set[A], A => Set[B]) => Set[B]` function.
+    */
+  object Map extends SetOperator {
+    val tpe = (Set(A), A ~> Set(B)) ~> Set(B)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Folds                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `foldLeft : (Set[A], B, (B, A) => B) => B` function.
+    */
+  object FoldLeft extends SetOperator {
+    val tpe = (Set(A), B, (B, A) ~> B) ~> B
+  }
+
+  /**
+    * The `foldRight : (Set[A], B, (B, A) => B) => B` function.
+    */
+  object FoldRight {
+    val tpe = (Set(A), B, (A, B) ~> B) ~> B
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Conversions                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `toAscList : Set[A] => List[A]` function.
+    */
+  object ToAscList extends SetOperator {
+    val tpe = Set(A) ~> Lst(A)
+  }
+
+  /**
+    * The `toDescList : Set[A] => List[A]` function.
+    */
+  object ToDescList extends SetOperator {
+    val tpe = Set(A) ~> Lst(A)
+  }
+
+  /**
+    * The `toMap : Set[(A, B)] => Map[A, B]` function.
+    */
+  object ToMap extends SetOperator {
+    val tpe = Set((A, B)) ~> Map(A, B)
+  }
 
 }

@@ -4,6 +4,18 @@ import ca.uwaterloo.flix.language.ast._
 
 import scala.collection.immutable.Seq
 
+// TODO: New syntax:
+//
+// 1. namespace replaced by a.b.c/Something
+//
+// 2. lambda-fn
+// fn sum(..): = ...
+//   let f = (x, y) => x + y in
+//   List/foldLeft(f, 0, xs)
+//
+// 3. list pattern match ::
+// set/map pattern matching #{}
+
 /**
  * A common-super type for parsed AST nodes.
  */

@@ -1,9 +1,22 @@
 package ca.uwaterloo.flix.language.library
 
+import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Type._
 
 object FDebug {
+
+  /**
+    * All debug operations.
+    */
+  val Ops = List(
+    "Debug::abort" -> Abort,
+    "Debug::print" -> Print,
+    "Debug::time" -> Time,
+    "Debug::trace" -> Trace
+  ).map {
+    case (name, op) => Name.Resolved.mk(name) -> op
+  }.toMap
 
   /**
     * A common super-type for all debug operations.

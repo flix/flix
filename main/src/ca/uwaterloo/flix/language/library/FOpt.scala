@@ -1,9 +1,20 @@
 package ca.uwaterloo.flix.language.library
 
+import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Type._
 
 object FOpt {
+
+  /**
+    * All option operations.
+    */
+  val Ops = List(
+    "Opt::map" -> Map,
+    "Opt::flatMap" -> FlatMap
+  ).map {
+    case (name, op) => Name.Resolved.mk(name) -> op
+  }.toMap
 
   /**
     * A common super-type for all option operations.

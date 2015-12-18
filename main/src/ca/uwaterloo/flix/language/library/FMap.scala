@@ -1,11 +1,17 @@
 package ca.uwaterloo.flix.language.library
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, TypedAst}
 
 object FMap {
 
-
-
+  /**
+    * All map operations.
+    */
+  val Ops = List(
+    "Map::isEmpty" -> IsEmpty
+  ).map {
+    case (name, op) => Name.Resolved.mk(name) -> op
+  }.toMap
 
   // TODO: Map
   // - getOrElse

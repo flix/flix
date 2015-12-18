@@ -52,6 +52,8 @@ object Name {
 
     private val cache = mutable.HashMap.empty[List[String], Resolved]
 
+    def mk(name: String): Resolved = mk(name.split("::").toList)
+
     def mk(parts: List[String]): Resolved = {
       cache.getOrElseUpdate(parts, new Resolved(parts))
     }
