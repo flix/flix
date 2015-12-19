@@ -1,17 +1,133 @@
 package ca.uwaterloo.flix.language.library
 
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.TypedAst.Type
+import ca.uwaterloo.flix.language.ast.TypedAst.Type._
 
 object FMap {
+
+  // TODO: Check naming, escp w.r.t. llist, set, etc.
 
   /**
     * All map operations.
     */
   val Ops = List(
-    "Map::isEmpty" -> IsEmpty
+    "Map::isEmpty" -> IsEmpty,
+    "Map::isMember" -> IsMember,
+    "Map::lookup" -> Lookup,
+    "Map::empty" -> Empty,
+    "Map::singleton" -> Singleton,
+    "Map::insert" -> Insert,
+    "Map::update" -> Update,
+    "Map::delete" -> Delete,
+    "Map::union" -> Union,
+    "Map::intersection" -> Intersection,
+    "Map::difference" -> Difference,
+    "Map::toList" -> ToList,
+    "Map::toSet" -> ToSet
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
+
+  /**
+    * A common super-type for all map operations.
+    */
+  sealed trait MapOperator
+
+  /**
+    * Generic type variables.
+    */
+  val K = Type.Var("K")
+  val V = Type.Var("V")
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Basic Operations                                                        //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `isEmpty : Map[K, V] => Bool` function.
+    */
+  object IsEmpty extends MapOperator {
+    val tpe = Map(K, V) ~> Bool
+  }
+
+  /**
+    * The `isMember : (K, Map[K, V]) => Bool` function.
+    */
+  object IsMember extends MapOperator {
+    val tpe = (K, Map(K, V)) ~> Bool
+  }
+
+  /**
+    * The `lookup : (K, Map[K, V]) => Opt[V]` function.
+    */
+  object Lookup extends MapOperator {
+    val tpe = (K, Map(K, V)) ~> Opt(V)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Construction                                                            //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `empty : Unit => Map[K, V]` function.
+    */
+  object Empty extends MapOperator {
+    val tpe = Unit ~> Map(K, V)
+  }
+
+  /**
+    * The `singleton : (K, V) => Map[K, V]` function.
+    */
+  object Singleton extends MapOperator {
+    val tpe = (K, V) ~> Map(K, V)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Insert / Update / Delete                                                //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `insert : (K, V, Map[K, V]) => Map[K, V]` function.
+    */
+  object Insert extends MapOperator {
+    val tpe = (K, V, Map(K, V)) ~> Map(K, V)
+  }
+
+  /**
+    * The `delete : (K, V => V, Map[K, V]) => Map[K, V]` function.
+    */
+  object Update extends MapOperator {
+    val tpe = (K, V ~> V, Map(K, V)) ~> Map(K, V)
+  }
+
+  /**
+    * The `delete : (K, V, Map[K, V]) => Map[K, V]` function.
+    */
+  object Delete extends MapOperator {
+    val tpe = (K, V, Map(K, V)) ~> Map(K, V)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Combine                                                                 //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `union : (Map[K, V], Map[K, V]) => Map[K, V]` function.
+    */
+  object Union extends MapOperator {
+    val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
+  }
+
+  /**
+    * The `intersection : (Map[K, V], Map[K, V]) => Map[K, V]` function.
+    */
+  object Intersection extends MapOperator {
+    val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
+  }
+
+  /**
+    * The `difference : (Map[K, V], Map[K, V]) => Map[K, V]` function.
+    */
+  object Difference extends MapOperator {
+    val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
+  }
 
   // TODO: Map
   // - getOrElse
@@ -48,18 +164,22 @@ object FMap {
   // isProperSubmapOf
 
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Conversions                                                             //
+  /////////////////////////////////////////////////////////////////////////////
   /**
-    * ...
-    * isEmpty : Set[A] => Bool
+    * The `toList : Map[K, V] => Lst[(K, V)]` function.
     */
-  case class IsEmpty(loc: SourceLocation) {
-
+  object ToList extends MapOperator {
+    val tpe = Map(K, V) ~> Lst((K, V))
   }
 
-
-
-  case class ToList(loc: SourceLocation) {
-    val tpe = TypedAst.Type.Lambda(???, ???)
+  /**
+    * The `toSet : Map[K, V] => Set[(K, V)]` function.
+    */
+  object ToSet extends MapOperator {
+    val tpe = Map(K, V) ~> Set((K, V))
   }
+
 
 }

@@ -21,6 +21,9 @@ object FOpt {
     */
   sealed trait OptOperator
 
+  /**
+    * Generic type variables.
+    */
   val A = Type.Var("A")
   val B = Type.Var("B")
 

@@ -23,8 +23,10 @@ object FDebug {
     */
   sealed trait DebugOperator
 
+  /**
+    * Generic type variables.
+    */
   val A = Type.Var("A")
-  val B = Type.Var("B")
 
   /**
     * The `abort : Str => Unit` function.

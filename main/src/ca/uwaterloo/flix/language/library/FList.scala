@@ -49,6 +49,9 @@ object FList {
     */
   sealed trait ListOperator
 
+  /**
+    * Generic type variables.
+    */
   val A = Type.Var("A")
   val B = Type.Var("B")
 

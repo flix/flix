@@ -38,6 +38,9 @@ object FSet {
     */
   sealed trait SetOperator
 
+  /**
+    * Generic type variables.
+    */
   val A = Type.Var("A")
   val B = Type.Var("B")
 
@@ -76,7 +79,7 @@ object FSet {
   // Construction                                                            //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * The `empty : () => Set[A]` function.
+    * The `empty : Unit => Set[A]` function.
     */
   object Empty extends SetOperator {
     val tpe = Type.Unit ~> Set(A)
