@@ -6,27 +6,29 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Type._
 
 object FSet {
 
-  // TODO: Allow syntax for: variableName.length() --> length(variableName). "postfix call"
-  // aSet.has(athing) --> has(aSet, athing).
-  // aSet.getOrElse(xyz) --> getOrElse(aSet, xyz).
-  //
-  // foo::bar::baz(qux) <--> quux.foo::bar::baz.
-  // aSet.Set::has(athing) --> Set::has(aSet, athing).
-  // TODO: Allow postfix calls without ()?
-  //    // TODO: Pattern matching can simplify this, e.g.:
-  //
-  //    match xs with {
-  //      case #Set{} => // empty set
-  //      case #Set{x} => // singleton with variable x
-  //      case #Set{42} => singleton with literao 42
-  //      case #Set{x, 42, y, rest...} => // set with two elements x and y, and 42, and rest...
-  //    }
-
   /**
     * All set operations.
     */
   val Ops = List(
-    "Set:memberOf" -> MemberOf
+    "Set:isEmpty" -> IsEmpty,
+    "Set:memberOf" -> MemberOf,
+    "Set:isSubsetOf" -> IsSubsetOf,
+    "Set:isProperSubsetOf" -> IsProperSubsetOf,
+    "Set:empty" -> Empty,
+    "Set:singleton" -> Singleton,
+    "Set:insert" -> Insert,
+    "Set:delete" -> Delete,
+    "Set:union" -> Union,
+    "Set:intersection" -> Intersection,
+    "Set:difference" -> Difference,
+    "Set:filter" -> Filter,
+    "Set:map" -> Map,
+    "Set:flatMap" -> FlatMap,
+    "Set:foldLeft" -> FoldLeft,
+    "Set:foldRight" -> FoldRight,
+    "Set:toAscList" -> ToAscList,
+    "Set:toDescList" -> ToDescList,
+    "Set:toMap" -> ToMap
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
@@ -45,7 +47,7 @@ object FSet {
   /**
     * The `isEmpty : Set[A] => Bool` function.
     */
-  object isEmpty extends SetOperator {
+  object IsEmpty extends SetOperator {
     val tpe = Set(A) ~> Bool
   }
 
@@ -70,26 +72,36 @@ object FSet {
     val tpe = (Set(A), Set(A)) ~> Bool
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Construction                                                            //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `empty : () => Set[A]` function.
+    */
+  object Empty extends SetOperator {
+    val tpe = Type.Unit ~> Set(A)
+  }
 
-  //    fn isSingleton[A](xs: Set[A]): Bool = ...
-  //    fn nonEmpty[A](xs: Set[A]): Bool = ...
-  //
-  //    fn head(xs: Set[A]): A
-  //    fn tail(xs: Set[A]): A
-  //
-  //    fn conj(xs: Set[A]): (A, Set[A])
-  //
-  //    fn size[A](xs: Set[A]): Int = ...
-  //    fn in[A](a: A, Set[A]): Bool = ...
-  //    fn memberOf[A](a: A, Set[A]): Bool = ...
-  //    fn notMemberOf[A](a: A, Set[A]): Bool = ...
-  //
-  //
-  //    // construction
-  //    fn empty(): Set[A] = ???
-  //    fn singleton(a: A): Set[A] = ???
-  //    fn insert(a: A, xs: Set[A]): Set[A] = ???
-  //    fn delete(a: A, xs: Set[A]): Set[A] = ???
+  /**
+    * The `singleton : A => Set[A]` function.
+    */
+  object Singleton extends SetOperator {
+    val tpe = A ~> Set(A)
+  }
+
+  /**
+    * The `insert : (A, Set[A]) => Set[A]` function.
+    */
+  object Insert extends SetOperator {
+    val tpe = (A, Set(A)) ~> Set(A)
+  }
+
+  /**
+    * The `delete : (A, Set[A]) => Set[A]` function.
+    */
+  object Delete extends SetOperator {
+    val tpe = (A, Set(A)) ~> Set(A)
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Combine                                                                 //
@@ -115,14 +127,15 @@ object FSet {
     val tpe = (Set(A), Set(A)) ~> Set(A)
   }
 
-
-  //    // filter/select/where?
-  //    fn filter[A](xs: Set[A], f: A => Bool): Set[A] = ???
-  //
-  //    // map
-  //    fn map[A, B](xs: Set[A], f: A => B): Set[B] = ???
-  //
-  // }
+  /////////////////////////////////////////////////////////////////////////////
+  // Filter                                                                  //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `filter : (Set[A], A => Bool) => Set[A]` function.
+    */
+  object Filter extends SetOperator {
+    val tpe = (Set(A), A ~> Bool) ~> Set(A)
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Maps                                                                    //
@@ -137,7 +150,7 @@ object FSet {
   /**
     * The `flatMap : (Set[A], A => Set[B]) => Set[B]` function.
     */
-  object Map extends SetOperator {
+  object FlatMap extends SetOperator {
     val tpe = (Set(A), A ~> Set(B)) ~> Set(B)
   }
 
@@ -179,7 +192,7 @@ object FSet {
     * The `toMap : Set[(A, B)] => Map[A, B]` function.
     */
   object ToMap extends SetOperator {
-    val tpe = Set((A, B)) ~> Map(A, B)
+    val tpe = Set((A, B)) ~> Type.Map(A, B)
   }
 
 }

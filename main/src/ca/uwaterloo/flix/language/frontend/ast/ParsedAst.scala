@@ -16,6 +16,23 @@ import scala.collection.immutable.Seq
 // 3. list pattern match ::
 // set/map pattern matching #{}
 
+// TODO: Allow syntax for: variableName.length() --> length(variableName). "postfix call"
+// aSet.has(athing) --> has(aSet, athing).
+// aSet.getOrElse(xyz) --> getOrElse(aSet, xyz).
+//
+// foo::bar::baz(qux) <--> quux.foo::bar::baz.
+// aSet.Set::has(athing) --> Set::has(aSet, athing).
+// TODO: Allow postfix calls without ()?
+//    // TODO: Pattern matching can simplify this, e.g.:
+//
+//    match xs with {
+//      case #Set{} => // empty set
+//      case #Set{x} => // singleton with variable x
+//      case #Set{42} => singleton with literao 42
+//      case #Set{x, 42, y, rest...} => // set with two elements x and y, and 42, and rest...
+//    }
+
+
 /**
  * A common-super type for parsed AST nodes.
  */

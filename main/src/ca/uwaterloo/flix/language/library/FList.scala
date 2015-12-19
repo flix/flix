@@ -3,7 +3,6 @@ package ca.uwaterloo.flix.language.library
 import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Type._
-import ca.uwaterloo.flix.runtime.Value
 
 object FList {
 
@@ -52,20 +51,6 @@ object FList {
 
   val A = Type.Var("A")
   val B = Type.Var("B")
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Evaluation                                                              //
-  /////////////////////////////////////////////////////////////////////////////
-  // TODO: Move
-  def eval(f: ListOperator, args: Array[Value]): Value = f match {
-    case IsNil => Value.mkBool(args(0).asInstanceOf[List[Value]].isEmpty)
-    case Length => Value.mkInt(args(0).asInstanceOf[List[Value]].length)
-
-    case And => Value.mkBool(args(0).asInstanceOf[List[Value]].foldLeft(true) {
-      case (acc, x) => acc && x.asInstanceOf[Value.Bool].b
-    })
-
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Basic Operations                                                        //
