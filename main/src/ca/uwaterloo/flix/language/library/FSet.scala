@@ -4,12 +4,14 @@ import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Type._
 
+import scala.collection.immutable
+
 object FSet {
 
   /**
     * All set operations.
     */
-  val Ops = List(
+  val Ops: immutable.Map[Name.Resolved, SetOperator] = List(
     "Set:isEmpty" -> IsEmpty,
     "Set:memberOf" -> MemberOf,
     "Set:isSubsetOf" -> IsSubsetOf,
@@ -36,7 +38,7 @@ object FSet {
   /**
     * A common super-type for all set operations.
     */
-  sealed trait SetOperator
+  sealed trait SetOperator extends LibraryOperator
 
   /**
     * Generic type variables.
@@ -170,7 +172,7 @@ object FSet {
   /**
     * The `foldRight : (Set[A], B, (B, A) => B) => B` function.
     */
-  object FoldRight {
+  object FoldRight extends SetOperator {
     val tpe = (Set(A), B, (A, B) ~> B) ~> B
   }
 

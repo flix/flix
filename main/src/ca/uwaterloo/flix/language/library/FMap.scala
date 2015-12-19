@@ -4,6 +4,8 @@ import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Type._
 
+import scala.collection.immutable
+
 object FMap {
 
   // TODO: Check naming, escp w.r.t. llist, set, etc.
@@ -11,7 +13,7 @@ object FMap {
   /**
     * All map operations.
     */
-  val Ops = List(
+  val Ops: immutable.Map[Name.Resolved, MapOperator] = List(
     "Map::isEmpty" -> IsEmpty,
     "Map::isMember" -> IsMember,
     "Map::lookup" -> Lookup,
@@ -32,7 +34,7 @@ object FMap {
   /**
     * A common super-type for all map operations.
     */
-  sealed trait MapOperator
+  sealed trait MapOperator extends LibraryOperator
 
   /**
     * Generic type variables.

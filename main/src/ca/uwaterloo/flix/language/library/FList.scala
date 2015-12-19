@@ -4,42 +4,43 @@ import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Type._
 
+import scala.collection.immutable
+
 object FList {
 
   /**
     * All list operations.
     */
-  val Ops = List(
-    "List::isNil" -> IsNil,
-    "List::head" -> Head,
-    "List::tail" -> Tail,
-    "List::memberOf" -> MemberOf,
-    "List::find" -> Find,
-    "List::length" -> Length,
-    "List::append" -> Append,
-    "List::isPrefixOf" -> IsPrefixOf,
-    "List::isInfixOf" -> IsInfixOf,
-    "List::isSuffixOf" -> IsSuffixOf,
-    "List::map" -> Map,
-    "List::flatMap" -> FlatMap,
-    "List::reverse" -> Reverse,
-    "List::foldLeft" -> FoldLeft,
-    "List::foldRight" -> FoldRight,
-    "List::exists" -> Exists,
-    "List::forall" -> Forall,
-    "List::and" -> And,
-    "List::or" -> Or,
-    "List::reduceLeft" -> ReduceLeft,
-    "List::reduceRight" -> ReduceRight,
-    "List::filter" -> Filter,
-    "List::take" -> Take,
-    "List::takeWhile" -> TakeWhile,
-    "List::drop" -> Drop,
-    "List::dropWhile" -> DropWhile,
-    "List::zip" -> Zip,
-    "List::toMap" -> ToMap,
-    "List::toSet" -> ToSet,
-    "List::groupBy" -> GroupBy
+  val Ops: immutable.Map[Name.Resolved, ListOperator] = List(
+    "List::nil" -> nil,
+    "List::head" -> head,
+    "List::tail" -> tail,
+    "List::find" -> find,
+    "List::memberOf" -> memberOf,
+    "List::isPrefixOf" -> isPrefixOf,
+    "List::isInfixOf" -> isInfixOf,
+    "List::isSuffixOf" -> isSuffixOf,
+    "List::map" -> map,
+    "List::flatMap" -> flatMap,
+    "List::flatten" -> flatten,
+    "List::reverse" -> reverse,
+    "List::foldLeft" -> foldLeft,
+    "List::foldRight" -> foldRight,
+    "List::exists" -> exists,
+    "List::forall" -> forall,
+    "List::and" -> and,
+    "List::or" -> or,
+    "List::reduceLeft" -> reduceLeft,
+    "List::reduceRight" -> reduceRight,
+    "List::filter" -> filter,
+    "List::take" -> take,
+    "List::takeWhile" -> takeWhile,
+    "List::drop" -> drop,
+    "List::dropWhile" -> dropWhile,
+    "List::zip" -> zip,
+    "List::toMap" -> toMap,
+    "List::toSet" -> toSet,
+    "List::groupBy" -> groupBy
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
@@ -47,7 +48,7 @@ object FList {
   /**
     * A common super-type for all list operations.
     */
-  sealed trait ListOperator
+  sealed trait ListOperator extends LibraryOperator
 
   /**
     * Generic type variables.
@@ -59,72 +60,58 @@ object FList {
   // Basic Operations                                                        //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * The `isNil : List[A] => Bool` function.
+    * The `null : List[A] => Bool` function.
     */
-  object IsNil extends ListOperator {
+  object nil extends ListOperator {
     val tpe = Lst(A) ~> Bool
   }
 
   /**
     * The `head : List[A] => A` function.
     */
-  object Head extends ListOperator {
+  object head extends ListOperator {
     val tpe = Lst(A) ~> A
   }
 
   /**
     * The `tail : List[A] => List[A]` function.
     */
-  object Tail extends ListOperator {
+  object tail extends ListOperator {
     val tpe = Lst(A) ~> Lst(A)
+  }
+
+  /**
+    * The `find : (A => Bool, List[A]) => Opt[A]` function.
+    */
+  object find extends ListOperator {
+    val tpe = (A ~> Bool, Lst(A)) ~> Opt(A)
   }
 
   /**
     * The `memberOf : (A, List[A]) => Bool` function.
     */
-  object MemberOf extends ListOperator {
+  object memberOf extends ListOperator {
     val tpe = (A, Lst(A)) ~> Bool
-  }
-
-  /**
-    * The `find : (List[A], A => Bool) => Opt[A]` function.
-    */
-  object Find extends ListOperator {
-    val tpe = (Lst(A), A ~> Bool) ~> Opt(A)
-  }
-
-  /**
-    * The `length : List[A] => Int` function.
-    */
-  object Length extends ListOperator {
-    val tpe = Lst(A) ~> Int
-  }
-
-  /**
-    * The `append : (List[A], List[A]) => List[A]` function.
-    */
-  object Append extends ListOperator {
-    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
   }
 
   /**
     * The `isPrefixOf : (List[A], List[A]) => Bool` function.
     */
-  object IsPrefixOf extends ListOperator {
+  object isPrefixOf extends ListOperator {
     val tpe = (Lst(A), Lst(A)) ~> Bool
   }
 
   /**
     * The `isInfixOf : (List[A], List[A]) => Bool` function.
     */
-  object IsInfixOf extends ListOperator {
+  object isInfixOf extends ListOperator {
     val tpe = (Lst(A), Lst(A)) ~> Bool
   }
 
   /**
     * The `isSuffixOf : (List[A], List[A]) => Bool` function.
     */
-  object IsSuffixOf extends ListOperator {
+  object isSuffixOf extends ListOperator {
     val tpe = (Lst(A), Lst(A)) ~> Bool
   }
 
@@ -132,23 +119,30 @@ object FList {
   // Transformations                                                         //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * The `map : (List[A], A => B) => List[B]` function.
+    * The `map : (A => B, List[A]) => List[B]` function.
     */
-  object Map extends ListOperator {
-    val tpe = (Lst(A), A ~> B) ~> Lst(B)
+  object map extends ListOperator {
+    val tpe = (A ~> B, Lst(A)) ~> Lst(B)
   }
 
   /**
-    * The `flatMap : (List[A], A => List[B]) => List[B]` function.
+    * The `flatMap : (A => List[B], List[A]) => List[B]` function.
     */
-  object FlatMap {
-    val tpe = (Lst(A), A ~> Lst(B)) ~> Lst(B)
+  object flatMap extends ListOperator {
+    val tpe = (A ~> Lst(B), Lst(A)) ~> Lst(B)
+  }
+
+  /**
+    * The `flatten : List[List[A]] => List[A]` function.
+    */
+  object flatten extends ListOperator {
+    val tpe = Lst(Lst(A)) ~> Lst(A)
   }
 
   /**
     * The `reverse : List[A] => List[A]` function.
     */
-  object Reverse {
+  object reverse extends ListOperator  {
     val tpe = Lst(A) ~> Lst(A)
   }
 
@@ -156,100 +150,100 @@ object FList {
   // Folds                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * The `foldLeft : (List[A], B, (B, A) => B) => B` function.
+    * The `foldLeft : ((B, A) => B, B, List[A]) => B` function.
     */
-  object FoldLeft {
-    val tpe = (Lst(A), B, (B, A) ~> B) ~> B
+  object foldLeft extends ListOperator {
+    val tpe = ((B, A) ~> B, B, Lst(A)) ~> B
   }
 
   /**
-    * The `foldRight : (List[A], B, (B, A) => B) => B` function.
+    * The `foldRight : ((A, B) => B, B, List[A]) => B` function.
     */
-  object FoldRight {
-    val tpe = (Lst(A), B, (A, B) ~> B) ~> B
+  object foldRight extends ListOperator {
+    val tpe = ((A, B) ~> B, B, Lst(A)) ~> B
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Special Folds                                                           //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * The `exists : (List[A], A => Bool) => Bool` function.
+    * The `exists : (A => Bool, List[A]) => Bool` function.
     */
-  object Exists {
-    val tpe = (Lst(A), A ~> Bool) ~> Bool
+  object exists extends ListOperator {
+    val tpe = (A ~> Bool, Lst(A)) ~> Bool
   }
 
   /**
-    * The `forall : (List[A], A => Bool) => Bool` function.
+    * The `forall : (A => Bool, List[A]) => Bool` function.
     */
-  object Forall {
-    val tpe = (Lst(A), A ~> Bool) ~> Bool
+  object forall extends ListOperator {
+    val tpe = (A ~> Bool, Lst(A)) ~> Bool
   }
 
   /**
     * The `and : List[Bool] => Bool` function.
     */
-  object And extends ListOperator {
+  object and extends ListOperator {
     val tpe = Lst(Bool) ~> Bool
   }
 
   /**
     * The `or : List[Bool] => Bool` function.
     */
-  object Or {
+  object or extends ListOperator {
     val tpe = Lst(Bool) ~> Bool
   }
 
   /**
-    * The `reduceLeft : (List[A], (A, A) => A) => A` function.
+    * The `reduceLeft : ((A, A) => A, List[A]) => A` function.
     */
-  object ReduceLeft {
-    val tpe = (Lst(A), (A, A) ~> A) ~> A
+  object reduceLeft extends ListOperator {
+    val tpe = ((A, A) ~> A, Lst(A)) ~> A
   }
 
   /**
-    * The `reduceRight : (List[A], (A, A) => A) => A` function.
+    * The `reduceRight : ((A, A) => A, List[A]) => A` function.
     */
-  object ReduceRight {
-    val tpe = (Lst(A), (A, A) ~> A) ~> A
+  object reduceRight extends ListOperator {
+    val tpe = ((A, A) ~> A, Lst(A)) ~> A
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Sub Lists                                                               //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * The `filter : (List[A], A => Bool) => List[A]` function.
+    * The `filter : (A => Bool, List[A]) => List[A]` function.
     */
-  object Filter {
-    val tpe = (Lst(A), A ~> Bool) ~> Lst(A)
+  object filter extends ListOperator {
+    val tpe = (A ~> Bool, Lst(A)) ~> Lst(A)
   }
 
   /**
-    * The `take : (List[A], Int) => List[A]` function.
+    * The `take : (Int, List[A]) => List[A]` function.
     */
-  object Take {
-    val tpe = (Lst(A), Int) ~> Lst(A)
+  object take extends ListOperator {
+    val tpe = (Int, Lst(A)) ~> Lst(A)
   }
 
   /**
-    * The `takeWhile : (List[A], A => Bool) => List[A]` function.
+    * The `takeWhile : (A => Bool, List[A]) => List[A]` function.
     */
-  object TakeWhile {
-    val tpe = (Lst(A), A ~> Bool) ~> Lst(A)
+  object takeWhile extends ListOperator  {
+    val tpe = (A ~> Bool, Lst(A)) ~> Lst(A)
   }
 
   /**
-    * The `drop : (List[A], Int) => List[A]` function.
+    * The `drop : (Int, List[A]) => List[A]` function.
     */
-  object Drop {
-    val tpe = (Lst(A), Int) ~> Lst(A)
+  object drop extends ListOperator {
+    val tpe = (Int, Lst(A)) ~> Lst(A)
   }
 
   /**
-    * The `dropWhile : (List[A], A => Bool) => List[A]` function.
+    * The `dropWhile : (A => Bool, List[A]) => List[A]` function.
     */
-  object DropWhile {
-    val tpe = (Lst(A), A ~> Bool) ~> Lst(A)
+  object dropWhile extends ListOperator {
+    val tpe = (A ~> Bool, Lst(A)) ~> Lst(A)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -258,7 +252,7 @@ object FList {
   /**
     * The `zip : (List[A], List[B]) => List[(A, B)]` function.
     */
-  object Zip {
+  object zip extends ListOperator {
     val tpe = (Lst(A), Lst(B)) ~> Lst((A, B))
   }
 
@@ -268,14 +262,14 @@ object FList {
   /**
     * The `toMap : List[(A, B)] => Map[A, B]` function.
     */
-  object ToMap {
+  object toMap extends ListOperator {
     val tpe = Lst((A, B)) ~> Type.Map(A, B)
   }
 
   /**
     * The `toSet : List[A] => Set[A]` function.
     */
-  object ToSet {
+  object toSet extends ListOperator {
     val tpe = Lst(A) ~> Set(A)
   }
 
@@ -283,10 +277,10 @@ object FList {
   // Grouping                                                                //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * The `groupBy : (List[A], (A, A) => Bool) => List[List[A]]` function.
+    * The `groupBy : ((A, A) => Bool, List[A]) => List[List[A]]` function.
     */
-  object GroupBy {
-    val tpe = (Lst(A), (A, A) ~> Bool) ~> Lst(Lst(A))
+  object groupBy extends ListOperator {
+    val tpe = ((A, A) ~> Bool, Lst(A)) ~> Lst(Lst(A))
   }
 
 }

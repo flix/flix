@@ -4,12 +4,14 @@ import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Type._
 
+import scala.collection.immutable
+
 object FOpt {
 
   /**
     * All option operations.
     */
-  val Ops = List(
+  val Ops: immutable.Map[Name.Resolved, OptOperator] = List(
     "Opt::map" -> Map,
     "Opt::flatMap" -> FlatMap
   ).map {
@@ -19,7 +21,7 @@ object FOpt {
   /**
     * A common super-type for all option operations.
     */
-  sealed trait OptOperator
+  sealed trait OptOperator extends LibraryOperator
 
   /**
     * Generic type variables.

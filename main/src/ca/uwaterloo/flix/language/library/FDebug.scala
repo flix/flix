@@ -4,16 +4,18 @@ import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Type._
 
+import scala.collection.immutable
+
 object FDebug {
 
   /**
     * All debug operations.
     */
-  val Ops = List(
-    "Debug::abort" -> Abort,
-    "Debug::print" -> Print,
-    "Debug::time" -> Time,
-    "Debug::trace" -> Trace
+  val Ops: immutable.Map[Name.Resolved, DebugOperator] = List(
+    "Debug::abort" -> abort,
+    "Debug::print" -> print,
+    "Debug::time" -> time,
+    "Debug::trace" -> trace
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
@@ -21,7 +23,7 @@ object FDebug {
   /**
     * A common super-type for all debug operations.
     */
-  sealed trait DebugOperator
+  sealed trait DebugOperator extends LibraryOperator
 
   /**
     * Generic type variables.
@@ -31,28 +33,28 @@ object FDebug {
   /**
     * The `abort : Str => Unit` function.
     */
-  object Abort extends DebugOperator {
+  object abort extends DebugOperator {
     val tpe = Str ~> Unit
   }
 
   /**
     * The `print : A => A` function.
     */
-  object Print extends DebugOperator {
+  object print extends DebugOperator {
     val tpe = A ~> A
   }
 
   /**
     * The `time : A => A` function.
     */
-  object Time extends DebugOperator {
+  object time extends DebugOperator {
     val tpe = A ~> A
   }
 
   /**
     * The `trace : A => A` function.
     */
-  object Trace extends DebugOperator {
+  object trace extends DebugOperator {
     val tpe = A ~> A
   }
 
