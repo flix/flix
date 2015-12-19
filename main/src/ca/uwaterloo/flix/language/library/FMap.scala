@@ -39,6 +39,8 @@ object FMap {
     */
   val K = Type.Var("K")
   val V = Type.Var("V")
+  val A = Type.Var("A")
+  val B = Type.Var("B")
 
   /////////////////////////////////////////////////////////////////////////////
   // Basic Operations                                                        //
@@ -129,35 +131,27 @@ object FMap {
     val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Map                                                                     //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `map : (A => B, Map[K, A]) => Map[K, B]` function.
+    */
+  object map extends MapOperator {
+    val tpe = (A ~> B, Map(K, A)) ~> Map(K, B)
+  }
+
+
   // TODO: Map
-  // - getOrElse
-  // - ++ (merge)
   // - removeKey
   // - foldValues
-  // - isEmpty
   // - filterKeys/filterValues/exists/find/fold
-  // - forall
-  // - groupBy
-  // - size
-  // - member/notMembet
-  // - lookup
-  // - empty
-  // - singleton
-  // - insert
-  // - delete
-  // - update
-  // - delete
-  // - leftUnion
-  // - difference
-  // - intersection?
   // - map
   // - mapWithKey
   // - mapKeys
   // foldLeft/foldRigyht, foldLeftWithKey, foldRightWithKey
   // - elms
   // - keys
-  // - toList
-  // - fromList
   // filter/filterWithKey
   // paritition, partitionWithKey
   // isSubmapOf
