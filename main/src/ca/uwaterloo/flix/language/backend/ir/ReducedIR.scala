@@ -12,14 +12,14 @@ object ReducedIR {
   object Definition {
 
     /**
-     * An AST node that represents the definition of a function.
-     *
-     * @param name the resolved name of the function.
-     * @param args the arguments of the function, for debugging purposes.
-     * @param body the expression body of the function.
-     * @param tpe the (lambda) type of the function.
-     * @param loc the source location of the function definition.
-     */
+      * An AST node that represents the definition of a function.
+      *
+      * @param name the resolved name of the function.
+      * @param args the arguments of the function, for debugging purposes.
+      * @param body the expression body of the function.
+      * @param tpe the (lambda) type of the function.
+      * @param loc the source location of the function definition.
+      */
     case class Function(name: Name.Resolved, args: List[String], body: ReducedIR.Expression, tpe: ReducedIR.Type.Lambda, loc: SourceLocation) extends ReducedIR.Definition {
       val descriptor = tpe.descriptor
     }
@@ -56,37 +56,38 @@ object ReducedIR {
     }
 
     /**
-     * An AST node representing a value (of type Int8) loaded from an Int64.
-     *
-     * @param e the expression, returning an Int64, that the value is loaded from.
-     * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
-     */
+      * An AST node representing a value (of type Int8) loaded from an Int64.
+      *
+      * @param e the expression, returning an Int64, that the value is loaded from.
+      * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
+      */
     case class LoadInt8(e: ReducedIR.Expression, offset: Int) extends ReducedIR.LoadExpression {
       val mask = 0xFFL
     }
 
     /**
-     * An AST node representing a value (of type Int16) loaded from an Int64.
-     *
-     * @param e the expression, returning an Int64, that the value is loaded from.
-     * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
-     */
+      * An AST node representing a value (of type Int16) loaded from an Int64.
+      *
+      * @param e the expression, returning an Int64, that the value is loaded from.
+      * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
+      */
     case class LoadInt16(e: ReducedIR.Expression, offset: Int) extends ReducedIR.LoadExpression {
       val mask = 0xFFFFL
     }
 
     /**
-     * An AST node representing a value (of type Bool) loaded from an Int64.
-     *
-     * @param e the expression, returning an Int32, that the value is loaded from.
-     * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
-     */
+      * An AST node representing a value (of type Int32) loaded from an Int64.
+      *
+      * @param e the expression, returning an Int64, that the value is loaded from.
+      * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
+      */
     case class LoadInt32(e: ReducedIR.Expression, offset: Int) extends ReducedIR.LoadExpression {
       val mask = 0xFFFFFFFFL
     }
 
     /**
-      * An AST node representing a value (of type Bool) to be stored into an Int64
+      * An AST node representing a value (of type Bool) to be stored into an Int64.
+      *
       * @param e the expression, returning an Int64, that the value is stored into.
       * @param offset the offset (in bits) from the least significant bit that the value is stored into.
       * @param v the value to be stored.
@@ -96,31 +97,34 @@ object ReducedIR {
     }
 
     /**
-     * An AST node representing a value (of type Int8) to be stored into an Int64
-     * @param e the expression, returning an Int64, that the value is stored into.
-     * @param offset the offset (in bits) from the least significant bit that the value is stored into.
-     * @param v the value to be stored.
-     */
+      * An AST node representing a value (of type Int8) to be stored into an Int64.
+      *
+      * @param e the expression, returning an Int64, that the value is stored into.
+      * @param offset the offset (in bits) from the least significant bit that the value is stored into.
+      * @param v the value to be stored.
+      */
     case class StoreInt8(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.StoreExpression {
       val mask = ~(0xFFL << offset)
     }
 
     /**
-     * An AST node representing a value (of type Int16) to be stored into an Int64
-     * @param e the expression, returning an Int64, that the value is stored into.
-     * @param offset the offset (in bits) from the least significant bit that the value is stored into.
-     * @param v the value to be stored.
-     */
+      * An AST node representing a value (of type Int16) to be stored into an Int64.
+      *
+      * @param e the expression, returning an Int64, that the value is stored into.
+      * @param offset the offset (in bits) from the least significant bit that the value is stored into.
+      * @param v the value to be stored.
+      */
     case class StoreInt16(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.StoreExpression {
       val mask = ~(0xFFFFL << offset)
     }
 
     /**
-     * An AST node representing a value (of type Int32) to be stored into an Int64
-     * @param e the expression, returning an Int64, that the value is stored into.
-     * @param offset the offset (in bits) from the least significant bit that the value is stored into.
-     * @param v the value to be stored.
-     */
+      * An AST node representing a value (of type Int32) to be stored into an Int64.
+      *
+      * @param e the expression, returning an Int64, that the value is stored into.
+      * @param offset the offset (in bits) from the least significant bit that the value is stored into.
+      * @param v the value to be stored.
+      */
     case class StoreInt32(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.StoreExpression {
       val mask = ~(0xFFFFFFFFL << offset)
     }
@@ -206,7 +210,7 @@ object ReducedIR {
 
     case class Tuple(elms: List[ReducedIR.Expression], tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
-    // TODO: ElementAt( (1,2), 0) = 1
+    // E.g.: TupleAt( (1,2), 0) = 1
     case class TupleAt(base: ReducedIR.Expression, offset: Int, tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
     case class Set(elms: List[ReducedIR.Expression], tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression

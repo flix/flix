@@ -99,15 +99,14 @@ object Codegen {
       visitor.visitInsn(L2I)
       compileConst(visitor)(load.mask)
       visitor.visitInsn(IAND)
-
     case store: StoreExpression =>
-      // (e & mask') | (v << offset) where mask' = ~(mask << offset)
+      // (e & mask') | ((v.toLong & 0xFFFFFFFFL) << offset) where mask' = ~(mask << offset)
+      // Note that toLong does a sign extension which we need to mask out
       compileExpression(context, visitor)(store.e)
       compileConst(visitor)(store.mask, isLong = true)
       visitor.visitInsn(LAND)
       compileExpression(context, visitor)(store.v)
       visitor.visitInsn(I2L)
-      // Bitwise AND with 0x00000000FFFFFFFF to mask out the sign extension
       compileConst(visitor)(0xFFFFFFFFL, isLong = true)
       visitor.visitInsn(LAND)
       if (store.offset > 0) {
@@ -115,7 +114,6 @@ object Codegen {
         visitor.visitInsn(LSHL)
       }
       visitor.visitInsn(LOR)
-
     case Const(i, Type.Int64, loc) => compileConst(visitor)(i, isLong = true)
     case Const(i, tpe, loc) => compileConst(visitor)(i)
     case Var(v, tpe, loc) => visitor.visitVarInsn(ILOAD, v.offset)
