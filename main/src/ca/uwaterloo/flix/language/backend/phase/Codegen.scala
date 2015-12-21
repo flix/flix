@@ -26,7 +26,7 @@ object Codegen {
    * For now, we put all definitions in a single class: ca.uwaterloo.flix.runtime.compiled.FlixDefinitions.
    * The Flix function A::B::C::foo is compiled as the method A$B$C$foo.
    */
-  // TODO: How exactly do we want to treat longs? Right now functions can take and return longs, but all operations are done on ints.
+  // TODO: How exactly do we want to treat longs? Right now compiled functions can take and return longs, but all operations are done on ints.
   def compile(context: Context): Array[Byte] = {
     val functions = context.functions
     val classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
@@ -92,24 +92,28 @@ object Codegen {
     case load: LoadExpression =>
       // (e >> offset).toInt & mask
       compileExpression(context, visitor)(load.e)
-      compileConst(visitor)(load.offset)
-      visitor.visitInsn(LSHR)
+      if (load.offset > 0) {
+        compileConst(visitor)(load.offset)
+        visitor.visitInsn(LSHR)
+      }
       visitor.visitInsn(L2I)
       compileConst(visitor)(load.mask)
       visitor.visitInsn(IAND)
 
     case store: StoreExpression =>
-      // (e & mask') | (v << offset)    where mask' = ~(mask << offset)
+      // (e & mask') | (v << offset) where mask' = ~(mask << offset)
       compileExpression(context, visitor)(store.e)
       compileConst(visitor)(store.mask, isLong = true)
       visitor.visitInsn(LAND)
       compileExpression(context, visitor)(store.v)
       visitor.visitInsn(I2L)
-      // Bitwise and with 0x00000000FFFFFFFF to mask out the sign extension
+      // Bitwise AND with 0x00000000FFFFFFFF to mask out the sign extension
       compileConst(visitor)(0xFFFFFFFFL, isLong = true)
       visitor.visitInsn(LAND)
-      compileConst(visitor)(store.offset)
-      visitor.visitInsn(LSHL)
+      if (store.offset > 0) {
+        compileConst(visitor)(store.offset)
+        visitor.visitInsn(LSHL)
+      }
       visitor.visitInsn(LOR)
 
     case Const(i, Type.Int64, loc) => compileConst(visitor)(i, isLong = true)
