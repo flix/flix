@@ -409,16 +409,16 @@ object Typer {
                 case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Int, loc)
               }
             }
-          case _: ComparisonOperator =>
-            @@(visit(re1, env), visit(re2, env)) flatMap {
-              case (e1, e2) => @@(expect(TypedAst.Type.Int, e1.tpe, e1.loc), expect(TypedAst.Type.Int, e2.tpe, e2.loc)) map {
-                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Bool, loc)
-              }
-            }
           case _: EqualityOperator =>
             @@(visit(re1, env), visit(re2, env)) flatMap {
               case (e1, e2) => expectEqual(e1.tpe, e2.tpe, e1.loc, e2.loc) map {
                 case tpe => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Bool, loc)
+              }
+            }
+          case _: ComparisonOperator =>
+            @@(visit(re1, env), visit(re2, env)) flatMap {
+              case (e1, e2) => @@(expect(TypedAst.Type.Int, e1.tpe, e1.loc), expect(TypedAst.Type.Int, e2.tpe, e2.loc)) map {
+                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, TypedAst.Type.Bool, loc)
               }
             }
           case _: LogicalOperator =>

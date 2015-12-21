@@ -1,8 +1,8 @@
 package ca.uwaterloo.flix.language.backend.phase
 
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
-import ca.uwaterloo.flix.language.ast.{Name, BinaryOperator, UnaryOperator}
-import ca.uwaterloo.flix.language.backend.ir.ReducedIR.{Definition, Expression, Type}
+import ca.uwaterloo.flix.language.ast.{Name, UnaryOperator, BinaryOperator, ComparisonOperator}
+import ca.uwaterloo.flix.language.backend.ir.ReducedIR.{LoadExpression, StoreExpression, Definition, Expression, Type}
 import ca.uwaterloo.flix.language.backend.ir.ReducedIR.Expression._
 
 import org.objectweb.asm.{ClassVisitor, ClassWriter, MethodVisitor, Label}
@@ -16,11 +16,17 @@ object Codegen {
     val getFunction = functions.map { f => (f.name, f) }.toMap
   }
 
+  /**
+   * Decorate (mangle) a Name.Resolved to get the internal JVM name.
+   */
+  def decorate(name: Name.Resolved): String = name.parts.mkString("$")
+
   /*
    * Given a list of Flix definitions, compile the definitions to bytecode and put them in a JVM class.
    * For now, we put all definitions in a single class: ca.uwaterloo.flix.runtime.compiled.FlixDefinitions.
    * The Flix function A::B::C::foo is compiled as the method A$B$C$foo.
    */
+  // TODO: How exactly do we want to treat longs? Right now compiled functions can take and return longs, but all operations are done on ints.
   def compile(context: Context): Array[Byte] = {
     val functions = context.functions
     val classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
@@ -60,7 +66,7 @@ object Codegen {
    */
   private def compileFunction(context: Context, visitor: ClassVisitor)(function: Definition.Function): Unit = {
     // TODO: Debug information
-    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, function.name.decorate, function.descriptor, null, null)
+    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, decorate(function.name), function.descriptor, null, null)
     mv.visitCode()
 
     // Compile the method body
@@ -83,26 +89,53 @@ object Codegen {
   }
 
   private def compileExpression(context: Context, visitor: MethodVisitor)(expr: Expression): Unit = expr match {
-    case LoadBool(exp, offset) => ???
-    case LoadInt8(exp, offset) => ???
-    case LoadInt16(exp, offset) => ???
-    case LoadInt32(exp, offset) => ???
-    case StoreBool(exp, offset, v) => ???
-    case StoreInt8(exp, offset, v) => ???
-    case StoreInt16(exp, offset, v) => ???
-    case StoreInt32(exp, offset, v) => ???
+    case load: LoadExpression =>
+      // (e >> offset).toInt & mask
+      compileExpression(context, visitor)(load.e)
+      if (load.offset > 0) {
+        compileConst(visitor)(load.offset)
+        visitor.visitInsn(LSHR)
+      }
+      visitor.visitInsn(L2I)
+      compileConst(visitor)(load.mask)
+      visitor.visitInsn(IAND)
+    case store: StoreExpression =>
+      // (e & mask') | ((v.toLong & 0xFFFFFFFFL) << offset) where mask' = ~(mask << offset)
+      // Note that toLong does a sign extension which we need to mask out
+      compileExpression(context, visitor)(store.e)
+      compileConst(visitor)(store.mask, isLong = true)
+      visitor.visitInsn(LAND)
+      compileExpression(context, visitor)(store.v)
+      visitor.visitInsn(I2L)
+      compileConst(visitor)(0xFFFFFFFFL, isLong = true)
+      visitor.visitInsn(LAND)
+      if (store.offset > 0) {
+        compileConst(visitor)(store.offset)
+        visitor.visitInsn(LSHL)
+      }
+      visitor.visitInsn(LOR)
+    case Const(i, Type.Int64, loc) => compileConst(visitor)(i, isLong = true)
     case Const(i, tpe, loc) => compileConst(visitor)(i)
     case Var(v, tpe, loc) => visitor.visitVarInsn(ILOAD, v.offset)
     case Apply(name, args, tpe, loc) =>
       args.foreach(compileExpression(context, visitor))
-      visitor.visitMethodInsn(INVOKESTATIC, context.clazz, name.decorate, context.getFunction(name).descriptor, false)
+      visitor.visitMethodInsn(INVOKESTATIC, context.clazz, decorate(name), context.getFunction(name).descriptor, false)
     case Let(v, exp1, exp2, tpe, loc) =>
       compileExpression(context, visitor)(exp1)
       visitor.visitVarInsn(ISTORE, v.offset)
       compileExpression(context, visitor)(exp2)
     case Unary(op, exp, tpe, loc) => compileUnaryExpression(context, visitor)(op, exp)
     case Binary(op, exp1, exp2, tpe, loc) => compileBinaryExpression(context, visitor)(op, exp1, exp2)
-    case IfThenElse(exp1, exp2, exp3, tpe, loc) => ???
+    case IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+      val ifElse = new Label()
+      val ifEnd = new Label()
+      compileExpression(context, visitor)(exp1)
+      visitor.visitJumpInsn(IFEQ, ifElse)
+      compileExpression(context, visitor)(exp2)
+      visitor.visitJumpInsn(GOTO, ifEnd)
+      visitor.visitLabel(ifElse)
+      compileExpression(context, visitor)(exp3)
+      visitor.visitLabel(ifEnd)
     case Tag(name, tag, exp, tpe, loc) => ???
     case TagOf(exp, name, tag, tpe, loc) => ???
     case Tuple(elms, tpe, loc) => ???
@@ -112,20 +145,32 @@ object Codegen {
   }
 
   /*
-   * Generate code to load a constant. Uses the minimal number of instructions necessary.
+   * Generate code to load a constant.
+   *
+   * Uses the smallest number of bytes necessary, e.g. ICONST_0 takes 1 byte to load a 0, but BIPUSH 7 takes 2 bytes to
+   * load a 7, and SIPUSH 200 takes 3 bytes to load a 200. However, note that values on the stack normally take up 4
+   * bytes. The exception is if we set `isLong` to true, in which case a cast will be performed if necessary.
+   *
+   * This is needed because sometimes we need the operands to be a long and two (int) values are popped from the
+   * stack (and concatenated to form a long).
    */
-  private def compileConst(visitor: MethodVisitor)(i: Long): Unit = i match {
-    case -1 => visitor.visitInsn(ICONST_M1)
-    case 0 => visitor.visitInsn(ICONST_0)
-    case 1 => visitor.visitInsn(ICONST_1)
-    case 2 => visitor.visitInsn(ICONST_2)
-    case 3 => visitor.visitInsn(ICONST_3)
-    case 4 => visitor.visitInsn(ICONST_4)
-    case 5 => visitor.visitInsn(ICONST_5)
-    case _ if Byte.MinValue <= i && i <= Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i.toInt)
-    case _ if Short.MinValue <= i && i <= Short.MaxValue => visitor.visitIntInsn(SIPUSH, i.toInt)
-    case _ if Int.MinValue <= i && i <= Int.MaxValue => visitor.visitLdcInsn(i.toInt)
-    case _ => visitor.visitLdcInsn(i)
+  private def compileConst(visitor: MethodVisitor)(i: Long, isLong: Boolean = false): Unit = {
+    i match {
+      case -1 => visitor.visitInsn(ICONST_M1)
+      case 0 => visitor.visitInsn(ICONST_0)
+      case 1 => visitor.visitInsn(ICONST_1)
+      case 2 => visitor.visitInsn(ICONST_2)
+      case 3 => visitor.visitInsn(ICONST_3)
+      case 4 => visitor.visitInsn(ICONST_4)
+      case 5 => visitor.visitInsn(ICONST_5)
+      case _ if Byte.MinValue <= i && i <= Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i.toInt)
+      case _ if Short.MinValue <= i && i <= Short.MaxValue => visitor.visitIntInsn(SIPUSH, i.toInt)
+      case _ if Int.MinValue <= i && i <= Int.MaxValue => visitor.visitLdcInsn(i.toInt)
+      case _ =>
+        visitor.visitLdcInsn(i)
+        if (!isLong) visitor.visitInsn(L2I)
+    }
+    if (Int.MinValue <= i && i <= Int.MaxValue && isLong) visitor.visitInsn(I2L)
   }
 
   private def compileUnaryExpression(context: Context, visitor: MethodVisitor)(op: UnaryOperator, expr: Expression): Unit = {
@@ -146,6 +191,7 @@ object Codegen {
         // Note that ~bbbb = bbbb ^ 1111, and since the JVM uses two's complement, -1 = 0xFFFFFFFF, so ~x = x ^ -1
         visitor.visitInsn(ICONST_M1)
         visitor.visitInsn(IXOR)
+
       case UnaryOperator.Set.IsEmpty => ???
       case UnaryOperator.Set.NonEmpty => ???
       case UnaryOperator.Set.Singleton => ???
@@ -153,8 +199,6 @@ object Codegen {
     }
   }
 
-  // TODO: Clean up comparison operations (and boolean unary not)
-  // At the very least, factor out common code. Or simplify IfThenElse, see: http://www.cs.indiana.edu/~dyb/pubs/ddcg.pdf
   // Binary operations And and Or are handled first because of short-circuit evaluation
   private def compileBinaryExpression(context: Context, visitor: MethodVisitor)(op: BinaryOperator, expr1: Expression, expr2: Expression): Unit = op match {
     case BinaryOperator.And =>
@@ -192,55 +236,18 @@ object Codegen {
         case BinaryOperator.Times => visitor.visitInsn(IMUL)
         case BinaryOperator.Divide => visitor.visitInsn(IDIV)
         case BinaryOperator.Modulo => visitor.visitInsn(IREM)
-        case BinaryOperator.Less =>
+        case o: ComparisonOperator =>
           val condElse = new Label()
           val condEnd = new Label()
-          visitor.visitJumpInsn(IF_ICMPGE, condElse)
-          visitor.visitInsn(ICONST_1)
-          visitor.visitJumpInsn(GOTO, condEnd)
-          visitor.visitLabel(condElse)
-          visitor.visitInsn(ICONST_0)
-          visitor.visitLabel(condEnd)
-        case BinaryOperator.LessEqual =>
-          val condElse = new Label()
-          val condEnd = new Label()
-          visitor.visitJumpInsn(IF_ICMPGT, condElse)
-          visitor.visitInsn(ICONST_1)
-          visitor.visitJumpInsn(GOTO, condEnd)
-          visitor.visitLabel(condElse)
-          visitor.visitInsn(ICONST_0)
-          visitor.visitLabel(condEnd)
-        case BinaryOperator.Greater =>
-          val condElse = new Label()
-          val condEnd = new Label()
-          visitor.visitJumpInsn(IF_ICMPLE, condElse)
-          visitor.visitInsn(ICONST_1)
-          visitor.visitJumpInsn(GOTO, condEnd)
-          visitor.visitLabel(condElse)
-          visitor.visitInsn(ICONST_0)
-          visitor.visitLabel(condEnd)
-        case BinaryOperator.GreaterEqual =>
-          val condElse = new Label()
-          val condEnd = new Label()
-          visitor.visitJumpInsn(IF_ICMPLT, condElse)
-          visitor.visitInsn(ICONST_1)
-          visitor.visitJumpInsn(GOTO, condEnd)
-          visitor.visitLabel(condElse)
-          visitor.visitInsn(ICONST_0)
-          visitor.visitLabel(condEnd)
-        case BinaryOperator.Equal =>
-          val condElse = new Label()
-          val condEnd = new Label()
-          visitor.visitJumpInsn(IF_ICMPNE, condElse)
-          visitor.visitInsn(ICONST_1)
-          visitor.visitJumpInsn(GOTO, condEnd)
-          visitor.visitLabel(condElse)
-          visitor.visitInsn(ICONST_0)
-          visitor.visitLabel(condEnd)
-        case BinaryOperator.NotEqual =>
-          val condElse = new Label()
-          val condEnd = new Label()
-          visitor.visitJumpInsn(IF_ICMPEQ, condElse)
+          val cmp = o match {
+            case BinaryOperator.Less => IF_ICMPGE
+            case BinaryOperator.LessEqual => IF_ICMPGT
+            case BinaryOperator.Greater => IF_ICMPLE
+            case BinaryOperator.GreaterEqual => IF_ICMPLT
+            case BinaryOperator.Equal => IF_ICMPNE
+            case BinaryOperator.NotEqual => IF_ICMPEQ
+          }
+          visitor.visitJumpInsn(cmp, condElse)
           visitor.visitInsn(ICONST_1)
           visitor.visitJumpInsn(GOTO, condEnd)
           visitor.visitLabel(condElse)
@@ -251,6 +258,7 @@ object Codegen {
         case BinaryOperator.BitwiseXor => visitor.visitInsn(IXOR)
         case BinaryOperator.BitwiseLeftShift => visitor.visitInsn(ISHL)
         case BinaryOperator.BitwiseRightShift => visitor.visitInsn(ISHR)
+
         case BinaryOperator.Set.Member => ???
         case BinaryOperator.Set.SubsetOf => ???
         case BinaryOperator.Set.ProperSubsetOf => ???
@@ -259,6 +267,7 @@ object Codegen {
         case BinaryOperator.Set.Union => ???
         case BinaryOperator.Set.Intersection => ???
         case BinaryOperator.Set.Difference => ???
+
         case BinaryOperator.And | BinaryOperator.Or =>
           throw new InternalCompilerError("BinaryOperator.And and BinaryOperator.Or should already have been handled.")
       }

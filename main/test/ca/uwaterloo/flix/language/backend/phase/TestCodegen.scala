@@ -35,9 +35,322 @@ class TestCodegen extends FunSuite {
       Files.write(Paths.get(path), code)
     }
 
-    def call(name: String, tpes: List[Class[_]] = List(), args: List[Object] = List()): Any = {
-      val method = clazz.getMethod(name, tpes: _*)
+    def call(name: Name.Resolved, tpes: List[Class[_]] = List(), args: List[Object] = List()): Any = {
+      val decorated = Codegen.decorate(name)
+      val method = clazz.getMethod(decorated, tpes: _*)
       method.invoke(null, args: _*)
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Loading (unpacking bits)                                                //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Codegen - LoadBool - 01") {
+    // Binary number is: 0000000000000000000000000000000000000000000000000000000000000000
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadBool(Const(0, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    for (i <- 0 until 64) {
+      val code = new CompiledCode(List(definition(i)))
+      val result = code.call(name, List())
+      assertResult(false)(result)
+    }
+  }
+
+  test("Codegen - LoadBool - 02") {
+    // Binary number is: 1111111111111111111111111111111111111111111111111111111111111111
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadBool(Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    for (i <- 0 until 64) {
+      val code = new CompiledCode(List(definition(i)))
+      val result = code.call(name, List())
+      assertResult(true)(result)
+    }
+  }
+
+  test("Codegen - LoadBool - 03") {
+    // Binary number is: 1001100110011001100110011001100110011001100110011001100110011001
+    // So the bits that are set are i = 0, 3, 4, 7, ..., i.e. i % 4 == 0 or i % 4 == 3
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadBool(Const(0x9999999999999999L, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    for (i <- 0 until 64) {
+      val code = new CompiledCode(List(definition(i)))
+      val result = code.call(name, List())
+      assertResult(i % 4 == 0 || i % 4 == 3)(result)
+    }
+  }
+
+  test("Codegen - LoadInt8 - 01") {
+    // Binary number is: 0000000000000000000000000000000000000000000000000000000000000000
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt8(Const(0, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 8) {
+      val code = new CompiledCode(List(definition(i * 8)))
+      val result = code.call(name, List())
+      assertResult(0)(result)
+    }
+  }
+
+  test("Codegen - LoadInt8 - 02") {
+    // Binary number is: 1111111111111111111111111111111111111111111111111111111111111111
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt8(Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 8) {
+      val code = new CompiledCode(List(definition(i * 8)))
+      val result = code.call(name, List())
+      assertResult(0xFF)(result)
+    }
+  }
+
+  test("Codegen - LoadInt8 - 03") {
+    // Binary number is: 1010101110101011101010111010101110101011101010111010101110101011
+    // So every 8 bits looks like 10101011 = 0xAB
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt8(Const(0xABABABABABABABABL, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 8) {
+      val code = new CompiledCode(List(definition(i * 8)))
+      val result = code.call(name, List())
+      assertResult(0xAB)(result)
+    }
+  }
+
+  test("Codegen - LoadInt16 - 01") {
+    // Binary number is: 0000000000000000000000000000000000000000000000000000000000000000
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt16(Const(0, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 4) {
+      val code = new CompiledCode(List(definition(i * 16)))
+      val result = code.call(name, List())
+      assertResult(0)(result)
+    }
+  }
+
+  test("Codegen - LoadInt16 - 02") {
+    // Binary number is: 1111111111111111111111111111111111111111111111111111111111111111
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt16(Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 4) {
+      val code = new CompiledCode(List(definition(i * 16)))
+      val result = code.call(name, List())
+      assertResult(0xFFFF)(result)
+    }
+  }
+
+  test("Codegen - LoadInt16 - 03") {
+    // Binary number is: 1100101011111110110010101111111011001010111111101100101011111110
+    // So every 16 bits looks like 1100101011111110 = 0xCAFE
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt16(Const(0xCAFECAFECAFECAFEL, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 4) {
+      val code = new CompiledCode(List(definition(i * 16)))
+      val result = code.call(name, List())
+      assertResult(0xCAFE)(result)
+    }
+  }
+
+  test("Codegen - LoadInt32 - 01") {
+    // Binary number is: 0000000000000000000000000000000000000000000000000000000000000000
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt32(Const(0, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 2) {
+      val code = new CompiledCode(List(definition(i * 32)))
+      val result = code.call(name, List())
+      assertResult(0)(result)
+    }
+  }
+
+  test("Codegen - LoadInt32 - 02") {
+    // Binary number is: 1111111111111111111111111111111111111111111111111111111111111111
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt32(Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 2) {
+      val code = new CompiledCode(List(definition(i * 32)))
+      val result = code.call(name, List())
+      assertResult(0xFFFFFFFF)(result)
+    }
+  }
+
+  test("Codegen - LoadInt32 - 03") {
+    // Binary number is: 1101111010101101101111101110111111011110101011011011111011101111
+    // So every 32 bits looks like 11011110101011011011111011101111 = 0xDEADBEEF
+    def definition(offset: Int) = Function(name, args = List(),
+      body = LoadInt32(Const(0xDEADBEEFDEADBEEFL, Type.Int64, loc), offset),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    for (i <- 0 until 2) {
+      val code = new CompiledCode(List(definition(i * 32)))
+      val result = code.call(name, List())
+      assertResult(0xDEADBEEF)(result)
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Storing (packing bits)                                                  //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Codegen - StoreBool - 01") {
+    val tru = Const(1, Type.Bool, loc)
+    val definition = Function(name, args = List(),
+      StoreBool(Const(0, Type.Int64, loc), 42, tru),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+    assertResult(1L << 42)(result)
+  }
+
+  test("Codegen - StoreBool - 02") {
+    val tru = Const(1, Type.Bool, loc)
+    val definition = Function(name, args = List(),
+      body = StoreBool(StoreBool(StoreBool(StoreBool(StoreBool(StoreBool(
+        Const(1230000, Type.Int64, loc), 2, tru), 5, tru), 10, tru), 12, tru), 49, tru), 61, tru),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+    assertResult((1L << 2) | (1L << 5) | (1L << 10) | (1L << 12) | (1L << 49) | (1L << 61) | 1230000L)(result)
+  }
+
+  test("Codegen - StoreBool - 03") {
+    val tru = Const(1, Type.Bool, loc)
+    def definition(offset: Int) = Function(name, args = List(),
+      body = StoreBool(Const(0, Type.Int64, loc), offset, tru),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    for (i <- 0 until 64) {
+      val code = new CompiledCode(List(definition(i)))
+      val result = code.call(name, List())
+      assertResult(1L << i)(result)
+    }
+  }
+
+  test("Codegen - StoreInt8 - 01") {
+    val v = Const(0xAB, Type.Int8, loc)
+    val definition = Function(name, args = List(),
+      StoreInt8(Const(0, Type.Int64, loc), 40, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+    assertResult(0xABL << 40)(result)
+  }
+
+  test("Codegen - StoreInt8 - 02") {
+    val v = Const(0xAB, Type.Int8, loc)
+    val definition = Function(name, args = List(),
+      body = StoreInt8(StoreInt8(StoreInt8(StoreInt8(
+        Const(123, Type.Int64, loc), 16, v), 32, v), 40, v), 56, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+    assertResult((0xABL << 16) | (0xABL << 32) | (0xABL << 40) | (0xABL << 56) | 123)(result)
+  }
+
+  test("Codegen - StoreInt8 - 03") {
+    val v = Const(0xFF, Type.Int8, loc)
+    def definition(offset: Int) = Function(name, args = List(),
+      body = StoreInt8(Const(0, Type.Int64, loc), offset, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    for (i <- 0 until 8) {
+      val code = new CompiledCode(List(definition(i * 8)))
+      val result = code.call(name, List())
+      assertResult(0xFFL << (i * 8))(result)
+    }
+  }
+
+  test("Codegen - StoreInt16 - 01") {
+    val v = Const(0xCAFE, Type.Int16, loc)
+    val definition = Function(name, args = List(),
+      StoreInt16(Const(0, Type.Int64, loc), 48, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+    assertResult(0xCAFEL << 48)(result)
+  }
+
+  test("Codegen - StoreInt16 - 02") {
+    val v = Const(0xCAFE, Type.Int16, loc)
+    val definition = Function(name, args = List(),
+      body = StoreInt16(StoreInt16(
+        Const(123L << 16, Type.Int64, loc), 0, v), 32, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+    assertResult((0xCAFEL << 0) | (0xCAFEL << 32) | (123L << 16))(result)
+  }
+
+  test("Codegen - StoreInt16 - 03") {
+    val v = Const(0xFFFF, Type.Int16, loc)
+    def definition(offset: Int) = Function(name, args = List(),
+      body = StoreInt16(Const(0, Type.Int64, loc), offset, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    for (i <- 0 until 4) {
+      val code = new CompiledCode(List(definition(i * 16)))
+      val result = code.call(name, List())
+      assertResult(0xFFFFL << (i * 16))(result)
+    }
+  }
+
+  test("Codegen - StoreInt32 - 01") {
+    val v = Const(0xDEADBEEF, Type.Int32, loc)
+    val definition = Function(name, args = List(),
+      StoreInt32(Const(0, Type.Int64, loc), 0, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+    assertResult(0xDEADBEEFL << 0)(result)
+  }
+
+  test("Codegen - StoreInt32 - 02") {
+    val v = Const(0xDEADBEEF, Type.Int32, loc)
+    val definition = Function(name, args = List(),
+      body = StoreInt32(
+        Const(123, Type.Int64, loc), 32, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+    assertResult((0xDEADBEEFL << 32) | 123)(result)
+  }
+
+  test("Codegen - StoreInt32 - 03") {
+    val v = Const(0xFFFFFFFF, Type.Int32, loc)
+    def definition(offset: Int) = Function(name, args = List(),
+      body = StoreInt32(Const(0, Type.Int64, loc), offset, v),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    for (i <- 0 until 2) {
+      val code = new CompiledCode(List(definition(i * 32)))
+      val result = code.call(name, List())
+      assertResult(0xFFFFFFFFL << (i * 32))(result)
     }
   }
 
@@ -51,7 +364,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate, List())
+    val result = code.call(name, List())
 
     assertResult(42)(result)
   }
@@ -91,13 +404,13 @@ class TestCodegen extends FunSuite {
 
     val code = new CompiledCode(List(def_m1, def_0, def_1, def_2, def_3, def_4, def_5))
 
-    val result_m1 = code.call(name_m1.decorate)
-    val result_0 = code.call(name_0.decorate)
-    val result_1 = code.call(name_1.decorate)
-    val result_2 = code.call(name_2.decorate)
-    val result_3 = code.call(name_3.decorate)
-    val result_4 = code.call(name_4.decorate)
-    val result_5 = code.call(name_5.decorate)
+    val result_m1 = code.call(name_m1)
+    val result_0 = code.call(name_0)
+    val result_1 = code.call(name_1)
+    val result_2 = code.call(name_2)
+    val result_3 = code.call(name_3)
+    val result_4 = code.call(name_4)
+    val result_5 = code.call(name_5)
 
     assertResult(-1)(result_m1)
     assertResult(0)(result_0)
@@ -139,12 +452,12 @@ class TestCodegen extends FunSuite {
 
     val code = new CompiledCode(List(def01, def02, def03, def04, def05, def06))
 
-    val result01 = code.call(name01.decorate)
-    val result02 = code.call(name02.decorate)
-    val result03 = code.call(name03.decorate)
-    val result04 = code.call(name04.decorate)
-    val result05 = code.call(name05.decorate)
-    val result06 = code.call(name06.decorate)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+    val result05 = code.call(name05)
+    val result06 = code.call(name06)
 
     assertResult(Byte.MinValue)(result01)
     assertResult(Byte.MinValue + 42)(result02)
@@ -185,12 +498,12 @@ class TestCodegen extends FunSuite {
 
     val code = new CompiledCode(List(def01, def02, def03, def04, def05, def06))
 
-    val result01 = code.call(name01.decorate)
-    val result02 = code.call(name02.decorate)
-    val result03 = code.call(name03.decorate)
-    val result04 = code.call(name04.decorate)
-    val result05 = code.call(name05.decorate)
-    val result06 = code.call(name06.decorate)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+    val result05 = code.call(name05)
+    val result06 = code.call(name06)
 
     assertResult(Short.MinValue)(result01)
     assertResult(Short.MinValue + 42)(result02)
@@ -231,12 +544,12 @@ class TestCodegen extends FunSuite {
 
     val code = new CompiledCode(List(def01, def02, def03, def04, def05, def06))
 
-    val result01 = code.call(name01.decorate)
-    val result02 = code.call(name02.decorate)
-    val result03 = code.call(name03.decorate)
-    val result04 = code.call(name04.decorate)
-    val result05 = code.call(name05.decorate)
-    val result06 = code.call(name06.decorate)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+    val result05 = code.call(name05)
+    val result06 = code.call(name06)
 
     assertResult(Int.MinValue)(result01)
     assertResult(Int.MinValue + 42)(result02)
@@ -252,7 +565,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate, List())
+    val result = code.call(name, List())
 
     assertResult(true)(result)
   }
@@ -263,7 +576,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int8), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate, List())
+    val result = code.call(name, List())
 
     assertResult(1)(result)
   }
@@ -274,7 +587,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int16), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate, List())
+    val result = code.call(name, List())
 
     assertResult(1)(result)
   }
@@ -285,7 +598,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate, List())
+    val result = code.call(name, List())
 
     assertResult(1)(result)
   }
@@ -296,7 +609,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int64), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate, List())
+    val result = code.call(name, List())
 
     assertResult(123456789123456789L)(result)
   }
@@ -311,8 +624,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val method = code.clazz.getMethod(name.decorate, Integer.TYPE)
-    val result = method.invoke(null, 42.asInstanceOf[Object])
+    val result = code.call(name, List(Integer.TYPE), List(42).map(_.asInstanceOf[Object]))
 
     assertResult(-1)(result)
   }
@@ -323,7 +635,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate, List(Integer.TYPE), List(42).map(_.asInstanceOf[Object]))
+    val result = code.call(name, List(Integer.TYPE), List(42).map(_.asInstanceOf[Object]))
 
     assertResult(42)(result)
   }
@@ -334,7 +646,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(Type.Int32, Type.Int32, Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate,
+    val result = code.call(name,
       List(Integer.TYPE, Integer.TYPE, Integer.TYPE),
       List(1337, -101010, 42).map(_.asInstanceOf[Object]))
 
@@ -352,7 +664,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(-1)(result)
   }
@@ -364,7 +676,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(42)(result)
   }
@@ -381,7 +693,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(-101010)(result)
   }
@@ -398,7 +710,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(Type.Int32, Type.Int32, Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate,
+    val result = code.call(name,
       List(Integer.TYPE, Integer.TYPE, Integer.TYPE),
       List(-1337, 101010, -42).map(_.asInstanceOf[Object]))
 
@@ -417,7 +729,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(Type.Int32, Type.Int32, Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate,
+    val result = code.call(name,
       List(Integer.TYPE, Integer.TYPE, Integer.TYPE),
       List(-1337, 101010, -42).map(_.asInstanceOf[Object]))
 
@@ -439,7 +751,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(main, f))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(24)(result)
   }
@@ -455,7 +767,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(main, f))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(24)(result)
   }
@@ -471,7 +783,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(main, f))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(3)(result)
   }
@@ -493,7 +805,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(main, f))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(120)(result)
   }
@@ -524,7 +836,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(main, f, g))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(4)(result)
   }
@@ -561,7 +873,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(main, f, g, h))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(196)(result)
   }
@@ -602,7 +914,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(main, f, g, h))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(-42)(result)
   }
@@ -617,7 +929,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -628,7 +940,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -639,7 +951,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(42)(result)
   }
@@ -650,7 +962,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(-42)(result)
   }
@@ -661,7 +973,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(-42)(result)
   }
@@ -672,7 +984,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(42)(result)
   }
@@ -683,7 +995,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(~42)(result)
   }
@@ -694,7 +1006,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(~(-42))(result)
   }
@@ -712,7 +1024,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -726,7 +1038,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -740,7 +1052,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -754,7 +1066,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -768,7 +1080,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -782,7 +1094,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -796,7 +1108,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -810,7 +1122,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -824,7 +1136,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(500)(result)
   }
@@ -838,7 +1150,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(500)(result)
   }
@@ -852,7 +1164,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(-300)(result)
   }
@@ -866,7 +1178,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(300)(result)
   }
@@ -880,7 +1192,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(-500)(result)
   }
@@ -894,7 +1206,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(300)(result)
   }
@@ -908,7 +1220,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(-300)(result)
   }
@@ -922,7 +1234,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(-500)(result)
   }
@@ -936,7 +1248,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(-500)(result)
   }
@@ -950,7 +1262,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(-300)(result)
   }
@@ -964,7 +1276,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(6)(result)
   }
@@ -978,7 +1290,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(6)(result)
   }
@@ -992,7 +1304,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(-6)(result)
   }
@@ -1006,7 +1318,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(-6)(result)
   }
@@ -1020,7 +1332,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(6)(result)
   }
@@ -1034,7 +1346,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(4)(result)
   }
@@ -1048,7 +1360,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(0)(result)
   }
@@ -1062,7 +1374,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(-4)(result)
   }
@@ -1076,7 +1388,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(0)(result)
   }
@@ -1090,7 +1402,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(4)(result)
   }
@@ -1104,7 +1416,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(0)(result)
   }
@@ -1118,7 +1430,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(2)(result)
   }
@@ -1132,7 +1444,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(-2)(result)
   }
@@ -1146,7 +1458,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(2)(result)
   }
@@ -1160,7 +1472,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(-2)(result)
   }
@@ -1174,7 +1486,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(42 & 0xFFFF)(result)
   }
@@ -1188,7 +1500,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(42 & 42)(result)
   }
@@ -1202,7 +1514,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(42 & 0)(result)
   }
@@ -1216,7 +1528,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(42 | 0xFFFF)(result)
   }
@@ -1230,7 +1542,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(42 | 42)(result)
   }
@@ -1244,7 +1556,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(42 | 0)(result)
   }
@@ -1258,7 +1570,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(42 ^ 0xFFFF)(result)
   }
@@ -1272,7 +1584,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(42 ^ 42)(result)
   }
@@ -1286,7 +1598,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(42 ^ 0)(result)
   }
@@ -1300,7 +1612,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(4 << 0)(result)
   }
@@ -1314,7 +1626,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(4 << 14)(result)
   }
@@ -1328,7 +1640,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(4 << 29)(result)
   }
@@ -1342,7 +1654,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(4 << 30)(result)
   }
@@ -1356,7 +1668,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(12345 >> 20)(result)
   }
@@ -1370,7 +1682,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(12345 >> 10)(result)
   }
@@ -1384,7 +1696,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(12345 >> 0)(result)
   }
@@ -1398,7 +1710,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -1412,7 +1724,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1426,7 +1738,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -1440,7 +1752,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1454,7 +1766,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -1468,7 +1780,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -1482,7 +1794,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -1496,7 +1808,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1510,7 +1822,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1524,7 +1836,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1538,7 +1850,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -1552,7 +1864,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1566,7 +1878,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1580,7 +1892,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -1594,7 +1906,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -1608,7 +1920,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -1622,7 +1934,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1636,7 +1948,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -1650,7 +1962,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1664,7 +1976,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -1678,7 +1990,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1692,7 +2004,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -1706,7 +2018,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1720,7 +2032,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1734,7 +2046,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -1748,7 +2060,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -1762,7 +2074,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1776,7 +2088,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -1790,7 +2102,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -1804,7 +2116,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1818,7 +2130,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1832,7 +2144,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1846,7 +2158,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
   }
@@ -1860,7 +2172,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1874,7 +2186,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(true)(result)
   }
@@ -1888,8 +2200,249 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name.decorate)
+    val result = code.call(name)
 
     assertResult(false)(result)
+  }
+
+  test("Codegen - IfThenElse01") {
+    val definition = Function(name, args = List(),
+      body = IfThenElse(Const(0, Type.Bool, loc),
+        Binary(BinaryOperator.Plus, Const(42, Type.Int32, loc), Const(10, Type.Int32, loc), Type.Int32, loc),
+        Binary(BinaryOperator.Minus, Const(42, Type.Int32, loc), Const(10, Type.Int32, loc), Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(32)(result)
+  }
+
+  test("Codegen - IfThenElse02") {
+    val definition = Function(name, args = List(),
+      body = IfThenElse(Const(1, Type.Bool, loc),
+        Binary(BinaryOperator.Plus, Const(42, Type.Int32, loc), Const(10, Type.Int32, loc), Type.Int32, loc),
+        Binary(BinaryOperator.Minus, Const(42, Type.Int32, loc), Const(10, Type.Int32, loc), Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(52)(result)
+  }
+
+  test("Codegen - IfThenElse03") {
+    val definition = Function(name, args = List("x"),
+      body = IfThenElse(Var(LocalVar(0, "x"), Type.Bool, loc),
+        IfThenElse(Const(0, Type.Bool, loc), Const(1, Type.Int32, loc), Const(2, Type.Int32, loc), Type.Int32, loc),
+        IfThenElse(Const(1, Type.Bool, loc), Const(3, Type.Int32, loc), Const(4, Type.Int32, loc), Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Bool), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(java.lang.Boolean.TYPE), List(true).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(java.lang.Boolean.TYPE), List(false).map(_.asInstanceOf[Object]))
+
+    assertResult(2)(result01)
+    assertResult(3)(result02)
+  }
+
+  test("Codegen - IfThenElse04") {
+    val definition = Function(name, args = List("x"),
+      body = IfThenElse(
+        IfThenElse(
+          Unary(UnaryOperator.Not, Var(LocalVar(0, "x"), Type.Bool, loc), Type.Bool, loc),
+          Const(1, Type.Bool, loc),
+          Const(0, Type.Bool, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Bool), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(java.lang.Boolean.TYPE), List(true).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(java.lang.Boolean.TYPE), List(false).map(_.asInstanceOf[Object]))
+
+    assertResult(5678)(result01)
+    assertResult(1234)(result02)
+  }
+
+  test("Codegen - IfThenElse05") {
+    val definition = Function(name, args = List("x", "y"),
+      body = IfThenElse(
+        Binary(BinaryOperator.And,
+          Var(LocalVar(0, "x"), Type.Bool, loc),
+          Var(LocalVar(1, "y"), Type.Bool, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Bool, Type.Bool), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(java.lang.Boolean.TYPE, java.lang.Boolean.TYPE),
+      List(true, true).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(java.lang.Boolean.TYPE, java.lang.Boolean.TYPE),
+      List(false, true).map(_.asInstanceOf[Object]))
+    val result03 = code.call(name, List(java.lang.Boolean.TYPE, java.lang.Boolean.TYPE),
+      List(true, false).map(_.asInstanceOf[Object]))
+    val result04 = code.call(name, List(java.lang.Boolean.TYPE, java.lang.Boolean.TYPE),
+      List(false, false).map(_.asInstanceOf[Object]))
+
+    assertResult(1234)(result01)
+    assertResult(5678)(result02)
+    assertResult(5678)(result03)
+    assertResult(5678)(result04)
+  }
+
+  test("Codegen - IfThenElse06") {
+    val definition = Function(name, args = List("x", "y"),
+      body = IfThenElse(
+        Binary(BinaryOperator.Or,
+          Var(LocalVar(0, "x"), Type.Bool, loc),
+          Var(LocalVar(1, "y"), Type.Bool, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Bool, Type.Bool), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(java.lang.Boolean.TYPE, java.lang.Boolean.TYPE),
+      List(true, true).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(java.lang.Boolean.TYPE, java.lang.Boolean.TYPE),
+      List(false, true).map(_.asInstanceOf[Object]))
+    val result03 = code.call(name, List(java.lang.Boolean.TYPE, java.lang.Boolean.TYPE),
+      List(true, false).map(_.asInstanceOf[Object]))
+    val result04 = code.call(name, List(java.lang.Boolean.TYPE, java.lang.Boolean.TYPE),
+      List(false, false).map(_.asInstanceOf[Object]))
+
+    assertResult(1234)(result01)
+    assertResult(1234)(result02)
+    assertResult(1234)(result03)
+    assertResult(5678)(result04)
+  }
+
+  test("Codegen - IfThenElse07") {
+    val definition = Function(name, args = List("x", "y"),
+      body = IfThenElse(
+        Binary(BinaryOperator.Less,
+          Var(LocalVar(0, "x"), Type.Int32, loc),
+          Var(LocalVar(1, "y"), Type.Int32, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 24).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 5).map(_.asInstanceOf[Object]))
+
+    assertResult(1234)(result01)
+    assertResult(5678)(result02)
+  }
+
+  test("Codegen - IfThenElse08") {
+    val definition = Function(name, args = List("x", "y"),
+      body = IfThenElse(
+        Binary(BinaryOperator.LessEqual,
+          Var(LocalVar(0, "x"), Type.Int32, loc),
+          Var(LocalVar(1, "y"), Type.Int32, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 5).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 2).map(_.asInstanceOf[Object]))
+
+    assertResult(1234)(result01)
+    assertResult(5678)(result02)
+  }
+
+  test("Codegen - IfThenElse09") {
+    val definition = Function(name, args = List("x", "y"),
+      body = IfThenElse(
+        Binary(BinaryOperator.Greater,
+          Var(LocalVar(0, "x"), Type.Int32, loc),
+          Var(LocalVar(1, "y"), Type.Int32, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(24, 5).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 5).map(_.asInstanceOf[Object]))
+
+    assertResult(1234)(result01)
+    assertResult(5678)(result02)
+  }
+
+  test("Codegen - IfThenElse10") {
+    val definition = Function(name, args = List("x", "y"),
+      body = IfThenElse(
+        Binary(BinaryOperator.GreaterEqual,
+          Var(LocalVar(0, "x"), Type.Int32, loc),
+          Var(LocalVar(1, "y"), Type.Int32, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 5).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(2, 5).map(_.asInstanceOf[Object]))
+
+    assertResult(1234)(result01)
+    assertResult(5678)(result02)
+  }
+
+  test("Codegen - IfThenElse11") {
+    val definition = Function(name, args = List("x", "y"),
+      body = IfThenElse(
+        Binary(BinaryOperator.Equal,
+          Var(LocalVar(0, "x"), Type.Int32, loc),
+          Var(LocalVar(1, "y"), Type.Int32, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 5).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(2, 5).map(_.asInstanceOf[Object]))
+
+    assertResult(1234)(result01)
+    assertResult(5678)(result02)
+  }
+
+  test("Codegen - IfThenElse12") {
+    val definition = Function(name, args = List("x", "y"),
+      body = IfThenElse(
+        Binary(BinaryOperator.NotEqual,
+          Var(LocalVar(0, "x"), Type.Int32, loc),
+          Var(LocalVar(1, "y"), Type.Int32, loc),
+          Type.Bool, loc),
+        Const(1234, Type.Int32, loc),
+        Const(5678, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result01 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(2, 5).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 5).map(_.asInstanceOf[Object]))
+
+    assertResult(1234)(result01)
+    assertResult(5678)(result02)
   }
 }
