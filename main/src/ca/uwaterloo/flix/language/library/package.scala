@@ -22,8 +22,6 @@ package object library {
   // Mini Type DSL                                                           //
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Do we need to implement Type.Apply and Type.Parametric?
-
   implicit class RichType(thiz: Type) {
     def ~>(that: Type): Type = Type.Lambda(List(thiz), that)
   }

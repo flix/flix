@@ -12,12 +12,10 @@ object FSet {
     * All set operations.
     */
   val Ops: immutable.Map[Name.Resolved, SetOperator] = List(
-    "Set:isEmpty" -> nul,
+    "Set:null" -> nul,
     "Set:memberOf" -> memberOf,
     "Set:isSubsetOf" -> isSubsetOf,
     "Set:isProperSubsetOf" -> isProperSubsetOf,
-    "Set:empty" -> empty,
-    "Set:singleton" -> singleton,
     "Set:insert" -> insert,
     "Set:delete" -> delete,
     "Set:union" -> union,
@@ -25,12 +23,12 @@ object FSet {
     "Set:difference" -> difference,
     "Set:filter" -> filter,
     "Set:map" -> map,
-    "Set:flatMap" -> FlatMap,
-    "Set:foldLeft" -> FoldLeft,
-    "Set:foldRight" -> FoldRight,
-    "Set:toAscList" -> ToAscList,
-    "Set:toDescList" -> ToDescList,
-    "Set:toMap" -> ToMap
+    "Set:flatMap" -> flatMap,
+    "Set:foldLeft" -> foldLeft,
+    "Set:foldRight" -> foldRight,
+    "Set:toAscList" -> toAscList,
+    "Set:toDescList" -> toDescList,
+    "Set:toMap" -> toMap
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
@@ -80,20 +78,6 @@ object FSet {
   /////////////////////////////////////////////////////////////////////////////
   // Construction                                                            //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `empty : Unit => Set[A]` function.
-    */
-  object empty extends SetOperator {
-    val tpe = Type.Unit ~> Set(A)
-  }
-
-  /**
-    * The `singleton : A => Set[A]` function.
-    */
-  object singleton extends SetOperator {
-    val tpe = A ~> Set(A)
-  }
-
   /**
     * The `insert : (A, Set[A]) => Set[A]` function.
     */
@@ -155,8 +139,8 @@ object FSet {
   /**
     * The `flatMap : (Set[A], A => Set[B]) => Set[B]` function.
     */
-  object FlatMap extends SetOperator {
-    val tpe = (Set(A), A ~> Set(B)) ~> Set(B)
+  object flatMap extends SetOperator {
+    val tpe = (A ~> Set(B), Set(A)) ~> Set(B)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -165,15 +149,15 @@ object FSet {
   /**
     * The `foldLeft : (Set[A], B, (B, A) => B) => B` function.
     */
-  object FoldLeft extends SetOperator {
-    val tpe = (Set(A), B, (B, A) ~> B) ~> B
+  object foldLeft extends SetOperator {
+    val tpe = ((B, A) ~> B, B, Set(A)) ~> B
   }
 
   /**
     * The `foldRight : (Set[A], B, (B, A) => B) => B` function.
     */
-  object FoldRight extends SetOperator {
-    val tpe = (Set(A), B, (A, B) ~> B) ~> B
+  object foldRight extends SetOperator {
+    val tpe = ((A, B) ~> B, B, Set(A)) ~> B
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -182,21 +166,21 @@ object FSet {
   /**
     * The `toAscList : Set[A] => List[A]` function.
     */
-  object ToAscList extends SetOperator {
+  object toAscList extends SetOperator {
     val tpe = Set(A) ~> Lst(A)
   }
 
   /**
     * The `toDescList : Set[A] => List[A]` function.
     */
-  object ToDescList extends SetOperator {
+  object toDescList extends SetOperator {
     val tpe = Set(A) ~> Lst(A)
   }
 
   /**
     * The `toMap : Set[(A, B)] => Map[A, B]` function.
     */
-  object ToMap extends SetOperator {
+  object toMap extends SetOperator {
     val tpe = Set((A, B)) ~> Type.Map(A, B)
   }
 

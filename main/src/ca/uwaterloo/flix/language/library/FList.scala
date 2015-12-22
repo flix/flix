@@ -12,7 +12,7 @@ object FList {
     * All list operations.
     */
   val Ops: immutable.Map[Name.Resolved, ListOperator] = List(
-    "List::nil" -> nul,
+    "List::null" -> nul,
     "List::head" -> head,
     "List::tail" -> tail,
     "List::find" -> find,

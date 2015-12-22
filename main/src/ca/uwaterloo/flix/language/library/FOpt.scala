@@ -12,8 +12,8 @@ object FOpt {
     * All option operations.
     */
   val Ops: immutable.Map[Name.Resolved, OptOperator] = List(
-    "Opt::map" -> Map,
-    "Opt::flatMap" -> FlatMap
+    "Opt::map" -> map,
+    "Opt::flatMap" -> flatMap
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
@@ -35,14 +35,14 @@ object FOpt {
   /**
     * The `map : (Opt[A], A => B) => Opt[B]` function.
     */
-  object Map extends OptOperator {
+  object map extends OptOperator {
     val tpe = (Opt(A), A ~> B) ~> Opt(B)
   }
 
   /**
     * The `flatMap : (Opt[A], A => Opt[B]) => Opt[B]` function.
     */
-  object FlatMap extends OptOperator {
+  object flatMap extends OptOperator {
     val tpe = (Opt(A), A ~> Opt(B)) ~> Opt(B)
   }
 

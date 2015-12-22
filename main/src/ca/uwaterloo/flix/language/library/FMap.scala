@@ -8,25 +8,22 @@ import scala.collection.immutable
 
 object FMap {
 
-  // TODO: Check naming, escp w.r.t. llist, set, etc.
-
   /**
     * All map operations.
     */
   val Ops: immutable.Map[Name.Resolved, MapOperator] = List(
-    "Map::isEmpty" -> IsEmpty,
-    "Map::isMember" -> IsMember,
-    "Map::lookup" -> Lookup,
-    "Map::empty" -> Empty,
-    "Map::singleton" -> Singleton,
-    "Map::insert" -> Insert,
-    "Map::update" -> Update,
-    "Map::delete" -> Delete,
-    "Map::union" -> Union,
-    "Map::intersection" -> Intersection,
-    "Map::difference" -> Difference,
-    "Map::toList" -> ToList,
-    "Map::toSet" -> ToSet
+    "Map::null" -> nul,
+    "Map::memberOf" -> memberOf,
+    "Map::lookup" -> lookup,
+    "Map::insert" -> insert,
+    "Map::update" -> update,
+    "Map::delete" -> delete,
+    "Map::union" -> union,
+    "Map::intersection" -> intersection,
+    "Map::difference" -> difference,
+    "Map::toAscList" -> toAscList,
+    "Map::toDescList" -> toDescList,
+    "Map::toSet" -> toSet
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
@@ -48,41 +45,24 @@ object FMap {
   // Basic Operations                                                        //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * The `isEmpty : Map[K, V] => Bool` function.
+    * The `null : Map[K, V] => Bool` function.
     */
-  object IsEmpty extends MapOperator {
+  object nul extends MapOperator {
     val tpe = Map(K, V) ~> Bool
   }
 
   /**
-    * The `isMember : (K, Map[K, V]) => Bool` function.
+    * The `memberOf : (K, Map[K, V]) => Bool` function.
     */
-  object IsMember extends MapOperator {
+  object memberOf extends MapOperator {
     val tpe = (K, Map(K, V)) ~> Bool
   }
 
   /**
     * The `lookup : (K, Map[K, V]) => Opt[V]` function.
     */
-  object Lookup extends MapOperator {
+  object lookup extends MapOperator {
     val tpe = (K, Map(K, V)) ~> Opt(V)
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Construction                                                            //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `empty : Unit => Map[K, V]` function.
-    */
-  object Empty extends MapOperator {
-    val tpe = Unit ~> Map(K, V)
-  }
-
-  /**
-    * The `singleton : (K, V) => Map[K, V]` function.
-    */
-  object Singleton extends MapOperator {
-    val tpe = (K, V) ~> Map(K, V)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -91,21 +71,21 @@ object FMap {
   /**
     * The `insert : (K, V, Map[K, V]) => Map[K, V]` function.
     */
-  object Insert extends MapOperator {
+  object insert extends MapOperator {
     val tpe = (K, V, Map(K, V)) ~> Map(K, V)
   }
 
   /**
-    * The `delete : (K, V => V, Map[K, V]) => Map[K, V]` function.
+    * The `update : (K, V => V, Map[K, V]) => Map[K, V]` function.
     */
-  object Update extends MapOperator {
+  object update extends MapOperator {
     val tpe = (K, V ~> V, Map(K, V)) ~> Map(K, V)
   }
 
   /**
     * The `delete : (K, V, Map[K, V]) => Map[K, V]` function.
     */
-  object Delete extends MapOperator {
+  object delete extends MapOperator {
     val tpe = (K, V, Map(K, V)) ~> Map(K, V)
   }
 
@@ -115,21 +95,21 @@ object FMap {
   /**
     * The `union : (Map[K, V], Map[K, V]) => Map[K, V]` function.
     */
-  object Union extends MapOperator {
+  object union extends MapOperator {
     val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
   }
 
   /**
     * The `intersection : (Map[K, V], Map[K, V]) => Map[K, V]` function.
     */
-  object Intersection extends MapOperator {
+  object intersection extends MapOperator {
     val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
   }
 
   /**
     * The `difference : (Map[K, V], Map[K, V]) => Map[K, V]` function.
     */
-  object Difference extends MapOperator {
+  object difference extends MapOperator {
     val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
   }
 
@@ -164,16 +144,23 @@ object FMap {
   // Conversions                                                             //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * The `toList : Map[K, V] => Lst[(K, V)]` function.
+    * The `toAscList : Map[K, V] => Lst[(K, V)]` function.
     */
-  object ToList extends MapOperator {
+  object toAscList extends MapOperator {
+    val tpe = Map(K, V) ~> Lst((K, V))
+  }
+
+  /**
+    * The `toDescList : Map[K, V] => Lst[(K, V)]` function.
+    */
+  object toDescList extends MapOperator {
     val tpe = Map(K, V) ~> Lst((K, V))
   }
 
   /**
     * The `toSet : Map[K, V] => Set[(K, V)]` function.
     */
-  object ToSet extends MapOperator {
+  object toSet extends MapOperator {
     val tpe = Map(K, V) ~> Set((K, V))
   }
 
