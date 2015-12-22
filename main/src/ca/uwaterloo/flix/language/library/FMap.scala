@@ -21,6 +21,8 @@ object FMap {
     "Map::union" -> union,
     "Map::intersection" -> intersection,
     "Map::difference" -> difference,
+    "Map::map" -> map,
+    "Map::mapWithKey" -> mapWithKey,
     "Map::toAscList" -> toAscList,
     "Map::toDescList" -> toDescList,
     "Map::toSet" -> toSet
@@ -123,13 +125,17 @@ object FMap {
     val tpe = (A ~> B, Map(K, A)) ~> Map(K, B)
   }
 
+  /**
+    * The `mapWithKey : ((K, A) => B, Map[K, A]) => Map[K, B]` function.
+    */
+  object mapWithKey extends MapOperator {
+    val tpe = ((K, A) ~> B, Map(K, A)) ~> Map(K, B)
+  }
 
   // TODO: Map
   // - removeKey
   // - foldValues
   // - filterKeys/filterValues/exists/find/fold
-  // - map
-  // - mapWithKey
   // - mapKeys
   // foldLeft/foldRigyht, foldLeftWithKey, foldRightWithKey
   // - elms
