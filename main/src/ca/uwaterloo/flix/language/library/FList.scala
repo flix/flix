@@ -12,7 +12,7 @@ object FList {
     * All list operations.
     */
   val Ops: immutable.Map[Name.Resolved, ListOperator] = List(
-    "List::nil" -> nil,
+    "List::nil" -> nul,
     "List::head" -> head,
     "List::tail" -> tail,
     "List::find" -> find,
@@ -62,7 +62,7 @@ object FList {
   /**
     * The `null : List[A] => Bool` function.
     */
-  object nil extends ListOperator {
+  object nul extends ListOperator {
     val tpe = Lst(A) ~> Bool
   }
 

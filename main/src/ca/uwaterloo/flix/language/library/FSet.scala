@@ -12,19 +12,19 @@ object FSet {
     * All set operations.
     */
   val Ops: immutable.Map[Name.Resolved, SetOperator] = List(
-    "Set:isEmpty" -> IsEmpty,
-    "Set:memberOf" -> MemberOf,
-    "Set:isSubsetOf" -> IsSubsetOf,
-    "Set:isProperSubsetOf" -> IsProperSubsetOf,
-    "Set:empty" -> Empty,
-    "Set:singleton" -> Singleton,
-    "Set:insert" -> Insert,
-    "Set:delete" -> Delete,
-    "Set:union" -> Union,
-    "Set:intersection" -> Intersection,
-    "Set:difference" -> Difference,
-    "Set:filter" -> Filter,
-    "Set:map" -> Map,
+    "Set:isEmpty" -> nul,
+    "Set:memberOf" -> memberOf,
+    "Set:isSubsetOf" -> isSubsetOf,
+    "Set:isProperSubsetOf" -> isProperSubsetOf,
+    "Set:empty" -> empty,
+    "Set:singleton" -> singleton,
+    "Set:insert" -> insert,
+    "Set:delete" -> delete,
+    "Set:union" -> union,
+    "Set:intersection" -> intersection,
+    "Set:difference" -> difference,
+    "Set:filter" -> filter,
+    "Set:map" -> map,
     "Set:flatMap" -> FlatMap,
     "Set:foldLeft" -> FoldLeft,
     "Set:foldRight" -> FoldRight,
@@ -50,30 +50,30 @@ object FSet {
   // Basic Operations                                                        //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * The `isEmpty : Set[A] => Bool` function.
+    * The `null : Set[A] => Bool` function.
     */
-  object IsEmpty extends SetOperator {
+  object nul extends SetOperator {
     val tpe = Set(A) ~> Bool
   }
 
   /**
     * The `memberOf : (A, Set[A]) => Bool` function.
     */
-  object MemberOf extends SetOperator {
+  object memberOf extends SetOperator {
     val tpe = (A, Set(A)) ~> Bool
   }
 
   /**
     * The `isSubsetOf : (Set[A], Set[A]) => Bool` function.
     */
-  object IsSubsetOf extends SetOperator {
+  object isSubsetOf extends SetOperator {
     val tpe = (Set(A), Set(A)) ~> Bool
   }
 
   /**
     * The `isProperSubsetOf : (Set[A], Set[A]) => Bool` function.
     */
-  object IsProperSubsetOf extends SetOperator {
+  object isProperSubsetOf extends SetOperator {
     val tpe = (Set(A), Set(A)) ~> Bool
   }
 
@@ -83,28 +83,28 @@ object FSet {
   /**
     * The `empty : Unit => Set[A]` function.
     */
-  object Empty extends SetOperator {
+  object empty extends SetOperator {
     val tpe = Type.Unit ~> Set(A)
   }
 
   /**
     * The `singleton : A => Set[A]` function.
     */
-  object Singleton extends SetOperator {
+  object singleton extends SetOperator {
     val tpe = A ~> Set(A)
   }
 
   /**
     * The `insert : (A, Set[A]) => Set[A]` function.
     */
-  object Insert extends SetOperator {
+  object insert extends SetOperator {
     val tpe = (A, Set(A)) ~> Set(A)
   }
 
   /**
     * The `delete : (A, Set[A]) => Set[A]` function.
     */
-  object Delete extends SetOperator {
+  object delete extends SetOperator {
     val tpe = (A, Set(A)) ~> Set(A)
   }
 
@@ -114,21 +114,21 @@ object FSet {
   /**
     * The `union : (Set[A], Set[A]) => Set[A]` function.
     */
-  object Union extends SetOperator {
+  object union extends SetOperator {
     val tpe = (Set(A), Set(A)) ~> Set(A)
   }
 
   /**
     * The `intersection : (Set[A], Set[A]) => Set[A]` function.
     */
-  object Intersection extends SetOperator {
+  object intersection extends SetOperator {
     val tpe = (Set(A), Set(A)) ~> Set(A)
   }
 
   /**
     * The `difference : (Set[A], Set[A]) => Set[A]` function.
     */
-  object Difference extends SetOperator {
+  object difference extends SetOperator {
     val tpe = (Set(A), Set(A)) ~> Set(A)
   }
 
@@ -136,20 +136,20 @@ object FSet {
   // Filter                                                                  //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * The `filter : (Set[A], A => Bool) => Set[A]` function.
+    * The `filter : (A => Bool, Set[A]) => Set[A]` function.
     */
-  object Filter extends SetOperator {
-    val tpe = (Set(A), A ~> Bool) ~> Set(A)
+  object filter extends SetOperator {
+    val tpe = (A ~> Bool, Set(A)) ~> Set(A)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Maps                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * The `map : (Set[A], A => B) => Set[B]` function.
+    * The `map : (A => B, Set[A]) => Set[B]` function.
     */
-  object Map extends SetOperator {
-    val tpe = (Set(A), A ~> B) ~> Set(B)
+  object map extends SetOperator {
+    val tpe = (A ~> B, Set(A)) ~> Set(B)
   }
 
   /**
