@@ -19,7 +19,7 @@ lazy val flix = (project in file("."))
     name := "flix",
     scalaSource in Compile := baseDirectory.value / "main" / "src",
     scalaSource in Test :=  baseDirectory.value / "main" / "test",
-    unmanagedResourceDirectories in Compile += baseDirectory.value / "main" / "src",
+    unmanagedResourceDirectories in Compile += baseDirectory.value / "main" / "src" / "ca" / "uwaterloo" / "flix" / "runtime" / "debugger",
     scalacOptions ++= Seq("-unchecked", "-deprecation"),
     libraryDependencies ++= dependencies
   )
