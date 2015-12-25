@@ -22,7 +22,7 @@ object FList {
     // TODO: init
     // TODO: last
     // TODO: mapPartial/collect.
-    // TODO: partition
+    // TODO: partition, or better, splitWith
   // TODO: splitAt
   // TODO: span
     // TODO: sortBy
@@ -33,16 +33,17 @@ object FList {
     // TODO: subsequences :: [a] -> [[a]]
     // TODO: permutations :: [a] -> [[a]]
 
-    "List::find" -> find,
+    "List::find" -> find, // TODO: findLeft
   // TODO at(index)
   // TODO: indexOf
   // TODO: findIndex
 
+
     "List::memberOf" -> memberOf,
-    "List::isPrefixOf" -> isPrefixOf,
+    "List::isPrefixOf" -> isPrefixOf, // TODO: or startsWith
     "List::isInfixOf" -> isInfixOf,
-    "List::isSuffixOf" -> isSuffixOf,
-  // isSubsequenceOf
+    "List::isSuffixOf" -> isSuffixOf, // TODO: endsWith
+  // TODO: isSubsequenceOf
     "List::map" -> map,
     "List::flatMap" -> flatMap,
     "List::reverse" -> reverse,
@@ -50,7 +51,10 @@ object FList {
     "List::foldRight" -> foldRight,
     "List::concatenate" -> concatenate,
   // TODO: reduceLeft
-  // TODO: reduceRight
+  // TODO: reduceLeftOpt
+    // TODO: reduceRight
+  // TODO: reduceRightOpt
+
     "List::exists" -> exists,
     "List::forall" -> forall,
     "List::and" -> and,
@@ -65,11 +69,18 @@ object FList {
     "List::zip" -> zip,
   // TODO: zipWith
   // TODO: unzip
+  // TODO: zip
+  // TODO: count
 
     "List::toMap" -> toMap,
     "List::toSet" -> toSet,
     "List::groupBy" -> groupBy
     // TODO: sum, product, minimum, maximum?
+  // TODO: MaximumBy, minimumBy
+
+  // TODO: Lattice/partial order specific operators?
+  // e.q. lub
+
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
