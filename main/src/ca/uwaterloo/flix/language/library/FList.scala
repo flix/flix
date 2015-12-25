@@ -78,8 +78,9 @@ object FList {
     // TODO: sum, product, minimum, maximum?
   // TODO: MaximumBy, minimumBy
 
-  // TODO: Lattice/partial order specific operators?
-  // e.q. lub
+  // TODO: partial order and lattice ops:
+  // List::lub
+  // List::meet
 
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
