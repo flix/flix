@@ -79,7 +79,8 @@ object FList {
   // TODO: MaximumBy, minimumBy
 
   // TODO: partial order and lattice ops:
-  // List::lub
+  // List:leq xs ys
+    // List::lub
   // List::meet
 
   ).map {
