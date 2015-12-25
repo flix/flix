@@ -20,6 +20,8 @@ object FOpt {
   // TODO: get
   // TODO: getOrElse
   // TODO:  or
+  // TODO: filter
+  // TODO: exists
 
     "Opt::map" -> map,
     "Opt::flatMap" -> flatMap
