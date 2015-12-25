@@ -83,6 +83,12 @@ object FList {
     // List::lub
   // List::meet
 
+  // TODO: Paper idea, combinator library for lattices:
+  // - flatLatticeOf(xs)
+  // - lift(l)
+  // - upsidedown
+  // - product (two kinds?)
+
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
