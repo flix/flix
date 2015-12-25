@@ -35,6 +35,9 @@ object FList {
 
     "List::find" -> find,
   // TODO at(index)
+  // TODO: indexOf
+  // TODO: findIndex
+
     "List::memberOf" -> memberOf,
     "List::isPrefixOf" -> isPrefixOf,
     "List::isInfixOf" -> isInfixOf,
@@ -60,6 +63,9 @@ object FList {
     "List::drop" -> drop,
     "List::dropWhile" -> dropWhile,
     "List::zip" -> zip,
+  // TODO: zipWith
+  // TODO: unzip
+
     "List::toMap" -> toMap,
     "List::toSet" -> toSet,
     "List::groupBy" -> groupBy
