@@ -8,10 +8,19 @@ import scala.collection.immutable
 
 object FOpt {
 
+  // TODO: Create cheatsheet
+
+
   /**
     * All option operations.
     */
   val Ops: immutable.Map[Name.Resolved, OptOperator] = List(
+  // TODO: None/Some
+  // TODO: null
+  // TODO: get
+  // TODO: getOrElse
+  // TODO:  or
+
     "Opt::map" -> map,
     "Opt::flatMap" -> flatMap
   ).map {
