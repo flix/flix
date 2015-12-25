@@ -8,6 +8,9 @@ import scala.collection.immutable
 
 object FList {
 
+  // TODO: Which of these should have special syntax?
+  // TODO: Need empty and Cons.
+
   /**
     * All list operations.
     */
@@ -15,17 +18,36 @@ object FList {
     "List::null" -> nul,
     "List::head" -> head,
     "List::tail" -> tail,
+    // TODO: length
+    // TODO: init
+    // TODO: last
+    // TODO: mapPartial/collect.
+    // TODO: partition
+  // TODO: splitAt
+  // TODO: span
+    // TODO: sortBy
+    // TODO: append
+    // TODO: intersperse.
+    // TODO: intercalate :: [a] -> [[a]] -> [a]
+    // TODO: transpose :: [[a]] -> [[a]]
+    // TODO: subsequences :: [a] -> [[a]]
+    // TODO: permutations :: [a] -> [[a]]
+
     "List::find" -> find,
+  // TODO at(index)
     "List::memberOf" -> memberOf,
     "List::isPrefixOf" -> isPrefixOf,
     "List::isInfixOf" -> isInfixOf,
     "List::isSuffixOf" -> isSuffixOf,
+  // isSubsequenceOf
     "List::map" -> map,
     "List::flatMap" -> flatMap,
-    "List::flatten" -> flatten,
     "List::reverse" -> reverse,
     "List::foldLeft" -> foldLeft,
     "List::foldRight" -> foldRight,
+    "List::concatenate" -> concatenate,
+  // TODO: reduceLeft
+  // TODO: reduceRight
     "List::exists" -> exists,
     "List::forall" -> forall,
     "List::and" -> and,
@@ -41,6 +63,7 @@ object FList {
     "List::toMap" -> toMap,
     "List::toSet" -> toSet,
     "List::groupBy" -> groupBy
+    // TODO: sum, product, minimum, maximum?
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
@@ -133,16 +156,9 @@ object FList {
   }
 
   /**
-    * The `flatten : List[List[A]] => List[A]` function.
-    */
-  object flatten extends ListOperator {
-    val tpe = Lst(Lst(A)) ~> Lst(A)
-  }
-
-  /**
     * The `reverse : List[A] => List[A]` function.
     */
-  object reverse extends ListOperator  {
+  object reverse extends ListOperator {
     val tpe = Lst(A) ~> Lst(A)
   }
 
@@ -166,6 +182,13 @@ object FList {
   /////////////////////////////////////////////////////////////////////////////
   // Special Folds                                                           //
   /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `concatenate : List[List[A]] => List[A]` function.
+    */
+  object concatenate extends ListOperator {
+    val tpe = Lst(Lst(A)) ~> Lst(A)
+  }
+
   /**
     * The `exists : (A => Bool, List[A]) => Bool` function.
     */
@@ -228,7 +251,7 @@ object FList {
   /**
     * The `takeWhile : (A => Bool, List[A]) => List[A]` function.
     */
-  object takeWhile extends ListOperator  {
+  object takeWhile extends ListOperator {
     val tpe = (A ~> Bool, Lst(A)) ~> Lst(A)
   }
 
