@@ -39,6 +39,9 @@ object FList {
   // TODO: findIndex
 
 
+    // TODO: Slice
+    // TODO: repeat
+  // TODO: mapWithIndex.
     "List::memberOf" -> memberOf,
     "List::isPrefixOf" -> isPrefixOf, // TODO: or startsWith
     "List::isInfixOf" -> isInfixOf,
