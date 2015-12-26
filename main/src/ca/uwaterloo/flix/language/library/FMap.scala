@@ -13,11 +13,20 @@ object FMap {
     */
   val Ops: immutable.Map[Name.Resolved, MapOperator] = List(
     "Map::null" -> nul,
+  // TODO: Empty, singleton
     "Map::memberOf" -> memberOf,
     "Map::lookup" -> lookup,
+  // TODO: LookupWithDefault
     "Map::insert" -> insert,
+  // TODOL insertWith
+  // TODO: insertWithKey
+    // TODO: adjust
+    // TODO: adjustWithKey
+
     "Map::update" -> update,
+// TODO: Update with key
     "Map::delete" -> delete,
+// TODO: alter
     "Map::union" -> union,
     "Map::intersection" -> intersection,
     "Map::difference" -> difference,
@@ -29,6 +38,21 @@ object FMap {
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
+
+
+  // TODO - removeKey
+  //TODO  - foldValues
+  // TODO filterKeys/filterValues
+
+  // TODO - mapKeys
+  // TODO  foldLeft/foldRigyht, foldLeftWithKey, foldRightWithKey
+  // TODO  - elms
+  // TODO  - keys
+  // TODO  filter/filterWithKey
+  // TODO  paritition, partitionWithKey
+  // TODO  isSubmapOf
+  // TODO  isProperSubmapOf
+
 
   /**
     * A common super-type for all map operations.
@@ -131,19 +155,6 @@ object FMap {
   object mapWithKey extends MapOperator {
     val tpe = ((K, A) ~> B, Map(K, A)) ~> Map(K, B)
   }
-
-  // TODO: Map
-  // - removeKey
-  // - foldValues
-  // - filterKeys/filterValues/exists/find/fold
-  // - mapKeys
-  // foldLeft/foldRigyht, foldLeftWithKey, foldRightWithKey
-  // - elms
-  // - keys
-  // filter/filterWithKey
-  // paritition, partitionWithKey
-  // isSubmapOf
-  // isProperSubmapOf
 
 
   /////////////////////////////////////////////////////////////////////////////
