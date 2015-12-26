@@ -39,7 +39,7 @@ object FMap {
   // TODO: differenceWithKey
     "Map::map" -> map,
     "Map::mapWithKey" -> mapWithKey,
-  // TODOL mapKeys
+  // TODO mapKeys
     "Map::toAscList" -> toAscList,
     "Map::toDescList" -> toDescList,
     "Map::toSet" -> toSet
@@ -50,17 +50,27 @@ object FMap {
 
   // TODO - removeKey
   //TODO  - foldValues
-  // TODO filterKeys/filterValues
+  // TODO filterKeys
+  // TODO: filter
+  // TODO: filterWithKey
+  // /filterValues
+
 
   // TODO  foldLeft/foldRight,
   // TODO foldLeftWithKey, foldRightWithKey
-  // TODO  - keySet
+  // TODO  - keySet // TODO: keys or keySet?
   // TODO - values
   // TODO  filter/filterWithKey
   // TODO  paritition, partitionWithKey
   // TODO  isSubmapOf
   // TODO  isProperSubmapOf
 
+  // TODO: mapEither??? then we need either.
+
+  // Indexed:
+  // TODO: lookupIndex, deleteAt, updateAt - wait do we need these?
+
+  // TODO: minimum, maximum,
 
   /**
     * A common super-type for all map operations.
