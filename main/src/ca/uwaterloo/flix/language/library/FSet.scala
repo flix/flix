@@ -28,6 +28,19 @@ object FSet {
     "Set:foldRight" -> foldRight,
     "Set:toAscList" -> toAscList,
     "Set:toDescList" -> toDescList,
+    // TODO: collect?
+    // TODO: count?
+    // TODO: find and other list like things, or not?
+    // TODO: flatten
+    // TODO: minimum, maximum, minimumBy, maximumBy
+    // TODO: partition/split?
+    // TODO: sum/product?
+    // TODO: reduceLeft, reduceRight, reduceLeftOpt, reduceRightOpt
+    // TODO: scanLeft, scanRight
+    // TODO: size
+    // TODO: subsets
+    // TODO: zip?
+
     "Set:toMap" -> toMap
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
