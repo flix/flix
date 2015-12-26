@@ -28,7 +28,7 @@ object FSet {
     "Set:foldRight" -> foldRight,
     "Set:toAscList" -> toAscList,
     "Set:toDescList" -> toDescList,
-    // TODO: collect?
+    // TODO: collect? collectFirst
     // TODO: count?
     // TODO: find and other list like things, or not?
     // TODO: flatten
@@ -40,6 +40,12 @@ object FSet {
     // TODO: size
     // TODO: subsets
     // TODO: zip?
+  // TODO: min, max, minBy, maxBy
+
+
+  // TODO: scala's aggregate[B](z: ⇒ B)(seqop: (B, (A, B)) ⇒ B, combop: (B, B) ⇒ B): B
+
+
 
     "Set:toMap" -> toMap
   ).map {
