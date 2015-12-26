@@ -28,10 +28,18 @@ object FMap {
     "Map::delete" -> delete,
 // TODO: alter
     "Map::union" -> union,
+  // TODO: unionWith
+  // TODO: unionWithKey
+
     "Map::intersection" -> intersection,
+  // TODO: intersectionWith
+  // TODO: intersectionWithKey
     "Map::difference" -> difference,
+  // TODO: differenceWith
+  // TODO: differenceWithKey
     "Map::map" -> map,
     "Map::mapWithKey" -> mapWithKey,
+  // TODOL mapKeys
     "Map::toAscList" -> toAscList,
     "Map::toDescList" -> toDescList,
     "Map::toSet" -> toSet
@@ -44,10 +52,10 @@ object FMap {
   //TODO  - foldValues
   // TODO filterKeys/filterValues
 
-  // TODO - mapKeys
-  // TODO  foldLeft/foldRigyht, foldLeftWithKey, foldRightWithKey
-  // TODO  - elms
-  // TODO  - keys
+  // TODO  foldLeft/foldRight,
+  // TODO foldLeftWithKey, foldRightWithKey
+  // TODO  - keySet
+  // TODO - values
   // TODO  filter/filterWithKey
   // TODO  paritition, partitionWithKey
   // TODO  isSubmapOf
