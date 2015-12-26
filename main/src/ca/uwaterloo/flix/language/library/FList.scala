@@ -9,7 +9,10 @@ import scala.collection.immutable
 object FList {
 
   // TODO: Which of these should have special syntax?
+  // TODO: Which should have multiple names?
+
   // TODO: Need empty and Cons.
+
 
   /**
     * All list operations.
@@ -74,6 +77,10 @@ object FList {
   // TODO: unzip
   // TODO: zip
   // TODO: count
+
+  // TODO: oneOf: List[Opt{A]] => Opt[A]
+
+  // TODO: scanLeft, scanRight
 
     "List::toMap" -> toMap,
     "List::toSet" -> toSet,

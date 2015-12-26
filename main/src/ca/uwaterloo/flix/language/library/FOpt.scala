@@ -16,12 +16,22 @@ object FOpt {
     */
   val Ops: immutable.Map[Name.Resolved, OptOperator] = List(
   // TODO: None/Some
+  // TODO: isNone
+  // TODO: isSome
+
   // TODO: null
   // TODO: get
   // TODO: getOrElse
   // TODO:  or
+  // TODO: orElse: (Opt[A], Opt[A] => Opt[A]
   // TODO: filter
   // TODO: exists
+  // TODO: forall
+
+  // TODO: map2: ((Opt, Opt) => A, Opt, Opt) => Opt
+  // TODO: flatMap2: see above
+  // TODO: toSet
+  // TODO: toList
 
     "Opt::map" -> map,
     "Opt::flatMap" -> flatMap
