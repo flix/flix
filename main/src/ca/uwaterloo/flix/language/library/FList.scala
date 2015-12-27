@@ -26,8 +26,8 @@ object FList {
     // TODO: last
     // TODO: mapPartial/collect.
     // TODO: partition, or better, splitWith
-  // TODO: splitAt
-  // TODO: span
+    // TODO: splitAt
+    // TODO: span
     // TODO: sortBy
     // TODO: append
     // TODO: intersperse.
@@ -37,67 +37,62 @@ object FList {
     // TODO: permutations :: [a] -> [[a]]
 
     "List::find" -> find, // TODO: findLeft
-  // TODO at(index)
-  // TODO: indexOf
-  // TODO: findIndex
-// TODO: replace
+    // TODO at(index)
+    // TODO: indexOf
+    // TODO: findIndex
+    // TODO: replace
 
     // TODO: Slice
     // TODO: repeat
-  // TODO: mapWithIndex.
+    // TODO: mapWithIndex.
     "List::memberOf" -> memberOf,
     "List::isPrefixOf" -> isPrefixOf, // TODO: or startsWith
     "List::isInfixOf" -> isInfixOf,
     "List::isSuffixOf" -> isSuffixOf, // TODO: endsWith
-  // TODO: isSubsequenceOf
+    // TODO: isSubsequenceOf
     "List::map" -> map,
     "List::flatMap" -> flatMap,
     "List::reverse" -> reverse,
     "List::foldLeft" -> foldLeft,
     "List::foldRight" -> foldRight,
     "List::concatenate" -> concatenate,
-  // TODO: reduceLeft
-  // TODO: reduceLeftOpt
-    // TODO: reduceRight
-  // TODO: reduceRightOpt
 
     "List::exists" -> exists,
     "List::forall" -> forall,
     "List::and" -> and,
     "List::or" -> or,
     "List::reduceLeft" -> reduceLeft,
+    "List::reduceLeftOpt" -> reduceLeftOpt,
     "List::reduceRight" -> reduceRight,
+    "List::reduceRightOpt" -> reduceRightOpt,
+
+
     "List::filter" -> filter,
     "List::take" -> take,
     "List::takeWhile" -> takeWhile,
     "List::drop" -> drop,
     "List::dropWhile" -> dropWhile,
     "List::zip" -> zip,
-  // TODO: zipWith
-  // TODO: unzip
-  // TODO: zip
-  // TODO: count
+    // TODO: zipWith
+    // TODO: unzip
+    // TODO: zip
+    // TODO: count
 
-  // TODO: oneOf: List[Opt{A]] => Opt[A]
+    // TODO: oneOf: List[Opt{A]] => Opt[A]
 
-  // TODO: scanLeft, scanRight
+    // TODO: scanLeft, scanRight
 
     "List::toMap" -> toMap,
     "List::toSet" -> toSet,
     "List::groupBy" -> groupBy
     // TODO: sum, product, minimum, maximum?
-  // TODO: MaximumBy, minimumBy
+    // TODO: MaximumBy, minimumBy
 
-  // TODO: partial order and lattice ops:
-  // List:leq xs ys
+    // TODO: partial order and lattice ops:
+    // List:leq xs ys
     // List::lub
-  // List::meet
+    // List::meet
 
-  // TODO: Paper idea, combinator library for lattices:
-  // - flatLatticeOf(xs)
-  // - lift(l)
-  // - upsidedown
-  // - product (two kinds?)
 
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
@@ -260,10 +255,32 @@ object FList {
   }
 
   /**
+    * The `reduceLeft : ((A, A) => A, List[A]) => Opt[A]` function.
+    *
+    * Optionally returns the result of applying the binary operator going from left to right.
+    *
+    * Returns None if the list is empty.
+    */
+  object reduceLeftOpt extends ListOperator {
+    val tpe = ((A, A) ~> A, Lst(A)) ~> Opt(A)
+  }
+
+  /**
     * The `reduceRight : ((A, A) => A, List[A]) => A` function.
     */
   object reduceRight extends ListOperator {
     val tpe = ((A, A) ~> A, Lst(A)) ~> A
+  }
+
+  /**
+    * The `reduceRight : ((A, A) => A, List[A]) => Opt[A]` function.
+    *
+    * Optionally returns the result of applying the binary operator going from right to left.
+    *
+    * Returns None if the list is empty.
+    */
+  object reduceRightOpt extends ListOperator {
+    val tpe = ((A, A) ~> A, Lst(A)) ~> Opt(A)
   }
 
   /////////////////////////////////////////////////////////////////////////////
