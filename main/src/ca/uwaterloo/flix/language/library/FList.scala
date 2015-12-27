@@ -93,7 +93,7 @@ object FList {
 // TODO: port to Set, Map?
 
     "List::isChain" -> isChain,
-    "List::isAntiChain" -> isAntiChain,
+    "List::isAntiChain" -> isAntiChain, // TODO: too expensive to compute?
     "List::join" -> join,
     "List::meet" -> meet,
     "List::zipWithJoin" -> zipWithJoin,
