@@ -53,6 +53,7 @@ object FList {
     "List::map" -> map,
     "List::flatMap" -> flatMap,
     "List::reverse" -> reverse,
+  // TODO: permutations
     "List::foldLeft" -> foldLeft,
     "List::foldRight" -> foldRight,
     "List::concatenate" -> concatenate,
