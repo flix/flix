@@ -66,6 +66,7 @@ object FList {
     "List::reduceRight" -> reduceRight,
     "List::reduceRightOpt" -> reduceRightOpt,
 
+  // TOOO: shiftLeft, shiftRight // rotateLeft, rotateRight??
 
     "List::filter" -> filter,
     "List::take" -> take,
