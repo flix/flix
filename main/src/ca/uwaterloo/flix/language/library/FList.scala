@@ -92,10 +92,12 @@ object FList {
     // TODO: partial order and lattice ops:
 // TODO: port to Set, Map?
 
-    "List::isChain" -> isChain,
-    "List::isAntiChain" -> isAntiChain, // TODO: too expensive to compute?
+    "List::isChain" -> isChain, // TODO: isAscChain, isDescChain
+    "List::isAntiChain" -> isAntiChain, // TODO: move to set.
     "List::join" -> join,
     "List::meet" -> meet,
+  // TODO: widen
+  // TODO: narrow
     "List::zipWithJoin" -> zipWithJoin,
     "List::zipWithMeet" -> zipWithMeet
 
