@@ -366,9 +366,11 @@ object FList {
   // Order and Lattice Operations                                            //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * Pairwise compares elements from two lists according the the partial order.
+    * Pairwise compares elements from the two lists according to the partial order.
     *
-    * Returns `true` if for every pair the first component is <= the second component.
+    * Returns `true` if for every pair the first component is less than or equal to the second component.
+    *
+    * The function has type: `leq: (List[A], List[A]) => Bool`.
     */
   object leq extends ListOperator {
     val tpe = Lst(A) ~> Bool
@@ -393,7 +395,7 @@ object FList {
   }
 
   /**
-    * Returns the least upper bound of all elements in the given list. Returns bottom if the list is empty.
+    * Returns the least upper bound of all elements in the list. Returns bottom if the list is empty.
     *
     * The function has type: `join: List[A] => A`.
     */
@@ -402,12 +404,34 @@ object FList {
   }
 
   /**
-    * Returns the greatest lower bound of all elements in the given list. Returns top if the list is empty.
+    * Returns the greatest lower bound of all elements in the list. Returns top if the list is empty.
     *
     * The function has type `meet: List[A] => A`.
     */
   object meet extends ListOperator {
     val tpe = Lst(A) ~> A
+  }
+
+  /**
+    * Pairwise computes the least upper bound of the elements of the two lists.
+    *
+    * If the lists are of unequal length the missing element(s) are assumed to be bottom.
+    *
+    * The function has type: `(List[A], List[A]) => List[A]`.
+    */
+  object zipWithJoin extends ListOperator {
+    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
+  }
+
+  /**
+    * Pairwise computes the greatest lower bound of the elements of the two lists.
+    *
+    * If the lists are of unequal length the missing element(s) are assumed to be top.
+    *
+    * The function has type `(List[A], List[A]) => List[A]`.
+    */
+  object zipWithMeet extends ListOperator {
+    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
   }
 
 }
