@@ -77,6 +77,7 @@ object FList {
     // TODO: unzip
     // TODO: zip
     // TODO: count
+    // TODO: patch
 
     // TODO: oneOf: List[Opt{A]] => Opt[A]
 
@@ -365,9 +366,18 @@ object FList {
   // Order and Lattice Operations                                            //
   /////////////////////////////////////////////////////////////////////////////
   /**
+    * Pairwise compares elements from two lists according the the partial order.
+    *
+    * Returns `true` if for every pair the first component is <= the second component.
+    */
+  object leq extends ListOperator {
+    val tpe = Lst(A) ~> Bool
+  }
+
+  /**
     * Returns `true` iff the list is a chain according to the partial order.
     *
-    * The function has type `chain: List[A] => Bool`.
+    * The function has type `isChain: List[A] => Bool`.
     */
   object isChain extends ListOperator {
     val tpe = Lst(A) ~> Bool
@@ -376,7 +386,7 @@ object FList {
   /**
     * Returns `true` iff the list is an anti-chain according to the partial order.
     *
-    * The function has type `antiChain: List[A] => Bool`.
+    * The function has type `isAntiChain: List[A] => Bool`.
     */
   object isAntiChain extends ListOperator {
     val tpe = Lst(A) ~> Bool
