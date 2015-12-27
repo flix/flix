@@ -9,6 +9,7 @@ class Combinators {
   // - Lattice::product(l1, l2).
   // - Lattice:lexiproduct(l1, l2).
 
+
   // TODO: sublattice
   // etc.
 
@@ -18,6 +19,12 @@ class Combinators {
   // - MeetSemiLattice: ...
   // - BoundedLattice: ...
 
+
+
   // TODO: Need Tuple2, Tuple3, etc. operations?
+
+  // TODO: minOpt, maxOpt
+
+
 
 }

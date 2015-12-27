@@ -94,6 +94,8 @@ object FList {
 
     "List::isChain" -> isChain, // TODO: isAscChain, isDescChain
     "List::isAntiChain" -> isAntiChain, // TODO: move to set.
+   // TODO: minOpt: optionally returns the minimum element (if it exists) among the elements of the list.
+  // TODO: maxOpt
     "List::join" -> join,
     "List::meet" -> meet,
   // TODO: widen
