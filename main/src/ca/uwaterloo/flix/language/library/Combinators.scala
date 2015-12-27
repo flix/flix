@@ -18,5 +18,6 @@ class Combinators {
   // - MeetSemiLattice: ...
   // - BoundedLattice: ...
 
+  // TODO: Need Tuple2, Tuple3, etc. operations?
 
 }

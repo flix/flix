@@ -94,9 +94,10 @@ object FList {
 
     "List::isChain" -> isChain,
     "List::isAntiChain" -> isAntiChain,
-
     "List::join" -> join,
-    "List::meet" -> meet
+    "List::meet" -> meet,
+    "List::zipWithJoin" -> zipWithJoin,
+    "List::zipWithMeet" -> zipWithMeet
 
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
