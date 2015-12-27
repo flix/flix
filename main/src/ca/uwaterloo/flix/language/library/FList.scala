@@ -396,7 +396,7 @@ object FList {
   }
 
   /**
-    * Returns all non-bottom elements.
+    * Returns all non-bottom elements in the list.
     *
     * The function has type `strict: List[A] => List[A]`.
     */
@@ -425,7 +425,7 @@ object FList {
   /**
     * Pairwise computes the least upper bound of the elements of the two lists.
     *
-    * If the lists are of unequal length the missing element(s) are assumed to be bottom.
+    * If the lists are of unequal length the missing element(s) are assumed to be bottom. // TODO: or just drop them?
     *
     * The function has type: `(List[A], List[A]) => List[A]`.
     */
@@ -436,7 +436,7 @@ object FList {
   /**
     * Pairwise computes the greatest lower bound of the elements of the two lists.
     *
-    * If the lists are of unequal length the missing element(s) are assumed to be top.
+    * If the lists are of unequal length the missing element(s) are assumed to be top. // TODO: or just drop them?
     *
     * The function has type `(List[A], List[A]) => List[A]`.
     */
