@@ -98,8 +98,8 @@ object FList {
   // TODO: maxOpt
     "List::join" -> join,
     "List::meet" -> meet,
-  // TODO: widen
-  // TODO: narrow
+  // TODO: widen, actually order matters, so it has to be widenLeft, widenRight, etc.
+  // TODO: narrow, again, order matters, so it has to be left/right.
     "List::zipWithJoin" -> zipWithJoin,
     "List::zipWithMeet" -> zipWithMeet
 
