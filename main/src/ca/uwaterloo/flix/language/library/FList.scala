@@ -84,15 +84,18 @@ object FList {
 
     "List::toMap" -> toMap,
     "List::toSet" -> toSet,
-    "List::groupBy" -> groupBy
+    "List::groupBy" -> groupBy,
     // TODO: sum, product, minimum, maximum?
     // TODO: MaximumBy, minimumBy
 
     // TODO: partial order and lattice ops:
     // List:leq xs ys
-    // List::lub
-    // List::meet
 
+    "List::isChain" -> isChain,
+    "List::isAntiChain" -> isAntiChain,
+
+    "List::join" -> join,
+    "List::meet" -> meet
 
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
@@ -356,6 +359,45 @@ object FList {
     */
   object groupBy extends ListOperator {
     val tpe = ((A, A) ~> Bool, Lst(A)) ~> Lst(Lst(A))
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Order and Lattice Operations                                            //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Returns `true` iff the list is a chain according to the partial order.
+    *
+    * The function has type `chain: List[A] => Bool`.
+    */
+  object isChain extends ListOperator {
+    val tpe = Lst(A) ~> Bool
+  }
+
+  /**
+    * Returns `true` iff the list is an anti-chain according to the partial order.
+    *
+    * The function has type `antiChain: List[A] => Bool`.
+    */
+  object isAntiChain extends ListOperator {
+    val tpe = Lst(A) ~> Bool
+  }
+
+  /**
+    * Returns the least upper bound of all elements in the given list. Returns bottom if the list is empty.
+    *
+    * The function has type: `join: List[A] => A`.
+    */
+  object join extends ListOperator {
+    val tpe = Lst(A) ~> A
+  }
+
+  /**
+    * Returns the greatest lower bound of all elements in the given list. Returns top if the list is empty.
+    *
+    * The function has type `meet: List[A] => A`.
+    */
+  object meet extends ListOperator {
+    val tpe = Lst(A) ~> A
   }
 
 }
