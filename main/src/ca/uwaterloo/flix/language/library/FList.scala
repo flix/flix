@@ -90,7 +90,7 @@ object FList {
     // TODO: MaximumBy, minimumBy
 
     // TODO: partial order and lattice ops:
-    // List:leq xs ys
+// TODO: port to Set, Map?
 
     "List::isChain" -> isChain,
     "List::isAntiChain" -> isAntiChain,
@@ -393,6 +393,15 @@ object FList {
     */
   object isAntiChain extends ListOperator {
     val tpe = Lst(A) ~> Bool
+  }
+
+  /**
+    * Returns all non-bottom elements.
+    *
+    * The function has type `strict: List[A] => List[A]`.
+    */
+  object strict extends ListOperator {
+    val tpe = Lst(A) ~> Lst(A)
   }
 
   /**
