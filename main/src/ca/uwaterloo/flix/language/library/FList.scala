@@ -84,7 +84,7 @@ object FList {
     // TODO: rotateLeft, rotateRight??
 
     "List::filter" -> filter,
-    // TODO: slice
+    "List::slice" -> slice,
     "List::take" -> take,
     "List::takeWhile" -> takeWhile,
     "List::drop" -> drop,
@@ -95,7 +95,6 @@ object FList {
     "List::unzip" -> unzip,
 
     // TODO: patch
-
     // TODO: oneOf: List[Opt{A]] => Opt[A]
 
     // TODO: scanLeft, scanRight
@@ -103,7 +102,12 @@ object FList {
 
     "List::groupBy" -> groupBy,
 
-    // TODO: sum, product, minimum, maximum?
+    // aggregation
+    "List::sum" -> sum,
+    "List::product" -> product,
+    "List::minimum" -> minimum,
+    "List::maximum" -> maximum,
+
     // TODO: MaximumBy, minimumBy
 
     // conversion operations.
@@ -394,6 +398,13 @@ object FList {
   }
 
   /**
+    * The `slice : (Int, Int, List[A]) => List[A]` function.
+    */
+  object slice extends ListOperator {
+    val tpe = (Int, Int, Lst(A)) ~> Lst(A)
+  }
+
+  /**
     * The `take : (Int, List[A]) => List[A]` function.
     */
   object take extends ListOperator {
@@ -453,6 +464,45 @@ object FList {
     */
   object groupBy extends ListOperator {
     val tpe = ((A, A) ~> Bool, Lst(A)) ~> Lst(Lst(A))
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Aggregation                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * fn sum(xs: List[Int): Int
+    *
+    * Computes the sum of the elements in the list `xs`. Returns zero if the list is empty.
+    */
+  object sum extends ListOperator {
+    val tpe = Lst(Int) ~> Int
+  }
+
+  /**
+    * fn product(xs: List[Int): Int
+    *
+    * Computes the product of the elements in the list `xs`. Returns one if the list is empty.
+    */
+  object product extends ListOperator {
+    val tpe = Lst(Int) ~> Int
+  }
+
+  /**
+    * fn minimum(xs: List[Int): Int
+    *
+    * Selects the minimum element in the list. Returns Int::MaxValue if the list is empty.
+    */
+  object minimum extends ListOperator {
+    val tpe = Lst(Int) ~> Int
+  }
+
+  /**
+    * fn maximum(xs: List[Int): Int
+    *
+    * Selects the maximum element in the list. Returns Int::MinValue if the list is empty.
+    */
+  object maximum extends ListOperator {
+    val tpe = Lst(Int) ~> Int
   }
 
   /////////////////////////////////////////////////////////////////////////////
