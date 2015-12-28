@@ -40,9 +40,6 @@ object FList {
     "List::permutations" -> permutations,
     "List::subsequences" -> subsequences,
 
-    // TODO: replace
-    // TODO: mapPartial/collect.
-
     "List::indexOf" -> indexOf,
     "List::findLeft" -> findLeft,
     "List::findRight" -> findRight,
@@ -83,6 +80,7 @@ object FList {
     "List::drop" -> drop,
     "List::dropWhile" -> dropWhile,
 
+    "List::replace" -> replace,
     "List::patch" -> patch,
 
     // zipping operations.
@@ -91,6 +89,7 @@ object FList {
     "List::unzip" -> unzip,
 
     // TODO: oneOf: List[Opt{A]] => Opt[A]
+    // TODO: mapPartial/collect.
 
     "List::groupBy" -> groupBy,
 
@@ -799,6 +798,15 @@ object FList {
     */
   object patch extends ListOperator {
     val tpe = ((A, A) ~> Int, Lst(A)) ~> Lst(A)
+  }
+
+  /**
+    * fn replace(index: Int, x: A, xs: List[A]): List[A]
+    *
+    * TODO: doc
+    */
+  object replace extends ListOperator {
+    val tpe = (Int, A, Lst(A)) ~> Lst(A)
   }
 
   // TODO: remember to put generic types.
