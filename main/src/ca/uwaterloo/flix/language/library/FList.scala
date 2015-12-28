@@ -25,7 +25,7 @@ object FList {
     "List::last" -> last,
     "List::length" -> length,
     "List::append" -> append,
-    // TODO at(index)
+    "List::at" -> at,
 
 
     // TODO: intersperse.
@@ -40,7 +40,6 @@ object FList {
     // TODO: subsequences :: [a] -> [[a]]
     // TODO: permutations :: [a] -> [[a]]
 
-
     // TODO: indexOf
     // TODO: findIndex
     // TODO: replace
@@ -52,29 +51,34 @@ object FList {
 
     "List::find" -> find, // TODO: findLeft
     "List::memberOf" -> memberOf,
-    "List::isPrefixOf" -> isPrefixOf, // TODO: or startsWith
+    "List::isPrefixOf" -> isPrefixOf,
     "List::isInfixOf" -> isInfixOf,
-    "List::isSuffixOf" -> isSuffixOf, // TODO: endsWith
+    "List::isSuffixOf" -> isSuffixOf,
     // TODO: isSubsequenceOf
     "List::map" -> map,
-    // TODO: mapWithIndex.
+    "List::mapWithIndex" -> mapWithIndex,
     "List::flatMap" -> flatMap,
     "List::reverse" -> reverse,
     // TODO: permutations
+
+    // fold operations
     "List::foldLeft" -> foldLeft,
     "List::foldRight" -> foldRight,
-    "List::concatenate" -> concatenate,
 
-    // TODO: foldLeft2 on two lists! and similar for other things, like forall2, exists2, reduce2
+    // TODO: map2, foldLeft2 on two lists! and similar for other things, like forall2, exists2, reduce2
+
+    // special fold operations
+    "List::count" -> count,
+    "List::concatenate" -> concatenate,
+    "List::reduceLeft" -> reduceLeft,
+    "List::reduceLeftOpt" -> reduceLeftOpt,
+    "List::reduceRight" -> reduceRight,
+    "List::reduceRightOpt" -> reduceRightOpt,
 
     "List::exists" -> exists,
     "List::forall" -> forall,
     "List::and" -> and,
     "List::or" -> or,
-    "List::reduceLeft" -> reduceLeft,
-    "List::reduceLeftOpt" -> reduceLeftOpt,
-    "List::reduceRight" -> reduceRight,
-    "List::reduceRightOpt" -> reduceRightOpt,
 
     // TODO: rotateLeft, rotateRight??
 
@@ -88,35 +92,31 @@ object FList {
     "List::zipWith" -> zipWith,
     "List::unzip" -> unzip,
 
-    // TODO: count
     // TODO: patch
 
     // TODO: oneOf: List[Opt{A]] => Opt[A]
 
     // TODO: scanLeft, scanRight
 
-    "List::toMap" -> toMap,
-    "List::toSet" -> toSet,
+
     "List::groupBy" -> groupBy,
 
     // TODO: sum, product, minimum, maximum?
     // TODO: MaximumBy, minimumBy
 
-    // TODO: partial order and lattice ops:
-    // TODO: port to Set, Map?
+    // conversion operations.
+    "List::toMap" -> toMap,
+    "List::toSet" -> toSet,
 
+    // order and lattice operations
     "List::isAscChain" -> isAscChain,
     "List::isDescChain" -> isDescChain,
-
-    // TODO: minOpt: optionally returns the minimum element (if it exists) among the elements of the list.
-    // TODO: maxOpt
     "List::join" -> join,
     "List::meet" -> meet,
     "List::widen" -> widen,
     "List::narrow" -> widen,
     "List::zipWithJoin" -> zipWithJoin,
     "List::zipWithMeet" -> zipWithMeet
-
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
@@ -207,6 +207,15 @@ object FList {
   }
 
   /**
+    * Returns the element at the given position in the list.
+    *
+    * The `at : (List[A], Int) => A` function.
+    */
+  object at extends ListOperator {
+    val tpe = (Lst(A), A) ~> A
+  }
+
+  /**
     * The `find : (A => Bool, List[A]) => Opt[A]` function.
     */
   object find extends ListOperator {
@@ -252,6 +261,13 @@ object FList {
   }
 
   /**
+    * The `mapWithIndex : ((A, Int) => B, List[A]) => List[B]` function.
+    */
+  object mapWithIndex extends ListOperator {
+    val tpe = ((A, Int) ~> B, Lst(A)) ~> Lst(B)
+  }
+
+  /**
     * The `flatMap : (A => List[B], List[A]) => List[B]` function.
     */
   object flatMap extends ListOperator {
@@ -285,6 +301,15 @@ object FList {
   /////////////////////////////////////////////////////////////////////////////
   // Special Folds                                                           //
   /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Returns the number of elements satisfying the predicate.
+    *
+    * The `count : (A => Bool, List[A]) => Int` function.
+    */
+  object count extends ListOperator {
+    val tpe = (A ~> Bool, Lst(A)) ~> Int
+  }
+
   /**
     * The `concatenate : List[List[A]] => List[A]` function.
     */
@@ -419,6 +444,16 @@ object FList {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Grouping                                                                //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `groupBy : ((A, A) => Bool, List[A]) => List[List[A]]` function.
+    */
+  object groupBy extends ListOperator {
+    val tpe = ((A, A) ~> Bool, Lst(A)) ~> Lst(Lst(A))
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Conversions                                                             //
   /////////////////////////////////////////////////////////////////////////////
   /**
@@ -433,16 +468,6 @@ object FList {
     */
   object toSet extends ListOperator {
     val tpe = Lst(A) ~> Set(A)
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Grouping                                                                //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `groupBy : ((A, A) => Bool, List[A]) => List[List[A]]` function.
-    */
-  object groupBy extends ListOperator {
-    val tpe = ((A, A) ~> Bool, Lst(A)) ~> Lst(Lst(A))
   }
 
   /////////////////////////////////////////////////////////////////////////////
