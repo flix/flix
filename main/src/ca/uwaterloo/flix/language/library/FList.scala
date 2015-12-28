@@ -103,7 +103,9 @@ object FList {
     "List::minBy" -> minBy,
     "List::maxBy" -> maxBy,
 
-    // TODO: sort / sortBy
+
+    "List::sort" -> sort,
+    "List::sortBy" -> sortBy,
 
     "List::scanLeft" -> scanLeft,
     "List::scanRight" -> scanRight,
@@ -764,6 +766,24 @@ object FList {
     */
   object scanRight extends ListOperator {
     val tpe = ((B, A) ~> B, B, Lst(A)) ~> Lst(B)
+  }
+
+  /**
+    * fn sort(xs: List[A]): List[A]
+    *
+    * TODO: doc
+    */
+  object sort extends ListOperator {
+    val tpe = Lst(A) ~> Lst(A)
+  }
+
+  /**
+    * fn sortBy(f: (A, A) => Ord, xs: List[A]): List[A]
+    *
+    * TODO: doc
+    */
+  object sortBy extends ListOperator {
+    val tpe = ((A, A) ~> Int, Lst(A)) ~> Lst(A)
   }
 
   // TODO: remember to put generic types.
