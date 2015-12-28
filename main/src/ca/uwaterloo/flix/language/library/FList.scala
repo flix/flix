@@ -75,9 +75,9 @@ object FList {
     "List::drop" -> drop,
     "List::dropWhile" -> dropWhile,
     "List::zip" -> zip,
-    // TODO: zipWith
-    // TODO: unzip
-    // TODO: zip
+    "List::zipWith" -> zipWith,
+    "List::unzip" -> unzip,
+
     // TODO: count
     // TODO: patch
 
@@ -120,6 +120,7 @@ object FList {
     */
   val A = Type.Var("A")
   val B = Type.Var("B")
+  val C = Type.Var("C")
 
   /////////////////////////////////////////////////////////////////////////////
   // Basic Operations                                                        //
@@ -341,6 +342,20 @@ object FList {
     */
   object zip extends ListOperator {
     val tpe = (Lst(A), Lst(B)) ~> Lst((A, B))
+  }
+
+  /**
+    * The `zipWith : ((A, B) => C, List[A], List[B]) => List[C]` function.
+    */
+  object zipWith extends ListOperator {
+    val tpe = ((A, B) ~> C, Lst(A), Lst(B)) ~> Lst(C)
+  }
+
+  /**
+    * The `unzip : List[(A, B)] => (List[A], List[B])` function.
+    */
+  object unzip extends ListOperator {
+    val tpe = Lst((A, B)) ~>(Lst(A), Lst(B))
   }
 
   /////////////////////////////////////////////////////////////////////////////
