@@ -8,6 +8,9 @@ import scala.collection.immutable
 
 object FList {
 
+  // Quiz: Know it, use it, love it.
+  // Library = (Scala union Haskell union OCaml) - (wierdness union lang. specific) + Lattice Ops
+
   /**
     * All list operations.
     */
@@ -36,7 +39,6 @@ object FList {
     // TODO: subsequences :: [a] -> [[a]]
     // TODO: permutations :: [a] -> [[a]]
 
-    "List::find" -> find, // TODO: findLeft
     // TODO at(index)
     // TODO: indexOf
     // TODO: findIndex
@@ -44,6 +46,8 @@ object FList {
 
     // TODO: Slice
     // TODO: repeat
+
+    "List::find" -> find, // TODO: findLeft
     "List::memberOf" -> memberOf,
     "List::isPrefixOf" -> isPrefixOf, // TODO: or startsWith
     "List::isInfixOf" -> isInfixOf,
