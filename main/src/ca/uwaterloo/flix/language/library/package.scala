@@ -7,6 +7,11 @@ import scala.collection.immutable
 
 package object library {
 
+  // Quiz: Know it, use it, love it.
+  // Library = (Scala union Haskell union OCaml) - (wierdness union lang. specific) + Lattice Ops
+
+  // TODO: Add flixdoc
+
   /**
     * A common super-type for all library operators.
     */

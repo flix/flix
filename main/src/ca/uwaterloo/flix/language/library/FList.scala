@@ -8,9 +8,6 @@ import scala.collection.immutable
 
 object FList {
 
-  // Quiz: Know it, use it, love it.
-  // Library = (Scala union Haskell union OCaml) - (wierdness union lang. specific) + Lattice Ops
-
   // TODO: check that every operation has a corresponding index op.
   // TODO: check that every operation has a "2" op?
 
@@ -31,21 +28,17 @@ object FList {
     "List::at" -> at,
 
     "List::intersperse" -> intersperse,
-
-    // TODO: intercalate :: [a] -> [[a]] -> [a]
-    // TODO: transpose :: [[a]] -> [[a]]
-
+    "List::intercalate" -> intercalate,
+    "List::transpose" -> transpose,
 
     // TODO: partition, or better, splitWith
     // TODO: splitAt
     // TODO: span
-    // TODO: sortBy
 
     "List::range" -> range,
     "List::repeat" -> repeat,
     "List::permutations" -> permutations,
-
-    // TODO: subsequences :: [a] -> [[a]]
+    "List::subsequences" -> subsequences,
 
     // TODO: indexOf
     // TODO: findIndex
@@ -63,7 +56,10 @@ object FList {
     "List::map" -> map,
     "List::mapWithIndex" -> mapWithIndex,
     "List::flatMap" -> flatMap,
+
     "List::reverse" -> reverse,
+    "List::rotateLeft" -> rotateLeft,
+    "List::rotateRight" -> rotateRight,
 
     // fold operations.
     "List::foldLeft" -> foldLeft,
@@ -94,13 +90,9 @@ object FList {
     "List::zipWith" -> zipWith,
     "List::unzip" -> unzip,
 
-    // TODO: rotateLeft, rotateRight??
-
     // TODO: patch
     // TODO: oneOf: List[Opt{A]] => Opt[A]
     // TODO: scanLeft, scanRight
-
-    // TODO: sort / sortBy
 
     "List::groupBy" -> groupBy,
 
@@ -111,6 +103,8 @@ object FList {
     "List::max" -> max,
     "List::minBy" -> minBy,
     "List::maxBy" -> maxBy,
+
+    // TODO: sort / sortBy
 
     // conversion operations.
     "List::toMap" -> toMap,
@@ -699,12 +693,57 @@ object FList {
   }
 
   /**
+    * Returns all subsequences of the list.
+    *
+    * The function has type `List[A] => List[List[A]]`.
+    */
+  object subsequences extends ListOperator {
+    val tpe = Lst(A) ~> Lst(Lst(A))
+  }
+
+  /**
     * fn intersperse(x: A, xs: List[A]): List[A]
     *
     * TODO: doc
     */
   object intersperse extends ListOperator {
     val tpe = (A, Lst(A)) ~> Lst(A)
+  }
+
+  /**
+    * fn intercalate(x: List[A], xs: List[List[A]]): List[A]
+    *
+    * TODO: doc
+    */
+  object intercalate extends ListOperator {
+    val tpe = (Lst(A), Lst(Lst(A))) ~> Lst(A)
+  }
+
+  /**
+    * fn transpose(xs: List[List[A]]): List[List[A]]
+    *
+    * TODO: doc
+    */
+  object transpose extends ListOperator {
+    val tpe = Lst(Lst(A)) ~> Lst(Lst(A))
+  }
+
+  /**
+    * fn rotateLeft(k: Int, xs: List[A]): List[A]
+    *
+    * TODO: doc
+    */
+  object rotateLeft extends ListOperator {
+    val tpe = (Int, Lst(A)) ~> Lst(A)
+  }
+
+  /**
+    * fn rotateRight(k: Int, xs: List[A]): List[A]
+    *
+    * TODO: doc
+    */
+  object rotateRight extends ListOperator {
+    val tpe = (Int, Lst(A)) ~> Lst(A)
   }
 
 }
