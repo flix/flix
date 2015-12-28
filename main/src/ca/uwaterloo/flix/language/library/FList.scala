@@ -30,7 +30,7 @@ object FList {
     "List::append" -> append,
     "List::at" -> at,
 
-    // TODO: intersperse.
+    "List::intersperse" -> intersperse,
 
     // TODO: intercalate :: [a] -> [[a]] -> [a]
     // TODO: transpose :: [[a]] -> [[a]]
@@ -68,8 +68,6 @@ object FList {
     // fold operations.
     "List::foldLeft" -> foldLeft,
     "List::foldRight" -> foldRight,
-
-    // TODO: map2, foldLeft2 on two lists! and similar for other things, like forall2, exists2, reduce2
 
     // special fold operations.
     "List::count" -> count,
@@ -117,6 +115,21 @@ object FList {
     // conversion operations.
     "List::toMap" -> toMap,
     "List::toSet" -> toSet,
+
+    // operations on two lists.
+    // TODO: map2, foldLeft2 on two lists! and similar for other things, like forall2, exists2, reduce2
+
+    //  val iter2 : ('a -> 'b -> unit) -> 'a list -> 'b list -> unit
+    //    List.iter2 f [a1; ...; an] [b1; ...; bn] calls in turn f a1 b1; ...; f an bn. Raise Invalid_argument if the two lists have different lengths.
+    //  val map2 : ('a -> 'b -> 'c) -> 'a list -> 'b list -> 'c list
+    //  List.map2 f [a1; ...; an] [b1; ...; bn] is [f a1 b1; ...; f an bn]. Raise Invalid_argument if the two lists have different lengths. Not tail-recursive.
+    //  val rev_map2 : ('a -> 'b -> 'c) -> 'a list -> 'b list -> 'c list
+    //  List.rev_map2 f l1 l2 gives the same result as List.rev (List.map2 f l1 l2), but is tail-recursive and more efficient.
+    //  val fold_left2 : ('a -> 'b -> 'c -> 'a) -> 'a -> 'b list -> 'c list -> 'a
+    //  List.fold_left2 f a [b1; ...; bn] [c1; ...; cn] is f (... (f (f a b1 c1) b2 c2) ...) bn cn. Raise Invalid_argument if the two lists have different lengths.
+    //  val fold_right2 : ('a -> 'b -> 'c -> 'c) -> 'a list -> 'b list -> 'c -> 'c
+    //  List.fold_right2 f [a1; ...; an] [b1; ...; bn] c is f a1 b1 (f a2 b2 (... (f an bn c) ...)). Raise Invalid_argument if the two lists have different lengths. Not tail-recursive.
+
 
     // order and lattice operations.
     "List::isAscChain" -> isAscChain,
@@ -601,7 +614,7 @@ object FList {
   /**
     * Returns the least upper bound of all elements in the list. Returns bottom if the list is empty.
     *
-    * The function has type: `join: List[A] => A`.
+    * The function has type: `join: List[A: JoinLattice] => A`.
     */
   object join extends ListOperator {
     val tpe = Lst(A) ~> A
@@ -610,7 +623,7 @@ object FList {
   /**
     * Returns the greatest lower bound of all elements in the list. Returns top if the list is empty.
     *
-    * The function has type `meet: List[A] => A`.
+    * The function has type `meet: List[A: MeetLattice] => A`.
     */
   object meet extends ListOperator {
     val tpe = Lst(A) ~> A
@@ -619,7 +632,7 @@ object FList {
   /**
     * Returns the widening of all elements in the list. Returns bottom if the list is empty.
     *
-    * The function has type `widen: List[A] => A`.
+    * The function has type `widen: List[A: WidenOp] => A`.
     */
   object widen extends ListOperator {
     val tpe = Lst(A) ~> A
@@ -628,7 +641,7 @@ object FList {
   /**
     * Returns the narrowing of all elements in the list. Returns top if the list is empty.
     *
-    * The function has type `narrow: List[A] => A`.
+    * The function has type `narrow: List[A: NarrowOp] => A`.
     */
   object narrow extends ListOperator {
     val tpe = Lst(A) ~> A
@@ -685,5 +698,13 @@ object FList {
     val tpe = Lst(A) ~> Lst(Lst(A))
   }
 
+  /**
+    * fn intersperse(x: A, xs: List[A]): List[A]
+    *
+    * TODO: doc
+    */
+  object intersperse extends ListOperator {
+    val tpe = (A, Lst(A)) ~> Lst(A)
+  }
 
 }
