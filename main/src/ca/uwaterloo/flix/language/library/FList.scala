@@ -31,8 +31,8 @@ object FList {
     "List::intercalate" -> intercalate,
     "List::transpose" -> transpose,
 
-    // TODO: partition, or better, splitWith
     // TODO: splitAt
+    //splitWith
     // TODO: span
 
     "List::range" -> range,
@@ -92,7 +92,6 @@ object FList {
 
     // TODO: patch
     // TODO: oneOf: List[Opt{A]] => Opt[A]
-    // TODO: scanLeft, scanRight
 
     "List::groupBy" -> groupBy,
 
@@ -105,6 +104,9 @@ object FList {
     "List::maxBy" -> maxBy,
 
     // TODO: sort / sortBy
+
+    "List::scanLeft" -> scanLeft,
+    "List::scanRight" -> scanRight,
 
     // conversion operations.
     "List::toMap" -> toMap,
@@ -745,5 +747,25 @@ object FList {
   object rotateRight extends ListOperator {
     val tpe = (Int, Lst(A)) ~> Lst(A)
   }
+
+  /**
+    * fn scanLeft(f: (B, A) => B, x: B, xs: List[A]): List[B]
+    *
+    * TODO: doc
+    */
+  object scanLeft extends ListOperator {
+    val tpe = ((B, A) ~> B, B, Lst(A)) ~> Lst(B)
+  }
+
+  /**
+    * fn scanRight(f: (A, B) => B, x: B, xs: List[A]): List[B]
+    *
+    * TODO: doc
+    */
+  object scanRight extends ListOperator {
+    val tpe = ((B, A) ~> B, B, Lst(A)) ~> Lst(B)
+  }
+
+  // TODO: remember to put generic types.
 
 }
