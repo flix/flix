@@ -40,7 +40,7 @@ object FList {
     "List::permutations" -> permutations,
     "List::subsequences" -> subsequences,
 
-    "List::indexOf" -> indexOf,
+    "List::indexOf" -> indexOf, // TODO: or indexWhere? lastIndexOf???
     "List::findLeft" -> findLeft,
     "List::findRight" -> findRight,
 
@@ -118,18 +118,10 @@ object FList {
     "List::filterMap" -> filterMap,
     "List::findMap" -> findMap,
 
-    // TODO: map2, foldLeft2 on two lists! and similar for other things, like forall2, exists2, reduce2
-    //  val iter2 : ('a -> 'b -> unit) -> 'a list -> 'b list -> unit
-    //    List.iter2 f [a1; ...; an] [b1; ...; bn] calls in turn f a1 b1; ...; f an bn. Raise Invalid_argument if the two lists have different lengths.
-    //  val map2 : ('a -> 'b -> 'c) -> 'a list -> 'b list -> 'c list
-    //  List.map2 f [a1; ...; an] [b1; ...; bn] is [f a1 b1; ...; f an bn]. Raise Invalid_argument if the two lists have different lengths. Not tail-recursive.
-    //  val rev_map2 : ('a -> 'b -> 'c) -> 'a list -> 'b list -> 'c list
-    //  List.rev_map2 f l1 l2 gives the same result as List.rev (List.map2 f l1 l2), but is tail-recursive and more efficient.
-    //  val fold_left2 : ('a -> 'b -> 'c -> 'a) -> 'a -> 'b list -> 'c list -> 'a
-    //  List.fold_left2 f a [b1; ...; bn] [c1; ...; cn] is f (... (f (f a b1 c1) b2 c2) ...) bn cn. Raise Invalid_argument if the two lists have different lengths.
-    //  val fold_right2 : ('a -> 'b -> 'c -> 'c) -> 'a list -> 'b list -> 'c -> 'c
-    //  List.fold_right2 f [a1; ...; an] [b1; ...; bn] c is f a1 b1 (f a2 b2 (... (f an bn c) ...)). Raise Invalid_argument if the two lists have different lengths. Not tail-recursive.
-
+    "List::map2" -> map2,
+    "List::flatMap2" -> flatMap2,
+    "List::foldLeft2" -> foldLeft2,
+    "List::foldRight2" -> foldRight2,
 
     // order and lattice operations.
     "List::isAscChain" -> isAscChain,
@@ -847,6 +839,42 @@ object FList {
     */
   object findMap extends ListOperator {
     val tpe = (A ~> Opt(B), Lst(A)) ~> B
+  }
+
+  /**
+    * fn map2(f: (A, B) => C, xs: List[A], ys: List[B]): List[C]
+    *
+    * TODO: doc
+    */
+  object map2 extends ListOperator {
+    val tpe = ((A, B) ~> C, Lst(A), Lst(B)) ~> Lst(C)
+  }
+
+  /**
+    * fn flatMap2(f: (A, B) => List[C], xs: List[A], ys: List[B]): List[C]
+    *
+    * TODO: doc
+    */
+  object flatMap2 extends ListOperator {
+    val tpe = ((A, B) ~> Lst(C), Lst(A), Lst(B)) ~> Lst(C)
+  }
+
+  /**
+    * fn foldLeft2(f: (C, A, B) => C, c: C, xs: List[A], ys: List[B]): C
+    *
+    * TODO: doc
+    */
+  object foldLeft2 extends ListOperator {
+    val tpe = ((C, A, B) ~> C, C, Lst(A), Lst(B)) ~> C
+  }
+
+  /**
+    * fn foldRight2(f: (A, B, C) => C, c: C, xs: List[A], ys: List[B]): C
+    *
+    * TODO: doc
+    */
+  object foldRight2 extends ListOperator {
+    val tpe = ((A, B, C) ~> C, C, Lst(A), Lst(B)) ~> C
   }
 
   // TODO: remember to put generic types.
