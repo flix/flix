@@ -8,16 +8,13 @@ import scala.collection.immutable
 
 object FList {
 
-  // TODO: Which of these should have special syntax?
-  // TODO: Which should have multiple names?
-
-  // TODO: Need empty and Cons.
-
-
   /**
     * All list operations.
     */
   val Ops: immutable.Map[Name.Resolved, ListOperator] = List(
+    "List::nil" -> nil,
+    "List::cons" -> cons,
+
     "List::null" -> nul,
     "List::head" -> head,
     "List::tail" -> tail,
@@ -48,13 +45,13 @@ object FList {
 
     // TODO: Slice
     // TODO: repeat
-    // TODO: mapWithIndex.
     "List::memberOf" -> memberOf,
     "List::isPrefixOf" -> isPrefixOf, // TODO: or startsWith
     "List::isInfixOf" -> isInfixOf,
     "List::isSuffixOf" -> isSuffixOf, // TODO: endsWith
     // TODO: isSubsequenceOf
     "List::map" -> map,
+    // TODO: mapWithIndex.
     "List::flatMap" -> flatMap,
     "List::reverse" -> reverse,
     // TODO: permutations
@@ -73,7 +70,7 @@ object FList {
     "List::reduceRight" -> reduceRight,
     "List::reduceRightOpt" -> reduceRightOpt,
 
-    // TODO: shiftLeft, shiftRight // rotateLeft, rotateRight??
+    // TODO: rotateLeft, rotateRight??
 
     "List::filter" -> filter,
     "List::take" -> take,
@@ -129,6 +126,23 @@ object FList {
   val A = Type.Var("A")
   val B = Type.Var("B")
   val C = Type.Var("C")
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Construction                                                            //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The empty list.
+    */
+  object nil extends ListOperator {
+    val tpe = ??? // TODO () ~> Lst(A)
+  }
+
+  /**
+    * A cons cell.
+    */
+  object cons extends ListOperator {
+    val tpe = (A, Lst(A)) ~> Lst(A)
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Basic Operations                                                        //
