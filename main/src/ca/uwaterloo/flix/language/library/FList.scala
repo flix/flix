@@ -53,7 +53,7 @@ object FList {
     "List::map" -> map,
     "List::flatMap" -> flatMap,
     "List::reverse" -> reverse,
-  // TODO: permutations
+    // TODO: permutations
     "List::foldLeft" -> foldLeft,
     "List::foldRight" -> foldRight,
     "List::concatenate" -> concatenate,
@@ -67,7 +67,7 @@ object FList {
     "List::reduceRight" -> reduceRight,
     "List::reduceRightOpt" -> reduceRightOpt,
 
-  // TOOO: shiftLeft, shiftRight // rotateLeft, rotateRight??
+    // TOOO: shiftLeft, shiftRight // rotateLeft, rotateRight??
 
     "List::filter" -> filter,
     "List::take" -> take,
@@ -92,16 +92,16 @@ object FList {
     // TODO: MaximumBy, minimumBy
 
     // TODO: partial order and lattice ops:
-// TODO: port to Set, Map?
+    // TODO: port to Set, Map?
 
     "List::isChain" -> isChain, // TODO: isAscChain, isDescChain
     "List::isAntiChain" -> isAntiChain, // TODO: move to set.
-   // TODO: minOpt: optionally returns the minimum element (if it exists) among the elements of the list.
-  // TODO: maxOpt
+    // TODO: minOpt: optionally returns the minimum element (if it exists) among the elements of the list.
+    // TODO: maxOpt
     "List::join" -> join,
     "List::meet" -> meet,
-  // TODO: widen, actually order matters, so it has to be widenLeft, widenRight, etc.
-  // TODO: narrow, again, order matters, so it has to be left/right.
+    "List::widen" -> widen,
+    "List::narrow" -> widen,
     "List::zipWithJoin" -> zipWithJoin,
     "List::zipWithMeet" -> zipWithMeet
 
@@ -425,6 +425,24 @@ object FList {
     * The function has type `meet: List[A] => A`.
     */
   object meet extends ListOperator {
+    val tpe = Lst(A) ~> A
+  }
+
+  /**
+    * Returns the widening of all elements in the list. Returns bottom if the list is empty.
+    *
+    * The function has type `widen: List[A] => A`.
+    */
+  object widen extends ListOperator {
+    val tpe = Lst(A) ~> A
+  }
+
+  /**
+    * Returns the narrowing of all elements in the list. Returns top if the list is empty.
+    *
+    * The function has type `narrow: List[A] => A`.
+    */
+  object narrow extends ListOperator {
     val tpe = Lst(A) ~> A
   }
 
