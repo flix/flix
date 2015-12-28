@@ -8,11 +8,6 @@ import scala.collection.immutable
 
 object FList {
 
-  // TODO: check that every operation has a corresponding index op.
-  // TODO: check that every operation has a "2" op?
-
-  // TODO: last vs. right
-
   /**
     * All list operations.
     */
@@ -41,7 +36,7 @@ object FList {
     "List::permutations" -> permutations,
     "List::subsequences" -> subsequences,
 
-    "List::indexOf" -> indexOf, // TODO: or indexWhere? lastIndexOf???
+    "List::indexWhere" -> indexWhere,
     "List::findLeft" -> findLeft,
     "List::findRight" -> findRight,
 
@@ -229,9 +224,9 @@ object FList {
   }
 
   /**
-    * The `indexOf : (A => Bool, List[A]) => Int` function.
+    * The `indexWhere : (A => Bool, List[A]) => Int` function.
     */
-  object indexOf extends ListOperator {
+  object indexWhere extends ListOperator {
     val tpe = (A ~> Bool, Lst(A)) ~> Int
   }
 
