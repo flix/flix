@@ -21,18 +21,22 @@ object FList {
     "List::null" -> nul,
     "List::head" -> head,
     "List::tail" -> tail,
+    "List::init" -> init,
+    "List::last" -> last,
+
     // TODO: length
-    // TODO: init
-    // TODO: last
     // TODO: mapPartial/collect.
+    // TODO: append
+
+    // TODO: intersperse.
+    // TODO: intercalate :: [a] -> [[a]] -> [a]
+    // TODO: transpose :: [[a]] -> [[a]]
+
     // TODO: partition, or better, splitWith
     // TODO: splitAt
     // TODO: span
     // TODO: sortBy
-    // TODO: append
-    // TODO: intersperse.
-    // TODO: intercalate :: [a] -> [[a]] -> [a]
-    // TODO: transpose :: [[a]] -> [[a]]
+
     // TODO: subsequences :: [a] -> [[a]]
     // TODO: permutations :: [a] -> [[a]]
 
@@ -58,6 +62,8 @@ object FList {
     "List::foldRight" -> foldRight,
     "List::concatenate" -> concatenate,
 
+    // TODO: foldLeft2 on two lists! and similar for other things, like forall2, exists2, reduce2
+
     "List::exists" -> exists,
     "List::forall" -> forall,
     "List::and" -> and,
@@ -67,13 +73,14 @@ object FList {
     "List::reduceRight" -> reduceRight,
     "List::reduceRightOpt" -> reduceRightOpt,
 
-    // TOOO: shiftLeft, shiftRight // rotateLeft, rotateRight??
+    // TODO: shiftLeft, shiftRight // rotateLeft, rotateRight??
 
     "List::filter" -> filter,
     "List::take" -> take,
     "List::takeWhile" -> takeWhile,
     "List::drop" -> drop,
     "List::dropWhile" -> dropWhile,
+
     "List::zip" -> zip,
     "List::zipWith" -> zipWith,
     "List::unzip" -> unzip,
@@ -88,6 +95,7 @@ object FList {
     "List::toMap" -> toMap,
     "List::toSet" -> toSet,
     "List::groupBy" -> groupBy,
+
     // TODO: sum, product, minimum, maximum?
     // TODO: MaximumBy, minimumBy
 
@@ -143,6 +151,20 @@ object FList {
     * The `tail : List[A] => List[A]` function.
     */
   object tail extends ListOperator {
+    val tpe = Lst(A) ~> Lst(A)
+  }
+
+  /**
+    * The `last : List[A] => A` function.
+    */
+  object last extends ListOperator {
+    val tpe = Lst(A) ~> A
+  }
+
+  /**
+    * The `init : List[A] => List[A]` function.
+    */
+  object init extends ListOperator {
     val tpe = Lst(A) ~> Lst(A)
   }
 
