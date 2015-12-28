@@ -94,8 +94,9 @@ object FList {
     // TODO: partial order and lattice ops:
     // TODO: port to Set, Map?
 
-    "List::isChain" -> isChain, // TODO: isAscChain, isDescChain
-    "List::isAntiChain" -> isAntiChain, // TODO: move to set.
+    "List::isAscChain" -> isAscChain,
+    "List::isDescChain" -> isDescChain,
+
     // TODO: minOpt: optionally returns the minimum element (if it exists) among the elements of the list.
     // TODO: maxOpt
     "List::join" -> join,
@@ -384,20 +385,20 @@ object FList {
   }
 
   /**
-    * Returns `true` iff the list is a chain according to the partial order.
+    * Returns `true` iff the list is an ascending chain according to the partial order.
     *
-    * The function has type `isChain: List[A] => Bool`.
+    * The function has type `isAscChain: List[A] => Bool`.
     */
-  object isChain extends ListOperator {
+  object isAscChain extends ListOperator {
     val tpe = Lst(A) ~> Bool
   }
 
   /**
-    * Returns `true` iff the list is an anti-chain according to the partial order.
+    * Returns `true` iff the list is a descending chain according to the partial order.
     *
-    * The function has type `isAntiChain: List[A] => Bool`.
+    * The function has type `isDescChain: List[A] => Bool`.
     */
-  object isAntiChain extends ListOperator {
+  object isDescChain extends ListOperator {
     val tpe = Lst(A) ~> Bool
   }
 

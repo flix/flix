@@ -42,7 +42,6 @@ object FSet {
     // TODO: zip?
   // TODO: min, max, minBy, maxBy
 
-
   // TODO: scala's aggregate[B](z: ⇒ B)(seqop: (B, (A, B)) ⇒ B, combop: (B, B) ⇒ B): B
 
 
@@ -201,6 +200,18 @@ object FSet {
     */
   object toMap extends SetOperator {
     val tpe = Set((A, B)) ~> Type.Map(A, B)
+  }
+
+
+
+  /**
+    * Returns `true` iff the list is an anti-chain according to the partial order.
+    *
+    * The function has type `isAntiChain: List[A] => Bool`.
+    */
+  // TODO
+  object isAntiChain extends SetOperator {
+    val tpe = Lst(A) ~> Bool
   }
 
 }
