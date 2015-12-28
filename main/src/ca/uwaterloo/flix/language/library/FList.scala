@@ -18,7 +18,7 @@ object FList {
     * All list operations.
     */
   val Ops: immutable.Map[Name.Resolved, ListOperator] = List(
-    // basic operations
+    // basic operations.
     "List::nil" -> nil,
     "List::cons" -> cons,
     "List::null" -> nul,
@@ -31,6 +31,7 @@ object FList {
     "List::at" -> at,
 
     // TODO: intersperse.
+
     // TODO: intercalate :: [a] -> [[a]] -> [a]
     // TODO: transpose :: [[a]] -> [[a]]
 
@@ -52,7 +53,9 @@ object FList {
 
     // TODO: mapPartial/collect.
 
-    "List::find" -> find, // TODO: findLeft
+    "List::findLeft" -> findLeft,
+    "List::findRight" -> findRight,
+
     "List::memberOf" -> memberOf,
     "List::isPrefixOf" -> isPrefixOf,
     "List::isInfixOf" -> isInfixOf,
@@ -62,13 +65,13 @@ object FList {
     "List::flatMap" -> flatMap,
     "List::reverse" -> reverse,
 
-    // fold operations
+    // fold operations.
     "List::foldLeft" -> foldLeft,
     "List::foldRight" -> foldRight,
 
     // TODO: map2, foldLeft2 on two lists! and similar for other things, like forall2, exists2, reduce2
 
-    // special fold operations
+    // special fold operations.
     "List::count" -> count,
     "List::concatenate" -> concatenate,
     "List::reduceLeft" -> reduceLeft,
@@ -81,8 +84,6 @@ object FList {
     "List::and" -> and,
     "List::or" -> or,
 
-    // TODO: rotateLeft, rotateRight??
-
     "List::filter" -> filter,
     "List::slice" -> slice,
     "List::take" -> take,
@@ -90,19 +91,22 @@ object FList {
     "List::drop" -> drop,
     "List::dropWhile" -> dropWhile,
 
+    // zipping operations.
     "List::zip" -> zip,
     "List::zipWith" -> zipWith,
     "List::unzip" -> unzip,
 
+    // TODO: rotateLeft, rotateRight??
+
     // TODO: patch
     // TODO: oneOf: List[Opt{A]] => Opt[A]
-
     // TODO: scanLeft, scanRight
 
+    // TODO: sort / sortBy
 
     "List::groupBy" -> groupBy,
 
-    // aggregation
+    // aggregation operations.
     "List::sum" -> sum,
     "List::product" -> product,
     "List::min" -> min,
@@ -110,13 +114,11 @@ object FList {
     "List::minBy" -> minBy,
     "List::maxBy" -> maxBy,
 
-    // TODO: MaximumBy, minimumBy
-
     // conversion operations.
     "List::toMap" -> toMap,
     "List::toSet" -> toSet,
 
-    // order and lattice operations
+    // order and lattice operations.
     "List::isAscChain" -> isAscChain,
     "List::isDescChain" -> isDescChain,
     "List::join" -> join,
@@ -224,9 +226,16 @@ object FList {
   }
 
   /**
-    * The `find : (A => Bool, List[A]) => Opt[A]` function.
+    * The `findLeft : (A => Bool, List[A]) => Opt[A]` function.
     */
-  object find extends ListOperator {
+  object findLeft extends ListOperator {
+    val tpe = (A ~> Bool, Lst(A)) ~> Opt(A)
+  }
+
+  /**
+    * The `findRight : (A => Bool, List[A]) => Opt[A]` function.
+    */
+  object findRight extends ListOperator {
     val tpe = (A ~> Bool, Lst(A)) ~> Opt(A)
   }
 
@@ -512,10 +521,22 @@ object FList {
     *
     * Selects the minimum element in the list according to the total order induced by the `cmp` function.
     *
-    * Aborts if the list is empty?
+    * TODO Aborts if the list is empty?
     */
   // TODO: Kind of need type class instance?
   object minBy extends ListOperator {
+    val tpe = ((A, A) ~> Bool, Lst(A)) ~> A
+  }
+
+  /**
+    * fn maxBy[A](ord: (A, A) => Ord, xs: List[A): A
+    *
+    * Selects the maximum element in the list according to the total order induced by the `cmp` function.
+    *
+    * TODO Aborts if the list is empty?
+    */
+  // TODO: Kind of need type class instance?
+  object maxBy extends ListOperator {
     val tpe = ((A, A) ~> Bool, Lst(A)) ~> A
   }
 
