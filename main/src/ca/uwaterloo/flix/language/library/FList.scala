@@ -33,9 +33,8 @@ object FList {
     "List::intercalate" -> intercalate,
     "List::transpose" -> transpose,
 
-    // TODO: splitAt
-    //splitWith
-    // TODO: span
+    "List::span" -> span,
+    "List::partition" -> partition,
 
     "List::range" -> range,
     "List::repeat" -> repeat,
@@ -874,6 +873,24 @@ object FList {
     */
   object foldRight2 extends ListOperator {
     val tpe = ((A, B, C) ~> C, C, Lst(A), Lst(B)) ~> C
+  }
+
+  /**
+    * fn span(f: A => Bool, xs: List[A]): (List[A], List[A])
+    *
+    * TODO: doc
+    */
+  object span extends ListOperator {
+    val tpe = (A ~> Bool, Lst(A), Lst(B)) ~>(Lst(A), Lst(A))
+  }
+
+  /**
+    * fn partition(f: A => Bool, xs: List[A]): (List[A], List[A])
+    *
+    * TODO: doc
+    */
+  object partition extends ListOperator {
+    val tpe = (A ~> Bool, Lst(A), Lst(B)) ~>(Lst(A), Lst(A))
   }
 
   // TODO: remember to put generic types.
