@@ -26,6 +26,10 @@ package object library {
     def ~>(that: Type): Type = Type.Lambda(List(thiz), that)
   }
 
+  implicit class RichTuple(thiz: Unit) {
+    def ~>(that: Type): Type = Type.Lambda(List.empty[Type], that)
+  }
+
   implicit class RichTuple2(thiz: (Type, Type)) {
     def ~>(that: Type): Type = Type.Lambda(List(thiz._1, thiz._2), that)
   }

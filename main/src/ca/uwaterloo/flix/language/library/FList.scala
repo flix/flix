@@ -8,6 +8,8 @@ import scala.collection.immutable
 
 object FList {
 
+  // TODO: Unit and ()??
+
   /**
     * All list operations.
     */
@@ -134,7 +136,7 @@ object FList {
     * The empty list.
     */
   object nil extends ListOperator {
-    val tpe = ??? // TODO () ~> Lst(A)
+    val tpe = () ~> Lst(A)
   }
 
   /**
