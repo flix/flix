@@ -1,7 +1,6 @@
 .idea/
 /api/
 /out/
-/target/
 /*.iml
 /flix.jar
-project/target
+target
