@@ -8,24 +8,21 @@ import scala.collection.immutable
 
 object FList {
 
-  // TODO: Unit and ()??
-
   /**
     * All list operations.
     */
   val Ops: immutable.Map[Name.Resolved, ListOperator] = List(
     "List::nil" -> nil,
     "List::cons" -> cons,
-
     "List::null" -> nul,
     "List::head" -> head,
     "List::tail" -> tail,
     "List::init" -> init,
     "List::last" -> last,
+    "List::length" -> length,
+    "List::append" -> append,
 
-    // TODO: length
     // TODO: mapPartial/collect.
-    // TODO: append
 
     // TODO: intersperse.
     // TODO: intercalate :: [a] -> [[a]] -> [a]
@@ -171,6 +168,13 @@ object FList {
   }
 
   /**
+    * The `init : List[A] => List[A]` function.
+    */
+  object init extends ListOperator {
+    val tpe = Lst(A) ~> Lst(A)
+  }
+
+  /**
     * The `last : List[A] => A` function.
     */
   object last extends ListOperator {
@@ -178,10 +182,21 @@ object FList {
   }
 
   /**
-    * The `init : List[A] => List[A]` function.
+    * Returns the length of the list.
+    *
+    * The `length : List[A] => Int` function.
     */
-  object init extends ListOperator {
-    val tpe = Lst(A) ~> Lst(A)
+  object length extends ListOperator {
+    val tpe = Lst(A) ~> Int
+  }
+
+  /**
+    * Returns the first list with the second list appended.
+    *
+    * The `append : (List[A], List[A]) => List[A]` function.
+    */
+  object append extends ListOperator {
+    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
   }
 
   /**
