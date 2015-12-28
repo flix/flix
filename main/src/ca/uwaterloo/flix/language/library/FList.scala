@@ -11,6 +11,8 @@ object FList {
   // TODO: check that every operation has a corresponding index op.
   // TODO: check that every operation has a "2" op?
 
+  // TODO: last vs. right
+
   /**
     * All list operations.
     */
@@ -108,16 +110,13 @@ object FList {
     "List::toMap" -> toMap,
     "List::toSet" -> toSet,
 
-    // operations on two lists.
-
-    // TODO:  unfoldLeft, unfoldRight,
-
     "List::oneOf" -> oneOf,
 
     "List::concatMap" -> concatMap,
     "List::filterMap" -> filterMap,
     "List::findMap" -> findMap,
 
+    // operations on two lists.
     "List::map2" -> map2,
     "List::flatMap2" -> flatMap2,
     "List::foldLeft2" -> foldLeft2,
