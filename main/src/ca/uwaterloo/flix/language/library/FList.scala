@@ -105,8 +105,10 @@ object FList {
     // aggregation
     "List::sum" -> sum,
     "List::product" -> product,
-    "List::minimum" -> minimum,
-    "List::maximum" -> maximum,
+    "List::min" -> min,
+    "List::max" -> max,
+    "List::minBy" -> minBy,
+    "List::maxBy" -> maxBy,
 
     // TODO: MaximumBy, minimumBy
 
@@ -492,7 +494,7 @@ object FList {
     *
     * Selects the minimum element in the list. Returns Int::MaxValue if the list is empty.
     */
-  object minimum extends ListOperator {
+  object min extends ListOperator {
     val tpe = Lst(Int) ~> Int
   }
 
@@ -501,8 +503,20 @@ object FList {
     *
     * Selects the maximum element in the list. Returns Int::MinValue if the list is empty.
     */
-  object maximum extends ListOperator {
+  object max extends ListOperator {
     val tpe = Lst(Int) ~> Int
+  }
+
+  /**
+    * fn minBy[A](ord: (A, A) => Ord, xs: List[A): A
+    *
+    * Selects the minimum element in the list according to the total order induced by the `cmp` function.
+    *
+    * Aborts if the list is empty?
+    */
+  // TODO: Kind of need type class instance?
+  object minBy extends ListOperator {
+    val tpe = ((A, A) ~> Bool, Lst(A)) ~> A
   }
 
   /////////////////////////////////////////////////////////////////////////////
