@@ -88,7 +88,6 @@ object FList {
     "List::zipWith" -> zipWith,
     "List::unzip" -> unzip,
 
-    // TODO: oneOf: List[Opt{A]] => Opt[A]
     // TODO: mapPartial/collect.
 
     "List::groupBy" -> groupBy,
@@ -126,6 +125,12 @@ object FList {
     //  val fold_right2 : ('a -> 'b -> 'c -> 'c) -> 'a list -> 'b list -> 'c -> 'c
     //  List.fold_right2 f [a1; ...; an] [b1; ...; bn] c is f a1 b1 (f a2 b2 (... (f an bn c) ...)). Raise Invalid_argument if the two lists have different lengths. Not tail-recursive.
 
+    // TODO:  unfoldLeft, unfoldRight,
+
+    "List::oneOf" -> oneOf,
+
+    "List::filterMap" -> filterMap,
+    "List::findMap" -> findMap,
 
     // order and lattice operations.
     "List::isAscChain" -> isAscChain,
@@ -807,6 +812,33 @@ object FList {
     */
   object replace extends ListOperator {
     val tpe = (Int, A, Lst(A)) ~> Lst(A)
+  }
+
+  /**
+    * fn oneOf(xs: List[Opt[A]]): Opt[A]
+    *
+    * TODO: doc
+    */
+  object oneOf extends ListOperator {
+    val tpe = Lst(Opt(A)) ~> Opt(A)
+  }
+
+  /**
+    * fn filterMap(f: A => Opt[B], xs: List[A]): List[B]
+    *
+    * TODO: doc
+    */
+  object filterMap extends ListOperator {
+    val tpe = (A ~> Opt(B), Lst(A)) ~> Lst(B)
+  }
+
+  /**
+    * fn findMap(f: A => Opt[B], xs: List[A]): Opt[B]
+    *
+    * TODO: doc
+    */
+  object findMap extends ListOperator {
+    val tpe = (A ~> Opt(B), Lst(A)) ~> B
   }
 
   // TODO: remember to put generic types.
