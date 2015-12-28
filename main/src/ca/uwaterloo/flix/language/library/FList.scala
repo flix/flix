@@ -11,6 +11,9 @@ object FList {
   // Quiz: Know it, use it, love it.
   // Library = (Scala union Haskell union OCaml) - (wierdness union lang. specific) + Lattice Ops
 
+  // TODO: check that every operation has a corresponding index op.
+  // TODO: check that every operation has a "2" op?
+
   /**
     * All list operations.
     */
@@ -27,18 +30,21 @@ object FList {
     "List::append" -> append,
     "List::at" -> at,
 
-
     // TODO: intersperse.
     // TODO: intercalate :: [a] -> [[a]] -> [a]
     // TODO: transpose :: [[a]] -> [[a]]
+
 
     // TODO: partition, or better, splitWith
     // TODO: splitAt
     // TODO: span
     // TODO: sortBy
 
+    "List::range" -> range,
+    "List::repeat" -> repeat,
+    "List::permutations" -> permutations,
+
     // TODO: subsequences :: [a] -> [[a]]
-    // TODO: permutations :: [a] -> [[a]]
 
     // TODO: indexOf
     // TODO: findIndex
@@ -46,20 +52,15 @@ object FList {
 
     // TODO: mapPartial/collect.
 
-    // TODO: Slice
-    // TODO: repeat
-
     "List::find" -> find, // TODO: findLeft
     "List::memberOf" -> memberOf,
     "List::isPrefixOf" -> isPrefixOf,
     "List::isInfixOf" -> isInfixOf,
     "List::isSuffixOf" -> isSuffixOf,
-    // TODO: isSubsequenceOf
     "List::map" -> map,
     "List::mapWithIndex" -> mapWithIndex,
     "List::flatMap" -> flatMap,
     "List::reverse" -> reverse,
-    // TODO: permutations
 
     // fold operations
     "List::foldLeft" -> foldLeft,
@@ -83,6 +84,7 @@ object FList {
     // TODO: rotateLeft, rotateRight??
 
     "List::filter" -> filter,
+    // TODO: slice
     "List::take" -> take,
     "List::takeWhile" -> takeWhile,
     "List::drop" -> drop,
@@ -568,5 +570,35 @@ object FList {
   object zipWithMeet extends ListOperator {
     val tpe = (Lst(A), Lst(A)) ~> Lst(A)
   }
+
+  // TODO: sort .....~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  /**
+    * Returns a list of all numbers in the range (including the smallest number and excluding the largest number).
+    *
+    * The function has type `(Int, Int) => List[Int]`.
+    */
+  object range extends ListOperator {
+    val tpe = (Int, Int) ~> Lst(Int)
+  }
+
+  /**
+    * Returns a list with the element repeated a given number of times.
+    *
+    * The function has type `(A, Int) => List[A]`.
+    */
+  object repeat extends ListOperator {
+    val tpe = (A, Int) ~> Lst(A)
+  }
+
+  /**
+    * Returns all permutations of the list.
+    *
+    * The function has type `List[A] => List[List[A]]`.
+    */
+  object permutations extends ListOperator {
+    val tpe = Lst(A) ~> Lst(Lst(A))
+  }
+
 
 }
