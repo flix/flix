@@ -40,12 +40,10 @@ object FList {
     "List::permutations" -> permutations,
     "List::subsequences" -> subsequences,
 
-    // TODO: indexOf
-    // TODO: findIndex
     // TODO: replace
-
     // TODO: mapPartial/collect.
 
+    "List::indexOf" -> indexOf,
     "List::findLeft" -> findLeft,
     "List::findRight" -> findRight,
 
@@ -85,12 +83,13 @@ object FList {
     "List::drop" -> drop,
     "List::dropWhile" -> dropWhile,
 
+    "List::patch" -> patch,
+
     // zipping operations.
     "List::zip" -> zip,
     "List::zipWith" -> zipWith,
     "List::unzip" -> unzip,
 
-    // TODO: patch
     // TODO: oneOf: List[Opt{A]] => Opt[A]
 
     "List::groupBy" -> groupBy,
@@ -234,6 +233,13 @@ object FList {
     */
   object at extends ListOperator {
     val tpe = (Lst(A), A) ~> A
+  }
+
+  /**
+    * The `indexOf : (A => Bool, List[A]) => Int` function.
+    */
+  object indexOf extends ListOperator {
+    val tpe = (A ~> Bool, Lst(A)) ~> Int
   }
 
   /**
@@ -783,6 +789,15 @@ object FList {
     * TODO: doc
     */
   object sortBy extends ListOperator {
+    val tpe = ((A, A) ~> Int, Lst(A)) ~> Lst(A)
+  }
+
+  /**
+    * fn patch(from: Int, xs: List[A], replaced: Int): List[A]
+    *
+    * TODO: doc
+    */
+  object patch extends ListOperator {
     val tpe = ((A, A) ~> Int, Lst(A)) ~> Lst(A)
   }
 
