@@ -88,8 +88,6 @@ object FList {
     "List::zipWith" -> zipWith,
     "List::unzip" -> unzip,
 
-    // TODO: mapPartial/collect.
-
     "List::groupBy" -> groupBy,
 
     // aggregation operations.
@@ -99,7 +97,6 @@ object FList {
     "List::max" -> max,
     "List::minBy" -> minBy,
     "List::maxBy" -> maxBy,
-
 
     "List::sort" -> sort,
     "List::sortBy" -> sortBy,
@@ -112,8 +109,16 @@ object FList {
     "List::toSet" -> toSet,
 
     // operations on two lists.
-    // TODO: map2, foldLeft2 on two lists! and similar for other things, like forall2, exists2, reduce2
 
+    // TODO:  unfoldLeft, unfoldRight,
+
+    "List::oneOf" -> oneOf,
+
+    "List::concatMap" -> concatMap,
+    "List::filterMap" -> filterMap,
+    "List::findMap" -> findMap,
+
+    // TODO: map2, foldLeft2 on two lists! and similar for other things, like forall2, exists2, reduce2
     //  val iter2 : ('a -> 'b -> unit) -> 'a list -> 'b list -> unit
     //    List.iter2 f [a1; ...; an] [b1; ...; bn] calls in turn f a1 b1; ...; f an bn. Raise Invalid_argument if the two lists have different lengths.
     //  val map2 : ('a -> 'b -> 'c) -> 'a list -> 'b list -> 'c list
@@ -125,12 +130,6 @@ object FList {
     //  val fold_right2 : ('a -> 'b -> 'c -> 'c) -> 'a list -> 'b list -> 'c -> 'c
     //  List.fold_right2 f [a1; ...; an] [b1; ...; bn] c is f a1 b1 (f a2 b2 (... (f an bn c) ...)). Raise Invalid_argument if the two lists have different lengths. Not tail-recursive.
 
-    // TODO:  unfoldLeft, unfoldRight,
-
-    "List::oneOf" -> oneOf,
-
-    "List::filterMap" -> filterMap,
-    "List::findMap" -> findMap,
 
     // order and lattice operations.
     "List::isAscChain" -> isAscChain,
@@ -821,6 +820,15 @@ object FList {
     */
   object oneOf extends ListOperator {
     val tpe = Lst(Opt(A)) ~> Opt(A)
+  }
+
+  /**
+    * fn concatMap(f: A => List[B], xs: List[A]): List[B]
+    *
+    * TODO: doc
+    */
+  object concatMap extends ListOperator {
+    val tpe = (A ~> Lst(B), Lst(A)) ~> Lst(B)
   }
 
   /**
