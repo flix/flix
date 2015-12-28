@@ -15,6 +15,7 @@ object FList {
     * All list operations.
     */
   val Ops: immutable.Map[Name.Resolved, ListOperator] = List(
+    // basic operations
     "List::nil" -> nil,
     "List::cons" -> cons,
     "List::null" -> nul,
@@ -24,8 +25,8 @@ object FList {
     "List::last" -> last,
     "List::length" -> length,
     "List::append" -> append,
+    // TODO at(index)
 
-    // TODO: mapPartial/collect.
 
     // TODO: intersperse.
     // TODO: intercalate :: [a] -> [[a]] -> [a]
@@ -39,10 +40,12 @@ object FList {
     // TODO: subsequences :: [a] -> [[a]]
     // TODO: permutations :: [a] -> [[a]]
 
-    // TODO at(index)
+
     // TODO: indexOf
     // TODO: findIndex
     // TODO: replace
+
+    // TODO: mapPartial/collect.
 
     // TODO: Slice
     // TODO: repeat
