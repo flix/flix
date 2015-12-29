@@ -12,25 +12,18 @@ object FOpt {
     * All Opt operations.
     */
   val Ops: immutable.Map[Name.Resolved, OptOperator] = List(
-    // TODO: None/Some
-    // TODO: isNone
-    // TODO: isSome
 
-    // TODO: null
     // TODO: get
     // TODO: getOrElse
-    // TODO:  or
-    // TODO: orElse: (Opt[A], Opt[A] => Opt[A]
     // TODO: filter
     // TODO: exists
     // TODO: forall
 
-    // TODO: map2: ((Opt, Opt) => A, Opt, Opt) => Opt
-    // TODO: flatMap2: see above
-
+    "Opt/null" -> nul,
     "Opt/map" -> map,
     "Opt/map2" -> map,
     "Opt/flatMap" -> flatMap,
+    "Opt/orElse" -> orElse,
     "Opt/toList" -> toList,
     "Opt/toSet" -> toSet
   ).map {
@@ -52,6 +45,10 @@ object FOpt {
   /////////////////////////////////////////////////////////////////////////////
   // Basic Operations                                                        //
   /////////////////////////////////////////////////////////////////////////////
+  object nul extends OptOperator {
+    val tpe = Opt(A) ~> Bool
+  }
+
   object map extends OptOperator {
     val tpe = (A ~> B, Opt(A)) ~> Opt(B)
   }
@@ -66,6 +63,10 @@ object FOpt {
 
   object flatMap2 extends OptOperator {
     val tpe = ((A, B) ~> Opt(C), Opt(A), Opt(B)) ~> Opt(C)
+  }
+
+  object orElse extends OptOperator {
+    val tpe = (Opt(A), Opt(A)) ~> Opt(A)
   }
 
   object toList extends OptOperator {
