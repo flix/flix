@@ -14,8 +14,7 @@ object FDebug {
   val Ops: immutable.Map[Name.Resolved, DebugOperator] = List(
     "Debug::abort!" -> abort,
     "Debug::print!" -> print,
-    "Debug::time!" -> time,
-    "Debug::trace!" -> trace
+    "Debug::time!" -> time
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
@@ -39,10 +38,6 @@ object FDebug {
   }
 
   object time extends DebugOperator {
-    val tpe = (() ~> A) ~> A
-  }
-
-  object trace extends DebugOperator {
     val tpe = (() ~> A) ~> A
   }
 

@@ -13,20 +13,22 @@ object FMap {
     */
   val Ops: immutable.Map[Name.Resolved, MapOperator] = List(
     "Map::null" -> nul,
+    "Map::get" -> get,
+    "Map::getWithDefault" -> getWithDefault,
     "Map::memberOf" -> memberOf,
-    "Map::lookup" -> lookup,
-  // TODO: LookupWithDefault
+
     "Map::insert" -> insert,
   // TODOL insertWith
   // TODO: insertWithKey
-    // TODO: adjust
-    // TODO: adjustWithKey
 
     "Map::update" -> update,
 // TODO: Update with key
     "Map::delete" -> delete,
 // TODO: alter
     "Map::union" -> union,
+
+    // TODO: adjust
+    // TODO: adjustWithKey
   // TODO: unionWith
   // TODO: unionWithKey
     // TODO: Empty, singleton
@@ -96,8 +98,12 @@ object FMap {
     val tpe = (K, Map(K, V)) ~> Bool
   }
 
-  object lookup extends MapOperator {
+  object get extends MapOperator {
     val tpe = (K, Map(K, V)) ~> Opt(V)
+  }
+
+  object getWithDefault extends MapOperator {
+    val tpe = (K, V, Map(K, V)) ~> V
   }
 
   /////////////////////////////////////////////////////////////////////////////
