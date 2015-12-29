@@ -146,16 +146,10 @@ object FList {
   /////////////////////////////////////////////////////////////////////////////
   // Construction                                                            //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The empty list.
-    */
   object nil extends ListOperator {
     val tpe = () ~> Lst(A)
   }
 
-  /**
-    * A cons cell.
-    */
   object cons extends ListOperator {
     val tpe = (A, Lst(A)) ~> Lst(A)
   }
@@ -163,37 +157,22 @@ object FList {
   /////////////////////////////////////////////////////////////////////////////
   // Basic Operations                                                        //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `null : List[A] => Bool` function.
-    */
   object nul extends ListOperator {
     val tpe = Lst(A) ~> Bool
   }
 
-  /**
-    * The `head : List[A] => A` function.
-    */
   object head extends ListOperator {
     val tpe = Lst(A) ~> A
   }
 
-  /**
-    * The `tail : List[A] => List[A]` function.
-    */
   object tail extends ListOperator {
     val tpe = Lst(A) ~> Lst(A)
   }
 
-  /**
-    * The `init : List[A] => List[A]` function.
-    */
   object init extends ListOperator {
     val tpe = Lst(A) ~> Lst(A)
   }
 
-  /**
-    * The `last : List[A] => A` function.
-    */
   object last extends ListOperator {
     val tpe = Lst(A) ~> A
   }
