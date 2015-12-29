@@ -29,6 +29,7 @@ object FOpt {
     // TODO: flatMap2: see above
 
     "Opt/map" -> map,
+    "Opt/map2" -> map,
     "Opt/flatMap" -> flatMap,
     "Opt/toList" -> toList,
     "Opt/toSet" -> toSet
@@ -46,12 +47,17 @@ object FOpt {
     */
   val A = Type.Var("A")
   val B = Type.Var("B")
+  val C = Type.Var("C")
 
   /////////////////////////////////////////////////////////////////////////////
   // Basic Operations                                                        //
   /////////////////////////////////////////////////////////////////////////////
   object map extends OptOperator {
     val tpe = (A ~> B, Opt(A)) ~> Opt(B)
+  }
+
+  object map2 extends OptOperator {
+    val tpe = ((A, B) ~> C, Opt(A), Opt(B)) ~> Opt(C)
   }
 
   object flatMap extends OptOperator {
