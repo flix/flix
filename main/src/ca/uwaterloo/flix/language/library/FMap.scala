@@ -13,7 +13,6 @@ object FMap {
     */
   val Ops: immutable.Map[Name.Resolved, MapOperator] = List(
     "Map::null" -> nul,
-  // TODO: Empty, singleton
     "Map::memberOf" -> memberOf,
     "Map::lookup" -> lookup,
   // TODO: LookupWithDefault
@@ -30,6 +29,7 @@ object FMap {
     "Map::union" -> union,
   // TODO: unionWith
   // TODO: unionWithKey
+    // TODO: Empty, singleton
 
     "Map::intersection" -> intersection,
   // TODO: intersectionWith
@@ -88,23 +88,14 @@ object FMap {
   /////////////////////////////////////////////////////////////////////////////
   // Basic Operations                                                        //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `null : Map[K, V] => Bool` function.
-    */
   object nul extends MapOperator {
     val tpe = Map(K, V) ~> Bool
   }
 
-  /**
-    * The `memberOf : (K, Map[K, V]) => Bool` function.
-    */
   object memberOf extends MapOperator {
     val tpe = (K, Map(K, V)) ~> Bool
   }
 
-  /**
-    * The `lookup : (K, Map[K, V]) => Opt[V]` function.
-    */
   object lookup extends MapOperator {
     val tpe = (K, Map(K, V)) ~> Opt(V)
   }
