@@ -64,6 +64,10 @@ object FOpt {
     val tpe = (A ~> Opt(B), Opt(A)) ~> Opt(B)
   }
 
+  object flatMap2 extends OptOperator {
+    val tpe = ((A, B) ~> Opt(C), Opt(A), Opt(B)) ~> Opt(C)
+  }
+
   object toList extends OptOperator {
     val tpe = Opt(A) ~> Lst(A)
   }
