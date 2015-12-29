@@ -8,8 +8,9 @@ import scala.collection.immutable
 
 object FOpt {
 
-  // TODO: Create cheatsheet
+  // TODO: Implement using `null` and iterators.
 
+  // TODO: Create cheatsheet
 
   /**
     * All option operations.

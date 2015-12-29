@@ -8,6 +8,8 @@ import scala.collection.immutable
 
 object FList {
 
+  // TODO: Implement using custom linked list, while loops and iterators.
+
   /**
     * All list operations.
     */
