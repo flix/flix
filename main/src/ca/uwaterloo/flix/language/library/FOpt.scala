@@ -13,17 +13,18 @@ object FOpt {
     */
   val Ops: immutable.Map[Name.Resolved, OptOperator] = List(
 
-    // TODO: get
-    // TODO: getOrElse
+    // TODO: get!
     // TODO: filter
     // TODO: exists
     // TODO: forall
 
     "Opt/null" -> nul,
+    "Opt/get" -> get,
+    "Opt/getWithDefault" -> getWithDefault,
     "Opt/map" -> map,
     "Opt/map2" -> map,
     "Opt/flatMap" -> flatMap,
-    "Opt/orElse" -> orElse,
+    "Opt/withDefault" -> withDefault,
     "Opt/toList" -> toList,
     "Opt/toSet" -> toSet
   ).map {
@@ -49,6 +50,14 @@ object FOpt {
     val tpe = Opt(A) ~> Bool
   }
 
+  object get extends OptOperator {
+    val tpe = Opt(A) ~> A
+  }
+
+  object getWithDefault extends OptOperator {
+    val tpe = (Opt(A), A) ~> A
+  }
+
   object map extends OptOperator {
     val tpe = (A ~> B, Opt(A)) ~> Opt(B)
   }
@@ -65,7 +74,7 @@ object FOpt {
     val tpe = ((A, B) ~> Opt(C), Opt(A), Opt(B)) ~> Opt(C)
   }
 
-  object orElse extends OptOperator {
+  object withDefault extends OptOperator {
     val tpe = (Opt(A), Opt(A)) ~> Opt(A)
   }
 
