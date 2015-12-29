@@ -178,31 +178,16 @@ object FList {
     val tpe = Lst(A) ~> A
   }
 
-  /**
-    * Returns the length of the list.
-    *
-    * The `length : List[A] => Int` function.
-    */
   object length extends ListOperator {
     val tpe = Lst(A) ~> Int
   }
 
-  /**
-    * Returns the first list with the second list appended.
-    *
-    * The `append : (List[A], List[A]) => List[A]` function.
-    */
   object append extends ListOperator {
     val tpe = (Lst(A), Lst(A)) ~> Lst(A)
   }
 
-  /**
-    * Returns the element at the given position in the list.
-    *
-    * The `at : (List[A], Int) => A` function.
-    */
   object at extends ListOperator {
-    val tpe = (Lst(A), A) ~> A
+    val tpe = (Int, Lst(A)) ~> A
   }
 
   /**
