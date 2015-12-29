@@ -12,10 +12,10 @@ object FDebug {
     * All debug operations.
     */
   val Ops: immutable.Map[Name.Resolved, DebugOperator] = List(
-    "Debug::abort" -> abort,
-    "Debug::print" -> print,
-    "Debug::time" -> time,
-    "Debug::trace" -> trace
+    "Debug::abort!" -> abort,
+    "Debug::print!" -> print,
+    "Debug::time!" -> time,
+    "Debug::trace!" -> trace
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
@@ -30,32 +30,20 @@ object FDebug {
     */
   val A = Type.Var("A")
 
-  /**
-    * The `abort : Str => Unit` function.
-    */
   object abort extends DebugOperator {
     val tpe = Str ~> Unit
   }
 
-  /**
-    * The `print : A => A` function.
-    */
   object print extends DebugOperator {
     val tpe = A ~> A
   }
 
-  /**
-    * The `time : A => A` function.
-    */
   object time extends DebugOperator {
-    val tpe = A ~> A
+    val tpe = (() ~> A) ~> A
   }
 
-  /**
-    * The `trace : A => A` function.
-    */
   object trace extends DebugOperator {
-    val tpe = A ~> A
+    val tpe = (() ~> A) ~> A
   }
 
 }
