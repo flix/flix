@@ -532,15 +532,8 @@ object FList {
   /////////////////////////////////////////////////////////////////////////////
   // Order and Lattice Operations                                            //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Pairwise compares elements from the two lists according to the partial order.
-    *
-    * Returns `true` if for every pair the first component is less than or equal to the second component.
-    *
-    * The function has type: `leq: (List[A], List[A]) => Bool`.
-    */
   object leq extends ListOperator {
-    val tpe = Lst(A) ~> Bool
+    val tpe = (Lst(A), Lst(A)) ~> Bool
   }
 
   /**
