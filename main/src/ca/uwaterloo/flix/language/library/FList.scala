@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.library
 import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Type._
+import ca.uwaterloo.flix.runtime.Value
 
 import scala.collection.immutable
 
@@ -870,5 +871,29 @@ object FList {
   }
 
   // TODO: remember to put generic types.
+
+  sealed trait MyList
+
+  object MyList {
+
+    object Nil extends MyList
+
+    case class Cons(hd: Value, tl: MyList) extends MyList
+
+  }
+
+  def eval(op: ListOperator, args: Array[Value]): Value = op match {
+    case `nil` => ???
+    case `cons` => ???
+    case `head` => evalHead(args(0).asInstanceOf[MyList])
+  }
+
+  def evalHead(xs: MyList): Value = xs match {
+    case MyList.Nil => ???
+    case MyList.Cons(hd, tl) => hd
+  }
+
+
+
 
 }
