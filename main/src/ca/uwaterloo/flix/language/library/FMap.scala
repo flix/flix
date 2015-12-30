@@ -18,8 +18,8 @@ object FMap {
     "Map::memberOf" -> memberOf,
 
     "Map::insert" -> insert,
-  // TODOL insertWith
-  // TODO: insertWithKey
+    "Map::insertWith" -> insertWith,
+    "Map::insertWithKey" -> insertWithKey,
 
     "Map::update" -> update,
 // TODO: Update with key
@@ -115,6 +115,10 @@ object FMap {
 
   object insertWith extends MapOperator {
     val tpe = ((V, V) ~> V, K, V, Map(K, V)) ~> Map(K, V)
+  }
+
+  object insertWithKey extends MapOperator {
+    val tpe = ((K, V, V) ~> V, K, V, Map(K, V)) ~> Map(K, V)
   }
 
   /**
