@@ -109,11 +109,12 @@ object FMap {
   /////////////////////////////////////////////////////////////////////////////
   // Insert / Update / Delete                                                //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `insert : (K, V, Map[K, V]) => Map[K, V]` function.
-    */
   object insert extends MapOperator {
     val tpe = (K, V, Map(K, V)) ~> Map(K, V)
+  }
+
+  object insertWith extends MapOperator {
+    val tpe = ((V, V) ~> V, K, V, Map(K, V)) ~> Map(K, V)
   }
 
   /**
