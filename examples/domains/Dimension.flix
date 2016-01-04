@@ -89,21 +89,6 @@ namespace Dimension {
     }
 
     /**
-     * Returns the dimension of the sum of the given dimensions `e1` and `e2`.
-     */
-    @strict @monotone @commutative @associative
-    fn sum(d1: Dimension, d2: Dimension): Dimension = match (d1, d2) with {
-        case (Dimension.Unitless, Dimension.Unitless)           => Dimension.Unitless
-        case (Dimension.Length, Dimension.Length)               => Dimension.Length
-        case (Dimension.Surface, Dimension.Surface)             => Dimension.Surface
-        case (Dimension.Time, Dimension.Time)                   => Dimension.Time
-        case (Dimension.Velocity, Dimension.Velocity)           => Dimension.Velocity
-        case (Dimension.Acceleration, Dimension.Acceleration)   => Dimension.Acceleration
-        case (Dimension.Mass, Dimension.Mass)                   => Dimension.Mass
-        case (Dimension.Force, Dimension.Force)                 => Dimension.Force
-    }
-
-    /**
      * Returns the dimension of the product of the given dimensions `e1` and `e2`.
      */
     @strict @monotone @commutative
