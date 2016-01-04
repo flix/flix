@@ -119,7 +119,8 @@ object FList {
     "List::foldLeft2" -> foldLeft2,
     "List::foldRight2" -> foldRight2,
 
-    // order and lattice operations.
+    // Order and Lattice Operations.
+    "List::leq" -> leq,
     "List::isAscChain" -> isAscChain,
     "List::isDescChain" -> isDescChain,
     "List::join" -> join,
@@ -502,97 +503,6 @@ object FList {
     val tpe = Lst(A) ~> Set(A)
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Order and Lattice Operations                                            //
-  /////////////////////////////////////////////////////////////////////////////
-  object leq extends ListOperator {
-    val tpe = (Lst(A), Lst(A)) ~> Bool
-  }
-
-  /**
-    * Returns `true` iff the list is an ascending chain according to the partial order.
-    *
-    * The function has type `isAscChain: List[A] => Bool`.
-    */
-  object isAscChain extends ListOperator {
-    val tpe = Lst(A) ~> Bool
-  }
-
-  /**
-    * Returns `true` iff the list is a descending chain according to the partial order.
-    *
-    * The function has type `isDescChain: List[A] => Bool`.
-    */
-  object isDescChain extends ListOperator {
-    val tpe = Lst(A) ~> Bool
-  }
-
-  /**
-    * Returns all non-bottom elements in the list.
-    *
-    * The function has type `strict: List[A] => List[A]`.
-    */
-  object strict extends ListOperator {
-    val tpe = Lst(A) ~> Lst(A)
-  }
-
-  /**
-    * Returns the least upper bound of all elements in the list. Returns bottom if the list is empty.
-    *
-    * The function has type: `join: List[A: JoinLattice] => A`.
-    */
-  object join extends ListOperator {
-    val tpe = Lst(A) ~> A
-  }
-
-  /**
-    * Returns the greatest lower bound of all elements in the list. Returns top if the list is empty.
-    *
-    * The function has type `meet: List[A: MeetLattice] => A`.
-    */
-  object meet extends ListOperator {
-    val tpe = Lst(A) ~> A
-  }
-
-  /**
-    * Returns the widening of all elements in the list. Returns bottom if the list is empty.
-    *
-    * The function has type `widen: List[A: WidenOp] => A`.
-    */
-  object widen extends ListOperator {
-    val tpe = Lst(A) ~> A
-  }
-
-  /**
-    * Returns the narrowing of all elements in the list. Returns top if the list is empty.
-    *
-    * The function has type `narrow: List[A: NarrowOp] => A`.
-    */
-  object narrow extends ListOperator {
-    val tpe = Lst(A) ~> A
-  }
-
-  /**
-    * Pairwise computes the least upper bound of the elements of the two lists.
-    *
-    * If the lists are of unequal length the missing element(s) are assumed to be bottom. // TODO: or just drop them?
-    *
-    * The function has type: `(List[A], List[A]) => List[A]`.
-    */
-  object zipWithJoin extends ListOperator {
-    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
-  }
-
-  /**
-    * Pairwise computes the greatest lower bound of the elements of the two lists.
-    *
-    * If the lists are of unequal length the missing element(s) are assumed to be top. // TODO: or just drop them?
-    *
-    * The function has type `(List[A], List[A]) => List[A]`.
-    */
-  object zipWithMeet extends ListOperator {
-    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
-  }
 
   // TODO: sort .....~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -820,6 +730,53 @@ object FList {
   object partition extends ListOperator {
     val tpe = (A ~> Bool, Lst(A), Lst(B)) ~>(Lst(A), Lst(A))
   }
+
+
+
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Order and Lattice Operations                                            //
+  /////////////////////////////////////////////////////////////////////////////
+  object leq extends ListOperator {
+    val tpe = (Lst(A), Lst(A)) ~> Bool
+  }
+
+  object isAscChain extends ListOperator {
+    val tpe = Lst(A) ~> Bool
+  }
+
+  object isDescChain extends ListOperator {
+    val tpe = Lst(A) ~> Bool
+  }
+
+  object join extends ListOperator {
+    val tpe = Lst(A) ~> A
+  }
+
+  object meet extends ListOperator {
+    val tpe = Lst(A) ~> A
+  }
+
+  object widen extends ListOperator {
+    val tpe = Lst(A) ~> A
+  }
+
+  object narrow extends ListOperator {
+    val tpe = Lst(A) ~> A
+  }
+
+  object zipWithJoin extends ListOperator {
+    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
+  }
+
+  object zipWithMeet extends ListOperator {
+    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
+  }
+
+
+
+
 
   // TODO: remember to put generic types.
 
