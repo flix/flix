@@ -47,9 +47,9 @@ namespace Constant {
     }
 
     /**
-     * Lifts a regular integer into the Sign domain.
+     * Abstracts a concrete integer into the Sign domain.
      */
-    fn lift(i: Int): Constant = Constant.Cst(i)
+    fn alpha(i: Int): Constant = Constant.Cst(i)
 
     /**
      * Over-approximates integer `addition`.
@@ -178,7 +178,7 @@ namespace Constant {
     fn eq(e1: Constant, e2: Constant): Belnap::Belnap = match (e1, e2) with {
         case (Constant.Bot, _)                      => Belnap::Belnap.Bot
         case (_, Constant.Bot)                      => Belnap::Belnap.Bot
-        case (Constant.Cst(n1), Constant.Cst(n2))   => Belnap::lift(n1 == n2)
+        case (Constant.Cst(n1), Constant.Cst(n2))   => Belnap::alpha(n1 == n2)
         case _                                      => Belnap::Belnap.Top
     }
 
@@ -195,7 +195,7 @@ namespace Constant {
     fn less(e1: Constant, e2: Constant): Belnap::Belnap = match (e1, e2) with {
         case (Constant.Bot, _)                      => Belnap::Belnap.Bot
         case (_, Constant.Bot)                      => Belnap::Belnap.Bot
-        case (Constant.Cst(n1), Constant.Cst(n2))   => Belnap::lift(n1 < n2)
+        case (Constant.Cst(n1), Constant.Cst(n2))   => Belnap::alpha(n1 < n2)
         case _                                      => Belnap::Belnap.Top
     }
 

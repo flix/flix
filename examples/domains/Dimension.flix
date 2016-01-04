@@ -81,5 +81,3 @@ namespace Dimension {
 //4(E)) = T4 6)
 
 }
-
-// TODO: rename "lift: in other lattices to alpha?

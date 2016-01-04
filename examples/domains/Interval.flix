@@ -62,9 +62,9 @@ namespace Interval {
     }
 
     /**
-     * Lifts a regular integer into the interval domain.
+     * Abstracts a concrete integer into the interval domain.
      */
-    fn lift(i: Int): Interval = Interval.Range(i, i)
+    fn alpha(i: Int): Interval = Interval.Range(i, i)
 
     /**
      * Over-approximates integer `addition`.

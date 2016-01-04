@@ -53,12 +53,13 @@ namespace Sign {
     }
 
     /**
-     * Lifts a regular integer into the Sign domain.
+     * Abstracts a concrete integer into the Sign domain.
      */
-    fn lift(i: Int): Sign =
+    fn alpha(i: Int): Sign =
         if (i < 0) Sign.Neg else
             if (i == 0) Sign.Zer else
                 Sign.Pos
+    // TODO: Use switch/branch/cond
 
     /**
      * Over-approximates integer `addition`.

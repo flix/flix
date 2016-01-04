@@ -322,7 +322,7 @@ namespace ConstantSign {
     fn eq(e1: ConstSign, e2: ConstSign): Belnap::Belnap = match (e1, e2) with {
         case (ConstSign.Bot, _)                         => Belnap::Belnap.Bot
         case (_, ConstSign.Bot)                         => Belnap::Belnap.Bot
-        case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => Belnap::lift(n1 == n2)
+        case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => Belnap::alpha(n1 == n2)
         case (ConstSign.Cst(n1), ConstSign.Neg)         =>
             if (n1 > 0) Belnap::Belnap.False else Belnap::Belnap.Top
         case (ConstSign.Neg, ConstSign.Cst(n1))         =>
@@ -347,7 +347,7 @@ namespace ConstantSign {
     fn less(e1: ConstSign, e2: ConstSign): Belnap::Belnap = match (e1, e2) with {
         case (ConstSign.Bot, _)                         => Belnap::Belnap.Bot
         case (_, ConstSign.Bot)                         => Belnap::Belnap.Bot
-        case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => Belnap::lift(n1 < n2)
+        case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => Belnap::alpha(n1 < n2)
         case (ConstSign.Cst(n1), ConstSign.Neg)         =>
             if (n1 > 0) Belnap::Belnap.False else Belnap::Belnap.Top
         case (ConstSign.Neg, ConstSign.Cst(n1))         =>
