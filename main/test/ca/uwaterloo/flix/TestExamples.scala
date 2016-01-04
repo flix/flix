@@ -246,6 +246,11 @@ class TestExamples extends FunSuite {
     assertResult(List(One))(A(List(Value.mkInt(9))))
   }
 
+  test("Type.flix") {
+    val input1 = Source.fromFile("./examples/domains/Type.flix").getLines().mkString("\n")
+    val model = Flix.mkStr(List(input1)).get
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Misc                                                                    //
   /////////////////////////////////////////////////////////////////////////////
@@ -260,7 +265,7 @@ class TestExamples extends FunSuite {
     assert(model.isSuccess)
   }
 
-  test("Interval.flix") {
+  ignore("Interval.flix") {
     val model = Flix.mkPath(Paths.get("./examples/domains/Interval.flix"))
     model.get
   }
