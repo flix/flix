@@ -246,6 +246,11 @@ class TestExamples extends FunSuite {
     assertResult(List(One))(A(List(Value.mkInt(9))))
   }
 
+  test("Dimension.flix") {
+    val input1 = Source.fromFile("./examples/domains/Dimension.flix").getLines().mkString("\n")
+    val model = Flix.mkStr(List(input1)).get
+  }
+
   test("Type.flix") {
     val input1 = Source.fromFile("./examples/domains/Type.flix").getLines().mkString("\n")
     val model = Flix.mkStr(List(input1)).get

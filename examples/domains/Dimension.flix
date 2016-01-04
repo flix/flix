@@ -5,11 +5,13 @@
  */
 namespace Dimension {
 
+    // TODO: Is this lattice simply the flat lattice?
+
     /**
      * The elements of the dimension lattice.
      */
     enum Dimension {
-        case Length, case Surface, case Volume, case Time, case Velocity, case Acceleration, case Mass, case Force, case NoDim
+        case Length, case Surface, case Volume, case Time, case Velocity, case Acceleration, case Mass, case Force, case Unitless
     }
 
     /**
@@ -86,30 +88,58 @@ namespace Dimension {
         case Measure.Newton             => Dimension.Force
     }
 
-
+    /**
+     * Returns the dimension of the sum of the given dimensions `e1` and `e2`.
+     */
+    @strict @monotone @commutative @associative
     fn sum(d1: Dimension, d2: Dimension): Dimension = match (d1, d2) with {
-        case (Dimension.Length, Dimension.Length)       => Dimension.Length
-        case (Dimension.Surface, Dimension.Surface)     => Dimension.Surface
-        case (Dimension.Time, Dimension.Time)           => Dimension.Time
-
+        case (Dimension.Unitless, Dimension.Unitless)           => Dimension.Unitless
+        case (Dimension.Length, Dimension.Length)               => Dimension.Length
+        case (Dimension.Surface, Dimension.Surface)             => Dimension.Surface
+        case (Dimension.Time, Dimension.Time)                   => Dimension.Time
+        case (Dimension.Velocity, Dimension.Velocity)           => Dimension.Velocity
+        case (Dimension.Acceleration, Dimension.Acceleration)   => Dimension.Acceleration
+        case (Dimension.Mass, Dimension.Mass)                   => Dimension.Mass
+        case (Dimension.Force, Dimension.Force)                 => Dimension.Force
     }
 
-    // length, su$ace, volume, time, speed, acceleration, mass, force,. . . , nodimension.
+    /**
+     * Returns the dimension of the product of the given dimensions `e1` and `e2`.
+     */
+    @strict @monotone @commutative
+    fn times(d1: Dimension, d2: Dimension): Dimension = match (d1, d2) with {
+        case (Dimension.Unitless, _)                    => d2
+        case (_, Dimension.Unitless)                    => d1
+        case (Dimension.Length, Dimension.Length)       => Dimension.Surface
+
+        case (Dimension.Length, Dimension.Surface)      => Dimension.Volume
+        case (Dimension.Surface, Dimension.Length)      => Dimension.Volume
+
+        case (Dimension.Time, Dimension.Velocity)       => Dimension.Length
+        case (Dimension.Velocity, Dimension.Time)       => Dimension.Length
+
+        case (Dimension.Time, Dimension.Acceleration)   => Dimension.Velocity
+        case (Dimension.Acceleration, Dimension.Time)   => Dimension.Velocity
+
+        case (Dimension.Mass, Dimension.Acceleration)   => Dimension.Force
+        case (Dimension.Acceleration, Dimension.Mass)   => Dimension.Force
+
+        case _ => ???: Dimension // TODO
+    }
+
+    /**
+     * Returns the dimension of the division of the given dimensions `e1` and `e2`.
+     */
+    @strict @monotone
+    fn divide(d1: Dimension, d2: Dimension): Dimension = match (d1, d2) with {
+        case (Dimension.Unitless, Dimension.Unitless)   => Dimension.Unitless
+    }
 
 //    length rlength = length
 //    length xlength = surface
 //    length / length = nodimension
 //    length / time = speed
 //    speed / time = acceleration
-//
-//a( meter) = length a(pound) = mass
-//cr(mile) = length cu(ton) = mass
-//a(acre) = surface ff (Newton) = force
-//a(second) = time (Y (nounit) = nodimension
-//cY(minute) = time . . .
-//cx(hour) = time
-//(Y ( kilogram) = mass
-//a(E, opE,) = &&&E,)
-//4(E)) = T4 6)
+
 
 }
