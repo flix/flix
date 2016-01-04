@@ -82,7 +82,7 @@ object FList {
     "List::replace" -> replace,
     "List::patch" -> patch,
 
-    // zipping operations.
+    // Zipping and Unzipping
     "List::zip" -> zip,
     "List::zipWith" -> zipWith,
     "List::unzip" -> unzip,
@@ -373,68 +373,41 @@ object FList {
   /////////////////////////////////////////////////////////////////////////////
   // Sub Lists                                                               //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `filter : (A => Bool, List[A]) => List[A]` function.
-    */
   object filter extends ListOperator {
     val tpe = (A ~> Bool, Lst(A)) ~> Lst(A)
   }
 
-  /**
-    * The `slice : (Int, Int, List[A]) => List[A]` function.
-    */
   object slice extends ListOperator {
     val tpe = (Int, Int, Lst(A)) ~> Lst(A)
   }
 
-  /**
-    * The `take : (Int, List[A]) => List[A]` function.
-    */
   object take extends ListOperator {
     val tpe = (Int, Lst(A)) ~> Lst(A)
   }
 
-  /**
-    * The `takeWhile : (A => Bool, List[A]) => List[A]` function.
-    */
   object takeWhile extends ListOperator {
     val tpe = (A ~> Bool, Lst(A)) ~> Lst(A)
   }
 
-  /**
-    * The `drop : (Int, List[A]) => List[A]` function.
-    */
   object drop extends ListOperator {
     val tpe = (Int, Lst(A)) ~> Lst(A)
   }
 
-  /**
-    * The `dropWhile : (A => Bool, List[A]) => List[A]` function.
-    */
   object dropWhile extends ListOperator {
     val tpe = (A ~> Bool, Lst(A)) ~> Lst(A)
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Zipping                                                                 //
+  // Zipping and Unzipping                                                   //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `zip : (List[A], List[B]) => List[(A, B)]` function.
-    */
   object zip extends ListOperator {
     val tpe = (Lst(A), Lst(B)) ~> Lst((A, B))
   }
 
-  /**
-    * The `zipWith : ((A, B) => C, List[A], List[B]) => List[C]` function.
-    */
   object zipWith extends ListOperator {
     val tpe = ((A, B) ~> C, Lst(A), Lst(B)) ~> Lst(C)
   }
 
-  /**
-    * The `unzip : List[(A, B)] => (List[A], List[B])` function.
-    */
   object unzip extends ListOperator {
     val tpe = Lst((A, B)) ~>(Lst(A), Lst(B))
   }
