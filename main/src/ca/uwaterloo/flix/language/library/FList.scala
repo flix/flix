@@ -9,8 +9,6 @@ import scala.collection.immutable
 
 object FList {
 
-  // TODO: Implement using custom linked list, while loops and iterators.
-
   /**
     * All list operations.
     */
@@ -113,7 +111,7 @@ object FList {
     "List::filterMap" -> filterMap,
     "List::findMap" -> findMap,
 
-    // operations on two lists.
+    // Two List Operations.
     "List::map2" -> map2,
     "List::flatMap2" -> flatMap2,
     "List::foldLeft2" -> foldLeft2,
@@ -678,42 +676,6 @@ object FList {
   }
 
   /**
-    * fn map2(f: (A, B) => C, xs: List[A], ys: List[B]): List[C]
-    *
-    * TODO: doc
-    */
-  object map2 extends ListOperator {
-    val tpe = ((A, B) ~> C, Lst(A), Lst(B)) ~> Lst(C)
-  }
-
-  /**
-    * fn flatMap2(f: (A, B) => List[C], xs: List[A], ys: List[B]): List[C]
-    *
-    * TODO: doc
-    */
-  object flatMap2 extends ListOperator {
-    val tpe = ((A, B) ~> Lst(C), Lst(A), Lst(B)) ~> Lst(C)
-  }
-
-  /**
-    * fn foldLeft2(f: (C, A, B) => C, c: C, xs: List[A], ys: List[B]): C
-    *
-    * TODO: doc
-    */
-  object foldLeft2 extends ListOperator {
-    val tpe = ((C, A, B) ~> C, C, Lst(A), Lst(B)) ~> C
-  }
-
-  /**
-    * fn foldRight2(f: (A, B, C) => C, c: C, xs: List[A], ys: List[B]): C
-    *
-    * TODO: doc
-    */
-  object foldRight2 extends ListOperator {
-    val tpe = ((A, B, C) ~> C, C, Lst(A), Lst(B)) ~> C
-  }
-
-  /**
     * fn span(f: A => Bool, xs: List[A]): (List[A], List[A])
     *
     * TODO: doc
@@ -732,7 +694,24 @@ object FList {
   }
 
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Two List Operations                                                     //
+  /////////////////////////////////////////////////////////////////////////////
+  object map2 extends ListOperator {
+    val tpe = ((A, B) ~> C, Lst(A), Lst(B)) ~> Lst(C)
+  }
 
+  object flatMap2 extends ListOperator {
+    val tpe = ((A, B) ~> Lst(C), Lst(A), Lst(B)) ~> Lst(C)
+  }
+
+  object foldLeft2 extends ListOperator {
+    val tpe = ((C, A, B) ~> C, C, Lst(A), Lst(B)) ~> C
+  }
+
+  object foldRight2 extends ListOperator {
+    val tpe = ((A, B, C) ~> C, C, Lst(A), Lst(B)) ~> C
+  }
 
 
   /////////////////////////////////////////////////////////////////////////////
@@ -773,35 +752,5 @@ object FList {
   object zipWithMeet extends ListOperator {
     val tpe = (Lst(A), Lst(A)) ~> Lst(A)
   }
-
-
-
-
-
-  // TODO: remember to put generic types.
-
-  sealed trait MyList
-
-  object MyList {
-
-    object Nil extends MyList
-
-    case class Cons(hd: Value, tl: MyList) extends MyList
-
-  }
-
-  def eval(op: ListOperator, args: Array[Value]): Value = op match {
-    case `nil` => ???
-    case `cons` => ???
-    case `head` => evalHead(args(0).asInstanceOf[MyList])
-  }
-
-  def evalHead(xs: MyList): Value = xs match {
-    case MyList.Nil => ???
-    case MyList.Cons(hd, tl) => hd
-  }
-
-
-
 
 }
