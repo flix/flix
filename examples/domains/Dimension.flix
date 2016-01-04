@@ -110,6 +110,7 @@ namespace Dimension {
     fn times(d1: Dimension, d2: Dimension): Dimension = match (d1, d2) with {
         case (Dimension.Unitless, _)                    => d2
         case (_, Dimension.Unitless)                    => d1
+
         case (Dimension.Length, Dimension.Length)       => Dimension.Surface
 
         case (Dimension.Length, Dimension.Surface)      => Dimension.Volume
@@ -132,14 +133,25 @@ namespace Dimension {
      */
     @strict @monotone
     fn divide(d1: Dimension, d2: Dimension): Dimension = match (d1, d2) with {
-        case (Dimension.Unitless, Dimension.Unitless)   => Dimension.Unitless
+        case (Dimension.Unitless, _)                    => d2
+        case (_, Dimension.Unitless)                    => d1
+
+        case (Dimension.Surface, Dimension.Length)      => Dimension.Length
+
+        case (Dimension.Volume, Dimension.Length)       => Dimension.Surface
+        case (Dimension.Volume, Dimension.Surface)      => Dimension.Length
+
+        case (Dimension.Length, Dimension.Time)         => Dimension.Velocity
+
+        case (Dimension.Velocity, Dimension.Time)       => Dimension.Acceleration
+
+        case (Dimension.Force, Dimension.Mass)          => Dimension.Acceleration
+
+        case _ =>
+            if (d1 == d2)
+                Dimension.Unitless
+            else
+                ???: Dimension // TODO
     }
-
-//    length rlength = length
-//    length xlength = surface
-//    length / length = nodimension
-//    length / time = speed
-//    speed / time = acceleration
-
 
 }
