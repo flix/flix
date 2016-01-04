@@ -8,7 +8,7 @@
 namespace Interval {
 
     /**
-     * The elements of the boolean lattice.
+     * The elements of the interval lattice.
      */
     enum Interval {
             case Top,
