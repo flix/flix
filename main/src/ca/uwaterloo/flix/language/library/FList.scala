@@ -3,7 +3,6 @@ package ca.uwaterloo.flix.language.library
 import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Type._
-import ca.uwaterloo.flix.runtime.Value
 
 import scala.collection.immutable
 
@@ -62,14 +61,15 @@ object FList {
     "List::reduceRight" -> reduceRight,
     "List::reduceRightOpt" -> reduceRightOpt,
 
-    // special fold operations.
+    // Special Fold Operations.
     "List::count" -> count,
-    "List::concatenate" -> concatenate,
+    "List::concat" -> concat,
     "List::exists" -> exists,
     "List::forall" -> forall,
     "List::and" -> and,
     "List::or" -> or,
 
+  // Sub List Operations.
     "List::filter" -> filter,
     "List::slice" -> slice,
     "List::take" -> take,
@@ -299,19 +299,11 @@ object FList {
   /////////////////////////////////////////////////////////////////////////////
   // Special Folds                                                           //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Returns the number of elements satisfying the predicate.
-    *
-    * The `count : (A => Bool, List[A]) => Int` function.
-    */
   object count extends ListOperator {
     val tpe = (A ~> Bool, Lst(A)) ~> Int
   }
 
-  /**
-    * The `concatenate : List[List[A]] => List[A]` function.
-    */
-  object concatenate extends ListOperator {
+  object concat extends ListOperator {
     val tpe = Lst(Lst(A)) ~> Lst(A)
   }
 
