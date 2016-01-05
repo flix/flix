@@ -40,9 +40,6 @@ object FList {
     "List::findRight" -> findRight,
 
     "List::memberOf" -> memberOf,
-    "List::isPrefixOf" -> isPrefixOf,
-    "List::isInfixOf" -> isInfixOf,
-    "List::isSuffixOf" -> isSuffixOf,
     "List::map" -> map,
     "List::mapWithIndex" -> mapWithIndex,
     "List::flatMap" -> flatMap,
@@ -50,6 +47,11 @@ object FList {
     "List::reverse" -> reverse,
     "List::rotateLeft" -> rotateLeft,
     "List::rotateRight" -> rotateRight,
+
+    // Predicates.
+    "List::isPrefixOf" -> isPrefixOf,
+    "List::isInfixOf" -> isInfixOf,
+    "List::isSuffixOf" -> isSuffixOf,
 
     // Fold Operations.
     "List::fold" -> foldLeft,
@@ -214,28 +216,20 @@ object FList {
     val tpe = (A, Lst(A)) ~> Bool
   }
 
-  /**
-    * The `isPrefixOf : (List[A], List[A]) => Bool` function.
-    */
+  /////////////////////////////////////////////////////////////////////////////
+  // Predicates                                                              //
+  /////////////////////////////////////////////////////////////////////////////
   object isPrefixOf extends ListOperator {
     val tpe = (Lst(A), Lst(A)) ~> Bool
   }
 
-  /**
-    * The `isInfixOf : (List[A], List[A]) => Bool` function.
-    */
   object isInfixOf extends ListOperator {
     val tpe = (Lst(A), Lst(A)) ~> Bool
   }
 
-  /**
-    * The `isSuffixOf : (List[A], List[A]) => Bool` function.
-    */
   object isSuffixOf extends ListOperator {
     val tpe = (Lst(A), Lst(A)) ~> Bool
   }
-
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Fold Operations                                                         //
@@ -373,6 +367,20 @@ object FList {
     val tpe = Lst((A, B)) ~>(Lst(A), Lst(B))
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Combined Operations                                                     //
+  /////////////////////////////////////////////////////////////////////////////
+  object concatMap extends ListOperator {
+    val tpe = (A ~> Lst(B), Lst(A)) ~> Lst(B)
+  }
+
+  object filterMap extends ListOperator {
+    val tpe = (A ~> Opt(B), Lst(A)) ~> Lst(B)
+  }
+
+  object findMap extends ListOperator {
+    val tpe = (A ~> Opt(B), Lst(A)) ~> B
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Two List Operations                                                     //
@@ -675,32 +683,6 @@ object FList {
     val tpe = Lst(Opt(A)) ~> Opt(A)
   }
 
-  /**
-    * fn concatMap(f: A => List[B], xs: List[A]): List[B]
-    *
-    * TODO: doc
-    */
-  object concatMap extends ListOperator {
-    val tpe = (A ~> Lst(B), Lst(A)) ~> Lst(B)
-  }
-
-  /**
-    * fn filterMap(f: A => Opt[B], xs: List[A]): List[B]
-    *
-    * TODO: doc
-    */
-  object filterMap extends ListOperator {
-    val tpe = (A ~> Opt(B), Lst(A)) ~> Lst(B)
-  }
-
-  /**
-    * fn findMap(f: A => Opt[B], xs: List[A]): Opt[B]
-    *
-    * TODO: doc
-    */
-  object findMap extends ListOperator {
-    val tpe = (A ~> Opt(B), Lst(A)) ~> B
-  }
 
 
 
