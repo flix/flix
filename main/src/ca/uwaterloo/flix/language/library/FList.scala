@@ -33,11 +33,6 @@ object FList {
     "List::findLeft" -> findLeft,
     "List::findRight" -> findRight,
 
-    "List::partition" -> partition,
-    "List::replace" -> replace,
-    "List::patch" -> patch,
-    // TODO: splice?
-
     // Construction.
     "List::range" -> range,
     "List::repeat" -> repeat,
@@ -51,6 +46,8 @@ object FList {
     "List::reverse" -> reverse,
     "List::rotateLeft" -> rotateLeft,
     "List::rotateRight" -> rotateRight,
+    "List::replace" -> replace,
+    "List::patch" -> patch,
     "List::intersperse" -> intersperse,
     "List::intercalate" -> intercalate,
     "List::permutations" -> permutations,
@@ -82,6 +79,7 @@ object FList {
     // Sub List Operations.
     "List::filter" -> filter,
     "List::span" -> span,
+    "List::partition" -> partition,
     "List::slice" -> slice,
     "List::drop" -> drop,
     "List::dropWhile" -> dropWhile,
@@ -253,6 +251,14 @@ object FList {
     val tpe = (Int, Lst(A)) ~> Lst(A)
   }
 
+  object replace extends ListOperator {
+    val tpe = (Int, A, Lst(A)) ~> Lst(A)
+  }
+
+  object patch extends ListOperator {
+    val tpe = (Int, Int, Lst(A), Lst(A)) ~> Lst(A)
+  }
+
   object permutations extends ListOperator {
     val tpe = Lst(A) ~> Lst(Lst(A))
   }
@@ -353,6 +359,10 @@ object FList {
     val tpe = (Int, Int, Lst(A)) ~> Lst(A)
   }
 
+  object partition extends ListOperator {
+    val tpe = (A ~> Bool, Lst(A), Lst(B)) ~>(Lst(A), Lst(A))
+  }
+
   object span extends ListOperator {
     val tpe = (A ~> Bool, Lst(A), Lst(B)) ~>(Lst(A), Lst(A))
   }
@@ -372,7 +382,6 @@ object FList {
   object takeWhile extends ListOperator {
     val tpe = (A ~> Bool, Lst(A)) ~> Lst(A)
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Aggregation and Sorting Operations                                      //
@@ -510,52 +519,6 @@ object FList {
 
   object zipWithMeet extends ListOperator {
     val tpe = (Lst(A), Lst(A)) ~> Lst(A)
-  }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // TODO: sort .....~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-  /**
-    * fn patch(from: Int, xs: List[A], replaced: Int): List[A]
-    *
-    * TODO: doc
-    */
-  object patch extends ListOperator {
-    val tpe = ((A, A) ~> Int, Lst(A)) ~> Lst(A)
-  }
-
-  /**
-    * fn replace(index: Int, x: A, xs: List[A]): List[A]
-    *
-    * TODO: doc
-    */
-  object replace extends ListOperator {
-    val tpe = (Int, A, Lst(A)) ~> Lst(A)
-  }
-
-
-
-  /**
-    * fn partition(f: A => Bool, xs: List[A]): (List[A], List[A])
-    *
-    * TODO: doc
-    */
-  object partition extends ListOperator {
-    val tpe = (A ~> Bool, Lst(A), Lst(B)) ~>(Lst(A), Lst(A))
   }
 
 }
