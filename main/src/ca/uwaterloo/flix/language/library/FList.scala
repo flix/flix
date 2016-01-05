@@ -28,7 +28,6 @@ object FList {
     "List::intercalate" -> intercalate,
     "List::transpose" -> transpose,
 
-    "List::span" -> span,
     "List::partition" -> partition,
 
     "List::range" -> range,
@@ -71,15 +70,12 @@ object FList {
 
     // Sub List Operations.
     "List::filter" -> filter,
+    "List::span" -> span,
     "List::slice" -> slice,
-    "List::take" -> take,
-    "List::takeWhile" -> takeWhile,
     "List::drop" -> drop,
     "List::dropWhile" -> dropWhile,
-
-
-
-
+    "List::take" -> take,
+    "List::takeWhile" -> takeWhile,
 
 
     "List::sort" -> sort,
@@ -306,12 +302,8 @@ object FList {
     val tpe = (Int, Int, Lst(A)) ~> Lst(A)
   }
 
-  object take extends ListOperator {
-    val tpe = (Int, Lst(A)) ~> Lst(A)
-  }
-
-  object takeWhile extends ListOperator {
-    val tpe = (A ~> Bool, Lst(A)) ~> Lst(A)
+  object span extends ListOperator {
+    val tpe = (A ~> Bool, Lst(A), Lst(B)) ~>(Lst(A), Lst(A))
   }
 
   object drop extends ListOperator {
@@ -321,6 +313,15 @@ object FList {
   object dropWhile extends ListOperator {
     val tpe = (A ~> Bool, Lst(A)) ~> Lst(A)
   }
+
+  object take extends ListOperator {
+    val tpe = (Int, Lst(A)) ~> Lst(A)
+  }
+
+  object takeWhile extends ListOperator {
+    val tpe = (A ~> Bool, Lst(A)) ~> Lst(A)
+  }
+
 
   /////////////////////////////////////////////////////////////////////////////
   // Aggregation and Sorting Operations                                      //
@@ -616,6 +617,18 @@ object FList {
     val tpe = (Int, Lst(A)) ~> Lst(A)
   }
 
+
+
+
+
+
+
+
+
+
+
+
+
   /**
     * fn scanLeft(f: (B, A) => B, x: B, xs: List[A]): List[B]
     *
@@ -689,14 +702,7 @@ object FList {
     val tpe = (A ~> Opt(B), Lst(A)) ~> B
   }
 
-  /**
-    * fn span(f: A => Bool, xs: List[A]): (List[A], List[A])
-    *
-    * TODO: doc
-    */
-  object span extends ListOperator {
-    val tpe = (A ~> Bool, Lst(A), Lst(B)) ~>(Lst(A), Lst(A))
-  }
+
 
   /**
     * fn partition(f: A => Bool, xs: List[A]): (List[A], List[A])
