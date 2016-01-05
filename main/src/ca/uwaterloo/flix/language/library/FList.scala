@@ -24,29 +24,34 @@ object FList {
     "List::append" -> append,
     "List::at" -> at,
 
+
     "List::intersperse" -> intersperse,
     "List::intercalate" -> intercalate,
     "List::transpose" -> transpose,
-
     "List::partition" -> partition,
-
     "List::range" -> range,
     "List::repeat" -> repeat,
     "List::permutations" -> permutations,
     "List::subsequences" -> subsequences,
-
     "List::indexWhere" -> indexWhere,
     "List::findLeft" -> findLeft,
     "List::findRight" -> findRight,
-
     "List::memberOf" -> memberOf,
     "List::map" -> map,
     "List::mapWithIndex" -> mapWithIndex,
     "List::flatMap" -> flatMap,
 
+    "List::scanLeft" -> scanLeft,
+    "List::scanRight" -> scanRight,
+    "List::oneOf" -> oneOf,
+    "List::replace" -> replace,
+    "List::patch" -> patch,
+
+    "List::groupBy" -> groupBy,
     "List::reverse" -> reverse,
     "List::rotateLeft" -> rotateLeft,
     "List::rotateRight" -> rotateRight,
+
 
     // Predicates.
     "List::isPrefixOf" -> isPrefixOf,
@@ -79,27 +84,15 @@ object FList {
     "List::take" -> take,
     "List::takeWhile" -> takeWhile,
 
-
-    "List::sort" -> sort,
-    "List::sortBy" -> sortBy,
-    "List::scanLeft" -> scanLeft,
-    "List::scanRight" -> scanRight,
-    "List::oneOf" -> oneOf,
-    "List::replace" -> replace,
-    "List::patch" -> patch,
-    "List::concatMap" -> concatMap,
-    "List::filterMap" -> filterMap,
-    "List::findMap" -> findMap,
-    "List::groupBy" -> groupBy,
-
-
-    // Aggregation Operations.
+    // Aggregation And Sorting Operations.
     "List::sum" -> sum,
     "List::product" -> product,
     "List::min" -> min,
     "List::max" -> max,
     "List::minBy" -> minBy,
     "List::maxBy" -> maxBy,
+    "List::sort" -> sort,
+    "List::sortBy" -> sortBy,
 
     // Zipping and Unzipping
     "List::zip" -> zip,
@@ -111,6 +104,11 @@ object FList {
     "List::flatMap2" -> flatMap2,
     "List::foldLeft2" -> foldLeft2,
     "List::foldRight2" -> foldRight2,
+
+    // Combined Operations.
+    "List::concatMap" -> concatMap,
+    "List::filterMap" -> filterMap,
+    "List::findMap" -> findMap,
 
     // Conversion Operations.
     "List::toMap" -> toMap,
@@ -464,37 +462,6 @@ object FList {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   /////////////////////////////////////////////////////////////////////////////
   // Grouping                                                                //
   /////////////////////////////////////////////////////////////////////////////
@@ -504,6 +471,9 @@ object FList {
   object groupBy extends ListOperator {
     val tpe = ((A, A) ~> Bool, Lst(A)) ~> Lst(Lst(A))
   }
+
+
+
 
 
 
@@ -626,17 +596,6 @@ object FList {
   }
 
 
-
-
-
-
-
-
-
-
-
-
-
   /**
     * fn scanLeft(f: (B, A) => B, x: B, xs: List[A]): List[B]
     *
@@ -684,8 +643,6 @@ object FList {
   }
 
 
-
-
   /**
     * fn partition(f: A => Bool, xs: List[A]): (List[A], List[A])
     *
@@ -694,4 +651,5 @@ object FList {
   object partition extends ListOperator {
     val tpe = (A ~> Bool, Lst(A), Lst(B)) ~>(Lst(A), Lst(A))
   }
+
 }
