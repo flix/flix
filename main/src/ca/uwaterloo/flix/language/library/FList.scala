@@ -15,8 +15,7 @@ object FList {
 
   // TODO: Check that every left has an alias
 
-    // basic operations.
-  // TODO: Re-order
+    // Basic Operations.
     "List::nil" -> nil,
     "List::cons" -> cons,
     "List::null" -> nul,
@@ -33,13 +32,13 @@ object FList {
     "List::findLeft" -> findLeft,
     "List::findRight" -> findRight,
 
-    // Construction.
+    // List Building.
     "List::range" -> range,
     "List::repeat" -> repeat,
     "List::scanLeft" -> scanLeft,
     "List::scanRight" -> scanRight,
 
-    // Transformations.
+    // List Transformations.
     "List::map" -> map,
     "List::mapWithIndex" -> mapWithIndex,
     "List::flatMap" -> flatMap,
@@ -54,12 +53,12 @@ object FList {
     "List::subsequences" -> subsequences,
     "List::transpose" -> transpose,
 
-    // Predicates.
+    // List Predicates.
     "List::isPrefixOf" -> isPrefixOf,
     "List::isInfixOf" -> isInfixOf,
     "List::isSuffixOf" -> isSuffixOf,
 
-    // Fold Operations.
+    // Fold and Reduce.
     "List::fold" -> foldLeft,
     "List::foldLeft" -> foldLeft,
     "List::foldRight" -> foldRight,
@@ -68,7 +67,7 @@ object FList {
     "List::reduceRight" -> reduceRight,
     "List::reduceRightOpt" -> reduceRightOpt,
 
-    // Special Fold Operations.
+    // Special Folds.
     "List::count" -> count,
     "List::concat" -> concat,
     "List::exists" -> exists,
@@ -76,7 +75,7 @@ object FList {
     "List::and" -> and,
     "List::or" -> or,
 
-    // Sub List Operations.
+    // Sub Lists.
     "List::filter" -> filter,
     "List::span" -> span,
     "List::partition" -> partition,
@@ -86,7 +85,7 @@ object FList {
     "List::take" -> take,
     "List::takeWhile" -> takeWhile,
 
-    // Aggregation and Sorting Operations.
+    // Aggregation and Sorting.
     "List::sum" -> sum,
     "List::product" -> product,
     "List::min" -> min,
@@ -155,7 +154,7 @@ object FList {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Basic Operations                                                        //
+  // Basic List Operations                                                   //
   /////////////////////////////////////////////////////////////////////////////
   object nul extends ListOperator {
     val tpe = Lst(A) ~> Bool
@@ -206,7 +205,7 @@ object FList {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Construction                                                            //
+  // List Building                                                           //
   /////////////////////////////////////////////////////////////////////////////
   object range extends ListOperator {
     val tpe = (Int, Int) ~> Lst(Int)
@@ -225,7 +224,7 @@ object FList {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Transformations                                                         //
+  // List Transformations                                                    //
   /////////////////////////////////////////////////////////////////////////////
   object map extends ListOperator {
     val tpe = (A ~> B, Lst(A)) ~> Lst(B)
@@ -280,7 +279,7 @@ object FList {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Predicates                                                              //
+  // List Predicates                                                         //
   /////////////////////////////////////////////////////////////////////////////
   object isPrefixOf extends ListOperator {
     val tpe = (Lst(A), Lst(A)) ~> Bool
@@ -295,7 +294,7 @@ object FList {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Fold Operations                                                         //
+  // Fold and Reduce                                                         //
   /////////////////////////////////////////////////////////////////////////////
   object foldLeft extends ListOperator {
     val tpe = ((B, A) ~> B, B, Lst(A)) ~> B
@@ -322,7 +321,7 @@ object FList {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Special Fold Operations                                                 //
+  // Special Folds                                                           //
   /////////////////////////////////////////////////////////////////////////////
   object count extends ListOperator {
     val tpe = (A ~> Bool, Lst(A)) ~> Int
@@ -349,7 +348,7 @@ object FList {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Sub Lists Operations                                                    //
+  // Sub Lists                                                               //
   /////////////////////////////////////////////////////////////////////////////
   object filter extends ListOperator {
     val tpe = (A ~> Bool, Lst(A)) ~> Lst(A)
@@ -384,7 +383,7 @@ object FList {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Aggregation and Sorting Operations                                      //
+  // Aggregation and Sorting                                                 //
   /////////////////////////////////////////////////////////////////////////////
   object sum extends ListOperator {
     val tpe = Lst(Int) ~> Int
@@ -423,7 +422,7 @@ object FList {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Zipping and Unzipping Operations                                        //
+  // Zipping and Unzipping                                                   //
   /////////////////////////////////////////////////////////////////////////////
   object zip extends ListOperator {
     val tpe = (Lst(A), Lst(B)) ~> Lst((A, B))
