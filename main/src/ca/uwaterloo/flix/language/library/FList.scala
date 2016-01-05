@@ -53,18 +53,18 @@ object FList {
     "List::rotateLeft" -> rotateLeft,
     "List::rotateRight" -> rotateRight,
 
-    // fold operations.
+    // Fold Operations.
+    "List::fold" -> foldLeft,
     "List::foldLeft" -> foldLeft,
     "List::foldRight" -> foldRight,
-
-    // special fold operations.
-    "List::count" -> count,
-    "List::concatenate" -> concatenate,
     "List::reduceLeft" -> reduceLeft,
     "List::reduceLeftOpt" -> reduceLeftOpt,
     "List::reduceRight" -> reduceRight,
     "List::reduceRightOpt" -> reduceRightOpt,
 
+    // special fold operations.
+    "List::count" -> count,
+    "List::concatenate" -> concatenate,
     "List::exists" -> exists,
     "List::forall" -> forall,
     "List::and" -> and,
@@ -272,18 +272,28 @@ object FList {
   /////////////////////////////////////////////////////////////////////////////
   // Folds                                                                   //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `foldLeft : ((B, A) => B, B, List[A]) => B` function.
-    */
   object foldLeft extends ListOperator {
     val tpe = ((B, A) ~> B, B, Lst(A)) ~> B
   }
 
-  /**
-    * The `foldRight : ((A, B) => B, B, List[A]) => B` function.
-    */
   object foldRight extends ListOperator {
     val tpe = ((A, B) ~> B, B, Lst(A)) ~> B
+  }
+
+  object reduceLeft extends ListOperator {
+    val tpe = ((A, A) ~> A, Lst(A)) ~> A
+  }
+
+  object reduceLeftOpt extends ListOperator {
+    val tpe = ((A, A) ~> A, Lst(A)) ~> Opt(A)
+  }
+
+  object reduceRight extends ListOperator {
+    val tpe = ((A, A) ~> A, Lst(A)) ~> A
+  }
+
+  object reduceRightOpt extends ListOperator {
+    val tpe = ((A, A) ~> A, Lst(A)) ~> Opt(A)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -333,41 +343,7 @@ object FList {
     val tpe = Lst(Bool) ~> Bool
   }
 
-  /**
-    * The `reduceLeft : ((A, A) => A, List[A]) => A` function.
-    */
-  object reduceLeft extends ListOperator {
-    val tpe = ((A, A) ~> A, Lst(A)) ~> A
-  }
 
-  /**
-    * The `reduceLeft : ((A, A) => A, List[A]) => Opt[A]` function.
-    *
-    * Optionally returns the result of applying the binary operator going from left to right.
-    *
-    * Returns None if the list is empty.
-    */
-  object reduceLeftOpt extends ListOperator {
-    val tpe = ((A, A) ~> A, Lst(A)) ~> Opt(A)
-  }
-
-  /**
-    * The `reduceRight : ((A, A) => A, List[A]) => A` function.
-    */
-  object reduceRight extends ListOperator {
-    val tpe = ((A, A) ~> A, Lst(A)) ~> A
-  }
-
-  /**
-    * The `reduceRight : ((A, A) => A, List[A]) => Opt[A]` function.
-    *
-    * Optionally returns the result of applying the binary operator going from right to left.
-    *
-    * Returns None if the list is empty.
-    */
-  object reduceRightOpt extends ListOperator {
-    val tpe = ((A, A) ~> A, Lst(A)) ~> Opt(A)
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Sub Lists                                                               //
