@@ -27,22 +27,24 @@ object FList {
     "List::append" -> append,
     "List::at" -> at,
 
+    "List::indexWhere" -> indexWhere,
 
 
     "List::partition" -> partition,
-    "List::range" -> range,
-    "List::repeat" -> repeat,
-    "List::indexWhere" -> indexWhere,
+
+    "List::memberOf" -> memberOf,
     "List::findLeft" -> findLeft,
     "List::findRight" -> findRight,
-    "List::memberOf" -> memberOf,
-    "List::scanLeft" -> scanLeft,
-    "List::scanRight" -> scanRight,
+
     "List::oneOf" -> oneOf,
     "List::replace" -> replace,
     "List::patch" -> patch,
-    "List::groupBy" -> groupBy,
 
+    // Construction.
+    "List::range" -> range,
+    "List::repeat" -> repeat,
+    "List::scanLeft" -> scanLeft,
+    "List::scanRight" -> scanRight,
 
     // Transformations.
     "List::map" -> map,
@@ -88,7 +90,7 @@ object FList {
     "List::take" -> take,
     "List::takeWhile" -> takeWhile,
 
-    // Aggregation And Sorting Operations.
+    // Aggregation and Sorting Operations.
     "List::sum" -> sum,
     "List::product" -> product,
     "List::min" -> min,
@@ -97,6 +99,7 @@ object FList {
     "List::maxBy" -> maxBy,
     "List::sort" -> sort,
     "List::sortBy" -> sortBy,
+    "List::groupBy" -> groupBy,
 
     // Zipping and Unzipping.
     "List::zip" -> zip,
@@ -216,6 +219,25 @@ object FList {
     */
   object memberOf extends ListOperator {
     val tpe = (A, Lst(A)) ~> Bool
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Construction                                                            //
+  /////////////////////////////////////////////////////////////////////////////
+  object range extends ListOperator {
+    val tpe = (Int, Int) ~> Lst(Int)
+  }
+
+  object repeat extends ListOperator {
+    val tpe = (A, Int) ~> Lst(A)
+  }
+
+  object scanLeft extends ListOperator {
+    val tpe = ((B, A) ~> B, B, Lst(A)) ~> Lst(B)
+  }
+
+  object scanRight extends ListOperator {
+    val tpe = ((B, A) ~> B, B, Lst(A)) ~> Lst(B)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -401,6 +423,10 @@ object FList {
     val tpe = ((A, A) ~> Bool, Lst(A)) ~> Lst(A)
   }
 
+  object groupBy extends ListOperator {
+    val tpe = ((A, A) ~> Bool, Lst(A)) ~> Lst(Lst(A))
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Zipping and Unzipping Operations                                        //
   /////////////////////////////////////////////////////////////////////////////
@@ -513,64 +539,8 @@ object FList {
 
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Grouping                                                                //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `groupBy : ((A, A) => Bool, List[A]) => List[List[A]]` function.
-    */
-  object groupBy extends ListOperator {
-    val tpe = ((A, A) ~> Bool, Lst(A)) ~> Lst(Lst(A))
-  }
-
-
-
-
-
-
-
-
-
-
 
   // TODO: sort .....~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  /**
-    * Returns a list of all numbers in the range (including the smallest number and excluding the largest number).
-    *
-    * The function has type `(Int, Int) => List[Int]`.
-    */
-  object range extends ListOperator {
-    val tpe = (Int, Int) ~> Lst(Int)
-  }
-
-  /**
-    * Returns a list with the element repeated a given number of times.
-    *
-    * The function has type `(A, Int) => List[A]`.
-    */
-  object repeat extends ListOperator {
-    val tpe = (A, Int) ~> Lst(A)
-  }
-
-
-  /**
-    * fn scanLeft(f: (B, A) => B, x: B, xs: List[A]): List[B]
-    *
-    * TODO: doc
-    */
-  object scanLeft extends ListOperator {
-    val tpe = ((B, A) ~> B, B, Lst(A)) ~> Lst(B)
-  }
-
-  /**
-    * fn scanRight(f: (A, B) => B, x: B, xs: List[A]): List[B]
-    *
-    * TODO: doc
-    */
-  object scanRight extends ListOperator {
-    val tpe = ((B, A) ~> B, B, Lst(A)) ~> Lst(B)
-  }
 
 
   /**
