@@ -323,7 +323,7 @@ object FList {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Aggregation Operations                                                  //
+  // Aggregation and Sorting Operations                                      //
   /////////////////////////////////////////////////////////////////////////////
   object sum extends ListOperator {
     val tpe = Lst(Int) ~> Int
@@ -347,6 +347,14 @@ object FList {
 
   object maxBy extends ListOperator {
     val tpe = ((A, A) ~> Bool, Lst(A)) ~> A
+  }
+
+  object sort extends ListOperator {
+    val tpe = Lst(A) ~> Lst(A)
+  }
+
+  object sortBy extends ListOperator {
+    val tpe = ((A, A) ~> Bool, Lst(A)) ~> Lst(A)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -626,23 +634,6 @@ object FList {
     val tpe = ((B, A) ~> B, B, Lst(A)) ~> Lst(B)
   }
 
-  /**
-    * fn sort(xs: List[A]): List[A]
-    *
-    * TODO: doc
-    */
-  object sort extends ListOperator {
-    val tpe = Lst(A) ~> Lst(A)
-  }
-
-  /**
-    * fn sortBy(f: (A, A) => Ord, xs: List[A]): List[A]
-    *
-    * TODO: doc
-    */
-  object sortBy extends ListOperator {
-    val tpe = ((A, A) ~> Int, Lst(A)) ~> Lst(A)
-  }
 
   /**
     * fn patch(from: Int, xs: List[A], replaced: Int): List[A]
