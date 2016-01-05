@@ -221,99 +221,49 @@ object FList {
   /////////////////////////////////////////////////////////////////////////////
   // Transformations                                                         //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `map : (A => B, List[A]) => List[B]` function.
-    */
   object map extends ListOperator {
     val tpe = (A ~> B, Lst(A)) ~> Lst(B)
   }
 
-  /**
-    * The `mapWithIndex : ((A, Int) => B, List[A]) => List[B]` function.
-    */
   object mapWithIndex extends ListOperator {
     val tpe = ((A, Int) ~> B, Lst(A)) ~> Lst(B)
   }
 
-  /**
-    * The `flatMap : (A => List[B], List[A]) => List[B]` function.
-    */
   object flatMap extends ListOperator {
     val tpe = (A ~> Lst(B), Lst(A)) ~> Lst(B)
   }
 
-  /**
-    * The `reverse : List[A] => List[A]` function.
-    */
   object reverse extends ListOperator {
     val tpe = Lst(A) ~> Lst(A)
   }
 
-  /**
-    * fn rotateLeft(k: Int, xs: List[A]): List[A]
-    *
-    * TODO: doc
-    */
   object rotateLeft extends ListOperator {
     val tpe = (Int, Lst(A)) ~> Lst(A)
   }
 
-  /**
-    * fn rotateRight(k: Int, xs: List[A]): List[A]
-    *
-    * TODO: doc
-    */
   object rotateRight extends ListOperator {
     val tpe = (Int, Lst(A)) ~> Lst(A)
   }
 
-  /**
-    * Returns all permutations of the list.
-    *
-    * The function has type `List[A] => List[List[A]]`.
-    */
   object permutations extends ListOperator {
     val tpe = Lst(A) ~> Lst(Lst(A))
   }
 
-  /**
-    * Returns all subsequences of the list.
-    *
-    * The function has type `List[A] => List[List[A]]`.
-    */
   object subsequences extends ListOperator {
     val tpe = Lst(A) ~> Lst(Lst(A))
   }
 
-  /**
-    * fn intersperse(x: A, xs: List[A]): List[A]
-    *
-    * TODO: doc
-    */
   object intersperse extends ListOperator {
     val tpe = (A, Lst(A)) ~> Lst(A)
   }
 
-  /**
-    * fn intercalate(x: List[A], xs: List[List[A]]): List[A]
-    *
-    * TODO: doc
-    */
   object intercalate extends ListOperator {
     val tpe = (Lst(A), Lst(Lst(A))) ~> Lst(A)
   }
 
-  /**
-    * fn transpose(xs: List[List[A]]): List[List[A]]
-    *
-    * TODO: doc
-    */
   object transpose extends ListOperator {
     val tpe = Lst(Lst(A)) ~> Lst(Lst(A))
   }
-
-
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Predicates                                                              //
