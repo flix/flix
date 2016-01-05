@@ -12,10 +12,11 @@ object FList {
     * All list operations.
     */
   val Ops: immutable.Map[Name.Resolved, ListOperator] = List(
-    // Summary of Important Operations
 
+  // TODO: Check that every left has an alias
 
     // basic operations.
+  // TODO: Re-order
     "List::nil" -> nil,
     "List::cons" -> cons,
     "List::null" -> nul,
@@ -26,19 +27,16 @@ object FList {
     "List::length" -> length,
     "List::append" -> append,
     "List::at" -> at,
-
-    "List::indexWhere" -> indexWhere,
-
-
-    "List::partition" -> partition,
-
     "List::memberOf" -> memberOf,
+    "List::indexOf" -> indexOf,
+    "List::find" -> findLeft,
     "List::findLeft" -> findLeft,
     "List::findRight" -> findRight,
 
-    "List::oneOf" -> oneOf,
+    "List::partition" -> partition,
     "List::replace" -> replace,
     "List::patch" -> patch,
+    // TODO: splice?
 
     // Construction.
     "List::range" -> range,
@@ -193,32 +191,20 @@ object FList {
     val tpe = (Int, Lst(A)) ~> A
   }
 
-  /**
-    * The `indexWhere : (A => Bool, List[A]) => Int` function.
-    */
-  object indexWhere extends ListOperator {
-    val tpe = (A ~> Bool, Lst(A)) ~> Int
+  object memberOf extends ListOperator {
+    val tpe = (A, Lst(A)) ~> Bool
   }
 
-  /**
-    * The `findLeft : (A => Bool, List[A]) => Opt[A]` function.
-    */
+  object indexOf extends ListOperator {
+    val tpe = (A, Lst(A)) ~> Int
+  }
+
   object findLeft extends ListOperator {
     val tpe = (A ~> Bool, Lst(A)) ~> Opt(A)
   }
 
-  /**
-    * The `findRight : (A => Bool, List[A]) => Opt[A]` function.
-    */
   object findRight extends ListOperator {
     val tpe = (A ~> Bool, Lst(A)) ~> Opt(A)
-  }
-
-  /**
-    * The `memberOf : (A, List[A]) => Bool` function.
-    */
-  object memberOf extends ListOperator {
-    val tpe = (A, Lst(A)) ~> Bool
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -561,14 +547,6 @@ object FList {
     val tpe = (Int, A, Lst(A)) ~> Lst(A)
   }
 
-  /**
-    * fn oneOf(xs: List[Opt[A]]): Opt[A]
-    *
-    * TODO: doc
-    */
-  object oneOf extends ListOperator {
-    val tpe = Lst(Opt(A)) ~> Opt(A)
-  }
 
 
   /**
