@@ -69,7 +69,7 @@ object FList {
     "List::and" -> and,
     "List::or" -> or,
 
-  // Sub List Operations.
+    // Sub List Operations.
     "List::filter" -> filter,
     "List::slice" -> slice,
     "List::take" -> take,
@@ -77,17 +77,25 @@ object FList {
     "List::drop" -> drop,
     "List::dropWhile" -> dropWhile,
 
+
+
+
+
+
+    "List::sort" -> sort,
+    "List::sortBy" -> sortBy,
+    "List::scanLeft" -> scanLeft,
+    "List::scanRight" -> scanRight,
+    "List::oneOf" -> oneOf,
     "List::replace" -> replace,
     "List::patch" -> patch,
-
-    // Zipping and Unzipping
-    "List::zip" -> zip,
-    "List::zipWith" -> zipWith,
-    "List::unzip" -> unzip,
-
+    "List::concatMap" -> concatMap,
+    "List::filterMap" -> filterMap,
+    "List::findMap" -> findMap,
     "List::groupBy" -> groupBy,
 
-    // aggregation operations.
+
+    // Aggregation Operations.
     "List::sum" -> sum,
     "List::product" -> product,
     "List::min" -> min,
@@ -95,17 +103,10 @@ object FList {
     "List::minBy" -> minBy,
     "List::maxBy" -> maxBy,
 
-    "List::sort" -> sort,
-    "List::sortBy" -> sortBy,
-
-    "List::scanLeft" -> scanLeft,
-    "List::scanRight" -> scanRight,
-
-    "List::oneOf" -> oneOf,
-
-    "List::concatMap" -> concatMap,
-    "List::filterMap" -> filterMap,
-    "List::findMap" -> findMap,
+    // Zipping and Unzipping
+    "List::zip" -> zip,
+    "List::zipWith" -> zipWith,
+    "List::unzip" -> unzip,
 
     // Two List Operations.
     "List::map2" -> map2,
@@ -238,39 +239,10 @@ object FList {
     val tpe = (Lst(A), Lst(A)) ~> Bool
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Transformations                                                         //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `map : (A => B, List[A]) => List[B]` function.
-    */
-  object map extends ListOperator {
-    val tpe = (A ~> B, Lst(A)) ~> Lst(B)
-  }
 
-  /**
-    * The `mapWithIndex : ((A, Int) => B, List[A]) => List[B]` function.
-    */
-  object mapWithIndex extends ListOperator {
-    val tpe = ((A, Int) ~> B, Lst(A)) ~> Lst(B)
-  }
-
-  /**
-    * The `flatMap : (A => List[B], List[A]) => List[B]` function.
-    */
-  object flatMap extends ListOperator {
-    val tpe = (A ~> Lst(B), Lst(A)) ~> Lst(B)
-  }
-
-  /**
-    * The `reverse : List[A] => List[A]` function.
-    */
-  object reverse extends ListOperator {
-    val tpe = Lst(A) ~> Lst(A)
-  }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Folds                                                                   //
+  // Fold Operations                                                         //
   /////////////////////////////////////////////////////////////////////////////
   object foldLeft extends ListOperator {
     val tpe = ((B, A) ~> B, B, Lst(A)) ~> B
@@ -297,7 +269,7 @@ object FList {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Special Folds                                                           //
+  // Special Fold Operations                                                 //
   /////////////////////////////////////////////////////////////////////////////
   object count extends ListOperator {
     val tpe = (A ~> Bool, Lst(A)) ~> Int
@@ -324,7 +296,7 @@ object FList {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Sub Lists                                                               //
+  // Sub Lists Operations                                                    //
   /////////////////////////////////////////////////////////////////////////////
   object filter extends ListOperator {
     val tpe = (A ~> Bool, Lst(A)) ~> Lst(A)
@@ -351,32 +323,7 @@ object FList {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Zipping and Unzipping                                                   //
-  /////////////////////////////////////////////////////////////////////////////
-  object zip extends ListOperator {
-    val tpe = (Lst(A), Lst(B)) ~> Lst((A, B))
-  }
-
-  object zipWith extends ListOperator {
-    val tpe = ((A, B) ~> C, Lst(A), Lst(B)) ~> Lst(C)
-  }
-
-  object unzip extends ListOperator {
-    val tpe = Lst((A, B)) ~>(Lst(A), Lst(B))
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Grouping                                                                //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `groupBy : ((A, A) => Bool, List[A]) => List[List[A]]` function.
-    */
-  object groupBy extends ListOperator {
-    val tpe = ((A, A) ~> Bool, Lst(A)) ~> Lst(Lst(A))
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Aggregation                                                             //
+  // Aggregation Operations                                                  //
   /////////////////////////////////////////////////////////////////////////////
   /**
     * fn sum(xs: List[Int): Int
@@ -438,8 +385,181 @@ object FList {
     val tpe = ((A, A) ~> Bool, Lst(A)) ~> A
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Zipping and Unzipping Operations                                        //
+  /////////////////////////////////////////////////////////////////////////////
+  object zip extends ListOperator {
+    val tpe = (Lst(A), Lst(B)) ~> Lst((A, B))
+  }
+
+  object zipWith extends ListOperator {
+    val tpe = ((A, B) ~> C, Lst(A), Lst(B)) ~> Lst(C)
+  }
+
+  object unzip extends ListOperator {
+    val tpe = Lst((A, B)) ~>(Lst(A), Lst(B))
+  }
 
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Two List Operations                                                     //
+  /////////////////////////////////////////////////////////////////////////////
+  object map2 extends ListOperator {
+    val tpe = ((A, B) ~> C, Lst(A), Lst(B)) ~> Lst(C)
+  }
+
+  object flatMap2 extends ListOperator {
+    val tpe = ((A, B) ~> Lst(C), Lst(A), Lst(B)) ~> Lst(C)
+  }
+
+  object foldLeft2 extends ListOperator {
+    val tpe = ((C, A, B) ~> C, C, Lst(A), Lst(B)) ~> C
+  }
+
+  object foldRight2 extends ListOperator {
+    val tpe = ((A, B, C) ~> C, C, Lst(A), Lst(B)) ~> C
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Conversion Operations                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+  object toMap extends ListOperator {
+    val tpe = Lst((A, B)) ~> Type.Map(A, B)
+  }
+
+  object toSet extends ListOperator {
+    val tpe = Lst(A) ~> Set(A)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Order and Lattice Operations                                            //
+  /////////////////////////////////////////////////////////////////////////////
+  object leq extends ListOperator {
+    val tpe = (Lst(A), Lst(A)) ~> Bool
+  }
+
+  object isAscChain extends ListOperator {
+    val tpe = Lst(A) ~> Bool
+  }
+
+  object isDescChain extends ListOperator {
+    val tpe = Lst(A) ~> Bool
+  }
+
+  object join extends ListOperator {
+    val tpe = Lst(A) ~> A
+  }
+
+  object meet extends ListOperator {
+    val tpe = Lst(A) ~> A
+  }
+
+  object widen extends ListOperator {
+    val tpe = Lst(A) ~> A
+  }
+
+  object narrow extends ListOperator {
+    val tpe = Lst(A) ~> A
+  }
+
+  object zipWithJoin extends ListOperator {
+    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
+  }
+
+  object zipWithMeet extends ListOperator {
+    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Grouping                                                                //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `groupBy : ((A, A) => Bool, List[A]) => List[List[A]]` function.
+    */
+  object groupBy extends ListOperator {
+    val tpe = ((A, A) ~> Bool, Lst(A)) ~> Lst(Lst(A))
+  }
+
+
+
+
+
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Transformations                                                         //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `map : (A => B, List[A]) => List[B]` function.
+    */
+  object map extends ListOperator {
+    val tpe = (A ~> B, Lst(A)) ~> Lst(B)
+  }
+
+  /**
+    * The `mapWithIndex : ((A, Int) => B, List[A]) => List[B]` function.
+    */
+  object mapWithIndex extends ListOperator {
+    val tpe = ((A, Int) ~> B, Lst(A)) ~> Lst(B)
+  }
+
+  /**
+    * The `flatMap : (A => List[B], List[A]) => List[B]` function.
+    */
+  object flatMap extends ListOperator {
+    val tpe = (A ~> Lst(B), Lst(A)) ~> Lst(B)
+  }
+
+  /**
+    * The `reverse : List[A] => List[A]` function.
+    */
+  object reverse extends ListOperator {
+    val tpe = Lst(A) ~> Lst(A)
+  }
 
   // TODO: sort .....~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -631,75 +751,4 @@ object FList {
   object partition extends ListOperator {
     val tpe = (A ~> Bool, Lst(A), Lst(B)) ~>(Lst(A), Lst(A))
   }
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Two List Operations                                                     //
-  /////////////////////////////////////////////////////////////////////////////
-  object map2 extends ListOperator {
-    val tpe = ((A, B) ~> C, Lst(A), Lst(B)) ~> Lst(C)
-  }
-
-  object flatMap2 extends ListOperator {
-    val tpe = ((A, B) ~> Lst(C), Lst(A), Lst(B)) ~> Lst(C)
-  }
-
-  object foldLeft2 extends ListOperator {
-    val tpe = ((C, A, B) ~> C, C, Lst(A), Lst(B)) ~> C
-  }
-
-  object foldRight2 extends ListOperator {
-    val tpe = ((A, B, C) ~> C, C, Lst(A), Lst(B)) ~> C
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Conversions                                                             //
-  /////////////////////////////////////////////////////////////////////////////
-  object toMap extends ListOperator {
-    val tpe = Lst((A, B)) ~> Type.Map(A, B)
-  }
-
-  object toSet extends ListOperator {
-    val tpe = Lst(A) ~> Set(A)
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Order and Lattice Operations                                            //
-  /////////////////////////////////////////////////////////////////////////////
-  object leq extends ListOperator {
-    val tpe = (Lst(A), Lst(A)) ~> Bool
-  }
-
-  object isAscChain extends ListOperator {
-    val tpe = Lst(A) ~> Bool
-  }
-
-  object isDescChain extends ListOperator {
-    val tpe = Lst(A) ~> Bool
-  }
-
-  object join extends ListOperator {
-    val tpe = Lst(A) ~> A
-  }
-
-  object meet extends ListOperator {
-    val tpe = Lst(A) ~> A
-  }
-
-  object widen extends ListOperator {
-    val tpe = Lst(A) ~> A
-  }
-
-  object narrow extends ListOperator {
-    val tpe = Lst(A) ~> A
-  }
-
-  object zipWithJoin extends ListOperator {
-    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
-  }
-
-  object zipWithMeet extends ListOperator {
-    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
-  }
-
 }
