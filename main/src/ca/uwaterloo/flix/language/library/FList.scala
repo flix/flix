@@ -101,10 +101,6 @@ object FList {
     "List::scanLeft" -> scanLeft,
     "List::scanRight" -> scanRight,
 
-    // conversion operations.
-    "List::toMap" -> toMap,
-    "List::toSet" -> toSet,
-
     "List::oneOf" -> oneOf,
 
     "List::concatMap" -> concatMap,
@@ -116,6 +112,10 @@ object FList {
     "List::flatMap2" -> flatMap2,
     "List::foldLeft2" -> foldLeft2,
     "List::foldRight2" -> foldRight2,
+
+    // Conversion Operations.
+    "List::toMap" -> toMap,
+    "List::toSet" -> toSet,
 
     // Order and Lattice Operations.
     "List::leq" -> leq,
@@ -315,35 +315,21 @@ object FList {
     val tpe = Lst(Lst(A)) ~> Lst(A)
   }
 
-  /**
-    * The `exists : (A => Bool, List[A]) => Bool` function.
-    */
   object exists extends ListOperator {
     val tpe = (A ~> Bool, Lst(A)) ~> Bool
   }
 
-  /**
-    * The `forall : (A => Bool, List[A]) => Bool` function.
-    */
   object forall extends ListOperator {
     val tpe = (A ~> Bool, Lst(A)) ~> Bool
   }
 
-  /**
-    * The `and : List[Bool] => Bool` function.
-    */
   object and extends ListOperator {
     val tpe = Lst(Bool) ~> Bool
   }
 
-  /**
-    * The `or : List[Bool] => Bool` function.
-    */
   object or extends ListOperator {
     val tpe = Lst(Bool) ~> Bool
   }
-
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Sub Lists                                                               //
@@ -460,22 +446,7 @@ object FList {
     val tpe = ((A, A) ~> Bool, Lst(A)) ~> A
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Conversions                                                             //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `toMap : List[(A, B)] => Map[A, B]` function.
-    */
-  object toMap extends ListOperator {
-    val tpe = Lst((A, B)) ~> Type.Map(A, B)
-  }
 
-  /**
-    * The `toSet : List[A] => Set[A]` function.
-    */
-  object toSet extends ListOperator {
-    val tpe = Lst(A) ~> Set(A)
-  }
 
 
   // TODO: sort .....~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -689,6 +660,16 @@ object FList {
     val tpe = ((A, B, C) ~> C, C, Lst(A), Lst(B)) ~> C
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Conversions                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  object toMap extends ListOperator {
+    val tpe = Lst((A, B)) ~> Type.Map(A, B)
+  }
+
+  object toSet extends ListOperator {
+    val tpe = Lst(A) ~> Set(A)
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Order and Lattice Operations                                            //
