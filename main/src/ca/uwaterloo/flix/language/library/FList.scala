@@ -325,62 +325,26 @@ object FList {
   /////////////////////////////////////////////////////////////////////////////
   // Aggregation Operations                                                  //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * fn sum(xs: List[Int): Int
-    *
-    * Computes the sum of the elements in the list `xs`. Returns zero if the list is empty.
-    */
   object sum extends ListOperator {
     val tpe = Lst(Int) ~> Int
   }
 
-  /**
-    * fn product(xs: List[Int): Int
-    *
-    * Computes the product of the elements in the list `xs`. Returns one if the list is empty.
-    */
   object product extends ListOperator {
     val tpe = Lst(Int) ~> Int
   }
 
-  /**
-    * fn minimum(xs: List[Int): Int
-    *
-    * Selects the minimum element in the list. Returns Int::MaxValue if the list is empty.
-    */
   object min extends ListOperator {
     val tpe = Lst(Int) ~> Int
   }
 
-  /**
-    * fn maximum(xs: List[Int): Int
-    *
-    * Selects the maximum element in the list. Returns Int::MinValue if the list is empty.
-    */
   object max extends ListOperator {
     val tpe = Lst(Int) ~> Int
   }
 
-  /**
-    * fn minBy[A](ord: (A, A) => Ord, xs: List[A): A
-    *
-    * Selects the minimum element in the list according to the total order induced by the `cmp` function.
-    *
-    * TODO Aborts if the list is empty?
-    */
-  // TODO: Kind of need type class instance?
   object minBy extends ListOperator {
     val tpe = ((A, A) ~> Bool, Lst(A)) ~> A
   }
 
-  /**
-    * fn maxBy[A](ord: (A, A) => Ord, xs: List[A): A
-    *
-    * Selects the maximum element in the list according to the total order induced by the `cmp` function.
-    *
-    * TODO Aborts if the list is empty?
-    */
-  // TODO: Kind of need type class instance?
   object maxBy extends ListOperator {
     val tpe = ((A, A) ~> Bool, Lst(A)) ~> A
   }
