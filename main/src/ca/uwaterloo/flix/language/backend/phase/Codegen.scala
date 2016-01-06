@@ -167,9 +167,7 @@ object Codegen {
       case _ if Byte.MinValue <= i && i <= Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i.toInt)
       case _ if Short.MinValue <= i && i <= Short.MaxValue => visitor.visitIntInsn(SIPUSH, i.toInt)
       case _ if Int.MinValue <= i && i <= Int.MaxValue => visitor.visitLdcInsn(i.toInt)
-      case _ =>
-        visitor.visitLdcInsn(i)
-        if (!isLong) visitor.visitInsn(L2I)
+      case _ => visitor.visitLdcInsn(i)
     }
     if (Int.MinValue <= i && i <= Int.MaxValue && isLong) visitor.visitInsn(I2L)
   }

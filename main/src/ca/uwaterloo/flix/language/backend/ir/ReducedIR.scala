@@ -33,7 +33,7 @@ object ReducedIR {
   sealed trait LoadExpression extends Expression {
     val e: ReducedIR.Expression
     val offset: Int
-    val mask: Long
+    val mask: Int
   }
 
   sealed trait StoreExpression extends Expression {
@@ -55,7 +55,7 @@ object ReducedIR {
       * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
       */
     case class LoadBool(e: ReducedIR.Expression, offset: Int) extends ReducedIR.LoadExpression {
-      val mask = 0x1L
+      val mask = 1
       val tpe = Type.Bool
     }
 
@@ -66,7 +66,7 @@ object ReducedIR {
       * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
       */
     case class LoadInt8(e: ReducedIR.Expression, offset: Int) extends ReducedIR.LoadExpression {
-      val mask = 0xFFL
+      val mask = 0xFF
       val tpe = Type.Int8
     }
 
@@ -77,7 +77,7 @@ object ReducedIR {
       * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
       */
     case class LoadInt16(e: ReducedIR.Expression, offset: Int) extends ReducedIR.LoadExpression {
-      val mask = 0xFFFFL
+      val mask = 0xFFFF
       val tpe = Type.Int16
     }
 
@@ -88,7 +88,7 @@ object ReducedIR {
       * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
       */
     case class LoadInt32(e: ReducedIR.Expression, offset: Int) extends ReducedIR.LoadExpression {
-      val mask = 0xFFFFFFFFL
+      val mask = -1 // if we had unsigned ints, would be 0xFFFFFFFF
       val tpe = Type.Int32
     }
 
