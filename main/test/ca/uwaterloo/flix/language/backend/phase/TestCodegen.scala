@@ -90,12 +90,12 @@ class TestCodegen extends FunSuite {
     // Binary number is: 0000000000000000000000000000000000000000000000000000000000000000
     def definition(offset: Int) = Function(name, args = List(),
       body = LoadInt8(Const(0, Type.Int64, loc), offset),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int8), loc)
 
     for (i <- 0 until 8) {
       val code = new CompiledCode(List(definition(i * 8)))
       val result = code.call(name, List())
-      assertResult(0)(result)
+      assertResult(0.asInstanceOf[Byte])(result)
     }
   }
 
@@ -103,12 +103,12 @@ class TestCodegen extends FunSuite {
     // Binary number is: 1111111111111111111111111111111111111111111111111111111111111111
     def definition(offset: Int) = Function(name, args = List(),
       body = LoadInt8(Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc), offset),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int8), loc)
 
     for (i <- 0 until 8) {
       val code = new CompiledCode(List(definition(i * 8)))
       val result = code.call(name, List())
-      assertResult(0xFF)(result)
+      assertResult(0xFF.asInstanceOf[Byte])(result)
     }
   }
 
@@ -117,12 +117,12 @@ class TestCodegen extends FunSuite {
     // So every 8 bits looks like 10101011 = 0xAB
     def definition(offset: Int) = Function(name, args = List(),
       body = LoadInt8(Const(0xABABABABABABABABL, Type.Int64, loc), offset),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int8), loc)
 
     for (i <- 0 until 8) {
       val code = new CompiledCode(List(definition(i * 8)))
       val result = code.call(name, List())
-      assertResult(0xAB)(result)
+      assertResult(0xAB.asInstanceOf[Byte])(result)
     }
   }
 
@@ -130,12 +130,12 @@ class TestCodegen extends FunSuite {
     // Binary number is: 0000000000000000000000000000000000000000000000000000000000000000
     def definition(offset: Int) = Function(name, args = List(),
       body = LoadInt16(Const(0, Type.Int64, loc), offset),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int16), loc)
 
     for (i <- 0 until 4) {
       val code = new CompiledCode(List(definition(i * 16)))
       val result = code.call(name, List())
-      assertResult(0)(result)
+      assertResult(0.asInstanceOf[Short])(result)
     }
   }
 
@@ -143,12 +143,12 @@ class TestCodegen extends FunSuite {
     // Binary number is: 1111111111111111111111111111111111111111111111111111111111111111
     def definition(offset: Int) = Function(name, args = List(),
       body = LoadInt16(Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc), offset),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int16), loc)
 
     for (i <- 0 until 4) {
       val code = new CompiledCode(List(definition(i * 16)))
       val result = code.call(name, List())
-      assertResult(0xFFFF)(result)
+      assertResult(0xFFFF.asInstanceOf[Short])(result)
     }
   }
 
@@ -157,12 +157,12 @@ class TestCodegen extends FunSuite {
     // So every 16 bits looks like 1100101011111110 = 0xCAFE
     def definition(offset: Int) = Function(name, args = List(),
       body = LoadInt16(Const(0xCAFECAFECAFECAFEL, Type.Int64, loc), offset),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int16), loc)
 
     for (i <- 0 until 4) {
       val code = new CompiledCode(List(definition(i * 16)))
       val result = code.call(name, List())
-      assertResult(0xCAFE)(result)
+      assertResult(0xCAFE.asInstanceOf[Short])(result)
     }
   }
 
@@ -381,26 +381,26 @@ class TestCodegen extends FunSuite {
     val name_5 = Name.Resolved.mk(List("foo", "bar", "f_5"))
 
     val def_m1 = Function(name_m1, args = List(),
-      body = Const(-1, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(-1, Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
     val def_0 = Function(name_0, args = List(),
-      body = Const(0, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(0, Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
     val def_1 = Function(name_1, args = List(),
-      body = Const(1, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(1, Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
     val def_2 = Function(name_2, args = List(),
-      body = Const(2, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(2, Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
     val def_3 = Function(name_3, args = List(),
-      body = Const(3, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(3, Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
     val def_4 = Function(name_4, args = List(),
-      body = Const(4, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(4, Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
     val def_5 = Function(name_5, args = List(),
-      body = Const(5, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(5, Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
 
     val code = new CompiledCode(List(def_m1, def_0, def_1, def_2, def_3, def_4, def_5))
 
@@ -432,23 +432,23 @@ class TestCodegen extends FunSuite {
     val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
-      body = Const(Byte.MinValue, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(Byte.MinValue, Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
     val def02 = Function(name02, args = List(),
-      body = Const(Byte.MinValue + 42, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(Byte.MinValue + 42, Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
     val def03 = Function(name03, args = List(),
-      body = Const(-2, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(-2, Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
     val def04 = Function(name04, args = List(),
-      body = Const(6, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(6, Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
     val def05 = Function(name05, args = List(),
-      body = Const(Byte.MaxValue - 42, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(Byte.MaxValue - 42, Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
     val def06 = Function(name06, args = List(),
-      body = Const(Byte.MaxValue, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(Byte.MaxValue, Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
 
     val code = new CompiledCode(List(def01, def02, def03, def04, def05, def06))
 
@@ -478,23 +478,23 @@ class TestCodegen extends FunSuite {
     val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
-      body = Const(Short.MinValue, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(Short.MinValue, Type.Int16, loc),
+      Type.Lambda(List(), Type.Int16), loc)
     val def02 = Function(name02, args = List(),
-      body = Const(Short.MinValue + 42, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(Short.MinValue + 42, Type.Int16, loc),
+      Type.Lambda(List(), Type.Int16), loc)
     val def03 = Function(name03, args = List(),
-      body = Const(Byte.MinValue - 1, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(Byte.MinValue - 1, Type.Int16, loc),
+      Type.Lambda(List(), Type.Int16), loc)
     val def04 = Function(name04, args = List(),
-      body = Const(Byte.MaxValue + 1, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(Byte.MaxValue + 1, Type.Int16, loc),
+      Type.Lambda(List(), Type.Int16), loc)
     val def05 = Function(name05, args = List(),
-      body = Const(Short.MaxValue - 42, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(Short.MaxValue - 42, Type.Int16, loc),
+      Type.Lambda(List(), Type.Int16), loc)
     val def06 = Function(name06, args = List(),
-      body = Const(Short.MaxValue, Type.Int32, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      body = Const(Short.MaxValue, Type.Int16, loc),
+      Type.Lambda(List(), Type.Int16), loc)
 
     val code = new CompiledCode(List(def01, def02, def03, def04, def05, def06))
 
@@ -604,6 +604,17 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Const10") {
+    val definition = Function(name, args = List(),
+      body = Const(1, Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+
+    assertResult(1)(result)
+  }
+
+  test("Codegen - Const11") {
     val definition = Function(name, args = List(),
       body = Const(123456789123456789L, Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)

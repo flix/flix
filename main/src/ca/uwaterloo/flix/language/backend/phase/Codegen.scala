@@ -72,7 +72,8 @@ object Codegen {
     // Compile the method body
     compileExpression(context, mv)(function.body)
 
-    // Return the value. No integer casts since bool is returned as int, and Flix treats Int8, Int16, and Int32 as int.
+    // Return the value. Note that Bool, Int8, Int16, and Int32 are represented as 32-bit ints, while Int64 is
+    // represented as a 64-bit long. We don't do any implicit casts.
     function.tpe.retTpe match {
       case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
@@ -141,7 +142,7 @@ object Codegen {
     case Tuple(elms, tpe, loc) => ???
     case TupleAt(base, offset, tpe, loc) => ???
     case Set(elms, tpe, loc) => ???
-    case Error(loc) => ???
+    case Error(loc, tpe) => ???
   }
 
   /*

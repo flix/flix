@@ -26,7 +26,9 @@ object ReducedIR {
 
   }
 
-  sealed trait Expression
+  sealed trait Expression {
+    val tpe: ReducedIR.Type
+  }
 
   sealed trait LoadExpression extends Expression {
     val e: ReducedIR.Expression
@@ -39,6 +41,7 @@ object ReducedIR {
     val offset: Int
     val v: ReducedIR.Expression
     val mask: Long
+    val tpe = Type.Int64
   }
 
   // TODO: Consider whether we want Exp8, Exp16, Exp32, Exp64 or if that information is associated with the type?
@@ -53,6 +56,7 @@ object ReducedIR {
       */
     case class LoadBool(e: ReducedIR.Expression, offset: Int) extends ReducedIR.LoadExpression {
       val mask = 0x1L
+      val tpe = Type.Bool
     }
 
     /**
@@ -63,6 +67,7 @@ object ReducedIR {
       */
     case class LoadInt8(e: ReducedIR.Expression, offset: Int) extends ReducedIR.LoadExpression {
       val mask = 0xFFL
+      val tpe = Type.Int8
     }
 
     /**
@@ -73,6 +78,7 @@ object ReducedIR {
       */
     case class LoadInt16(e: ReducedIR.Expression, offset: Int) extends ReducedIR.LoadExpression {
       val mask = 0xFFFFL
+      val tpe = Type.Int16
     }
 
     /**
@@ -83,6 +89,7 @@ object ReducedIR {
       */
     case class LoadInt32(e: ReducedIR.Expression, offset: Int) extends ReducedIR.LoadExpression {
       val mask = 0xFFFFFFFFL
+      val tpe = Type.Int32
     }
 
     /**
@@ -215,7 +222,7 @@ object ReducedIR {
 
     case class Set(elms: List[ReducedIR.Expression], tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
-    case class Error(loc: SourceLocation) extends ReducedIR.Expression
+    case class Error(loc: SourceLocation, tpe: ReducedIR.Type) extends ReducedIR.Expression
 
   }
 
@@ -231,7 +238,7 @@ object ReducedIR {
 
     /**
       * The type of booleans, i.e. a 1-bit integer.
-      * Maps to a JVM boolean, even though all boolean operations are done as int operations.
+      * Maps to a JVM boolean, even though all non-long operations are done as int operations.
       */
     case object Bool extends ReducedIR.Type {
       override val descriptor = "Z"
@@ -239,18 +246,18 @@ object ReducedIR {
 
     /**
       * The type of 8-bit signed integers.
-      * Maps to a JVM int because Flix doesn't have bytes.
+      * Maps to a JVM byte, even though all non-long operations are done as int operations.
       */
     case object Int8 extends ReducedIR.Type {
-      override val descriptor = "I"
+      override val descriptor = "B"
     }
 
     /**
       * The type of 16-bit signed integers.
-      * Maps to a JVM int because Flix doesn't have shorts.
+      * Maps to a JVM short, even though all non-long operations are done as int operations.
       */
     case object Int16 extends ReducedIR.Type {
-      override val descriptor = "I"
+      override val descriptor = "S"
     }
 
     /**
@@ -258,7 +265,6 @@ object ReducedIR {
       * Maps to a JVM int.
       */
     case object Int32 extends ReducedIR.Type {
-      // Maps to a JVM int
       override val descriptor = "I"
     }
 
