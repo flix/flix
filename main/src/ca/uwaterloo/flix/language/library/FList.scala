@@ -13,8 +13,6 @@ object FList {
     */
   val Ops: immutable.Map[Name.Resolved, ListOperator] = List(
 
-  // TODO: Check that every left has an alias
-
     // Basic Operations.
     "List::nil" -> nil,
     "List::cons" -> cons,
@@ -35,6 +33,7 @@ object FList {
     // List Building.
     "List::range" -> range,
     "List::repeat" -> repeat,
+    "List::scan" -> scanLeft,
     "List::scanLeft" -> scanLeft,
     "List::scanRight" -> scanRight,
 
@@ -62,7 +61,9 @@ object FList {
     "List::fold" -> foldLeft,
     "List::foldLeft" -> foldLeft,
     "List::foldRight" -> foldRight,
+    "List::reduce" -> reduceLeft,
     "List::reduceLeft" -> reduceLeft,
+    "List::reduceOpt" -> reduceLeftOpt,
     "List::reduceLeftOpt" -> reduceLeftOpt,
     "List::reduceRight" -> reduceRight,
     "List::reduceRightOpt" -> reduceRightOpt,
@@ -104,6 +105,7 @@ object FList {
     // Two List Operations.
     "List::map2" -> map2,
     "List::flatMap2" -> flatMap2,
+    "List::fold2" -> foldLeft2,
     "List::foldLeft2" -> foldLeft2,
     "List::foldRight2" -> foldRight2,
 
