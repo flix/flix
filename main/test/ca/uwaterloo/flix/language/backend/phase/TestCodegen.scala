@@ -605,6 +605,17 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Const10") {
     val definition = Function(name, args = List(),
+      body = Const(0, Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+
+    assertResult(0)(result)
+  }
+
+  test("Codegen - Const11") {
+    val definition = Function(name, args = List(),
       body = Const(1, Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
 
@@ -614,7 +625,7 @@ class TestCodegen extends FunSuite {
     assertResult(1)(result)
   }
 
-  test("Codegen - Const11") {
+  test("Codegen - Const12") {
     val definition = Function(name, args = List(),
       body = Const(123456789123456789L, Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)

@@ -158,8 +158,8 @@ object Codegen {
   private def compileConst(visitor: MethodVisitor)(i: Long, isLong: Boolean = false): Unit = {
     i match {
       case -1 => visitor.visitInsn(ICONST_M1)
-      case 0 => visitor.visitInsn(ICONST_0)
-      case 1 => visitor.visitInsn(ICONST_1)
+      case 0 => if (!isLong) visitor.visitInsn(ICONST_0) else visitor.visitInsn(LCONST_0)
+      case 1 => if (!isLong) visitor.visitInsn(ICONST_1) else visitor.visitInsn(LCONST_1)
       case 2 => visitor.visitInsn(ICONST_2)
       case 3 => visitor.visitInsn(ICONST_3)
       case 4 => visitor.visitInsn(ICONST_4)
@@ -169,7 +169,7 @@ object Codegen {
       case _ if Int.MinValue <= i && i <= Int.MaxValue => visitor.visitLdcInsn(i.toInt)
       case _ => visitor.visitLdcInsn(i)
     }
-    if (Int.MinValue <= i && i <= Int.MaxValue && isLong) visitor.visitInsn(I2L)
+    if (Int.MinValue <= i && i <= Int.MaxValue && i != 0 && i != 1 && isLong) visitor.visitInsn(I2L)
   }
 
   private def compileUnaryExpression(context: Context, visitor: MethodVisitor)(op: UnaryOperator, expr: Expression): Unit = {
