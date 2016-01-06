@@ -9,6 +9,11 @@ import scala.collection.immutable
 object FDebug {
 
   /**
+    * A common super-type for all debug operations.
+    */
+  sealed trait DebugOperator extends LibraryOperator
+
+  /**
     * All debug operations.
     */
   val Ops: immutable.Map[Name.Resolved, DebugOperator] = List(
@@ -18,11 +23,6 @@ object FDebug {
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
-
-  /**
-    * A common super-type for all debug operations.
-    */
-  sealed trait DebugOperator extends LibraryOperator
 
   /**
     * Generic type variables.

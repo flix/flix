@@ -9,7 +9,12 @@ import scala.collection.immutable
 object FOpt {
 
   /**
-    * All Opt operations.
+    * A common super-type for all option operations.
+    */
+  sealed trait OptOperator extends LibraryOperator
+
+  /**
+    * All opt operations.
     */
   val Ops: immutable.Map[Name.Resolved, OptOperator] = List(
     "Opt/null" -> nul,
@@ -27,11 +32,6 @@ object FOpt {
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
-
-  /**
-    * A common super-type for all option operations.
-    */
-  sealed trait OptOperator extends LibraryOperator
 
   /**
     * Generic type variables.

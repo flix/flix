@@ -9,6 +9,11 @@ import scala.collection.immutable
 object FList {
 
   /**
+    * A common super-type for all list operations.
+    */
+  sealed trait ListOperator extends LibraryOperator
+
+  /**
     * All list operations.
     */
   val Ops: immutable.Map[Name.Resolved, ListOperator] = List(
@@ -131,11 +136,6 @@ object FList {
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
-
-  /**
-    * A common super-type for all list operations.
-    */
-  sealed trait ListOperator extends LibraryOperator
 
   /**
     * Generic type variables.

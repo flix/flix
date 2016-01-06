@@ -9,6 +9,11 @@ import scala.collection.immutable
 object FSet {
 
   /**
+    * A common super-type for all set operations.
+    */
+  sealed trait SetOperator extends LibraryOperator
+
+  /**
     * All set operations.
     */
   val Ops: immutable.Map[Name.Resolved, SetOperator] = List(
@@ -50,11 +55,6 @@ object FSet {
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
-
-  /**
-    * A common super-type for all set operations.
-    */
-  sealed trait SetOperator extends LibraryOperator
 
   /**
     * Generic type variables.

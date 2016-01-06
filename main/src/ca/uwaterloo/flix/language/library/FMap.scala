@@ -9,6 +9,11 @@ import scala.collection.immutable
 object FMap {
 
   /**
+    * A common super-type for all map operations.
+    */
+  sealed trait MapOperator extends LibraryOperator
+
+  /**
     * All map operations.
     */
   val Ops: immutable.Map[Name.Resolved, MapOperator] = List(
@@ -73,11 +78,6 @@ object FMap {
   // TODO: lookupIndex, deleteAt, updateAt - wait do we need these?
 
   // TODO: minimum, maximum,
-
-  /**
-    * A common super-type for all map operations.
-    */
-  sealed trait MapOperator extends LibraryOperator
 
   /**
     * Generic type variables.
