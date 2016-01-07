@@ -65,7 +65,14 @@ object Simplifier {
   }
 
   object Directives {
-    def simplify(tast: TypedAst.Directives): SimplifiedAst.Directives = ???
+    def simplify(tast: TypedAst.Directives): SimplifiedAst.Directives =
+      SimplifiedAst.Directives(tast.directives map simplify)
+
+    def simplify(tast: TypedAst.Directive): SimplifiedAst.Directive = tast match {
+      case TypedAst.Directive.AssertFact(fact, loc) => ??? // TODO: To be removed?
+      case TypedAst.Directive.AssertRule(fact, loc) => ??? // TODO: To be removed?
+      case TypedAst.Directive.Print(fact, loc) => ??? // TODO: To be removed?
+    }
   }
 
   object Expression {
@@ -97,6 +104,7 @@ object Simplifier {
       def simplify(tast: TypedAst.Predicate.Head): SimplifiedAst.Predicate.Head = tast match {
         case TypedAst.Predicate.Head.Relation(name, terms, tpe, loc) =>
           SimplifiedAst.Predicate.Head.Relation(name, terms map Term.simplify, tpe, loc)
+        case TypedAst.Predicate.Head.Error(terms, tpe, loc) => ??? // TODO: To be removed?
       }
     }
 
@@ -116,7 +124,12 @@ object Simplifier {
   }
 
   object Term {
-    def simplify(tast: TypedAst.Term.Head): SimplifiedAst.Term.Head = ???
+    def simplify(tast: TypedAst.Term.Head): SimplifiedAst.Term.Head = tast match {
+      case TypedAst.Term.Head.Var(ident, tpe, loc) => ???
+      case TypedAst.Term.Head.Lit(lit, tpe, loc) => ???
+      case TypedAst.Term.Head.Apply(name, args, tpe, loc) => ???
+      case TypedAst.Term.Head.NativeField(field, tpe, loc) => ??? // TODO: to be removed?
+    }
 
     def simplify(tast: TypedAst.Term.Body): SimplifiedAst.Term.Body = ???
   }
