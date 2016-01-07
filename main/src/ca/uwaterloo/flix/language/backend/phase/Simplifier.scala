@@ -77,12 +77,16 @@ object Simplifier {
   }
 
   object Literal {
-    // TODO: or inline?
     def simplify(tast: TypedAst.Literal): SimplifiedAst.Expression = tast match {
       case TypedAst.Literal.Unit(loc) => SimplifiedAst.Expression.Unit(loc)
-      //
+      case TypedAst.Literal.Bool(b, loc) =>
+        if (b) SimplifiedAst.Expression.True(loc) else SimplifiedAst.Expression.False(loc)
+      case TypedAst.Literal.Int(i, loc) => SimplifiedAst.Expression.Int(i, loc)
+      case TypedAst.Literal.Str(s, loc) => SimplifiedAst.Expression.Str(s, loc)
+      case TypedAst.Literal.Tag(enum, tag, lit, tpe, loc) => ???
+      case TypedAst.Literal.Tuple(elms, tpe, loc) => ???
+      case TypedAst.Literal.Set(elms, tpe, loc) => ???
     }
-
   }
 
   object Predicate {

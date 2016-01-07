@@ -80,15 +80,23 @@ object SimplifiedAst {
   object Expression {
 
     case class Unit(loc: SourceLocation) extends SimplifiedAst.Expression {
-      val tpe = TypedAst.Type.Unit
+      final val tpe = TypedAst.Type.Unit
     }
 
     case class True(loc: SourceLocation) extends SimplifiedAst.Expression {
-      val tpe = TypedAst.Type.Bool
+      final val tpe = TypedAst.Type.Bool
     }
 
     case class False(loc: SourceLocation) extends SimplifiedAst.Expression {
-      val tpe = TypedAst.Type.Bool
+      final val tpe = TypedAst.Type.Bool
+    }
+
+    case class Int(lit: scala.Int, loc: SourceLocation) extends SimplifiedAst.Expression {
+      final val tpe = TypedAst.Type.Int
+    }
+
+    case class Str(lit: java.lang.String, loc: SourceLocation) extends SimplifiedAst.Expression {
+      final val tpe = TypedAst.Type.Str
     }
 
     case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
@@ -114,32 +122,6 @@ object SimplifiedAst {
     case class Set(elms: List[SimplifiedAst.Expression], tpe: Type.Set, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Error(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-  }
-
-
-  sealed trait Literal extends SimplifiedAst {
-    def tpe: TypedAst.Type
-
-    def loc: SourceLocation
-  }
-
-  object Literal {
-
-    case class Int(lit: scala.Int, loc: SourceLocation) extends SimplifiedAst.Literal {
-      final val tpe = TypedAst.Type.Int
-    }
-
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends SimplifiedAst.Literal {
-      final val tpe = TypedAst.Type.Str
-    }
-
-    case class Tag(enum: Name.Resolved, tag: Name.Ident, lit: TypedAst.Literal, tpe: TypedAst.Type.Enum, loc: SourceLocation) extends SimplifiedAst.Literal
-
-    case class Tuple(elms: List[TypedAst.Literal], tpe: TypedAst.Type.Tuple, loc: SourceLocation) extends SimplifiedAst.Literal
-
-    case class Set(elms: List[TypedAst.Literal], tpe: TypedAst.Type.Set, loc: SourceLocation) extends SimplifiedAst.Literal
 
   }
 
