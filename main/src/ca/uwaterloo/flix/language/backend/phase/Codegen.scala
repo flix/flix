@@ -134,7 +134,7 @@ object Codegen {
         case Type.Lambda(args, retTpe) => ???
       }
       compileExpression(context, visitor)(exp2)
-    case Unary(op, exp, tpe, loc) => compileUnaryExpression(context, visitor)(op, exp)
+    case Unary(op, exp, tpe, loc) => compileUnaryExpression(context, visitor)(op, exp, tpe)
     case Binary(op, exp1, exp2, tpe, loc) => compileBinaryExpression(context, visitor)(op, exp1, exp2)
     case IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       val ifElse = new Label()
@@ -181,8 +181,7 @@ object Codegen {
     if (Int.MinValue <= i && i <= Int.MaxValue && i != 0 && i != 1 && isLong) visitor.visitInsn(I2L)
   }
 
-  // TODO: Handle int/long ops
-  private def compileUnaryExpression(context: Context, visitor: MethodVisitor)(op: UnaryOperator, expr: Expression): Unit = {
+  private def compileUnaryExpression(context: Context, visitor: MethodVisitor)(op: UnaryOperator, expr: Expression, tpe: Type): Unit = {
     compileExpression(context, visitor)(expr)
     op match {
       case UnaryOperator.Not =>
@@ -194,12 +193,34 @@ object Codegen {
         visitor.visitLabel(condElse)
         visitor.visitInsn(ICONST_0)
         visitor.visitLabel(condEnd)
-      case UnaryOperator.Plus => // Unary plus is a nop
-      case UnaryOperator.Minus => visitor.visitInsn(INEG)
+      case UnaryOperator.Plus => // nop
+      case UnaryOperator.Minus =>
+        // For Int8 and Int16, we need to truncate the result.
+        tpe match {
+          case Type.Int8 =>
+            visitor.visitInsn(INEG)
+            visitor.visitInsn(I2B)
+          case Type.Int16 =>
+            visitor.visitInsn(INEG)
+            visitor.visitInsn(I2S)
+          case Type.Int32 => visitor.visitInsn(INEG)
+          case Type.Int64 => visitor.visitInsn(LNEG)
+          case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
+            throw new InternalCompilerError(s"Can't apply $op to $tpe.")
+        }
       case UnaryOperator.Negate =>
-        // Note that ~bbbb = bbbb ^ 1111, and since the JVM uses two's complement, -1 = 0xFFFFFFFF, so ~x = x ^ -1
+        // Note that ~bbbb = bbbb ^ 1111, and since the JVM uses two's complement, -1 = 0xFFFFFFFF, so ~x = x ^ -1.
+        // No need to truncate because Int8/Int16 are sign-extended to Int32, and s.ext(negate(X) = negate(s.ext(X)).
         visitor.visitInsn(ICONST_M1)
-        visitor.visitInsn(IXOR)
+        tpe match {
+          case Type.Int8 | Type.Int16 | Type.Int32 =>
+            visitor.visitInsn(IXOR)
+          case Type.Int64 =>
+            visitor.visitInsn(I2L)
+            visitor.visitInsn(LXOR)
+          case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
+            throw new InternalCompilerError(s"Can't apply $op to $tpe.")
+        }
 
       case UnaryOperator.Set.IsEmpty => ???
       case UnaryOperator.Set.NonEmpty => ???

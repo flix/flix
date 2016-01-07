@@ -1150,47 +1150,372 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Unary.Minus01") {
-    val definition = Function(name, args = List(),
-      body = Unary(UnaryOperator.Minus, Const(42, Type.Int32, loc), Type.Int32, loc),
+    // Unary minus operator applied to Int8
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+
+    val def01 = Function(name01, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(Byte.MaxValue, Type.Int8, loc), Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(42, Type.Int8, loc), Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(0, Type.Int8, loc), Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(-42, Type.Int8, loc), Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def05 = Function(name05, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(Byte.MinValue, Type.Int8, loc), Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
+    val code = new CompiledCode(List(def01, def02, def03, def04, def05))
 
-    assertResult(-42)(result)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+    val result05 = code.call(name05)
+
+    assertResult(-Byte.MaxValue)(result01)
+    assertResult(-42)(result02)
+    assertResult(0)(result03)
+    assertResult(42)(result04)
+    assertResult(Byte.MinValue)(result05)
   }
 
+
   test("Codegen - Unary.Minus02") {
-    val definition = Function(name, args = List(),
-      body = Unary(UnaryOperator.Minus, Const(-42, Type.Int32, loc), Type.Int32, loc),
+    // Unary minus operator applied to Int16
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+
+    val def01 = Function(name01, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(Short.MaxValue, Type.Int16, loc), Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(420, Type.Int16, loc), Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(0, Type.Int16, loc), Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(-420, Type.Int16, loc), Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def05 = Function(name05, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(Short.MinValue, Type.Int16, loc), Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
+    val code = new CompiledCode(List(def01, def02, def03, def04, def05))
 
-    assertResult(42)(result)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+    val result05 = code.call(name05)
+
+    assertResult(-Short.MaxValue)(result01)
+    assertResult(-420)(result02)
+    assertResult(0)(result03)
+    assertResult(420)(result04)
+    assertResult(Short.MinValue)(result05)
+  }
+
+  test("Codegen - Unary.Minus03") {
+    // Unary minus operator applied to Int32
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+
+    val def01 = Function(name01, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(Int.MaxValue, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(36000, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(0, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(-36000, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def05 = Function(name05, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(Int.MinValue, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(def01, def02, def03, def04, def05))
+
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+    val result05 = code.call(name05)
+
+    assertResult(-Int.MaxValue)(result01)
+    assertResult(-36000)(result02)
+    assertResult(0)(result03)
+    assertResult(36000)(result04)
+    assertResult(Int.MinValue)(result05)
+  }
+
+  test("Codegen - Unary.Minus04") {
+    // Unary minus operator applied to Int64
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+
+    val def01 = Function(name01, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(Long.MaxValue, Type.Int64, loc), Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def02 = Function(name02, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(10000000000L, Type.Int64, loc), Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def03 = Function(name03, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(0, Type.Int64, loc), Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def04 = Function(name04, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(-10000000000L, Type.Int64, loc), Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def05 = Function(name05, args = List(),
+      body = Unary(UnaryOperator.Minus, Const(Long.MinValue, Type.Int64, loc), Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(def01, def02, def03, def04, def05))
+
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+    val result05 = code.call(name05)
+
+    assertResult(-Long.MaxValue)(result01)
+    assertResult(-10000000000L)(result02)
+    assertResult(0)(result03)
+    assertResult(10000000000L)(result04)
+    assertResult(Long.MinValue)(result05)
   }
 
   test("Codegen - Unary.Negate01") {
-    val definition = Function(name, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(42, Type.Int32, loc), Type.Int32, loc),
+    // Unary negation operator applied to Int8
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name07 = Name.Resolved.mk(List("foo", "bar", "f07"))
+
+    val def01 = Function(name01, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(Byte.MaxValue, Type.Int8, loc), Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(42, Type.Int8, loc), Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(1, Type.Int8, loc), Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(0, Type.Int8, loc), Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def05 = Function(name05, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(-1, Type.Int8, loc), Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def06 = Function(name06, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(-42, Type.Int8, loc), Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def07 = Function(name07, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(Byte.MinValue, Type.Int8, loc), Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
+    val code = new CompiledCode(List(def01, def02, def03, def04, def05, def06, def07))
 
-    assertResult(~42)(result)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+    val result05 = code.call(name05)
+    val result06 = code.call(name06)
+    val result07 = code.call(name07)
+
+    assertResult(Byte.MinValue)(result01)
+    assertResult(-43)(result02)
+    assertResult(-2)(result03)
+    assertResult(-1)(result04)
+    assertResult(0)(result05)
+    assertResult(41)(result06)
+    assertResult(Byte.MaxValue)(result07)
   }
 
   test("Codegen - Unary.Negate02") {
-    val definition = Function(name, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(-42, Type.Int32, loc), Type.Int32, loc),
+    // Unary negation operator applied to Int16
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name07 = Name.Resolved.mk(List("foo", "bar", "f07"))
+
+    val def01 = Function(name01, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(Short.MaxValue, Type.Int16, loc), Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(420, Type.Int16, loc), Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(1, Type.Int16, loc), Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(0, Type.Int16, loc), Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def05 = Function(name05, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(-1, Type.Int16, loc), Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def06 = Function(name06, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(-420, Type.Int16, loc), Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def07 = Function(name07, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(Short.MinValue, Type.Int16, loc), Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
+    val code = new CompiledCode(List(def01, def02, def03, def04, def05, def06, def07))
 
-    assertResult(~(-42))(result)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+    val result05 = code.call(name05)
+    val result06 = code.call(name06)
+    val result07 = code.call(name07)
+
+    assertResult(Short.MinValue)(result01)
+    assertResult(-421)(result02)
+    assertResult(-2)(result03)
+    assertResult(-1)(result04)
+    assertResult(0)(result05)
+    assertResult(419)(result06)
+    assertResult(Short.MaxValue)(result07)
+  }
+
+  test("Codegen - Unary.Negate03") {
+    // Unary negation operator applied to Int32
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name07 = Name.Resolved.mk(List("foo", "bar", "f07"))
+
+    val def01 = Function(name01, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(Int.MaxValue, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(36000, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(1, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(0, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def05 = Function(name05, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(-1, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def06 = Function(name06, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(-36000, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def07 = Function(name07, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(Int.MinValue, Type.Int32, loc), Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(def01, def02, def03, def04, def05, def06, def07))
+
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+    val result05 = code.call(name05)
+    val result06 = code.call(name06)
+    val result07 = code.call(name07)
+
+    assertResult(Int.MinValue)(result01)
+    assertResult(-36001)(result02)
+    assertResult(-2)(result03)
+    assertResult(-1)(result04)
+    assertResult(0)(result05)
+    assertResult(35999)(result06)
+    assertResult(Int.MaxValue)(result07)
+  }
+
+  test("Codegen - Unary.Negate04") {
+    // Unary negation operator applied to Int64
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name07 = Name.Resolved.mk(List("foo", "bar", "f07"))
+
+    val def01 = Function(name01, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(Long.MaxValue, Type.Int64, loc), Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def02 = Function(name02, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(10000000000L, Type.Int64, loc), Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def03 = Function(name03, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(1, Type.Int64, loc), Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def04 = Function(name04, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(0, Type.Int64, loc), Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def05 = Function(name05, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(-1, Type.Int64, loc), Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def06 = Function(name06, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(-10000000000L, Type.Int64, loc), Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def07 = Function(name07, args = List(),
+      body = Unary(UnaryOperator.Negate, Const(Long.MinValue, Type.Int64, loc), Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(def01, def02, def03, def04, def05, def06, def07))
+
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+    val result05 = code.call(name05)
+    val result06 = code.call(name06)
+    val result07 = code.call(name07)
+
+    assertResult(Long.MinValue)(result01)
+    assertResult(-10000000001L)(result02)
+    assertResult(-2)(result03)
+    assertResult(-1)(result04)
+    assertResult(0)(result05)
+    assertResult(9999999999L)(result06)
+    assertResult(Long.MaxValue)(result07)
   }
 
   /////////////////////////////////////////////////////////////////////////////
