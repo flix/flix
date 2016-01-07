@@ -94,16 +94,15 @@ object Simplifier {
 
       case TypedAst.Expression.Match(exp, rules, tpe, loc) => ???
 
-      case TypedAst.Expression.Tag(enum, tag, exp, tpe, loc) => ???
-
-      case TypedAst.Expression.Tuple(elms, tpe, loc) => ???
-
-      case TypedAst.Expression.Set(elms, tpe, loc) => ???
-
-      case TypedAst.Expression.Error(tpe, loc) => ???
-
+      case TypedAst.Expression.Tag(enum, tag, e, tpe, loc) =>
+        SimplifiedAst.Expression.Tag(enum, tag, simplify(e), tpe, loc)
+      case TypedAst.Expression.Tuple(elms, tpe, loc) =>
+        SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
+      case TypedAst.Expression.Set(elms, tpe, loc) =>
+        SimplifiedAst.Expression.Set(elms map simplify, tpe, loc)
+      case TypedAst.Expression.Error(tpe, loc) =>
+        SimplifiedAst.Expression.Error(tpe, loc)
       case TypedAst.Expression.NativeField(field, tpe, loc) => throw new UnsupportedOperationException // TODO: To be removed?
-
       case TypedAst.Expression.NativeMethod(method, tpe, loc) => throw new UnsupportedOperationException // TODO: To be removed?
     }
   }
