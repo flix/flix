@@ -237,40 +237,35 @@ object ReducedIR {
   object Type {
 
     /**
-      * The type of booleans, i.e. a 1-bit integer.
-      * Maps to a JVM boolean, even though all non-long operations are done as int operations.
+      * The type of booleans, i.e. a 1-bit integer. Maps to a JVM boolean.
       */
     case object Bool extends ReducedIR.Type {
       override val descriptor = "Z"
     }
 
     /**
-      * The type of 8-bit signed integers.
-      * Maps to a JVM byte, even though all non-long operations are done as int operations.
+      * The type of 8-bit signed integers. Maps to a JVM byte.
       */
     case object Int8 extends ReducedIR.Type {
       override val descriptor = "B"
     }
 
     /**
-      * The type of 16-bit signed integers.
-      * Maps to a JVM short, even though all non-long operations are done as int operations.
+      * The type of 16-bit signed integers. Maps to a JVM short.
       */
     case object Int16 extends ReducedIR.Type {
       override val descriptor = "S"
     }
 
     /**
-      * The type of 32-bit signed integers.
-      * Maps to a JVM int.
+      * The type of 32-bit signed integers. Maps to a JVM int.
       */
     case object Int32 extends ReducedIR.Type {
       override val descriptor = "I"
     }
 
     /**
-      * The type of 64-bit signed integers.
-      * Maps to a JVM long.
+      * The type of 64-bit signed integers. Maps to a JVM long.
       */
     case object Int64 extends ReducedIR.Type {
       override val descriptor = "J"

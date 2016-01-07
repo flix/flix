@@ -34,13 +34,9 @@ object Codegen {
     // Initialize the visitor to create a class
     visitor.visit(V1_7, ACC_PUBLIC + ACC_SUPER, context.clazz, null, "java/lang/Object", null)
 
-    // Generate the constructor for the class
     compileConstructor(context, visitor)
-
-    // Generate code for each of the Flix functions
     functions.foreach(compileFunction(context, visitor))
 
-    // Finish the traversal and convert to a byte array
     visitor.visitEnd()
     classWriter.toByteArray
   }
@@ -68,11 +64,8 @@ object Codegen {
     val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, decorate(function.name), function.descriptor, null, null)
     mv.visitCode()
 
-    // Compile the method body
     compileExpression(context, mv)(function.body)
 
-    // Return the value. Note that Bool, Int8, Int16, and Int32 are represented as 32-bit ints, while Int64 is
-    // represented as a 64-bit long. We don't do any implicit casts.
     function.tpe.retTpe match {
       case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
@@ -101,7 +94,7 @@ object Codegen {
       visitor.visitInsn(IAND)
     case store: StoreExpression =>
       // (e & mask') | ((v.toLong & 0xFFFFFFFFL) << offset) where mask' = ~(mask << offset)
-      // Note that toLong does a sign extension which we need to mask out
+      // Note that toLong does a sign extension which we need to mask out.
       compileExpression(context, visitor)(store.e)
       compileConst(visitor)(store.mask, isLong = true)
       visitor.visitInsn(LAND)
