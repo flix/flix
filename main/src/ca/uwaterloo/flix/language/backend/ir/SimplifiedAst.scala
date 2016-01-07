@@ -103,7 +103,8 @@ object SimplifiedAst {
 
     case class Ref(name: Name.Resolved, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Lambda(args: List[SimplifiedAst.FormalArg], body: SimplifiedAst.Expression, tpe: Type.Lambda, loc: SourceLocation) extends SimplifiedAst.Expression
+    // TODO: Lambda lift?
+    case class Lambda(annotations: Ast.Annotations, args: List[SimplifiedAst.FormalArg], body: SimplifiedAst.Expression, tpe: Type.Lambda, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Apply(exp: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -169,7 +170,7 @@ object SimplifiedAst {
     object Head {
 
       case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
-
+      // TODO: Lambda lift?
       case class Exp(literal: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
 
       // TODO: Can we get rid of this?
@@ -188,7 +189,7 @@ object SimplifiedAst {
       case class Wildcard(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
 
       case class Var(v: Int, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
-
+      // TODO: Lambda lift?
       case class Exp(e: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
 
     }

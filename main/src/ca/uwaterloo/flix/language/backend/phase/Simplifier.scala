@@ -3,16 +3,12 @@ package ca.uwaterloo.flix.language.backend.phase
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst
 
-// TODO: This phase:
-// - Eliminates switch and match.
-// - Introduce TestTag, extract etc.
-// - Inlines literals into Exp?
-// - Numbers every argument etc.
-
 /**
   * A phase that simplifies a Typed AST by:
   *
-  * -
+  * - Compiles literals to expressions.
+  * - Eliminates match expressions.
+  * - Numbers every variable.
   */
 object Simplifier {
 
@@ -81,8 +77,7 @@ object Simplifier {
       case TypedAst.Expression.Var(ident, tpe, loc) => SimplifiedAst.Expression.Var(ident, tpe, loc)
       case TypedAst.Expression.Ref(name, tpe, loc) => SimplifiedAst.Expression.Ref(name, tpe, loc)
       case TypedAst.Expression.Lambda(annotations, args, body, tpe, loc) =>
-        ??? // TODO Eta conversion?
-
+        SimplifiedAst.Expression.Lambda(annotations, args map Simplifier.simplify, simplify(body), tpe, loc)
       case TypedAst.Expression.Apply(e, args, tpe, loc) =>
         SimplifiedAst.Expression.Apply(simplify(e), args map simplify, tpe, loc)
       case TypedAst.Expression.Unary(op, e, tpe, loc) =>
@@ -169,4 +164,5 @@ object Simplifier {
   def simplify(tast: TypedAst.Attribute): SimplifiedAst.Attribute =
     SimplifiedAst.Attribute(tast.ident, tast.tpe)
 
+  def simplify(tast: TypedAst.FormalArg): SimplifiedAst.FormalArg = ???
 }
