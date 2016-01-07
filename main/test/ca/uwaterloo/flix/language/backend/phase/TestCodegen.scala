@@ -675,6 +675,43 @@ class TestCodegen extends FunSuite {
     assertResult(-101010)(result)
   }
 
+  test("Codegen - Var04") {
+    val definition = Function(name, args = List("x"),
+      body = Var(LocalVar(0, "x"), Type.Int64, loc),
+      Type.Lambda(List(Type.Int64), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List(java.lang.Long.TYPE), List(42).map(_.asInstanceOf[Object]))
+
+    assertResult(42)(result)
+  }
+
+  test("Codegen - Var05") {
+    val definition = Function(name, args = List("x", "y", "z"),
+      body = Var(LocalVar(2, "y"), Type.Int64, loc),
+      Type.Lambda(List(Type.Int64, Type.Int64, Type.Int64), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name,
+      List(java.lang.Long.TYPE, java.lang.Long.TYPE, java.lang.Long.TYPE),
+      List(1337, -101010, 42).map(_.asInstanceOf[Object]))
+
+    assertResult(-101010)(result)
+  }
+
+  test("Codegen - Var06") {
+    val definition = Function(name, args = List("x", "y", "z"),
+      body = Var(LocalVar(1, "y"), Type.Int64, loc),
+      Type.Lambda(List(Type.Int32, Type.Int64, Type.Int64), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name,
+      List(Integer.TYPE, java.lang.Long.TYPE, java.lang.Long.TYPE),
+      List(1337, -101010, 42).map(_.asInstanceOf[Object]))
+
+    assertResult(-101010)(result)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Let expression                                                          //
   /////////////////////////////////////////////////////////////////////////////
@@ -744,7 +781,7 @@ class TestCodegen extends FunSuite {
       body = Let(LocalVar(3, "x"), Const(1337, Type.Int32, loc),
         Let(LocalVar(4, "y"), Const(-101010, Type.Int32, loc),
           Let(LocalVar(5, "z"), Const(42, Type.Int32, loc),
-            Var(LocalVar(0, "a"), Type.Int32, loc),
+            Var(LocalVar(1, "b"), Type.Int32, loc),
             Type.Int32, loc),
           Type.Int32, loc),
         Type.Int32, loc),
@@ -755,7 +792,130 @@ class TestCodegen extends FunSuite {
       List(Integer.TYPE, Integer.TYPE, Integer.TYPE),
       List(-1337, 101010, -42).map(_.asInstanceOf[Object]))
 
-    assertResult(-1337)(result)
+    assertResult(101010)(result)
+  }
+
+  test("Codegen - Let06") {
+    val definition = Function(name, args = List(),
+      body = Let(LocalVar(0, "x"), Const(42, Type.Int64, loc),
+        Var(LocalVar(0, "x"), Type.Int64, loc), Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(42)(result)
+  }
+
+  test("Codegen - Let07") {
+    val definition = Function(name, args = List(),
+      body = Let(LocalVar(0, "x"), Const(1337, Type.Int64, loc),
+        Let(LocalVar(2, "y"), Const(-101010, Type.Int64, loc),
+          Let(LocalVar(4, "z"), Const(42, Type.Int64, loc),
+            Var(LocalVar(2, "y"), Type.Int64, loc),
+            Type.Int64, loc),
+          Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(-101010)(result)
+  }
+
+  test("Codegen - Let08") {
+    val definition = Function(name, args = List(),
+      body = Let(LocalVar(0, "x"), Const(1337, Type.Int32, loc),
+        Let(LocalVar(1, "y"), Const(-101010, Type.Int64, loc),
+          Let(LocalVar(3, "z"), Const(42, Type.Int64, loc),
+            Var(LocalVar(1, "y"), Type.Int64, loc),
+            Type.Int64, loc),
+          Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(-101010)(result)
+  }
+
+  test("Codegen - Let09") {
+    val definition = Function(name, args = List("a", "b", "c"),
+      body = Let(LocalVar(6, "x"), Const(1337, Type.Int64, loc),
+        Let(LocalVar(8, "y"), Const(-101010, Type.Int64, loc),
+          Let(LocalVar(10, "z"), Const(42, Type.Int64, loc),
+            Var(LocalVar(8, "y"), Type.Int64, loc),
+            Type.Int64, loc),
+          Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(Type.Int64, Type.Int64, Type.Int64), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name,
+      List(java.lang.Long.TYPE, java.lang.Long.TYPE, java.lang.Long.TYPE),
+      List(-1337, 101010, -42).map(_.asInstanceOf[Object]))
+
+    assertResult(-101010)(result)
+  }
+
+  test("Codegen - Let10") {
+    val definition = Function(name, args = List("a", "b", "c"),
+      body = Let(LocalVar(5, "x"), Const(1337, Type.Int32, loc),
+        Let(LocalVar(6, "y"), Const(-101010, Type.Int64, loc),
+          Let(LocalVar(8, "z"), Const(42, Type.Int64, loc),
+            Var(LocalVar(6, "y"), Type.Int64, loc),
+            Type.Int64, loc),
+          Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(Type.Int32, Type.Int64, Type.Int64), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name,
+      List(Integer.TYPE, java.lang.Long.TYPE, java.lang.Long.TYPE),
+      List(-1337, 101010, -42).map(_.asInstanceOf[Object]))
+
+    assertResult(-101010)(result)
+  }
+
+
+  test("Codegen - Let11") {
+    val definition = Function(name, args = List("a", "b", "c"),
+      body = Let(LocalVar(6, "x"), Const(1337, Type.Int64, loc),
+        Let(LocalVar(8, "y"), Const(-101010, Type.Int64, loc),
+          Let(LocalVar(10, "z"), Const(42, Type.Int64, loc),
+            Var(LocalVar(2, "b"), Type.Int64, loc),
+            Type.Int64, loc),
+          Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(Type.Int64, Type.Int64, Type.Int64), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name,
+      List(java.lang.Long.TYPE, java.lang.Long.TYPE, java.lang.Long.TYPE),
+      List(-1337, 101010, -42).map(_.asInstanceOf[Object]))
+
+    assertResult(101010)(result)
+  }
+
+  test("Codegen - Let12") {
+    val definition = Function(name, args = List("a", "b", "c"),
+      body = Let(LocalVar(5, "x"), Const(1337, Type.Int32, loc),
+        Let(LocalVar(6, "y"), Const(-101010, Type.Int64, loc),
+          Let(LocalVar(8, "z"), Const(42, Type.Int64, loc),
+            Var(LocalVar(1, "b"), Type.Int64, loc),
+            Type.Int64, loc),
+          Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(Type.Int32, Type.Int64, Type.Int64), Type.Int64), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name,
+      List(Integer.TYPE, java.lang.Long.TYPE, java.lang.Long.TYPE),
+      List(-1337, 101010, -42).map(_.asInstanceOf[Object]))
+
+    assertResult(101010)(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////

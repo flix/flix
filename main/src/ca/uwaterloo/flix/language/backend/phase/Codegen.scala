@@ -26,7 +26,6 @@ object Codegen {
    * For now, we put all definitions in a single class: ca.uwaterloo.flix.runtime.compiled.FlixDefinitions.
    * The Flix function A::B::C::foo is compiled as the method A$B$C$foo.
    */
-  // TODO: How exactly do we want to treat longs? Right now compiled functions can take and return longs, but all operations are done on ints.
   def compile(context: Context): Array[Byte] = {
     val functions = context.functions
     val classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
@@ -117,13 +116,30 @@ object Codegen {
       visitor.visitInsn(LOR)
     case Const(i, Type.Int64, loc) => compileConst(visitor)(i, isLong = true)
     case Const(i, tpe, loc) => compileConst(visitor)(i)
-    case Var(v, tpe, loc) => visitor.visitVarInsn(ILOAD, v.offset)
+    case Var(v, tpe, loc) =>
+      tpe match {
+        case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ILOAD, v.offset)
+        case Type.Int64 => visitor.visitVarInsn(LLOAD, v.offset)
+        case Type.Tag(name, ident, typ) => ???
+        case Type.Enum(cases) => ???
+        case Type.Tuple(elms) => ???
+        case Type.Set(elmType) => ???
+        case Type.Lambda(args, retTpe) => ???
+      }
     case Apply(name, args, tpe, loc) =>
       args.foreach(compileExpression(context, visitor))
       visitor.visitMethodInsn(INVOKESTATIC, context.clazz, decorate(name), context.getFunction(name).descriptor, false)
     case Let(v, exp1, exp2, tpe, loc) =>
       compileExpression(context, visitor)(exp1)
-      visitor.visitVarInsn(ISTORE, v.offset)
+      exp1.tpe match {
+        case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ISTORE, v.offset)
+        case Type.Int64 => visitor.visitVarInsn(LSTORE, v.offset)
+        case Type.Tag(name, ident, typ) => ???
+        case Type.Enum(cases) => ???
+        case Type.Tuple(elms) => ???
+        case Type.Set(elmType) => ???
+        case Type.Lambda(args, retTpe) => ???
+      }
       compileExpression(context, visitor)(exp2)
     case Unary(op, exp, tpe, loc) => compileUnaryExpression(context, visitor)(op, exp)
     case Binary(op, exp1, exp2, tpe, loc) => compileBinaryExpression(context, visitor)(op, exp1, exp2)
@@ -172,6 +188,7 @@ object Codegen {
     if (Int.MinValue <= i && i <= Int.MaxValue && i != 0 && i != 1 && isLong) visitor.visitInsn(I2L)
   }
 
+  // TODO: Handle int/long ops
   private def compileUnaryExpression(context: Context, visitor: MethodVisitor)(op: UnaryOperator, expr: Expression): Unit = {
     compileExpression(context, visitor)(expr)
     op match {
@@ -199,6 +216,7 @@ object Codegen {
   }
 
   // Binary operations And and Or are handled first because of short-circuit evaluation
+  // TODO: Handle int/long ops
   private def compileBinaryExpression(context: Context, visitor: MethodVisitor)(op: BinaryOperator, expr1: Expression, expr2: Expression): Unit = op match {
     case BinaryOperator.And =>
       val andFalseBranch = new Label()
