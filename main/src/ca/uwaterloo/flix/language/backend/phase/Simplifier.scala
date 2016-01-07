@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.backend.phase
 
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst
+import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst.Expression
 
 /**
   * A phase that simplifies a Typed AST by:
@@ -90,8 +91,12 @@ object Simplifier {
         SimplifiedAst.Expression.Let(ident, simplify(e1), simplify(e2), tpe, loc)
 
       case TypedAst.Expression.Match(exp, rules, tpe, loc) =>
-        ??? // TODO: Eliminate
-
+        // TODO: This should probably be in a let binding
+        val valueExp = simplify(exp)
+        val zero = SimplifiedAst.Expression.MatchError(tpe, loc)
+        rules.foldRight(zero: SimplifiedAst.Expression) {
+          case (rule, acc) => Pattern.simplify(valueExp, rule, acc)
+        }
       case TypedAst.Expression.Tag(enum, tag, e, tpe, loc) =>
         SimplifiedAst.Expression.Tag(enum, tag, simplify(e), tpe, loc)
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
@@ -102,6 +107,18 @@ object Simplifier {
         SimplifiedAst.Expression.Error(tpe, loc)
       case TypedAst.Expression.NativeField(field, tpe, loc) => throw new UnsupportedOperationException // TODO: To be removed?
       case TypedAst.Expression.NativeMethod(method, tpe, loc) => throw new UnsupportedOperationException // TODO: To be removed?
+    }
+  }
+
+  object Pattern {
+    def simplify(valueExp: SimplifiedAst.Expression, rule: (TypedAst.Pattern, TypedAst.Expression), elseExp: SimplifiedAst.Expression): SimplifiedAst.Expression = {
+      val (pat, matchExp) = rule
+
+      pat match {
+        case TypedAst.Pattern.Var(ident, tpe, loc) => ???
+      }
+
+      ???
     }
   }
 

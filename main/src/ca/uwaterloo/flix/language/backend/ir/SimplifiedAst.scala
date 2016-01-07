@@ -124,6 +124,8 @@ object SimplifiedAst {
 
     case class Error(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
+    case class MatchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
   }
 
   sealed trait Predicate extends SimplifiedAst {
