@@ -61,7 +61,6 @@ object Simplifier {
 
     def simplify(tast: TypedAst.Definition.Index): SimplifiedAst.Definition.Index =
       SimplifiedAst.Definition.Index(tast.name, tast.indexes, tast.loc)
-
   }
 
   object Directives {
@@ -82,6 +81,7 @@ object Simplifier {
       case TypedAst.Expression.Ref(name, tpe, loc) => SimplifiedAst.Expression.Ref(name, tpe, loc)
       case TypedAst.Expression.Lambda(annotations, args, body, tpe, loc) =>
         ??? // TODO Eta conversion?
+
       case TypedAst.Expression.Apply(e, args, tpe, loc) =>
         SimplifiedAst.Expression.Apply(simplify(e), args map simplify, tpe, loc)
       case TypedAst.Expression.Unary(op, e, tpe, loc) =>
@@ -130,7 +130,7 @@ object Simplifier {
           SimplifiedAst.Predicate.Head.Relation(name, terms map Term.simplify, tpe, loc)
         case TypedAst.Predicate.Head.Error(terms, tpe, loc) => throw new UnsupportedOperationException // TODO: To be removed?
         case TypedAst.Predicate.Head.Trace(terms, tpe, loc) => throw new UnsupportedOperationException // TODO: To be removed?
-        case TypedAst.Predicate.Head.Write(terms, path, tpe, loc) => ???
+        case TypedAst.Predicate.Head.Write(terms, path, tpe, loc) => throw new UnsupportedOperationException // TODO: To be removed?
       }
     }
 
@@ -161,7 +161,7 @@ object Simplifier {
     def simplify(tast: TypedAst.Term.Body): SimplifiedAst.Term.Body = tast match {
       case TypedAst.Term.Body.Wildcard(tpe, loc) => SimplifiedAst.Term.Body.Wildcard(tpe, loc)
       case TypedAst.Term.Body.Var(ident, tpe, loc) => SimplifiedAst.Term.Body.Var(ident, tpe, loc)
-      case TypedAst.Term.Body.Lit(lit, tpe, loc) => ??? // TODO
+      case TypedAst.Term.Body.Lit(lit, tpe, loc) => SimplifiedAst.Term.Body.Exp(Literal.simplify(lit), tpe, loc)
     }
   }
 
