@@ -80,19 +80,20 @@ object Simplifier {
       case TypedAst.Expression.Lit(lit, tpe, loc) => Literal.simplify(lit)
       case TypedAst.Expression.Var(ident, tpe, loc) => SimplifiedAst.Expression.Var(ident, tpe, loc)
       case TypedAst.Expression.Ref(name, tpe, loc) => SimplifiedAst.Expression.Ref(name, tpe, loc)
-      case TypedAst.Expression.Lambda(annotations, args, body, tpe, loc) => ??? // TODO
+      case TypedAst.Expression.Lambda(annotations, args, body, tpe, loc) =>
+        ??? // TODO Eta conversion?
       case TypedAst.Expression.Apply(exp, args, tpe, loc) =>
         ???
-      case TypedAst.Expression.Unary(op, exp, tpe, loc) =>
-        ???
+      case TypedAst.Expression.Unary(op, e, tpe, loc) =>
+        SimplifiedAst.Expression.Unary(op, simplify(e), tpe, loc)
       case TypedAst.Expression.Binary(op, e1, e2, tpe, loc) =>
-        ???
-
-      case TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc) => ???
-
+        SimplifiedAst.Expression.Binary(op, simplify(e1), simplify(e2), tpe, loc)
+      case TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc) =>
+        SimplifiedAst.Expression.IfThenElse(simplify(e1), simplify(e2), simplify(e3), tpe, loc)
       case TypedAst.Expression.Let(ident, e1, e2, tpe, loc) => ???
 
-      case TypedAst.Expression.Match(exp, rules, tpe, loc) => ???
+      case TypedAst.Expression.Match(exp, rules, tpe, loc) =>
+        ??? // TODO: Eliminate
 
       case TypedAst.Expression.Tag(enum, tag, e, tpe, loc) =>
         SimplifiedAst.Expression.Tag(enum, tag, simplify(e), tpe, loc)
