@@ -69,9 +69,9 @@ object Simplifier {
       SimplifiedAst.Directives(tast.directives map simplify)
 
     def simplify(tast: TypedAst.Directive): SimplifiedAst.Directive = tast match {
-      case TypedAst.Directive.AssertFact(fact, loc) => ??? // TODO: To be removed?
-      case TypedAst.Directive.AssertRule(fact, loc) => ??? // TODO: To be removed?
-      case TypedAst.Directive.Print(fact, loc) => ??? // TODO: To be removed?
+      case TypedAst.Directive.AssertFact(fact, loc) => throw new UnsupportedOperationException // TODO: To be removed?
+      case TypedAst.Directive.AssertRule(fact, loc) => throw new UnsupportedOperationException // TODO: To be removed?
+      case TypedAst.Directive.Print(fact, loc) => throw new UnsupportedOperationException // TODO: To be removed?
     }
   }
 
@@ -80,8 +80,31 @@ object Simplifier {
       case TypedAst.Expression.Lit(lit, tpe, loc) => Literal.simplify(lit)
       case TypedAst.Expression.Var(ident, tpe, loc) => SimplifiedAst.Expression.Var(ident, tpe, loc)
       case TypedAst.Expression.Ref(name, tpe, loc) => SimplifiedAst.Expression.Ref(name, tpe, loc)
-      case TypedAst.Expression.Lambda(annotations, args, body, tpe, loc) => ???
+      case TypedAst.Expression.Lambda(annotations, args, body, tpe, loc) => ??? // TODO
+      case TypedAst.Expression.Apply(exp, args, tpe, loc) =>
+        ???
+      case TypedAst.Expression.Unary(op, exp, tpe, loc) =>
+        ???
+      case TypedAst.Expression.Binary(op, e1, e2, tpe, loc) =>
+        ???
 
+      case TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc) => ???
+
+      case TypedAst.Expression.Let(ident, e1, e2, tpe, loc) => ???
+
+      case TypedAst.Expression.Match(exp, rules, tpe, loc) => ???
+
+      case TypedAst.Expression.Tag(enum, tag, exp, tpe, loc) => ???
+
+      case TypedAst.Expression.Tuple(elms, tpe, loc) => ???
+
+      case TypedAst.Expression.Set(elms, tpe, loc) => ???
+
+      case TypedAst.Expression.Error(tpe, loc) => ???
+
+      case TypedAst.Expression.NativeField(field, tpe, loc) => throw new UnsupportedOperationException // TODO: To be removed?
+
+      case TypedAst.Expression.NativeMethod(method, tpe, loc) => throw new UnsupportedOperationException // TODO: To be removed?
     }
   }
 
@@ -104,7 +127,9 @@ object Simplifier {
       def simplify(tast: TypedAst.Predicate.Head): SimplifiedAst.Predicate.Head = tast match {
         case TypedAst.Predicate.Head.Relation(name, terms, tpe, loc) =>
           SimplifiedAst.Predicate.Head.Relation(name, terms map Term.simplify, tpe, loc)
-        case TypedAst.Predicate.Head.Error(terms, tpe, loc) => ??? // TODO: To be removed?
+        case TypedAst.Predicate.Head.Error(terms, tpe, loc) => throw new UnsupportedOperationException // TODO: To be removed?
+        case TypedAst.Predicate.Head.Trace(terms, tpe, loc) => throw new UnsupportedOperationException // TODO: To be removed?
+        case TypedAst.Predicate.Head.Write(terms, path, tpe, loc) => ???
       }
     }
 
@@ -118,6 +143,7 @@ object Simplifier {
           SimplifiedAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc)
         case TypedAst.Predicate.Body.Loop(ident, term, tpe, loc) =>
           SimplifiedAst.Predicate.Body.Loop(ident, Term.simplify(term), tpe, loc)
+        case TypedAst.Predicate.Body.Read(terms, path, tpe, loc) => throw new UnsupportedOperationException // TODO: to be removed?
       }
     }
 
@@ -125,13 +151,17 @@ object Simplifier {
 
   object Term {
     def simplify(tast: TypedAst.Term.Head): SimplifiedAst.Term.Head = tast match {
-      case TypedAst.Term.Head.Var(ident, tpe, loc) => ???
-      case TypedAst.Term.Head.Lit(lit, tpe, loc) => ???
-      case TypedAst.Term.Head.Apply(name, args, tpe, loc) => ???
-      case TypedAst.Term.Head.NativeField(field, tpe, loc) => ??? // TODO: to be removed?
+      case TypedAst.Term.Head.Var(ident, tpe, loc) => SimplifiedAst.Term.Head.Var(ident, tpe, loc)
+      case TypedAst.Term.Head.Lit(lit, tpe, loc) => SimplifiedAst.Term.Head.Lit(???, tpe, loc) // TODO
+      case TypedAst.Term.Head.Apply(name, args, tpe, loc) => SimplifiedAst.Term.Head.Apply(name, ???, tpe, loc) // TODO
+      case TypedAst.Term.Head.NativeField(field, tpe, loc) => throw new UnsupportedOperationException // TODO: to be removed?
     }
 
-    def simplify(tast: TypedAst.Term.Body): SimplifiedAst.Term.Body = ???
+    def simplify(tast: TypedAst.Term.Body): SimplifiedAst.Term.Body = tast match {
+      case TypedAst.Term.Body.Wildcard(tpe, loc) => SimplifiedAst.Term.Body.Wildcard(tpe, loc)
+      case TypedAst.Term.Body.Var(ident, tpe, loc) => SimplifiedAst.Term.Body.Var(ident, tpe, loc)
+      case TypedAst.Term.Body.Lit(lit, tpe, loc) => ??? // TODO
+    }
   }
 
   def simplify(tast: TypedAst.Attribute): SimplifiedAst.Attribute =
