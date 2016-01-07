@@ -170,8 +170,9 @@ object SimplifiedAst {
 
       case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
 
-      case class Lit(literal: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
+      case class Exp(literal: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
 
+      // TODO: Can we get rid of this?
       case class Apply(name: Name.Resolved, args: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
 
     }
@@ -186,7 +187,7 @@ object SimplifiedAst {
 
       case class Wildcard(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
 
-      case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
+      case class Var(v: Int, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
 
       case class Exp(e: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
 

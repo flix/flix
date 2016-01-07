@@ -43,6 +43,7 @@ object Simplifier {
       SimplifiedAst.Constraint.Fact(Predicate.Head.simplify(tast.head))
 
     def simplify(tast: TypedAst.Constraint.Rule): SimplifiedAst.Constraint.Rule = {
+      implicit val genSym = new GenSym
       val head = Predicate.Head.simplify(tast.head)
       val body = tast.body.map(Predicate.Body.simplify)
       SimplifiedAst.Constraint.Rule(head, body)
@@ -135,7 +136,7 @@ object Simplifier {
     }
 
     object Body {
-      def simplify(tast: TypedAst.Predicate.Body): SimplifiedAst.Predicate.Body = tast match {
+      def simplify(tast: TypedAst.Predicate.Body)(implicit genSym: GenSym): SimplifiedAst.Predicate.Body = tast match {
         case TypedAst.Predicate.Body.Collection(name, terms, tpe, loc) =>
           SimplifiedAst.Predicate.Body.Collection(name, terms map Term.simplify, tpe, loc)
         case TypedAst.Predicate.Body.Function(name, terms, tpe, loc) =>
@@ -153,14 +154,14 @@ object Simplifier {
   object Term {
     def simplify(tast: TypedAst.Term.Head): SimplifiedAst.Term.Head = tast match {
       case TypedAst.Term.Head.Var(ident, tpe, loc) => SimplifiedAst.Term.Head.Var(ident, tpe, loc)
-      case TypedAst.Term.Head.Lit(lit, tpe, loc) => SimplifiedAst.Term.Head.Lit(???, tpe, loc) // TODO
-      case TypedAst.Term.Head.Apply(name, args, tpe, loc) => SimplifiedAst.Term.Head.Apply(name, ???, tpe, loc) // TODO
+      case TypedAst.Term.Head.Lit(lit, tpe, loc) => SimplifiedAst.Term.Head.Exp(Literal.simplify(lit), tpe, loc)
+      case TypedAst.Term.Head.Apply(name, args, tpe, loc) => SimplifiedAst.Term.Head.Apply(name, args map simplify, tpe, loc)
       case TypedAst.Term.Head.NativeField(field, tpe, loc) => throw new UnsupportedOperationException // TODO: to be removed?
     }
 
-    def simplify(tast: TypedAst.Term.Body): SimplifiedAst.Term.Body = tast match {
+    def simplify(tast: TypedAst.Term.Body)(implicit genSym: GenSym): SimplifiedAst.Term.Body = tast match {
       case TypedAst.Term.Body.Wildcard(tpe, loc) => SimplifiedAst.Term.Body.Wildcard(tpe, loc)
-      case TypedAst.Term.Body.Var(ident, tpe, loc) => SimplifiedAst.Term.Body.Var(ident, tpe, loc)
+      case TypedAst.Term.Body.Var(ident, tpe, loc) => SimplifiedAst.Term.Body.Var(genSym(ident), tpe, loc)
       case TypedAst.Term.Body.Lit(lit, tpe, loc) => SimplifiedAst.Term.Body.Exp(Literal.simplify(lit), tpe, loc)
     }
   }
