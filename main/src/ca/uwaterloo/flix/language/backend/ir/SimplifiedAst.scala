@@ -115,7 +115,7 @@ object SimplifiedAst {
 
     case class Let(ident: Name.Ident, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Tag(name: Name.Resolved, ident: Name.Ident, exp: SimplifiedAst.Expression, tpe: Type.Enum, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Tag(enum: Name.Resolved, tag: Name.Ident, exp: SimplifiedAst.Expression, tpe: Type.Enum, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Tuple(elms: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -138,8 +138,6 @@ object SimplifiedAst {
     object Head {
 
       case class Relation(name: Name.Resolved, terms: List[SimplifiedAst.Term.Head], tpe: Type.Predicate, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
-
-      case class Error(terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
     }
 

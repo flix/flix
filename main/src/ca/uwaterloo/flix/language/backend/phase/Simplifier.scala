@@ -70,9 +70,11 @@ object Simplifier {
 
   object Expression {
     def simplify(tast: TypedAst.Expression): SimplifiedAst.Expression = tast match {
-      case TypedAst.Expression.Lit(lit, tpe, loc) => ???
+      case TypedAst.Expression.Lit(lit, tpe, loc) => Literal.simplify(lit)
       case TypedAst.Expression.Var(ident, tpe, loc) => SimplifiedAst.Expression.Var(ident, tpe, loc)
       case TypedAst.Expression.Ref(name, tpe, loc) => SimplifiedAst.Expression.Ref(name, tpe, loc)
+      case TypedAst.Expression.Lambda(annotations, args, body, tpe, loc) => ???
+
     }
   }
 
@@ -83,24 +85,43 @@ object Simplifier {
         if (b) SimplifiedAst.Expression.True(loc) else SimplifiedAst.Expression.False(loc)
       case TypedAst.Literal.Int(i, loc) => SimplifiedAst.Expression.Int(i, loc)
       case TypedAst.Literal.Str(s, loc) => SimplifiedAst.Expression.Str(s, loc)
-      case TypedAst.Literal.Tag(enum, tag, lit, tpe, loc) => ???
-      case TypedAst.Literal.Tuple(elms, tpe, loc) => ???
-      case TypedAst.Literal.Set(elms, tpe, loc) => ???
+      case TypedAst.Literal.Tag(enum, tag, lit, tpe, loc) => SimplifiedAst.Expression.Tag(enum, tag, simplify(lit), tpe, loc)
+      case TypedAst.Literal.Tuple(elms, tpe, loc) => SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
+      case TypedAst.Literal.Set(elms, tpe, loc) => SimplifiedAst.Expression.Set(elms map simplify, tpe, loc)
     }
   }
 
   object Predicate {
 
     object Head {
-      def simplify(tast: TypedAst.Predicate.Head): SimplifiedAst.Predicate.Head = ???
+      def simplify(tast: TypedAst.Predicate.Head): SimplifiedAst.Predicate.Head = tast match {
+        case TypedAst.Predicate.Head.Relation(name, terms, tpe, loc) =>
+          SimplifiedAst.Predicate.Head.Relation(name, terms map Term.simplify, tpe, loc)
+      }
     }
 
     object Body {
-      def simplify(tast: TypedAst.Predicate.Body): SimplifiedAst.Predicate.Body = ???
+      def simplify(tast: TypedAst.Predicate.Body): SimplifiedAst.Predicate.Body = tast match {
+        case TypedAst.Predicate.Body.Collection(name, terms, tpe, loc) =>
+          SimplifiedAst.Predicate.Body.Collection(name, terms map Term.simplify, tpe, loc)
+        case TypedAst.Predicate.Body.Function(name, terms, tpe, loc) =>
+          SimplifiedAst.Predicate.Body.Function(name, terms map Term.simplify, tpe, loc)
+        case TypedAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc) =>
+          SimplifiedAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc)
+        case TypedAst.Predicate.Body.Loop(ident, term, tpe, loc) =>
+          SimplifiedAst.Predicate.Body.Loop(ident, Term.simplify(term), tpe, loc)
+      }
     }
 
   }
 
-  def simplify(tast: TypedAst.Attribute): SimplifiedAst.Attribute = ???
+  object Term {
+    def simplify(tast: TypedAst.Term.Head): SimplifiedAst.Term.Head = ???
+
+    def simplify(tast: TypedAst.Term.Body): SimplifiedAst.Term.Body = ???
+  }
+
+  def simplify(tast: TypedAst.Attribute): SimplifiedAst.Attribute =
+    SimplifiedAst.Attribute(tast.ident, tast.tpe)
 
 }
