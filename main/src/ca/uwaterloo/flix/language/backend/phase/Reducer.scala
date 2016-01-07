@@ -8,12 +8,4 @@ object Reducer {
   // Inline things?
   // Apply partial evaluation.
 
-  object Expressions {
-
-    def reduce(tast: SimplifiedAst.Expression): ReducedIR.Expression = tast match {
-      case _ => ???
-    }
-
-  }
-
 }

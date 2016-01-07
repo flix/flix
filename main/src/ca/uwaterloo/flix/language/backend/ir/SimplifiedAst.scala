@@ -8,7 +8,7 @@ sealed trait SimplifiedAst
 
 object SimplifiedAst {
 
-  case class Root(functions: Map[Name.Resolved, SimplifiedAst.Definition.Function],
+  case class Root(constants: Map[Name.Resolved, SimplifiedAst.Definition.Constant],
                   directives: SimplifiedAst.Directives,
                   lattices: Map[Type, SimplifiedAst.Definition.Lattice],
                   collections: Map[Name.Resolved, SimplifiedAst.Collection],
@@ -23,7 +23,7 @@ object SimplifiedAst {
 
   object Definition {
 
-    case class Function(name: Name.Resolved, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Definition
+    case class Constant(name: Name.Resolved, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Definition
 
     case class Lattice(tpe: Type,
                        bot: SimplifiedAst.Expression,
@@ -79,24 +79,16 @@ object SimplifiedAst {
 
   object Expression {
 
-    case object Unit extends SimplifiedAst.Expression {
-      final val tpe = Type.Unit
+    case class Unit(loc: SourceLocation) extends SimplifiedAst.Expression {
+      val tpe = TypedAst.Type.Unit
     }
 
-    case object True extends SimplifiedAst.Expression {
-      final val tpe = Type.Unit
+    case class True(loc: SourceLocation) extends SimplifiedAst.Expression {
+      val tpe = TypedAst.Type.Bool
     }
 
-    case object False extends SimplifiedAst.Expression {
-      final val tpe = Type.Unit
-    }
-
-    case class Int(lit: scala.Int) extends SimplifiedAst.Expression {
-      final val tpe = Type.Int
-    }
-
-    case class Str(lit: java.lang.String) extends SimplifiedAst.Expression {
-      final val tpe = Type.Str
+    case class False(loc: SourceLocation) extends SimplifiedAst.Expression {
+      val tpe = TypedAst.Type.Bool
     }
 
     case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
@@ -125,6 +117,32 @@ object SimplifiedAst {
 
   }
 
+
+  sealed trait Literal extends SimplifiedAst {
+    def tpe: TypedAst.Type
+
+    def loc: SourceLocation
+  }
+
+  object Literal {
+
+    case class Int(lit: scala.Int, loc: SourceLocation) extends SimplifiedAst.Literal {
+      final val tpe = TypedAst.Type.Int
+    }
+
+
+    case class Str(lit: java.lang.String, loc: SourceLocation) extends SimplifiedAst.Literal {
+      final val tpe = TypedAst.Type.Str
+    }
+
+    case class Tag(enum: Name.Resolved, tag: Name.Ident, lit: TypedAst.Literal, tpe: TypedAst.Type.Enum, loc: SourceLocation) extends SimplifiedAst.Literal
+
+    case class Tuple(elms: List[TypedAst.Literal], tpe: TypedAst.Type.Tuple, loc: SourceLocation) extends SimplifiedAst.Literal
+
+    case class Set(elms: List[TypedAst.Literal], tpe: TypedAst.Type.Set, loc: SourceLocation) extends SimplifiedAst.Literal
+
+  }
+
   sealed trait Predicate extends SimplifiedAst {
     def tpe: Type
 
@@ -147,6 +165,7 @@ object SimplifiedAst {
     sealed trait Body extends SimplifiedAst.Predicate
 
     object Body {
+
       case class Collection(name: Name.Resolved, terms: List[SimplifiedAst.Term.Body], tpe: Type.Predicate, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class Function(name: Name.Resolved, terms: List[SimplifiedAst.Term.Body], tpe: Type.Lambda, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
@@ -154,6 +173,7 @@ object SimplifiedAst {
       case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class Loop(ident: Name.Ident, term: SimplifiedAst.Term.Head, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+
     }
 
   }
@@ -167,6 +187,7 @@ object SimplifiedAst {
     }
 
     object Head {
+
       case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
 
       case class Lit(literal: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
@@ -182,12 +203,15 @@ object SimplifiedAst {
     }
 
     object Body {
+
       case class Wildcard(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
 
       case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
 
       case class Lit(lit: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
+
     }
+
   }
 
   case class Attribute(ident: Name.Ident, tpe: Type) extends SimplifiedAst
