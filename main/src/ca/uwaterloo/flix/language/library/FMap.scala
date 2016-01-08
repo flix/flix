@@ -17,20 +17,20 @@ object FMap {
     * All map operations.
     */
   val Ops: immutable.Map[Name.Resolved, MapOperator] = List(
-    "Map::null" -> nul,
-    "Map::get" -> get,
-    "Map::getWithDefault" -> getWithDefault,
-    "Map::memberOf" -> memberOf,
+    "Map/null" -> nul,
+    "Map/get" -> get,
+    "Map/getWithDefault" -> getWithDefault,
+    "Map/memberOf" -> memberOf,
 
-    "Map::insert" -> insert,
-    "Map::insertWith" -> insertWith,
-    "Map::insertWithKey" -> insertWithKey,
+    "Map/insert" -> insert,
+    "Map/insertWith" -> insertWith,
+    "Map/insertWithKey" -> insertWithKey,
 
-    "Map::update" -> update,
+    "Map/update" -> update,
 // TODO: Update with key
-    "Map::delete" -> delete,
+    "Map/delete" -> delete,
 // TODO: alter
-    "Map::union" -> union,
+    "Map/union" -> union,
 
     // TODO: adjust
     // TODO: adjustWithKey
@@ -38,18 +38,18 @@ object FMap {
   // TODO: unionWithKey
     // TODO: Empty, singleton
 
-    "Map::intersection" -> intersection,
+    "Map/intersection" -> intersection,
   // TODO: intersectionWith
   // TODO: intersectionWithKey
-    "Map::difference" -> difference,
+    "Map/difference" -> difference,
   // TODO: differenceWith
   // TODO: differenceWithKey
-    "Map::map" -> map,
-    "Map::mapWithKey" -> mapWithKey,
+    "Map/map" -> map,
+    "Map/mapWithKey" -> mapWithKey,
   // TODO mapKeys
-    "Map::toAscList" -> toAscList,
-    "Map::toDescList" -> toDescList,
-    "Map::toSet" -> toSet
+    "Map/toAscList" -> toAscList,
+    "Map/toDescList" -> toDescList,
+    "Map/toSet" -> toSet
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap

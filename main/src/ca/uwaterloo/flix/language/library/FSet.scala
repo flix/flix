@@ -18,32 +18,32 @@ object FSet {
     */
   val Ops: immutable.Map[Name.Resolved, SetOperator] = List(
     // Set Construction.
-    "Set:empty" -> empty,
-    "Set:singleton" -> singleton,
-    "Set:insert" -> insert,
-    "Set:delete" -> delete,
+    "Set/empty" -> empty,
+    "Set/singleton" -> singleton,
+    "Set/insert" -> insert,
+    "Set/delete" -> delete,
 
     // Set Predicates.
-    "Set:null" -> nul,
-    "Set:memberOf" -> memberOf,
-    "Set:isSubsetOf" -> isSubsetOf,
-    "Set:isProperSubsetOf" -> isProperSubsetOf,
+    "Set/null" -> nul,
+    "Set/memberOf" -> memberOf,
+    "Set/isSubsetOf" -> isSubsetOf,
+    "Set/isProperSubsetOf" -> isProperSubsetOf,
 
     // Elementary Set Operations.
-    "Set:union" -> union,
-    "Set:intersection" -> intersection,
-    "Set:difference" -> difference,
+    "Set/union" -> union,
+    "Set/intersection" -> intersection,
+    "Set/difference" -> difference,
 
     // Set Transformation.
-    "Set:filter" -> filter,
-    "Set:map" -> map,
-    "Set:flatMap" -> flatMap,
+    "Set/filter" -> filter,
+    "Set/map" -> map,
+    "Set/flatMap" -> flatMap,
 
     // Set Conversions.
-    "Set:toList" -> toAscList,
-    "Set:toAscList" -> toAscList,
-    "Set:toDescList" -> toDescList,
-    "Set:toMap" -> toMap
+    "Set/toList" -> toAscList,
+    "Set/toAscList" -> toAscList,
+    "Set/toDescList" -> toDescList,
+    "Set/toMap" -> toMap
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
