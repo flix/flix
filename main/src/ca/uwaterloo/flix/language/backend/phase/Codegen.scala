@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.backend.phase
 
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
-import ca.uwaterloo.flix.language.ast.{Name, UnaryOperator, BinaryOperator, ComparisonOperator}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.backend.ir.ReducedIR.{LoadExpression, StoreExpression, Definition, Expression, Type}
 import ca.uwaterloo.flix.language.backend.ir.ReducedIR.Expression._
 
@@ -135,7 +135,7 @@ object Codegen {
       }
       compileExpression(context, visitor)(exp2)
     case Unary(op, exp, tpe, loc) => compileUnaryExpression(context, visitor)(op, exp, tpe)
-    case Binary(op, exp1, exp2, tpe, loc) => compileBinaryExpression(context, visitor)(op, exp1, exp2)
+    case Binary(op, exp1, exp2, tpe, loc) => compileBinaryExpression(context, visitor)(op, exp1, exp2, tpe)
     case IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       val ifElse = new Label()
       val ifEnd = new Label()
@@ -206,7 +206,7 @@ object Codegen {
           case Type.Int32 => visitor.visitInsn(INEG)
           case Type.Int64 => visitor.visitInsn(LNEG)
           case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
-            throw new InternalCompilerError(s"Can't apply $op to $tpe.")
+            throw new InternalCompilerError(s"Can't apply $op to type $tpe.")
         }
       case UnaryOperator.Negate =>
         // Note that ~bbbb = bbbb ^ 1111, and since the JVM uses two's complement, -1 = 0xFFFFFFFF, so ~x = x ^ -1.
@@ -219,7 +219,7 @@ object Codegen {
             visitor.visitInsn(I2L)
             visitor.visitInsn(LXOR)
           case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
-            throw new InternalCompilerError(s"Can't apply $op to $tpe.")
+            throw new InternalCompilerError(s"Can't apply $op to type $tpe.")
         }
 
       case UnaryOperator.Set.IsEmpty => ???
@@ -230,8 +230,7 @@ object Codegen {
   }
 
   // Binary operations And and Or are handled first because of short-circuit evaluation
-  // TODO: Handle int/long ops
-  private def compileBinaryExpression(context: Context, visitor: MethodVisitor)(op: BinaryOperator, expr1: Expression, expr2: Expression): Unit = op match {
+  private def compileBinaryExpression(context: Context, visitor: MethodVisitor)(op: BinaryOperator, expr1: Expression, expr2: Expression, tpe: Type): Unit = op match {
     case BinaryOperator.And =>
       val andFalseBranch = new Label()
       val andEnd = new Label()
@@ -262,12 +261,32 @@ object Codegen {
       compileExpression(context, visitor)(expr1)
       compileExpression(context, visitor)(expr2)
       op match {
-        case BinaryOperator.Plus => visitor.visitInsn(IADD)
-        case BinaryOperator.Minus => visitor.visitInsn(ISUB)
-        case BinaryOperator.Times => visitor.visitInsn(IMUL)
-        case BinaryOperator.Divide => visitor.visitInsn(IDIV)
-        case BinaryOperator.Modulo => visitor.visitInsn(IREM)
+        case o: ArithmeticOperator =>
+          // Results are truncated, so that adding two IntN's will always return an IntN. Overflow can occur.
+          val (intOp, longOp) = o match {
+            case BinaryOperator.Plus => (IADD, LADD)
+            case BinaryOperator.Minus => (ISUB, LSUB)
+            case BinaryOperator.Times => (IMUL, LMUL)
+            case BinaryOperator.Divide => (IDIV, LDIV)
+            case BinaryOperator.Modulo => (IREM, LREM)
+          }
+          tpe match {
+            case Type.Int8 =>
+              visitor.visitInsn(intOp)
+              visitor.visitInsn(I2B)
+            case Type.Int16 =>
+              visitor.visitInsn(intOp)
+              visitor.visitInsn(I2S)
+            case Type.Int32 =>
+              visitor.visitInsn(intOp)
+            case Type.Int64 =>
+              visitor.visitInsn(longOp)
+            case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
+              throw new InternalCompilerError(s"Can't apply $op to type $tpe.")
+          }
+
         case o: ComparisonOperator =>
+          // TODO: handle int8/int16/int32/int64
           val condElse = new Label()
           val condEnd = new Label()
           val cmp = o match {
@@ -300,7 +319,7 @@ object Codegen {
         case BinaryOperator.Set.Difference => ???
 
         case BinaryOperator.And | BinaryOperator.Or =>
-          throw new InternalCompilerError("BinaryOperator.And and BinaryOperator.Or should already have been handled.")
+          throw new InternalCompilerError(s"$op should already have been handled.")
       }
   }
 }
