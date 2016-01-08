@@ -11,6 +11,7 @@ import scala.collection.immutable.Seq
 import scala.io.Source
 
 // TODO: Parse whitespace more "tightly" to improve source positions.
+// TODO: Add support for characters.
 
 /**
  * A parser for the Flix language.

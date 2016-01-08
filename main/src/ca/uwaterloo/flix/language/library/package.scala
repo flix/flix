@@ -21,7 +21,7 @@ package object library {
     * A map of all library operators.
     */
   val Library: immutable.Map[Name.Resolved, LibraryOperator] =
-    FDebug.Ops ++ FList.Ops ++ FMap.Ops ++ FOpt.Ops ++ FSet.Ops
+    FBool.Ops ++ FChar.Ops ++ FDebug.Ops ++ FInt.Ops ++ FList.Ops ++ FMap.Ops ++ FOpt.Ops ++ FSet.Ops
 
   /////////////////////////////////////////////////////////////////////////////
   // Mini Type DSL                                                           //

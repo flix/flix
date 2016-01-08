@@ -26,7 +26,7 @@ object FChar {
     "Char/isHexDigit" -> isHexDigit,
     "Char/isLower" -> isLower,
     "Char/isUpper" -> isUpper,
-    "Char/isSpace" -> isSpace,
+    "Char/isWhiteSpace" -> isWhiteSpace,
 
     // Char Conversions.
     "Char/toLower" -> toLower,
@@ -35,8 +35,6 @@ object FChar {
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
-
-  // TODO: Replace Int by Char
 
   /////////////////////////////////////////////////////////////////////////////
   // Char Predicates                                                         //
@@ -69,7 +67,7 @@ object FChar {
     val tpe = Type.Int ~> Type.Bool
   }
 
-  object isSpace extends CharOperator {
+  object isWhiteSpace extends CharOperator {
     val tpe = Type.Int ~> Type.Bool
   }
 
