@@ -47,6 +47,9 @@ object FMap {
     "Map/map" -> map,
     "Map/mapWithKey" -> mapWithKey,
   // TODO mapKeys
+
+  // Conversions.
+    "Map/toList" -> toAscList,
     "Map/toAscList" -> toAscList,
     "Map/toDescList" -> toDescList,
     "Map/toSet" -> toSet
@@ -180,23 +183,14 @@ object FMap {
   /////////////////////////////////////////////////////////////////////////////
   // Conversions                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `toAscList : Map[K, V] => Lst[(K, V)]` function.
-    */
   object toAscList extends MapOperator {
     val tpe = Map(K, V) ~> Lst((K, V))
   }
 
-  /**
-    * The `toDescList : Map[K, V] => Lst[(K, V)]` function.
-    */
   object toDescList extends MapOperator {
     val tpe = Map(K, V) ~> Lst((K, V))
   }
 
-  /**
-    * The `toSet : Map[K, V] => Set[(K, V)]` function.
-    */
   object toSet extends MapOperator {
     val tpe = Map(K, V) ~> Set((K, V))
   }
