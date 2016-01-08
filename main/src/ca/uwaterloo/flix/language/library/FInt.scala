@@ -38,6 +38,10 @@ object FInt {
   /////////////////////////////////////////////////////////////////////////////
   // Integer Operations                                                      //
   /////////////////////////////////////////////////////////////////////////////
+  object abs extends IntOperator {
+    val tpe = (Type.Int, Type.Int) ~> Type.Int
+  }
+
   object min extends IntOperator {
     val tpe = (Type.Int, Type.Int) ~> Type.Int
   }
@@ -45,17 +49,5 @@ object FInt {
   object max extends IntOperator {
     val tpe = (Type.Int, Type.Int) ~> Type.Int
   }
-
-  // TODO:
-  // isPositive/isNegative?
-  // https://doc.rust-lang.org/std/primitive.i64.html
-  // https://docs.oracle.com/javase/7/docs/api/java/lang/Integer.html
-
-
-
-  object abs extends IntOperator {
-
-  }
-
 
 }
