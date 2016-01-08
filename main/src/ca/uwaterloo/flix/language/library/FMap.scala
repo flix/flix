@@ -17,38 +17,48 @@ object FMap {
     * All map operations.
     */
   val Ops: immutable.Map[Name.Resolved, MapOperator] = List(
+    // Map Construction
+    "Map/empty" -> empty,
+    "Map/singleton" -> singleton,
+
+    // TODO:
     "Map/null" -> nul,
     "Map/get" -> get,
     "Map/getWithDefault" -> getWithDefault,
     "Map/memberOf" -> memberOf,
 
+    // Insert
     "Map/insert" -> insert,
     "Map/insertWith" -> insertWith,
     "Map/insertWithKey" -> insertWithKey,
 
     "Map/update" -> update,
-// TODO: Update with key
+    // TODO: adjust
+    // TODO: alter  // TODO: adjustWithKey
+
+
+    // Delete
     "Map/delete" -> delete,
-// TODO: alter
+
+
     "Map/union" -> union,
 
-    // TODO: adjust
-    // TODO: adjustWithKey
-  // TODO: unionWith
-  // TODO: unionWithKey
+
+    // TODO: unionWith
+    // TODO: unionWithKey
     // TODO: Empty, singleton
 
     "Map/intersection" -> intersection,
-  // TODO: intersectionWith
-  // TODO: intersectionWithKey
+    // TODO: intersectionWith
+    // TODO: intersectionWithKey
     "Map/difference" -> difference,
-  // TODO: differenceWith
-  // TODO: differenceWithKey
+    // TODO: differenceWith
+    // TODO: differenceWithKey
     "Map/map" -> map,
     "Map/mapWithKey" -> mapWithKey,
-  // TODO mapKeys
+    // TODO mapKeys
 
-  // Conversions.
+    // Conversions.
     "Map/toList" -> toAscList,
     "Map/toAscList" -> toAscList,
     "Map/toDescList" -> toDescList,
@@ -91,6 +101,17 @@ object FMap {
   val B = Type.Var("B")
 
   /////////////////////////////////////////////////////////////////////////////
+  // Map Construction                                                        //
+  /////////////////////////////////////////////////////////////////////////////
+  object empty extends MapOperator {
+    val tpe = () ~> Map(K, V)
+  }
+
+  object singleton extends MapOperator {
+    val tpe = (K, V) ~> Map(K, V)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Basic Operations                                                        //
   /////////////////////////////////////////////////////////////////////////////
   object nul extends MapOperator {
@@ -110,7 +131,7 @@ object FMap {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Insert / Update / Delete                                                //
+  // Insert                                                                  //
   /////////////////////////////////////////////////////////////////////////////
   object insert extends MapOperator {
     val tpe = (K, V, Map(K, V)) ~> Map(K, V)
@@ -124,18 +145,19 @@ object FMap {
     val tpe = ((K, V, V) ~> V, K, V, Map(K, V)) ~> Map(K, V)
   }
 
-  /**
-    * The `update : (K, V => V, Map[K, V]) => Map[K, V]` function.
-    */
+  /////////////////////////////////////////////////////////////////////////////
+  // Update                                                                  //
+  /////////////////////////////////////////////////////////////////////////////
   object update extends MapOperator {
     val tpe = (K, V ~> V, Map(K, V)) ~> Map(K, V)
   }
 
-  /**
-    * The `delete : (K, V, Map[K, V]) => Map[K, V]` function.
-    */
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Delete                                                                  //
+  /////////////////////////////////////////////////////////////////////////////
   object delete extends MapOperator {
-    val tpe = (K, V, Map(K, V)) ~> Map(K, V)
+    val tpe = (K, Map(K, V)) ~> Map(K, V)
   }
 
   /////////////////////////////////////////////////////////////////////////////
