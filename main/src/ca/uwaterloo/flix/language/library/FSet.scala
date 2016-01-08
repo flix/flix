@@ -17,28 +17,27 @@ object FSet {
     * All set operations.
     */
   val Ops: immutable.Map[Name.Resolved, SetOperator] = List(
-    // Basic Operations.
-    "Set:null" -> nul,
-    "Set:memberOf" -> memberOf,
+    // Set Construction.
+    "Set:empty" -> empty,
     "Set:singleton" -> singleton,
     "Set:insert" -> insert,
     "Set:delete" -> delete,
 
     // Set Predicates.
+    "Set:null" -> nul,
+    "Set:memberOf" -> memberOf,
     "Set:isSubsetOf" -> isSubsetOf,
     "Set:isProperSubsetOf" -> isProperSubsetOf,
 
-    // Two Set Operations.
+    // Elementary Set Operations.
     "Set:union" -> union,
     "Set:intersection" -> intersection,
     "Set:difference" -> difference,
 
-
+    // Set Transformation.
     "Set:filter" -> filter,
     "Set:map" -> map,
     "Set:flatMap" -> flatMap,
-    "Set:foldLeft" -> foldLeft,
-    "Set:foldRight" -> foldRight,
 
     // Set Conversions.
     "Set:toList" -> toAscList,
@@ -49,21 +48,8 @@ object FSet {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
 
-
-  // TODO: collect? collectFirst
-  // TODO: count?
-  // TODO: find and other list like things, or not?
-  // TODO: flatten
-  // TODO: minimum, maximum, minimumBy, maximumBy
-  // TODO: partition/split?
-  // TODO: sum/product?
-  // TODO: reduceLeft, reduceRight, reduceLeftOpt, reduceRightOpt
-  // TODO: scanLeft, scanRight
-  // TODO: size
+  // TODO: Port list operations?
   // TODO: subsets
-  // TODO: zip?
-  // TODO: min, max, minBy, maxBy
-  // TODO: scala's aggregate[B](z: ⇒ B)(seqop: (B, (A, B)) ⇒ B, combop: (B, B) ⇒ B): B
 
   /**
     * Generic type variables.
@@ -72,18 +58,14 @@ object FSet {
   val B = Type.Var("B")
 
   /////////////////////////////////////////////////////////////////////////////
-  // Basic Operations                                                        //
+  // Set Construction                                                        //
   /////////////////////////////////////////////////////////////////////////////
-  object nul extends SetOperator {
-    val tpe = Set(A) ~> Bool
-  }
-
-  object memberOf extends SetOperator {
-    val tpe = (A, Set(A)) ~> Bool
+  object empty extends SetOperator {
+    val tpe = () ~> Bool
   }
 
   object singleton extends SetOperator {
-    val tpe = (A) ~> Bool
+    val tpe = A ~> Bool
   }
 
   object insert extends SetOperator {
@@ -97,6 +79,14 @@ object FSet {
   /////////////////////////////////////////////////////////////////////////////
   // Set Predicates                                                          //
   /////////////////////////////////////////////////////////////////////////////
+  object nul extends SetOperator {
+    val tpe = Set(A) ~> Bool
+  }
+
+  object memberOf extends SetOperator {
+    val tpe = (A, Set(A)) ~> Bool
+  }
+
   object isSubsetOf extends SetOperator {
     val tpe = (Set(A), Set(A)) ~> Bool
   }
@@ -121,59 +111,19 @@ object FSet {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Filter                                                                  //
+  // Set Transformation                                                      //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `filter : (A => Bool, Set[A]) => Set[A]` function.
-    */
   object filter extends SetOperator {
     val tpe = (A ~> Bool, Set(A)) ~> Set(A)
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Maps                                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `map : (A => B, Set[A]) => Set[B]` function.
-    */
   object map extends SetOperator {
     val tpe = (A ~> B, Set(A)) ~> Set(B)
   }
 
-  /**
-    * The `flatMap : (Set[A], A => Set[B]) => Set[B]` function.
-    */
   object flatMap extends SetOperator {
     val tpe = (A ~> Set(B), Set(A)) ~> Set(B)
   }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Folds                                                                   //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `foldLeft : (Set[A], B, (B, A) => B) => B` function.
-    */
-  object foldLeft extends SetOperator {
-    val tpe = ((B, A) ~> B, B, Set(A)) ~> B
-  }
-
-  /**
-    * The `foldRight : (Set[A], B, (B, A) => B) => B` function.
-    */
-  object foldRight extends SetOperator {
-    val tpe = ((A, B) ~> B, B, Set(A)) ~> B
-  }
-
-  /**
-    * Returns `true` iff the list is an anti-chain according to the partial order.
-    *
-    * The function has type `isAntiChain: List[A] => Bool`.
-    */
-  // TODO
-  object isAntiChain extends SetOperator {
-    val tpe = Lst(A) ~> Bool
-  }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Set Conversions                                                         //
