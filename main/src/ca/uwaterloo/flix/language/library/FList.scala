@@ -473,7 +473,7 @@ object FList {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // List Conversion                                                         //
+  // List Conversions                                                        //
   /////////////////////////////////////////////////////////////////////////////
   object toMap extends ListOperator {
     val tpe = Lst((A, B)) ~> Type.Map(A, B)

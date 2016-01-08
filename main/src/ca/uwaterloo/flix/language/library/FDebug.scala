@@ -17,9 +17,9 @@ object FDebug {
     * All debug operations.
     */
   val Ops: immutable.Map[Name.Resolved, DebugOperator] = List(
-    "Debug::abort!" -> abort,
-    "Debug::print!" -> print,
-    "Debug::time!" -> time
+    "Debug::abort" -> abort,
+    "Debug::print" -> print,
+    "Debug::time" -> time
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap

@@ -17,15 +17,23 @@ object FSet {
     * All set operations.
     */
   val Ops: immutable.Map[Name.Resolved, SetOperator] = List(
+    // Basic Operations.
     "Set:null" -> nul,
     "Set:memberOf" -> memberOf,
+
+    // Set Predicates.
     "Set:isSubsetOf" -> isSubsetOf,
     "Set:isProperSubsetOf" -> isProperSubsetOf,
+
+
     "Set:insert" -> insert,
     "Set:delete" -> delete,
+
+    // Two Set Operations.
     "Set:union" -> union,
     "Set:intersection" -> intersection,
     "Set:difference" -> difference,
+
     "Set:filter" -> filter,
     "Set:map" -> map,
     "Set:flatMap" -> flatMap,
@@ -45,9 +53,7 @@ object FSet {
     // TODO: subsets
     // TODO: zip?
     // TODO: min, max, minBy, maxBy
-
     // TODO: scala's aggregate[B](z: ⇒ B)(seqop: (B, (A, B)) ⇒ B, combop: (B, B) ⇒ B): B
-
 
     // Set Conversions.
     "Set:toList" -> toAscList,
@@ -67,32 +73,12 @@ object FSet {
   /////////////////////////////////////////////////////////////////////////////
   // Basic Operations                                                        //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `null : Set[A] => Bool` function.
-    */
   object nul extends SetOperator {
     val tpe = Set(A) ~> Bool
   }
 
-  /**
-    * The `memberOf : (A, Set[A]) => Bool` function.
-    */
   object memberOf extends SetOperator {
     val tpe = (A, Set(A)) ~> Bool
-  }
-
-  /**
-    * The `isSubsetOf : (Set[A], Set[A]) => Bool` function.
-    */
-  object isSubsetOf extends SetOperator {
-    val tpe = (Set(A), Set(A)) ~> Bool
-  }
-
-  /**
-    * The `isProperSubsetOf : (Set[A], Set[A]) => Bool` function.
-    */
-  object isProperSubsetOf extends SetOperator {
-    val tpe = (Set(A), Set(A)) ~> Bool
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -113,25 +99,27 @@ object FSet {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Combine                                                                 //
+  // Set Predicates                                                          //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `union : (Set[A], Set[A]) => Set[A]` function.
-    */
+  object isSubsetOf extends SetOperator {
+    val tpe = (Set(A), Set(A)) ~> Bool
+  }
+
+  object isProperSubsetOf extends SetOperator {
+    val tpe = (Set(A), Set(A)) ~> Bool
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Two Set Operations                                                      //
+  /////////////////////////////////////////////////////////////////////////////
   object union extends SetOperator {
     val tpe = (Set(A), Set(A)) ~> Set(A)
   }
 
-  /**
-    * The `intersection : (Set[A], Set[A]) => Set[A]` function.
-    */
   object intersection extends SetOperator {
     val tpe = (Set(A), Set(A)) ~> Set(A)
   }
 
-  /**
-    * The `difference : (Set[A], Set[A]) => Set[A]` function.
-    */
   object difference extends SetOperator {
     val tpe = (Set(A), Set(A)) ~> Set(A)
   }

@@ -7,11 +7,6 @@ import scala.collection.immutable
 
 package object library {
 
-  // Quiz: Know it, use it, love it.
-  // Library = (Scala union Haskell union OCaml) - (wierdness union lang. specific) + Lattice Ops
-
-  // TODO: Add flixdoc
-
   /**
     * A common super-type for all library operators.
     */
@@ -26,7 +21,6 @@ package object library {
   /////////////////////////////////////////////////////////////////////////////
   // Mini Type DSL                                                           //
   /////////////////////////////////////////////////////////////////////////////
-
   implicit class RichType(thiz: Type) {
     def ~>(that: Type): Type = Type.Lambda(List(thiz), that)
   }
