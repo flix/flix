@@ -31,8 +31,7 @@ object FSet {
     "Set:flatMap" -> flatMap,
     "Set:foldLeft" -> foldLeft,
     "Set:foldRight" -> foldRight,
-    "Set:toAscList" -> toAscList,
-    "Set:toDescList" -> toDescList,
+
     // TODO: collect? collectFirst
     // TODO: count?
     // TODO: find and other list like things, or not?
@@ -45,12 +44,15 @@ object FSet {
     // TODO: size
     // TODO: subsets
     // TODO: zip?
-  // TODO: min, max, minBy, maxBy
+    // TODO: min, max, minBy, maxBy
 
-  // TODO: scala's aggregate[B](z: ⇒ B)(seqop: (B, (A, B)) ⇒ B, combop: (B, B) ⇒ B): B
+    // TODO: scala's aggregate[B](z: ⇒ B)(seqop: (B, (A, B)) ⇒ B, combop: (B, B) ⇒ B): B
 
 
-
+    // Set Conversions.
+    "Set:toList" -> toAscList,
+    "Set:toAscList" -> toAscList,
+    "Set:toDescList" -> toDescList,
     "Set:toMap" -> toMap
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
@@ -178,32 +180,6 @@ object FSet {
     val tpe = ((A, B) ~> B, B, Set(A)) ~> B
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Conversions                                                             //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `toAscList : Set[A] => List[A]` function.
-    */
-  object toAscList extends SetOperator {
-    val tpe = Set(A) ~> Lst(A)
-  }
-
-  /**
-    * The `toDescList : Set[A] => List[A]` function.
-    */
-  object toDescList extends SetOperator {
-    val tpe = Set(A) ~> Lst(A)
-  }
-
-  /**
-    * The `toMap : Set[(A, B)] => Map[A, B]` function.
-    */
-  object toMap extends SetOperator {
-    val tpe = Set((A, B)) ~> Type.Map(A, B)
-  }
-
-
-
   /**
     * Returns `true` iff the list is an anti-chain according to the partial order.
     *
@@ -212,6 +188,22 @@ object FSet {
   // TODO
   object isAntiChain extends SetOperator {
     val tpe = Lst(A) ~> Bool
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Set Conversions                                                         //
+  /////////////////////////////////////////////////////////////////////////////
+  object toAscList extends SetOperator {
+    val tpe = Set(A) ~> Lst(A)
+  }
+
+  object toDescList extends SetOperator {
+    val tpe = Set(A) ~> Lst(A)
+  }
+
+  object toMap extends SetOperator {
+    val tpe = Set((A, B)) ~> Type.Map(A, B)
   }
 
 }

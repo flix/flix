@@ -119,7 +119,7 @@ object FList {
     "List::filterMap" -> filterMap,
     "List::findMap" -> findMap,
 
-    // Conversion Operations.
+    // List Conversions.
     "List::toMap" -> toMap,
     "List::toSet" -> toSet,
 
@@ -473,7 +473,7 @@ object FList {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Conversion Operations                                                   //
+  // List Conversion                                                         //
   /////////////////////////////////////////////////////////////////////////////
   object toMap extends ListOperator {
     val tpe = Lst((A, B)) ~> Type.Map(A, B)
