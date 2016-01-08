@@ -2735,227 +2735,887 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Binary.BitwiseAnd01") {
-    val definition = Function(name, args = List(),
+    // Binary bitwise and operator applied to Int8
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseAnd,
-        Const(42, Type.Int32, loc),
-        Const(0xFFFF, Type.Int32, loc),
-        Type.Int32, loc),
+        Const(42, Type.Int8, loc),
+        Const(0xFF, Type.Int8, loc),
+        Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseAnd,
+        Const(42, Type.Int8, loc),
+        Const(42, Type.Int8, loc),
+        Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseAnd,
+        Const(42, Type.Int8, loc),
+        Const(0, Type.Int8, loc),
+        Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Binary(BinaryOperator.BitwiseAnd,
+        Const(0xFF, Type.Int8, loc),
+        Const(0xFF, Type.Int8, loc),
+        Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
+    val code = new CompiledCode(List(def01, def02, def03, def04))
 
-    assertResult(42 & 0xFFFF)(result)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(42)(result01)
+    assertResult(42)(result02)
+    assertResult(0)(result03)
+    assertResult(0xFF)(result04)
   }
 
   test("Codegen - Binary.BitwiseAnd02") {
-    val definition = Function(name, args = List(),
+    // Binary bitwise and operator applied to Int16
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseAnd,
-        Const(42, Type.Int32, loc),
-        Const(42, Type.Int32, loc),
-        Type.Int32, loc),
+        Const(420, Type.Int16, loc),
+        Const(0xFFFF, Type.Int16, loc),
+        Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseAnd,
+        Const(420, Type.Int16, loc),
+        Const(420, Type.Int16, loc),
+        Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseAnd,
+        Const(420, Type.Int16, loc),
+        Const(0, Type.Int16, loc),
+        Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Binary(BinaryOperator.BitwiseAnd,
+        Const(0xFFFF, Type.Int16, loc),
+        Const(0xFFFF, Type.Int16, loc),
+        Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
+    val code = new CompiledCode(List(def01, def02, def03, def04))
 
-    assertResult(42 & 42)(result)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(420)(result01)
+    assertResult(420)(result02)
+    assertResult(0)(result03)
+    assertResult(0xFFFF)(result04)
   }
 
   test("Codegen - Binary.BitwiseAnd03") {
-    val definition = Function(name, args = List(),
+    // Binary bitwise and operator applied to Int32
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseAnd,
-        Const(42, Type.Int32, loc),
+        Const(40000, Type.Int32, loc),
+        Const(0xFFFFFFFF, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseAnd,
+        Const(40000, Type.Int32, loc),
+        Const(40000, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseAnd,
+        Const(40000, Type.Int32, loc),
         Const(0, Type.Int32, loc),
         Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Binary(BinaryOperator.BitwiseAnd,
+        Const(0xFFFFFFFF, Type.Int32, loc),
+        Const(0xFFFFFFFF, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
 
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
+    val code = new CompiledCode(List(def01, def02, def03, def04))
 
-    assertResult(42 & 0)(result)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(40000)(result01)
+    assertResult(40000)(result02)
+    assertResult(0)(result03)
+    assertResult(0xFFFFFFFF)(result04)
+  }
+
+  test("Codegen - Binary.BitwiseAnd04") {
+    // Binary bitwise and operator applied to Int64
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
+      body = Binary(BinaryOperator.BitwiseAnd,
+        Const(10000000000L, Type.Int64, loc),
+        Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseAnd,
+        Const(10000000000L, Type.Int64, loc),
+        Const(10000000000L, Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseAnd,
+        Const(10000000000L, Type.Int64, loc),
+        Const(0, Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def04 = Function(name04, args = List(),
+      body = Binary(BinaryOperator.BitwiseAnd,
+        Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc),
+        Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(def01, def02, def03, def04))
+
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(10000000000L)(result01)
+    assertResult(10000000000L)(result02)
+    assertResult(0)(result03)
+    assertResult(0xFFFFFFFFFFFFFFFFL)(result04)
   }
 
   test("Codegen - Binary.BitwiseOr01") {
-    val definition = Function(name, args = List(),
+    // Binary bitwise or operator applied to Int8
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseOr,
-        Const(42, Type.Int32, loc),
-        Const(0xFFFF, Type.Int32, loc),
-        Type.Int32, loc),
+        Const(42, Type.Int8, loc),
+        Const(0xFF, Type.Int8, loc),
+        Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseOr,
+        Const(42, Type.Int8, loc),
+        Const(42, Type.Int8, loc),
+        Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseOr,
+        Const(42, Type.Int8, loc),
+        Const(0, Type.Int8, loc),
+        Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Binary(BinaryOperator.BitwiseOr,
+        Const(0xFF, Type.Int8, loc),
+        Const(0xFF, Type.Int8, loc),
+        Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
+    val code = new CompiledCode(List(def01, def02, def03, def04))
 
-    assertResult(42 | 0xFFFF)(result)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(0xFF)(result01)
+    assertResult(42)(result02)
+    assertResult(42)(result03)
+    assertResult(0xFF)(result04)
   }
 
   test("Codegen - Binary.BitwiseOr02") {
-    val definition = Function(name, args = List(),
+    // Binary bitwise or operator applied to Int16
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseOr,
-        Const(42, Type.Int32, loc),
-        Const(42, Type.Int32, loc),
-        Type.Int32, loc),
+        Const(420, Type.Int16, loc),
+        Const(0xFFFF, Type.Int16, loc),
+        Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseOr,
+        Const(420, Type.Int16, loc),
+        Const(420, Type.Int16, loc),
+        Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseOr,
+        Const(420, Type.Int16, loc),
+        Const(0, Type.Int16, loc),
+        Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Binary(BinaryOperator.BitwiseOr,
+        Const(0xFFFF, Type.Int16, loc),
+        Const(0xFFFF, Type.Int16, loc),
+        Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
+    val code = new CompiledCode(List(def01, def02, def03, def04))
 
-    assertResult(42 | 42)(result)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(0xFFFF)(result01)
+    assertResult(420)(result02)
+    assertResult(420)(result03)
+    assertResult(0xFFFF)(result04)
   }
 
   test("Codegen - Binary.BitwiseOr03") {
-    val definition = Function(name, args = List(),
+    // Binary bitwise or operator applied to Int32
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseOr,
-        Const(42, Type.Int32, loc),
+        Const(40000, Type.Int32, loc),
+        Const(0xFFFFFFFF, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseOr,
+        Const(40000, Type.Int32, loc),
+        Const(40000, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseOr,
+        Const(40000, Type.Int32, loc),
         Const(0, Type.Int32, loc),
         Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Binary(BinaryOperator.BitwiseOr,
+        Const(0xFFFFFFFF, Type.Int32, loc),
+        Const(0xFFFFFFFF, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
 
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
+    val code = new CompiledCode(List(def01, def02, def03, def04))
 
-    assertResult(42 | 0)(result)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(0xFFFFFFFF)(result01)
+    assertResult(40000)(result02)
+    assertResult(40000)(result03)
+    assertResult(0xFFFFFFFF)(result04)
+  }
+
+  test("Codegen - Binary.BitwiseOr04") {
+    // Binary bitwise or operator applied to Int64
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
+      body = Binary(BinaryOperator.BitwiseOr,
+        Const(10000000000L, Type.Int64, loc),
+        Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseOr,
+        Const(10000000000L, Type.Int64, loc),
+        Const(10000000000L, Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseOr,
+        Const(10000000000L, Type.Int64, loc),
+        Const(0, Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def04 = Function(name04, args = List(),
+      body = Binary(BinaryOperator.BitwiseOr,
+        Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc),
+        Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(def01, def02, def03, def04))
+
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(0xFFFFFFFFFFFFFFFFL)(result01)
+    assertResult(10000000000L)(result02)
+    assertResult(10000000000L)(result03)
+    assertResult(0xFFFFFFFFFFFFFFFFL)(result04)
   }
 
   test("Codegen - Binary.BitwiseXor01") {
-    val definition = Function(name, args = List(),
+    // Binary bitwise xor operator applied to Int8
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseXor,
-        Const(42, Type.Int32, loc),
-        Const(0xFFFF, Type.Int32, loc),
-        Type.Int32, loc),
+        Const(42, Type.Int8, loc),
+        Const(0xFF, Type.Int8, loc),
+        Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseXor,
+        Const(42, Type.Int8, loc),
+        Const(42, Type.Int8, loc),
+        Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseXor,
+        Const(42, Type.Int8, loc),
+        Const(0, Type.Int8, loc),
+        Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Binary(BinaryOperator.BitwiseXor,
+        Const(0xFF, Type.Int8, loc),
+        Const(0xFF, Type.Int8, loc),
+        Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
+    val code = new CompiledCode(List(def01, def02, def03, def04))
 
-    assertResult(42 ^ 0xFFFF)(result)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(213)(result01)
+    assertResult(0)(result02)
+    assertResult(42)(result03)
+    assertResult(0)(result04)
   }
 
   test("Codegen - Binary.BitwiseXor02") {
-    val definition = Function(name, args = List(),
+    // Binary bitwise xor operator applied to Int16
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseXor,
-        Const(42, Type.Int32, loc),
-        Const(42, Type.Int32, loc),
-        Type.Int32, loc),
+        Const(420, Type.Int16, loc),
+        Const(0xFFFF, Type.Int16, loc),
+        Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseXor,
+        Const(420, Type.Int16, loc),
+        Const(420, Type.Int16, loc),
+        Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseXor,
+        Const(420, Type.Int16, loc),
+        Const(0, Type.Int16, loc),
+        Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Binary(BinaryOperator.BitwiseXor,
+        Const(0xFFFF, Type.Int16, loc),
+        Const(0xFFFF, Type.Int16, loc),
+        Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
+    val code = new CompiledCode(List(def01, def02, def03, def04))
 
-    assertResult(42 ^ 42)(result)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(65115)(result01)
+    assertResult(0)(result02)
+    assertResult(420)(result03)
+    assertResult(0)(result04)
   }
 
   test("Codegen - Binary.BitwiseXor03") {
-    val definition = Function(name, args = List(),
+    // Binary bitwise xor operator applied to Int32
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseXor,
-        Const(42, Type.Int32, loc),
+        Const(40000, Type.Int32, loc),
+        Const(0xFFFFFFFF, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseXor,
+        Const(40000, Type.Int32, loc),
+        Const(40000, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseXor,
+        Const(40000, Type.Int32, loc),
         Const(0, Type.Int32, loc),
         Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Binary(BinaryOperator.BitwiseXor,
+        Const(0xFFFFFFFF, Type.Int32, loc),
+        Const(0xFFFFFFFF, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
 
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
+    val code = new CompiledCode(List(def01, def02, def03, def04))
 
-    assertResult(42 ^ 0)(result)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(-40001)(result01)
+    assertResult(0)(result02)
+    assertResult(40000)(result03)
+    assertResult(0)(result04)
+  }
+
+  test("Codegen - Binary.BitwiseXor04") {
+    // Binary bitwise xor operator applied to Int64
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
+      body = Binary(BinaryOperator.BitwiseXor,
+        Const(10000000000L, Type.Int64, loc),
+        Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseXor,
+        Const(10000000000L, Type.Int64, loc),
+        Const(10000000000L, Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseXor,
+        Const(10000000000L, Type.Int64, loc),
+        Const(0, Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def04 = Function(name04, args = List(),
+      body = Binary(BinaryOperator.BitwiseXor,
+        Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc),
+        Const(0xFFFFFFFFFFFFFFFFL, Type.Int64, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(def01, def02, def03, def04))
+
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(-10000000001L)(result01)
+    assertResult(0)(result02)
+    assertResult(10000000000L)(result03)
+    assertResult(0)(result04)
   }
 
   test("Codegen - Binary.BitwiseLeftShift01") {
-    val definition = Function(name, args = List(),
+    // Bitwise left shift applied to Int8
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
+      body = Binary(BinaryOperator.BitwiseLeftShift,
+        Const(4, Type.Int8, loc),
+        Const(0, Type.Int32, loc),
+        Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseLeftShift,
+        Const(4, Type.Int8, loc),
+        Const(2, Type.Int32, loc),
+        Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseLeftShift,
+        Const(4, Type.Int8, loc),
+        Const(5, Type.Int32, loc),
+        Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Binary(BinaryOperator.BitwiseLeftShift,
+        Const(4, Type.Int8, loc),
+        Const(6, Type.Int32, loc),
+        Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(def01, def02, def03, def04))
+
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(4)(result01)
+    assertResult(16)(result02)
+    assertResult(128)(result03)
+    assertResult(0)(result04)
+  }
+
+  test("Codegen - Binary.BitwiseLeftShift02") {
+    // Bitwise left shift applied to Int16
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
+      body = Binary(BinaryOperator.BitwiseLeftShift,
+        Const(4, Type.Int16, loc),
+        Const(0, Type.Int32, loc),
+        Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseLeftShift,
+        Const(4, Type.Int16, loc),
+        Const(6, Type.Int32, loc),
+        Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseLeftShift,
+        Const(4, Type.Int16, loc),
+        Const(13, Type.Int32, loc),
+        Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Binary(BinaryOperator.BitwiseLeftShift,
+        Const(4, Type.Int16, loc),
+        Const(14, Type.Int32, loc),
+        Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(def01, def02, def03, def04))
+
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(4)(result01)
+    assertResult(256)(result02)
+    assertResult(32768)(result03)
+    assertResult(0)(result04)
+  }
+
+  test("Codegen - Binary.BitwiseLeftShift03") {
+    // Bitwise left shift applied to Int32
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseLeftShift,
         Const(4, Type.Int32, loc),
         Const(0, Type.Int32, loc),
         Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
-
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
-
-    assertResult(4 << 0)(result)
-  }
-
-  test("Codegen - Binary.BitwiseLeftShift02") {
-    val definition = Function(name, args = List(),
+    val def02 = Function(name02, args = List(),
       body = Binary(BinaryOperator.BitwiseLeftShift,
         Const(4, Type.Int32, loc),
         Const(14, Type.Int32, loc),
         Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
-
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
-
-    assertResult(4 << 14)(result)
-  }
-
-  test("Codegen - Binary.BitwiseLeftShift03") {
-    val definition = Function(name, args = List(),
+    val def03 = Function(name03, args = List(),
       body = Binary(BinaryOperator.BitwiseLeftShift,
         Const(4, Type.Int32, loc),
         Const(29, Type.Int32, loc),
         Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
-
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
-
-    assertResult(4 << 29)(result)
-  }
-
-  test("Codegen - Binary.BitwiseLeftShift04") {
-    val definition = Function(name, args = List(),
+    val def04 = Function(name04, args = List(),
       body = Binary(BinaryOperator.BitwiseLeftShift,
         Const(4, Type.Int32, loc),
         Const(30, Type.Int32, loc),
         Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
+    val code = new CompiledCode(List(def01, def02, def03, def04))
 
-    assertResult(4 << 30)(result)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(4)(result01)
+    assertResult(65536)(result02)
+    assertResult(-2147483648)(result03)
+    assertResult(0)(result04)
+  }
+
+  test("Codegen - Binary.BitwiseLeftShift04") {
+    // Bitwise left shift applied to Int64
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
+      body = Binary(BinaryOperator.BitwiseLeftShift,
+        Const(4, Type.Int64, loc),
+        Const(0, Type.Int32, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseLeftShift,
+        Const(4, Type.Int64, loc),
+        Const(30, Type.Int32, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseLeftShift,
+        Const(4, Type.Int64, loc),
+        Const(61, Type.Int32, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def04 = Function(name04, args = List(),
+      body = Binary(BinaryOperator.BitwiseLeftShift,
+        Const(4, Type.Int64, loc),
+        Const(62, Type.Int32, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(def01, def02, def03, def04))
+
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(4)(result01)
+    assertResult(4294967296L)(result02)
+    assertResult(-9223372036854775808L)(result03)
+    assertResult(0)(result04)
   }
 
   test("Codegen - Binary.BitwiseRightShift01") {
-    val definition = Function(name, args = List(),
+    // Bitwise right shift applied to Int8
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+
+    val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseRightShift,
-        Const(12345, Type.Int32, loc),
-        Const(20, Type.Int32, loc),
-        Type.Int32, loc),
+        Const(123, Type.Int8, loc),
+        Const(0, Type.Int32, loc),
+        Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseRightShift,
+        Const(123, Type.Int8, loc),
+        Const(2, Type.Int32, loc),
+        Type.Int8, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseRightShift,
+        Const(123, Type.Int8, loc),
+        Const(7, Type.Int32, loc),
+        Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
+    val code = new CompiledCode(List(def01, def02, def03))
 
-    assertResult(12345 >> 20)(result)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+
+    assertResult(123)(result01)
+    assertResult(30)(result02)
+    assertResult(0)(result03)
   }
 
   test("Codegen - Binary.BitwiseRightShift02") {
-    val definition = Function(name, args = List(),
+    // Bitwise right shift applied to Int16
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+
+    val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseRightShift,
-        Const(12345, Type.Int32, loc),
-        Const(10, Type.Int32, loc),
-        Type.Int32, loc),
+        Const(12000, Type.Int16, loc),
+        Const(0, Type.Int32, loc),
+        Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseRightShift,
+        Const(12000, Type.Int16, loc),
+        Const(2, Type.Int32, loc),
+        Type.Int16, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseRightShift,
+        Const(12000, Type.Int16, loc),
+        Const(15, Type.Int32, loc),
+        Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
+    val code = new CompiledCode(List(def01, def02, def03))
 
-    assertResult(12345 >> 10)(result)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+
+    assertResult(12000)(result01)
+    assertResult(3000)(result02)
+    assertResult(0)(result03)
   }
 
   test("Codegen - Binary.BitwiseRightShift03") {
-    val definition = Function(name, args = List(),
+    // Bitwise right shift applied to Int32
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+
+    val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseRightShift,
-        Const(12345, Type.Int32, loc),
+        Const(120000, Type.Int32, loc),
         Const(0, Type.Int32, loc),
         Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseRightShift,
+        Const(120000, Type.Int32, loc),
+        Const(2, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseRightShift,
+        Const(120000, Type.Int32, loc),
+        Const(31, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
 
-    val code = new CompiledCode(List(definition))
-    val result = code.call(name)
+    val code = new CompiledCode(List(def01, def02, def03))
 
-    assertResult(12345 >> 0)(result)
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+
+    assertResult(120000)(result01)
+    assertResult(30000)(result02)
+    assertResult(0)(result03)
+  }
+
+  test("Codegen - Binary.BitwiseRightShift04") {
+    // Bitwise right shift applied to Int64
+
+    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
+
+    val def01 = Function(name01, args = List(),
+      body = Binary(BinaryOperator.BitwiseRightShift,
+        Const(12000000000L, Type.Int64, loc),
+        Const(0, Type.Int32, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def02 = Function(name02, args = List(),
+      body = Binary(BinaryOperator.BitwiseRightShift,
+        Const(12000000000L, Type.Int64, loc),
+        Const(2, Type.Int32, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+    val def03 = Function(name03, args = List(),
+      body = Binary(BinaryOperator.BitwiseRightShift,
+        Const(12000000000L, Type.Int64, loc),
+        Const(63, Type.Int32, loc),
+        Type.Int64, loc),
+      Type.Lambda(List(), Type.Int64), loc)
+
+    val code = new CompiledCode(List(def01, def02, def03))
+
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+
+    assertResult(12000000000L)(result01)
+    assertResult(3000000000L)(result02)
+    assertResult(0)(result03)
   }
 
   test("Codegen - Binary.Less01") {

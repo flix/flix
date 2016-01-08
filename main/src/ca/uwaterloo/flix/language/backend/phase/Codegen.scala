@@ -195,7 +195,7 @@ object Codegen {
         visitor.visitLabel(condEnd)
       case UnaryOperator.Plus => // nop
       case UnaryOperator.Minus =>
-        // For Int8 and Int16, we need to truncate the result.
+        // For Int8 and Int16, we need to truncate (and sign-extend) the result.
         tpe match {
           case Type.Int8 =>
             visitor.visitInsn(INEG)
@@ -303,11 +303,38 @@ object Codegen {
           visitor.visitLabel(condElse)
           visitor.visitInsn(ICONST_0)
           visitor.visitLabel(condEnd)
-        case BinaryOperator.BitwiseAnd => visitor.visitInsn(IAND)
-        case BinaryOperator.BitwiseOr => visitor.visitInsn(IOR)
-        case BinaryOperator.BitwiseXor => visitor.visitInsn(IXOR)
-        case BinaryOperator.BitwiseLeftShift => visitor.visitInsn(ISHL)
-        case BinaryOperator.BitwiseRightShift => visitor.visitInsn(ISHR)
+
+        case o: BitwiseOperator =>
+          // Don't need to truncate because there are no higher-order bits.
+          // An Int8 has the upper 24 bits set to zero, so when you AND two Int8s, the upper 24 bits are unchanged.
+          // Exception: we *do* want to truncate after bitwise shifts.
+          // TODO: Consider creating and handling BitwiseShiftOperator separately?
+          // Note: the right-hand operand of a shift (i.e. the shift amount) *must* be Int32.
+          val (intOp, longOp) = o match {
+            case BinaryOperator.BitwiseAnd => (IAND, LAND)
+            case BinaryOperator.BitwiseOr => (IOR, LOR)
+            case BinaryOperator.BitwiseXor => (IXOR, LXOR)
+            case BinaryOperator.BitwiseLeftShift => (ISHL, LSHL)
+            case BinaryOperator.BitwiseRightShift => (ISHR, LSHR)
+          }
+          tpe match {
+            case Type.Int8 =>
+              visitor.visitInsn(intOp)
+              if (intOp == ISHL || intOp == ISHR) {
+                compileConst(visitor)(0xFF)
+                visitor.visitInsn(IAND)
+              }
+            case Type.Int16 =>
+              visitor.visitInsn(intOp)
+              if (intOp == ISHL || intOp == ISHR) {
+                compileConst(visitor)(0xFFFF)
+                visitor.visitInsn(IAND)
+              }
+            case Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitInsn(intOp)
+            case Type.Int64 => visitor.visitInsn(longOp)
+            case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
+              throw new InternalCompilerError(s"Can't apply $op to type $tpe.")
+          }
 
         case BinaryOperator.Set.Member => ???
         case BinaryOperator.Set.SubsetOf => ???
