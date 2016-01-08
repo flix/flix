@@ -26,6 +26,8 @@ object FMap {
     "Map/get" -> get,
     "Map/getWithDefault" -> getWithDefault,
     "Map/memberOf" -> memberOf,
+    //  TODO: keys
+    // TODO: values
 
     // Insert
     "Map/insert" -> insert,
@@ -40,23 +42,24 @@ object FMap {
     // Delete
     "Map/delete" -> delete,
 
-
-    "Map/union" -> union,
-
-
-    // TODO: unionWith
-    // TODO: unionWithKey
-    // TODO: Empty, singleton
-
-    "Map/intersection" -> intersection,
-    // TODO: intersectionWith
-    // TODO: intersectionWithKey
-    "Map/difference" -> difference,
     // TODO: differenceWith
     // TODO: differenceWithKey
     "Map/map" -> map,
     "Map/mapWithKey" -> mapWithKey,
     // TODO mapKeys
+
+    // Combine Operations.
+    "Map/union" -> union,
+    "Map/unionWith" -> unionWith,
+    "Map/unionWithKey" -> unionWithKey,
+
+    "Map/intersection" -> intersection,
+    // TODO: intersectionWith
+    // TODO: intersectionWithKey
+
+    "Map/difference" -> difference,
+    "Map/differenceWith" -> differenceWith,
+    "Map/differenceWithKey" -> differenceWithKey,
 
     // Conversions.
     "Map/toList" -> toAscList,
@@ -74,8 +77,6 @@ object FMap {
   // TODO: filter
   // TODO: filterWithKey
   // /filterValues
-
-
   // TODO  foldLeft/foldRight,
   // TODO foldLeftWithKey, foldRightWithKey
   // TODO  - keySet // TODO: keys or keySet?
@@ -84,12 +85,6 @@ object FMap {
   // TODO  paritition, partitionWithKey
   // TODO  isSubmapOf
   // TODO  isProperSubmapOf
-
-  // TODO: mapEither??? then we need either.
-
-  // Indexed:
-  // TODO: lookupIndex, deleteAt, updateAt - wait do we need these?
-
   // TODO: minimum, maximum,
 
   /**
@@ -161,13 +156,18 @@ object FMap {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Combine                                                                 //
+  // Combine Operations                                                      //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `union : (Map[K, V], Map[K, V]) => Map[K, V]` function.
-    */
   object union extends MapOperator {
     val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
+  }
+
+  object unionWith extends MapOperator {
+    val tpe = ((V, V) ~> V, Map(K, V), Map(K, V)) ~> Map(K, V)
+  }
+
+  object unionWithKey extends MapOperator {
+    val tpe = ((K, V, V) ~> V, Map(K, V), Map(K, V)) ~> Map(K, V)
   }
 
   /**
@@ -177,11 +177,17 @@ object FMap {
     val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
   }
 
-  /**
-    * The `difference : (Map[K, V], Map[K, V]) => Map[K, V]` function.
-    */
+
   object difference extends MapOperator {
     val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
+  }
+
+  object differenceWith extends MapOperator {
+    val tpe = ((V, V) ~> V, Map(K, V), Map(K, V)) ~> Map(K, V)
+  }
+
+  object differenceWithKey extends MapOperator {
+    val tpe = ((K, V, V) ~> V, Map(K, V), Map(K, V)) ~> Map(K, V)
   }
 
   /////////////////////////////////////////////////////////////////////////////
