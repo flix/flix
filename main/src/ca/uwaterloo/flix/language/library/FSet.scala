@@ -20,40 +20,25 @@ object FSet {
     // Basic Operations.
     "Set:null" -> nul,
     "Set:memberOf" -> memberOf,
+    "Set:singleton" -> singleton,
+    "Set:insert" -> insert,
+    "Set:delete" -> delete,
 
     // Set Predicates.
     "Set:isSubsetOf" -> isSubsetOf,
     "Set:isProperSubsetOf" -> isProperSubsetOf,
-
-
-    "Set:insert" -> insert,
-    "Set:delete" -> delete,
 
     // Two Set Operations.
     "Set:union" -> union,
     "Set:intersection" -> intersection,
     "Set:difference" -> difference,
 
+
     "Set:filter" -> filter,
     "Set:map" -> map,
     "Set:flatMap" -> flatMap,
     "Set:foldLeft" -> foldLeft,
     "Set:foldRight" -> foldRight,
-
-    // TODO: collect? collectFirst
-    // TODO: count?
-    // TODO: find and other list like things, or not?
-    // TODO: flatten
-    // TODO: minimum, maximum, minimumBy, maximumBy
-    // TODO: partition/split?
-    // TODO: sum/product?
-    // TODO: reduceLeft, reduceRight, reduceLeftOpt, reduceRightOpt
-    // TODO: scanLeft, scanRight
-    // TODO: size
-    // TODO: subsets
-    // TODO: zip?
-    // TODO: min, max, minBy, maxBy
-    // TODO: scala's aggregate[B](z: ⇒ B)(seqop: (B, (A, B)) ⇒ B, combop: (B, B) ⇒ B): B
 
     // Set Conversions.
     "Set:toList" -> toAscList,
@@ -63,6 +48,22 @@ object FSet {
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
+
+
+  // TODO: collect? collectFirst
+  // TODO: count?
+  // TODO: find and other list like things, or not?
+  // TODO: flatten
+  // TODO: minimum, maximum, minimumBy, maximumBy
+  // TODO: partition/split?
+  // TODO: sum/product?
+  // TODO: reduceLeft, reduceRight, reduceLeftOpt, reduceRightOpt
+  // TODO: scanLeft, scanRight
+  // TODO: size
+  // TODO: subsets
+  // TODO: zip?
+  // TODO: min, max, minBy, maxBy
+  // TODO: scala's aggregate[B](z: ⇒ B)(seqop: (B, (A, B)) ⇒ B, combop: (B, B) ⇒ B): B
 
   /**
     * Generic type variables.
@@ -81,19 +82,14 @@ object FSet {
     val tpe = (A, Set(A)) ~> Bool
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Construction                                                            //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `insert : (A, Set[A]) => Set[A]` function.
-    */
+  object singleton extends SetOperator {
+    val tpe = (A) ~> Bool
+  }
+
   object insert extends SetOperator {
     val tpe = (A, Set(A)) ~> Set(A)
   }
 
-  /**
-    * The `delete : (A, Set[A]) => Set[A]` function.
-    */
   object delete extends SetOperator {
     val tpe = (A, Set(A)) ~> Set(A)
   }
