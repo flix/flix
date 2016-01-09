@@ -62,7 +62,11 @@ object FMap {
     "Map/toList" -> toAscList,
     "Map/toAscList" -> toAscList,
     "Map/toDescList" -> toDescList,
-    "Map/toSet" -> toSet
+    "Map/toSet" -> toSet,
+
+    // Order and Lattice Operations
+    "Map/join" -> join,
+    "Map/meet" -> meet
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
@@ -209,7 +213,6 @@ object FMap {
     val tpe = ((K, A) ~> B, Map(K, A)) ~> Map(K, B)
   }
 
-
   /////////////////////////////////////////////////////////////////////////////
   // Conversions                                                             //
   /////////////////////////////////////////////////////////////////////////////
@@ -225,5 +228,15 @@ object FMap {
     val tpe = Map(K, V) ~> Set((K, V))
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Order and Lattice Operations                                            //
+  /////////////////////////////////////////////////////////////////////////////
+  object join extends MapOperator {
+    val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
+  }
+
+  object meet extends MapOperator {
+    val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
+  }
 
 }
