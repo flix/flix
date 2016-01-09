@@ -41,6 +41,13 @@ object FMap {
     // Delete.
     "Map/delete" -> delete,
 
+  // Map Transformation.
+    "Map/filter" -> filter,
+    "Map/filterWithKey" -> filterWithKey,
+    // TODO: filter
+    // TODO: filterWithKey
+    // TODO filterKeys
+    // TODO: filterValues
 
     "Map/map" -> map,
     "Map/mapWithKey" -> mapWithKey,
@@ -73,10 +80,6 @@ object FMap {
 
   // TODO - removeKey
   //TODO  - foldValues
-  // TODO filterKeys
-  // TODO: filter
-  // TODO: filterWithKey
-  // TODO: filterValues
   // TODO  foldLeft/foldRight,
   // TODO foldLeftWithKey, foldRightWithKey
   // TODO  - keySet // TODO: keys or keySet?
@@ -155,12 +158,22 @@ object FMap {
     val tpe = (K, V ~> V, Map(K, V)) ~> Map(K, V)
   }
 
-
   /////////////////////////////////////////////////////////////////////////////
   // Delete                                                                  //
   /////////////////////////////////////////////////////////////////////////////
   object delete extends MapOperator {
     val tpe = (K, Map(K, V)) ~> Map(K, V)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Map Transformations                                                     //
+  /////////////////////////////////////////////////////////////////////////////
+  object filter extends MapOperator {
+    val tpe = (V ~> Bool, Map(K, V)) ~> Map(K, V)
+  }
+
+  object filterWithKey extends MapOperator {
+    val tpe = ((K, V) ~> Bool, Map(K, V)) ~> Map(K, V)
   }
 
   /////////////////////////////////////////////////////////////////////////////
