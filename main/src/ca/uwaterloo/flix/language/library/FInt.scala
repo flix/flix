@@ -8,24 +8,30 @@ import scala.collection.immutable
 object FInt {
 
   /**
-    * A common super-type for all integer operations.
+    * A common super-type for all int operations.
     */
   sealed trait IntOperator extends LibraryOperator
 
   /**
-    * All integer operations.
+    * All int operations.
     */
   val Ops: immutable.Map[Name.Resolved, IntOperator] = List(
+    // Int Constants.
+    "Int/minValue" -> minValue,
+    "Int/maxValue" -> maxValue,
+
+    // Int Operations.
     "Int/min" -> min,
     "Int/max" -> max,
-    "Int/minValue" -> minValue,
-    "Int/maxValue" -> maxValue
+
+    // Int Conversions.
+    "Int/toChar" -> toChar
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
 
   /////////////////////////////////////////////////////////////////////////////
-  // Integer Constants                                                       //
+  // Int Constants                                                           //
   /////////////////////////////////////////////////////////////////////////////
   object minValue extends IntOperator {
     val tpe = () ~> Type.Int
@@ -36,7 +42,7 @@ object FInt {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Integer Operations                                                      //
+  // Int Operations                                                          //
   /////////////////////////////////////////////////////////////////////////////
   object abs extends IntOperator {
     val tpe = (Type.Int, Type.Int) ~> Type.Int
@@ -48,6 +54,13 @@ object FInt {
 
   object max extends IntOperator {
     val tpe = (Type.Int, Type.Int) ~> Type.Int
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Int Conversions                                                         //
+  /////////////////////////////////////////////////////////////////////////////
+  object toChar extends IntOperator {
+    val tpe = Type.Int ~> Type.Char
   }
 
 }

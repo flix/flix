@@ -7,8 +7,6 @@ import scala.collection.immutable
 
 object FChar {
 
-  // TODO: Need Char type.
-
   /**
     * A common super-type for all char operations.
     */
@@ -40,50 +38,50 @@ object FChar {
   // Char Predicates                                                         //
   /////////////////////////////////////////////////////////////////////////////
   object isAscii extends CharOperator {
-    val tpe = Type.Int ~> Type.Bool
+    val tpe = Type.Char ~> Type.Bool
   }
 
   object isLetter extends CharOperator {
-    val tpe = Type.Int ~> Type.Bool
+    val tpe = Type.Char ~> Type.Bool
   }
 
   object isDigit extends CharOperator {
-    val tpe = Type.Int ~> Type.Bool
+    val tpe = Type.Char ~> Type.Bool
   }
 
   object isOctDigit extends CharOperator {
-    val tpe = Type.Int ~> Type.Bool
+    val tpe = Type.Char ~> Type.Bool
   }
 
   object isHexDigit extends CharOperator {
-    val tpe = Type.Int ~> Type.Bool
+    val tpe = Type.Char ~> Type.Bool
   }
 
   object isLower extends CharOperator {
-    val tpe = Type.Int ~> Type.Bool
+    val tpe = Type.Char ~> Type.Bool
   }
 
   object isUpper extends CharOperator {
-    val tpe = Type.Int ~> Type.Bool
+    val tpe = Type.Char ~> Type.Bool
   }
 
   object isWhiteSpace extends CharOperator {
-    val tpe = Type.Int ~> Type.Bool
+    val tpe = Type.Char ~> Type.Bool
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Char Conversions                                                        //
   /////////////////////////////////////////////////////////////////////////////
   object toInt extends CharOperator {
-    val tpe = Type.Int ~> Type.Int
+    val tpe = Type.Char ~> Type.Int
   }
 
   object toLower extends CharOperator {
-    val tpe = Type.Int ~> Type.Int
+    val tpe = Type.Char ~> Type.Char
   }
 
   object toUpper extends CharOperator {
-    val tpe = Type.Int ~> Type.Int
+    val tpe = Type.Char ~> Type.Char
   }
 
 }

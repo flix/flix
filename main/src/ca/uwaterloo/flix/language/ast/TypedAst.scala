@@ -992,6 +992,11 @@ object TypedAst {
       */
     case class Native(name: String) extends TypedAst.Type
 
+    case object Char extends TypedAst.Type
+
+    // TODO
+    case class Abs(name: String) extends TypedAst.Type
+
   }
 
   /**
