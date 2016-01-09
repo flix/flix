@@ -995,7 +995,7 @@ object TypedAst {
     case object Char extends TypedAst.Type
 
     // TODO
-    case class Abs(name: String) extends TypedAst.Type
+    case class Abs(name: TypedAst.Type.Var, tpe: TypedAst.Type) extends TypedAst.Type
 
   }
 

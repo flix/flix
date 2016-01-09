@@ -13,7 +13,7 @@ object FBool {
   sealed trait BoolOperator extends LibraryOperator
 
   /**
-    * All boolean operations.
+    * All bool operations.
     */
   val Ops: immutable.Map[Name.Resolved, BoolOperator] = List(
     "Bool/&&" -> and,

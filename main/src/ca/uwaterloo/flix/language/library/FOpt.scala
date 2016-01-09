@@ -44,7 +44,7 @@ object FOpt {
   // Basic Operations                                                        //
   /////////////////////////////////////////////////////////////////////////////
   object nul extends OptOperator {
-    val tpe = Opt(A) ~> Bool
+    val tpe = Type.Abs(A, Opt(A) ~> Bool)
   }
 
   object get extends OptOperator {
