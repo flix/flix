@@ -40,6 +40,10 @@ object FMap {
     // Delete.
     "Map/delete" -> delete,
 
+    // Map Predicates.
+    "Map/isSubmapOf" -> isSubmapOf,
+    "Map/isProperSubmapOf" -> isProperSubmapOf,
+
     // Map Transformation.
     "Map/filter" -> filter,
     "Map/filterWithKey" -> filterWithKey,
@@ -82,13 +86,8 @@ object FMap {
   // TODO: alter  // TODO: adjustWithKey
   // TODO mapKeys
   // TODO - removeKey
-  //TODO  - foldValues
-  // TODO  foldLeft/foldRight,
-  // TODO foldLeftWithKey, foldRightWithKey
   // TODO  paritition, partitionWithKey
-  // TODO  isSubmapOf
-  // TODO  isProperSubmapOf
-  // TODO: minimum, maximum,
+
 
   /**
     * Generic type variables.
@@ -163,6 +162,17 @@ object FMap {
   /////////////////////////////////////////////////////////////////////////////
   object delete extends MapOperator {
     val tpe = (K, Map(K, V)) ~> Map(K, V)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Map Predicates                                                          //
+  /////////////////////////////////////////////////////////////////////////////
+  object isSubmapOf extends MapOperator {
+    val tpe = (Map(K, V), Map(K, V)) ~> Bool
+  }
+
+  object isProperSubmapOf extends MapOperator {
+    val tpe = (Map(K, V), Map(K, V)) ~> Bool
   }
 
   /////////////////////////////////////////////////////////////////////////////
