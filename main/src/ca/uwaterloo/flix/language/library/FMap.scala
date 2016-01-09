@@ -17,19 +17,19 @@ object FMap {
     * All map operations.
     */
   val Ops: immutable.Map[Name.Resolved, MapOperator] = List(
-    // Map Construction
+    // Map Construction.
     "Map/empty" -> empty,
     "Map/singleton" -> singleton,
 
-    // TODO:
+    // Basic Operations.
     "Map/null" -> nul,
     "Map/get" -> get,
     "Map/getWithDefault" -> getWithDefault,
     "Map/memberOf" -> memberOf,
-    //  TODO: keys
-    // TODO: values
+    "Map/keysOf" -> keysOf,
+    "Map/valuesOf" -> valuesOf,
 
-    // Insert
+    // Insert.
     "Map/insert" -> insert,
     "Map/insertWith" -> insertWith,
     "Map/insertWithKey" -> insertWithKey,
@@ -38,11 +38,10 @@ object FMap {
     // TODO: adjust
     // TODO: alter  // TODO: adjustWithKey
 
-    // Delete
+    // Delete.
     "Map/delete" -> delete,
 
-    // TODO: differenceWith
-    // TODO: differenceWithKey
+
     "Map/map" -> map,
     "Map/mapWithKey" -> mapWithKey,
     // TODO mapKeys
@@ -64,7 +63,7 @@ object FMap {
     "Map/toDescList" -> toDescList,
     "Map/toSet" -> toSet,
 
-    // Order and Lattice Operations
+    // Order and Lattice Operations.
     "Map/join" -> join,
     "Map/meet" -> meet
   ).map {
@@ -77,7 +76,7 @@ object FMap {
   // TODO filterKeys
   // TODO: filter
   // TODO: filterWithKey
-  // /filterValues
+  // TODO: filterValues
   // TODO  foldLeft/foldRight,
   // TODO foldLeftWithKey, foldRightWithKey
   // TODO  - keySet // TODO: keys or keySet?
@@ -114,16 +113,24 @@ object FMap {
     val tpe = Map(K, V) ~> Bool
   }
 
-  object memberOf extends MapOperator {
-    val tpe = (K, Map(K, V)) ~> Bool
-  }
-
   object get extends MapOperator {
     val tpe = (K, Map(K, V)) ~> Opt(V)
   }
 
   object getWithDefault extends MapOperator {
     val tpe = (K, V, Map(K, V)) ~> V
+  }
+
+  object memberOf extends MapOperator {
+    val tpe = (K, Map(K, V)) ~> Bool
+  }
+
+  object keysOf extends MapOperator {
+    val tpe = Map(K, V) ~> Set(K)
+  }
+
+  object valuesOf extends MapOperator {
+    val tpe = Map(K, V) ~> Lst(V)
   }
 
   /////////////////////////////////////////////////////////////////////////////
