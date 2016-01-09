@@ -36,6 +36,7 @@ object FMap {
 
     // Update.
     "Map/update" -> update,
+    "Map/updateWithKey" -> updateWithKey,
 
     // Delete.
     "Map/delete" -> delete,
@@ -49,7 +50,6 @@ object FMap {
     "Map/filterWithKey" -> filterWithKey,
     "Map/map" -> map,
     "Map/mapWithKey" -> mapWithKey,
-
 
     // Folds.
     "Map/fold" -> foldLeft,
@@ -153,6 +153,10 @@ object FMap {
   /////////////////////////////////////////////////////////////////////////////
   object update extends MapOperator {
     val tpe = (K, V ~> V, Map(K, V)) ~> Map(K, V)
+  }
+
+  object updateWithKey extends MapOperator {
+    val tpe = (K, V ~> V, Map(K, V)) ~> Map(K, V) // TODO
   }
 
   /////////////////////////////////////////////////////////////////////////////
