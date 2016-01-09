@@ -7,8 +7,6 @@ import scala.collection.immutable
 
 object FBool {
 
-  // TODO: Figure out what goes here.
-
   /**
     * A common super-type for all boolean operations.
     */

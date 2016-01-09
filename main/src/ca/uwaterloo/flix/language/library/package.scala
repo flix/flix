@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Type
 import scala.collection.immutable
 
 package object library {
-
+  
   /**
     * A common super-type for all library operators.
     */
