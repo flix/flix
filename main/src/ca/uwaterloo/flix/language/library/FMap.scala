@@ -34,24 +34,25 @@ object FMap {
     "Map/insertWith" -> insertWith,
     "Map/insertWithKey" -> insertWithKey,
 
+    // Update.
     "Map/update" -> update,
-    // TODO: adjust
-    // TODO: alter  // TODO: adjustWithKey
 
     // Delete.
     "Map/delete" -> delete,
 
-  // Map Transformation.
+    // Map Transformation.
     "Map/filter" -> filter,
     "Map/filterWithKey" -> filterWithKey,
-    // TODO: filter
-    // TODO: filterWithKey
-    // TODO filterKeys
-    // TODO: filterValues
-
     "Map/map" -> map,
     "Map/mapWithKey" -> mapWithKey,
-    // TODO mapKeys
+
+    // Folds.
+    "Map/fold" -> foldLeft,
+    "Map/foldWithKey" -> foldLeftWithKey,
+    "Map/foldLeft" -> foldLeft,
+    "Map/foldLeftWithKey" -> foldLeftWithKey,
+    "Map/foldRight" -> foldRight,
+    "Map/foldRightWithKey" -> foldRightWithKey,
 
     // Combine Operations.
     "Map/union" -> union,
@@ -77,14 +78,13 @@ object FMap {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
 
-
+  // TODO: adjust
+  // TODO: alter  // TODO: adjustWithKey
+  // TODO mapKeys
   // TODO - removeKey
   //TODO  - foldValues
   // TODO  foldLeft/foldRight,
   // TODO foldLeftWithKey, foldRightWithKey
-  // TODO  - keySet // TODO: keys or keySet?
-  // TODO - values
-  // TODO  filter/filterWithKey
   // TODO  paritition, partitionWithKey
   // TODO  isSubmapOf
   // TODO  isProperSubmapOf
@@ -176,6 +176,14 @@ object FMap {
     val tpe = ((K, V) ~> Bool, Map(K, V)) ~> Map(K, V)
   }
 
+  object map extends MapOperator {
+    val tpe = (A ~> B, Map(K, A)) ~> Map(K, B)
+  }
+
+  object mapWithKey extends MapOperator {
+    val tpe = ((K, A) ~> B, Map(K, A)) ~> Map(K, B)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Combine Operations                                                      //
   /////////////////////////////////////////////////////////////////////////////
@@ -219,18 +227,20 @@ object FMap {
   /////////////////////////////////////////////////////////////////////////////
   // Map                                                                     //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * The `map : (A => B, Map[K, A]) => Map[K, B]` function.
-    */
-  object map extends MapOperator {
-    val tpe = (A ~> B, Map(K, A)) ~> Map(K, B)
+  object foldLeft extends MapOperator {
+    val tpe = ((B, A) ~> B, B, Map(K, A)) ~> B
   }
 
-  /**
-    * The `mapWithKey : ((K, A) => B, Map[K, A]) => Map[K, B]` function.
-    */
-  object mapWithKey extends MapOperator {
-    val tpe = ((K, A) ~> B, Map(K, A)) ~> Map(K, B)
+  object foldLeftWithKey extends MapOperator {
+    val tpe = ((B, K, A) ~> B, B, Map(K, A)) ~> B
+  }
+
+  object foldRight extends MapOperator {
+    val tpe = ((A, B) ~> B, B, Map(K, A)) ~> B
+  }
+
+  object foldRightWithKey extends MapOperator {
+    val tpe = ((K, A, B) ~> B, B, Map(K, A)) ~> B
   }
 
   /////////////////////////////////////////////////////////////////////////////
