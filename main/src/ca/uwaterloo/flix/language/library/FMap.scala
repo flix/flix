@@ -38,7 +38,6 @@ object FMap {
     // TODO: adjust
     // TODO: alter  // TODO: adjustWithKey
 
-
     // Delete
     "Map/delete" -> delete,
 
@@ -52,11 +51,9 @@ object FMap {
     "Map/union" -> union,
     "Map/unionWith" -> unionWith,
     "Map/unionWithKey" -> unionWithKey,
-
     "Map/intersection" -> intersection,
-    // TODO: intersectionWith
-    // TODO: intersectionWithKey
-
+    "Map/intersectionWith" -> intersectionWith,
+    "Map/intersectionWithKey" -> intersectionWithKey,
     "Map/difference" -> difference,
     "Map/differenceWith" -> differenceWith,
     "Map/differenceWithKey" -> differenceWithKey,
@@ -158,6 +155,7 @@ object FMap {
   /////////////////////////////////////////////////////////////////////////////
   // Combine Operations                                                      //
   /////////////////////////////////////////////////////////////////////////////
+  // TODO: Some of these could return a map of a difference type.
   object union extends MapOperator {
     val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
   }
@@ -170,13 +168,17 @@ object FMap {
     val tpe = ((K, V, V) ~> V, Map(K, V), Map(K, V)) ~> Map(K, V)
   }
 
-  /**
-    * The `intersection : (Map[K, V], Map[K, V]) => Map[K, V]` function.
-    */
   object intersection extends MapOperator {
     val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
   }
 
+  object intersectionWith extends MapOperator {
+    val tpe = ((V, V) ~> V, Map(K, V), Map(K, V)) ~> Map(K, V)
+  }
+
+  object intersectionWithKey extends MapOperator {
+    val tpe = ((K, V, V) ~> V, Map(K, V), Map(K, V)) ~> Map(K, V)
+  }
 
   object difference extends MapOperator {
     val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
