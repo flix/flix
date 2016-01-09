@@ -34,6 +34,10 @@ object FMap {
     "Map/insertWith" -> insertWith,
     "Map/insertWithKey" -> insertWithKey,
 
+    // Adjust.
+    "Map/adjust" -> adjust,
+    "Map/adjustWithKey" -> adjustWithKey,
+
     // Update.
     "Map/update" -> update,
     "Map/updateWithKey" -> updateWithKey,
@@ -82,10 +86,6 @@ object FMap {
   ).map {
     case (name, op) => Name.Resolved.mk(name) -> op
   }.toMap
-
-  // TODO: adjust
-  // TODO: alter  // TODO: adjustWithKey
-
 
   /**
     * Generic type variables.
@@ -149,14 +149,25 @@ object FMap {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Adjust                                                                  //
+  /////////////////////////////////////////////////////////////////////////////
+  object adjust extends MapOperator {
+    val tpe = (V ~> V, K, Map(K, V)) ~> Map(K, V)
+  }
+
+  object adjustWithKey extends MapOperator {
+    val tpe = ((K, V) ~> V, K, Map(K, V)) ~> Map(K, V)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Update                                                                  //
   /////////////////////////////////////////////////////////////////////////////
   object update extends MapOperator {
-    val tpe = (K, V ~> V, Map(K, V)) ~> Map(K, V)
+    val tpe = (V ~> Opt(V), K, Map(K, V)) ~> Map(K, V)
   }
 
   object updateWithKey extends MapOperator {
-    val tpe = (K, V ~> V, Map(K, V)) ~> Map(K, V) // TODO
+    val tpe = ((K, V) ~> Opt(V), K, Map(K, V)) ~> Map(K, V)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -199,7 +210,6 @@ object FMap {
   /////////////////////////////////////////////////////////////////////////////
   // Combine Operations                                                      //
   /////////////////////////////////////////////////////////////////////////////
-  // TODO: Some of these could return a map of a difference type.
   object union extends MapOperator {
     val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
   }
