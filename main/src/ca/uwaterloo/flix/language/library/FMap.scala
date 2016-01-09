@@ -50,6 +50,7 @@ object FMap {
     "Map/map" -> map,
     "Map/mapWithKey" -> mapWithKey,
 
+
     // Folds.
     "Map/fold" -> foldLeft,
     "Map/foldWithKey" -> foldLeftWithKey,
@@ -84,9 +85,6 @@ object FMap {
 
   // TODO: adjust
   // TODO: alter  // TODO: adjustWithKey
-  // TODO mapKeys
-  // TODO - removeKey
-  // TODO  paritition, partitionWithKey
 
 
   /**
