@@ -37,6 +37,7 @@ object TypedAst {
     /**
       * Computes map of the dependencies between collection predicates.
       */
+    @deprecated("moved to ExecutableAST", "0.1")
     val dependenciesOf: Map[Name.Resolved, mutable.Set[(Constraint.Rule, TypedAst.Predicate.Body.Collection)]] = {
       val result = mutable.Map.empty[Name.Resolved, mutable.Set[(Constraint.Rule, TypedAst.Predicate.Body.Collection)]]
 
@@ -94,8 +95,13 @@ object TypedAst {
       * @param glb the greatest lower bound.
       * @param loc the source location.
       */
-    case class BoundedLattice(tpe: TypedAst.Type, bot: TypedAst.Expression, top: TypedAst.Expression, leq: TypedAst.Expression,
-                              lub: TypedAst.Expression, glb: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Definition
+    case class BoundedLattice(tpe: TypedAst.Type,
+                              bot: TypedAst.Expression,
+                              top: TypedAst.Expression,
+                              leq: TypedAst.Expression,
+                              lub: TypedAst.Expression,
+                              glb: TypedAst.Expression,
+                              loc: SourceLocation) extends TypedAst.Definition
 
     /**
       * A typed AST node representing an index definition.
@@ -159,24 +165,30 @@ object TypedAst {
       */
     case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body]) extends TypedAst.Constraint {
 
+      @deprecated("moved to ExecutableAST", "0.1")
       val collections: List[TypedAst.Predicate.Body.Collection] = body collect {
         case p: TypedAst.Predicate.Body.Collection => p
       }
 
+      @deprecated("moved to ExecutableAST", "0.1")
       val loops: List[TypedAst.Predicate.Body.Loop] = body collect {
         case p: TypedAst.Predicate.Body.Loop => p
       }
 
+      @deprecated("moved to ExecutableAST", "0.1")
       val filters: List[TypedAst.Predicate.Body.Function] = body collect {
         case p: TypedAst.Predicate.Body.Function => p
       }
 
+      @deprecated("moved to ExecutableAST", "0.1")
       val disjoint: List[TypedAst.Predicate.Body.NotEqual] = body collect {
         case p: TypedAst.Predicate.Body.NotEqual => p
       }
 
       // TODO: Refactor so this is not part of the typed ast.
+      @deprecated("moved to ExecutableAST", "0.1")
       var elapsedTime: Long = 0
+      @deprecated("moved to ExecutableAST", "0.1")
       var hitcount: Int = 0
 
     }
@@ -190,6 +202,7 @@ object TypedAst {
     /**
       * A collection fact assertions in the program.
       */
+    @deprecated("moved to ExecutableAST", "0.1")
     val assertedFacts: List[TypedAst.Directive.AssertFact] = directives collect {
       case d: TypedAst.Directive.AssertFact => d
     }
@@ -197,6 +210,7 @@ object TypedAst {
     /**
       * A collection of rule assertions in the program.
       */
+    @deprecated("moved to ExecutableAST", "0.1")
     val assertedRules: List[TypedAst.Directive.AssertRule] = directives collect {
       case d: TypedAst.Directive.AssertRule => d
     }
@@ -204,6 +218,7 @@ object TypedAst {
     /**
       * A collection print directives in the program.
       */
+    @deprecated("moved to ExecutableAST", "0.1")
     val prints: List[TypedAst.Directive.Print] = directives collect {
       case d: TypedAst.Directive.Print => d
     }
@@ -318,6 +333,7 @@ object TypedAst {
       */
     case class Tuple(elms: List[TypedAst.Literal], tpe: TypedAst.Type.Tuple, loc: SourceLocation) extends TypedAst.Literal {
       // TODO: Move
+      @deprecated("moved to ExecutableAST", "0.1")
       val asArray: Array[TypedAst.Literal] = elms.toArray
     }
 
@@ -383,6 +399,7 @@ object TypedAst {
       */
     case class Lambda(annotations: Ast.Annotations, args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: TypedAst.Type.Lambda, loc: SourceLocation) extends TypedAst.Expression {
       // TODO: Move
+      @deprecated("moved to ExecutableAST", "0.1")
       val argsAsArray: Array[TypedAst.FormalArg] = args.toArray
     }
 
@@ -396,6 +413,7 @@ object TypedAst {
       */
     case class Apply(exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression {
       // TODO: Move
+      @deprecated("moved to ExecutableAST", "0.1")
       val argsAsArray: Array[TypedAst.Expression] = args.toArray
     }
 
@@ -452,6 +470,7 @@ object TypedAst {
       */
     case class Match(exp: TypedAst.Expression, rules: List[(TypedAst.Pattern, TypedAst.Expression)], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression {
       // TODO: Move
+      @deprecated("moved to ExecutableAST", "0.1")
       val rulesAsArray: Array[(TypedAst.Pattern, TypedAst.Expression)] = rules.toArray
     }
 
@@ -475,6 +494,7 @@ object TypedAst {
       */
     case class Tuple(elms: List[TypedAst.Expression], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression {
       // TODO: Move
+      @deprecated("moved to ExecutableAST", "0.1")
       val asArray: Array[TypedAst.Expression] = elms.toArray
     }
 
@@ -596,6 +616,7 @@ object TypedAst {
       */
     case class Tuple(elms: List[TypedAst.Pattern], tpe: TypedAst.Type.Tuple, loc: SourceLocation) extends TypedAst.Pattern {
       // TODO: Move
+      @deprecated("moved to ExecutableAST", "0.1")
       val asArray: Array[TypedAst.Pattern] = elms.toArray
     }
 
@@ -640,11 +661,13 @@ object TypedAst {
         /**
           * Returns the arity of the predicate.
           */
+        @deprecated("moved to ExecutableAST", "0.1")
         val arity: Int = terms.length
         /**
           * Returns the terms as an array.
           */
         // TODO: Move this into a more appropiate IR.
+        @deprecated("moved to ExecutableAST", "0.1")
         val termsArray: Array[TypedAst.Term.Head] = terms.toArray
       }
 
@@ -685,6 +708,7 @@ object TypedAst {
       /**
         * Returns the set of free variables in the term.
         */
+      // TODO: Move
       def freeVars: Set[String] = this match {
         case TypedAst.Predicate.Body.Collection(_, terms, _, _) => terms.foldLeft(Set.empty[String]) {
           case (xs, t: TypedAst.Term.Body.Wildcard) => xs
@@ -716,15 +740,18 @@ object TypedAst {
         /**
           * Returns the arity of this collection predicate.
           */
+        @deprecated("moved to ExecutableAST", "0.1")
         val arity: Int = terms.length
 
         /**
           * Returns the terms as an array.
           */
         // TODO: Move this into a more appropiate IR.
+        @deprecated("moved to ExecutableAST", "0.1")
         val termsArray: Array[TypedAst.Term.Body] = terms.toArray
 
         // TODO: Move this into a more appropiate IR.
+        @deprecated("moved to ExecutableAST", "0.1")
         val index2var: Array[String] = {
           val r = new Array[String](terms.length)
           var i = 0
@@ -750,6 +777,7 @@ object TypedAst {
         */
       case class Function(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body {
         // TODO: Move
+        @deprecated("moved to ExecutableAST", "0.1")
         val termsAsArray: Array[TypedAst.Term.Body] = terms.toArray
       }
 
@@ -835,6 +863,7 @@ object TypedAst {
         */
       case class Apply(name: Name.Resolved, args: List[TypedAst.Term.Head], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Term.Head {
         // TODO: Move
+        @deprecated("moved to ExecutableAST", "0.1")
         val argsAsArray: Array[TypedAst.Term.Head] = args.toArray
       }
 
@@ -952,7 +981,7 @@ object TypedAst {
       * @param elms the types of the elements.
       */
     case class Tuple(elms: List[TypedAst.Type]) extends TypedAst.Type {
-      // TODO: Move
+      @deprecated("removed", "0.1")
       val asArray: Array[TypedAst.Type] = elms.toArray
     }
 
