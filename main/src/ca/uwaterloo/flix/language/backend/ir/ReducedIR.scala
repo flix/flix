@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.backend.ir
 import ca.uwaterloo.flix.language.ast.{Name, BinaryOperator, SourceLocation, UnaryOperator}
 import ca.uwaterloo.flix.runtime.Value
 
+@deprecated("to be replaced by SimplifiedAST", "0.1")
 sealed trait ReducedIR
 
 object ReducedIR {

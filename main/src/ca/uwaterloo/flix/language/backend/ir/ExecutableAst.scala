@@ -145,12 +145,29 @@ object ExecutableAst {
 
   sealed trait Expression extends ExecutableAst {
     def tpe: Type
-
-    def loc: SourceLocation
   }
 
   object Expression {
 
+    case object Unit extends ExecutableAst.Expression {
+      final val tpe = TypedAst.Type.Unit
+    }
+
+    case object True extends ExecutableAst.Expression {
+      final val tpe = TypedAst.Type.Bool
+    }
+
+    case object False extends ExecutableAst.Expression {
+      final val tpe = TypedAst.Type.Bool
+    }
+
+    case class Int(lit: scala.Int) extends ExecutableAst.Expression {
+      final val tpe = TypedAst.Type.Int
+    }
+
+    case class Str(lit: java.lang.String) extends ExecutableAst.Expression {
+      final val tpe = TypedAst.Type.Str
+    }
 
     case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 

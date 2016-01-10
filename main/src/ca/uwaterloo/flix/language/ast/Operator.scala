@@ -30,6 +30,7 @@ object UnaryOperator {
   /**
     * Bitwise negate.
     */
+  // TODO: Rename
   case object Negate extends UnaryOperator
 
   /**
