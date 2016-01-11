@@ -284,26 +284,31 @@ object Codegen {
             case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
               throw new InternalCompilerError(s"Can't apply $op to type $tpe.")
           }
-
         case o: ComparisonOperator =>
-          // TODO: handle int8/int16/int32/int64
           val condElse = new Label()
           val condEnd = new Label()
-          val cmp = o match {
-            case BinaryOperator.Less => IF_ICMPGE
-            case BinaryOperator.LessEqual => IF_ICMPGT
-            case BinaryOperator.Greater => IF_ICMPLE
-            case BinaryOperator.GreaterEqual => IF_ICMPLT
-            case BinaryOperator.Equal => IF_ICMPNE
-            case BinaryOperator.NotEqual => IF_ICMPEQ
+          val (intOp, longOp) = o match {
+            case BinaryOperator.Less => (IF_ICMPGE, IFGE)
+            case BinaryOperator.LessEqual => (IF_ICMPGT, IFGT)
+            case BinaryOperator.Greater => (IF_ICMPLE, IFLE)
+            case BinaryOperator.GreaterEqual => (IF_ICMPLT, IFLT)
+            case BinaryOperator.Equal => (IF_ICMPNE, IFNE)
+            case BinaryOperator.NotEqual => (IF_ICMPEQ, IFEQ)
           }
-          visitor.visitJumpInsn(cmp, condElse)
+          expr1.tpe match {
+            case Type.Int8 | Type.Int16 | Type.Int32 =>
+              visitor.visitJumpInsn(intOp, condElse)
+            case Type.Int64 =>
+              visitor.visitInsn(LCMP)
+              visitor.visitJumpInsn(longOp, condElse)
+            case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
+              throw new InternalCompilerError(s"Can't apply $op to type $tpe.")
+          }
           visitor.visitInsn(ICONST_1)
           visitor.visitJumpInsn(GOTO, condEnd)
           visitor.visitLabel(condElse)
           visitor.visitInsn(ICONST_0)
           visitor.visitLabel(condEnd)
-
         case o: BitwiseOperator =>
           // Don't need to truncate because there are no higher-order bits.
           // An Int8 has the upper 24 bits set to zero, so when you AND two Int8s, the upper 24 bits are unchanged.
