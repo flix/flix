@@ -1,21 +1,20 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, UnaryOperator}
-import ca.uwaterloo.flix.language.backend.ir.ExecutableAst.Expression
-import ca.uwaterloo.flix.language.backend.ir.ExecutableAst.Expression._
-import ca.uwaterloo.flix.language.backend.ir.{ExecutableAst, ReducedIR}
+import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst.Expression
+import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst.Expression._
 
 object PartialEvaluator {
 
   /**
     * The type of the environment used by the partial evaluator.
     */
-  type Env = Map[Int, ReducedIR.Expression]
+  type Env = Map[Int, Expression]
 
   /**
     * The type of the continuation used by the partial evaluator.
     */
-  type Cont = ExecutableAst.Expression => ExecutableAst.Expression
+  type Cont = Expression => Expression
 
   /**
     * Partially evaluates the given expression `exp0` under the given environment `env0`.
@@ -91,6 +90,25 @@ object PartialEvaluator {
           })
         })
     }
+
+    /*
+      * If-then-else Expressions.
+      */
+    case IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+      // Partially evaluate exp1.
+      eval(exp1, env0, {
+        // Case 1: The condition is true. The result is exp2.
+        case True => eval(exp2, env0, k)
+        // Case 2: The condition is false. The result is exp3.
+        case False => eval(exp3, env0, k)
+        // Case 3: The condition is residual.
+        // Partially evaluate exp2 and exp3 and (re-)construct the residual.
+        case r1 => eval(exp2, env0, {
+          case r2 => eval(exp3, env0, {
+            case r3 => k(IfThenElse(r1, r2, r3, tpe, loc))
+          })
+        })
+      })
 
   }
 

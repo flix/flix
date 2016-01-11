@@ -79,19 +79,19 @@ object SimplifiedAst {
 
   object Expression {
 
-    case class Unit(loc: SourceLocation) extends SimplifiedAst.Expression {
+    case object Unit extends SimplifiedAst.Expression {
       final val tpe = TypedAst.Type.Unit
     }
 
-    case class True(loc: SourceLocation) extends SimplifiedAst.Expression {
+    case object True extends SimplifiedAst.Expression {
       final val tpe = TypedAst.Type.Bool
     }
 
-    case class False(loc: SourceLocation) extends SimplifiedAst.Expression {
+    case object False extends SimplifiedAst.Expression {
       final val tpe = TypedAst.Type.Bool
     }
 
-    case class Int(lit: scala.Int, loc: SourceLocation) extends SimplifiedAst.Expression {
+    case class Int(lit: scala.Int) extends SimplifiedAst.Expression {
       final val tpe = TypedAst.Type.Int
     }
 
