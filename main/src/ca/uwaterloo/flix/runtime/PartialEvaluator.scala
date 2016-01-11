@@ -54,45 +54,43 @@ object PartialEvaluator {
     /*
       * Binary Expressions.
       */
-    case Binary(op, exp1, exp2, _, _) => op match {
+    case Binary(op, exp1, exp2, tpe, loc) => op match {
       case BinaryOperator.Or =>
-        ???
+        // Partially evaluate exp1.
+        eval(exp1, env0, {
+          // Case 1: exp1 is true. The result is true.
+          case True => k(True)
+          // Case 2: exp1 is false. The result is exp2.
+          case False => eval(exp2, env0, k)
+          // Case 3: exp1 is residual. Partially evaluate exp2.
+          case r1 => eval(exp2, env0, {
+            // Case 3.1: exp2 is true. The result is true.
+            case True => k(True)
+            // Case 3.2: exp2 is false. The result is the exp1 (i.e. its residual).
+            case False => k(r1)
+            // Case 3.3: exp2 is also residual. The result is residual.
+            case r2 => k(Binary(BinaryOperator.Or, r1, r2, tpe, loc))
+          })
+        })
 
       case BinaryOperator.And =>
-        ???
+        // Partially evaluate exp1.
+        eval(exp1, env0, {
+          // Case 1: exp1 is true. The result is exp2.
+          case True => eval(exp2, env0, k)
+          // Case 2: exp1 is false. The result is false.
+          case False => k(False)
+          // Case 3: exp1 is residual. Partially evaluate exp2.
+          case r1 => eval(exp2, env0, {
+            // Case 3.1: exp2 is true. The result is exp1 (i.e. its residual).
+            case True => k(r1)
+            // Case 3.2: exp2 is false. The result is false.
+            case False => k(False)
+            // Case 3.3: exp3 is also residual. The result is residual.
+            case r2 => k(Binary(BinaryOperator.And, r1, r2, tpe, loc))
+          })
+        })
     }
-//
-//
-//    /*
-//      * If-then-else Expressions.
-//      */
-//
-//    case exp@Binary(BinaryOperator.Or, exp1, exp2, _, _) =>
-//      // partially evaluate exp1
-//      eval(exp1, env0, e1 => e1 match {
-//        // Case 1: exp1 is true. The result is true.
-//        case Lit(Literal.Bool(true, loc), tpe, _) => k(True(loc))
-//        // Case 2: exp1 is false. The result is exp2.
-//        case Lit(Literal.Bool(false, _), _, _) => eval(exp2, env0, k)
-//        // Case 3: exp1 is residual. Partially evaluate exp2.
-//        case _ => eval(exp2, env0, e2 => e2 match {
-//          // Case 3.1: exp2 is true. The result is true.
-//          case Lit(Literal.Bool(true, loc), tpe, _) => k(Lit(Literal.Bool(lit = true, loc), tpe, loc))
-//          // Case 3.2: exp2 is false or residual. Reconstruct the term. // TODO:  This seems incorrect
-//          case _ => exp.copy(exp1 = e1, exp2 = e2)
-//        })
-//      })
-//
-//    case exp@Binary(BinaryOperator.And, exp1, exp2, _, _) =>
-//      // partially evaluate exp1
-//      eval(exp1, env0, e1 => e1 match {
-//        // Case 1: exp1 is false. The result is false.
-//        case False(loc) => k(Lit(Literal.Bool(lit = false, loc), tpe, loc))
-//        // Case 2: exp1 is true. The result is exp2.
-//        case True(loc) => eval(exp2, env0, k)
-//        // Case 3: exp1 is residual. Partially evaluate exp2.
-//        case _ => ???
-//      })
 
   }
 
