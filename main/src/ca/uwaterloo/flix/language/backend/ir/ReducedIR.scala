@@ -41,6 +41,7 @@ object ReducedIR {
     val offset: Int
     val v: ReducedIR.Expression
     val mask: Long
+    val targetMask = ~(mask << offset)
     val tpe = Type.Int64
   }
 
@@ -100,7 +101,7 @@ object ReducedIR {
       * @param v the value to be stored.
      */
     case class StoreBool(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.StoreExpression {
-      val mask = ~(0x1L << offset)
+      val mask = 0x1L
     }
 
     /**
@@ -111,7 +112,7 @@ object ReducedIR {
       * @param v the value to be stored.
       */
     case class StoreInt8(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.StoreExpression {
-      val mask = ~(0xFFL << offset)
+      val mask = 0xFFL
     }
 
     /**
@@ -122,7 +123,7 @@ object ReducedIR {
       * @param v the value to be stored.
       */
     case class StoreInt16(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.StoreExpression {
-      val mask = ~(0xFFFFL << offset)
+      val mask = 0xFFFFL
     }
 
     /**
@@ -133,7 +134,7 @@ object ReducedIR {
       * @param v the value to be stored.
       */
     case class StoreInt32(e: ReducedIR.Expression, offset: Int, v: ReducedIR.Expression) extends ReducedIR.StoreExpression {
-      val mask = ~(0xFFFFFFFFL << offset)
+      val mask = 0xFFFFFFFFL
     }
 
     /**
