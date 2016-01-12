@@ -256,9 +256,14 @@ object ParsedAst {
 
   }
 
+  // TODO: Introduce type classes.
+  // TODO: Introduce type bounds.
+  // TODO: Introduce extern.
+
   /**
    * A common super-type for AST node that represents literals.
    */
+  // TODO: Why have literals?
   sealed trait Literal {
     /**
      * Returns the source location of `this` literal.
