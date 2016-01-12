@@ -14,12 +14,13 @@ import ca.uwaterloo.flix.util.AsciiTable
  */
 case class Model(root: TypedAst.Root,
                  constants: Map[Name.Resolved, Value],
-                 relations: Map[Name.Resolved, Iterator[List[Value]]],
-                 lattices: Map[Name.Resolved, Iterator[(List[Value], List[Value])]]) {
+                 relations: Map[Name.Resolved, Iterator[List[Value]]], // TODO: Replace with Iterable.
+                 lattices: Map[Name.Resolved, Iterator[(List[Value], List[Value])]]) { // TODO: Replace with Iterable.
 
   /**
    * Evaluates all print directives in the program.
    */
+  // TODO: Move somewhere else.
   def print(): Unit = {
     for (directive <- root.directives.prints) {
       print(directive)
@@ -29,6 +30,7 @@ case class Model(root: TypedAst.Root,
   /**
    * Evaluates the given print `directive`.
    */
+  // TODO: Move somewhere else.
   private def print(directive: Directive.Print): Unit = {
     val collection = root.collections(directive.name)
 
