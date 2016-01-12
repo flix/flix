@@ -249,6 +249,7 @@ object ParsedAst {
      * @param name the name of the relation.
      * @param sp2 the position of the last character in the directive.
      */
+    // TODO: replace by the shell and possibility to print with a flag.
     case class Print(sp1: SourcePosition, name: Name.Unresolved, sp2: SourcePosition) extends Directive {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }

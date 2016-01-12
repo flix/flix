@@ -7,8 +7,10 @@ package object phase {
   class GenSym() {
     private var number: Int = 0
 
+    def fresh(): Int = ???
+
     // TODO: Maintain map from s to Int
-    def apply(s: Name.Ident): Int = {
+    def of(s: Name.Ident): Int = {
       number = number + 1
       number
     }
