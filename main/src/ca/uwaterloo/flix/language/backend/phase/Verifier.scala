@@ -375,61 +375,64 @@ object Verifier {
 
   // TODO: Might also be worth it to emit the constraints?
 
-  /**
-    * Installation Steps:
-    *
-    * Ensure that you have installed:
-    *
-    * Visual C++ Redistributable for Visual Studio 2012 Update 4
-    *
-    * which exists in 32 bit and 64bit platforms.
-    *
-    */
-
-  def main(args: Array[String]): Unit = {
-
-    val msg =
-      """###############################################################################
-        |###                                                                         ###
-        |### You are running Flix with verification enabled (--verify).              ###
-        |### Flix uses the Microsoft Z3 SMT solver to verify correctness.            ###
-        |### For this to work, you must have the correct Z3 libraries installed.     ###
-        |###                                                                         ###
-        |### On Windows:                                                             ###
-        |###   1. Unpack the z3 bundle.                                              ###
-        |###   2. Ensure that java.library.path points to that path, i.e. run        ###
-        |###      java -Djava.library.path=... -jar flix.jar                         ###
-        |###   3. Ensure that you have the                                           ###
-        |###      'Microsoft Visual Studio Redistributable 2012 Package' installed.  ###
-        |###                                                                         ###
-        |### NB: You must have the 64 bit version of Java, Z3 and the VS package.    ###
-        |###                                                                         ###
-        |###############################################################################
-      """.stripMargin
-
-    println(msg)
-
-    val path = Paths.get(System.getProperty("java.library.path"))
-
-    if (!Files.exists(path) || !Files.isDirectory(path)) {
-      throw new RuntimeException("")
+  def mkContext(): Context = {
+    // check that the path property is set.
+    val prop = System.getProperty("java.library.path")
+    if (prop == null) {
+      Console.println(errorMessage)
+      Console.println()
+      Console.println("> java.library.path not set.")
+      System.exit(1)
     }
 
+    // check that the path exists.
+    val path = Paths.get(prop)
+    if (!Files.isDirectory(path) || !Files.isReadable(path)) {
+      Console.println(errorMessage)
+      Console.println()
+      Console.println("> java.library.path is not a readable directory.")
+      System.exit(1)
+    }
 
-    System.err.println("java.library.path = " + System.getProperty("java.library.path"));
-    System.err.println("trying to load lib z3java");
-
+    // attempt to load the native library.
     try {
-      System.err.println("Trying to load lib libz3java");
-      System.loadLibrary("libz3");
+      System.loadLibrary("libz3")
     } catch {
-      case ex2: UnsatisfiedLinkError => ex2.printStackTrace();
+      case e: UnsatisfiedLinkError =>
+        Console.println(errorMessage)
+        Console.println()
+        Console.println("> Unable to load the library. Stack Trace reproduced below: ")
+        e.printStackTrace()
+        System.exit(1)
     }
 
     val ctx = new Context()
     println(ctx)
-    ctx.dispose()
+
+    ctx
   }
 
+  private def errorMessage: String =
+    """###############################################################################
+      |###                                                                         ###
+      |### You are running Flix with verification enabled (--verify).              ###
+      |### Flix uses the Microsoft Z3 SMT solver to verify correctness.            ###
+      |### For this to work, you must have the correct Z3 libraries installed.     ###
+      |###                                                                         ###
+      |### On Windows:                                                             ###
+      |###   1. Unpack the z3 bundle.                                              ###
+      |###   2. Ensure that java.library.path points to that path, i.e. run        ###
+      |###      java -Djava.library.path=... -jar flix.jar                         ###
+      |###   3. Ensure that you have the                                           ###
+      |###      'Microsoft Visual Studio Redistributable 2012 Package' installed.  ###
+      |###                                                                         ###
+      |### NB: You must have the 64 bit version of Java, Z3 and the VS package.    ###
+      |###                                                                         ###
+      |###############################################################################
+    """.stripMargin
 
+  // TODO: remove
+  def main(args: Array[String]): Unit = {
+    mkContext()
+  }
 }
