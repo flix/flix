@@ -188,11 +188,10 @@ object Verifier {
 
   }
 
-
   /**
     * Returns all the verification conditions required to ensure the safety of the given AST `root`.
     */
-  def verificationConditions(root: SimplifiedAst.Root): List[Property] = {
+  def properties(root: SimplifiedAst.Root): List[Property] = {
 
     val partialOrderProperties = lattices(root) flatMap {
       case l => List(
@@ -258,11 +257,21 @@ object Verifier {
     ∨(¬(e1), e2)
 
   /**
+    * Returns the logical bi-implication of the two expressions `e1` and `e2`.
+    */
+  def ↔(e1: Expression, e2: Expression): Expression =
+    ∧(→(e1, e2), →(e2, e1))
+
+  /**
     * Returns an equality test of the two expressions `e1` and `e2`.
     */
   def ≡(e1: Expression, e2: Expression): Expression =
     Binary(BinaryOperator.Equal, e1, e2, Type.Bool, SourceLocation.Unknown)
 
+  /**
+    * Returns an object with convenience opperations on a lattice.
+    */
+  def latticeOps(l: Lattice): LatticeOps = new LatticeOps(l)
 
   class LatticeOps(lattice: Lattice) {
     /**
@@ -288,14 +297,25 @@ object Verifier {
     def ⊓(e1: Expression, e2: Expression): Expression =
       Apply(lattice.glb, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
-    // ▽, △
+    /**
+      * Returns the widening of the two expressions `e1` and `e2`.
+      */
+    def ▽(e1: Expression, e2: Expression): Expression =
+      throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+
+    /**
+      * Returns the narrowing of the two expressions `e1` and `e2`.
+      */
+    def △(e1: Expression, e2: Expression): Expression =
+      throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
   }
 
-  def latticeOps(l: Lattice): LatticeOps = new LatticeOps(l)
-
-
+  /**
+    * Returns all lattice definitions in the given AST `root`.
+    */
   def lattices(root: SimplifiedAst.Root): List[SimplifiedAst.Definition.Lattice] =
     root.lattices.values.toList
+
 
   def lambdas(root: SimplifiedAst.Root): List[SimplifiedAst.Expression.Lambda] = ???
 
