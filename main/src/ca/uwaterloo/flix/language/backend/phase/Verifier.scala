@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.backend.phase
 import ca.uwaterloo.flix.Flix.FlixError
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
-import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, TypedAst}
 import ca.uwaterloo.flix.runtime.Value
 
 object Verifier {
@@ -13,50 +13,41 @@ object Verifier {
   object Property {
 
     /**
-      * Properties of Binary Operators.
+      * Associativity.
       */
-    object BinaryOperator {
+    case class Associativity(op: TypedAst.Expression.Lambda) extends Property {
+      val (f, x, y, z) = (op.lam, 'x.ofType(op.tpe), 'y.ofType(op.tpe), 'z.ofType(op.tpe))
 
-      /**
-        * Associativity.
-        */
-      case class Associativity(op: TypedAst.Expression) extends Property {
-        val (f, x, y, z) = (op.lam, 'x.ofType(op.tpe), 'y.ofType(op.tpe), 'z.ofType(op.tpe))
-
-        val property = ∀(x, y, z)(f(f(x, y), z) ≡ f(x, f(y, z)))
-      }
-
-      /**
-        * Commutativity.
-        */
-      case class Commutativity(op: TypedAst.Expression) extends Property {
-        val (f, x, y) = (op.lam, 'x.ofType(op.tpe), 'y.ofType(op.tpe))
-
-        val property = ∀(x, y)(f(x, y) ≡ f(y, x))
-      }
-
-
-      //
-      //  /**
-      //   * Monotone: ?x1, x2. x1 ? x2 ? f(x1) ? f(x2).
-      //   */
-      //  def monotone1(f: Term.Abs, leq: Term.Abs): Term.Abs =
-      //    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ,
-      //      leq.call('x1, 'x2) ==> leq.call(f.call('x1), f.call('x2))))
-      //
-      //  /**
-      //   * Monotone: ?x1, x2, y1, y2. x1 ? x2 ? y1 ? y2 ? f(x1, y1) ? f(x2, y2).
-      //   */
-      //  def monotone2(f: Term.Abs, leq: Term.Abs): Term.Abs =
-      //    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ, Term.Abs('y1, leq.typ, Term.Abs('y2, leq.typ,
-      //      (leq.call('x1, 'x2) && leq.call('y1, 'y2)) ==> leq.call(f.call('x1, 'y1), f.call('x2, 'y2))))))
-
+      val property = ∀(x, y, z)(f(f(x, y), z) ≡ f(x, f(y, z)))
     }
 
-    object Function {
-      // TODO: Strictness.
-      // TODO: Monotonicty
+    /**
+      * Commutativity.
+      */
+    case class Commutativity(op: TypedAst.Expression.Lambda) extends Property {
+      val (f, x, y) = (op.lam, 'x.ofType(op.tpe), 'y.ofType(op.tpe))
+
+      val property = ∀(x, y)(f(x, y) ≡ f(y, x))
     }
+
+
+    //
+    //  /**
+    //   * Monotone: ?x1, x2. x1 ? x2 ? f(x1) ? f(x2).
+    //   */
+    //  def monotone1(f: Term.Abs, leq: Term.Abs): Term.Abs =
+    //    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ,
+    //      leq.call('x1, 'x2) ==> leq.call(f.call('x1), f.call('x2))))
+    //
+    //  /**
+    //   * Monotone: ?x1, x2, y1, y2. x1 ? x2 ? y1 ? y2 ? f(x1, y1) ? f(x2, y2).
+    //   */
+    //  def monotone2(f: Term.Abs, leq: Term.Abs): Term.Abs =
+    //    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ, Term.Abs('y1, leq.typ, Term.Abs('y2, leq.typ,
+    //      (leq.call('x1, 'x2) && leq.call('y1, 'y2)) ==> leq.call(f.call('x1, 'y1), f.call('x2, 'y2))))))
+
+    // TODO: Strictness.
+    // TODO: Monotonicty
 
     /**
       * Properties of Partial Orders.
@@ -221,12 +212,16 @@ object Verifier {
     def ofType(tpe: TypedAst.Type): Formula.Var = ???
   }
 
-  implicit class RichExp(val thiz: TypedAst.Expression) {
+  implicit class RichExp(val e1: TypedAst.Expression) {
     def ⊑(that: Formula): Formula = ???
 
     def lam: Formula.Lambda = ???
 
     def value: Formula = ???
+
+
+    def ∧(e2: TypedAst.Expression): TypedAst.Expression =
+      TypedAst.Expression.Binary(BinaryOperator.And, e1, e2, TypedAst.Type.Bool, SourceLocation.Unknown)
   }
 
   implicit class RichFormula(val thiz: Formula) {
@@ -263,8 +258,8 @@ object Verifier {
     val functionProperties = lambdas(root) flatMap {
       case f if f.annotations.isUnchecked => Nil
       case f => f.annotations.annotations.collect {
-        case Annotation.Associative(loc) => Property.BinaryOperator.Associativity(f)
-        case Annotation.Commutative(loc) => Property.BinaryOperator.Commutativity(f)
+        case Annotation.Associative(loc) => Property.Associativity(f)
+        case Annotation.Commutative(loc) => Property.Commutativity(f)
         case Annotation.Strict(loc) => ???
       }
     }
