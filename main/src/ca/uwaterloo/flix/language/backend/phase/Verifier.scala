@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.backend.phase
 
+import java.nio.file.{Files, Paths, Path}
+
 import ca.uwaterloo.flix.Flix.FlixError
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
@@ -10,6 +12,7 @@ import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst.Definition._
 import ca.uwaterloo.flix.runtime.{PartialEvaluator, Value}
+import com.microsoft.z3.Context
 
 object Verifier {
 
@@ -215,7 +218,7 @@ object Verifier {
       case Expression.True => // success!
       case Expression.False => // failure!
       case residual =>
-        // Case 3: Indeterminate. Must extract SMT verification condition.
+      // Case 3: Indeterminate. Must extract SMT verification condition.
 
     }
 
@@ -257,7 +260,7 @@ object Verifier {
 
 
   /////////////////////////////////////////////////////////////////////////////
-  // Helper Functions                                                        //
+  // Property DSL                                                            //
   /////////////////////////////////////////////////////////////////////////////
   /**
     * Returns an expression universally quantified by the given variables.
@@ -365,5 +368,47 @@ object Verifier {
   // TODO: Should also find inner lambdas.
   def lambdas(root: SimplifiedAst.Root): List[Expression.Lambda] =
     root.constants.values.map(_.exp.asInstanceOf[Expression.Lambda]).toList // TODO: Avoid cast?
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Microsoft Z3 Interface                                                  //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: Might also be worth it to emit the constraints?
+
+  /**
+    * Installation Steps:
+    *
+    * Ensure that you have installed:
+    *
+    * Visual C++ Redistributable for Visual Studio 2012 Update 4
+    *
+    * which exists in 32 bit and 64bit platforms.
+    *
+    */
+
+  def main(args: Array[String]): Unit = {
+
+    val path = Paths.get(System.getProperty("java.library.path"))
+
+    if (!Files.exists(path) || !Files.isDirectory(path)) {
+      throw new RuntimeException("")
+    }
+
+
+    System.err.println("java.library.path = " + System.getProperty("java.library.path"));
+    System.err.println("trying to load lib z3java");
+
+    try {
+      System.err.println("Trying to load lib libz3java");
+      System.loadLibrary("libz3");
+    } catch {
+      case ex2: UnsatisfiedLinkError => ex2.printStackTrace();
+    }
+
+     val ctx = new Context()
+      println(ctx)
+     ctx.dispose()
+  }
+
 
 }
