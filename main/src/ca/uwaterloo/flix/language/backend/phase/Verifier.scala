@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.backend.phase
 
 import ca.uwaterloo.flix.Flix.FlixError
+import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 import ca.uwaterloo.flix.runtime.Value
@@ -10,23 +11,6 @@ object Verifier {
   sealed trait Property
 
   object Property {
-
-    /**
-      * Properties of Unary Operators.
-      */
-    object UnaryOperator {
-
-      /**
-        * Strictness of a unary function.
-        */
-      case class Strictness(op: TypedAst.Expression.Lambda, lat: TypedAst.Definition.BoundedLattice) extends Property {
-        val (f, x) = (op.lam, 'x.ofType(op.args.head.tpe))
-
-        val property = f(lat.bot.value) ≡ ???
-      }
-
-      // TODO: Monotone
-    }
 
     /**
       * Properties of Binary Operators.
@@ -51,7 +35,7 @@ object Verifier {
         val property = ∀(x, y)(f(x, y) ≡ f(y, x))
       }
 
-      // TODO: Strictness.
+
       //
       //  /**
       //   * Monotone: ?x1, x2. x1 ? x2 ? f(x1) ? f(x2).
@@ -67,6 +51,11 @@ object Verifier {
       //    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ, Term.Abs('y1, leq.typ, Term.Abs('y2, leq.typ,
       //      (leq.call('x1, 'x2) && leq.call('y1, 'y2)) ==> leq.call(f.call('x1, 'y1), f.call('x2, 'y2))))))
 
+    }
+
+    object Function {
+      // TODO: Strictness.
+      // TODO: Monotonicty
     }
 
     /**
@@ -128,7 +117,7 @@ object Verifier {
     object JoinSemiLattice {
 
       /**
-        * The least element must be bottom.
+        * The bottom element must be the least element.
         */
       case class LeastElement(lattice: TypedAst.Definition.BoundedLattice) extends Property {
         val x = 'x.ofType(lattice.tpe)
@@ -149,11 +138,7 @@ object Verifier {
       //  /**
       //   * Least Upper Bound: ?x, y, z. x ? z ? y ? z ? x ? y ? z.
       //   */
-      //  def leastUpperBound(leq: Term.Abs, lub: Term.Abs): Term.Abs =
-      //    Term.Abs('x, leq.typ, Term.Abs('y, leq.typ, Term.Abs('z, leq.typ,
-      //      (leq.call('x, 'z) && leq.call('y, 'z)) ==> leq.call(lub.call('x, 'y), 'z))))
-      //
-      //
+
 
     }
 
@@ -163,45 +148,46 @@ object Verifier {
 
   object VerifierError {
 
+    implicit val consoleCtx = Compiler.ConsoleCtx
+
     /**
       * An error raised to indicate that a partial order is not reflexive.
       *
+      * @param lat the lattice defining the partial order.
       * @param prop the violated property.
       * @param elm the element that violates the property.
-      * @param loc the location of the partial order `leq`.
+      * @param loc the location of the definition of the partial order.
       */
-    case class NonReflexivity(lat: TypedAst.Definition.BoundedLattice, prop: Property, elm: Value, loc: SourceLocation) extends VerifierError {
-      val format = "" // TODO
-      //      val format =
-      //        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-      //           |
-      //            |${consoleCtx.red(s">> Duplicate definition of the variable '$name'.")}
-      //           |
-      //            |First definition was here:
-      //           |${loc1.underline}
-      //           |Second definition was here:
-      //           |${loc2.underline}
-      //           |Tip: Consider renaming or removing one of the aliases.
-      //         """.stripMargin
-
-      val format2 = List(
-        Header("VERIFICATION ERROR", loc.source.format),
-        BlankLine,
-        Line(Red(s">> Reflexivity violated for $lat.")),
-        BlankLine,
-        Line(s"The element $elm does not satisfy x <= x."), // TODO: Consider custom formatter? How to color elm red?
-        BlankLine,
-        Line("The partial order was defined here:"),
-        Location(loc)
-      )
+    case class ReflexivityError(lat: TypedAst.Definition.BoundedLattice, prop: Property, elm: Value, loc: SourceLocation) extends VerifierError {
+      val format =
+        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> The partial order is not reflexive.")}
+           |
+           |The partial order was defined here:
+           |${loc.underline}
+           """.stripMargin
     }
+
+    /**
+      * An error raised to indicate that a partial order is not anti-symmetric.
+      *
+      * @param lat the lattice defining the partial order.
+      * @param prop the violated property.
+      * @param elm1 the first element that violates the property.
+      * @param elm2 the second element that violates the property.
+      * @param loc the location of the definition of the partial order.
+      */
+    case class AntiSymmetryError(lat: TypedAst.Definition.BoundedLattice, prop: Property, elm1: Value, elm2: Value, loc: SourceLocation) extends VerifierError {
+      val format = s"AntiSymmetry violated for $lat."
+    }
+
 
   }
 
-
+  // TODO: Get rid of this and rely soly on Exp?
   sealed trait Formula {
     // TODO: override toString
-
   }
 
   object Formula {
@@ -258,18 +244,7 @@ object Verifier {
   }
 
 
-  // TODO
-  case class Header(s: String, s2: String)
-
-  case object BlankLine
-
-  case class Line(s: Any)
-
-  case class Red(s: String)
-
-  case class Location(s: Any)
-
-  def doStuff(root: TypedAst.Root): Unit = {
+  def doStuff(root: TypedAst.Root): List[Property] = {
 
     val partialOrderProperties = lattices(root) flatMap {
       case l => List(
@@ -290,21 +265,17 @@ object Verifier {
       case f => f.annotations.annotations.collect {
         case Annotation.Associative(loc) => Property.BinaryOperator.Associativity(f)
         case Annotation.Commutative(loc) => Property.BinaryOperator.Commutativity(f)
-        case Annotation.Strict(loc) =>
-          if (f.args.length == 1)
-            Property.UnaryOperator.Strictness(f, ???)
-          else ???
+        case Annotation.Strict(loc) => ???
       }
     }
 
-    val properties = partialOrderProperties ++ functionProperties
-
+    val properties = partialOrderProperties ++ latticeProperties ++ functionProperties
     properties.foreach(p => Console.println(p.toString))
+    properties
   }
 
   def lattices(root: TypedAst.Root): List[TypedAst.Definition.BoundedLattice] = ???
 
   def lambdas(root: TypedAst.Root): List[TypedAst.Expression.Lambda] = ???
-
 
 }
