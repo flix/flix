@@ -388,6 +388,27 @@ object Verifier {
 
   def main(args: Array[String]): Unit = {
 
+    val msg =
+      """###############################################################################
+        |###                                                                         ###
+        |### You are running Flix with verification enabled (--verify).              ###
+        |### Flix uses the Microsoft Z3 SMT solver to verify correctness.            ###
+        |### For this to work, you must have the correct Z3 libraries installed.     ###
+        |###                                                                         ###
+        |### On Windows:                                                             ###
+        |###   1. Unpack the z3 bundle.                                              ###
+        |###   2. Ensure that java.library.path points to that path, i.e. run        ###
+        |###      java -Djava.library.path=... -jar flix.jar                         ###
+        |###   3. Ensure that you have the                                           ###
+        |###      'Microsoft Visual Studio Redistributable 2012 Package' installed.  ###
+        |###                                                                         ###
+        |### NB: You must have the 64 bit version of Java, Z3 and the VS package.    ###
+        |###                                                                         ###
+        |###############################################################################
+      """.stripMargin
+
+    println(msg)
+
     val path = Paths.get(System.getProperty("java.library.path"))
 
     if (!Files.exists(path) || !Files.isDirectory(path)) {
@@ -405,9 +426,9 @@ object Verifier {
       case ex2: UnsatisfiedLinkError => ex2.printStackTrace();
     }
 
-     val ctx = new Context()
-      println(ctx)
-     ctx.dispose()
+    val ctx = new Context()
+    println(ctx)
+    ctx.dispose()
   }
 
 
