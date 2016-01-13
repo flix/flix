@@ -3,13 +3,13 @@ package ca.uwaterloo.flix.language.backend.phase
 import ca.uwaterloo.flix.Flix.FlixError
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
-import ca.uwaterloo.flix.language.ast.{UnaryOperator, BinaryOperator, SourceLocation}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
 import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst
 import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst.Definition._
-import ca.uwaterloo.flix.runtime.Value
+import ca.uwaterloo.flix.runtime.{PartialEvaluator, Value}
 
 object Verifier {
 
@@ -63,12 +63,14 @@ object Verifier {
         * Reflexivity.
         */
       case class Reflexivity(lattice: Lattice) extends Property {
+        val ops = latticeOps(lattice)
+
+        import ops._
+
         val property = {
-          val ops = latticeOps(lattice)
+          val x = mkVar("x")
 
-          val x = 'x.ofType(lattice.tpe)
-
-          // ∀(x)(⊑(x, x))
+          ∀(x)(⊑(x, x))
         }
       }
 
@@ -76,16 +78,22 @@ object Verifier {
         * Anti-symmetry.
         */
       case class AntiSymmetry(lattice: Lattice) extends Property {
-        val (x, y) = ('x.ofType(lattice.tpe), 'y.ofType(lattice.tpe))
+        val ops = latticeOps(lattice)
 
-        // val property = ∀(x, y)((x ⊑ y) ∧ (y ⊑ x)) → (x ≡ y)
+        import ops._
+
+        val property = {
+          val (x, y) = (mkVar("x"), mkVar("y"))
+
+          ∀(x, y)(→(∧(⊑(x, y), ⊑(y, x)), ≡(x, y)))
+        }
       }
 
       /**
         * Transitivity.
         */
       case class Transitivity(lattice: Lattice) extends Property {
-        val (x, y, z) = ('x.ofType(lattice.tpe), 'y.ofType(lattice.tpe), 'z.ofType(lattice.tpe))
+        //  val (x, y, z) = ('x.ofType(lattice.tpe), 'y.ofType(lattice.tpe), 'z.ofType(lattice.tpe))
 
         //   val property = ∀(x, y, z)(((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z))
       }
@@ -132,7 +140,7 @@ object Verifier {
         * The lub must be an upper bound.
         */
       case class UpperBound(lattice: Lattice) extends Property {
-        val (x, y) = ('x.ofType(lattice.tpe), 'y.ofType(lattice.tpe))
+        //  val (x, y) = ('x.ofType(lattice.tpe), 'y.ofType(lattice.tpe))
 
         // val property = ∀(x, y)((x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y)))
       }
@@ -188,10 +196,36 @@ object Verifier {
 
   }
 
+  // TODO: def check.
+  def checkAll(root: SimplifiedAst.Root): List[VerifierError] = {
+
+    val properties = collectProperties(root)
+
+    properties map {
+      case property => checkProperty(property)
+    }
+  }
+
+  def checkProperty(property: Property): VerifierError = {
+
+    // property.exp
+
+
+    PartialEvaluator.eval(???, Map.empty, identity) match {
+      case Expression.True => // success!
+      case Expression.False => // failure!
+      case residual =>
+        // Case 3: Indeterminate. Must extract SMT verification condition.
+
+    }
+
+    ???
+  }
+
   /**
     * Returns all the verification conditions required to ensure the safety of the given AST `root`.
     */
-  def properties(root: SimplifiedAst.Root): List[Property] = {
+  def collectProperties(root: SimplifiedAst.Root): List[Property] = {
 
     val partialOrderProperties = lattices(root) flatMap {
       case l => List(
@@ -225,12 +259,14 @@ object Verifier {
   /////////////////////////////////////////////////////////////////////////////
   // Helper Functions                                                        //
   /////////////////////////////////////////////////////////////////////////////
-
-  implicit class RichSymbol(val s: Symbol) {
-    def ofType(t: Type): Expression = ???
-  }
-
-  def ∀(x: Expression*)(f: Expression): Expression = ???
+  /**
+    * Returns an expression universally quantified by the given variables.
+    *
+    * We represent such an expression by sequence of lambda functions.
+    */
+  // TODO: Alternatively introduce a special constraint construct?
+  // Probably need this to report errors.
+  def ∀(x: Expression.Var*)(f: Expression): Expression.Lambda = ???
 
   /**
     * Returns the logical negation of the expression `e`.
@@ -269,11 +305,18 @@ object Verifier {
     Binary(BinaryOperator.Equal, e1, e2, Type.Bool, SourceLocation.Unknown)
 
   /**
-    * Returns an object with convenience opperations on a lattice.
+    * Returns an object with convenience operations on a lattice.
     */
   def latticeOps(l: Lattice): LatticeOps = new LatticeOps(l)
 
   class LatticeOps(lattice: Lattice) {
+    /**
+      * Returns a variable expression of the given name `s`.
+      */
+    def mkVar(s: String): Expression.Var = {
+      Var(Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown), lattice.tpe, SourceLocation.Unknown)
+    }
+
     /**
       * Returns the bottom element.
       */
@@ -313,10 +356,14 @@ object Verifier {
   /**
     * Returns all lattice definitions in the given AST `root`.
     */
-  def lattices(root: SimplifiedAst.Root): List[SimplifiedAst.Definition.Lattice] =
+  def lattices(root: SimplifiedAst.Root): List[Lattice] =
     root.lattices.values.toList
 
-
-  def lambdas(root: SimplifiedAst.Root): List[SimplifiedAst.Expression.Lambda] = ???
+  /**
+    * Returns all lambdas in the program.
+    */
+  // TODO: Should also find inner lambdas.
+  def lambdas(root: SimplifiedAst.Root): List[Expression.Lambda] =
+    root.constants.values.map(_.exp.asInstanceOf[Expression.Lambda]).toList // TODO: Avoid cast?
 
 }
