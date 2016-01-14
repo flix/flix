@@ -13,7 +13,7 @@ import ca.uwaterloo.flix.runtime.{PartialEvaluator, Value}
 
 import java.nio.file.{Files, Paths}
 
-import com.microsoft.z3.{Model, BoolExpr, Status, Context}
+import com.microsoft.z3._
 
 object Verifier {
 
@@ -376,8 +376,19 @@ object Verifier {
   // Microsoft Z3 Interface                                                  //
   /////////////////////////////////////////////////////////////////////////////
 
+  /**
+    * Translates the given expression `e` to a Z3 expression.
+    */
+  def translate(e: Expression, ctx: Context): Expr = e match {
+    case True => ctx.mkBool(true)
+    case False => ctx.mkBool(false)
+
+    //case Unary()
+
+  }
+
   // TODO: Might also be worth it to emit the constraints?
-  def mkContext(): Context = {
+  def withContext[A](f: Context => A): A = {
     // check that the path property is set.
     val prop = System.getProperty("java.library.path")
     if (prop == null) {
@@ -409,9 +420,9 @@ object Verifier {
     }
 
     val ctx = new Context()
-    println(ctx)
-
-    ctx
+    val r = f(ctx)
+    ctx.dispose()
+    r
   }
 
   private def errorMessage: String =
@@ -435,60 +446,31 @@ object Verifier {
 
   // TODO: remove
   def main(args: Array[String]): Unit = {
-    val ctx = mkContext()
+    val ctx = withContext(ctx => {
 
-    val x = ctx.mkIntConst("x")
-    val y = ctx.mkIntConst("y")
+      val x = ctx.mkIntConst("x")
+      val y = ctx.mkIntConst("y")
 
-    val one = ctx.mkInt(1)
-    val two = ctx.mkInt(1)
+      val one = ctx.mkInt(1)
+      val two = ctx.mkInt(1)
 
-    val yPlusOne = ctx.mkAdd(y, one)
+      val yPlusOne = ctx.mkAdd(y, one)
 
-    val c1 = ctx.mkLt(x, yPlusOne)
-    val c2 = ctx.mkGe(x, two)
+      val c1 = ctx.mkLt(x, yPlusOne)
+      val c2 = ctx.mkGe(x, two)
 
-    val q = ctx.mkAnd(c1, c2)
+      val q = ctx.mkAnd(c1, c2)
 
-    Console.println("model for: x < y + 1")
-    val m = check(ctx, q, Status.SATISFIABLE)
-    println(m)
-
-
+      Console.println("model for: x < y + 1")
+      val m = check(ctx, q, Status.SATISFIABLE)
+      println(m)
 
 
-    //    System.out.println("FindModelExample2");
-    //    Log.append("FindModelExample2");
-    //
-    //    IntExpr x = ctx.mkIntConst("x");
-    //    IntExpr y = ctx.mkIntConst("y");
-    //    IntExpr one = ctx.mkInt(1);
-    //    IntExpr two = ctx.mkInt(2);
-    //
-    //    ArithExpr y_plus_one = ctx.mkAdd(y, one);
-    //
-    //    BoolExpr c1 = ctx.mkLt(x, y_plus_one);
-    //    BoolExpr c2 = ctx.mkGt(x, two);
-    //
-    //    BoolExpr q = ctx.mkAnd(c1, c2);
-    //
-    //    System.out.println("model for: x < y + 1, x > 2");
-    //    Model model = check(ctx, q, Status.SATISFIABLE);
-    //    System.out.println("x = " + model.evaluate(x, false) + ", y ="
-    //      + model.evaluate(y, false));
-    //
-    //    /* assert not(x = y) */
-    //    BoolExpr x_eq_y = ctx.mkEq(x, y);
-    //    BoolExpr c3 = ctx.mkNot(x_eq_y);
-    //
-    //    q = ctx.mkAnd(q, c3);
-    //
-    //    System.out.println("model for: x < y + 1, x > 2, not(x = y)");
-    //    model = check(ctx, q, Status.SATISFIABLE);
-    //    System.out.println("x = " + model.evaluate(x, false) + ", y = "
-    //      + model.evaluate(y, false));
+    })
 
   }
+
+  // TODO: SAT (Model), UNSAT, UNKNOWN
 
   def check(ctx: Context, f: BoolExpr, sat: Status): Model = {
     val s = ctx.mkSolver()
@@ -513,5 +495,12 @@ object Verifier {
   //          return null;
   //      }
 
+  sealed trait Result
+
+  object Result {
+
+    case object Unknown extends Result
+
+  }
 
 }

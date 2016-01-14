@@ -1,0 +1,19 @@
+Examples of lattices:
+- http://www.upriss.org.uk/fca/example.jpg
+- https://en.wikipedia.org/wiki/File:Lattice_of_the_divisibility_of_60.svg
+- https://en.wikipedia.org/wiki/File:Lattice_of_partitions_of_an_order_4_set.svg
+- https://en.wikipedia.org/wiki/Greatest_common_divisor
+- https://en.wikipedia.org/wiki/Least_common_multiple
+- https://en.wikipedia.org/wiki/Tamari_lattice
+- http://www.jfsowa.com/figs/erdmann2.gif
+- http://edgeoforder.org/images/400px-Bands.svg.png
+- https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Infinite_lattice_of_divisors.svg/130px-Infinite_lattice_of_divisors.svg.png
+- http://www.luschny.de/math/seq/CountingWithPartitions.html
+- http://i.stack.imgur.com/rfcrR.png
+- http://math.stackexchange.com/questions/1545633/how-to-identify-lattice-in-given-hasse-diagrams
+- https://crazyproject.files.wordpress.com/2010/02/subgroups-of-z2-cross-z4.png
+- https://lh3.googleusercontent.com/-LxAQnaVOdvk/VomSjvZkx4I/AAAAAAAA8kE/z9xQjXWcvj4/w500-h510/free_modular_lattice_on_3_generators.gif
+
+Examples of non-lattices:
+
+- http://math.stackexchange.com/questions/355393/topological-sorting-in-linear-order-for-hasse-diagram
