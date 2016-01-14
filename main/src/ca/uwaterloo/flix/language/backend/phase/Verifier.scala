@@ -378,6 +378,9 @@ object Verifier {
   /////////////////////////////////////////////////////////////////////////////
   /**
     * Translates the given bool expression `e0` into a Z3 formula.
+    *
+    * Assumes that all lambdas, calls and let bindings have been removed.
+    * (In addition to all tags, tuples, sets, maps, etc.)
     */
   def visitBoolExp(e0: Expression, ctx: Context): BoolExpr = e0 match {
     case True => ctx.mkBool(true)
@@ -419,6 +422,9 @@ object Verifier {
 
   /**
     * Translates the given int expression `e` into a Z3 int expression.
+    *
+    * Assumes that all lambdas, calls and let bindings have been removed.
+    * (In addition to all tags, tuples, sets, maps, etc.)
     */
   def visitIntExp(e: Expression, ctx: Context): ArithExpr = e match {
     case Int(i) => ctx.mkInt(i)
