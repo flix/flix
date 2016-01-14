@@ -72,6 +72,8 @@ object PartialEvaluator {
           })
         })
 
+        // TODO: Eq for boolean ops.
+
       case BinaryOperator.And =>
         // Partially evaluate exp1.
         eval(exp1, env0, {

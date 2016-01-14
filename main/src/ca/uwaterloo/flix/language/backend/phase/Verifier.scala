@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.backend.phase
 
 import ca.uwaterloo.flix.Flix.FlixError
 import ca.uwaterloo.flix.language.Compiler
+import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
@@ -373,21 +374,65 @@ object Verifier {
     root.constants.values.map(_.exp.asInstanceOf[Expression.Lambda]).toList // TODO: Avoid cast?
 
   /////////////////////////////////////////////////////////////////////////////
-  // Microsoft Z3 Interface                                                  //
+  // Translation to Z3 Formulae                                              //
   /////////////////////////////////////////////////////////////////////////////
-
   /**
-    * Translates the given expression `e` to a Z3 expression.
+    * Translates the given bool expression `e0` into a Z3 formula.
     */
-  def translate(e: Expression, ctx: Context): Expr = e match {
+  def visitBoolExp(e0: Expression, ctx: Context): BoolExpr = e0 match {
     case True => ctx.mkBool(true)
     case False => ctx.mkBool(false)
-
-    //case Unary()
-
+    case Var(ident, tpe, loc) => ctx.mkBoolConst(ident.name)
+    case Unary(op, exp, tpe, loc) => op match {
+      case UnaryOperator.Not => ctx.mkNot(visitBoolExp(e0, ctx))
+      case _ => throw new InternalCompilerError(s"Illegal boolean unary operator: $op.")
+    }
+    case Binary(op, e1, e2, tpe, loc) => op match {
+      case BinaryOperator.Less => ctx.mkLt(visitIntExp(e1, ctx), visitIntExp(e2, ctx))
+      case BinaryOperator.LessEqual => ctx.mkLe(visitIntExp(e1, ctx), visitIntExp(e2, ctx))
+      case BinaryOperator.Greater => ctx.mkGt(visitIntExp(e1, ctx), visitIntExp(e2, ctx))
+      case BinaryOperator.GreaterEqual => ctx.mkGe(visitIntExp(e1, ctx), visitIntExp(e2, ctx))
+      case BinaryOperator.Equal =>
+        tpe match {
+          case Type.Bool => ctx.mkEq(visitBoolExp(e1, ctx), visitBoolExp(e2, ctx))
+          case Type.Int => ctx.mkEq(visitIntExp(e1, ctx), visitIntExp(e2, ctx))
+          case _ => throw new InternalCompilerError(s"Illegal type: $tpe.")
+        }
+      case BinaryOperator.NotEqual => tpe match {
+        case Type.Bool => ctx.mkNot(ctx.mkEq(visitBoolExp(e1, ctx), visitBoolExp(e2, ctx)))
+        case Type.Int => ctx.mkNot(ctx.mkEq(visitIntExp(e1, ctx), visitIntExp(e2, ctx)))
+        case _ => throw new InternalCompilerError(s"Illegal type: $tpe.")
+      }
+      case BinaryOperator.And => ctx.mkAnd(visitBoolExp(e1, ctx), visitBoolExp(e2, ctx))
+      case BinaryOperator.Or => ctx.mkOr(visitBoolExp(e1, ctx), visitBoolExp(e2, ctx))
+      case _ => throw new InternalCompilerError(s"Illegal boolean binary operator: $op.")
+    }
+    case IfThenElse(e1, e2, e3, tpe, loc) =>
+      val c1 = visitBoolExp(e1, ctx)
+      val c2 = visitBoolExp(e2, ctx)
+      val c3 = visitBoolExp(e3, ctx)
+      ctx.mkOr(
+        ctx.mkAnd(c1, c2),
+        ctx.mkAnd(ctx.mkNot(c1), c3)
+      )
+    case _ => throw new InternalCompilerError(s"Illegal boolean expression of type: ${e0.tpe}.")
   }
 
-  // TODO: Might also be worth it to emit the constraints?
+  /**
+    * Translates the given int expression `e` into a Z3 int expression.
+    */
+  def visitIntExp(e: Expression, ctx: Context): IntExpr = e match {
+    case Int(i) => ctx.mkInt(i)
+    case Unary(op, e1, tpe, loc) => op match {
+      case UnaryOperator.Plus => visitIntExp(e1, ctx)
+    }
+
+    case _ => throw new InternalCompilerError(s"Expected int expression but got: ${e.tpe}")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Interface to Z3                                                         //
+  /////////////////////////////////////////////////////////////////////////////
   def withContext[A](f: Context => A): A = {
     // check that the path property is set.
     val prop = System.getProperty("java.library.path")
@@ -425,6 +470,9 @@ object Verifier {
     r
   }
 
+  /**
+    * Returns an error message explaining how to configure Microsoft Z3.
+    */
   private def errorMessage: String =
     """###############################################################################
       |###                                                                         ###
@@ -444,37 +492,13 @@ object Verifier {
       |###############################################################################
     """.stripMargin
 
-  // TODO: remove
-  def main(args: Array[String]): Unit = {
-    val ctx = withContext(ctx => {
-
-      val x = ctx.mkIntConst("x")
-      val y = ctx.mkIntConst("y")
-
-      val one = ctx.mkInt(1)
-      val two = ctx.mkInt(1)
-
-      val yPlusOne = ctx.mkAdd(y, one)
-
-      val c1 = ctx.mkLt(x, yPlusOne)
-      val c2 = ctx.mkGe(x, two)
-
-      val q = ctx.mkAnd(c1, c2)
-
-      Console.println("model for: x < y + 1")
-      val m = check(ctx, q, Status.SATISFIABLE)
-      println(m)
-
-
-    })
-
-  }
 
   // TODO: SAT (Model), UNSAT, UNKNOWN
 
   def check(ctx: Context, f: BoolExpr, sat: Status): Model = {
     val s = ctx.mkSolver()
     s.add(f)
+    println(f.toString)
     if (s.check() != sat)
       throw null
     if (sat == Status.SATISFIABLE) {
@@ -500,6 +524,34 @@ object Verifier {
   object Result {
 
     case object Unknown extends Result
+
+  }
+
+  // TODO: Might also be worth it to emit the constraints?
+
+
+  // TODO: remove
+  def main(args: Array[String]): Unit = {
+    withContext(ctx => {
+
+      val x = ctx.mkIntConst("x")
+      val y = ctx.mkIntConst("y")
+
+      val one = ctx.mkInt(1)
+      val two = ctx.mkInt(1)
+
+      val yPlusOne = ctx.mkAdd(y, one)
+
+      val c1 = ctx.mkLt(x, yPlusOne)
+      val c2 = ctx.mkGe(x, two)
+
+      val q = ctx.mkAnd(c1, c2)
+
+      Console.println("model for: x < y + 1")
+      val m = check(ctx, q, Status.SATISFIABLE)
+      println(m)
+    })
+
 
   }
 
