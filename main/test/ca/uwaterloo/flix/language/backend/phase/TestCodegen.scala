@@ -46,6 +46,12 @@ class TestCodegen extends FunSuite {
   // Loading (unpacking bits)                                                //
   /////////////////////////////////////////////////////////////////////////////
 
+  /*
+   * Test methods always return an Int32 (or an Int64). Otherwise, the return
+   * value is implicitly cast to an Int8 or an Int16 (short). This can hide
+   * potential bugs -- we return an Int32 so we can inspect the higher-order bits.
+   */
+
   test("Codegen - LoadBool - 01") {
     // Binary number is: 0000000000000000000000000000000000000000000000000000000000000000
     def definition(offset: Int) = Function(name, args = List(),
@@ -390,6 +396,10 @@ class TestCodegen extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Int constants                                                           //
   /////////////////////////////////////////////////////////////////////////////
+
+  /*
+   * Here we're testing methods that return Int8/Int16, so the implicit casting is OK.
+   */
 
   test("Codegen - Const01") {
     val definition = Function(name, args = List(),
@@ -1554,6 +1564,13 @@ class TestCodegen extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Binary operators                                                        //
   /////////////////////////////////////////////////////////////////////////////
+
+  /*
+   * Test methods for arithmetic and bitwise operations always return an Int32
+   * (or an Int64). Otherwise, the return value is implicitly cast to an Int8
+   * or an Int16 (short). This can hide potential bugs -- we return an Int32
+   * so we can inspect the higher-order bits.
+   */
 
   test("Codegen - Binary.And01") {
     val definition = Function(name, args = List(),

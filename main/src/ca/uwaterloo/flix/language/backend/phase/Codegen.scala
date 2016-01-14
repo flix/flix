@@ -91,8 +91,8 @@ object Codegen {
       //   e      = xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 10101010 xxxxxxxx xxxxxxxx
       //
       // First we do a right shift (with sign extension) (LSHR):
-      //            xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 10101010:
-      // Then we convert/truncate to an int, discarding the higher-order bits (L2I)
+      //            xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 10101010
+      // Then we convert/truncate to an int, discarding the higher-order bits (L2I):
       //            xxxxxxxx xxxxxxxx xxxxxxxx 10101010
       // We bitwise-and with the mask, clearing the higher-order bits (IAND):
       //   mask   = 00000000 00000000 00000000 11111111
@@ -130,7 +130,7 @@ object Codegen {
       //   e      = xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 00000000 00000000 00000000 00000000
       //   result = xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 11110000 11110000 11110000 11110000
       //
-      // Note: (v & mask).toLong instead of (v.toLong & mask), gives the wrong result because of sign extension.
+      // Note: (v & mask).toLong instead of (v.toLong & mask) gives the wrong result because of sign extension.
       // Bitwise-and of v and mask (IAND):
       //   mask   = 11111111 11111111 11111111 11111111
       //   result = 11110000 11110000 11110000 11110000
@@ -206,7 +206,7 @@ object Codegen {
    * load a 7, and SIPUSH 200 takes 3 bytes to load a 200. However, note that values on the stack normally take up 4
    * bytes. The exception is if we set `isLong` to true, in which case a cast will be performed if necessary.
    *
-   * This is needed because sometimes we need the operands to be a long, which means two (int) values are popped from
+   * This is needed because sometimes we expect the operands to be a long, which means two (int) values are popped from
    * the stack and concatenated to form a long.
    */
   private def compileConst(visitor: MethodVisitor)(i: Long, isLong: Boolean = false): Unit = {
@@ -337,7 +337,9 @@ object Codegen {
       compileExpression(context, visitor)(expr2)
       op match {
         case o: ArithmeticOperator =>
-          // Results are truncated, so that adding two IntN's will always return an IntN. Overflow can occur.
+          // Results are truncated (and sign extended), so that adding two IntN's will always return an IntN.
+          // Overflow can occur. Note that in Java semantics, the result of an arithmetic operation is an Int32 (int)
+          // or an Int64 (long), and the user must explicitly downcast to an Int8 (byte) or Int16 (short).
           //
           // Example:
           // Consider adding two Int8s (bytes), 127 and 1. The result overflows:
@@ -397,8 +399,7 @@ object Codegen {
           visitor.visitInsn(ICONST_0)
           visitor.visitLabel(condEnd)
         case o: BitwiseOperator =>
-          // In general we don't do any truncation, because it doesn't matter what the higher-order bits are. This is
-          // similar to Unary.Negate, where sign extension before or after the operation yields the same result.
+          // In general we don't do any truncation, because it doesn't matter what the higher-order bits are.
           //
           // Example:
           // Consider the bitwise-and of the following Int8s:
@@ -412,10 +413,13 @@ object Codegen {
           // ---------------------------------------    ---------------------------------------
           //    11111111 11111111 11111111 11000000        00000000 00000000 00000000 00000011
           //
+          // As with Unary.Negate, sign extension before or after the operation yields the same result.
+          //
+          //
           // The exception is with bitwise left shifts. The higher-order bits matter because we might sign extend.
           //
           // Example:
-          // Consider the following left shift, where x and y each represent an unknown value (0 or 1):
+          // Consider the following left shift, where x and y each represent unknown values (0 or 1):
           //   x000y000 << 4 = y0000000
           // But because Int8s (bytes) are represented as Int32s (ints), and the x is sign extended, we get:
           //   xxxxxxxx xxxxxxxx xxxxxxxx x000y000 << 4 = xxxxxxxx xxxxxxxx xxxxx000 y0000000
@@ -423,11 +427,11 @@ object Codegen {
           //   yyyyyyyy yyyyyyyy yyyyyyyy y0000000
           //
           // It doesn't matter that we left shifted x, because we (generally) ignore the higher-order bits. However, it
-          // does matter that we shifted y into the sign bit of an Int8. If y = 1, then the Int8 10000000 has value
-          // -128, which needs to be sign extended to represent that value as an Int32.
+          // *does* matter that we shifted y into the sign bit of an Int8. If y = 1, then the Int8 (byte) 10000000 has
+          // value -128, which needs to be sign extended to represent that value as an Int32 (int).
           //
           // Example:
-          // Consider the following right shift (which sign extends), where x represents an unknown value (0 or 1):
+          // Consider the following (signed) right shift, where x represents an unknown value (0 or 1):
           //   x0000000 >> 4 = xxxxx000
           // These Int8s (bytes) are represented as Int32s (ints), so the x is sign extended:
           //   xxxxxxxx xxxxxxxx xxxxxxxx x0000000 >> 4 = xxxxxxxx xxxxxxxx xxxxxxxx xxxxx000
@@ -442,8 +446,6 @@ object Codegen {
             case BinaryOperator.BitwiseXor => (IXOR, LXOR)
             case BinaryOperator.BitwiseLeftShift => (ISHL, LSHL)
             case BinaryOperator.BitwiseRightShift => (ISHR, LSHR)
-            // TODO: What about unsigned right shift (>>>, IUSHR, LUSHR)?
-            // We would need to use a bitmask to clear the higher-order bits, and then do the shift.
           }
           tpe match {
             case Type.Int8 =>
