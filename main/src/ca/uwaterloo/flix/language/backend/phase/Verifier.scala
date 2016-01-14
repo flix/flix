@@ -385,35 +385,34 @@ object Verifier {
     case Var(ident, tpe, loc) => ctx.mkBoolConst(ident.name)
     case Unary(op, exp, tpe, loc) => op match {
       case UnaryOperator.Not => ctx.mkNot(visitBoolExp(e0, ctx))
-      case _ => throw new InternalCompilerError(s"Illegal boolean unary operator: $op.")
+      case _ => throw new InternalCompilerError(s"Illegal unary operator: $op.")
     }
     case Binary(op, e1, e2, tpe, loc) => op match {
       case BinaryOperator.Less => ctx.mkLt(visitIntExp(e1, ctx), visitIntExp(e2, ctx))
       case BinaryOperator.LessEqual => ctx.mkLe(visitIntExp(e1, ctx), visitIntExp(e2, ctx))
       case BinaryOperator.Greater => ctx.mkGt(visitIntExp(e1, ctx), visitIntExp(e2, ctx))
       case BinaryOperator.GreaterEqual => ctx.mkGe(visitIntExp(e1, ctx), visitIntExp(e2, ctx))
-      case BinaryOperator.Equal =>
-        tpe match {
-          case Type.Bool => ctx.mkEq(visitBoolExp(e1, ctx), visitBoolExp(e2, ctx))
-          case Type.Int => ctx.mkEq(visitIntExp(e1, ctx), visitIntExp(e2, ctx))
+      case BinaryOperator.Equal | BinaryOperator.NotEqual =>
+        val (f1, f2) = tpe match {
+          case Type.Bool => (visitBoolExp(e1, ctx), visitBoolExp(e2, ctx))
+          case Type.Int => (visitIntExp(e1, ctx), visitIntExp(e2, ctx))
           case _ => throw new InternalCompilerError(s"Illegal type: $tpe.")
         }
-      case BinaryOperator.NotEqual => tpe match {
-        case Type.Bool => ctx.mkNot(ctx.mkEq(visitBoolExp(e1, ctx), visitBoolExp(e2, ctx)))
-        case Type.Int => ctx.mkNot(ctx.mkEq(visitIntExp(e1, ctx), visitIntExp(e2, ctx)))
-        case _ => throw new InternalCompilerError(s"Illegal type: $tpe.")
-      }
+        if (op == BinaryOperator.Equal)
+          ctx.mkEq(f1, f2)
+        else
+          ctx.mkNot(ctx.mkEq(f1, f2))
       case BinaryOperator.And => ctx.mkAnd(visitBoolExp(e1, ctx), visitBoolExp(e2, ctx))
       case BinaryOperator.Or => ctx.mkOr(visitBoolExp(e1, ctx), visitBoolExp(e2, ctx))
-      case _ => throw new InternalCompilerError(s"Illegal boolean binary operator: $op.")
+      case _ => throw new InternalCompilerError(s"Illegal binary operator: $op.")
     }
     case IfThenElse(e1, e2, e3, tpe, loc) =>
-      val c1 = visitBoolExp(e1, ctx)
-      val c2 = visitBoolExp(e2, ctx)
-      val c3 = visitBoolExp(e3, ctx)
+      val f1 = visitBoolExp(e1, ctx)
+      val f2 = visitBoolExp(e2, ctx)
+      val f3 = visitBoolExp(e3, ctx)
       ctx.mkOr(
-        ctx.mkAnd(c1, c2),
-        ctx.mkAnd(ctx.mkNot(c1), c3)
+        ctx.mkAnd(f1, f2),
+        ctx.mkAnd(ctx.mkNot(f1), f3)
       )
     case _ => throw new InternalCompilerError(s"Illegal boolean expression of type: ${e0.tpe}.")
   }
@@ -421,12 +420,20 @@ object Verifier {
   /**
     * Translates the given int expression `e` into a Z3 int expression.
     */
-  def visitIntExp(e: Expression, ctx: Context): IntExpr = e match {
+  def visitIntExp(e: Expression, ctx: Context): ArithExpr = e match {
     case Int(i) => ctx.mkInt(i)
+    case Var(name, tpe, loc) => ctx.mkIntConst(name.name)
     case Unary(op, e1, tpe, loc) => op match {
       case UnaryOperator.Plus => visitIntExp(e1, ctx)
+      case UnaryOperator.Minus => ctx.mkSub(ctx.mkInt(0), visitIntExp(e1, ctx))
+      case UnaryOperator.Negate => throw new InternalCompilerError(s"Not yet implemented. Sorry.")
+      case _ => throw new InternalCompilerError(s"Illegal unary operator: $op.")
+    }
+    case Binary(op, e1, e2, tpe, loc) => op match {
+      case BinaryOperator.Plus => ???
     }
 
+    case IfThenElse(e1, e2, e3, tpe, loc) => ???
     case _ => throw new InternalCompilerError(s"Expected int expression but got: ${e.tpe}")
   }
 
@@ -551,8 +558,6 @@ object Verifier {
       val m = check(ctx, q, Status.SATISFIABLE)
       println(m)
     })
-
-
   }
 
 }
