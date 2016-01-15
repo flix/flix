@@ -224,7 +224,7 @@ object ReducedIR {
 
     case class Set(elms: List[ReducedIR.Expression], tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
-    case class Error(loc: SourceLocation, tpe: ReducedIR.Type) extends ReducedIR.Expression
+    case class Error(tpe: ReducedIR.Type, loc: SourceLocation) extends ReducedIR.Expression
 
   }
 
