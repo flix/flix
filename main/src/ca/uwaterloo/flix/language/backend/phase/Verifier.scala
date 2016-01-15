@@ -177,6 +177,7 @@ object Verifier {
       * @param elm the element that violates the property.
       * @param loc the location of the definition of the partial order.
       */
+    // TODO: has to take an optional model.
     case class ReflexivityError(lat: Lattice, prop: Property, elm: Value, loc: SourceLocation) extends VerifierError {
       val format =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -377,42 +378,48 @@ object Verifier {
   // Translation to Z3 Formulae                                              //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * Translates the given bool expression `e0` into a Z3 formula.
+    * Microsoft Z3 Solver API:
+    *
+    * http://z3prover.github.io/api/html/classcom_1_1microsoft_1_1z3_1_1_context.html
+    */
+
+  /**
+    * Translates the given expression `e0` into a Z3 boolean expression.
     *
     * Assumes that all lambdas, calls and let bindings have been removed.
     * (In addition to all tags, tuples, sets, maps, etc.)
     */
-  def visitBoolExp(e0: Expression, ctx: Context): BoolExpr = e0 match {
+  def visitBoolExpr(e0: Expression, ctx: Context): BoolExpr = e0 match {
     case True => ctx.mkBool(true)
     case False => ctx.mkBool(false)
     case Var(ident, tpe, loc) => ctx.mkBoolConst(ident.name)
     case Unary(op, exp, tpe, loc) => op match {
-      case UnaryOperator.Not => ctx.mkNot(visitBoolExp(e0, ctx))
+      case UnaryOperator.Not => ctx.mkNot(visitBoolExpr(e0, ctx))
       case _ => throw new InternalCompilerError(s"Illegal unary operator: $op.")
     }
     case Binary(op, e1, e2, tpe, loc) => op match {
-      case BinaryOperator.Less => ctx.mkLt(visitIntExp(e1, ctx), visitIntExp(e2, ctx))
-      case BinaryOperator.LessEqual => ctx.mkLe(visitIntExp(e1, ctx), visitIntExp(e2, ctx))
-      case BinaryOperator.Greater => ctx.mkGt(visitIntExp(e1, ctx), visitIntExp(e2, ctx))
-      case BinaryOperator.GreaterEqual => ctx.mkGe(visitIntExp(e1, ctx), visitIntExp(e2, ctx))
+      case BinaryOperator.Less => ctx.mkLt(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case BinaryOperator.LessEqual => ctx.mkLe(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case BinaryOperator.Greater => ctx.mkGt(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case BinaryOperator.GreaterEqual => ctx.mkGe(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
       case BinaryOperator.Equal | BinaryOperator.NotEqual =>
         val (f1, f2) = tpe match {
-          case Type.Bool => (visitBoolExp(e1, ctx), visitBoolExp(e2, ctx))
-          case Type.Int => (visitIntExp(e1, ctx), visitIntExp(e2, ctx))
+          case Type.Bool => (visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
+          case Type.Int => (visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
           case _ => throw new InternalCompilerError(s"Illegal type: $tpe.")
         }
         if (op == BinaryOperator.Equal)
           ctx.mkEq(f1, f2)
         else
           ctx.mkNot(ctx.mkEq(f1, f2))
-      case BinaryOperator.And => ctx.mkAnd(visitBoolExp(e1, ctx), visitBoolExp(e2, ctx))
-      case BinaryOperator.Or => ctx.mkOr(visitBoolExp(e1, ctx), visitBoolExp(e2, ctx))
+      case BinaryOperator.And => ctx.mkAnd(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
+      case BinaryOperator.Or => ctx.mkOr(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
       case _ => throw new InternalCompilerError(s"Illegal binary operator: $op.")
     }
     case IfThenElse(e1, e2, e3, tpe, loc) =>
-      val f1 = visitBoolExp(e1, ctx)
-      val f2 = visitBoolExp(e2, ctx)
-      val f3 = visitBoolExp(e3, ctx)
+      val f1 = visitBoolExpr(e1, ctx)
+      val f2 = visitBoolExpr(e2, ctx)
+      val f3 = visitBoolExpr(e3, ctx)
       ctx.mkOr(
         ctx.mkAnd(f1, f2),
         ctx.mkAnd(ctx.mkNot(f1), f3)
@@ -421,27 +428,55 @@ object Verifier {
   }
 
   /**
-    * Translates the given int expression `e` into a Z3 int expression.
+    * Translates the given expression `e` into a Z3 bit vector expression.
     *
     * Assumes that all lambdas, calls and let bindings have been removed.
     * (In addition to all tags, tuples, sets, maps, etc.)
     */
-  def visitIntExp(e: Expression, ctx: Context): ArithExpr = e match {
+  def visitBitVecExpr(e0: Expression, ctx: Context): BitVecExpr = e0 match {
+    case Int(i) => ctx.mkBV(i, 32)
+    case Unary(op, e1, tpe, loc) => ???
+    case Binary(op, e1, e2, tpe, loc) => op match {
+      case BinaryOperator.BitwiseAnd => ctx.mkBVAND(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+    }
+  }
+
+  // TODO: Need int Expr?
+
+  /**
+    * Translates the given expression `e` into a Z3 arithmetic expression.
+    *
+    * Assumes that all lambdas, calls and let bindings have been removed.
+    * (In addition to all tags, tuples, sets, maps, etc.)
+    */
+  def visitArithExpr(e0: Expression, ctx: Context): ArithExpr = e0 match {
     case Int(i) => ctx.mkInt(i)
     case Var(name, tpe, loc) => ctx.mkIntConst(name.name)
     case Unary(op, e1, tpe, loc) => op match {
-      case UnaryOperator.Plus => visitIntExp(e1, ctx)
-      case UnaryOperator.Minus => ctx.mkSub(ctx.mkInt(0), visitIntExp(e1, ctx))
+      case UnaryOperator.Plus => visitArithExpr(e1, ctx)
+      case UnaryOperator.Minus => ctx.mkSub(ctx.mkInt(0), visitArithExpr(e1, ctx))
       case UnaryOperator.Negate => throw new InternalCompilerError(s"Not yet implemented. Sorry.")
       case _ => throw new InternalCompilerError(s"Illegal unary operator: $op.")
     }
     case Binary(op, e1, e2, tpe, loc) => op match {
-      case BinaryOperator.Plus => ???
+      case BinaryOperator.Plus => ctx.mkAdd(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case BinaryOperator.Minus => ctx.mkSub(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case BinaryOperator.Times => ctx.mkMul(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case BinaryOperator.Divide => ctx.mkDiv(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case BinaryOperator.Modulo => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO: Need to split IntExp into ArithExp
+      case BinaryOperator.BitwiseAnd => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+      case BinaryOperator.BitwiseOr => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+      case BinaryOperator.BitwiseXor => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+      case BinaryOperator.BitwiseLeftShift => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+      case BinaryOperator.BitwiseRightShift => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+      case _ => throw new InternalCompilerError(s"Illegal binary operator: $op.")
     }
 
     case IfThenElse(e1, e2, e3, tpe, loc) => ???
-    case _ => throw new InternalCompilerError(s"Expected int expression but got: ${e.tpe}")
+
+    case _ => throw new InternalCompilerError(s"Expected int expression but got: ${e0.tpe}")
   }
+
 
   /////////////////////////////////////////////////////////////////////////////
   // Interface to Z3                                                         //
@@ -565,5 +600,7 @@ object Verifier {
       println(m)
     })
   }
+
+  // TODO: Can we use uinterpreted functions for anything?
 
 }
