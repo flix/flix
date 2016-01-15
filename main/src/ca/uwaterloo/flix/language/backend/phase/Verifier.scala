@@ -433,6 +433,7 @@ object Verifier {
     * Assumes that all lambdas, calls and let bindings have been removed.
     * (In addition to all tags, tuples, sets, maps, etc.)
     */
+  // TODO: Who can call this?
   def visitBitVecExpr(e0: Expression, ctx: Context): BitVecExpr = e0 match {
     case Int(i) => ctx.mkBV(i, 32)
     case Unary(op, e1, tpe, loc) => ???
@@ -540,37 +541,41 @@ object Verifier {
       |###############################################################################
     """.stripMargin
 
-
-  // TODO: SAT (Model), UNSAT, UNKNOWN
-
-  def check(ctx: Context, f: BoolExpr, sat: Status): Model = {
-    val s = ctx.mkSolver()
-    s.add(f)
-    println(f.toString)
-    if (s.check() != sat)
-      throw null
-    if (sat == Status.SATISFIABLE) {
-      s.getModel
-    } else
-      ???
+  /**
+    * Checks the satisfiability of the given boolean formula `f`.
+    */
+  def check(f: BoolExpr, ctx: Context): Result = {
+    val solver = ctx.mkSolver()
+    solver.add(f)
+    solver.check() match {
+      case Status.SATISFIABLE => Result.Satisfiable(solver.getModel)
+      case Status.UNSATISFIABLE => Result.Unsatisfiable
+      case Status.UNKNOWN => Result.Unknown
+    }
   }
 
-  //      Model check(Context ctx, BoolExpr f, Status sat) throws TestFailedException
-  //      {
-  //        Solver s = ctx.mkSolver();
-  //        s.add(f);
-  //        if (s.check() != sat)
-  //          throw new TestFailedException();
-  //        if (sat == Status.SATISFIABLE)
-  //          return s.getModel();
-  //        else
-  //          return null;
-  //      }
-
+  /**
+    * A common super-type that represents the result of an SMT query.
+    */
   sealed trait Result
 
   object Result {
 
+    /**
+      * The SMT query is satisfiable, i.e. it has at least one model.
+      *
+      * @param model a model that satisfies the SMT query.
+      */
+    case class Satisfiable(model: Model) extends Result
+
+    /**
+      * The SMT query is unsatisfiable, i.e. it has no model.
+      */
+    case object Unsatisfiable extends Result
+
+    /**
+      * The SMT query may or may not be satisfiable, i.e. it is unknown if there is a model.
+      */
     case object Unknown extends Result
 
   }
@@ -596,7 +601,7 @@ object Verifier {
       val q = ctx.mkAnd(c1, c2)
 
       Console.println("model for: x < y + 1")
-      val m = check(ctx, q, Status.SATISFIABLE)
+      val m = check(q, ctx)
       println(m)
     })
   }
