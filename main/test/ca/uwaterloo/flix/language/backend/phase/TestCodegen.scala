@@ -4270,6 +4270,35 @@ class TestCodegen extends FunSuite {
     assertResult(false)(result)
   }
 
+  // TODO: Tests for short-circut evaluation, but Error is not implemented yet
+  ignore("Codegen - Binary.Add05") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.And,
+        Const(0, Type.Bool, loc),
+        Error(Type.Bool, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(false)(result)
+  }
+
+  ignore("Codegen - Binary.Add06") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.And,
+        Const(1, Type.Bool, loc),
+        Error(Type.Bool, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    intercept[RuntimeException] {
+      code.call(name)
+    }
+  }
+
   test("Codegen - Binary.Or01") {
     val definition = Function(name, args = List(),
       body = Binary(BinaryOperator.Or,
@@ -4324,6 +4353,35 @@ class TestCodegen extends FunSuite {
     val result = code.call(name)
 
     assertResult(true)(result)
+  }
+
+  // TODO: Tests for short-circut evaluation, but Error is not implemented yet
+  ignore("Codegen - Binary.Or05") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Or,
+        Const(1, Type.Bool, loc),
+        Error(Type.Bool, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(true)(result)
+  }
+
+  ignore("Codegen - Binary.Or06") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Or,
+        Const(0, Type.Bool, loc),
+        Error(Type.Bool, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    intercept[RuntimeException] {
+      code.call(name)
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////

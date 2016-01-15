@@ -196,7 +196,7 @@ object Codegen {
     case Tuple(elms, tpe, loc) => ???
     case TupleAt(base, offset, tpe, loc) => ???
     case Set(elms, tpe, loc) => ???
-    case Error(loc, tpe) => ???
+    case Error(tpe, loc) => ???
   }
 
   /*
