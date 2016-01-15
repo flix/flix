@@ -1,0 +1,18 @@
+## Method
+
+1. Search for lattice.
+   - Discard if not found.
+2. Check if lattice is powerset or similar.
+   - Discard if found.
+
+
+
+## SAS
+### 2015 (19 papers)
+ - Precise Data Flow Analysis in the Presence of Correlated Method Calls
+ - Modularity in Lattices: A Case Study on the Correspondence between Top-Down and Bottom-Up Analysis
+ - Abstract Domains for Stateful Program Properties
+
+
+## OOPSLA 2015
+
