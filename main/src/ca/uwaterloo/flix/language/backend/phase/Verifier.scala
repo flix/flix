@@ -436,9 +436,14 @@ object Verifier {
   // TODO: Who can call this?
   def visitBitVecExpr(e0: Expression, ctx: Context): BitVecExpr = e0 match {
     case Int(i) => ctx.mkBV(i, 32)
-    case Unary(op, e1, tpe, loc) => ???
+    case Unary(op, e1, tpe, loc) => op match {
+      case UnaryOperator.Negate => ctx.mkBVNot(visitBitVecExpr(e1, ctx))
+      case _ => throw new InternalCompilerError(s"Illegal unary operator: $op.")
+    }
     case Binary(op, e1, e2, tpe, loc) => op match {
       case BinaryOperator.BitwiseAnd => ctx.mkBVAND(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case BinaryOperator.BitwiseOr => ctx.mkBVOR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+
     }
   }
 
