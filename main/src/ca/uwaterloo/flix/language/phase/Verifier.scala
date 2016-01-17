@@ -495,7 +495,7 @@ object Verifier {
     }
 
     // check that the path exists.
-    val path = Paths.get(prop)
+    val path = Paths.get(prop)// TODO: the path is actually a sequence of separeted paths...
     if (!Files.isDirectory(path) || !Files.isReadable(path)) {
       Console.println(errorMessage)
       Console.println()

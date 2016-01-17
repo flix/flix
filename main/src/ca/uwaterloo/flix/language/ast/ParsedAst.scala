@@ -828,6 +828,7 @@ object ParsedAst {
   /**
     * AST node for Types.
     */
+  @deprecated("will be replaced by Type in language.ast", "0.1")
   sealed trait Type extends ParsedAst
 
   object Type {

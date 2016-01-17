@@ -671,11 +671,10 @@ object WeededAst {
 
   }
 
-  // TODO: Move type out of AST? and introduce an AnnotatedType.
-
   /**
     * A common super-type for AST nodes that represent types. 
     */
+  @deprecated("will be replaced by Type in language.ast", "0.1")
   sealed trait Type extends WeededAst
 
   object Type {
