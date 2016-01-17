@@ -57,12 +57,4 @@ object Flix {
   def mkPath(input: Path): Validation[Model, FlixError] =
     mkPath(Seq(input))
 
-
-  // TODO use builder interface for Flix:
-
-  trait FType {
-    def mkIBool: FType
-    def mkInt: FType
-  }
-
 }
