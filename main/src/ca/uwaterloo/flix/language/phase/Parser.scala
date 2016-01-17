@@ -1,10 +1,8 @@
-package ca.uwaterloo.flix.language.frontend.phase
+package ca.uwaterloo.flix.language.phase
 
 import java.util.zip.ZipFile
 
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.frontend.ast.ParsedAst
-
+import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
@@ -14,8 +12,8 @@ import scala.io.Source
 // TODO: Add support for characters.
 
 /**
- * A parser for the Flix language.
- */
+  * A parser for the Flix language.
+  */
 class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   /*
@@ -541,8 +539,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Operator {
 
     /**
-     * Parses a unary operator.
-     */
+      * Parses a unary operator.
+      */
     def Unary: Rule1[UnaryOperator] = rule {
       atomic("!") ~> (() => UnaryOperator.Not) |
         atomic("+") ~> (() => UnaryOperator.Plus) |
@@ -556,21 +554,21 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     /**
-     * Parses a logical operator.
-     */
+      * Parses a logical operator.
+      */
     def LogicalOp: Rule1[BinaryOperator] = rule {
       atomic("&&") ~> (() => BinaryOperator.And) |
         atomic("||") ~> (() => BinaryOperator.Or) |
         atomic("&") ~> (() => BinaryOperator.BitwiseAnd) |
-        atomic("|") ~> (() => BinaryOperator.BitwiseOr)  |
+        atomic("|") ~> (() => BinaryOperator.BitwiseOr) |
         atomic("^") ~> (() => BinaryOperator.BitwiseXor) |
         atomic("<<") ~> (() => BinaryOperator.BitwiseLeftShift) |
         atomic(">>") ~> (() => BinaryOperator.BitwiseRightShift)
     }
 
     /**
-     * Parses a comparison operator.
-     */
+      * Parses a comparison operator.
+      */
     def ComparisonOp: Rule1[BinaryOperator] = rule {
       atomic("<=") ~> (() => BinaryOperator.LessEqual) |
         atomic(">=") ~> (() => BinaryOperator.GreaterEqual) |
@@ -581,8 +579,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     /**
-     * Parses a multiplicative operator.
-     */
+      * Parses a multiplicative operator.
+      */
     def MultiplicativeOp: Rule1[BinaryOperator] = rule {
       atomic("*") ~> (() => BinaryOperator.Times) |
         atomic("/") ~> (() => BinaryOperator.Divide) |
@@ -595,8 +593,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     /**
-     * Parses an additive operator.
-     */
+      * Parses an additive operator.
+      */
     def AdditiveOp: Rule1[BinaryOperator] = rule {
       atomic("+") ~> (() => BinaryOperator.Plus) |
         atomic("-") ~> (() => BinaryOperator.Minus)

@@ -2,10 +2,11 @@ package ca.uwaterloo.flix.language.backend.phase
 
 import java.nio.file.{Paths, Files}
 
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, UnaryOperator, Name, SourceLocation}
-import ca.uwaterloo.flix.language.backend.ir.ReducedIR.{Definition, LocalVar, Type}
-import ca.uwaterloo.flix.language.backend.ir.ReducedIR.Expression._
-import ca.uwaterloo.flix.language.backend.ir.ReducedIR.Definition.Function
+import ca.uwaterloo.flix.language.ast._
+import ReducedIR.{Definition, LocalVar, Type}
+import ReducedIR.Expression._
+import ReducedIR.Definition.Function
+import ca.uwaterloo.flix.language.phase.Codegen
 
 import org.scalatest.FunSuite
 

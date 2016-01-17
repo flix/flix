@@ -2,8 +2,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.Flix
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.frontend.ast.ParsedAst
-import ca.uwaterloo.flix.language.frontend.phase.Parser
+import ca.uwaterloo.flix.language.ast.ParsedAst
+import ca.uwaterloo.flix.language.phase.Parser
 
 import scala.collection.immutable.Seq
 

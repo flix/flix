@@ -1,19 +1,17 @@
-package ca.uwaterloo.flix.language.backend.phase
+package ca.uwaterloo.flix.language.phase
+
+import java.nio.file.{Files, Paths}
 
 import ca.uwaterloo.flix.Flix.FlixError
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition._
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
-import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst
-import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst.Expression
-import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst.Expression._
-import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst.Definition._
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, _}
 import ca.uwaterloo.flix.runtime.{PartialEvaluator, Value}
-
-import java.nio.file.{Files, Paths}
-
 import com.microsoft.z3._
 
 object Verifier {
@@ -172,10 +170,10 @@ object Verifier {
     /**
       * An error raised to indicate that a partial order is not reflexive.
       *
-      * @param lat the lattice defining the partial order.
+      * @param lat  the lattice defining the partial order.
       * @param prop the violated property.
-      * @param elm the element that violates the property.
-      * @param loc the location of the definition of the partial order.
+      * @param elm  the element that violates the property.
+      * @param loc  the location of the definition of the partial order.
       */
     // TODO: has to take an optional model.
     case class ReflexivityError(lat: Lattice, prop: Property, elm: Value, loc: SourceLocation) extends VerifierError {
@@ -192,11 +190,11 @@ object Verifier {
     /**
       * An error raised to indicate that a partial order is not anti-symmetric.
       *
-      * @param lat the lattice defining the partial order.
+      * @param lat  the lattice defining the partial order.
       * @param prop the violated property.
       * @param elm1 the first element that violates the property.
       * @param elm2 the second element that violates the property.
-      * @param loc the location of the definition of the partial order.
+      * @param loc  the location of the definition of the partial order.
       */
     case class AntiSymmetryError(lat: Lattice, prop: Property, elm1: Value, elm2: Value, loc: SourceLocation) extends VerifierError {
       val format = s"AntiSymmetry violated for $lat."

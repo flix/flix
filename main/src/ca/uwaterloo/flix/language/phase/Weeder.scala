@@ -1,10 +1,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.Compiler
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.frontend.ast.ParsedAst
+import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.util.Validation
-import Validation._
+import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
@@ -285,7 +284,7 @@ object Weeder {
       * An error raised to indicate the presence of an illegal annotation.
       *
       * @param name the name of the illegal annotation.
-      * @param loc the location of the annotation.
+      * @param loc  the location of the annotation.
       */
     case class IllegalAnnotation(name: String, loc: SourceLocation) extends WeederError {
       val format =
@@ -323,7 +322,6 @@ object Weeder {
       * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
       *
       * @param name the name of the variable.
-      *
       * @param loc1 the location of the first use of the variable.
       * @param loc2 the location of the second use of the variable.
       */

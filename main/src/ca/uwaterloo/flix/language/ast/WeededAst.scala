@@ -11,7 +11,7 @@ object WeededAst {
     * The AST root node.
     *
     * @param declarations the declarations in the AST.
-    * @param time the time spent in each compiler phase.
+    * @param time         the time spent in each compiler phase.
     */
   case class Root(declarations: List[WeededAst.Declaration], time: Time) extends WeededAst
 
@@ -32,7 +32,7 @@ object WeededAst {
       *
       * @param name the name of the namespace.
       * @param body the nested declarations.
-      * @param loc the source location.
+      * @param loc  the source location.
       */
     case class Namespace(name: Name.Unresolved, body: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
@@ -40,7 +40,7 @@ object WeededAst {
       * An AST node that a fact declaration.
       *
       * @param head the head predicate.
-      * @param loc the source location.
+      * @param loc  the source location.
       */
     case class Fact(head: WeededAst.Predicate.Head, loc: SourceLocation) extends WeededAst.Declaration
 
@@ -49,7 +49,7 @@ object WeededAst {
       *
       * @param head the head predicate.
       * @param body the body predicate.
-      * @param loc the source location.
+      * @param loc  the source location.
       */
     case class Rule(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation) extends WeededAst.Declaration
 
@@ -66,9 +66,9 @@ object WeededAst {
       * An AST node that represent a constant definition.
       *
       * @param ident the name of the constant.
-      * @param e the named expression.
-      * @param tpe the declared type of the expression.
-      * @param loc the source location.
+      * @param e     the named expression.
+      * @param tpe   the declared type of the expression.
+      * @param loc   the source location.
       */
     case class Constant(ident: Name.Ident, e: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Definition
 
@@ -77,7 +77,7 @@ object WeededAst {
       *
       * @param ident the name of the enum.
       * @param cases the cases of the enum.
-      * @param loc the source location.
+      * @param loc   the source location.
       */
     case class Enum(ident: Name.Ident, cases: Map[String, WeededAst.Type.Tag], loc: SourceLocation) extends WeededAst.Definition
 
@@ -99,9 +99,9 @@ object WeededAst {
     /**
       * An AST node that represents an index definition.
       *
-      * @param ident the name of the relation or lattice.
+      * @param ident   the name of the relation or lattice.
       * @param indexes the sequence of indexes.
-      * @param loc the source location.
+      * @param loc     the source location.
       */
     case class Index(ident: Name.Ident, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends WeededAst.Definition
 
@@ -122,19 +122,19 @@ object WeededAst {
     /**
       * An AST node that represents a relation definition.
       *
-      * @param ident the name of the relation.
+      * @param ident      the name of the relation.
       * @param attributes the attributes of the relation.
-      * @param loc the source location of the relation.
+      * @param loc        the source location of the relation.
       */
     case class Relation(ident: Name.Ident, attributes: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Collection
 
     /**
       * An AST node that represents a lattice definition.
       *
-      * @param ident the name of the lattice.
-      * @param keys the key attributes of the lattice.
+      * @param ident  the name of the lattice.
+      * @param keys   the key attributes of the lattice.
       * @param values the values attributes of the lattice.
-      * @param loc the source location of the lattice.
+      * @param loc    the source location of the lattice.
       */
     case class Lattice(ident: Name.Ident, keys: List[WeededAst.Attribute], values: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Collection
 
@@ -156,7 +156,7 @@ object WeededAst {
       * An AST node that represents an asserted fact.
       *
       * @param fact the asserted fact.
-      * @param loc the source location.
+      * @param loc  the source location.
       */
     case class AssertFact(fact: WeededAst.Declaration.Fact, loc: SourceLocation) extends WeededAst.Directive
 
@@ -164,7 +164,7 @@ object WeededAst {
       * An AST node that represents an asserted rule.
       *
       * @param rule the asserted rule.
-      * @param loc the source location.
+      * @param loc  the source location.
       */
     case class AssertRule(rule: WeededAst.Declaration.Rule, loc: SourceLocation) extends WeededAst.Directive
 
@@ -172,7 +172,7 @@ object WeededAst {
       * An AST node that represents a directive to print a relation.
       *
       * @param name the name of the relation.
-      * @param loc the source location.
+      * @param loc  the source location.
       */
     case class Print(name: Name.Unresolved, loc: SourceLocation) extends WeededAst.Directive
 
@@ -224,10 +224,10 @@ object WeededAst {
     /**
       * An AST node that represents a tagged literal.
       *
-      * @param enum the enum name.
-      * @param tag the tag name.
+      * @param enum    the enum name.
+      * @param tag     the tag name.
       * @param literal the literal
-      * @param loc the source location of the literal.
+      * @param loc     the source location of the literal.
       */
     case class Tag(enum: Name.Unresolved, tag: Name.Ident, literal: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Literal
 
@@ -235,7 +235,7 @@ object WeededAst {
       * An AST node that represents a tuple literal.
       *
       * @param elms the elements of the tuple.
-      * @param loc the source location of the literal.
+      * @param loc  the source location of the literal.
       */
     case class Tuple(elms: List[WeededAst.Literal], loc: SourceLocation) extends WeededAst.Literal
 
@@ -243,7 +243,7 @@ object WeededAst {
       * An AST node that represents a set literal.
       *
       * @param elms the elements of the set.
-      * @param loc the source location of the literal.
+      * @param loc  the source location of the literal.
       */
     case class Set(elms: List[WeededAst.Literal], loc: SourceLocation) extends WeededAst.Literal
 
@@ -273,7 +273,7 @@ object WeededAst {
       * An AST node that represents a variable or unresolved reference.
       *
       * @param name the unresolved name.
-      * @param loc the source location.
+      * @param loc  the source location.
       */
     case class Var(name: Name.Unresolved, loc: SourceLocation) extends WeededAst.Expression
 
@@ -281,10 +281,10 @@ object WeededAst {
       * An AST node that represents a lambda expressions.
       *
       * @param annotations the annotations.
-      * @param formals the formal arguments.
-      * @param body the body expression.
-      * @param retTpe the declared return type.
-      * @param loc the source location.
+      * @param formals     the formal arguments.
+      * @param body        the body expression.
+      * @param retTpe      the declared return type.
+      * @param loc         the source location.
       */
     case class Lambda(annotations: Ast.Annotations, formals: List[WeededAst.FormalArg], body: WeededAst.Expression, retTpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
@@ -292,16 +292,16 @@ object WeededAst {
       * An AST node that represents a call expression.
       *
       * @param lambda the lambda expression.
-      * @param args the argument expressions.
-      * @param loc the source location.
+      * @param args   the argument expressions.
+      * @param loc    the source location.
       */
     case class Apply(lambda: WeededAst.Expression, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     /**
       * An AST node that represents a unary expression.
       *
-      * @param op the unary operator.
-      * @param e the nested expression.
+      * @param op  the unary operator.
+      * @param e   the nested expression.
       * @param loc the source location.
       */
     case class Unary(op: UnaryOperator, e: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -309,9 +309,9 @@ object WeededAst {
     /**
       * An AST node that represents a binary expression.
       *
-      * @param op the binary operator.
-      * @param e1 the lhs expression.
-      * @param e2 the rhs expression.
+      * @param op  the binary operator.
+      * @param e1  the lhs expression.
+      * @param e2  the rhs expression.
       * @param loc the source location.
       */
     case class Binary(op: BinaryOperator, e1: WeededAst.Expression, e2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -319,9 +319,9 @@ object WeededAst {
     /**
       * An AST node that represents an if-then-else expression.
       *
-      * @param e1 the conditional expression.
-      * @param e2 the consequent expression.
-      * @param e3 the alternate expression.
+      * @param e1  the conditional expression.
+      * @param e2  the consequent expression.
+      * @param e3  the alternate expression.
       * @param loc the source location.
       */
     case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -331,16 +331,16 @@ object WeededAst {
       *
       * @param ident the name of the bound variable.
       * @param value the value expression.
-      * @param body the body expression in which the let-bound variable occurs.
-      * @param loc the source location.
+      * @param body  the body expression in which the let-bound variable occurs.
+      * @param loc   the source location.
       */
     case class Let(ident: Name.Ident, value: WeededAst.Expression, body: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     /**
       * An AST node that represents a match expression.
       *
-      * @param e the match value expression.
-      * @param rs the match rules.
+      * @param e   the match value expression.
+      * @param rs  the match rules.
       * @param loc the source location.
       */
     case class Match(e: WeededAst.Expression, rs: List[(WeededAst.Pattern, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
@@ -349,9 +349,9 @@ object WeededAst {
       * An AST node that represents a tagged expression.
       *
       * @param enum the enum name.
-      * @param tag the tag name.
-      * @param e the tagged expression.
-      * @param loc the source location.
+      * @param tag  the tag name.
+      * @param e    the tagged expression.
+      * @param loc  the source location.
       */
     case class Tag(enum: Name.Unresolved, tag: Name.Ident, e: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -359,7 +359,7 @@ object WeededAst {
       * An AST node that represents a tuple expression.
       *
       * @param elms the elements of the tuple.
-      * @param loc the source location.
+      * @param loc  the source location.
       */
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
@@ -367,14 +367,14 @@ object WeededAst {
       * An AST node that represents a set expression.
       *
       * @param elms the elements of the set.
-      * @param loc the source location.
+      * @param loc  the source location.
       */
     case class Set(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     /**
       * An AST node that represents an ascribe expression.
       *
-      * @param e the ascribed expression.
+      * @param e   the ascribed expression.
       * @param tpe the ascribed type.
       * @param loc the source location.
       */
@@ -391,9 +391,9 @@ object WeededAst {
     /**
       * An AST node that represents a reference to a JVM static field or method.
       *
-      * @param className the fully qualified name of the class.
+      * @param className  the fully qualified name of the class.
       * @param memberName the name of the field or method.
-      * @param loc the source location.
+      * @param loc        the source location.
       */
     case class Native(className: String, memberName: String, loc: SourceLocation) extends WeededAst.Expression
 
@@ -435,7 +435,7 @@ object WeededAst {
       * An AST node that represents a variable pattern.
       *
       * @param ident the name of the variable.
-      * @param loc the source location.
+      * @param loc   the source location.
       */
     case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Pattern
 
@@ -451,9 +451,9 @@ object WeededAst {
       * An AST node that represents a tagged pattern.
       *
       * @param enum the enum name.
-      * @param tag the tag name.
-      * @param pat the nested pattern.
-      * @param loc the source location.
+      * @param tag  the tag name.
+      * @param pat  the nested pattern.
+      * @param loc  the source location.
       */
     case class Tag(enum: Name.Unresolved, tag: Name.Ident, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
@@ -461,7 +461,7 @@ object WeededAst {
       * An AST node that represents a tuple pattern.
       *
       * @param elms the elements of the tuple.
-      * @param loc the source location.
+      * @param loc  the source location.
       */
     case class Tuple(elms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
@@ -484,9 +484,9 @@ object WeededAst {
       /**
         * An AST node that represents a relational predicate.
         *
-        * @param name the name of the relation.
+        * @param name  the name of the relation.
         * @param terms the terms of the predicate.
-        * @param loc the source location.
+        * @param loc   the source location.
         */
       case class Relation(name: Name.Unresolved, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
@@ -494,7 +494,7 @@ object WeededAst {
         * An AST node that represents the special trace predicate.
         *
         * @param terms the terms of the predicate.
-        * @param loc the source location.
+        * @param loc   the source location.
         */
       case class Trace(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
@@ -502,8 +502,8 @@ object WeededAst {
         * An AST node that represents the special write predicate.
         *
         * @param terms the terms of the predicate.
-        * @param path the path to write to.
-        * @param loc the source location.
+        * @param path  the path to write to.
+        * @param loc   the source location.
         */
       case class Write(terms: List[WeededAst.Term.Head], path: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Predicate.Head
 
@@ -511,7 +511,7 @@ object WeededAst {
         * An AST node that represents the special error predicate.
         *
         * @param terms the terms of the predicate.
-        * @param loc the source location.
+        * @param loc   the source location.
         */
       case class Error(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
@@ -527,9 +527,9 @@ object WeededAst {
       /**
         * An AST node that represents a functional or relational predicate.
         *
-        * @param name the name of the function or relation.
+        * @param name  the name of the function or relation.
         * @param terms the terms of the predicate.
-        * @param loc the source location.
+        * @param loc   the source location.
         */
       case class FunctionOrRelation(name: Name.Unresolved, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst.Predicate.Body
 
@@ -538,7 +538,7 @@ object WeededAst {
         *
         * @param ident1 the name of the first variable.
         * @param ident2 the name of the second variable.
-        * @param loc the source location.
+        * @param loc    the source location.
         */
       case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends WeededAst.Predicate.Body
 
@@ -546,8 +546,8 @@ object WeededAst {
         * An AST node that represents the special loop predicate.
         *
         * @param ident the loop variable.
-        * @param term the set term.
-        * @param loc the source location.
+        * @param term  the set term.
+        * @param loc   the source location.
         */
       case class Loop(ident: Name.Ident, term: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Predicate.Body
 
@@ -555,8 +555,8 @@ object WeededAst {
         * An AST node that represents the special read predicate.
         *
         * @param terms the terms of the predicate.
-        * @param path the path to read from.
-        * @param loc the source location.
+        * @param path  the path to read from.
+        * @param loc   the source location.
         */
       case class Read(terms: List[WeededAst.Term.Body], path: WeededAst.Term.Body, loc: SourceLocation) extends WeededAst.Predicate.Body
 
@@ -587,7 +587,7 @@ object WeededAst {
         * A variable term.
         *
         * @param ident the name of the variable.
-        * @param loc the source location.
+        * @param loc   the source location.
         */
       case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Term.Head
 
@@ -604,7 +604,7 @@ object WeededAst {
         *
         * @param name the name of the function.
         * @param args the arguments to the function. 
-        * @param loc the source location.
+        * @param loc  the source location.
         */
       case class Apply(name: Name.Unresolved, args: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Term.Head
 
@@ -612,17 +612,17 @@ object WeededAst {
         * An ascribe term.
         *
         * @param term the ascribed term.
-        * @param tpe the typed of the ascribed term.
-        * @param loc the source location.
+        * @param tpe  the typed of the ascribed term.
+        * @param loc  the source location.
         */
       case class Ascribe(term: Head, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Term.Head
 
       /**
         * An AST node that represents a reference to a JVM static field or method.
         *
-        * @param className the fully qualified name of the class.
+        * @param className  the fully qualified name of the class.
         * @param memberName the name of the field or method.
-        * @param loc the source location.
+        * @param loc        the source location.
         */
       case class Native(className: String, memberName: String, loc: SourceLocation) extends WeededAst.Term.Head
 
@@ -646,7 +646,7 @@ object WeededAst {
         * A variable term.
         *
         * @param ident the name of the variable.
-        * @param loc the source location.
+        * @param loc   the source location.
         */
       case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Term.Body
 
@@ -662,8 +662,8 @@ object WeededAst {
         * An ascribe term.
         *
         * @param term the ascribed term.
-        * @param tpe the typed of the ascribed term.
-        * @param loc the source location.
+        * @param tpe  the typed of the ascribed term.
+        * @param loc  the source location.
         */
       case class Ascribe(term: Body, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Term.Body
 
@@ -703,7 +703,7 @@ object WeededAst {
     /**
       * An AST node that represents an enum type.
       *
-      * @param name the name of the enum.
+      * @param name  the name of the enum.
       * @param cases the cases of the enum.
       */
     case class Enum(name: Name.Resolved, cases: Map[String, WeededAst.Type.Tag]) extends WeededAst.Type
@@ -725,7 +725,7 @@ object WeededAst {
     /**
       * An AST node that represents a function type.
       *
-      * @param args the type of the arguments.
+      * @param args   the type of the arguments.
       * @param retTpe the return type.
       */
     case class Function(args: List[WeededAst.Type], retTpe: WeededAst.Type) extends WeededAst.Type
@@ -734,7 +734,7 @@ object WeededAst {
       * An AST node that represents a native type.
       *
       * @param name the fully qualified name of the type.
-      * @param loc the source location.
+      * @param loc  the source location.
       */
     case class Native(name: String, loc: SourceLocation) extends WeededAst.Type
 
@@ -743,8 +743,8 @@ object WeededAst {
   /**
     * An AST node that represents an attribute in a relation.
     *
-    * @param ident the name of the attribute.
-    * @param tpe the declared type of the attribute.
+    * @param ident  the name of the attribute.
+    * @param tpe    the declared type of the attribute.
     * @param interp the interpretation of the attribute.
     */
   case class Attribute(ident: Name.Ident, tpe: WeededAst.Type, interp: WeededAst.Interpretation) extends WeededAst
@@ -772,7 +772,7 @@ object WeededAst {
     * An AST node representing a formal argument of a function.
     *
     * @param ident the name of the argument.
-    * @param tpe the type of the argument.
+    * @param tpe   the type of the argument.
     */
   case class FormalArg(ident: Name.Ident, tpe: WeededAst.Type) extends WeededAst
 

@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.language.backend
+package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.language.ast.Name
 

@@ -1,8 +1,6 @@
-package ca.uwaterloo.flix.language.backend.phase
+package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst
-import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst.Expression
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, TypedAst}
 
 /**
   * A phase that simplifies a Typed AST by:

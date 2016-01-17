@@ -1,7 +1,7 @@
-package ca.uwaterloo.flix.language.backend.phase
+package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.{TypedAst, Name}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Term, Predicate}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Predicate, Term}
+import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 
 import scala.collection.mutable
 

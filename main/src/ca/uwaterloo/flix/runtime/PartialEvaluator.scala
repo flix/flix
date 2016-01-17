@@ -1,8 +1,8 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, UnaryOperator}
-import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst.Expression
-import ca.uwaterloo.flix.language.backend.ir.SimplifiedAst.Expression._
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 
 object PartialEvaluator {
 

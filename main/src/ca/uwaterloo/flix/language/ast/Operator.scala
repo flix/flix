@@ -90,8 +90,8 @@ sealed trait EqualityOperator extends ComparisonOperator
 sealed trait LogicalOperator extends BinaryOperator
 
 /**
- * A common super-type for bitwise operators.
- */
+  * A common super-type for bitwise operators.
+  */
 sealed trait BitwiseOperator extends BinaryOperator
 
 object BinaryOperator {
@@ -162,28 +162,28 @@ object BinaryOperator {
   case object Or extends LogicalOperator
 
   /**
-   * Bitwise and.
-   */
+    * Bitwise and.
+    */
   case object BitwiseAnd extends BitwiseOperator
 
   /**
-   * Bitwise or.
-   */
+    * Bitwise or.
+    */
   case object BitwiseOr extends BitwiseOperator
 
   /**
-   * Bitwise xor.
-   */
+    * Bitwise xor.
+    */
   case object BitwiseXor extends BitwiseOperator
 
   /**
-   * Bitwise left shift.
-   */
+    * Bitwise left shift.
+    */
   case object BitwiseLeftShift extends BitwiseOperator
 
   /**
-   * Bitwise right shift.
-   */
+    * Bitwise right shift.
+    */
   case object BitwiseRightShift extends BitwiseOperator
 
   /**

@@ -1,10 +1,10 @@
 package ca.uwaterloo.flix.language.phase
 
-import java.lang.reflect.{Method, Field, Modifier}
+import java.lang.reflect.{Field, Method, Modifier}
 
+import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.WeededAst.Root
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.misc.Levenshtein
@@ -49,7 +49,7 @@ object Resolver {
       * An error raised to indicate that the given `name` is illegal for a constant definition.
       *
       * @param name the invalid name.
-      * @param loc the location of the name.
+      * @param loc  the location of the name.
       */
     case class IllegalConstantName(name: String, loc: SourceLocation) extends ResolverError {
       val format =
@@ -66,7 +66,7 @@ object Resolver {
       * An error raised to indicate that the given `name` is illegal for a relation definition.
       *
       * @param name the invalid name.
-      * @param loc the location of the name.
+      * @param loc  the location of the name.
       */
     // TODO: Rename to illegal collection name.
     case class IllegalRelationName(name: String, loc: SourceLocation) extends ResolverError {
@@ -84,7 +84,7 @@ object Resolver {
       * An error raised to indicate that the given `name` is illegal as a variable name.
       *
       * @param name the invalid name.
-      * @param loc the location of the name.
+      * @param loc  the location of the name.
       */
     case class IllegalVariableName(name: String, loc: SourceLocation) extends ResolverError {
       val format =
@@ -100,7 +100,7 @@ object Resolver {
     /**
       * An error raised to indicate that the given `name` in the given `namespace` was not found.
       *
-      * @param name the unresolved name.
+      * @param name      the unresolved name.
       * @param namespace the current namespace.
       */
     // TODO: Split this into multiple different versions:
@@ -112,9 +112,9 @@ object Resolver {
     /**
       * An error raised to indicate a reference to an unknown constant.
       *
-      * @param name the unresolved name.
+      * @param name      the unresolved name.
       * @param namespace the current namespace.
-      * @param loc the source location of the reference.
+      * @param loc       the source location of the reference.
       */
     case class UnresolvedConstantReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
@@ -129,9 +129,9 @@ object Resolver {
     /**
       * An error raised to indicate a reference to an unknown enum.
       *
-      * @param name the unresolved name.
+      * @param name      the unresolved name.
       * @param namespace the current namespace.
-      * @param loc the source location of the reference.
+      * @param loc       the source location of the reference.
       */
     case class UnresolvedEnumReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
@@ -147,8 +147,8 @@ object Resolver {
       * An error raised to indicate a reference to an unknown tag in an enum.
       *
       * @param enum the enum.
-      * @param tag the tag name.
-      * @param loc the source location of the reference.
+      * @param tag  the tag name.
+      * @param loc  the source location of the reference.
       */
     case class UnresolvedTagReference(enum: WeededAst.Definition.Enum, tag: String, loc: SourceLocation) extends ResolverError {
       val format = {
@@ -169,9 +169,9 @@ object Resolver {
     /**
       * An error raised to indicate a reference to an unknown relation.
       *
-      * @param name the unresolved name.
+      * @param name      the unresolved name.
       * @param namespace the current namespace.
-      * @param loc the source location of the reference.
+      * @param loc       the source location of the reference.
       */
     case class UnresolvedRelationReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
@@ -186,9 +186,9 @@ object Resolver {
     /**
       * An error raised to indicate a reference to an unknown type.
       *
-      * @param name the unresolved name.
+      * @param name      the unresolved name.
       * @param namespace the current namespace.
-      * @param loc the source location of the reference.
+      * @param loc       the source location of the reference.
       */
     case class UnresolvedTypeReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val format =
@@ -204,7 +204,7 @@ object Resolver {
       * An error raised to indicate a reference to an unknown native class.
       *
       * @param name the fully qualified name of the class.
-      * @param loc the source location of the reference.
+      * @param loc  the source location of the reference.
       */
     // TODO: Test case
     case class UnresolvedNativeClass(name: String, loc: SourceLocation) extends ResolverError {
@@ -221,9 +221,9 @@ object Resolver {
     /**
       * An error raised to indicate a reference to an unknown field or method.
       *
-      * @param clazz the fully qualified name of the class.
+      * @param clazz  the fully qualified name of the class.
       * @param member the field or method name.
-      * @param loc the source location of the reference.
+      * @param loc    the source location of the reference.
       */
     // TODO: Test case
     case class UnresolvedFieldOrMethod(clazz: String, member: String, loc: SourceLocation) extends ResolverError {
@@ -239,9 +239,9 @@ object Resolver {
     /**
       * An error raised to indicate a reference to an unknown field or method.
       *
-      * @param clazz the fully qualified name of the class.
+      * @param clazz  the fully qualified name of the class.
       * @param member the field or method name.
-      * @param loc the source location of the reference.
+      * @param loc    the source location of the reference.
       */
     // TODO: Test case
     case class AmbiguousFieldOrMethod(clazz: String, member: String, loc: SourceLocation) extends ResolverError {

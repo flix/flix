@@ -1,8 +1,8 @@
-package ca.uwaterloo.flix.language.backend.ir
+package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.{Method, Field}
+import java.lang.reflect.{Field, Method}
+
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
-import ca.uwaterloo.flix.language.ast._
 
 import scala.collection.mutable
 
@@ -55,12 +55,12 @@ object ExecutableAst {
     case class Constant(name: Name.Resolved, exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Definition
 
     case class BoundedLattice(tpe: Type,
-                       bot: ExecutableAst.Expression,
-                       top: ExecutableAst.Expression,
-                       leq: ExecutableAst.Expression,
-                       lub: ExecutableAst.Expression,
-                       glb: ExecutableAst.Expression,
-                       loc: SourceLocation) extends ExecutableAst.Definition
+                              bot: ExecutableAst.Expression,
+                              top: ExecutableAst.Expression,
+                              leq: ExecutableAst.Expression,
+                              lub: ExecutableAst.Expression,
+                              glb: ExecutableAst.Expression,
+                              loc: SourceLocation) extends ExecutableAst.Definition
 
     case class Index(name: Name.Resolved, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends ExecutableAst.Definition
 

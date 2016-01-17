@@ -1,13 +1,12 @@
-package ca.uwaterloo.flix.language.backend.phase
+package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
+import ca.uwaterloo.flix.language.ast.ReducedIR.Expression._
+import ca.uwaterloo.flix.language.ast.ReducedIR.{Definition, Expression, LoadExpression, StoreExpression, Type}
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.backend.ir.ReducedIR.{LoadExpression, StoreExpression, Definition, Expression, Type}
-import ca.uwaterloo.flix.language.backend.ir.ReducedIR.Expression._
-
-import org.objectweb.asm.{ClassVisitor, ClassWriter, MethodVisitor, Label}
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.util.CheckClassAdapter
+import org.objectweb.asm.{ClassVisitor, ClassWriter, Label, MethodVisitor}
 
 object Codegen {
 

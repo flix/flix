@@ -28,8 +28,8 @@ object Typer {
       * An error raised to indicate a type mismatch between an `expected` and an `actual` type.
       *
       * @param expected the expected type.
-      * @param actual the actual type.
-      * @param loc the source location.
+      * @param actual   the actual type.
+      * @param loc      the source location.
       */
     case class ExpectedType(expected: TypedAst.Type, actual: TypedAst.Type, loc: SourceLocation) extends TypeError {
       val format =
@@ -803,8 +803,8 @@ object Typer {
     * Returns the given `expected` type wrapped in [[Success]] if it matches the given `actual` type.
     *
     * @param expected the expected type.
-    * @param actual the actual type.
-    * @param loc the source location.
+    * @param actual   the actual type.
+    * @param loc      the source location.
     */
   def expect(expected: TypedAst.Type, actual: TypedAst.Type, loc: SourceLocation): Validation[TypedAst.Type, TypeError] =
     if (expected == TypedAst.Type.Any)

@@ -30,8 +30,8 @@ package object ast {
     case class TxtFile(path: Path) extends SourceInput
 
     /**
-     * An source that is backed by a zip file.
-     */
+      * An source that is backed by a zip file.
+      */
     case class ZipFile(path: Path) extends SourceInput
 
   }
@@ -47,7 +47,7 @@ package object ast {
     * A class that represent a physical source position inside a source input.
     *
     * @param line the line number.
-    * @param col the column number.
+    * @param col  the column number.
     * @param code the line.
     */
   case class SourcePosition(source: SourceInput, line: Int, col: Int, code: () => String)
@@ -71,12 +71,12 @@ package object ast {
   /**
     * A class that represents the physical source location of some parsed syntactic entity.
     *
-    * @param source the source input.
+    * @param source    the source input.
     * @param beginLine the line number where the entity begins.
-    * @param beginCol the column number where the entity begins.
-    * @param endLine the line number where the entity ends.
-    * @param endCol the column number where the entity ends.
-    * @param line the optional line (if the syntactic entity occurs on one line).
+    * @param beginCol  the column number where the entity begins.
+    * @param endLine   the line number where the entity ends.
+    * @param endCol    the column number where the entity ends.
+    * @param line      the optional line (if the syntactic entity occurs on one line).
     */
   case class SourceLocation(source: SourceInput, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int, line: () => String) {
 

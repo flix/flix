@@ -1,8 +1,6 @@
-package ca.uwaterloo.flix.language.backend.ir
+package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.{Method, Field}
 import ca.uwaterloo.flix.language.ast.TypedAst.Type
-import ca.uwaterloo.flix.language.ast._
 
 sealed trait SimplifiedAst
 
@@ -172,6 +170,7 @@ object SimplifiedAst {
     object Head {
 
       case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
+
       // TODO: Lambda lift?
       case class Exp(literal: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
 
@@ -191,6 +190,7 @@ object SimplifiedAst {
       case class Wildcard(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
 
       case class Var(v: Int, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
+
       // TODO: Lambda lift?
       case class Exp(e: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
 
