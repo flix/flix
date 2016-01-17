@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.Type
+import ca.uwaterloo.flix.language.ast.Type
 
 import java.lang.reflect.Method
 import scala.collection.mutable

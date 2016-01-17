@@ -2,8 +2,6 @@ package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{Field, Method}
 
-import ca.uwaterloo.flix.language.ast.TypedAst.Type
-
 import scala.collection.mutable
 
 sealed trait ExecutableAst
@@ -150,23 +148,23 @@ object ExecutableAst {
   object Expression {
 
     case object Unit extends ExecutableAst.Expression {
-      final val tpe = TypedAst.Type.Unit
+      final val tpe = Type.Unit
     }
 
     case object True extends ExecutableAst.Expression {
-      final val tpe = TypedAst.Type.Bool
+      final val tpe = Type.Bool
     }
 
     case object False extends ExecutableAst.Expression {
-      final val tpe = TypedAst.Type.Bool
+      final val tpe = Type.Bool
     }
 
     case class Int(lit: scala.Int) extends ExecutableAst.Expression {
-      final val tpe = TypedAst.Type.Int
+      final val tpe = Type.Int
     }
 
     case class Str(lit: java.lang.String) extends ExecutableAst.Expression {
-      final val tpe = TypedAst.Type.Str
+      final val tpe = Type.Str
     }
 
     case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression

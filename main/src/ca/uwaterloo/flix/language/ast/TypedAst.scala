@@ -27,7 +27,7 @@ object TypedAst {
     */
   case class Root(constants: Map[Name.Resolved, TypedAst.Definition.Constant],
                   directives: TypedAst.Directives,
-                  lattices: Map[TypedAst.Type, TypedAst.Definition.BoundedLattice],
+                  lattices: Map[Type, TypedAst.Definition.BoundedLattice],
                   collections: Map[Name.Resolved, TypedAst.Collection],
                   indexes: Map[Name.Resolved, TypedAst.Definition.Index],
                   facts: List[TypedAst.Constraint.Fact],
@@ -82,7 +82,7 @@ object TypedAst {
       * @param tpe  the type of the constant.
       * @param loc  the source location.
       */
-    case class Constant(name: Name.Resolved, exp: TypedAst.Expression, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Definition
+    case class Constant(name: Name.Resolved, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Definition
 
     /**
       * A typed AST node representing a bounded lattice definition.
@@ -95,7 +95,7 @@ object TypedAst {
       * @param glb the greatest lower bound.
       * @param loc the source location.
       */
-    case class BoundedLattice(tpe: TypedAst.Type,
+    case class BoundedLattice(tpe: Type,
                               bot: TypedAst.Expression,
                               top: TypedAst.Expression,
                               leq: TypedAst.Expression,
@@ -264,7 +264,7 @@ object TypedAst {
     /**
       * The type of `this` literal.
       */
-    def tpe: TypedAst.Type
+    def tpe: Type
 
     /**
       * The source location of `this` literal.
@@ -280,7 +280,7 @@ object TypedAst {
       * @param loc the source location.
       */
     case class Unit(loc: SourceLocation) extends TypedAst.Literal {
-      final val tpe = TypedAst.Type.Unit
+      final val tpe = Type.Unit
     }
 
     /**
@@ -290,7 +290,7 @@ object TypedAst {
       * @param loc the source location.
       */
     case class Bool(lit: scala.Boolean, loc: SourceLocation) extends TypedAst.Literal {
-      final val tpe = TypedAst.Type.Bool
+      final val tpe = Type.Bool
     }
 
     /**
@@ -300,7 +300,7 @@ object TypedAst {
       * @param loc the source location.
       */
     case class Int(lit: scala.Int, loc: SourceLocation) extends TypedAst.Literal {
-      final val tpe = TypedAst.Type.Int
+      final val tpe = Type.Int
     }
 
     /**
@@ -310,7 +310,7 @@ object TypedAst {
       * @param loc the source location.
       */
     case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Literal {
-      final val tpe = TypedAst.Type.Str
+      final val tpe = Type.Str
     }
 
     /**
@@ -322,7 +322,7 @@ object TypedAst {
       * @param tpe  the type of the tag.
       * @param loc  the source location.
       */
-    case class Tag(enum: Name.Resolved, tag: Name.Ident, lit: TypedAst.Literal, tpe: TypedAst.Type.Enum, loc: SourceLocation) extends TypedAst.Literal
+    case class Tag(enum: Name.Resolved, tag: Name.Ident, lit: TypedAst.Literal, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Literal
 
     /**
       * A typed AST node representing a tuple literal.
@@ -331,7 +331,7 @@ object TypedAst {
       * @param tpe  the type of the tuple.
       * @param loc  the source location.
       */
-    case class Tuple(elms: List[TypedAst.Literal], tpe: TypedAst.Type.Tuple, loc: SourceLocation) extends TypedAst.Literal {
+    case class Tuple(elms: List[TypedAst.Literal], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Literal {
       // TODO: Move
       @deprecated("moved to ExecutableAST", "0.1")
       val asArray: Array[TypedAst.Literal] = elms.toArray
@@ -344,7 +344,7 @@ object TypedAst {
       * @param tpe  the type of the set.
       * @param loc  the source location.
       */
-    case class Set(elms: List[TypedAst.Literal], tpe: TypedAst.Type.Set, loc: SourceLocation) extends TypedAst.Literal
+    case class Set(elms: List[TypedAst.Literal], tpe: Type.Set, loc: SourceLocation) extends TypedAst.Literal
 
   }
 
@@ -369,7 +369,7 @@ object TypedAst {
       * @param tpe     the type of the literal.
       * @param loc     the source location.
       */
-    case class Lit(literal: TypedAst.Literal, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Lit(literal: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a local variable expression (i.e. a parameter or let-bound variable).
@@ -377,7 +377,7 @@ object TypedAst {
       * @param ident the name of the variable.
       * @param tpe   the type of the variable.
       */
-    case class Var(ident: Name.Ident, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a reference to a definition (i.e. a value or function).
@@ -386,7 +386,7 @@ object TypedAst {
       * @param tpe  the type of the definition.
       * @param loc  the source location.
       */
-    case class Ref(name: Name.Resolved, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Ref(name: Name.Resolved, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a lambda abstraction.
@@ -397,7 +397,7 @@ object TypedAst {
       * @param tpe         the type of the entire function.
       * @param loc         the source location.
       */
-    case class Lambda(annotations: Ast.Annotations, args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: TypedAst.Type.Lambda, loc: SourceLocation) extends TypedAst.Expression {
+    case class Lambda(annotations: Ast.Annotations, args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Expression {
       // TODO: Move
       @deprecated("moved to ExecutableAST", "0.1")
       val argsAsArray: Array[TypedAst.FormalArg] = args.toArray
@@ -411,7 +411,7 @@ object TypedAst {
       * @param tpe  the return type of the function.
       * @param loc  the source location.
       */
-    case class Apply(exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression {
+    case class Apply(exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       // TODO: Move
       @deprecated("moved to ExecutableAST", "0.1")
       val argsAsArray: Array[TypedAst.Expression] = args.toArray
@@ -425,7 +425,7 @@ object TypedAst {
       * @param tpe the type
       * @param loc the source location.
       */
-    case class Unary(op: UnaryOperator, exp: TypedAst.Expression, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Unary(op: UnaryOperator, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a binary expression.
@@ -436,7 +436,7 @@ object TypedAst {
       * @param tpe  the type of the expression.
       * @param loc  the source location.
       */
-    case class Binary(op: BinaryOperator, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Binary(op: BinaryOperator, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing an if-then-else expression.
@@ -447,7 +447,7 @@ object TypedAst {
       * @param tpe  the type of the consequent and alternative expressions.
       * @param loc  the source location.
       */
-    case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a let expression.
@@ -458,7 +458,7 @@ object TypedAst {
       * @param tpe   the type of the expression (which is equivalent to the type of the body expression).
       * @param loc   the source location.
       */
-    case class Let(ident: Name.Ident, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Let(ident: Name.Ident, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a match expression.
@@ -468,7 +468,7 @@ object TypedAst {
       * @param tpe   the type of the match expression (which is equivalent to the type of each rule).
       * @param loc   the source location.
       */
-    case class Match(exp: TypedAst.Expression, rules: List[(TypedAst.Pattern, TypedAst.Expression)], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression {
+    case class Match(exp: TypedAst.Expression, rules: List[(TypedAst.Pattern, TypedAst.Expression)], tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       // TODO: Move
       @deprecated("moved to ExecutableAST", "0.1")
       val rulesAsArray: Array[(TypedAst.Pattern, TypedAst.Expression)] = rules.toArray
@@ -483,7 +483,7 @@ object TypedAst {
       * @param tpe   the type of the expression.
       * @param loc   the source location.
       */
-    case class Tag(name: Name.Resolved, ident: Name.Ident, exp: TypedAst.Expression, tpe: TypedAst.Type.Enum, loc: SourceLocation) extends TypedAst.Expression
+    case class Tag(name: Name.Resolved, ident: Name.Ident, exp: TypedAst.Expression, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a tuple expression.
@@ -492,7 +492,7 @@ object TypedAst {
       * @param tpe  the type of the tuple.
       * @param loc  the source location.
       */
-    case class Tuple(elms: List[TypedAst.Expression], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression {
+    case class Tuple(elms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       // TODO: Move
       @deprecated("moved to ExecutableAST", "0.1")
       val asArray: Array[TypedAst.Expression] = elms.toArray
@@ -505,7 +505,7 @@ object TypedAst {
       * @param tpe  the type of the set.
       * @param loc  the source location.
       */
-    case class Set(elms: List[TypedAst.Expression], tpe: TypedAst.Type.Set, loc: SourceLocation) extends TypedAst.Expression
+    case class Set(elms: List[TypedAst.Expression], tpe: Type.Set, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing an error expression.
@@ -513,7 +513,7 @@ object TypedAst {
       * @param tpe the type of the error expression.
       * @param loc the source location.
       */
-    case class Error(tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Error(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a native field access expression.
@@ -522,7 +522,7 @@ object TypedAst {
       * @param tpe   the type of the field.
       * @param loc   the source location.
       */
-    case class NativeField(field: Field, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a native method expression.
@@ -531,7 +531,7 @@ object TypedAst {
       * @param tpe    the type of the method.
       * @param loc    the source location.
       */
-    case class NativeMethod(method: Method, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Expression
+    case class NativeMethod(method: Method, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
   }
 
@@ -542,7 +542,7 @@ object TypedAst {
     /**
       * The type of `this` pattern.
       */
-    def tpe: TypedAst.Type
+    def tpe: Type
 
     /**
       * The source location of `this` pattern.
@@ -552,8 +552,8 @@ object TypedAst {
     /**
       * Returns the free variables (along with their types) in `this` pattern.
       */
-    def freeVars: Map[String, TypedAst.Type] = {
-      def visit(pat: TypedAst.Pattern, m: Map[String, TypedAst.Type]): Map[String, TypedAst.Type] =
+    def freeVars: Map[String, Type] = {
+      def visit(pat: TypedAst.Pattern, m: Map[String, Type]): Map[String, Type] =
         pat match {
           case TypedAst.Pattern.Wildcard(_, _) => m
           case TypedAst.Pattern.Var(ident, tpe, _) => m + (ident.name -> tpe)
@@ -576,7 +576,7 @@ object TypedAst {
       * @param tpe the type of the wildcard variable.
       * @param loc the source location.
       */
-    case class Wildcard(tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Pattern
+    case class Wildcard(tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     /**
       * A typed AST node representing a variable pattern.
@@ -585,7 +585,7 @@ object TypedAst {
       * @param tpe   the type of the variable.
       * @param loc   the source location.
       */
-    case class Var(ident: Name.Ident, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Pattern
+    case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     /**
       * A typed AST node representing a literal pattern.
@@ -594,7 +594,7 @@ object TypedAst {
       * @param tpe the type of the literal.
       * @param loc the source location.
       */
-    case class Lit(lit: TypedAst.Literal, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Pattern
+    case class Lit(lit: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     /**
       * A typed AST node representing a tagged pattern.
@@ -605,7 +605,7 @@ object TypedAst {
       * @param tpe   the type of the tag.
       * @param loc   the source location.
       */
-    case class Tag(name: Name.Resolved, ident: Name.Ident, pat: TypedAst.Pattern, tpe: TypedAst.Type.Tag, loc: SourceLocation) extends TypedAst.Pattern
+    case class Tag(name: Name.Resolved, ident: Name.Ident, pat: TypedAst.Pattern, tpe: Type.Tag, loc: SourceLocation) extends TypedAst.Pattern
 
     /**
       * A typed AST node representing a tuple pattern.
@@ -614,7 +614,7 @@ object TypedAst {
       * @param tpe  the type of the tuple.
       * @param loc  the source location.
       */
-    case class Tuple(elms: List[TypedAst.Pattern], tpe: TypedAst.Type.Tuple, loc: SourceLocation) extends TypedAst.Pattern {
+    case class Tuple(elms: List[TypedAst.Pattern], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Pattern {
       // TODO: Move
       @deprecated("moved to ExecutableAST", "0.1")
       val asArray: Array[TypedAst.Pattern] = elms.toArray
@@ -629,7 +629,7 @@ object TypedAst {
     /**
       * The type of the predicate.
       */
-    def tpe: TypedAst.Type
+    def tpe: Type
 
     /**
       * The source location of the predicate.
@@ -657,7 +657,7 @@ object TypedAst {
         * @param loc   the source location.
         */
       // TODO: Need better name....could also be a lattice...
-      case class Relation(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Head {
+      case class Relation(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Head {
         /**
           * Returns the arity of the predicate.
           */
@@ -678,7 +678,7 @@ object TypedAst {
         * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      case class Trace(terms: List[TypedAst.Term.Head], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class Trace(terms: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
 
       /**
         * A typed write predicate that occurs in the head of a rule.
@@ -688,7 +688,7 @@ object TypedAst {
         * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      case class Write(terms: List[TypedAst.Term.Head], path: TypedAst.Term.Head, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class Write(terms: List[TypedAst.Term.Head], path: TypedAst.Term.Head, tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
 
       /**
         * A typed error predicate that occurs in the head of a rule.
@@ -697,7 +697,7 @@ object TypedAst {
         * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      case class Error(terms: List[TypedAst.Term.Head], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class Error(terms: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
 
     }
 
@@ -736,7 +736,7 @@ object TypedAst {
         * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      case class Collection(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Body {
+      case class Collection(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Body {
         /**
           * Returns the arity of this collection predicate.
           */
@@ -775,7 +775,7 @@ object TypedAst {
         * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      case class Function(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: TypedAst.Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body {
+      case class Function(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body {
         // TODO: Move
         @deprecated("moved to ExecutableAST", "0.1")
         val termsAsArray: Array[TypedAst.Term.Body] = terms.toArray
@@ -789,7 +789,7 @@ object TypedAst {
         * @param tpe    the type of the predicate.
         * @param loc    the source location.
         */
-      case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Body
 
       /**
         * An AST node that represents the special loop predicate.
@@ -799,7 +799,7 @@ object TypedAst {
         * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      case class Loop(ident: Name.Ident, term: TypedAst.Term.Head, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Loop(ident: Name.Ident, term: TypedAst.Term.Head, tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Body
 
       /**
         * A typed read predicate that occurs in the head of a rule.
@@ -809,7 +809,7 @@ object TypedAst {
         * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      case class Read(terms: List[TypedAst.Term.Body], path: TypedAst.Term.Body, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Read(terms: List[TypedAst.Term.Body], path: TypedAst.Term.Body, tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Body
 
 
     }
@@ -825,7 +825,7 @@ object TypedAst {
       /**
         * The type of `this` term.
         */
-      def tpe: TypedAst.Type
+      def tpe: Type
 
       /**
         * The source location of `this` term.
@@ -842,7 +842,7 @@ object TypedAst {
         * @param tpe   the type of the term.
         * @param loc   the source location.
         */
-      case class Var(ident: Name.Ident, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Term.Head
+      case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
 
       /**
         * A typed AST node representing a literal term.
@@ -851,7 +851,7 @@ object TypedAst {
         * @param tpe     the type of the term.
         * @param loc     the source location.
         */
-      case class Lit(literal: TypedAst.Literal, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Term.Head
+      case class Lit(literal: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
 
       /**
         * A typed AST node representing a function call term.
@@ -861,7 +861,7 @@ object TypedAst {
         * @param tpe  the type of the term.
         * @param loc  the source location.
         */
-      case class Apply(name: Name.Resolved, args: List[TypedAst.Term.Head], tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Term.Head {
+      case class Apply(name: Name.Resolved, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head {
         // TODO: Move
         @deprecated("moved to ExecutableAST", "0.1")
         val argsAsArray: Array[TypedAst.Term.Head] = args.toArray
@@ -874,7 +874,7 @@ object TypedAst {
         * @param tpe   the type of the field.
         * @param loc   the source location.
         */
-      case class NativeField(field: Field, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Term.Head
+      case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
 
     }
 
@@ -885,7 +885,7 @@ object TypedAst {
       /**
         * The type of `this` term.
         */
-      def tpe: TypedAst.Type
+      def tpe: Type
 
       /**
         * The source location of `this` term.
@@ -901,7 +901,7 @@ object TypedAst {
         * @param tpe the type of the term.
         * @param loc the source location.
         */
-      case class Wildcard(tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Term.Body
+      case class Wildcard(tpe: Type, loc: SourceLocation) extends TypedAst.Term.Body
 
       /**
         * A typed AST node representing a variable term.
@@ -910,7 +910,7 @@ object TypedAst {
         * @param tpe   the type of the term.
         * @param loc   the source location.
         */
-      case class Var(ident: Name.Ident, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Term.Body
+      case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Body
 
       /**
         * A typed AST node representing a literal term.
@@ -919,112 +919,9 @@ object TypedAst {
         * @param tpe the type of the term.
         * @param loc the source location.
         */
-      case class Lit(lit: TypedAst.Literal, tpe: TypedAst.Type, loc: SourceLocation) extends TypedAst.Term.Body
+      case class Lit(lit: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Body
 
     }
-
-  }
-
-  /**
-    * A common super-type for types.
-    */
-  sealed trait Type extends TypedAst
-
-  object Type {
-
-    case object Any extends TypedAst.Type
-
-    /**
-      * A type variable.
-      */
-    case class Var(x: String) extends TypedAst.Type
-
-    /**
-      * An AST node representing the Unit type.
-      */
-    case object Unit extends TypedAst.Type
-
-    /**
-      * An AST node representing the Boolean type.
-      */
-    case object Bool extends TypedAst.Type
-
-    /**
-      * An AST node representing the Integer type.
-      */
-    case object Int extends TypedAst.Type
-
-    /**
-      * An AST node representing the String type.
-      */
-    case object Str extends TypedAst.Type
-
-    /**
-      * An AST node representing the type of a tag.
-      *
-      * @param name  the namespace of the tag.
-      * @param ident the name of the tag.
-      * @param tpe   the type of the nested value.
-      */
-    case class Tag(name: Name.Resolved, ident: Name.Ident, tpe: TypedAst.Type) extends TypedAst.Type
-
-    /**
-      * An AST node representing an enum type (a set of tags).
-      *
-      * @param cases a map from tag names to tag types.
-      */
-    case class Enum(cases: scala.collection.immutable.Map[String, TypedAst.Type.Tag]) extends TypedAst.Type
-
-    /**
-      * An AST node representing a tuple type.
-      *
-      * @param elms the types of the elements.
-      */
-    case class Tuple(elms: List[TypedAst.Type]) extends TypedAst.Type {
-      @deprecated("removed", "0.1")
-      val asArray: Array[TypedAst.Type] = elms.toArray
-    }
-
-    case class Opt(elmType: TypedAst.Type) extends TypedAst.Type
-
-    case class Lst(elmType: TypedAst.Type) extends TypedAst.Type
-
-    /**
-      * An AST node representing a set type.
-      *
-      * @param elmType the types of the elements.
-      */
-    case class Set(elmType: TypedAst.Type) extends TypedAst.Type
-
-    case class Map(key: TypedAst.Type, value: TypedAst.Type) extends TypedAst.Type
-
-
-    /**
-      * An AST node representing a function type.
-      *
-      * @param args   the type of the arguments.
-      * @param retTpe the type of the return type.
-      */
-    case class Lambda(args: List[TypedAst.Type], retTpe: TypedAst.Type) extends TypedAst.Type
-
-    /**
-      * An AST node representing a predicate type.
-      *
-      * @param terms the terms of the predicate.
-      */
-    case class Predicate(terms: List[TypedAst.Type]) extends TypedAst.Type
-
-    /**
-      * An AST node that represents a native type.
-      *
-      * @param name the fully qualified name of the type.
-      */
-    case class Native(name: String) extends TypedAst.Type
-
-    case object Char extends TypedAst.Type
-
-    // TODO
-    case class Abs(name: TypedAst.Type.Var, tpe: TypedAst.Type) extends TypedAst.Type
 
   }
 
@@ -1034,7 +931,7 @@ object TypedAst {
     * @param ident the name of the attribute.
     * @param tpe   the type of the attribute.
     */
-  case class Attribute(ident: Name.Ident, tpe: TypedAst.Type) extends TypedAst
+  case class Attribute(ident: Name.Ident, tpe: Type) extends TypedAst
 
   /**
     * A typed AST node representing a formal argument of a function.
@@ -1042,6 +939,6 @@ object TypedAst {
     * @param ident the name of the argument.
     * @param tpe   the type of the argument.
     */
-  case class FormalArg(ident: Name.Ident, tpe: TypedAst.Type) extends TypedAst
+  case class FormalArg(ident: Name.Ident, tpe: Type) extends TypedAst
 
 }

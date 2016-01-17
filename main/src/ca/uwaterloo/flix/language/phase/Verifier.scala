@@ -9,7 +9,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Annotation
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition._
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
-import ca.uwaterloo.flix.language.ast.TypedAst.Type
+import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, _}
 import ca.uwaterloo.flix.runtime.{PartialEvaluator, Value}
 import com.microsoft.z3._

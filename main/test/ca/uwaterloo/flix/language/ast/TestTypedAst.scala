@@ -11,13 +11,13 @@ class TestTypedAst extends FunSuite {
     val y = ident("y")
 
     val pat = TypedAst.Pattern.Tuple(List(
-      TypedAst.Pattern.Var(x, TypedAst.Type.Bool, SL),
-      TypedAst.Pattern.Var(y, TypedAst.Type.Int, SL)
-    ), TypedAst.Type.Tuple(List(TypedAst.Type.Bool, TypedAst.Type.Int)), SL)
+      TypedAst.Pattern.Var(x, Type.Bool, SL),
+      TypedAst.Pattern.Var(y, Type.Int, SL)
+    ), Type.Tuple(List(Type.Bool, Type.Int)), SL)
 
     assertResult(Map(
-      "x" -> TypedAst.Type.Bool,
-      "y" -> TypedAst.Type.Int
+      "x" -> Type.Bool,
+      "y" -> Type.Int
     ))(pat.freeVars)
   }
 

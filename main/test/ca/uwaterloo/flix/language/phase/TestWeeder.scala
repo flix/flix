@@ -3,7 +3,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ParsedAst
-import ca.uwaterloo.flix.language.phase.Parser
 
 import scala.collection.immutable.Seq
 

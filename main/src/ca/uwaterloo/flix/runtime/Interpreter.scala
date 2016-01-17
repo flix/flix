@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Type, Term, Root}
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Term, Root}
+import ca.uwaterloo.flix.language.ast.{Type, BinaryOperator, UnaryOperator}
 
 import scala.annotation.tailrec
 import scala.collection.mutable

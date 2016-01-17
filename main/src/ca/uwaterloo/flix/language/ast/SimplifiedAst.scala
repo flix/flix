@@ -1,7 +1,5 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.TypedAst.Type
-
 sealed trait SimplifiedAst
 
 object SimplifiedAst {
@@ -78,23 +76,23 @@ object SimplifiedAst {
   object Expression {
 
     case object Unit extends SimplifiedAst.Expression {
-      final val tpe = TypedAst.Type.Unit
+      final val tpe = Type.Unit
     }
 
     case object True extends SimplifiedAst.Expression {
-      final val tpe = TypedAst.Type.Bool
+      final val tpe = Type.Bool
     }
 
     case object False extends SimplifiedAst.Expression {
-      final val tpe = TypedAst.Type.Bool
+      final val tpe = Type.Bool
     }
 
     case class Int(lit: scala.Int) extends SimplifiedAst.Expression {
-      final val tpe = TypedAst.Type.Int
+      final val tpe = Type.Int
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends SimplifiedAst.Expression {
-      final val tpe = TypedAst.Type.Str
+      final val tpe = Type.Str
     }
 
     case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression

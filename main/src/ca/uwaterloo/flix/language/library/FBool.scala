@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.library
 
 import ca.uwaterloo.flix.language.ast.Name
-import ca.uwaterloo.flix.language.ast.TypedAst.Type
+import ca.uwaterloo.flix.language.ast.Type
 
 import scala.collection.immutable
 
