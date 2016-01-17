@@ -539,7 +539,7 @@ object Typer {
         }
       case ResolvedAst.Pattern.Tag(enumName, tagName, rpat, loc) => tpe match {
         case Type.Enum(cases) => cases.get(tagName.name) match {
-          case Some(tag) if enumName == tag.name => {
+          case Some(tag) if enumName == tag.enum => {
             typer(rpat, tag.tpe, root) map {
               case pat => TypedAst.Pattern.Tag(enumName, tagName, pat, Type.Tag(enumName, tagName, pat.tpe), loc)
             }
@@ -812,7 +812,7 @@ object Typer {
       val nested = s"(${prettyPrint(tpe)}})"
       enumAndTag + nested
     case Type.Enum(cases) =>
-      s"Enum(${cases.head._2.name})"
+      s"Enum(${cases.head._2.enum})"
     case Type.Tuple(elms) => "(" + elms.map(prettyPrint).mkString(", ") + ")"
     case Type.Set(elms) => "Set(" + prettyPrint(elms) + ")"
     case Type.Lambda(args, retTpe) =>

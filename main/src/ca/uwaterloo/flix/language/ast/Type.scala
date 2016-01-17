@@ -8,8 +8,6 @@ sealed trait Type
 
 object Type {
 
-  case object Any extends Type
-
   /**
     * A type variable.
     */
@@ -28,6 +26,7 @@ object Type {
   /**
     * An AST node representing the Integer type.
     */
+  // TODO: Specialize
   case object Int extends Type
 
   /**
@@ -38,11 +37,11 @@ object Type {
   /**
     * An AST node representing the type of a tag.
     *
-    * @param name  the namespace of the tag.
-    * @param ident the name of the tag.
-    * @param tpe   the type of the nested value.
+    * @param enum the namespace of the tag.
+    * @param tag  the name of the tag.
+    * @param tpe  the type of the nested value.
     */
-  case class Tag(name: Name.Resolved, ident: Name.Ident, tpe: Type) extends Type
+  case class Tag(enum: Name.Resolved, tag: Name.Ident, tpe: Type) extends Type
 
   /**
     * An AST node representing an enum type (a set of tags).
@@ -61,8 +60,10 @@ object Type {
     val asArray: Array[Type] = elms.toArray
   }
 
+  // TODO: Document
   case class Opt(elmType: Type) extends Type
 
+  // TODO: Document
   case class Lst(elmType: Type) extends Type
 
   /**
@@ -72,6 +73,7 @@ object Type {
     */
   case class Set(elmType: Type) extends Type
 
+  // TODO: Document
   case class Map(key: Type, value: Type) extends Type
 
 
@@ -97,9 +99,15 @@ object Type {
     */
   case class Native(name: String) extends Type
 
+
+  // TODO
   case object Char extends Type
 
   // TODO
   case class Abs(name: Var, tpe: Type) extends Type
+
+
+  // TODO: Remove or rename to error???
+  case object Any extends Type
 
 }
