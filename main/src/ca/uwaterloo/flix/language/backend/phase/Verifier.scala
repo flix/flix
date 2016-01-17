@@ -443,7 +443,6 @@ object Verifier {
     case Binary(op, e1, e2, tpe, loc) => op match {
       case BinaryOperator.BitwiseAnd => ctx.mkBVAND(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
       case BinaryOperator.BitwiseOr => ctx.mkBVOR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-
     }
   }
 
