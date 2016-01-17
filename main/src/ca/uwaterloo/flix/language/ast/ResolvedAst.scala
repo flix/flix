@@ -12,7 +12,7 @@ object ResolvedAst {
   case class Root(constants: Map[Name.Resolved, ResolvedAst.Definition.Constant],
                   directives: List[ResolvedAst.Directive],
                   enums: Map[Name.Resolved, ResolvedAst.Definition.Enum],
-                  lattices: Map[ResolvedAst.Type, ResolvedAst.Definition.BoundedLattice],
+                  lattices: Map[Type, ResolvedAst.Definition.BoundedLattice],
                   collections: Map[Name.Resolved, ResolvedAst.Collection],
                   indexes: Map[Name.Resolved, ResolvedAst.Definition.Index],
                   facts: List[ResolvedAst.Constraint.Fact],
@@ -31,10 +31,10 @@ object ResolvedAst {
       * @param tpe  the (declared) type of the constant.
       * @param loc  the location.
       */
-    case class Constant(name: Name.Resolved, exp: ResolvedAst.Expression, tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Definition
+    case class Constant(name: Name.Resolved, exp: ResolvedAst.Expression, tpe: Type, loc: SourceLocation) extends ResolvedAst.Definition
 
     //  TODO: DOC
-    case class Enum(name: Name.Resolved, cases: Map[String, ResolvedAst.Type.Tag], loc: SourceLocation) extends ResolvedAst.Definition
+    case class Enum(name: Name.Resolved, cases: Map[String, Type.Tag], loc: SourceLocation) extends ResolvedAst.Definition
 
     /**
       * A resolved AST node that represents a bounded lattice definition.
@@ -47,7 +47,7 @@ object ResolvedAst {
       * @param glb the greatest lower bound.
       * @param loc the source location.
       */
-    case class BoundedLattice(tpe: ResolvedAst.Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, leq: ResolvedAst.Expression,
+    case class BoundedLattice(tpe: Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, leq: ResolvedAst.Expression,
                               lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Definition
 
     // TODO: DOC
@@ -148,7 +148,7 @@ object ResolvedAst {
 
     case class Lit(literal: ResolvedAst.Literal, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Lambda(annotations: Ast.Annotations, formals: List[FormalArg], retTpe: ResolvedAst.Type, body: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Lambda(annotations: Ast.Annotations, formals: List[FormalArg], retTpe: Type, body: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Apply(lambda: ResolvedAst.Expression, args: Seq[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -168,9 +168,9 @@ object ResolvedAst {
 
     case class Set(elms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Ascribe(e: ResolvedAst.Expression, tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Ascribe(e: ResolvedAst.Expression, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Error(tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Error(tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class NativeField(field: Field, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -361,7 +361,7 @@ object ResolvedAst {
         * @param tpe  the ascribed type.
         * @param loc  the location.
         */
-      case class Ascribe(term: ResolvedAst.Term.Head, tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Term.Head
+      case class Ascribe(term: ResolvedAst.Term.Head, tpe: Type, loc: SourceLocation) extends ResolvedAst.Term.Head
 
       /**
         * An AST node representing a function call term.
@@ -419,84 +419,9 @@ object ResolvedAst {
         * @param tpe  the ascribed type.
         * @param loc  the location.
         */
-      case class Ascribe(term: ResolvedAst.Term.Body, tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Term.Body
+      case class Ascribe(term: ResolvedAst.Term.Body, tpe: Type, loc: SourceLocation) extends ResolvedAst.Term.Body
 
     }
-
-  }
-
-  /**
-    * A common super-type for resolved types.
-    */
-  sealed trait Type extends ResolvedAst
-
-  object Type {
-
-    /**
-      * An AST node representing the Unit type.
-      */
-    case object Unit extends ResolvedAst.Type
-
-    /**
-      * An AST node representing the Boolean type.
-      */
-    case object Bool extends ResolvedAst.Type
-
-    /**
-      * An AST node representing the Integer type.
-      */
-    case object Int extends ResolvedAst.Type
-
-    /**
-      * An AST node representing the String type.
-      */
-    case object Str extends ResolvedAst.Type
-
-    /**
-      * An AST node representing a type tag.
-      *
-      * @param name  the name of the enum.
-      * @param ident the name of the tag.
-      * @param tpe   the nested type.
-      */
-    case class Tag(name: Name.Resolved, ident: Name.Ident, tpe: ResolvedAst.Type) extends ResolvedAst.Type
-
-    /**
-      * An AST node representing an enum type (a set of tags).
-      *
-      * @param cases a map from tag names to tag types.
-      */
-    case class Enum(cases: Map[String, ResolvedAst.Type.Tag]) extends ResolvedAst.Type
-
-    /**
-      * An AST node representing a tuple type.
-      *
-      * @param elms the type of the elements.
-      */
-    case class Tuple(elms: List[ResolvedAst.Type]) extends ResolvedAst.Type
-
-    /**
-      * An AST node representing a set type.
-      *
-      * @param elms the type of the elements.
-      */
-    case class Set(elms: ResolvedAst.Type) extends ResolvedAst.Type
-
-    /**
-      * An AST node representing a function type.
-      *
-      * @param args   the argument types.
-      * @param retTpe the return type.
-      */
-    case class Function(args: List[ResolvedAst.Type], retTpe: ResolvedAst.Type) extends ResolvedAst.Type
-
-    /**
-      * An AST node that represents a native type.
-      *
-      * @param name the fully qualified name of the type.
-      * @param loc  the source location.
-      */
-    case class Native(name: String, loc: SourceLocation) extends ResolvedAst.Type
 
   }
 
@@ -506,7 +431,7 @@ object ResolvedAst {
     * @param ident the name of the attribute.
     * @param tpe   the (declared) type of the attribute.
     */
-  case class Attribute(ident: Name.Ident, tpe: ResolvedAst.Type) extends ResolvedAst
+  case class Attribute(ident: Name.Ident, tpe: Type) extends ResolvedAst
 
   /**
     * A resolved AST node representing a formal argument in a function.
@@ -514,6 +439,6 @@ object ResolvedAst {
     * @param ident the name of the argument.
     * @param tpe   the type of the argument.
     */
-  case class FormalArg(ident: Name.Ident, tpe: ResolvedAst.Type) extends ResolvedAst
+  case class FormalArg(ident: Name.Ident, tpe: Type) extends ResolvedAst
 
 }
