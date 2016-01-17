@@ -90,9 +90,8 @@ object Interpreter {
   private def evalIntUnary(op: UnaryOperator, e: Expression, root: Root, env: Env): Int = op match {
     case UnaryOperator.Plus => +evalInt(e, root, env)
     case UnaryOperator.Minus => -evalInt(e, root, env)
-    case UnaryOperator.Negate => ~evalInt(e, root, env)
-    case UnaryOperator.Set.Size => eval(e, root, env).toSet.size
-    case UnaryOperator.Not | UnaryOperator.Set.IsEmpty | UnaryOperator.Set.NonEmpty | UnaryOperator.Set.Singleton =>
+    case UnaryOperator.BitwiseNegate => ~evalInt(e, root, env)
+    case UnaryOperator.Not =>
       throw new InternalRuntimeError(s"Type of unary expression is not Type.Int.")
   }
 
@@ -109,10 +108,7 @@ object Interpreter {
     case BinaryOperator.BitwiseLeftShift => evalInt(e1, root, env) << evalInt(e2, root, env)
     case BinaryOperator.BitwiseRightShift => evalInt(e1, root, env) >> evalInt(e2, root, env)
     case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual |
-         BinaryOperator.Equal | BinaryOperator.NotEqual | BinaryOperator.And | BinaryOperator.Or |
-         BinaryOperator.Set.Member | BinaryOperator.Set.SubsetOf | BinaryOperator.Set.ProperSubsetOf |
-         BinaryOperator.Set.Insert | BinaryOperator.Set.Remove | BinaryOperator.Set.Union |
-         BinaryOperator.Set.Intersection | BinaryOperator.Set.Difference =>
+         BinaryOperator.Equal | BinaryOperator.NotEqual | BinaryOperator.And | BinaryOperator.Or  =>
       throw new InternalRuntimeError(s"Type of binary expression is not Type.Int.")
   }
 
@@ -162,10 +158,7 @@ object Interpreter {
 
   private def evalBoolUnary(op: UnaryOperator, e: Expression, root: Root, env: Env): Boolean = op match {
     case UnaryOperator.Not => !evalBool(e, root, env)
-    case UnaryOperator.Set.IsEmpty => eval(e, root, env).toSet.isEmpty
-    case UnaryOperator.Set.NonEmpty => eval(e, root, env).toSet.nonEmpty
-    case UnaryOperator.Set.Singleton => eval(e, root, env).toSet.size == 1
-    case UnaryOperator.Plus | UnaryOperator.Minus | UnaryOperator.Negate | UnaryOperator.Set.Size =>
+    case UnaryOperator.Plus | UnaryOperator.Minus | UnaryOperator.BitwiseNegate =>
       throw new InternalRuntimeError(s"Type of unary expression is not Type.Bool.")
   }
 
@@ -178,17 +171,9 @@ object Interpreter {
     case BinaryOperator.NotEqual => eval(e1, root, env) != eval(e2, root, env)
     case BinaryOperator.And => evalBool(e1, root, env) && evalBool(e2, root, env)
     case BinaryOperator.Or => evalBool(e1, root, env) || evalBool(e2, root, env)
-    case BinaryOperator.Set.Member => eval(e2, root, env).toSet contains eval(e1, root, env)
-    case BinaryOperator.Set.SubsetOf => eval(e1, root, env).toSet subsetOf eval(e2, root, env).toSet
-    case BinaryOperator.Set.ProperSubsetOf =>
-      val s1 = eval(e1, root, env).toSet
-      val s2 = eval(e2, root, env).toSet
-      s1.subsetOf(s2) && s1.size < s2.size
     case BinaryOperator.Plus | BinaryOperator.Minus | BinaryOperator.Times | BinaryOperator.Divide |
          BinaryOperator.Modulo | BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor |
-         BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift | BinaryOperator.Set.Insert |
-         BinaryOperator.Set.Remove | BinaryOperator.Set.Union | BinaryOperator.Set.Intersection |
-         BinaryOperator.Set.Difference =>
+         BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
       throw new InternalRuntimeError(s"Type of binary expression is not Type.Bool.")
   }
 
@@ -256,11 +241,7 @@ object Interpreter {
       case UnaryOperator.Not => if (v.toBool) Value.False else Value.True
       case UnaryOperator.Plus => Value.mkInt(+v.toInt)
       case UnaryOperator.Minus => Value.mkInt(-v.toInt)
-      case UnaryOperator.Negate => Value.mkInt(~v.toInt)
-      case UnaryOperator.Set.IsEmpty => if (v.toSet.isEmpty) Value.True else Value.False
-      case UnaryOperator.Set.NonEmpty => if (v.toSet.nonEmpty) Value.True else Value.False
-      case UnaryOperator.Set.Singleton => if (v.toSet.size == 1) Value.True else Value.False
-      case UnaryOperator.Set.Size => Value.mkInt(v.toSet.size)
+      case UnaryOperator.BitwiseNegate => Value.mkInt(~v.toInt)
     }
   }
 
@@ -286,15 +267,6 @@ object Interpreter {
       case BinaryOperator.BitwiseXor => Value.mkInt(v1.toInt ^ v2.toInt)
       case BinaryOperator.BitwiseLeftShift => Value.mkInt(v1.toInt << v2.toInt)
       case BinaryOperator.BitwiseRightShift => Value.mkInt(v1.toInt >> v2.toInt)
-      case BinaryOperator.Set.Member => if (v2.toSet.contains(v1)) Value.True else Value.False
-      case BinaryOperator.Set.SubsetOf => if (v1.toSet.subsetOf(v2.toSet)) Value.True else Value.False
-      case BinaryOperator.Set.ProperSubsetOf =>
-        if (v1.toSet.subsetOf(v2.toSet) && v1.toSet.size < v2.toSet.size) Value.True else Value.False
-      case BinaryOperator.Set.Insert => Value.Set(v1.toSet + v2)
-      case BinaryOperator.Set.Remove => Value.Set(v1.toSet - v2)
-      case BinaryOperator.Set.Union => Value.Set(v1.toSet | v2.toSet)
-      case BinaryOperator.Set.Intersection => Value.Set(v1.toSet & v2.toSet)
-      case BinaryOperator.Set.Difference => Value.Set(v1.toSet &~ v2.toSet)
     }
   }
 

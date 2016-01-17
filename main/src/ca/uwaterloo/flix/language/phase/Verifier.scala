@@ -435,7 +435,7 @@ object Verifier {
   def visitBitVecExpr(e0: Expression, ctx: Context): BitVecExpr = e0 match {
     case Int(i) => ctx.mkBV(i, 32)
     case Unary(op, e1, tpe, loc) => op match {
-      case UnaryOperator.Negate => ctx.mkBVNot(visitBitVecExpr(e1, ctx))
+      case UnaryOperator.BitwiseNegate => ctx.mkBVNot(visitBitVecExpr(e1, ctx))
       case _ => throw new InternalCompilerError(s"Illegal unary operator: $op.")
     }
     case Binary(op, e1, e2, tpe, loc) => op match {
@@ -458,7 +458,7 @@ object Verifier {
     case Unary(op, e1, tpe, loc) => op match {
       case UnaryOperator.Plus => visitArithExpr(e1, ctx)
       case UnaryOperator.Minus => ctx.mkSub(ctx.mkInt(0), visitArithExpr(e1, ctx))
-      case UnaryOperator.Negate => throw new InternalCompilerError(s"Not yet implemented. Sorry.")
+      case UnaryOperator.BitwiseNegate => throw new InternalCompilerError(s"Not yet implemented. Sorry.")
       case _ => throw new InternalCompilerError(s"Illegal unary operator: $op.")
     }
     case Binary(op, e1, e2, tpe, loc) => op match {

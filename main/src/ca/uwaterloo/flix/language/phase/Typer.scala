@@ -384,22 +384,12 @@ object Typer {
                 case tpe => TypedAst.Expression.Unary(op, e, tpe, loc)
               }
             }
-          case UnaryOperator.Negate =>
+          case UnaryOperator.BitwiseNegate =>
             visit(re, env) flatMap {
               case e => expect(Type.Int, e.tpe, loc) map {
                 case tpe => TypedAst.Expression.Unary(op, e, tpe, loc)
               }
             }
-
-          case UnaryOperator.Set.IsEmpty | UnaryOperator.Set.NonEmpty | UnaryOperator.Set.Singleton => visit(re, env) map {
-            // TODO: Check that it is actually a set.
-            case e => TypedAst.Expression.Unary(op, e, Type.Bool, loc)
-          }
-
-          case UnaryOperator.Set.Size => visit(re, env) map {
-            // TODO: Check that it is actually a set.
-            case e => TypedAst.Expression.Unary(op, e, Type.Int, loc)
-          }
 
         }
 
@@ -434,29 +424,6 @@ object Typer {
                 case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, Type.Int, loc)
               }
             }
-          case BinaryOperator.Set.Member => @@(visit(re1, env), visit(re2, env)) flatMap {
-            case (e1, e2) => expect(Type.Set(e1.tpe), e2.tpe, e2.loc) map {
-              case _ => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc)
-            }
-          }
-          case BinaryOperator.Set.SubsetOf | BinaryOperator.Set.ProperSubsetOf =>
-            @@(visit(re1, env), visit(re2, env)) flatMap {
-              case (e1, e2) => expectEqual(e1.tpe, e2.tpe, e1.loc, e2.loc) map {
-                case tpe => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc)
-              }
-            }
-          case BinaryOperator.Set.Insert | BinaryOperator.Set.Remove => @@(visit(re1, env), visit(re2, env)) flatMap {
-            case (e1, e2) => expect(Type.Set(e2.tpe), e1.tpe, e1.loc) map {
-              case tpe => TypedAst.Expression.Binary(op, e1, e2, tpe, loc)
-            }
-          }
-          case BinaryOperator.Set.Union | BinaryOperator.Set.Intersection | BinaryOperator.Set.Difference =>
-            @@(visit(re1, env), visit(re2, env)) flatMap {
-              case (e1, e2) => expectEqual(e1.tpe, e2.tpe, e1.loc, e2.loc) map {
-                case tpe => TypedAst.Expression.Binary(op, e1, e2, tpe, loc)
-              }
-            }
-
         }
 
         case ResolvedAst.Expression.IfThenElse(re1, re2, re3, loc) =>

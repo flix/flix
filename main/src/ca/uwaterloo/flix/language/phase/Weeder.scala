@@ -683,17 +683,7 @@ object Weeder {
 
       case exp: ParsedAst.Expression.Infix =>
         @@(compile(exp.e1), compile(exp.e2)) map {
-          case (e1, e2) => exp.name.parts match {
-            case List("in") => WeededAst.Expression.Binary(BinaryOperator.Set.Member, e1, e2, exp.loc)
-            case List("subsetOf") => WeededAst.Expression.Binary(BinaryOperator.Set.SubsetOf, e1, e2, exp.loc)
-            case List("properSubsetOf") => WeededAst.Expression.Binary(BinaryOperator.Set.ProperSubsetOf, e1, e2, exp.loc)
-            case List("insert") => WeededAst.Expression.Binary(BinaryOperator.Set.Insert, e1, e2, exp.loc)
-            case List("remove") => WeededAst.Expression.Binary(BinaryOperator.Set.Remove, e1, e2, exp.loc)
-            case List("union") => WeededAst.Expression.Binary(BinaryOperator.Set.Union, e1, e2, exp.loc)
-            case List("intersect") => WeededAst.Expression.Binary(BinaryOperator.Set.Intersection, e1, e2, exp.loc)
-            case List("diff") => WeededAst.Expression.Binary(BinaryOperator.Set.Difference, e1, e2, exp.loc)
-            case _ => WeededAst.Expression.Apply(WeededAst.Expression.Var(exp.name, exp.loc), List(e1, e2), exp.loc)
-          }
+          case (e1, e2) => WeededAst.Expression.Apply(WeededAst.Expression.Var(exp.name, exp.loc), List(e1, e2), exp.loc)
         }
 
       case exp: ParsedAst.Expression.Tag => compile(exp.e) map {

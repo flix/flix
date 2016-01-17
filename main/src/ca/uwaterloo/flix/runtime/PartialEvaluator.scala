@@ -44,7 +44,7 @@ object PartialEvaluator {
         case residual => k(residual)
       })
 
-      case UnaryOperator.Negate => eval(exp, env0, {
+      case UnaryOperator.BitwiseNegate => eval(exp, env0, {
         case Int(i) => Int(~i)
         case residual => k(residual)
       })

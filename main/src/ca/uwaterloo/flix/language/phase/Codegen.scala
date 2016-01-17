@@ -116,7 +116,6 @@ object Codegen {
       case o: ComparisonOperator => compileComparisonExpr(context, visitor)(o, exp1, exp2, tpe)
       case o: LogicalOperator => compileLogicalExpr(context, visitor)(o, exp1, exp2, tpe)
       case o: BitwiseOperator => compileBitwiseExpr(context, visitor)(o, exp1, exp2, tpe)
-      case o: BinaryOperator.SetOperator => ???
     }
     case IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       val ifElse = new Label()
@@ -255,11 +254,7 @@ object Codegen {
         visitor.visitLabel(condEnd)
       case UnaryOperator.Plus => // nop
       case UnaryOperator.Minus => compileUnaryMinusExpr(context, visitor)(tpe)
-      case UnaryOperator.Negate => compileUnaryNegateExpr(context, visitor)(tpe)
-      case UnaryOperator.Set.IsEmpty => ???
-      case UnaryOperator.Set.NonEmpty => ???
-      case UnaryOperator.Set.Singleton => ???
-      case UnaryOperator.Set.Size => ???
+      case UnaryOperator.BitwiseNegate => compileUnaryNegateExpr(context, visitor)(tpe)
     }
   }
 

@@ -290,7 +290,7 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - StoreInt8 - 04") {
-    val v = Unary(UnaryOperator.Negate, Const(0xAB, Type.Int8, loc), Type.Int8, loc)
+    val v = Unary(UnaryOperator.BitwiseNegate, Const(0xAB, Type.Int8, loc), Type.Int8, loc)
     val definition = Function(name, args = List(),
       StoreInt8(Const(0, Type.Int64, loc), 40, v),
       Type.Lambda(List(), Type.Int64), loc)
@@ -337,7 +337,7 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - StoreInt16 - 04") {
-    val v = Unary(UnaryOperator.Negate, Const(0xCAFE, Type.Int16, loc), Type.Int16, loc)
+    val v = Unary(UnaryOperator.BitwiseNegate, Const(0xCAFE, Type.Int16, loc), Type.Int16, loc)
     val definition = Function(name, args = List(),
       StoreInt16(Const(0, Type.Int64, loc), 48, v),
       Type.Lambda(List(), Type.Int64), loc)
@@ -384,7 +384,7 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - StoreInt32 - 04") {
-    val v = Unary(UnaryOperator.Negate, Const(0xDEADBEEF, Type.Int32, loc), Type.Int32, loc)
+    val v = Unary(UnaryOperator.BitwiseNegate, Const(0xDEADBEEF, Type.Int32, loc), Type.Int32, loc)
     val definition = Function(name, args = List(),
       StoreInt32(Const(0, Type.Int64, loc), 0, v),
       Type.Lambda(List(), Type.Int64), loc)
@@ -1366,25 +1366,25 @@ class TestCodegen extends FunSuite {
     val name07 = Name.Resolved.mk(List("foo", "bar", "f07"))
 
     val def01 = Function(name01, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(Byte.MaxValue, Type.Int8, loc), Type.Int8, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(Byte.MaxValue, Type.Int8, loc), Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def02 = Function(name02, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(42, Type.Int8, loc), Type.Int8, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(42, Type.Int8, loc), Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def03 = Function(name03, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(1, Type.Int8, loc), Type.Int8, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(1, Type.Int8, loc), Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def04 = Function(name04, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(0, Type.Int8, loc), Type.Int8, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(0, Type.Int8, loc), Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def05 = Function(name05, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(-1, Type.Int8, loc), Type.Int8, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(-1, Type.Int8, loc), Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def06 = Function(name06, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(-42, Type.Int8, loc), Type.Int8, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(-42, Type.Int8, loc), Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def07 = Function(name07, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(Byte.MinValue, Type.Int8, loc), Type.Int8, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(Byte.MinValue, Type.Int8, loc), Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(def01, def02, def03, def04, def05, def06, def07))
@@ -1418,25 +1418,25 @@ class TestCodegen extends FunSuite {
     val name07 = Name.Resolved.mk(List("foo", "bar", "f07"))
 
     val def01 = Function(name01, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(Short.MaxValue, Type.Int16, loc), Type.Int16, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(Short.MaxValue, Type.Int16, loc), Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def02 = Function(name02, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(420, Type.Int16, loc), Type.Int16, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(420, Type.Int16, loc), Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def03 = Function(name03, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(1, Type.Int16, loc), Type.Int16, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(1, Type.Int16, loc), Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def04 = Function(name04, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(0, Type.Int16, loc), Type.Int16, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(0, Type.Int16, loc), Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def05 = Function(name05, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(-1, Type.Int16, loc), Type.Int16, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(-1, Type.Int16, loc), Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def06 = Function(name06, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(-420, Type.Int16, loc), Type.Int16, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(-420, Type.Int16, loc), Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def07 = Function(name07, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(Short.MinValue, Type.Int16, loc), Type.Int16, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(Short.MinValue, Type.Int16, loc), Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(def01, def02, def03, def04, def05, def06, def07))
@@ -1470,25 +1470,25 @@ class TestCodegen extends FunSuite {
     val name07 = Name.Resolved.mk(List("foo", "bar", "f07"))
 
     val def01 = Function(name01, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(Int.MaxValue, Type.Int32, loc), Type.Int32, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(Int.MaxValue, Type.Int32, loc), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def02 = Function(name02, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(36000, Type.Int32, loc), Type.Int32, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(36000, Type.Int32, loc), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def03 = Function(name03, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(1, Type.Int32, loc), Type.Int32, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(1, Type.Int32, loc), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def04 = Function(name04, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(0, Type.Int32, loc), Type.Int32, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(0, Type.Int32, loc), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def05 = Function(name05, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(-1, Type.Int32, loc), Type.Int32, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(-1, Type.Int32, loc), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def06 = Function(name06, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(-36000, Type.Int32, loc), Type.Int32, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(-36000, Type.Int32, loc), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def07 = Function(name07, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(Int.MinValue, Type.Int32, loc), Type.Int32, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(Int.MinValue, Type.Int32, loc), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(def01, def02, def03, def04, def05, def06, def07))
@@ -1522,25 +1522,25 @@ class TestCodegen extends FunSuite {
     val name07 = Name.Resolved.mk(List("foo", "bar", "f07"))
 
     val def01 = Function(name01, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(Long.MaxValue, Type.Int64, loc), Type.Int64, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(Long.MaxValue, Type.Int64, loc), Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
     val def02 = Function(name02, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(10000000000L, Type.Int64, loc), Type.Int64, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(10000000000L, Type.Int64, loc), Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
     val def03 = Function(name03, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(1, Type.Int64, loc), Type.Int64, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(1, Type.Int64, loc), Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
     val def04 = Function(name04, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(0, Type.Int64, loc), Type.Int64, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(0, Type.Int64, loc), Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
     val def05 = Function(name05, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(-1, Type.Int64, loc), Type.Int64, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(-1, Type.Int64, loc), Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
     val def06 = Function(name06, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(-10000000000L, Type.Int64, loc), Type.Int64, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(-10000000000L, Type.Int64, loc), Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
     val def07 = Function(name07, args = List(),
-      body = Unary(UnaryOperator.Negate, Const(Long.MinValue, Type.Int64, loc), Type.Int64, loc),
+      body = Unary(UnaryOperator.BitwiseNegate, Const(Long.MinValue, Type.Int64, loc), Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
 
     val code = new CompiledCode(List(def01, def02, def03, def04, def05, def06, def07))

@@ -545,12 +545,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       atomic("!") ~> (() => UnaryOperator.Not) |
         atomic("+") ~> (() => UnaryOperator.Plus) |
         atomic("-") ~> (() => UnaryOperator.Minus) |
-        atomic("~") ~> (() => UnaryOperator.Negate) |
-        // set operators
-        atomic("isEmpty?") ~> (() => UnaryOperator.Set.IsEmpty) |
-        atomic("nonEmpty?") ~> (() => UnaryOperator.Set.NonEmpty) |
-        atomic("singleton?") ~> (() => UnaryOperator.Set.Singleton) |
-        atomic("size?") ~> (() => UnaryOperator.Set.Size)
+        atomic("~") ~> (() => UnaryOperator.BitwiseNegate)
     }
 
     /**
@@ -584,12 +579,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def MultiplicativeOp: Rule1[BinaryOperator] = rule {
       atomic("*") ~> (() => BinaryOperator.Times) |
         atomic("/") ~> (() => BinaryOperator.Divide) |
-        atomic("%") ~> (() => BinaryOperator.Modulo) |
-        // set operators
-        atomic("+=") ~> (() => BinaryOperator.Set.Insert) |
-        atomic("-=") ~> (() => BinaryOperator.Set.Remove) |
-        atomic("++") ~> (() => BinaryOperator.Set.Union) |
-        atomic("--") ~> (() => BinaryOperator.Set.Difference)
+        atomic("%") ~> (() => BinaryOperator.Modulo)
     }
 
     /**

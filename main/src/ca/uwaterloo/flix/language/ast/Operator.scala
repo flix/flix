@@ -30,37 +30,7 @@ object UnaryOperator {
   /**
     * Bitwise negate.
     */
-  // TODO: Rename
-  case object Negate extends UnaryOperator
-
-  /**
-    * A common super-type for unary set operations.
-    */
-  sealed trait SetOperator extends UnaryOperator
-
-  object Set {
-
-    /**
-      * A unary operator that returns `true` if its argument is the empty set.
-      */
-    case object IsEmpty extends UnaryOperator.SetOperator
-
-    /**
-      * A unary operator that returns `true` if its argument is a non-empty set.
-      */
-    case object NonEmpty extends UnaryOperator.SetOperator
-
-    /**
-      * A unary operator that returns `true` if its argument is a singleton set.
-      */
-    case object Singleton extends UnaryOperator.SetOperator
-
-    /**
-      * A unary operator that returns the size of a set.
-      */
-    case object Size extends UnaryOperator.SetOperator
-
-  }
+  case object BitwiseNegate extends UnaryOperator
 
 }
 
@@ -185,55 +155,5 @@ object BinaryOperator {
     * Bitwise right shift.
     */
   case object BitwiseRightShift extends BitwiseOperator
-
-  /**
-    * A common super-type for binary set operators.
-    */
-  sealed trait SetOperator extends BinaryOperator
-
-  object Set {
-
-    /**
-      * A binary operator that returns `true` if the left argument is a member of the right argument.
-      */
-    case object Member extends BinaryOperator.SetOperator
-
-    /**
-      * A binary operator that returns `true` if the left argument is a subset of the right argument.
-      */
-    case object SubsetOf extends BinaryOperator.SetOperator
-
-    /**
-      * A binary operator that returns `true` if the left argument is a proper subset of the right argument.
-      */
-    case object ProperSubsetOf extends BinaryOperator.SetOperator
-
-    /**
-      * A binary operator that returns the left argument with the right argument added.
-      */
-    case object Insert extends BinaryOperator.SetOperator
-
-    /**
-      * A binary operator that returns the left argument with the right argument removed.
-      */
-    case object Remove extends BinaryOperator.SetOperator
-
-    /**
-      * A binary operator that returns the set union of its two arguments.
-      */
-    case object Union extends BinaryOperator.SetOperator
-
-    /**
-      * A binary operator that returns the set intersection of its two arguments.
-      */
-    case object Intersection extends BinaryOperator.SetOperator
-
-    /**
-      * A binary operator that returns the set difference of its two arguments.
-      */
-    case object Difference extends BinaryOperator.SetOperator
-
-  }
-
 
 }
