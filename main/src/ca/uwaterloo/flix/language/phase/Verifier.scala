@@ -16,7 +16,10 @@ import com.microsoft.z3._
 
 object Verifier {
 
-  sealed trait Property
+  sealed trait Property {
+    // TODO: rename to formula
+    val property: Formula
+  }
 
   object Property {
 
@@ -27,6 +30,8 @@ object Verifier {
       // val (f, x, y, z) = (op.lam, 'x.ofType(op.tpe), 'y.ofType(op.tpe), 'z.ofType(op.tpe))
 
       // val property = ∀(x, y, z)(f(f(x, y), z) ≡ f(x, f(y, z)))
+
+      val property = ∀()(Expression.True)
     }
 
     /**
@@ -36,6 +41,8 @@ object Verifier {
       //  val (f, x, y) = (op.lam, 'x.ofType(op.tpe), 'y.ofType(op.tpe))
 
       // val property = ∀(x, y)(f(x, y) ≡ f(y, x))
+
+      val property = ∀()(Expression.True)
     }
 
 
@@ -99,6 +106,7 @@ object Verifier {
         //  val (x, y, z) = ('x.ofType(lattice.tpe), 'y.ofType(lattice.tpe), 'z.ofType(lattice.tpe))
 
         //   val property = ∀(x, y, z)(((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z))
+        val property = ∀()(Expression.True)
       }
 
       /**
@@ -131,12 +139,14 @@ object Verifier {
         * The bottom element must be the least element.
         */
       case class LeastElement(lattice: Lattice) extends Property {
-        val property = {
+        //val property = {
           //val (⊥, ⊑, ⊔, ⊓) = latticeOps(lattice)
           //  val x = 'x.ofType(lattice.tpe)
 
           //  ∀(x)(⊑(⊥, x))
-        }
+        //}
+
+        val property = ∀()(Expression.True)
       }
 
       /**
@@ -146,6 +156,7 @@ object Verifier {
         //  val (x, y) = ('x.ofType(lattice.tpe), 'y.ofType(lattice.tpe))
 
         // val property = ∀(x, y)((x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y)))
+        val property = ∀()(Expression.True)
       }
 
 
@@ -153,10 +164,18 @@ object Verifier {
       //   * Least Upper Bound: ?x, y, z. x ? z ? y ? z ? x ? y ? z.
       //   */
 
-
     }
 
   }
+
+  /**
+    * A formula is a universally quantified expression.
+    *
+    * @param q the universally quantified variables.
+    * @param e the expression
+    */
+  case class Formula(q: List[Expression.Var], e: Expression)
+
 
   /**
     * A common super-type for verification errors.
@@ -203,36 +222,79 @@ object Verifier {
 
   }
 
-  // TODO: def check.
+  /**
+    * Attempts to verify all properties of every function in the given AST `root`.
+    *
+    * Returns a list of errors. If the list is empty, all properties were successfully verified.
+    */
   def checkAll(root: SimplifiedAst.Root): List[VerifierError] = {
-
+    // find all properties to verify.
     val properties = collectProperties(root)
 
-    properties map {
+    // attempt to verify each property.
+    properties flatMap {
       case property => checkProperty(property)
     }
   }
 
-  def checkProperty(property: Property): VerifierError = {
 
-    // property.exp
+  /**
+    * Attempts to verify the given `property`.
+    *
+    * Returns `None` if the property is satisfied.
+    * Otherwise returns `Some` containing the verification error.
+    */
+  def checkProperty(property: Property): Option[VerifierError] = {
+    // the base expression
+    val exp0 = property.property.e
 
-    PartialEvaluator.eval(???, Map.empty, identity) match {
-      case Expression.True => // success!
-      case Expression.False => // failure!
-      case residual =>
-      // Case 3: Indeterminate. Must extract SMT verification condition.
+    // a sequence of environments under which the base expression must hold.
+    val envs = enumerate(property.property.q)
 
+    val result = envs flatMap {
+      case env0 => PartialEvaluator.eval(exp0, env0, identity) match {
+        case Expression.True =>
+          // Case 1: The partial evaluator proved the property.
+          None
+        case Expression.False =>
+          // Case 2: The partial evaluator disproved the property.
+          Some(??? : VerifierError)
+        case residual =>
+          // Case 3: The partial evaluator reduced the expression, but it is still residual.
+          // Must translate the expression into an SMT formula and attempt to prove it.
+
+          // TODO: Carefull with universially quantified variables?
+          mkContext(ctx => {
+            // Check if the negation of the expression has a model.
+            // If so, the property does not hold.
+            val q = ctx.mkNot(visitBoolExpr(residual, ctx))
+            checkSat(q, ctx) match {
+              case Result.Unsatisfiable =>
+                // Case 3.1: The formula is UNSAT, i.e. the property HOLDS.
+                None
+              case Result.Satisfiable(model) =>
+                // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
+                Some(??? : VerifierError)
+              case Result.Unknown =>
+                // Case 3.3: It is unknown whether the formula has a model.
+                Some(??? : VerifierError)
+            }
+          })
+      }
     }
 
     ???
   }
 
+  def enumerate(q: List[Var]): List[Map[String, Expression]] = ???
+
+  // def eval()
+
   /**
     * Returns all the verification conditions required to ensure the safety of the given AST `root`.
     */
   def collectProperties(root: SimplifiedAst.Root): List[Property] = {
-
+    // Collect partial order properties.
     val partialOrderProperties = lattices(root) flatMap {
       case l => List(
         Property.PartialOrder.Reflexivity(l),
@@ -241,24 +303,25 @@ object Verifier {
       )
     }
 
+    // Collect lattice properties.
     val latticeProperties = lattices(root) flatMap {
       case l => List(
         Property.JoinSemiLattice.LeastElement(l)
       )
     }
 
+    // Collect function properties.
     val functionProperties = lambdas(root) flatMap {
       case f if f.annotations.isUnchecked => Nil
       case f => f.annotations.annotations.collect {
         case Annotation.Associative(loc) => Property.Associativity(f)
         case Annotation.Commutative(loc) => Property.Commutativity(f)
-        case Annotation.Strict(loc) => ???
+        case Annotation.Strict(loc) => ??? // TODO
       }
     }
 
-    val properties = partialOrderProperties ++ latticeProperties ++ functionProperties
-    properties.foreach(p => Console.println(p.toString))
-    properties
+    // return all the collected properties.
+    partialOrderProperties ++ latticeProperties ++ functionProperties
   }
 
 
@@ -272,7 +335,7 @@ object Verifier {
     */
   // TODO: Alternatively introduce a special constraint construct?
   // Probably need this to report errors.
-  def ∀(x: Expression.Var*)(f: Expression): Expression.Lambda = ???
+  def ∀(x: Expression.Var*)(f: Expression): Formula = ???
 
   /**
     * Returns the logical negation of the expression `e`.
@@ -431,7 +494,6 @@ object Verifier {
     * Assumes that all lambdas, calls and let bindings have been removed.
     * (In addition to all tags, tuples, sets, maps, etc.)
     */
-  // TODO: Who can call this?
   def visitBitVecExpr(e0: Expression, ctx: Context): BitVecExpr = e0 match {
     case Int(i) => ctx.mkBV(i, 32)
     case Unary(op, e1, tpe, loc) => op match {
@@ -441,6 +503,9 @@ object Verifier {
     case Binary(op, e1, e2, tpe, loc) => op match {
       case BinaryOperator.BitwiseAnd => ctx.mkBVAND(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
       case BinaryOperator.BitwiseOr => ctx.mkBVOR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case BinaryOperator.BitwiseXor => ctx.mkBVXOR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case BinaryOperator.BitwiseLeftShift => ctx.mkBVSHL(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case BinaryOperator.BitwiseRightShift => ctx.mkBVLSHR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
     }
   }
 
@@ -474,9 +539,11 @@ object Verifier {
       case BinaryOperator.BitwiseRightShift => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
       case _ => throw new InternalCompilerError(s"Illegal binary operator: $op.")
     }
-
-    case IfThenElse(e1, e2, e3, tpe, loc) => ???
-
+    case IfThenElse(e1, e2, e3, tpe, loc) =>
+      val f1 = visitBoolExpr(e1, ctx)
+      val f2 = visitArithExpr(e2, ctx)
+      val f3 = visitArithExpr(e3, ctx)
+      ??? // TODO
     case _ => throw new InternalCompilerError(s"Expected int expression but got: ${e0.tpe}")
   }
 
@@ -484,7 +551,7 @@ object Verifier {
   /////////////////////////////////////////////////////////////////////////////
   // Interface to Z3                                                         //
   /////////////////////////////////////////////////////////////////////////////
-  def withContext[A](f: Context => A): A = {
+  def mkContext[A](f: Context => A): A = {
     // check that the path property is set.
     val prop = System.getProperty("java.library.path")
     if (prop == null) {
@@ -495,7 +562,7 @@ object Verifier {
     }
 
     // check that the path exists.
-    val path = Paths.get(prop)// TODO: the path is actually a sequence of separeted paths...
+    val path = Paths.get(prop) // TODO: the path is actually a sequence of separeted paths...
     if (!Files.isDirectory(path) || !Files.isReadable(path)) {
       Console.println(errorMessage)
       Console.println()
@@ -546,7 +613,7 @@ object Verifier {
   /**
     * Checks the satisfiability of the given boolean formula `f`.
     */
-  def check(f: BoolExpr, ctx: Context): Result = {
+  def checkSat(f: BoolExpr, ctx: Context): Result = {
     val solver = ctx.mkSolver()
     solver.add(f)
     solver.check() match {
@@ -582,12 +649,15 @@ object Verifier {
 
   }
 
+  // TODO: Can we use uinterpreted functions for anything?
   // TODO: Might also be worth it to emit the constraints?
+  // TODO: Exploit that the existence of leq/lub only need to be proved for incomparable elements?
+  // TODO: How to prove totality / existence?
 
 
   // TODO: remove
   def main(args: Array[String]): Unit = {
-    withContext(ctx => {
+    mkContext(ctx => {
 
       val x = ctx.mkIntConst("x")
       val y = ctx.mkIntConst("y")
@@ -603,11 +673,10 @@ object Verifier {
       val q = ctx.mkAnd(c1, c2)
 
       Console.println("model for: x < y + 1")
-      val m = check(q, ctx)
+      val m = checkSat(q, ctx)
       println(m)
     })
   }
 
-  // TODO: Can we use uinterpreted functions for anything?
 
 }
