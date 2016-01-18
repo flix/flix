@@ -220,8 +220,7 @@ object Verifier {
       * An error raised to indicate that a partial order is not reflexive.
       *
       * @param elm the optional counter example.
-      * @param loc the source location where the partial order was declared.
-      *
+      * @param loc the location where the partial order was declared.
       */
     case class ReflexivityError(elm: Option[Expression], loc: SourceLocation) extends VerifierError {
       val format =
