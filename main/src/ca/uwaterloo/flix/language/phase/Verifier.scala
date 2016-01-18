@@ -202,18 +202,17 @@ object Verifier {
     /**
       * An error raised to indicate that a partial order is not reflexive.
       *
-      * @param x   the optional counter example.
+      * @param elm   the optional counter example.
       * @param loc the source location where the partial order was declared.
       *
       */
-    // TODO: has to take an optional model.
-    case class ReflexivityError(x: Option[Expression], loc: SourceLocation) extends VerifierError {
+    case class ReflexivityError(elm: Option[Expression], loc: SourceLocation) extends VerifierError {
       val format =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The partial order is not reflexive.")}
            |
-           |Counter-example: ${x.getOrElse("n/a")}.
+           |Counter-example: ${elm.getOrElse("n/a")}.
            |
            |The partial order was defined here:
            |${loc.underline}
@@ -344,6 +343,7 @@ object Verifier {
     // return all the collected properties.
     partialOrderProperties ++ latticeProperties ++ functionProperties
   }
+
 
   /////////////////////////////////////////////////////////////////////////////
   // Property DSL                                                            //
