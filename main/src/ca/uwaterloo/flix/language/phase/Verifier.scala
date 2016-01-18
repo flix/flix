@@ -35,7 +35,7 @@ object Verifier {
     /**
       * Associativity.
       */
-    case class Associativity(op: SimplifiedAst.Expression.Lambda) extends Property {
+    case class Associativity(f: SimplifiedAst.Expression.Lambda) extends Property {
       // val (f, x, y, z) = (op.lam, 'x.ofType(op.tpe), 'y.ofType(op.tpe), 'z.ofType(op.tpe))
 
       // val property = ∀(x, y, z)(f(f(x, y), z) ≡ f(x, f(y, z)))
@@ -43,11 +43,12 @@ object Verifier {
       val formula = {
 
 
-        ∀()(Expression.True)
+        ∀()(f(Expression.True))
       }
 
       def fail(env0: Map[String, Expression]): VerifierError = ???
     }
+
 
     /**
       * Commutativity.
@@ -412,6 +413,11 @@ object Verifier {
     */
   def ≡(e1: Expression, e2: Expression): Expression =
     Binary(BinaryOperator.Equal, e1, e2, Type.Bool, SourceLocation.Unknown)
+
+  implicit class RichLambda(val e1: Expression.Lambda) {
+    def apply(e2: Expression): Expression =
+      Expression.Apply(e1, List(e1), e1.tpe.retTpe, SourceLocation.Unknown)
+  }
 
   /**
     * Returns an object with convenience operations on a lattice.
