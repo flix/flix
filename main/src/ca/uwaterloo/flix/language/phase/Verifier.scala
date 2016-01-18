@@ -219,7 +219,7 @@ object Verifier {
     /**
       * An error raised to indicate that a partial order is not reflexive.
       *
-      * @param elm   the optional counter example.
+      * @param elm the optional counter example.
       * @param loc the source location where the partial order was declared.
       *
       */
@@ -368,7 +368,7 @@ object Verifier {
   /**
     * Returns a variable expression of the given name `s`.
     */
-  def mkVar(s: String, tpe: Type): Expression.Var = {
+  def mkVar2(s: String, tpe: Type): Expression.Var = {
     Var(Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown), tpe, SourceLocation.Unknown)
   }
 
@@ -714,9 +714,26 @@ object Verifier {
       val c2 = ctx.mkGe(x, two)
 
       val q = ctx.mkAnd(c1, c2)
-
       Console.println("model for: x < y + 1")
       val m = checkSat(q, ctx)
+      println(m)
+    })
+
+    ////////////////////////////////
+    ////////////////////////////////
+    ////////////////////////////////
+    ////////////////////////////////
+    println()
+    println()
+    println()
+    println()
+    mkContext(ctx => {
+
+      val x = ctx.mkIntConst("x")
+      val q = ctx.mkLt(ctx.mkAdd(x, ctx.mkInt(1)), x)
+      println(q)
+      Console.println("model for: not x + 1 < x")
+      val m = checkSat(ctx.mkNot(q), ctx)
       println(m)
     })
   }
