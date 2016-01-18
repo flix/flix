@@ -107,7 +107,7 @@ object SimplifiedAst {
     val v: SimplifiedAst.Expression
     val mask: Long
     final val targetMask = ~(mask << offset)
-    final val tpe = Type.Int    // TODO(mhyee), this needs to be an Int64
+    final val tpe = Type.Int64
   }
 
   object Expression {
@@ -163,7 +163,7 @@ object SimplifiedAst {
       */
     case class LoadInt8(e: SimplifiedAst.Expression, offset: scala.Int) extends SimplifiedAst.LoadExpression {
       val mask = 0xFF
-      val tpe = Type.Int      // TODO(mhyee), this needs to be an Int8
+      val tpe = Type.Int8
     }
 
     /**
@@ -174,7 +174,7 @@ object SimplifiedAst {
       */
     case class LoadInt16(e: SimplifiedAst.Expression, offset: scala.Int) extends SimplifiedAst.LoadExpression {
       val mask = 0xFFFF
-      val tpe = Type.Int      // TODO(mhyee), this needs to be an Int16
+      val tpe = Type.Int16
     }
 
     /**
@@ -185,7 +185,7 @@ object SimplifiedAst {
       */
     case class LoadInt32(e: SimplifiedAst.Expression, offset: scala.Int) extends SimplifiedAst.LoadExpression {
       val mask = -1 // if we had unsigned ints, would be 0xFFFFFFFF
-      val tpe = Type.Int      // TODO(mhyee), this needs to be an Int32
+      val tpe = Type.Int32
     }
 
     /**

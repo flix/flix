@@ -23,12 +23,14 @@ object Codegen {
   /*
    * Returns the internal name of the JVM type that `tpe` maps to.
    */
-  // TODO(mhyee): Int8 (byte => B), Int16 (short => S), Int32 (int => I), Int64 (long => J)
   def descriptor(tpe: Type): String = tpe match {
     case Type.Var(x) => ???
     case Type.Unit => ???
-    case Type.Bool => "Z" // JVM boolean
-    case Type.Int => "I" // JVM int (32 bits)
+    case Type.Bool => "Z"   // JVM boolean
+    case Type.Int8 => "B"   // JVM byte (8 bits)
+    case Type.Int16 => "S"  // JVM short (16 bits)
+    case Type.Int32 | Type.Int => "I"  // JVM int (32 bits)
+    case Type.Int64 => "J"  // JVM long (64 bits)
     case Type.Str => ???
     case Type.Tag(enum, tag, t) => ???
     case Type.Enum(cases) => ???
