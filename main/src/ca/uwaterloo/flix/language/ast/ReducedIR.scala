@@ -18,9 +18,7 @@ object ReducedIR {
       * @param tpe  the (lambda) type of the function.
       * @param loc  the source location of the function definition.
       */
-    case class Function(name: Name.Resolved, args: List[String], body: ReducedIR.Expression, tpe: ReducedIR.Type.Lambda, loc: SourceLocation) extends ReducedIR.Definition {
-      val descriptor = tpe.descriptor
-    }
+    case class Function(name: Name.Resolved, args: List[String], body: ReducedIR.Expression, tpe: ReducedIR.Type.Lambda, loc: SourceLocation) extends ReducedIR.Definition
 
   }
 

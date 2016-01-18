@@ -46,10 +46,8 @@ object SimplifiedAst {
     case class Function(name: Name.Resolved,
                         args: List[String],
                         body: SimplifiedAst.Expression,
-                        tpe: CodegenType.Lambda,   // TODO(mhyee)
-                        loc: SourceLocation) extends SimplifiedAst.Definition {
-      final val descriptor = tpe.descriptor
-    }
+                        tpe: Type.Lambda,
+                        loc: SourceLocation) extends SimplifiedAst.Definition
 
   }
 
@@ -493,78 +491,5 @@ object SimplifiedAst {
     * @param name the name of the variable, for debugging purposes.
     */
   case class LocalVar(offset: scala.Int, name: String) extends SimplifiedAst
-
-  /**
-    * A common super-type for types, which map to JVM types.
-    * `descriptor` is the internal name of the JVM type.
-    */
-  // TODO(mhyee): Remove this
-  @deprecated("placeholder until it can be merged with SimplifiedAst", "0.1")
-  sealed trait CodegenType {
-    val descriptor: String
-  }
-
-  object CodegenType {
-
-    /**
-      * The type of booleans, i.e. a 1-bit integer. Maps to a JVM boolean.
-      */
-    case object Bool extends CodegenType {
-      override val descriptor = "Z"
-    }
-
-    /**
-      * The type of 8-bit signed integers. Maps to a JVM byte.
-      */
-    case object Int8 extends CodegenType {
-      override val descriptor = "B"
-    }
-
-    /**
-      * The type of 16-bit signed integers. Maps to a JVM short.
-      */
-    case object Int16 extends CodegenType {
-      override val descriptor = "S"
-    }
-
-    /**
-      * The type of 32-bit signed integers. Maps to a JVM int.
-      */
-    case object Int32 extends CodegenType {
-      override val descriptor = "I"
-    }
-
-    /**
-      * The type of 64-bit signed integers. Maps to a JVM long.
-      */
-    case object Int64 extends CodegenType {
-      override val descriptor = "J"
-    }
-
-    case class Tag(name: Name.Resolved, ident: Name.Ident, tpe: CodegenType) extends CodegenType {
-      // Maps to a Flix tag
-      override val descriptor = ???
-    }
-
-    case class Enum(cases: Map[String, CodegenType.Tag]) extends CodegenType {
-      // Maps to a Flix enum
-      override val descriptor = ???
-    }
-
-    case class Tuple(elms: List[CodegenType]) extends CodegenType {
-      // Maps to a Scala tuple
-      override val descriptor = ???
-    }
-
-    case class Set(elmTyp: CodegenType) extends CodegenType {
-      // Maps to a Scala set
-      override val descriptor = ???
-    }
-
-    case class Lambda(args: List[CodegenType], retTpe: CodegenType) extends CodegenType {
-      override val descriptor = s"""(${ args.map(_.descriptor).mkString })${retTpe.descriptor}"""
-    }
-
-  }
 
 }

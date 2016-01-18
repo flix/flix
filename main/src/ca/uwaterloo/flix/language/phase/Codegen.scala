@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.ReducedIR.Expression._
-import ca.uwaterloo.flix.language.ast.ReducedIR.{Definition, Expression, LoadExpression, StoreExpression, Type}
+import ca.uwaterloo.flix.language.ast.ReducedIR.{Definition, Expression, LoadExpression, StoreExpression}
 import ca.uwaterloo.flix.language.ast._
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.util.CheckClassAdapter
@@ -19,6 +19,31 @@ object Codegen {
    * Decorate (mangle) a Name.Resolved to get the internal JVM name.
    */
   def decorate(name: Name.Resolved): String = name.parts.mkString("$")
+
+  /*
+   * Returns the internal name of the JVM type that `tpe` maps to.
+   */
+  // TODO(mhyee): Int8 (byte => B), Int16 (short => S), Int32 (int => I), Int64 (long => J)
+  def descriptor(tpe: Type): String = tpe match {
+    case Type.Var(x) => ???
+    case Type.Unit => ???
+    case Type.Bool => "Z" // JVM boolean
+    case Type.Int => "I" // JVM int (32 bits)
+    case Type.Str => ???
+    case Type.Tag(enum, tag, t) => ???
+    case Type.Enum(cases) => ???
+    case Type.Tuple(elms) => ???
+    case Type.Opt(elmType) => ???
+    case Type.Lst(elmType) => ???
+    case Type.Set(elmType) => ???
+    case Type.Map(k, v) => ???
+    case Type.Lambda(args, retTpe) => s"""(${ args.map(descriptor).mkString })${descriptor(retTpe)}"""
+    case Type.Predicate(terms) => ???
+    case Type.Native(name) => ???
+    case Type.Char => ???
+    case Type.Abs(name, t) => ???
+    case Type.Any => ???
+  }
 
   /*
    * Given a list of Flix definitions, compile the definitions to bytecode and put them in a JVM class. For now, we put
@@ -60,19 +85,19 @@ object Codegen {
    */
   private def compileFunction(context: Context, visitor: ClassVisitor)(function: Definition.Function): Unit = {
     // TODO: Debug information
-    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, decorate(function.name), function.descriptor, null, null)
+    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, decorate(function.name), function.tpe.descriptor, null, null)
     mv.visitCode()
 
     compileExpression(context, mv)(function.body)
 
     function.tpe.retTpe match {
-      case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 => mv.visitInsn(IRETURN)
-      case Type.Int64 => mv.visitInsn(LRETURN)
-      case Type.Tag(name, ident, tpe) => ???
-      case Type.Enum(cases) => ???
-      case Type.Tuple(elms) => ???
-      case Type.Set(elmType) => ???
-      case Type.Lambda(args, retTpe) => ???
+      case ReducedIR.Type.Bool | ReducedIR.Type.Int8 | ReducedIR.Type.Int16 | ReducedIR.Type.Int32 => mv.visitInsn(IRETURN)
+      case ReducedIR.Type.Int64 => mv.visitInsn(LRETURN)
+      case ReducedIR.Type.Tag(name, ident, tpe) => ???
+      case ReducedIR.Type.Enum(cases) => ???
+      case ReducedIR.Type.Tuple(elms) => ???
+      case ReducedIR.Type.Set(elmType) => ???
+      case ReducedIR.Type.Lambda(args, retTpe) => ???
     }
 
     // Dummy large numbers so the bytecode checker can run. Afterwards, the ASM library calculates the proper maxes.
@@ -83,31 +108,31 @@ object Codegen {
   private def compileExpression(context: Context, visitor: MethodVisitor)(expr: Expression): Unit = expr match {
     case load: LoadExpression => compileLoadExpr(context, visitor)(load)
     case store: StoreExpression => compileStoreExpr(context, visitor)(store)
-    case Const(i, Type.Int64, loc) => compileConst(visitor)(i, isLong = true)
+    case Const(i, ReducedIR.Type.Int64, loc) => compileConst(visitor)(i, isLong = true)
     case Const(i, tpe, loc) => compileConst(visitor)(i)
     case Var(v, tpe, loc) =>
       tpe match {
-        case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ILOAD, v.offset)
-        case Type.Int64 => visitor.visitVarInsn(LLOAD, v.offset)
-        case Type.Tag(name, ident, typ) => ???
-        case Type.Enum(cases) => ???
-        case Type.Tuple(elms) => ???
-        case Type.Set(elmType) => ???
-        case Type.Lambda(args, retTpe) => ???
+        case ReducedIR.Type.Bool | ReducedIR.Type.Int8 | ReducedIR.Type.Int16 | ReducedIR.Type.Int32 => visitor.visitVarInsn(ILOAD, v.offset)
+        case ReducedIR.Type.Int64 => visitor.visitVarInsn(LLOAD, v.offset)
+        case ReducedIR.Type.Tag(name, ident, typ) => ???
+        case ReducedIR.Type.Enum(cases) => ???
+        case ReducedIR.Type.Tuple(elms) => ???
+        case ReducedIR.Type.Set(elmType) => ???
+        case ReducedIR.Type.Lambda(args, retTpe) => ???
       }
     case Apply(name, args, tpe, loc) =>
       args.foreach(compileExpression(context, visitor))
-      visitor.visitMethodInsn(INVOKESTATIC, context.clazz, decorate(name), context.getFunction(name).descriptor, false)
+      visitor.visitMethodInsn(INVOKESTATIC, context.clazz, decorate(name), context.getFunction(name).tpe.descriptor, false)
     case Let(v, exp1, exp2, tpe, loc) =>
       compileExpression(context, visitor)(exp1)
       exp1.tpe match {
-        case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ISTORE, v.offset)
-        case Type.Int64 => visitor.visitVarInsn(LSTORE, v.offset)
-        case Type.Tag(name, ident, typ) => ???
-        case Type.Enum(cases) => ???
-        case Type.Tuple(elms) => ???
-        case Type.Set(elmType) => ???
-        case Type.Lambda(args, retTpe) => ???
+        case ReducedIR.Type.Bool | ReducedIR.Type.Int8 | ReducedIR.Type.Int16 | ReducedIR.Type.Int32 => visitor.visitVarInsn(ISTORE, v.offset)
+        case ReducedIR.Type.Int64 => visitor.visitVarInsn(LSTORE, v.offset)
+        case ReducedIR.Type.Tag(name, ident, typ) => ???
+        case ReducedIR.Type.Enum(cases) => ???
+        case ReducedIR.Type.Tuple(elms) => ???
+        case ReducedIR.Type.Set(elmType) => ???
+        case ReducedIR.Type.Lambda(args, retTpe) => ???
       }
       compileExpression(context, visitor)(exp2)
     case Unary(op, exp, tpe, loc) => compileUnaryExpr(context, visitor)(op, exp, tpe)
@@ -240,7 +265,7 @@ object Codegen {
   }
 
   private def compileUnaryExpr(context: Context, visitor: MethodVisitor)
-                              (op: UnaryOperator, expr: Expression, tpe: Type): Unit = {
+                              (op: UnaryOperator, expr: Expression, tpe: ReducedIR.Type): Unit = {
     compileExpression(context, visitor)(expr)
     op match {
       case UnaryOperator.Not =>
@@ -276,16 +301,16 @@ object Codegen {
    * Note that in Java semantics, the unary minus operator returns an Int32 (int), so the programmer must explicitly
    * cast to an Int8 (byte).
    */
-  private def compileUnaryMinusExpr(context: Context, visitor: MethodVisitor)(tpe: Type): Unit = tpe match {
-    case Type.Int8 =>
+  private def compileUnaryMinusExpr(context: Context, visitor: MethodVisitor)(tpe: ReducedIR.Type): Unit = tpe match {
+    case ReducedIR.Type.Int8 =>
       visitor.visitInsn(INEG)
       visitor.visitInsn(I2B)
-    case Type.Int16 =>
+    case ReducedIR.Type.Int16 =>
       visitor.visitInsn(INEG)
       visitor.visitInsn(I2S)
-    case Type.Int32 => visitor.visitInsn(INEG)
-    case Type.Int64 => visitor.visitInsn(LNEG)
-    case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
+    case ReducedIR.Type.Int32 => visitor.visitInsn(INEG)
+    case ReducedIR.Type.Int64 => visitor.visitInsn(LNEG)
+    case ReducedIR.Type.Bool | ReducedIR.Type.Tag(_, _, _) | ReducedIR.Type.Enum(_) | ReducedIR.Type.Tuple(_) | ReducedIR.Type.Set(_) | ReducedIR.Type.Lambda(_, _) =>
       throw new InternalCompilerError(s"Can't apply UnaryOperator.Minus to type $tpe.")
   }
 
@@ -304,15 +329,15 @@ object Codegen {
    *
    * Note that sign extending and then negating a value is equal to negating and then sign extending it.
    */
-  private def compileUnaryNegateExpr(context: Context, visitor: MethodVisitor)(tpe: Type): Unit = {
+  private def compileUnaryNegateExpr(context: Context, visitor: MethodVisitor)(tpe: ReducedIR.Type): Unit = {
     visitor.visitInsn(ICONST_M1)
     tpe match {
-      case Type.Int8 | Type.Int16 | Type.Int32 =>
+      case ReducedIR.Type.Int8 | ReducedIR.Type.Int16 | ReducedIR.Type.Int32 =>
         visitor.visitInsn(IXOR)
-      case Type.Int64 =>
+      case ReducedIR.Type.Int64 =>
         visitor.visitInsn(I2L)
         visitor.visitInsn(LXOR)
-      case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
+      case ReducedIR.Type.Bool | ReducedIR.Type.Tag(_, _, _) | ReducedIR.Type.Enum(_) | ReducedIR.Type.Tuple(_) | ReducedIR.Type.Set(_) | ReducedIR.Type.Lambda(_, _) =>
         throw new InternalCompilerError(s"Can't apply UnaryOperator.Negate to type $tpe.")
     }
   }
@@ -338,7 +363,7 @@ object Codegen {
    *     11111111 11111111 11111111 10000000 = -128
    */
   private def compileArithmeticExpr(context: Context, visitor: MethodVisitor)
-                                   (o: ArithmeticOperator, e1: Expression, e2: Expression, tpe: Type): Unit = {
+                                   (o: ArithmeticOperator, e1: Expression, e2: Expression, tpe: ReducedIR.Type): Unit = {
     compileExpression(context, visitor)(e1)
     compileExpression(context, visitor)(e2)
     val (intOp, longOp) = o match {
@@ -349,21 +374,21 @@ object Codegen {
       case BinaryOperator.Modulo => (IREM, LREM)
     }
     tpe match {
-      case Type.Int8 =>
+      case ReducedIR.Type.Int8 =>
         visitor.visitInsn(intOp)
         visitor.visitInsn(I2B)
-      case Type.Int16 =>
+      case ReducedIR.Type.Int16 =>
         visitor.visitInsn(intOp)
         visitor.visitInsn(I2S)
-      case Type.Int32 => visitor.visitInsn(intOp)
-      case Type.Int64 => visitor.visitInsn(longOp)
-      case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
+      case ReducedIR.Type.Int32 => visitor.visitInsn(intOp)
+      case ReducedIR.Type.Int64 => visitor.visitInsn(longOp)
+      case ReducedIR.Type.Bool | ReducedIR.Type.Tag(_, _, _) | ReducedIR.Type.Enum(_) | ReducedIR.Type.Tuple(_) | ReducedIR.Type.Set(_) | ReducedIR.Type.Lambda(_, _) =>
         throw new InternalCompilerError(s"Can't apply $o to type $tpe.")
     }
   }
 
   private def compileComparisonExpr(context: Context, visitor: MethodVisitor)
-                                   (o: ComparisonOperator, e1: Expression, e2: Expression, tpe: Type): Unit = {
+                                   (o: ComparisonOperator, e1: Expression, e2: Expression, tpe: ReducedIR.Type): Unit = {
     compileExpression(context, visitor)(e1)
     compileExpression(context, visitor)(e2)
     val condElse = new Label()
@@ -377,11 +402,11 @@ object Codegen {
       case BinaryOperator.NotEqual => (IF_ICMPEQ, IFEQ)
     }
     e1.tpe match {
-      case Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitJumpInsn(intOp, condElse)
-      case Type.Int64 =>
+      case ReducedIR.Type.Int8 | ReducedIR.Type.Int16 | ReducedIR.Type.Int32 => visitor.visitJumpInsn(intOp, condElse)
+      case ReducedIR.Type.Int64 =>
         visitor.visitInsn(LCMP)
         visitor.visitJumpInsn(longOp, condElse)
-      case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
+      case ReducedIR.Type.Bool | ReducedIR.Type.Tag(_, _, _) | ReducedIR.Type.Enum(_) | ReducedIR.Type.Tuple(_) | ReducedIR.Type.Set(_) | ReducedIR.Type.Lambda(_, _) =>
         throw new InternalCompilerError(s"Can't apply $o to type $tpe.")
     }
     visitor.visitInsn(ICONST_1)
@@ -395,7 +420,7 @@ object Codegen {
    * Note that these expressions do short-circuit evaluation.
    */
   private def compileLogicalExpr(context: Context, visitor: MethodVisitor)
-                                (o: LogicalOperator, e1: Expression, e2: Expression, tpe: Type): Unit = o match {
+                                (o: LogicalOperator, e1: Expression, e2: Expression, tpe: ReducedIR.Type): Unit = o match {
     case BinaryOperator.And =>
       val andFalseBranch = new Label()
       val andEnd = new Label()
@@ -468,7 +493,7 @@ object Codegen {
    * Note: the right-hand operand of a shift (i.e. the shift amount) *must* be Int32.
    */
   private def compileBitwiseExpr(context: Context, visitor: MethodVisitor)
-                                (o: BitwiseOperator, e1: Expression, e2: Expression, tpe: Type): Unit = {
+                                (o: BitwiseOperator, e1: Expression, e2: Expression, tpe: ReducedIR.Type): Unit = {
     compileExpression(context, visitor)(e1)
     compileExpression(context, visitor)(e2)
     val (intOp, longOp) = o match {
@@ -479,15 +504,15 @@ object Codegen {
       case BinaryOperator.BitwiseRightShift => (ISHR, LSHR)
     }
     tpe match {
-      case Type.Int8 =>
+      case ReducedIR.Type.Int8 =>
         visitor.visitInsn(intOp)
         if (intOp == ISHL) visitor.visitInsn(I2B)
-      case Type.Int16 =>
+      case ReducedIR.Type.Int16 =>
         visitor.visitInsn(intOp)
         if (intOp == ISHL) visitor.visitInsn(I2S)
-      case Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitInsn(intOp)
-      case Type.Int64 => visitor.visitInsn(longOp)
-      case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
+      case ReducedIR.Type.Int8 | ReducedIR.Type.Int16 | ReducedIR.Type.Int32 => visitor.visitInsn(intOp)
+      case ReducedIR.Type.Int64 => visitor.visitInsn(longOp)
+      case ReducedIR.Type.Bool | ReducedIR.Type.Tag(_, _, _) | ReducedIR.Type.Enum(_) | ReducedIR.Type.Tuple(_) | ReducedIR.Type.Set(_) | ReducedIR.Type.Lambda(_, _) =>
         throw new InternalCompilerError(s"Can't apply $o to type $tpe.")
     }
   }
