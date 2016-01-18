@@ -19,6 +19,8 @@ object Verifier {
   sealed trait Property {
     // TODO: rename to formula
     val property: Formula
+
+    def fail(env0: Map[String, Expression]): VerifierError = ???
   }
 
   object Property {
@@ -140,10 +142,10 @@ object Verifier {
         */
       case class LeastElement(lattice: Lattice) extends Property {
         //val property = {
-          //val (⊥, ⊑, ⊔, ⊓) = latticeOps(lattice)
-          //  val x = 'x.ofType(lattice.tpe)
+        //val (⊥, ⊑, ⊔, ⊓) = latticeOps(lattice)
+        //  val x = 'x.ofType(lattice.tpe)
 
-          //  ∀(x)(⊑(⊥, x))
+        //  ∀(x)(⊑(⊥, x))
         //}
 
         val property = ∀()(Expression.True)
@@ -219,7 +221,6 @@ object Verifier {
       val format = s"AntiSymmetry violated for $lat."
     }
 
-
   }
 
   /**
@@ -232,11 +233,8 @@ object Verifier {
     val properties = collectProperties(root)
 
     // attempt to verify each property.
-    properties flatMap {
-      case property => checkProperty(property)
-    }
+    properties flatMap checkProperty
   }
-
 
   /**
     * Attempts to verify the given `property`.
@@ -251,14 +249,15 @@ object Verifier {
     // a sequence of environments under which the base expression must hold.
     val envs = enumerate(property.property.q)
 
-    val result = envs flatMap {
+    // attempt to verify that the property holds under each environment.
+    val violations = envs flatMap {
       case env0 => PartialEvaluator.eval(exp0, env0, identity) match {
         case Expression.True =>
           // Case 1: The partial evaluator proved the property.
-          None
+          Nil
         case Expression.False =>
           // Case 2: The partial evaluator disproved the property.
-          Some(??? : VerifierError)
+          List(property.fail(env0))
         case residual =>
           // Case 3: The partial evaluator reduced the expression, but it is still residual.
           // Must translate the expression into an SMT formula and attempt to prove it.
@@ -271,24 +270,34 @@ object Verifier {
             checkSat(q, ctx) match {
               case Result.Unsatisfiable =>
                 // Case 3.1: The formula is UNSAT, i.e. the property HOLDS.
-                None
+                Nil
               case Result.Satisfiable(model) =>
                 // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
-                Some(??? : VerifierError)
+                List(??? : VerifierError)
               case Result.Unknown =>
                 // Case 3.3: It is unknown whether the formula has a model.
-                Some(??? : VerifierError)
+                List(??? : VerifierError)
             }
           })
       }
     }
 
-    ???
+    violations.headOption
   }
 
-  def enumerate(q: List[Var]): List[Map[String, Expression]] = ???
+  /**
+    * Enumerates all possible environments of the given universally quantified variables.
+    */
+  def enumerate(q: List[Var]): List[Map[String, Expression]] = {
+    def visit(tpe: Type): List[Expression] = tpe match {
+      case Type.Bool => List(Expression.True, Expression.False)
+      case Type.Int => ???
+      case Type.Enum(cases) => ???
+      case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+    }
 
-  // def eval()
+    ???
+  }
 
   /**
     * Returns all the verification conditions required to ensure the safety of the given AST `root`.
@@ -324,18 +333,14 @@ object Verifier {
     partialOrderProperties ++ latticeProperties ++ functionProperties
   }
 
-
   /////////////////////////////////////////////////////////////////////////////
   // Property DSL                                                            //
   /////////////////////////////////////////////////////////////////////////////
   /**
     * Returns an expression universally quantified by the given variables.
-    *
-    * We represent such an expression by sequence of lambda functions.
     */
-  // TODO: Alternatively introduce a special constraint construct?
-  // Probably need this to report errors.
-  def ∀(x: Expression.Var*)(f: Expression): Formula = ???
+  def ∀(q: Expression.Var*)(e: Expression): Formula =
+    Formula(q.toList, e)
 
   /**
     * Returns the logical negation of the expression `e`.
