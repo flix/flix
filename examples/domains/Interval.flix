@@ -13,7 +13,7 @@ namespace Interval {
     enum Interval {
             case Top,
 
-        case Range(Int, Int),
+        case Range(Int, Int)/*TODO: refinement type [x > y]*/,
 
             case Bot
     }

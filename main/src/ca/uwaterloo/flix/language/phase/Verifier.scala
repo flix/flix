@@ -27,7 +27,7 @@ object Verifier {
     val formula: Formula
 
 
-    def fail(env0: Map[String, Expression]): VerifierError = ???
+    def fail(env0: Map[String, Expression]): VerifierError
   }
 
   object Property {
@@ -40,7 +40,13 @@ object Verifier {
 
       // val property = ∀(x, y, z)(f(f(x, y), z) ≡ f(x, f(y, z)))
 
-      val formula = ∀()(Expression.True)
+      val formula = {
+
+
+        ∀()(Expression.True)
+      }
+
+      def fail(env0: Map[String, Expression]): VerifierError = ???
     }
 
     /**
@@ -52,6 +58,8 @@ object Verifier {
       // val property = ∀(x, y)(f(x, y) ≡ f(y, x))
 
       val formula = ∀()(Expression.True)
+
+      def fail(env0: Map[String, Expression]): VerifierError = ???
     }
 
 
@@ -110,6 +118,8 @@ object Verifier {
 
           ∀(x, y)(→(∧(⊑(x, y), ⊑(y, x)), ≡(x, y)))
         }
+
+        def fail(env0: Map[String, Expression]): VerifierError = ???
       }
 
       /**
@@ -120,6 +130,8 @@ object Verifier {
 
         //   val property = ∀(x, y, z)(((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z))
         val formula = ∀()(Expression.True)
+
+        def fail(env0: Map[String, Expression]): VerifierError = ???
       }
 
       /**
@@ -160,6 +172,8 @@ object Verifier {
         //}
 
         val formula = ∀()(Expression.True)
+
+        def fail(env0: Map[String, Expression]): VerifierError = ???
       }
 
       /**
@@ -170,12 +184,15 @@ object Verifier {
 
         // val property = ∀(x, y)((x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y)))
         val formula = ∀()(Expression.True)
+
+        def fail(env0: Map[String, Expression]): VerifierError = ???
       }
 
 
       //  /**
       //   * Least Upper Bound: ?x, y, z. x ? z ? y ? z ? x ? y ? z.
       //   */
+
 
     }
 
@@ -348,6 +365,13 @@ object Verifier {
   /////////////////////////////////////////////////////////////////////////////
   // Property DSL                                                            //
   /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Returns a variable expression of the given name `s`.
+    */
+  def mkVar(s: String, tpe: Type): Expression.Var = {
+    Var(Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown), tpe, SourceLocation.Unknown)
+  }
+
   /**
     * Returns an expression universally quantified by the given variables.
     */
