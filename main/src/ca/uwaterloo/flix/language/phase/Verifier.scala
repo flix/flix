@@ -11,14 +11,21 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, _}
+import ca.uwaterloo.flix.language.phase.Verifier.VerifierError.ReflexivityError
 import ca.uwaterloo.flix.runtime.{PartialEvaluator, Value}
 import com.microsoft.z3._
 
 object Verifier {
 
+  /**
+    * A common super-type for properties of partial orders, lattices and functions.
+    */
   sealed trait Property {
-    // TODO: rename to formula
-    val property: Formula
+    /**
+      * The formula corresponding to the property. May or may not be a theorem.
+      */
+    val formula: Formula
+
 
     def fail(env0: Map[String, Expression]): VerifierError = ???
   }
@@ -33,7 +40,7 @@ object Verifier {
 
       // val property = ∀(x, y, z)(f(f(x, y), z) ≡ f(x, f(y, z)))
 
-      val property = ∀()(Expression.True)
+      val formula = ∀()(Expression.True)
     }
 
     /**
@@ -44,7 +51,7 @@ object Verifier {
 
       // val property = ∀(x, y)(f(x, y) ≡ f(y, x))
 
-      val property = ∀()(Expression.True)
+      val formula = ∀()(Expression.True)
     }
 
 
@@ -79,11 +86,15 @@ object Verifier {
 
         import ops._
 
-        val property = {
+        val formula = {
           val x = mkVar("x")
 
           ∀(x)(⊑(x, x))
         }
+
+        override def fail(env0: Map[String, Expression]): VerifierError =
+          ReflexivityError(env0.get("x"), lattice.leq.loc)
+
       }
 
       /**
@@ -94,7 +105,7 @@ object Verifier {
 
         import ops._
 
-        val property = {
+        val formula = {
           val (x, y) = (mkVar("x"), mkVar("y"))
 
           ∀(x, y)(→(∧(⊑(x, y), ⊑(y, x)), ≡(x, y)))
@@ -108,7 +119,7 @@ object Verifier {
         //  val (x, y, z) = ('x.ofType(lattice.tpe), 'y.ofType(lattice.tpe), 'z.ofType(lattice.tpe))
 
         //   val property = ∀(x, y, z)(((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z))
-        val property = ∀()(Expression.True)
+        val formula = ∀()(Expression.True)
       }
 
       /**
@@ -148,7 +159,7 @@ object Verifier {
         //  ∀(x)(⊑(⊥, x))
         //}
 
-        val property = ∀()(Expression.True)
+        val formula = ∀()(Expression.True)
       }
 
       /**
@@ -158,7 +169,7 @@ object Verifier {
         //  val (x, y) = ('x.ofType(lattice.tpe), 'y.ofType(lattice.tpe))
 
         // val property = ∀(x, y)((x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y)))
-        val property = ∀()(Expression.True)
+        val formula = ∀()(Expression.True)
       }
 
 
@@ -191,17 +202,18 @@ object Verifier {
     /**
       * An error raised to indicate that a partial order is not reflexive.
       *
-      * @param lat  the lattice defining the partial order.
-      * @param prop the violated property.
-      * @param elm  the element that violates the property.
-      * @param loc  the location of the definition of the partial order.
+      * @param x   the optional counter example.
+      * @param loc the source location where the partial order was declared.
+      *
       */
     // TODO: has to take an optional model.
-    case class ReflexivityError(lat: Lattice, prop: Property, elm: Value, loc: SourceLocation) extends VerifierError {
+    case class ReflexivityError(x: Option[Expression], loc: SourceLocation) extends VerifierError {
       val format =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The partial order is not reflexive.")}
+           |
+           |Counter-example: ${x.getOrElse("n/a")}.
            |
            |The partial order was defined here:
            |${loc.underline}
@@ -244,10 +256,10 @@ object Verifier {
     */
   def checkProperty(property: Property): Option[VerifierError] = {
     // the base expression
-    val exp0 = property.property.e
+    val exp0 = property.formula.e
 
     // a sequence of environments under which the base expression must hold.
-    val envs = enumerate(property.property.q)
+    val envs = enumerate(property.formula.q)
 
     // attempt to verify that the property holds under each environment.
     val violations = envs flatMap {
@@ -273,10 +285,10 @@ object Verifier {
                 Nil
               case Result.Satisfiable(model) =>
                 // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
-                List(??? : VerifierError)
+                List(property.fail(model2env(model)))
               case Result.Unknown =>
                 // Case 3.3: It is unknown whether the formula has a model.
-                List(??? : VerifierError)
+                List(property.fail(Map.empty))
             }
           })
       }
@@ -659,6 +671,8 @@ object Verifier {
   // TODO: Exploit that the existence of leq/lub only need to be proved for incomparable elements?
   // TODO: How to prove totality / existence?
 
+
+  def model2env(model: Model): Map[String, Expression] = ???
 
   // TODO: remove
   def main(args: Array[String]): Unit = {

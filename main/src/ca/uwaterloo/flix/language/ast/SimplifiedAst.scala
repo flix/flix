@@ -71,24 +71,34 @@ object SimplifiedAst {
 
   sealed trait Expression extends SimplifiedAst {
     def tpe: Type
+
+    def loc: SourceLocation
   }
 
   object Expression {
 
     case object Unit extends SimplifiedAst.Expression {
       final val tpe = Type.Unit
+
+      final val loc = SourceLocation.Unknown
     }
 
     case object True extends SimplifiedAst.Expression {
       final val tpe = Type.Bool
+
+      final val loc = SourceLocation.Unknown
     }
 
     case object False extends SimplifiedAst.Expression {
       final val tpe = Type.Bool
+
+      final val loc = SourceLocation.Unknown
     }
 
     case class Int(lit: scala.Int) extends SimplifiedAst.Expression {
       final val tpe = Type.Int
+
+      final val loc = SourceLocation.Unknown
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends SimplifiedAst.Expression {
