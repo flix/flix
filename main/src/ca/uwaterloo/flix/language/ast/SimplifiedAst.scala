@@ -124,25 +124,30 @@ object SimplifiedAst {
       final val tpe = Type.Bool
     }
 
+    // TODO: Eventually we'll want to use the specialized ints below, so we'll remove this later
     case class Int(lit: scala.Int) extends SimplifiedAst.Expression {
       final val tpe = Type.Int
+    }
+
+    case class Int8(lit: scala.Byte) extends SimplifiedAst.Expression {
+      final val tpe = Type.Int8
+    }
+
+    case class Int16(lit: scala.Short) extends SimplifiedAst.Expression {
+      final val tpe = Type.Int16
+    }
+
+    case class Int32(lit: scala.Int) extends SimplifiedAst.Expression {
+      final val tpe = Type.Int32
+    }
+
+    case class Int64(lit: scala.Long) extends SimplifiedAst.Expression {
+      final val tpe = Type.Int64
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends SimplifiedAst.Expression {
       final val tpe = Type.Str
     }
-
-    /**
-      * A typed AST node representing a constant integer literal.
-      * Note that calling this case class "Int" conflicts with scala.Int.
-      *
-      * @param value the integer value.
-      * @param tpe the type of the integer.
-      * @param loc the source location of the integer.
-      */
-    // TODO(mhyee): Remove this
-    @deprecated("placeholder until it can be merged into SimplifiedAst.Int", "0.1")
-    case class Const(value: Long, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
       * An AST node representing a value (of type Bool) loaded from an Int64.
