@@ -734,7 +734,7 @@ object Verifier {
     def visit(tpe: Type): List[Expression] = tpe match {
       case Type.Unit => List(Expression.Unit)
       case Type.Bool => List(Expression.True, Expression.False)
-      case Type.Int => List(Expression.Var(???, Type.Int, SourceLocation.Unknown)) // TODO: Need genSym
+      case Type.Int => List(Expression.Var(???, ???, Type.Int, SourceLocation.Unknown)) // TODO: Need genSym
       case Type.Tuple(elms) => ???
       case Type.Enum(cases) => ???
       case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
@@ -803,7 +803,7 @@ object Verifier {
     * Returns a variable expression of the given name `s`.
     */
   def mkVar2(s: String, tpe: Type): Expression.Var = {
-    Var(Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown), tpe, SourceLocation.Unknown)
+    Var(Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown), ???, tpe, SourceLocation.Unknown)
   }
 
   /**
@@ -850,10 +850,10 @@ object Verifier {
 
   implicit class RichLambda(val f: Expression.Lambda) {
     def apply(e1: Expression): Expression =
-      Expression.Apply(f, List(e1), f.tpe.retTpe, SourceLocation.Unknown)
+      Expression.Apply(???, List(e1), f.tpe.retTpe, SourceLocation.Unknown)
 
     def apply(e1: Expression, e2: Expression): Expression =
-      Expression.Apply(f, List(e1, e2), f.tpe.retTpe, SourceLocation.Unknown)
+      Expression.Apply(???, List(e1, e2), f.tpe.retTpe, SourceLocation.Unknown)
   }
 
   /**

@@ -102,6 +102,7 @@ object SimplifiedAst {
     val e: SimplifiedAst.Expression
     val offset: scala.Int
     val mask: scala.Int
+    final val loc = SourceLocation.Unknown
   }
 
   sealed trait StoreExpression extends Expression {
@@ -111,6 +112,7 @@ object SimplifiedAst {
     val mask: Long
     final val targetMask = ~(mask << offset)
     final val tpe = Type.Int64
+    final val loc = SourceLocation.Unknown
   }
 
   object Expression {
@@ -142,18 +144,26 @@ object SimplifiedAst {
 
     case class Int8(lit: scala.Byte) extends SimplifiedAst.Expression {
       final val tpe = Type.Int8
+
+      final val loc = SourceLocation.Unknown
     }
 
     case class Int16(lit: scala.Short) extends SimplifiedAst.Expression {
       final val tpe = Type.Int16
+
+      final val loc = SourceLocation.Unknown
     }
 
     case class Int32(lit: scala.Int) extends SimplifiedAst.Expression {
       final val tpe = Type.Int32
+
+      final val loc = SourceLocation.Unknown
     }
 
     case class Int64(lit: scala.Long) extends SimplifiedAst.Expression {
       final val tpe = Type.Int64
+
+      final val loc = SourceLocation.Unknown
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends SimplifiedAst.Expression {
