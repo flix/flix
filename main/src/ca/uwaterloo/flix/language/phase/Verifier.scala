@@ -303,7 +303,7 @@ object Verifier {
     object AscendingChainCondition {
 
       /**
-        * Ascending Chain Condition
+        * Height function must be non-negative.
         */
       case class HeightNonNegative(lattice: Lattice) extends Property {
         val ops = latticeOps(lattice)
@@ -317,26 +317,35 @@ object Verifier {
         }
 
         def fail(env0: Map[String, Expression]): VerifierError = {
-          val x = mkVar("x")
-          //ACCNonNegative(x, lattice.leq.loc)
-          ???
+          val x = env0.get("x")
+          HeightNonNegativeError(x, lattice.acc.loc)
         }
       }
 
-      //  /**
-      //   * Non-Negative: ?x. f(x) > 0.
-      //   */
-      //  def nonNegative(h: Term.Abs): Term.Abs =
-      //    Term.Abs('x, h.typ,
-      //      Term.BinaryOp(BinaryOperator.Greater, h.call('x), Term.Int(0)))
-      //
-      //  /**
-      //   * Stricly-Decreasing: ?x, y. x ? y ? x != y ? f(x) > f(y).
-      //   */
-      //  def strictlyDecreasing(h: Term.Abs, leq: Term.Abs): Term.Abs =
-      //    Term.Abs('x, h.typ, Term.Abs('y, h.typ,
-      //      (leq.call('x, 'y) && (Term.Var('x) !== Term.Var('y))) ==>
-      //        Term.BinaryOp(BinaryOperator.Greater, h.call('x), h.call('y))))
+      /**
+        * Height function must be decreasing.
+        */
+      case class HeightStrictlyDecreasing(lattice: Lattice) extends Property {
+        val ops = latticeOps(lattice)
+
+        import ops._
+
+        val formula = {
+          val (x, y) = (mkVar("x"), mkVar("y"))
+
+          ∀(x, y)(
+            →(
+              ∧(⊑(x, y), ¬(≡(x, y))),
+              Expression.Binary(BinaryOperator.Greater, lattice.acc(x), lattice.acc(y), Type.Bool, SourceLocation.Unknown)
+            ))
+        }
+
+        def fail(env0: Map[String, Expression]): VerifierError = {
+          val x = env0.get("x")
+          val y = env0.get("y")
+          HeightStrictlyDecreasingError(x, y, lattice.acc.loc)
+        }
+      }
 
     }
 
@@ -433,7 +442,7 @@ object Verifier {
            |
            |${consoleCtx.red(s">> The partial order is not transitive.")}
            |
-           |Counter-example: ($x, $y)
+           |Counter-example: ($x, $y, $z)
            |
            |The partial order was defined here:
            |${loc.underline}
@@ -481,7 +490,7 @@ object Verifier {
            |
            |${consoleCtx.red(s">> The lub is not a least upper bound.")}
            |
-           |Counter-example: ($x, $y)
+           |Counter-example: ($x, $y, $z)
            |
            |The lub was defined here:
            |${loc.underline}
@@ -527,15 +536,46 @@ object Verifier {
       val format =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
-           |${consoleCtx.red(s">> The glb is not a greatest lower bound..")}
+           |${consoleCtx.red(s">> The glb is not a greatest lower bound.")}
            |
-           |Counter-example: ($x, $y)
+           |Counter-example: ($x, $y, $z)
            |
            |The glb was defined here:
            |${loc.underline}
            """.stripMargin
     }
 
+    /**
+      * An error raised to indicate that the height function may be negative.
+      */
+    case class HeightNonNegativeError(x: Option[Expression], loc: SourceLocation) extends VerifierError {
+      val format =
+        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> The height function is not non-negative.")}
+           |
+           |Counter-example: ($x)
+           |
+           |The height function was defined here:
+           |${loc.underline}
+           """.stripMargin
+    }
+
+    /**
+      * An error raised to indicate that the height function is not strictly decreasing.
+      */
+    case class HeightStrictlyDecreasingError(x: Option[Expression], y: Option[Expression], loc: SourceLocation) extends VerifierError {
+      val format =
+        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> The height function is not strictly decreasing.")}
+           |
+           |Counter-example: ($x)
+           |
+           |The height function was defined here:
+           |${loc.underline}
+           """.stripMargin
+    }
 
   }
 
