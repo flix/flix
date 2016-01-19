@@ -4443,8 +4443,8 @@ class TestCodegen extends FunSuite {
     assertResult(42)(result01)
     assertResult(42)(result02)
     assertResult(0)(result03)
-    assertResult(0xFF)(result04)
-    assertResult(-1.toByte)(result05)
+    assertResult(0xFF.toByte)(result04)
+    assertResult((-1).toByte)(result05)
   }
 
   test("Codegen - Binary.BitwiseAnd02") {
@@ -4498,8 +4498,8 @@ class TestCodegen extends FunSuite {
     assertResult(420)(result01)
     assertResult(420)(result02)
     assertResult(0)(result03)
-    assertResult(0xFFFF)(result04)
-    assertResult(-1.toShort)(result05)
+    assertResult(0xFFFF.toShort)(result04)
+    assertResult((-1).toShort)(result05)
   }
 
   test("Codegen - Binary.BitwiseAnd03") {
@@ -4660,11 +4660,11 @@ class TestCodegen extends FunSuite {
     val result04 = code.call(name04)
     val result05 = code.call(name05)
 
-    assertResult(0xFF)(result01)
+    assertResult(0xFF.toByte)(result01)
     assertResult(42)(result02)
     assertResult(42)(result03)
-    assertResult(0xFF)(result04)
-    assertResult(-1.toByte)(result05)
+    assertResult(0xFF.toByte)(result04)
+    assertResult((-1).toByte)(result05)
   }
 
   test("Codegen - Binary.BitwiseOr02") {
@@ -4715,11 +4715,11 @@ class TestCodegen extends FunSuite {
     val result04 = code.call(name04)
     val result05 = code.call(name05)
 
-    assertResult(0xFFFF)(result01)
+    assertResult(0xFFFF.toShort)(result01)
     assertResult(420)(result02)
     assertResult(420)(result03)
-    assertResult(0xFFFF)(result04)
-    assertResult(-1.toShort)(result05)
+    assertResult(0xFFFF.toShort)(result04)
+    assertResult((-1).toShort)(result05)
   }
 
   test("Codegen - Binary.BitwiseOr03") {
@@ -4880,7 +4880,7 @@ class TestCodegen extends FunSuite {
     val result04 = code.call(name04)
     val result05 = code.call(name05)
 
-    assertResult(213)(result01)
+    assertResult(-43)(result01)
     assertResult(0)(result02)
     assertResult(42)(result03)
     assertResult(0)(result04)
@@ -4935,7 +4935,7 @@ class TestCodegen extends FunSuite {
     val result04 = code.call(name04)
     val result05 = code.call(name05)
 
-    assertResult(65115)(result01)
+    assertResult(-421)(result01)
     assertResult(0)(result02)
     assertResult(420)(result03)
     assertResult(0)(result04)
