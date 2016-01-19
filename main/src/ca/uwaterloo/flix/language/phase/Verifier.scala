@@ -705,7 +705,6 @@ object Verifier {
           // Case 3: The partial evaluator reduced the expression, but it is still residual.
           // Must translate the expression into an SMT formula and attempt to prove it.
 
-          // TODO: Carefull with universially quantified variables?
           mkContext(ctx => {
             // Check if the negation of the expression has a model.
             // If so, the property does not hold.
@@ -733,8 +732,10 @@ object Verifier {
     */
   def enumerate(q: List[Var]): List[Map[String, Expression]] = {
     def visit(tpe: Type): List[Expression] = tpe match {
+      case Type.Unit => List(Expression.Unit)
       case Type.Bool => List(Expression.True, Expression.False)
-      case Type.Int => ???
+      case Type.Int => List(Expression.Var(???, Type.Int, SourceLocation.Unknown)) // TODO: Need genSym
+      case Type.Tuple(elms) => ???
       case Type.Enum(cases) => ???
       case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
     }
@@ -919,8 +920,9 @@ object Verifier {
     * Returns all lambdas in the program.
     */
   // TODO: Should also find inner lambdas.
+  // TODO: Avoid cast
   def lambdas(root: SimplifiedAst.Root): List[Expression.Lambda] =
-    root.constants.values.map(_.exp.asInstanceOf[Expression.Lambda]).toList // TODO: Avoid cast?
+    root.constants.values.map(_.exp.asInstanceOf[Expression.Lambda]).toList
 
   /////////////////////////////////////////////////////////////////////////////
   // Translation to Z3 Formulae                                              //
@@ -1018,7 +1020,7 @@ object Verifier {
       case BinaryOperator.Minus => ctx.mkSub(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
       case BinaryOperator.Times => ctx.mkMul(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
       case BinaryOperator.Divide => ctx.mkDiv(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
-      case BinaryOperator.Modulo => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO: Need to split IntExp into ArithExp
+      case BinaryOperator.Modulo => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
       case BinaryOperator.BitwiseAnd => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
       case BinaryOperator.BitwiseOr => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
       case BinaryOperator.BitwiseXor => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
@@ -1045,15 +1047,6 @@ object Verifier {
       Console.println(errorMessage)
       Console.println()
       Console.println("> java.library.path not set.")
-      System.exit(1)
-    }
-
-    // check that the path exists.
-    val path = Paths.get(prop) // TODO: the path is actually a sequence of separeted paths...
-    if (!Files.isDirectory(path) || !Files.isReadable(path)) {
-      Console.println(errorMessage)
-      Console.println()
-      Console.println("> java.library.path is not a readable directory.")
       System.exit(1)
     }
 
@@ -1136,11 +1129,7 @@ object Verifier {
 
   }
 
-  // TODO: Can we use uinterpreted functions for anything?
-  // TODO: Might also be worth it to emit the constraints?
-  // TODO: Exploit that the existence of leq/lub only need to be proved for incomparable elements?
-  // TODO: How to prove totality / existence?
-
+  // TODO: Can we use un-interpreted functions for anything?
 
   def model2env(model: Model): Map[String, Expression] = ???
 
