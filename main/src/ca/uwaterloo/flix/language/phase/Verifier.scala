@@ -321,29 +321,6 @@ object Verifier {
       }
     }
 
-
-    /**
-      * The function `f` must be strict in all its arguments.
-      */
-    case class StrictN(f: Expression.Lambda, root: SimplifiedAst.Root) extends Property {
-      val formula = {
-
-        // TODO
-
-        // Step 1: Generate n variables corresponding to each argument.
-
-        // Step 2: Generate formula where the nth argument is restricted to be bottom.
-
-        // Step 3: Universally quantify all formulas with all variables.
-
-        ???
-      }
-
-      def fail(env0: Map[String, Expression]): VerifierError = {
-        StrictError(f.loc)
-      }
-    }
-
     /**
       * The function `f` must be monotone in all its arguments.
       */
@@ -781,17 +758,35 @@ object Verifier {
     // Collect lattice properties.
     val latticeProperties = lattices(root) flatMap {
       case l => List(
-        Property.JoinSemiLattice.LeastElement(l) // TODO: More
+        Property.JoinSemiLattice.LeastElement(l),
+        Property.JoinSemiLattice.UpperBound(l),
+        Property.JoinSemiLattice.LeastUpperBound(l),
+        Property.MeetSemiLattice.GreatestElement(l),
+        Property.MeetSemiLattice.LowerBound(l),
+        Property.MeetSemiLattice.GreatestLowerBound(l),
+        Property.AscendingChainCondition.HeightNonNegative(l),
+        Property.AscendingChainCondition.HeightStrictlyDecreasing(l)
       )
     }
 
     // Collect function properties.
     val functionProperties = lambdas(root) flatMap {
       case f if f.annotations.isUnchecked => Nil
-      case f => f.annotations.annotations.collect {
-        case Annotation.Associative(loc) => Property.Associativity(f)
-        case Annotation.Commutative(loc) => Property.Commutativity(f)
-        case Annotation.Strict(loc) => ??? // TODO
+      case f => f.annotations.annotations.flatMap {
+        case Annotation.Associative(loc) => Some(Property.Associativity(f))
+        case Annotation.Commutative(loc) => Some(Property.Commutativity(f))
+        case Annotation.Strict(loc) => f.args match {
+          case Nil => None // A constant function is always strict.
+          case a :: Nil => Some(Property.Strict1(f, root))
+          case a1 :: a2 :: Nil => Some(Property.Strict2(f, root))
+          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+        }
+        case Annotation.Monotone(loc) => f.args match {
+          case Nil => None // A constant function is always monotone.
+          case a :: Nil => Some(Property.Monotone1(f, root))
+          case a1 :: a2 :: Nil => Some(Property.Monotone2(f, root))
+          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+        }
       }
     }
 
