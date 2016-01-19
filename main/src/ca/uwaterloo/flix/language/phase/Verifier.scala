@@ -35,15 +35,12 @@ object Verifier {
     /**
       * Associativity.
       */
-    case class Associativity(op: SimplifiedAst.Expression.Lambda) extends Property {
-      // val (f, x, y, z) = (op.lam, 'x.ofType(op.tpe), 'y.ofType(op.tpe), 'z.ofType(op.tpe))
-
-      // val property = ∀(x, y, z)(f(f(x, y), z) ≡ f(x, f(y, z)))
-
+    case class Associativity(f: SimplifiedAst.Expression.Lambda) extends Property {
       val formula = {
+        val tpe = f.args.head.tpe
+        val (x, y, z) = (mkVar2("x", tpe), mkVar2("y", tpe), mkVar2("z", tpe), )
 
-
-        ∀()(Expression.True)
+        ∀(x, y)(f(x, f(y, z)) ≡ f(f(x, y), z))
       }
 
       def fail(env0: Map[String, Expression]): VerifierError = ???
