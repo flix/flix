@@ -27,6 +27,7 @@ object SimplifiedAst {
                        leq: SimplifiedAst.Expression,
                        lub: SimplifiedAst.Expression,
                        glb: SimplifiedAst.Expression,
+                       acc: SimplifiedAst.Expression.Lambda,
                        loc: SourceLocation) extends SimplifiedAst.Definition
 
     case class Index(name: Name.Resolved, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends SimplifiedAst.Definition

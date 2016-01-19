@@ -10,7 +10,7 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition._
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Type, _}
-import ca.uwaterloo.flix.language.phase.Verifier.VerifierError.{AntiSymmetryError, AssociativityError, CommutativityError, ReflexivityError}
+import ca.uwaterloo.flix.language.phase.Verifier.VerifierError._
 import ca.uwaterloo.flix.runtime.PartialEvaluator
 import com.microsoft.z3._
 
@@ -119,32 +119,23 @@ object Verifier {
         * Transitivity.
         */
       case class Transitivity(lattice: Lattice) extends Property {
-        //  val (x, y, z) = ('x.ofType(lattice.tpe), 'y.ofType(lattice.tpe), 'z.ofType(lattice.tpe))
+        val ops = latticeOps(lattice)
 
-        //   val property = ∀(x, y, z)(((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z))
-        val formula = ∀()(Expression.True)
+        import ops._
 
-        def fail(env0: Map[String, Expression]): VerifierError = ???
+        val formula = {
+          val (x, y, z) = (mkVar("x"), mkVar("y"), mkVar("z"))
+
+          ∀(x, y, z)(→(∧(⊑(x, y), ⊑(y, z)), ⊑(x, z)))
+        }
+
+        def fail(env0: Map[String, Expression]): VerifierError = {
+          val x = env0.get("x")
+          val y = env0.get("y")
+          val z = env0.get("z")
+          TransitivityError(x, y, z, lattice.leq.loc)
+        }
       }
-
-      /**
-        * Ascending Chain Condition
-        */
-      //  /**
-      //   * Non-Negative: ?x. f(x) > 0.
-      //   */
-      //  def nonNegative(h: Term.Abs): Term.Abs =
-      //    Term.Abs('x, h.typ,
-      //      Term.BinaryOp(BinaryOperator.Greater, h.call('x), Term.Int(0)))
-      //
-      //  /**
-      //   * Stricly-Decreasing: ?x, y. x ? y ? x != y ? f(x) > f(y).
-      //   */
-      //  def strictlyDecreasing(h: Term.Abs, leq: Term.Abs): Term.Abs =
-      //    Term.Abs('x, h.typ, Term.Abs('y, h.typ,
-      //      (leq.call('x, 'y) && (Term.Var('x) !== Term.Var('y))) ==>
-      //        Term.BinaryOp(BinaryOperator.Greater, h.call('x), h.call('y))))
-
 
     }
 
@@ -190,8 +181,6 @@ object Verifier {
     }
 
 
-
-
     // TODO: Strictness.
     // TODO: Monotonicty
     //
@@ -209,7 +198,45 @@ object Verifier {
     //    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ, Term.Abs('y1, leq.typ, Term.Abs('y2, leq.typ,
     //      (leq.call('x1, 'x2) && leq.call('y1, 'y2)) ==> leq.call(f.call('x1, 'y1), f.call('x2, 'y2))))))
 
+    object AscendingChainCondition {
 
+      /**
+        * Ascending Chain Condition
+        */
+      case class HeightNonNegative(lattice: Lattice) extends Property {
+        val ops = latticeOps(lattice)
+
+        import ops._
+
+        val formula = {
+          val x = mkVar("x")
+
+          ∀(x)(Expression.Binary(BinaryOperator.GreaterEqual, lattice.acc(x), Expression.Int(0), Type.Bool, SourceLocation.Unknown))
+        }
+
+        def fail(env0: Map[String, Expression]): VerifierError = {
+          val x = mkVar("x")
+          //ACCNonNegative(x, lattice.leq.loc)
+          ???
+        }
+      }
+
+      //  /**
+      //   * Non-Negative: ?x. f(x) > 0.
+      //   */
+      //  def nonNegative(h: Term.Abs): Term.Abs =
+      //    Term.Abs('x, h.typ,
+      //      Term.BinaryOp(BinaryOperator.Greater, h.call('x), Term.Int(0)))
+      //
+      //  /**
+      //   * Stricly-Decreasing: ?x, y. x ? y ? x != y ? f(x) > f(y).
+      //   */
+      //  def strictlyDecreasing(h: Term.Abs, leq: Term.Abs): Term.Abs =
+      //    Term.Abs('x, h.typ, Term.Abs('y, h.typ,
+      //      (leq.call('x, 'y) && (Term.Var('x) !== Term.Var('y))) ==>
+      //        Term.BinaryOp(BinaryOperator.Greater, h.call('x), h.call('y))))
+
+    }
 
   }
 
@@ -240,7 +267,7 @@ object Verifier {
            |
            |${consoleCtx.red(s">> The function is not associative.")}
            |
-           |Counter-example: f($x, $y, $z)
+           |Counter-example: ($x, $y, $z)
            |
            |The partial order was defined here:
            |${loc.underline}
@@ -256,7 +283,7 @@ object Verifier {
            |
            |${consoleCtx.red(s">> The function is not commutative.")}
            |
-           |Counter-example: f($x, $y)
+           |Counter-example: ($x, $y)
            |
            |The partial order was defined here:
            |${loc.underline}
@@ -272,7 +299,7 @@ object Verifier {
            |
            |${consoleCtx.red(s">> The partial order is not reflexive.")}
            |
-           |Counter-example: leq($x)
+           |Counter-example: ($x)
            |
            |The partial order was defined here:
            |${loc.underline}
@@ -286,9 +313,25 @@ object Verifier {
       val format =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
-           |${consoleCtx.red(s">> The partial order is not reflexive.")}
+           |${consoleCtx.red(s">> The partial order is not anti-symmetric.")}
            |
-           |Counter-example: leq($x, $y)
+           |Counter-example: ($x, $y)
+           |
+           |The partial order was defined here:
+           |${loc.underline}
+           """.stripMargin
+    }
+
+    /**
+      * An error raised to indicate that a partial order is not transitive.
+      */
+    case class TransitivityError(x: Option[Expression], y: Option[Expression], z: Option[Expression], loc: SourceLocation) extends VerifierError {
+      val format =
+        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> The partial order is not transitive.")}
+           |
+           |Counter-example: ($x, $y)
            |
            |The partial order was defined here:
            |${loc.underline}

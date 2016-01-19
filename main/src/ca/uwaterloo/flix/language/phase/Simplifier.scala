@@ -49,7 +49,7 @@ object Simplifier {
     def simplify(tast: TypedAst.Definition.BoundedLattice)(implicit genSym: GenSym): SimplifiedAst.Definition.Lattice = tast match {
       case TypedAst.Definition.BoundedLattice(tpe, bot, top, leq, lub, glb, loc) =>
         import Expression.{simplify => s}
-        SimplifiedAst.Definition.Lattice(tpe, s(bot), s(top), s(leq), s(lub), s(glb), loc)
+        SimplifiedAst.Definition.Lattice(tpe, s(bot), s(top), s(leq), s(lub), s(glb), /* TODO */ ???, loc)
     }
 
     def simplify(tast: TypedAst.Definition.Constant)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant =
