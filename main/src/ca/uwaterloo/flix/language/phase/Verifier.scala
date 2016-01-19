@@ -286,20 +286,66 @@ object Verifier {
     /**
       * The function `f` must be strict in all its arguments.
       */
-    case class Strict(f: Expression.Lambda, root: SimplifiedAst.Root) extends Property {
-
+    case class Strict1(f: Expression.Lambda, root: SimplifiedAst.Root) extends Property {
       val formula = {
-        // TODO:
-        ???
-        //        val (x, y, z) = (mkVar("x"), mkVar("y"), mkVar("z"))
-        //        ∀(x, y, z)(→(∧(⊑(z, x), ⊑(z, y)), ⊑(z, ⊓(x, y))))
+        val (tpe :: Nil) = f.tpe.args
+        val retTpe = f.tpe.retTpe
+        val argLat = root.lattices(tpe)
+        val retLat = root.lattices(retTpe)
+        ∀()(≡(f(argLat.bot), retLat.bot))
       }
 
       def fail(env0: Map[String, Expression]): VerifierError = {
+        StrictError(f.loc)
+      }
+    }
+
+    /**
+      * The function `f` must be strict in all its arguments.
+      */
+    case class Strict2(f: Expression.Lambda, root: SimplifiedAst.Root) extends Property {
+      val formula = {
+        val (tpe1 :: tpe2 :: Nil) = f.tpe.args
+        val retTpe = f.tpe.retTpe
+        val (arg1Lat, arg2Lat) = (root.lattices(tpe1), root.lattices(tpe2))
+        val retLat = root.lattices(retTpe)
+
+        val (x, y) = (mkVar2("x", tpe1), mkVar2("y", tpe2))
+
+        ∀(x, y)(∧(≡(f(arg1Lat.bot, y), retLat.bot), ≡(f(x, arg2Lat.bot), retLat.bot)))
+
+      }
+
+      def fail(env0: Map[String, Expression]): VerifierError = {
+        StrictError(f.loc)
+      }
+    }
+
+
+    /**
+      * The function `f` must be strict in all its arguments.
+      */
+    case class StrictN(f: Expression.Lambda, root: SimplifiedAst.Root) extends Property {
+      val formula = {
+
+        // TODO
+
+        // Step 1: Generate n variables corresponding to each argument.
+
+        // Step 2: Generate formula where the nth argument is restricted to be bottom.
+
+        // Step 3: Universally quantify all formulas with all variables.
+
         ???
       }
 
+      def fail(env0: Map[String, Expression]): VerifierError = {
+        StrictError(f.loc)
+      }
     }
+
+
+
 
     // TODO: Strictness.
     // TODO: Monotonicty
@@ -559,6 +605,20 @@ object Verifier {
            |Counter-example: ($x, $y, $z)
            |
            |The glb was defined here:
+           |${loc.underline}
+           """.stripMargin
+    }
+
+    /**
+      * An error raised to indicate that the function is not strict.
+      */
+    case class StrictError(loc: SourceLocation) extends VerifierError {
+      val format =
+        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> The function is not strict.")}
+           |
+           |The function was defined here:
            |${loc.underline}
            """.stripMargin
     }
