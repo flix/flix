@@ -148,30 +148,43 @@ object Verifier {
         * The bottom element must be the least element.
         */
       case class LeastElement(lattice: Lattice) extends Property {
-        //val property = {
-        //val (⊥, ⊑, ⊔, ⊓) = latticeOps(lattice)
-        //  val x = 'x.ofType(lattice.tpe)
+        val ops = latticeOps(lattice)
 
-        //  ∀(x)(⊑(⊥, x))
-        //}
+        import ops._
 
-        val formula = ∀()(Expression.True)
+        val formula = {
+          val x = mkVar("x")
 
-        def fail(env0: Map[String, Expression]): VerifierError = ???
+          ∀(x)(⊑(⊥(), x))
+        }
+
+        def fail(env0: Map[String, Expression]): VerifierError = {
+          val x = env0.get("x")
+          LeastElementError(x, lattice.leq.loc)
+        }
       }
 
       /**
         * The lub must be an upper bound.
         */
       case class UpperBound(lattice: Lattice) extends Property {
-        //  val (x, y) = ('x.ofType(lattice.tpe), 'y.ofType(lattice.tpe))
 
-        // val property = ∀(x, y)((x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y)))
-        val formula = ∀()(Expression.True)
+        val ops = latticeOps(lattice)
 
-        def fail(env0: Map[String, Expression]): VerifierError = ???
+        import ops._
+
+        val formula = {
+          val (x, y) = (mkVar("x"), mkVar("y"))
+
+          ∀(x, y)(∧(⊑(x, ⊔(x, y)), ⊑(y, ⊔(x, y))))
+        }
+
+        def fail(env0: Map[String, Expression]): VerifierError = {
+          val x = env0.get("x")
+          val y = env0.get("y")
+          UpperBoundError(x, y, lattice.lub.loc)
+        }
       }
-
 
       //  /**
       //   * Least Upper Bound: ?x, y, z. x ? z ? y ? z ? x ? y ? z.
@@ -334,6 +347,38 @@ object Verifier {
            |Counter-example: ($x, $y)
            |
            |The partial order was defined here:
+           |${loc.underline}
+           """.stripMargin
+    }
+
+    /**
+      * An error raised to indicate that the least element is not smallest.
+      */
+    case class LeastElementError(x: Option[Expression], loc: SourceLocation) extends VerifierError {
+      val format =
+        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> The least element is not the smallest.")}
+           |
+           |Counter-example: ($x)
+           |
+           |The partial order was defined here:
+           |${loc.underline}
+           """.stripMargin
+    }
+
+    /**
+      * An error raised to indicate that the lub is not an upper bound.
+      */
+    case class UpperBoundError(x: Option[Expression], y: Option[Expression], loc: SourceLocation) extends VerifierError {
+      val format =
+        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> The lub is not an upper bound.")}
+           |
+           |Counter-example: ($x, $y)
+           |
+           |The lub was defined here:
            |${loc.underline}
            """.stripMargin
     }
