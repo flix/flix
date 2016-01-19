@@ -186,10 +186,27 @@ object Verifier {
         }
       }
 
-      //  /**
-      //   * Least Upper Bound: ?x, y, z. x ? z ? y ? z ? x ? y ? z.
-      //   */
+      /**
+        * The lub must be the least upper bound.
+        */
+      case class LeastUpperBound(lattice: Lattice) extends Property {
 
+        val ops = latticeOps(lattice)
+
+        import ops._
+
+        val formula = {
+          val (x, y, z) = (mkVar("x"), mkVar("y"), mkVar("z"))
+
+          ∀(x, y, z)(→(∧(⊑(x, z), ⊑(y, z)), ⊑(⊔(x, y), z)))
+        }
+
+        def fail(env0: Map[String, Expression]): VerifierError = {
+          val x = env0.get("x")
+          val y = env0.get("y")
+          UpperBoundError(x, y, lattice.lub.loc)
+        }
+      }
 
     }
 
