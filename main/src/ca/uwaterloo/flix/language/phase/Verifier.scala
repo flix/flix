@@ -283,6 +283,24 @@ object Verifier {
 
     }
 
+    /**
+      * The function `f` must be strict in all its arguments.
+      */
+    case class Strict(f: Expression.Lambda, root: SimplifiedAst.Root) extends Property {
+
+      val formula = {
+        // TODO:
+        ???
+        //        val (x, y, z) = (mkVar("x"), mkVar("y"), mkVar("z"))
+        //        ∀(x, y, z)(→(∧(⊑(z, x), ⊑(z, y)), ⊑(z, ⊓(x, y))))
+      }
+
+      def fail(env0: Map[String, Expression]): VerifierError = {
+        ???
+      }
+
+    }
+
     // TODO: Strictness.
     // TODO: Monotonicty
     //
@@ -671,7 +689,7 @@ object Verifier {
     // Collect lattice properties.
     val latticeProperties = lattices(root) flatMap {
       case l => List(
-        Property.JoinSemiLattice.LeastElement(l)
+        Property.JoinSemiLattice.LeastElement(l) // TODO: More
       )
     }
 
