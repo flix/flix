@@ -97,13 +97,13 @@ object SimplifiedAst {
 
   sealed trait LoadExpression extends Expression {
     val e: SimplifiedAst.Expression
-    val offset: Int
-    val mask: Int
+    val offset: scala.Int
+    val mask: scala.Int
   }
 
   sealed trait StoreExpression extends Expression {
     val e: SimplifiedAst.Expression
-    val offset: Int
+    val offset: scala.Int
     val v: SimplifiedAst.Expression
     val mask: Long
     final val targetMask = ~(mask << offset)
@@ -248,17 +248,15 @@ object SimplifiedAst {
     /**
       * A typed AST node representing a local variable expression (i.e. a parameter or let-bound variable).
       *
-      * @param localVar the local variable being referenced.
+      * @param ident the name of the variable.
+      * @param offset the (0-based) index of the variable.
       * @param tpe the type of the variable.
       * @param loc the source location of the variable.
       */
-    // TODO(mhyee): Remove this
-    @deprecated("placeholder until it can be merged with SimplifiedAst", "0.1")
-    case class ReducedIrVar(localVar: LocalVar,
-                            tpe: Type,
-                            loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Var(ident: Name.Ident,
+                   offset: scala.Int,
+                   tpe: Type,
+                   loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Ref(name: Name.Resolved, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -277,14 +275,7 @@ object SimplifiedAst {
       * @param tpe the return type of the function.
       * @param loc the source location.
       */
-    // TODO(mhyee): Remove this
-    @deprecated("placeholder until it can be merged with SimplifiedAst", "0.1")
-    case class ReducedIrApply(name: Name.Resolved,
-                              args: List[SimplifiedAst.Expression],
-                              tpe: Type,
-                              loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class Apply(exp: SimplifiedAst.Expression,
+    case class Apply(name: Name.Resolved,
                      args: List[SimplifiedAst.Expression],
                      tpe: Type,
                      loc: SourceLocation) extends SimplifiedAst.Expression
@@ -334,40 +325,24 @@ object SimplifiedAst {
     /**
       * A typed AST node representing a let expression.
       *
-      * @param localVar the bound variable.
+      * @param ident the name of the bound variable.
+      * @param offset the (0-based) index of the bound variable.
       * @param exp1 the value of the bound variable.
       * @param exp2 the body expression in which the bound variable is visible.
       * @param tpe the type of the expression (which is equivalent to the type of the body expression).
       * @param loc the source location.
       */
-    // TODO(mhyee): Remove this
-    @deprecated("placeholder until it can be merged with SimplifiedAst", "0.1")
-    case class ReducedIrLet(localVar: LocalVar,
-                            exp1: SimplifiedAst.Expression,
-                            exp2: SimplifiedAst.Expression,
-                            tpe: Type,
-                            loc: SourceLocation) extends SimplifiedAst.Expression
-
     case class Let(ident: Name.Ident,
+                   offset: scala.Int,
                    exp1: SimplifiedAst.Expression,
                    exp2: SimplifiedAst.Expression,
                    tpe: Type,
                    loc: SourceLocation) extends SimplifiedAst.Expression
 
-    // TODO(mhyee): Remove this
-    @deprecated("placeholder until it can be merged with SimplifiedAst", "0.1")
-    case class ReducedIrTag(name: Name.Resolved,
-                            tag: String,
-                            exp: SimplifiedAst.Expression,
-                            tpe: Type,
-                            loc: SourceLocation) extends SimplifiedAst.Expression
-
-    // Destructs a (ReducedIr)Tag
-    // TODO(mhyee): Remove this
-    @deprecated("placeholder until it can be merged with SimplifiedAst", "0.1")
+    // Destructs a Tag
     case class TagOf(exp: SimplifiedAst.Expression,
-                     name: Name.Resolved,
-                     tag: String,
+                     enum: Name.Resolved,
+                     tag: Name.Ident,
                      tpe: Type,
                      loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -378,15 +353,13 @@ object SimplifiedAst {
                    loc: SourceLocation) extends SimplifiedAst.Expression
 
     // Destructs a Tuple
-    // TODO(mhyee): Remove this
-    @deprecated("placeholder until it can be merged with SimplifiedAst", "0.1")
     case class TupleAt(base: SimplifiedAst.Expression,
                        offset: scala.Int,
                        tpe: Type,
                        loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Tuple(elms: List[SimplifiedAst.Expression],
-                     tpe: Type,
+                     tpe: Type.Tuple,
                      loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Set(elms: List[SimplifiedAst.Expression],
@@ -476,7 +449,7 @@ object SimplifiedAst {
 
       case class Wildcard(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
 
-      case class Var(v: Int, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
+      case class Var(v: scala.Int, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
 
       // TODO: Lambda lift?
       case class Exp(e: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
@@ -488,13 +461,5 @@ object SimplifiedAst {
   case class Attribute(ident: Name.Ident, tpe: Type) extends SimplifiedAst
 
   case class FormalArg(ident: Name.Ident, tpe: Type) extends SimplifiedAst
-
-  /**
-    * A local variable that is being referenced.
-    *
-    * @param offset the (0-based) local variable slot in the JVM method.
-    * @param name the name of the variable, for debugging purposes.
-    */
-  case class LocalVar(offset: scala.Int, name: String) extends SimplifiedAst
 
 }
