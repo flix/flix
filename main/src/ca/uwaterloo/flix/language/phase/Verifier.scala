@@ -204,12 +204,84 @@ object Verifier {
         def fail(env0: Map[String, Expression]): VerifierError = {
           val x = env0.get("x")
           val y = env0.get("y")
-          UpperBoundError(x, y, lattice.lub.loc)
+          val z = env0.get("z")
+          LeastUpperBoundError(x, y, z, lattice.lub.loc)
         }
       }
 
     }
 
+    /**
+      * Properties of Meet Semi Lattices.
+      */
+    object MeetSemiLattice {
+
+      /**
+        * The top element must be the greatest element.
+        */
+      case class GreatestElement(lattice: Lattice) extends Property {
+        val ops = latticeOps(lattice)
+
+        import ops._
+
+        val formula = {
+          val x = mkVar("x")
+
+          ∀(x)(⊑(x, ⊤()))
+        }
+
+        def fail(env0: Map[String, Expression]): VerifierError = {
+          val x = env0.get("x")
+          GreatestElementError(x, lattice.leq.loc)
+        }
+      }
+
+      /**
+        * The glb must be a lower bound.
+        */
+      case class LowerBound(lattice: Lattice) extends Property {
+
+        val ops = latticeOps(lattice)
+
+        import ops._
+
+        val formula = {
+          val (x, y) = (mkVar("x"), mkVar("y"))
+
+          ∀(x, y)(∧(⊑(⊓(x, y), x), ⊑(⊓(x, y), y)))
+        }
+
+        def fail(env0: Map[String, Expression]): VerifierError = {
+          val x = env0.get("x")
+          val y = env0.get("y")
+          LowerBoundError(x, y, lattice.glb.loc)
+        }
+      }
+
+      /**
+        * The glb must be the greatest lower bound.
+        */
+      case class GreatestLowerBound(lattice: Lattice) extends Property {
+
+        val ops = latticeOps(lattice)
+
+        import ops._
+
+        val formula = {
+          val (x, y, z) = (mkVar("x"), mkVar("y"), mkVar("z"))
+
+          ∀(x, y, z)(→(∧(⊑(z, x), ⊑(z, y)), ⊑(z, ⊓(x, y))))
+        }
+
+        def fail(env0: Map[String, Expression]): VerifierError = {
+          val x = env0.get("x")
+          val y = env0.get("y")
+          val z = env0.get("z")
+          GreatestLowerBoundError(x, y, z, lattice.glb.loc)
+        }
+      }
+
+    }
 
     // TODO: Strictness.
     // TODO: Monotonicty
@@ -399,6 +471,71 @@ object Verifier {
            |${loc.underline}
            """.stripMargin
     }
+
+    /**
+      * An error raised to indicate that the lub is not a least upper bound.
+      */
+    case class LeastUpperBoundError(x: Option[Expression], y: Option[Expression], z: Option[Expression], loc: SourceLocation) extends VerifierError {
+      val format =
+        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> The lub is not a least upper bound.")}
+           |
+           |Counter-example: ($x, $y)
+           |
+           |The lub was defined here:
+           |${loc.underline}
+           """.stripMargin
+    }
+
+    /**
+      * An error raised to indicate that the greatest element is not the largest.
+      */
+    case class GreatestElementError(x: Option[Expression], loc: SourceLocation) extends VerifierError {
+      val format =
+        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> The greatest element is not the largest.")}
+           |
+           |Counter-example: ($x)
+           |
+           |The partial order was defined here:
+           |${loc.underline}
+           """.stripMargin
+    }
+
+    /**
+      * An error raised to indicate that the glb is not a lower bound.
+      */
+    case class LowerBoundError(x: Option[Expression], y: Option[Expression], loc: SourceLocation) extends VerifierError {
+      val format =
+        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> The glb is not a lower bound.")}
+           |
+           |Counter-example: ($x, $y)
+           |
+           |The glb was defined here:
+           |${loc.underline}
+           """.stripMargin
+    }
+
+    /**
+      * An error raised to indicate that the glb is not the greatest lower bound.
+      */
+    case class GreatestLowerBoundError(x: Option[Expression], y: Option[Expression], z: Option[Expression], loc: SourceLocation) extends VerifierError {
+      val format =
+        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> The glb is not a greatest lower bound..")}
+           |
+           |Counter-example: ($x, $y)
+           |
+           |The glb was defined here:
+           |${loc.underline}
+           """.stripMargin
+    }
+
 
   }
 
@@ -590,6 +727,11 @@ object Verifier {
       * Returns the bottom element.
       */
     def ⊥(): Expression = lattice.bot
+
+    /**
+      * Returns the top element.
+      */
+    def ⊤(): Expression = lattice.top
 
     /**
       * Returns the `true` if `e1` is less than or equal to `e2` according to the partial order.
