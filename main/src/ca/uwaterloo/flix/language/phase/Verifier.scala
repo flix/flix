@@ -9,10 +9,9 @@ import ca.uwaterloo.flix.language.ast.Ast.Annotation
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition._
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
-import ca.uwaterloo.flix.language.ast.Type
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, _}
-import ca.uwaterloo.flix.language.phase.Verifier.VerifierError.ReflexivityError
-import ca.uwaterloo.flix.runtime.{PartialEvaluator, Value}
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Type, _}
+import ca.uwaterloo.flix.language.phase.Verifier.VerifierError.{AntiSymmetryError, AssociativityError, CommutativityError, ReflexivityError}
+import ca.uwaterloo.flix.runtime.PartialEvaluator
 import com.microsoft.z3._
 
 object Verifier {
@@ -38,45 +37,36 @@ object Verifier {
     case class Associativity(f: SimplifiedAst.Expression.Lambda) extends Property {
       val formula = {
         val tpe = f.args.head.tpe
-        val (x, y, z) = (mkVar2("x", tpe), mkVar2("y", tpe), mkVar2("z", tpe), )
+        val (x, y, z) = (mkVar2("x", tpe), mkVar2("y", tpe), mkVar2("z", tpe))
 
-        ∀(x, y)(f(x, f(y, z)) ≡ f(f(x, y), z))
+        ∀(x, y, z)(≡(f(x, f(y, z)), f(f(x, y), z)))
       }
 
-      def fail(env0: Map[String, Expression]): VerifierError = ???
+      def fail(env0: Map[String, Expression]): VerifierError = {
+        val x = env0.get("x")
+        val y = env0.get("y")
+        val z = env0.get("z")
+        AssociativityError(x, y, z, f.loc)
+      }
     }
 
     /**
       * Commutativity.
       */
-    case class Commutativity(op: SimplifiedAst.Expression.Lambda) extends Property {
-      //  val (f, x, y) = (op.lam, 'x.ofType(op.tpe), 'y.ofType(op.tpe))
+    case class Commutativity(f: SimplifiedAst.Expression.Lambda) extends Property {
+      val formula = {
+        val tpe = f.args.head.tpe
+        val (x, y) = (mkVar2("x", tpe), mkVar2("y", tpe))
 
-      // val property = ∀(x, y)(f(x, y) ≡ f(y, x))
+        ∀(x, y)(≡(f(x, y), f(y, x)))
+      }
 
-      val formula = ∀()(Expression.True)
-
-      def fail(env0: Map[String, Expression]): VerifierError = ???
+      def fail(env0: Map[String, Expression]): VerifierError = {
+        val x = env0.get("x")
+        val y = env0.get("y")
+        CommutativityError(x, y, f.loc)
+      }
     }
-
-
-    //
-    //  /**
-    //   * Monotone: ?x1, x2. x1 ? x2 ? f(x1) ? f(x2).
-    //   */
-    //  def monotone1(f: Term.Abs, leq: Term.Abs): Term.Abs =
-    //    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ,
-    //      leq.call('x1, 'x2) ==> leq.call(f.call('x1), f.call('x2))))
-    //
-    //  /**
-    //   * Monotone: ?x1, x2, y1, y2. x1 ? x2 ? y1 ? y2 ? f(x1, y1) ? f(x2, y2).
-    //   */
-    //  def monotone2(f: Term.Abs, leq: Term.Abs): Term.Abs =
-    //    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ, Term.Abs('y1, leq.typ, Term.Abs('y2, leq.typ,
-    //      (leq.call('x1, 'x2) && leq.call('y1, 'y2)) ==> leq.call(f.call('x1, 'y1), f.call('x2, 'y2))))))
-
-    // TODO: Strictness.
-    // TODO: Monotonicty
 
     /**
       * Properties of Partial Orders.
@@ -97,8 +87,10 @@ object Verifier {
           ∀(x)(⊑(x, x))
         }
 
-        override def fail(env0: Map[String, Expression]): VerifierError =
-          ReflexivityError(env0.get("x"), lattice.leq.loc)
+        override def fail(env0: Map[String, Expression]): VerifierError = {
+          val x = env0.get("x")
+          ReflexivityError(x, lattice.leq.loc)
+        }
 
       }
 
@@ -116,7 +108,11 @@ object Verifier {
           ∀(x, y)(→(∧(⊑(x, y), ⊑(y, x)), ≡(x, y)))
         }
 
-        def fail(env0: Map[String, Expression]): VerifierError = ???
+        def fail(env0: Map[String, Expression]): VerifierError = {
+          val x = env0.get("x")
+          val y = env0.get("y")
+          AntiSymmetryError(x, y, lattice.leq.loc)
+        }
       }
 
       /**
@@ -193,6 +189,28 @@ object Verifier {
 
     }
 
+
+
+
+    // TODO: Strictness.
+    // TODO: Monotonicty
+    //
+    //  /**
+    //   * Monotone: ?x1, x2. x1 ? x2 ? f(x1) ? f(x2).
+    //   */
+    //  def monotone1(f: Term.Abs, leq: Term.Abs): Term.Abs =
+    //    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ,
+    //      leq.call('x1, 'x2) ==> leq.call(f.call('x1), f.call('x2))))
+    //
+    //  /**
+    //   * Monotone: ?x1, x2, y1, y2. x1 ? x2 ? y1 ? y2 ? f(x1, y1) ? f(x2, y2).
+    //   */
+    //  def monotone2(f: Term.Abs, leq: Term.Abs): Term.Abs =
+    //    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ, Term.Abs('y1, leq.typ, Term.Abs('y2, leq.typ,
+    //      (leq.call('x1, 'x2) && leq.call('y1, 'y2)) ==> leq.call(f.call('x1, 'y1), f.call('x2, 'y2))))))
+
+
+
   }
 
   /**
@@ -214,18 +232,47 @@ object Verifier {
     implicit val consoleCtx = Compiler.ConsoleCtx
 
     /**
-      * An error raised to indicate that a partial order is not reflexive.
-      *
-      * @param elm the optional counter example.
-      * @param loc the location where the partial order was declared.
+      * An error raised to indicate that a function is not associative.
       */
-    case class ReflexivityError(elm: Option[Expression], loc: SourceLocation) extends VerifierError {
+    case class AssociativityError(x: Option[Expression], y: Option[Expression], z: Option[Expression], loc: SourceLocation) extends VerifierError {
+      val format =
+        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> The function is not associative.")}
+           |
+           |Counter-example: f($x, $y, $z)
+           |
+           |The partial order was defined here:
+           |${loc.underline}
+           """.stripMargin
+    }
+
+    /**
+      * An error raised to indicate that a function is not commutative.
+      */
+    case class CommutativityError(x: Option[Expression], y: Option[Expression], loc: SourceLocation) extends VerifierError {
+      val format =
+        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> The function is not commutative.")}
+           |
+           |Counter-example: f($x, $y)
+           |
+           |The partial order was defined here:
+           |${loc.underline}
+           """.stripMargin
+    }
+
+    /**
+      * An error raised to indicate that a partial order is not reflexive.
+      */
+    case class ReflexivityError(x: Option[Expression], loc: SourceLocation) extends VerifierError {
       val format =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The partial order is not reflexive.")}
            |
-           |Counter-example: ${elm.getOrElse("n/a")}.
+           |Counter-example: leq($x)
            |
            |The partial order was defined here:
            |${loc.underline}
@@ -234,15 +281,18 @@ object Verifier {
 
     /**
       * An error raised to indicate that a partial order is not anti-symmetric.
-      *
-      * @param lat  the lattice defining the partial order.
-      * @param prop the violated property.
-      * @param elm1 the first element that violates the property.
-      * @param elm2 the second element that violates the property.
-      * @param loc  the location of the definition of the partial order.
       */
-    case class AntiSymmetryError(lat: Lattice, prop: Property, elm1: Value, elm2: Value, loc: SourceLocation) extends VerifierError {
-      val format = s"AntiSymmetry violated for $lat."
+    case class AntiSymmetryError(x: Option[Expression], y: Option[Expression], loc: SourceLocation) extends VerifierError {
+      val format =
+        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> The partial order is not reflexive.")}
+           |
+           |Counter-example: leq($x, $y)
+           |
+           |The partial order was defined here:
+           |${loc.underline}
+           """.stripMargin
     }
 
   }
@@ -410,9 +460,12 @@ object Verifier {
   def ≡(e1: Expression, e2: Expression): Expression =
     Binary(BinaryOperator.Equal, e1, e2, Type.Bool, SourceLocation.Unknown)
 
-  implicit class RichLambda(val e1: Expression.Lambda) {
-    def apply(e2: Expression): Expression =
-      Expression.Apply(e1, List(e1), e1.tpe.retTpe, SourceLocation.Unknown)
+  implicit class RichLambda(val f: Expression.Lambda) {
+    def apply(e1: Expression): Expression =
+      Expression.Apply(f, List(e1), f.tpe.retTpe, SourceLocation.Unknown)
+
+    def apply(e1: Expression, e2: Expression): Expression =
+      Expression.Apply(f, List(e1, e2), f.tpe.retTpe, SourceLocation.Unknown)
   }
 
   /**
