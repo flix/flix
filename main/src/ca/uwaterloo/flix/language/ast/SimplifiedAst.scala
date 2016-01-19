@@ -28,6 +28,7 @@ object SimplifiedAst {
                        leq: SimplifiedAst.Expression,
                        lub: SimplifiedAst.Expression,
                        glb: SimplifiedAst.Expression,
+                       acc: SimplifiedAst.Expression.Lambda,
                        loc: SourceLocation) extends SimplifiedAst.Definition
 
     case class Index(name: Name.Resolved,
@@ -93,6 +94,8 @@ object SimplifiedAst {
 
   sealed trait Expression extends SimplifiedAst {
     def tpe: Type
+
+    def loc: SourceLocation
   }
 
   sealed trait LoadExpression extends Expression {
@@ -114,19 +117,27 @@ object SimplifiedAst {
 
     case object Unit extends SimplifiedAst.Expression {
       final val tpe = Type.Unit
+
+      final val loc = SourceLocation.Unknown
     }
 
     case object True extends SimplifiedAst.Expression {
       final val tpe = Type.Bool
+
+      final val loc = SourceLocation.Unknown
     }
 
     case object False extends SimplifiedAst.Expression {
       final val tpe = Type.Bool
+
+      final val loc = SourceLocation.Unknown
     }
 
     // TODO: Eventually we'll want to use the specialized ints below, so we'll remove this later
     case class Int(lit: scala.Int) extends SimplifiedAst.Expression {
       final val tpe = Type.Int
+
+      final val loc = SourceLocation.Unknown
     }
 
     case class Int8(lit: scala.Byte) extends SimplifiedAst.Expression {

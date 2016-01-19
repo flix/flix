@@ -10,6 +10,7 @@ import scala.io.Source
 
 // TODO: Parse whitespace more "tightly" to improve source positions.
 // TODO: Add support for characters.
+// TODO: Add support for lattice symbols ⊥, etc.
 
 /**
   * A parser for the Flix language.

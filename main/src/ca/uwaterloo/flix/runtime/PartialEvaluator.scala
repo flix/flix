@@ -7,11 +7,6 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 object PartialEvaluator {
 
   /**
-    * The type of the environment used by the partial evaluator.
-    */
-  type Env = Map[Int, Expression]
-
-  /**
     * The type of the continuation used by the partial evaluator.
     */
   type Cont = Expression => Expression
@@ -21,7 +16,7 @@ object PartialEvaluator {
     *
     * Applies the continuation `k` to the result of the evaluation.
     */
-  def eval(exp0: Expression, env0: Env, k: Cont): Expression = exp0 match {
+  def eval(exp0: Expression, env0: Map[String, Expression], k: Cont): Expression = exp0 match {
     /*
       * Constant Expressions.
       */
