@@ -61,6 +61,16 @@ class NarrowOperator[E] {
 
 }
 
+// TODO: How to deal with these?
+class Strict[E] {
+
+}
+
+// TODO: How to deal with these?
+class Monotone[E] {
+    fn f(e: E): E
+}
+
 // TODO: use word "impl"? for ?
 instance PartialOrder[Sign] {
 

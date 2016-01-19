@@ -344,25 +344,42 @@ object Verifier {
       }
     }
 
+    /**
+      * The function `f` must be monotone in all its arguments.
+      */
+    case class Monotone1(f: Expression.Lambda, root: SimplifiedAst.Root) extends Property {
+      val formula = {
+        val lat1 = latticeOps(root.lattices(f.args.head.tpe))
+        val lat2 = latticeOps(root.lattices(f.tpe.retTpe))
 
+        val (x, y) = (lat1.mkVar("x"), lat1.mkVar("y"))
 
+        ∀(x, y)(→(lat1.⊑(x, y), lat2.⊑(f(x), f(y))))
+      }
 
-    // TODO: Strictness.
-    // TODO: Monotonicty
-    //
-    //  /**
-    //   * Monotone: ?x1, x2. x1 ? x2 ? f(x1) ? f(x2).
-    //   */
-    //  def monotone1(f: Term.Abs, leq: Term.Abs): Term.Abs =
-    //    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ,
-    //      leq.call('x1, 'x2) ==> leq.call(f.call('x1), f.call('x2))))
-    //
-    //  /**
-    //   * Monotone: ?x1, x2, y1, y2. x1 ? x2 ? y1 ? y2 ? f(x1, y1) ? f(x2, y2).
-    //   */
-    //  def monotone2(f: Term.Abs, leq: Term.Abs): Term.Abs =
-    //    Term.Abs('x1, leq.typ, Term.Abs('x2, leq.typ, Term.Abs('y1, leq.typ, Term.Abs('y2, leq.typ,
-    //      (leq.call('x1, 'x2) && leq.call('y1, 'y2)) ==> leq.call(f.call('x1, 'y1), f.call('x2, 'y2))))))
+      def fail(env0: Map[String, Expression]): VerifierError = {
+        MonotoneError(f.loc)
+      }
+    }
+
+    /**
+      * The function `f` must be monotone in all its arguments.
+      */
+    case class Monotone2(f: Expression.Lambda, root: SimplifiedAst.Root) extends Property {
+      val formula = {
+        val (tpe1 :: tpe2 :: Nil) = f.args.map(_.tpe)
+        val (lat1, lat2) = (latticeOps(root.lattices(tpe1)), latticeOps(root.lattices(tpe2)))
+        val lat3 = latticeOps(root.lattices(f.tpe.retTpe))
+
+        val (x1, y1, x2, y2) = (lat1.mkVar("x1"), lat1.mkVar("y1"), lat2.mkVar("x2"), lat2.mkVar("y2"))
+
+        ∀(x1, y1, x2, y2)(→(∧(lat1.⊑(x1, x2), lat2.⊑(y1, y2)), lat3.⊑(f(x1, y1), f(x2, y2))))
+      }
+
+      def fail(env0: Map[String, Expression]): VerifierError = {
+        MonotoneError(f.loc)
+      }
+    }
 
     object AscendingChainCondition {
 
@@ -622,6 +639,21 @@ object Verifier {
            |${loc.underline}
            """.stripMargin
     }
+
+    /**
+      * An error raised to indicate that the function is not monotone.
+      */
+    case class MonotoneError(loc: SourceLocation) extends VerifierError {
+      val format =
+        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> The function is not monotone.")}
+           |
+           |The function was defined here:
+           |${loc.underline}
+           """.stripMargin
+    }
+
 
     /**
       * An error raised to indicate that the height function may be negative.
