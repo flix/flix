@@ -410,6 +410,11 @@ object Verifier {
   def ≡(e1: Expression, e2: Expression): Expression =
     Binary(BinaryOperator.Equal, e1, e2, Type.Bool, SourceLocation.Unknown)
 
+  implicit class RichLambda(val e1: Expression.Lambda) {
+    def apply(e2: Expression): Expression =
+      Expression.Apply(e1, List(e1), e1.tpe.retTpe, SourceLocation.Unknown)
+  }
+
   /**
     * Returns an object with convenience operations on a lattice.
     */
