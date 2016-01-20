@@ -64,13 +64,27 @@ class NarrowOperator[E] {
 }
 
 // TODO: How to deal with these?
+// TODO: Need some notion of function type here?
 class Strict[A: JoinSemiLattice, B: JoinSemiLattice] {
     fn f(a: A): B
 
+    // and then even this requirement cant readily be described?
     law Strict(): Bool = f(bot) == bot
 }
 
-impl Strict for (A => B)
+impl Strict for (A => B) {
+    // ... ?
+}
+
+//or how about this:
+class Strict[A => B] where A: PartialOrder, B: PartialOrder {
+    law Strict(f: A => B): Bool = f(bot) == bot
+}
+// this seems closer to what we want, since A => B is truly the member of this class.
+
+instance Strict[MySpecificFun]
+// the above could be rewritten with @strict
+
 
 // TODO: How to deal with these?
 class Monotone[E: PartialOrder] {

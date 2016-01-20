@@ -313,6 +313,7 @@ object Verifier {
 
         val (x, y) = (mkVar2("x", tpe1), mkVar2("y", tpe2))
 
+        // TODO: This doesnt seem right. It would seem that bottom is when both args are bottom?
         ∀(x, y)(∧(≡(f(arg1Lat.bot, y), retLat.bot), ≡(f(x, arg2Lat.bot), retLat.bot)))
 
       }
