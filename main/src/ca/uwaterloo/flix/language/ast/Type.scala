@@ -26,8 +26,28 @@ object Type {
   /**
     * An AST node representing the Integer type.
     */
-  // TODO: Specialize
+  // TODO: The specialized int types exist below, so eventually we should get rid of this
   case object Int extends Type
+
+  /**
+    * An AST node representing the 8-bit signed integer type, i.e. a byte.
+    */
+  case object Int8 extends Type
+
+  /**
+    * An AST node representing the 16-bit signed integer type, i.e. a short.
+    */
+  case object Int16 extends Type
+
+  /**
+    * An AST node representing the 32-bit signed integer type, i.e. an int.
+    */
+  case object Int32 extends Type
+
+  /**
+    * An AST node representing the 64-bit signed integer type, i.e. a long.
+    */
+  case object Int64 extends Type
 
   /**
     * An AST node representing the String type.

@@ -1,8 +1,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
-import ca.uwaterloo.flix.language.ast.ReducedIR.Expression._
-import ca.uwaterloo.flix.language.ast.ReducedIR.{Definition, Expression, LoadExpression, StoreExpression, Type}
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Definition, Expression, LoadExpression, StoreExpression}
 import ca.uwaterloo.flix.language.ast._
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.util.CheckClassAdapter
@@ -19,6 +19,33 @@ object Codegen {
    * Decorate (mangle) a Name.Resolved to get the internal JVM name.
    */
   def decorate(name: Name.Resolved): String = name.parts.mkString("$")
+
+  /*
+   * Returns the internal name of the JVM type that `tpe` maps to.
+   */
+  def descriptor(tpe: Type): String = tpe match {
+    case Type.Var(x) => ???
+    case Type.Unit => ???
+    case Type.Bool => "Z"   // JVM boolean
+    case Type.Int8 => "B"   // JVM byte (8 bits)
+    case Type.Int16 => "S"  // JVM short (16 bits)
+    case Type.Int32 | Type.Int => "I"  // JVM int (32 bits)
+    case Type.Int64 => "J"  // JVM long (64 bits)
+    case Type.Str => ???
+    case Type.Tag(enum, tag, t) => ???
+    case Type.Enum(cases) => ???
+    case Type.Tuple(elms) => ???
+    case Type.Opt(elmType) => ???
+    case Type.Lst(elmType) => ???
+    case Type.Set(elmType) => ???
+    case Type.Map(k, v) => ???
+    case Type.Lambda(args, retTpe) => s"""(${ args.map(descriptor).mkString })${descriptor(retTpe)}"""
+    case Type.Predicate(terms) => ???
+    case Type.Native(name) => ???
+    case Type.Char => ???
+    case Type.Abs(name, t) => ???
+    case Type.Any => ???
+  }
 
   /*
    * Given a list of Flix definitions, compile the definitions to bytecode and put them in a JVM class. For now, we put
@@ -60,19 +87,30 @@ object Codegen {
    */
   private def compileFunction(context: Context, visitor: ClassVisitor)(function: Definition.Function): Unit = {
     // TODO: Debug information
-    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, decorate(function.name), function.descriptor, null, null)
+    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, decorate(function.name), descriptor(function.tpe), null, null)
     mv.visitCode()
 
     compileExpression(context, mv)(function.body)
 
     function.tpe.retTpe match {
-      case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 => mv.visitInsn(IRETURN)
+      case Type.Var(x) => ???
+      case Type.Unit => ???
+      case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
-      case Type.Tag(name, ident, tpe) => ???
+      case Type.Str => ???
+      case Type.Tag(enum, tag, tpe) => ???
       case Type.Enum(cases) => ???
       case Type.Tuple(elms) => ???
+      case Type.Opt(elmType) => ???
+      case Type.Lst(elmType) => ???
       case Type.Set(elmType) => ???
+      case Type.Map(k, v) => ???
       case Type.Lambda(args, retTpe) => ???
+      case Type.Predicate(terms) => ???
+      case Type.Native(name) => ???
+      case Type.Char => ???
+      case Type.Abs(name, t) => ???
+      case Type.Any => ???
     }
 
     // Dummy large numbers so the bytecode checker can run. Afterwards, the ASM library calculates the proper maxes.
@@ -81,35 +119,44 @@ object Codegen {
   }
 
   private def compileExpression(context: Context, visitor: MethodVisitor)(expr: Expression): Unit = expr match {
+    case Unit => ???
+    case True => visitor.visitInsn(ICONST_1)
+    case False => visitor.visitInsn(ICONST_0)
+    case Int(i) => compileInt(visitor)(i)
+    case Int8(b) => compileInt(visitor)(b)
+    case Int16(s) => compileInt(visitor)(s)
+    case Int32(i) => compileInt(visitor)(i)
+    case Int64(l) => compileInt(visitor)(l, isLong = true)
+    case Str(s, loc) => ???
     case load: LoadExpression => compileLoadExpr(context, visitor)(load)
     case store: StoreExpression => compileStoreExpr(context, visitor)(store)
-    case Const(i, Type.Int64, loc) => compileConst(visitor)(i, isLong = true)
-    case Const(i, tpe, loc) => compileConst(visitor)(i)
-    case Var(v, tpe, loc) =>
+    case Var(ident, offset, tpe, loc) =>
       tpe match {
-        case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ILOAD, v.offset)
-        case Type.Int64 => visitor.visitVarInsn(LLOAD, v.offset)
-        case Type.Tag(name, ident, typ) => ???
+        case Type.Var(x) => ???
+        case Type.Unit => ???
+        case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ILOAD, offset)
+        case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
+        case Type.Str => ???
+        case Type.Tag(name, id, typ) => ???
         case Type.Enum(cases) => ???
         case Type.Tuple(elms) => ???
+        case Type.Opt(elmType) => ???
+        case Type.Lst(elmType) => ???
         case Type.Set(elmType) => ???
+        case Type.Map(k, v) => ???
         case Type.Lambda(args, retTpe) => ???
+        case Type.Predicate(terms) => ???
+        case Type.Native(name) => ???
+        case Type.Char => ???
+        case Type.Abs(name, t) => ???
+        case Type.Any => ???
       }
+    case Ref(name, tpe, loc) => ???
+    case Lambda(annotations, args, body, tpe, loc) => ???
     case Apply(name, args, tpe, loc) =>
       args.foreach(compileExpression(context, visitor))
-      visitor.visitMethodInsn(INVOKESTATIC, context.clazz, decorate(name), context.getFunction(name).descriptor, false)
-    case Let(v, exp1, exp2, tpe, loc) =>
-      compileExpression(context, visitor)(exp1)
-      exp1.tpe match {
-        case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ISTORE, v.offset)
-        case Type.Int64 => visitor.visitVarInsn(LSTORE, v.offset)
-        case Type.Tag(name, ident, typ) => ???
-        case Type.Enum(cases) => ???
-        case Type.Tuple(elms) => ???
-        case Type.Set(elmType) => ???
-        case Type.Lambda(args, retTpe) => ???
-      }
-      compileExpression(context, visitor)(exp2)
+      visitor.visitMethodInsn(INVOKESTATIC, context.clazz, decorate(name),
+        descriptor(context.getFunction(name).tpe), false)
     case Unary(op, exp, tpe, loc) => compileUnaryExpr(context, visitor)(op, exp, tpe)
     case Binary(op, exp1, exp2, tpe, loc) => op match {
       case o: ArithmeticOperator => compileArithmeticExpr(context, visitor)(o, exp1, exp2, tpe)
@@ -127,12 +174,36 @@ object Codegen {
       visitor.visitLabel(ifElse)
       compileExpression(context, visitor)(exp3)
       visitor.visitLabel(ifEnd)
-    case Tag(name, tag, exp, tpe, loc) => ???
-    case TagOf(exp, name, tag, tpe, loc) => ???
-    case Tuple(elms, tpe, loc) => ???
+    case Let(ident, offset, exp1, exp2, tpe, loc) =>
+      compileExpression(context, visitor)(exp1)
+      exp1.tpe match {
+        case Type.Var(x) => ???
+        case Type.Unit => ???
+        case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ISTORE, offset)
+        case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
+        case Type.Str => ???
+        case Type.Tag(name, id, typ) => ???
+        case Type.Enum(cases) => ???
+        case Type.Tuple(elms) => ???
+        case Type.Opt(elmType) => ???
+        case Type.Lst(elmType) => ???
+        case Type.Set(elmType) => ???
+        case Type.Map(k, v) => ???
+        case Type.Lambda(args, retTpe) => ???
+        case Type.Predicate(terms) => ???
+        case Type.Native(name) => ???
+        case Type.Char => ???
+        case Type.Abs(name, t) => ???
+        case Type.Any => ???
+      }
+      compileExpression(context, visitor)(exp2)
+    case TagOf(exp, enum, tag, tpe, loc) => ???
+    case Tag(enum, tag, exp, tpe, loc) => ???
     case TupleAt(base, offset, tpe, loc) => ???
+    case Tuple(elms, tpe, loc) => ???
     case Set(elms, tpe, loc) => ???
     case Error(tpe, loc) => ???
+    case MatchError(tpe, loc) => ???
   }
 
   /*
@@ -157,11 +228,11 @@ object Codegen {
   private def compileLoadExpr(context: Context, visitor: MethodVisitor)(load: LoadExpression): Unit = {
     compileExpression(context, visitor)(load.e)
     if (load.offset > 0) {
-      compileConst(visitor)(load.offset)
+      compileInt(visitor)(load.offset)
       visitor.visitInsn(LSHR)
     }
     visitor.visitInsn(L2I)
-    compileConst(visitor)(load.mask)
+    compileInt(visitor)(load.mask)
     visitor.visitInsn(IAND)
   }
 
@@ -199,21 +270,21 @@ object Codegen {
    */
   private def compileStoreExpr(context: Context, visitor: MethodVisitor)(store: StoreExpression): Unit = {
     compileExpression(context, visitor)(store.e)
-    compileConst(visitor)(store.targetMask, isLong = true)
+    compileInt(visitor)(store.targetMask, isLong = true)
     visitor.visitInsn(LAND)
     compileExpression(context, visitor)(store.v)
     visitor.visitInsn(I2L)
-    compileConst(visitor)(store.mask, isLong = true)
+    compileInt(visitor)(store.mask, isLong = true)
     visitor.visitInsn(LAND)
     if (store.offset > 0) {
-      compileConst(visitor)(store.offset)
+      compileInt(visitor)(store.offset)
       visitor.visitInsn(LSHL)
     }
     visitor.visitInsn(LOR)
   }
 
   /*
-   * Generate code to load a constant.
+   * Generate code to load an integer constant.
    *
    * Uses the smallest number of bytes necessary, e.g. ICONST_0 takes 1 byte to load a 0, but BIPUSH 7 takes 2 bytes to
    * load a 7, and SIPUSH 200 takes 3 bytes to load a 200. However, note that values on the stack normally take up 4
@@ -222,7 +293,7 @@ object Codegen {
    * This is needed because sometimes we expect the operands to be a long, which means two (int) values are popped from
    * the stack and concatenated to form a long.
    */
-  private def compileConst(visitor: MethodVisitor)(i: Long, isLong: Boolean = false): Unit = {
+  private def compileInt(visitor: MethodVisitor)(i: Long, isLong: Boolean = false): Unit = {
     i match {
       case -1 => visitor.visitInsn(ICONST_M1)
       case 0 => if (!isLong) visitor.visitInsn(ICONST_0) else visitor.visitInsn(LCONST_0)
@@ -231,12 +302,12 @@ object Codegen {
       case 3 => visitor.visitInsn(ICONST_3)
       case 4 => visitor.visitInsn(ICONST_4)
       case 5 => visitor.visitInsn(ICONST_5)
-      case _ if Byte.MinValue <= i && i <= Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i.toInt)
-      case _ if Short.MinValue <= i && i <= Short.MaxValue => visitor.visitIntInsn(SIPUSH, i.toInt)
-      case _ if Int.MinValue <= i && i <= Int.MaxValue => visitor.visitLdcInsn(i.toInt)
+      case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i.toInt)
+      case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => visitor.visitIntInsn(SIPUSH, i.toInt)
+      case _ if scala.Int.MinValue <= i && i <= scala.Int.MaxValue => visitor.visitLdcInsn(i.toInt)
       case _ => visitor.visitLdcInsn(i)
     }
-    if (isLong && Int.MinValue <= i && i <= Int.MaxValue && i != 0 && i != 1) visitor.visitInsn(I2L)
+    if (isLong && scala.Int.MinValue <= i && i <= scala.Int.MaxValue && i != 0 && i != 1) visitor.visitInsn(I2L)
   }
 
   private def compileUnaryExpr(context: Context, visitor: MethodVisitor)
@@ -283,9 +354,11 @@ object Codegen {
     case Type.Int16 =>
       visitor.visitInsn(INEG)
       visitor.visitInsn(I2S)
-    case Type.Int32 => visitor.visitInsn(INEG)
+    case Type.Int32 | Type.Int => visitor.visitInsn(INEG)
     case Type.Int64 => visitor.visitInsn(LNEG)
-    case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
+    case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
+         Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
+         Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any =>
       throw new InternalCompilerError(s"Can't apply UnaryOperator.Minus to type $tpe.")
   }
 
@@ -307,12 +380,14 @@ object Codegen {
   private def compileUnaryNegateExpr(context: Context, visitor: MethodVisitor)(tpe: Type): Unit = {
     visitor.visitInsn(ICONST_M1)
     tpe match {
-      case Type.Int8 | Type.Int16 | Type.Int32 =>
+      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int =>
         visitor.visitInsn(IXOR)
       case Type.Int64 =>
         visitor.visitInsn(I2L)
         visitor.visitInsn(LXOR)
-      case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
+      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
+           Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
+           Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any =>
         throw new InternalCompilerError(s"Can't apply UnaryOperator.Negate to type $tpe.")
     }
   }
@@ -355,9 +430,11 @@ object Codegen {
       case Type.Int16 =>
         visitor.visitInsn(intOp)
         visitor.visitInsn(I2S)
-      case Type.Int32 => visitor.visitInsn(intOp)
+      case Type.Int32 | Type.Int => visitor.visitInsn(intOp)
       case Type.Int64 => visitor.visitInsn(longOp)
-      case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
+      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
+           Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
+           Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any =>
         throw new InternalCompilerError(s"Can't apply $o to type $tpe.")
     }
   }
@@ -377,11 +454,13 @@ object Codegen {
       case BinaryOperator.NotEqual => (IF_ICMPEQ, IFEQ)
     }
     e1.tpe match {
-      case Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitJumpInsn(intOp, condElse)
+      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitJumpInsn(intOp, condElse)
       case Type.Int64 =>
         visitor.visitInsn(LCMP)
         visitor.visitJumpInsn(longOp, condElse)
-      case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
+      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
+           Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
+           Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any =>
         throw new InternalCompilerError(s"Can't apply $o to type $tpe.")
     }
     visitor.visitInsn(ICONST_1)
@@ -485,9 +564,11 @@ object Codegen {
       case Type.Int16 =>
         visitor.visitInsn(intOp)
         if (intOp == ISHL) visitor.visitInsn(I2S)
-      case Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitInsn(intOp)
+      case Type.Int32 | Type.Int => visitor.visitInsn(intOp)
       case Type.Int64 => visitor.visitInsn(longOp)
-      case Type.Bool | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) | Type.Set(_) | Type.Lambda(_, _) =>
+      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
+           Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
+           Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any =>
         throw new InternalCompilerError(s"Can't apply $o to type $tpe.")
     }
   }

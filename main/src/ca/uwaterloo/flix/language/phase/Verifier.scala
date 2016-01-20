@@ -736,7 +736,7 @@ object Verifier {
     def visit(tpe: Type): List[Expression] = tpe match {
       case Type.Unit => List(Expression.Unit)
       case Type.Bool => List(Expression.True, Expression.False)
-      case Type.Int => List(Expression.Var(???, Type.Int, SourceLocation.Unknown)) // TODO: Need genSym
+      case Type.Int => List(Expression.Var(???, ???, Type.Int, SourceLocation.Unknown)) // TODO: Need genSym
       case Type.Tuple(elms) => ???
       case Type.Enum(cases) => ???
       case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
@@ -806,7 +806,7 @@ object Verifier {
     * Returns a variable expression of the given name `s`.
     */
   def mkVar2(s: String, tpe: Type): Expression.Var = {
-    Var(Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown), tpe, SourceLocation.Unknown)
+    Var(Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown), ???, tpe, SourceLocation.Unknown)
   }
 
   /**
@@ -853,10 +853,10 @@ object Verifier {
 
   implicit class RichLambda(val f: Expression.Lambda) {
     def apply(e1: Expression): Expression =
-      Expression.Apply(f, List(e1), f.tpe.retTpe, SourceLocation.Unknown)
+      Expression.Apply(???, List(e1), f.tpe.retTpe, SourceLocation.Unknown)
 
     def apply(e1: Expression, e2: Expression): Expression =
-      Expression.Apply(f, List(e1, e2), f.tpe.retTpe, SourceLocation.Unknown)
+      Expression.Apply(???, List(e1, e2), f.tpe.retTpe, SourceLocation.Unknown)
   }
 
   /**
@@ -869,7 +869,8 @@ object Verifier {
       * Returns a variable expression of the given name `s`.
       */
     def mkVar(s: String): Expression.Var = {
-      Var(Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown), lattice.tpe, SourceLocation.Unknown)
+      // TODO: Variable numbering
+      Var(Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown), -1, lattice.tpe, SourceLocation.Unknown)
     }
 
     /**
@@ -885,20 +886,23 @@ object Verifier {
     /**
       * Returns the `true` if `e1` is less than or equal to `e2` according to the partial order.
       */
+    // TODO: Function needs to be a name, not an arbitrary expression
     def ⊑(e1: Expression, e2: Expression): Expression =
-      Apply(lattice.lub, List(e1, e2), e1.tpe, SourceLocation.Unknown)
+      Apply(???, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
     /**
       * Returns the least upper bound of the two expressions `e1` and `e2`.
       */
+    // TODO: Function needs to be a name, not an arbitrary expression
     def ⊔(e1: Expression, e2: Expression): Expression =
-      Apply(lattice.lub, List(e1, e2), e1.tpe, SourceLocation.Unknown)
+      Apply(???, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
     /**
       * Returns the greatest lower bound of the two expressions `e1` and `e2`.
       */
+    // TODO: Function needs to be a name, not an arbitrary expression
     def ⊓(e1: Expression, e2: Expression): Expression =
-      Apply(lattice.glb, List(e1, e2), e1.tpe, SourceLocation.Unknown)
+      Apply(???, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
     /**
       * Returns the widening of the two expressions `e1` and `e2`.
@@ -944,7 +948,7 @@ object Verifier {
     */
   def visitArithExpr(e0: Expression, ctx: Context): ArithExpr = e0 match {
     case Int(i) => ctx.mkInt(i)
-    case Var(name, tpe, loc) => ctx.mkIntConst(name.name)
+    case Var(name, offset, tpe, loc) => ctx.mkIntConst(name.name)
     case Unary(op, e1, tpe, loc) => op match {
       case UnaryOperator.Plus => visitArithExpr(e1, ctx)
       case UnaryOperator.Minus => ctx.mkSub(ctx.mkInt(0), visitArithExpr(e1, ctx))
@@ -976,7 +980,7 @@ object Verifier {
   def visitBoolExpr(e0: Expression, ctx: Context): BoolExpr = e0 match {
     case True => ctx.mkBool(true)
     case False => ctx.mkBool(false)
-    case Var(ident, tpe, loc) => ctx.mkBoolConst(ident.name)
+    case Var(ident, offset, tpe, loc) => ctx.mkBoolConst(ident.name)
     case Unary(op, exp, tpe, loc) => op match {
       case UnaryOperator.Not => ctx.mkNot(visitBoolExpr(e0, ctx))
       case _ => throw new InternalCompilerError(s"Illegal unary operator: $op.")
