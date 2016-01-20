@@ -1,6 +1,8 @@
 // TODO: Everything in here is experimental and not yet implemented.
 // ∀, ¬, ∧, ∨, →, ↔, ≡, ⊥, ⊤, ⊑, ⊔, ⊓
 
+// TODO: Use E or A for type parameters?
+
 class PartialOrder[E] {
 
     /**
@@ -62,21 +64,65 @@ class NarrowOperator[E] {
 }
 
 // TODO: How to deal with these?
-class Strict[E] {
+// TODO: Need some notion of function type here?
+class Strict[A: JoinSemiLattice, B: JoinSemiLattice] {
+    fn f(a: A): B
 
+    // and then even this requirement cant readily be described?
+    law Strict(): Bool = f(bot) == bot
 }
 
+impl Strict for (A => B) {
+    // ... ?
+}
+
+//or how about this:
+class Strict[A => B] where A: PartialOrder, B: PartialOrder {
+    law Strict(f: A => B): Bool = f(bot) == bot
+}
+// this seems closer to what we want, since A => B is truly the member of this class.
+
+instance Strict[MySpecificFun]
+// the above could be rewritten with @strict
+
+
 // TODO: How to deal with these?
-class Monotone[E] {
+class Monotone[E: PartialOrder] {
     fn f(e: E): E
 }
 
 // TODO: use word "impl"? for ?
+// TODO: class or concept?
 instance PartialOrder[Sign] {
 
     fn leq(x: Sign, y: Sign): Bool = ???
 
 }
+
+namespace std::ops {
+
+    class Add[E] {
+        fn add(x: E, y: E): E
+    }
+
+    impl Add for Int32 {
+        fn add(x: Int32, y: Int32): Int32 = native
+    }
+
+}
+
+
+impl PartialOrder for (A: PartialOrder, B: PartialOrder) {
+
+    fn leq(x: (A, B), y: (A, B)): Bool =
+        let (xa, xb) = x in
+        let (ya, yb) = y in
+            leq(xa, xb) && leq(ya, yb)
+
+}
+
+
+
 
 //// rust:
 //trait HasArea {

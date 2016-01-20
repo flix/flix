@@ -1,7 +1,5 @@
 package ca.uwaterloo.flix.language.phase
 
-import java.nio.file.{Files, Paths}
-
 import ca.uwaterloo.flix.Flix.FlixError
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
@@ -13,6 +11,9 @@ import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Type, _}
 import ca.uwaterloo.flix.language.phase.Verifier.VerifierError._
 import ca.uwaterloo.flix.runtime.PartialEvaluator
 import com.microsoft.z3._
+
+// TODO: have some help verify this class.
+// TODO: Can we use un-interpreted functions for anything?
 
 object Verifier {
 
@@ -312,6 +313,7 @@ object Verifier {
 
         val (x, y) = (mkVar2("x", tpe1), mkVar2("y", tpe2))
 
+        // TODO: This doesnt seem right. It would seem that bottom is when both args are bottom?
         ∀(x, y)(∧(≡(f(arg1Lat.bot, y), retLat.bot), ≡(f(x, arg2Lat.bot), retLat.bot)))
 
       }
@@ -788,6 +790,7 @@ object Verifier {
           case a1 :: a2 :: Nil => Some(Property.Monotone2(f, root))
           case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
         }
+        case _ => Nil
       }
     }
 
@@ -938,6 +941,37 @@ object Verifier {
     */
 
   /**
+    * Translates the given expression `e` into a Z3 arithmetic expression.
+    *
+    * Assumes that all lambdas, calls and let bindings have been removed.
+    * (In addition to all tags, tuples, sets, maps, etc.)
+    */
+  def visitArithExpr(e0: Expression, ctx: Context): ArithExpr = e0 match {
+    case Int(i) => ctx.mkInt(i)
+    case Var(name, offset, tpe, loc) => ctx.mkIntConst(name.name)
+    case Unary(op, e1, tpe, loc) => op match {
+      case UnaryOperator.Plus => visitArithExpr(e1, ctx)
+      case UnaryOperator.Minus => ctx.mkSub(ctx.mkInt(0), visitArithExpr(e1, ctx))
+      case UnaryOperator.BitwiseNegate => throw new InternalCompilerError(s"Not yet implemented. Sorry.")
+      case _ => throw new InternalCompilerError(s"Illegal unary operator: $op.")
+    }
+    case Binary(op, e1, e2, tpe, loc) => op match {
+      case BinaryOperator.Plus => ctx.mkAdd(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case BinaryOperator.Minus => ctx.mkSub(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case BinaryOperator.Times => ctx.mkMul(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case BinaryOperator.Divide => ctx.mkDiv(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case BinaryOperator.Modulo => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+      case BinaryOperator.BitwiseAnd => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+      case BinaryOperator.BitwiseOr => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+      case BinaryOperator.BitwiseXor => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+      case BinaryOperator.BitwiseLeftShift => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+      case BinaryOperator.BitwiseRightShift => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+      case _ => throw new InternalCompilerError(s"Illegal binary operator: $op.")
+    }
+    case _ => throw new InternalCompilerError(s"Unexpected expression: $e0.")
+  }
+
+  /**
     * Translates the given expression `e0` into a Z3 boolean expression.
     *
     * Assumes that all lambdas, calls and let bindings have been removed.
@@ -978,7 +1012,7 @@ object Verifier {
         ctx.mkAnd(f1, f2),
         ctx.mkAnd(ctx.mkNot(f1), f3)
       )
-    case _ => throw new InternalCompilerError(s"Illegal boolean expression of type: ${e0.tpe}.")
+    case _ => throw new InternalCompilerError(s"Unexpected expression: $e0.")
   }
 
   /**
@@ -994,52 +1028,20 @@ object Verifier {
       case _ => throw new InternalCompilerError(s"Illegal unary operator: $op.")
     }
     case Binary(op, e1, e2, tpe, loc) => op match {
+      case BinaryOperator.Plus => ctx.mkBVAdd(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case BinaryOperator.Minus => ctx.mkBVSub(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case BinaryOperator.Times => ctx.mkBVMul(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case BinaryOperator.Divide => ctx.mkBVSDiv(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case BinaryOperator.Modulo => ctx.mkBVSMod(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
       case BinaryOperator.BitwiseAnd => ctx.mkBVAND(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
       case BinaryOperator.BitwiseOr => ctx.mkBVOR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
       case BinaryOperator.BitwiseXor => ctx.mkBVXOR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
       case BinaryOperator.BitwiseLeftShift => ctx.mkBVSHL(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
       case BinaryOperator.BitwiseRightShift => ctx.mkBVLSHR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-    }
-  }
-
-  // TODO: Need int Expr?
-
-  /**
-    * Translates the given expression `e` into a Z3 arithmetic expression.
-    *
-    * Assumes that all lambdas, calls and let bindings have been removed.
-    * (In addition to all tags, tuples, sets, maps, etc.)
-    */
-  def visitArithExpr(e0: Expression, ctx: Context): ArithExpr = e0 match {
-    case Int(i) => ctx.mkInt(i)
-    case Var(name, offset, tpe, loc) => ctx.mkIntConst(name.name)
-    case Unary(op, e1, tpe, loc) => op match {
-      case UnaryOperator.Plus => visitArithExpr(e1, ctx)
-      case UnaryOperator.Minus => ctx.mkSub(ctx.mkInt(0), visitArithExpr(e1, ctx))
-      case UnaryOperator.BitwiseNegate => throw new InternalCompilerError(s"Not yet implemented. Sorry.")
-      case _ => throw new InternalCompilerError(s"Illegal unary operator: $op.")
-    }
-    case Binary(op, e1, e2, tpe, loc) => op match {
-      case BinaryOperator.Plus => ctx.mkAdd(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
-      case BinaryOperator.Minus => ctx.mkSub(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
-      case BinaryOperator.Times => ctx.mkMul(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
-      case BinaryOperator.Divide => ctx.mkDiv(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
-      case BinaryOperator.Modulo => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
-      case BinaryOperator.BitwiseAnd => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
-      case BinaryOperator.BitwiseOr => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
-      case BinaryOperator.BitwiseXor => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
-      case BinaryOperator.BitwiseLeftShift => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
-      case BinaryOperator.BitwiseRightShift => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
       case _ => throw new InternalCompilerError(s"Illegal binary operator: $op.")
     }
-    case IfThenElse(e1, e2, e3, tpe, loc) =>
-      val f1 = visitBoolExpr(e1, ctx)
-      val f2 = visitArithExpr(e2, ctx)
-      val f3 = visitArithExpr(e3, ctx)
-      ??? // TODO
-    case _ => throw new InternalCompilerError(s"Expected int expression but got: ${e0.tpe}")
+    case _ => throw new InternalCompilerError(s"Unexpected expression: $e0.")
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Interface to Z3                                                         //
@@ -1133,9 +1135,20 @@ object Verifier {
 
   }
 
-  // TODO: Can we use un-interpreted functions for anything?
+  /**
+    * Returns a Z3 model as a map from string variables to expressions.
+    */
+  def model2env(model: Model): Map[String, Expression] = {
+    def visit(exp: Expr): Expression = exp match {
+      case e: BoolExpr => if (e.isTrue) True else False
+      case e: IntNum => Int(e.getInt)
+      case _ => throw new InternalCompilerError(s"Unexpected Z3 expression: $exp.")
+    }
 
-  def model2env(model: Model): Map[String, Expression] = ???
+    model.getConstDecls.foldLeft(Map.empty[String, Expression]) {
+      case (macc, decl) => macc + (decl.getName.toString -> visit(decl.asInstanceOf[Expr]))
+    }
+  }
 
   // TODO: remove
   def main(args: Array[String]): Unit = {
