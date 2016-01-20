@@ -1,6 +1,8 @@
 // TODO: Everything in here is experimental and not yet implemented.
 // ∀, ¬, ∧, ∨, →, ↔, ≡, ⊥, ⊤, ⊑, ⊔, ⊓
 
+// TODO: Use E or A for type parameters?
+
 class PartialOrder[E] {
 
     /**
@@ -62,21 +64,51 @@ class NarrowOperator[E] {
 }
 
 // TODO: How to deal with these?
-class Strict[E] {
+class Strict[A: JoinSemiLattice, B: JoinSemiLattice] {
+    fn f(a: A): B
 
+    law Strict(): Bool = f(bot) == bot
 }
 
+impl Strict for (A => B)
+
 // TODO: How to deal with these?
-class Monotone[E] {
+class Monotone[E: PartialOrder] {
     fn f(e: E): E
 }
 
 // TODO: use word "impl"? for ?
+// TODO: class or concept?
 instance PartialOrder[Sign] {
 
     fn leq(x: Sign, y: Sign): Bool = ???
 
 }
+
+namespace std::ops {
+
+    class Add[E] {
+        fn add(x: E, y: E): E
+    }
+
+    impl Add for Int32 {
+        fn add(x: Int32, y: Int32): Int32 = native
+    }
+
+}
+
+
+impl PartialOrder for (A: PartialOrder, B: PartialOrder) {
+
+    fn leq(x: (A, B), y: (A, B)): Bool =
+        let (xa, xb) = x in
+        let (ya, yb) = y in
+            leq(xa, xb) && leq(ya, yb)
+
+}
+
+
+
 
 //// rust:
 //trait HasArea {
