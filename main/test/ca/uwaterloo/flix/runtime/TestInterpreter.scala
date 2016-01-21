@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
+import ca.uwaterloo.flix.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.{Definition, Expression, Literal, Pattern, Term, FormalArg, Root}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.Compiler
@@ -604,14 +605,14 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - UnaryOperator.UnaryNegate01") {
     val input = "val x: Int = ~42"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(~42))(result)
   }
 
   test("Interpreter - UnaryOperator.UnaryNegate02") {
     val input = "val x: Int = ~~42"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(42))(result)
   }
@@ -897,112 +898,112 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - BinaryOperator.BitwiseAnd01") {
     val input = "val x: Int = 42 & 65535"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(42 & 65535))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseAnd02") {
     val input = "val x: Int = 42 & 0"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(42 & 0))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseAnd03") {
     val input = "val x: Int = 42 & 42"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(42 & 42))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseOr01") {
     val input = "val x: Int = 42 | 65535"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(42 | 65535))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseOr02") {
     val input = "val x: Int = 42 | 0"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(42 | 0))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseOr03") {
     val input = "val x: Int = 42 | 42"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(42 | 42))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseXor01") {
     val input = "val x: Int = 42 ^ 65535"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(42 ^ 65535))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseXor02") {
     val input = "val x: Int = 42 ^ 0"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(42 ^ 0))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseXor03") {
     val input = "val x: Int = 42 ^ 42"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(42 ^ 42))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseLeftShift01") {
     val input = "val x: Int = 4 << 0"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(4 << 0))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseLeftShift02") {
     val input = "val x: Int = 4 << 14"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(4 << 14))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseLeftShift03") {
     val input = "val x: Int = 4 << 29"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(4 << 29))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseLeftShift04") {
     val input = "val x: Int = 4 << 30"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(4 << 30))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseRightShift01") {
     val input = "val x: Int = 12345 >> 20"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(12345 >> 20))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseRightShift02") {
     val input = "val x: Int = 12345 >> 10"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(12345 >> 10))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseRightShift03") {
     val input = "val x: Int = 12345 >> 0"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.mkInt(12345 >> 0))(result)
   }
@@ -2223,21 +2224,21 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - Expression.Set01") {
     val input = "val x: Set[Int] = #{1, 4, 2}"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.Set(Set(Value.mkInt(1), Value.mkInt(4), Value.mkInt(2))))(result)
   }
 
   test("Interpreter - Expression.Set02") {
     val input = "val x: Set[Int] = #{1 + 2, 3 * 4, 5 - 6}"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.Set(Set(Value.mkInt(-1), Value.mkInt(12), Value.mkInt(3))))(result)
   }
 
   test("Interpreter - Expression.Set03") {
     val input = "val x: Set[(Int, Bool)] = #{(1 + 2, true), (2 + 1, !false), (4 * 7, true), (5, true && false)}"
-    val tree = Compiler.compile(input).get.constants.head._2.exp
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
     assertResult(Value.Set(Set(
       Value.Tuple(Array(Value.mkInt(3), Value.True)),

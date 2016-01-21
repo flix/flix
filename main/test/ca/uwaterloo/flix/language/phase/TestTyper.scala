@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.Compiler
+import ca.uwaterloo.flix.Flix
 import ca.uwaterloo.flix.language.ast._
 
 import org.scalatest.FunSuite
@@ -86,7 +86,7 @@ class TestTyper extends FunSuite {
     val input =
       """let Int<> = (0, 1, 2, 3, 4);
       """.stripMargin
-    val result = Compiler.compile(input)
+    val result = new Flix.Builder().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Typer.TypeError])
   }
 
@@ -98,7 +98,7 @@ class TestTyper extends FunSuite {
         |
         |let Int<> = (0, 1, lub, leq, glb);
       """.stripMargin
-    val result = Compiler.compile(input)
+    val result = new Flix.Builder().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Typer.TypeError])
   }
 
@@ -1001,7 +1001,7 @@ class TestTyper extends FunSuite {
          |  lat A(x: Int, y: Int<>);
          |};
        """.stripMargin
-    val result = Compiler.compile(input)
+    val result = new Flix.Builder().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
   }
 
@@ -1015,7 +1015,7 @@ class TestTyper extends FunSuite {
          |  lat A(x: Int, y: Elm<>);
          |};
        """.stripMargin
-    val result = Compiler.compile(input)
+    val result = new Flix.Builder().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
   }
 
@@ -1028,7 +1028,7 @@ class TestTyper extends FunSuite {
          |  val y: Bool = #java.lang.Boolean.getBoolean("true") // primitive boolean
          |};
        """.stripMargin
-    val result = Compiler.compile(input)
+    val result = new Flix.Builder().addStr(input).compile()
     assert(result.isSuccess)
   }
 
@@ -1039,7 +1039,7 @@ class TestTyper extends FunSuite {
          |  val y: Int = #java.lang.Integer.SIZE;         // primitive int
          |};
        """.stripMargin
-    val result = Compiler.compile(input)
+    val result = new Flix.Builder().addStr(input).compile()
     assert(result.isSuccess)
   }
 
@@ -1049,7 +1049,7 @@ class TestTyper extends FunSuite {
          |  val x: Str = #ca.uwaterloo.flix.util.misc.SampleLattice.TOP; // java.lang.String
          |};
        """.stripMargin
-    val result = Compiler.compile(input)
+    val result = new Flix.Builder().addStr(input).compile()
     assert(result.isSuccess)
   }
 
@@ -1077,7 +1077,7 @@ class TestTyper extends FunSuite {
          |      (#ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple5: (Int, Int, Int, Int, Int) -> (Int, Int, Int, Int, Int))(1, 2, 3, 4, 5);
          |};
        """.stripMargin
-    val result = Compiler.compile(input)
+    val result = new Flix.Builder().addStr(input).compile()
     assert(result.isSuccess)
   }
 
@@ -1088,7 +1088,7 @@ class TestTyper extends FunSuite {
          |  val b: Set[Int] = (#ca.uwaterloo.flix.util.misc.ScalaNative.set: (Int) -> Set[Int])();
          |};
        """.stripMargin
-    val result = Compiler.compile(input)
+    val result = new Flix.Builder().addStr(input).compile()
     assert(result.isSuccess)
   }
 
@@ -1101,7 +1101,7 @@ class TestTyper extends FunSuite {
          |    (#ca.uwaterloo.flix.util.misc.ScalaNative.tupleOfSets: (Int) -> (Set[Int], Set[Str], Set[Str]))();
          |};
        """.stripMargin
-    val result = Compiler.compile(input)
+    val result = new Flix.Builder().addStr(input).compile()
     assert(result.isSuccess)
   }
 }

@@ -4,9 +4,7 @@ import java.nio.file.{Files, Path, Paths}
 
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.{Resolver, Typer, Weeder}
 import ca.uwaterloo.flix.runtime.{Invokable, Model, Solver}
-import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Options, Validation}
 
 import scala.collection.mutable
@@ -128,20 +126,7 @@ object Flix {
       if (strings.isEmpty && paths.isEmpty)
         throw new IllegalStateException("No input specified. Please add at least one string or path input.")
 
-      val result = @@(getSourceInputs.map(Compiler.parse)) map {
-        case (asts) => asts.reduce[ParsedAst.Root] {
-          // TODO: Change the definition of Root to allow multiple compilation units.
-          case (ast1, ast2) => ParsedAst.Root(ast1.declarations ++ ast2.declarations, ast1.time)
-        }
-      }
-
-      result flatMap {
-        case past => Weeder.weed(past, hooks.toMap) flatMap {
-          case wast => Resolver.resolve(wast) flatMap {
-            case rast => Typer.typecheck(rast)
-          }
-        }
-      }
+      Compiler.compile(getSourceInputs, hooks.toMap)
     }
 
     /**
