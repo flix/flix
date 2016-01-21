@@ -161,6 +161,8 @@ object ResolvedAst {
 
     case class IfThenElse(e1: ResolvedAst.Expression, e2: ResolvedAst.Expression, e3: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class Switch(rules: List[(ResolvedAst.Expression, ResolvedAst.Expression)], loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Let(ident: Name.Ident, value: ResolvedAst.Expression, body: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Match(e: ResolvedAst.Expression, rules: List[(ResolvedAst.Pattern, ResolvedAst.Expression)], loc: SourceLocation) extends ResolvedAst.Expression

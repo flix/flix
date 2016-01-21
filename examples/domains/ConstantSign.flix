@@ -39,19 +39,13 @@ namespace ConstantSign {
         case (ConstSign.Bot, x)                         => x
         case (x, ConstSign.Bot)                         => x
 
-        case (ConstSign.Cst(n1), ConstSign.Cst(n2)) =>
-            if (n1 == n2)               ConstSign.Cst(n1) else
-            (if (n1 >= 0 && n2 >= 0)     ConstSign.Pos else
-            (if (n1 <= 0 && n2 <= 0)     ConstSign.Neg else
-                                        ConstSign.Top))
+        case (ConstSign.Cst(n1), ConstSign.Cst(n2)) => switch {
+            case n1 == n2               => ConstSign.Cst(n1)
+            case n1 >= 0 && n2 >= 0     => ConstSign.Pos
+            case n1 <= 0 && n2 <= 0     => ConstSign.Neg
+            case true                   => ConstSign.Top
+        }
 
-    // TODO: Implement switch expression
-    //        switch {
-    //            if (n1 == n2)           => ConstSign.Cst(n1)
-    //            if (n1 > 0 && n2 > 0)   => ConstSign.Pos
-    //            if (n1 < 0 && n2 < 0)   => ConstSign.Neg
-    //            if _                    => ConstSign.Top
-    //        }
         // TODO: there was a bug here, where < and > where used without <=.
 
         case (ConstSign.Cst(n), ConstSign.Neg) =>

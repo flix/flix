@@ -663,14 +663,22 @@ object Weeder {
           case (e1, e2) => WeededAst.Expression.Binary(exp.op, e1, e2, exp.loc)
         }
 
+      case exp: ParsedAst.Expression.Let =>
+        @@(compile(exp.value), compile(exp.body)) map {
+          case (value, body) => WeededAst.Expression.Let(exp.ident, value, body, exp.loc)
+        }
+
       case exp: ParsedAst.Expression.IfThenElse =>
         @@(compile(exp.e1), compile(exp.e2), compile(exp.e3)) map {
           case (e1, e2, e3) => WeededAst.Expression.IfThenElse(e1, e2, e3, exp.loc)
         }
 
-      case exp: ParsedAst.Expression.Let =>
-        @@(compile(exp.value), compile(exp.body)) map {
-          case (value, body) => WeededAst.Expression.Let(exp.ident, value, body, exp.loc)
+      case exp: ParsedAst.Expression.Switch =>
+        val rulesVal = exp.rules map {
+          case (cond, body) => @@(Expression.compile(cond), Expression.compile(body))
+        }
+        @@(rulesVal) map {
+          case rules => WeededAst.Expression.Switch(rules, exp.loc)
         }
 
       case exp: ParsedAst.Expression.Match =>

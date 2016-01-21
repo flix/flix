@@ -450,6 +450,17 @@ object TypedAst {
     case class Binary(op: BinaryOperator, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
+      * A typed AST node representing a let expression.
+      *
+      * @param ident the name of the bound variable.
+      * @param exp1  the value of the bound variable.
+      * @param exp2  the body expression in which the bound variable is visible.
+      * @param tpe   the type of the expression (which is equivalent to the type of the body expression).
+      * @param loc   the source location.
+      */
+    case class Let(ident: Name.Ident, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    /**
       * A typed AST node representing an if-then-else expression.
       *
       * @param exp1 the conditional expression.
@@ -461,15 +472,13 @@ object TypedAst {
     case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
-      * A typed AST node representing a let expression.
+      * A typed AST node representing a switch expression.
       *
-      * @param ident the name of the bound variable.
-      * @param exp1  the value of the bound variable.
-      * @param exp2  the body expression in which the bound variable is visible.
-      * @param tpe   the type of the expression (which is equivalent to the type of the body expression).
+      * @param rules the rules of the switch.
+      * @param tpe   the type of the rule bodies.
       * @param loc   the source location.
       */
-    case class Let(ident: Name.Ident, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Switch(rules: List[(TypedAst.Expression, TypedAst.Expression)], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a match expression.

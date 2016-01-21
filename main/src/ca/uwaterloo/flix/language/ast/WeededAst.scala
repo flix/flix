@@ -328,6 +328,14 @@ object WeededAst {
     case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     /**
+      * An AST node that represents a switch expression.
+      *
+      * @param rules the rules of the switch.
+      * @param loc   the source location.
+      */
+    case class Switch(rules: List[(WeededAst.Expression, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
+
+    /**
       * An AST node that represents a let expression.
       *
       * @param ident the name of the bound variable.

@@ -436,6 +436,28 @@ object Typer {
               }
           }
 
+        case ResolvedAst.Expression.Switch(rules, loc) =>
+          val (rconds, rbodies) = rules.unzip
+          // type the conditions against bool
+          val condsVal = @@(rconds map {
+            case cond => visit(cond, env) flatMap {
+              case e => expect(Type.Bool, e.tpe, e.loc) map {
+                case tpe => e
+              }
+            }
+          })
+
+          val bodiesVal = @@(rbodies map {
+            case body => visit(body, env)
+          })
+
+          @@(condsVal, bodiesVal) flatMap {
+            case (conds, bodies) =>
+              expectEqual(bodies.map(body => (body.tpe, body.loc))) map {
+                case tpe => TypedAst.Expression.Switch(conds zip bodies, tpe, loc)
+              }
+          }
+
         case ResolvedAst.Expression.Let(ident, rvalue, rbody, loc) =>
           visit(rvalue, env) flatMap {
             case value => visit(rbody, env + (ident.name -> value.tpe)) map {

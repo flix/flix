@@ -68,6 +68,7 @@ object Interpreter {
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
       val cond = evalBool(exp1, root, env)
       if (cond) evalInt(exp2, root, env) else evalInt(exp3, root, env)
+    case Expression.Switch(rules, tpe, loc) => ??? // TODO
     case Expression.Let(ident, exp1, exp2, _, _) =>
       // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
       val newEnv = env + (ident.name -> eval(exp1, root, env))
@@ -138,6 +139,7 @@ object Interpreter {
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
       val cond = eval(exp1, root, env).toBool
       if (cond) evalBool(exp2, root, env) else evalBool(exp3, root, env)
+    case Expression.Switch(rules, tpe, loc) => ??? // TODO
     case Expression.Let(ident, exp1, exp2, _, _) =>
       // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
       val newEnv = env + (ident.name -> eval(exp1, root, env))
@@ -211,6 +213,7 @@ object Interpreter {
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
       val cond = evalBool(exp1, root, env)
       if (cond) eval(exp2, root, env) else eval(exp3, root, env)
+    case Expression.Switch(rules, tpe, loc) => ??? // TODO
     case Expression.Let(ident, exp1, exp2, _, _) =>
       // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
       val newEnv = env + (ident.name -> eval(exp1, root, env))

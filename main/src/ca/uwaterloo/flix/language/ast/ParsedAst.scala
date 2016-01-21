@@ -436,6 +436,19 @@ object ParsedAst {
     }
 
     /**
+      * An AST node that represents a let-binding.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param ident the identifier to be bound.
+      * @param value the expression whose value the identifier should be bound to.
+      * @param body  the expression in which the bound variable is visible.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class Let(sp1: SourcePosition, ident: Name.Ident, value: ParsedAst.Expression, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
       * An AST node that represents an if-then-else expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -449,15 +462,13 @@ object ParsedAst {
     }
 
     /**
-      * An AST node that represents a let-binding.
+      * An AST node that represents a switch expression.
       *
       * @param sp1   the position of the first character in the expression.
-      * @param ident the identifier to be bound.
-      * @param value the expression whose value the identifier should be bound to.
-      * @param body  the expression in which the bound variable is visible.
+      * @param rules the rules of the switch.
       * @param sp2   the position of the last character in the expression.
       */
-    case class Let(sp1: SourcePosition, ident: Name.Ident, value: ParsedAst.Expression, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+    case class Switch(sp1: SourcePosition, rules: Seq[(ParsedAst.Expression, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 

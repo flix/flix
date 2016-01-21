@@ -188,7 +188,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def SimpleExpression: Rule1[ParsedAst.Expression] = rule {
-    LetExpression | IfThenElseExpression | MatchExpression | TagExpression | TupleExpression | SetExpression | LiteralExpression | LambdaExpression | VariableExpression | ErrorExpression | NativeExpression
+    LetExpression | IfThenElseExpression | SwitchExpression | MatchExpression | TagExpression | TupleExpression | SetExpression | LiteralExpression | LambdaExpression | VariableExpression | ErrorExpression | NativeExpression
   }
 
   def LiteralExpression: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -201,6 +201,16 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def IfThenElseExpression: Rule1[ParsedAst.Expression.IfThenElse] = rule {
     SP ~ atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ optWS ~ atomic("else") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
+  }
+
+  def SwitchExpression: Rule1[ParsedAst.Expression.Switch] = {
+    def SwitchRule: Rule1[(ParsedAst.Expression, ParsedAst.Expression)] = rule {
+      atomic("case") ~ optWS ~ Expression ~ optWS ~ "=>" ~ optWS ~ Expression ~> ((e1: ParsedAst.Expression, e2: ParsedAst.Expression) => (e1, e2))
+    }
+
+    rule {
+      SP ~ atomic("switch") ~ optWS ~ "{" ~ optWS ~ oneOrMore(SwitchRule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Switch
+    }
   }
 
   def MatchExpression: Rule1[ParsedAst.Expression.Match] = {

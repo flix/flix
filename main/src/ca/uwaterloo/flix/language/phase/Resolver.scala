@@ -723,6 +723,14 @@ object Resolver {
             case (e1, e2, e3) => ResolvedAst.Expression.IfThenElse(e1, e2, e3, loc)
           }
 
+        case WeededAst.Expression.Switch(wrules, loc) =>
+          val result = wrules map {
+            case (cond, body) => @@(visit(cond, locals), visit(body, locals))
+          }
+          @@(result) map {
+            case rules => ResolvedAst.Expression.Switch(rules, loc)
+          }
+
         case WeededAst.Expression.Let(ident, wvalue, wbody, loc) =>
           val valueVal = visit(wvalue, locals)
           val bodyVal = visit(wbody, locals + ident.name)

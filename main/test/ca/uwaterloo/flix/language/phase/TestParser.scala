@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.Flix
 import ca.uwaterloo.flix.language.ast.ParsedAst.Literal
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import org.scalatest.FunSuite
@@ -467,6 +468,38 @@ class TestParser extends FunSuite {
     val result = new Parser(SourceInput.Str(input)).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.IfThenElse])
+  }
+
+  test("Expression.Switch01") {
+    val input =
+      """fn f(x: Int): Int = switch {
+        |  case true  => 1
+        |}
+      """.stripMargin
+    val result = new Flix.Builder().addStr(input).compile()
+    assert(result.isSuccess)
+  }
+
+  test("Expression.Switch02") {
+    val input =
+      """fn f(x: Int): Int = switch {
+        |  case x < 0  => 1
+        |}
+      """.stripMargin
+    val result = new Flix.Builder().addStr(input).compile()
+    assert(result.isSuccess)
+  }
+
+  test("Expression.Switch03") {
+    val input =
+      """fn f(x: Int): Int = switch {
+        |  case x < 0  => 1
+        |  case x > 0  => 2
+        |  case x == 0 => 3
+        |}
+      """.stripMargin
+    val result = new Flix.Builder().addStr(input).compile()
+    assert(result.isSuccess)
   }
 
   test("Expression.MatchExp01") {
@@ -2008,7 +2041,7 @@ class TestParser extends FunSuite {
 
 
   /**
-   * Returns a parser for the given string `s`.
-   */
+    * Returns a parser for the given string `s`.
+    */
   private def mkParser(s: String): Parser = new Parser(SourceInput.Str(s))
 }
