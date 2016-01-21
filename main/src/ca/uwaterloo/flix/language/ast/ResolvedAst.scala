@@ -384,8 +384,14 @@ object ResolvedAst {
         */
       case class Apply(name: Name.Resolved, args: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Term.Head
 
-      // TODO:
-      case class Hook(hook: Ast.Hook, args: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Term.Head
+      /**
+        * An AST node representing a hook function call term.
+        *
+        * @param hook the hook.
+        * @param args the arguments to the function.
+        * @param loc  the location.
+        */
+      case class ApplyHook(hook: Ast.Hook, args: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Term.Head
 
       /**
         * An AST node representing a reference to a native JVM static field.

@@ -915,7 +915,7 @@ object Resolver {
               case args => ResolvedAst.Term.Head.Apply(rname, args.toList, loc)
             }
             case (rname, Right(hook)) => @@(wargs map (arg => resolve(arg, namespace, syms))) map {
-              case args => ResolvedAst.Term.Head.Hook(hook, args.toList, loc)
+              case args => ResolvedAst.Term.Head.ApplyHook(hook, args.toList, loc)
             }
           }
         case WeededAst.Term.Head.Native(className, memberName, loc) =>

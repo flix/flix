@@ -357,7 +357,7 @@ object Interpreter {
         i = i + 1
       }
       evalCall(function, evalArgs, root, env)
-    case term: Term.Head.Hook => ??? // TODO
+    case term: Term.Head.ApplyHook => ??? // TODO
     case Term.Head.NativeField(field, tpe, _) => Value.java2flix(field.get(null), tpe)
   }
 

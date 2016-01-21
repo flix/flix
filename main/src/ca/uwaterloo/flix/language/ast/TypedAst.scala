@@ -898,8 +898,15 @@ object TypedAst {
         val argsAsArray: Array[TypedAst.Term.Head] = args.toArray
       }
 
-      // TODO: Doc
-      case class Hook(hook: Ast.Hook, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head {
+      /**
+        * A typed AST node representing a hook function call term.
+        *
+        * @param hook the hook.
+        * @param args the arguments to the function.
+        * @param tpe  the type of the term.
+        * @param loc  the source location.
+        */
+      case class ApplyHook(hook: Ast.Hook, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head {
         // TODO: Move
         @deprecated("moved to ExecutableAST", "0.1")
         val argsAsArray: Array[TypedAst.Term.Head] = args.toArray

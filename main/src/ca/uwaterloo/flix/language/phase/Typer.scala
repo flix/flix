@@ -732,7 +732,7 @@ object Typer {
           case _ => IllegalApply(constant.tpe, loc).toFailure
         }
 
-      case ResolvedAst.Term.Head.Hook(hook, actuals, loc) =>
+      case ResolvedAst.Term.Head.ApplyHook(hook, actuals, loc) =>
         val formals = hook.tpe.args
         // type arguments with the declared formals.
         val argsVal = (actuals zip formals) map {
@@ -740,7 +740,7 @@ object Typer {
         }
         // put everything together and check the return type.
         @@(@@(argsVal), expect(tpe, hook.tpe.retTpe, loc)) map {
-          case (args, returnType) => TypedAst.Term.Head.Hook(hook, args, returnType, loc)
+          case (args, returnType) => TypedAst.Term.Head.ApplyHook(hook, args, returnType, loc)
         }
 
       case ResolvedAst.Term.Head.NativeField(field, loc) =>
