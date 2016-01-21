@@ -141,7 +141,7 @@ object Typer {
     @@(constantsVal, directivesVal, latticesVal, relationsVal, indexesVal, factsVal, rulesVal) map {
       case (constants, directives, lattices, relations, indexes, facts, rules) =>
         val e = System.nanoTime()
-        TypedAst.Root(constants, TypedAst.Directives(directives), lattices, relations, indexes, facts, rules, root.time.copy(typer = e - b))
+        TypedAst.Root(constants, TypedAst.Directives(directives), lattices, relations, indexes, facts, rules, root.hooks, root.time.copy(typer = e - b))
     }
   }
 
@@ -324,6 +324,10 @@ object Typer {
         case ResolvedAst.Expression.Ref(name, loc) =>
           val constant = root.constants(name)
           TypedAst.Expression.Ref(name, constant.tpe, loc).toSuccess
+
+        case ResolvedAst.Expression.HookRef(hook, loc) =>
+          val tpe = hook.tpe
+          TypedAst.Expression.Hook(hook, tpe, loc).toSuccess
 
         case ResolvedAst.Expression.Lit(rlit, loc) =>
           val lit = Literal.typer(rlit, root)
@@ -648,7 +652,7 @@ object Typer {
               }
           }
 
-        case ResolvedAst.Predicate.Body.Function(name, rterms, loc) =>
+        case ResolvedAst.Predicate.Body.ApplyFilter(name, rterms, loc) =>
           val constant = root.constants(name)
           // TODO: Check that result type is bool.
           // TODO: Improve the cast here
@@ -657,8 +661,20 @@ object Typer {
           }
 
           @@(termsVal) map {
-            case terms => TypedAst.Predicate.Body.Function(name, terms, Type.Lambda(terms map (_.tpe), Type.Bool), loc) // TODO Type
+            case terms => TypedAst.Predicate.Body.ApplyFilter(name, terms, Type.Lambda(terms map (_.tpe), Type.Bool), loc) // TODO Type
           }
+
+        case ResolvedAst.Predicate.Body.ApplyHookFilter(hook, rterms, loc) =>
+          // TODO: Check that result type is bool.
+          // TODO: Improve the cast here
+          val termsVal = (rterms zip hook.tpe.asInstanceOf[Type.Lambda].args) map {
+            case (term, tpe) => Term.typer(term, tpe, root)
+          }
+
+          @@(termsVal) map {
+            case terms => TypedAst.Predicate.Body.ApplyHookFilter(hook, terms, Type.Lambda(terms map (_.tpe), Type.Bool), loc) // TODO Type
+          }
+
 
         case ResolvedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
           TypedAst.Predicate.Body.NotEqual(ident1, ident2, Type.Bool, loc).toSuccess
@@ -715,6 +731,18 @@ object Typer {
             }
           case _ => IllegalApply(constant.tpe, loc).toFailure
         }
+
+      case ResolvedAst.Term.Head.Hook(hook, actuals, loc) =>
+        val formals = hook.tpe.args
+        // type arguments with the declared formals.
+        val argsVal = (actuals zip formals) map {
+          case (term, termType) => Term.typer(term, termType, root)
+        }
+        // put everything together and check the return type.
+        @@(@@(argsVal), expect(tpe, hook.tpe.retTpe, loc)) map {
+          case (args, returnType) => TypedAst.Term.Head.Hook(hook, args, returnType, loc)
+        }
+
       case ResolvedAst.Term.Head.NativeField(field, loc) =>
         val tpe = java2flix(field.getType.getCanonicalName)
         TypedAst.Term.Head.NativeField(field, tpe, loc).toSuccess

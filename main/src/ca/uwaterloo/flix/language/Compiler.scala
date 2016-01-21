@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language
 import java.nio.file.{Files, Path}
 
 import ca.uwaterloo.flix.Flix
-import ca.uwaterloo.flix.language.ast.{ParsedAst, SourceInput, TypedAst}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.{Parser, _}
 import ca.uwaterloo.flix.util.{AnsiConsole, Validation}
 import ca.uwaterloo.flix.util.Validation._
@@ -123,19 +123,19 @@ object Compiler {
   /**
     * Compiles the given `string`.
     */
-  def compile(string: String): Validation[TypedAst.Root, CompilationError] = compileStrings(List(string))
+  def compile(string: String): Validation[TypedAst.Root, CompilationError] = compileStrings(List(string), Map.empty)
 
   /**
     * Compiles the given `path`.
     */
-  def compile(path: Path): Validation[TypedAst.Root, CompilationError] = compilePaths(List(path))
+  def compile(path: Path): Validation[TypedAst.Root, CompilationError] = compilePaths(List(path), Map.empty)
 
   /**
     * Compiles the given `strings`.
     */
-  def compileStrings(strings: Traversable[String]): Validation[TypedAst.Root, CompilationError] = {
+  def compileStrings(strings: Traversable[String], hooks: Map[Name.Resolved, Ast.Hook]): Validation[TypedAst.Root, CompilationError] = {
     parseStrings(strings) flatMap {
-      case past => Weeder.weed(past) flatMap {
+      case past => Weeder.weed(past, hooks) flatMap {
         case wast => Resolver.resolve(wast) flatMap {
           case rast => Typer.typecheck(rast)
         }
@@ -146,9 +146,9 @@ object Compiler {
   /**
     * Compiles the given `paths`.
     */
-  def compilePaths(paths: Traversable[Path]): Validation[TypedAst.Root, CompilationError] = {
+  def compilePaths(paths: Traversable[Path], hooks: Map[Name.Resolved, Ast.Hook]): Validation[TypedAst.Root, CompilationError] = {
     parsePaths(paths) flatMap {
-      case past => Weeder.weed(past) flatMap {
+      case past => Weeder.weed(past, hooks) flatMap {
         case wast => Resolver.resolve(wast) flatMap {
           case rast => Typer.typecheck(rast)
         }

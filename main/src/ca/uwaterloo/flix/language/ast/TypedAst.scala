@@ -23,6 +23,7 @@ object TypedAst {
     * @param indexes     a map from collection names to indexes.
     * @param facts       a list of facts.
     * @param rules       a list of rules.
+    * @param hooks       a map from names to hooks.
     * @param time        the time spent in each compiler phase.
     */
   case class Root(constants: Map[Name.Resolved, TypedAst.Definition.Constant],
@@ -32,6 +33,7 @@ object TypedAst {
                   indexes: Map[Name.Resolved, TypedAst.Definition.Index],
                   facts: List[TypedAst.Constraint.Fact],
                   rules: List[TypedAst.Constraint.Rule],
+                  hooks: Map[Name.Resolved, Ast.Hook],
                   time: Time) extends TypedAst {
 
     /**
@@ -176,8 +178,8 @@ object TypedAst {
       }
 
       @deprecated("moved to ExecutableAST", "0.1")
-      val filters: List[TypedAst.Predicate.Body.Function] = body collect {
-        case p: TypedAst.Predicate.Body.Function => p
+      val filters: List[TypedAst.Predicate.Body.ApplyFilter] = body collect {
+        case p: TypedAst.Predicate.Body.ApplyFilter => p
       }
 
       @deprecated("moved to ExecutableAST", "0.1")
@@ -387,6 +389,15 @@ object TypedAst {
       * @param loc  the source location.
       */
     case class Ref(name: Name.Resolved, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    /**
+      * A typed AST node representing a reference to a native JVM function.
+      *
+      * @param hook the native hook.
+      * @param tpe  the type of native function.
+      * @param loc  the source location.
+      */
+    case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a lambda abstraction.
@@ -715,7 +726,12 @@ object TypedAst {
           case (xs, t: TypedAst.Term.Body.Var) => xs + t.ident.name
           case (xs, t: TypedAst.Term.Body.Lit) => xs
         }
-        case TypedAst.Predicate.Body.Function(_, terms, _, _) => terms.foldLeft(Set.empty[String]) {
+        case TypedAst.Predicate.Body.ApplyFilter(_, terms, _, _) => terms.foldLeft(Set.empty[String]) {
+          case (xs, t: TypedAst.Term.Body.Wildcard) => xs
+          case (xs, t: TypedAst.Term.Body.Var) => xs + t.ident.name
+          case (xs, t: TypedAst.Term.Body.Lit) => xs
+        }
+        case TypedAst.Predicate.Body.ApplyHookFilter(_, terms, _, _) => terms.foldLeft(Set.empty[String]) {
           case (xs, t: TypedAst.Term.Body.Wildcard) => xs
           case (xs, t: TypedAst.Term.Body.Var) => xs + t.ident.name
           case (xs, t: TypedAst.Term.Body.Lit) => xs
@@ -768,18 +784,33 @@ object TypedAst {
       }
 
       /**
-        * A typed functional predicate that occurs in the body of a rule.
+        * A filter predicate that occurs in the body of a rule.
         *
         * @param name  the name of the function.
         * @param terms the terms of the predicate.
         * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      case class Function(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body {
+      case class ApplyFilter(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body {
         // TODO: Move
         @deprecated("moved to ExecutableAST", "0.1")
         val termsAsArray: Array[TypedAst.Term.Body] = terms.toArray
       }
+
+      /**
+        * A hook filter predicate that occurs in the body of a rule.
+        *
+        * @param hook  the name hook.
+        * @param terms the terms of the predicate.
+        * @param tpe   the type of the predicate.
+        * @param loc   the source location.
+        */
+      case class ApplyHookFilter(hook: Ast.Hook, terms: List[TypedAst.Term.Body], tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body {
+        // TODO: Move
+        @deprecated("moved to ExecutableAST", "0.1")
+        val termsAsArray: Array[TypedAst.Term.Body] = terms.toArray
+      }
+
 
       /**
         * A typed not equal predicate that occurs in the body of a rule.
@@ -862,6 +893,13 @@ object TypedAst {
         * @param loc  the source location.
         */
       case class Apply(name: Name.Resolved, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head {
+        // TODO: Move
+        @deprecated("moved to ExecutableAST", "0.1")
+        val argsAsArray: Array[TypedAst.Term.Head] = args.toArray
+      }
+
+      // TODO: Doc
+      case class Hook(hook: Ast.Hook, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head {
         // TODO: Move
         @deprecated("moved to ExecutableAST", "0.1")
         val argsAsArray: Array[TypedAst.Term.Head] = args.toArray

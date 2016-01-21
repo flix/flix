@@ -265,11 +265,11 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
    * Filters the given `row` through all filter functions in the body.
    */
   @tailrec
-  private def filter(rule: Constraint.Rule, ps: List[Predicate.Body.Function], row: mutable.Map[String, Value]): Unit = ps match {
+  private def filter(rule: Constraint.Rule, ps: List[Predicate.Body.ApplyFilter], row: mutable.Map[String, Value]): Unit = ps match {
     case Nil =>
       // filter complete, now check disjointness
       disjoint(rule, rule.disjoint, row)
-    case (pred: Predicate.Body.Function) :: xs =>
+    case (pred: Predicate.Body.ApplyFilter) :: xs =>
       val lambda = sCtx.root.constants(pred.name)
       val args = new Array[Value](pred.termsAsArray.length)
       var i = 0
@@ -281,6 +281,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       if (result)
         filter(rule, xs, row)
   }
+
+  // TODO: Need to deal with hook filter functions.
 
   /**
    * Filters the given `row` through all disjointness filters in the body.

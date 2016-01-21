@@ -42,7 +42,7 @@ object Main {
     }
 
     // run flix
-    Flix.mkPath(paths map (s => Paths.get(s)), options) match {
+    Flix.mkPath(paths map (s => Paths.get(s)), Map.empty, options) match {
       case Validation.Success(model, errors) =>
         errors.foreach(e => println(e.format))
         if (options.verbosity != Verbosity.Silent) {

@@ -366,12 +366,12 @@ object Weeder {
   /**
     * Compiles the given parsed `past` to a weeded ast.
     */
-  def weed(past: ParsedAst.Root): Validation[WeededAst.Root, WeederError] = {
+  def weed(past: ParsedAst.Root, hooks: Map[Name.Resolved, Ast.Hook]): Validation[WeededAst.Root, WeederError] = {
     val b = System.nanoTime()
     @@(past.declarations.map(Declaration.compile)) map {
       case decls =>
         val e = System.nanoTime()
-        WeededAst.Root(decls, past.time.copy(weeder = e - b))
+        WeededAst.Root(decls, hooks, past.time.copy(weeder = e - b))
     }
   }
 
@@ -758,7 +758,7 @@ object Weeder {
         * Compiles the given parsed predicate `p` to a weeded head predicate.
         */
       def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Alias] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
-        case p: ParsedAst.Predicate.FunctionOrRelation =>
+        case p: ParsedAst.Predicate.Ambiguous =>
           @@(p.terms.map(t => Term.Head.compile(t, aliases))) map {
             case terms => WeededAst.Predicate.Head.Relation(p.name, terms, p.loc)
           }
@@ -793,9 +793,9 @@ object Weeder {
         * Compiles the given parsed predicate `p` to a weeded body predicate.
         */
       def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
-        case p: ParsedAst.Predicate.FunctionOrRelation =>
+        case p: ParsedAst.Predicate.Ambiguous =>
           @@(p.terms.map(Term.Body.compile)) map {
-            case terms => WeededAst.Predicate.Body.FunctionOrRelation(p.name, terms, past.loc)
+            case terms => WeededAst.Predicate.Body.Ambiguous(p.name, terms, past.loc)
           }
 
         case p: ParsedAst.Predicate.NotEqual =>

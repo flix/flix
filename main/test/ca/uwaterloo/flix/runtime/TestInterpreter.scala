@@ -12,7 +12,7 @@ import scala.collection.mutable
 // Older tests were written before the front-end was completely implemented, so they had to directly construct ASTs.
 
 class TestInterpreter extends FunSuite {
-  val root = Root(Map(), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), new Time(0, 0, 0, 0))
+  val root = Root(Map(), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0))
 
   val loc = SourceLocation.Unknown
 
@@ -279,7 +279,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Ref01") {
     val name = Name.Resolved.mk(List("foo", "bar", "baz"))
     val const = Definition.Constant(name, Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Bool, loc)
-    val root = Root(Map(name -> const), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),new Time(0, 0, 0, 0))
+    val root = Root(Map(name -> const), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0))
     val input = Expression.Lit(Literal.Str("hello", loc), Type.Str, loc)
     val result = Interpreter.eval(input, root)
     assertResult(Value.mkStr("hello"))(result)
@@ -288,7 +288,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Ref02") {
     val name = Name.Resolved.mk(List("foo", "bar", "baz"))
     val const = Definition.Constant(name, Expression.Lit(Literal.Int(5, loc), Type.Int, loc), Type.Int, loc)
-    val root = Root(Map(name -> const), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), new Time(0, 0, 0, 0))
+    val root = Root(Map(name -> const), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0))
     val input = Expression.Ref(name, Type.Int, loc)
     val result = Interpreter.eval(input, root)
     assertResult(Value.mkInt(5))(result)
@@ -297,7 +297,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Ref03") {
     val name = Name.Resolved.mk(List("foo", "bar", "baz"))
     val const = Definition.Constant(name, Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Bool, loc)
-    val root = Root(Map(name -> const), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), new Time(0, 0, 0, 0))
+    val root = Root(Map(name -> const), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0))
     val input = Expression.Ref(name, Type.Bool, loc)
     val result = Interpreter.eval(input, root)
     assertResult(Value.False)(result)
@@ -308,7 +308,7 @@ class TestInterpreter extends FunSuite {
     val name02 = Name.Resolved.mk(List("abc", "def", "ghi"))
     val const01 = Definition.Constant(name01, Expression.Lit(Literal.Str("foo", loc), Type.Str, loc), Type.Str, loc)
     val const02 = Definition.Constant(name01, Expression.Lit(Literal.Str("bar", loc), Type.Str, loc), Type.Str, loc)
-    val root = Root(Map(name01 -> const01, name02 -> const02), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), new Time(0, 0, 0, 0))
+    val root = Root(Map(name01 -> const01, name02 -> const02), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0))
     val input = Expression.Ref(name02, Type.Str, loc)
     val result = Interpreter.eval(input, root)
     assertResult(Value.mkStr("bar"))(result)
@@ -2462,7 +2462,7 @@ class TestInterpreter extends FunSuite {
       Ast.Annotations(List.empty),
       List(), Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Lambda(List(), Type.Bool), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),new Time(0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),Map.empty, new Time(0, 0, 0, 0))
 
     // foo.bar()
     val apply = Term.Head.Apply(name01, List(), Type.Bool, loc)
@@ -2477,7 +2477,7 @@ class TestInterpreter extends FunSuite {
       List(FormalArg(ident01, Type.Int)), Expression.Lit(Literal.Int(3, loc), Type.Int, loc),
       Type.Lambda(List(Type.Int), Type.Int), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),new Time(0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),Map.empty, new Time(0, 0, 0, 0))
 
     // foo.bar(4)
     val apply = Term.Head.Apply(name01, List(Term.Head.Lit(Literal.Int(4, loc), Type.Int, loc)), Type.Int, loc)
@@ -2492,7 +2492,7 @@ class TestInterpreter extends FunSuite {
       List(FormalArg(ident01, Type.Int)), Expression.Var(ident01, Type.Int, loc),
       Type.Lambda(List(Type.Int), Type.Int), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),new Time(0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),Map.empty, new Time(0, 0, 0, 0))
 
     // foo.bar(5)
     val apply = Term.Head.Apply(name01, List(Term.Head.Lit(Literal.Int(5, loc), Type.Int, loc)), Type.Int, loc)
@@ -2512,7 +2512,7 @@ class TestInterpreter extends FunSuite {
         Type.Int, loc),
       Type.Lambda(List(Type.Int), Type.Int), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),new Time(0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),Map.empty, new Time(0, 0, 0, 0))
 
     // foo.bar(42)
     val apply = Term.Head.Apply(name01, List(Term.Head.Lit(Literal.Int(42, loc), Type.Int, loc)), Type.Int, loc)
@@ -2532,7 +2532,7 @@ class TestInterpreter extends FunSuite {
         Type.Int, loc),
       Type.Lambda(List(Type.Int), Type.Int), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),new Time(0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),Map.empty, new Time(0, 0, 0, 0))
 
     // foo.bar(100)
     val apply = Term.Head.Apply(name01, List(Term.Head.Lit(Literal.Int(100, loc), Type.Int, loc)), Type.Int, loc)
@@ -2552,7 +2552,7 @@ class TestInterpreter extends FunSuite {
         Type.Int, loc),
       Type.Lambda(List(Type.Int, Type.Int), Type.Int), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),new Time(0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),Map.empty, new Time(0, 0, 0, 0))
 
     // foo.bar(3, 4)
     val apply = Term.Head.Apply(name01, List(
@@ -2575,7 +2575,7 @@ class TestInterpreter extends FunSuite {
         Type.Bool, loc),
       Type.Lambda(List(Type.Bool, Type.Bool), Type.Bool), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),new Time(0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),Map.empty, new Time(0, 0, 0, 0))
 
     // foo.bar(false, true)
     val apply = Term.Head.Apply(name01, List(
@@ -2602,7 +2602,7 @@ class TestInterpreter extends FunSuite {
         Type.Int, loc),
       Type.Lambda(List(Type.Int, Type.Int, Type.Int), Type.Int), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),new Time(0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),Map.empty, new Time(0, 0, 0, 0))
 
     // foo.bar(2, 42, 5)
     val apply = Term.Head.Apply(name01, List(
@@ -2633,7 +2633,7 @@ class TestInterpreter extends FunSuite {
       Expression.Apply(lambda, List(Expression.Lit(Literal.Int(3, loc), Type.Int, loc)),
         Type.Lambda(List(Type.Int), Type.Int), loc),
       Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),new Time(0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),Map.empty, new Time(0, 0, 0, 0))
 
     // foo.bar(3)(4)
     val apply = Term.Head.Apply(
@@ -2655,7 +2655,7 @@ class TestInterpreter extends FunSuite {
         Type.Int, loc),
       Type.Lambda(List(Type.Lambda(List(Type.Int), Type.Int), Type.Int), Type.Int), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),new Time(0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),Map.empty, new Time(0, 0, 0, 0))
     val innerLambda = Expression.Lambda(
       Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Int)),
@@ -2687,7 +2687,7 @@ class TestInterpreter extends FunSuite {
     val definition01 = Definition.Constant(name01, lambda01, Type.Lambda(List(), Type.Bool), loc)
     val definition02 = Definition.Constant(name02, lambda02, Type.Lambda(List(), Type.Bool), loc)
     val root = Root(Map(name01 -> definition01, name02 -> definition02),
-      TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),new Time(0, 0, 0, 0))
+      TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(),Map.empty, new Time(0, 0, 0, 0))
 
     // abc.def()
     val apply = Term.Head.Apply(name02, List(), Type.Bool, loc)

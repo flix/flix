@@ -11,9 +11,10 @@ object WeededAst {
     * The AST root node.
     *
     * @param declarations the declarations in the AST.
+    * @param hooks        a map from names to hooks.
     * @param time         the time spent in each compiler phase.
     */
-  case class Root(declarations: List[WeededAst.Declaration], time: Time) extends WeededAst
+  case class Root(declarations: List[WeededAst.Declaration], hooks: Map[Name.Resolved, Ast.Hook], time: Time) extends WeededAst
 
   /**
     * A common super-type for AST nodes that represents declarations.
@@ -525,13 +526,13 @@ object WeededAst {
     object Body {
 
       /**
-        * An AST node that represents a functional or relational predicate.
+        * An AST node that represent an ambiguous predicate.
         *
         * @param name  the name of the function or relation.
         * @param terms the terms of the predicate.
         * @param loc   the source location.
         */
-      case class FunctionOrRelation(name: Name.Unresolved, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Ambiguous(name: Name.Unresolved, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst.Predicate.Body
 
       /**
         * An AST node that represents the special not equal predicate.

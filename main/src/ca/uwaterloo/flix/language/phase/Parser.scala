@@ -325,8 +325,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     FunctionOrRelationPredicate | NotEqualPredicate | TracePredicate | ReadPredicate | WritePredicate | ErrorPredicate | AliasPredicate | LoopPredicate
   }
 
-  def FunctionOrRelationPredicate: Rule1[ParsedAst.Predicate.FunctionOrRelation] = rule {
-    SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.FunctionOrRelation
+  def FunctionOrRelationPredicate: Rule1[ParsedAst.Predicate.Ambiguous] = rule {
+    SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Ambiguous
   }
 
   def NotEqualPredicate: Rule1[ParsedAst.Predicate.NotEqual] = rule {

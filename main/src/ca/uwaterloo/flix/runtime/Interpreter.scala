@@ -54,6 +54,7 @@ object Interpreter {
     case Expression.Lit(literal, _, _) => evalLit(literal).toInt
     case Expression.Var(ident, _, loc) => env(ident.name).toInt
     case Expression.Ref(name, _, _) => evalInt(root.constants(name).exp, root, env)
+    case Expression.Hook(hook, tpe, loc) => ??? // TODO
     case apply: Expression.Apply =>
       val evalArgs = new Array[Value](apply.argsAsArray.length)
       var i = 0
@@ -123,6 +124,7 @@ object Interpreter {
     case Expression.Lit(literal, _, _) => evalLit(literal).toBool
     case Expression.Var(ident, _, loc) => env(ident.name).toBool
     case Expression.Ref(name, _, _) => evalBool(root.constants(name).exp, root, env)
+    case Expression.Hook(hook, tpe, loc) => ??? // TODO
     case apply: Expression.Apply =>
       val evalArgs = new Array[Value](apply.argsAsArray.length)
       var i = 0
@@ -187,6 +189,7 @@ object Interpreter {
     case Expression.Lit(literal, _, _) => evalLit(literal)
     case Expression.Var(ident, _, loc) => env(ident.name)
     case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
+    case Expression.Hook(hook, tpe, loc) => ??? // TODO
     case exp: Expression.Lambda =>
       val formals = new Array[String](exp.argsAsArray.length)
       var i = 0
@@ -354,6 +357,7 @@ object Interpreter {
         i = i + 1
       }
       evalCall(function, evalArgs, root, env)
+    case term: Term.Head.Hook => ??? // TODO
     case Term.Head.NativeField(field, tpe, _) => Value.java2flix(field.get(null), tpe)
   }
 

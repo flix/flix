@@ -154,7 +154,7 @@ object Simplifier {
       def simplify(tast: TypedAst.Predicate.Body)(implicit genSym: GenSym): SimplifiedAst.Predicate.Body = tast match {
         case TypedAst.Predicate.Body.Collection(name, terms, tpe, loc) =>
           SimplifiedAst.Predicate.Body.Collection(name, terms map Term.simplify, tpe, loc)
-        case TypedAst.Predicate.Body.Function(name, terms, tpe, loc) =>
+        case TypedAst.Predicate.Body.ApplyFilter(name, terms, tpe, loc) =>
           SimplifiedAst.Predicate.Body.Function(name, terms map Term.simplify, tpe, loc)
         case TypedAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc) =>
           SimplifiedAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc)

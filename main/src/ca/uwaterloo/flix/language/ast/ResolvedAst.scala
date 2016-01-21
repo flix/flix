@@ -17,6 +17,7 @@ object ResolvedAst {
                   indexes: Map[Name.Resolved, ResolvedAst.Definition.Index],
                   facts: List[ResolvedAst.Constraint.Fact],
                   rules: List[ResolvedAst.Constraint.Rule],
+                  hooks: Map[Name.Resolved, Ast.Hook],
                   time: Time) extends ResolvedAst
 
   sealed trait Definition
@@ -145,6 +146,8 @@ object ResolvedAst {
     case class Var(ident: Name.Ident, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Ref(name: Name.Resolved, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class HookRef(hook: Ast.Hook, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Lit(literal: ResolvedAst.Literal, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -294,13 +297,22 @@ object ResolvedAst {
       case class Relation(name: Name.Resolved, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
       /**
-        * A functional predicate that occurs in the body of a rule.
+        * A filter predicate that occurs in the body of a rule.
         *
         * @param name  the name of the function.
         * @param terms the terms of the predicate.
         * @param loc   the source location.
         */
-      case class Function(name: Name.Resolved, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class ApplyFilter(name: Name.Resolved, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
+
+      /**
+        * A hook filter predicate that occurs in the body of a rule.
+        *
+        * @param hook  the hook.
+        * @param terms the terms of the predicate.
+        * @param loc   the source location.
+        */
+      case class ApplyHookFilter(hook: Ast.Hook, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
       /**
         * A not equal predicate that occurs in the body of a rule.
@@ -371,6 +383,9 @@ object ResolvedAst {
         * @param loc  the location.
         */
       case class Apply(name: Name.Resolved, args: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Term.Head
+
+      // TODO:
+      case class Hook(hook: Ast.Hook, args: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Term.Head
 
       /**
         * An AST node representing a reference to a native JVM static field.

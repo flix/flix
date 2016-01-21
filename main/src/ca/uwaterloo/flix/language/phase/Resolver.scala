@@ -260,20 +260,22 @@ object Resolver {
   }
 
   object SymbolTable {
-    val empty = SymbolTable(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
+    def empty(hooks: Map[Name.Resolved, Ast.Hook]) = SymbolTable(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, hooks)
   }
 
   // TODO: Come up with a SymbolTable that can give the set of definitions in each namespace.
+
 
   case class SymbolTable(enums: Map[Name.Resolved, WeededAst.Definition.Enum],
                          constants: Map[Name.Resolved, WeededAst.Definition.Constant],
                          lattices: Map[WeededAst.Type, (List[String], WeededAst.Definition.BoundedLattice)],
                          relations: Map[Name.Resolved, WeededAst.Collection],
                          indexes: Map[Name.Resolved, WeededAst.Definition.Index],
-                         types: Map[Name.Resolved, WeededAst.Type]) {
+                         types: Map[Name.Resolved, WeededAst.Type],
+                         hooks: Map[Name.Resolved, Ast.Hook]) {
 
     // TODO: Cleanup
-    def lookupConstant(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Constant), ResolverError] = {
+    def lookupConstant(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, Either[WeededAst.Definition.Constant, Ast.Hook]), ResolverError] = {
       val rname = Name.Resolved.mk(
         if (name.parts.size == 1)
           namespace ::: name.parts.head :: Nil
@@ -281,8 +283,14 @@ object Resolver {
           name.parts
       )
       constants.get(rname) match {
-        case None => UnresolvedConstantReference(name, namespace, name.loc).toFailure
-        case Some(d) => (rname, d).toSuccess
+        case None => {
+          // lookup in hooks
+          hooks.get(rname) match {
+            case None => UnresolvedConstantReference(name, namespace, name.loc).toFailure
+            case Some(hook) => (rname, Right(hook)).toSuccess
+          }
+        }
+        case Some(d) => (rname, Left(d)).toSuccess
       }
     }
 
@@ -340,8 +348,10 @@ object Resolver {
   def resolve(wast: WeededAst.Root): Validation[ResolvedAst.Root, ResolverError] = {
     val b = System.nanoTime()
 
+    // TODO: Check that hooks do not overlap with any names in the program.
+
     // TODO: Can anyone actually understand this: ??
-    val symsVal = Validation.fold[WeededAst.Declaration, SymbolTable, ResolverError](wast.declarations, SymbolTable.empty) {
+    val symsVal = Validation.fold[WeededAst.Declaration, SymbolTable, ResolverError](wast.declarations, SymbolTable.empty(wast.hooks)) {
       case (msyms, d) => Declaration.symbolsOf(d, List.empty, msyms)
     }
 
@@ -378,7 +388,7 @@ object Resolver {
         @@(collectedConstants, collectedDirectives, collectedEnums, collectedLattices, collectionsVal, collectedIndexes, collectedFacts, collectedRules) map {
           case (constants, directives, enums, lattices, collections, indexes, facts, rules) =>
             val e = System.nanoTime()
-            ResolvedAst.Root(constants, directives, enums, lattices, collections, indexes, facts, rules, wast.time.copy(resolver = e - b))
+            ResolvedAst.Root(constants, directives, enums, lattices, collections, indexes, facts, rules, wast.hooks, wast.time.copy(resolver = e - b))
         }
     }
   }
@@ -660,7 +670,8 @@ object Resolver {
         case WeededAst.Expression.Var(name, loc) => name.parts match {
           case Seq(x) if locals contains x => ResolvedAst.Expression.Var(Name.Ident(name.sp1, x, name.sp2), loc).toSuccess
           case _ => syms.lookupConstant(name, namespace) map {
-            case (rname, defn) => ResolvedAst.Expression.Ref(rname, loc)
+            case (rname, Left(defn)) => ResolvedAst.Expression.Ref(rname, loc)
+            case (rname, Right(hook)) => ResolvedAst.Expression.HookRef(hook, loc)
           }
         }
 
@@ -847,7 +858,7 @@ object Resolver {
         * Performs symbol resolution in the given body predicate `wast` in the given `namespace` with the given symbol table `syms`.
         */
       def resolve(wast: WeededAst.Predicate.Body, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Body, ResolverError] = wast match {
-        case WeededAst.Predicate.Body.FunctionOrRelation(name, wterms, loc) =>
+        case WeededAst.Predicate.Body.Ambiguous(name, wterms, loc) =>
           val termsVal = @@(wterms map (t => Term.Body.resolve(t, namespace, syms)))
 
           if (name.parts.last.head.isUpper) {
@@ -856,7 +867,8 @@ object Resolver {
             }
           } else {
             @@(syms.lookupConstant(name, namespace), termsVal) map {
-              case ((rname, defn), terms) => ResolvedAst.Predicate.Body.Function(rname, terms, loc)
+              case ((rname, Left(defn)), terms) => ResolvedAst.Predicate.Body.ApplyFilter(rname, terms, loc)
+              case ((rname, Right(hook)), terms) => ResolvedAst.Predicate.Body.ApplyHookFilter(hook, terms, loc)
             }
           }
 
@@ -899,8 +911,11 @@ object Resolver {
           }
         case WeededAst.Term.Head.Apply(name, wargs, loc) =>
           syms.lookupConstant(name, namespace) flatMap {
-            case (rname, defn) => @@(wargs map (arg => resolve(arg, namespace, syms))) map {
+            case (rname, Left(defn)) => @@(wargs map (arg => resolve(arg, namespace, syms))) map {
               case args => ResolvedAst.Term.Head.Apply(rname, args.toList, loc)
+            }
+            case (rname, Right(hook)) => @@(wargs map (arg => resolve(arg, namespace, syms))) map {
+              case args => ResolvedAst.Term.Head.Hook(hook, args.toList, loc)
             }
           }
         case WeededAst.Term.Head.Native(className, memberName, loc) =>
