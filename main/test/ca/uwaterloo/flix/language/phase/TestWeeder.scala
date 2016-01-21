@@ -1,12 +1,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.Flix
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.ast.ParsedAst
+import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
+import org.scalatest.FunSuite
 
 import scala.collection.immutable.Seq
-
-import org.scalatest.FunSuite
 
 class TestWeeder extends FunSuite {
 
@@ -356,7 +354,7 @@ class TestWeeder extends FunSuite {
         |fn foo(x: Int): Int = 42
         |
       """.stripMargin
-    val result = Flix.mkStr(input)
+    val result = new Flix.Builder().addStr(input).solve()
 
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAnnotation])
   }
@@ -367,7 +365,7 @@ class TestWeeder extends FunSuite {
         |fn foo(x: Int): Int = 42
         |
       """.stripMargin
-    val result = Flix.mkStr(input)
+    val result = new Flix.Builder().addStr(input).solve()
 
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAnnotation])
   }
@@ -378,7 +376,7 @@ class TestWeeder extends FunSuite {
         |fn foo(x: Int): Int = 42
         |
       """.stripMargin
-    val result = Flix.mkStr(input)
+    val result = new Flix.Builder().addStr(input).solve()
 
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalAnnotation])
   }

@@ -78,12 +78,14 @@ object Compiler {
   /**
     * Returns the abstract syntax tree of the given `string`.
     */
+  @deprecated("use Flix.Builder", "0.1.0")
   def parse(string: String): Validation[ParsedAst.Root, CompilationError] =
     parse(SourceInput.Str(string))
 
   /**
     * Returns the abstract syntax tree of the given `strings`.
     */
+  @deprecated("use Flix.Builder", "0.1.0")
   def parseStrings(strings: Traversable[String]): Validation[ParsedAst.Root, CompilationError] = {
     @@(strings map parse) map {
       case asts => asts.reduce[ParsedAst.Root] {
@@ -95,6 +97,7 @@ object Compiler {
   /**
     * Returns the abstract syntax tree of the given `path`.
     */
+  @deprecated("use Flix.Builder", "0.1.0")
   def parse(path: Path): Validation[ParsedAst.Root, CompilationError] =
     if (!Files.exists(path))
       throw new RuntimeException(s"Path '$path' does not exist.")
@@ -112,6 +115,7 @@ object Compiler {
   /**
     * Returns the abstract syntax tree of the given `paths`.
     */
+  @deprecated("use Flix.Builder", "0.1.0")
   def parsePaths(paths: Traversable[Path]): Validation[ParsedAst.Root, CompilationError] = {
     @@(paths map parse) map {
       case asts => asts.reduce[ParsedAst.Root] {
@@ -123,16 +127,19 @@ object Compiler {
   /**
     * Compiles the given `string`.
     */
+  @deprecated("use Flix.Builder", "0.1.0")
   def compile(string: String): Validation[TypedAst.Root, CompilationError] = compileStrings(List(string), Map.empty)
 
   /**
     * Compiles the given `path`.
     */
+  @deprecated("use Flix.Builder", "0.1.0")
   def compile(path: Path): Validation[TypedAst.Root, CompilationError] = compilePaths(List(path), Map.empty)
 
   /**
     * Compiles the given `strings`.
     */
+  @deprecated("use Flix.Builder", "0.1.0")
   def compileStrings(strings: Traversable[String], hooks: Map[Name.Resolved, Ast.Hook]): Validation[TypedAst.Root, CompilationError] = {
     parseStrings(strings) flatMap {
       case past => Weeder.weed(past, hooks) flatMap {
@@ -146,6 +153,7 @@ object Compiler {
   /**
     * Compiles the given `paths`.
     */
+  @deprecated("use Flix.Builder", "0.1.0")
   def compilePaths(paths: Traversable[Path], hooks: Map[Name.Resolved, Ast.Hook]): Validation[TypedAst.Root, CompilationError] = {
     parsePaths(paths) flatMap {
       case past => Weeder.weed(past, hooks) flatMap {

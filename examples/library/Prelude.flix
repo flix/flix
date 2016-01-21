@@ -121,7 +121,32 @@ impl PartialOrder for (A: PartialOrder, B: PartialOrder) {
 
 }
 
-
+//
+//idris:
+//The class and instance keywords have been deprecated. The class keyword has been replaced by interface. Instances are now called implementations and are introduced by giving the interface name and parameters. For example:
+//interface Eq a where
+//    (==) : ty -> ty -> Bool
+//    (/=) : ty -> ty -> Bool
+//
+//    (==) x y = not (/=) x y
+//    (/=) x y = not (==) x y
+//
+//Eq Bool where
+//    True  == True  = True
+//    True  == False = False
+//    False == True  = False
+//    False == False = True
+//
+//Eq a => Eq (Maybe a) where
+//    Nothing  == Nothing  = True
+//    Nothing  == (Just _) = False
+//    (Just _) == Nothing  = False
+//    (Just a) == (Just b) = a == b
+//This is as before, but without the instance keyword.
+//
+//The rationale for this change is that interfaces as implemented in Idris have several differences from Haskell type classes, even though they have a lot in common. They can be parameterised by things which are not types (including values and interfaces themselves). They are primarily for overloading interfaces, rather than classifying types, and hence there can be multiple implementations.
+//
+//New Fractional interface, with functions (/) and recip.
 
 
 //// rust:

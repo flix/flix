@@ -7,6 +7,8 @@ import ca.uwaterloo.flix.runtime.Invokable
   */
 object Ast {
 
+  // TODO: When to use this, and when to use the package object?
+
   /**
     * A common super type for AST nodes that represent annotations.
     */
@@ -132,9 +134,10 @@ object Ast {
   /**
     * A reference to an implementation of the [[Invokable]] interface.
     *
-    * @param inv the functional object.
-    * @param tpe the type of the function.
+    * @param name the fully qualified name.
+    * @param inv  the functional object.
+    * @param tpe  the type of the function.
     */
-  case class Hook(inv: Invokable, tpe: Type.Lambda)
+  case class Hook(name: Name.Resolved, inv: Invokable, tpe: Type.Lambda)
 
 }

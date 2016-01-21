@@ -1,10 +1,7 @@
-package ca.uwaterloo.flix.language.frontend
+package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.ast.ParsedAst
 import ca.uwaterloo.flix.language.ast.ParsedAst.Literal
-import ca.uwaterloo.flix.language.phase.Parser
-
+import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import org.scalatest.FunSuite
 
 // TODO: Cleanup names. Numbering and remove the Parser. prefix.
