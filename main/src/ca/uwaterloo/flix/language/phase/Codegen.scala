@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Definition, Expression, LoadExpression, StoreExpression}
 import ca.uwaterloo.flix.language.ast._
 import org.objectweb.asm.Opcodes._
@@ -119,18 +118,18 @@ object Codegen {
   }
 
   private def compileExpression(context: Context, visitor: MethodVisitor)(expr: Expression): Unit = expr match {
-    case Unit => ???
-    case True => visitor.visitInsn(ICONST_1)
-    case False => visitor.visitInsn(ICONST_0)
-    case Int(i) => compileInt(visitor)(i)
-    case Int8(b) => compileInt(visitor)(b)
-    case Int16(s) => compileInt(visitor)(s)
-    case Int32(i) => compileInt(visitor)(i)
-    case Int64(l) => compileInt(visitor)(l, isLong = true)
-    case Str(s, loc) => ???
+    case Expression.Unit => ???
+    case Expression.True => visitor.visitInsn(ICONST_1)
+    case Expression.False => visitor.visitInsn(ICONST_0)
+    case Expression.Int(i) => compileInt(visitor)(i)
+    case Expression.Int8(b) => compileInt(visitor)(b)
+    case Expression.Int16(s) => compileInt(visitor)(s)
+    case Expression.Int32(i) => compileInt(visitor)(i)
+    case Expression.Int64(l) => compileInt(visitor)(l, isLong = true)
+    case Expression.Str(s, loc) => ???
     case load: LoadExpression => compileLoadExpr(context, visitor)(load)
     case store: StoreExpression => compileStoreExpr(context, visitor)(store)
-    case Var(ident, offset, tpe, loc) =>
+    case Expression.Var(ident, offset, tpe, loc) =>
       tpe match {
         case Type.Var(x) => ???
         case Type.Unit => ???
@@ -151,20 +150,20 @@ object Codegen {
         case Type.Abs(name, t) => ???
         case Type.Any => ???
       }
-    case Ref(name, tpe, loc) => ???
-    case Lambda(annotations, args, body, tpe, loc) => ???
-    case Apply(name, args, tpe, loc) =>
+    case Expression.Ref(name, tpe, loc) => ???
+    case Expression.Lambda(annotations, args, body, tpe, loc) => ???
+    case Expression.Apply(name, args, tpe, loc) =>
       args.foreach(compileExpression(context, visitor))
       visitor.visitMethodInsn(INVOKESTATIC, context.clazz, decorate(name),
         descriptor(context.getFunction(name).tpe), false)
-    case Unary(op, exp, tpe, loc) => compileUnaryExpr(context, visitor)(op, exp, tpe)
-    case Binary(op, exp1, exp2, tpe, loc) => op match {
+    case Expression.Unary(op, exp, tpe, loc) => compileUnaryExpr(context, visitor)(op, exp, tpe)
+    case Expression.Binary(op, exp1, exp2, tpe, loc) => op match {
       case o: ArithmeticOperator => compileArithmeticExpr(context, visitor)(o, exp1, exp2, tpe)
       case o: ComparisonOperator => compileComparisonExpr(context, visitor)(o, exp1, exp2, tpe)
       case o: LogicalOperator => compileLogicalExpr(context, visitor)(o, exp1, exp2, tpe)
       case o: BitwiseOperator => compileBitwiseExpr(context, visitor)(o, exp1, exp2, tpe)
     }
-    case IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       val ifElse = new Label()
       val ifEnd = new Label()
       compileExpression(context, visitor)(exp1)
@@ -174,7 +173,7 @@ object Codegen {
       visitor.visitLabel(ifElse)
       compileExpression(context, visitor)(exp3)
       visitor.visitLabel(ifEnd)
-    case Let(ident, offset, exp1, exp2, tpe, loc) =>
+    case Expression.Let(ident, offset, exp1, exp2, tpe, loc) =>
       compileExpression(context, visitor)(exp1)
       exp1.tpe match {
         case Type.Var(x) => ???
@@ -197,13 +196,13 @@ object Codegen {
         case Type.Any => ???
       }
       compileExpression(context, visitor)(exp2)
-    case TagOf(exp, enum, tag, tpe, loc) => ???
-    case Tag(enum, tag, exp, tpe, loc) => ???
-    case TupleAt(base, offset, tpe, loc) => ???
-    case Tuple(elms, tpe, loc) => ???
-    case Set(elms, tpe, loc) => ???
-    case Error(tpe, loc) => ???
-    case MatchError(tpe, loc) => ???
+    case Expression.TagOf(exp, enum, tag, tpe, loc) => ???
+    case Expression.Tag(enum, tag, exp, tpe, loc) => ???
+    case Expression.TupleAt(base, offset, tpe, loc) => ???
+    case Expression.Tuple(elms, tpe, loc) => ???
+    case Expression.Set(elms, tpe, loc) => ???
+    case Expression.Error(tpe, loc) => ???
+    case Expression.MatchError(tpe, loc) => ???
   }
 
   /*
