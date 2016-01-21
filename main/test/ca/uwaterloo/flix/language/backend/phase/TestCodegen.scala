@@ -405,6 +405,24 @@ class TestCodegen extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Unit                                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Codegen - Unit") {
+    import ca.uwaterloo.flix.runtime.Value
+    val definition = Function(name, args = List(),
+      body = Unit,
+      Type.Lambda(List(), Type.Unit), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+
+    assertResult(Value.Unit)(result)
+  }
+
+  // TODO: Boolean literals
+
+  /////////////////////////////////////////////////////////////////////////////
   // Int constants                                                           //
   /////////////////////////////////////////////////////////////////////////////
 
@@ -5706,6 +5724,19 @@ class TestCodegen extends FunSuite {
     val result = code.call(name)
 
     assertResult(Value.mkTag(constPropName, identV.name, Value.True))(result)
+  }
+
+  test("Codegen - Tag03") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List(),
+      body = Tag(constPropName, identT, Unit, enumTpe, loc),
+      Type.Lambda(List(), enumTpe), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.mkTag(constPropName, identT.name, Value.Unit))(result)
   }
 
 }

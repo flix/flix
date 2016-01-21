@@ -23,29 +23,34 @@ object Codegen {
   /*
    * Returns the internal name of the JVM type that `tpe` maps to.
    */
-  def descriptor(tpe: Type): String = tpe match {
-    case Type.Var(x) => ???
-    case Type.Unit => ???
-    case Type.Bool => "Z"   // JVM boolean
-    case Type.Int8 => "B"   // JVM byte (8 bits)
-    case Type.Int16 => "S"  // JVM short (16 bits)
-    case Type.Int32 | Type.Int => "I"  // JVM int (32 bits)
-    case Type.Int64 => "J"  // JVM long (64 bits)
-    case Type.Str => ???
-    case Type.Tag(_, _, _) | Type.Enum(_) =>
-      // TODO: Can we return something of Type.Tag? Looks like we only return Type.Enum, which is a set of Type.Tags.
-      asm.Type.getDescriptor(classOf[ca.uwaterloo.flix.runtime.Value.Tag])
-    case Type.Tuple(elms) => ???
-    case Type.Opt(elmType) => ???
-    case Type.Lst(elmType) => ???
-    case Type.Set(elmType) => ???
-    case Type.Map(k, v) => ???
-    case Type.Lambda(args, retTpe) => s"""(${ args.map(descriptor).mkString })${descriptor(retTpe)}"""
-    case Type.Predicate(terms) => ???
-    case Type.Native(name) => ???
-    case Type.Char => ???
-    case Type.Abs(name, t) => ???
-    case Type.Any => ???
+  def descriptor(tpe: Type): String = {
+    import ca.uwaterloo.flix.runtime.Value
+    tpe match {
+      case Type.Var(x) => ???
+      case Type.Unit =>
+        // TODO: Can we do better than hardcoding?
+        "Lca/uwaterloo/flix/runtime/Value$Unit$;"
+      case Type.Bool => "Z"   // JVM boolean
+      case Type.Int8 => "B"   // JVM byte (8 bits)
+      case Type.Int16 => "S"  // JVM short (16 bits)
+      case Type.Int32 | Type.Int => "I"  // JVM int (32 bits)
+      case Type.Int64 => "J"  // JVM long (64 bits)
+      case Type.Str => ???
+      case Type.Tag(_, _, _) | Type.Enum(_) =>
+        // TODO: Can we return something of Type.Tag? Looks like we only return Type.Enum, which is a set of Type.Tags.
+        asm.Type.getDescriptor(classOf[Value.Tag])
+      case Type.Tuple(elms) => ???
+      case Type.Opt(elmType) => ???
+      case Type.Lst(elmType) => ???
+      case Type.Set(elmType) => ???
+      case Type.Map(k, v) => ???
+      case Type.Lambda(args, retTpe) => s"""(${ args.map(descriptor).mkString })${descriptor(retTpe)}"""
+      case Type.Predicate(terms) => ???
+      case Type.Native(name) => ???
+      case Type.Char => ???
+      case Type.Abs(name, t) => ???
+      case Type.Any => ???
+    }
   }
 
   /*
@@ -95,11 +100,10 @@ object Codegen {
 
     function.tpe.retTpe match {
       case Type.Var(x) => ???
-      case Type.Unit => ???
       case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Str => ???
-      case Type.Tag(_, _, _) | Type.Enum(_) => mv.visitInsn(ARETURN)
+      case Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) => mv.visitInsn(ARETURN)
       case Type.Tuple(elms) => ???
       case Type.Opt(elmType) => ???
       case Type.Lst(elmType) => ???
@@ -119,7 +123,8 @@ object Codegen {
   }
 
   private def compileExpression(context: Context, visitor: MethodVisitor)(expr: Expression): Unit = expr match {
-    case Expression.Unit => ???
+    case Expression.Unit =>
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$Unit$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$Unit$;");
     case Expression.True => visitor.visitInsn(ICONST_1)
     case Expression.False => visitor.visitInsn(ICONST_0)
     case Expression.Int(i) => compileInt(visitor)(i)
@@ -133,11 +138,10 @@ object Codegen {
     case Expression.Var(ident, offset, tpe, loc) =>
       tpe match {
         case Type.Var(x) => ???
-        case Type.Unit => ???
         case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ILOAD, offset)
         case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
         case Type.Str => ???
-        case Type.Tag(_, _, _) | Type.Enum(_) => visitor.visitVarInsn(ALOAD, offset)
+        case Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) => visitor.visitVarInsn(ALOAD, offset)
         case Type.Tuple(elms) => ???
         case Type.Opt(elmType) => ???
         case Type.Lst(elmType) => ???
@@ -177,11 +181,10 @@ object Codegen {
       compileExpression(context, visitor)(exp1)
       exp1.tpe match {
         case Type.Var(x) => ???
-        case Type.Unit => ???
         case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ISTORE, offset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
         case Type.Str => ???
-        case Type.Tag(_, _, _) | Type.Enum(_) => visitor.visitVarInsn(ASTORE, offset)
+        case Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) => visitor.visitVarInsn(ASTORE, offset)
         case Type.Tuple(elms) => ???
         case Type.Opt(elmType) => ???
         case Type.Lst(elmType) => ???
@@ -212,7 +215,7 @@ object Codegen {
       // load `exp`, boxing as a Flix value
       exp.tpe match {
         case Type.Var(x) => ???
-        case Type.Unit => ???
+        case Type.Unit => compileExpression(context, visitor)(exp)
         case Type.Bool =>
           visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
           val boolFalse = new Label()
