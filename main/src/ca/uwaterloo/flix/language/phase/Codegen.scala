@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Definition, Expression, LoadExpression, StoreExpression}
 import ca.uwaterloo.flix.language.ast._
+import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.util.CheckClassAdapter
 import org.objectweb.asm.{ClassVisitor, ClassWriter, Label, MethodVisitor}
@@ -31,8 +32,9 @@ object Codegen {
     case Type.Int32 | Type.Int => "I"  // JVM int (32 bits)
     case Type.Int64 => "J"  // JVM long (64 bits)
     case Type.Str => ???
-    case Type.Tag(enum, tag, t) => ???
-    case Type.Enum(cases) => ???
+    case Type.Tag(_, _, _) | Type.Enum(_) =>
+      // TODO: Can we return something of Type.Tag? Looks like we only return Type.Enum, which is a set of Type.Tags.
+      asm.Type.getDescriptor(classOf[ca.uwaterloo.flix.runtime.Value.Tag])
     case Type.Tuple(elms) => ???
     case Type.Opt(elmType) => ???
     case Type.Lst(elmType) => ???
@@ -97,8 +99,7 @@ object Codegen {
       case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Str => ???
-      case Type.Tag(enum, tag, tpe) => ???
-      case Type.Enum(cases) => ???
+      case Type.Tag(_, _, _) | Type.Enum(_) => mv.visitInsn(ARETURN)
       case Type.Tuple(elms) => ???
       case Type.Opt(elmType) => ???
       case Type.Lst(elmType) => ???
@@ -136,8 +137,7 @@ object Codegen {
         case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ILOAD, offset)
         case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
         case Type.Str => ???
-        case Type.Tag(name, id, typ) => ???
-        case Type.Enum(cases) => ???
+        case Type.Tag(_, _, _) | Type.Enum(_) => visitor.visitVarInsn(ALOAD, offset)
         case Type.Tuple(elms) => ???
         case Type.Opt(elmType) => ???
         case Type.Lst(elmType) => ???
@@ -181,8 +181,7 @@ object Codegen {
         case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ISTORE, offset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
         case Type.Str => ???
-        case Type.Tag(name, id, typ) => ???
-        case Type.Enum(cases) => ???
+        case Type.Tag(_, _, _) | Type.Enum(_) => visitor.visitVarInsn(ASTORE, offset)
         case Type.Tuple(elms) => ???
         case Type.Opt(elmType) => ???
         case Type.Lst(elmType) => ???
@@ -197,7 +196,47 @@ object Codegen {
       }
       compileExpression(context, visitor)(exp2)
     case Expression.TagOf(exp, enum, tag, tpe, loc) => ???
-    case Expression.Tag(enum, tag, exp, tpe, loc) => ???
+    case Expression.Tag(enum, tag, exp, tpe, loc) =>
+      // TODO: Can we use reflection instead of hardcoding everything?
+      // load the Value companion object (so we can call Value.mkTag)
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+
+      // load `enum` as a string
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/Name$Resolved$", "MODULE$", "Lca/uwaterloo/flix/language/ast/Name$Resolved$;")
+      visitor.visitLdcInsn(enum.parts.mkString("::"))
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/Name$Resolved$", "mk", "(Ljava/lang/String;)Lca/uwaterloo/flix/language/ast/Name$Resolved;", false)
+
+      // load `tag.name`
+      visitor.visitLdcInsn(tag.name)
+
+      // load `exp`, boxing as a Flix value
+      exp.tpe match {
+        case Type.Var(x) => ???
+        case Type.Unit => ???
+        case Type.Bool => ???
+        case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int =>
+          visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+          compileExpression(context, visitor)(exp)
+          visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt", "(I)Lca/uwaterloo/flix/runtime/Value$Int;", false)
+        case Type.Int64 => ??? // Value.Int doesn't support longs
+        case Type.Str => ???
+        case Type.Tag(_, _, _) => ???
+        case Type.Enum(_) => ???
+        case Type.Tuple(elms) => ???
+        case Type.Opt(elmType) => ???
+        case Type.Lst(elmType) => ???
+        case Type.Set(elmType) => ???
+        case Type.Map(k, v) => ???
+        case Type.Lambda(args, retTpe) => ???
+        case Type.Predicate(terms) => ???
+        case Type.Native(name) => ???
+        case Type.Char => ???
+        case Type.Abs(name, t) => ???
+        case Type.Any => ???
+      }
+
+      // call Value.mkTag
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkTag", "(Lca/uwaterloo/flix/language/ast/Name$Resolved;Ljava/lang/String;Lca/uwaterloo/flix/runtime/Value;)Lca/uwaterloo/flix/runtime/Value$Tag;", false);
     case Expression.TupleAt(base, offset, tpe, loc) => ???
     case Expression.Tuple(elms, tpe, loc) => ???
     case Expression.Set(elms, tpe, loc) => ???

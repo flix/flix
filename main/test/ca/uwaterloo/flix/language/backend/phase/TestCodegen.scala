@@ -17,6 +17,18 @@ class TestCodegen extends FunSuite {
   val name02 = Name.Resolved.mk(List("foo", "bar", "g"))
   val name03 = Name.Resolved.mk(List("foo", "bar", "h"))
 
+  def toIdent(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
+
+  val constPropName = Name.Resolved.mk(List("foo", "bar", "baz", "ConstProp"))
+  val identB = toIdent("Bot")
+  val identV = toIdent("Val")
+  val identT = toIdent("Top")
+
+  val tagTpeB = Type.Tag(name, identB, Type.Unit)
+  val tagTpeV = Type.Tag(name, identV, Type.Int)
+  val tagTpeT = Type.Tag(name, identT, Type.Unit)
+  val enumTpe = Type.Enum(Map("ConstProp.Bot" -> tagTpeB, "ConstProp.Val" -> tagTpeV, "ConstProp.Top" -> tagTpeT))
+
   val loc = SourceLocation.Unknown
   val sp = SourcePosition.Unknown
   val compiledClassName = "ca.uwaterloo.flix.compiled.FlixDefinitions"
@@ -5664,4 +5676,22 @@ class TestCodegen extends FunSuite {
     assertResult(1234)(result01)
     assertResult(5678)(result02)
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Tag                                                                     //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Codegen - Tag01") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List(),
+      body = Tag(constPropName, identV, Int32(42), enumTpe, loc),
+      Type.Lambda(List(), enumTpe), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.mkTag(constPropName, identV.name, Value.mkInt(42)))(result)
+  }
+
 }
