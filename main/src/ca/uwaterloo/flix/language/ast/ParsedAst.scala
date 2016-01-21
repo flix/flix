@@ -540,6 +540,7 @@ object ParsedAst {
       * @param name the fully qualified name of the field or method.
       * @param sp2  the position of the last character in the expression.
       */
+    @deprecated("replaced by new Flix builder", "0.1.0")
     case class Native(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
@@ -819,6 +820,7 @@ object ParsedAst {
       * @param name the fully qualified name of the field or method.
       * @param sp2  the position of the last character in the term.
       */
+    @deprecated("replaced by new Flix builder", "0.1.0")
     case class Native(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst.Term {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
@@ -883,6 +885,7 @@ object ParsedAst {
       * @param name the fully qualified name of the type.
       * @param sp2  the position of the last character in the term.
       */
+    @deprecated("replaced by new Flix builder", "0.1.0")
     case class Native(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst.Type {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
