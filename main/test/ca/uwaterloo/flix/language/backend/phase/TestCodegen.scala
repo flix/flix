@@ -24,9 +24,9 @@ class TestCodegen extends FunSuite {
   val identV = toIdent("Val")
   val identT = toIdent("Top")
 
-  val tagTpeB = Type.Tag(name, identB, Type.Unit)
-  val tagTpeV = Type.Tag(name, identV, Type.Int)
-  val tagTpeT = Type.Tag(name, identT, Type.Unit)
+  val tagTpeB = Type.Tag(constPropName, identB, Type.Unit)
+  val tagTpeV = Type.Tag(constPropName, identV, Type.Int)
+  val tagTpeT = Type.Tag(constPropName, identT, Type.Unit)
   val enumTpe = Type.Enum(Map("ConstProp.Bot" -> tagTpeB, "ConstProp.Val" -> tagTpeV, "ConstProp.Top" -> tagTpeT))
 
   val loc = SourceLocation.Unknown
@@ -5692,6 +5692,20 @@ class TestCodegen extends FunSuite {
     val result = code.call(name)
 
     assertResult(Value.mkTag(constPropName, identV.name, Value.mkInt(42)))(result)
+  }
+
+  test("Codegen - Tag02") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val enum = Type.Enum(Map("ConstProp.Val" -> Type.Tag(constPropName, identV, Type.Bool)))
+    val definition = Function(name, args = List(),
+      body = Tag(constPropName, identV, True, enum, loc),
+      Type.Lambda(List(), enum), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.mkTag(constPropName, identV.name, Value.True))(result)
   }
 
 }

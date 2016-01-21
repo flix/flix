@@ -213,7 +213,17 @@ object Codegen {
       exp.tpe match {
         case Type.Var(x) => ???
         case Type.Unit => ???
-        case Type.Bool => ???
+        case Type.Bool =>
+          visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+          val boolFalse = new Label()
+          val boolEnd = new Label()
+          compileExpression(context, visitor)(exp)
+          visitor.visitJumpInsn(IFEQ, boolFalse)
+          visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "True", "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
+          visitor.visitJumpInsn(GOTO, boolEnd)
+          visitor.visitLabel(boolFalse)
+          visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "False", "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
+          visitor.visitLabel(boolEnd)
         case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int =>
           visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
           compileExpression(context, visitor)(exp)
