@@ -87,12 +87,10 @@ object Flix {
       * Adds the given invokable `inv` with the given `name.`
       *
       * @param name the fully qualified name for the invokable.
-      * @param inv  the invokable method.
       * @param tpe  the Flix type of the invokable.
-      *
-      *             NB: The `tpe` argument is subject to change.
+      * @param inv  the invokable method.
       */
-    def addHook(name: String, inv: Invokable, tpe: Type.Lambda): Builder = {
+    def addHook(name: String, tpe: Type.Lambda, inv: Invokable): Builder = {
       if (name == null)
         throw new IllegalArgumentException("'name' must be non-null.")
       if (inv == null)
