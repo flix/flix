@@ -46,16 +46,4 @@ namespace Company {
     WorkerAddress(name, address) :- Employee(name, dept), Building(address, dept).
     WorkerAddress(name, address) :- Intern(name, dept, _, _), Building(address, dept).
 
-    assert Employee("Adam Smith", "Sales").
-    assert WorkerAddress("Adam Smith", "123 Main St").
-    assert Error#(name) :- Intern(name, _, _, _), Worker(name, _).
-
-    print WorkerAddress.
-
-// TODO: Rename to trace?
-    Trace#(x) :- Employee(x, _).
-    Write#(x, "tmp.txt") :- Employee(x, _).
-//    Error#(x) :- Employee(x, _), Read#(x, "tmp.txt").
-// TODO: Figure out how to deal with Read.
-
 }

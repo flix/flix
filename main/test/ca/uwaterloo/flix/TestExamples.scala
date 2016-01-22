@@ -266,24 +266,6 @@ class TestExamples extends FunSuite {
     assert(model.isSuccess)
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Misc                                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-
-  ignore("IDE.flix") {
-    val model = new Flix.Builder().addPath("./examples/analysis/IDE.flix").solve()
-    assert(model.isSuccess)
-  }
-
-  test("IFDS.flix") {
-    val model = new Flix.Builder().addPath("./examples/analysis/IFDS.flix").solve()
-    assert(model.isSuccess)
-  }
-
-  ignore("Interval.flix") {
-    val model = new Flix.Builder().addPath("./examples/domains/Interval.flix").solve()
-    model.get
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Entities                                                                //
@@ -291,11 +273,6 @@ class TestExamples extends FunSuite {
 
   test("Bank.flix") {
     val model = new Flix.Builder().addPath("./examples/entities/Bank.flix").solve()
-    assert(model.isSuccess)
-  }
-
-  ignore("Cards.flix") {
-    val model = new Flix.Builder().addPath("./examples/entities/Cards.flix").solve()
     assert(model.isSuccess)
   }
 

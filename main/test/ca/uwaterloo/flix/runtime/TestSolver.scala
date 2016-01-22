@@ -452,12 +452,12 @@ class TestSolver extends FunSuite {
     assert(!(B contains List(Value.mkInt(1), Value.mkInt(1))))
   }
 
-  ignore("Loop01") {
+  test("Loop01") {
     val s =
       """rel A(x: Int);
         |rel B(x: Int);
         |
-        |def f(x: Int): Set[Int] = #{x, x * x};
+        |def f(x: Int): Set[Int] = #{x * x};
         |
         |A(1).
         |A(2).
@@ -466,9 +466,9 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix.Builder().addStr(s).solve().get
-    val B = model.relations(NameB).toList
-    assert(B contains List(Value.mkInt(1), Value.mkInt(3)))
-    assert(!(B contains List(Value.mkInt(1), Value.mkInt(1))))
+    val B = model.relations(NameB).toSet
+    assert(B contains List(Value.mkInt(1)))
+    assert(B contains List(Value.mkInt(4)))
   }
 
 
