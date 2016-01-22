@@ -68,7 +68,7 @@ object Interpreter {
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
       val cond = evalBool(exp1, root, env)
       if (cond) evalInt(exp2, root, env) else evalInt(exp3, root, env)
-    case Expression.Switch(rules, tpe, loc) => ??? // TODO
+    case Expression.Switch(rules, _, _) => evalIntSwitch(rules, root, env)
     case Expression.Let(ident, exp1, exp2, _, _) =>
       // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
       val newEnv = env + (ident.name -> eval(exp1, root, env))
@@ -114,6 +114,12 @@ object Interpreter {
       throw new InternalRuntimeError(s"Type of binary expression is not Type.Int.")
   }
 
+  @tailrec private def evalIntSwitch(rules: List[(Expression, Expression)], root: Root, env: Env): Int = {
+    val ((test, exp) :: rest) = rules
+    val cond = evalBool(test, root, env)
+    if (cond) evalInt(exp, root, env) else evalIntSwitch(rest, root, env)
+  }
+
   /*
    * Evaluates expressions of type `Type.Bool`, returning an unwrapped
    * `scala.Boolean`. Performs casting as necessary.
@@ -139,7 +145,7 @@ object Interpreter {
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
       val cond = eval(exp1, root, env).toBool
       if (cond) evalBool(exp2, root, env) else evalBool(exp3, root, env)
-    case Expression.Switch(rules, tpe, loc) => ??? // TODO
+    case Expression.Switch(rules, _, _) => evalBoolSwitch(rules, root, env)
     case Expression.Let(ident, exp1, exp2, _, _) =>
       // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
       val newEnv = env + (ident.name -> eval(exp1, root, env))
@@ -181,6 +187,12 @@ object Interpreter {
       throw new InternalRuntimeError(s"Type of binary expression is not Type.Bool.")
   }
 
+  @tailrec private def evalBoolSwitch(rules: List[(Expression, Expression)], root: Root, env: Env): Boolean = {
+    val ((test, exp) :: rest) = rules
+    val cond = evalBool(test, root, env)
+    if (cond) evalBool(exp, root, env) else evalBoolSwitch(rest, root, env)
+  }
+
   /*
    * A general evaluator of `Expression`s.
    *
@@ -213,7 +225,7 @@ object Interpreter {
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
       val cond = evalBool(exp1, root, env)
       if (cond) eval(exp2, root, env) else eval(exp3, root, env)
-    case Expression.Switch(rules, tpe, loc) => ??? // TODO
+    case Expression.Switch(rules, _, _) => evalGeneralSwitch(rules, root, env)
     case Expression.Let(ident, exp1, exp2, _, _) =>
       // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
       val newEnv = env + (ident.name -> eval(exp1, root, env))
@@ -274,6 +286,12 @@ object Interpreter {
       case BinaryOperator.BitwiseLeftShift => Value.mkInt(v1.toInt << v2.toInt)
       case BinaryOperator.BitwiseRightShift => Value.mkInt(v1.toInt >> v2.toInt)
     }
+  }
+
+  @tailrec private def evalGeneralSwitch(rules: List[(Expression, Expression)], root: Root, env: Env): Value = {
+    val ((test, exp) :: rest) = rules
+    val cond = evalBool(test, root, env)
+    if (cond) eval(exp, root, env) else evalGeneralSwitch(rest, root, env)
   }
 
   def evalLit(lit: Literal): Value = lit match {
