@@ -1534,6 +1534,49 @@ class TestInterpreter extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Expressions - Switch                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Interpreter - Switch01") {
+    val input =
+      """val x: Int = switch {
+        |  case -42 < 0 => 1
+        |  case -42 > 0 => 2
+        |  case true    => 3
+        |}
+      """.stripMargin
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(1))(result)
+  }
+
+  test("Interpreter - Switch02") {
+    val input =
+      """val x: Int = switch {
+        |  case 42 < 0 => 1
+        |  case 42 > 0 => 2
+        |  case true   => 3
+        |}
+      """.stripMargin
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(2))(result)
+  }
+
+  test("Interpreter - Switch03") {
+    val input =
+      """val x: Int = switch {
+        |  case 0 < 0 => 1
+        |  case 0 > 0 => 2
+        |  case true  => 3
+        |}
+      """.stripMargin
+    val tree = new Flix.Builder().addStr(input).compile().get.constants.head._2.exp
+    val result = Interpreter.eval(tree, root)
+    assertResult(Value.mkInt(3))(result)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Expressions - Let                                                       //
   /////////////////////////////////////////////////////////////////////////////
 
