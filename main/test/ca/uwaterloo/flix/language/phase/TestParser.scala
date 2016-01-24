@@ -1874,6 +1874,32 @@ class TestParser extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // UTF8 Operators                                                          //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Operator.Unary.UTF8-NOT") {
+    val input = "¬"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.Unary).get
+    assertResult(UnaryOperator.Not)(result)
+  }
+
+  test("Operator.Binary.UTF8-AND") {
+    val input = "∧"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
+    assertResult(BinaryOperator.And)(result)
+  }
+
+  test("Operator.Binary.UTF8-OR") {
+    val input = "∨"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
+    assertResult(BinaryOperator.Or)(result)
+  }
+
+  // TODO: ∀, ¬, ∧, ∨, →, ↔, ≡, ⊥
+
+  /////////////////////////////////////////////////////////////////////////////
   // Annotations                                                             //
   /////////////////////////////////////////////////////////////////////////////
   test("Annotation @strict") {

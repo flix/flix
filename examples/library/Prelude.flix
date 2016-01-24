@@ -13,7 +13,7 @@
  *
  * A partial order must satisfy three laws:
  *   - Reflexivity
- *   - Anti-Symmetry
+ *   - AntiSymmetry
  *   - Transitivity
  */
 class PartialOrder[E] {
@@ -48,9 +48,21 @@ class PartialOrder[E] {
 
 }
 
+/**
+ * A join semi lattice is a partial order equipped with
+ * a bottom element and a least upper bound operator.
+ *
+ * A join semi lattice must satisfy X laws:
+ */
+class JoinSemiLattice[E: PartialOrder] {
 
-class JoinSemiLattice[E] {
+
+
     // bot, lub
+
+    law LeastElement(x: E): Bool = ⊥ ⊑ x
+
+
 }
 
 class MeetSemiLattice[E] {
@@ -114,7 +126,7 @@ class Monotone[E: PartialOrder] {
 
 // TODO: use word "impl"? for ?
 // TODO: class or concept?
-instance PartialOrder[Sign] {
+impl PartialOrder Sign {
 
     fn leq(x: Sign, y: Sign): Bool = ???
 
