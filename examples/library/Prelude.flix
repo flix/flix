@@ -4,9 +4,10 @@
 // TODO: Use E or A for type parameters?
 
 /**
- * A partial order is a set equipped with a partial comparison function `leq`.
+ * A partial order is a set E equipped with a partial order function `leq`.
  *
- * Informally, if `leq(x, y)` then `x` is less than or equal to `y`.
+ * Informally,
+ * If `leq(x, y)` then `x` is less than or equal to `y`.
  * If `leq(x, y)` and `leq(y, x)` are both true then `x == y`.
  * Finally, if neither `leq(x, y)` and `leq(y, x)` are true then `x` and `y` are incomparable.
  *
@@ -28,23 +29,25 @@ class PartialOrder[E] {
     fn ⊑(x: E, y: E): Bool = leq(x, y)
 
     /**
-     * The Reflexivity law requires that any element be less than or equal to itself.
+     * The reflexivity law requires that any element be less than or equal to itself.
      */
     law Reflexivity(x: E): Bool = x ⊑ x
 
     /**
-     * The AntiSymmetry law requires that if one element x is less than or equal to
-     * another element y and vice versa then those two elements must in fact be equal.
-     *
-     * NB: A pre-order or quasi-order does not satisfy the AntiSymmetry law.
+     * The anti symmetry law requires that if `x` is less than or equal to `y`
+     * and vice versa then those two elements must be equal.
      */
     law AntiSymmetry(x: E, y: E): Bool = (x ⊑ y ∧ y ⊑ x) → (x ≡ y)
 
-
-    law Transitivity(x: E, y: E, z: E): Bool =
-
+    /**
+     * The transitivity law requires that if `x` less than or equal to `y`
+     * and `y` is less than or equal to `z` then `x` must be less than or
+     * equal to `z`.
+     */
+    law Transitivity(x: E, y: E, z: E): Bool = (x ⊑ y ∧ y ⊑ z) → (x ⊑ z)
 
 }
+
 
 class JoinSemiLattice[E] {
     // bot, lub
