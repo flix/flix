@@ -3,11 +3,22 @@
 
 // TODO: Use E or A for type parameters?
 
+/**
+ * A partial order is a set equipped with a partial comparison function `leq`.
+ *
+ * Informally, if `leq(x, y)` then `x` is less than or equal to `y`.
+ * If `leq(x, y)` and `leq(y, x)` are both true then `x == y`.
+ * Finally, if neither `leq(x, y)` and `leq(y, x)` are true then `x` and `y` are incomparable.
+ *
+ * A partial order must satisfy three laws:
+ *   - Reflexivity
+ *   - Anti-Symmetry
+ *   - Transitivity
+ */
 class PartialOrder[E] {
 
     /**
-     * Returns `true` iff the element `x` is less than or equal to
-     * the element `y` according to the partial order on E.
+     * Returns `true` iff the element `x` is less than or equal to the element `y`.
      */
     fn leq(x: E, y: E): Bool
 
@@ -23,19 +34,15 @@ class PartialOrder[E] {
 
     /**
      * The AntiSymmetry law requires that if one element x is less than or equal to
-     * another element y and vice versa then those two elements must infact be equal.
+     * another element y and vice versa then those two elements must in fact be equal.
      *
      * NB: A pre-order or quasi-order does not satisfy the AntiSymmetry law.
      */
     law AntiSymmetry(x: E, y: E): Bool = (x ⊑ y ∧ y ⊑ x) → (x ≡ y)
 
 
-    law Transitivity()
+    law Transitivity(x: E, y: E, z: E): Bool =
 
-
-}
-
-class PreOrder[E] {
 
 }
 
@@ -51,15 +58,26 @@ class BoundedLattice[E] {
     // height?
 }
 
-class NormOperator[E] {
 
-}
 
 class WidenOperator[E] {
 
 }
 
 class NarrowOperator[E] {
+    fn narrow(x: E): E
+
+    /**
+     *
+     */
+    law LowerBound(x: E, y: E): Bool =
+}
+
+class PreOrder[E] {
+
+}
+
+class NormOperator[E] {
 
 }
 
