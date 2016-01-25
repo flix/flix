@@ -5827,4 +5827,110 @@ class TestCodegen extends FunSuite {
     assertResult(Value.mkTag(tagName, ident.name, Value.mkStr("hello")))(result)
   }
 
+  test("Codegen - Tag08") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val tagName = Name.Resolved.mk("abc")
+    val ident = toIdent("def")
+    val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int, Type.Str)))))
+    val definition = Function(name, args = List(),
+      body = Tag(tagName, ident, Tuple(List(Int32(1), Str("one", loc)),
+        Type.Tuple(List(Type.Int, Type.Str)), loc), enum, loc),
+      Type.Lambda(List(), enum), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.mkTag(tagName, ident.name, Value.Tuple(Array(Value.mkInt(1), Value.mkStr("one")))))(result)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Tuple                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Codegen - Tuple01") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List(),
+      body = Tuple(List(Int32(321), Int32(5)), Type.Tuple(List(Type.Int32, Type.Int32)), loc),
+      Type.Lambda(List(), Type.Tuple(List(Type.Int32, Type.Int32))), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.Tuple(Array(321, 5).map(Value.mkInt)))(result)
+  }
+
+  test("Codegen - Tuple02") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List(),
+      body = Tuple(List(True, True, False), Type.Tuple(List(Type.Bool, Type.Bool, Type.Bool)), loc),
+      Type.Lambda(List(), Type.Tuple(List(Type.Bool, Type.Bool, Type.Bool))), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.Tuple(Array(Value.True, Value.True, Value.False)))(result)
+  }
+
+  test("Codegen - Tuple03") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List(),
+      body = Tuple(List(Str("un", loc), Str("deux", loc), Str("trois", loc), Str("quatre", loc)),
+        Type.Tuple(List(Type.Str, Type.Str, Type.Str, Type.Str)), loc),
+      Type.Lambda(List(), Type.Tuple(List(Type.Str, Type.Str, Type.Str, Type.Str))), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.Tuple(Array("un", "deux", "trois", "quatre").map(Value.mkStr)))(result)
+  }
+
+  test("Codegen - Tuple04") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List(),
+      body = Tuple(List(Str("un", loc), False, Int32(12345), Unit, Int8(-2)),
+        Type.Tuple(List(Type.Str, Type.Bool, Type.Int32, Type.Unit, Type.Int8)), loc),
+      Type.Lambda(List(), Type.Tuple(List(Type.Str, Type.Bool, Type.Int32, Type.Unit, Type.Int8))), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.Tuple(Array(Value.mkStr("un"), Value.False, Value.mkInt(12345), Value.Unit, Value.mkInt(-2))))(result)
+  }
+
+  test("Codegen - Tuple05") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List(),
+      body = Tuple(List(
+        Tag(constPropName, identV, Int32(111), enumTpe, loc),
+        Tag(constPropName, identB, Unit, enumTpe, loc)),
+        Type.Tuple(List(enumTpe, enumTpe)), loc),
+      Type.Lambda(List(), Type.Tuple(List(enumTpe, enumTpe))), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.Tuple(Array(Value.mkTag(constPropName, identV.name, Value.mkInt(111)), Value.mkTag(constPropName, identB.name, Value.Unit))))(result)
+  }
+
+  test("Codegen - Tuple06") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List(),
+      body = Tuple(List(
+        Tuple(List(Int32(123), Int32(456)), Type.Tuple(List(Type.Int32, Type.Int32)), loc),
+        Tuple(List(Str("654", loc), Str("321", loc)), Type.Tuple(List(Type.Str, Type.Str)), loc)),
+        Type.Tuple(List(Type.Tuple(List(Type.Int32, Type.Int32)), Type.Tuple(List(Type.Str, Type.Str)))), loc),
+      Type.Lambda(List(), Type.Tuple(List(Type.Tuple(List(Type.Int32, Type.Int32)), Type.Tuple(List(Type.Str, Type.Str))))), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.Tuple(Array(Value.Tuple(Array(123, 456).map(Value.mkInt)), Value.Tuple(Array("654", "321").map(Value.mkStr)))))(result)
+  }
 }

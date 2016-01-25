@@ -40,9 +40,10 @@ object Codegen {
       case Type.Tag(_, _, _) | Type.Enum(_) =>
         // TODO: Can we return something of Type.Tag? Looks like we only return Type.Enum, which is a set of Type.Tags.
         asm.Type.getDescriptor(classOf[Value.Tag])
+      case Type.Tuple(elms) => asm.Type.getDescriptor(classOf[Value.Tuple])
       case Type.Lambda(args, retTpe) => s"""(${ args.map(descriptor).mkString })${descriptor(retTpe)}"""
-      case Type.Var(_) | Type.Tuple(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) |
-           Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
+      case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) | Type.Native(_) |
+           Type.Char | Type.Abs(_, _) | Type.Any => ???
     }
   }
 
@@ -57,7 +58,7 @@ object Codegen {
     val visitor = new CheckClassAdapter(classWriter)
 
     // Initialize the visitor to create a class
-    visitor.visit(V1_7, ACC_PUBLIC + ACC_SUPER, context.clazz, null, "java/lang/Object", null)
+    visitor.visit(V1_8, ACC_PUBLIC + ACC_SUPER, context.clazz, null, "java/lang/Object", null)
 
     compileConstructor(context, visitor)
     functions.foreach(compileFunction(context, visitor))
@@ -94,9 +95,9 @@ object Codegen {
     function.tpe.retTpe match {
       case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
-      case Type.Str | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) => mv.visitInsn(ARETURN)
-      case Type.Var(_) | Type.Tuple(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) |
-           Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
+      case Type.Str | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) => mv.visitInsn(ARETURN)
+      case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
+           Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
     }
 
     // Dummy large numbers so the bytecode checker can run. Afterwards, the ASM library calculates the proper maxes.
@@ -121,9 +122,9 @@ object Codegen {
       tpe match {
         case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ILOAD, offset)
         case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
-        case Type.Str | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) => visitor.visitVarInsn(ALOAD, offset)
-        case Type.Var(_) | Type.Tuple(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) |
-             Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
+        case Type.Str | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) => visitor.visitVarInsn(ALOAD, offset)
+        case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
+             Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
       }
     case Expression.Ref(name, tpe, loc) => ???
     case Expression.Lambda(annotations, args, body, tpe, loc) => ???
@@ -153,9 +154,9 @@ object Codegen {
       exp1.tpe match {
         case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ISTORE, offset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
-        case Type.Str | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) => visitor.visitVarInsn(ASTORE, offset)
-        case Type.Var(_) | Type.Tuple(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) |
-             Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
+        case Type.Str | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) => visitor.visitVarInsn(ASTORE, offset)
+        case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
+             Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
       }
       compileExpression(context, visitor)(exp2)
     case Expression.TagOf(exp, enum, tag, tpe, loc) => ???
@@ -176,8 +177,37 @@ object Codegen {
 
       // call Value.mkTag
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkTag", "(Lca/uwaterloo/flix/language/ast/Name$Resolved;Ljava/lang/String;Lca/uwaterloo/flix/runtime/Value;)Lca/uwaterloo/flix/runtime/Value$Tag;", false);
-    case Expression.TupleAt(base, offset, tpe, loc) => ???
-    case Expression.Tuple(elms, tpe, loc) => ???
+    case Expression.TupleAt(base, offset, tpe, loc) => ??? // TODO
+    case Expression.Tuple(elms, tpe, loc) =>
+      // TODO: What is our limit on tuples? We've been using [2-5]; Scala supports [2-22]
+      if (elms.size < 2 || elms.size > 5) throw new InternalCompilerError("Tuple must contain 2 to 5 elements, inclusive.")
+
+      // Create the array to hold the tuple elements
+      compileInt(visitor)(elms.size)
+      visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(classOf[ca.uwaterloo.flix.runtime.Value]))
+
+      // Iterate over elms, boxing them and slotting each one into the array
+      elms.zipWithIndex.foreach { case (e, i) =>
+        // AASTORE pops the array reference, array index, and element to be stored.
+        // Instead of saving a copy of the array reference into a local variable, we duplicate it.
+        visitor.visitInsn(DUP)
+        compileInt(visitor)(i)
+        compileBoxedExpr(context, visitor)(e)
+        visitor.visitInsn(AASTORE)
+      }
+
+      // Now construct a Value.Tuple: create a reference, load the arguments, and call the constructor
+      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/Value$Tuple")
+
+      // Right now the stack looks like: array, tuple (top)
+      // We use dup_x1 and swap to manipulate the stack so we can avoid using a local variable.
+      visitor.visitInsn(DUP_X1)
+      visitor.visitInsn(SWAP)
+      // Now the stack looks like: tuple, tuple, array (top)
+
+      // Finally, call the constructor, which pops the reference (tuple) and argument (array)
+      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "<init>", "([Lca/uwaterloo/flix/runtime/Value;)V", false)
+
     case Expression.Set(elms, tpe, loc) => ???
     case Expression.Error(tpe, loc) => ???
     case Expression.MatchError(tpe, loc) => ???
@@ -214,10 +244,10 @@ object Codegen {
       visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
       compileExpression(context, visitor)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkStr", "(Ljava/lang/String;)Lca/uwaterloo/flix/runtime/Value$Str;", false)
-    case Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) =>
+    case Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) =>
       compileExpression(context, visitor)(exp)
-    case Type.Var(_) | Type.Tuple(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) |
-         Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
+    case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
+         Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
   }
 
   /*
