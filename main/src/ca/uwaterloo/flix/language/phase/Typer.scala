@@ -515,12 +515,6 @@ object Typer {
 
         case ResolvedAst.Expression.Ascribe(re, tpe, loc) =>
           visit(re, env) flatMap {
-            case TypedAst.Expression.NativeField(field, _, _) =>
-              TypedAst.Expression.NativeField(field, tpe, loc).toSuccess
-
-            case TypedAst.Expression.NativeMethod(method, _, _) =>
-              TypedAst.Expression.NativeMethod(method, tpe, loc).toSuccess
-
             case e => expect(tpe, e.tpe, loc) map {
               case _ => e
             }
@@ -529,17 +523,6 @@ object Typer {
         case ResolvedAst.Expression.Error(tpe, loc) =>
           TypedAst.Expression.Error(tpe, loc).toSuccess
 
-        case ResolvedAst.Expression.NativeField(field, loc) =>
-          val tpe = java2flix(field.getType.getCanonicalName)
-          TypedAst.Expression.NativeField(field, tpe, loc).toSuccess
-
-        case ResolvedAst.Expression.NativeMethod(method, loc) =>
-          val args = method.getParameterTypes.toList.map {
-            case clazz => java2flix(clazz.getCanonicalName)
-          }
-          val retTpe = java2flix(method.getReturnType.getCanonicalName)
-          val tpe = Type.Lambda(args, retTpe)
-          TypedAst.Expression.NativeMethod(method, tpe, loc).toSuccess
       }
 
       visit(rast, env)
@@ -764,10 +747,6 @@ object Typer {
         @@(@@(argsVal), expect(tpe, hook.tpe.retTpe, loc)) map {
           case (args, returnType) => TypedAst.Term.Head.ApplyHook(hook, args, returnType, loc)
         }
-
-      case ResolvedAst.Term.Head.NativeField(field, loc) =>
-        val tpe = java2flix(field.getType.getCanonicalName)
-        TypedAst.Term.Head.NativeField(field, tpe, loc).toSuccess
     }
 
     /**
@@ -829,22 +808,6 @@ object Typer {
       val (tpe2, loc2) = types.find(t => t._1 != tpe1).get
       ExpectedEqualTypes(tpe1, tpe2, loc1, loc2).toFailure
     }
-  }
-
-
-  /**
-    * Returns a Flix type corresponding to the given canonical name.
-    */
-  private def java2flix(canonicalName: String): Type = canonicalName match {
-    case "boolean" | "java.lang.Boolean" => Type.Bool
-    case "int" | "java.lang.Integer" => Type.Int
-    case "java.lang.String" => Type.Str
-    case t if t.matches("scala.Tuple[2-5]") =>
-      // Create a list of N Type.Native("java.lang.Object")
-      val types = List().padTo(t.last - '0', Type.Native("java.lang.Object"))
-      Type.Tuple(types)
-    case "scala.collection.immutable.Set" => Type.Set(Type.Native("java.lang.Object"))
-    case _ => Type.Native(canonicalName)
   }
 
   /**

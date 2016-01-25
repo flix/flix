@@ -2360,8 +2360,6 @@ class TestInterpreter extends FunSuite {
     )))(result)
   }
 
-  // TODO(mhyee): NativeField
-
   /////////////////////////////////////////////////////////////////////////////
   // Expressions - Error                                                     //
   /////////////////////////////////////////////////////////////////////////////
@@ -3081,5 +3079,4 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkTag(name, "Val", Value.mkInt(1241)))(result)
   }
 
-  // TODO(mhyee): evalCall NativeMethod
 }
