@@ -81,10 +81,8 @@ object Interpreter {
         evalInt(result, root, newEnv)
       else
         throw new RuntimeException(s"Unmatched value $value.")
-    case Expression.NativeField(field, _, _) =>
-      field.get(null).asInstanceOf[java.lang.Integer].intValue()
     case Expression.Lambda(_, _, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
-         Expression.Set(_, _, _) | Expression.NativeMethod(_, _, _) =>
+         Expression.Set(_, _, _)  =>
       throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int.")
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
   }
@@ -158,10 +156,8 @@ object Interpreter {
         evalBool(result, root, newEnv)
       else
         throw new RuntimeException(s"Unmatched value $value.")
-    case Expression.NativeField(field, _, _) =>
-      field.get(null).asInstanceOf[java.lang.Boolean].booleanValue()
     case Expression.Lambda(_, _, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
-         Expression.Set(_, _, _) | Expression.NativeMethod(_, _, _) =>
+         Expression.Set(_, _, _) =>
       throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
     }
@@ -238,8 +234,6 @@ object Interpreter {
         eval(result, root, newEnv)
       else
         throw new RuntimeException(s"Unmatched value $value.")
-    case Expression.NativeField(field, tpe, _) => Value.java2flix(field.get(null), tpe)
-    case Expression.NativeMethod(method, _, _) => Value.NativeMethod(method)
     case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
     case exp: Expression.Tuple =>
       val elms = new Array[Value](exp.asArray.length)
@@ -379,7 +373,6 @@ object Interpreter {
       }
       evalCall(function, evalArgs, root, env)
     case term: Term.Head.ApplyHook => ??? // TODO
-    case Term.Head.NativeField(field, tpe, _) => Value.java2flix(field.get(null), tpe)
   }
 
   def evalBodyTerm(t: Term.Body, env: Env): Value = t match {
@@ -397,15 +390,6 @@ object Interpreter {
           i = i + 1
         }
         eval(body, root, closureEnv)
-      case Value.NativeMethod(method) =>
-        val nativeArgs = new Array[java.lang.Object](args.length)
-        var i = 0
-        while (i < args.length) {
-          nativeArgs(i) = args(i).toJava
-          i = i + 1
-        }
-        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
-        Value.java2flix(method.invoke(null, nativeArgs: _*), tpe)
     }
 
   def eval2(closure: Value.Closure, arg1: Value, arg2: Value, root: Root): Value = {

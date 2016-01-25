@@ -177,10 +177,6 @@ object ResolvedAst {
 
     case class Error(tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class NativeField(field: Field, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class NativeMethod(method: Method, loc: SourceLocation) extends ResolvedAst.Expression
-
   }
 
   /**
@@ -394,15 +390,6 @@ object ResolvedAst {
         * @param loc  the location.
         */
       case class ApplyHook(hook: Ast.Hook, args: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Term.Head
-
-      /**
-        * An AST node representing a reference to a native JVM static field.
-        *
-        * @param field the field.
-        * @param loc   the location.
-        */
-      case class NativeField(field: Field, loc: SourceLocation) extends ResolvedAst.Term.Head
-
     }
 
     /**
