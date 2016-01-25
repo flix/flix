@@ -546,6 +546,76 @@ class TestInterpreter extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Expressions - Hook and Apply                                            //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Interpreter - Expression.Hook01") {
+    val input =
+      s"""namespace A {
+          |  fn f(x: Int): Bool = g(x)
+          |  fn x(): Bool = f(42)
+          |};
+       """.stripMargin
+    var executed = false
+    val model = new Flix.Builder()
+      .addStr(input)
+      .addHook("A::g", Type.Lambda(List(Type.Int), Type.Bool), new Invokable {
+        def apply(args: Array[Value]): Value = {
+          executed = true
+          Value.mkBool(true)
+        }
+      })
+      .solve()
+    val result = model.get.constants(Name.Resolved.mk("A::x"))
+    assert(executed)
+    assertResult(Value.True)(result)
+  }
+
+  test("Interpreter - Expression.Hook02") {
+    val input =
+      s"""namespace A {
+          |  fn f(x: Int, y: Int): Int = g(x, y)
+          |  fn x(): Int = f(40, 2)
+          |};
+       """.stripMargin
+    var executed = false
+    val model = new Flix.Builder()
+      .addStr(input)
+      .addHook("A::g", Type.Lambda(List(Type.Int, Type.Int), Type.Int), new Invokable {
+        def apply(args: Array[Value]): Value = {
+          executed = true
+          Value.mkInt(args(0).toInt + args(1).toInt)
+        }
+      })
+      .solve()
+    val result = model.get.constants(Name.Resolved.mk("A::x"))
+    assert(executed)
+    assertResult(Value.mkInt(42))(result)
+  }
+
+  test("Interpreter - Expression.Hook03") {
+    val input =
+      s"""namespace A {
+          |  fn f(x: Int): Int = g()
+          |  fn x(): Int = f(42)
+          |};
+       """.stripMargin
+    var executed = false
+    val model = new Flix.Builder()
+      .addStr(input)
+      .addHook("A::g", Type.Lambda(List(), Type.Int), new Invokable {
+        def apply(args: Array[Value]): Value = {
+          executed = true
+          Value.mkInt(123)
+        }
+      })
+      .solve()
+    val result = model.get.constants(Name.Resolved.mk("A::x"))
+    assert(executed)
+    assertResult(Value.mkInt(123))(result)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Expressions - Unary                                                     //
   /////////////////////////////////////////////////////////////////////////////
 
@@ -2737,6 +2807,85 @@ class TestInterpreter extends FunSuite {
     val apply = Term.Head.Apply(name02, List(), Type.Bool, loc)
     val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
     assertResult(Value.True)(value)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expressions - Hook and Apply                                            //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("evalHeadTerm - HookApply01") {
+    val input =
+      s"""namespace A {
+          |  fn f(x: Int): Bool = g(x)
+          |  rel S(x: Int)
+          |  rel T(x: Bool)
+          |  S(42).
+          |  T(f(x)) :- S(x).
+          |};
+       """.stripMargin
+    var counter = 0
+    val model = new Flix.Builder()
+      .addStr(input)
+      .addHook("A::g", Type.Lambda(List(Type.Int), Type.Bool), new Invokable {
+        def apply(args: Array[Value]): Value = {
+          counter += 1
+          Value.mkBool(true)
+        }
+      })
+      .solve()
+    val result = model.get.relations(Name.Resolved.mk("A::T")).toSet
+    assertResult(1)(counter)
+    assertResult(Set(List(Value.True)))(result)
+  }
+
+  test("evalHeadTerm - HookApply02") {
+    val input =
+      s"""namespace A {
+          |  fn f(x: Int, y: Int): Int = g(x, y)
+          |  rel S(x: Int, y: Int)
+          |  rel T(x: Int)
+          |  S(40, 2).
+          |  S(2, 40).
+          |  S(1, 5).
+          |  T(f(x, y)) :- S(x, y).
+          |};
+       """.stripMargin
+    var counter = 0
+    val model = new Flix.Builder()
+      .addStr(input)
+      .addHook("A::g", Type.Lambda(List(Type.Int, Type.Int), Type.Int), new Invokable {
+        def apply(args: Array[Value]): Value = {
+          counter += 1
+          Value.mkInt(args(0).toInt + args(1).toInt)
+        }
+      })
+      .solve()
+    val result = model.get.relations(Name.Resolved.mk("A::T")).toSet
+    assertResult(3)(counter)
+    assertResult(Set(List(Value.mkInt(42)), List(Value.mkInt(6))))(result)
+  }
+
+  test("evalHeadTerm - HookApply03") {
+    val input =
+      s"""namespace A {
+          |  fn f(x: Int): Int = g()
+          |  rel T(x: Int)
+          |  T(f(42)).
+          |};
+       """.stripMargin
+    var counter = 0
+    val model = new Flix.Builder()
+      .addStr(input)
+      .addHook("A::g", Type.Lambda(List(), Type.Int), new Invokable {
+        def apply(args: Array[Value]): Value = {
+          counter += 1
+          Value.mkInt(123)
+        }
+      })
+      .solve()
+    val result = model.get.relations(Name.Resolved.mk("A::T")).toSet
+    assertResult(1)(counter)
+    assertResult(Set(List(Value.mkInt(123))))(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////
