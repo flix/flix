@@ -5,6 +5,11 @@ import ca.uwaterloo.flix.runtime.Value
 
 protected final class ValueWrapper(private val value: Value) extends IValue {
 
+  def isUnit: Boolean = value match {
+    case Value.Unit => true
+    case _ => false
+  }
+
   def getType: IType = value match {
     case Value.Unit => new TypeWrapper(Type.Unit)
     case Value.True => new TypeWrapper(Type.Bool)
@@ -20,17 +25,17 @@ protected final class ValueWrapper(private val value: Value) extends IValue {
     case _ => throw new FlixApiError(s"Unexpected value: $value")
   }
 
-  def isBool(b: Boolean): Boolean =
-    getBool == b
+  def isTrue: Boolean = value match {
+    case Value.True => true
+    case _ => false
+  }
 
-  def isTrue: Boolean = getBool
-
-  def isFalse: Boolean = !getBool
+  def isFalse: Boolean = value match {
+    case Value.False => true
+    case _ => false
+  }
 
   def getChar: Char = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
-
-  def isChar(c: Char): Boolean =
-    getChar == c
 
   def getInt8: Byte = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
 
@@ -43,23 +48,14 @@ protected final class ValueWrapper(private val value: Value) extends IValue {
 
   def getInt64: Long = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
 
-  def isInt8(i: Byte): Boolean =
-    getInt8 == i
-
-  def isInt16(i: Short): Boolean =
-    getInt16 == i
-
-  def isInt32(i: Int): Boolean =
-    getInt32 == i
-
-  def isInt64(i: Long): Boolean =
-    getInt64 == i
-
   def getStr: String = value match {
     case v: Value.Str => v.s
     case _ => throw new FlixApiError(s"Unexpected value: $value")
   }
 
-  def isStr(s: String): Boolean =
-    getStr == s
+  def getTuple: Array[IValue] = value match {
+    case v: Value.Tuple => v.elms.map(e => new ValueWrapper(e))
+    case _ => throw new FlixApiError(s"Unexpected value: $value")
+  }
+
 }
