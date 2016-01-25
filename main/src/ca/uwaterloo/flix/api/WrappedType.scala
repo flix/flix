@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.Type
 
-protected final class TypeWrapper(private val tpe: Type) extends IType {
+protected final class WrappedType(private val tpe: Type) extends IType {
 
   def isUnit: Boolean =
     tpe == Type.Unit
@@ -64,37 +64,37 @@ protected final class TypeWrapper(private val tpe: Type) extends IType {
   }
 
   def getTupleParams: Array[IType] = tpe match {
-    case Type.Tuple(elms) => elms.map(t => new TypeWrapper(t)).toArray
+    case Type.Tuple(elms) => elms.map(t => new WrappedType(t)).toArray
     case _ => throw new FlixApiError(s"Unexpected type: $tpe")
   }
 
   def getOptParam: IType = tpe match {
-    case Type.Opt(elm) => new TypeWrapper(elm)
+    case Type.Opt(elm) => new WrappedType(elm)
     case _ => throw new FlixApiError(s"Unexpected type: $tpe")
   }
 
   def getListParam: IType = tpe match {
-    case Type.Lst(elm) => new TypeWrapper(elm)
+    case Type.Lst(elm) => new WrappedType(elm)
     case _ => throw new FlixApiError(s"Unexpected type: $tpe")
   }
 
   def getSetParam: IType = tpe match {
-    case Type.Set(elm) => new TypeWrapper(elm)
+    case Type.Set(elm) => new WrappedType(elm)
     case _ => throw new FlixApiError(s"Unexpected type: $tpe")
   }
 
   def getMapKeyParam: IType = tpe match {
-    case Type.Map(k, v) => new TypeWrapper(k)
+    case Type.Map(k, v) => new WrappedType(k)
     case _ => throw new FlixApiError(s"Unexpected type: $tpe")
   }
 
   def getMapValueParam: IType = tpe match {
-    case Type.Map(k, v) => new TypeWrapper(v)
+    case Type.Map(k, v) => new WrappedType(v)
     case _ => throw new FlixApiError(s"Unexpected type: $tpe")
   }
 
   override def equals(other: Any): Boolean = other match {
-    case that: TypeWrapper => tpe == that.tpe
+    case that: WrappedType => tpe == that.tpe
     case _ => false
   }
 

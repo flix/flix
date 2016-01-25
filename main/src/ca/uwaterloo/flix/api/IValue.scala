@@ -1,17 +1,22 @@
 package ca.uwaterloo.flix.api
 
+import scala.collection.immutable
+
 /**
   * Public interface for Flix values.
   */
 trait IValue {
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Meta                                                                    //
+  /////////////////////////////////////////////////////////////////////////////
   /**
     * Returns the type of `this` value.
     */
   def getType: IType
 
   /////////////////////////////////////////////////////////////////////////////
-  // Unit Extractors                                                         //
+  // Unit                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   /**
     * Returns `true` if `this` value is the unit value.
@@ -19,7 +24,7 @@ trait IValue {
   def isUnit: Boolean
 
   /////////////////////////////////////////////////////////////////////////////
-  // Boolean Extractors                                                      //
+  // Booleans                                                                //
   /////////////////////////////////////////////////////////////////////////////
   /**
     * Returns the boolean represented by `this` value.
@@ -39,7 +44,7 @@ trait IValue {
   def isFalse: Boolean
 
   /////////////////////////////////////////////////////////////////////////////
-  // Char Extractors                                                         //
+  // Chars                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   /**
     * Returns the char represented by `this` value.
@@ -49,7 +54,7 @@ trait IValue {
   def getChar: Char
 
   /////////////////////////////////////////////////////////////////////////////
-  // Int Extractors                                                          //
+  // Ints                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   /**
     * Returns the int8 represented by `this` value.
@@ -80,7 +85,7 @@ trait IValue {
   def getInt64: Long
 
   /////////////////////////////////////////////////////////////////////////////
-  // String Extractors                                                       //
+  // Strings                                                                 //
   /////////////////////////////////////////////////////////////////////////////
   /**
     * Returns the string represented by `this` value.
@@ -90,7 +95,7 @@ trait IValue {
   def getStr: String
 
   /////////////////////////////////////////////////////////////////////////////
-  // Tuple Extractors                                                        //
+  // Tuples                                                                  //
   /////////////////////////////////////////////////////////////////////////////
   /**
     * Returns the tuple represented by `this` value.
@@ -99,5 +104,105 @@ trait IValue {
     */
   def getTuple: Array[IValue]
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Enums                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Returns the fully qualified name of the enum represented by `this` value.
+    *
+    * @throws FlixError if `this` value is not of enum type.
+    */
+  def getEnumName: String
 
+  /**
+    * Returns the name of the tag represented by `this` value.
+    *
+    * @throws FlixError if `this` value is not of enum type.
+    */
+  def getTagName: String
+
+  /**
+    * Returns the value of the tag represented by `this` value.
+    *
+    * @throws FlixError if `this` value is not of enum type.
+    */
+  def getTagValue: IValue
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Native                                                                  //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Returns the native object represented by `this` value.
+    *
+    * @throws FlixError if `this` value is not of native type.
+    */
+  def getNativeObj: AnyRef
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Opts                                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Returns the option represented by `this` value.
+    *
+    * @throws FlixError if `this` value is not of opt type.
+    */
+  def getJavaOpt: java.util.Optional[IValue]
+
+  /**
+    * Returns the option represented by `this` value.
+    *
+    * @throws FlixError if `this` value is not of opt type.
+    */
+  def getScalaOpt: scala.Option[IValue]
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Lists                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Returns the list represented by `this` value.
+    *
+    * @throws FlixError if `this` value is not of list type.
+    */
+  def getJavaList: java.util.Set[IValue]
+
+  /**
+    * Returns the list represented by `this` value.
+    *
+    * @throws FlixError if `this` value is not of list type.
+    */
+  def getScalaList: immutable.List[IValue]
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Sets                                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Returns the set represented by `this` value.
+    *
+    * @throws FlixError if `this` value is not of set type.
+    */
+  def getJavaSet: java.util.Set[IValue]
+
+  /**
+    * Returns the set represented by `this` value.
+    *
+    * @throws FlixError if `this` value is not of set type.
+    */
+  def getScalaSet: immutable.Set[IValue]
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Maps                                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Returns the set represented by `this` value.
+    *
+    * @throws FlixError if `this` value is not of map type.
+    */
+  def getJavaMap: java.util.Map[IValue, IValue]
+
+  /**
+    * Returns the set represented by `this` value.
+    *
+    * @throws FlixError if `this` value is not of map type.
+    */
+  def getScalaMap: immutable.Map[IValue, IValue]
 }
