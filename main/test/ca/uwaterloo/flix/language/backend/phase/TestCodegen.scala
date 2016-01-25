@@ -12,12 +12,16 @@ import org.scalatest.FunSuite
 
 class TestCodegen extends FunSuite {
 
+  val loc = SourceLocation.Unknown
+  val sp = SourcePosition.Unknown
+  val compiledClassName = "ca.uwaterloo.flix.compiled.FlixDefinitions"
+
   val name = Name.Resolved.mk(List("foo", "bar", "main"))
   val name01 = Name.Resolved.mk(List("foo", "bar", "f"))
   val name02 = Name.Resolved.mk(List("foo", "bar", "g"))
   val name03 = Name.Resolved.mk(List("foo", "bar", "h"))
 
-  def toIdent(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
+  def toIdent(s: String): Name.Ident = Name.Ident(sp, s, sp)
 
   val constPropName = Name.Resolved.mk(List("foo", "bar", "baz", "ConstProp"))
   val identB = toIdent("Bot")
@@ -28,10 +32,6 @@ class TestCodegen extends FunSuite {
   val tagTpeV = Type.Tag(constPropName, identV, Type.Int)
   val tagTpeT = Type.Tag(constPropName, identT, Type.Unit)
   val enumTpe = Type.Enum(Map("ConstProp.Bot" -> tagTpeB, "ConstProp.Val" -> tagTpeV, "ConstProp.Top" -> tagTpeT))
-
-  val loc = SourceLocation.Unknown
-  val sp = SourcePosition.Unknown
-  val compiledClassName = "ca.uwaterloo.flix.compiled.FlixDefinitions"
 
   class CompiledCode(definitions: List[Definition], debug: Boolean = false) {
     object Loader extends ClassLoader {
@@ -420,8 +420,6 @@ class TestCodegen extends FunSuite {
     assertResult(Value.Unit)(result)
   }
 
-  // TODO: Boolean literals
-
   /////////////////////////////////////////////////////////////////////////////
   // Int constants                                                           //
   /////////////////////////////////////////////////////////////////////////////
@@ -751,7 +749,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Var02") {
     val definition = Function(name, args = List("x"),
-      body = Var(Name.Ident(sp, "x", sp), 0, Type.Int32, loc),
+      body = Var(toIdent("x"), 0, Type.Int32, loc),
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
@@ -762,7 +760,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Var03") {
     val definition = Function(name, args = List("x", "y", "z"),
-      body = Var(Name.Ident(sp, "y", sp), 1, Type.Int32, loc),
+      body = Var(toIdent("y"), 1, Type.Int32, loc),
       Type.Lambda(List(Type.Int32, Type.Int32, Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
@@ -775,7 +773,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Var04") {
     val definition = Function(name, args = List("x"),
-      body = Var(Name.Ident(sp, "x", sp), 0, Type.Int64, loc),
+      body = Var(toIdent("x"), 0, Type.Int64, loc),
       Type.Lambda(List(Type.Int64), Type.Int64), loc)
 
     val code = new CompiledCode(List(definition))
@@ -786,7 +784,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Var05") {
     val definition = Function(name, args = List("x", "y", "z"),
-      body = Var(Name.Ident(sp, "y", sp), 2, Type.Int64, loc),
+      body = Var(toIdent("y"), 2, Type.Int64, loc),
       Type.Lambda(List(Type.Int64, Type.Int64, Type.Int64), Type.Int64), loc)
 
     val code = new CompiledCode(List(definition))
@@ -799,7 +797,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Var06") {
     val definition = Function(name, args = List("x", "y", "z"),
-      body = Var(Name.Ident(sp, "y", sp), 1, Type.Int64, loc),
+      body = Var(toIdent("y"), 1, Type.Int64, loc),
       Type.Lambda(List(Type.Int32, Type.Int64, Type.Int64), Type.Int64), loc)
 
     val code = new CompiledCode(List(definition))
@@ -816,7 +814,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Let01") {
     val definition = Function(name, args = List(),
-      body = Let(Name.Ident(sp, "x", sp), 0, Int32(42),
+      body = Let(toIdent("x"), 0, Int32(42),
         Int32(-1), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
@@ -828,8 +826,8 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Let02") {
     val definition = Function(name, args = List(),
-      body = Let(Name.Ident(sp, "x", sp), 0, Int32(42),
-        Var(Name.Ident(sp, "x", sp), 0, Type.Int32, loc), Type.Int32, loc),
+      body = Let(toIdent("x"), 0, Int32(42),
+        Var(toIdent("x"), 0, Type.Int32, loc), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
@@ -840,10 +838,10 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Let03") {
     val definition = Function(name, args = List(),
-      body = Let(Name.Ident(sp, "x", sp), 0, Int32(1337),
-        Let(Name.Ident(sp, "y", sp), 1, Int32(-101010),
-          Let(Name.Ident(sp, "z", sp), 2, Int32(42),
-            Var(Name.Ident(sp, "y", sp), 1, Type.Int32, loc),
+      body = Let(toIdent("x"), 0, Int32(1337),
+        Let(toIdent("y"), 1, Int32(-101010),
+          Let(toIdent("z"), 2, Int32(42),
+            Var(toIdent("y"), 1, Type.Int32, loc),
             Type.Int32, loc),
           Type.Int32, loc),
         Type.Int32, loc),
@@ -857,10 +855,10 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Let04") {
     val definition = Function(name, args = List("a", "b", "c"),
-      body = Let(Name.Ident(sp, "x", sp), 3, Int32(1337),
-        Let(Name.Ident(sp, "y", sp), 4, Int32(-101010),
-          Let(Name.Ident(sp, "z", sp), 5, Int32(42),
-            Var(Name.Ident(sp, "y", sp), 4, Type.Int32, loc),
+      body = Let(toIdent("x"), 3, Int32(1337),
+        Let(toIdent("y"), 4, Int32(-101010),
+          Let(toIdent("z"), 5, Int32(42),
+            Var(toIdent("y"), 4, Type.Int32, loc),
             Type.Int32, loc),
           Type.Int32, loc),
         Type.Int32, loc),
@@ -876,10 +874,10 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Let05") {
     val definition = Function(name, args = List("a", "b", "c"),
-      body = Let(Name.Ident(sp, "x", sp), 3, Int32(1337),
-        Let(Name.Ident(sp, "y", sp), 4, Int32(-101010),
-          Let(Name.Ident(sp, "z", sp), 5, Int32(42),
-            Var(Name.Ident(sp, "b", sp), 1, Type.Int32, loc),
+      body = Let(toIdent("x"), 3, Int32(1337),
+        Let(toIdent("y"), 4, Int32(-101010),
+          Let(toIdent("z"), 5, Int32(42),
+            Var(toIdent("b"), 1, Type.Int32, loc),
             Type.Int32, loc),
           Type.Int32, loc),
         Type.Int32, loc),
@@ -895,8 +893,8 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Let06") {
     val definition = Function(name, args = List(),
-      body = Let(Name.Ident(sp, "x", sp), 0, Int64(42),
-        Var(Name.Ident(sp, "x", sp), 0, Type.Int64, loc), Type.Int64, loc),
+      body = Let(toIdent("x"), 0, Int64(42),
+        Var(toIdent("x"), 0, Type.Int64, loc), Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
 
     val code = new CompiledCode(List(definition))
@@ -907,10 +905,10 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Let07") {
     val definition = Function(name, args = List(),
-      body = Let(Name.Ident(sp, "x", sp), 0, Int64(1337),
-        Let(Name.Ident(sp, "y", sp), 2, Int64(-101010),
-          Let(Name.Ident(sp, "z", sp), 4, Int64(42),
-            Var(Name.Ident(sp, "y", sp), 2, Type.Int64, loc),
+      body = Let(toIdent("x"), 0, Int64(1337),
+        Let(toIdent("y"), 2, Int64(-101010),
+          Let(toIdent("z"), 4, Int64(42),
+            Var(toIdent("y"), 2, Type.Int64, loc),
             Type.Int64, loc),
           Type.Int64, loc),
         Type.Int64, loc),
@@ -924,10 +922,10 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Let08") {
     val definition = Function(name, args = List(),
-      body = Let(Name.Ident(sp, "x", sp), 0, Int32(1337),
-        Let(Name.Ident(sp, "y", sp), 1, Int64(-101010),
-          Let(Name.Ident(sp, "z", sp), 3, Int64(42),
-            Var(Name.Ident(sp, "y", sp), 1, Type.Int64, loc),
+      body = Let(toIdent("x"), 0, Int32(1337),
+        Let(toIdent("y"), 1, Int64(-101010),
+          Let(toIdent("z"), 3, Int64(42),
+            Var(toIdent("y"), 1, Type.Int64, loc),
             Type.Int64, loc),
           Type.Int64, loc),
         Type.Int64, loc),
@@ -941,10 +939,10 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Let09") {
     val definition = Function(name, args = List("a", "b", "c"),
-      body = Let(Name.Ident(sp, "x", sp), 6, Int64(1337),
-        Let(Name.Ident(sp, "y", sp), 8, Int64(-101010),
-          Let(Name.Ident(sp, "z", sp), 10, Int64(42),
-            Var(Name.Ident(sp, "y", sp), 8, Type.Int64, loc),
+      body = Let(toIdent("x"), 6, Int64(1337),
+        Let(toIdent("y"), 8, Int64(-101010),
+          Let(toIdent("z"), 10, Int64(42),
+            Var(toIdent("y"), 8, Type.Int64, loc),
             Type.Int64, loc),
           Type.Int64, loc),
         Type.Int64, loc),
@@ -960,10 +958,10 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Let10") {
     val definition = Function(name, args = List("a", "b", "c"),
-      body = Let(Name.Ident(sp, "x", sp), 5, Int32(1337),
-        Let(Name.Ident(sp, "y", sp), 6, Int64(-101010),
-          Let(Name.Ident(sp, "z", sp), 8, Int64(42),
-            Var(Name.Ident(sp, "y", sp), 6, Type.Int64, loc),
+      body = Let(toIdent("x"), 5, Int32(1337),
+        Let(toIdent("y"), 6, Int64(-101010),
+          Let(toIdent("z"), 8, Int64(42),
+            Var(toIdent("y"), 6, Type.Int64, loc),
             Type.Int64, loc),
           Type.Int64, loc),
         Type.Int64, loc),
@@ -980,10 +978,10 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Let11") {
     val definition = Function(name, args = List("a", "b", "c"),
-      body = Let(Name.Ident(sp, "x", sp), 6, Int64(1337),
-        Let(Name.Ident(sp, "y", sp), 8, Int64(-101010),
-          Let(Name.Ident(sp, "z", sp), 10, Int64(42),
-            Var(Name.Ident(sp, "b", sp), 2, Type.Int64, loc),
+      body = Let(toIdent("x"), 6, Int64(1337),
+        Let(toIdent("y"), 8, Int64(-101010),
+          Let(toIdent("z"), 10, Int64(42),
+            Var(toIdent("b"), 2, Type.Int64, loc),
             Type.Int64, loc),
           Type.Int64, loc),
         Type.Int64, loc),
@@ -999,10 +997,10 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Let12") {
     val definition = Function(name, args = List("a", "b", "c"),
-      body = Let(Name.Ident(sp, "x", sp), 5, Int32(1337),
-        Let(Name.Ident(sp, "y", sp), 6, Int64(-101010),
-          Let(Name.Ident(sp, "z", sp), 8, Int64(42),
-            Var(Name.Ident(sp, "b", sp), 1, Type.Int64, loc),
+      body = Let(toIdent("x"), 5, Int32(1337),
+        Let(toIdent("y"), 6, Int64(-101010),
+          Let(toIdent("z"), 8, Int64(42),
+            Var(toIdent("b"), 1, Type.Int64, loc),
             Type.Int64, loc),
           Type.Int64, loc),
         Type.Int64, loc),
@@ -1059,7 +1057,7 @@ class TestCodegen extends FunSuite {
       body = Apply(name01, List(Int32(3)), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val f = Function(name01, args = List("x"),
-      body = Var(Name.Ident(sp, "x", sp), 0, Type.Int32, loc),
+      body = Var(toIdent("x"), 0, Type.Int32, loc),
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(main, f))
@@ -1077,8 +1075,8 @@ class TestCodegen extends FunSuite {
     val f = Function(name01, args = List("x", "y"),
       body = Binary(BinaryOperator.Minus,
         Binary(BinaryOperator.Times,
-          Var(Name.Ident(sp, "x", sp), 0, Type.Int32, loc),
-          Var(Name.Ident(sp, "y", sp), 1, Type.Int32, loc),
+          Var(toIdent("x"), 0, Type.Int32, loc),
+          Var(toIdent("y"), 1, Type.Int32, loc),
           Type.Int32, loc),
         Int32(6),
         Type.Int32, loc),
@@ -1098,19 +1096,19 @@ class TestCodegen extends FunSuite {
       body = Apply(name01, List(Int32(5)), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val f = Function(name01, args = List("x"),
-      body = Let(Name.Ident(sp, "y", sp), 1, Apply(name02,
+      body = Let(toIdent("y"), 1, Apply(name02,
         List(Binary(BinaryOperator.Plus,
-          Var(Name.Ident(sp, "x", sp), 0, Type.Int32, loc),
+          Var(toIdent("x"), 0, Type.Int32, loc),
           Int32(1), Type.Int32, loc)), Type.Int32, loc),
         Binary(BinaryOperator.Times,
-          Var(Name.Ident(sp, "y", sp), 1, Type.Int32, loc),
-          Var(Name.Ident(sp, "y", sp), 1, Type.Int32, loc),
+          Var(toIdent("y"), 1, Type.Int32, loc),
+          Var(toIdent("y"), 1, Type.Int32, loc),
           Type.Int32, loc),
         Type.Int32, loc),
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
     val g = Function(name02, args = List("x"),
       body =Binary(BinaryOperator.Minus,
-        Var(Name.Ident(sp, "x", sp), 0, Type.Int32, loc),
+        Var(toIdent("x"), 0, Type.Int32, loc),
         Int32(4),
         Type.Int32, loc),
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
@@ -1132,7 +1130,7 @@ class TestCodegen extends FunSuite {
     val f = Function(name01, args = List("x"),
       body = Apply(name02, List(
         Binary(BinaryOperator.Plus,
-          Var(Name.Ident(sp, "x", sp), 0, Type.Int32, loc),
+          Var(toIdent("x"), 0, Type.Int32, loc),
           Int32(1),
           Type.Int32, loc)),
         Type.Int32, loc),
@@ -1140,15 +1138,15 @@ class TestCodegen extends FunSuite {
     val g = Function(name02, args = List("x"),
       body = Apply(name03, List(
         Binary(BinaryOperator.Plus,
-          Var(Name.Ident(sp, "x", sp), 0, Type.Int32, loc),
+          Var(toIdent("x"), 0, Type.Int32, loc),
           Int32(10),
           Type.Int32, loc)),
         Type.Int32, loc),
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
     val h = Function(name03, args = List("x"),
       body = Binary(BinaryOperator.Times,
-        Var(Name.Ident(sp, "x", sp), 0, Type.Int32, loc),
-        Var(Name.Ident(sp, "x", sp), 0, Type.Int32, loc),
+        Var(toIdent("x"), 0, Type.Int32, loc),
+        Var(toIdent("x"), 0, Type.Int32, loc),
         Type.Int32, loc),
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
 
@@ -1164,30 +1162,30 @@ class TestCodegen extends FunSuite {
     // def g(x: scala.Int): scala.Int = x * 3
     // def h(x: scala.Int): scala.Int = g(x - 1)
     val main = Function(name, args = List(),
-      body = Let(Name.Ident(sp, "x", sp), 0, Int32(7),
+      body = Let(toIdent("x"), 0, Int32(7),
         Apply(name01, List(
           Apply(name02, List(Int32(3)), Type.Int32, loc),
           Apply(name03, List(
-            Apply(name03, List(Var(Name.Ident(sp, "x", sp), 0, Type.Int32, loc)),
+            Apply(name03, List(Var(toIdent("x"), 0, Type.Int32, loc)),
               Type.Int32, loc)), Type.Int32, loc)),
           Type.Int32, loc), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val f = Function(name01, args = List("x", "y"),
       body = Binary(BinaryOperator.Minus,
-        Var(Name.Ident(sp, "x", sp), 0, Type.Int32, loc),
-        Var(Name.Ident(sp, "y", sp), 1, Type.Int32, loc),
+        Var(toIdent("x"), 0, Type.Int32, loc),
+        Var(toIdent("y"), 1, Type.Int32, loc),
         Type.Int32, loc),
       Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
     val g = Function(name02, args = List("x"),
       body = Binary(BinaryOperator.Times,
-          Var(Name.Ident(sp, "x", sp), 0, Type.Int32, loc),
+          Var(toIdent("x"), 0, Type.Int32, loc),
           Int32(3),
           Type.Int32, loc),
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
     val h = Function(name03, args = List("x"),
       body = Apply(name02, List(
         Binary(BinaryOperator.Minus,
-          Var(Name.Ident(sp, "x", sp), 0, Type.Int32, loc),
+          Var(toIdent("x"), 0, Type.Int32, loc),
           Int32(1),
           Type.Int32, loc)),
         Type.Int32, loc),
@@ -5510,7 +5508,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - IfThenElse03") {
     val definition = Function(name, args = List("x"),
-      body = IfThenElse(Var(Name.Ident(sp, "x", sp), 0, Type.Bool, loc),
+      body = IfThenElse(Var(toIdent("x"), 0, Type.Bool, loc),
         IfThenElse(False, Int32(1), Int32(2), Type.Int32, loc),
         IfThenElse(True, Int32(3), Int32(4), Type.Int32, loc),
         Type.Int32, loc),
@@ -5528,7 +5526,7 @@ class TestCodegen extends FunSuite {
     val definition = Function(name, args = List("x"),
       body = IfThenElse(
         IfThenElse(
-          Unary(UnaryOperator.Not, Var(Name.Ident(sp, "x", sp), 0, Type.Bool, loc), Type.Bool, loc),
+          Unary(UnaryOperator.Not, Var(toIdent("x"), 0, Type.Bool, loc), Type.Bool, loc),
           True,
           False,
           Type.Bool, loc),
@@ -5549,8 +5547,8 @@ class TestCodegen extends FunSuite {
     val definition = Function(name, args = List("x", "y"),
       body = IfThenElse(
         Binary(BinaryOperator.And,
-          Var(Name.Ident(sp, "x", sp), 0, Type.Bool, loc),
-          Var(Name.Ident(sp, "y", sp), 1, Type.Bool, loc),
+          Var(toIdent("x"), 0, Type.Bool, loc),
+          Var(toIdent("y"), 1, Type.Bool, loc),
           Type.Bool, loc),
         Int32(1234),
         Int32(5678),
@@ -5577,8 +5575,8 @@ class TestCodegen extends FunSuite {
     val definition = Function(name, args = List("x", "y"),
       body = IfThenElse(
         Binary(BinaryOperator.Or,
-          Var(Name.Ident(sp, "x", sp), 0, Type.Bool, loc),
-          Var(Name.Ident(sp, "y", sp), 1, Type.Bool, loc),
+          Var(toIdent("x"), 0, Type.Bool, loc),
+          Var(toIdent("y"), 1, Type.Bool, loc),
           Type.Bool, loc),
         Int32(1234),
         Int32(5678),
@@ -5605,8 +5603,8 @@ class TestCodegen extends FunSuite {
     val definition = Function(name, args = List("x", "y"),
       body = IfThenElse(
         Binary(BinaryOperator.Less,
-          Var(Name.Ident(sp, "x", sp), 0, Type.Int8, loc),
-          Var(Name.Ident(sp, "y", sp), 1, Type.Int8, loc),
+          Var(toIdent("x"), 0, Type.Int8, loc),
+          Var(toIdent("y"), 1, Type.Int8, loc),
           Type.Bool, loc),
         Int32(1234),
         Int32(5678),
@@ -5625,8 +5623,8 @@ class TestCodegen extends FunSuite {
     val definition = Function(name, args = List("x", "y"),
       body = IfThenElse(
         Binary(BinaryOperator.LessEqual,
-          Var(Name.Ident(sp, "x", sp), 0, Type.Int16, loc),
-          Var(Name.Ident(sp, "y", sp), 1, Type.Int16, loc),
+          Var(toIdent("x"), 0, Type.Int16, loc),
+          Var(toIdent("y"), 1, Type.Int16, loc),
           Type.Bool, loc),
         Int32(1234),
         Int32(5678),
@@ -5645,8 +5643,8 @@ class TestCodegen extends FunSuite {
     val definition = Function(name, args = List("x", "y"),
       body = IfThenElse(
         Binary(BinaryOperator.Greater,
-          Var(Name.Ident(sp, "x", sp), 0, Type.Int32, loc),
-          Var(Name.Ident(sp, "y", sp), 1, Type.Int32, loc),
+          Var(toIdent("x"), 0, Type.Int32, loc),
+          Var(toIdent("y"), 1, Type.Int32, loc),
           Type.Bool, loc),
         Int32(1234),
         Int32(5678),
@@ -5665,8 +5663,8 @@ class TestCodegen extends FunSuite {
     val definition = Function(name, args = List("x", "y"),
       body = IfThenElse(
         Binary(BinaryOperator.GreaterEqual,
-          Var(Name.Ident(sp, "x", sp), 0, Type.Int64, loc),
-          Var(Name.Ident(sp, "y", sp), 2, Type.Int64, loc),
+          Var(toIdent("x"), 0, Type.Int64, loc),
+          Var(toIdent("y"), 2, Type.Int64, loc),
           Type.Bool, loc),
         Int32(1234),
         Int32(5678),
@@ -5685,8 +5683,8 @@ class TestCodegen extends FunSuite {
     val definition = Function(name, args = List("x", "y"),
       body = IfThenElse(
         Binary(BinaryOperator.Equal,
-          Var(Name.Ident(sp, "x", sp), 0, Type.Int32, loc),
-          Var(Name.Ident(sp, "y", sp), 1, Type.Int32, loc),
+          Var(toIdent("x"), 0, Type.Int32, loc),
+          Var(toIdent("y"), 1, Type.Int32, loc),
           Type.Bool, loc),
         Int32(1234),
         Int32(5678),
@@ -5705,8 +5703,8 @@ class TestCodegen extends FunSuite {
     val definition = Function(name, args = List("x", "y"),
       body = IfThenElse(
         Binary(BinaryOperator.NotEqual,
-          Var(Name.Ident(sp, "x", sp), 0, Type.Int32, loc),
-          Var(Name.Ident(sp, "y", sp), 1, Type.Int32, loc),
+          Var(toIdent("x"), 0, Type.Int32, loc),
+          Var(toIdent("y"), 1, Type.Int32, loc),
           Type.Bool, loc),
         Int32(1234),
         Int32(5678),
@@ -5765,7 +5763,55 @@ class TestCodegen extends FunSuite {
     assertResult(Value.mkTag(constPropName, identT.name, Value.Unit))(result)
   }
 
+  test("Codegen - Tag04") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val tagName = Name.Resolved.mk("abc")
+    val ident = toIdent("def")
+    val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
+    val definition = Function(name, args = List(),
+      body = Tag(tagName, ident, True, enum, loc),
+      Type.Lambda(List(), enum), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.mkTag(tagName, ident.name, Value.True))(result)
+  }
+
   test("Codegen - Tag05") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val tagName = Name.Resolved.mk("abc")
+    val ident = toIdent("def")
+    val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
+    val definition = Function(name, args = List(),
+      body = Tag(tagName, ident, False, enum, loc),
+      Type.Lambda(List(), enum), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.mkTag(tagName, ident.name, Value.False))(result)
+  }
+
+  test("Codegen - Tag06") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val tagName = Name.Resolved.mk("abc")
+    val ident = toIdent("def")
+    val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
+    val definition = Function(name, args = List("x"),
+      body = Tag(tagName, ident, Var(toIdent("x"), 0, Type.Bool, loc), enum, loc),
+      Type.Lambda(List(Type.Bool), enum), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List(java.lang.Boolean.TYPE), List(false.asInstanceOf[Object]))
+
+    assertResult(Value.mkTag(tagName, ident.name, Value.False))(result)
+  }
+
+  test("Codegen - Tag07") {
     import ca.uwaterloo.flix.runtime.Value
 
     val tagName = Name.Resolved.mk("abc")
