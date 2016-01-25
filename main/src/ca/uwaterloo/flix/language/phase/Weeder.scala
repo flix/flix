@@ -717,12 +717,6 @@ object Weeder {
         Type.compile(exp.tpe) map {
           case tpe => WeededAst.Expression.Error(tpe, exp.loc)
         }
-
-      case exp: ParsedAst.Expression.Native =>
-        val parts = exp.name.split('.')
-        val className = parts.dropRight(1).mkString(".")
-        val memberName = parts.last
-        WeededAst.Expression.Native(className, memberName, exp.loc).toSuccess
     }
   }
 
@@ -856,11 +850,6 @@ object Weeder {
           @@(compile(term.t1, aliases), compile(term.t2, aliases)) map {
             case (t1, t2) => WeededAst.Term.Head.Apply(term.name, List(t1, t2), term.loc)
           }
-        case term: ParsedAst.Term.Native =>
-          val parts = term.name.split('.')
-          val className = parts.dropRight(1).mkString(".")
-          val memberName = parts.last
-          WeededAst.Term.Head.Native(className, memberName, term.loc).toSuccess
       }
     }
 
@@ -880,7 +869,6 @@ object Weeder {
           }
         case term: ParsedAst.Term.Apply => IllegalBodyTerm("Function calls may not occur in body predicates.", term.loc).toFailure
         case term: ParsedAst.Term.Infix => IllegalBodyTerm("Function calls may not occur in body predicates.", term.loc).toFailure
-        case term: ParsedAst.Term.Native => IllegalBodyTerm("Native fields/calls may not occur in body predicates.", term.loc).toFailure // TODO: Allow?
       }
     }
 
@@ -909,8 +897,6 @@ object Weeder {
         compile(tpe) map WeededAst.Type.Set
       case ParsedAst.Type.Parametric(name, pelms) =>
         Unsupported("Parametric types are not yet supported.", name.loc).toFailure
-      case p@ParsedAst.Type.Native(sp1, name, sp2) =>
-        WeededAst.Type.Native(name, p.loc).toSuccess
     }
   }
 

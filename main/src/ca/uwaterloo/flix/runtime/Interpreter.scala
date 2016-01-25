@@ -14,12 +14,12 @@ object Interpreter {
   // TODO: Use this exception:
 
   /**
-   * An exception thrown to indicate an internal runtime error.
-   *
-   * This exception should never be thrown if the compiler and runtime is implemented correctly.
-   *
-   * @param message the error message.
-   */
+    * An exception thrown to indicate an internal runtime error.
+    *
+    * This exception should never be thrown if the compiler and runtime is implemented correctly.
+    *
+    * @param message the error message.
+    */
   case class InternalRuntimeError(message: String) extends RuntimeException(message)
 
   /*
@@ -50,7 +50,7 @@ object Interpreter {
    * example, the `exp` of Apply(exp, args, _, _), we directly call
    * `evalGeneral`.
    */
-  @tailrec private def evalInt(expr: Expression, root: Root, env: Env = mutable.Map.empty): Int =  expr match {
+  @tailrec private def evalInt(expr: Expression, root: Root, env: Env = mutable.Map.empty): Int = expr match {
     case Expression.Lit(literal, _, _) => evalLit(literal).toInt
     case Expression.Var(ident, _, loc) => env(ident.name).toInt
     case Expression.Ref(name, _, _) => evalInt(root.constants(name).exp, root, env)
@@ -80,10 +80,8 @@ object Interpreter {
         evalInt(result, root, newEnv)
       else
         throw new RuntimeException(s"Unmatched value $value.")
-    case Expression.NativeField(field, _, _) =>
-      field.get(null).asInstanceOf[java.lang.Integer].intValue()
     case Expression.Lambda(_, _, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
-         Expression.Set(_, _, _) | Expression.NativeMethod(_, _, _) | Expression.Hook(_, _, _) =>
+         Expression.Set(_, _, _) | Expression.Hook(_, _, _) =>
       throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int.")
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
   }
@@ -109,7 +107,7 @@ object Interpreter {
     case BinaryOperator.BitwiseLeftShift => evalInt(e1, root, env) << evalInt(e2, root, env)
     case BinaryOperator.BitwiseRightShift => evalInt(e1, root, env) >> evalInt(e2, root, env)
     case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual |
-         BinaryOperator.Equal | BinaryOperator.NotEqual | BinaryOperator.And | BinaryOperator.Or  =>
+         BinaryOperator.Equal | BinaryOperator.NotEqual | BinaryOperator.And | BinaryOperator.Or =>
       throw new InternalRuntimeError(s"Type of binary expression is not Type.Int.")
   }
 
@@ -156,13 +154,13 @@ object Interpreter {
         evalBool(result, root, newEnv)
       else
         throw new RuntimeException(s"Unmatched value $value.")
-    case Expression.NativeField(field, _, _) =>
-      field.get(null).asInstanceOf[java.lang.Boolean].booleanValue()
     case Expression.Lambda(_, _, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
-         Expression.Set(_, _, _) | Expression.NativeMethod(_, _, _) | Expression.Hook(_, _, _) =>
-      throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
+         Expression.Set(_, _, _) | Expression.Hook(_, _, _) =>
+      throw new InternalRuntimeError(s"Expression $expr has type ${
+        expr.tpe
+      } instead of Type.Bool.")
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
-    }
+  }
 
   private def evalBoolUnary(op: UnaryOperator, e: Expression, root: Root, env: Env): Boolean = op match {
     case UnaryOperator.Not => !evalBool(e, root, env)
@@ -236,8 +234,6 @@ object Interpreter {
         eval(result, root, newEnv)
       else
         throw new RuntimeException(s"Unmatched value $value.")
-    case Expression.NativeField(field, tpe, _) => Value.java2flix(field.get(null), tpe)
-    case Expression.NativeMethod(method, _, _) => Value.NativeMethod(method)
     case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
     case exp: Expression.Tuple =>
       val elms = new Array[Value](exp.asArray.length)
@@ -362,8 +358,8 @@ object Interpreter {
   // TODO: Everything below here is really bad and should just be replaced at will.
 
   /**
-   * Evaluates the given head term `t` under the given environment `env0`
-   */
+    * Evaluates the given head term `t` under the given environment `env0`
+    */
   def evalHeadTerm(t: Term.Head, root: Root, env: mutable.Map[String, Value]): Value = t match {
     case Term.Head.Var(x, _, _) => env(x.name)
     case Term.Head.Lit(lit, _, _) => evalLit(lit)
@@ -379,7 +375,6 @@ object Interpreter {
     case Term.Head.ApplyHook(hook, args, _, _) =>
       val evalArgs = args.map(a => evalHeadTerm(a, root, env))
       hook.inv(evalArgs.toArray)
-    case Term.Head.NativeField(field, tpe, _) => Value.java2flix(field.get(null), tpe)
   }
 
   def evalBodyTerm(t: Term.Body, env: Env): Value = t match {
@@ -397,15 +392,6 @@ object Interpreter {
           i = i + 1
         }
         eval(body, root, closureEnv)
-      case Value.NativeMethod(method) =>
-        val nativeArgs = new Array[java.lang.Object](args.length)
-        var i = 0
-        while (i < args.length) {
-          nativeArgs(i) = args(i).toJava
-          i = i + 1
-        }
-        val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
-        Value.java2flix(method.invoke(null, nativeArgs: _*), tpe)
       case Value.HookClosure(inv) => inv(args)
     }
 

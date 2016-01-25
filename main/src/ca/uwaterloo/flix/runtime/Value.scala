@@ -33,7 +33,7 @@ sealed trait Value {
     case Value.Set(elms) => elms.map(_.toJava)
     case Value.Native(v) => v
     case v: Value.Tag => this
-    case Value.Unit | Value.Tuple(_) | Value.Closure(_, _, _) | Value.NativeMethod(_) => this
+    case Value.Unit | Value.Tuple(_) | Value.Closure(_, _, _) => this
   }
 
   //  TODO: Figure out a place to put all the formatting functions.
@@ -47,7 +47,6 @@ sealed trait Value {
     case Value.Set(elms) => "{" + elms.map(_.pretty).mkString(",") + "}"
     case Value.Closure(_, _, _) => ???
     case Value.Native(v) => s"Native($v)"
-    case Value.NativeMethod(m) => ???
   }
 }
 
@@ -194,14 +193,12 @@ object Value {
 
   final case class Native(value: AnyRef) extends Value
 
-  final case class NativeMethod(method: Method) extends Value
-
   final case class HookClosure(inv: Invokable) extends Value
 
   /** *************************************************************************
     * Convert from native values to Flix values                               *
     * **************************************************************************/
-
+  @deprecated("this method is now unused. Do we need it?", "0.1.0")
   def java2flix(obj: AnyRef, tpe: Type): Value = tpe match {
     case Type.Bool => if (obj.asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
     case Type.Int => Value.mkInt(obj.asInstanceOf[java.lang.Integer].intValue)

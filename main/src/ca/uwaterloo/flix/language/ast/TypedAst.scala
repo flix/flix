@@ -540,24 +540,6 @@ object TypedAst {
       */
     case class Error(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    /**
-      * A typed AST node representing a native field access expression.
-      *
-      * @param field the field itself
-      * @param tpe   the type of the field.
-      * @param loc   the source location.
-      */
-    case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
-
-    /**
-      * A typed AST node representing a native method expression.
-      *
-      * @param method the field itself
-      * @param tpe    the type of the method.
-      * @param loc    the source location.
-      */
-    case class NativeMethod(method: Method, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
-
   }
 
   /**
@@ -925,16 +907,6 @@ object TypedAst {
         @deprecated("moved to ExecutableAST", "0.1")
         val argsAsArray: Array[TypedAst.Term.Head] = args.toArray
       }
-
-      /**
-        * A typed AST node representing a reference to a native JVM static field.
-        *
-        * @param field the field.
-        * @param tpe   the type of the field.
-        * @param loc   the source location.
-        */
-      case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
-
     }
 
     /**

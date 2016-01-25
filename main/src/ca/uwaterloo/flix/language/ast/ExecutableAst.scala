@@ -200,10 +200,6 @@ object ExecutableAst {
 
     case class Error(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
-    case class NativeMethod(method: Method, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
   }
 
   sealed trait Predicate extends ExecutableAst {
@@ -299,8 +295,6 @@ object ExecutableAst {
         // TODO: Move
         val argsAsArray: Array[ExecutableAst.Term.Head] = args.toArray
       }
-
-      case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
     }
 
