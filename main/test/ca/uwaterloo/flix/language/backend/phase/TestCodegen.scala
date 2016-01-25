@@ -709,6 +709,32 @@ class TestCodegen extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Strings                                                                 //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Codegen - Str01") {
+    val definition = Function(name, args = List(),
+      body = Str("foobar", loc),
+      Type.Lambda(List(), Type.Str), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+
+    assertResult("foobar")(result)
+  }
+
+  test("Codegen - Str02") {
+    val definition = Function(name, args = List(),
+      body = Str("", loc),
+      Type.Lambda(List(), Type.Str), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+
+    assertResult("")(result)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Variables                                                               //
   /////////////////////////////////////////////////////////////////////////////
 
@@ -5737,6 +5763,22 @@ class TestCodegen extends FunSuite {
     val result = code.call(name)
 
     assertResult(Value.mkTag(constPropName, identT.name, Value.Unit))(result)
+  }
+
+  test("Codegen - Tag05") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val tagName = Name.Resolved.mk("abc")
+    val ident = toIdent("def")
+    val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Str)))
+    val definition = Function(name, args = List(),
+      body = Tag(tagName, ident, Str("hello", loc), enum, loc),
+      Type.Lambda(List(), enum), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.mkTag(tagName, ident.name, Value.mkStr("hello")))(result)
   }
 
 }

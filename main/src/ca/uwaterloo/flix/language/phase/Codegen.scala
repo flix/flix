@@ -8,6 +8,10 @@ import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.util.CheckClassAdapter
 import org.objectweb.asm.{ClassVisitor, ClassWriter, Label, MethodVisitor}
 
+// TODO: For now, we hardcode the type descriptors for all the Value objects
+// There's no nice way of using reflection to get the type of a companion object.
+// Later, we'll rewrite Value in a Java-like style so reflection is easier
+
 object Codegen {
 
   case class Context(definitions: List[Definition], clazz: String = "ca/uwaterloo/flix/compiled/FlixDefinitions") {
@@ -27,15 +31,13 @@ object Codegen {
     import ca.uwaterloo.flix.runtime.Value
     tpe match {
       case Type.Var(x) => ???
-      case Type.Unit =>
-        // TODO: Can we do better than hardcoding?
-        "Lca/uwaterloo/flix/runtime/Value$Unit$;"
+      case Type.Unit => "Lca/uwaterloo/flix/runtime/Value$Unit$;"
       case Type.Bool => "Z"   // JVM boolean
       case Type.Int8 => "B"   // JVM byte (8 bits)
       case Type.Int16 => "S"  // JVM short (16 bits)
       case Type.Int32 | Type.Int => "I"  // JVM int (32 bits)
       case Type.Int64 => "J"  // JVM long (64 bits)
-      case Type.Str => ???
+      case Type.Str => asm.Type.getDescriptor(classOf[java.lang.String])
       case Type.Tag(_, _, _) | Type.Enum(_) =>
         // TODO: Can we return something of Type.Tag? Looks like we only return Type.Enum, which is a set of Type.Tags.
         asm.Type.getDescriptor(classOf[Value.Tag])
@@ -102,8 +104,7 @@ object Codegen {
       case Type.Var(x) => ???
       case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
-      case Type.Str => ???
-      case Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) => mv.visitInsn(ARETURN)
+      case Type.Str | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) => mv.visitInsn(ARETURN)
       case Type.Tuple(elms) => ???
       case Type.Opt(elmType) => ???
       case Type.Lst(elmType) => ???
@@ -132,7 +133,7 @@ object Codegen {
     case Expression.Int16(s) => compileInt(visitor)(s)
     case Expression.Int32(i) => compileInt(visitor)(i)
     case Expression.Int64(l) => compileInt(visitor)(l, isLong = true)
-    case Expression.Str(s, loc) => ???
+    case Expression.Str(s, _) => visitor.visitLdcInsn(s)
     case load: LoadExpression => compileLoadExpr(context, visitor)(load)
     case store: StoreExpression => compileStoreExpr(context, visitor)(store)
     case Expression.Var(ident, offset, tpe, loc) =>
@@ -140,8 +141,7 @@ object Codegen {
         case Type.Var(x) => ???
         case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ILOAD, offset)
         case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
-        case Type.Str => ???
-        case Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) => visitor.visitVarInsn(ALOAD, offset)
+        case Type.Str | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) => visitor.visitVarInsn(ALOAD, offset)
         case Type.Tuple(elms) => ???
         case Type.Opt(elmType) => ???
         case Type.Lst(elmType) => ???
@@ -183,8 +183,7 @@ object Codegen {
         case Type.Var(x) => ???
         case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ISTORE, offset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
-        case Type.Str => ???
-        case Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) => visitor.visitVarInsn(ASTORE, offset)
+        case Type.Str | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) => visitor.visitVarInsn(ASTORE, offset)
         case Type.Tuple(elms) => ???
         case Type.Opt(elmType) => ???
         case Type.Lst(elmType) => ???
@@ -200,7 +199,6 @@ object Codegen {
       compileExpression(context, visitor)(exp2)
     case Expression.TagOf(exp, enum, tag, tpe, loc) => ???
     case Expression.Tag(enum, tag, exp, tpe, loc) =>
-      // TODO: Can we use reflection instead of hardcoding everything?
       // load the Value companion object (so we can call Value.mkTag)
       visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
 
@@ -232,7 +230,10 @@ object Codegen {
           compileExpression(context, visitor)(exp)
           visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt", "(I)Lca/uwaterloo/flix/runtime/Value$Int;", false)
         case Type.Int64 => ??? // Value.Int doesn't support longs
-        case Type.Str => ???
+        case Type.Str =>
+          visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+          compileExpression(context, visitor)(exp)
+          visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkStr", "(Ljava/lang/String;)Lca/uwaterloo/flix/runtime/Value$Str;", false)
         case Type.Tag(_, _, _) => ???
         case Type.Enum(_) => ???
         case Type.Tuple(elms) => ???
