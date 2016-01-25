@@ -189,12 +189,14 @@ object Value {
   }
 
   /** *************************************************************************
-    * Value.Native, Value.NativeMethod implementations                        *
+    * Value.Native, Value.NativeMethod, Value.HookClosure implementations     *
     * **************************************************************************/
 
   final case class Native(value: AnyRef) extends Value
 
   final case class NativeMethod(method: Method) extends Value
+
+  final case class HookClosure(inv: Invokable) extends Value
 
   /** *************************************************************************
     * Convert from native values to Flix values                               *

@@ -54,7 +54,6 @@ object Interpreter {
     case Expression.Lit(literal, _, _) => evalLit(literal).toInt
     case Expression.Var(ident, _, loc) => env(ident.name).toInt
     case Expression.Ref(name, _, _) => evalInt(root.constants(name).exp, root, env)
-    case Expression.Hook(hook, tpe, loc) => ??? // TODO
     case apply: Expression.Apply =>
       val evalArgs = new Array[Value](apply.argsAsArray.length)
       var i = 0
@@ -84,7 +83,7 @@ object Interpreter {
     case Expression.NativeField(field, _, _) =>
       field.get(null).asInstanceOf[java.lang.Integer].intValue()
     case Expression.Lambda(_, _, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
-         Expression.Set(_, _, _) | Expression.NativeMethod(_, _, _) =>
+         Expression.Set(_, _, _) | Expression.NativeMethod(_, _, _) | Expression.Hook(_, _, _) =>
       throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int.")
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
   }
@@ -131,7 +130,6 @@ object Interpreter {
     case Expression.Lit(literal, _, _) => evalLit(literal).toBool
     case Expression.Var(ident, _, loc) => env(ident.name).toBool
     case Expression.Ref(name, _, _) => evalBool(root.constants(name).exp, root, env)
-    case Expression.Hook(hook, tpe, loc) => ??? // TODO
     case apply: Expression.Apply =>
       val evalArgs = new Array[Value](apply.argsAsArray.length)
       var i = 0
@@ -161,7 +159,7 @@ object Interpreter {
     case Expression.NativeField(field, _, _) =>
       field.get(null).asInstanceOf[java.lang.Boolean].booleanValue()
     case Expression.Lambda(_, _, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
-         Expression.Set(_, _, _) | Expression.NativeMethod(_, _, _) =>
+         Expression.Set(_, _, _) | Expression.NativeMethod(_, _, _) | Expression.Hook(_, _, _) =>
       throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
     }
@@ -203,7 +201,7 @@ object Interpreter {
     case Expression.Lit(literal, _, _) => evalLit(literal)
     case Expression.Var(ident, _, loc) => env(ident.name)
     case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
-    case Expression.Hook(hook, tpe, loc) => ??? // TODO
+    case Expression.Hook(hook, _, _) => Value.HookClosure(hook.inv)
     case exp: Expression.Lambda =>
       val formals = new Array[String](exp.argsAsArray.length)
       var i = 0
@@ -378,7 +376,9 @@ object Interpreter {
         i = i + 1
       }
       evalCall(function, evalArgs, root, env)
-    case term: Term.Head.ApplyHook => ??? // TODO
+    case Term.Head.ApplyHook(hook, args, _, _) =>
+      val evalArgs = args.map(a => evalHeadTerm(a, root, env))
+      hook.inv(evalArgs.toArray)
     case Term.Head.NativeField(field, tpe, _) => Value.java2flix(field.get(null), tpe)
   }
 
@@ -406,6 +406,7 @@ object Interpreter {
         }
         val tpe = function.tpe.asInstanceOf[Type.Lambda].retTpe
         Value.java2flix(method.invoke(null, nativeArgs: _*), tpe)
+      case Value.HookClosure(inv) => inv(args)
     }
 
   def eval2(closure: Value.Closure, arg1: Value, arg2: Value, root: Root): Value = {
