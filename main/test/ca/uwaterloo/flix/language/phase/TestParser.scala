@@ -709,18 +709,6 @@ class TestParser extends FunSuite {
     assert(result.get.isInstanceOf[ParsedAst.Expression.Error])
   }
 
-  test("Expression.NativeField01") {
-    val input = "#java.lang.Integer.MIN_VALUE"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Expression.Native])
-  }
-
-  test("Expression.NativeMethod01") {
-    val input = "#java.nio.file.Files.isReadable"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Expression.Native])
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
   /////////////////////////////////////////////////////////////////////////////
@@ -1044,18 +1032,6 @@ class TestParser extends FunSuite {
     val input = "Foo.Bar `plus` Baz.Qux"
     val result = new Parser(SourceInput.Str(input)).Term.run().get
     assert(result.isInstanceOf[ParsedAst.Term.Infix])
-  }
-
-  test("Term.NativeField01") {
-    val input = "#java.lang.Integer.MIN_VALUE"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get
-    assert(result.isInstanceOf[ParsedAst.Term.Native])
-  }
-
-  test("Term.NativeMethod01") {
-    val input = "#java.nio.file.Files.isReadable"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get
-    assert(result.isInstanceOf[ParsedAst.Term.Native])
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1488,24 +1464,6 @@ class TestParser extends FunSuite {
     val result = new Parser(SourceInput.Str(input)).Type.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Type.Parametric])
-  }
-
-  test("Type.Native01") {
-    val input = "#java.lang.String"
-    val result = new Parser(SourceInput.Str(input)).Type.run().get
-    assert(result.isInstanceOf[ParsedAst.Type.Native])
-  }
-
-  test("Type.Native02") {
-    val input = "#java.util.ArrayList"
-    val result = new Parser(SourceInput.Str(input)).Type.run().get
-    assert(result.isInstanceOf[ParsedAst.Type.Native])
-  }
-
-  test("Type.Native03") {
-    val input = "#java.util.List"
-    val result = new Parser(SourceInput.Str(input)).Type.run().get
-    assert(result.isInstanceOf[ParsedAst.Type.Native])
   }
 
   /////////////////////////////////////////////////////////////////////////////

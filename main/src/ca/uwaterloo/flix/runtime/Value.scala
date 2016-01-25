@@ -18,24 +18,6 @@ sealed trait Value {
 
   def toSet: Set[Value] = this.asInstanceOf[Value.Set].elms
 
-  def toJava: java.lang.Object = (this: @unchecked) match {
-    case v: Value.Bool => boolean2Boolean(v.b)
-    case v: Value.Int => int2Integer(v.i)
-    case v: Value.Str => v.s
-    case Value.Tuple(elms) if elms.length == 2 =>
-      (elms(0).toJava, elms(1).toJava)
-    case Value.Tuple(elms) if elms.length == 3 =>
-      (elms(0).toJava, elms(1).toJava, elms(2).toJava)
-    case Value.Tuple(elms) if elms.length == 4 =>
-      (elms(0).toJava, elms(1).toJava, elms(2).toJava, elms(3).toJava)
-    case Value.Tuple(elms) if elms.length == 5 =>
-      (elms(0).toJava, elms(1).toJava, elms(2).toJava, elms(3).toJava, elms(4).toJava)
-    case Value.Set(elms) => elms.map(_.toJava)
-    case Value.Native(v) => v
-    case v: Value.Tag => this
-    case Value.Unit | Value.Tuple(_) | Value.Closure(_, _, _) | Value.NativeMethod(_) => this
-  }
-
   //  TODO: Figure out a place to put all the formatting functions.
   def pretty: String = this match {
     case Value.Unit => "()"
@@ -47,7 +29,6 @@ sealed trait Value {
     case Value.Set(elms) => "{" + elms.map(_.pretty).mkString(",") + "}"
     case Value.Closure(_, _, _) => ???
     case Value.Native(v) => s"Native($v)"
-    case Value.NativeMethod(m) => ???
   }
 }
 
@@ -189,59 +170,11 @@ object Value {
   }
 
   /** *************************************************************************
-    * Value.Native, Value.NativeMethod, Value.HookClosure implementations     *
+    * Value.Native, Value.HookClosure implementations                         *
     * **************************************************************************/
 
   final case class Native(value: AnyRef) extends Value
 
-  final case class NativeMethod(method: Method) extends Value
-
   final case class HookClosure(inv: Invokable) extends Value
 
-  /** *************************************************************************
-    * Convert from native values to Flix values                               *
-    * **************************************************************************/
-
-  def java2flix(obj: AnyRef, tpe: Type): Value = tpe match {
-    case Type.Bool => if (obj.asInstanceOf[java.lang.Boolean].booleanValue) Value.True else Value.False
-    case Type.Int => Value.mkInt(obj.asInstanceOf[java.lang.Integer].intValue)
-    case Type.Str => Value.mkStr(obj.asInstanceOf[java.lang.String])
-    case typs: Type.Tuple =>
-      val typsArray = typs.asArray
-      val tupleElms = new Array[Value](typsArray.length)
-      typsArray.length match {
-        case 2 =>
-          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object)]
-          tupleElms(0) = java2flix(t._1, typsArray(0))
-          tupleElms(1) = java2flix(t._2, typsArray(1))
-          Value.Tuple(tupleElms)
-        case 3 =>
-          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object)]
-          tupleElms(0) = java2flix(t._1, typsArray(0))
-          tupleElms(1) = java2flix(t._2, typsArray(1))
-          tupleElms(2) = java2flix(t._3, typsArray(2))
-          Value.Tuple(tupleElms)
-        case 4 =>
-          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
-          tupleElms(0) = java2flix(t._1, typsArray(0))
-          tupleElms(1) = java2flix(t._2, typsArray(1))
-          tupleElms(2) = java2flix(t._3, typsArray(2))
-          tupleElms(3) = java2flix(t._4, typsArray(3))
-          Value.Tuple(tupleElms)
-        case 5 =>
-          val t = obj.asInstanceOf[(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)]
-          tupleElms(0) = java2flix(t._1, typsArray(0))
-          tupleElms(1) = java2flix(t._2, typsArray(1))
-          tupleElms(2) = java2flix(t._3, typsArray(2))
-          tupleElms(3) = java2flix(t._4, typsArray(3))
-          tupleElms(4) = java2flix(t._5, typsArray(4))
-          Value.Tuple(tupleElms)
-        case _ => Value.Native(obj)
-      }
-    case Type.Set(typ) =>
-      Value.Set(obj.asInstanceOf[scala.collection.immutable.Set[java.lang.Object]].map(e => java2flix(e, typ)))
-    case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Set(_) | Type.Lambda(_, _) |
-         Type.Predicate(_) | Type.Native(_) | Type.Any =>
-      Value.Native(obj)
-  }
 }
