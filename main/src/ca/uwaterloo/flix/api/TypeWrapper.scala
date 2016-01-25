@@ -25,6 +25,9 @@ protected final class TypeWrapper(private val tpe: Type) extends IType {
   def isInt64: Boolean =
     tpe == Type.Int64
 
+  def isStr: Boolean =
+    tpe == Type.Str
+
   def isEnum: Boolean = tpe match {
     case Type.Enum(cases) => true
     case _ => false

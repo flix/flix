@@ -55,5 +55,11 @@ protected final class ValueWrapper(private val value: Value) extends IValue {
   def isInt64(i: Long): Boolean =
     getInt64 == i
 
+  def getStr: String = value match {
+    case v: Value.Str => v.s
+    case _ => throw new FlixApiError(s"Unexpected value: $value")
+  }
 
+  def isStr(s: String): Boolean =
+    getStr == s
 }

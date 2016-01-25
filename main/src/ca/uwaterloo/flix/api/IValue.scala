@@ -120,5 +120,22 @@ trait IValue {
     */
   def isInt64(i: Long): Boolean
 
+  /////////////////////////////////////////////////////////////////////////////
+  // String Extractors                                                       //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /**
+    * Returns the string represented by `this` value.
+    *
+    * @throws FlixError if `this` value is not of string type.
+    */
+  def getStr: String
+
+  /**
+    * Returns `true` if `this` value is equal to the given string `s`.
+    *
+    * @throws FlixError if `this` value is not of string type.
+    */
+  def isStr(s: String): Boolean
 
 }

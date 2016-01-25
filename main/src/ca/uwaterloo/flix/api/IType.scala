@@ -45,6 +45,11 @@ trait IType {
   def isInt64: Boolean
 
   /**
+    * Returns `true` if `this` type is the str type.
+    */
+  def isStr: Boolean
+
+  /**
     * Returns `true` if `this` type is the enum type.
     */
   def isEnum: Boolean
