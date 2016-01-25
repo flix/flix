@@ -1,21 +1,39 @@
 package ca.uwaterloo.flix.api
 
 /**
-  * Public API for Flix values.
+  * Public interface for Flix values.
   */
 trait IValue {
 
+  /**
+    * Returns the type of `this` value.
+    */
+  def getType: IType
+
   /////////////////////////////////////////////////////////////////////////////
-  // Type Tests                                                              //
+  // Value Tests                                                             //
   /////////////////////////////////////////////////////////////////////////////
 
   /**
+    * Returns the boolean represented by `this` value.
     *
-    * @return
+    * @throws FlixError if `this` value is not of boolean type.
     */
-  def isBool: Boolean
+  def getBool: Boolean
 
+  /**
+    * Returns `true` if `this` value is the boolean `true` value.
+    *
+    * @throws FlixError if `this` value is not of boolean type.
+    */
   def isTrue: Boolean
+
+  /**
+    * Returns `true` if `this` value is the boolean `false` value.
+    *
+    * @throws FlixError if `this` value is not of boolean type.
+    */
+  def isFalse: Boolean
 
 
 
