@@ -156,9 +156,7 @@ object Interpreter {
         throw new RuntimeException(s"Unmatched value $value.")
     case Expression.Lambda(_, _, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
          Expression.Set(_, _, _) | Expression.Hook(_, _, _) =>
-      throw new InternalRuntimeError(s"Expression $expr has type ${
-        expr.tpe
-      } instead of Type.Bool.")
+      throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
   }
 
