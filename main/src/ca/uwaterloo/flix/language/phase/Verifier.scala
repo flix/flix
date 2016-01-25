@@ -819,19 +819,19 @@ object Verifier {
     * Returns the logical negation of the expression `e`.
     */
   def ¬(e: Expression): Expression =
-    Unary(UnaryOperator.Not, e, Type.Bool, SourceLocation.Unknown)
+    Unary(UnaryOperator.LogicalNot, e, Type.Bool, SourceLocation.Unknown)
 
   /**
     * Returns the logical conjunction of the two expressions `e1` and `e2`.
     */
   def ∧(e1: Expression, e2: Expression): Expression =
-    Binary(BinaryOperator.And, e1, e2, Type.Bool, SourceLocation.Unknown)
+    Binary(BinaryOperator.LogicalAnd, e1, e2, Type.Bool, SourceLocation.Unknown)
 
   /**
     * Returns the logical disjunction of the two expressions `e1` and `e2`.
     */
   def ∨(e1: Expression, e2: Expression): Expression =
-    Binary(BinaryOperator.Or, e1, e2, Type.Bool, SourceLocation.Unknown)
+    Binary(BinaryOperator.LogicalOr, e1, e2, Type.Bool, SourceLocation.Unknown)
 
   /**
     * Returns the logical implication of the two expressions `e1` and `e2`.
@@ -982,7 +982,7 @@ object Verifier {
     case False => ctx.mkBool(false)
     case Var(ident, offset, tpe, loc) => ctx.mkBoolConst(ident.name)
     case Unary(op, exp, tpe, loc) => op match {
-      case UnaryOperator.Not => ctx.mkNot(visitBoolExpr(e0, ctx))
+      case UnaryOperator.LogicalNot => ctx.mkNot(visitBoolExpr(e0, ctx))
       case _ => throw new InternalCompilerError(s"Illegal unary operator: $op.")
     }
     case Binary(op, e1, e2, tpe, loc) => op match {
@@ -1000,8 +1000,8 @@ object Verifier {
           ctx.mkEq(f1, f2)
         else
           ctx.mkNot(ctx.mkEq(f1, f2))
-      case BinaryOperator.And => ctx.mkAnd(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
-      case BinaryOperator.Or => ctx.mkOr(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
+      case BinaryOperator.LogicalAnd => ctx.mkAnd(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
+      case BinaryOperator.LogicalOr => ctx.mkOr(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
       case _ => throw new InternalCompilerError(s"Illegal binary operator: $op.")
     }
     case IfThenElse(e1, e2, e3, tpe, loc) =>

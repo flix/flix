@@ -21,7 +21,7 @@ object Context {
       *
       */
     override def mkAnd(e1: FExp, e2: FExp): FExp =
-      Binary(BinaryOperator.And, e1, e2, FType.Bool, SourceLocation.Unknown)
+      Binary(BinaryOperator.LogicalAnd, e1, e2, FType.Bool, SourceLocation.Unknown)
 
     /////////////////////////////////////////////////////////////////////////////
     // Expressions                                                             //

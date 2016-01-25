@@ -92,7 +92,7 @@ object Interpreter {
     case UnaryOperator.Plus => +evalInt(e, root, env)
     case UnaryOperator.Minus => -evalInt(e, root, env)
     case UnaryOperator.BitwiseNegate => ~evalInt(e, root, env)
-    case UnaryOperator.Not =>
+    case UnaryOperator.LogicalNot =>
       throw new InternalRuntimeError(s"Type of unary expression is not Type.Int.")
   }
 
@@ -109,7 +109,7 @@ object Interpreter {
     case BinaryOperator.BitwiseLeftShift => evalInt(e1, root, env) << evalInt(e2, root, env)
     case BinaryOperator.BitwiseRightShift => evalInt(e1, root, env) >> evalInt(e2, root, env)
     case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual |
-         BinaryOperator.Equal | BinaryOperator.NotEqual | BinaryOperator.And | BinaryOperator.Or  =>
+         BinaryOperator.Equal | BinaryOperator.NotEqual | BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr  =>
       throw new InternalRuntimeError(s"Type of binary expression is not Type.Int.")
   }
 
@@ -165,7 +165,7 @@ object Interpreter {
     }
 
   private def evalBoolUnary(op: UnaryOperator, e: Expression, root: Root, env: Env): Boolean = op match {
-    case UnaryOperator.Not => !evalBool(e, root, env)
+    case UnaryOperator.LogicalNot => !evalBool(e, root, env)
     case UnaryOperator.Plus | UnaryOperator.Minus | UnaryOperator.BitwiseNegate =>
       throw new InternalRuntimeError(s"Type of unary expression is not Type.Bool.")
   }
@@ -177,8 +177,8 @@ object Interpreter {
     case BinaryOperator.GreaterEqual => evalInt(e1, root, env) >= evalInt(e2, root, env)
     case BinaryOperator.Equal => eval(e1, root, env) == eval(e2, root, env)
     case BinaryOperator.NotEqual => eval(e1, root, env) != eval(e2, root, env)
-    case BinaryOperator.And => evalBool(e1, root, env) && evalBool(e2, root, env)
-    case BinaryOperator.Or => evalBool(e1, root, env) || evalBool(e2, root, env)
+    case BinaryOperator.LogicalAnd => evalBool(e1, root, env) && evalBool(e2, root, env)
+    case BinaryOperator.LogicalOr => evalBool(e1, root, env) || evalBool(e2, root, env)
     case BinaryOperator.Plus | BinaryOperator.Minus | BinaryOperator.Times | BinaryOperator.Divide |
          BinaryOperator.Modulo | BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor |
          BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
@@ -254,7 +254,7 @@ object Interpreter {
   private def evalGeneralUnary(op: UnaryOperator, e: Expression, root: Root, env: Env): Value = {
     val v = eval(e, root, env)
     op match {
-      case UnaryOperator.Not => if (v.toBool) Value.False else Value.True
+      case UnaryOperator.LogicalNot => if (v.toBool) Value.False else Value.True
       case UnaryOperator.Plus => Value.mkInt(+v.toInt)
       case UnaryOperator.Minus => Value.mkInt(-v.toInt)
       case UnaryOperator.BitwiseNegate => Value.mkInt(~v.toInt)
@@ -276,8 +276,8 @@ object Interpreter {
       case BinaryOperator.GreaterEqual => if (v1.toInt >= v2.toInt) Value.True else Value.False
       case BinaryOperator.Equal => if (v1 == v2) Value.True else Value.False
       case BinaryOperator.NotEqual => if (v1 != v2) Value.True else Value.False
-      case BinaryOperator.And => if (v1.toBool && v2.toBool) Value.True else Value.False
-      case BinaryOperator.Or => if (v1.toBool || v2.toBool) Value.True else Value.False
+      case BinaryOperator.LogicalAnd => if (v1.toBool && v2.toBool) Value.True else Value.False
+      case BinaryOperator.LogicalOr => if (v1.toBool || v2.toBool) Value.True else Value.False
       case BinaryOperator.BitwiseAnd => Value.mkInt(v1.toInt & v2.toInt)
       case BinaryOperator.BitwiseOr => Value.mkInt(v1.toInt | v2.toInt)
       case BinaryOperator.BitwiseXor => Value.mkInt(v1.toInt ^ v2.toInt)

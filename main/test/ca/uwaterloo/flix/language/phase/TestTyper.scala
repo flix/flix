@@ -438,7 +438,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Unary01") {
-    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Not, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL), SL)
+    val rast = ResolvedAst.Expression.Unary(UnaryOperator.LogicalNot, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL), SL)
     val result = Typer.Expression.typer(rast, Root)
     assertResult(Type.Bool)(result.get.tpe)
   }
@@ -456,7 +456,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Unary.NonBooleanValue") {
-    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Not, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
+    val rast = ResolvedAst.Expression.Unary(UnaryOperator.LogicalNot, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
     val result = Typer.Expression.typer(rast, Root)
     assert(result.isFailure)
   }
@@ -476,7 +476,7 @@ class TestTyper extends FunSuite {
   test("Expression.Binary01") {
     val e1 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
     val e2 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(false, SL), SL)
-    val rast = ResolvedAst.Expression.Binary(BinaryOperator.And, e1, e2, SL)
+    val rast = ResolvedAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, SL)
     val result = Typer.Expression.typer(rast, Root)
     assertResult(Type.Bool)(result.get.tpe)
   }
@@ -577,7 +577,7 @@ class TestTyper extends FunSuite {
     val rast = ResolvedAst.Expression.Let(
       Ident,
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo", SL), SL),
-      ResolvedAst.Expression.Unary(UnaryOperator.Not, ResolvedAst.Expression.Var(Ident, SL), SL)
+      ResolvedAst.Expression.Unary(UnaryOperator.LogicalNot, ResolvedAst.Expression.Var(Ident, SL), SL)
       , SL)
     val result = Typer.Expression.typer(rast, Root)
     assert(result.isFailure)

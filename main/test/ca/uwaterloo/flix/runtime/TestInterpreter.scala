@@ -621,7 +621,7 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - UnaryOperator.Not01") {
     val input = Expression.Unary(
-      UnaryOperator.Not,
+      UnaryOperator.LogicalNot,
       Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
       Type.Bool, loc)
     val result = Interpreter.eval(input, root)
@@ -630,7 +630,7 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - UnaryOperator.Not02") {
     val input = Expression.Unary(
-      UnaryOperator.Not,
+      UnaryOperator.LogicalNot,
       Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
       Type.Bool, loc)
     val result = Interpreter.eval(input, root)
@@ -1476,7 +1476,7 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - BinaryOperator.And01") {
     val input = Expression.Binary(
-      BinaryOperator.And,
+      BinaryOperator.LogicalAnd,
       Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
       Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
       Type.Bool, loc
@@ -1487,7 +1487,7 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - BinaryOperator.And02") {
     val input = Expression.Binary(
-      BinaryOperator.And,
+      BinaryOperator.LogicalAnd,
       Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
       Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
       Type.Bool, loc
@@ -1498,7 +1498,7 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - BinaryOperator.And03") {
     val input = Expression.Binary(
-      BinaryOperator.And,
+      BinaryOperator.LogicalAnd,
       Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
       Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
       Type.Bool, loc
@@ -1509,7 +1509,7 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - BinaryOperator.Or01") {
     val input = Expression.Binary(
-      BinaryOperator.Or,
+      BinaryOperator.LogicalOr,
       Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
       Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
       Type.Bool, loc
@@ -1520,7 +1520,7 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - BinaryOperator.Or02") {
     val input = Expression.Binary(
-      BinaryOperator.Or,
+      BinaryOperator.LogicalOr,
       Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
       Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
       Type.Bool, loc
@@ -1531,7 +1531,7 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - BinaryOperator.Or03") {
     val input = Expression.Binary(
-      BinaryOperator.Or,
+      BinaryOperator.LogicalOr,
       Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
       Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
       Type.Bool, loc
@@ -1570,7 +1570,7 @@ class TestInterpreter extends FunSuite {
     // if (20 % 7 >= 3 || 25 - 5 == 4) "foo" else "bar"
     val input = Expression.IfThenElse(
       Expression.Binary(
-        BinaryOperator.Or,
+        BinaryOperator.LogicalOr,
         Expression.Binary(
           BinaryOperator.GreaterEqual,
           Expression.Binary(
@@ -2227,7 +2227,7 @@ class TestInterpreter extends FunSuite {
         Type.Int, loc),
       // !(-12 < 22)
       Expression.Unary(
-        UnaryOperator.Not,
+        UnaryOperator.LogicalNot,
         Expression.Binary(
           BinaryOperator.Less,
           Expression.Lit(Literal.Int(-12, loc), Type.Int, loc),
@@ -2254,7 +2254,7 @@ class TestInterpreter extends FunSuite {
       // if (!(4 != 4)) "hello world" else "asdfasdf"
       Expression.IfThenElse(
         Expression.Unary(
-          UnaryOperator.Not,
+          UnaryOperator.LogicalNot,
           Expression.Binary(
             BinaryOperator.NotEqual,
             Expression.Lit(Literal.Int(4, loc), Type.Int, loc),

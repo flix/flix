@@ -372,7 +372,7 @@ object Typer {
           }
 
         case ResolvedAst.Expression.Unary(op, re, loc) => op match {
-          case UnaryOperator.Not =>
+          case UnaryOperator.LogicalNot =>
             visit(re, env) flatMap {
               case e => expect(Type.Bool, e.tpe, loc) map {
                 case tpe => TypedAst.Expression.Unary(op, e, tpe, loc)

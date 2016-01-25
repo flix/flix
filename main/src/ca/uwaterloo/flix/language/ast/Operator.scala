@@ -15,7 +15,7 @@ object UnaryOperator {
   /**
     * Unary negation.
     */
-  case object Not extends UnaryOperator
+  case object LogicalNot extends UnaryOperator
 
   /**
     * Unary plus.
@@ -124,12 +124,22 @@ object BinaryOperator {
   /**
     * Logical conjunction.
     */
-  case object And extends LogicalOperator
+  case object LogicalAnd extends LogicalOperator
 
   /**
     * Logical disjunction.
     */
-  case object Or extends LogicalOperator
+  case object LogicalOr extends LogicalOperator
+
+  /**
+    * Logical implication.
+    */
+  case object Implication extends LogicalOperator
+
+  /**
+    * Logical Biconditional.
+    */
+  case object Biconditional extends LogicalOperator
 
   /**
     * Bitwise and.

@@ -553,23 +553,30 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       * Parses a unary operator.
       */
     def Unary: Rule1[UnaryOperator] = rule {
-      atomic("!") ~> (() => UnaryOperator.Not) |
+      atomic("!") ~> (() => UnaryOperator.LogicalNot) |
         atomic("+") ~> (() => UnaryOperator.Plus) |
         atomic("-") ~> (() => UnaryOperator.Minus) |
-        atomic("~") ~> (() => UnaryOperator.BitwiseNegate)
+        atomic("~") ~> (() => UnaryOperator.BitwiseNegate) |
+        atomic("¬") ~> (() => UnaryOperator.LogicalNot)
     }
 
     /**
       * Parses a logical operator.
       */
     def LogicalOp: Rule1[BinaryOperator] = rule {
-      atomic("&&") ~> (() => BinaryOperator.And) |
-        atomic("||") ~> (() => BinaryOperator.Or) |
+      atomic("&&") ~> (() => BinaryOperator.LogicalAnd) |
+        atomic("||") ~> (() => BinaryOperator.LogicalOr) |
         atomic("&") ~> (() => BinaryOperator.BitwiseAnd) |
         atomic("|") ~> (() => BinaryOperator.BitwiseOr) |
+        atomic("==>") ~> (() => BinaryOperator.Implication) |
+        atomic("<==>") ~> (() => BinaryOperator.Biconditional) |
         atomic("^") ~> (() => BinaryOperator.BitwiseXor) |
         atomic("<<") ~> (() => BinaryOperator.BitwiseLeftShift) |
-        atomic(">>") ~> (() => BinaryOperator.BitwiseRightShift)
+        atomic(">>") ~> (() => BinaryOperator.BitwiseRightShift) |
+        atomic("∧") ~> (() => BinaryOperator.LogicalAnd) |
+        atomic("∨") ~> (() => BinaryOperator.LogicalOr) |
+        atomic("→") ~> (() => BinaryOperator.Implication) |
+        atomic("↔") ~> (() => BinaryOperator.Biconditional)
     }
 
     /**
@@ -581,7 +588,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
         atomic("<") ~> (() => BinaryOperator.Less) |
         atomic(">") ~> (() => BinaryOperator.Greater) |
         atomic("==") ~> (() => BinaryOperator.Equal) |
-        atomic("!=") ~> (() => BinaryOperator.NotEqual)
+        atomic("!=") ~> (() => BinaryOperator.NotEqual) |
+        atomic("≡") ~> (() => BinaryOperator.Equal)
     }
 
     /**

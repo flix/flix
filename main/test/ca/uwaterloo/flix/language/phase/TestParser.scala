@@ -254,19 +254,19 @@ class TestParser extends FunSuite {
   test("Expression.LogicalExp01") {
     val input = "true && false"
     val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.And)(result.op)
+    assertResult(BinaryOperator.LogicalAnd)(result.op)
   }
 
   test("Expression.LogicalExp02") {
     val input = "true || false"
     val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.Or)(result.op)
+    assertResult(BinaryOperator.LogicalOr)(result.op)
   }
 
   test("Expression.LogicalExp03") {
     val input = "1 < 2 && 3 < 4"
     val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.And)(result.op)
+    assertResult(BinaryOperator.LogicalAnd)(result.op)
   }
 
   test("Expression.ComparisonExp01") {
@@ -390,7 +390,7 @@ class TestParser extends FunSuite {
   test("Expression.UnaryExp03") {
     val input = "!! true"
     val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Unary]
-    assertResult(UnaryOperator.Not)(result.op)
+    assertResult(UnaryOperator.LogicalNot)(result.op)
   }
 
   test("Expression.Ascribe01") {
@@ -1723,7 +1723,7 @@ class TestParser extends FunSuite {
     val input = "!"
     val parser = mkParser(input)
     val result = parser.__run(parser.Operator.Unary).get
-    assertResult(UnaryOperator.Not)(result)
+    assertResult(UnaryOperator.LogicalNot)(result)
   }
 
   test("Operator.Unary +") {
@@ -1751,14 +1751,28 @@ class TestParser extends FunSuite {
     val input = "&&"
     val parser = mkParser(input)
     val result = parser.__run(parser.Operator.LogicalOp).get
-    assertResult(BinaryOperator.And)(result)
+    assertResult(BinaryOperator.LogicalAnd)(result)
   }
 
   test("Operator.Binary.LogicalOp ||") {
     val input = "||"
     val parser = mkParser(input)
     val result = parser.__run(parser.Operator.LogicalOp).get
-    assertResult(BinaryOperator.Or)(result)
+    assertResult(BinaryOperator.LogicalOr)(result)
+  }
+
+  test("Operator.Binary.LogicalOp ->") {
+    val input = "==>"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
+    assertResult(BinaryOperator.Implication)(result)
+  }
+
+  test("Operator.Binary.LogicalOp <->") {
+    val input = "<==>"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
+    assertResult(BinaryOperator.Biconditional)(result)
   }
 
   test("Operator.Binary.Bitwise &") {
@@ -1876,28 +1890,47 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // UTF8 Operators                                                          //
   /////////////////////////////////////////////////////////////////////////////
-  test("Operator.Unary.UTF8-NOT") {
+  test("Operator.Unary.UTF8-Negation") {
     val input = "¬"
     val parser = mkParser(input)
     val result = parser.__run(parser.Operator.Unary).get
-    assertResult(UnaryOperator.Not)(result)
+    assertResult(UnaryOperator.LogicalNot)(result)
   }
 
-  test("Operator.Binary.UTF8-AND") {
+  test("Operator.Binary.UTF8-Equal") {
+    val input = "≡"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.ComparisonOp).get
+    assertResult(BinaryOperator.Equal)(result)
+  }
+
+  test("Operator.Binary.UTF8-Conjunction") {
     val input = "∧"
     val parser = mkParser(input)
     val result = parser.__run(parser.Operator.LogicalOp).get
-    assertResult(BinaryOperator.And)(result)
+    assertResult(BinaryOperator.LogicalAnd)(result)
   }
 
-  test("Operator.Binary.UTF8-OR") {
+  test("Operator.Binary.UTF8-Disjunction") {
     val input = "∨"
     val parser = mkParser(input)
     val result = parser.__run(parser.Operator.LogicalOp).get
-    assertResult(BinaryOperator.Or)(result)
+    assertResult(BinaryOperator.LogicalOr)(result)
   }
 
-  // TODO: ∀, ¬, ∧, ∨, →, ↔, ≡, ⊥
+  test("Operator.Binary.UTF8-Implication") {
+    val input = "→"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
+    assertResult(BinaryOperator.Implication)(result)
+  }
+
+  test("Operator.Binary.UTF8-Biconditional") {
+    val input = "↔"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
+    assertResult(BinaryOperator.Biconditional)(result)
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Annotations                                                             //

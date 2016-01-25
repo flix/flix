@@ -1149,7 +1149,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Unary.Not01") {
     val definition = Function(name, args = List(),
-      body = Unary(UnaryOperator.Not, False, Type.Bool, loc),
+      body = Unary(UnaryOperator.LogicalNot, False, Type.Bool, loc),
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
@@ -1160,7 +1160,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Unary.Not02") {
     val definition = Function(name, args = List(),
-      body = Unary(UnaryOperator.Not, True, Type.Bool, loc),
+      body = Unary(UnaryOperator.LogicalNot, True, Type.Bool, loc),
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
@@ -4215,7 +4215,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Binary.And01") {
     val definition = Function(name, args = List(),
-      body = Binary(BinaryOperator.And,
+      body = Binary(BinaryOperator.LogicalAnd,
         True,
         True,
         Type.Bool, loc),
@@ -4229,7 +4229,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Binary.And02") {
     val definition = Function(name, args = List(),
-      body = Binary(BinaryOperator.And,
+      body = Binary(BinaryOperator.LogicalAnd,
         True,
         False,
         Type.Bool, loc),
@@ -4243,7 +4243,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Binary.And03") {
     val definition = Function(name, args = List(),
-      body = Binary(BinaryOperator.And,
+      body = Binary(BinaryOperator.LogicalAnd,
         False,
         False,
         Type.Bool, loc),
@@ -4257,7 +4257,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Binary.And04") {
     val definition = Function(name, args = List(),
-      body = Binary(BinaryOperator.And,
+      body = Binary(BinaryOperator.LogicalAnd,
         False,
         True,
         Type.Bool, loc),
@@ -4272,7 +4272,7 @@ class TestCodegen extends FunSuite {
   // TODO: Tests for short-circut evaluation, but Error is not implemented yet
   ignore("Codegen - Binary.Add05") {
     val definition = Function(name, args = List(),
-      body = Binary(BinaryOperator.And,
+      body = Binary(BinaryOperator.LogicalAnd,
         False,
         Error(Type.Bool, loc),
         Type.Bool, loc),
@@ -4286,7 +4286,7 @@ class TestCodegen extends FunSuite {
 
   ignore("Codegen - Binary.Add06") {
     val definition = Function(name, args = List(),
-      body = Binary(BinaryOperator.And,
+      body = Binary(BinaryOperator.LogicalAnd,
         True,
         Error(Type.Bool, loc),
         Type.Bool, loc),
@@ -4300,7 +4300,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Binary.Or01") {
     val definition = Function(name, args = List(),
-      body = Binary(BinaryOperator.Or,
+      body = Binary(BinaryOperator.LogicalOr,
         True,
         True,
         Type.Bool, loc),
@@ -4314,7 +4314,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Binary.Or02") {
     val definition = Function(name, args = List(),
-      body = Binary(BinaryOperator.Or,
+      body = Binary(BinaryOperator.LogicalOr,
         True,
         False,
         Type.Bool, loc),
@@ -4328,7 +4328,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Binary.Or03") {
     val definition = Function(name, args = List(),
-      body = Binary(BinaryOperator.Or,
+      body = Binary(BinaryOperator.LogicalOr,
         False,
         False,
         Type.Bool, loc),
@@ -4342,7 +4342,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Binary.Or04") {
     val definition = Function(name, args = List(),
-      body = Binary(BinaryOperator.Or,
+      body = Binary(BinaryOperator.LogicalOr,
         False,
         True,
         Type.Bool, loc),
@@ -4357,7 +4357,7 @@ class TestCodegen extends FunSuite {
   // TODO: Tests for short-circut evaluation, but Error is not implemented yet
   ignore("Codegen - Binary.Or05") {
     val definition = Function(name, args = List(),
-      body = Binary(BinaryOperator.Or,
+      body = Binary(BinaryOperator.LogicalOr,
         True,
         Error(Type.Bool, loc),
         Type.Bool, loc),
@@ -4371,7 +4371,7 @@ class TestCodegen extends FunSuite {
 
   ignore("Codegen - Binary.Or06") {
     val definition = Function(name, args = List(),
-      body = Binary(BinaryOperator.Or,
+      body = Binary(BinaryOperator.LogicalOr,
         False,
         Error(Type.Bool, loc),
         Type.Bool, loc),
@@ -5472,7 +5472,7 @@ class TestCodegen extends FunSuite {
     val definition = Function(name, args = List("x"),
       body = IfThenElse(
         IfThenElse(
-          Unary(UnaryOperator.Not, Var(Name.Ident(sp, "x", sp), 0, Type.Bool, loc), Type.Bool, loc),
+          Unary(UnaryOperator.LogicalNot, Var(Name.Ident(sp, "x", sp), 0, Type.Bool, loc), Type.Bool, loc),
           True,
           False,
           Type.Bool, loc),
@@ -5492,7 +5492,7 @@ class TestCodegen extends FunSuite {
   test("Codegen - IfThenElse05") {
     val definition = Function(name, args = List("x", "y"),
       body = IfThenElse(
-        Binary(BinaryOperator.And,
+        Binary(BinaryOperator.LogicalAnd,
           Var(Name.Ident(sp, "x", sp), 0, Type.Bool, loc),
           Var(Name.Ident(sp, "y", sp), 1, Type.Bool, loc),
           Type.Bool, loc),
@@ -5520,7 +5520,7 @@ class TestCodegen extends FunSuite {
   test("Codegen - IfThenElse06") {
     val definition = Function(name, args = List("x", "y"),
       body = IfThenElse(
-        Binary(BinaryOperator.Or,
+        Binary(BinaryOperator.LogicalOr,
           Var(Name.Ident(sp, "x", sp), 0, Type.Bool, loc),
           Var(Name.Ident(sp, "y", sp), 1, Type.Bool, loc),
           Type.Bool, loc),

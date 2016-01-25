@@ -314,7 +314,7 @@ object Codegen {
                               (op: UnaryOperator, expr: Expression, tpe: Type): Unit = {
     compileExpression(context, visitor)(expr)
     op match {
-      case UnaryOperator.Not =>
+      case UnaryOperator.LogicalNot =>
         val condElse = new Label()
         val condEnd = new Label()
         visitor.visitJumpInsn(IFNE, condElse)
@@ -475,7 +475,7 @@ object Codegen {
    */
   private def compileLogicalExpr(context: Context, visitor: MethodVisitor)
                                 (o: LogicalOperator, e1: Expression, e2: Expression, tpe: Type): Unit = o match {
-    case BinaryOperator.And =>
+    case BinaryOperator.LogicalAnd =>
       val andFalseBranch = new Label()
       val andEnd = new Label()
       compileExpression(context, visitor)(e1)
@@ -487,7 +487,7 @@ object Codegen {
       visitor.visitLabel(andFalseBranch)
       visitor.visitInsn(ICONST_0)
       visitor.visitLabel(andEnd)
-    case BinaryOperator.Or =>
+    case BinaryOperator.LogicalOr =>
       val orTrueBranch = new Label()
       val orFalseBranch = new Label()
       val orEnd = new Label()
