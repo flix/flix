@@ -1,7 +1,7 @@
 // TODO: Everything in here is experimental and not yet implemented.
-// ∀, ¬, ∧, ∨, →, ↔, ≡, ⊥, ⊤, ⊑, ⊔, ⊓
 
-// TODO: Use E or A for type parameters?
+// ops to impl:  ∀, ¬, ∧, ∨, →, ↔, ≡, ⊥, ⊤, ⊑, ⊔, ⊓, ▽, △
+
 
 /**
  * A partial order is a set E equipped with a partial order function `leq`.
