@@ -183,6 +183,11 @@ object TypedAst {
       }
 
       @deprecated("moved to ExecutableAST", "0.1")
+      val filterHooks: List[TypedAst.Predicate.Body.ApplyHookFilter] = body collect {
+        case p: TypedAst.Predicate.Body.ApplyHookFilter => p
+      }
+
+      @deprecated("moved to ExecutableAST", "0.1")
       val disjoint: List[TypedAst.Predicate.Body.NotEqual] = body collect {
         case p: TypedAst.Predicate.Body.NotEqual => p
       }

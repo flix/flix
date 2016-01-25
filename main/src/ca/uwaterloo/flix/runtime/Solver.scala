@@ -267,8 +267,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   @tailrec
   private def filter(rule: Constraint.Rule, ps: List[Predicate.Body.ApplyFilter], row: mutable.Map[String, Value]): Unit = ps match {
     case Nil =>
-      // filter complete, now check disjointness
-      disjoint(rule, rule.disjoint, row)
+      // filter with hook functions
+      filterHook(rule, rule.filterHooks, row)
     case (pred: Predicate.Body.ApplyFilter) :: xs =>
       val lambda = sCtx.root.constants(pred.name)
       val args = new Array[Value](pred.termsAsArray.length)
@@ -282,7 +282,28 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         filter(rule, xs, row)
   }
 
-  // TODO: Need to deal with hook filter functions.
+  /**
+    * Filters the given `row` through all filter hook functions in the body.
+    */
+  @tailrec
+  private def filterHook(rule: Constraint.Rule, ps: List[Predicate.Body.ApplyHookFilter], row: mutable.Map[String, Value]): Unit = ps match {
+    case Nil =>
+      // filter complete, now check disjointness
+      disjoint(rule, rule.disjoint, row)
+    case (pred: Predicate.Body.ApplyHookFilter) :: xs =>
+
+      val args = new Array[Value](pred.termsAsArray.length)
+      var i = 0
+      while (i < args.length) {
+        args(i) = Interpreter.evalBodyTerm(pred.termsAsArray(i), row)
+        i = i + 1
+      }
+
+      val result = pred.hook.inv.apply(args)
+      if (result.toBool) {
+        filterHook(rule, xs, row)
+      }
+  }
 
   /**
    * Filters the given `row` through all disjointness filters in the body.

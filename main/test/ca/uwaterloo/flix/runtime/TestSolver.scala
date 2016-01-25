@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.Flix
-import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.{Type, Name}
 import org.scalatest.FunSuite
 
 class TestSolver extends FunSuite {
@@ -471,5 +471,28 @@ class TestSolver extends FunSuite {
     assert(B contains List(Value.mkInt(4)))
   }
 
+  test("FilterHook01") {
+    val s =
+      """rel A(x: Int);
+        |rel B(x: Int);
+        |
+        |A(1).
+        |A(2).
+        |
+        |B(x) :- f(x), A(x).
+      """.stripMargin
+
+    val model = new Flix.Builder()
+      .addStr(s)
+        .addHook("f", Type.Lambda(List(Type.Int), Type.Str), new Invokable {
+          override def apply(args: Array[Value]): Value = Value.mkBool(args(0).toInt == 1)
+        })
+      .solve()
+      .get
+
+    val B = model.relations(NameB).toSet
+    assert(B contains List(Value.mkInt(1)))
+    assert(!(B contains List(Value.mkInt(2))))
+  }
 
 }
