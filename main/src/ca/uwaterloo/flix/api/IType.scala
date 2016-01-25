@@ -84,19 +84,45 @@ trait IType {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
+    * Returns the parametric types of `this` tuple type.
+    *
+    * @throws FlixError if `this` type is not a tuple.
+    */
+  def getTupleParams: Array[IType]
+
+  /**
     * Returns the parametric type of `this` opt type.
     *
     * @throws FlixError if `this` type is not an opt.
     */
-  def getOptType: IType
+  def getOptParam: IType
 
   /**
     * Returns the parametric type of `this` list type.
     *
     * @throws FlixError if `this` type is not a list.
     */
-  def getListType: IType
+  def getListParam: IType
 
+  /**
+    * Returns the parametric type of `this` set type.
+    *
+    * @throws FlixError if `this` type is not a set.
+    */
+  def getSetParam: IType
 
+  /**
+    * Returns the parametric type of the keys of `this` map type.
+    *
+    * @throws FlixError if `this` type is not a map.
+    */
+  def getMapKeyParam: IType
+
+  /**
+    * Returns the parametric type of the values of `this` map type.
+    *
+    * @throws FlixError if `this` type is not a map.
+    */
+  def getMapValueParam: IType
 
 }
