@@ -2,6 +2,7 @@ package ca.uwaterloo.flix
 
 import java.nio.file.{Files, InvalidPathException, Paths}
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.{Debugger, Options, Validation, Verbosity}
 
 /**
@@ -42,7 +43,7 @@ object Main {
     }
 
     // configure Flix and add the paths.
-    val builder = new Flix.Builder()
+    val builder = new Flix()
     builder.setOptions(options)
     for (path <- paths) {
       builder.addPath(Paths.get(path))

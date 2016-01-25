@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.Flix
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.runtime.{Invokable, Value}
 import org.scalatest.FunSuite
@@ -15,7 +15,7 @@ class TestResolver extends FunSuite {
          |  val foo: Int = 21;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
@@ -29,7 +29,7 @@ class TestResolver extends FunSuite {
          |  val foo: Str = "bar";
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
@@ -41,7 +41,7 @@ class TestResolver extends FunSuite {
          |  def foo(x: Int): Int = 21;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
@@ -53,7 +53,7 @@ class TestResolver extends FunSuite {
          |  def foo(x: Int): Int = 21;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
@@ -67,7 +67,7 @@ class TestResolver extends FunSuite {
           |  val foo: Int = 21;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
@@ -85,7 +85,7 @@ class TestResolver extends FunSuite {
           |  };
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
@@ -95,7 +95,7 @@ class TestResolver extends FunSuite {
           |  val F: Int = 42;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
   }
 
@@ -105,7 +105,7 @@ class TestResolver extends FunSuite {
           |  val Foo: Int = 42;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
   }
 
@@ -115,7 +115,7 @@ class TestResolver extends FunSuite {
           |  val FOO: Int = 42;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
   }
 
@@ -125,7 +125,7 @@ class TestResolver extends FunSuite {
           |  def F(x: Int): Int = x;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
   }
 
@@ -135,7 +135,7 @@ class TestResolver extends FunSuite {
           |  def Foo(x: Int): Int = x;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
   }
 
@@ -145,7 +145,7 @@ class TestResolver extends FunSuite {
           |  def FOO(x: Int): Int = x;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
   }
 
@@ -155,7 +155,7 @@ class TestResolver extends FunSuite {
           |  rel f(x: Int)
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
   }
 
@@ -165,7 +165,7 @@ class TestResolver extends FunSuite {
           |  rel foo(x: Int)
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
   }
 
@@ -175,7 +175,7 @@ class TestResolver extends FunSuite {
           |  rel fOO(x: Int)
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
   }
 
@@ -185,7 +185,7 @@ class TestResolver extends FunSuite {
           |  val x: Int = y;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
   }
 
@@ -195,7 +195,7 @@ class TestResolver extends FunSuite {
           |  def foo(x: Int, y: Int): Int = x + y + z;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
   }
 
@@ -205,7 +205,7 @@ class TestResolver extends FunSuite {
           |  val x: Int = Foo.Bar
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference])
   }
 
@@ -215,7 +215,7 @@ class TestResolver extends FunSuite {
           |  val x: Int = Foo::Bar.Qux(true)
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference])
   }
 
@@ -230,7 +230,7 @@ class TestResolver extends FunSuite {
          |  val b: B = B.Qux;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
   }
 
@@ -245,7 +245,7 @@ class TestResolver extends FunSuite {
          |  val x: B = B.Qux(1 + 2);
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
   }
 
@@ -262,7 +262,7 @@ class TestResolver extends FunSuite {
           |  }
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
   }
 
@@ -272,7 +272,7 @@ class TestResolver extends FunSuite {
           |  VarPointsTo(1, 2).
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedRelationReference])
   }
 
@@ -282,7 +282,7 @@ class TestResolver extends FunSuite {
           |  VarPointsTo(1, 2).
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedRelationReference])
   }
 
@@ -292,7 +292,7 @@ class TestResolver extends FunSuite {
           |  val x: Foo = 42;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
   }
 
@@ -302,7 +302,7 @@ class TestResolver extends FunSuite {
           |  def foo(bar: Baz, baz: Baz): Qux = bar;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
   }
 
@@ -312,7 +312,7 @@ class TestResolver extends FunSuite {
           |  val x: #java.lang = 42;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedNativeClass])
   }
 
@@ -322,7 +322,7 @@ class TestResolver extends FunSuite {
           |  val x: #java.lang.XYZ = 42;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedNativeClass])
   }
 
@@ -332,7 +332,7 @@ class TestResolver extends FunSuite {
           |  val x: #java.lang.String = #java.lang.String.Foo;
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedFieldOrMethod])
   }
 
@@ -342,7 +342,7 @@ class TestResolver extends FunSuite {
           |  val x: Bool = #java.lang.Character.codePointBefore
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.AmbiguousFieldOrMethod])
   }
 
@@ -352,7 +352,7 @@ class TestResolver extends FunSuite {
           |  val x: Int = #java.util.Arrays.binarySearch
           |};
        """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.AmbiguousFieldOrMethod])
   }
 
@@ -362,7 +362,7 @@ class TestResolver extends FunSuite {
           |  fn f(x: Int): Bool = g(x)
           |};
        """.stripMargin
-    val result = new Flix.Builder()
+    val result = new Flix()
       .addStr(input)
       .addHook("A::g", Type.Lambda(List(Type.Int), Type.Bool), new Invokable {
         def apply(args: Array[Value]): Value = Value.mkBool(true)
@@ -377,7 +377,7 @@ class TestResolver extends FunSuite {
           |  fn f(x: Bool, y: Int, z: Str): Bool = g(x, y, z)
           |};
        """.stripMargin
-    val result = new Flix.Builder()
+    val result = new Flix()
       .addStr(input)
       .addHook("A::g", Type.Lambda(List(Type.Bool, Type.Int, Type.Str), Type.Bool), new Invokable {
         def apply(args: Array[Value]): Value = Value.mkBool(true)
@@ -394,7 +394,7 @@ class TestResolver extends FunSuite {
           |  R(x, y, z) :- f(x, y, z), R(x, y, z).
           |};
        """.stripMargin
-    val result = new Flix.Builder()
+    val result = new Flix()
       .addStr(input)
       .addHook("A::f", Type.Lambda(List(Type.Bool, Type.Int, Type.Str), Type.Bool), new Invokable {
         def apply(args: Array[Value]): Value = Value.mkBool(true)
@@ -411,7 +411,7 @@ class TestResolver extends FunSuite {
           |  R(x, y, f(x, y, z)) :- R(x, y, z).
           |};
        """.stripMargin
-    val result = new Flix.Builder()
+    val result = new Flix()
       .addStr(input)
       .addHook("A::f", Type.Lambda(List(Type.Int, Type.Str), Type.Str), new Invokable {
         def apply(args: Array[Value]): Value = Value.mkStr("foo")

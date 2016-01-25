@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.Flix
+import ca.uwaterloo.flix.api.{FlixError, Flix}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.{Parser, Resolver, Typer, Weeder}
 import ca.uwaterloo.flix.util.Validation._
@@ -26,7 +26,7 @@ object Compiler {
   /**
     * A common super-type for compilation errors.
     */
-  trait CompilationError extends Flix.FlixError {
+  trait CompilationError extends FlixError {
     /**
       * Returns a human readable string representation of the error.
       */

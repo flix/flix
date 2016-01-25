@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.Flix
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Type, Name}
 import org.scalatest.FunSuite
 
@@ -81,7 +81,7 @@ class TestSolver extends FunSuite {
         |A(x, z) :- A(x, y), A(y, z).
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val A = model.relations(NameA).toList
     assert(A contains List(Value.mkInt(1), Value.mkInt(3)))
   }
@@ -98,7 +98,7 @@ class TestSolver extends FunSuite {
         |A(x, z) :- A(x, y), A(y, z).
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val A = model.relations(NameA).toList
     assert(A contains List(Value.mkInt(1), Value.mkInt(5)))
     assert(A contains List(Value.mkInt(1), Value.mkInt(5)))
@@ -115,7 +115,7 @@ class TestSolver extends FunSuite {
         |A(x, z) :- A(x, y), A(y, z).
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val A = model.relations(NameA).toList
     assert(A contains List(Value.mkInt(2), Value.mkInt(2)))
   }
@@ -131,7 +131,7 @@ class TestSolver extends FunSuite {
         |A(x, c, z) :- A(x, c, y), A(y, c, z).
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val A = model.relations(NameA).toList
     assert(A contains List(Value.mkInt(1), Value.mkStr("a"), Value.mkInt(3)))
   }
@@ -148,7 +148,7 @@ class TestSolver extends FunSuite {
         |A(x, c, z) :- A(x, c, y), A(y, c, z).
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val A = model.relations(NameA).toList
     assert(A contains List(Value.mkInt(2), Value.mkStr("b"), Value.mkInt(2)))
   }
@@ -164,7 +164,7 @@ class TestSolver extends FunSuite {
         |A(x, c, y) :- A(y, c, x).
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val A = model.relations(NameA).toList
     assert(A contains List(Value.mkInt(1), Value.mkStr("b"), Value.mkInt(3)))
   }
@@ -180,7 +180,7 @@ class TestSolver extends FunSuite {
         |A(x, c, y) :- A(y, c, x).
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val A = model.relations(NameA).toList
     assert(A contains List(Value.mkInt(1), Value.mkStr("b"), Value.mkInt(3)))
   }
@@ -197,7 +197,7 @@ class TestSolver extends FunSuite {
         |R(x) :- A(x), B(x).
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val R = model.relations(NameR).toList
     assert(R contains List(Value.mkInt(2)))
   }
@@ -217,7 +217,7 @@ class TestSolver extends FunSuite {
         |R(x) :- A(x), B(x), C(x).
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val R = model.relations(NameR).toList
     assert(R contains List(Value.mkInt(3)))
   }
@@ -237,7 +237,7 @@ class TestSolver extends FunSuite {
         |R(x) :- C(x), A(x), B(x), B(x), C(x), A(x).
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val R = model.relations(NameR).toList
     assert(R contains List(Value.mkInt(3)))
   }
@@ -255,7 +255,7 @@ class TestSolver extends FunSuite {
         |R(x, z) :- A(x, y), B(y, z).
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val R = model.relations(NameR).toList
     assert(R contains List(Value.mkInt(3), Value.mkInt(5)))
   }
@@ -275,7 +275,7 @@ class TestSolver extends FunSuite {
         |R(x, w) :- A(x, y), B(y, z), C(z, w).
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val R = model.relations(NameR).toList
     assert(R contains List(Value.mkInt(1), Value.mkInt(7)))
   }
@@ -295,7 +295,7 @@ class TestSolver extends FunSuite {
         |B(x, z) :- A(x, y), C(y, z).
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val A = model.relations(NameA).toList
     val B = model.relations(NameB).toList
     val C = model.relations(NameC).toList
@@ -320,7 +320,7 @@ class TestSolver extends FunSuite {
         |R(x) :- A(x), B(x), C(x).
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val R = model.relations(NameR).toList
     assert(R.isEmpty)
   }
@@ -340,7 +340,7 @@ class TestSolver extends FunSuite {
         |C(x, y) :- A(x, _), B(_, y).
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val C = model.relations(NameC).toList
     assert(C contains List(Value.mkInt(1), Value.mkInt(6)))
     assert(C contains List(Value.mkInt(1), Value.mkInt(8)))
@@ -358,7 +358,7 @@ class TestSolver extends FunSuite {
         |
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(Parity.Definition).addStr(s).solve().get
+    val model = new Flix().addStr(Parity.Definition).addStr(s).solve().get
     val A = model.lattices(NameA).toMap
     assert(A(List(Value.mkInt(1))).head == Parity.Odd)
     assert(A(List(Value.mkInt(2))).head == Parity.Even)
@@ -374,7 +374,7 @@ class TestSolver extends FunSuite {
         |
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(Parity.Definition).addStr(s).solve().get
+    val model = new Flix().addStr(Parity.Definition).addStr(s).solve().get
     val A = model.lattices(NameA).toMap
     assert(A(List(Value.mkInt(1))).head == Parity.Top)
   }
@@ -390,7 +390,7 @@ class TestSolver extends FunSuite {
         |A(3, x) :- A(2,x).
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(Parity.Definition).addStr(s).solve().get
+    val model = new Flix().addStr(Parity.Definition).addStr(s).solve().get
     val A = model.lattices(NameA).toMap
     assert(A(List(Value.mkInt(3))).head == Parity.Top)
   }
@@ -405,7 +405,7 @@ class TestSolver extends FunSuite {
         |B(x, y) :- A(x), A(y), x != y.
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val B = model.relations(NameB).toList
     assert(B contains List(Value.mkInt(1), Value.mkInt(2)))
     assert(B contains List(Value.mkInt(1), Value.mkInt(3)))
@@ -428,7 +428,7 @@ class TestSolver extends FunSuite {
         |B(x, y) :- A(x, y), x != y.
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val B = model.relations(NameB).toList
     assert(B contains List(Value.mkInt(1), Value.mkInt(2)))
     assert(!(B contains List(Value.mkInt(2), Value.mkInt(2))))
@@ -446,7 +446,7 @@ class TestSolver extends FunSuite {
         |B(x, z) :- A(x, y), A(y, z), x != z.
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val B = model.relations(NameB).toList
     assert(B contains List(Value.mkInt(1), Value.mkInt(3)))
     assert(!(B contains List(Value.mkInt(1), Value.mkInt(1))))
@@ -465,7 +465,7 @@ class TestSolver extends FunSuite {
         |B(y) :- A(x), y <- f(x): Set[Int].
       """.stripMargin
 
-    val model = new Flix.Builder().addStr(s).solve().get
+    val model = new Flix().addStr(s).solve().get
     val B = model.relations(NameB).toSet
     assert(B contains List(Value.mkInt(1)))
     assert(B contains List(Value.mkInt(4)))
@@ -482,7 +482,7 @@ class TestSolver extends FunSuite {
         |B(x) :- f(x), A(x).
       """.stripMargin
 
-    val model = new Flix.Builder()
+    val model = new Flix()
       .addStr(s)
         .addHook("f", Type.Lambda(List(Type.Int), Type.Str), new Invokable {
           override def apply(args: Array[Value]): Value = Value.mkBool(args(0).toInt == 1)

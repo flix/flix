@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.runtime.Value
 import org.scalatest.FunSuite
@@ -33,7 +34,7 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val model = new Flix.Builder()
+    val model = new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addStr(input)
       .solve()
@@ -81,7 +82,7 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val model = new Flix.Builder()
+    val model = new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Parity.flix")
       .addStr(input)
@@ -130,7 +131,7 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val model = new Flix.Builder()
+    val model = new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Sign.flix")
       .addStr(input)
@@ -178,7 +179,7 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val model = new Flix.Builder()
+    val model = new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Constant.flix")
       .addStr(input)
@@ -229,7 +230,7 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val model = new Flix.Builder()
+    val model = new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/ConstantSign.flix")
       .addStr(input)
@@ -257,12 +258,12 @@ class TestExamples extends FunSuite {
   }
 
   test("Dimension.flix") {
-    val model = new Flix.Builder().addPath("./examples/domains/Dimension.flix").solve()
+    val model = new Flix().addPath("./examples/domains/Dimension.flix").solve()
     assert(model.isSuccess)
   }
 
   test("Type.flix") {
-    val model = new Flix.Builder().addPath("./examples/domains/Type.flix").solve()
+    val model = new Flix().addPath("./examples/domains/Type.flix").solve()
     assert(model.isSuccess)
   }
 
@@ -272,47 +273,47 @@ class TestExamples extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   test("Bank.flix") {
-    val model = new Flix.Builder().addPath("./examples/entities/Bank.flix").solve()
+    val model = new Flix().addPath("./examples/entities/Bank.flix").solve()
     assert(model.isSuccess)
   }
 
   test("Cinema.flix") {
-    val model = new Flix.Builder().addPath("./examples/entities/Cinema.flix").solve()
+    val model = new Flix().addPath("./examples/entities/Cinema.flix").solve()
     assert(model.isSuccess)
   }
 
   test("Company.flix") {
-    val model = new Flix.Builder().addPath("./examples/entities/Company.flix").solve()
+    val model = new Flix().addPath("./examples/entities/Company.flix").solve()
     assert(model.isSuccess)
   }
 
   test("Hotel.flix") {
-    val model = new Flix.Builder().addPath("./examples/entities/Hotel.flix").solve()
+    val model = new Flix().addPath("./examples/entities/Hotel.flix").solve()
     assert(model.isSuccess)
   }
 
   test("Library.flix") {
-    val model = new Flix.Builder().addPath("./examples/entities/Library.flix").solve()
+    val model = new Flix().addPath("./examples/entities/Library.flix").solve()
     assert(model.isSuccess)
   }
 
   test("Manufacturer.flix") {
-    val model = new Flix.Builder().addPath("./examples/entities/Manufacturer.flix").solve()
+    val model = new Flix().addPath("./examples/entities/Manufacturer.flix").solve()
     assert(model.isSuccess)
   }
 
   test("Realtor.flix") {
-    val model = new Flix.Builder().addPath("./examples/entities/Realtor.flix").solve()
+    val model = new Flix().addPath("./examples/entities/Realtor.flix").solve()
     assert(model.isSuccess)
   }
 
   test("Tournament.flix") {
-    val model = new Flix.Builder().addPath("./examples/entities/Tournament.flix").solve()
+    val model = new Flix().addPath("./examples/entities/Tournament.flix").solve()
     assert(model.isSuccess)
   }
 
   ignore("University.flix") {
-    val model = new Flix.Builder().addPath("./examples/entities/University.flix").solve()
+    val model = new Flix().addPath("./examples/entities/University.flix").solve()
     assert(model.isSuccess)
   }
 

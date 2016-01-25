@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.Flix
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ParsedAst.Literal
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import org.scalatest.FunSuite
@@ -476,7 +476,7 @@ class TestParser extends FunSuite {
         |  case true  => 1
         |}
       """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.isSuccess)
   }
 
@@ -486,7 +486,7 @@ class TestParser extends FunSuite {
         |  case x < 0  => 1
         |}
       """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.isSuccess)
   }
 
@@ -498,7 +498,7 @@ class TestParser extends FunSuite {
         |  case x == 0 => 3
         |}
       """.stripMargin
-    val result = new Flix.Builder().addStr(input).compile()
+    val result = new Flix().addStr(input).compile()
     assert(result.isSuccess)
   }
 

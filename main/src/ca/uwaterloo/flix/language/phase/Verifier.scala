@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.Flix.FlixError
+import ca.uwaterloo.flix.api.{FlixError, Flix}
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
