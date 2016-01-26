@@ -12,10 +12,10 @@ import ca.uwaterloo.flix.util.AsciiTable
  * @param relations the relational facts in the model.
  * @param lattices the lattice facts in the model.
  */
-case class Model(root: TypedAst.Root,
+case class Model(root: TypedAst.Root, // TODO: remove
                  constants: Map[Name.Resolved, Value],
-                 relations: Map[Name.Resolved, Iterator[List[Value]]], // TODO: Replace with Iterable.
-                 lattices: Map[Name.Resolved, Iterator[(List[Value], List[Value])]]) { // TODO: Replace with Iterable.
+                 relations: Map[Name.Resolved, Iterable[List[Value]]],
+                 lattices: Map[Name.Resolved, Iterable[(List[Value], List[Value])]]) {
 
   /**
    * Evaluates all print directives in the program.

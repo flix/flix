@@ -28,27 +28,16 @@ protected class WrappedModel(private val model: Model) extends IModel {
     val rname = Name.Resolved.mk(name)
     model.relations.get(rname) match {
       case None => throw new IllegalArgumentException(s"Unknown relation: '$name'.")
+      case Some(iterable) => iterable.map(row => row.map(v => new WrappedValue(v): IValue).toArray).asJava
     }
   }
 
-  /**
-    * Returns an iterable over the lattice with the given fully qualified `name`.
-    *
-    * @throws IllegalArgumentException if no such lattice exists.
-    */
   def getLattice(name: String): java.lang.Iterable[Array[IValue]] = {
-    ???
+    throw new UnsupportedOperationException("Not Implemented Yet. Sorry.")
   }
 
-  /**
-    * Returns `true` if the given `fact` exists in the relation or lattice with the given `name`.
-    *
-    * @param name the fully qualified name of the relation or lattice.
-    * @param fact the fact as an array of values.
-    * @throws IllegalArgumentException if no relation or lattice exists with the given `name`.
-    */
   def isFact(name: String, fact: Array[IValue]): Boolean = {
-    ???
+    throw new UnsupportedOperationException("Not Implemented Yet. Sorry.")
   }
 
 }
