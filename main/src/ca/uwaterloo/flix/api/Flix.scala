@@ -145,7 +145,37 @@ class Flix {
     si1 ::: si2
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Type Constructors                                                       //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Returns the unit type.
+    */
+  def mkUnitType: IType = new WrappedType(Type.Unit)
+
+  /**
+    * Returns the bool type.
+    */
+  def mkBoolType: IType = new WrappedType(Type.Bool)
+
+  /**
+    * Returns the char type.
+    */
+  def mkCharType: IType = new WrappedType(Type.Char)
+
+  /**
+    *
+    */
+  // TODO
+
+
+
   // TODO: Add constructor methods.
   //def mkBool()
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Value Constructors                                                      //
+  /////////////////////////////////////////////////////////////////////////////
+
 
 }
