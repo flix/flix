@@ -30,7 +30,6 @@ object Codegen {
   def descriptor(tpe: Type): String = {
     import ca.uwaterloo.flix.runtime.Value
     tpe match {
-      case Type.Var(x) => ???
       case Type.Unit => "Lca/uwaterloo/flix/runtime/Value$Unit$;"
       case Type.Bool => asm.Type.BOOLEAN_TYPE.getDescriptor
       case Type.Int8 => asm.Type.BYTE_TYPE.getDescriptor
@@ -41,17 +40,9 @@ object Codegen {
       case Type.Tag(_, _, _) | Type.Enum(_) =>
         // TODO: Can we return something of Type.Tag? Looks like we only return Type.Enum, which is a set of Type.Tags.
         asm.Type.getDescriptor(classOf[Value.Tag])
-      case Type.Tuple(elms) => ???
-      case Type.Opt(elmType) => ???
-      case Type.Lst(elmType) => ???
-      case Type.Set(elmType) => ???
-      case Type.Map(k, v) => ???
       case Type.Lambda(args, retTpe) => s"""(${ args.map(descriptor).mkString })${descriptor(retTpe)}"""
-      case Type.Predicate(terms) => ???
-      case Type.Native(name) => ???
-      case Type.Char => ???
-      case Type.Abs(name, t) => ???
-      case Type.Any => ???
+      case Type.Var(_) | Type.Tuple(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) |
+           Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
     }
   }
 
@@ -101,21 +92,11 @@ object Codegen {
     compileExpression(context, mv)(function.body)
 
     function.tpe.retTpe match {
-      case Type.Var(x) => ???
       case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Str | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) => mv.visitInsn(ARETURN)
-      case Type.Tuple(elms) => ???
-      case Type.Opt(elmType) => ???
-      case Type.Lst(elmType) => ???
-      case Type.Set(elmType) => ???
-      case Type.Map(k, v) => ???
-      case Type.Lambda(args, retTpe) => ???
-      case Type.Predicate(terms) => ???
-      case Type.Native(name) => ???
-      case Type.Char => ???
-      case Type.Abs(name, t) => ???
-      case Type.Any => ???
+      case Type.Var(_) | Type.Tuple(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) |
+           Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
     }
 
     // Dummy large numbers so the bytecode checker can run. Afterwards, the ASM library calculates the proper maxes.
@@ -138,21 +119,11 @@ object Codegen {
     case store: StoreExpression => compileStoreExpr(context, visitor)(store)
     case Expression.Var(ident, offset, tpe, loc) =>
       tpe match {
-        case Type.Var(x) => ???
         case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ILOAD, offset)
         case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
         case Type.Str | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) => visitor.visitVarInsn(ALOAD, offset)
-        case Type.Tuple(elms) => ???
-        case Type.Opt(elmType) => ???
-        case Type.Lst(elmType) => ???
-        case Type.Set(elmType) => ???
-        case Type.Map(k, v) => ???
-        case Type.Lambda(args, retTpe) => ???
-        case Type.Predicate(terms) => ???
-        case Type.Native(name) => ???
-        case Type.Char => ???
-        case Type.Abs(name, t) => ???
-        case Type.Any => ???
+        case Type.Var(_) | Type.Tuple(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) |
+             Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
       }
     case Expression.Ref(name, tpe, loc) => ???
     case Expression.Lambda(annotations, args, body, tpe, loc) => ???
@@ -180,21 +151,11 @@ object Codegen {
     case Expression.Let(ident, offset, exp1, exp2, tpe, loc) =>
       compileExpression(context, visitor)(exp1)
       exp1.tpe match {
-        case Type.Var(x) => ???
         case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ISTORE, offset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
         case Type.Str | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) => visitor.visitVarInsn(ASTORE, offset)
-        case Type.Tuple(elms) => ???
-        case Type.Opt(elmType) => ???
-        case Type.Lst(elmType) => ???
-        case Type.Set(elmType) => ???
-        case Type.Map(k, v) => ???
-        case Type.Lambda(args, retTpe) => ???
-        case Type.Predicate(terms) => ???
-        case Type.Native(name) => ???
-        case Type.Char => ???
-        case Type.Abs(name, t) => ???
-        case Type.Any => ???
+        case Type.Var(_) | Type.Tuple(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) |
+             Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
       }
       compileExpression(context, visitor)(exp2)
     case Expression.TagOf(exp, enum, tag, tpe, loc) => ???
@@ -227,7 +188,6 @@ object Codegen {
    * Other types (e.g. tag, tuple) are already Flix values.
    */
   private def compileBoxedExpr(context: Context, visitor: MethodVisitor)(exp: Expression): Unit = exp.tpe match {
-    case Type.Var(x) => ???
     case Type.Bool =>
       visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
       if (exp == Expression.True) {
@@ -254,20 +214,10 @@ object Codegen {
       visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
       compileExpression(context, visitor)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkStr", "(Ljava/lang/String;)Lca/uwaterloo/flix/runtime/Value$Str;", false)
-    case Type.Unit | Type.Tag(_, _, _) =>
+    case Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) =>
       compileExpression(context, visitor)(exp)
-    case Type.Enum(_) => ???
-    case Type.Tuple(elms) => ???
-    case Type.Opt(elmType) => ???
-    case Type.Lst(elmType) => ???
-    case Type.Set(elmType) => ???
-    case Type.Map(k, v) => ???
-    case Type.Lambda(args, retTpe) => ???
-    case Type.Predicate(terms) => ???
-    case Type.Native(name) => ???
-    case Type.Char => ???
-    case Type.Abs(name, t) => ???
-    case Type.Any => ???
+    case Type.Var(_) | Type.Tuple(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) |
+         Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
   }
 
   /*
