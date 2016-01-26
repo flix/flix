@@ -32,7 +32,7 @@ object Typer {
       * @param loc      the source location.
       */
     case class ExpectedType(expected: Type, actual: Type, loc: SourceLocation) extends TypeError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Expected type '${prettyPrint(expected)}' but actual type is '${prettyPrint(actual)}'.")}
@@ -50,7 +50,7 @@ object Typer {
       * @param loc2 the source location of the second type.
       */
     case class ExpectedEqualTypes(tpe1: Type, tpe2: Type, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Expected equal types '${prettyPrint(tpe1)}' and '${prettyPrint(tpe2)}'.")}
@@ -68,7 +68,7 @@ object Typer {
       */
     // TODO: Pretty print
     case class IllegalApply(tpe: Type, loc: SourceLocation) extends TypeError {
-      val format = s"Type Error: The type '${prettyPrint(tpe)}' is not a function type at ${loc.format}.\n"
+      val message = s"Type Error: The type '${prettyPrint(tpe)}' is not a function type at ${loc.format}.\n"
     }
 
     /**
@@ -80,7 +80,7 @@ object Typer {
       */
     // TODO: Pretty print
     case class IllegalPattern(pat: ResolvedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypeError {
-      val format = s"Type Error: Pattern '${prettyPrint(pat)}' does not match expected type '${prettyPrint(tpe)}' at ${loc.format}.\n"
+      val message = s"Type Error: Pattern '${prettyPrint(pat)}' does not match expected type '${prettyPrint(tpe)}' at ${loc.format}.\n"
     }
 
     // TODO: Check arity of function calls, predicates, etc.
@@ -92,7 +92,7 @@ object Typer {
       * @param loc the source location.
       */
     case class NoSuchLattice(tpe: Type, loc: SourceLocation) extends TypeError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> No lattice declared for '${prettyPrint(tpe)}'.")}

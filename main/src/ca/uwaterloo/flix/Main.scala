@@ -52,12 +52,12 @@ object Main {
     // compute the least model.
     builder.solve() match {
       case Validation.Success(model, errors) =>
-        errors.foreach(e => println(e.format))
+        errors.foreach(e => println(e.message))
         if (options.verbosity != Verbosity.Silent) {
           model.print()
         }
       case Validation.Failure(errors) =>
-        errors.foreach(e => println(e.format))
+        errors.foreach(e => println(e.message))
     }
 
   }

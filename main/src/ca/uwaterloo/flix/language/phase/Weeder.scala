@@ -31,7 +31,7 @@ object Weeder {
       * @param loc2 the location of the second declaration.
       */
     case class DuplicateAlias(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Duplicate definition of the variable '$name'.")}
@@ -52,7 +52,7 @@ object Weeder {
       * @param loc2 the location of the second use.
       */
     case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Duplicate annotation '$name'.")}
@@ -73,7 +73,7 @@ object Weeder {
       * @param loc2 the location of the second declaration.
       */
     case class DuplicateAttribute(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Duplicate attribute name '$name'.")}
@@ -94,7 +94,7 @@ object Weeder {
       * @param loc2 the location of the second declaration.
       */
     case class DuplicateFormal(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Duplicate formal argument '$name'.")}
@@ -115,7 +115,7 @@ object Weeder {
       * @param loc2 the location of the second declaration.
       */
     case class DuplicateTag(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Duplicate tag name '$name'.")}
@@ -134,7 +134,7 @@ object Weeder {
       * @param loc the location where the illegal predicate occurs.
       */
     case class IllegalHeadPredicate(loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal predicate in the head of a fact/rule.")}
@@ -149,7 +149,7 @@ object Weeder {
       * @param loc the location where the illegal predicate occurs.
       */
     case class IllegalBodyPredicate(loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal predicate in the body of a rule.")}
@@ -164,7 +164,7 @@ object Weeder {
       * @param loc the location where the illegal predicate occurs.
       */
     case class IllegalReadPredicate(loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Too few arguments for Read# predicate.")}
@@ -180,7 +180,7 @@ object Weeder {
       * @param loc the location where the illegal predicate occurs.
       */
     case class IllegalWritePredicate(loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Too few arguments for Write# predicate.")}
@@ -197,7 +197,7 @@ object Weeder {
       * @param loc the location where the illegal term occurs.
       */
     case class IllegalHeadTerm(msg: String, loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal term in the head of a fact/rule.")}
@@ -214,7 +214,7 @@ object Weeder {
       * @param loc the location where the illegal term occurs.
       */
     case class IllegalBodyTerm(msg: String, loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal term in the body of a rule.")}
@@ -230,7 +230,7 @@ object Weeder {
       * @param loc the location where the illegal definition occurs.
       */
     case class IllegalBoundedLattice(loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Lattice definition must have exactly five components: bot, top, leq, lub and glb.")}
@@ -250,7 +250,7 @@ object Weeder {
       * @param loc the location where the illegal definition occurs.
       */
     case class IllegalLatticeAttributeInRelation(loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal lattice attribute in relation.")}
@@ -268,7 +268,7 @@ object Weeder {
       * @param loc the location where the illegal definition occurs.
       */
     case class IllegalNonLatticeAttribute(loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal non-lattice attribute.")}
@@ -287,7 +287,7 @@ object Weeder {
       * @param loc  the location of the annotation.
       */
     case class IllegalAnnotation(name: String, loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> Illegal annotation '$name'.")}
@@ -304,7 +304,7 @@ object Weeder {
       * @param loc2 the location where a following non-lattice attribute occurs.
       */
     case class IllegalMixedAttributes(loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal non-lattice attribute follows lattice attribute.")}
@@ -326,7 +326,7 @@ object Weeder {
       * @param loc2 the location of the second use of the variable.
       */
     case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Duplicate definition of the same variable '$name' in pattern.")}
@@ -349,7 +349,7 @@ object Weeder {
       * @param loc the location of the syntactic construct.
       */
     case class Unsupported(msg: String, loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Unsupported feature: $msg")}

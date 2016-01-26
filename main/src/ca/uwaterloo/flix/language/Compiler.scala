@@ -30,7 +30,7 @@ object Compiler {
     /**
       * Returns a human readable string representation of the error.
       */
-    def format: String
+    def message: String
   }
 
   /**
@@ -40,7 +40,7 @@ object Compiler {
     * @param src the source input.
     */
   case class ParseError(msg: String, src: SourceInput) extends CompilationError {
-    val format =
+    val message =
       s"""${ConsoleCtx.blue(s"-- PARSE ERROR ------------------------------------------------- ${src.format}")}
          |
          |${ConsoleCtx.red(msg)}

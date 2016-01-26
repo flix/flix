@@ -164,18 +164,88 @@ class Flix {
   def mkCharType: IType = new WrappedType(Type.Char)
 
   /**
-    *
+    * Returns the int8 type.
     */
-  // TODO
+  def mkInt8Type: IType = new WrappedType(Type.Int8)
+
+  /**
+    * Returns the int16 type.
+    */
+  def mkInt16Type: IType = new WrappedType(Type.Int16)
+
+  /**
+    * Returns the int32 type.
+    */
+  def mkInt32Type: IType = new WrappedType(Type.Int32)
+
+  /**
+    * Returns the int64 type.
+    */
+  def mkInt64Type: IType = new WrappedType(Type.Int64)
+
+  /**
+    * Returns the Str type.
+    */
+  def mkStrType: IType = new WrappedType(Type.Str)
+
+  /**
+    * Returns the enum with the given fully qualified `name` and tags.
+    */
+  def mkEnumType(name: String, tags: Array[String]): IType = {
+    // TODO
+    val cases = tags.foldLeft(Map.empty[String, Type.Tag]) {
+      case (macc, tag) => macc + (tag -> Type.Tag(???, ???, ???))
+    }
+
+    new WrappedType(new Type.Enum(cases))
+  }
+
+  /**
+    * Returns the tuple type of the given `types`.
+    */
+  def mkTupleType(types: Array[IType]): IType = {
+    val elms = types.toList.map(_.asInstanceOf[Type])
+    new WrappedType(Type.Tuple(elms))
+  }
+
+  /**
+    * Returns the opt type of the given type `tpe`.
+    */
+  def mkOptType(tpe: IType): IType = {
+    new WrappedType(Type.Opt(tpe.asInstanceOf[Type]))
+  }
 
 
 
-  // TODO: Add constructor methods.
-  //def mkBool()
+  //
+  //  /**
+  //    * Returns `true` if `this` type is the list type.
+  //    */
+  //  def isList: Boolean
+  //
+  //  /**
+  //    * Returns `true` if `this` type is the set type.
+  //    */
+  //  def isSet: Boolean
+  //
+  //  /**
+  //    * Returns `true` if `this` type is the map type.
+  //    */
+  //  def isMap: Boolean
+  //
+  //  /**
+  //    * Returns `true` if `this` type is the native type.
+  //    */
+  //  def isNative: Boolean
+
+  // TODO: Function Type
+
 
   /////////////////////////////////////////////////////////////////////////////
   // Value Constructors                                                      //
   /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: Add constructor methods.
 
 
 }

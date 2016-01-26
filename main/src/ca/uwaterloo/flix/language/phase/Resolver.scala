@@ -32,7 +32,7 @@ object Resolver {
       * @param loc2 the location of the second definition.
       */
     case class DuplicateDefinition(name: Name.Resolved, loc1: SourceLocation, loc2: SourceLocation) extends ResolverError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Duplicate definition of the name '$name'.")}
@@ -52,7 +52,7 @@ object Resolver {
       * @param loc  the location of the name.
       */
     case class IllegalConstantName(name: String, loc: SourceLocation) extends ResolverError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal uppercase name '$name'.")}
@@ -70,7 +70,7 @@ object Resolver {
       */
     // TODO: Rename to illegal collection name.
     case class IllegalRelationName(name: String, loc: SourceLocation) extends ResolverError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal lowercase name '$name'.")}
@@ -87,7 +87,7 @@ object Resolver {
       * @param loc  the location of the name.
       */
     case class IllegalVariableName(name: String, loc: SourceLocation) extends ResolverError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal uppercase variable name '$name'.")}
@@ -106,7 +106,7 @@ object Resolver {
     // TODO: Split this into multiple different versions:
     @deprecated("", "")
     case class UnresolvedReference(name: Name.Unresolved, namespace: List[String]) extends ResolverError {
-      val format: String = s"Error: Unresolved reference to '$name' in namespace '${namespace.mkString("::")}' at: ${name.loc.format}\n"
+      val message: String = s"Error: Unresolved reference to '$name' in namespace '${namespace.mkString("::")}' at: ${name.loc.format}\n"
     }
 
     /**
@@ -117,7 +117,7 @@ object Resolver {
       * @param loc       the source location of the reference.
       */
     case class UnresolvedConstantReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Unresolved reference to constant '$name'.")}
@@ -134,7 +134,7 @@ object Resolver {
       * @param loc       the source location of the reference.
       */
     case class UnresolvedEnumReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Unresolved reference to enum '$name'.")}
@@ -151,7 +151,7 @@ object Resolver {
       * @param loc  the source location of the reference.
       */
     case class UnresolvedTagReference(enum: WeededAst.Definition.Enum, tag: String, loc: SourceLocation) extends ResolverError {
-      val format = {
+      val message = {
         val tags = enum.cases.keySet
         val formattedTags = tags.map(t => "'" + t + "'").mkString(", ")
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -174,7 +174,7 @@ object Resolver {
       * @param loc       the source location of the reference.
       */
     case class UnresolvedRelationReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Unresolved reference to relation '$name'.")}
@@ -191,7 +191,7 @@ object Resolver {
       * @param loc       the source location of the reference.
       */
     case class UnresolvedTypeReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Unresolved reference to type '$name'.")}
