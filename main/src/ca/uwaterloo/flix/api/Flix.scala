@@ -368,18 +368,20 @@ class Flix {
   /**
     * Returns the list corresponding to the given Java array.
     */
-  def mkList[A](ls: Array[A]): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def mkList(ls: Array[IValue]): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
 
   /**
     * Returns the list corresponding to the given Java list.
     */
-  def mkList[A](ls: java.util.List[A]): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def mkList(ls: java.util.List[IValue]): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
 
   /**
     * Returns the list corresponding to the given Scala Seq.
     */
-  def mkList[A](ls: scala.Seq[A]): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def mkList(ls: scala.Seq[IValue]): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
 
+
+  // TODO: Add constructor methods.
   //
   //  /**
   //    * Returns the set type parameterized by the given type `tpe`.
@@ -407,7 +409,9 @@ class Flix {
   //  }
   //
 
-
-  // TODO: Add constructor methods.
+  /**
+    * Returns the Flix representation of the given native object `o`.
+    */
+  def mkNative(o: AnyRef): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
 
 }
