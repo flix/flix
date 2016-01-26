@@ -20,13 +20,13 @@ protected final class WrappedValue(private val value: Value) extends IValue {
     case Value.False => new WrappedType(Type.Bool)
     case v: Value.Int => new WrappedType(Type.Int32)
     case v: Value.Str => new WrappedType(Type.Str)
-    case _ => throw new FlixApiError(s"Unexpected value: $value")
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: $value")
   }
 
   def getBool: Boolean = value match {
     case Value.True => true
     case Value.False => false
-    case _ => throw new FlixApiError(s"Unexpected value: $value")
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: $value")
   }
 
   def isTrue: Boolean = value match {
@@ -47,40 +47,40 @@ protected final class WrappedValue(private val value: Value) extends IValue {
 
   def getInt32: Int = value match {
     case v: Value.Int => v.i
-    case _ => throw new FlixApiError(s"Unexpected value: $value")
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: $value")
   }
 
   def getInt64: Long = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
 
   def getStr: String = value match {
     case v: Value.Str => v.s
-    case _ => throw new FlixApiError(s"Unexpected value: $value")
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: $value")
   }
 
   def getTuple: Array[IValue] = value match {
     case v: Value.Tuple => v.elms.map(e => new WrappedValue(e))
-    case _ => throw new FlixApiError(s"Unexpected value: $value")
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: $value")
   }
 
 
   def getEnumName: String = value match {
     case v: Value.Tag => v.enum.parts.mkString("::")
-    case _ => throw new FlixApiError(s"Unexpected value: $value")
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: $value")
   }
 
   def getTagName: String = value match {
     case v: Value.Tag => v.tag
-    case _ => throw new FlixApiError(s"Unexpected value: $value")
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: $value")
   }
 
   def getTagValue: IValue = value match {
     case v: Value.Tag => new WrappedValue(v.value)
-    case _ => throw new FlixApiError(s"Unexpected value: $value")
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: $value")
   }
 
   def getNativeObj: AnyRef = value match {
     case v: Value.Native => v.value
-    case _ => throw new FlixApiError(s"Unexpected value: $value")
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: $value")
   }
 
   def getJavaOpt: java.util.Optional[IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
@@ -99,12 +99,12 @@ protected final class WrappedValue(private val value: Value) extends IValue {
       }
       r
     }
-    case _ => throw new FlixApiError(s"Unexpected value: $value")
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: $value")
   }
 
   def getScalaSet: immutable.Set[IValue] = value match {
     case v: Value.Set => v.elms.map(e => new WrappedValue(e))
-    case _ => throw new FlixApiError(s"Unexpected value: $value")
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: $value")
   }
 
   def getJavaMap: java.util.Map[IValue, IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
