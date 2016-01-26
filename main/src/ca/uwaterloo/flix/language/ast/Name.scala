@@ -67,6 +67,11 @@ object Name {
   final class Resolved private(val parts: List[String]) {
 
     /**
+      * Returns the fully qualified name of `this` as a string.
+      */
+    def fqn: String = parts.mkString("::")
+
+    /**
       * Returns `true` if this resolved name is equal to `obj` resolved name.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
