@@ -6,6 +6,8 @@ package ca.uwaterloo.flix.runtime
 @FunctionalInterface
 abstract class Invokable {
 
+  // TODO: Introduce Safe and UnsafeInvokable.
+
   /**
     * Invokes the method with the given Flix arguments `args`.
     *

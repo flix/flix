@@ -334,51 +334,52 @@ class Flix {
   /**
     * Returns the str value corresponding to the given string.
     */
-  def mkStr(s: String): IValue = new WrappedValue(Value.mkStr(s))
+  def mkStr(s: String): IValue = {
+    if (s == null)
+      throw new IllegalArgumentException("Argument 's' must be non-null.")
+    new WrappedValue(Value.mkStr(s))
+  }
 
-  // TODO: Add constructor methods.
+  /**
+    *
+    */
+  // TODO: mkEnum
 
+  /**
+    * Returns the tuple corresponding to the given array.
+    */
+  def mkTuple(tuple: Array[IValue]): IValue = {
+    if (tuple == null)
+      throw new IllegalArgumentException("Argument 'tuple' must be non-null.")
+    val elms = tuple.map(_.asInstanceOf[Value])
+    new WrappedValue(Value.Tuple(elms))
+  }
 
-  //
-  //  /**
-  //    * Returns the enum with the given fully qualified `name` and tags.
-  //    */
-  //  def mkEnumType(name: String, tags: Array[String]): IType = {
-  //    if (name == null) throw new IllegalArgumentException("Argument 'name' must be non-null.")
-  //    if (tags == null) throw new IllegalArgumentException("Argument 'tags' must be non-null.")
-  //
-  //    // TODO
-  //    val cases = tags.foldLeft(Map.empty[String, Type.Tag]) {
-  //      case (macc, tag) => macc + (tag -> Type.Tag(???, ???, ???))
-  //    }
-  //
-  //    new WrappedType(new Type.Enum(cases))
-  //  }
-  //
-  //  /**
-  //    * Returns the tuple type of the given `types`.
-  //    */
-  //  def mkTupleType(types: Array[IType]): IType = {
-  //    if (types == null) throw new IllegalArgumentException("Argument 'types' must be non-null.")
-  //    val elms = types.toList.map(_.asInstanceOf[Type])
-  //    new WrappedType(Type.Tuple(elms))
-  //  }
-  //
-  //  /**
-  //    * Returns the opt type parameterized by the given type `tpe`.
-  //    */
-  //  def mkOptType(tpe: IType): IType = {
-  //    if (tpe == null) throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
-  //    new WrappedType(Type.Opt(tpe.asInstanceOf[Type]))
-  //  }
-  //
-  //  /**
-  //    * Returns the list type parameterized by the given type `tpe`.
-  //    */
-  //  def mkListType(tpe: IType): IType = {
-  //    if (tpe == null) throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
-  //    new WrappedType(Type.Lst(tpe.asInstanceOf[Type]))
-  //  }
+  /**
+    * Returns the opt corresponding to the given Java Optional.
+    */
+  def mkOpt(v: java.util.Optional[IValue]): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+
+  /**
+    * Return the opt corresponding to the given Scala Option.
+    */
+  def mkOpt(v: scala.Option[IValue]): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+
+  /**
+    * Returns the list corresponding to the given Java array.
+    */
+  def mkList[A](ls: Array[A]): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+
+  /**
+    * Returns the list corresponding to the given Java list.
+    */
+  def mkList[A](ls: java.util.List[A]): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+
+  /**
+    * Returns the list corresponding to the given Scala Seq.
+    */
+  def mkList[A](ls: scala.Seq[A]): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+
   //
   //  /**
   //    * Returns the set type parameterized by the given type `tpe`.
@@ -405,14 +406,8 @@ class Flix {
   //    new WrappedType(Type.Native(name))
   //  }
   //
-  //  /**
-  //    * Returns the function type for the function with the given argument types and return type.
-  //    */
-  //  def mkFunctionType(arguments: Array[IType], returnType: IType): IType = {
-  //    if (arguments == null) throw new IllegalArgumentException("Argument 'arguments' must be non-null.")
-  //    if (returnType == null) throw new IllegalArgumentException("Argument 'returnType' must be non-null.")
-  //    val args = arguments.toList.map(_.asInstanceOf[Type])
-  //    val retTpe = returnType.asInstanceOf[Type]
-  //    new WrappedType(Type.Lambda(args, retTpe))
-  //  }
+
+
+  // TODO: Add constructor methods.
+
 }
