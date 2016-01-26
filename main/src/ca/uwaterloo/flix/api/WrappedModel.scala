@@ -33,11 +33,11 @@ protected class WrappedModel(private val model: Model) extends IModel {
   }
 
   def getLattice(name: String): java.lang.Iterable[Array[IValue]] = {
-    throw new UnsupportedOperationException("Not Implemented Yet. Sorry.")
+    throw new UnsupportedOperationException("Not Implemented Yet. Sorry.") // TODO
   }
 
   def isFact(name: String, fact: Array[IValue]): Boolean = {
-    throw new UnsupportedOperationException("Not Implemented Yet. Sorry.")
+    throw new UnsupportedOperationException("Not Implemented Yet. Sorry.") // TODO
   }
 
 }

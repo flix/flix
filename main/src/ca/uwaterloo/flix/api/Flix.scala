@@ -192,6 +192,9 @@ class Flix {
     * Returns the enum with the given fully qualified `name` and tags.
     */
   def mkEnumType(name: String, tags: Array[String]): IType = {
+    if (name == null) throw new IllegalArgumentException("Argument 'name' must be non-null.")
+    if (tags == null) throw new IllegalArgumentException("Argument 'tags' must be non-null.")
+
     // TODO
     val cases = tags.foldLeft(Map.empty[String, Type.Tag]) {
       case (macc, tag) => macc + (tag -> Type.Tag(???, ???, ???))
@@ -204,48 +207,67 @@ class Flix {
     * Returns the tuple type of the given `types`.
     */
   def mkTupleType(types: Array[IType]): IType = {
+    if (types == null) throw new IllegalArgumentException("Argument 'types' must be non-null.")
     val elms = types.toList.map(_.asInstanceOf[Type])
     new WrappedType(Type.Tuple(elms))
   }
 
   /**
-    * Returns the opt type of the given type `tpe`.
+    * Returns the opt type parameterized by the given type `tpe`.
     */
   def mkOptType(tpe: IType): IType = {
+    if (tpe == null) throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
     new WrappedType(Type.Opt(tpe.asInstanceOf[Type]))
   }
 
+  /**
+    * Returns the list type parameterized by the given type `tpe`.
+    */
+  def mkListType(tpe: IType): IType = {
+    if (tpe == null) throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
+    new WrappedType(Type.Lst(tpe.asInstanceOf[Type]))
+  }
 
+  /**
+    * Returns the set type parameterized by the given type `tpe`.
+    */
+  def mkSetType(tpe: IType): IType = {
+    if (tpe == null) throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
+    new WrappedType(Type.Set(tpe.asInstanceOf[Type]))
+  }
 
-  //
-  //  /**
-  //    * Returns `true` if `this` type is the list type.
-  //    */
-  //  def isList: Boolean
-  //
-  //  /**
-  //    * Returns `true` if `this` type is the set type.
-  //    */
-  //  def isSet: Boolean
-  //
-  //  /**
-  //    * Returns `true` if `this` type is the map type.
-  //    */
-  //  def isMap: Boolean
-  //
-  //  /**
-  //    * Returns `true` if `this` type is the native type.
-  //    */
-  //  def isNative: Boolean
+  /**
+    * Returns the set type parameterized by the given `key` and `value` types.
+    */
+  def mkMapType(key: IType, value: IType): IType = {
+    if (key == null) throw new IllegalArgumentException("Argument 'key' must be non-null.")
+    if (value == null) throw new IllegalArgumentException("Argument 'value' must be non-null.")
+    new WrappedType(Type.Map(key.asInstanceOf[Type], value.asInstanceOf[Type]))
+  }
 
-  // TODO: Function Type
+  /**
+    * Returns the native type for the given fully qualified `name`.
+    */
+  def mkNative(name: String): IType = {
+    if (name == null) throw new IllegalArgumentException("Argument 'name' must be non-null.")
+    new WrappedType(Type.Native(name))
+  }
 
+  /**
+    * Returns the function type for the function with the given argument types and return type.
+    */
+  def mkFunctionType(arguments: Array[IType], returnType: IType): IType = {
+    if (arguments == null) throw new IllegalArgumentException("Argument 'arguments' must be non-null.")
+    if (returnType == null) throw new IllegalArgumentException("Argument 'returnType' must be non-null.")
+    val args = arguments.toList.map(_.asInstanceOf[Type])
+    val retTpe = returnType.asInstanceOf[Type]
+    new WrappedType(Type.Lambda(args, retTpe))
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Value Constructors                                                      //
   /////////////////////////////////////////////////////////////////////////////
 
   // TODO: Add constructor methods.
-
 
 }
