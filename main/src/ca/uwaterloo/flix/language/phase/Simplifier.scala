@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Type, BinaryOperator, SimplifiedAst, TypedAst}
 
 /**
   * A phase that simplifies a Typed AST by:
@@ -93,13 +93,14 @@ object Simplifier {
         SimplifiedAst.Expression.Let(ident, -1, simplify(e1), simplify(e2), tpe, loc)
 
       case TypedAst.Expression.Match(exp, rules, tpe, loc) =>
-        val name = genSym.fresh()
+        // val name = genSym.fresh()
         // TODO: This should probably be in a let binding
         val valueExp = simplify(exp)
         val zero = SimplifiedAst.Expression.MatchError(tpe, loc)
-        rules.foldRight(zero: SimplifiedAst.Expression) {
-          case (rule, acc) => Pattern.simplify(valueExp, rule, acc)
-        }
+        //        rules.foldRight(zero: SimplifiedAst.Expression) {
+        //          case (rule, acc) => Pattern.simplify(valueExp, rule, acc)
+        //        }
+        ???
       case TypedAst.Expression.Tag(enum, tag, e, tpe, loc) =>
         SimplifiedAst.Expression.Tag(enum, tag, simplify(e), tpe, loc)
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
@@ -112,15 +113,42 @@ object Simplifier {
   }
 
   object Pattern {
-    def simplify(valueExp: SimplifiedAst.Expression, rule: (TypedAst.Pattern, TypedAst.Expression), elseExp: SimplifiedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = {
-      val (pat, matchExp) = rule
 
-      pat match {
-        case TypedAst.Pattern.Var(ident, tpe, loc) => ???
-      }
+    def genCode(patterns: List[TypedAst.Pattern],
+                variables: List[SimplifiedAst.Expression.Var],
+                body: SimplifiedAst.Expression,
+                fail: SimplifiedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = patterns match {
+      case Nil => body
 
-      ???
+      case TypedAst.Pattern.Wildcard(tpe, loc) :: rest => genCode(rest, variables.tail, body, fail)
+
+      case TypedAst.Pattern.Var(ident, tpe, loc) :: rest =>
+        SimplifiedAst.Expression.Let(ident, -1, variables.head, body, body.tpe, loc)
+
+      case TypedAst.Pattern.Lit(lit, tpe, loc) :: rest =>
+        val cond = SimplifiedAst.Expression.Binary(
+          BinaryOperator.Equal,
+          Literal.simplify(lit),
+          variables.head,
+          Type.Bool,
+          loc
+        )
+        SimplifiedAst.Expression.IfThenElse(cond, genCode(rest, variables.tail, body, fail), fail, body.tpe, loc)
+
+      case TypedAst.Pattern.Tag(enum, tag, pat, tpe, loc) :: rest =>
+        val cond = SimplifiedAst.Expression.CheckTag(tag, variables.head, loc)
+        val v = genSym.fresh()
+        val e = SimplifiedAst.Expression.Let(v.ident, -1, SimplifiedAst.Expression.GetTagValue(variables.head, variables.head.tpe, loc), body, body.tpe, loc)
+        val thenExp = genCode(pat :: rest, v :: variables.tail, e, fail)
+        val elseExp = fail
+
+        SimplifiedAst.Expression.IfThenElse(cond, thenExp, elseExp, body.tpe, loc)
+
+      case TypedAst.Pattern.Tuple(elms, tpe, loc) :: rest =>
+        ??? // TODO
+
     }
+
   }
 
   object Literal {

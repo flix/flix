@@ -197,7 +197,6 @@ object Codegen {
         case Type.Any => ???
       }
       compileExpression(context, visitor)(exp2)
-    case TagOf(exp, enum, tag, tpe, loc) => ???
     case Tag(enum, tag, exp, tpe, loc) => ???
     case TupleAt(base, offset, tpe, loc) => ???
     case Tuple(elms, tpe, loc) => ???

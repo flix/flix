@@ -1,13 +1,14 @@
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Name}
 
 package object phase {
 
   class GenSym() {
     private var number: Int = 0
 
-    def fresh(): Int = ???
+    //  TODO: return Name.Ident
+    def fresh(): SimplifiedAst.Expression.Var = ???
 
     // TODO: Maintain map from s to Int
     def of(s: Name.Ident): Int = {
