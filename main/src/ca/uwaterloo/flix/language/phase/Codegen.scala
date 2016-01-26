@@ -32,11 +32,11 @@ object Codegen {
     tpe match {
       case Type.Var(x) => ???
       case Type.Unit => "Lca/uwaterloo/flix/runtime/Value$Unit$;"
-      case Type.Bool => "Z"   // JVM boolean
-      case Type.Int8 => "B"   // JVM byte (8 bits)
-      case Type.Int16 => "S"  // JVM short (16 bits)
-      case Type.Int32 | Type.Int => "I"  // JVM int (32 bits)
-      case Type.Int64 => "J"  // JVM long (64 bits)
+      case Type.Bool => asm.Type.BOOLEAN_TYPE.getDescriptor
+      case Type.Int8 => asm.Type.BYTE_TYPE.getDescriptor
+      case Type.Int16 => asm.Type.SHORT_TYPE.getDescriptor
+      case Type.Int32 | Type.Int => asm.Type.INT_TYPE.getDescriptor
+      case Type.Int64 => asm.Type.LONG_TYPE.getDescriptor
       case Type.Str => asm.Type.getDescriptor(classOf[java.lang.String])
       case Type.Tag(_, _, _) | Type.Enum(_) =>
         // TODO: Can we return something of Type.Tag? Looks like we only return Type.Enum, which is a set of Type.Tags.
@@ -210,50 +210,8 @@ object Codegen {
       // load `tag.name`
       visitor.visitLdcInsn(tag.name)
 
-      // load `exp`, boxing as a Flix value
-      exp.tpe match {
-        case Type.Var(x) => ???
-        case Type.Unit => compileExpression(context, visitor)(exp)
-        case Type.Bool =>
-          visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
-          if (exp == Expression.True) {
-            visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "True", "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
-          } else if (exp == Expression.False) {
-            visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "False", "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
-          } else {
-            val boolFalse = new Label()
-            val boolEnd = new Label()
-            compileExpression(context, visitor)(exp)
-            visitor.visitJumpInsn(IFEQ, boolFalse)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "True", "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
-            visitor.visitJumpInsn(GOTO, boolEnd)
-            visitor.visitLabel(boolFalse)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "False", "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
-            visitor.visitLabel(boolEnd)
-          }
-        case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int =>
-          visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
-          compileExpression(context, visitor)(exp)
-          visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt", "(I)Lca/uwaterloo/flix/runtime/Value$Int;", false)
-        case Type.Int64 => ??? // Value.Int doesn't support longs
-        case Type.Str =>
-          visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
-          compileExpression(context, visitor)(exp)
-          visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkStr", "(Ljava/lang/String;)Lca/uwaterloo/flix/runtime/Value$Str;", false)
-        case Type.Tag(_, _, _) => ???
-        case Type.Enum(_) => ???
-        case Type.Tuple(elms) => ???
-        case Type.Opt(elmType) => ???
-        case Type.Lst(elmType) => ???
-        case Type.Set(elmType) => ???
-        case Type.Map(k, v) => ???
-        case Type.Lambda(args, retTpe) => ???
-        case Type.Predicate(terms) => ???
-        case Type.Native(name) => ???
-        case Type.Char => ???
-        case Type.Abs(name, t) => ???
-        case Type.Any => ???
-      }
+      // load `exp`, boxing as a Flix value if needed
+      compileBoxedExpr(context, visitor)(exp)
 
       // call Value.mkTag
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkTag", "(Lca/uwaterloo/flix/language/ast/Name$Resolved;Ljava/lang/String;Lca/uwaterloo/flix/runtime/Value;)Lca/uwaterloo/flix/runtime/Value$Tag;", false);
@@ -262,6 +220,54 @@ object Codegen {
     case Expression.Set(elms, tpe, loc) => ???
     case Expression.Error(tpe, loc) => ???
     case Expression.MatchError(tpe, loc) => ???
+  }
+
+  /*
+   * Some types (e.g. bool, int, str) need to be boxed as Flix values.
+   * Other types (e.g. tag, tuple) are already Flix values.
+   */
+  private def compileBoxedExpr(context: Context, visitor: MethodVisitor)(exp: Expression): Unit = exp.tpe match {
+    case Type.Var(x) => ???
+    case Type.Bool =>
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      if (exp == Expression.True) {
+        visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "True", "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
+      } else if (exp == Expression.False) {
+        visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "False", "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
+      } else {
+        val boolFalse = new Label()
+        val boolEnd = new Label()
+        compileExpression(context, visitor)(exp)
+        visitor.visitJumpInsn(IFEQ, boolFalse)
+        visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "True", "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
+        visitor.visitJumpInsn(GOTO, boolEnd)
+        visitor.visitLabel(boolFalse)
+        visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "False", "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
+        visitor.visitLabel(boolEnd)
+      }
+    case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int =>
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      compileExpression(context, visitor)(exp)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt", "(I)Lca/uwaterloo/flix/runtime/Value$Int;", false)
+    case Type.Int64 => ??? // Value.Int doesn't support longs
+    case Type.Str =>
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      compileExpression(context, visitor)(exp)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkStr", "(Ljava/lang/String;)Lca/uwaterloo/flix/runtime/Value$Str;", false)
+    case Type.Unit | Type.Tag(_, _, _) =>
+      compileExpression(context, visitor)(exp)
+    case Type.Enum(_) => ???
+    case Type.Tuple(elms) => ???
+    case Type.Opt(elmType) => ???
+    case Type.Lst(elmType) => ???
+    case Type.Set(elmType) => ???
+    case Type.Map(k, v) => ???
+    case Type.Lambda(args, retTpe) => ???
+    case Type.Predicate(terms) => ???
+    case Type.Native(name) => ???
+    case Type.Char => ???
+    case Type.Abs(name, t) => ???
+    case Type.Any => ???
   }
 
   /*
