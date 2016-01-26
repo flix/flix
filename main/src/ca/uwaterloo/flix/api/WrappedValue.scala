@@ -14,6 +14,7 @@ protected final class WrappedValue(private val value: Value) extends IValue {
     case _ => false
   }
 
+  // TODO: Maybe this needs to be part of the value???
   def getType: IType = value match {
     case Value.Unit => new WrappedType(Type.Unit)
     case Value.True => new WrappedType(Type.Bool)
@@ -110,5 +111,12 @@ protected final class WrappedValue(private val value: Value) extends IValue {
   def getJavaMap: java.util.Map[IValue, IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
 
   def getScalaMap: immutable.Map[IValue, IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+
+  override def equals(other: Any): Boolean = other match {
+    case that: WrappedValue => value == that.value
+    case _ => false
+  }
+
+  override def hashCode(): Int = value.hashCode()
 
 }

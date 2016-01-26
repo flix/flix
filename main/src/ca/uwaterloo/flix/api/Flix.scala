@@ -4,7 +4,7 @@ import java.nio.file.{Files, Path, Paths}
 
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.runtime.{Invokable, Model, Solver}
+import ca.uwaterloo.flix.runtime.{Value, Invokable, Model, Solver}
 import ca.uwaterloo.flix.util.{Options, Validation}
 
 import scala.collection.mutable
@@ -267,7 +267,152 @@ class Flix {
   /////////////////////////////////////////////////////////////////////////////
   // Value Constructors                                                      //
   /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Returns the unit value.
+    */
+  def mkUnit: IValue = new WrappedValue(Value.Unit)
+
+  /**
+    * Returns the `true` bool value.
+    */
+  def mkTrue: IValue = new WrappedValue(Value.True)
+
+  /**
+    * Returns the `false` bool value.
+    */
+  def mkFalse: IValue = new WrappedValue(Value.False)
+
+  /**
+    * Returns the bool value corresponding to the given boolean.
+    */
+  def mkBool(b: Boolean): IValue = new WrappedValue(Value.mkBool(b))
+
+  /**
+    * Returns the char value corresponding to the given character.
+    */
+  def mkChar(c: Char): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+
+  /**
+    * Returns the int8 value corresponding to the given byte.
+    */
+  def mkInt8(b: Byte): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+
+  /**
+    * Returns the int8 value corresponding to the given int.
+    *
+    * @throws IllegalArgumentException if the int is out of bounds.
+    */
+  def mkInt8(i: Int): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+
+  /**
+    * Returns the int16 value corresponding to the given short.
+    */
+  def mkInt16(s: Short): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+
+  /**
+    * Returns the int16 value corresponding to the given int.
+    *
+    * @throws IllegalArgumentException if the int is out of bounds.
+    */
+  def mkInt16(i: Int): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+
+  /**
+    * Returns the int32 value corresponding to the given int.
+    */
+  def mkInt32(i: Int): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+
+  /**
+    * Returns the int64 value corresponding to the given int.
+    */
+  def mkInt64(i: Int): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+
+  /**
+    * Returns the int64 value corresponding to the given long.
+    */
+  def mkInt64(l: Long): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+
+  /**
+    * Returns the str value corresponding to the given string.
+    */
+  def mkStr(s: String): IValue = new WrappedValue(Value.mkStr(s))
 
   // TODO: Add constructor methods.
 
+
+  //
+  //  /**
+  //    * Returns the enum with the given fully qualified `name` and tags.
+  //    */
+  //  def mkEnumType(name: String, tags: Array[String]): IType = {
+  //    if (name == null) throw new IllegalArgumentException("Argument 'name' must be non-null.")
+  //    if (tags == null) throw new IllegalArgumentException("Argument 'tags' must be non-null.")
+  //
+  //    // TODO
+  //    val cases = tags.foldLeft(Map.empty[String, Type.Tag]) {
+  //      case (macc, tag) => macc + (tag -> Type.Tag(???, ???, ???))
+  //    }
+  //
+  //    new WrappedType(new Type.Enum(cases))
+  //  }
+  //
+  //  /**
+  //    * Returns the tuple type of the given `types`.
+  //    */
+  //  def mkTupleType(types: Array[IType]): IType = {
+  //    if (types == null) throw new IllegalArgumentException("Argument 'types' must be non-null.")
+  //    val elms = types.toList.map(_.asInstanceOf[Type])
+  //    new WrappedType(Type.Tuple(elms))
+  //  }
+  //
+  //  /**
+  //    * Returns the opt type parameterized by the given type `tpe`.
+  //    */
+  //  def mkOptType(tpe: IType): IType = {
+  //    if (tpe == null) throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
+  //    new WrappedType(Type.Opt(tpe.asInstanceOf[Type]))
+  //  }
+  //
+  //  /**
+  //    * Returns the list type parameterized by the given type `tpe`.
+  //    */
+  //  def mkListType(tpe: IType): IType = {
+  //    if (tpe == null) throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
+  //    new WrappedType(Type.Lst(tpe.asInstanceOf[Type]))
+  //  }
+  //
+  //  /**
+  //    * Returns the set type parameterized by the given type `tpe`.
+  //    */
+  //  def mkSetType(tpe: IType): IType = {
+  //    if (tpe == null) throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
+  //    new WrappedType(Type.Set(tpe.asInstanceOf[Type]))
+  //  }
+  //
+  //  /**
+  //    * Returns the set type parameterized by the given `key` and `value` types.
+  //    */
+  //  def mkMapType(key: IType, value: IType): IType = {
+  //    if (key == null) throw new IllegalArgumentException("Argument 'key' must be non-null.")
+  //    if (value == null) throw new IllegalArgumentException("Argument 'value' must be non-null.")
+  //    new WrappedType(Type.Map(key.asInstanceOf[Type], value.asInstanceOf[Type]))
+  //  }
+  //
+  //  /**
+  //    * Returns the native type for the given fully qualified `name`.
+  //    */
+  //  def mkNative(name: String): IType = {
+  //    if (name == null) throw new IllegalArgumentException("Argument 'name' must be non-null.")
+  //    new WrappedType(Type.Native(name))
+  //  }
+  //
+  //  /**
+  //    * Returns the function type for the function with the given argument types and return type.
+  //    */
+  //  def mkFunctionType(arguments: Array[IType], returnType: IType): IType = {
+  //    if (arguments == null) throw new IllegalArgumentException("Argument 'arguments' must be non-null.")
+  //    if (returnType == null) throw new IllegalArgumentException("Argument 'returnType' must be non-null.")
+  //    val args = arguments.toList.map(_.asInstanceOf[Type])
+  //    val retTpe = returnType.asInstanceOf[Type]
+  //    new WrappedType(Type.Lambda(args, retTpe))
+  //  }
 }
