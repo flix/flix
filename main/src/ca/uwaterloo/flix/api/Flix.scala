@@ -192,8 +192,10 @@ class Flix {
     * Returns the enum with the given fully qualified `name` and tags.
     */
   def mkEnumType(name: String, tags: Array[String]): IType = {
-    if (name == null) throw new IllegalArgumentException("Argument 'name' must be non-null.")
-    if (tags == null) throw new IllegalArgumentException("Argument 'tags' must be non-null.")
+    if (name == null)
+      throw new IllegalArgumentException("Argument 'name' must be non-null.")
+    if (tags == null)
+      throw new IllegalArgumentException("Argument 'tags' must be non-null.")
 
     // TODO
     val cases = tags.foldLeft(Map.empty[String, Type.Tag]) {
@@ -351,6 +353,7 @@ class Flix {
   def mkTuple(tuple: Array[IValue]): IValue = {
     if (tuple == null)
       throw new IllegalArgumentException("Argument 'tuple' must be non-null.")
+
     val elms = tuple.map(_.asInstanceOf[Value])
     new WrappedValue(Value.Tuple(elms))
   }
@@ -358,12 +361,28 @@ class Flix {
   /**
     * Returns the opt corresponding to the given Java Optional.
     */
-  def mkOpt(v: java.util.Optional[IValue]): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def mkOpt(o: java.util.Optional[IValue]): IValue = {
+    if (o == null)
+      throw new IllegalArgumentException("Argument 'o' must be non-null.")
+
+    if (!o.isPresent)
+      new WrappedValue(Value.mkNone)
+    else
+      new WrappedValue(Value.mkSome(o.get().asInstanceOf[Value]))
+  }
 
   /**
     * Return the opt corresponding to the given Scala Option.
     */
-  def mkOpt(v: scala.Option[IValue]): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def mkOpt(o: scala.Option[IValue]): IValue = {
+    if (o == null)
+      throw new IllegalArgumentException("Argument 'o' must be non-null.")
+
+    o match {
+      case None => new WrappedValue(Value.mkNone)
+      case Some(v) => new WrappedValue(Value.mkSome(v.asInstanceOf[Value]))
+    }
+  }
 
   /**
     * Returns the list corresponding to the given Java array.

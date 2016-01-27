@@ -178,8 +178,12 @@ object Value {
 
   final case class HookClosure(inv: Invokable) extends Value
 
-  def mkList(list: List[Value]): Value = ???
+  def mkList(list: List[Value]): Value = ??? // TODO
 
   def mkMap(map: Map[Value, Value]): Value = ??? // TODO
+
+  def mkNone: Value = ??? // TODO
+
+  def mkSome(v: Value): Value = ??? // TODO
 
 }
