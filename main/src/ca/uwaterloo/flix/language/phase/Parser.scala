@@ -184,7 +184,19 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def InvokeExpression: Rule1[ParsedAst.Expression] = rule {
-    ApplyExpression | SimpleExpression
+    ApplyExpression | LatticeExpression | SimpleExpression
+  }
+
+  def LatticeExpression: Rule1[ParsedAst.Expression] = rule {
+    BotExpression | TopExpression
+  }
+
+  def BotExpression: Rule1[ParsedAst.Expression.Bot] = rule {
+    SP ~ "⊥" ~ SP ~> ParsedAst.Expression.Bot
+  }
+
+  def TopExpression: Rule1[ParsedAst.Expression.Top] = rule {
+    SP ~ "⊤" ~ SP ~> ParsedAst.Expression.Top
   }
 
   def SimpleExpression: Rule1[ParsedAst.Expression] = rule {

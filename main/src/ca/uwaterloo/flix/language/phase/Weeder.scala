@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.Compiler
+import ca.uwaterloo.flix.language.ast.Name.Unresolved
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -717,6 +718,17 @@ object Weeder {
         Type.compile(exp.tpe) map {
           case tpe => WeededAst.Expression.Error(tpe, exp.loc)
         }
+
+      case exp: ParsedAst.Expression.Bot =>
+        val name = Name.Unresolved(exp.sp1, List("⊥"), exp.sp2)
+        val lambda = WeededAst.Expression.Var(name, exp.loc)
+        WeededAst.Expression.Apply(lambda, List(), exp.loc).toSuccess
+
+      case exp: ParsedAst.Expression.Top =>
+        val name = Name.Unresolved(exp.sp1, List("⊤"), exp.sp2)
+        val lambda = WeededAst.Expression.Var(name, exp.loc)
+        WeededAst.Expression.Apply(lambda, List(), exp.loc).toSuccess
+
     }
   }
 

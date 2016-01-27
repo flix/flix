@@ -554,6 +554,27 @@ object ParsedAst {
     case class Error(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
+
+    /**
+      * An AST node that represents a bot expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Bot(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents a top expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Top(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
   }
 
   /**

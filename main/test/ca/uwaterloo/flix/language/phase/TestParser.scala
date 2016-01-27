@@ -709,6 +709,20 @@ class TestParser extends FunSuite {
     assert(result.get.isInstanceOf[ParsedAst.Expression.Error])
   }
 
+  test("Expression.Bot01") {
+    val input = "⊥"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Bot])
+  }
+
+  test("Expression.Top01") {
+    val input = "⊤"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Top])
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
   /////////////////////////////////////////////////////////////////////////////
