@@ -136,7 +136,7 @@ trait IValue {
     *
     * @throws UnsupportedOperationException if `this` value is not of native type.
     */
-  def getNativeObj: AnyRef
+  def getNativeRef: AnyRef
 
   /////////////////////////////////////////////////////////////////////////////
   // Opts                                                                    //
@@ -163,7 +163,7 @@ trait IValue {
     *
     * @throws UnsupportedOperationException if `this` value is not of list type.
     */
-  def getJavaList: java.util.Set[IValue]
+  def getJavaList: java.util.List[IValue]
 
   /**
     * Returns the list represented by `this` value.

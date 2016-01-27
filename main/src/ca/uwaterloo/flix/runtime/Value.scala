@@ -2,11 +2,75 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.runtime.Interpreter.InternalRuntimeError
+import scala.collection.immutable
 import scala.collection.mutable
 
 import java.util
 
 object Value {
+
+  def cast2char(ref: AnyRef): Char =  ref match {
+    case o: java.lang.Character => o.charValue()
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
+
+  def cast2int8(ref: AnyRef): Byte = ref match {
+    case o: java.lang.Byte => o.byteValue()
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
+
+  def cast2int16(ref: AnyRef): Short = ref match {
+    case o: java.lang.Short => o.shortValue()
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
+
+  def cast2int64(ref: AnyRef): Long = ref match {
+    case o: java.lang.Long => o.longValue()
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
+
+  def cast2str(ref: AnyRef): String = ref match {
+    case v: Value.Str => v.s
+    case o: java.lang.String => o
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
+
+  def cast2tuple(ref: AnyRef): Array[AnyRef] = ref match {
+   // case v: Value.Tuple => v.elms.map(e => new WrappedValue(e))
+    //case o: Array[AnyRef] => o.map(e => new WrappedValue(e))
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
+
+  def cast2tag(ref: AnyRef): Value.Tag = ref match {
+    case v: Value.Tag => v
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
+
+  // TODO: return type
+  def cast2opt(ref: AnyRef) = ref match {
+    case null => java.util.Optional.empty()
+ //   case o => java.util.Optional.of(new WrappedValue(o))
+  }
+
+  // TODO: return type
+  def cast2list(ref: AnyRef): immutable.List[AnyRef] = ???
+
+  def cast2set(ref: AnyRef): immutable.Set[AnyRef] = ref match {
+    //case v: Value.Set => v.elms.map(e => new WrappedValue(e))
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
+
+  def cast2map(ref: AnyRef): immutable.Map[AnyRef, AnyRef]  = ref match {
+//    case o: immutable.Map[AnyRef, AnyRef]@unchecked =>
+//      o.foldLeft(Map.empty[AnyRef, AnyRef]) {
+//        case (macc, (key, value)) =>
+//          val k = new WrappedValue(key)
+//          val v = new WrappedValue(value)
+//          macc + (k -> v)
+//      }
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
+
   def mkInt64(i: scala.Int): AnyRef = ???
 
   def mkInt64(i: Long): AnyRef = ???
