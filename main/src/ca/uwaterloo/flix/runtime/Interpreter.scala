@@ -29,13 +29,13 @@ object Interpreter {
    *
    * Assumes all input has been type-checked.
    */
-  def eval(expr: Expression, root: Root, env: Env = mutable.Map.empty): Value = expr.tpe match {
-    case Type.Int => Value.mkInt(evalInt(expr, root, env))
-    case Type.Bool => if (evalBool(expr, root, env)) Value.True else Value.False
-    case Type.Str => evalGeneral(expr, root, env)
+  def eval[ValueType](expr: Expression, root: Root, env: Env = mutable.Map.empty): ValueType = expr.tpe match {
+    case Type.Int => Value.mkInt(evalInt(expr, root, env)).asInstanceOf[ValueType]
+    case Type.Bool => if (evalBool(expr, root, env)) Value.True.asInstanceOf[ValueType] else Value.False.asInstanceOf[ValueType]
+    case Type.Str => evalGeneral(expr, root, env).asInstanceOf[ValueType]
     case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
          Type.Set(_) | Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) | Type.Any =>
-      evalGeneral(expr, root, env)
+      evalGeneral(expr, root, env).asInstanceOf[ValueType]
   }
 
   /*
@@ -73,7 +73,7 @@ object Interpreter {
       val newEnv = env + (ident.name -> eval(exp1, root, env))
       evalInt(exp2, root, newEnv)
     case m: Expression.Match =>
-      val value = eval(m.exp, root, env)
+      val value = eval[Value](m.exp, root, env)
       val newEnv = env.clone()
       val result = matchRule(m.rulesAsArray, value, newEnv)
       if (result != null)
@@ -147,7 +147,7 @@ object Interpreter {
       val newEnv = env + (ident.name -> eval(exp1, root, env))
       evalBool(exp2, root, newEnv)
     case m: Expression.Match =>
-      val value = eval(m.exp, root, env)
+      val value = eval[Value](m.exp, root, env)
       val newEnv = env.clone()
       val result = matchRule(m.rulesAsArray, value, newEnv)
       if (result != null)
@@ -225,7 +225,7 @@ object Interpreter {
       val newEnv = env + (ident.name -> eval(exp1, root, env))
       eval(exp2, root, newEnv)
     case m: Expression.Match =>
-      val value = eval(m.exp, root, env)
+      val value = eval[Value](m.exp, root, env)
       val newEnv = env.clone()
       val result = matchRule(m.rulesAsArray, value, newEnv)
       if (result != null)
@@ -241,7 +241,7 @@ object Interpreter {
         i = i + 1
       }
       Value.Tuple(elms)
-    case Expression.Set(elms, _, _) => Value.Set(elms.map(e => eval(e, root, env)).toSet)
+    case Expression.Set(elms, _, _) => Value.Set(elms.map(e => eval[Value](e, root, env)).toSet)
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
   }
 
@@ -393,11 +393,11 @@ object Interpreter {
       case Value.HookClosure(inv) => inv(args)
     }
 
-  def eval2(closure: Value.Closure, arg1: Value, arg2: Value, root: Root): Value = {
-    val env = closure.env
-    env.update(closure.formals(0), arg1)
-    env.update(closure.formals(1), arg2)
-    eval(closure.body, root, env)
+  def eval2[ValueType](closure: ValueType, arg1: ValueType, arg2: ValueType, root: Root): ValueType = {
+    val env = closure.asInstanceOf[Value.Closure].env
+    env.update(closure.asInstanceOf[Value.Closure].formals(0), arg1.asInstanceOf[Value])
+    env.update(closure.asInstanceOf[Value.Closure].formals(1), arg2.asInstanceOf[Value])
+    eval(closure.asInstanceOf[Value.Closure].body, root, env)
   }
 
 }

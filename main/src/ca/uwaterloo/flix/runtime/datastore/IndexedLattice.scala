@@ -1,18 +1,20 @@
 package ca.uwaterloo.flix.runtime.datastore
 
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.runtime.{Interpreter, Solver, Value}
+import ca.uwaterloo.flix.runtime.{Value, Interpreter, Solver}
 
 import scala.annotation.switch
 import scala.collection.mutable
 
 import java.util
 
-class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
+import scala.reflect.ClassTag
+
+class IndexedLattice[ValueType <: AnyRef](lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(implicit sCtx: Solver.SolverContext, m: ClassTag[ValueType]) extends IndexedCollection[ValueType] {
   /**
     * A map from indexes to a map from keys to rows (represented as map from keys to elements).
     */
-  private val store = mutable.Map.empty[Int, mutable.Map[Key, mutable.Map[Key, Array[Value]]]]
+  private val store = mutable.Map.empty[Int, mutable.Map[Key[ValueType], mutable.Map[Key[ValueType], Array[ValueType]]]]
 
   /**
     * The number of key columns in the lattice.
@@ -34,29 +36,45 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
   /**
     * The bottom element(s).
     */
-  private val Bot: Array[Value] = latticeOps map {
-    case l => Interpreter.eval(l.bot, sCtx.root)
+  private val Bot: Array[ValueType] = {
+    val a = new Array[AnyRef](latticeOps.length)
+    for ((l, i) <- latticeOps.zipWithIndex) {
+      a(i) = Interpreter.eval(l.bot, sCtx.root)
+    }
+    a.asInstanceOf[Array[ValueType]]
   }
 
   /**
     * The Leq operator(s). Must be defined as Flix functions.
     */
-  private val Leq: Array[Value.Closure] = latticeOps map {
-    case l => Interpreter.eval(l.leq, sCtx.root).asInstanceOf[Value.Closure]
+  private val Leq: Array[ValueType] = {
+    val a = new Array[AnyRef](latticeOps.length)
+    for ((l, i) <- latticeOps.zipWithIndex) {
+      a(i) = Interpreter.eval(l.leq, sCtx.root)
+    }
+    a.asInstanceOf[Array[ValueType]]
   }
 
   /**
     * The Lub operator(s). Must be defined as Flix functions.
     */
-  private val Lub: Array[Value.Closure] = latticeOps map {
-    case l => Interpreter.eval(l.lub, sCtx.root).asInstanceOf[Value.Closure]
+  private val Lub: Array[ValueType] = {
+    val a = new Array[AnyRef](latticeOps.length)
+    for ((l, i) <- latticeOps.zipWithIndex) {
+      a(i) = Interpreter.eval(l.lub, sCtx.root)
+    }
+    a.asInstanceOf[Array[ValueType]]
   }
 
   /**
     * The Glb operator(s). Must be defined as Flix functions.
     */
-  private val Glb: Array[Value.Closure] = latticeOps map {
-    case l => Interpreter.eval(l.glb, sCtx.root).asInstanceOf[Value.Closure]
+  private val Glb: Array[ValueType] = {
+    val a = new Array[AnyRef](latticeOps.length)
+    for ((l, i) <- latticeOps.zipWithIndex) {
+      a(i) = Interpreter.eval(l.glb, sCtx.root)
+    }
+    a.asInstanceOf[Array[ValueType]]
   }
 
   /**
@@ -79,7 +97,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
     *
     * Returns `true` iff the fact did not already exist in the relation.
     */
-  def inferredFact(fact: Array[Value]): Boolean = {
+  def inferredFact(fact: Array[ValueType]): Boolean = {
     // Get the index on every column.
     val pat = util.Arrays.copyOfRange(fact, 0, numberOfKeys)
     val idx = getExactIndex(indexes, pat)
@@ -118,7 +136,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
     *
     * Returns an iterator over the matching rows.
     */
-  def lookup(pat: Array[Value]): Iterator[Array[Value]] = {
+  def lookup(pat: Array[ValueType]): Iterator[Array[ValueType]] = {
     // check if there is an exact index.
     var idx = getExactIndex(indexes, pat)
     val table = if (idx != 0) {
@@ -140,7 +158,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
 
     table filter {
       // match the keys
-      case (keys, _) => matchKey(util.Arrays.copyOf(pat, numberOfKeys), keys.toArray)
+      case (keys, _) => matchKey(util.Arrays.copyOf[ValueType](pat, numberOfKeys), keys.toArray)
     } map {
       case (keys, elms) =>
         val elmsCopy = elms.clone()
@@ -150,24 +168,24 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
       case e => e != null
     } map {
       case (keys, elms) =>
-        val result = new Array[Value](numberOfKeys + numberOfElms)
+        val result = new Array[ValueType](numberOfKeys + numberOfElms)
         System.arraycopy(keys.toArray, 0, result, 0, numberOfKeys)
         System.arraycopy(elms, 0, result, numberOfKeys, numberOfElms)
-        result
+        result.asInstanceOf[Array[ValueType]]
     }
   }
 
   /**
     * Returns all rows in the relation using a table scan.
     */
-  def scan: Iterator[(Key, Array[Value])] = store(indexes.head).iterator.flatMap {
+  def scan: Iterator[(Key[ValueType], Array[ValueType])] = store(indexes.head).iterator.flatMap {
     case (key, m) => m.iterator
   }
 
   /**
     * Returns the key part of the given array `a`.
     */
-  def keyPart(a: Array[Value]): Key = {
+  def keyPart(a: Array[ValueType]): Key[ValueType] = {
     (numberOfKeys: @switch) match {
       case 1 => new Key1(a(0))
       case 2 => new Key2(a(0), a(1))
@@ -181,8 +199,8 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
   /**
     * Returns the element part of the given array `a`.
     */
-  def elmPart(a: Array[Value]): Array[Value] = {
-    return util.Arrays.copyOfRange(a, numberOfKeys, a.length)
+  def elmPart(a: Array[ValueType]): Array[ValueType] = {
+    return util.Arrays.copyOfRange[ValueType](a, numberOfKeys, a.length)
   }
 
   /**
@@ -190,7 +208,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
     * are equal to their corresponding entry in the given `row`.
     */
   // TODO: Optimize by changing signature
-  def matchKey(pat: Array[Value], row: Array[Value]): Boolean = {
+  def matchKey(pat: Array[ValueType], row: Array[ValueType]): Boolean = {
     var i = 0
     while (i < pat.length) {
       val pv = pat(i)
@@ -208,7 +226,7 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
     *
     * Modifies the given `row` in the process.
     */
-  def matchElms(pat: Array[Value], row: Array[Value]): Boolean = {
+  def matchElms(pat: Array[ValueType], row: Array[ValueType]): Boolean = {
     var i = 0
     while (i < pat.length) {
       val pv = pat(i)
@@ -233,14 +251,14 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
   /**
     * Returns `true` iff `a` is pairwise less than or equal to `b`.
     */
-  private def leq(a: Array[Value], b: Array[Value]): Boolean = {
+  private def leq(a: Array[ValueType], b: Array[ValueType]): Boolean = {
     var i = 0
     while (i < a.length) {
-      val v1: Value = a(i)
-      val v2: Value = b(i)
+      val v1: ValueType = a(i)
+      val v2: ValueType = b(i)
 
       // if v1 and v2 are equal we do not need to compute leq.
-      if (v1 ne v2) {
+      if (v1 != v2) { // TODO: use neq
         // v1 and v2 are different, must compute leq.
         val result = Interpreter.eval2(Leq(i), v1, v2, sCtx.root)
         if (!Value.cast2bool(result)) {
@@ -255,16 +273,16 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
   /**
     * Returns the pairwise least upper bound of `a` and `b`.
     */
-  private def lub(a: Array[Value], b: Array[Value]): Array[Value] = {
-    val result = new Array[Value](a.length)
+  private def lub(a: Array[ValueType], b: Array[ValueType]): Array[ValueType] = {
+    val result = new Array[ValueType](a.length)
     var i = 0
     while (i < result.length) {
-      val v1: Value = a(i)
-      val v2: Value = b(i)
+      val v1: ValueType = a(i)
+      val v2: ValueType = b(i)
 
-      if (v1 eq Bot(i))
+      if (v1 == Bot(i)) // TODO: use eq
         result(i) = v2
-      else if (v2 eq Bot(i))
+      else if (v2 == Bot(i)) // TODO: use eq
         result(i) = v1
       else
         result(i) = Interpreter.eval2(Lub(i), v1, v2, sCtx.root)

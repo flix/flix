@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.runtime.datastore
 import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.TypedAst.Collection
 import ca.uwaterloo.flix.language.phase.Indexer
-import ca.uwaterloo.flix.runtime.Solver
+import ca.uwaterloo.flix.runtime.{Value, Solver}
 import ca.uwaterloo.flix.util.{BitOps, AsciiTable}
 
 import scala.collection.mutable
@@ -16,12 +16,12 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
   /**
    * A map from names to indexed relations.
    */
-  val relations = mutable.Map.empty[Name.Resolved, IndexedRelation]
+  val relations = mutable.Map.empty[Name.Resolved, IndexedRelation[Value]]
 
   /**
    * A map from names to indexed lattices.
    */
-  val lattices = mutable.Map.empty[Name.Resolved, IndexedLattice]
+  val lattices = mutable.Map.empty[Name.Resolved, IndexedLattice[Value]]
 
   /**
    * Initializes the relations and lattices.

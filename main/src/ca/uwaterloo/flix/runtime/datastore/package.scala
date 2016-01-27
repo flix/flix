@@ -9,48 +9,48 @@ package object datastore {
   /**
     * A common super-type for keys.
     */
-  sealed trait Key {
+  sealed trait Key[ValueType] {
 
-    def toArray: Array[Value] = this match {
-      case k: Key1 =>
-        val a = new Array[Value](1)
+    def toArray: Array[ValueType] = this match {
+      case k: Key1[_] =>
+        val a = new Array[Any](1)
         a(0) = k.v0
-        a
-      case k: Key2 =>
-        val a = new Array[Value](2)
+        a.asInstanceOf[Array[ValueType]]
+      case k: Key2[_] =>
+        val a = new Array[Any](2)
         a(0) = k.v0
         a(1) = k.v1
-        a
-      case k: Key3 =>
-        val a = new Array[Value](3)
+        a.asInstanceOf[Array[ValueType]]
+      case k: Key3[_] =>
+        val a = new Array[Any](3)
         a(0) = k.v0
         a(1) = k.v1
         a(2) = k.v2
-        a
-      case k: Key4 =>
-        val a = new Array[Value](4)
+        a.asInstanceOf[Array[ValueType]]
+      case k: Key4[_] =>
+        val a = new Array[Any](4)
         a(0) = k.v0
         a(1) = k.v1
         a(2) = k.v2
         a(3) = k.v3
-        a
-      case k: Key5 =>
-        val a = new Array[Value](5)
+        a.asInstanceOf[Array[ValueType]]
+      case k: Key5[_] =>
+        val a = new Array[Any](5)
         a(0) = k.v0
         a(1) = k.v1
         a(2) = k.v2
         a(3) = k.v3
         a(4) = k.v3
-        a
+        a.asInstanceOf[Array[ValueType]]
     }
   }
 
   /**
     * A key with one value.
     */
-  final class Key1(val v0: Value) extends Key {
+  final class Key1[ValueType](val v0: ValueType) extends Key[ValueType] {
     override def equals(o: scala.Any): Boolean = o match {
-      case that: Key1 => this.v0 == that.v0
+      case that: Key1[_] => this.v0 == that.v0
       case _ => false
     }
 
@@ -60,9 +60,9 @@ package object datastore {
   /**
     * A key with two values.
     */
-  final class Key2(val v0: Value, val v1: Value) extends Key {
+  final class Key2[ValueType](val v0: ValueType, val v1: ValueType) extends Key[ValueType] {
     override def equals(o: scala.Any): Boolean = o match {
-      case that: Key2 =>
+      case that: Key2[_] =>
         this.v0 == that.v0 &&
           this.v1 == that.v1
       case _ => false
@@ -74,9 +74,9 @@ package object datastore {
   /**
     * A key with three values.
     */
-  final class Key3(val v0: Value, val v1: Value, val v2: Value) extends Key {
+  final class Key3[ValueType](val v0: ValueType, val v1: ValueType, val v2: ValueType) extends Key[ValueType] {
     override def equals(o: scala.Any): Boolean = o match {
-      case that: Key3 =>
+      case that: Key3[_] =>
         this.v0 == that.v0 &&
           this.v1 == that.v1 &&
           this.v2 == that.v2
@@ -89,9 +89,9 @@ package object datastore {
   /**
     * A key with four values.
     */
-  final class Key4(val v0: Value, val v1: Value, val v2: Value, val v3: Value) extends Key {
+  final class Key4[ValueType](val v0: ValueType, val v1: ValueType, val v2: ValueType, val v3: ValueType) extends Key[ValueType] {
     override def equals(o: scala.Any): Boolean = o match {
-      case that: Key4 =>
+      case that: Key4[_] =>
         this.v0 == that.v0 &&
           this.v1 == that.v1 &&
           this.v2 == that.v2 &&
@@ -105,9 +105,9 @@ package object datastore {
   /**
     * A key with five values.
     */
-  final class Key5(val v0: Value, val v1: Value, val v2: Value, val v3: Value, val v4: Value) extends Key {
+  final class Key5[ValueType](val v0: ValueType, val v1: ValueType, val v2: ValueType, val v3: ValueType, val v4: ValueType) extends Key[ValueType] {
     override def equals(o: scala.Any): Boolean = o match {
-      case that: Key5 =>
+      case that: Key5[_] =>
         this.v0 == that.v0 &&
           this.v1 == that.v1 &&
           this.v2 == that.v2 &&
@@ -126,7 +126,7 @@ package object datastore {
     *
     * Returns zero if no such index exists.
     */
-  def getExactIndex(indexes: Set[Int], pat: Array[Value]): Int = {
+  def getExactIndex[ValueType](indexes: Set[Int], pat: Array[ValueType]): Int = {
     var index = 0
     var i = 0
     while (i < pat.length) {
@@ -148,7 +148,7 @@ package object datastore {
     *
     * Returns zero if no such index exists.
     */
-  def getApproximateIndex(indexes: Set[Int], pat: Array[Value]): Int = {
+  def getApproximateIndex[ValueType](indexes: Set[Int], pat: Array[ValueType]): Int = {
     // the result index. Defaults to zero representing that no usable index exists.
     var result: Int = 0
     // loop through all available indexes looking for the first partially matching index.
@@ -187,7 +187,7 @@ package object datastore {
     * @param idx the index (in binary).
     * @param pat the pattern.
     */
-  def keyOf(idx: Int, pat: Array[Value]): Key = {
+  def keyOf[ValueType](idx: Int, pat: Array[ValueType]): Key[ValueType] = {
     val columns = Integer.bitCount(idx)
     val i1 = idx
     (columns: @switch) match {

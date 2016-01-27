@@ -69,7 +69,7 @@ object Value {
     * Casts the given reference `ref` to a primitive boolean.
     */
   @inline
-  def cast2bool(ref: AnyRef): Boolean = ref match {
+  def cast2bool(ref: Any): Boolean = ref match {
     case Value.True => true
     case Value.False => false
     case o: java.lang.Boolean => o.booleanValue()
