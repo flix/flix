@@ -113,16 +113,18 @@ protected final class WrappedValue(val ref: AnyRef) extends IValue {
     case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
   }
 
-  def getScalaList: immutable.List[IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
+  def getScalaList: immutable.List[IValue] = ref match {
+    case o: immutable.List[AnyRef]@unchecked => o.map(e => new WrappedValue(e))
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
 
   def getJavaSet: java.util.Set[IValue] = ref match {
-    case v: Value.Set => {
+    case v: Value.Set =>
       val r = new util.HashSet[IValue]()
       for (e <- v.elms) {
         r.add(new WrappedValue(e))
       }
       r
-    }
     case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
   }
 
@@ -131,9 +133,26 @@ protected final class WrappedValue(val ref: AnyRef) extends IValue {
     case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
   }
 
-  def getJavaMap: java.util.Map[IValue, IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
+  def getJavaMap: java.util.Map[IValue, IValue] = ref match {
+    case o: immutable.Map[AnyRef, AnyRef]@unchecked =>
+      val map = new java.util.HashMap[IValue, IValue]
+      for ((k, v) <- o) {
+        map.put(new WrappedValue(k), new WrappedValue(v))
+      }
+      map
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
 
-  def getScalaMap: immutable.Map[IValue, IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
+  def getScalaMap: immutable.Map[IValue, IValue] = ref match {
+    case o: immutable.Map[AnyRef, AnyRef]@unchecked =>
+      o.foldLeft(Map.empty[IValue, IValue]) {
+        case (macc, (key, value)) =>
+          val k = new WrappedValue(key)
+          val v = new WrappedValue(value)
+          macc + (k -> v)
+      }
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
 
   override def equals(other: Any): Boolean = other match {
     case that: WrappedValue => ref == that.ref
