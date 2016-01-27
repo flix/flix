@@ -14,7 +14,7 @@ protected final class WrappedValue(val ref: AnyRef) extends IValue {
     case _ => false
   }
 
-  // TODO: Maybe this needs to be part of the value???
+  // TODO: How do we get the type?
   @deprecated
   def getType: IType = ref match {
     case Value.Unit => new WrappedType(Type.Unit)

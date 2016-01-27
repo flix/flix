@@ -374,9 +374,14 @@ class Flix {
   }
 
   /**
-    *
+    * Returns the tag with the given `enumName`, `tagName` and `tagValue`.
     */
-  // TODO: mkEnum
+  def mkTag(enumName: String, tagName: String, tagValue: IValue): IValue = {
+    val enum = Name.Resolved.mk(enumName)
+    val ref = tagValue.asInstanceOf[WrappedValue].ref.asInstanceOf[Value]
+
+    new WrappedValue(Value.mkTag(enum, tagName, ref))
+  }
 
   /**
     * Returns the tuple corresponding to the given array.
@@ -512,7 +517,5 @@ class Flix {
 
     new WrappedValue(Value.Native(o))
   }
-
-  // TODO: Check every cast !!!
 
 }
