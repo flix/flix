@@ -9,25 +9,6 @@ import java.util
 
 object Value {
 
-  def cast2char(ref: AnyRef): Char =  ref match {
-    case o: java.lang.Character => o.charValue()
-    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
-  }
-
-  def cast2int8(ref: AnyRef): Byte = ref match {
-    case o: java.lang.Byte => o.byteValue()
-    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
-  }
-
-  def cast2int16(ref: AnyRef): Short = ref match {
-    case o: java.lang.Short => o.shortValue()
-    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
-  }
-
-  def cast2int64(ref: AnyRef): Long = ref match {
-    case o: java.lang.Long => o.longValue()
-    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
-  }
 
   def cast2str(ref: AnyRef): String = ref match {
     case v: Value.Str => v.s
@@ -36,7 +17,7 @@ object Value {
   }
 
   def cast2tuple(ref: AnyRef): Array[AnyRef] = ref match {
-   // case v: Value.Tuple => v.elms.map(e => new WrappedValue(e))
+    // case v: Value.Tuple => v.elms.map(e => new WrappedValue(e))
     //case o: Array[AnyRef] => o.map(e => new WrappedValue(e))
     case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
   }
@@ -49,7 +30,7 @@ object Value {
   // TODO: return type
   def cast2opt(ref: AnyRef) = ref match {
     case null => java.util.Optional.empty()
- //   case o => java.util.Optional.of(new WrappedValue(o))
+    //   case o => java.util.Optional.of(new WrappedValue(o))
   }
 
   // TODO: return type
@@ -60,33 +41,17 @@ object Value {
     case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
   }
 
-  def cast2map(ref: AnyRef): immutable.Map[AnyRef, AnyRef]  = ref match {
-//    case o: immutable.Map[AnyRef, AnyRef]@unchecked =>
-//      o.foldLeft(Map.empty[AnyRef, AnyRef]) {
-//        case (macc, (key, value)) =>
-//          val k = new WrappedValue(key)
-//          val v = new WrappedValue(value)
-//          macc + (k -> v)
-//      }
+  def cast2map(ref: AnyRef): immutable.Map[AnyRef, AnyRef] = ref match {
+    //    case o: immutable.Map[AnyRef, AnyRef]@unchecked =>
+    //      o.foldLeft(Map.empty[AnyRef, AnyRef]) {
+    //        case (macc, (key, value)) =>
+    //          val k = new WrappedValue(key)
+    //          val v = new WrappedValue(value)
+    //          macc + (k -> v)
+    //      }
     case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
   }
 
-  def mkInt64(i: scala.Int): AnyRef = ???
-
-  def mkInt64(i: Long): AnyRef = ???
-
-
-  def mkChar(c: Char): AnyRef = ???
-
-  def mkInt8(b: Byte): AnyRef = ???
-
-  // TODO: Cleanup Int name.
-  def mkInt8(b: scala.Int): AnyRef = ???
-
-
-  def mkInt16(s: Short): AnyRef = ???
-
-  def mkInt16(i: scala.Int): AnyRef = ???
 
   // TODO: Doc and cleanup.
   def pretty(o: AnyRef): String = o match {
@@ -151,7 +116,23 @@ object Value {
     case Value.True => true
     case Value.False => false
     case o: java.lang.Boolean => o.booleanValue()
-    case _ => throw new InternalRuntimeError(s"Unexpected non-bolean type: '$ref'.")
+    case _ => throw new InternalRuntimeError(s"Unexpected non-bool type: '$ref'.")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Char                                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Constructs a char value from the given char `c`.
+    */
+  def mkChar(c: Char): AnyRef = new java.lang.Character(c)
+
+  /**
+    * Casts the given reference `ref` to a primitive char.
+    */
+  def cast2char(ref: AnyRef): Char = ref match {
+    case o: java.lang.Character => o.charValue()
+    case _ => throw new InternalRuntimeError(s"Unexpected non-char type: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -159,13 +140,54 @@ object Value {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
+    * Constructs an int8 value from the given byte `b`.
+    */
+  def mkInt8(b: Byte): AnyRef = new java.lang.Byte(b)
+
+  /**
+    * Constructs an int8 from the given int `i`.
+    */
+  def mkInt8(i: scala.Int): AnyRef = new java.lang.Byte(i.asInstanceOf[Byte])
+
+  def mkInt16(s: Short): AnyRef = ???
+
+  def mkInt16(i: scala.Int): AnyRef = ???
+
+  def mkInt64(i: scala.Int): AnyRef = ???
+
+  def mkInt64(i: Long): AnyRef = ???
+
+  /**
+    * Casts the given reference `ref` to an int8.
+    */
+  def cast2int8(ref: AnyRef): Byte = ref match {
+    case o: java.lang.Byte => o.byteValue()
+    case _ => throw new InternalRuntimeError(s"Unexpected non-int8 type: '$ref'.")
+  }
+
+  /**
+    * Casts the given reference `ref` to an int16.
+    */
+  def cast2int16(ref: AnyRef): Short = ref match {
+    case o: java.lang.Short => o.shortValue()
+    case _ => throw new InternalRuntimeError(s"Unexpected non-int16 type: '$ref'.")
+  }
+
+  /**
     * Casts the given reference `ref` to an int32.
     */
-  // TODO: check that theser are not used by hooks.
   def cast2int32(ref: AnyRef): scala.Int = ref match {
     case v: Value.Int => v.i
     case o: java.lang.Integer => o.intValue()
     case _ => throw new InternalRuntimeError(s"Unexpected non-int32 type: '$ref'.")
+  }
+
+  /**
+    * Casts the given reference `ref` to an int64.
+    */
+  def cast2int64(ref: AnyRef): Long = ref match {
+    case o: java.lang.Long => o.longValue()
+    case _ => throw new InternalRuntimeError(s"Unexpected non-int64 type: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////

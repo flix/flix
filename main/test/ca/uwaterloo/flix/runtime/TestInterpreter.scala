@@ -585,7 +585,7 @@ class TestInterpreter extends FunSuite {
       .addHook("A::g", Type.Lambda(List(Type.Int, Type.Int), Type.Int), new Invokable {
         def apply(args: Array[IValue]): IValue = {
           executed = true
-          flix.mkInt32(Value.cast2int32(args(0)) + Value.cast2int32(args(1)))
+          flix.mkInt32(args(0).getInt32 + args(1).getInt32)
         }
       })
     val model = flix.solve()
