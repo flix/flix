@@ -186,7 +186,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       }
       inferredFact(p.name, fact, enqueue)
     case p: Predicate.Head.Trace =>
-      val row = p.terms map (t => Interpreter.evalHeadTerm(t, sCtx.root, env0).pretty)
+      val row = p.terms map (t => Value.pretty(Interpreter.evalHeadTerm(t, sCtx.root, env0)))
       val out = "Trace(" + row.mkString(", ") + ")"
       Console.println(out)
     case p: Predicate.Head.Write => // NOP - used when the fixpoint has been found.
@@ -253,7 +253,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   def loop(rule: Constraint.Rule, ps: List[Predicate.Body.Loop], row: mutable.Map[String, Value]): Unit = ps match {
     case Nil => filter(rule, rule.filters, row)
     case Predicate.Body.Loop(name, term, _, _) :: rest =>
-      val result = Interpreter.evalHeadTerm(term, sCtx.root, row).toSet
+      val result = Interpreter.evalHeadTerm(term, sCtx.root, row).asInstanceOf[Value.Set].elms
       for (x <- result) {
         val newRow = row.clone()
         newRow.update(name.name, x)
@@ -277,8 +277,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         args(i) = Interpreter.evalBodyTerm(pred.termsAsArray(i), row)
         i = i + 1
       }
-      val result = Interpreter.evalCall(lambda.exp, args, sCtx.root, row).toBool
-      if (result)
+      val result = Interpreter.evalCall(lambda.exp, args, sCtx.root, row)
+      if (Value.cast2bool(result))
         filter(rule, xs, row)
   }
 
@@ -300,7 +300,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       }
 
       val result = pred.hook.inv.apply(args)
-      if (result.toBool) {
+      if (Value.cast2bool(result)) {
         filterHook(rule, xs, row)
       }
   }

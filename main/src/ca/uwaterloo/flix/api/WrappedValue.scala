@@ -14,16 +14,7 @@ protected final class WrappedValue(val ref: AnyRef) extends IValue {
     case _ => false
   }
 
-  // TODO: How do we get the type?
-  @deprecated
-  def getType: IType = ref match {
-    case Value.Unit => new WrappedType(Type.Unit)
-    case Value.True => new WrappedType(Type.Bool)
-    case Value.False => new WrappedType(Type.Bool)
-    case v: Value.Int => new WrappedType(Type.Int32)
-    case v: Value.Str => new WrappedType(Type.Str)
-    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
-  }
+  def getType: IType = throw new UnsupportedOperationException("Not yet implemented. Sorry.") // TODO
 
   def getBool: Boolean = ref match {
     case Value.True => true
