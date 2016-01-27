@@ -304,7 +304,7 @@ object SimplifiedAst {
       * @param name the name of the function being called.
       * @param args the function arguments.
       * @param tpe  the return type of the function.
-      * @param loc  the source location.
+      * @param loc  the source location of the expression.
       */
     case class Apply(name: Name.Resolved,
                      args: List[SimplifiedAst.Expression],
@@ -361,7 +361,7 @@ object SimplifiedAst {
       * @param exp1   the value of the bound variable.
       * @param exp2   the body expression in which the bound variable is visible.
       * @param tpe    the type of the expression (which is equivalent to the type of the body expression).
-      * @param loc    the source location.
+      * @param loc    the source location of the expression.
       */
     case class Let(ident: Name.Ident,
                    offset: scala.Int,
@@ -370,29 +370,66 @@ object SimplifiedAst {
                    tpe: Type,
                    loc: SourceLocation) extends SimplifiedAst.Expression
 
+    /**
+      * A typed AST node representing a check-tag expression, i.e. check if the tag expression matches the given tag
+      * identifier.
+      *
+      * @param tag the tag identifier.
+      * @param exp the tag expression to check.
+      * @param loc the source location of the expression.
+      */
     case class CheckTag(tag: Name.Ident,
                         exp: SimplifiedAst.Expression,
                         loc: SourceLocation) extends SimplifiedAst.Expression {
       final val tpe: Type = Type.Bool
     }
 
-    // Destructs a Tag
+    /**
+      * A typed AST node representing a dereference of the inner value of a tag, i.e. destruct a tag.
+      *
+      * @param exp the tag expression to destruct.
+      * @param tpe the type of the inner tag value.
+      * @param loc the source location of the expression.
+      */
     case class GetTagValue(exp: SimplifiedAst.Expression,
                            tpe: Type,
                            loc: SourceLocation) extends SimplifiedAst.Expression
 
+    /**
+      * A typed AST node representing a tagged expression.
+      *
+      * @param enum the name of the enum.
+      * @param tag  the name of the tag.
+      * @param exp  the expression.
+      * @param tpe  the type of the expression.
+      * @param loc  The source location of the tag.
+      */
     case class Tag(enum: Name.Resolved,
                    tag: Name.Ident,
                    exp: SimplifiedAst.Expression,
                    tpe: Type.Enum,
                    loc: SourceLocation) extends SimplifiedAst.Expression
 
-    // Destructs a Tuple
+    /**
+      * A typed AST node representing an index into a tuple, i.e. destruct a tuple.
+      *
+      * @param base   the tuple expression to index into.
+      * @param offset the (0-based) offset of the tuple.
+      * @param tpe    the type of the expression.
+      * @param loc    the source location of the tuple.
+      */
     case class TupleAt(base: SimplifiedAst.Expression,
                        offset: scala.Int,
                        tpe: Type,
                        loc: SourceLocation) extends SimplifiedAst.Expression
 
+    /**
+      * A typed AST node representing a tuple expression.
+      *
+      * @param elms the elements of the tuple.
+      * @param tpe  the type of the tuple.
+      * @param loc  the source location of the tuple.
+      */
     case class Tuple(elms: List[SimplifiedAst.Expression],
                      tpe: Type.Tuple,
                      loc: SourceLocation) extends SimplifiedAst.Expression

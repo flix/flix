@@ -410,6 +410,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Unit") {
     import ca.uwaterloo.flix.runtime.Value
+
     val definition = Function(name, args = List(),
       body = Unit,
       Type.Lambda(List(), Type.Unit), loc)
@@ -5845,6 +5846,93 @@ class TestCodegen extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // CheckTag                                                                //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Codegen - CheckTag01") {
+    val definition = Function(name, args = List(),
+      body = Let(toIdent("x"), 0,
+        exp1 = Tag(constPropName, identV, Int32(42), enumTpe, loc),
+        exp2 = CheckTag(identV, Var(toIdent("x"), 0, enumTpe, loc), loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - CheckTag02") {
+    val definition = Function(name, args = List(),
+      body = Let(toIdent("x"), 0,
+        exp1 = Tag(constPropName, identV, Int32(42), enumTpe, loc),
+        exp2 = CheckTag(identB, Var(toIdent("x"), 0, enumTpe, loc), loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(false)(result)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // GetTagValue                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Codegen - GetTagValue01") {
+    val definition = Function(name, args = List(),
+      body = Let(toIdent("x"), 0,
+        exp1 = Tag(constPropName, identV, Int32(42), enumTpe, loc),
+        exp2 = GetTagValue(Var(toIdent("x"), 0, enumTpe, loc), Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(42)(result)
+  }
+
+  test("Codegen - GetTagValue02") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List(),
+      body = Let(toIdent("x"), 0,
+        exp1 = Tag(constPropName, identT, Unit, enumTpe, loc),
+        exp2 = GetTagValue(Var(toIdent("x"), 0, enumTpe, loc), Type.Unit, loc),
+        Type.Unit, loc),
+      Type.Lambda(List(), Type.Unit), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.Unit)(result)
+  }
+
+  test("Codegen - GetTagValue03") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val tagName = Name.Resolved.mk("abc")
+    val ident = toIdent("def")
+    val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int, Type.Str)))))
+
+    val definition = Function(name, args = List(),
+      body = Let(toIdent("x"), 0,
+        exp1 = Tag(tagName, ident, Tuple(List(Int32(1), Str("one", loc)),
+          Type.Tuple(List(Type.Int, Type.Str)), loc), enum, loc),
+        exp2 = GetTagValue(Var(toIdent("x"), 0, enum, loc), Type.Tuple(List(Type.Int32, Type.Str)), loc),
+        Type.Unit, loc),
+      Type.Lambda(List(), Type.Tuple(List(Type.Int32, Type.Str))), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.Tuple(Array(Value.mkInt(1), Value.mkStr("one"))))(result)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Tuple                                                                   //
   /////////////////////////////////////////////////////////////////////////////
 
@@ -5932,5 +6020,124 @@ class TestCodegen extends FunSuite {
     val result = code.call(name)
 
     assertResult(Value.Tuple(Array(Value.Tuple(Array(123, 456).map(Value.mkInt)), Value.Tuple(Array("654", "321").map(Value.mkStr)))))(result)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // TupleAt                                                                 //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Codegen - TupleAt01") {
+    val definition = Function(name, args = List(),
+      body = Let(toIdent("x"), 0,
+        exp1 = Tuple(List(Str("un", loc), False, Int32(12345), Unit, Int8(-2)),
+          Type.Tuple(List(Type.Str, Type.Bool, Type.Int32, Type.Unit, Type.Int8)), loc),
+        exp2 = TupleAt(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int32, Type.Unit, Type.Int8)), loc), 0, Type.Str, loc),
+        Type.Str, loc),
+      Type.Lambda(List(), Type.Str), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult("un")(result)
+  }
+
+  test("Codegen - TupleAt02") {
+    val definition = Function(name, args = List(),
+      body = Let(toIdent("x"), 0,
+        exp1 = Tuple(List(Str("un", loc), False, Int32(12345), Unit, Int8(-2)),
+          Type.Tuple(List(Type.Str, Type.Bool, Type.Int32, Type.Unit, Type.Int8)), loc),
+        exp2 = TupleAt(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int32, Type.Unit, Type.Int8)), loc), 1, Type.Bool, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - TupleAt03") {
+    val definition = Function(name, args = List(),
+      body = Let(toIdent("x"), 0,
+        exp1 = Tuple(List(Str("un", loc), False, Int32(12345), Unit, Int8(-2)),
+          Type.Tuple(List(Type.Str, Type.Bool, Type.Int32, Type.Unit, Type.Int8)), loc),
+        exp2 = TupleAt(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int32, Type.Unit, Type.Int8)), loc), 2, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(12345)(result)
+  }
+
+  test("Codegen - TupleAt04") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List(),
+      body = Let(toIdent("x"), 0,
+        exp1 = Tuple(List(Str("un", loc), False, Int32(12345), Unit, Int8(-2)),
+          Type.Tuple(List(Type.Str, Type.Bool, Type.Int32, Type.Unit, Type.Int8)), loc),
+        exp2 = TupleAt(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int32, Type.Unit, Type.Int8)), loc), 3, Type.Unit, loc),
+        Type.Unit, loc),
+      Type.Lambda(List(), Type.Unit), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.Unit)(result)
+  }
+
+  test("Codegen - TupleAt05") {
+    val definition = Function(name, args = List(),
+      body = Let(toIdent("x"), 0,
+        exp1 = Tuple(List(Str("un", loc), False, Int32(12345), Unit, Int8(-2)),
+          Type.Tuple(List(Type.Str, Type.Bool, Type.Int32, Type.Unit, Type.Int8)), loc),
+        exp2 = TupleAt(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int32, Type.Unit, Type.Int8)), loc), 4, Type.Int8, loc),
+        Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(-2)(result)
+  }
+
+  test("Codegen - TupleAt06") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List(),
+      body = Let(toIdent("x"), 0,
+        exp1 = Tuple(List(Tag(constPropName, identV, Int32(111), enumTpe, loc), Tag(constPropName, identB, Unit, enumTpe, loc)),
+          Type.Tuple(List(enumTpe, enumTpe)), loc),
+        exp2 = TupleAt(Var(toIdent("x"), 0, enumTpe, loc), 1, enumTpe, loc),
+        enumTpe, loc),
+      Type.Lambda(List(), enumTpe), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.mkTag(constPropName, identB.name, Value.Unit))(result)
+  }
+
+  test("Codegen - TupleAt07") {
+    val innerLet = Let(toIdent("y"), 1,
+      exp1 = Tuple(List(
+        Tuple(List(Int32(123), Int32(456)), Type.Tuple(List(Type.Int32, Type.Int32)), loc),
+        Tuple(List(Str("654", loc), Str("321", loc)), Type.Tuple(List(Type.Str, Type.Str)), loc)),
+        Type.Tuple(List(Type.Tuple(List(Type.Int32, Type.Int32)), Type.Tuple(List(Type.Str, Type.Str)))), loc),
+      exp2 = TupleAt(Var(toIdent("y"), 1, Type.Tuple(List(Type.Tuple(List(Type.Int32, Type.Int32)), Type.Tuple(List(Type.Str, Type.Str)))), loc), 0, Type.Tuple(List(Type.Int32, Type.Int32)), loc),
+      Type.Tuple(List(Type.Int32, Type.Int32)), loc)
+    val definition = Function(name, args = List(),
+      body = Let(toIdent("x"), 0,
+        exp1 = innerLet,
+        exp2 = TupleAt(Var(toIdent("x"), 0, Type.Tuple(List(Type.Int32, Type.Int32)), loc), 0, Type.Int32, loc),
+        Type.Int32, loc),
+      Type.Lambda(List(), Type.Int32), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(123)(result)
   }
 }
