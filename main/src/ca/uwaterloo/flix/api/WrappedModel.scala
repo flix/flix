@@ -35,14 +35,13 @@ protected class WrappedModel(private val model: Model) extends IModel {
   }
 
   def getLattice(name: String): java.lang.Iterable[Array[IValue]] = {
-    //    val rname = Name.Resolved.mk(name)
-    //    model.lattices.get(rname) match {
-    //      case None => throw new IllegalArgumentException(s"Unknown relation: '$name'.")
-    //      case Some(iterable) => iterable.map {
-    //        case (keys, values) =>
-    //      }
-    //    }
-    ???
+    val rname = Name.Resolved.mk(name)
+    model.lattices.get(rname) match {
+      case None => throw new IllegalArgumentException(s"Unknown relation: '$name'.")
+      case Some(iterable) => iterable.map {
+        case (keys, values) => (keys ::: values).map(e => new WrappedValue(e): IValue).toArray
+      }.asJava
+    }
   }
 
 }

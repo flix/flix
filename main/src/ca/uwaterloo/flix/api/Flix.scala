@@ -189,17 +189,35 @@ class Flix {
   def mkStrType: IType = new WrappedType(Type.Str)
 
   /**
-    * Returns the enum with the given fully qualified `name` and tags.
+    * Returns the Tag type for the given `enumName` with the `tagName` and nested type `tpe`.
     */
-  def mkEnumType(name: String, tags: Array[String]): IType = {
-    if (name == null)
-      throw new IllegalArgumentException("Argument 'name' must be non-null.")
+  def mkTagType(enumName: String, tagName: String, tpe: Type): IType = {
+    if (enumName == null)
+      throw new IllegalArgumentException("Argument 'enumName' must be non-null.")
+    if (tagName == null)
+      throw new IllegalArgumentException("Argument 'tagName' must be non-null.")
+    if (tpe == null)
+      throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
+
+    val enum = Name.Resolved.mk(enumName)
+    val tag = Name.Ident(SourcePosition.Unknown, tagName, SourcePosition.Unknown)
+    new WrappedType(new Type.Tag(enum, tag, tpe))
+  }
+
+  /**
+    * Returns the enum with the given `enumName` and `tags`.
+    */
+  def mkEnumType(enumName: String, tags: Array[IType]): IType = {
+    if (enumName == null)
+      throw new IllegalArgumentException("Argument 'enumName' must be non-null.")
     if (tags == null)
       throw new IllegalArgumentException("Argument 'tags' must be non-null.")
 
-    // TODO
     val cases = tags.foldLeft(Map.empty[String, Type.Tag]) {
-      case (macc, tag) => macc + (tag -> Type.Tag(???, ???, ???))
+      case (macc, tpe) =>
+        val tag = tpe.asInstanceOf[WrappedType].tpe.asInstanceOf[Type.Tag]
+        val tagName = tag.tag.name
+        macc + (tagName -> tag)
     }
 
     new WrappedType(new Type.Enum(cases))
