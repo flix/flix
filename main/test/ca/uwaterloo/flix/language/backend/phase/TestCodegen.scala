@@ -809,6 +809,60 @@ class TestCodegen extends FunSuite {
     assertResult(-101010)(result)
   }
 
+  test("Codegen - Var07") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List("x"),
+      body = Var(toIdent("x"), 0, enumTpe, loc),
+      Type.Lambda(List(enumTpe), enumTpe), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name,
+      List(classOf[Value.Tag]),
+      List(Value.mkTag(constPropName, identV.name, Value.mkInt(987))))
+
+    assertResult(Value.mkTag(constPropName, identV.name, Value.mkInt(987)))(result)
+  }
+
+  test("Codegen - Var08") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List("x"),
+      body = Var(toIdent("x"), 0, Type.Unit, loc),
+      Type.Lambda(List(Type.Unit), Type.Unit), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List(Value.Unit.getClass), List(Value.Unit))
+
+    assertResult(Value.Unit)(result)
+  }
+
+  test("Codegen - Var09") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List("x"),
+      body = Var(toIdent("x"), 0, Type.Str, loc),
+      Type.Lambda(List(Type.Str), Type.Str), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List(classOf[java.lang.String]), List("helloworld"))
+
+    assertResult("helloworld")(result)
+  }
+
+  test("Codegen - Var10") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List("x"),
+      body = Var(toIdent("x"), 0, Type.Tuple(List(Type.Int32, Type.Int32)), loc),
+      Type.Lambda(List(Type.Tuple(List(Type.Int32, Type.Int32))), Type.Tuple(List(Type.Int32, Type.Int32))), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List(classOf[Value.Tuple]), List(Value.Tuple(Array(321, 5).map(Value.mkInt))))
+
+    assertResult(Value.Tuple(Array(321, 5).map(Value.mkInt)))(result)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Let expression                                                          //
   /////////////////////////////////////////////////////////////////////////////
@@ -1013,6 +1067,68 @@ class TestCodegen extends FunSuite {
       List(-1337, 101010, -42).map(_.asInstanceOf[Object]))
 
     assertResult(101010)(result)
+  }
+
+  test("Codegen - Let13") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List(),
+      body = Let(toIdent("x"), 0,
+        exp1 = Tag(constPropName, identV, Int32(42), enumTpe, loc),
+        exp2 = Var(toIdent("x"), 0, enumTpe, loc),
+        enumTpe, loc),
+      Type.Lambda(List(), enumTpe), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.mkTag(constPropName, identV.name, Value.mkInt(42)))(result)
+  }
+
+  test("Codegen - Let14") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List(),
+      body = Let(toIdent("x"), 0,
+        exp1 = Unit,
+        exp2 = Var(toIdent("x"), 0, Type.Unit, loc),
+        Type.Unit, loc),
+      Type.Lambda(List(), Type.Unit), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+
+    assertResult(Value.Unit)(result)
+  }
+
+  test("Codegen - Let15") {
+    val definition = Function(name, args = List(),
+      body = Let(toIdent("x"), 0,
+        exp1 = Str("helloworld", loc),
+        exp2 = Var(toIdent("x"), 0, Type.Str, loc),
+        Type.Str, loc),
+      Type.Lambda(List(), Type.Str), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name, List())
+
+    assertResult("helloworld")(result)
+  }
+
+  test("Codegen - Let16") {
+    import ca.uwaterloo.flix.runtime.Value
+
+    val definition = Function(name, args = List(),
+      body = Let(toIdent("x"), 0,
+        exp1 = Tuple(List(Int32(321), Int32(5)), Type.Tuple(List(Type.Int32, Type.Int32)), loc),
+        exp2 = Var(toIdent("x"), 0, Type.Tuple(List(Type.Int32, Type.Int32)), loc),
+        Type.Tuple(List(Type.Int32, Type.Int32)), loc),
+      Type.Lambda(List(), Type.Tuple(List(Type.Int32, Type.Int32))), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(Value.Tuple(Array(321, 5).map(Value.mkInt)))(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -4325,7 +4441,7 @@ class TestCodegen extends FunSuite {
   }
 
   // TODO: Tests for short-circut evaluation, but Error is not implemented yet
-  ignore("Codegen - Binary.Add05") {
+  ignore("Codegen - Binary.And05") {
     val definition = Function(name, args = List(),
       body = Binary(BinaryOperator.LogicalAnd,
         False,
@@ -4339,7 +4455,7 @@ class TestCodegen extends FunSuite {
     assertResult(false)(result)
   }
 
-  ignore("Codegen - Binary.Add06") {
+  ignore("Codegen - Binary.And06") {
     val definition = Function(name, args = List(),
       body = Binary(BinaryOperator.LogicalAnd,
         True,
