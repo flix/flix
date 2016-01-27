@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
+import ca.uwaterloo.flix.api.IValue
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.ast.Type
 
@@ -176,5 +177,9 @@ object Value {
   final case class Native(value: AnyRef) extends Value
 
   final case class HookClosure(inv: Invokable) extends Value
+
+  def mkList(list: List[Value]): Value = ???
+
+  def mkMap(map: Map[Value, Value]): Value = ??? // TODO
 
 }

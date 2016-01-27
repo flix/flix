@@ -4,11 +4,11 @@ import java.nio.file.{Files, Path, Paths}
 
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.runtime.{Value, Invokable, Model, Solver}
+import ca.uwaterloo.flix.runtime.{Invokable, Model, Solver, Value}
 import ca.uwaterloo.flix.util.{Options, Validation}
 
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.collection.{immutable, mutable}
 
 /**
   * Main programmatic interface for Flix.
@@ -368,50 +368,99 @@ class Flix {
   /**
     * Returns the list corresponding to the given Java array.
     */
-  def mkList(ls: Array[IValue]): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def mkList(l: Array[IValue]): IValue = {
+    if (l == null)
+      throw new IllegalArgumentException("Argument 'l' must be non-null.")
+
+    val list = l.toList.map(_.asInstanceOf[Value])
+    new WrappedValue(Value.mkList(list))
+  }
 
   /**
     * Returns the list corresponding to the given Java list.
     */
-  def mkList(ls: java.util.List[IValue]): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def mkList(l: java.util.List[IValue]): IValue = {
+    if (l == null)
+      throw new IllegalArgumentException("Argument 'l' must be non-null.")
+
+    import scala.collection.JavaConversions._
+    val list = l.toList.map(_.asInstanceOf[Value])
+    new WrappedValue(Value.mkList(list))
+  }
 
   /**
-    * Returns the list corresponding to the given Scala Seq.
+    * Returns the list corresponding to the given Scala seq.
     */
-  def mkList(ls: scala.Seq[IValue]): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def mkList(l: scala.Seq[IValue]): IValue = {
+    if (l == null)
+      throw new IllegalArgumentException("Argument 'l' must be non-null.")
 
+    val list = l.toList.map(_.asInstanceOf[Value])
+    new WrappedValue(Value.mkList(list))
+  }
 
-  // TODO: Add constructor methods.
-  //
-  //  /**
-  //    * Returns the set type parameterized by the given type `tpe`.
-  //    */
-  //  def mkSetType(tpe: IType): IType = {
-  //    if (tpe == null) throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
-  //    new WrappedType(Type.Set(tpe.asInstanceOf[Type]))
-  //  }
-  //
-  //  /**
-  //    * Returns the set type parameterized by the given `key` and `value` types.
-  //    */
-  //  def mkMapType(key: IType, value: IType): IType = {
-  //    if (key == null) throw new IllegalArgumentException("Argument 'key' must be non-null.")
-  //    if (value == null) throw new IllegalArgumentException("Argument 'value' must be non-null.")
-  //    new WrappedType(Type.Map(key.asInstanceOf[Type], value.asInstanceOf[Type]))
-  //  }
-  //
-  //  /**
-  //    * Returns the native type for the given fully qualified `name`.
-  //    */
-  //  def mkNative(name: String): IType = {
-  //    if (name == null) throw new IllegalArgumentException("Argument 'name' must be non-null.")
-  //    new WrappedType(Type.Native(name))
-  //  }
-  //
+  /**
+    * Returns the set corresponding to the given Java set.
+    */
+  def mkSet(s: java.util.Set[IValue]): IValue = {
+    if (s == null)
+      throw new IllegalArgumentException("Argument 's' must be non-null.")
+
+    import scala.collection.JavaConversions._
+    val set = s.foldLeft(immutable.Set.empty[Value]) {
+      case (sacc, v) => sacc + v.asInstanceOf[Value]
+    }
+    new WrappedValue(Value.Set(set))
+  }
+
+  /**
+    * Returns the set corresponding to the given Scala Set.
+    */
+  def mkSet(s: immutable.Set[IValue]): IValue = {
+    if (s == null)
+      throw new IllegalArgumentException("Argument 's' must be non-null.")
+
+    val set = s.foldLeft(immutable.Set.empty[Value]) {
+      case (sacc, v) => sacc + v.asInstanceOf[Value]
+    }
+    new WrappedValue(Value.Set(set))
+  }
+
+  /**
+    * Returns the map corresponding to the given Java map.
+    */
+  def mkMap(m: java.util.Map[IValue, IValue]): IValue = {
+    if (m == null)
+      throw new IllegalArgumentException("Argument 'm' must be non-null.")
+
+    import scala.collection.JavaConversions._
+    val map = m.foldLeft(immutable.Map.empty[Value, Value]) {
+      case (macc, (key, value)) => macc + (key.asInstanceOf[Value] -> value.asInstanceOf[Value])
+    }
+    new WrappedValue(Value.mkMap(map))
+  }
+
+  /**
+    * Returns the map corresponding to the given Scala map.
+    */
+  def mkMap(m: immutable.Map[IValue, IValue]): IValue = {
+    if (m == null)
+      throw new IllegalArgumentException("Argument 'm' must be non-null.")
+
+    val map = m.foldLeft(immutable.Map.empty[Value, Value]) {
+      case (macc, (key, value)) => macc + (key.asInstanceOf[Value] -> value.asInstanceOf[Value])
+    }
+    new WrappedValue(Value.mkMap(map))
+  }
 
   /**
     * Returns the Flix representation of the given native object `o`.
     */
-  def mkNative(o: AnyRef): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def mkNative(o: AnyRef): IValue = {
+    if (o == null)
+      throw new IllegalArgumentException("Argument 'o' must be non-null.")
+
+    new WrappedValue(Value.Native(o))
+  }
 
 }
