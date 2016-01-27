@@ -11,9 +11,10 @@ object WeededAst {
     * The AST root node.
     *
     * @param declarations the declarations in the AST.
+    * @param hooks        a map from names to hooks.
     * @param time         the time spent in each compiler phase.
     */
-  case class Root(declarations: List[WeededAst.Declaration], time: Time) extends WeededAst
+  case class Root(declarations: List[WeededAst.Declaration], hooks: Map[Name.Resolved, Ast.Hook], time: Time) extends WeededAst
 
   /**
     * A common super-type for AST nodes that represents declarations.
@@ -327,6 +328,14 @@ object WeededAst {
     case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     /**
+      * An AST node that represents a switch expression.
+      *
+      * @param rules the rules of the switch.
+      * @param loc   the source location.
+      */
+    case class Switch(rules: List[(WeededAst.Expression, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
+
+    /**
       * An AST node that represents a let expression.
       *
       * @param ident the name of the bound variable.
@@ -387,15 +396,6 @@ object WeededAst {
       * @param loc the source location.
       */
     case class Error(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
-
-    /**
-      * An AST node that represents a reference to a JVM static field or method.
-      *
-      * @param className  the fully qualified name of the class.
-      * @param memberName the name of the field or method.
-      * @param loc        the source location.
-      */
-    case class Native(className: String, memberName: String, loc: SourceLocation) extends WeededAst.Expression
 
   }
 
@@ -525,13 +525,13 @@ object WeededAst {
     object Body {
 
       /**
-        * An AST node that represents a functional or relational predicate.
+        * An AST node that represent an ambiguous predicate.
         *
         * @param name  the name of the function or relation.
         * @param terms the terms of the predicate.
         * @param loc   the source location.
         */
-      case class FunctionOrRelation(name: Name.Unresolved, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Ambiguous(name: Name.Unresolved, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst.Predicate.Body
 
       /**
         * An AST node that represents the special not equal predicate.
@@ -616,15 +616,6 @@ object WeededAst {
         * @param loc  the source location.
         */
       case class Ascribe(term: Head, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Term.Head
-
-      /**
-        * An AST node that represents a reference to a JVM static field or method.
-        *
-        * @param className  the fully qualified name of the class.
-        * @param memberName the name of the field or method.
-        * @param loc        the source location.
-        */
-      case class Native(className: String, memberName: String, loc: SourceLocation) extends WeededAst.Term.Head
 
     }
 
@@ -728,14 +719,6 @@ object WeededAst {
       * @param retTpe the return type.
       */
     case class Function(args: List[WeededAst.Type], retTpe: WeededAst.Type) extends WeededAst.Type
-
-    /**
-      * An AST node that represents a native type.
-      *
-      * @param name the fully qualified name of the type.
-      * @param loc  the source location.
-      */
-    case class Native(name: String, loc: SourceLocation) extends WeededAst.Type
 
   }
 

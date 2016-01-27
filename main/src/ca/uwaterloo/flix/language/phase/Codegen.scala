@@ -95,7 +95,7 @@ object Codegen {
     function.tpe.retTpe match {
       case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
-      case Type.Str | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) => mv.visitInsn(ARETURN)
+      case Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) => mv.visitInsn(ARETURN)
       case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
            Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
     }
@@ -122,7 +122,7 @@ object Codegen {
       tpe match {
         case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ILOAD, offset)
         case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
-        case Type.Str | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) => visitor.visitVarInsn(ALOAD, offset)
+        case Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) => visitor.visitVarInsn(ALOAD, offset)
         case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
              Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
       }
@@ -154,12 +154,13 @@ object Codegen {
       exp1.tpe match {
         case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ISTORE, offset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
-        case Type.Str | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) => visitor.visitVarInsn(ASTORE, offset)
+        case Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) => visitor.visitVarInsn(ASTORE, offset)
         case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
              Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
       }
       compileExpression(context, visitor)(exp2)
-    case Expression.TagOf(exp, enum, tag, tpe, loc) => ???
+    case Expression.CheckTag(tag, exp, loc) => ???
+    case Expression.GetTagValue(exp, tpe, loc) => ???
     case Expression.Tag(enum, tag, exp, tpe, loc) =>
       // load the Value companion object (so we can call Value.mkTag)
       visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
@@ -358,7 +359,7 @@ object Codegen {
                               (op: UnaryOperator, expr: Expression, tpe: Type): Unit = {
     compileExpression(context, visitor)(expr)
     op match {
-      case UnaryOperator.Not =>
+      case UnaryOperator.LogicalNot =>
         val condElse = new Label()
         val condEnd = new Label()
         visitor.visitJumpInsn(IFNE, condElse)
@@ -519,7 +520,7 @@ object Codegen {
    */
   private def compileLogicalExpr(context: Context, visitor: MethodVisitor)
                                 (o: LogicalOperator, e1: Expression, e2: Expression, tpe: Type): Unit = o match {
-    case BinaryOperator.And =>
+    case BinaryOperator.LogicalAnd =>
       val andFalseBranch = new Label()
       val andEnd = new Label()
       compileExpression(context, visitor)(e1)
@@ -531,7 +532,7 @@ object Codegen {
       visitor.visitLabel(andFalseBranch)
       visitor.visitInsn(ICONST_0)
       visitor.visitLabel(andEnd)
-    case BinaryOperator.Or =>
+    case BinaryOperator.LogicalOr =>
       val orTrueBranch = new Label()
       val orFalseBranch = new Label()
       val orEnd = new Label()
@@ -545,6 +546,8 @@ object Codegen {
       visitor.visitLabel(orFalseBranch)
       visitor.visitInsn(ICONST_0)
       visitor.visitLabel(orEnd)
+    case BinaryOperator.Implication => ???
+    case BinaryOperator.Biconditional => ???
   }
 
   /*

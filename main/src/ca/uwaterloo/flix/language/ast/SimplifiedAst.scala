@@ -41,8 +41,8 @@ object SimplifiedAst {
       * @param name the resolved name of the function.
       * @param args the arguments of the function, for debugging purposes.
       * @param body the expression body of the function.
-      * @param tpe the (lambda) type of the function.
-      * @param loc the source location of the function definition.
+      * @param tpe  the (lambda) type of the function.
+      * @param loc  the source location of the function definition.
       */
     case class Function(name: Name.Resolved,
                         args: List[String],
@@ -100,18 +100,27 @@ object SimplifiedAst {
 
   sealed trait LoadExpression extends Expression {
     val e: SimplifiedAst.Expression
+
     val offset: scala.Int
+
     val mask: scala.Int
+
     final val loc = SourceLocation.Unknown
   }
 
   sealed trait StoreExpression extends Expression {
     val e: SimplifiedAst.Expression
+
     val offset: scala.Int
+
     val v: SimplifiedAst.Expression
+
     val mask: Long
+
     final val targetMask = ~(mask << offset)
+
     final val tpe = Type.Int64
+
     final val loc = SourceLocation.Unknown
   }
 
@@ -173,7 +182,7 @@ object SimplifiedAst {
     /**
       * An AST node representing a value (of type Bool) loaded from an Int64.
       *
-      * @param e the expression, returning an Int64, that the value is loaded from.
+      * @param e      the expression, returning an Int64, that the value is loaded from.
       * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
       */
     case class LoadBool(e: SimplifiedAst.Expression, offset: scala.Int) extends SimplifiedAst.LoadExpression {
@@ -184,7 +193,7 @@ object SimplifiedAst {
     /**
       * An AST node representing a value (of type Int8) loaded from an Int64.
       *
-      * @param e the expression, returning an Int64, that the value is loaded from.
+      * @param e      the expression, returning an Int64, that the value is loaded from.
       * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
       */
     case class LoadInt8(e: SimplifiedAst.Expression, offset: scala.Int) extends SimplifiedAst.LoadExpression {
@@ -195,7 +204,7 @@ object SimplifiedAst {
     /**
       * An AST node representing a value (of type Int16) loaded from an Int64.
       *
-      * @param e the expression, returning an Int64, that the value is loaded from.
+      * @param e      the expression, returning an Int64, that the value is loaded from.
       * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
       */
     case class LoadInt16(e: SimplifiedAst.Expression, offset: scala.Int) extends SimplifiedAst.LoadExpression {
@@ -206,20 +215,21 @@ object SimplifiedAst {
     /**
       * An AST node representing a value (of type Int32) loaded from an Int64.
       *
-      * @param e the expression, returning an Int64, that the value is loaded from.
+      * @param e      the expression, returning an Int64, that the value is loaded from.
       * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
       */
     case class LoadInt32(e: SimplifiedAst.Expression, offset: scala.Int) extends SimplifiedAst.LoadExpression {
-      val mask = -1 // if we had unsigned ints, would be 0xFFFFFFFF
+      // If we had unsigned ints, would be 0xFFFFFFFF
+      val mask = -1
       val tpe = Type.Int32
     }
 
     /**
       * An AST node representing a value (of type Bool) to be stored into an Int64.
       *
-      * @param e the expression, returning an Int64, that the value is stored into.
+      * @param e      the expression, returning an Int64, that the value is stored into.
       * @param offset the offset (in bits) from the least significant bit that the value is stored into.
-      * @param v the value to be stored.
+      * @param v      the value to be stored.
       */
     case class StoreBool(e: SimplifiedAst.Expression,
                          offset: scala.Int,
@@ -230,9 +240,9 @@ object SimplifiedAst {
     /**
       * An AST node representing a value (of type Int8) to be stored into an Int64.
       *
-      * @param e the expression, returning an Int64, that the value is stored into.
+      * @param e      the expression, returning an Int64, that the value is stored into.
       * @param offset the offset (in bits) from the least significant bit that the value is stored into.
-      * @param v the value to be stored.
+      * @param v      the value to be stored.
       */
     case class StoreInt8(e: SimplifiedAst.Expression,
                          offset: scala.Int, v:
@@ -243,9 +253,9 @@ object SimplifiedAst {
     /**
       * An AST node representing a value (of type Int16) to be stored into an Int64.
       *
-      * @param e the expression, returning an Int64, that the value is stored into.
+      * @param e      the expression, returning an Int64, that the value is stored into.
       * @param offset the offset (in bits) from the least significant bit that the value is stored into.
-      * @param v the value to be stored.
+      * @param v      the value to be stored.
       */
     case class StoreInt16(e: SimplifiedAst.Expression,
                           offset: scala.Int, v:
@@ -256,9 +266,9 @@ object SimplifiedAst {
     /**
       * An AST node representing a value (of type Int32) to be stored into an Int64.
       *
-      * @param e the expression, returning an Int64, that the value is stored into.
+      * @param e      the expression, returning an Int64, that the value is stored into.
       * @param offset the offset (in bits) from the least significant bit that the value is stored into.
-      * @param v the value to be stored.
+      * @param v      the value to be stored.
       */
     case class StoreInt32(e: SimplifiedAst.Expression,
                           offset: scala.Int, v:
@@ -269,10 +279,10 @@ object SimplifiedAst {
     /**
       * A typed AST node representing a local variable expression (i.e. a parameter or let-bound variable).
       *
-      * @param ident the name of the variable.
+      * @param ident  the name of the variable.
       * @param offset the (0-based) index of the variable.
-      * @param tpe the type of the variable.
-      * @param loc the source location of the variable.
+      * @param tpe    the type of the variable.
+      * @param loc    the source location of the variable.
       */
     case class Var(ident: Name.Ident,
                    offset: scala.Int,
@@ -293,8 +303,8 @@ object SimplifiedAst {
       *
       * @param name the name of the function being called.
       * @param args the function arguments.
-      * @param tpe the return type of the function.
-      * @param loc the source location.
+      * @param tpe  the return type of the function.
+      * @param loc  the source location.
       */
     case class Apply(name: Name.Resolved,
                      args: List[SimplifiedAst.Expression],
@@ -304,7 +314,7 @@ object SimplifiedAst {
     /**
       * A typed AST node representing a unary expression.
       *
-      * @param op the unary operator.
+      * @param op  the unary operator.
       * @param exp the expression.
       * @param tpe the type of the expression.
       * @param loc the source location of the expression.
@@ -316,11 +326,11 @@ object SimplifiedAst {
     /**
       * A typed AST node representing a binary expression.
       *
-      * @param op the binary operator.
+      * @param op   the binary operator.
       * @param exp1 the left expression.
       * @param exp2 the right expression.
-      * @param tpe the type of the expression.
-      * @param loc the source location of the expression.
+      * @param tpe  the type of the expression.
+      * @param loc  the source location of the expression.
       */
     case class Binary(op: BinaryOperator,
                       exp1: SimplifiedAst.Expression,
@@ -334,8 +344,8 @@ object SimplifiedAst {
       * @param exp1 the conditional expression.
       * @param exp2 the consequent expression.
       * @param exp3 the alternative expression.
-      * @param tpe the type of the consequent and alternative expression.
-      * @param loc the source location of the expression.
+      * @param tpe  the type of the consequent and alternative expression.
+      * @param loc  the source location of the expression.
       */
     case class IfThenElse(exp1: SimplifiedAst.Expression,
                           exp2: SimplifiedAst.Expression,
@@ -346,12 +356,12 @@ object SimplifiedAst {
     /**
       * A typed AST node representing a let expression.
       *
-      * @param ident the name of the bound variable.
+      * @param ident  the name of the bound variable.
       * @param offset the (0-based) index of the bound variable.
-      * @param exp1 the value of the bound variable.
-      * @param exp2 the body expression in which the bound variable is visible.
-      * @param tpe the type of the expression (which is equivalent to the type of the body expression).
-      * @param loc the source location.
+      * @param exp1   the value of the bound variable.
+      * @param exp2   the body expression in which the bound variable is visible.
+      * @param tpe    the type of the expression (which is equivalent to the type of the body expression).
+      * @param loc    the source location.
       */
     case class Let(ident: Name.Ident,
                    offset: scala.Int,
@@ -360,12 +370,16 @@ object SimplifiedAst {
                    tpe: Type,
                    loc: SourceLocation) extends SimplifiedAst.Expression
 
+    case class CheckTag(tag: Name.Ident,
+                        exp: SimplifiedAst.Expression,
+                        loc: SourceLocation) extends SimplifiedAst.Expression {
+      final val tpe: Type = Type.Bool
+    }
+
     // Destructs a Tag
-    case class TagOf(exp: SimplifiedAst.Expression,
-                     enum: Name.Resolved,
-                     tag: Name.Ident,
-                     tpe: Type,
-                     loc: SourceLocation) extends SimplifiedAst.Expression
+    case class GetTagValue(exp: SimplifiedAst.Expression,
+                           tpe: Type,
+                           loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Tag(enum: Name.Resolved,
                    tag: Name.Ident,
@@ -395,6 +409,7 @@ object SimplifiedAst {
 
   sealed trait Predicate extends SimplifiedAst {
     def tpe: Type
+
     def loc: SourceLocation
   }
 
@@ -443,6 +458,7 @@ object SimplifiedAst {
 
     sealed trait Head extends SimplifiedAst {
       def tpe: Type
+
       def loc: SourceLocation
     }
 
@@ -463,6 +479,7 @@ object SimplifiedAst {
 
     sealed trait Body extends SimplifiedAst {
       def tpe: Type
+
       def loc: SourceLocation
     }
 

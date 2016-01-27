@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.Compiler
+import ca.uwaterloo.flix.language.ast.Name.Unresolved
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -31,7 +32,7 @@ object Weeder {
       * @param loc2 the location of the second declaration.
       */
     case class DuplicateAlias(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Duplicate definition of the variable '$name'.")}
@@ -52,7 +53,7 @@ object Weeder {
       * @param loc2 the location of the second use.
       */
     case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Duplicate annotation '$name'.")}
@@ -73,7 +74,7 @@ object Weeder {
       * @param loc2 the location of the second declaration.
       */
     case class DuplicateAttribute(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Duplicate attribute name '$name'.")}
@@ -94,7 +95,7 @@ object Weeder {
       * @param loc2 the location of the second declaration.
       */
     case class DuplicateFormal(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Duplicate formal argument '$name'.")}
@@ -115,7 +116,7 @@ object Weeder {
       * @param loc2 the location of the second declaration.
       */
     case class DuplicateTag(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Duplicate tag name '$name'.")}
@@ -134,7 +135,7 @@ object Weeder {
       * @param loc the location where the illegal predicate occurs.
       */
     case class IllegalHeadPredicate(loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal predicate in the head of a fact/rule.")}
@@ -149,7 +150,7 @@ object Weeder {
       * @param loc the location where the illegal predicate occurs.
       */
     case class IllegalBodyPredicate(loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal predicate in the body of a rule.")}
@@ -164,7 +165,7 @@ object Weeder {
       * @param loc the location where the illegal predicate occurs.
       */
     case class IllegalReadPredicate(loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Too few arguments for Read# predicate.")}
@@ -180,7 +181,7 @@ object Weeder {
       * @param loc the location where the illegal predicate occurs.
       */
     case class IllegalWritePredicate(loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Too few arguments for Write# predicate.")}
@@ -197,7 +198,7 @@ object Weeder {
       * @param loc the location where the illegal term occurs.
       */
     case class IllegalHeadTerm(msg: String, loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal term in the head of a fact/rule.")}
@@ -214,7 +215,7 @@ object Weeder {
       * @param loc the location where the illegal term occurs.
       */
     case class IllegalBodyTerm(msg: String, loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal term in the body of a rule.")}
@@ -230,7 +231,7 @@ object Weeder {
       * @param loc the location where the illegal definition occurs.
       */
     case class IllegalBoundedLattice(loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Lattice definition must have exactly five components: bot, top, leq, lub and glb.")}
@@ -250,7 +251,7 @@ object Weeder {
       * @param loc the location where the illegal definition occurs.
       */
     case class IllegalLatticeAttributeInRelation(loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal lattice attribute in relation.")}
@@ -268,7 +269,7 @@ object Weeder {
       * @param loc the location where the illegal definition occurs.
       */
     case class IllegalNonLatticeAttribute(loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal non-lattice attribute.")}
@@ -287,7 +288,7 @@ object Weeder {
       * @param loc  the location of the annotation.
       */
     case class IllegalAnnotation(name: String, loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> Illegal annotation '$name'.")}
@@ -304,7 +305,7 @@ object Weeder {
       * @param loc2 the location where a following non-lattice attribute occurs.
       */
     case class IllegalMixedAttributes(loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal non-lattice attribute follows lattice attribute.")}
@@ -326,7 +327,7 @@ object Weeder {
       * @param loc2 the location of the second use of the variable.
       */
     case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Duplicate definition of the same variable '$name' in pattern.")}
@@ -349,7 +350,7 @@ object Weeder {
       * @param loc the location of the syntactic construct.
       */
     case class Unsupported(msg: String, loc: SourceLocation) extends WeederError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Unsupported feature: $msg")}
@@ -366,12 +367,12 @@ object Weeder {
   /**
     * Compiles the given parsed `past` to a weeded ast.
     */
-  def weed(past: ParsedAst.Root): Validation[WeededAst.Root, WeederError] = {
+  def weed(past: ParsedAst.Root, hooks: Map[Name.Resolved, Ast.Hook]): Validation[WeededAst.Root, WeederError] = {
     val b = System.nanoTime()
     @@(past.declarations.map(Declaration.compile)) map {
       case decls =>
         val e = System.nanoTime()
-        WeededAst.Root(decls, past.time.copy(weeder = e - b))
+        WeededAst.Root(decls, hooks, past.time.copy(weeder = e - b))
     }
   }
 
@@ -663,14 +664,22 @@ object Weeder {
           case (e1, e2) => WeededAst.Expression.Binary(exp.op, e1, e2, exp.loc)
         }
 
+      case exp: ParsedAst.Expression.Let =>
+        @@(compile(exp.value), compile(exp.body)) map {
+          case (value, body) => WeededAst.Expression.Let(exp.ident, value, body, exp.loc)
+        }
+
       case exp: ParsedAst.Expression.IfThenElse =>
         @@(compile(exp.e1), compile(exp.e2), compile(exp.e3)) map {
           case (e1, e2, e3) => WeededAst.Expression.IfThenElse(e1, e2, e3, exp.loc)
         }
 
-      case exp: ParsedAst.Expression.Let =>
-        @@(compile(exp.value), compile(exp.body)) map {
-          case (value, body) => WeededAst.Expression.Let(exp.ident, value, body, exp.loc)
+      case exp: ParsedAst.Expression.Switch =>
+        val rulesVal = exp.rules map {
+          case (cond, body) => @@(Expression.compile(cond), Expression.compile(body))
+        }
+        @@(rulesVal) map {
+          case rules => WeededAst.Expression.Switch(rules, exp.loc)
         }
 
       case exp: ParsedAst.Expression.Match =>
@@ -710,11 +719,16 @@ object Weeder {
           case tpe => WeededAst.Expression.Error(tpe, exp.loc)
         }
 
-      case exp: ParsedAst.Expression.Native =>
-        val parts = exp.name.split('.')
-        val className = parts.dropRight(1).mkString(".")
-        val memberName = parts.last
-        WeededAst.Expression.Native(className, memberName, exp.loc).toSuccess
+      case exp: ParsedAst.Expression.Bot =>
+        val name = Name.Unresolved(exp.sp1, List("⊥"), exp.sp2)
+        val lambda = WeededAst.Expression.Var(name, exp.loc)
+        WeededAst.Expression.Apply(lambda, List(), exp.loc).toSuccess
+
+      case exp: ParsedAst.Expression.Top =>
+        val name = Name.Unresolved(exp.sp1, List("⊤"), exp.sp2)
+        val lambda = WeededAst.Expression.Var(name, exp.loc)
+        WeededAst.Expression.Apply(lambda, List(), exp.loc).toSuccess
+
     }
   }
 
@@ -758,7 +772,7 @@ object Weeder {
         * Compiles the given parsed predicate `p` to a weeded head predicate.
         */
       def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Alias] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
-        case p: ParsedAst.Predicate.FunctionOrRelation =>
+        case p: ParsedAst.Predicate.Ambiguous =>
           @@(p.terms.map(t => Term.Head.compile(t, aliases))) map {
             case terms => WeededAst.Predicate.Head.Relation(p.name, terms, p.loc)
           }
@@ -793,9 +807,9 @@ object Weeder {
         * Compiles the given parsed predicate `p` to a weeded body predicate.
         */
       def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
-        case p: ParsedAst.Predicate.FunctionOrRelation =>
+        case p: ParsedAst.Predicate.Ambiguous =>
           @@(p.terms.map(Term.Body.compile)) map {
-            case terms => WeededAst.Predicate.Body.FunctionOrRelation(p.name, terms, past.loc)
+            case terms => WeededAst.Predicate.Body.Ambiguous(p.name, terms, past.loc)
           }
 
         case p: ParsedAst.Predicate.NotEqual =>
@@ -848,11 +862,6 @@ object Weeder {
           @@(compile(term.t1, aliases), compile(term.t2, aliases)) map {
             case (t1, t2) => WeededAst.Term.Head.Apply(term.name, List(t1, t2), term.loc)
           }
-        case term: ParsedAst.Term.Native =>
-          val parts = term.name.split('.')
-          val className = parts.dropRight(1).mkString(".")
-          val memberName = parts.last
-          WeededAst.Term.Head.Native(className, memberName, term.loc).toSuccess
       }
     }
 
@@ -872,7 +881,6 @@ object Weeder {
           }
         case term: ParsedAst.Term.Apply => IllegalBodyTerm("Function calls may not occur in body predicates.", term.loc).toFailure
         case term: ParsedAst.Term.Infix => IllegalBodyTerm("Function calls may not occur in body predicates.", term.loc).toFailure
-        case term: ParsedAst.Term.Native => IllegalBodyTerm("Native fields/calls may not occur in body predicates.", term.loc).toFailure // TODO: Allow?
       }
     }
 
@@ -901,8 +909,6 @@ object Weeder {
         compile(tpe) map WeededAst.Type.Set
       case ParsedAst.Type.Parametric(name, pelms) =>
         Unsupported("Parametric types are not yet supported.", name.loc).toFailure
-      case p@ParsedAst.Type.Native(sp1, name, sp2) =>
-        WeededAst.Type.Native(name, p.loc).toSuccess
     }
   }
 

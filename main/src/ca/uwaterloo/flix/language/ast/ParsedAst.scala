@@ -436,6 +436,19 @@ object ParsedAst {
     }
 
     /**
+      * An AST node that represents a let-binding.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param ident the identifier to be bound.
+      * @param value the expression whose value the identifier should be bound to.
+      * @param body  the expression in which the bound variable is visible.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class Let(sp1: SourcePosition, ident: Name.Ident, value: ParsedAst.Expression, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
       * An AST node that represents an if-then-else expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -449,15 +462,13 @@ object ParsedAst {
     }
 
     /**
-      * An AST node that represents a let-binding.
+      * An AST node that represents a switch expression.
       *
       * @param sp1   the position of the first character in the expression.
-      * @param ident the identifier to be bound.
-      * @param value the expression whose value the identifier should be bound to.
-      * @param body  the expression in which the bound variable is visible.
+      * @param rules the rules of the switch.
       * @param sp2   the position of the last character in the expression.
       */
-    case class Let(sp1: SourcePosition, ident: Name.Ident, value: ParsedAst.Expression, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+    case class Switch(sp1: SourcePosition, rules: Seq[(ParsedAst.Expression, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -534,17 +545,6 @@ object ParsedAst {
     }
 
     /**
-      * An AST node that represents a reference to a JVM static field or method.
-      *
-      * @param sp1  the position of the first character in the expression.
-      * @param name the fully qualified name of the field or method.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class Native(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst.Expression {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
       * An AST node that represents an error expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -555,7 +555,38 @@ object ParsedAst {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
-    // TODO: Add print
+    /**
+      * An AST node that represents a bot expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Bot(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents a top expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Top(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents a leq expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param e1  the first argument expression.
+      * @param e2  the second argument expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Leq(sp1: SourcePosition, e1: ParsedAst.Expression, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
   }
 
   /**
@@ -643,14 +674,14 @@ object ParsedAst {
   object Predicate {
 
     /**
-      * An AST node that represent a functional or relational predicate.
+      * An AST node that represent an ambiguous predicate.
       *
       * @param sp1   the position of the first character in the predicate.
       * @param name  the unresolved name of the predicate.
       * @param terms the terms of the predicate.
       * @param sp2   the position of the last character in the predicate.
       */
-    case class FunctionOrRelation(sp1: SourcePosition, name: Name.Unresolved, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
+    case class Ambiguous(sp1: SourcePosition, name: Name.Unresolved, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -812,17 +843,6 @@ object ParsedAst {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
-    /**
-      * An AST node that represents a reference to a JVM static field or method.
-      *
-      * @param sp1  the position of the first character in the term.
-      * @param name the fully qualified name of the field or method.
-      * @param sp2  the position of the last character in the term.
-      */
-    case class Native(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst.Term {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
   }
 
   /**
@@ -875,17 +895,6 @@ object ParsedAst {
       * @param elms the type of the type parameters.
       */
     case class Parametric(name: Name.Unresolved, elms: Seq[ParsedAst.Type]) extends ParsedAst.Type
-
-    /**
-      * An AST node that represents a native type.
-      *
-      * @param sp1  the position of the first character in the term.
-      * @param name the fully qualified name of the type.
-      * @param sp2  the position of the last character in the term.
-      */
-    case class Native(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst.Type {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
 
   }
 

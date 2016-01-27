@@ -1,9 +1,13 @@
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.runtime.Invokable
+
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
   */
 object Ast {
+
+  // TODO: When to use this, and when to use the package object?
 
   /**
     * A common super type for AST nodes that represent annotations.
@@ -126,5 +130,14 @@ object Ast {
       */
     def isUnsafe: Boolean = annotations exists (_.isInstanceOf[Annotation.Unsafe])
   }
+
+  /**
+    * A reference to an implementation of the [[Invokable]] interface.
+    *
+    * @param name the fully qualified name.
+    * @param inv  the functional object.
+    * @param tpe  the type of the function.
+    */
+  case class Hook(name: Name.Resolved, inv: Invokable, tpe: Type.Lambda)
 
 }

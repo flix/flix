@@ -1,10 +1,8 @@
-package ca.uwaterloo.flix.language.frontend
+package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.ast.ParsedAst
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ParsedAst.Literal
-import ca.uwaterloo.flix.language.phase.Parser
-
+import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import org.scalatest.FunSuite
 
 // TODO: Cleanup names. Numbering and remove the Parser. prefix.
@@ -256,19 +254,19 @@ class TestParser extends FunSuite {
   test("Expression.LogicalExp01") {
     val input = "true && false"
     val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.And)(result.op)
+    assertResult(BinaryOperator.LogicalAnd)(result.op)
   }
 
   test("Expression.LogicalExp02") {
     val input = "true || false"
     val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.Or)(result.op)
+    assertResult(BinaryOperator.LogicalOr)(result.op)
   }
 
   test("Expression.LogicalExp03") {
     val input = "1 < 2 && 3 < 4"
     val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.And)(result.op)
+    assertResult(BinaryOperator.LogicalAnd)(result.op)
   }
 
   test("Expression.ComparisonExp01") {
@@ -392,7 +390,7 @@ class TestParser extends FunSuite {
   test("Expression.UnaryExp03") {
     val input = "!! true"
     val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Unary]
-    assertResult(UnaryOperator.Not)(result.op)
+    assertResult(UnaryOperator.LogicalNot)(result.op)
   }
 
   test("Expression.Ascribe01") {
@@ -470,6 +468,38 @@ class TestParser extends FunSuite {
     val result = new Parser(SourceInput.Str(input)).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.IfThenElse])
+  }
+
+  test("Expression.Switch01") {
+    val input =
+      """fn f(x: Int): Int = switch {
+        |  case true  => 1
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    assert(result.isSuccess)
+  }
+
+  test("Expression.Switch02") {
+    val input =
+      """fn f(x: Int): Int = switch {
+        |  case x < 0  => 1
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    assert(result.isSuccess)
+  }
+
+  test("Expression.Switch03") {
+    val input =
+      """fn f(x: Int): Int = switch {
+        |  case x < 0  => 1
+        |  case x > 0  => 2
+        |  case x == 0 => 3
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    assert(result.isSuccess)
   }
 
   test("Expression.MatchExp01") {
@@ -679,16 +709,25 @@ class TestParser extends FunSuite {
     assert(result.get.isInstanceOf[ParsedAst.Expression.Error])
   }
 
-  test("Expression.NativeField01") {
-    val input = "#java.lang.Integer.MIN_VALUE"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Expression.Native])
+  test("Expression.Bot01") {
+    val input = "⊥"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Bot])
   }
 
-  test("Expression.NativeMethod01") {
-    val input = "#java.nio.file.Files.isReadable"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Expression.Native])
+  test("Expression.Top01") {
+    val input = "⊤"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Top])
+  }
+
+  test("Expression.Leq02") {
+    val input = "⊥ ⊑ ⊤"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Leq])
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1014,18 +1053,6 @@ class TestParser extends FunSuite {
     val input = "Foo.Bar `plus` Baz.Qux"
     val result = new Parser(SourceInput.Str(input)).Term.run().get
     assert(result.isInstanceOf[ParsedAst.Term.Infix])
-  }
-
-  test("Term.NativeField01") {
-    val input = "#java.lang.Integer.MIN_VALUE"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get
-    assert(result.isInstanceOf[ParsedAst.Term.Native])
-  }
-
-  test("Term.NativeMethod01") {
-    val input = "#java.nio.file.Files.isReadable"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get
-    assert(result.isInstanceOf[ParsedAst.Term.Native])
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1460,24 +1487,6 @@ class TestParser extends FunSuite {
     assert(result.get.isInstanceOf[ParsedAst.Type.Parametric])
   }
 
-  test("Type.Native01") {
-    val input = "#java.lang.String"
-    val result = new Parser(SourceInput.Str(input)).Type.run().get
-    assert(result.isInstanceOf[ParsedAst.Type.Native])
-  }
-
-  test("Type.Native02") {
-    val input = "#java.util.ArrayList"
-    val result = new Parser(SourceInput.Str(input)).Type.run().get
-    assert(result.isInstanceOf[ParsedAst.Type.Native])
-  }
-
-  test("Type.Native03") {
-    val input = "#java.util.List"
-    val result = new Parser(SourceInput.Str(input)).Type.run().get
-    assert(result.isInstanceOf[ParsedAst.Type.Native])
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Identifiers & Names                                                     //
   /////////////////////////////////////////////////////////////////////////////
@@ -1693,7 +1702,7 @@ class TestParser extends FunSuite {
     val input = "!"
     val parser = mkParser(input)
     val result = parser.__run(parser.Operator.Unary).get
-    assertResult(UnaryOperator.Not)(result)
+    assertResult(UnaryOperator.LogicalNot)(result)
   }
 
   test("Operator.Unary +") {
@@ -1721,14 +1730,28 @@ class TestParser extends FunSuite {
     val input = "&&"
     val parser = mkParser(input)
     val result = parser.__run(parser.Operator.LogicalOp).get
-    assertResult(BinaryOperator.And)(result)
+    assertResult(BinaryOperator.LogicalAnd)(result)
   }
 
   test("Operator.Binary.LogicalOp ||") {
     val input = "||"
     val parser = mkParser(input)
     val result = parser.__run(parser.Operator.LogicalOp).get
-    assertResult(BinaryOperator.Or)(result)
+    assertResult(BinaryOperator.LogicalOr)(result)
+  }
+
+  test("Operator.Binary.LogicalOp ->") {
+    val input = "==>"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
+    assertResult(BinaryOperator.Implication)(result)
+  }
+
+  test("Operator.Binary.LogicalOp <->") {
+    val input = "<==>"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
+    assertResult(BinaryOperator.Biconditional)(result)
   }
 
   test("Operator.Binary.Bitwise &") {
@@ -1841,6 +1864,51 @@ class TestParser extends FunSuite {
     val parser = mkParser(input)
     val result = parser.__run(parser.Operator.AdditiveOp).get
     assertResult(BinaryOperator.Minus)(result)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // UTF8 Operators                                                          //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Operator.Unary.UTF8-Negation") {
+    val input = "¬"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.Unary).get
+    assertResult(UnaryOperator.LogicalNot)(result)
+  }
+
+  test("Operator.Binary.UTF8-Equal") {
+    val input = "≡"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.ComparisonOp).get
+    assertResult(BinaryOperator.Equal)(result)
+  }
+
+  test("Operator.Binary.UTF8-Conjunction") {
+    val input = "∧"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
+    assertResult(BinaryOperator.LogicalAnd)(result)
+  }
+
+  test("Operator.Binary.UTF8-Disjunction") {
+    val input = "∨"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
+    assertResult(BinaryOperator.LogicalOr)(result)
+  }
+
+  test("Operator.Binary.UTF8-Implication") {
+    val input = "→"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
+    assertResult(BinaryOperator.Implication)(result)
+  }
+
+  test("Operator.Binary.UTF8-Biconditional") {
+    val input = "↔"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.LogicalOp).get
+    assertResult(BinaryOperator.Biconditional)(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -2011,7 +2079,7 @@ class TestParser extends FunSuite {
 
 
   /**
-   * Returns a parser for the given string `s`.
-   */
+    * Returns a parser for the given string `s`.
+    */
   private def mkParser(s: String): Parser = new Parser(SourceInput.Str(s))
 }

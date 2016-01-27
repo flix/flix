@@ -32,7 +32,7 @@ object Typer {
       * @param loc      the source location.
       */
     case class ExpectedType(expected: Type, actual: Type, loc: SourceLocation) extends TypeError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Expected type '${prettyPrint(expected)}' but actual type is '${prettyPrint(actual)}'.")}
@@ -50,7 +50,7 @@ object Typer {
       * @param loc2 the source location of the second type.
       */
     case class ExpectedEqualTypes(tpe1: Type, tpe2: Type, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
             |${consoleCtx.red(s">> Expected equal types '${prettyPrint(tpe1)}' and '${prettyPrint(tpe2)}'.")}
@@ -68,7 +68,7 @@ object Typer {
       */
     // TODO: Pretty print
     case class IllegalApply(tpe: Type, loc: SourceLocation) extends TypeError {
-      val format = s"Type Error: The type '${prettyPrint(tpe)}' is not a function type at ${loc.format}.\n"
+      val message = s"Type Error: The type '${prettyPrint(tpe)}' is not a function type at ${loc.format}.\n"
     }
 
     /**
@@ -80,7 +80,7 @@ object Typer {
       */
     // TODO: Pretty print
     case class IllegalPattern(pat: ResolvedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypeError {
-      val format = s"Type Error: Pattern '${prettyPrint(pat)}' does not match expected type '${prettyPrint(tpe)}' at ${loc.format}.\n"
+      val message = s"Type Error: Pattern '${prettyPrint(pat)}' does not match expected type '${prettyPrint(tpe)}' at ${loc.format}.\n"
     }
 
     // TODO: Check arity of function calls, predicates, etc.
@@ -92,7 +92,7 @@ object Typer {
       * @param loc the source location.
       */
     case class NoSuchLattice(tpe: Type, loc: SourceLocation) extends TypeError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> No lattice declared for '${prettyPrint(tpe)}'.")}
@@ -141,7 +141,7 @@ object Typer {
     @@(constantsVal, directivesVal, latticesVal, relationsVal, indexesVal, factsVal, rulesVal) map {
       case (constants, directives, lattices, relations, indexes, facts, rules) =>
         val e = System.nanoTime()
-        TypedAst.Root(constants, TypedAst.Directives(directives), lattices, relations, indexes, facts, rules, root.time.copy(typer = e - b))
+        TypedAst.Root(constants, TypedAst.Directives(directives), lattices, relations, indexes, facts, rules, root.hooks, root.time.copy(typer = e - b))
     }
   }
 
@@ -325,6 +325,10 @@ object Typer {
           val constant = root.constants(name)
           TypedAst.Expression.Ref(name, constant.tpe, loc).toSuccess
 
+        case ResolvedAst.Expression.HookRef(hook, loc) =>
+          val tpe = hook.tpe
+          TypedAst.Expression.Hook(hook, tpe, loc).toSuccess
+
         case ResolvedAst.Expression.Lit(rlit, loc) =>
           val lit = Literal.typer(rlit, root)
           TypedAst.Expression.Lit(lit, lit.tpe, loc).toSuccess
@@ -368,7 +372,7 @@ object Typer {
           }
 
         case ResolvedAst.Expression.Unary(op, re, loc) => op match {
-          case UnaryOperator.Not =>
+          case UnaryOperator.LogicalNot =>
             visit(re, env) flatMap {
               case e => expect(Type.Bool, e.tpe, loc) map {
                 case tpe => TypedAst.Expression.Unary(op, e, tpe, loc)
@@ -432,6 +436,28 @@ object Typer {
               }
           }
 
+        case ResolvedAst.Expression.Switch(rules, loc) =>
+          val (rconds, rbodies) = rules.unzip
+          // type the conditions against bool
+          val condsVal = @@(rconds map {
+            case cond => visit(cond, env) flatMap {
+              case e => expect(Type.Bool, e.tpe, e.loc) map {
+                case tpe => e
+              }
+            }
+          })
+
+          val bodiesVal = @@(rbodies map {
+            case body => visit(body, env)
+          })
+
+          @@(condsVal, bodiesVal) flatMap {
+            case (conds, bodies) =>
+              expectEqual(bodies.map(body => (body.tpe, body.loc))) map {
+                case tpe => TypedAst.Expression.Switch(conds zip bodies, tpe, loc)
+              }
+          }
+
         case ResolvedAst.Expression.Let(ident, rvalue, rbody, loc) =>
           visit(rvalue, env) flatMap {
             case value => visit(rbody, env + (ident.name -> value.tpe)) map {
@@ -489,12 +515,6 @@ object Typer {
 
         case ResolvedAst.Expression.Ascribe(re, tpe, loc) =>
           visit(re, env) flatMap {
-            case TypedAst.Expression.NativeField(field, _, _) =>
-              TypedAst.Expression.NativeField(field, tpe, loc).toSuccess
-
-            case TypedAst.Expression.NativeMethod(method, _, _) =>
-              TypedAst.Expression.NativeMethod(method, tpe, loc).toSuccess
-
             case e => expect(tpe, e.tpe, loc) map {
               case _ => e
             }
@@ -503,17 +523,6 @@ object Typer {
         case ResolvedAst.Expression.Error(tpe, loc) =>
           TypedAst.Expression.Error(tpe, loc).toSuccess
 
-        case ResolvedAst.Expression.NativeField(field, loc) =>
-          val tpe = java2flix(field.getType.getCanonicalName)
-          TypedAst.Expression.NativeField(field, tpe, loc).toSuccess
-
-        case ResolvedAst.Expression.NativeMethod(method, loc) =>
-          val args = method.getParameterTypes.toList.map {
-            case clazz => java2flix(clazz.getCanonicalName)
-          }
-          val retTpe = java2flix(method.getReturnType.getCanonicalName)
-          val tpe = Type.Lambda(args, retTpe)
-          TypedAst.Expression.NativeMethod(method, tpe, loc).toSuccess
       }
 
       visit(rast, env)
@@ -648,7 +657,7 @@ object Typer {
               }
           }
 
-        case ResolvedAst.Predicate.Body.Function(name, rterms, loc) =>
+        case ResolvedAst.Predicate.Body.ApplyFilter(name, rterms, loc) =>
           val constant = root.constants(name)
           // TODO: Check that result type is bool.
           // TODO: Improve the cast here
@@ -657,8 +666,20 @@ object Typer {
           }
 
           @@(termsVal) map {
-            case terms => TypedAst.Predicate.Body.Function(name, terms, Type.Lambda(terms map (_.tpe), Type.Bool), loc) // TODO Type
+            case terms => TypedAst.Predicate.Body.ApplyFilter(name, terms, Type.Lambda(terms map (_.tpe), Type.Bool), loc) // TODO Type
           }
+
+        case ResolvedAst.Predicate.Body.ApplyHookFilter(hook, rterms, loc) =>
+          // TODO: Check that result type is bool.
+          // TODO: Improve the cast here
+          val termsVal = (rterms zip hook.tpe.asInstanceOf[Type.Lambda].args) map {
+            case (term, tpe) => Term.typer(term, tpe, root)
+          }
+
+          @@(termsVal) map {
+            case terms => TypedAst.Predicate.Body.ApplyHookFilter(hook, terms, Type.Lambda(terms map (_.tpe), Type.Bool), loc) // TODO Type
+          }
+
 
         case ResolvedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
           TypedAst.Predicate.Body.NotEqual(ident1, ident2, Type.Bool, loc).toSuccess
@@ -715,9 +736,17 @@ object Typer {
             }
           case _ => IllegalApply(constant.tpe, loc).toFailure
         }
-      case ResolvedAst.Term.Head.NativeField(field, loc) =>
-        val tpe = java2flix(field.getType.getCanonicalName)
-        TypedAst.Term.Head.NativeField(field, tpe, loc).toSuccess
+
+      case ResolvedAst.Term.Head.ApplyHook(hook, actuals, loc) =>
+        val formals = hook.tpe.args
+        // type arguments with the declared formals.
+        val argsVal = (actuals zip formals) map {
+          case (term, termType) => Term.typer(term, termType, root)
+        }
+        // put everything together and check the return type.
+        @@(@@(argsVal), expect(tpe, hook.tpe.retTpe, loc)) map {
+          case (args, returnType) => TypedAst.Term.Head.ApplyHook(hook, args, returnType, loc)
+        }
     }
 
     /**
@@ -779,22 +808,6 @@ object Typer {
       val (tpe2, loc2) = types.find(t => t._1 != tpe1).get
       ExpectedEqualTypes(tpe1, tpe2, loc1, loc2).toFailure
     }
-  }
-
-
-  /**
-    * Returns a Flix type corresponding to the given canonical name.
-    */
-  private def java2flix(canonicalName: String): Type = canonicalName match {
-    case "boolean" | "java.lang.Boolean" => Type.Bool
-    case "int" | "java.lang.Integer" => Type.Int
-    case "java.lang.String" => Type.Str
-    case t if t.matches("scala.Tuple[2-5]") =>
-      // Create a list of N Type.Native("java.lang.Object")
-      val types = List().padTo(t.last - '0', Type.Native("java.lang.Object"))
-      Type.Tuple(types)
-    case "scala.collection.immutable.Set" => Type.Set(Type.Native("java.lang.Object"))
-    case _ => Type.Native(canonicalName)
   }
 
   /**

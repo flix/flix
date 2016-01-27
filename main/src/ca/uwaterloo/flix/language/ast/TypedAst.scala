@@ -23,6 +23,7 @@ object TypedAst {
     * @param indexes     a map from collection names to indexes.
     * @param facts       a list of facts.
     * @param rules       a list of rules.
+    * @param hooks       a map from names to hooks.
     * @param time        the time spent in each compiler phase.
     */
   case class Root(constants: Map[Name.Resolved, TypedAst.Definition.Constant],
@@ -32,6 +33,7 @@ object TypedAst {
                   indexes: Map[Name.Resolved, TypedAst.Definition.Index],
                   facts: List[TypedAst.Constraint.Fact],
                   rules: List[TypedAst.Constraint.Rule],
+                  hooks: Map[Name.Resolved, Ast.Hook],
                   time: Time) extends TypedAst {
 
     /**
@@ -176,8 +178,13 @@ object TypedAst {
       }
 
       @deprecated("moved to ExecutableAST", "0.1")
-      val filters: List[TypedAst.Predicate.Body.Function] = body collect {
-        case p: TypedAst.Predicate.Body.Function => p
+      val filters: List[TypedAst.Predicate.Body.ApplyFilter] = body collect {
+        case p: TypedAst.Predicate.Body.ApplyFilter => p
+      }
+
+      @deprecated("moved to ExecutableAST", "0.1")
+      val filterHooks: List[TypedAst.Predicate.Body.ApplyHookFilter] = body collect {
+        case p: TypedAst.Predicate.Body.ApplyHookFilter => p
       }
 
       @deprecated("moved to ExecutableAST", "0.1")
@@ -389,6 +396,15 @@ object TypedAst {
     case class Ref(name: Name.Resolved, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
+      * A typed AST node representing a reference to a native JVM function.
+      *
+      * @param hook the native hook.
+      * @param tpe  the type of native function.
+      * @param loc  the source location.
+      */
+    case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    /**
       * A typed AST node representing a lambda abstraction.
       *
       * @param annotations the annotations.
@@ -439,6 +455,17 @@ object TypedAst {
     case class Binary(op: BinaryOperator, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
+      * A typed AST node representing a let expression.
+      *
+      * @param ident the name of the bound variable.
+      * @param exp1  the value of the bound variable.
+      * @param exp2  the body expression in which the bound variable is visible.
+      * @param tpe   the type of the expression (which is equivalent to the type of the body expression).
+      * @param loc   the source location.
+      */
+    case class Let(ident: Name.Ident, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    /**
       * A typed AST node representing an if-then-else expression.
       *
       * @param exp1 the conditional expression.
@@ -450,15 +477,13 @@ object TypedAst {
     case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
-      * A typed AST node representing a let expression.
+      * A typed AST node representing a switch expression.
       *
-      * @param ident the name of the bound variable.
-      * @param exp1  the value of the bound variable.
-      * @param exp2  the body expression in which the bound variable is visible.
-      * @param tpe   the type of the expression (which is equivalent to the type of the body expression).
+      * @param rules the rules of the switch.
+      * @param tpe   the type of the rule bodies.
       * @param loc   the source location.
       */
-    case class Let(ident: Name.Ident, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Switch(rules: List[(TypedAst.Expression, TypedAst.Expression)], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a match expression.
@@ -514,24 +539,6 @@ object TypedAst {
       * @param loc the source location.
       */
     case class Error(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
-
-    /**
-      * A typed AST node representing a native field access expression.
-      *
-      * @param field the field itself
-      * @param tpe   the type of the field.
-      * @param loc   the source location.
-      */
-    case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
-
-    /**
-      * A typed AST node representing a native method expression.
-      *
-      * @param method the field itself
-      * @param tpe    the type of the method.
-      * @param loc    the source location.
-      */
-    case class NativeMethod(method: Method, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
   }
 
@@ -715,7 +722,12 @@ object TypedAst {
           case (xs, t: TypedAst.Term.Body.Var) => xs + t.ident.name
           case (xs, t: TypedAst.Term.Body.Lit) => xs
         }
-        case TypedAst.Predicate.Body.Function(_, terms, _, _) => terms.foldLeft(Set.empty[String]) {
+        case TypedAst.Predicate.Body.ApplyFilter(_, terms, _, _) => terms.foldLeft(Set.empty[String]) {
+          case (xs, t: TypedAst.Term.Body.Wildcard) => xs
+          case (xs, t: TypedAst.Term.Body.Var) => xs + t.ident.name
+          case (xs, t: TypedAst.Term.Body.Lit) => xs
+        }
+        case TypedAst.Predicate.Body.ApplyHookFilter(_, terms, _, _) => terms.foldLeft(Set.empty[String]) {
           case (xs, t: TypedAst.Term.Body.Wildcard) => xs
           case (xs, t: TypedAst.Term.Body.Var) => xs + t.ident.name
           case (xs, t: TypedAst.Term.Body.Lit) => xs
@@ -768,18 +780,33 @@ object TypedAst {
       }
 
       /**
-        * A typed functional predicate that occurs in the body of a rule.
+        * A filter predicate that occurs in the body of a rule.
         *
         * @param name  the name of the function.
         * @param terms the terms of the predicate.
         * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      case class Function(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body {
+      case class ApplyFilter(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body {
         // TODO: Move
         @deprecated("moved to ExecutableAST", "0.1")
         val termsAsArray: Array[TypedAst.Term.Body] = terms.toArray
       }
+
+      /**
+        * A hook filter predicate that occurs in the body of a rule.
+        *
+        * @param hook  the name hook.
+        * @param terms the terms of the predicate.
+        * @param tpe   the type of the predicate.
+        * @param loc   the source location.
+        */
+      case class ApplyHookFilter(hook: Ast.Hook, terms: List[TypedAst.Term.Body], tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body {
+        // TODO: Move
+        @deprecated("moved to ExecutableAST", "0.1")
+        val termsAsArray: Array[TypedAst.Term.Body] = terms.toArray
+      }
+
 
       /**
         * A typed not equal predicate that occurs in the body of a rule.
@@ -868,14 +895,18 @@ object TypedAst {
       }
 
       /**
-        * A typed AST node representing a reference to a native JVM static field.
+        * A typed AST node representing a hook function call term.
         *
-        * @param field the field.
-        * @param tpe   the type of the field.
-        * @param loc   the source location.
+        * @param hook the hook.
+        * @param args the arguments to the function.
+        * @param tpe  the type of the term.
+        * @param loc  the source location.
         */
-      case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
-
+      case class ApplyHook(hook: Ast.Hook, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head {
+        // TODO: Move
+        @deprecated("moved to ExecutableAST", "0.1")
+        val argsAsArray: Array[TypedAst.Term.Head] = args.toArray
+      }
     }
 
     /**

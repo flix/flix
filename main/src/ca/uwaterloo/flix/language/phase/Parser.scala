@@ -184,11 +184,28 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def InvokeExpression: Rule1[ParsedAst.Expression] = rule {
-    ApplyExpression | SimpleExpression
+    ApplyExpression | LatticeExpression | SimpleExpression
+  }
+
+  def LatticeExpression: Rule1[ParsedAst.Expression] = rule {
+    LeqExpression | BotExpression | TopExpression // TODO
+  }
+
+  def BotExpression: Rule1[ParsedAst.Expression.Bot] = rule {
+    SP ~ "⊥" ~ SP ~> ParsedAst.Expression.Bot
+  }
+
+  def TopExpression: Rule1[ParsedAst.Expression.Top] = rule {
+    SP ~ "⊤" ~ SP ~> ParsedAst.Expression.Top
+  }
+
+  // TODO
+  def LeqExpression: Rule1[ParsedAst.Expression.Leq] = rule {
+    SP ~ SimpleExpression ~ optWS ~ "⊑" ~ optWS ~ SimpleExpression ~ SP ~> ParsedAst.Expression.Leq
   }
 
   def SimpleExpression: Rule1[ParsedAst.Expression] = rule {
-    LetExpression | IfThenElseExpression | MatchExpression | TagExpression | TupleExpression | SetExpression | LiteralExpression | LambdaExpression | VariableExpression | ErrorExpression | NativeExpression
+    LetExpression | IfThenElseExpression | SwitchExpression | MatchExpression | TagExpression | TupleExpression | SetExpression | LiteralExpression | LambdaExpression | VariableExpression | ErrorExpression
   }
 
   def LiteralExpression: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -201,6 +218,16 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def IfThenElseExpression: Rule1[ParsedAst.Expression.IfThenElse] = rule {
     SP ~ atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ optWS ~ atomic("else") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
+  }
+
+  def SwitchExpression: Rule1[ParsedAst.Expression.Switch] = {
+    def SwitchRule: Rule1[(ParsedAst.Expression, ParsedAst.Expression)] = rule {
+      atomic("case") ~ optWS ~ Expression ~ optWS ~ "=>" ~ optWS ~ Expression ~> ((e1: ParsedAst.Expression, e2: ParsedAst.Expression) => (e1, e2))
+    }
+
+    rule {
+      SP ~ atomic("switch") ~ optWS ~ "{" ~ optWS ~ oneOrMore(SwitchRule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Switch
+    }
   }
 
   def MatchExpression: Rule1[ParsedAst.Expression.Match] = {
@@ -253,10 +280,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def LambdaExpression: Rule1[ParsedAst.Expression.Lambda] = rule {
     SP ~ atomic("fn") ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Lambda
-  }
-
-  def NativeExpression: Rule1[ParsedAst.Expression.Native] = rule {
-    SP ~ atomic("#") ~ JavaName ~ SP ~> ParsedAst.Expression.Native
   }
 
   def ErrorExpression: Rule1[ParsedAst.Expression] = rule {
@@ -325,8 +348,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     FunctionOrRelationPredicate | NotEqualPredicate | TracePredicate | ReadPredicate | WritePredicate | ErrorPredicate | AliasPredicate | LoopPredicate
   }
 
-  def FunctionOrRelationPredicate: Rule1[ParsedAst.Predicate.FunctionOrRelation] = rule {
-    SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.FunctionOrRelation
+  def FunctionOrRelationPredicate: Rule1[ParsedAst.Predicate.Ambiguous] = rule {
+    SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Ambiguous
   }
 
   def NotEqualPredicate: Rule1[ParsedAst.Predicate.NotEqual] = rule {
@@ -372,7 +395,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   // NB: ApplyTerm must be parsed before LiteralTerm which must be parsed before VariableTerm.
   def BaseTerm: Rule1[ParsedAst.Term] = rule {
-    ApplyTerm | ParenTerm | LiteralTerm | WildcardTerm | VariableTerm | NativeTerm
+    ApplyTerm | ParenTerm | LiteralTerm | WildcardTerm | VariableTerm
   }
 
   // TODO: Probably unfold singleton tuples.
@@ -404,15 +427,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     SP ~ SimpleTerm ~ optWS ~ "`" ~ QName ~ "`" ~ optWS ~ SimpleTerm ~ SP ~> ParsedAst.Term.Infix
   }
 
-  def NativeTerm: Rule1[ParsedAst.Term.Native] = rule {
-    SP ~ atomic("#") ~ JavaName ~ SP ~> ParsedAst.Term.Native
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   def Type: Rule1[ParsedAst.Type] = rule {
-    FunctionType | TupleType | ParametricType | NamedType | NativeType
+    FunctionType | TupleType | ParametricType | NamedType
   }
 
   def NamedType: Rule1[ParsedAst.Type.Named] = rule {
@@ -445,10 +464,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     QName ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ optWS ~> ParsedAst.Type.Parametric
   }
 
-  def NativeType: Rule1[ParsedAst.Type.Native] = rule {
-    atomic("#") ~ SP ~ JavaName ~ SP ~ optWS ~> ParsedAst.Type.Native
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Helpers                                                                 //
   /////////////////////////////////////////////////////////////////////////////
@@ -475,10 +490,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   def QName: Rule1[Name.Unresolved] = rule {
     SP ~ oneOrMore(LegalIdentifier).separatedBy(atomic("::")) ~ SP ~>
       ((sp1: SourcePosition, parts: Seq[String], sp2: SourcePosition) => Name.Unresolved(sp1, parts.toList, sp2))
-  }
-
-  def JavaName: Rule1[String] = rule {
-    oneOrMore(LegalIdentifier).separatedBy(".") ~> ((xs: Seq[String]) => xs.mkString("."))
   }
 
   def Annotation: Rule1[ParsedAst.Annotation] = rule {
@@ -543,23 +554,30 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       * Parses a unary operator.
       */
     def Unary: Rule1[UnaryOperator] = rule {
-      atomic("!") ~> (() => UnaryOperator.Not) |
+      atomic("!") ~> (() => UnaryOperator.LogicalNot) |
         atomic("+") ~> (() => UnaryOperator.Plus) |
         atomic("-") ~> (() => UnaryOperator.Minus) |
-        atomic("~") ~> (() => UnaryOperator.BitwiseNegate)
+        atomic("~") ~> (() => UnaryOperator.BitwiseNegate) |
+        atomic("¬") ~> (() => UnaryOperator.LogicalNot)
     }
 
     /**
       * Parses a logical operator.
       */
     def LogicalOp: Rule1[BinaryOperator] = rule {
-      atomic("&&") ~> (() => BinaryOperator.And) |
-        atomic("||") ~> (() => BinaryOperator.Or) |
+      atomic("&&") ~> (() => BinaryOperator.LogicalAnd) |
+        atomic("||") ~> (() => BinaryOperator.LogicalOr) |
         atomic("&") ~> (() => BinaryOperator.BitwiseAnd) |
         atomic("|") ~> (() => BinaryOperator.BitwiseOr) |
+        atomic("==>") ~> (() => BinaryOperator.Implication) |
+        atomic("<==>") ~> (() => BinaryOperator.Biconditional) |
         atomic("^") ~> (() => BinaryOperator.BitwiseXor) |
         atomic("<<") ~> (() => BinaryOperator.BitwiseLeftShift) |
-        atomic(">>") ~> (() => BinaryOperator.BitwiseRightShift)
+        atomic(">>") ~> (() => BinaryOperator.BitwiseRightShift) |
+        atomic("∧") ~> (() => BinaryOperator.LogicalAnd) |
+        atomic("∨") ~> (() => BinaryOperator.LogicalOr) |
+        atomic("→") ~> (() => BinaryOperator.Implication) |
+        atomic("↔") ~> (() => BinaryOperator.Biconditional)
     }
 
     /**
@@ -571,7 +589,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
         atomic("<") ~> (() => BinaryOperator.Less) |
         atomic(">") ~> (() => BinaryOperator.Greater) |
         atomic("==") ~> (() => BinaryOperator.Equal) |
-        atomic("!=") ~> (() => BinaryOperator.NotEqual)
+        atomic("!=") ~> (() => BinaryOperator.NotEqual) |
+        atomic("≡") ~> (() => BinaryOperator.Equal)
     }
 
     /**

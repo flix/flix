@@ -17,6 +17,7 @@ object ResolvedAst {
                   indexes: Map[Name.Resolved, ResolvedAst.Definition.Index],
                   facts: List[ResolvedAst.Constraint.Fact],
                   rules: List[ResolvedAst.Constraint.Rule],
+                  hooks: Map[Name.Resolved, Ast.Hook],
                   time: Time) extends ResolvedAst
 
   sealed trait Definition
@@ -146,6 +147,8 @@ object ResolvedAst {
 
     case class Ref(name: Name.Resolved, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class HookRef(hook: Ast.Hook, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Lit(literal: ResolvedAst.Literal, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Lambda(annotations: Ast.Annotations, formals: List[FormalArg], retTpe: Type, body: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
@@ -157,6 +160,8 @@ object ResolvedAst {
     case class Binary(op: BinaryOperator, e1: ResolvedAst.Expression, e2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class IfThenElse(e1: ResolvedAst.Expression, e2: ResolvedAst.Expression, e3: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Switch(rules: List[(ResolvedAst.Expression, ResolvedAst.Expression)], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Let(ident: Name.Ident, value: ResolvedAst.Expression, body: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -171,10 +176,6 @@ object ResolvedAst {
     case class Ascribe(e: ResolvedAst.Expression, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Error(tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class NativeField(field: Field, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class NativeMethod(method: Method, loc: SourceLocation) extends ResolvedAst.Expression
 
   }
 
@@ -294,13 +295,22 @@ object ResolvedAst {
       case class Relation(name: Name.Resolved, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
       /**
-        * A functional predicate that occurs in the body of a rule.
+        * A filter predicate that occurs in the body of a rule.
         *
         * @param name  the name of the function.
         * @param terms the terms of the predicate.
         * @param loc   the source location.
         */
-      case class Function(name: Name.Resolved, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class ApplyFilter(name: Name.Resolved, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
+
+      /**
+        * A hook filter predicate that occurs in the body of a rule.
+        *
+        * @param hook  the hook.
+        * @param terms the terms of the predicate.
+        * @param loc   the source location.
+        */
+      case class ApplyHookFilter(hook: Ast.Hook, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
       /**
         * A not equal predicate that occurs in the body of a rule.
@@ -373,13 +383,13 @@ object ResolvedAst {
       case class Apply(name: Name.Resolved, args: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Term.Head
 
       /**
-        * An AST node representing a reference to a native JVM static field.
+        * An AST node representing a hook function call term.
         *
-        * @param field the field.
-        * @param loc   the location.
+        * @param hook the hook.
+        * @param args the arguments to the function.
+        * @param loc  the location.
         */
-      case class NativeField(field: Field, loc: SourceLocation) extends ResolvedAst.Term.Head
-
+      case class ApplyHook(hook: Ast.Hook, args: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Term.Head
     }
 
     /**

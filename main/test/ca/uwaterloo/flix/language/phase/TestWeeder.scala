@@ -1,12 +1,10 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.Flix
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.ast.ParsedAst
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
+import org.scalatest.FunSuite
 
 import scala.collection.immutable.Seq
-
-import org.scalatest.FunSuite
 
 class TestWeeder extends FunSuite {
 
@@ -153,28 +151,22 @@ class TestWeeder extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  ignore("DuplicateFormal01") {
-    // TODO
-    //    val past = ParsedAst.Definition.Function(SP, Ident, Seq(
-    //      ParsedAst.FormalArg(ident("x"), ParsedAst.Type.Unit),
-    //      ParsedAst.FormalArg(ident("x"), ParsedAst.Type.Unit)
-    //    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SP, ParsedAst.Literal.Unit(SP, SP), SP), SP)
-    //
-    //    val result = Weeder.Definition.compile(past)
-    //    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
+  test("DuplicateFormal01") {
+    val input = "fn f(x: Int, x: Int): Int = 42"
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
   }
 
-  ignore("DuplicateFormal02") {
-    // TODO
-    //    val past = ParsedAst.Definition.Function(SP, Ident, Seq(
-    //      ParsedAst.FormalArg(ident("x"), ParsedAst.Type.Unit),
-    //      ParsedAst.FormalArg(ident("y"), ParsedAst.Type.Unit),
-    //      ParsedAst.FormalArg(ident("x"), ParsedAst.Type.Unit),
-    //      ParsedAst.FormalArg(ident("x"), ParsedAst.Type.Unit)
-    //    ), ParsedAst.Type.Unit, ParsedAst.Expression.Lit(SP, ParsedAst.Literal.Unit(SP, SP), SP), SP)
-    //
-    //    val result = Weeder.Definition.compile(past)
-    //    assertResult(2)(result.errors.size)
+  test("DuplicateFormal02") {
+    val input = "fn f(x: Int, y: Int, x: Int): Int = 42"
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
+  }
+
+  test("DuplicateFormal03") {
+    val input = "fn f(x: Bool, x: Int, x: Str): Int = 42"
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
   }
 
   test("NonLinearPattern01") {
@@ -356,7 +348,7 @@ class TestWeeder extends FunSuite {
         |fn foo(x: Int): Int = 42
         |
       """.stripMargin
-    val result = Flix.mkStr(input)
+    val result = new Flix().addStr(input).solve()
 
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAnnotation])
   }
@@ -367,7 +359,7 @@ class TestWeeder extends FunSuite {
         |fn foo(x: Int): Int = 42
         |
       """.stripMargin
-    val result = Flix.mkStr(input)
+    val result = new Flix().addStr(input).solve()
 
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAnnotation])
   }
@@ -378,7 +370,7 @@ class TestWeeder extends FunSuite {
         |fn foo(x: Int): Int = 42
         |
       """.stripMargin
-    val result = Flix.mkStr(input)
+    val result = new Flix().addStr(input).solve()
 
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalAnnotation])
   }

@@ -2,7 +2,6 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.backend.phase.TestCodegen
-import ca.uwaterloo.flix.language.frontend.TestParser
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.runtime.{TestSolver, TestValue, TestInterpreter}
 import ca.uwaterloo.flix.util.TestValidation
@@ -21,7 +20,6 @@ class TestAll extends Suites(
   new TestSolver,
   new TestValue,
   new TestValidation,
-  new TestExamples,
-  new TestMicro) with ParallelTestExecution {
+  new TestExamples) with ParallelTestExecution {
 
 }

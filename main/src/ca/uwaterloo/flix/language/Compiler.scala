@@ -1,12 +1,10 @@
 package ca.uwaterloo.flix.language
 
-import java.nio.file.{Files, Path}
-
-import ca.uwaterloo.flix.Flix
-import ca.uwaterloo.flix.language.ast.{ParsedAst, SourceInput, TypedAst}
-import ca.uwaterloo.flix.language.phase.{Parser, _}
-import ca.uwaterloo.flix.util.{AnsiConsole, Validation}
+import ca.uwaterloo.flix.api.{FlixError, Flix}
+import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.phase.{Parser, Resolver, Typer, Weeder}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{AnsiConsole, Validation}
 
 import scala.util.{Failure, Success}
 
@@ -28,11 +26,11 @@ object Compiler {
   /**
     * A common super-type for compilation errors.
     */
-  trait CompilationError extends Flix.FlixError {
+  trait CompilationError extends FlixError {
     /**
       * Returns a human readable string representation of the error.
       */
-    def format: String
+    def message: String
   }
 
   /**
@@ -42,7 +40,7 @@ object Compiler {
     * @param src the source input.
     */
   case class ParseError(msg: String, src: SourceInput) extends CompilationError {
-    val format =
+    val message =
       s"""${ConsoleCtx.blue(s"-- PARSE ERROR ------------------------------------------------- ${src.format}")}
          |
          |${ConsoleCtx.red(msg)}
@@ -76,79 +74,18 @@ object Compiler {
   }
 
   /**
-    * Returns the abstract syntax tree of the given `string`.
+    * Returns the typed AST corresponding to the given `inputs`.
     */
-  def parse(string: String): Validation[ParsedAst.Root, CompilationError] =
-    parse(SourceInput.Str(string))
-
-  /**
-    * Returns the abstract syntax tree of the given `strings`.
-    */
-  def parseStrings(strings: Traversable[String]): Validation[ParsedAst.Root, CompilationError] = {
-    @@(strings map parse) map {
-      case asts => asts.reduce[ParsedAst.Root] {
-        case (ast1, ast2) => ParsedAst.Root(ast1.declarations ++ ast2.declarations, ast1.time) // TODO: Merge trees differently due to time
+  def compile(inputs: List[SourceInput], hooks: Map[Name.Resolved, Ast.Hook]): Validation[TypedAst.Root, CompilationError] = {
+    val result = @@(inputs.map(parse)) map {
+      case (asts) => asts.reduce[ParsedAst.Root] {
+        // TODO: Change the definition of Root to allow multiple compilation units.
+        case (ast1, ast2) => ParsedAst.Root(ast1.declarations ++ ast2.declarations, ast1.time)
       }
     }
-  }
 
-  /**
-    * Returns the abstract syntax tree of the given `path`.
-    */
-  def parse(path: Path): Validation[ParsedAst.Root, CompilationError] =
-    if (!Files.exists(path))
-      throw new RuntimeException(s"Path '$path' does not exist.")
-    else if (!Files.isReadable(path))
-      throw new RuntimeException(s"Path '$path' is not readable.")
-    else if (!Files.isRegularFile(path))
-      throw new RuntimeException(s"Path '$path' is not a regular file.")
-    else {
-      if (path.getFileName.toString.endsWith(".flix.zip"))
-        parse(SourceInput.ZipFile(path))
-      else
-        parse(SourceInput.TxtFile(path))
-    }
-
-  /**
-    * Returns the abstract syntax tree of the given `paths`.
-    */
-  def parsePaths(paths: Traversable[Path]): Validation[ParsedAst.Root, CompilationError] = {
-    @@(paths map parse) map {
-      case asts => asts.reduce[ParsedAst.Root] {
-        case (ast1, ast2) => ParsedAst.Root(ast1.declarations ++ ast2.declarations, ast1.time) // TODO: Merge trees differently due to time
-      }
-    }
-  }
-
-  /**
-    * Compiles the given `string`.
-    */
-  def compile(string: String): Validation[TypedAst.Root, CompilationError] = compileStrings(List(string))
-
-  /**
-    * Compiles the given `path`.
-    */
-  def compile(path: Path): Validation[TypedAst.Root, CompilationError] = compilePaths(List(path))
-
-  /**
-    * Compiles the given `strings`.
-    */
-  def compileStrings(strings: Traversable[String]): Validation[TypedAst.Root, CompilationError] = {
-    parseStrings(strings) flatMap {
-      case past => Weeder.weed(past) flatMap {
-        case wast => Resolver.resolve(wast) flatMap {
-          case rast => Typer.typecheck(rast)
-        }
-      }
-    }
-  }
-
-  /**
-    * Compiles the given `paths`.
-    */
-  def compilePaths(paths: Traversable[Path]): Validation[TypedAst.Root, CompilationError] = {
-    parsePaths(paths) flatMap {
-      case past => Weeder.weed(past) flatMap {
+    result flatMap {
+      case past => Weeder.weed(past, hooks) flatMap {
         case wast => Resolver.resolve(wast) flatMap {
           case rast => Typer.typecheck(rast)
         }

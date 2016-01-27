@@ -1,12 +1,9 @@
 package ca.uwaterloo.flix
 
-import java.nio.file.Paths
-
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.runtime.Value
 import org.scalatest.FunSuite
-
-import scala.io.Source
 
 class TestExamples extends FunSuite {
 
@@ -14,8 +11,7 @@ class TestExamples extends FunSuite {
   // Domains                                                                 //
   /////////////////////////////////////////////////////////////////////////////
   test("Belnap.flix") {
-    val input1 = Source.fromFile("./examples/domains/Belnap.flix").getLines().mkString("\n")
-    val input2 =
+    val input =
       """namespace Belnap {
         |    let Belnap<> = (Belnap.Bot, Belnap.Top, leq, lub, glb);
         |    lat A(k: Int, v: Belnap<>);
@@ -38,7 +34,11 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val model = Flix.mkStr(List(input1, input2)).get
+    val model = new Flix()
+      .addPath("./examples/domains/Belnap.flix")
+      .addStr(input)
+      .solve()
+      .get
 
     val Belnap = Name.Resolved.mk(List("Belnap", "Belnap"))
 
@@ -59,9 +59,7 @@ class TestExamples extends FunSuite {
   }
 
   test("Parity.flix") {
-    val input1 = Source.fromFile("./examples/domains/Parity.flix").getLines().mkString("\n")
-    val input2 = Source.fromFile("./examples/domains/Belnap.flix").getLines().mkString("\n")
-    val input3 =
+    val input =
       """namespace Parity {
         |    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb);
         |    lat A(k: Int, v: Parity<>);
@@ -84,7 +82,12 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val model = Flix.mkStr(List(input1, input2, input3)).get
+    val model = new Flix()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/Parity.flix")
+      .addStr(input)
+      .solve()
+      .get
 
     val Parity = Name.Resolved.mk(List("Parity", "Parity"))
 
@@ -105,9 +108,7 @@ class TestExamples extends FunSuite {
   }
 
   test("Sign.flix") {
-    val input1 = Source.fromFile("./examples/domains/Sign.flix").getLines().mkString("\n")
-    val input2 = Source.fromFile("./examples/domains/Belnap.flix").getLines().mkString("\n")
-    val input3 =
+    val input =
       """namespace Sign {
         |    let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb);
         |    lat A(k: Int, v: Sign<>);
@@ -130,7 +131,12 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val model = Flix.mkStr(List(input1, input2, input3)).get
+    val model = new Flix()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/Sign.flix")
+      .addStr(input)
+      .solve()
+      .get
 
     val Sign = Name.Resolved.mk(List("Sign", "Sign"))
 
@@ -153,9 +159,7 @@ class TestExamples extends FunSuite {
   }
 
   test("Constant.flix") {
-    val input1 = Source.fromFile("./examples/domains/Constant.flix").getLines().mkString("\n")
-    val input2 = Source.fromFile("./examples/domains/Belnap.flix").getLines().mkString("\n")
-    val input3 =
+    val input =
       """namespace Constant {
         |    let Constant<> = (Constant.Bot, Constant.Top, leq, lub, glb);
         |    lat A(k: Int, v: Constant<>);
@@ -175,7 +179,12 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val model = Flix.mkStr(List(input1, input2, input3)).get
+    val model = new Flix()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/Constant.flix")
+      .addStr(input)
+      .solve()
+      .get
 
     val Constant = Name.Resolved.mk(List("Constant", "Constant"))
 
@@ -196,9 +205,7 @@ class TestExamples extends FunSuite {
   }
 
   test("ConstantSign.flix") {
-    val input1 = Source.fromFile("./examples/domains/ConstantSign.flix").getLines().mkString("\n")
-    val input2 = Source.fromFile("./examples/domains/Belnap.flix").getLines().mkString("\n")
-    val input3 =
+    val input =
       """namespace ConstantSign {
         |    let ConstSign<> = (ConstSign.Bot, ConstSign.Top, leq, lub, glb);
         |    lat A(k: Int, v: ConstSign<>);
@@ -223,13 +230,17 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val model = Flix.mkStr(List(input1, input2, input3)).get
+    val model = new Flix()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/ConstantSign.flix")
+      .addStr(input)
+      .solve()
+      .get
 
     val ConstantSign = Name.Resolved.mk(List("ConstantSign", "ConstSign"))
 
     val Zer = Value.mkTag(ConstantSign, "Cst", Value.mkInt(0))
     val One = Value.mkTag(ConstantSign, "Cst", Value.mkInt(1))
-    val Neg = Value.mkTag(ConstantSign, "Neg", Value.Unit)
     val Pos = Value.mkTag(ConstantSign, "Pos", Value.Unit)
     val Top = Value.mkTag(ConstantSign, "Top", Value.Unit)
 
@@ -247,85 +258,62 @@ class TestExamples extends FunSuite {
   }
 
   test("Dimension.flix") {
-    val input1 = Source.fromFile("./examples/domains/Dimension.flix").getLines().mkString("\n")
-    val model = Flix.mkStr(List(input1)).get
+    val model = new Flix().addPath("./examples/domains/Dimension.flix").solve()
+    assert(model.isSuccess)
   }
 
   test("Type.flix") {
-    val input1 = Source.fromFile("./examples/domains/Type.flix").getLines().mkString("\n")
-    val model = Flix.mkStr(List(input1)).get
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Misc                                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-
-  ignore("IDE.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/analysis/IDE.flix"))
+    val model = new Flix().addPath("./examples/domains/Type.flix").solve()
     assert(model.isSuccess)
   }
 
-  test("IFDS.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/analysis/IFDS.flix"))
-    assert(model.isSuccess)
-  }
-
-  ignore("Interval.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/domains/Interval.flix"))
-    model.get
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Entities                                                                //
   /////////////////////////////////////////////////////////////////////////////
 
   test("Bank.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/entities/Bank.flix"))
-    assert(model.isSuccess)
-  }
-
-  ignore("Cards.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/entities/Cards.flix"))
+    val model = new Flix().addPath("./examples/entities/Bank.flix").solve()
     assert(model.isSuccess)
   }
 
   test("Cinema.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/entities/Cinema.flix"))
+    val model = new Flix().addPath("./examples/entities/Cinema.flix").solve()
     assert(model.isSuccess)
   }
 
   test("Company.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/entities/Company.flix"))
+    val model = new Flix().addPath("./examples/entities/Company.flix").solve()
     assert(model.isSuccess)
   }
 
   test("Hotel.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/entities/Hotel.flix"))
+    val model = new Flix().addPath("./examples/entities/Hotel.flix").solve()
     assert(model.isSuccess)
   }
 
   test("Library.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/entities/Library.flix"))
+    val model = new Flix().addPath("./examples/entities/Library.flix").solve()
     assert(model.isSuccess)
   }
 
   test("Manufacturer.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/entities/Manufacturer.flix"))
+    val model = new Flix().addPath("./examples/entities/Manufacturer.flix").solve()
     assert(model.isSuccess)
   }
 
   test("Realtor.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/entities/Realtor.flix"))
+    val model = new Flix().addPath("./examples/entities/Realtor.flix").solve()
     assert(model.isSuccess)
   }
 
   test("Tournament.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/entities/Tournament.flix"))
+    val model = new Flix().addPath("./examples/entities/Tournament.flix").solve()
     assert(model.isSuccess)
   }
 
   ignore("University.flix") {
-    val model = Flix.mkPath(Paths.get("./examples/entities/University.flix"))
+    val model = new Flix().addPath("./examples/entities/University.flix").solve()
     assert(model.isSuccess)
   }
 

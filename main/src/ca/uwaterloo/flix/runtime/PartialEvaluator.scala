@@ -26,7 +26,7 @@ object PartialEvaluator {
       * Unary Expressions.
       */
     case Unary(op, exp, _, _) => op match {
-      case UnaryOperator.Not => eval(exp0, env0, {
+      case UnaryOperator.LogicalNot => eval(exp0, env0, {
         case True => k(False)
         case False => k(True)
         case residual => k(residual)
@@ -49,7 +49,7 @@ object PartialEvaluator {
       * Binary Expressions.
       */
     case Binary(op, exp1, exp2, tpe, loc) => op match {
-      case BinaryOperator.Or =>
+      case BinaryOperator.LogicalOr =>
         // Partially evaluate exp1.
         eval(exp1, env0, {
           // Case 1: exp1 is true. The result is true.
@@ -63,13 +63,13 @@ object PartialEvaluator {
             // Case 3.2: exp2 is false. The result is the exp1 (i.e. its residual).
             case False => k(r1)
             // Case 3.3: exp2 is also residual. The result is residual.
-            case r2 => k(Binary(BinaryOperator.Or, r1, r2, tpe, loc))
+            case r2 => k(Binary(BinaryOperator.LogicalOr, r1, r2, tpe, loc))
           })
         })
 
         // TODO: Eq for boolean ops.
 
-      case BinaryOperator.And =>
+      case BinaryOperator.LogicalAnd =>
         // Partially evaluate exp1.
         eval(exp1, env0, {
           // Case 1: exp1 is true. The result is exp2.
@@ -83,7 +83,7 @@ object PartialEvaluator {
             // Case 3.2: exp2 is false. The result is false.
             case False => k(False)
             // Case 3.3: exp3 is also residual. The result is residual.
-            case r2 => k(Binary(BinaryOperator.And, r1, r2, tpe, loc))
+            case r2 => k(Binary(BinaryOperator.LogicalAnd, r1, r2, tpe, loc))
           })
         })
     }

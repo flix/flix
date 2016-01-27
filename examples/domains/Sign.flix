@@ -55,11 +55,11 @@ namespace Sign {
     /**
      * Abstracts a concrete integer into the Sign domain.
      */
-    fn alpha(i: Int): Sign =
-        if (i < 0) Sign.Neg else
-            if (i == 0) Sign.Zer else
-                Sign.Pos
-    // TODO: Use switch/branch/cond
+    fn alpha(i: Int): Sign = switch {
+        case i < 0  => Sign.Neg
+        case i > 0  => Sign.Pos
+        case true   => Sign.Zer
+    }
 
     /**
      * Over-approximates integer `addition`.

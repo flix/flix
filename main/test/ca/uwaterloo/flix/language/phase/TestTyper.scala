@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.Compiler
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 
 import org.scalatest.FunSuite
@@ -10,7 +10,7 @@ class TestTyper extends FunSuite {
   // TODO: Consider using real syntax?
 
   val SL = SourceLocation.Unknown
-  val Root = ResolvedAst.Root(Map.empty, List.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty, new Time(0, 0, 0, 0))
+  val Root = ResolvedAst.Root(Map.empty, List.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty, Map.empty, new Time(0, 0, 0, 0))
   val Ident = ident("x")
   val RName = Name.Resolved.mk(List("foo", "bar"))
 
@@ -86,7 +86,7 @@ class TestTyper extends FunSuite {
     val input =
       """let Int<> = (0, 1, 2, 3, 4);
       """.stripMargin
-    val result = Compiler.compile(input)
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Typer.TypeError])
   }
 
@@ -98,7 +98,7 @@ class TestTyper extends FunSuite {
         |
         |let Int<> = (0, 1, lub, leq, glb);
       """.stripMargin
-    val result = Compiler.compile(input)
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Typer.TypeError])
   }
 
@@ -438,7 +438,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Unary01") {
-    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Not, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL), SL)
+    val rast = ResolvedAst.Expression.Unary(UnaryOperator.LogicalNot, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL), SL)
     val result = Typer.Expression.typer(rast, Root)
     assertResult(Type.Bool)(result.get.tpe)
   }
@@ -456,7 +456,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Unary.NonBooleanValue") {
-    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Not, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
+    val rast = ResolvedAst.Expression.Unary(UnaryOperator.LogicalNot, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
     val result = Typer.Expression.typer(rast, Root)
     assert(result.isFailure)
   }
@@ -476,7 +476,7 @@ class TestTyper extends FunSuite {
   test("Expression.Binary01") {
     val e1 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
     val e2 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(false, SL), SL)
-    val rast = ResolvedAst.Expression.Binary(BinaryOperator.And, e1, e2, SL)
+    val rast = ResolvedAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, SL)
     val result = Typer.Expression.typer(rast, Root)
     assertResult(Type.Bool)(result.get.tpe)
   }
@@ -577,7 +577,7 @@ class TestTyper extends FunSuite {
     val rast = ResolvedAst.Expression.Let(
       Ident,
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo", SL), SL),
-      ResolvedAst.Expression.Unary(UnaryOperator.Not, ResolvedAst.Expression.Var(Ident, SL), SL)
+      ResolvedAst.Expression.Unary(UnaryOperator.LogicalNot, ResolvedAst.Expression.Var(Ident, SL), SL)
       , SL)
     val result = Typer.Expression.typer(rast, Root)
     assert(result.isFailure)
@@ -1001,7 +1001,7 @@ class TestTyper extends FunSuite {
          |  lat A(x: Int, y: Int<>);
          |};
        """.stripMargin
-    val result = Compiler.compile(input)
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
   }
 
@@ -1015,93 +1015,10 @@ class TestTyper extends FunSuite {
          |  lat A(x: Int, y: Elm<>);
          |};
        """.stripMargin
-    val result = Compiler.compile(input)
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
   }
 
   def ident(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
 
-  test("Native Type 01 (Boolean and boolean)") {
-    val input =
-      s"""namespace A {
-         |  val x: Bool = #java.lang.Boolean.TRUE;              // boxed Boolean
-         |  val y: Bool = #java.lang.Boolean.getBoolean("true") // primitive boolean
-         |};
-       """.stripMargin
-    val result = Compiler.compile(input)
-    assert(result.isSuccess)
-  }
-
-  test("Native Type 02 (Integer and int)") {
-    val input =
-      s"""namespace A {
-         |  val x: Int = #java.lang.Integer.decode("42"); // boxed Integer
-         |  val y: Int = #java.lang.Integer.SIZE;         // primitive int
-         |};
-       """.stripMargin
-    val result = Compiler.compile(input)
-    assert(result.isSuccess)
-  }
-
-  test("Native Type 03 (java.lang.String)") {
-    val input =
-      s"""namespace A {
-         |  val x: Str = #ca.uwaterloo.flix.util.misc.SampleLattice.TOP; // java.lang.String
-         |};
-       """.stripMargin
-    val result = Compiler.compile(input)
-    assert(result.isSuccess)
-  }
-
-  test("Native Type 04 (tuples)") {
-    val input =
-      s"""namespace A {
-         |  val a: (#java.lang.Object, #java.lang.Object) = #ca.uwaterloo.flix.util.misc.ScalaNative.strTuple2();
-         |
-         |  val b: (#java.lang.Object, #java.lang.Object) = #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple2(1, 2);
-         |  val c: (#java.lang.Object, #java.lang.Object, #java.lang.Object) =
-         |      #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple3(1, 2, 3);
-         |  val d: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
-         |      #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple4(1, 2, 3, 4);
-         |  val e: (#java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object, #java.lang.Object) =
-         |      #ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple5(1, 2, 3, 4, 5);
-         |
-         |  val z: #scala.Tuple6 = #ca.uwaterloo.flix.util.misc.ScalaNative.tuple6();
-         |
-         |  val b2: (Int, Int) = (#ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple2: (Int, Int) -> (Int, Int))(1, 2);
-         |  val c2: (Int, Int, Int) =
-         |      (#ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple3: (Int, Int, Int) -> (Int, Int, Int))(1, 2, 3);
-         |  val d2: (Int, Int, Int, Int) =
-         |      (#ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple4: (Int, Int, Int, Int) -> (Int, Int, Int, Int))(1, 2, 3, 4);
-         |  val e2: (Int, Int, Int, Int, Int) =
-         |      (#ca.uwaterloo.flix.util.misc.ScalaNative.mkTuple5: (Int, Int, Int, Int, Int) -> (Int, Int, Int, Int, Int))(1, 2, 3, 4, 5);
-         |};
-       """.stripMargin
-    val result = Compiler.compile(input)
-    assert(result.isSuccess)
-  }
-
-  test("Native Type 05 (sets)") {
-    val input =
-      s"""namespace A{
-         |  val a: Set[#java.lang.Object] = #ca.uwaterloo.flix.util.misc.ScalaNative.set();
-         |  val b: Set[Int] = (#ca.uwaterloo.flix.util.misc.ScalaNative.set: (Int) -> Set[Int])();
-         |};
-       """.stripMargin
-    val result = Compiler.compile(input)
-    assert(result.isSuccess)
-  }
-
-  test("Native Type 06 (nested tuples and sets)") {
-    val input =
-      s"""namespace A{
-         |  val a: Set[(Int, Str)] =
-         |    (#ca.uwaterloo.flix.util.misc.ScalaNative.setOfTuples: (Int) -> Set[(Int, Str)])();
-         |  val b: (Set[Int], Set[Str], Set[Str]) =
-         |    (#ca.uwaterloo.flix.util.misc.ScalaNative.tupleOfSets: (Int) -> (Set[Int], Set[Str], Set[Str]))();
-         |};
-       """.stripMargin
-    val result = Compiler.compile(input)
-    assert(result.isSuccess)
-  }
 }

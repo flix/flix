@@ -1,7 +1,7 @@
 namespace IDE {
 
 // TODO: Ondrej can we clean this up?
-
+// TODO ADD TO TEST
   enum Value {
     case Top,
     case Cst(Int),

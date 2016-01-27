@@ -144,14 +144,11 @@ namespace Interval {
     fn eq(e1: Interval, e2: Interval): Belnap::Belnap = match (e1, e2) with {
         case (Interval.Bot, _)                                  => Belnap::Belnap.Bot
         case (_, Interval.Bot)                                  => Belnap::Belnap.Bot
-        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
-            if ((b1 == e1) && ((e1 == b2) && (b2 == e2))) // TODO: Parser // TODO: Switch
-                Belnap::Belnap.True
-             else
-                if (e1 < b2 || e2 < b1)
-                    Belnap::Belnap.False
-                else
-                    Belnap::Belnap.Top
+        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   => switch {
+            case (b1 == e1) && (e1 == b2) && (b2 == e2)         => Belnap::Belnap.True
+            case (e1 < b2) || (e2 < b1)                         => Belnap::Belnap.False
+            case true                                           => Belnap::Belnap.Top
+        }
         case _                                                  => Belnap::Belnap.Top
     }
 

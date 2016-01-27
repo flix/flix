@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.Flix.FlixError
+import ca.uwaterloo.flix.api.{FlixError, Flix}
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
@@ -433,7 +433,7 @@ object Verifier {
       * An error raised to indicate that a function is not associative.
       */
     case class AssociativityError(x: Option[Expression], y: Option[Expression], z: Option[Expression], loc: SourceLocation) extends VerifierError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The function is not associative.")}
@@ -449,7 +449,7 @@ object Verifier {
       * An error raised to indicate that a function is not commutative.
       */
     case class CommutativityError(x: Option[Expression], y: Option[Expression], loc: SourceLocation) extends VerifierError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The function is not commutative.")}
@@ -465,7 +465,7 @@ object Verifier {
       * An error raised to indicate that a partial order is not reflexive.
       */
     case class ReflexivityError(x: Option[Expression], loc: SourceLocation) extends VerifierError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The partial order is not reflexive.")}
@@ -481,7 +481,7 @@ object Verifier {
       * An error raised to indicate that a partial order is not anti-symmetric.
       */
     case class AntiSymmetryError(x: Option[Expression], y: Option[Expression], loc: SourceLocation) extends VerifierError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The partial order is not anti-symmetric.")}
@@ -497,7 +497,7 @@ object Verifier {
       * An error raised to indicate that a partial order is not transitive.
       */
     case class TransitivityError(x: Option[Expression], y: Option[Expression], z: Option[Expression], loc: SourceLocation) extends VerifierError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The partial order is not transitive.")}
@@ -513,7 +513,7 @@ object Verifier {
       * An error raised to indicate that the least element is not smallest.
       */
     case class LeastElementError(x: Option[Expression], loc: SourceLocation) extends VerifierError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The least element is not the smallest.")}
@@ -529,7 +529,7 @@ object Verifier {
       * An error raised to indicate that the lub is not an upper bound.
       */
     case class UpperBoundError(x: Option[Expression], y: Option[Expression], loc: SourceLocation) extends VerifierError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The lub is not an upper bound.")}
@@ -545,7 +545,7 @@ object Verifier {
       * An error raised to indicate that the lub is not a least upper bound.
       */
     case class LeastUpperBoundError(x: Option[Expression], y: Option[Expression], z: Option[Expression], loc: SourceLocation) extends VerifierError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The lub is not a least upper bound.")}
@@ -561,7 +561,7 @@ object Verifier {
       * An error raised to indicate that the greatest element is not the largest.
       */
     case class GreatestElementError(x: Option[Expression], loc: SourceLocation) extends VerifierError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The greatest element is not the largest.")}
@@ -577,7 +577,7 @@ object Verifier {
       * An error raised to indicate that the glb is not a lower bound.
       */
     case class LowerBoundError(x: Option[Expression], y: Option[Expression], loc: SourceLocation) extends VerifierError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The glb is not a lower bound.")}
@@ -593,7 +593,7 @@ object Verifier {
       * An error raised to indicate that the glb is not the greatest lower bound.
       */
     case class GreatestLowerBoundError(x: Option[Expression], y: Option[Expression], z: Option[Expression], loc: SourceLocation) extends VerifierError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The glb is not a greatest lower bound.")}
@@ -609,7 +609,7 @@ object Verifier {
       * An error raised to indicate that the function is not strict.
       */
     case class StrictError(loc: SourceLocation) extends VerifierError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The function is not strict.")}
@@ -623,7 +623,7 @@ object Verifier {
       * An error raised to indicate that the function is not monotone.
       */
     case class MonotoneError(loc: SourceLocation) extends VerifierError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The function is not monotone.")}
@@ -638,7 +638,7 @@ object Verifier {
       * An error raised to indicate that the height function may be negative.
       */
     case class HeightNonNegativeError(x: Option[Expression], loc: SourceLocation) extends VerifierError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The height function is not non-negative.")}
@@ -654,7 +654,7 @@ object Verifier {
       * An error raised to indicate that the height function is not strictly decreasing.
       */
     case class HeightStrictlyDecreasingError(x: Option[Expression], y: Option[Expression], loc: SourceLocation) extends VerifierError {
-      val format =
+      val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The height function is not strictly decreasing.")}
@@ -819,19 +819,19 @@ object Verifier {
     * Returns the logical negation of the expression `e`.
     */
   def ¬(e: Expression): Expression =
-    Unary(UnaryOperator.Not, e, Type.Bool, SourceLocation.Unknown)
+    Unary(UnaryOperator.LogicalNot, e, Type.Bool, SourceLocation.Unknown)
 
   /**
     * Returns the logical conjunction of the two expressions `e1` and `e2`.
     */
   def ∧(e1: Expression, e2: Expression): Expression =
-    Binary(BinaryOperator.And, e1, e2, Type.Bool, SourceLocation.Unknown)
+    Binary(BinaryOperator.LogicalAnd, e1, e2, Type.Bool, SourceLocation.Unknown)
 
   /**
     * Returns the logical disjunction of the two expressions `e1` and `e2`.
     */
   def ∨(e1: Expression, e2: Expression): Expression =
-    Binary(BinaryOperator.Or, e1, e2, Type.Bool, SourceLocation.Unknown)
+    Binary(BinaryOperator.LogicalOr, e1, e2, Type.Bool, SourceLocation.Unknown)
 
   /**
     * Returns the logical implication of the two expressions `e1` and `e2`.
@@ -982,7 +982,7 @@ object Verifier {
     case False => ctx.mkBool(false)
     case Var(ident, offset, tpe, loc) => ctx.mkBoolConst(ident.name)
     case Unary(op, exp, tpe, loc) => op match {
-      case UnaryOperator.Not => ctx.mkNot(visitBoolExpr(e0, ctx))
+      case UnaryOperator.LogicalNot => ctx.mkNot(visitBoolExpr(e0, ctx))
       case _ => throw new InternalCompilerError(s"Illegal unary operator: $op.")
     }
     case Binary(op, e1, e2, tpe, loc) => op match {
@@ -1000,8 +1000,8 @@ object Verifier {
           ctx.mkEq(f1, f2)
         else
           ctx.mkNot(ctx.mkEq(f1, f2))
-      case BinaryOperator.And => ctx.mkAnd(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
-      case BinaryOperator.Or => ctx.mkOr(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
+      case BinaryOperator.LogicalAnd => ctx.mkAnd(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
+      case BinaryOperator.LogicalOr => ctx.mkOr(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
       case _ => throw new InternalCompilerError(s"Illegal binary operator: $op.")
     }
     case IfThenElse(e1, e2, e3, tpe, loc) =>

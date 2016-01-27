@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Type, BinaryOperator, SimplifiedAst, TypedAst}
 
 /**
   * A phase that simplifies a Typed AST by:
@@ -93,13 +93,14 @@ object Simplifier {
         SimplifiedAst.Expression.Let(ident, -1, simplify(e1), simplify(e2), tpe, loc)
 
       case TypedAst.Expression.Match(exp, rules, tpe, loc) =>
-        val name = genSym.fresh()
+        // val name = genSym.fresh()
         // TODO: This should probably be in a let binding
         val valueExp = simplify(exp)
         val zero = SimplifiedAst.Expression.MatchError(tpe, loc)
-        rules.foldRight(zero: SimplifiedAst.Expression) {
-          case (rule, acc) => Pattern.simplify(valueExp, rule, acc)
-        }
+        //        rules.foldRight(zero: SimplifiedAst.Expression) {
+        //          case (rule, acc) => Pattern.simplify(valueExp, rule, acc)
+        //        }
+        ???
       case TypedAst.Expression.Tag(enum, tag, e, tpe, loc) =>
         SimplifiedAst.Expression.Tag(enum, tag, simplify(e), tpe, loc)
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
@@ -108,21 +109,46 @@ object Simplifier {
         SimplifiedAst.Expression.Set(elms map simplify, tpe, loc)
       case TypedAst.Expression.Error(tpe, loc) =>
         SimplifiedAst.Expression.Error(tpe, loc)
-      case TypedAst.Expression.NativeField(field, tpe, loc) => throw new UnsupportedOperationException // TODO: To be removed?
-      case TypedAst.Expression.NativeMethod(method, tpe, loc) => throw new UnsupportedOperationException // TODO: To be removed?
     }
   }
 
   object Pattern {
-    def simplify(valueExp: SimplifiedAst.Expression, rule: (TypedAst.Pattern, TypedAst.Expression), elseExp: SimplifiedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = {
-      val (pat, matchExp) = rule
 
-      pat match {
-        case TypedAst.Pattern.Var(ident, tpe, loc) => ???
-      }
+    def genCode(patterns: List[TypedAst.Pattern],
+                variables: List[SimplifiedAst.Expression.Var],
+                body: SimplifiedAst.Expression,
+                fail: SimplifiedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = patterns match {
+      case Nil => body
 
-      ???
+      case TypedAst.Pattern.Wildcard(tpe, loc) :: rest => genCode(rest, variables.tail, body, fail)
+
+      case TypedAst.Pattern.Var(ident, tpe, loc) :: rest =>
+        SimplifiedAst.Expression.Let(ident, -1, variables.head, body, body.tpe, loc)
+
+      case TypedAst.Pattern.Lit(lit, tpe, loc) :: rest =>
+        val cond = SimplifiedAst.Expression.Binary(
+          BinaryOperator.Equal,
+          Literal.simplify(lit),
+          variables.head,
+          Type.Bool,
+          loc
+        )
+        SimplifiedAst.Expression.IfThenElse(cond, genCode(rest, variables.tail, body, fail), fail, body.tpe, loc)
+
+      case TypedAst.Pattern.Tag(enum, tag, pat, tpe, loc) :: rest =>
+        val cond = SimplifiedAst.Expression.CheckTag(tag, variables.head, loc)
+        val v = genSym.fresh()
+        val e = SimplifiedAst.Expression.Let(v.ident, -1, SimplifiedAst.Expression.GetTagValue(variables.head, variables.head.tpe, loc), body, body.tpe, loc)
+        val thenExp = genCode(pat :: rest, v :: variables.tail, e, fail)
+        val elseExp = fail
+
+        SimplifiedAst.Expression.IfThenElse(cond, thenExp, elseExp, body.tpe, loc)
+
+      case TypedAst.Pattern.Tuple(elms, tpe, loc) :: rest =>
+        ??? // TODO
+
     }
+
   }
 
   object Literal {
@@ -154,7 +180,7 @@ object Simplifier {
       def simplify(tast: TypedAst.Predicate.Body)(implicit genSym: GenSym): SimplifiedAst.Predicate.Body = tast match {
         case TypedAst.Predicate.Body.Collection(name, terms, tpe, loc) =>
           SimplifiedAst.Predicate.Body.Collection(name, terms map Term.simplify, tpe, loc)
-        case TypedAst.Predicate.Body.Function(name, terms, tpe, loc) =>
+        case TypedAst.Predicate.Body.ApplyFilter(name, terms, tpe, loc) =>
           SimplifiedAst.Predicate.Body.Function(name, terms map Term.simplify, tpe, loc)
         case TypedAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc) =>
           SimplifiedAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc)
@@ -171,7 +197,6 @@ object Simplifier {
       case TypedAst.Term.Head.Var(ident, tpe, loc) => SimplifiedAst.Term.Head.Var(ident, tpe, loc)
       case TypedAst.Term.Head.Lit(lit, tpe, loc) => SimplifiedAst.Term.Head.Exp(Literal.simplify(lit), tpe, loc)
       case TypedAst.Term.Head.Apply(name, args, tpe, loc) => SimplifiedAst.Term.Head.Apply(name, args map simplify, tpe, loc)
-      case TypedAst.Term.Head.NativeField(field, tpe, loc) => throw new UnsupportedOperationException // TODO: to be removed?
     }
 
     def simplify(tast: TypedAst.Term.Body)(implicit genSym: GenSym): SimplifiedAst.Term.Body = tast match {

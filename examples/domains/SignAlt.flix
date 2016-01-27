@@ -72,11 +72,11 @@ namespace SignAlt {
     /**
      * Abstracts a concrete number into the (alternative) sign domain.
      */
-    fn alpha(i: Int): Sign =
-        if (i == 0) Sign.Zer else
-            if (i < 0) Sign.Neg else
-                Sign.Pos
-    // TODO: use switch, branch, etc.
+    fn alpha(i: Int): Sign = switch {
+        case i < 0  => Sign.Neg
+        case i > 0  => Sign.Pos
+        case true   => Sign.Zer
+    }
 
     /**
      * Over-approximates integer `addition`.

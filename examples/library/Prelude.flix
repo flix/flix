@@ -1,13 +1,25 @@
 // TODO: Everything in here is experimental and not yet implemented.
-// ∀, ¬, ∧, ∨, →, ↔, ≡, ⊥, ⊤, ⊑, ⊔, ⊓
 
-// TODO: Use E or A for type parameters?
+// ops to impl:  ∀, ¬, ∧, ∨, →, ↔, ≡, ⊥, ⊤, ⊑, ⊔, ⊓, ▽, △
 
+
+/**
+ * A partial order is a set E equipped with a partial order function `leq`.
+ *
+ * Informally,
+ * If `leq(x, y)` then `x` is less than or equal to `y`.
+ * If `leq(x, y)` and `leq(y, x)` are both true then `x == y`.
+ * Finally, if neither `leq(x, y)` and `leq(y, x)` are true then `x` and `y` are incomparable.
+ *
+ * A partial order must satisfy three laws:
+ *   - Reflexivity
+ *   - AntiSymmetry
+ *   - Transitivity
+ */
 class PartialOrder[E] {
 
     /**
-     * Returns `true` iff the element `x` is less than or equal to
-     * the element `y` according to the partial order on E.
+     * Returns `true` iff the element `x` is less than or equal to the element `y`.
      */
     fn leq(x: E, y: E): Bool
 
@@ -17,30 +29,40 @@ class PartialOrder[E] {
     fn ⊑(x: E, y: E): Bool = leq(x, y)
 
     /**
-     * The Reflexivity law requires that any element be less than or equal to itself.
+     * The reflexivity law requires that any element be less than or equal to itself.
      */
     law Reflexivity(x: E): Bool = x ⊑ x
 
     /**
-     * The AntiSymmetry law requires that if one element x is less than or equal to
-     * another element y and vice versa then those two elements must infact be equal.
-     *
-     * NB: A pre-order or quasi-order does not satisfy the AntiSymmetry law.
+     * The anti symmetry law requires that if `x` is less than or equal to `y`
+     * and vice versa then those two elements must be equal.
      */
     law AntiSymmetry(x: E, y: E): Bool = (x ⊑ y ∧ y ⊑ x) → (x ≡ y)
 
-
-    law Transitivity()
-
+    /**
+     * The transitivity law requires that if `x` less than or equal to `y`
+     * and `y` is less than or equal to `z` then `x` must be less than or
+     * equal to `z`.
+     */
+    law Transitivity(x: E, y: E, z: E): Bool = (x ⊑ y ∧ y ⊑ z) → (x ⊑ z)
 
 }
 
-class PreOrder[E] {
+/**
+ * A join semi lattice is a partial order equipped with
+ * a bottom element and a least upper bound operator.
+ *
+ * A join semi lattice must satisfy X laws:
+ */
+class JoinSemiLattice[E: PartialOrder] {
 
-}
 
-class JoinSemiLattice[E] {
+
     // bot, lub
+
+    law LeastElement(x: E): Bool = ⊥ ⊑ x
+
+
 }
 
 class MeetSemiLattice[E] {
@@ -51,15 +73,26 @@ class BoundedLattice[E] {
     // height?
 }
 
-class NormOperator[E] {
 
-}
 
 class WidenOperator[E] {
 
 }
 
 class NarrowOperator[E] {
+    fn narrow(x: E): E
+
+    /**
+     *
+     */
+    law LowerBound(x: E, y: E): Bool =
+}
+
+class PreOrder[E] {
+
+}
+
+class NormOperator[E] {
 
 }
 
@@ -93,7 +126,7 @@ class Monotone[E: PartialOrder] {
 
 // TODO: use word "impl"? for ?
 // TODO: class or concept?
-instance PartialOrder[Sign] {
+impl PartialOrder Sign {
 
     fn leq(x: Sign, y: Sign): Bool = ???
 
@@ -121,7 +154,32 @@ impl PartialOrder for (A: PartialOrder, B: PartialOrder) {
 
 }
 
-
+//
+//idris:
+//The class and instance keywords have been deprecated. The class keyword has been replaced by interface. Instances are now called implementations and are introduced by giving the interface name and parameters. For example:
+//interface Eq a where
+//    (==) : ty -> ty -> Bool
+//    (/=) : ty -> ty -> Bool
+//
+//    (==) x y = not (/=) x y
+//    (/=) x y = not (==) x y
+//
+//Eq Bool where
+//    True  == True  = True
+//    True  == False = False
+//    False == True  = False
+//    False == False = True
+//
+//Eq a => Eq (Maybe a) where
+//    Nothing  == Nothing  = True
+//    Nothing  == (Just _) = False
+//    (Just _) == Nothing  = False
+//    (Just a) == (Just b) = a == b
+//This is as before, but without the instance keyword.
+//
+//The rationale for this change is that interfaces as implemented in Idris have several differences from Haskell type classes, even though they have a lot in common. They can be parameterised by things which are not types (including values and interfaces themselves). They are primarily for overloading interfaces, rather than classifying types, and hence there can be multiple implementations.
+//
+//New Fractional interface, with functions (/) and recip.
 
 
 //// rust:
