@@ -723,11 +723,52 @@ class TestParser extends FunSuite {
     assert(result.get.isInstanceOf[ParsedAst.Expression.Top])
   }
 
-  test("Expression.Leq02") {
+  test("Expression.Leq01") {
+    val input = "x ⊑ y"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
+    assertResult(ExtendedBinaryOperator.Leq)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
+  }
+
+  test("Expression.Lub01") {
+    val input = "x ⊔ y"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
+    assertResult(ExtendedBinaryOperator.Lub)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
+  }
+
+  test("Expression.Glb1") {
+    val input = "x ⊓ y"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
+    assertResult(ExtendedBinaryOperator.Glb)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
+  }
+
+  test("Expression.Widen01") {
+    val input = "x ▽ y"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
+    assertResult(ExtendedBinaryOperator.Widen)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
+  }
+
+  test("Expression.Narrow01") {
+    val input = "x △ y"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
+    assertResult(ExtendedBinaryOperator.Narrow)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
+  }
+
+  test("Expression.BotLeqTop") {
     val input = "⊥ ⊑ ⊤"
     val result = new Parser(SourceInput.Str(input)).Expression.run()
     assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Leq])
+    assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
+    assertResult(ExtendedBinaryOperator.Leq)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1864,6 +1905,41 @@ class TestParser extends FunSuite {
     val parser = mkParser(input)
     val result = parser.__run(parser.Operator.AdditiveOp).get
     assertResult(BinaryOperator.Minus)(result)
+  }
+
+  test("Operator.ExtendedBinary.Leq ⊑") {
+    val input = "⊑"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.ExtendedBinaryOp).get
+    assertResult(ExtendedBinaryOperator.Leq)(result)
+  }
+
+  test("Operator.ExtendedBinary.Lub ⊔") {
+    val input = "⊔"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.ExtendedBinaryOp).get
+    assertResult(ExtendedBinaryOperator.Lub)(result)
+  }
+
+  test("Operator.ExtendedBinary.Glb ⊓") {
+    val input = "⊓"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.ExtendedBinaryOp).get
+    assertResult(ExtendedBinaryOperator.Glb)(result)
+  }
+
+  test("Operator.ExtendedBinary.Widen ▽") {
+    val input = "▽"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.ExtendedBinaryOp).get
+    assertResult(ExtendedBinaryOperator.Widen)(result)
+  }
+
+  test("Operator.ExtendedBinary.Narrow △") {
+    val input = "△"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operator.ExtendedBinaryOp).get
+    assertResult(ExtendedBinaryOperator.Narrow)(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////

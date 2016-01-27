@@ -167,3 +167,37 @@ object BinaryOperator {
   case object BitwiseRightShift extends BitwiseOperator
 
 }
+
+/**
+  * A common super-type for extended binary operators.
+  */
+sealed trait ExtendedBinaryOperator
+
+object ExtendedBinaryOperator {
+
+  /**
+    * The partial order operator ⊑.
+    */
+  case object Leq extends ExtendedBinaryOperator
+
+  /**
+    * The least upper bound operator ⊔.
+    */
+  case object Lub extends ExtendedBinaryOperator
+
+  /**
+    * The greatest lower bound operator ⊓.
+    */
+  case object Glb extends ExtendedBinaryOperator
+
+  /**
+    * The widening operator ▽.
+    */
+  case object Widen extends ExtendedBinaryOperator
+
+  /**
+    * The narrowing operator △.
+    */
+  case object Narrow extends ExtendedBinaryOperator
+
+}
