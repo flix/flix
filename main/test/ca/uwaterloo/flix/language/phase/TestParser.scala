@@ -723,6 +723,13 @@ class TestParser extends FunSuite {
     assert(result.get.isInstanceOf[ParsedAst.Expression.Top])
   }
 
+  test("Expression.Leq02") {
+    val input = "⊥ ⊑ ⊤"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Leq])
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
   /////////////////////////////////////////////////////////////////////////////

@@ -575,6 +575,18 @@ object ParsedAst {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
+    /**
+      * An AST node that represents a leq expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param e1  the first argument expression.
+      * @param e2  the second argument expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Leq(sp1: SourcePosition, e1: ParsedAst.Expression, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
   }
 
   /**

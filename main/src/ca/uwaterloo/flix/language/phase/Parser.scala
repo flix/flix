@@ -188,7 +188,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def LatticeExpression: Rule1[ParsedAst.Expression] = rule {
-    BotExpression | TopExpression
+    LeqExpression | BotExpression | TopExpression // TODO
   }
 
   def BotExpression: Rule1[ParsedAst.Expression.Bot] = rule {
@@ -197,6 +197,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def TopExpression: Rule1[ParsedAst.Expression.Top] = rule {
     SP ~ "⊤" ~ SP ~> ParsedAst.Expression.Top
+  }
+
+  // TODO
+  def LeqExpression: Rule1[ParsedAst.Expression.Leq] = rule {
+    SP ~ SimpleExpression ~ optWS ~ "⊑" ~ optWS ~ SimpleExpression ~ SP ~> ParsedAst.Expression.Leq
   }
 
   def SimpleExpression: Rule1[ParsedAst.Expression] = rule {
