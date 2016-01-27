@@ -125,8 +125,8 @@ object Interpreter {
    * possible.
    */
   @tailrec private def evalBool(expr: Expression, root: Root, env: Env = mutable.Map.empty): Boolean = expr match {
-    case Expression.Lit(literal, _, _) => evalLit(literal).toBool
-    case Expression.Var(ident, _, loc) => env(ident.name).toBool
+    case Expression.Lit(literal, _, _) => Value.cast2bool(evalLit(literal))
+    case Expression.Var(ident, _, loc) => Value.cast2bool(env(ident.name))
     case Expression.Ref(name, _, _) => evalBool(root.constants(name).exp, root, env)
     case apply: Expression.Apply =>
       val evalArgs = new Array[Value](apply.argsAsArray.length)
@@ -135,11 +135,11 @@ object Interpreter {
         evalArgs(i) = eval(apply.argsAsArray(i), root, env)
         i = i + 1
       }
-      evalCall(apply.exp, evalArgs, root, env).toBool
+      Value.cast2bool(evalCall(apply.exp, evalArgs, root, env))
     case Expression.Unary(op, exp, _, _) => evalBoolUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => evalBoolBinary(op, exp1, exp2, root, env)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
-      val cond = eval(exp1, root, env).toBool
+      val cond = Value.cast2bool(eval(exp1, root, env))
       if (cond) evalBool(exp2, root, env) else evalBool(exp3, root, env)
     case Expression.Switch(rules, _, _) => evalBoolSwitch(rules, root, env)
     case Expression.Let(ident, exp1, exp2, _, _) =>
@@ -248,7 +248,7 @@ object Interpreter {
   private def evalGeneralUnary(op: UnaryOperator, e: Expression, root: Root, env: Env): Value = {
     val v = eval(e, root, env)
     op match {
-      case UnaryOperator.LogicalNot => if (v.toBool) Value.False else Value.True
+      case UnaryOperator.LogicalNot => if (Value.cast2bool(v)) Value.False else Value.True
       case UnaryOperator.Plus => Value.mkInt(+v.toInt)
       case UnaryOperator.Minus => Value.mkInt(-v.toInt)
       case UnaryOperator.BitwiseNegate => Value.mkInt(~v.toInt)
@@ -270,8 +270,8 @@ object Interpreter {
       case BinaryOperator.GreaterEqual => if (v1.toInt >= v2.toInt) Value.True else Value.False
       case BinaryOperator.Equal => if (v1 == v2) Value.True else Value.False
       case BinaryOperator.NotEqual => if (v1 != v2) Value.True else Value.False
-      case BinaryOperator.LogicalAnd => if (v1.toBool && v2.toBool) Value.True else Value.False
-      case BinaryOperator.LogicalOr => if (v1.toBool || v2.toBool) Value.True else Value.False
+      case BinaryOperator.LogicalAnd => if (Value.cast2bool(v1) && Value.cast2bool(v2)) Value.True else Value.False
+      case BinaryOperator.LogicalOr => if (Value.cast2bool(v1) || Value.cast2bool(v2)) Value.True else Value.False
       case BinaryOperator.BitwiseAnd => Value.mkInt(v1.toInt & v2.toInt)
       case BinaryOperator.BitwiseOr => Value.mkInt(v1.toInt | v2.toInt)
       case BinaryOperator.BitwiseXor => Value.mkInt(v1.toInt ^ v2.toInt)

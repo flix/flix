@@ -172,7 +172,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def InfixExpression: Rule1[ParsedAst.Expression] = rule {
-    UnaryExpression ~ optional(optWS ~ "`" ~ SP ~ QName ~ "`" ~ optWS ~ UnaryExpression ~ SP ~> ParsedAst.Expression.Infix)
+    Extended ~ optional(optWS ~ "`" ~ SP ~ QName ~ "`" ~ optWS ~ Extended ~ SP ~> ParsedAst.Expression.Infix)
+  }
+
+  def Extended: Rule1[ParsedAst.Expression] = rule {
+    UnaryExpression ~ optional(optWS ~ SP ~ Operator.ExtendedBinaryOp ~ optWS ~ UnaryExpression ~ SP ~> ParsedAst.Expression.ExtendedBinary)
   }
 
   def UnaryExpression: Rule1[ParsedAst.Expression] = rule {
@@ -184,28 +188,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def InvokeExpression: Rule1[ParsedAst.Expression] = rule {
-    ApplyExpression | LatticeExpression | SimpleExpression
-  }
-
-  def LatticeExpression: Rule1[ParsedAst.Expression] = rule {
-    LeqExpression | BotExpression | TopExpression // TODO
-  }
-
-  def BotExpression: Rule1[ParsedAst.Expression.Bot] = rule {
-    SP ~ "⊥" ~ SP ~> ParsedAst.Expression.Bot
-  }
-
-  def TopExpression: Rule1[ParsedAst.Expression.Top] = rule {
-    SP ~ "⊤" ~ SP ~> ParsedAst.Expression.Top
-  }
-
-  // TODO
-  def LeqExpression: Rule1[ParsedAst.Expression.Leq] = rule {
-    SP ~ SimpleExpression ~ optWS ~ "⊑" ~ optWS ~ SimpleExpression ~ SP ~> ParsedAst.Expression.Leq
+    ApplyExpression | SimpleExpression
   }
 
   def SimpleExpression: Rule1[ParsedAst.Expression] = rule {
-    LetExpression | IfThenElseExpression | SwitchExpression | MatchExpression | TagExpression | TupleExpression | SetExpression | LiteralExpression | LambdaExpression | VariableExpression | ErrorExpression
+    LetExpression | IfThenElseExpression | SwitchExpression | MatchExpression | TagExpression | TupleExpression |
+      SetExpression | LiteralExpression | LambdaExpression | BotExpression | TopExpression | VariableExpression | ErrorExpression
   }
 
   def LiteralExpression: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -272,6 +260,14 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def SetExpression: Rule1[ParsedAst.Expression.Set] = rule {
     SP ~ "#{" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Set
+  }
+
+  def BotExpression: Rule1[ParsedAst.Expression.Bot] = rule {
+    SP ~ "⊥" ~ SP ~> ParsedAst.Expression.Bot
+  }
+
+  def TopExpression: Rule1[ParsedAst.Expression.Top] = rule {
+    SP ~ "⊤" ~ SP ~> ParsedAst.Expression.Top
   }
 
   def VariableExpression: Rule1[ParsedAst.Expression.Var] = rule {
@@ -608,6 +604,17 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def AdditiveOp: Rule1[BinaryOperator] = rule {
       atomic("+") ~> (() => BinaryOperator.Plus) |
         atomic("-") ~> (() => BinaryOperator.Minus)
+    }
+
+    /**
+      * Parses an extended binary operator.
+      */
+    def ExtendedBinaryOp: Rule1[ExtendedBinaryOperator] = rule {
+      atomic("⊑") ~> (() => ExtendedBinaryOperator.Leq) |
+        atomic("⊔") ~> (() => ExtendedBinaryOperator.Lub) |
+        atomic("⊓") ~> (() => ExtendedBinaryOperator.Glb) |
+        atomic("▽") ~> (() => ExtendedBinaryOperator.Widen) |
+        atomic("△") ~> (() => ExtendedBinaryOperator.Narrow)
     }
 
   }

@@ -6,7 +6,7 @@ import java.nio.file.{Paths, Files}
 import java.util.concurrent.Executors
 
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.runtime.{Monitor, Solver}
+import ca.uwaterloo.flix.runtime.{Value, Monitor, Solver}
 import ca.uwaterloo.flix.runtime.datastore.{IndexedLattice, IndexedRelation}
 
 import com.sun.net.httpserver.{HttpServer, HttpExchange, HttpHandler}
@@ -224,7 +224,7 @@ class RestServer(solver: Solver) {
     def json: JValue = JObject(
       JField("cols", JArray(ast.attributes.map(a => JString(a.ident.name)))),
       JField("rows", JArray(relation.scan.toList.map {
-        case row => JArray(row.toList.map(e => JString(e.pretty)))
+        case row => JArray(row.toList.map(e => JString(Value.pretty(e))))
       })))
   }
 
@@ -238,7 +238,7 @@ class RestServer(solver: Solver) {
     def json: JValue = JObject(
       JField("cols", JArray(ast.keys.map(a => JString(a.ident.name)) ::: ast.values.map(a => JString(a.ident.name)))),
       JField("rows", JArray(relation.scan.toList.map {
-        case (key, elms) => JArray(key.toArray.map(k => JString(k.pretty)).toList ::: elms.map(e => JString(e.pretty)).toList)
+        case (key, elms) => JArray(key.toArray.map(k => JString(Value.pretty(k))).toList ::: elms.map(e => JString(Value.pretty(e))).toList)
       })))
   }
 

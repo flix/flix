@@ -242,8 +242,8 @@ class IndexedLattice(lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(im
       // if v1 and v2 are equal we do not need to compute leq.
       if (v1 ne v2) {
         // v1 and v2 are different, must compute leq.
-        val value = Interpreter.eval2(Leq(i), v1, v2, sCtx.root)
-        if (!value.toBool) {
+        val result = Interpreter.eval2(Leq(i), v1, v2, sCtx.root)
+        if (!Value.cast2bool(result)) {
           return false
         }
       }

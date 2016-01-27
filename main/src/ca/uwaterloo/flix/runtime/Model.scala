@@ -40,7 +40,7 @@ case class Model(root: TypedAst.Root, // TODO: remove
         val cols = r.attributes.map(_.ident.name)
         val ascii = new AsciiTable().withCols(cols: _*)
         for (row <- table.toSeq.sortBy(_.head.toString)) {
-          ascii.mkRow(row.toList map (_.pretty))
+          ascii.mkRow(row.toList map Value.pretty)
         }
 
         Console.println(r.name)
@@ -53,7 +53,7 @@ case class Model(root: TypedAst.Root, // TODO: remove
         val cols = l.keys.map(_.ident.name) ::: l.values.map(_.ident.name + "<>")
         val ascii = new AsciiTable().withCols(cols: _*)
         for ((keys, elms) <- table.toSeq.sortBy(_._1.head.toString)) {
-          ascii.mkRow((keys map (_.pretty)) ++ (elms map (_.pretty)))
+          ascii.mkRow((keys map Value.pretty) ++ (elms map Value.pretty))
         }
 
         Console.println(l.name)

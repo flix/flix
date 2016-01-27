@@ -664,6 +664,37 @@ object Weeder {
           case (e1, e2) => WeededAst.Expression.Binary(exp.op, e1, e2, exp.loc)
         }
 
+      case exp: ParsedAst.Expression.ExtendedBinary =>
+        @@(compile(exp.e1), compile(exp.e2)) map {
+          case (e1, e2) =>
+            exp.op match {
+              case ExtendedBinaryOperator.Leq =>
+                val name = Name.Unresolved(exp.sp1, List("⊑"), exp.sp2)
+                val lambda = WeededAst.Expression.Var(name, exp.loc)
+                WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
+
+              case ExtendedBinaryOperator.Lub =>
+                val name = Name.Unresolved(exp.sp1, List("⊔"), exp.sp2)
+                val lambda = WeededAst.Expression.Var(name, exp.loc)
+                WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
+
+              case ExtendedBinaryOperator.Glb =>
+                val name = Name.Unresolved(exp.sp1, List("⊓"), exp.sp2)
+                val lambda = WeededAst.Expression.Var(name, exp.loc)
+                WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
+
+              case ExtendedBinaryOperator.Widen =>
+                val name = Name.Unresolved(exp.sp1, List("▽"), exp.sp2)
+                val lambda = WeededAst.Expression.Var(name, exp.loc)
+                WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
+
+              case ExtendedBinaryOperator.Narrow =>
+                val name = Name.Unresolved(exp.sp1, List("△"), exp.sp2)
+                val lambda = WeededAst.Expression.Var(name, exp.loc)
+                WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
+            }
+        }
+
       case exp: ParsedAst.Expression.Let =>
         @@(compile(exp.value), compile(exp.body)) map {
           case (value, body) => WeededAst.Expression.Let(exp.ident, value, body, exp.loc)

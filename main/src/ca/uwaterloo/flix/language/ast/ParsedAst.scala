@@ -436,6 +436,19 @@ object ParsedAst {
     }
 
     /**
+      * An AST node that represents extended binary operator expressions.
+      *
+      * @param e1  the left expression.
+      * @param sp1 the position of the first character in the expression.
+      * @param op  the extended binary operator.
+      * @param e2  the right expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class ExtendedBinary(e1: ParsedAst.Expression, sp1: SourcePosition, op: ExtendedBinaryOperator, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
       * An AST node that represents a let-binding.
       *
       * @param sp1   the position of the first character in the expression.
@@ -572,18 +585,6 @@ object ParsedAst {
       * @param sp2 the position of the last character in the expression.
       */
     case class Top(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
-      * An AST node that represents a leq expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param e1  the first argument expression.
-      * @param e2  the second argument expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Leq(sp1: SourcePosition, e1: ParsedAst.Expression, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 

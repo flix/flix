@@ -1,39 +1,38 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.IValue
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
-import ca.uwaterloo.flix.language.ast.Type
-
-import java.lang.reflect.Method
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 import java.util
 
+@deprecated("The value trait will be removed in the future. Please do not use it. " +
+  "The replacement is to either use AnyRef or better, to use a generic parameter.", "0.1.0")
 sealed trait Value {
-  def toBool: Boolean = this.asInstanceOf[Value.Bool].b
-
   def toInt: Int = this.asInstanceOf[Value.Int].i
+}
 
-  def toStr: String = this.asInstanceOf[Value.Str].s
+object Value {
 
-  def toSet: Set[Value] = this.asInstanceOf[Value.Set].elms
+  @inline
+  def cast2bool(ref: AnyRef): Boolean = ref match {
+    case Value.True => true
+    case Value.False => false
+    case o: java.lang.Boolean => o.booleanValue()
+    case _ => throw new IllegalArgumentException()
+  }
 
-  //  TODO: Figure out a place to put all the formatting functions.
-  def pretty: String = this match {
+  def pretty(o: AnyRef): String = o match {
     case Value.Unit => "()"
     case v: Value.Bool => v.b.toString
     case v: Value.Int => v.i.toString
     case v: Value.Str => v.s.toString
-    case v: Value.Tag => s"${v.enum}.${v.tag}(${v.value.pretty})"
-    case Value.Tuple(elms) => "(" + elms.map(_.pretty).mkString(",") + ")"
-    case Value.Set(elms) => "{" + elms.map(_.pretty).mkString(",") + "}"
+    case v: Value.Tag => s"${v.enum}.${v.tag}(${pretty(v.value)})"
+    case Value.Tuple(elms) => "(" + elms.map(pretty).mkString(",") + ")"
+    case Value.Set(elms) => "{" + elms.map(pretty).mkString(",") + "}"
     case Value.Closure(_, _, _) => ???
     case Value.Native(v) => s"Native($v)"
+    case _ => o.toString
   }
-}
-
-object Value {
 
   case object Unit extends Value
 
