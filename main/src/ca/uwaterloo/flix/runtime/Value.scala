@@ -7,19 +7,9 @@ import java.util
 
 @deprecated("The value trait will be removed in the future. Please do not use it. " +
   "The replacement is to either use AnyRef or better, to use a generic parameter.", "0.1.0")
-sealed trait Value {
-  def toInt: Int = this.asInstanceOf[Value.Int].i
-}
+sealed trait Value
 
 object Value {
-
-  @inline
-  def cast2bool(ref: AnyRef): Boolean = ref match {
-    case Value.True => true
-    case Value.False => false
-    case o: java.lang.Boolean => o.booleanValue()
-    case _ => throw new IllegalArgumentException()
-  }
 
   def pretty(o: AnyRef): String = o match {
     case Value.Unit => "()"
@@ -34,12 +24,18 @@ object Value {
     case _ => o.toString
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Unit                                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The Unit value.
+    */
   case object Unit extends Value
 
-  /** *************************************************************************
-    * Value.Bool implementation                                               *
-    * **************************************************************************/
-
+  /////////////////////////////////////////////////////////////////////////////
+  // Bool                                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+  @deprecated
   final class Bool private[Value](val b: scala.Boolean) extends Value {
     override val toString: java.lang.String = s"Value.Bool($b)"
 
@@ -51,10 +47,47 @@ object Value {
     override val hashCode: scala.Int = b.hashCode
   }
 
+  /**
+    * The true value.
+    */
+  @inline
   val True = new Value.Bool(true)
+
+  /**
+    * The false value.
+    */
+  @inline
   val False = new Value.Bool(false)
 
+  /**
+    * Constructs a bool from the given boolean `b`.
+    */
+  @inline
   def mkBool(b: Boolean): Bool = if (b) True else False
+
+  /**
+    * Casts the given reference `ref` to a primitive boolean.
+    */
+  @inline
+  def cast2bool(ref: AnyRef): Boolean = ref match {
+    case Value.True => true
+    case Value.False => false
+    case o: java.lang.Boolean => o.booleanValue()
+    case _ => throw new IllegalArgumentException()
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Ints                                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /**
+    * Casts the given reference `ref` to an int32.
+    */
+  def cast2int32(ref: AnyRef): scala.Int = ref match {
+    case v: Value.Int => v.i
+    case o: java.lang.Integer => o.intValue()
+    case _ => throw new IllegalArgumentException()
+  }
 
   /** *************************************************************************
     * Value.Int implementation                                                *

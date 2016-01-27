@@ -485,7 +485,7 @@ class TestSolver extends FunSuite {
     val model = new Flix()
       .addStr(s)
         .addHook("f", Type.Lambda(List(Type.Int), Type.Str), new Invokable {
-          override def apply(args: Array[Value]): Value = Value.mkBool(args(0).toInt == 1)
+          override def apply(args: Array[Value]): Value = Value.mkBool(Value.cast2int32(args(0)) == 1)
         })
       .solve()
       .get

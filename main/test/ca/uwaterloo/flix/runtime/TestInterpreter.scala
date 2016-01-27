@@ -584,7 +584,7 @@ class TestInterpreter extends FunSuite {
       .addHook("A::g", Type.Lambda(List(Type.Int, Type.Int), Type.Int), new Invokable {
         def apply(args: Array[Value]): Value = {
           executed = true
-          Value.mkInt(args(0).toInt + args(1).toInt)
+          Value.mkInt(Value.cast2int32(args(0)) + Value.cast2int32(args(1)))
         }
       })
       .solve()
@@ -2854,7 +2854,7 @@ class TestInterpreter extends FunSuite {
       .addHook("A::g", Type.Lambda(List(Type.Int, Type.Int), Type.Int), new Invokable {
         def apply(args: Array[Value]): Value = {
           counter += 1
-          Value.mkInt(args(0).toInt + args(1).toInt)
+          Value.mkInt(Value.cast2int32(args(0)) + Value.cast2int32(args(1)))
         }
       })
       .solve()

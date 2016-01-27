@@ -22,37 +22,6 @@ class TestValue extends FunSuite {
     assert(b3 != b4)
   }
 
-  test("Value.Bool hashing") {
-    val set: mutable.Set[Value.Bool] = mutable.Set()
-    val b1 = Value.True
-    val b2 = Value.True
-    val b3 = Value.False
-
-    set += b1
-    assert(set.contains(b1))
-    assert(set.contains(b2))
-    assert(!set.contains(b3))
-
-    set -= b2
-    assert(set.isEmpty)
-
-    set += b1
-    set += b2
-    set += b3
-    assert(set.size == 2)
-  }
-
-  test("Value.Bool pattern matching") {
-    val v: Value = Value.True
-
-    val result = v match {
-      case v: Value.Bool => s"${v.b}"
-      case _ => "unknown"
-    }
-
-    assert(result == "true")
-  }
-
   test("Value.Int equality") {
     val i1 = Value.mkInt(0)
     val i2 = Value.mkInt(-1337)
