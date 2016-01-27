@@ -235,7 +235,7 @@ class IndexedLattice[ValueType <: AnyRef](lattice: TypedAst.Collection.Lattice, 
 
         if (rv != pv) {
           val bot = Bot(i)
-          val glb = Interpreter.eval2(Glb(i), pv, rv, sCtx.root)
+          val glb = Interpreter.eval2(Glb(i), pv, rv, sCtx.root).asInstanceOf[ValueType]
 
           if (bot == glb)
             return false
@@ -285,7 +285,7 @@ class IndexedLattice[ValueType <: AnyRef](lattice: TypedAst.Collection.Lattice, 
       else if (v2 == Bot(i)) // TODO: use eq
         result(i) = v1
       else
-        result(i) = Interpreter.eval2(Lub(i), v1, v2, sCtx.root)
+        result(i) = Interpreter.eval2(Lub(i), v1, v2, sCtx.root).asInstanceOf[ValueType]
 
       i = i + 1
     }

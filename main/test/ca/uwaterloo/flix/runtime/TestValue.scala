@@ -41,28 +41,8 @@ class TestValue extends FunSuite {
     assert(i3 != i4)
   }
 
-  test("Value.Int hashing") {
-    val set: mutable.Set[Value.Int] = mutable.Set()
-    val i1 = Value.mkInt(42)
-    val i2 = Value.mkInt(42)
-    val i3 = Value.mkInt(0xdeadbeef)
-
-    set += i1
-    assert(set.contains(i1))
-    assert(set.contains(i2))
-    assert(!set.contains(i3))
-
-    set -= i2
-    assert(set.isEmpty)
-
-    set += i1
-    set += i2
-    set += i3
-    assert(set.size == 2)
-  }
-
   test("Value.Int pattern matching") {
-    val v: Value = Value.mkInt(123456789)
+    val v = Value.mkInt(123456789)
 
     val result = v match {
       case v: Value.Int => s"${v.i}"
@@ -91,28 +71,8 @@ class TestValue extends FunSuite {
     assert(s3 != s4)
   }
 
-  test("Value.Str hashing") {
-    val set: mutable.Set[Value.Str] = mutable.Set()
-    val s1 = Value.mkStr("hello")
-    val s2 = Value.mkStr("hello")
-    val s3 = Value.mkStr("goodbye")
-
-    set += s1
-    assert(set.contains(s1))
-    assert(set.contains(s2))
-    assert(!set.contains(s3))
-
-    set -= s2
-    assert(set.isEmpty)
-
-    set += s1
-    set += s2
-    set += s3
-    assert(set.size == 2)
-  }
-
   test("Value.Str pattern matching") {
-    val v: Value = Value.mkStr("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    val v = Value.mkStr("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
     val result = v match {
       case v: Value.Str => s"${v.s}!!!"
@@ -206,7 +166,7 @@ class TestValue extends FunSuite {
   }
 
   test("Value.Tag pattern matching") {
-    val v: Value = Value.mkTag(Name.Resolved.mk(List("foo", "bar")), "aaa", Value.mkInt(42))
+    val v = Value.mkTag(Name.Resolved.mk(List("foo", "bar")), "aaa", Value.mkInt(42))
 
     val r1 = v match {
       case v: Value.Tag => v.enum

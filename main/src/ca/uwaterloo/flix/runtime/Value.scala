@@ -1,16 +1,15 @@
 package ca.uwaterloo.flix.runtime
 
+import ca.uwaterloo.flix.api.WrappedValue
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
+import ca.uwaterloo.flix.runtime.Interpreter.InternalRuntimeError
 import scala.collection.mutable
 
 import java.util
 
-@deprecated("The value trait will be removed in the future. Please do not use it. " +
-  "The replacement is to either use AnyRef or better, to use a generic parameter.", "0.1.0")
-sealed trait Value
-
 object Value {
 
+  // TODO: Doc and cleanup.
   def pretty(o: AnyRef): String = o match {
     case Value.Unit => "()"
     case v: Value.Bool => v.b.toString
@@ -30,13 +29,13 @@ object Value {
   /**
     * The Unit value.
     */
-  case object Unit extends Value
+  case object Unit
 
   /////////////////////////////////////////////////////////////////////////////
   // Bool                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   @deprecated
-  final class Bool private[Value](val b: scala.Boolean) extends Value {
+  final class Bool private[Value](val b: scala.Boolean) {
     override val toString: java.lang.String = s"Value.Bool($b)"
 
     override def equals(other: Any): scala.Boolean = other match {
@@ -51,19 +50,19 @@ object Value {
     * The true value.
     */
   @inline
-  val True = new Value.Bool(true)
+  val True: AnyRef = new Value.Bool(true)
 
   /**
     * The false value.
     */
   @inline
-  val False = new Value.Bool(false)
+  val False: AnyRef = new Value.Bool(false)
 
   /**
     * Constructs a bool from the given boolean `b`.
     */
   @inline
-  def mkBool(b: Boolean): Bool = if (b) True else False
+  def mkBool(b: Boolean): AnyRef = if (b) True else False
 
   /**
     * Casts the given reference `ref` to a primitive boolean.
@@ -73,7 +72,7 @@ object Value {
     case Value.True => true
     case Value.False => false
     case o: java.lang.Boolean => o.booleanValue()
-    case _ => throw new IllegalArgumentException()
+    case _ => throw new InternalRuntimeError(s"Unexpected non-bolean type: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -83,17 +82,26 @@ object Value {
   /**
     * Casts the given reference `ref` to an int32.
     */
+  // TODO: check that theser are not used by hooks.
   def cast2int32(ref: AnyRef): scala.Int = ref match {
     case v: Value.Int => v.i
     case o: java.lang.Integer => o.intValue()
-    case _ => throw new IllegalArgumentException()
+    case _ => throw new InternalRuntimeError(s"Unexpected non-int32 type: '$ref'.")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Closures                                                                //
+  /////////////////////////////////////////////////////////////////////////////
+  def cast2closure(ref: AnyRef): Closure = ref match {
+    case o: Closure => o
+    case _ => throw new InternalRuntimeError(s"Unexpected non-closure type: '$ref'.")
   }
 
   /** *************************************************************************
     * Value.Int implementation                                                *
     * **************************************************************************/
 
-  final class Int private[Value](val i: scala.Int) extends Value {
+  final class Int private[Value](val i: scala.Int) {
     override val toString: java.lang.String = s"Value.Int($i)"
 
     override def equals(other: Any): scala.Boolean = other match {
@@ -107,7 +115,7 @@ object Value {
   // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
   private val intCache = mutable.HashMap[scala.Int, Value.Int]()
 
-  def mkInt(i: scala.Int) = if (intCache.contains(i)) {
+  def mkInt(i: scala.Int): AnyRef = if (intCache.contains(i)) {
     intCache(i)
   } else {
     val ret = new Value.Int(i)
@@ -119,7 +127,7 @@ object Value {
     * Value.Str implementation                                                *
     * **************************************************************************/
 
-  final class Str private[Value](val s: java.lang.String) extends Value {
+  final class Str private[Value](val s: java.lang.String) {
     override val toString: java.lang.String = s"Value.Str($s)"
 
     override def equals(other: Any): scala.Boolean = other match {
@@ -133,7 +141,7 @@ object Value {
   // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
   private val strCache = mutable.HashMap[java.lang.String, Value.Str]()
 
-  def mkStr(s: java.lang.String) = if (strCache.contains(s)) {
+  def mkStr(s: java.lang.String): AnyRef = if (strCache.contains(s)) {
     strCache(s)
   } else {
     val ret = new Value.Str(s)
@@ -145,7 +153,7 @@ object Value {
     * Value.Tag implementation                                                *
     * **************************************************************************/
 
-  final class Tag private[Value](val enum: Name.Resolved, val tag: java.lang.String, val value: Value) extends Value {
+  final class Tag private[Value](val enum: Name.Resolved, val tag: java.lang.String, val value: AnyRef) {
     override val toString: java.lang.String = s"Value.Tag($enum, $tag, $value)"
 
     override def equals(other: Any): scala.Boolean = other match {
@@ -157,9 +165,9 @@ object Value {
   }
 
   // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
-  private val tagCache = mutable.HashMap[(Name.Resolved, java.lang.String, Value), Value.Tag]()
+  private val tagCache = mutable.HashMap[(Name.Resolved, java.lang.String, AnyRef), Value.Tag]()
 
-  def mkTag(e: Name.Resolved, t: java.lang.String, v: Value) = {
+  def mkTag(e: Name.Resolved, t: java.lang.String, v: AnyRef) = {
     val triple = (e, t, v)
     if (tagCache.contains(triple)) {
       tagCache(triple)
@@ -174,7 +182,7 @@ object Value {
     * Value.Tuple, Value.Set, Value.Closure implementations                   *
     * **************************************************************************/
 
-  final case class Tuple(elms: Array[Value]) extends Value {
+  final case class Tuple(elms: Array[AnyRef]) {
     override def toString: java.lang.String = s"Value.Tuple(Array(${elms.mkString(",")}))"
 
     override def equals(obj: scala.Any): Boolean = obj match {
@@ -186,9 +194,9 @@ object Value {
     override def hashCode: scala.Int = util.Arrays.hashCode(elms.asInstanceOf[Array[AnyRef]])
   }
 
-  case class Set(elms: scala.collection.immutable.Set[Value]) extends Value
+  case class Set(elms: scala.collection.immutable.Set[AnyRef])
 
-  final case class Closure(formals: Array[String], body: TypedAst.Expression, env: mutable.Map[String, Value]) extends Value {
+  final case class Closure(formals: Array[String], body: TypedAst.Expression, env: mutable.Map[String, AnyRef]) {
     override def toString: java.lang.String = s"Value.Closure(Array(${formals.mkString(",")}), $body, $env)"
 
     override def equals(obj: scala.Any): Boolean = obj match {
@@ -206,16 +214,17 @@ object Value {
     * Value.Native, Value.HookClosure implementations                         *
     * **************************************************************************/
 
-  final case class Native(value: AnyRef) extends Value
+  // TODO: Omit
+  final case class Native(value: AnyRef)
 
-  final case class HookClosure(inv: Invokable) extends Value
+  final case class HookClosure(inv: Invokable)
 
-  def mkList(list: List[Value]): Value = ??? // TODO
+  def mkList[ValueType](list: List[ValueType]): ValueType = ??? // TODO
 
-  def mkMap(map: Map[Value, Value]): Value = ??? // TODO
+  def mkMap[ValueType](map: Map[ValueType, ValueType]): ValueType = ??? // TODO
 
-  def mkNone: Value = ??? // TODO
+  def mkNone[ValueType]: ValueType = ??? // TODO
 
-  def mkSome(v: Value): Value = ??? // TODO
+  def mkSome[ValueType](v: ValueType): ValueType = ??? // TODO
 
 }

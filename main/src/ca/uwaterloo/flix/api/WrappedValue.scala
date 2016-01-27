@@ -2,12 +2,11 @@ package ca.uwaterloo.flix.api
 
 import java.util
 
-import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.runtime.Value
 
 import scala.collection.immutable
 
-protected final class WrappedValue(val ref: AnyRef) extends IValue {
+final class WrappedValue(val ref: AnyRef) extends IValue {
 
   def isUnit: Boolean = ref match {
     case Value.Unit => true

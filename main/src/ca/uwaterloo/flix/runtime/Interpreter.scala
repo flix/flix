@@ -1,17 +1,13 @@
 package ca.uwaterloo.flix.runtime
 
+import ca.uwaterloo.flix.api.{IValue, WrappedValue}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Term, Root}
 import ca.uwaterloo.flix.language.ast.{Type, BinaryOperator, UnaryOperator}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-// TODO: Consider an EvaluationContext
 object Interpreter {
-
-  type Env = mutable.Map[String, Value]
-
-  // TODO: Use this exception:
 
   /**
     * An exception thrown to indicate an internal runtime error.
@@ -29,13 +25,13 @@ object Interpreter {
    *
    * Assumes all input has been type-checked.
    */
-  def eval[ValueType](expr: Expression, root: Root, env: Env = mutable.Map.empty): ValueType = expr.tpe match {
-    case Type.Int => Value.mkInt(evalInt(expr, root, env)).asInstanceOf[ValueType]
-    case Type.Bool => if (evalBool(expr, root, env)) Value.True.asInstanceOf[ValueType] else Value.False.asInstanceOf[ValueType]
-    case Type.Str => evalGeneral(expr, root, env).asInstanceOf[ValueType]
+  def eval(expr: Expression, root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef = expr.tpe match {
+    case Type.Int => Value.mkInt(evalInt(expr, root, env))
+    case Type.Bool => if (evalBool(expr, root, env)) Value.True else Value.False
+    case Type.Str => evalGeneral(expr, root, env)
     case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
          Type.Set(_) | Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) | Type.Any =>
-      evalGeneral(expr, root, env).asInstanceOf[ValueType]
+      evalGeneral(expr, root, env)
   }
 
   /*
@@ -50,12 +46,12 @@ object Interpreter {
    * example, the `exp` of Apply(exp, args, _, _), we directly call
    * `evalGeneral`.
    */
-  @tailrec private def evalInt(expr: Expression, root: Root, env: Env = mutable.Map.empty): Int = expr match {
+  private def evalInt(expr: Expression, root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): Int = expr match {
     case Expression.Lit(literal, _, _) => Value.cast2int32(evalLit(literal))
     case Expression.Var(ident, _, loc) => Value.cast2int32(env(ident.name))
     case Expression.Ref(name, _, _) => evalInt(root.constants(name).exp, root, env)
     case apply: Expression.Apply =>
-      val evalArgs = new Array[Value](apply.argsAsArray.length)
+      val evalArgs = new Array[AnyRef](apply.argsAsArray.length)
       var i = 0
       while (i < evalArgs.length) {
         evalArgs(i) = eval(apply.argsAsArray(i), root, env)
@@ -73,7 +69,7 @@ object Interpreter {
       val newEnv = env + (ident.name -> eval(exp1, root, env))
       evalInt(exp2, root, newEnv)
     case m: Expression.Match =>
-      val value = eval[Value](m.exp, root, env)
+      val value = eval(m.exp, root, env)
       val newEnv = env.clone()
       val result = matchRule(m.rulesAsArray, value, newEnv)
       if (result != null)
@@ -86,7 +82,7 @@ object Interpreter {
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
   }
 
-  private def evalIntUnary(op: UnaryOperator, e: Expression, root: Root, env: Env): Int = op match {
+  private def evalIntUnary(op: UnaryOperator, e: Expression, root: Root, env: mutable.Map[String, AnyRef]): Int = op match {
     case UnaryOperator.Plus => +evalInt(e, root, env)
     case UnaryOperator.Minus => -evalInt(e, root, env)
     case UnaryOperator.BitwiseNegate => ~evalInt(e, root, env)
@@ -95,7 +91,7 @@ object Interpreter {
   }
 
   // TODO: Document semantics of modulo on negative operands
-  private def evalIntBinary(op: BinaryOperator, e1: Expression, e2: Expression, root: Root, env: Env): Int = op match {
+  private def evalIntBinary(op: BinaryOperator, e1: Expression, e2: Expression, root: Root, env: mutable.Map[String, AnyRef]): Int = op match {
     case BinaryOperator.Plus => evalInt(e1, root, env) + evalInt(e2, root, env)
     case BinaryOperator.Minus => evalInt(e1, root, env) - evalInt(e2, root, env)
     case BinaryOperator.Times => evalInt(e1, root, env) * evalInt(e2, root, env)
@@ -111,7 +107,7 @@ object Interpreter {
       throw new InternalRuntimeError(s"Type of binary expression is not Type.Int.")
   }
 
-  @tailrec private def evalIntSwitch(rules: List[(Expression, Expression)], root: Root, env: Env): Int = {
+  @tailrec private def evalIntSwitch(rules: List[(Expression, Expression)], root: Root, env: mutable.Map[String, AnyRef]): Int = {
     val ((test, exp) :: rest) = rules
     val cond = evalBool(test, root, env)
     if (cond) evalInt(exp, root, env) else evalIntSwitch(rest, root, env)
@@ -124,12 +120,12 @@ object Interpreter {
    * Subexpressions are evaluated by calling specialized eval whenever
    * possible.
    */
-  @tailrec private def evalBool(expr: Expression, root: Root, env: Env = mutable.Map.empty): Boolean = expr match {
+  @tailrec private def evalBool(expr: Expression, root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): Boolean = expr match {
     case Expression.Lit(literal, _, _) => Value.cast2bool(evalLit(literal))
     case Expression.Var(ident, _, loc) => Value.cast2bool(env(ident.name))
     case Expression.Ref(name, _, _) => evalBool(root.constants(name).exp, root, env)
     case apply: Expression.Apply =>
-      val evalArgs = new Array[Value](apply.argsAsArray.length)
+      val evalArgs = new Array[AnyRef](apply.argsAsArray.length)
       var i = 0
       while (i < evalArgs.length) {
         evalArgs(i) = eval(apply.argsAsArray(i), root, env)
@@ -147,7 +143,7 @@ object Interpreter {
       val newEnv = env + (ident.name -> eval(exp1, root, env))
       evalBool(exp2, root, newEnv)
     case m: Expression.Match =>
-      val value = eval[Value](m.exp, root, env)
+      val value = eval(m.exp, root, env)
       val newEnv = env.clone()
       val result = matchRule(m.rulesAsArray, value, newEnv)
       if (result != null)
@@ -160,13 +156,13 @@ object Interpreter {
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
   }
 
-  private def evalBoolUnary(op: UnaryOperator, e: Expression, root: Root, env: Env): Boolean = op match {
+  private def evalBoolUnary(op: UnaryOperator, e: Expression, root: Root, env: mutable.Map[String, AnyRef]): Boolean = op match {
     case UnaryOperator.LogicalNot => !evalBool(e, root, env)
     case UnaryOperator.Plus | UnaryOperator.Minus | UnaryOperator.BitwiseNegate =>
       throw new InternalRuntimeError(s"Type of unary expression is not Type.Bool.")
   }
 
-  private def evalBoolBinary(op: BinaryOperator, e1: Expression, e2: Expression, root: Root, env: Env): Boolean = op match {
+  private def evalBoolBinary(op: BinaryOperator, e1: Expression, e2: Expression, root: Root, env: mutable.Map[String, AnyRef]): Boolean = op match {
     case BinaryOperator.Less => evalInt(e1, root, env) < evalInt(e2, root, env)
     case BinaryOperator.LessEqual => evalInt(e1, root, env) <= evalInt(e2, root, env)
     case BinaryOperator.Greater => evalInt(e1, root, env) > evalInt(e2, root, env)
@@ -181,7 +177,7 @@ object Interpreter {
       throw new InternalRuntimeError(s"Type of binary expression is not Type.Bool.")
   }
 
-  @tailrec private def evalBoolSwitch(rules: List[(Expression, Expression)], root: Root, env: Env): Boolean = {
+  @tailrec private def evalBoolSwitch(rules: List[(Expression, Expression)], root: Root, env: mutable.Map[String, AnyRef]): Boolean = {
     val ((test, exp) :: rest) = rules
     val cond = evalBool(test, root, env)
     if (cond) evalBool(exp, root, env) else evalBoolSwitch(rest, root, env)
@@ -193,7 +189,7 @@ object Interpreter {
    * Subexpressions are always evaluated by calling `eval`, which will call the
    * specialized eval whenever possible.
    */
-  def evalGeneral(expr: Expression, root: Root, env: Env = mutable.Map.empty): Value = expr match {
+  def evalGeneral(expr: Expression, root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef = expr match {
     case Expression.Lit(literal, _, _) => evalLit(literal)
     case Expression.Var(ident, _, loc) => env(ident.name)
     case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
@@ -207,7 +203,7 @@ object Interpreter {
       }
       Value.Closure(formals, exp.body, env.clone())
     case apply: Expression.Apply =>
-      val evalArgs = new Array[Value](apply.argsAsArray.length)
+      val evalArgs = new Array[AnyRef](apply.argsAsArray.length)
       var i = 0
       while (i < evalArgs.length) {
         evalArgs(i) = eval(apply.argsAsArray(i), root, env)
@@ -225,7 +221,7 @@ object Interpreter {
       val newEnv = env + (ident.name -> eval(exp1, root, env))
       eval(exp2, root, newEnv)
     case m: Expression.Match =>
-      val value = eval[Value](m.exp, root, env)
+      val value = eval(m.exp, root, env)
       val newEnv = env.clone()
       val result = matchRule(m.rulesAsArray, value, newEnv)
       if (result != null)
@@ -234,18 +230,18 @@ object Interpreter {
         throw new RuntimeException(s"Unmatched value $value.")
     case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
     case exp: Expression.Tuple =>
-      val elms = new Array[Value](exp.asArray.length)
+      val elms = new Array[AnyRef](exp.asArray.length)
       var i = 0
       while (i < elms.length) {
         elms(i) = eval(exp.asArray(i), root, env)
         i = i + 1
       }
       Value.Tuple(elms)
-    case Expression.Set(elms, _, _) => Value.Set(elms.map(e => eval[Value](e, root, env)).toSet)
+    case Expression.Set(elms, _, _) => Value.Set(elms.map(e => eval(e, root, env)).toSet)
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
   }
 
-  private def evalGeneralUnary(op: UnaryOperator, e: Expression, root: Root, env: Env): Value = {
+  private def evalGeneralUnary(op: UnaryOperator, e: Expression, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
     val v = eval(e, root, env)
     op match {
       case UnaryOperator.LogicalNot => if (Value.cast2bool(v)) Value.False else Value.True
@@ -255,7 +251,7 @@ object Interpreter {
     }
   }
 
-  private def evalGeneralBinary(op: BinaryOperator, e1: Expression, e2: Expression, root: Root, env: Env): Value = {
+  private def evalGeneralBinary(op: BinaryOperator, e1: Expression, e2: Expression, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
     val v1 = eval(e1, root, env)
     val v2 = eval(e2, root, env)
     op match {
@@ -280,20 +276,20 @@ object Interpreter {
     }
   }
 
-  @tailrec private def evalGeneralSwitch(rules: List[(Expression, Expression)], root: Root, env: Env): Value = {
+  @tailrec private def evalGeneralSwitch(rules: List[(Expression, Expression)], root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
     val ((test, exp) :: rest) = rules
     val cond = evalBool(test, root, env)
     if (cond) eval(exp, root, env) else evalGeneralSwitch(rest, root, env)
   }
 
-  def evalLit(lit: Literal): Value = lit match {
+  def evalLit(lit: Literal): AnyRef = lit match {
     case Literal.Unit(_) => Value.Unit
     case Literal.Bool(b, _) => if (b) Value.True else Value.False
     case Literal.Int(i, _) => Value.mkInt(i)
     case Literal.Str(s, _) => Value.mkStr(s)
     case Literal.Tag(name, ident, innerLit, _, _) => Value.mkTag(name, ident.name, evalLit(innerLit))
     case tpl: Literal.Tuple =>
-      val lits = new Array[Value](tpl.asArray.length)
+      val lits = new Array[AnyRef](tpl.asArray.length)
       var i = 0
       while (i < lits.length) {
         lits(i) = evalLit(tpl.asArray(i))
@@ -303,7 +299,7 @@ object Interpreter {
     case Literal.Set(elms, _, _) => Value.Set(elms.map(evalLit).toSet)
   }
 
-  private def matchRule(rules: Array[(Pattern, Expression)], value: Value, env: Env): Expression = {
+  private def matchRule(rules: Array[(Pattern, Expression)], value: AnyRef, env: mutable.Map[String, AnyRef]): Expression = {
     var i = 0
     while (i < rules.length) {
       val rule = rules(i)
@@ -318,7 +314,7 @@ object Interpreter {
 
   // Assuming `pattern` can unify with `value`, updates the given `env`.
   // Bad things will happen if `pattern` does not unify with `value`.
-  private def unify(pattern: Pattern, value: Value, env: Env): Unit = pattern match {
+  private def unify(pattern: Pattern, value: AnyRef, env: mutable.Map[String, AnyRef]): Unit = pattern match {
     case Pattern.Var(ident, _, _) => env.update(ident.name, value)
     case Pattern.Tag(_, _, innerPat, _, _) => unify(innerPat, value.asInstanceOf[Value.Tag].value, env)
     case p: Pattern.Tuple =>
@@ -332,7 +328,7 @@ object Interpreter {
   }
 
   // Returns `true` if `pattern` can unify with `value`. Returns `false` otherwise.
-  private def canUnify(pattern: Pattern, value: Value): Boolean = pattern match {
+  private def canUnify(pattern: Pattern, value: AnyRef): Boolean = pattern match {
     case Pattern.Lit(lit, _, _) => evalLit(lit) == value
     case Pattern.Tag(name, ident, innerPat, _, _) => value match {
       case v: Value.Tag if name == v.enum && ident.name == v.tag => canUnify(innerPat, v.value)
@@ -358,12 +354,12 @@ object Interpreter {
   /**
     * Evaluates the given head term `t` under the given environment `env0`
     */
-  def evalHeadTerm(t: Term.Head, root: Root, env: mutable.Map[String, Value]): Value = t match {
+  def evalHeadTerm(t: Term.Head, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = t match {
     case Term.Head.Var(x, _, _) => env(x.name)
     case Term.Head.Lit(lit, _, _) => evalLit(lit)
     case term: Term.Head.Apply =>
       val function = root.constants(term.name).exp
-      val evalArgs = new Array[Value](term.argsAsArray.length)
+      val evalArgs = new Array[AnyRef](term.argsAsArray.length)
       var i = 0
       while (i < evalArgs.length) {
         evalArgs(i) = evalHeadTerm(term.argsAsArray(i), root, env)
@@ -372,16 +368,19 @@ object Interpreter {
       evalCall(function, evalArgs, root, env)
     case Term.Head.ApplyHook(hook, args, _, _) =>
       val evalArgs = args.map(a => evalHeadTerm(a, root, env))
-      hook.inv(evalArgs.toArray)
+      val wargs = evalArgs map {
+        case arg => new WrappedValue(arg): IValue
+      }
+      hook.inv(wargs.toArray).asInstanceOf[WrappedValue].ref // TODO
   }
 
-  def evalBodyTerm(t: Term.Body, env: Env): Value = t match {
+  def evalBodyTerm(t: Term.Body, env: mutable.Map[String, AnyRef]): AnyRef = t match {
     case Term.Body.Wildcard(_, _) => ???
     case Term.Body.Var(x, _, _) => env(x.name)
     case Term.Body.Lit(lit, _, _) => evalLit(lit)
   }
 
-  def evalCall(function: Expression, args: Array[Value], root: Root, env: Env = mutable.Map.empty): Value =
+  def evalCall(function: Expression, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef =
     (evalGeneral(function, root, env): @unchecked) match {
       case Value.Closure(formals, body, closureEnv) =>
         var i = 0
@@ -390,13 +389,18 @@ object Interpreter {
           i = i + 1
         }
         eval(body, root, closureEnv)
-      case Value.HookClosure(inv) => inv(args)
+      case Value.HookClosure(inv) =>
+        val wargs = args map {
+          case arg => new WrappedValue(arg): IValue
+        }
+        inv(wargs).asInstanceOf[WrappedValue].ref // TODO: Cleanup
     }
 
-  def eval2[ValueType](closure: ValueType, arg1: ValueType, arg2: ValueType, root: Root): ValueType = {
-    val env = closure.asInstanceOf[Value.Closure].env
-    env.update(closure.asInstanceOf[Value.Closure].formals(0), arg1.asInstanceOf[Value])
-    env.update(closure.asInstanceOf[Value.Closure].formals(1), arg2.asInstanceOf[Value])
+  def eval2(closure: AnyRef, arg1: AnyRef, arg2: AnyRef, root: Root): AnyRef = {
+    val clo = Value.cast2closure(closure)
+    val env = clo.env
+    env.update(clo.formals(0), arg1)
+    env.update(clo.formals(1), arg2)
     eval(closure.asInstanceOf[Value.Closure].body, root, env)
   }
 

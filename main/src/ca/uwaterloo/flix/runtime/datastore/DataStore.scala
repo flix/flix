@@ -3,29 +3,30 @@ package ca.uwaterloo.flix.runtime.datastore
 import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.TypedAst.Collection
 import ca.uwaterloo.flix.language.phase.Indexer
-import ca.uwaterloo.flix.runtime.{Value, Solver}
-import ca.uwaterloo.flix.util.{BitOps, AsciiTable}
+import ca.uwaterloo.flix.runtime.Solver
+import ca.uwaterloo.flix.util.BitOps
 
 import scala.collection.mutable
+import scala.reflect.ClassTag
 
 /**
- * A class implementing a data store for indexed relations and lattices.
- */
-class DataStore(implicit sCtx: Solver.SolverContext) {
+  * A class implementing a data store for indexed relations and lattices.
+  */
+class DataStore[ValueType <: AnyRef](implicit sCtx: Solver.SolverContext, m: ClassTag[ValueType]) {
 
   /**
-   * A map from names to indexed relations.
-   */
-  val relations = mutable.Map.empty[Name.Resolved, IndexedRelation[Value]]
+    * A map from names to indexed relations.
+    */
+  val relations = mutable.Map.empty[Name.Resolved, IndexedRelation[ValueType]]
 
   /**
-   * A map from names to indexed lattices.
-   */
-  val lattices = mutable.Map.empty[Name.Resolved, IndexedLattice[Value]]
+    * A map from names to indexed lattices.
+    */
+  val lattices = mutable.Map.empty[Name.Resolved, IndexedLattice[ValueType]]
 
   /**
-   * Initializes the relations and lattices.
-   */
+    * Initializes the relations and lattices.
+    */
   // compute indexes based on the program constraint rules.
   val indexes = Indexer.index(sCtx.root)
 
@@ -38,16 +39,16 @@ class DataStore(implicit sCtx: Solver.SolverContext) {
 
     collection match {
       case r: Collection.Relation =>
-        relations(name) = new IndexedRelation(r, idx, idx.head)
+        relations(name) = new IndexedRelation[ValueType](r, idx, idx.head)
 
       case l: Collection.Lattice =>
-        lattices(name) = new IndexedLattice(l, idx)
+        lattices(name) = new IndexedLattice[ValueType](l, idx)
     }
   }
 
   /**
-   * Returns the total number of facts in the datastore.
-   */
+    * Returns the total number of facts in the datastore.
+    */
   def numberOfFacts: Int = {
     var result: Int = 0
     for ((name, relation) <- relations) {

@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{IValue, Flix}
 import ca.uwaterloo.flix.language.ast.{Type, Name}
 import org.scalatest.FunSuite
 
@@ -482,12 +482,14 @@ class TestSolver extends FunSuite {
         |B(x) :- f(x), A(x).
       """.stripMargin
 
-    val model = new Flix()
+    val flix = new Flix()
+    flix
       .addStr(s)
-        .addHook("f", Type.Lambda(List(Type.Int), Type.Str), new Invokable {
-          override def apply(args: Array[Value]): Value = Value.mkBool(Value.cast2int32(args(0)) == 1)
-        })
-      .solve()
+      .addHook("f", Type.Lambda(List(Type.Int), Type.Str), new Invokable {
+        override def apply(args: Array[IValue]): IValue = flix.mkBool(args(0) == flix.mkInt32(1))
+      })
+
+    val model = flix.solve()
       .get
 
     val B = model.relations(NameB).toSet

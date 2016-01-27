@@ -321,47 +321,47 @@ class Flix {
   /**
     * Returns the bool value corresponding to the given boolean.
     */
-  def mkBool(b: Boolean): IValue = new WrappedValue(Value.mkBool(b))
+  def mkBool(b: Boolean): IValue = new WrappedValue(Value.mkBool(b))// TODO...
 
   /**
     * Returns the char value corresponding to the given character.
     */
-  def mkChar(c: Char): IValue = new WrappedValue(new java.lang.Character(c))
+  def mkChar(c: Char): IValue = new WrappedValue(new java.lang.Character(c)) // TODO...
 
   /**
     * Returns the int8 value corresponding to the given byte.
     */
-  def mkInt8(b: Byte): IValue = new WrappedValue(new java.lang.Byte(b))
+  def mkInt8(b: Byte): IValue = new WrappedValue(new java.lang.Byte(b)) // TODO...
 
   /**
     * Returns the int8 value corresponding to the given int.
     */
-  def mkInt8(i: Int): IValue = new WrappedValue(new java.lang.Byte(i.asInstanceOf[Byte]))
+  def mkInt8(i: Int): IValue = new WrappedValue(new java.lang.Byte(i.asInstanceOf[Byte])) // TODO...
 
   /**
     * Returns the int16 value corresponding to the given short.
     */
-  def mkInt16(s: Short): IValue = new WrappedValue(new java.lang.Short(s))
+  def mkInt16(s: Short): IValue = new WrappedValue(new java.lang.Short(s)) // TODO...
 
   /**
     * Returns the int16 value corresponding to the given int.
     */
-  def mkInt16(i: Int): IValue = new WrappedValue(new java.lang.Short(i.asInstanceOf[Short]))
+  def mkInt16(i: Int): IValue = new WrappedValue(new java.lang.Short(i.asInstanceOf[Short])) // TODO...
 
   /**
     * Returns the int32 value corresponding to the given int.
     */
-  def mkInt32(i: Int): IValue = new WrappedValue(new java.lang.Integer(i))
+  def mkInt32(i: Int): IValue = new WrappedValue(Value.mkInt(i)) // TODO...
 
   /**
     * Returns the int64 value corresponding to the given int.
     */
-  def mkInt64(i: Int): IValue = new WrappedValue(new java.lang.Long(i))
+  def mkInt64(i: Int): IValue = new WrappedValue(new java.lang.Long(i))// TODO...
 
   /**
     * Returns the int64 value corresponding to the given long.
     */
-  def mkInt64(l: Long): IValue = new WrappedValue(new java.lang.Long(l))
+  def mkInt64(l: Long): IValue = new WrappedValue(new java.lang.Long(l))// TODO...
 
   /**
     * Returns the str value corresponding to the given string.
@@ -378,7 +378,7 @@ class Flix {
     */
   def mkTag(enumName: String, tagName: String, tagValue: IValue): IValue = {
     val enum = Name.Resolved.mk(enumName)
-    val ref = tagValue.asInstanceOf[WrappedValue].ref.asInstanceOf[Value]
+    val ref = tagValue.asInstanceOf[WrappedValue].ref
 
     new WrappedValue(Value.mkTag(enum, tagName, ref))
   }
@@ -390,7 +390,7 @@ class Flix {
     if (tuple == null)
       throw new IllegalArgumentException("Argument 'tuple' must be non-null.")
 
-    val elms = tuple.map(_.asInstanceOf[Value])
+    val elms = tuple.map(_.asInstanceOf[WrappedValue].ref)
     new WrappedValue(Value.Tuple(elms))
   }
 
@@ -404,7 +404,7 @@ class Flix {
     if (!o.isPresent)
       new WrappedValue(Value.mkNone)
     else
-      new WrappedValue(Value.mkSome(o.get().asInstanceOf[Value]))
+      new WrappedValue(Value.mkSome(o.get()))
   }
 
   /**
@@ -416,7 +416,7 @@ class Flix {
 
     o match {
       case None => new WrappedValue(Value.mkNone)
-      case Some(v) => new WrappedValue(Value.mkSome(v.asInstanceOf[Value]))
+      case Some(v) => new WrappedValue(Value.mkSome(v))
     }
   }
 
@@ -427,7 +427,7 @@ class Flix {
     if (l == null)
       throw new IllegalArgumentException("Argument 'l' must be non-null.")
 
-    val list = l.toList.map(_.asInstanceOf[Value])
+    val list = l.toList.map(_.asInstanceOf[WrappedValue].ref)
     new WrappedValue(Value.mkList(list))
   }
 
@@ -439,7 +439,7 @@ class Flix {
       throw new IllegalArgumentException("Argument 'l' must be non-null.")
 
     import scala.collection.JavaConversions._
-    val list = l.toList.map(_.asInstanceOf[Value])
+    val list = l.toList.map(_.asInstanceOf[WrappedValue].ref)
     new WrappedValue(Value.mkList(list))
   }
 
@@ -450,7 +450,7 @@ class Flix {
     if (l == null)
       throw new IllegalArgumentException("Argument 'l' must be non-null.")
 
-    val list = l.toList.map(_.asInstanceOf[Value])
+    val list = l.toList.map(_.asInstanceOf[WrappedValue].ref)
     new WrappedValue(Value.mkList(list))
   }
 
@@ -462,8 +462,8 @@ class Flix {
       throw new IllegalArgumentException("Argument 's' must be non-null.")
 
     import scala.collection.JavaConversions._
-    val set = s.foldLeft(immutable.Set.empty[Value]) {
-      case (sacc, v) => sacc + v.asInstanceOf[Value]
+    val set = s.foldLeft(immutable.Set.empty[AnyRef]) {
+      case (sacc, v) => sacc + v.asInstanceOf[WrappedValue].ref
     }
     new WrappedValue(Value.Set(set))
   }
@@ -475,8 +475,8 @@ class Flix {
     if (s == null)
       throw new IllegalArgumentException("Argument 's' must be non-null.")
 
-    val set = s.foldLeft(immutable.Set.empty[Value]) {
-      case (sacc, v) => sacc + v.asInstanceOf[Value]
+    val set = s.foldLeft(immutable.Set.empty[AnyRef]) {
+      case (sacc, v) => sacc + v.asInstanceOf[WrappedValue].ref
     }
     new WrappedValue(Value.Set(set))
   }
@@ -489,8 +489,8 @@ class Flix {
       throw new IllegalArgumentException("Argument 'm' must be non-null.")
 
     import scala.collection.JavaConversions._
-    val map = m.foldLeft(immutable.Map.empty[Value, Value]) {
-      case (macc, (key, value)) => macc + (key.asInstanceOf[Value] -> value.asInstanceOf[Value])
+    val map = m.foldLeft(immutable.Map.empty[AnyRef, AnyRef]) {
+      case (macc, (key, value)) => macc + (key.asInstanceOf[WrappedValue].ref -> value.asInstanceOf[WrappedValue].ref)
     }
     new WrappedValue(Value.mkMap(map))
   }
@@ -502,8 +502,8 @@ class Flix {
     if (m == null)
       throw new IllegalArgumentException("Argument 'm' must be non-null.")
 
-    val map = m.foldLeft(immutable.Map.empty[Value, Value]) {
-      case (macc, (key, value)) => macc + (key.asInstanceOf[Value] -> value.asInstanceOf[Value])
+    val map = m.foldLeft(immutable.Map.empty[AnyRef, AnyRef]) {
+      case (macc, (key, value)) => macc + (key.asInstanceOf[WrappedValue].ref -> value.asInstanceOf[WrappedValue].ref)
     }
     new WrappedValue(Value.mkMap(map))
   }
@@ -517,5 +517,7 @@ class Flix {
 
     new WrappedValue(Value.Native(o))
   }
+
+  // TODO: Cleanup with use of getUnsafeRef?
 
 }

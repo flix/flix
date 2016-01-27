@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.runtime.Model
 
 import scala.collection.JavaConverters._
 
-protected class WrappedModel(val model: Model) extends IModel {
+final class WrappedModel(val model: Model) extends IModel {
 
   def getConstants: java.lang.Iterable[String] =
     model.constants.keys.map(_.fqn).asJava
