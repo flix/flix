@@ -93,11 +93,25 @@ protected final class WrappedValue(val ref: AnyRef) extends IValue {
     case o => o
   }
 
-  def getJavaOpt: java.util.Optional[IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
+  def getJavaOpt: java.util.Optional[IValue] = ref match {
+    case null => java.util.Optional.empty()
+    case o => java.util.Optional.of(new WrappedValue(o))
+  }
 
-  def getScalaOpt: scala.Option[IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
+  def getScalaOpt: scala.Option[IValue] = ref match {
+    case null => scala.None
+    case o => scala.Some(new WrappedValue(o))
+  }
 
-  def getJavaList: java.util.Set[IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
+  def getJavaList: java.util.Set[IValue] = ref match {
+    case o: Value.Set =>
+      val result = new java.util.HashSet[IValue]
+      for (e <- o.elms) {
+        result.add(new WrappedValue(e))
+      }
+      result
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
 
   def getScalaList: immutable.List[IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
 
