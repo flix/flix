@@ -41,13 +41,4 @@ trait IModel {
     */
   def getLattice(name: String): java.lang.Iterable[Array[IValue]]
 
-  /**
-    * Returns `true` if the given `fact` exists in the relation or lattice with the given `name`.
-    *
-    * @param name the fully qualified name of the relation or lattice.
-    * @param fact the fact as an array of values.
-    * @throws IllegalArgumentException if no relation or lattice exists with the given `name`.
-    */
-  def isFact(name: String, fact: Array[IValue]): Boolean
-
 }

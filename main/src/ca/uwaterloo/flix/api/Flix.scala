@@ -212,7 +212,7 @@ class Flix {
     if (types == null)
       throw new IllegalArgumentException("Argument 'types' must be non-null.")
 
-    val elms = types.toList.map(_.asInstanceOf[Type])
+    val elms = types.toList.map(_.asInstanceOf[WrappedType].tpe)
     new WrappedType(Type.Tuple(elms))
   }
 
@@ -223,7 +223,7 @@ class Flix {
     if (tpe == null)
       throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
 
-    new WrappedType(Type.Opt(tpe.asInstanceOf[Type]))
+    new WrappedType(Type.Opt(tpe.asInstanceOf[WrappedType].tpe))
   }
 
   /**
@@ -233,7 +233,7 @@ class Flix {
     if (tpe == null)
       throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
 
-    new WrappedType(Type.Lst(tpe.asInstanceOf[Type]))
+    new WrappedType(Type.Lst(tpe.asInstanceOf[WrappedType].tpe))
   }
 
   /**
@@ -243,7 +243,7 @@ class Flix {
     if (tpe == null)
       throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
 
-    new WrappedType(Type.Set(tpe.asInstanceOf[Type]))
+    new WrappedType(Type.Set(tpe.asInstanceOf[WrappedType].tpe))
   }
 
   /**
@@ -255,7 +255,7 @@ class Flix {
     if (value == null)
       throw new IllegalArgumentException("Argument 'value' must be non-null.")
 
-    new WrappedType(Type.Map(key.asInstanceOf[Type], value.asInstanceOf[Type]))
+    new WrappedType(Type.Map(key.asInstanceOf[WrappedType].tpe, value.asInstanceOf[WrappedType].tpe))
   }
 
   /**
@@ -277,8 +277,8 @@ class Flix {
     if (returnType == null)
       throw new IllegalArgumentException("Argument 'returnType' must be non-null.")
 
-    val args = arguments.toList.map(_.asInstanceOf[Type])
-    val retTpe = returnType.asInstanceOf[Type]
+    val args = arguments.toList.map(_.asInstanceOf[WrappedType].tpe)
+    val retTpe = returnType.asInstanceOf[WrappedType].tpe
     new WrappedType(Type.Lambda(args, retTpe))
   }
 
@@ -333,17 +333,17 @@ class Flix {
   /**
     * Returns the int32 value corresponding to the given int.
     */
-  def mkInt32(i: Int): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")  // TODO
+  def mkInt32(i: Int): IValue = new WrappedValue(new java.lang.Integer(i))
 
   /**
     * Returns the int64 value corresponding to the given int.
     */
-  def mkInt64(i: Int): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")  // TODO
+  def mkInt64(i: Int): IValue = new WrappedValue(new java.lang.Long(i))
 
   /**
     * Returns the int64 value corresponding to the given long.
     */
-  def mkInt64(l: Long): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")  // TODO
+  def mkInt64(l: Long): IValue = new WrappedValue(new java.lang.Long(l))
 
   /**
     * Returns the str value corresponding to the given string.

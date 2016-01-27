@@ -28,16 +28,21 @@ protected class WrappedModel(private val model: Model) extends IModel {
     val rname = Name.Resolved.mk(name)
     model.relations.get(rname) match {
       case None => throw new IllegalArgumentException(s"Unknown relation: '$name'.")
-      case Some(iterable) => iterable.map(row => row.map(v => new WrappedValue(v): IValue).toArray).asJava
+      case Some(iterable) => iterable.map {
+        case row => row.map(v => new WrappedValue(v): IValue).toArray
+      }.asJava
     }
   }
 
   def getLattice(name: String): java.lang.Iterable[Array[IValue]] = {
-    throw new UnsupportedOperationException("Not Implemented Yet. Sorry.") // TODO
-  }
-
-  def isFact(name: String, fact: Array[IValue]): Boolean = {
-    throw new UnsupportedOperationException("Not Implemented Yet. Sorry.") // TODO
+    //    val rname = Name.Resolved.mk(name)
+    //    model.lattices.get(rname) match {
+    //      case None => throw new IllegalArgumentException(s"Unknown relation: '$name'.")
+    //      case Some(iterable) => iterable.map {
+    //        case (keys, values) =>
+    //      }
+    //    }
+    ???
   }
 
 }

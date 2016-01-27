@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.Type
 
-protected final class WrappedType(private val tpe: Type) extends IType {
+protected final class WrappedType(val tpe: Type) extends IType {
 
   def isUnit: Boolean =
     tpe == Type.Unit
