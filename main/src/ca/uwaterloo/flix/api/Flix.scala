@@ -317,8 +317,6 @@ class Flix {
 
   /**
     * Returns the int8 value corresponding to the given int.
-    *
-    * @throws IllegalArgumentException if the int is out of bounds.
     */
   def mkInt8(i: Int): IValue = new WrappedValue(new java.lang.Byte(i.asInstanceOf[Byte]))
 
@@ -329,8 +327,6 @@ class Flix {
 
   /**
     * Returns the int16 value corresponding to the given int.
-    *
-    * @throws IllegalArgumentException if the int is out of bounds.
     */
   def mkInt16(i: Int): IValue = new WrappedValue(new java.lang.Short(i.asInstanceOf[Short]))
 
