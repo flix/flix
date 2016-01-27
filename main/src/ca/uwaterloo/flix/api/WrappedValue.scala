@@ -7,7 +7,7 @@ import ca.uwaterloo.flix.runtime.Value
 
 import scala.collection.immutable
 
-protected final class WrappedValue(private val value: Value) extends IValue {
+protected final class WrappedValue(private val value: AnyRef) extends IValue {
 
   def isUnit: Boolean = value match {
     case Value.Unit => true
@@ -40,11 +40,11 @@ protected final class WrappedValue(private val value: Value) extends IValue {
     case _ => false
   }
 
-  def getChar: Char = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def getChar: Char = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
 
-  def getInt8: Byte = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def getInt8: Byte = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")  // TODO
 
-  def getInt16: Short = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def getInt16: Short = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")  // TODO
 
   def getInt32: Int = value match {
     case v: Value.Int => v.i
@@ -84,13 +84,13 @@ protected final class WrappedValue(private val value: Value) extends IValue {
     case _ => throw new UnsupportedOperationException(s"Unexpected value: $value")
   }
 
-  def getJavaOpt: java.util.Optional[IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def getJavaOpt: java.util.Optional[IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")  // TODO
 
-  def getScalaOpt: scala.Option[IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def getScalaOpt: scala.Option[IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
 
-  def getJavaList: java.util.Set[IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def getJavaList: java.util.Set[IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")  // TODO
 
-  def getScalaList: immutable.List[IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def getScalaList: immutable.List[IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")  // TODO
 
   def getJavaSet: java.util.Set[IValue] = value match {
     case v: Value.Set => {
@@ -108,9 +108,9 @@ protected final class WrappedValue(private val value: Value) extends IValue {
     case _ => throw new UnsupportedOperationException(s"Unexpected value: $value")
   }
 
-  def getJavaMap: java.util.Map[IValue, IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def getJavaMap: java.util.Map[IValue, IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
 
-  def getScalaMap: immutable.Map[IValue, IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def getScalaMap: immutable.Map[IValue, IValue] = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")  // TODO
 
   override def equals(other: Any): Boolean = other match {
     case that: WrappedValue => value == that.value

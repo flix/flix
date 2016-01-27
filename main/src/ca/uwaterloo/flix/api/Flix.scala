@@ -209,7 +209,9 @@ class Flix {
     * Returns the tuple type of the given `types`.
     */
   def mkTupleType(types: Array[IType]): IType = {
-    if (types == null) throw new IllegalArgumentException("Argument 'types' must be non-null.")
+    if (types == null)
+      throw new IllegalArgumentException("Argument 'types' must be non-null.")
+
     val elms = types.toList.map(_.asInstanceOf[Type])
     new WrappedType(Type.Tuple(elms))
   }
@@ -218,7 +220,9 @@ class Flix {
     * Returns the opt type parameterized by the given type `tpe`.
     */
   def mkOptType(tpe: IType): IType = {
-    if (tpe == null) throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
+    if (tpe == null)
+      throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
+
     new WrappedType(Type.Opt(tpe.asInstanceOf[Type]))
   }
 
@@ -226,7 +230,9 @@ class Flix {
     * Returns the list type parameterized by the given type `tpe`.
     */
   def mkListType(tpe: IType): IType = {
-    if (tpe == null) throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
+    if (tpe == null)
+      throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
+
     new WrappedType(Type.Lst(tpe.asInstanceOf[Type]))
   }
 
@@ -234,7 +240,9 @@ class Flix {
     * Returns the set type parameterized by the given type `tpe`.
     */
   def mkSetType(tpe: IType): IType = {
-    if (tpe == null) throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
+    if (tpe == null)
+      throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
+
     new WrappedType(Type.Set(tpe.asInstanceOf[Type]))
   }
 
@@ -242,8 +250,11 @@ class Flix {
     * Returns the set type parameterized by the given `key` and `value` types.
     */
   def mkMapType(key: IType, value: IType): IType = {
-    if (key == null) throw new IllegalArgumentException("Argument 'key' must be non-null.")
-    if (value == null) throw new IllegalArgumentException("Argument 'value' must be non-null.")
+    if (key == null)
+      throw new IllegalArgumentException("Argument 'key' must be non-null.")
+    if (value == null)
+      throw new IllegalArgumentException("Argument 'value' must be non-null.")
+
     new WrappedType(Type.Map(key.asInstanceOf[Type], value.asInstanceOf[Type]))
   }
 
@@ -251,7 +262,9 @@ class Flix {
     * Returns the native type for the given fully qualified `name`.
     */
   def mkNative(name: String): IType = {
-    if (name == null) throw new IllegalArgumentException("Argument 'name' must be non-null.")
+    if (name == null)
+      throw new IllegalArgumentException("Argument 'name' must be non-null.")
+
     new WrappedType(Type.Native(name))
   }
 
@@ -259,8 +272,11 @@ class Flix {
     * Returns the function type for the function with the given argument types and return type.
     */
   def mkFunctionType(arguments: Array[IType], returnType: IType): IType = {
-    if (arguments == null) throw new IllegalArgumentException("Argument 'arguments' must be non-null.")
-    if (returnType == null) throw new IllegalArgumentException("Argument 'returnType' must be non-null.")
+    if (arguments == null)
+      throw new IllegalArgumentException("Argument 'arguments' must be non-null.")
+    if (returnType == null)
+      throw new IllegalArgumentException("Argument 'returnType' must be non-null.")
+
     val args = arguments.toList.map(_.asInstanceOf[Type])
     val retTpe = returnType.asInstanceOf[Type]
     new WrappedType(Type.Lambda(args, retTpe))
@@ -292,46 +308,46 @@ class Flix {
   /**
     * Returns the char value corresponding to the given character.
     */
-  def mkChar(c: Char): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def mkChar(c: Char): IValue = new WrappedValue(new java.lang.Character(c))
 
   /**
     * Returns the int8 value corresponding to the given byte.
     */
-  def mkInt8(b: Byte): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def mkInt8(b: Byte): IValue = new WrappedValue(new java.lang.Byte(b))
 
   /**
     * Returns the int8 value corresponding to the given int.
     *
     * @throws IllegalArgumentException if the int is out of bounds.
     */
-  def mkInt8(i: Int): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def mkInt8(i: Int): IValue = new WrappedValue(new java.lang.Byte(i.asInstanceOf[Byte]))
 
   /**
     * Returns the int16 value corresponding to the given short.
     */
-  def mkInt16(s: Short): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def mkInt16(s: Short): IValue = new WrappedValue(new java.lang.Short(s))
 
   /**
     * Returns the int16 value corresponding to the given int.
     *
     * @throws IllegalArgumentException if the int is out of bounds.
     */
-  def mkInt16(i: Int): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def mkInt16(i: Int): IValue = new WrappedValue(new java.lang.Short(i.asInstanceOf[Short]))
 
   /**
     * Returns the int32 value corresponding to the given int.
     */
-  def mkInt32(i: Int): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def mkInt32(i: Int): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")  // TODO
 
   /**
     * Returns the int64 value corresponding to the given int.
     */
-  def mkInt64(i: Int): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def mkInt64(i: Int): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")  // TODO
 
   /**
     * Returns the int64 value corresponding to the given long.
     */
-  def mkInt64(l: Long): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+  def mkInt64(l: Long): IValue = throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")  // TODO
 
   /**
     * Returns the str value corresponding to the given string.
@@ -339,6 +355,7 @@ class Flix {
   def mkStr(s: String): IValue = {
     if (s == null)
       throw new IllegalArgumentException("Argument 's' must be non-null.")
+
     new WrappedValue(Value.mkStr(s))
   }
 
@@ -481,5 +498,7 @@ class Flix {
 
     new WrappedValue(Value.Native(o))
   }
+
+  // TODO: Check every cast !!!
 
 }
