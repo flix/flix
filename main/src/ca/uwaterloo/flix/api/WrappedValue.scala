@@ -144,6 +144,8 @@ final class WrappedValue(val ref: AnyRef) extends IValue {
     case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
   }
 
+  def getUnsafeRef: AnyRef = ref
+
   override def equals(other: Any): Boolean = other match {
     case that: WrappedValue => ref == that.ref
     case _ => false

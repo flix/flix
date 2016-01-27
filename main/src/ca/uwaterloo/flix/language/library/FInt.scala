@@ -32,12 +32,12 @@ object FInt {
   sealed trait IntOperator extends LibraryOperator {
     def eval(args: Array[AnyRef]): AnyRef = this match {
       // Int Constants.
-      case `minValue` => Value.mkInt(minValue())
-      case `maxValue` => Value.mkInt(maxValue())
+      case `minValue` => Value.mkInt32(minValue())
+      case `maxValue` => Value.mkInt32(maxValue())
       // Int Operations.
-      case `abs` => Value.mkInt(abs(Value.cast2int32(args(0))))
-      case `min` => Value.mkInt(min(Value.cast2int32(args(0)), Value.cast2int32(args(1))))
-      case `max` => Value.mkInt(min(Value.cast2int32(args(0)), Value.cast2int32(args(1))))
+      case `abs` => Value.mkInt32(abs(Value.cast2int32(args(0))))
+      case `min` => Value.mkInt32(min(Value.cast2int32(args(0)), Value.cast2int32(args(1))))
+      case `max` => Value.mkInt32(min(Value.cast2int32(args(0)), Value.cast2int32(args(1))))
       // Int Conversions.
       case `toChar` => ???
     }

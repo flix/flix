@@ -205,4 +205,15 @@ trait IValue {
     * @throws UnsupportedOperationException if `this` value is not of map type.
     */
   def getScalaMap: immutable.Map[IValue, IValue]
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Unsafe                                                                  //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Unsafely returns the Flix representation of `this` value.
+    *
+    * Warning: This function should not be used.
+    */
+  def getUnsafeRef: AnyRef
+
 }

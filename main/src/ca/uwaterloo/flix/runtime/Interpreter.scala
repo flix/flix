@@ -26,7 +26,7 @@ object Interpreter {
    * Assumes all input has been type-checked.
    */
   def eval(expr: Expression, root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef = expr.tpe match {
-    case Type.Int => Value.mkInt(evalInt(expr, root, env))
+    case Type.Int => Value.mkInt32(evalInt(expr, root, env))
     case Type.Bool => if (evalBool(expr, root, env)) Value.True else Value.False
     case Type.Str => evalGeneral(expr, root, env)
     case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
@@ -245,9 +245,9 @@ object Interpreter {
     val v = eval(e, root, env)
     op match {
       case UnaryOperator.LogicalNot => if (Value.cast2bool(v)) Value.False else Value.True
-      case UnaryOperator.Plus => Value.mkInt(+Value.cast2int32(v))
-      case UnaryOperator.Minus => Value.mkInt(-Value.cast2int32(v))
-      case UnaryOperator.BitwiseNegate => Value.mkInt(~Value.cast2int32(v))
+      case UnaryOperator.Plus => Value.mkInt32(+Value.cast2int32(v))
+      case UnaryOperator.Minus => Value.mkInt32(-Value.cast2int32(v))
+      case UnaryOperator.BitwiseNegate => Value.mkInt32(~Value.cast2int32(v))
     }
   }
 
@@ -255,11 +255,11 @@ object Interpreter {
     val v1 = eval(e1, root, env)
     val v2 = eval(e2, root, env)
     op match {
-      case BinaryOperator.Plus => Value.mkInt(Value.cast2int32(v1) + Value.cast2int32(v2))
-      case BinaryOperator.Minus => Value.mkInt(Value.cast2int32(v1) - Value.cast2int32(v2))
-      case BinaryOperator.Times => Value.mkInt(Value.cast2int32(v1) * Value.cast2int32(v2))
-      case BinaryOperator.Divide => Value.mkInt(Value.cast2int32(v1) / Value.cast2int32(v2))
-      case BinaryOperator.Modulo => Value.mkInt(Value.cast2int32(v1) % Value.cast2int32(v2))
+      case BinaryOperator.Plus => Value.mkInt32(Value.cast2int32(v1) + Value.cast2int32(v2))
+      case BinaryOperator.Minus => Value.mkInt32(Value.cast2int32(v1) - Value.cast2int32(v2))
+      case BinaryOperator.Times => Value.mkInt32(Value.cast2int32(v1) * Value.cast2int32(v2))
+      case BinaryOperator.Divide => Value.mkInt32(Value.cast2int32(v1) / Value.cast2int32(v2))
+      case BinaryOperator.Modulo => Value.mkInt32(Value.cast2int32(v1) % Value.cast2int32(v2))
       case BinaryOperator.Less => if (Value.cast2int32(v1) < Value.cast2int32(v2)) Value.True else Value.False
       case BinaryOperator.LessEqual => if (Value.cast2int32(v1) <= Value.cast2int32(v2)) Value.True else Value.False
       case BinaryOperator.Greater => if (Value.cast2int32(v1) > Value.cast2int32(v2)) Value.True else Value.False
@@ -268,11 +268,11 @@ object Interpreter {
       case BinaryOperator.NotEqual => if (v1 != v2) Value.True else Value.False
       case BinaryOperator.LogicalAnd => if (Value.cast2bool(v1) && Value.cast2bool(v2)) Value.True else Value.False
       case BinaryOperator.LogicalOr => if (Value.cast2bool(v1) || Value.cast2bool(v2)) Value.True else Value.False
-      case BinaryOperator.BitwiseAnd => Value.mkInt(Value.cast2int32(v1) & Value.cast2int32(v2))
-      case BinaryOperator.BitwiseOr => Value.mkInt(Value.cast2int32(v1) | Value.cast2int32(v2))
-      case BinaryOperator.BitwiseXor => Value.mkInt(Value.cast2int32(v1) ^ Value.cast2int32(v2))
-      case BinaryOperator.BitwiseLeftShift => Value.mkInt(Value.cast2int32(v1) << Value.cast2int32(v2))
-      case BinaryOperator.BitwiseRightShift => Value.mkInt(Value.cast2int32(v1) >> Value.cast2int32(v2))
+      case BinaryOperator.BitwiseAnd => Value.mkInt32(Value.cast2int32(v1) & Value.cast2int32(v2))
+      case BinaryOperator.BitwiseOr => Value.mkInt32(Value.cast2int32(v1) | Value.cast2int32(v2))
+      case BinaryOperator.BitwiseXor => Value.mkInt32(Value.cast2int32(v1) ^ Value.cast2int32(v2))
+      case BinaryOperator.BitwiseLeftShift => Value.mkInt32(Value.cast2int32(v1) << Value.cast2int32(v2))
+      case BinaryOperator.BitwiseRightShift => Value.mkInt32(Value.cast2int32(v1) >> Value.cast2int32(v2))
     }
   }
 
@@ -285,7 +285,7 @@ object Interpreter {
   def evalLit(lit: Literal): AnyRef = lit match {
     case Literal.Unit(_) => Value.Unit
     case Literal.Bool(b, _) => if (b) Value.True else Value.False
-    case Literal.Int(i, _) => Value.mkInt(i)
+    case Literal.Int(i, _) => Value.mkInt32(i)
     case Literal.Str(s, _) => Value.mkStr(s)
     case Literal.Tag(name, ident, innerLit, _, _) => Value.mkTag(name, ident.name, evalLit(innerLit))
     case tpl: Literal.Tuple =>

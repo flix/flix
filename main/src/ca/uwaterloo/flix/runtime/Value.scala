@@ -1,6 +1,5 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.WrappedValue
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.runtime.Interpreter.InternalRuntimeError
 import scala.collection.mutable
@@ -8,6 +7,22 @@ import scala.collection.mutable
 import java.util
 
 object Value {
+  def mkInt64(i: scala.Int): AnyRef = ???
+
+  def mkInt64(i: Long): AnyRef = ???
+
+
+  def mkChar(c: Char): AnyRef = ???
+
+  def mkInt8(b: Byte): AnyRef = ???
+
+  // TODO: Cleanup Int name.
+  def mkInt8(b: scala.Int): AnyRef = ???
+
+
+  def mkInt16(s: Short): AnyRef = ???
+
+  def mkInt16(i: scala.Int): AnyRef = ???
 
   // TODO: Doc and cleanup.
   def pretty(o: AnyRef): String = o match {
@@ -115,7 +130,7 @@ object Value {
   // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
   private val intCache = mutable.HashMap[scala.Int, Value.Int]()
 
-  def mkInt(i: scala.Int): AnyRef = if (intCache.contains(i)) {
+  def mkInt32(i: scala.Int): AnyRef = if (intCache.contains(i)) {
     intCache(i)
   } else {
     val ret = new Value.Int(i)

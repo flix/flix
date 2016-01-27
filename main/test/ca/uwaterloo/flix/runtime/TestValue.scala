@@ -23,11 +23,11 @@ class TestValue extends FunSuite {
   }
 
   test("Value.Int equality") {
-    val i1 = Value.mkInt(0)
-    val i2 = Value.mkInt(-1337)
-    val i3 = Value.mkInt(0)
-    val i4 = Value.mkInt(-1337)
-    val i5 = Value.mkInt(0)
+    val i1 = Value.mkInt32(0)
+    val i2 = Value.mkInt32(-1337)
+    val i3 = Value.mkInt32(0)
+    val i4 = Value.mkInt32(-1337)
+    val i5 = Value.mkInt32(0)
 
     assert(i1 == i1)
     assert(i1 != i2)
@@ -42,7 +42,7 @@ class TestValue extends FunSuite {
   }
 
   test("Value.Int pattern matching") {
-    val v = Value.mkInt(123456789)
+    val v = Value.mkInt32(123456789)
 
     val result = v match {
       case v: Value.Int => s"${v.i}"
@@ -85,16 +85,16 @@ class TestValue extends FunSuite {
   test("Value.Tag equality") {
     val name1 = Name.Resolved.mk(List("foo", "bar"))
     val name2 = Name.Resolved.mk(List("abc", "def"))
-    val t1 = Value.mkTag(name1, "aaa", Value.mkInt(42))
-    val t2 = Value.mkTag(name1, "aaa", Value.mkInt(10))
-    val t3 = Value.mkTag(name1, "zzz", Value.mkInt(42))
-    val t4 = Value.mkTag(name1, "zzz", Value.mkInt(10))
-    val t5 = Value.mkTag(name2, "aaa", Value.mkInt(42))
-    val t6 = Value.mkTag(name2, "aaa", Value.mkInt(10))
-    val t7 = Value.mkTag(name2, "zzz", Value.mkInt(42))
-    val t8 = Value.mkTag(name2, "zzz", Value.mkInt(10))
-    val t9 = Value.mkTag(name1, "aaa", Value.mkInt(42))
-    val t10 = Value.mkTag(name1, "aaa", Value.mkInt(42))
+    val t1 = Value.mkTag(name1, "aaa", Value.mkInt32(42))
+    val t2 = Value.mkTag(name1, "aaa", Value.mkInt32(10))
+    val t3 = Value.mkTag(name1, "zzz", Value.mkInt32(42))
+    val t4 = Value.mkTag(name1, "zzz", Value.mkInt32(10))
+    val t5 = Value.mkTag(name2, "aaa", Value.mkInt32(42))
+    val t6 = Value.mkTag(name2, "aaa", Value.mkInt32(10))
+    val t7 = Value.mkTag(name2, "zzz", Value.mkInt32(42))
+    val t8 = Value.mkTag(name2, "zzz", Value.mkInt32(10))
+    val t9 = Value.mkTag(name1, "aaa", Value.mkInt32(42))
+    val t10 = Value.mkTag(name1, "aaa", Value.mkInt32(42))
 
     assert(t1 == t1)
     assert(t1 == t9)
@@ -135,15 +135,15 @@ class TestValue extends FunSuite {
     val set: mutable.Set[Value.Tag] = mutable.Set()
     val name1 = Name.Resolved.mk(List("foo", "bar"))
     val name2 = Name.Resolved.mk(List("abc", "def"))
-    val t1 = Value.mkTag(name1, "aaa", Value.mkInt(42))
-    val t2 = Value.mkTag(name1, "aaa", Value.mkInt(10))
-    val t3 = Value.mkTag(name1, "zzz", Value.mkInt(42))
-    val t4 = Value.mkTag(name1, "zzz", Value.mkInt(10))
-    val t5 = Value.mkTag(name2, "aaa", Value.mkInt(42))
-    val t6 = Value.mkTag(name2, "aaa", Value.mkInt(10))
-    val t7 = Value.mkTag(name2, "zzz", Value.mkInt(42))
-    val t8 = Value.mkTag(name2, "zzz", Value.mkInt(10))
-    val t9 = Value.mkTag(name1, "aaa", Value.mkInt(42))
+    val t1 = Value.mkTag(name1, "aaa", Value.mkInt32(42))
+    val t2 = Value.mkTag(name1, "aaa", Value.mkInt32(10))
+    val t3 = Value.mkTag(name1, "zzz", Value.mkInt32(42))
+    val t4 = Value.mkTag(name1, "zzz", Value.mkInt32(10))
+    val t5 = Value.mkTag(name2, "aaa", Value.mkInt32(42))
+    val t6 = Value.mkTag(name2, "aaa", Value.mkInt32(10))
+    val t7 = Value.mkTag(name2, "zzz", Value.mkInt32(42))
+    val t8 = Value.mkTag(name2, "zzz", Value.mkInt32(10))
+    val t9 = Value.mkTag(name1, "aaa", Value.mkInt32(42))
 
     set += t1
     assert(set.contains(t1))
@@ -166,7 +166,7 @@ class TestValue extends FunSuite {
   }
 
   test("Value.Tag pattern matching") {
-    val v = Value.mkTag(Name.Resolved.mk(List("foo", "bar")), "aaa", Value.mkInt(42))
+    val v = Value.mkTag(Name.Resolved.mk(List("foo", "bar")), "aaa", Value.mkInt32(42))
 
     val r1 = v match {
       case v: Value.Tag => v.enum
@@ -184,7 +184,7 @@ class TestValue extends FunSuite {
       case v: Value.Tag => v.value
       case _ => Value.Unit
     }
-    assert(r3 == Value.mkInt(42))
+    assert(r3 == Value.mkInt32(42))
   }
 
 }
