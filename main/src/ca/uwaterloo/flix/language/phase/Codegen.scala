@@ -243,8 +243,8 @@ object Codegen {
       visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "<init>", "([Lca/uwaterloo/flix/runtime/Value;)V", false)
 
     case Expression.Set(elms, tpe, loc) => ???
-    case Expression.Error(tpe, loc) => ???
-    case Expression.MatchError(tpe, loc) => ???
+    case Expression.Error(_, loc) => compileThrow(context, visitor)(s"Runtime error at ${loc.format}")
+    case Expression.MatchError(_, loc) => compileThrow(context, visitor)(s"Match error at ${loc.format}")
   }
 
   /*
@@ -679,4 +679,11 @@ object Codegen {
     }
   }
 
+  private def compileThrow(context: Context, visitor: MethodVisitor)(message: String): Unit = {
+    visitor.visitTypeInsn(NEW, "java/lang/RuntimeException")
+    visitor.visitInsn(DUP)
+    visitor.visitLdcInsn(message)
+    visitor.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V", false)
+    visitor.visitInsn(ATHROW)
+  }
 }

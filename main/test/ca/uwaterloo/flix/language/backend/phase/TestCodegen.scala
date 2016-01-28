@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.backend.phase
 
+import java.lang.reflect.InvocationTargetException
 import java.nio.file.{Paths, Files}
 
 import ca.uwaterloo.flix.language.ast._
@@ -52,7 +53,14 @@ class TestCodegen extends FunSuite {
     def call(name: Name.Resolved, tpes: List[Class[_]] = List(), args: List[Object] = List()): Any = {
       val decorated = Codegen.decorate(name)
       val method = clazz.getMethod(decorated, tpes: _*)
-      method.invoke(null, args: _*)
+
+      try {
+        method.invoke(null, args: _*)
+      } catch {
+        case e: InvocationTargetException =>
+          // Rethrow the real exception
+          throw e.getTargetException
+      }
     }
   }
 
@@ -4440,8 +4448,7 @@ class TestCodegen extends FunSuite {
     assertResult(false)(result)
   }
 
-  // TODO: Tests for short-circut evaluation, but Error is not implemented yet
-  ignore("Codegen - Binary.And05") {
+  test("Codegen - Binary.And05") {
     val definition = Function(name, args = List(),
       body = Binary(BinaryOperator.LogicalAnd,
         False,
@@ -4455,7 +4462,7 @@ class TestCodegen extends FunSuite {
     assertResult(false)(result)
   }
 
-  ignore("Codegen - Binary.And06") {
+  test("Codegen - Binary.And06") {
     val definition = Function(name, args = List(),
       body = Binary(BinaryOperator.LogicalAnd,
         True,
@@ -4464,9 +4471,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    intercept[RuntimeException] {
-      code.call(name)
-    }
+    intercept[RuntimeException] { code.call(name) }
   }
 
   test("Codegen - Binary.Or01") {
@@ -4525,8 +4530,7 @@ class TestCodegen extends FunSuite {
     assertResult(true)(result)
   }
 
-  // TODO: Tests for short-circut evaluation, but Error is not implemented yet
-  ignore("Codegen - Binary.Or05") {
+  test("Codegen - Binary.Or05") {
     val definition = Function(name, args = List(),
       body = Binary(BinaryOperator.LogicalOr,
         True,
@@ -4540,7 +4544,7 @@ class TestCodegen extends FunSuite {
     assertResult(true)(result)
   }
 
-  ignore("Codegen - Binary.Or06") {
+  test("Codegen - Binary.Or06") {
     val definition = Function(name, args = List(),
       body = Binary(BinaryOperator.LogicalOr,
         False,
@@ -4549,9 +4553,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    intercept[RuntimeException] {
-      code.call(name)
-    }
+    intercept[RuntimeException] { code.call(name) }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -6256,4 +6258,27 @@ class TestCodegen extends FunSuite {
 
     assertResult(123)(result)
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Error and MatchError                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Codegen - Error01") {
+    val definition = Function(name, args = List(),
+      body = Error(Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
+
+    val code = new CompiledCode(List(definition))
+    intercept[RuntimeException] { code.call(name) }
+  }
+
+  test("Codegen - MatchError01") {
+    val definition = Function(name, args = List(),
+      body = MatchError(Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
+
+    val code = new CompiledCode(List(definition))
+    intercept[RuntimeException] { code.call(name) }
+  }
+
 }

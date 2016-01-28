@@ -438,8 +438,20 @@ object SimplifiedAst {
                    tpe: Type.Set,
                    loc: SourceLocation) extends SimplifiedAst.Expression
 
+    /**
+      * A typed AST node representing an error.
+      *
+      * @param tpe the type of the error.
+      * @param loc the source location of the error.
+      */
     case class Error(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
+    /**
+      * A typed AST node representing a match error.
+      *
+      * @param tpe the type of the error.
+      * @param loc the source location of the error.
+      */
     case class MatchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
   }
