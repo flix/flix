@@ -181,7 +181,7 @@ object Value {
     */
   final case class HookClosure(inv: Invokable)
 
-  // TODO: introduce make function and make class private?
+  // TODO: introduce make function and make class private
 
   /////////////////////////////////////////////////////////////////////////////
   // Strings                                                                 //
@@ -270,8 +270,8 @@ object Value {
     */
   @inline
   def cast2tuple(ref: AnyRef): Array[AnyRef] = ref match {
-    // case v: Value.Tuple => v.elms.map(e => new WrappedValue(e))
-    //case o: Array[AnyRef] => o.map(e => new WrappedValue(e))
+    case o: Array[AnyRef] => o
+    case o: Tuple => o.elms // TODO: remove
     case _ => throw new InternalRuntimeError(s"Unexpected non-tuple value: '$ref'.")
   }
 
@@ -295,7 +295,6 @@ object Value {
     */
   def mkList(ref: AnyRef): AnyRef = ref match {
     case o: immutable.List[_] => o
-    // TODO other cases
     case _ => throw new InternalRuntimeError(s"Unexpected non-list value: '$ref'.")
   }
 
@@ -305,7 +304,6 @@ object Value {
   @inline
   def mkSet(ref: AnyRef): AnyRef = ref match {
     case o: immutable.Set[_] => o
-    case o: java.lang.Iterable[_] => ??? // TODO
     case _ => throw new InternalRuntimeError(s"Unexpected non-set value: '$ref'.")
   }
 
@@ -315,7 +313,6 @@ object Value {
   @inline
   def mkMap(ref: AnyRef): AnyRef = ref match {
     case o: immutable.Map[_, _] => o
-    case o: java.lang.Iterable[_] => ??? // TODO
     case _ => throw new InternalRuntimeError(s"Unexpected non-map value: '$ref'.")
   }
 
