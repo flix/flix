@@ -36,7 +36,7 @@ object SimplifiedAst {
                      loc: SourceLocation) extends SimplifiedAst.Definition
 
     /**
-      * An AST node that represents the definition of a function.
+      * A typed AST node that represents the definition of a function.
       *
       * @param name the resolved name of the function.
       * @param args the arguments of the function, for debugging purposes.
@@ -94,33 +94,23 @@ object SimplifiedAst {
 
   sealed trait Expression extends SimplifiedAst {
     def tpe: Type
-
     def loc: SourceLocation
   }
 
   sealed trait LoadExpression extends Expression {
     val e: SimplifiedAst.Expression
-
     val offset: scala.Int
-
     val mask: scala.Int
-
     final val loc = SourceLocation.Unknown
   }
 
   sealed trait StoreExpression extends Expression {
     val e: SimplifiedAst.Expression
-
     val offset: scala.Int
-
     val v: SimplifiedAst.Expression
-
     val mask: Long
-
     final val targetMask = ~(mask << offset)
-
     final val tpe = Type.Int64
-
     final val loc = SourceLocation.Unknown
   }
 
@@ -128,50 +118,42 @@ object SimplifiedAst {
 
     case object Unit extends SimplifiedAst.Expression {
       final val tpe = Type.Unit
-
       final val loc = SourceLocation.Unknown
     }
 
     case object True extends SimplifiedAst.Expression {
       final val tpe = Type.Bool
-
       final val loc = SourceLocation.Unknown
     }
 
     case object False extends SimplifiedAst.Expression {
       final val tpe = Type.Bool
-
       final val loc = SourceLocation.Unknown
     }
 
-    // TODO: Eventually we'll want to use the specialized ints below, so we'll remove this later
+    // TODO: Eventually we'll want to use the specialized ints below, and this will alias to Int32
     case class Int(lit: scala.Int) extends SimplifiedAst.Expression {
       final val tpe = Type.Int
-
       final val loc = SourceLocation.Unknown
     }
 
     case class Int8(lit: scala.Byte) extends SimplifiedAst.Expression {
       final val tpe = Type.Int8
-
       final val loc = SourceLocation.Unknown
     }
 
     case class Int16(lit: scala.Short) extends SimplifiedAst.Expression {
       final val tpe = Type.Int16
-
       final val loc = SourceLocation.Unknown
     }
 
     case class Int32(lit: scala.Int) extends SimplifiedAst.Expression {
       final val tpe = Type.Int32
-
       final val loc = SourceLocation.Unknown
     }
 
     case class Int64(lit: scala.Long) extends SimplifiedAst.Expression {
       final val tpe = Type.Int64
-
       final val loc = SourceLocation.Unknown
     }
 
@@ -458,7 +440,6 @@ object SimplifiedAst {
 
   sealed trait Predicate extends SimplifiedAst {
     def tpe: Type
-
     def loc: SourceLocation
   }
 
@@ -507,7 +488,6 @@ object SimplifiedAst {
 
     sealed trait Head extends SimplifiedAst {
       def tpe: Type
-
       def loc: SourceLocation
     }
 
@@ -528,7 +508,6 @@ object SimplifiedAst {
 
     sealed trait Body extends SimplifiedAst {
       def tpe: Type
-
       def loc: SourceLocation
     }
 

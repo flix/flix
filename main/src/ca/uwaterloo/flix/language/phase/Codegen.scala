@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Definition, Expression, LoadExpression, StoreExpression}
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.runtime.Value
 import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.util.CheckClassAdapter
@@ -11,6 +12,8 @@ import org.objectweb.asm.{ClassVisitor, ClassWriter, Label, MethodVisitor}
 // TODO: For now, we hardcode the type descriptors for all the Value objects
 // There's no nice way of using reflection to get the type of a companion object.
 // Later, we'll rewrite Value in a Java-like style so reflection is easier
+
+// TODO: Debugging information
 
 object Codegen {
 
@@ -27,24 +30,21 @@ object Codegen {
   /*
    * Returns the internal name of the JVM type that `tpe` maps to.
    */
-  def descriptor(tpe: Type): String = {
-    import ca.uwaterloo.flix.runtime.Value
-    tpe match {
-      case Type.Unit => "Lca/uwaterloo/flix/runtime/Value$Unit$;"
-      case Type.Bool => asm.Type.BOOLEAN_TYPE.getDescriptor
-      case Type.Int8 => asm.Type.BYTE_TYPE.getDescriptor
-      case Type.Int16 => asm.Type.SHORT_TYPE.getDescriptor
-      case Type.Int32 | Type.Int => asm.Type.INT_TYPE.getDescriptor
-      case Type.Int64 => asm.Type.LONG_TYPE.getDescriptor
-      case Type.Str => asm.Type.getDescriptor(classOf[java.lang.String])
-      case Type.Tag(_, _, _) | Type.Enum(_) =>
-        // TODO: Can we return something of Type.Tag? Looks like we only return Type.Enum, which is a set of Type.Tags.
-        asm.Type.getDescriptor(classOf[Value.Tag])
-      case Type.Tuple(elms) => asm.Type.getDescriptor(classOf[Value.Tuple])
-      case Type.Lambda(args, retTpe) => s"""(${ args.map(descriptor).mkString })${descriptor(retTpe)}"""
-      case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) | Type.Native(_) |
-           Type.Char | Type.Abs(_, _) | Type.Any => ???
-    }
+  def descriptor(tpe: Type): String = tpe match {
+    case Type.Unit => "Lca/uwaterloo/flix/runtime/Value$Unit$;"
+    case Type.Bool => asm.Type.BOOLEAN_TYPE.getDescriptor
+    case Type.Int8 => asm.Type.BYTE_TYPE.getDescriptor
+    case Type.Int16 => asm.Type.SHORT_TYPE.getDescriptor
+    case Type.Int32 | Type.Int => asm.Type.INT_TYPE.getDescriptor
+    case Type.Int64 => asm.Type.LONG_TYPE.getDescriptor
+    case Type.Str => asm.Type.getDescriptor(classOf[java.lang.String])
+    case Type.Tag(_, _, _) | Type.Enum(_) =>
+      // TODO: Can we return something of Type.Tag? Looks like we only return Type.Enum, which is a set of Type.Tags.
+      asm.Type.getDescriptor(classOf[Value.Tag])
+    case Type.Tuple(elms) => asm.Type.getDescriptor(classOf[Value.Tuple])
+    case Type.Lambda(args, retTpe) => s"""(${ args.map(descriptor).mkString })${descriptor(retTpe)}"""
+    case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) | Type.Native(_) |
+         Type.Char | Type.Abs(_, _) | Type.Any => ???
   }
 
   /*
@@ -57,7 +57,7 @@ object Codegen {
     val classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
     val visitor = new CheckClassAdapter(classWriter)
 
-    // Initialize the visitor to create a class
+    // Initialize the visitor to create a class.
     visitor.visit(V1_8, ACC_PUBLIC + ACC_SUPER, context.clazz, null, "java/lang/Object", null)
 
     compileConstructor(context, visitor)
@@ -86,7 +86,6 @@ object Codegen {
    * The Flix function A::B::C::foo is compiled as the method A$B$C$foo.
    */
   private def compileFunction(context: Context, visitor: ClassVisitor)(function: Definition.Function): Unit = {
-    // TODO: Debug information
     val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, decorate(function.name), descriptor(function.tpe), null, null)
     mv.visitCode()
 
@@ -107,7 +106,9 @@ object Codegen {
 
   private def compileExpression(context: Context, visitor: MethodVisitor)(expr: Expression): Unit = expr match {
     case Expression.Unit =>
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$Unit$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$Unit$;");
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$Unit$", "MODULE$",
+        "Lca/uwaterloo/flix/runtime/Value$Unit$;")
+
     case Expression.True => visitor.visitInsn(ICONST_1)
     case Expression.False => visitor.visitInsn(ICONST_0)
     case Expression.Int(i) => compileInt(visitor)(i)
@@ -116,22 +117,27 @@ object Codegen {
     case Expression.Int32(i) => compileInt(visitor)(i)
     case Expression.Int64(l) => compileInt(visitor)(l, isLong = true)
     case Expression.Str(s, _) => visitor.visitLdcInsn(s)
+
     case load: LoadExpression => compileLoadExpr(context, visitor)(load)
     case store: StoreExpression => compileStoreExpr(context, visitor)(store)
-    case Expression.Var(ident, offset, tpe, loc) =>
-      tpe match {
-        case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ILOAD, offset)
-        case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
-        case Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) => visitor.visitVarInsn(ALOAD, offset)
-        case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-             Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
-      }
+
+    case Expression.Var(ident, offset, tpe, loc) => tpe match {
+      case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ILOAD, offset)
+      case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
+      case Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) =>
+        visitor.visitVarInsn(ALOAD, offset)
+      case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
+           Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
+    }
+
     case Expression.Ref(name, tpe, loc) => ???
     case Expression.Lambda(annotations, args, body, tpe, loc) => ???
+
     case Expression.Apply(name, args, _, _) =>
       args.foreach(compileExpression(context, visitor))
       visitor.visitMethodInsn(INVOKESTATIC, context.clazz, decorate(name),
         descriptor(context.getFunction(name).tpe), false)
+
     case Expression.Unary(op, exp, tpe, _) => compileUnaryExpr(context, visitor)(op, exp, tpe)
     case Expression.Binary(op, exp1, exp2, tpe, _) => op match {
       case o: ArithmeticOperator => compileArithmeticExpr(context, visitor)(o, exp1, exp2, tpe)
@@ -139,6 +145,7 @@ object Codegen {
       case o: LogicalOperator => compileLogicalExpr(context, visitor)(o, exp1, exp2, tpe)
       case o: BitwiseOperator => compileBitwiseExpr(context, visitor)(o, exp1, exp2, tpe)
     }
+
     case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
       val ifElse = new Label()
       val ifEnd = new Label()
@@ -149,100 +156,96 @@ object Codegen {
       visitor.visitLabel(ifElse)
       compileExpression(context, visitor)(exp3)
       visitor.visitLabel(ifEnd)
+
     case Expression.Let(ident, offset, exp1, exp2, _, _) =>
       compileExpression(context, visitor)(exp1)
       exp1.tpe match {
         case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ISTORE, offset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
-        case Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) => visitor.visitVarInsn(ASTORE, offset)
+        case Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) =>
+          visitor.visitVarInsn(ASTORE, offset)
         case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
              Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
       }
       compileExpression(context, visitor)(exp2)
+
     case Expression.CheckTag(tag, exp, _) =>
-      // Compile the tag expression
+      // Get the tag string of `exp` (compiled as a tag) and compare to `tag.name`.
       compileExpression(context, visitor)(exp)
-
-      // Load its tag identifier string
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tag", "tag", "()Ljava/lang/String;", false)
-
-      // Load the tag identifier we're comparing against
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tag", "tag", "()Ljava/lang/String;",
+        false)
       visitor.visitLdcInsn(tag.name)
-
-      // Compare the two strings
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false)
+
     case Expression.GetTagValue(exp, tpe, _) =>
-      // Compile the tag expression
+      // Compile `exp` as a tag expression, get its inner `value`, and unbox if necessary.
       compileExpression(context, visitor)(exp)
-
-      // Call tag.value
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tag", "value", "()Lca/uwaterloo/flix/runtime/Value;", false)
-
-      // Unbox if necessary
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tag", "value",
+        "()Lca/uwaterloo/flix/runtime/Value;", false)
       compileUnbox(context, visitor)(tpe)
+
     case Expression.Tag(enum, tag, exp, _, _) =>
-      // Load the Value companion object (so we can call Value.mkTag)
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      // Load the Value companion object, then the arguments, and finally call `Value.mkTag`.
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
+        "Lca/uwaterloo/flix/runtime/Value$;")
 
-      // Load `enum` as a string
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/Name$Resolved$", "MODULE$", "Lca/uwaterloo/flix/language/ast/Name$Resolved$;")
+      // Load `enum` as a string, by calling `Name.Resolved.mk`
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/Name$Resolved$", "MODULE$",
+        "Lca/uwaterloo/flix/language/ast/Name$Resolved$;")
       visitor.visitLdcInsn(enum.parts.mkString("::"))
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/Name$Resolved$", "mk", "(Ljava/lang/String;)Lca/uwaterloo/flix/language/ast/Name$Resolved;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/Name$Resolved$", "mk",
+        "(Ljava/lang/String;)Lca/uwaterloo/flix/language/ast/Name$Resolved;", false)
 
-      // Load `tag.name`
+      // Load `tag.name` and box `exp` if necessary.
       visitor.visitLdcInsn(tag.name)
-
-      // Load `exp`, boxing as a Flix value if needed
       compileBoxedExpr(context, visitor)(exp)
 
-      // Call Value.mkTag
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkTag", "(Lca/uwaterloo/flix/language/ast/Name$Resolved;Ljava/lang/String;Lca/uwaterloo/flix/runtime/Value;)Lca/uwaterloo/flix/runtime/Value$Tag;", false);
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkTag",
+        "(Lca/uwaterloo/flix/language/ast/Name$Resolved;Ljava/lang/String;Lca/uwaterloo/flix/runtime/Value;)Lca/uwaterloo/flix/runtime/Value$Tag;", false);
+
     case Expression.TupleAt(base, offset, tpe, _) =>
-      // Compile the tuple expression
+      // Compile the tuple expression, load the tuple array, compile the offset, load the array element, and unbox if
+      // necessary.
       compileExpression(context, visitor)(base)
-
-      // Load the tuple array
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "elms", "()[Lca/uwaterloo/flix/runtime/Value;", false)
-
-      // Compile the offset
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "elms",
+        "()[Lca/uwaterloo/flix/runtime/Value;", false)
       compileInt(visitor)(offset)
-
-      // Load the array element
       visitor.visitInsn(AALOAD)
-
-      // Unbox if necessary
       compileUnbox(context, visitor)(tpe)
+
     case Expression.Tuple(elms, _, _) =>
       // TODO: What is our limit on tuples? We've been using [2-5]; Scala supports [2-22]
-      if (elms.size < 2 || elms.size > 5) throw new InternalCompilerError("Tuple must contain 2 to 5 elements, inclusive.")
+      if (elms.size < 2 || elms.size > 5)
+        throw new InternalCompilerError("Tuple must contain 2 to 5 elements, inclusive.")
 
-      // Create the array to hold the tuple elements
+      // Create the array to hold the tuple elements.
       compileInt(visitor)(elms.size)
-      visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(classOf[ca.uwaterloo.flix.runtime.Value]))
+      visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(classOf[Value]))
 
-      // Iterate over elms, boxing them and slotting each one into the array
+      // Iterate over elms, boxing them and slotting each one into the array.
       elms.zipWithIndex.foreach { case (e, i) =>
-        // AASTORE pops the array reference, array index, and element to be stored.
-        // Instead of saving a copy of the array reference into a local variable, we duplicate it.
+        // Duplicate the array reference, otherwise AASTORE will consume it.
         visitor.visitInsn(DUP)
         compileInt(visitor)(i)
         compileBoxedExpr(context, visitor)(e)
         visitor.visitInsn(AASTORE)
       }
 
-      // Now construct a Value.Tuple: create a reference, load the arguments, and call the constructor
+      // Now construct a Value.Tuple: create a reference, load the arguments, and call the constructor.
       visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/Value$Tuple")
 
-      // Right now the stack looks like: array, tuple (top)
       // We use dup_x1 and swap to manipulate the stack so we can avoid using a local variable.
+      // Stack before: array, tuple (top)
+      // Stack after: tuple, tuple, array (top)
       visitor.visitInsn(DUP_X1)
       visitor.visitInsn(SWAP)
-      // Now the stack looks like: tuple, tuple, array (top)
 
-      // Finally, call the constructor, which pops the reference (tuple) and argument (array)
-      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "<init>", "([Lca/uwaterloo/flix/runtime/Value;)V", false)
+      // Finally, call the constructor, which pops the reference (tuple) and argument (array).
+      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "<init>",
+        "([Lca/uwaterloo/flix/runtime/Value;)V", false)
 
     case Expression.Set(elms, tpe, loc) => ???
+
     case Expression.Error(_, loc) => compileThrow(context, visitor)(s"Runtime error at ${loc.format}")
     case Expression.MatchError(_, loc) => compileThrow(context, visitor)(s"Match error at ${loc.format}")
   }
@@ -253,31 +256,40 @@ object Codegen {
    */
   private def compileBoxedExpr(context: Context, visitor: MethodVisitor)(exp: Expression): Unit = exp.tpe match {
     case Type.Bool =>
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
+        "Lca/uwaterloo/flix/runtime/Value$;")
       if (exp == Expression.True) {
-        visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "True", "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
+        visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "True",
+          "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
       } else if (exp == Expression.False) {
-        visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "False", "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
+        visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "False",
+          "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
       } else {
         val boolFalse = new Label()
         val boolEnd = new Label()
         compileExpression(context, visitor)(exp)
         visitor.visitJumpInsn(IFEQ, boolFalse)
-        visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "True", "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
+        visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "True",
+          "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
         visitor.visitJumpInsn(GOTO, boolEnd)
         visitor.visitLabel(boolFalse)
-        visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "False", "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
+        visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "False",
+          "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
         visitor.visitLabel(boolEnd)
       }
     case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int =>
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
+        "Lca/uwaterloo/flix/runtime/Value$;")
       compileExpression(context, visitor)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt", "(I)Lca/uwaterloo/flix/runtime/Value$Int;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt",
+        "(I)Lca/uwaterloo/flix/runtime/Value$Int;", false)
     case Type.Int64 => ??? // Value.Int doesn't support longs
     case Type.Str =>
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
+        "Lca/uwaterloo/flix/runtime/Value$;")
       compileExpression(context, visitor)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkStr", "(Ljava/lang/String;)Lca/uwaterloo/flix/runtime/Value$Str;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkStr",
+        "(Ljava/lang/String;)Lca/uwaterloo/flix/runtime/Value$Str;", false)
     case Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) =>
       compileExpression(context, visitor)(exp)
     case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
@@ -294,9 +306,12 @@ object Codegen {
     case Type.Bool =>
       // For Value.Bool, simply compare to Value.True
       visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Bool")
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "True", "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Bool", "equals", "(Ljava/lang/Object;)Z", false)
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
+        "Lca/uwaterloo/flix/runtime/Value$;")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "True",
+        "()Lca/uwaterloo/flix/runtime/Value$Bool;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Bool", "equals",
+        "(Ljava/lang/Object;)Z", false)
     case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int =>
       visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Int")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Int", "i", "()I", false)
@@ -679,6 +694,7 @@ object Codegen {
     }
   }
 
+  // TODO: A better exception to throw?
   private def compileThrow(context: Context, visitor: MethodVisitor)(message: String): Unit = {
     visitor.visitTypeInsn(NEW, "java/lang/RuntimeException")
     visitor.visitInsn(DUP)
@@ -686,4 +702,5 @@ object Codegen {
     visitor.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V", false)
     visitor.visitInsn(ATHROW)
   }
+
 }

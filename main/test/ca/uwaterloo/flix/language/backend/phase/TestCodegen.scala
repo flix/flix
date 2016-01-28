@@ -1,14 +1,14 @@
 package ca.uwaterloo.flix.language.backend.phase
 
 import java.lang.reflect.InvocationTargetException
-import java.nio.file.{Paths, Files}
+import java.nio.file.{Files, Paths}
 
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition.Function
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast._
-import SimplifiedAst.Definition
-import SimplifiedAst.Definition.Function
-import SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.phase.Codegen
-
+import ca.uwaterloo.flix.runtime.Value
 import org.scalatest.FunSuite
 
 class TestCodegen extends FunSuite {
@@ -417,8 +417,6 @@ class TestCodegen extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   test("Codegen - Unit") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List(),
       body = Unit,
       Type.Lambda(List(), Type.Unit), loc)
@@ -751,7 +749,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name, List(Integer.TYPE), List(42).map(_.asInstanceOf[Object]))
+    val result = code.call(name, List(java.lang.Integer.TYPE), List(42).map(_.asInstanceOf[Object]))
 
     assertResult(-1)(result)
   }
@@ -762,7 +760,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result = code.call(name, List(Integer.TYPE), List(42).map(_.asInstanceOf[Object]))
+    val result = code.call(name, List(java.lang.Integer.TYPE), List(42).map(_.asInstanceOf[Object]))
 
     assertResult(42)(result)
   }
@@ -774,7 +772,7 @@ class TestCodegen extends FunSuite {
 
     val code = new CompiledCode(List(definition))
     val result = code.call(name,
-      List(Integer.TYPE, Integer.TYPE, Integer.TYPE),
+      List(java.lang.Integer.TYPE, java.lang.Integer.TYPE, java.lang.Integer.TYPE),
       List(1337, -101010, 42).map(_.asInstanceOf[Object]))
 
     assertResult(-101010)(result)
@@ -811,15 +809,13 @@ class TestCodegen extends FunSuite {
 
     val code = new CompiledCode(List(definition))
     val result = code.call(name,
-      List(Integer.TYPE, java.lang.Long.TYPE, java.lang.Long.TYPE),
+      List(java.lang.Integer.TYPE, java.lang.Long.TYPE, java.lang.Long.TYPE),
       List(1337, -101010, 42).map(_.asInstanceOf[Object]))
 
     assertResult(-101010)(result)
   }
 
   test("Codegen - Var07") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List("x"),
       body = Var(toIdent("x"), 0, enumTpe, loc),
       Type.Lambda(List(enumTpe), enumTpe), loc)
@@ -833,8 +829,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Var08") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List("x"),
       body = Var(toIdent("x"), 0, Type.Unit, loc),
       Type.Lambda(List(Type.Unit), Type.Unit), loc)
@@ -846,8 +840,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Var09") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List("x"),
       body = Var(toIdent("x"), 0, Type.Str, loc),
       Type.Lambda(List(Type.Str), Type.Str), loc)
@@ -859,8 +851,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Var10") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List("x"),
       body = Var(toIdent("x"), 0, Type.Tuple(List(Type.Int32, Type.Int32)), loc),
       Type.Lambda(List(Type.Tuple(List(Type.Int32, Type.Int32))), Type.Tuple(List(Type.Int32, Type.Int32))), loc)
@@ -929,7 +919,7 @@ class TestCodegen extends FunSuite {
 
     val code = new CompiledCode(List(definition))
     val result = code.call(name,
-      List(Integer.TYPE, Integer.TYPE, Integer.TYPE),
+      List(java.lang.Integer.TYPE, java.lang.Integer.TYPE, java.lang.Integer.TYPE),
       List(-1337, 101010, -42).map(_.asInstanceOf[Object]))
 
     assertResult(-101010)(result)
@@ -948,7 +938,7 @@ class TestCodegen extends FunSuite {
 
     val code = new CompiledCode(List(definition))
     val result = code.call(name,
-      List(Integer.TYPE, Integer.TYPE, Integer.TYPE),
+      List(java.lang.Integer.TYPE, java.lang.Integer.TYPE, java.lang.Integer.TYPE),
       List(-1337, 101010, -42).map(_.asInstanceOf[Object]))
 
     assertResult(101010)(result)
@@ -1032,7 +1022,7 @@ class TestCodegen extends FunSuite {
 
     val code = new CompiledCode(List(definition))
     val result = code.call(name,
-      List(Integer.TYPE, java.lang.Long.TYPE, java.lang.Long.TYPE),
+      List(java.lang.Integer.TYPE, java.lang.Long.TYPE, java.lang.Long.TYPE),
       List(-1337, 101010, -42).map(_.asInstanceOf[Object]))
 
     assertResult(-101010)(result)
@@ -1071,15 +1061,13 @@ class TestCodegen extends FunSuite {
 
     val code = new CompiledCode(List(definition))
     val result = code.call(name,
-      List(Integer.TYPE, java.lang.Long.TYPE, java.lang.Long.TYPE),
+      List(java.lang.Integer.TYPE, java.lang.Long.TYPE, java.lang.Long.TYPE),
       List(-1337, 101010, -42).map(_.asInstanceOf[Object]))
 
     assertResult(101010)(result)
   }
 
   test("Codegen - Let13") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
         exp1 = Tag(constPropName, identV, Int32(42), enumTpe, loc),
@@ -1094,8 +1082,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Let14") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
         exp1 = Unit,
@@ -1124,8 +1110,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Let16") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
         exp1 = Tuple(List(Int32(321), Int32(5)), Type.Tuple(List(Type.Int32, Type.Int32)), loc),
@@ -5771,8 +5755,8 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result01 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(2400000, 500000).map(_.asInstanceOf[Object]))
-    val result02 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(500000, 500000).map(_.asInstanceOf[Object]))
+    val result01 = code.call(name, List(java.lang.Integer.TYPE, java.lang.Integer.TYPE), List(2400000, 500000).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(java.lang.Integer.TYPE, java.lang.Integer.TYPE), List(500000, 500000).map(_.asInstanceOf[Object]))
 
     assertResult(1234)(result01)
     assertResult(5678)(result02)
@@ -5811,8 +5795,8 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result01 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 5).map(_.asInstanceOf[Object]))
-    val result02 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(2, 5).map(_.asInstanceOf[Object]))
+    val result01 = code.call(name, List(java.lang.Integer.TYPE, java.lang.Integer.TYPE), List(5, 5).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(java.lang.Integer.TYPE, java.lang.Integer.TYPE), List(2, 5).map(_.asInstanceOf[Object]))
 
     assertResult(1234)(result01)
     assertResult(5678)(result02)
@@ -5831,8 +5815,8 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
 
     val code = new CompiledCode(List(definition))
-    val result01 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(2, 5).map(_.asInstanceOf[Object]))
-    val result02 = code.call(name, List(Integer.TYPE, Integer.TYPE), List(5, 5).map(_.asInstanceOf[Object]))
+    val result01 = code.call(name, List(java.lang.Integer.TYPE, java.lang.Integer.TYPE), List(2, 5).map(_.asInstanceOf[Object]))
+    val result02 = code.call(name, List(java.lang.Integer.TYPE, java.lang.Integer.TYPE), List(5, 5).map(_.asInstanceOf[Object]))
 
     assertResult(1234)(result01)
     assertResult(5678)(result02)
@@ -5843,8 +5827,6 @@ class TestCodegen extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   test("Codegen - Tag01") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List(),
       body = Tag(constPropName, identV, Int32(42), enumTpe, loc),
       Type.Lambda(List(), enumTpe), loc)
@@ -5856,8 +5838,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tag02") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val enum = Type.Enum(Map("ConstProp.Val" -> Type.Tag(constPropName, identV, Type.Bool)))
     val definition = Function(name, args = List(),
       body = Tag(constPropName, identV, True, enum, loc),
@@ -5870,8 +5850,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tag03") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List(),
       body = Tag(constPropName, identT, Unit, enumTpe, loc),
       Type.Lambda(List(), enumTpe), loc)
@@ -5883,8 +5861,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tag04") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val tagName = Name.Resolved.mk("abc")
     val ident = toIdent("def")
     val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
@@ -5899,8 +5875,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tag05") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val tagName = Name.Resolved.mk("abc")
     val ident = toIdent("def")
     val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
@@ -5915,8 +5889,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tag06") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val tagName = Name.Resolved.mk("abc")
     val ident = toIdent("def")
     val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
@@ -5931,8 +5903,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tag07") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val tagName = Name.Resolved.mk("abc")
     val ident = toIdent("def")
     val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Str)))
@@ -5947,8 +5917,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tag08") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val tagName = Name.Resolved.mk("abc")
     val ident = toIdent("def")
     val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int, Type.Str)))))
@@ -6014,8 +5982,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - GetTagValue02") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
         exp1 = Tag(constPropName, identT, Unit, enumTpe, loc),
@@ -6030,8 +5996,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - GetTagValue03") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val tagName = Name.Resolved.mk("abc")
     val ident = toIdent("def")
     val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int, Type.Str)))))
@@ -6055,8 +6019,6 @@ class TestCodegen extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   test("Codegen - Tuple01") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List(),
       body = Tuple(List(Int32(321), Int32(5)), Type.Tuple(List(Type.Int32, Type.Int32)), loc),
       Type.Lambda(List(), Type.Tuple(List(Type.Int32, Type.Int32))), loc)
@@ -6068,8 +6030,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tuple02") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List(),
       body = Tuple(List(True, True, False), Type.Tuple(List(Type.Bool, Type.Bool, Type.Bool)), loc),
       Type.Lambda(List(), Type.Tuple(List(Type.Bool, Type.Bool, Type.Bool))), loc)
@@ -6081,8 +6041,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tuple03") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List(),
       body = Tuple(List(Str("un", loc), Str("deux", loc), Str("trois", loc), Str("quatre", loc)),
         Type.Tuple(List(Type.Str, Type.Str, Type.Str, Type.Str)), loc),
@@ -6095,8 +6053,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tuple04") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List(),
       body = Tuple(List(Str("un", loc), False, Int32(12345), Unit, Int8(-2)),
         Type.Tuple(List(Type.Str, Type.Bool, Type.Int32, Type.Unit, Type.Int8)), loc),
@@ -6109,8 +6065,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tuple05") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List(),
       body = Tuple(List(
         Tag(constPropName, identV, Int32(111), enumTpe, loc),
@@ -6125,8 +6079,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tuple06") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List(),
       body = Tuple(List(
         Tuple(List(Int32(123), Int32(456)), Type.Tuple(List(Type.Int32, Type.Int32)), loc),
@@ -6190,8 +6142,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - TupleAt04") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
         exp1 = Tuple(List(Str("un", loc), False, Int32(12345), Unit, Int8(-2)),
@@ -6222,8 +6172,6 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - TupleAt06") {
-    import ca.uwaterloo.flix.runtime.Value
-
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
         exp1 = Tuple(List(Tag(constPropName, identV, Int32(111), enumTpe, loc), Tag(constPropName, identB, Unit, enumTpe, loc)),
