@@ -153,9 +153,8 @@ object Value {
   /**
     * Flix internal representation of closures.
     */
-  case class Closure(formals: Array[String], body: TypedAst.Expression, env: mutable.Map[String, AnyRef]) {
-    override def toString: java.lang.String = s"Value.Closure(Array(${formals.mkString(",")}), $body, $env)"
-
+  final case class Closure(formals: Array[String], body: TypedAst.Expression, env: mutable.Map[String, AnyRef]) {
+    // TODO: Why override equals?
     override def equals(obj: scala.Any): Boolean = obj match {
       case that: Value.Closure =>
         util.Arrays.equals(this.formals.asInstanceOf[Array[AnyRef]], that.formals.asInstanceOf[Array[AnyRef]]) &&
@@ -177,6 +176,13 @@ object Value {
     case o: Closure => o
     case _ => throw new InternalRuntimeError(s"Unexpected non-closure type: '$ref'.")
   }
+
+  /**
+    * Flix internal representation of hook closures.
+    */
+  final case class HookClosure(inv: Invokable)
+
+  // TODO: introduce make function and make class private?
 
   /////////////////////////////////////////////////////////////////////////////
   // Strings                                                                 //
@@ -272,10 +278,8 @@ object Value {
     * Value.Native, Value.HookClosure implementations                         *
     * **************************************************************************/
 
-  // TODO: Omit
-  final case class Native(value: AnyRef)
 
-  final case class HookClosure(inv: Invokable)
+
 
   def mkList[ValueType](list: List[ValueType]): ValueType = ??? // TODO
 
@@ -320,7 +324,6 @@ object Value {
     case Value.Tuple(elms) => "(" + elms.map(pretty).mkString(",") + ")"
     case Value.Set(elms) => "{" + elms.map(pretty).mkString(",") + "}"
     case Value.Closure(_, _, _) => ???
-    case Value.Native(v) => s"Native($v)"
     case _ => o.toString
   }
 
