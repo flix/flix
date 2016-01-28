@@ -316,7 +316,7 @@ object Interpreter {
   // Bad things will happen if `pattern` does not unify with `value`.
   private def unify(pattern: Pattern, value: AnyRef, env: mutable.Map[String, AnyRef]): Unit = pattern match {
     case Pattern.Var(ident, _, _) => env.update(ident.name, value)
-    case Pattern.Tag(_, _, innerPat, _, _) => unify(innerPat, value.asInstanceOf[Value.Tag].value, env)
+    case Pattern.Tag(_, _, innerPat, _, _) => unify(innerPat, Value.cast2tag(value).value, env)
     case p: Pattern.Tuple =>
       val elms = value.asInstanceOf[Value.Tuple].elms
       var i = 0

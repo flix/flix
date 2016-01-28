@@ -41,17 +41,6 @@ class TestValue extends FunSuite {
     assert(i3 != i4)
   }
 
-  test("Value.Int pattern matching") {
-    val v = Value.mkInt32(123456789)
-
-    val result = v match {
-      case v: Value.Int => s"${v.i}"
-      case _ => "unknown"
-    }
-
-    assert(result == "123456789")
-  }
-
   test("Value.Str equality") {
     val s1 = Value.mkStr("foo")
     val s2 = Value.mkStr("bar")
@@ -69,17 +58,6 @@ class TestValue extends FunSuite {
     assert(s2 != s3)
     assert(s2 == s4)
     assert(s3 != s4)
-  }
-
-  test("Value.Str pattern matching") {
-    val v = Value.mkStr("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-    val result = v match {
-      case v: Value.Str => s"${v.s}!!!"
-      case _ => "unknown"
-    }
-
-    assert(result == "ABCDEFGHIJKLMNOPQRSTUVWXYZ!!!")
   }
 
   test("Value.Tag equality") {
