@@ -459,7 +459,7 @@ class Flix {
     val set = s.foldLeft(immutable.Set.empty[AnyRef]) {
       case (sacc, v) => sacc + v.getUnsafeRef
     }
-    new WrappedValue(Value.Set(set))
+    new WrappedValue(Value.mkSet(set))
   }
 
   /**
@@ -472,7 +472,7 @@ class Flix {
     val set = s.foldLeft(immutable.Set.empty[AnyRef]) {
       case (sacc, v) => sacc + v.getUnsafeRef
     }
-    new WrappedValue(Value.Set(set))
+    new WrappedValue(Value.mkSet(set))
   }
 
   /**

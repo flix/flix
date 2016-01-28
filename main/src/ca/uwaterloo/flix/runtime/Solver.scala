@@ -256,7 +256,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   def loop(rule: Constraint.Rule, ps: List[Predicate.Body.Loop], row: mutable.Map[String, AnyRef]): Unit = ps match {
     case Nil => filter(rule, rule.filters, row)
     case Predicate.Body.Loop(name, term, _, _) :: rest =>
-      val result = Interpreter.evalHeadTerm(term, sCtx.root, row).asInstanceOf[Value.Set].elms // TODO: use cast
+      val result = Value.cast2set(Interpreter.evalHeadTerm(term, sCtx.root, row))
       for (x <- result) {
         val newRow = row.clone()
         newRow.update(name.name, x)

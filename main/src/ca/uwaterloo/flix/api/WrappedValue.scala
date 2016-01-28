@@ -73,7 +73,7 @@ final class WrappedValue(val ref: AnyRef) extends IValue {
     r
   }
 
-  def getScalaSet: immutable.Set[IValue] = Value.cast2set(ref).map(e => new WrappedValue(e))
+  def getScalaSet: immutable.Set[IValue] = Value.cast2set(ref).map(e => new WrappedValue(e)).toSet
 
   def getJavaMap: java.util.Map[IValue, IValue] = {
     val xs = Value.cast2map(ref)

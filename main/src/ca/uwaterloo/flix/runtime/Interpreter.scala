@@ -237,7 +237,7 @@ object Interpreter {
         i = i + 1
       }
       Value.Tuple(elms)
-    case Expression.Set(elms, _, _) => Value.Set(elms.map(e => eval(e, root, env)).toSet)
+    case Expression.Set(elms, _, _) => Value.mkSet(elms.map(e => eval(e, root, env)).toSet)
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
   }
 
@@ -296,7 +296,7 @@ object Interpreter {
         i = i + 1
       }
       Value.Tuple(lits)
-    case Literal.Set(elms, _, _) => Value.Set(elms.map(evalLit).toSet)
+    case Literal.Set(elms, _, _) => Value.mkSet(elms.map(evalLit).toSet)
   }
 
   private def matchRule(rules: Array[(Pattern, Expression)], value: AnyRef, env: mutable.Map[String, AnyRef]): Expression = {

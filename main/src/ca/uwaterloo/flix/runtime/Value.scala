@@ -68,7 +68,6 @@ object Value {
   /////////////////////////////////////////////////////////////////////////////
   // Ints                                                                    //
   /////////////////////////////////////////////////////////////////////////////
-
   /**
     * Constructs an int8 value from the given byte `b`.
     */
@@ -228,6 +227,7 @@ object Value {
   /**
     * Constructs the tag for the given enum name `e`, tag name `t` and tag value `v`.
     */
+  @inline
   def mkTag(e: Name.Resolved, t: java.lang.String, v: AnyRef) = {
     val triple = (e, t, v)
     if (tagCache.contains(triple)) {
@@ -242,15 +242,17 @@ object Value {
   /**
     * Casts the given reference `ref` to a tag.
     */
+  @inline
   def cast2tag(ref: AnyRef): Value.Tag = ref match {
     case v: Value.Tag => v
     case _ => throw new InternalRuntimeError(s"Unexpected non-tag type: '$ref'.")
   }
 
-  /** *************************************************************************
-    * Value.Tuple, Value.Set, Value.Closure implementations                   *
-    * **************************************************************************/
+  /////////////////////////////////////////////////////////////////////////////
+  // Tuples                                                                  //
+  /////////////////////////////////////////////////////////////////////////////
 
+  // TODO: Remove
   final case class Tuple(elms: Array[AnyRef]) {
     override def toString: java.lang.String = s"Value.Tuple(Array(${elms.mkString(",")}))"
 
@@ -263,32 +265,46 @@ object Value {
     override def hashCode: Int = util.Arrays.hashCode(elms.asInstanceOf[Array[AnyRef]])
   }
 
-
+  /**
+    * Casts the given reference `ref` to a tuple.
+    */
+  @inline
   def cast2tuple(ref: AnyRef): Array[AnyRef] = ref match {
     // case v: Value.Tuple => v.elms.map(e => new WrappedValue(e))
     //case o: Array[AnyRef] => o.map(e => new WrappedValue(e))
     case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Opt, List, Set, Map                                                     //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Constructs the `None` value.
+    */
+  @inline
+  def mkNone: AnyRef = null
 
-  case class Set(elms: scala.collection.immutable.Set[AnyRef])
+  /**
+    * Constructs the `Some` value for the given `ref`.
+    */
+  @inline
+  def mkSome(ref: AnyRef): AnyRef = ref
+
+  /**
+    * Constructs the flix representation of a list for the given `ref`.
+    */
+  def mkList(ref: AnyRef): AnyRef = ??? // TODO
 
 
-  /** *************************************************************************
-    * Value.Native, Value.HookClosure implementations                         *
-    * **************************************************************************/
 
+  def mkSet(ref: AnyRef): AnyRef = ref match {
+    case o: immutable.Set[_] => o
+    case o: java.lang.Iterable[_] => ???
 
+  }
 
-
-  def mkList[ValueType](list: List[ValueType]): ValueType = ??? // TODO
 
   def mkMap[ValueType](map: Map[ValueType, ValueType]): ValueType = ??? // TODO
-
-  def mkNone[ValueType]: ValueType = ??? // TODO
-
-  def mkSome[ValueType](v: ValueType): ValueType = ??? // TODO
-
 
 
   // TODO: return type
@@ -300,7 +316,8 @@ object Value {
   // TODO: return type
   def cast2list(ref: AnyRef): immutable.List[AnyRef] = ???
 
-  def cast2set(ref: AnyRef): immutable.Set[AnyRef] = ref match {
+
+  def cast2set(ref: AnyRef): Traversable[AnyRef] = ref match {
     //case v: Value.Set => v.elms.map(e => new WrappedValue(e))
     case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
   }
@@ -316,14 +333,16 @@ object Value {
     case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Pretty Printing                                                         //
+  /////////////////////////////////////////////////////////////////////////////
 
   // TODO: Doc and cleanup.
   def pretty(o: AnyRef): String = o match {
     case Value.Unit => "()"
+
     case v: Value.Tag => s"${v.enum}.${v.tag}(${pretty(v.value)})"
     case Value.Tuple(elms) => "(" + elms.map(pretty).mkString(",") + ")"
-    case Value.Set(elms) => "{" + elms.map(pretty).mkString(",") + "}"
-    case Value.Closure(_, _, _) => ???
     case _ => o.toString
   }
 

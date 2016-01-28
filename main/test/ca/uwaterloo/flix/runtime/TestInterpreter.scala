@@ -201,13 +201,13 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Literal.Set01") {
     val input = Expression.Lit(Literal.Set(List(), Type.Set(Type.Int), loc), Type.Set(Type.Int), loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Set(Set()))(result)
+    assertResult(Value.mkSet(Set()))(result)
   }
 
   test("Interpreter - Literal.Set02") {
     val input = Expression.Lit(Literal.Set(List(), Type.Set(Type.Bool), loc), Type.Set(Type.Bool), loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Set(Set()))(result)
+    assertResult(Value.mkSet(Set()))(result)
   }
 
   test("Interpreter - Literal.Set03") {
@@ -217,7 +217,7 @@ class TestInterpreter extends FunSuite {
       Literal.Int(44, loc)
     ), Type.Set(Type.Int), loc), Type.Set(Type.Int), loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Set(Set(3, 100, 44).map(Value.mkInt32)))(result)
+    assertResult(Value.mkSet(Set(3, 100, 44).map(Value.mkInt32)))(result)
   }
 
   test("Interpreter - Literal.Set04") {
@@ -225,7 +225,7 @@ class TestInterpreter extends FunSuite {
       Literal.Bool(true, loc)
     ), Type.Set(Type.Bool), loc), Type.Set(Type.Bool), loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Set(Set(Value.True)))(result)
+    assertResult(Value.mkSet(Set(Value.True)))(result)
   }
 
   test("Interpreter - Literal.Set05") {
@@ -237,7 +237,7 @@ class TestInterpreter extends FunSuite {
       Type.Set(Type.Tuple(List(Type.Int, Type.Str))), loc),
       Type.Set(Type.Tuple(List(Type.Int, Type.Str))), loc)
     val result = Interpreter.eval(input, root)
-    assertResult(Value.Set(Set(Value.Tuple(Array(Value.mkInt32(3), Value.mkStr("three"))))))(result)
+    assertResult(Value.mkSet(Set(Value.Tuple(Array(Value.mkInt32(3), Value.mkStr("three"))))))(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -2341,21 +2341,21 @@ class TestInterpreter extends FunSuite {
     val input = "val x: Set[Int] = #{1, 4, 2}"
     val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
-    assertResult(Value.Set(Set(Value.mkInt32(1), Value.mkInt32(4), Value.mkInt32(2))))(result)
+    assertResult(Value.mkSet(Set(Value.mkInt32(1), Value.mkInt32(4), Value.mkInt32(2))))(result)
   }
 
   test("Interpreter - Expression.Set02") {
     val input = "val x: Set[Int] = #{1 + 2, 3 * 4, 5 - 6}"
     val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
-    assertResult(Value.Set(Set(Value.mkInt32(-1), Value.mkInt32(12), Value.mkInt32(3))))(result)
+    assertResult(Value.mkSet(Set(Value.mkInt32(-1), Value.mkInt32(12), Value.mkInt32(3))))(result)
   }
 
   test("Interpreter - Expression.Set03") {
     val input = "val x: Set[(Int, Bool)] = #{(1 + 2, true), (2 + 1, !false), (4 * 7, true), (5, true && false)}"
     val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
     val result = Interpreter.eval(tree, root)
-    assertResult(Value.Set(Set(
+    assertResult(Value.mkSet(Set(
       Value.Tuple(Array(Value.mkInt32(3), Value.True)),
       Value.Tuple(Array(Value.mkInt32(28), Value.True)),
       Value.Tuple(Array(Value.mkInt32(5), Value.False))
