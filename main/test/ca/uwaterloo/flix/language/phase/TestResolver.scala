@@ -1,8 +1,8 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{IValue, Flix}
+import ca.uwaterloo.flix.api.{Invokable, IValue, Flix}
 import ca.uwaterloo.flix.language.ast.Type
-import ca.uwaterloo.flix.runtime.{Invokable, Value}
+import ca.uwaterloo.flix.runtime.Value
 import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite {

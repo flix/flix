@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.{IValue, Flix}
+import ca.uwaterloo.flix.api.{Invokable, IValue, Flix}
 import ca.uwaterloo.flix.language.ast.{Type, Name}
 import org.scalatest.FunSuite
 

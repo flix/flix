@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.{IValue, WrappedValue}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Term, Root}
-import ca.uwaterloo.flix.language.ast.{Type, BinaryOperator, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{Ast, Type, BinaryOperator, UnaryOperator}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -193,7 +193,7 @@ object Interpreter {
     case Expression.Lit(literal, _, _) => evalLit(literal)
     case Expression.Var(ident, _, loc) => env(ident.name)
     case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
-    case Expression.Hook(hook, _, _) => Value.HookClosure(hook.inv)
+    case Expression.Hook(hook, _, _) => Value.HookClosure(hook)
     case exp: Expression.Lambda =>
       val formals = new Array[String](exp.argsAsArray.length)
       var i = 0
@@ -368,10 +368,17 @@ object Interpreter {
       evalCall(function, evalArgs, root, env)
     case Term.Head.ApplyHook(hook, args, _, _) =>
       val evalArgs = args.map(a => evalHeadTerm(a, root, env))
-      val wargs = evalArgs map {
-        case arg => new WrappedValue(arg): IValue
+
+      hook match {
+        case Ast.Hook.Safe(name, inv, tpe) =>
+          val wargs = evalArgs map {
+            case arg => new WrappedValue(arg): IValue
+          }
+          inv(wargs.toArray).getUnsafeRef
+
+        case Ast.Hook.Unsafe(name, inv, tpe) =>
+          inv(evalArgs.toArray)
       }
-      hook.inv(wargs.toArray).asInstanceOf[WrappedValue].ref // TODO
   }
 
   def evalBodyTerm(t: Term.Body, env: mutable.Map[String, AnyRef]): AnyRef = t match {
@@ -389,11 +396,16 @@ object Interpreter {
           i = i + 1
         }
         eval(body, root, closureEnv)
-      case Value.HookClosure(inv) =>
-        val wargs = args map {
-          case arg => new WrappedValue(arg): IValue
-        }
-        inv(wargs).asInstanceOf[WrappedValue].ref // TODO: Cleanup
+      case Value.HookClosure(hook) => hook match {
+        case Ast.Hook.Safe(name, inv, tpe) =>
+          val wargs = args map {
+            case arg => new WrappedValue(arg): IValue
+          }
+          inv(wargs).getUnsafeRef
+
+        case Ast.Hook.Unsafe(name, inv, tpe) =>
+          inv(args)
+      }
     }
 
   def eval2(closure: AnyRef, arg1: AnyRef, arg2: AnyRef, root: Root): AnyRef = {

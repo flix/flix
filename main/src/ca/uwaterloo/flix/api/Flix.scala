@@ -4,7 +4,7 @@ import java.nio.file.{Files, Path, Paths}
 
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.runtime.{Invokable, Model, Solver, Value}
+import ca.uwaterloo.flix.runtime.{Model, Solver, Value}
 import ca.uwaterloo.flix.util.{Options, Validation}
 
 import scala.collection.mutable.ListBuffer
@@ -89,7 +89,31 @@ class Flix {
 
     val rname = Name.Resolved.mk(name)
     hooks.get(rname) match {
-      case None => hooks += (rname -> Ast.Hook(rname, inv, tpe))
+      case None => hooks += (rname -> Ast.Hook.Safe(rname, inv, tpe))
+      case Some(otherHook) =>
+        throw new IllegalStateException(s"Another hook already exists for the given '$name'.")
+    }
+    this
+  }
+
+  /**
+    * Adds the given unsafe invokable `inv` with the given `name.`
+    *
+    * @param name the fully qualified name for the invokable.
+    * @param tpe  the Flix type of the invokable.
+    * @param inv  the invokable method.
+    */
+  def addHookUnsafe(name: String, tpe: Type.Lambda, inv: InvokableUnsafe): Flix = {
+    if (name == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    if (inv == null)
+      throw new IllegalArgumentException("'inv' must be non-null.")
+    if (tpe == null)
+      throw new IllegalArgumentException("'tpe' must be non-null.")
+
+    val rname = Name.Resolved.mk(name)
+    hooks.get(rname) match {
+      case None => hooks += (rname -> Ast.Hook.Unsafe(rname, inv, tpe))
       case Some(otherHook) =>
         throw new IllegalStateException(s"Another hook already exists for the given '$name'.")
     }

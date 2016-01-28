@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.runtime.Invokable
+import ca.uwaterloo.flix.api.{InvokableUnsafe, Invokable}
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
@@ -132,12 +132,41 @@ object Ast {
   }
 
   /**
-    * A reference to an implementation of the [[Invokable]] interface.
-    *
-    * @param name the fully qualified name.
-    * @param inv  the functional object.
-    * @param tpe  the type of the function.
+    * A common super-type for hooks.
     */
-  case class Hook(name: Name.Resolved, inv: Invokable, tpe: Type.Lambda)
+  sealed trait Hook {
+    /**
+      * Returns the fully qualified name of the hook.
+      */
+    def name: Name.Resolved
+
+    /**
+      * Returns the type of the hook.
+      */
+    def tpe: Type.Lambda
+  }
+
+  object Hook {
+
+    /**
+      * A reference to an implementation of the [[Invokable]] interface.
+      *
+      * @param name the fully qualified name.
+      * @param inv  the functional object.
+      * @param tpe  the type of the function.
+      */
+    case class Safe(name: Name.Resolved, inv: Invokable, tpe: Type.Lambda) extends Hook
+
+    /**
+      * A reference to an implementation of the [[InvokableUnsafe]] interface.
+      *
+      * @param name the fully qualified name.
+      * @param inv  the functional object.
+      * @param tpe  the type of the function.
+      */
+    case class Unsafe(name: Name.Resolved, inv: InvokableUnsafe, tpe: Type.Lambda) extends Hook
+
+  }
+
 
 }

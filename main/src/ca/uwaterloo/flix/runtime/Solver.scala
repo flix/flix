@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.{IValue, WrappedValue}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, TypedAst}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.util.{Verbosity, Debugger, Options}
@@ -302,13 +302,20 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         i = i + 1
       }
 
-      val wargs = args map {
-        case arg => new WrappedValue(arg): IValue
-      }
-      val result = pred.hook.inv.apply(wargs).asInstanceOf[WrappedValue].ref // TODO: cleanup
-
-      if (Value.cast2bool(result)) {
-        filterHook(rule, xs, row)
+      pred.hook match {
+        case Ast.Hook.Safe(name, inv, tpe) =>
+          val wargs = args map {
+            case arg => new WrappedValue(arg): IValue
+          }
+          val result = inv.apply(wargs).getUnsafeRef
+          if (Value.cast2bool(result)) {
+            filterHook(rule, xs, row)
+          }
+        case Ast.Hook.Unsafe(name, inv, tpe) =>
+          val result = inv.apply(args)
+          if (Value.cast2bool(result)) {
+            filterHook(rule, xs, row)
+          }
       }
   }
 

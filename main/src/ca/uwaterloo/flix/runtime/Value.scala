@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
+import ca.uwaterloo.flix.api.Invokable
+import ca.uwaterloo.flix.language.ast.{Ast, Name, TypedAst}
 import ca.uwaterloo.flix.runtime.Interpreter.InternalRuntimeError
 import scala.collection.immutable
 import scala.collection.mutable
@@ -179,7 +180,7 @@ object Value {
   /**
     * Flix internal representation of hook closures.
     */
-  final case class HookClosure(inv: Invokable)
+  final case class HookClosure(hook: Ast.Hook)
 
   // TODO: introduce make function and make class private
 
