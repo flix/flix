@@ -44,7 +44,7 @@ object Value {
   @inline
   def cast2bool(ref: Any): Boolean = ref match {
     case o: java.lang.Boolean => o.booleanValue()
-    case _ => throw new InternalRuntimeError(s"Unexpected non-bool type: '$ref'.")
+    case _ => throw new InternalRuntimeError(s"Unexpected non-bool value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -62,7 +62,7 @@ object Value {
   @inline
   def cast2char(ref: AnyRef): Char = ref match {
     case o: java.lang.Character => o.charValue()
-    case _ => throw new InternalRuntimeError(s"Unexpected non-char type: '$ref'.")
+    case _ => throw new InternalRuntimeError(s"Unexpected non-char value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -116,7 +116,7 @@ object Value {
   @inline
   def cast2int8(ref: AnyRef): Byte = ref match {
     case o: java.lang.Byte => o.byteValue()
-    case _ => throw new InternalRuntimeError(s"Unexpected non-int8 type: '$ref'.")
+    case _ => throw new InternalRuntimeError(s"Unexpected non-int8 value: '$ref'.")
   }
 
   /**
@@ -125,7 +125,7 @@ object Value {
   @inline
   def cast2int16(ref: AnyRef): Short = ref match {
     case o: java.lang.Short => o.shortValue()
-    case _ => throw new InternalRuntimeError(s"Unexpected non-int16 type: '$ref'.")
+    case _ => throw new InternalRuntimeError(s"Unexpected non-int16 value: '$ref'.")
   }
 
   /**
@@ -134,7 +134,7 @@ object Value {
   @inline
   def cast2int32(ref: AnyRef): Int = ref match {
     case o: java.lang.Integer => o.intValue()
-    case _ => throw new InternalRuntimeError(s"Unexpected non-int32 type: '$ref'.")
+    case _ => throw new InternalRuntimeError(s"Unexpected non-int32 value: '$ref'.")
   }
 
   /**
@@ -143,7 +143,7 @@ object Value {
   @inline
   def cast2int64(ref: AnyRef): Long = ref match {
     case o: java.lang.Long => o.longValue()
-    case _ => throw new InternalRuntimeError(s"Unexpected non-int64 type: '$ref'.")
+    case _ => throw new InternalRuntimeError(s"Unexpected non-int64 value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -173,7 +173,7 @@ object Value {
   @inline
   def cast2closure(ref: AnyRef): Closure = ref match {
     case o: Closure => o
-    case _ => throw new InternalRuntimeError(s"Unexpected non-closure type: '$ref'.")
+    case _ => throw new InternalRuntimeError(s"Unexpected non-closure value: '$ref'.")
   }
 
   /**
@@ -198,7 +198,7 @@ object Value {
   @inline
   def cast2str(ref: AnyRef): String = ref match {
     case o: java.lang.String => o
-    case _ => throw new InternalRuntimeError(s"Unexpected non-string type: '$ref'.")
+    case _ => throw new InternalRuntimeError(s"Unexpected non-string value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -245,7 +245,7 @@ object Value {
   @inline
   def cast2tag(ref: AnyRef): Value.Tag = ref match {
     case v: Value.Tag => v
-    case _ => throw new InternalRuntimeError(s"Unexpected non-tag type: '$ref'.")
+    case _ => throw new InternalRuntimeError(s"Unexpected non-tag value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -272,7 +272,7 @@ object Value {
   def cast2tuple(ref: AnyRef): Array[AnyRef] = ref match {
     // case v: Value.Tuple => v.elms.map(e => new WrappedValue(e))
     //case o: Array[AnyRef] => o.map(e => new WrappedValue(e))
-    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+    case _ => throw new InternalRuntimeError(s"Unexpected non-tuple value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -291,59 +291,79 @@ object Value {
   def mkSome(ref: AnyRef): AnyRef = ref
 
   /**
-    * Constructs the flix representation of a list for the given `ref`.
+    * Constructs the Flix representation of a list for the given `ref`.
     */
-  def mkList(ref: AnyRef): AnyRef = ??? // TODO
+  def mkList(ref: AnyRef): AnyRef = ref match {
+    case o: immutable.List[_] => o
+    // TODO other cases
+    case _ => throw new InternalRuntimeError(s"Unexpected non-list value: '$ref'.")
+  }
 
-
-
+  /**
+    * Constructs the Flix representation of a set for the given `ref`.
+    */
+  @inline
   def mkSet(ref: AnyRef): AnyRef = ref match {
     case o: immutable.Set[_] => o
-    case o: java.lang.Iterable[_] => ???
-
+    case o: java.lang.Iterable[_] => ??? // TODO
+    case _ => throw new InternalRuntimeError(s"Unexpected non-set value: '$ref'.")
   }
 
-
-  def mkMap[ValueType](map: Map[ValueType, ValueType]): ValueType = ??? // TODO
-
-
-  // TODO: return type
-  def cast2opt(ref: AnyRef) = ref match {
-    case null => java.util.Optional.empty()
-    //   case o => java.util.Optional.of(new WrappedValue(o))
+  /**
+    * Constructs the Flix representation of a map for the given `ref`.
+    */
+  @inline
+  def mkMap(ref: AnyRef): AnyRef = ref match {
+    case o: immutable.Map[_, _] => o
+    case o: java.lang.Iterable[_] => ??? // TODO
+    case _ => throw new InternalRuntimeError(s"Unexpected non-map value: '$ref'.")
   }
 
-  // TODO: return type
-  def cast2list(ref: AnyRef): immutable.List[AnyRef] = ???
+  /**
+    * Casts the given `ref` to a Flix opt value.
+    */
+  @inline
+  def cast2opt(ref: AnyRef): AnyRef = ref
 
-
-  def cast2set(ref: AnyRef): Traversable[AnyRef] = ref match {
-    //case v: Value.Set => v.elms.map(e => new WrappedValue(e))
-    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  /**
+    * Casts the given `ref` to a Flix list value.
+    */
+  @inline
+  def cast2list(ref: AnyRef): immutable.List[AnyRef] = ref match {
+    case o: immutable.List[AnyRef]@unchecked => o
+    case _ => throw new InternalRuntimeError(s"Unexpected non-list value: '$ref'.")
   }
 
+  /**
+    * Casts the given `ref` to a Flix set value.
+    */
+  @inline
+  def cast2set(ref: AnyRef): immutable.Set[AnyRef] = ref match {
+    case o: immutable.Set[AnyRef]@unchecked => o
+    case _ => throw new InternalRuntimeError(s"Unexpected non-set value: '$ref'.")
+  }
+
+  /**
+    * Casts the given `ref` to a Flix map value.
+    */
+  @inline
   def cast2map(ref: AnyRef): immutable.Map[AnyRef, AnyRef] = ref match {
-    //    case o: immutable.Map[AnyRef, AnyRef]@unchecked =>
-    //      o.foldLeft(Map.empty[AnyRef, AnyRef]) {
-    //        case (macc, (key, value)) =>
-    //          val k = new WrappedValue(key)
-    //          val v = new WrappedValue(value)
-    //          macc + (k -> v)
-    //      }
-    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+    case o: immutable.Map[AnyRef, AnyRef]@unchecked => o
+    case _ => throw new InternalRuntimeError(s"Unexpected non-map value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Pretty Printing                                                         //
   /////////////////////////////////////////////////////////////////////////////
-
-  // TODO: Doc and cleanup.
-  def pretty(o: AnyRef): String = o match {
+  /**
+    * Returns a pretty printed formatting of the given Flix `ref`.
+    */
+  def pretty(ref: AnyRef): String = ref match {
     case Value.Unit => "()"
 
     case v: Value.Tag => s"${v.enum}.${v.tag}(${pretty(v.value)})"
     case Value.Tuple(elms) => "(" + elms.map(pretty).mkString(",") + ")"
-    case _ => o.toString
+    case _ => ref.toString
   }
 
 }
