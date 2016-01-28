@@ -3,7 +3,7 @@ package ca.uwaterloo.flix
 import java.nio.file.{Files, InvalidPathException, Paths}
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.{Debugger, Options, Validation, Verbosity}
+import ca.uwaterloo.flix.util._
 
 /**
   * The main entry point for the Flix compiler and runtime.
@@ -36,6 +36,7 @@ object Main {
         case "--verbose" => options = options.copy(verbosity = Verbosity.Verbose)
         case "-s" => options = options.copy(verbosity = Verbosity.Silent)
         case "--silent" => options = options.copy(verbosity = Verbosity.Silent)
+        case "--verify" => options = options.copy(verify = Verify.Enabled)
         case _ =>
           Console.println(s"Error: '$arg' is not a valid argument.")
           System.exit(1)

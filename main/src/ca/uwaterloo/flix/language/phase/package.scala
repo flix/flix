@@ -10,6 +10,8 @@ package object phase {
     //  TODO: return Name.Ident
     def fresh(): SimplifiedAst.Expression.Var = ???
 
+    def fresh2(): Name.Ident = ???
+
     // TODO: Maintain map from s to Int
     def of(s: Name.Ident): Int = {
       number = number + 1

@@ -5,8 +5,9 @@ import java.nio.file.{Files, Path, Paths}
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.phase.{GenSym, Verifier, Simplifier}
 import ca.uwaterloo.flix.runtime.{Model, Solver, Value}
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.{Verify, Options, Validation}
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
@@ -156,7 +157,14 @@ class Flix {
     */
   def solve(): Validation[Model, FlixError] = {
     compile() map {
-      case ast => new Solver()(Solver.SolverContext(ast, options)).solve()
+      case ast =>
+        if (options.verify == Verify.Enabled) {
+          implicit val genSym = new GenSym()
+          val sast = Simplifier.simplify(ast)
+          Verifier.checkAll(sast)
+        }
+
+        new Solver()(Solver.SolverContext(ast, options)).solve()
     }
   }
 

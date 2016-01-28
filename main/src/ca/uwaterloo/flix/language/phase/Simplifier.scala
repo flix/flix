@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.ast.BinaryOperator.Equal
 import ca.uwaterloo.flix.language.ast.{Type, BinaryOperator, SimplifiedAst, TypedAst}
 
 /**
@@ -113,6 +114,74 @@ object Simplifier {
   }
 
   object Pattern {
+
+    import TypedAst.Pattern._
+    import SimplifiedAst.{Expression => SExp}
+
+    /**
+      * Eliminates pattern matching.
+      */
+    def simplify(xs: List[TypedAst.Pattern],
+                 ys: List[SExp.Var],
+                 succ: SExp,
+                 fail: SExp)(implicit genSym: GenSym): SExp = (xs, ys) match {
+      /**
+        * There are no more patterns and variables to match.
+        *
+        * The pattern was match successfully and we simply return the body expression.
+        */
+      case (Nil, Nil) => succ
+
+      /**
+        * Matching a wildcard is guaranteed to succeed.
+        *
+        * We proceed by recursion on the remaining patterns and variables.
+        */
+      case (Wildcard(tpe, loc) :: ps, v :: vs) =>
+        simplify(ps, vs, succ, fail)
+
+      /**
+        * Matching a variable is guaranteed to succeed.
+        *
+        * We proceed by constructing a let-binding that binds the value
+        * of the match variable `ident` to the variable `v`.
+        * The body of the let-binding is computed by recursion on the
+        * remaining patterns and variables.
+        */
+      case (Var(ident, tpe, loc) :: ps, v :: vs) =>
+        val exp = simplify(ps, vs, succ, fail)
+        SExp.Let(ident, -1, v, exp, succ.tpe, loc)
+
+      /**
+        * Matching a literal may succeed or fail.
+        *
+        * We generate a binary expression testing whether the literal `lit`
+        * matches the variable `v` and then we generate an if-then-else
+        * expression where the consequent expression is determined by
+        * recursion on the remaining patterns and variables and the
+        * alternative expression is `fail`.
+        */
+      case (Lit(lit, tpe, loc) :: ps, v :: vs) =>
+        val exp = simplify(ps, vs, succ, fail)
+        val cond = SExp.Binary(Equal, Literal.simplify(lit), v, Type.Bool, loc)
+        SExp.IfThenElse(cond, exp, fail, succ.tpe, loc)
+
+      /**
+        * Matching a tag may succeed or fail.
+        *
+        * We generate a binary expression testing whether the tag name `tag`
+        * matches the tag extracted from the variable `v` and then we generate
+        * an if-then-else expression where the consequent expression is determined
+        * by recursion on the remaining patterns and variables together with the
+        * nested pattern of the tag added in front and a new fresh variable holding
+        * the value of the tag.
+        */
+      case (Tag(enum, tag, pat, tpe, loc) :: ps, v :: vs) =>
+        val cond = SExp.CheckTag(tag, v, loc)
+        val freshVar = genSym.fresh2()
+        val consequent = SExp.Let(freshVar, -1, SExp.GetTagValue(v, pat.tpe, loc), succ, succ.tpe, loc)
+        SExp.IfThenElse(cond, consequent, fail, succ.tpe, loc)
+    }
 
     def genCode(patterns: List[TypedAst.Pattern],
                 variables: List[SimplifiedAst.Expression.Var],
