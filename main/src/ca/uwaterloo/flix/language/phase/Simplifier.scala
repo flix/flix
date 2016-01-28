@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.BinaryOperator.Equal
-import ca.uwaterloo.flix.language.ast.{Type, BinaryOperator, SimplifiedAst, TypedAst}
+import ca.uwaterloo.flix.language.ast._
 
 /**
   * A phase that simplifies a Typed AST by:
@@ -122,7 +122,7 @@ object Simplifier {
       * Eliminates pattern matching.
       */
     def simplify(xs: List[TypedAst.Pattern],
-                 ys: List[SExp.Var],
+                 ys: List[Name.Ident],
                  succ: SExp,
                  fail: SExp)(implicit genSym: GenSym): SExp = (xs, ys) match {
       /**
@@ -150,7 +150,7 @@ object Simplifier {
         */
       case (Var(ident, tpe, loc) :: ps, v :: vs) =>
         val exp = simplify(ps, vs, succ, fail)
-        SExp.Let(ident, -1, v, exp, succ.tpe, loc)
+        SExp.Let(ident, -1, SExp.Var(v, -1, tpe, loc), exp, succ.tpe, loc)
 
       /**
         * Matching a literal may succeed or fail.
@@ -163,7 +163,7 @@ object Simplifier {
         */
       case (Lit(lit, tpe, loc) :: ps, v :: vs) =>
         val exp = simplify(ps, vs, succ, fail)
-        val cond = SExp.Binary(Equal, Literal.simplify(lit), v, Type.Bool, loc)
+        val cond = SExp.Binary(Equal, Literal.simplify(lit), SExp.Var(v, -1, tpe, loc), Type.Bool, loc)
         SExp.IfThenElse(cond, exp, fail, succ.tpe, loc)
 
       /**
@@ -177,10 +177,26 @@ object Simplifier {
         * the value of the tag.
         */
       case (Tag(enum, tag, pat, tpe, loc) :: ps, v :: vs) =>
-        val cond = SExp.CheckTag(tag, v, loc)
+        val cond = SExp.CheckTag(tag, SExp.Var(v, -1, tpe, loc), loc)
         val freshVar = genSym.fresh2()
-        val consequent = SExp.Let(freshVar, -1, SExp.GetTagValue(v, pat.tpe, loc), succ, succ.tpe, loc)
+        val consequent = SExp.Let(freshVar, -1, SExp.GetTagValue(SExp.Var(v, -1, tpe, loc), pat.tpe, loc), succ, succ.tpe, loc)
         SExp.IfThenElse(cond, consequent, fail, succ.tpe, loc)
+
+      /**
+        * Matching a tuple may succeed or fail.
+        *
+        * We generate a fresh variable and let-binding for each component of the
+        * tuple and then we recurse on the nested patterns and freshly generated
+        * variables.
+        */
+      case (Tuple(elms, tpe, loc) :: ps, v :: vs) =>
+        val freshVars = elms.map(_ => genSym.fresh2())
+        val zero = simplify(elms ::: ps, freshVars ::: vs, succ, fail)
+        (elms zip freshVars zipWithIndex).foldRight(zero) {
+          case (((pat, name), idx), exp) =>
+            SExp.Let(name, -1, SExp.TupleAt(SExp.Var(v, -1, pat.tpe, loc), -1, pat.tpe, loc), exp, zero.tpe, loc)
+        }
+
     }
 
     def genCode(patterns: List[TypedAst.Pattern],

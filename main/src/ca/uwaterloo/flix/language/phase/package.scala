@@ -10,6 +10,7 @@ package object phase {
     //  TODO: return Name.Ident
     def fresh(): SimplifiedAst.Expression.Var = ???
 
+    // TODO: Consider allowing a "seed" variable.
     def fresh2(): Name.Ident = ???
 
     // TODO: Maintain map from s to Int
