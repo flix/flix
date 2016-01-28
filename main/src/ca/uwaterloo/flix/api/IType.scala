@@ -55,6 +55,11 @@ trait IType {
   def isEnum: Boolean
 
   /**
+    * Returns `true` if `this` type is the function type.
+    */
+  def isFunction: Boolean
+
+  /**
     * Returns `true` if `this` type is the tuple type.
     */
   def isTuple: Boolean

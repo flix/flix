@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.{Invokable, IValue, Flix}
+import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast.TypedAst.{Definition, Expression, Literal, Pattern, Term, FormalArg, Root}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.Compiler
@@ -557,9 +558,10 @@ class TestInterpreter extends FunSuite {
        """.stripMargin
     var executed = false
     val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType)
     flix
       .addStr(input)
-      .addHook("A::g", Type.Lambda(List(Type.Int), Type.Bool), new Invokable {
+      .addHook("A::g", tpe, new Invokable {
         def apply(args: Array[IValue]): IValue = {
           executed = true
           flix.mkTrue
@@ -580,9 +582,10 @@ class TestInterpreter extends FunSuite {
        """.stripMargin
     var executed = false
     val flix = new Flix()
-    flix
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkInt32Type), flix.mkInt32Type)
+      flix
       .addStr(input)
-      .addHook("A::g", Type.Lambda(List(Type.Int, Type.Int), Type.Int), new Invokable {
+      .addHook("A::g", tpe, new Invokable {
         def apply(args: Array[IValue]): IValue = {
           executed = true
           flix.mkInt32(args(0).getInt32 + args(1).getInt32)
@@ -603,9 +606,10 @@ class TestInterpreter extends FunSuite {
        """.stripMargin
     var executed = false
     val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(), flix.mkInt32Type)
     flix
       .addStr(input)
-      .addHook("A::g", Type.Lambda(List(), Type.Int), new Invokable {
+      .addHook("A::g", tpe, new Invokable {
         def apply(args: Array[IValue]): IValue = {
           executed = true
           flix.mkInt32(123)
@@ -2825,9 +2829,10 @@ class TestInterpreter extends FunSuite {
        """.stripMargin
     var counter = 0
     val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType)
     flix
       .addStr(input)
-      .addHook("A::g", Type.Lambda(List(Type.Int), Type.Bool), new Invokable {
+      .addHook("A::g", tpe, new Invokable {
         def apply(args: Array[IValue]): IValue = {
           counter += 1
           flix.mkTrue
@@ -2853,9 +2858,10 @@ class TestInterpreter extends FunSuite {
        """.stripMargin
     var counter = 0
     val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkInt32Type), flix.mkInt32Type)
     flix
       .addStr(input)
-      .addHook("A::g", Type.Lambda(List(Type.Int, Type.Int), Type.Int), new Invokable {
+      .addHook("A::g", tpe, new Invokable {
         def apply(args: Array[IValue]): IValue = {
           counter += 1
           flix.mkInt32(args(0).getInt32 + args(1).getInt32)
@@ -2877,9 +2883,10 @@ class TestInterpreter extends FunSuite {
        """.stripMargin
     var counter = 0
     val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(), flix.mkInt32Type)
     flix
       .addStr(input)
-      .addHook("A::g", Type.Lambda(List(), Type.Int), new Invokable {
+      .addHook("A::g", tpe, new Invokable {
         def apply(args: Array[IValue]): IValue = {
           counter += 1
           flix.mkInt32(123)

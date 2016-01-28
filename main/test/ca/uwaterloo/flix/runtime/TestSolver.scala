@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.{Invokable, IValue, Flix}
+import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast.{Type, Name}
 import org.scalatest.FunSuite
 
@@ -483,9 +484,10 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkStrType)
     flix
       .addStr(s)
-      .addHook("f", Type.Lambda(List(Type.Int), Type.Str), new Invokable {
+      .addHook("f", tpe, new Invokable {
         override def apply(args: Array[IValue]): IValue = flix.mkBool(args(0) == flix.mkInt32(1))
       })
 

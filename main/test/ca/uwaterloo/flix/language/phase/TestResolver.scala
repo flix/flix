@@ -1,7 +1,8 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{Invokable, IValue, Flix}
+import ca.uwaterloo.flix.api.{IType, Invokable, IValue, Flix}
 import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.runtime.Value
 import org.scalatest.FunSuite
 
@@ -313,9 +314,10 @@ class TestResolver extends FunSuite {
           |};
        """.stripMargin
     val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType)
     flix
       .addStr(input)
-      .addHook("A::g", Type.Lambda(List(Type.Int), Type.Bool), new Invokable {
+      .addHook("A::g", tpe, new Invokable {
         def apply(args: Array[IValue]) = flix.mkTrue
       })
     val result = flix.compile()
@@ -329,9 +331,10 @@ class TestResolver extends FunSuite {
           |};
        """.stripMargin
     val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkInt32Type, flix.mkStrType), flix.mkBoolType)
     flix
       .addStr(input)
-      .addHook("A::g", Type.Lambda(List(Type.Bool, Type.Int, Type.Str), Type.Bool), new Invokable {
+      .addHook("A::g", tpe, new Invokable {
         def apply(args: Array[IValue]) = flix.mkTrue
       })
     val result = flix.compile()
@@ -347,9 +350,10 @@ class TestResolver extends FunSuite {
           |};
        """.stripMargin
     val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkInt32Type, flix.mkStrType), flix.mkBoolType)
     flix
       .addStr(input)
-      .addHook("A::f", Type.Lambda(List(Type.Bool, Type.Int, Type.Str), Type.Bool), new Invokable {
+      .addHook("A::f", tpe, new Invokable {
         def apply(args: Array[IValue]) = flix.mkTrue
       })
     val result = flix.compile()
@@ -365,9 +369,10 @@ class TestResolver extends FunSuite {
           |};
        """.stripMargin
     val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkStrType), flix.mkStrType)
     flix
       .addStr(input)
-      .addHook("A::f", Type.Lambda(List(Type.Int, Type.Str), Type.Str), new Invokable {
+      .addHook("A::f", tpe, new Invokable {
         def apply(args: Array[IValue]) = flix.mkStr("foo")
       })
     val result = flix.compile()

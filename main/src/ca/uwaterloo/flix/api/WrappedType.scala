@@ -33,6 +33,11 @@ final class WrappedType(val tpe: Type) extends IType {
     case _ => false
   }
 
+  def isFunction: Boolean = tpe match {
+    case Type.Lambda(args, retTpe) => true
+    case _ => false
+  }
+
   def isTuple: Boolean = tpe match {
     case Type.Tuple(elms) => true
     case _ => false

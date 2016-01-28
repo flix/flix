@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.api
 import java.nio.file.{Files, Path, Paths}
 
 import ca.uwaterloo.flix.language.Compiler
+import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.{Model, Solver, Value}
 import ca.uwaterloo.flix.util.{Options, Validation}
@@ -79,17 +80,21 @@ class Flix {
     * @param tpe  the Flix type of the invokable.
     * @param inv  the invokable method.
     */
-  def addHook(name: String, tpe: Type.Lambda, inv: Invokable): Flix = {
+  def addHook(name: String, tpe: IType, inv: Invokable): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
     if (inv == null)
       throw new IllegalArgumentException("'inv' must be non-null.")
     if (tpe == null)
       throw new IllegalArgumentException("'tpe' must be non-null.")
+    if (!tpe.isFunction)
+      throw new IllegalArgumentException("'tpe' must be a function type.")
 
     val rname = Name.Resolved.mk(name)
     hooks.get(rname) match {
-      case None => hooks += (rname -> Ast.Hook.Safe(rname, inv, tpe))
+      case None =>
+        val typ = tpe.asInstanceOf[WrappedType].tpe.asInstanceOf[Lambda]
+        hooks += (rname -> Ast.Hook.Safe(rname, inv, typ))
       case Some(otherHook) =>
         throw new IllegalStateException(s"Another hook already exists for the given '$name'.")
     }
@@ -103,17 +108,21 @@ class Flix {
     * @param tpe  the Flix type of the invokable.
     * @param inv  the invokable method.
     */
-  def addHookUnsafe(name: String, tpe: Type.Lambda, inv: InvokableUnsafe): Flix = {
+  def addHookUnsafe(name: String, tpe: IType, inv: InvokableUnsafe): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
     if (inv == null)
       throw new IllegalArgumentException("'inv' must be non-null.")
     if (tpe == null)
       throw new IllegalArgumentException("'tpe' must be non-null.")
+    if (!tpe.isFunction)
+      throw new IllegalArgumentException("'tpe' must be a function type.")
 
     val rname = Name.Resolved.mk(name)
     hooks.get(rname) match {
-      case None => hooks += (rname -> Ast.Hook.Unsafe(rname, inv, tpe))
+      case None =>
+        val typ = tpe.asInstanceOf[WrappedType].tpe.asInstanceOf[Lambda]
+        hooks += (rname -> Ast.Hook.Unsafe(rname, inv, typ))
       case Some(otherHook) =>
         throw new IllegalStateException(s"Another hook already exists for the given '$name'.")
     }
@@ -200,7 +209,7 @@ class Flix {
   /**
     * Returns the int32 type.
     */
-  def mkInt32Type: IType = new WrappedType(Type.Int32)
+  def mkInt32Type: IType = new WrappedType(Type.Int)
 
   /**
     * Returns the int64 type.
