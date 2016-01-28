@@ -302,6 +302,12 @@ object SimplifiedAst {
                      tpe: Type,
                      loc: SourceLocation) extends SimplifiedAst.Expression
 
+    // TODO:
+    case class Apply2(name: Name.Ident,
+                     args: List[SimplifiedAst.Expression],
+                     tpe: Type,
+                     loc: SourceLocation) extends SimplifiedAst.Expression
+
     /**
       * A typed AST node representing a unary expression.
       *
