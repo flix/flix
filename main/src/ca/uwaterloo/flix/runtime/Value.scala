@@ -360,8 +360,14 @@ object Value {
     */
   def pretty(ref: AnyRef): String = ref match {
     case Value.Unit => "()"
-
-    case v: Value.Tag => s"${v.enum}.${v.tag}(${pretty(v.value)})"
+    case o: java.lang.Boolean => o.booleanValue().toString
+    case o: java.lang.Character => o.charValue().toString
+    case o: java.lang.Byte => o.byteValue().toString
+    case o: java.lang.Short => o.shortValue().toString
+    case o: java.lang.Integer => o.intValue().toString
+    case o: java.lang.Long => o.longValue().toString
+    case o: java.lang.String => o
+    case o: Value.Tag => s"${o.tag}(${pretty(o.value)})"
     case Value.Tuple(elms) => "(" + elms.map(pretty).mkString(",") + ")"
     case _ => ref.toString
   }
