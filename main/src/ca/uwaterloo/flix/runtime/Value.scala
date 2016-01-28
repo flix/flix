@@ -9,71 +9,13 @@ import java.util
 
 object Value {
 
-
-  def cast2str(ref: AnyRef): String = ref match {
-    case v: Value.Str => v.s
-    case o: java.lang.String => o
-    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
-  }
-
-  def cast2tuple(ref: AnyRef): Array[AnyRef] = ref match {
-    // case v: Value.Tuple => v.elms.map(e => new WrappedValue(e))
-    //case o: Array[AnyRef] => o.map(e => new WrappedValue(e))
-    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
-  }
-
-  def cast2tag(ref: AnyRef): Value.Tag = ref match {
-    case v: Value.Tag => v
-    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
-  }
-
-  // TODO: return type
-  def cast2opt(ref: AnyRef) = ref match {
-    case null => java.util.Optional.empty()
-    //   case o => java.util.Optional.of(new WrappedValue(o))
-  }
-
-  // TODO: return type
-  def cast2list(ref: AnyRef): immutable.List[AnyRef] = ???
-
-  def cast2set(ref: AnyRef): immutable.Set[AnyRef] = ref match {
-    //case v: Value.Set => v.elms.map(e => new WrappedValue(e))
-    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
-  }
-
-  def cast2map(ref: AnyRef): immutable.Map[AnyRef, AnyRef] = ref match {
-    //    case o: immutable.Map[AnyRef, AnyRef]@unchecked =>
-    //      o.foldLeft(Map.empty[AnyRef, AnyRef]) {
-    //        case (macc, (key, value)) =>
-    //          val k = new WrappedValue(key)
-    //          val v = new WrappedValue(value)
-    //          macc + (k -> v)
-    //      }
-    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
-  }
-
-
-  // TODO: Doc and cleanup.
-  def pretty(o: AnyRef): String = o match {
-    case Value.Unit => "()"
-    case v: Value.Bool => v.b.toString
-    case v: Value.Int => v.i.toString
-    case v: Value.Str => v.s.toString
-    case v: Value.Tag => s"${v.enum}.${v.tag}(${pretty(v.value)})"
-    case Value.Tuple(elms) => "(" + elms.map(pretty).mkString(",") + ")"
-    case Value.Set(elms) => "{" + elms.map(pretty).mkString(",") + "}"
-    case Value.Closure(_, _, _) => ???
-    case Value.Native(v) => s"Native($v)"
-    case _ => o.toString
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Unit                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   /**
     * The Unit value.
     */
-  case object Unit
+  object Unit
 
   /////////////////////////////////////////////////////////////////////////////
   // Bool                                                                    //
@@ -125,11 +67,13 @@ object Value {
   /**
     * Constructs a char value from the given char `c`.
     */
+  @inline
   def mkChar(c: Char): AnyRef = new java.lang.Character(c)
 
   /**
     * Casts the given reference `ref` to a primitive char.
     */
+  @inline
   def cast2char(ref: AnyRef): Char = ref match {
     case o: java.lang.Character => o.charValue()
     case _ => throw new InternalRuntimeError(s"Unexpected non-char type: '$ref'.")
@@ -142,11 +86,13 @@ object Value {
   /**
     * Constructs an int8 value from the given byte `b`.
     */
+  @inline
   def mkInt8(b: Byte): AnyRef = new java.lang.Byte(b)
 
   /**
     * Constructs an int8 from the given int `i`.
     */
+  @inline
   def mkInt8(i: scala.Int): AnyRef = new java.lang.Byte(i.asInstanceOf[Byte])
 
   def mkInt16(s: Short): AnyRef = ???
@@ -327,5 +273,63 @@ object Value {
   def mkNone[ValueType]: ValueType = ??? // TODO
 
   def mkSome[ValueType](v: ValueType): ValueType = ??? // TODO
+
+
+  def cast2str(ref: AnyRef): String = ref match {
+    case v: Value.Str => v.s
+    case o: java.lang.String => o
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
+
+  def cast2tuple(ref: AnyRef): Array[AnyRef] = ref match {
+    // case v: Value.Tuple => v.elms.map(e => new WrappedValue(e))
+    //case o: Array[AnyRef] => o.map(e => new WrappedValue(e))
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
+
+  def cast2tag(ref: AnyRef): Value.Tag = ref match {
+    case v: Value.Tag => v
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
+
+  // TODO: return type
+  def cast2opt(ref: AnyRef) = ref match {
+    case null => java.util.Optional.empty()
+    //   case o => java.util.Optional.of(new WrappedValue(o))
+  }
+
+  // TODO: return type
+  def cast2list(ref: AnyRef): immutable.List[AnyRef] = ???
+
+  def cast2set(ref: AnyRef): immutable.Set[AnyRef] = ref match {
+    //case v: Value.Set => v.elms.map(e => new WrappedValue(e))
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
+
+  def cast2map(ref: AnyRef): immutable.Map[AnyRef, AnyRef] = ref match {
+    //    case o: immutable.Map[AnyRef, AnyRef]@unchecked =>
+    //      o.foldLeft(Map.empty[AnyRef, AnyRef]) {
+    //        case (macc, (key, value)) =>
+    //          val k = new WrappedValue(key)
+    //          val v = new WrappedValue(value)
+    //          macc + (k -> v)
+    //      }
+    case _ => throw new UnsupportedOperationException(s"Unexpected value: '$ref'.")
+  }
+
+
+  // TODO: Doc and cleanup.
+  def pretty(o: AnyRef): String = o match {
+    case Value.Unit => "()"
+    case v: Value.Bool => v.b.toString
+    case v: Value.Int => v.i.toString
+    case v: Value.Str => v.s.toString
+    case v: Value.Tag => s"${v.enum}.${v.tag}(${pretty(v.value)})"
+    case Value.Tuple(elms) => "(" + elms.map(pretty).mkString(",") + ")"
+    case Value.Set(elms) => "{" + elms.map(pretty).mkString(",") + "}"
+    case Value.Closure(_, _, _) => ???
+    case Value.Native(v) => s"Native($v)"
+    case _ => o.toString
+  }
 
 }
