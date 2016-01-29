@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{FlixError, Flix}
+import ca.uwaterloo.flix.api.FlixError
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
@@ -373,12 +373,12 @@ object Verifier {
         val formula = {
           val x = mkVar("x")
 
-          ∀(x)(Expression.Binary(BinaryOperator.GreaterEqual, lattice.acc(x), Expression.Int(0), Type.Bool, SourceLocation.Unknown))
+          ∀(x)(Expression.Binary(BinaryOperator.GreaterEqual, ???, Expression.Int(0), Type.Bool, SourceLocation.Unknown))
         }
 
         def fail(env0: Map[String, Expression]): VerifierError = {
           val x = env0.get("x")
-          HeightNonNegativeError(x, lattice.acc.loc)
+          HeightNonNegativeError(x, ???)
         }
       }
 
@@ -396,14 +396,14 @@ object Verifier {
           ∀(x, y)(
             →(
               ∧(⊑(x, y), ¬(≡(x, y))),
-              Expression.Binary(BinaryOperator.Greater, lattice.acc(x), lattice.acc(y), Type.Bool, SourceLocation.Unknown)
+              Expression.Binary(BinaryOperator.Greater, ???, ???, Type.Bool, SourceLocation.Unknown)
             ))
         }
 
         def fail(env0: Map[String, Expression]): VerifierError = {
           val x = env0.get("x")
           val y = env0.get("y")
-          HeightStrictlyDecreasingError(x, y, lattice.acc.loc)
+          HeightStrictlyDecreasingError(x, y, ???)
         }
       }
 
@@ -678,7 +678,7 @@ object Verifier {
     val properties = collectProperties(root)
 
     // attempt to verify each property.
-    properties flatMap checkProperty
+    properties flatMap (p => checkProperty(p, root))
   }
 
   /**
@@ -687,7 +687,7 @@ object Verifier {
     * Returns `None` if the property is satisfied.
     * Otherwise returns `Some` containing the verification error.
     */
-  def checkProperty(property: Property): Option[VerifierError] = {
+  def checkProperty(property: Property, root: SimplifiedAst.Root): Option[VerifierError] = {
     // the base expression
     val exp0 = property.formula.e
 
@@ -696,7 +696,7 @@ object Verifier {
 
     // attempt to verify that the property holds under each environment.
     val violations = envs flatMap {
-      case env0 => PartialEvaluator.eval(exp0, env0, identity) match {
+      case env0 => PartialEvaluator.eval(exp0, root, env0) match {
         case Expression.True =>
           // Case 1: The partial evaluator proved the property.
           Nil
@@ -732,17 +732,35 @@ object Verifier {
   /**
     * Enumerates all possible environments of the given universally quantified variables.
     */
+  // TODO: replace string by name?
   def enumerate(q: List[Var]): List[Map[String, Expression]] = {
+    val genSym = new GenSym
+
     def visit(tpe: Type): List[Expression] = tpe match {
       case Type.Unit => List(Expression.Unit)
       case Type.Bool => List(Expression.True, Expression.False)
-      case Type.Int => List(Expression.Var(???, ???, Type.Int, SourceLocation.Unknown)) // TODO: Need genSym
+      case Type.Int => List(Expression.Var(genSym.fresh2(), -1, Type.Int, SourceLocation.Unknown))
       case Type.Tuple(elms) => ???
-      case Type.Enum(cases) => ???
+      case t@Type.Enum(cases) =>
+        val enum = cases.head._2.enum
+        val r = cases flatMap {
+          case (tagName, tagType) =>
+            val tag = Name.Ident(SourcePosition.Unknown, tagName, SourcePosition.Unknown)
+            visit(tagType.tpe) map {
+              case e => Expression.Tag(enum, tag, e, t, SourceLocation.Unknown)
+            }
+        }
+        r.toList
       case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
     }
 
-    ???
+    val result = q map {
+      case name => visit(name.tpe) map {
+        case exp => name.ident.name -> exp
+      }
+    }
+
+    result.transpose.map(_.toMap)
   }
 
   /**
@@ -766,9 +784,9 @@ object Verifier {
         Property.JoinSemiLattice.LeastUpperBound(l),
         Property.MeetSemiLattice.GreatestElement(l),
         Property.MeetSemiLattice.LowerBound(l),
-        Property.MeetSemiLattice.GreatestLowerBound(l),
-        Property.AscendingChainCondition.HeightNonNegative(l),
-        Property.AscendingChainCondition.HeightStrictlyDecreasing(l)
+        Property.MeetSemiLattice.GreatestLowerBound(l)
+        //        Property.AscendingChainCondition.HeightNonNegative(l), // TODO
+        //        Property.AscendingChainCondition.HeightStrictlyDecreasing(l) // TODO
       )
     }
 
@@ -806,7 +824,7 @@ object Verifier {
     * Returns a variable expression of the given name `s`.
     */
   def mkVar2(s: String, tpe: Type): Expression.Var = {
-    Var(Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown), ???, tpe, SourceLocation.Unknown)
+    Var(Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown), -1, tpe, SourceLocation.Unknown)
   }
 
   /**
@@ -853,10 +871,10 @@ object Verifier {
 
   implicit class RichLambda(val f: Expression.Lambda) {
     def apply(e1: Expression): Expression =
-      Expression.Apply(???, List(e1), f.tpe.retTpe, SourceLocation.Unknown)
+      Expression.Apply3(f, List(e1), f.tpe.retTpe, SourceLocation.Unknown)
 
     def apply(e1: Expression, e2: Expression): Expression =
-      Expression.Apply(???, List(e1, e2), f.tpe.retTpe, SourceLocation.Unknown)
+      Expression.Apply3(f, List(e1, e2), f.tpe.retTpe, SourceLocation.Unknown)
   }
 
   /**
@@ -888,21 +906,21 @@ object Verifier {
       */
     // TODO: Function needs to be a name, not an arbitrary expression
     def ⊑(e1: Expression, e2: Expression): Expression =
-      Apply(???, List(e1, e2), e1.tpe, SourceLocation.Unknown)
+      Apply3(lattice.leq, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
     /**
       * Returns the least upper bound of the two expressions `e1` and `e2`.
       */
     // TODO: Function needs to be a name, not an arbitrary expression
     def ⊔(e1: Expression, e2: Expression): Expression =
-      Apply(???, List(e1, e2), e1.tpe, SourceLocation.Unknown)
+      Apply3(lattice.lub, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
     /**
       * Returns the greatest lower bound of the two expressions `e1` and `e2`.
       */
     // TODO: Function needs to be a name, not an arbitrary expression
     def ⊓(e1: Expression, e2: Expression): Expression =
-      Apply(???, List(e1, e2), e1.tpe, SourceLocation.Unknown)
+      Apply3(lattice.glb, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
     /**
       * Returns the widening of the two expressions `e1` and `e2`.

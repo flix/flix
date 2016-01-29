@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime.datastore
 
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.runtime.{Solver, Value}
+import ca.uwaterloo.flix.runtime.Solver
 import ca.uwaterloo.flix.util.BitOps
 
 import scala.collection.mutable
@@ -16,12 +16,12 @@ import scala.collection.mutable
   * @param indexes the indexes.
   * @param default the default index.
   */
-final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set[Int], default: Int)(implicit sCtx: Solver.SolverContext) extends IndexedCollection {
+final class IndexedRelation[ValueType](relation: TypedAst.Collection.Relation, indexes: Set[Int], default: Int)(implicit sCtx: Solver.SolverContext) extends IndexedCollection[ValueType] {
 
   /**
     * A map from indexes to keys to rows of values.
     */
-  private val store = mutable.Map.empty[Int, mutable.Map[Key, mutable.ArrayBuffer[Array[Value]]]]
+  private val store = mutable.Map.empty[Int, mutable.Map[Key[ValueType], mutable.ArrayBuffer[Array[ValueType]]]]
 
   /**
     * A map from indexes to number of successful usages.
@@ -89,7 +89,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
     *
     * Returns `true` iff the fact did not already exist in the relation.
     */
-  def inferredFact(fact: Array[Value]): Boolean = {
+  def inferredFact(fact: Array[ValueType]): Boolean = {
     if (lookup(fact).isEmpty) {
       newFact(fact)
       return true
@@ -100,11 +100,11 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   /**
     * Updates all indexes and tables with a new `fact`.
     */
-  private def newFact(fact: Array[Value]): Unit = {
+  private def newFact(fact: Array[ValueType]): Unit = {
     // loop through all the indexes and update the tables.
     for (idx <- indexes) {
       val key = keyOf(idx, fact)
-      val table = store(idx).getOrElseUpdate(key, mutable.ArrayBuffer.empty[Array[Value]])
+      val table = store(idx).getOrElseUpdate(key, mutable.ArrayBuffer.empty[Array[ValueType]])
       table += fact
     }
   }
@@ -116,7 +116,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
     *
     * Returns an iterator over the matching rows.
     */
-  def lookup(pat: Array[Value]): Iterator[Array[Value]] = {
+  def lookup(pat: Array[ValueType]): Iterator[Array[ValueType]] = {
     // case 1: Check if there is an exact index.
     var idx = getExactIndex(indexes, pat)
     if (idx != 0) {
@@ -150,7 +150,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
   /**
     * Returns all rows in the relation using a table scan.
     */
-  def scan: Iterator[Array[Value]] = store(default).iterator.flatMap {
+  def scan: Iterator[Array[ValueType]] = store(default).iterator.flatMap {
     case (key, value) => value
   }
 
@@ -159,7 +159,7 @@ final class IndexedRelation(relation: TypedAst.Collection.Relation, indexes: Set
     *
     * A pattern matches if all is non-null entries are equal to the row.
     */
-  private def matchRow(pat: Array[Value], row: Array[Value]): Boolean = {
+  private def matchRow(pat: Array[ValueType], row: Array[ValueType]): Boolean = {
     var i = 0
     while (i < pat.length) {
       val pv = pat(i)

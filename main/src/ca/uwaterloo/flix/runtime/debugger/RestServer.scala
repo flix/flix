@@ -220,7 +220,7 @@ class RestServer(solver: Solver) {
    * @param ast the AST declaration of the relation.
    * @param relation a reference to the datastore backing the relation.
    */
-  class ListRelation(ast: TypedAst.Collection.Relation, relation: IndexedRelation) extends JsonHandler {
+  class ListRelation(ast: TypedAst.Collection.Relation, relation: IndexedRelation[AnyRef]) extends JsonHandler {
     def json: JValue = JObject(
       JField("cols", JArray(ast.attributes.map(a => JString(a.ident.name)))),
       JField("rows", JArray(relation.scan.toList.map {
@@ -234,7 +234,7 @@ class RestServer(solver: Solver) {
    * @param ast the AST declaration of the lattice.
    * @param relation a reference to the datastore backing the lattice.
    */
-  class ListLattice(ast: TypedAst.Collection.Lattice, relation: IndexedLattice) extends JsonHandler {
+  class ListLattice(ast: TypedAst.Collection.Lattice, relation: IndexedLattice[AnyRef]) extends JsonHandler {
     def json: JValue = JObject(
       JField("cols", JArray(ast.keys.map(a => JString(a.ident.name)) ::: ast.values.map(a => JString(a.ident.name)))),
       JField("rows", JArray(relation.scan.toList.map {

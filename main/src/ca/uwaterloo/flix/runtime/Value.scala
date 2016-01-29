@@ -1,118 +1,215 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
+import ca.uwaterloo.flix.api.Invokable
+import ca.uwaterloo.flix.language.ast.{Ast, Name, TypedAst}
+import ca.uwaterloo.flix.runtime.Interpreter.InternalRuntimeError
+import scala.collection.immutable
 import scala.collection.mutable
 
 import java.util
 
-@deprecated("The value trait will be removed in the future. Please do not use it. " +
-  "The replacement is to either use AnyRef or better, to use a generic parameter.", "0.1.0")
-sealed trait Value {
-  def toInt: Int = this.asInstanceOf[Value.Int].i
-}
-
 object Value {
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Unit                                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The Unit value.
+    */
+  object Unit
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Bools                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The true value.
+    */
   @inline
-  def cast2bool(ref: AnyRef): Boolean = ref match {
-    case Value.True => true
-    case Value.False => false
+  val True: AnyRef = java.lang.Boolean.TRUE
+
+  /**
+    * The false value.
+    */
+  @inline
+  val False: AnyRef = java.lang.Boolean.FALSE
+
+  /**
+    * Constructs a bool from the given boolean `b`.
+    */
+  @inline
+  def mkBool(b: Boolean): AnyRef = if (b) True else False
+
+  /**
+    * Casts the given reference `ref` to a primitive boolean.
+    */
+  @inline
+  def cast2bool(ref: Any): Boolean = ref match {
     case o: java.lang.Boolean => o.booleanValue()
-    case _ => throw new IllegalArgumentException()
+    case _ => throw new InternalRuntimeError(s"Unexpected non-bool value: '$ref'.")
   }
 
-  def pretty(o: AnyRef): String = o match {
-    case Value.Unit => "()"
-    case v: Value.Bool => v.b.toString
-    case v: Value.Int => v.i.toString
-    case v: Value.Str => v.s.toString
-    case v: Value.Tag => s"${v.enum}.${v.tag}(${pretty(v.value)})"
-    case Value.Tuple(elms) => "(" + elms.map(pretty).mkString(",") + ")"
-    case Value.Set(elms) => "{" + elms.map(pretty).mkString(",") + "}"
-    case Value.Closure(_, _, _) => ???
-    case Value.Native(v) => s"Native($v)"
-    case _ => o.toString
+  /////////////////////////////////////////////////////////////////////////////
+  // Chars                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Constructs a char value from the given char `c`.
+    */
+  @inline
+  def mkChar(c: Char): AnyRef = new java.lang.Character(c)
+
+  /**
+    * Casts the given reference `ref` to a primitive char.
+    */
+  @inline
+  def cast2char(ref: AnyRef): Char = ref match {
+    case o: java.lang.Character => o.charValue()
+    case _ => throw new InternalRuntimeError(s"Unexpected non-char value: '$ref'.")
   }
 
-  case object Unit extends Value
+  /////////////////////////////////////////////////////////////////////////////
+  // Ints                                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Constructs an int8 value from the given byte `b`.
+    */
+  @inline
+  def mkInt8(b: Byte): AnyRef = new java.lang.Byte(b)
 
-  /** *************************************************************************
-    * Value.Bool implementation                                               *
-    * **************************************************************************/
+  /**
+    * Constructs an int8 from the given int `i`.
+    */
+  @inline
+  def mkInt8(i: Int): AnyRef = new java.lang.Byte(i.asInstanceOf[Byte])
 
-  final class Bool private[Value](val b: scala.Boolean) extends Value {
-    override val toString: java.lang.String = s"Value.Bool($b)"
+  /**
+    * Constructs an int16 from the given short `s`.
+    */
+  @inline
+  def mkInt16(s: Short): AnyRef = new java.lang.Short(s)
 
-    override def equals(other: Any): scala.Boolean = other match {
-      case that: Value.Bool => that eq this
+  /**
+    * Constructs an int16 form the given int `i`.
+    */
+  @inline
+  def mkInt16(i: Int): AnyRef = new java.lang.Short(i.asInstanceOf[Short])
+
+  /**
+    * Constructs an int32 from the given int `i`.
+    */
+  @inline
+  def mkInt32(i: Int): AnyRef = new java.lang.Integer(i)
+
+  /**
+    * Constructs an int64 from the given int `i`.
+    */
+  @inline
+  def mkInt64(i: Int): AnyRef = new java.lang.Long(i)
+
+  /**
+    * Constructs an int64 from the given long `l`.
+    */
+  @inline
+  def mkInt64(l: Long): AnyRef = new java.lang.Long(l)
+
+  /**
+    * Casts the given reference `ref` to an int8.
+    */
+  @inline
+  def cast2int8(ref: AnyRef): Byte = ref match {
+    case o: java.lang.Byte => o.byteValue()
+    case _ => throw new InternalRuntimeError(s"Unexpected non-int8 value: '$ref'.")
+  }
+
+  /**
+    * Casts the given reference `ref` to an int16.
+    */
+  @inline
+  def cast2int16(ref: AnyRef): Short = ref match {
+    case o: java.lang.Short => o.shortValue()
+    case _ => throw new InternalRuntimeError(s"Unexpected non-int16 value: '$ref'.")
+  }
+
+  /**
+    * Casts the given reference `ref` to an int32.
+    */
+  @inline
+  def cast2int32(ref: AnyRef): Int = ref match {
+    case o: java.lang.Integer => o.intValue()
+    case _ => throw new InternalRuntimeError(s"Unexpected non-int32 value: '$ref'.")
+  }
+
+  /**
+    * Casts the given reference `ref` to an int64.
+    */
+  @inline
+  def cast2int64(ref: AnyRef): Long = ref match {
+    case o: java.lang.Long => o.longValue()
+    case _ => throw new InternalRuntimeError(s"Unexpected non-int64 value: '$ref'.")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Closures                                                                //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Flix internal representation of closures.
+    */
+  final case class Closure(formals: Array[String], body: TypedAst.Expression, env: mutable.Map[String, AnyRef]) {
+    // TODO: Why override equals?
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: Value.Closure =>
+        util.Arrays.equals(this.formals.asInstanceOf[Array[AnyRef]], that.formals.asInstanceOf[Array[AnyRef]]) &&
+          this.body == that.body && this.env == that.env
       case _ => false
     }
 
-    override val hashCode: scala.Int = b.hashCode
+    override def hashCode: Int =
+      41 * (41 * (41 + util.Arrays.hashCode(formals.asInstanceOf[Array[AnyRef]])) + body.hashCode) + env.hashCode
   }
 
-  val True = new Value.Bool(true)
-  val False = new Value.Bool(false)
+  // TODO: Introduce make function and make Closure constructor private.
 
-  def mkBool(b: Boolean): Bool = if (b) True else False
-
-  /** *************************************************************************
-    * Value.Int implementation                                                *
-    * **************************************************************************/
-
-  final class Int private[Value](val i: scala.Int) extends Value {
-    override val toString: java.lang.String = s"Value.Int($i)"
-
-    override def equals(other: Any): scala.Boolean = other match {
-      case that: Value.Int => that eq this
-      case _ => false
-    }
-
-    override val hashCode: scala.Int = i.hashCode
+  /**
+    * Casts the given reference `ref` to a closure.
+    */
+  @inline
+  def cast2closure(ref: AnyRef): Closure = ref match {
+    case o: Closure => o
+    case _ => throw new InternalRuntimeError(s"Unexpected non-closure value: '$ref'.")
   }
 
-  // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
-  private val intCache = mutable.HashMap[scala.Int, Value.Int]()
+  /**
+    * Flix internal representation of hook closures.
+    */
+  final case class HookClosure(hook: Ast.Hook)
 
-  def mkInt(i: scala.Int) = if (intCache.contains(i)) {
-    intCache(i)
-  } else {
-    val ret = new Value.Int(i)
-    intCache(i) = ret
-    ret
+  // TODO: introduce make function and make class private
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Strings                                                                 //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Constructs a str from the given string `s`.
+    */
+  @inline
+  def mkStr(s: String): AnyRef = s.intern()
+
+  /**
+    * Casts the given reference `ref` to a string.
+    */
+  @inline
+  def cast2str(ref: AnyRef): String = ref match {
+    case o: java.lang.String => o
+    case _ => throw new InternalRuntimeError(s"Unexpected non-string value: '$ref'.")
   }
 
-  /** *************************************************************************
-    * Value.Str implementation                                                *
-    * **************************************************************************/
-
-  final class Str private[Value](val s: java.lang.String) extends Value {
-    override val toString: java.lang.String = s"Value.Str($s)"
-
-    override def equals(other: Any): scala.Boolean = other match {
-      case that: Value.Str => that eq this
-      case _ => false
-    }
-
-    override val hashCode: scala.Int = s.hashCode
-  }
-
-  // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
-  private val strCache = mutable.HashMap[java.lang.String, Value.Str]()
-
-  def mkStr(s: java.lang.String) = if (strCache.contains(s)) {
-    strCache(s)
-  } else {
-    val ret = new Value.Str(s)
-    strCache(s) = ret
-    ret
-  }
-
-  /** *************************************************************************
-    * Value.Tag implementation                                                *
-    * **************************************************************************/
-
-  final class Tag private[Value](val enum: Name.Resolved, val tag: java.lang.String, val value: Value) extends Value {
+  /////////////////////////////////////////////////////////////////////////////
+  // Tags                                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Flix internal representation of tags.
+    */
+  // TODO: Technically we don't need to store the enum name with the tag.
+  final class Tag private[Value](val enum: Name.Resolved, val tag: java.lang.String, val value: AnyRef) {
     override val toString: java.lang.String = s"Value.Tag($enum, $tag, $value)"
 
     override def equals(other: Any): scala.Boolean = other match {
@@ -120,13 +217,19 @@ object Value {
       case _ => false
     }
 
-    override val hashCode: scala.Int = 41 * (41 * (41 + enum.hashCode) + tag.hashCode) + value.hashCode
+    override val hashCode: Int = 41 * (41 * (41 + enum.hashCode) + tag.hashCode) + value.hashCode
   }
 
-  // TODO(mhyee): Need to use weak (or soft?) references so cache doesn't grow without bound
-  private val tagCache = mutable.HashMap[(Name.Resolved, java.lang.String, Value), Value.Tag]()
+  /**
+    * A cache for every tag ever created.
+    */
+  private val tagCache = mutable.HashMap[(Name.Resolved, java.lang.String, AnyRef), Value.Tag]()
 
-  def mkTag(e: Name.Resolved, t: java.lang.String, v: Value) = {
+  /**
+    * Constructs the tag for the given enum name `e`, tag name `t` and tag value `v`.
+    */
+  @inline
+  def mkTag(e: Name.Resolved, t: java.lang.String, v: AnyRef) = {
     val triple = (e, t, v)
     if (tagCache.contains(triple)) {
       tagCache(triple)
@@ -137,52 +240,134 @@ object Value {
     }
   }
 
-  /** *************************************************************************
-    * Value.Tuple, Value.Set, Value.Closure implementations                   *
-    * **************************************************************************/
+  /**
+    * Casts the given reference `ref` to a tag.
+    */
+  @inline
+  def cast2tag(ref: AnyRef): Value.Tag = ref match {
+    case v: Value.Tag => v
+    case _ => throw new InternalRuntimeError(s"Unexpected non-tag value: '$ref'.")
+  }
 
-  final case class Tuple(elms: Array[Value]) extends Value {
+  /////////////////////////////////////////////////////////////////////////////
+  // Tuples                                                                  //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: Remove
+  final case class Tuple(elms: Array[AnyRef]) {
     override def toString: java.lang.String = s"Value.Tuple(Array(${elms.mkString(",")}))"
 
     override def equals(obj: scala.Any): Boolean = obj match {
       case that: Value.Tuple =>
-        util.Arrays.equals(this.elms.asInstanceOf[Array[AnyRef]], that.elms.asInstanceOf[Array[AnyRef]])
+        util.Arrays.equals(this.elms.asInstanceOf[Array[AnyRef]], that.elms)
       case _ => false
     }
 
-    override def hashCode: scala.Int = util.Arrays.hashCode(elms.asInstanceOf[Array[AnyRef]])
+    override def hashCode: Int = util.Arrays.hashCode(elms.asInstanceOf[Array[AnyRef]])
   }
 
-  case class Set(elms: scala.collection.immutable.Set[Value]) extends Value
-
-  final case class Closure(formals: Array[String], body: TypedAst.Expression, env: mutable.Map[String, Value]) extends Value {
-    override def toString: java.lang.String = s"Value.Closure(Array(${formals.mkString(",")}), $body, $env)"
-
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: Value.Closure =>
-        util.Arrays.equals(this.formals.asInstanceOf[Array[AnyRef]], that.formals.asInstanceOf[Array[AnyRef]]) &&
-          this.body == that.body && this.env == that.env
-      case _ => false
-    }
-
-    override def hashCode: scala.Int =
-      41 * (41 * (41 + util.Arrays.hashCode(formals.asInstanceOf[Array[AnyRef]])) + body.hashCode) + env.hashCode
+  /**
+    * Casts the given reference `ref` to a tuple.
+    */
+  @inline
+  def cast2tuple(ref: AnyRef): Array[AnyRef] = ref match {
+    case o: Array[AnyRef] => o
+    case o: Tuple => o.elms // TODO: remove
+    case _ => throw new InternalRuntimeError(s"Unexpected non-tuple value: '$ref'.")
   }
 
-  /** *************************************************************************
-    * Value.Native, Value.HookClosure implementations                         *
-    * **************************************************************************/
+  /////////////////////////////////////////////////////////////////////////////
+  // Opt, List, Set, Map                                                     //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Constructs the `None` value.
+    */
+  @inline
+  def mkNone: AnyRef = null
 
-  final case class Native(value: AnyRef) extends Value
+  /**
+    * Constructs the `Some` value for the given `ref`.
+    */
+  @inline
+  def mkSome(ref: AnyRef): AnyRef = ref
 
-  final case class HookClosure(inv: Invokable) extends Value
+  /**
+    * Constructs the Flix representation of a list for the given `ref`.
+    */
+  def mkList(ref: AnyRef): AnyRef = ref match {
+    case o: immutable.List[_] => o
+    case _ => throw new InternalRuntimeError(s"Unexpected non-list value: '$ref'.")
+  }
 
-  def mkList(list: List[Value]): Value = ??? // TODO
+  /**
+    * Constructs the Flix representation of a set for the given `ref`.
+    */
+  @inline
+  def mkSet(ref: AnyRef): AnyRef = ref match {
+    case o: immutable.Set[_] => o
+    case _ => throw new InternalRuntimeError(s"Unexpected non-set value: '$ref'.")
+  }
 
-  def mkMap(map: Map[Value, Value]): Value = ??? // TODO
+  /**
+    * Constructs the Flix representation of a map for the given `ref`.
+    */
+  @inline
+  def mkMap(ref: AnyRef): AnyRef = ref match {
+    case o: immutable.Map[_, _] => o
+    case _ => throw new InternalRuntimeError(s"Unexpected non-map value: '$ref'.")
+  }
 
-  def mkNone: Value = ??? // TODO
+  /**
+    * Casts the given `ref` to a Flix opt value.
+    */
+  @inline
+  def cast2opt(ref: AnyRef): AnyRef = ref
 
-  def mkSome(v: Value): Value = ??? // TODO
+  /**
+    * Casts the given `ref` to a Flix list value.
+    */
+  @inline
+  def cast2list(ref: AnyRef): immutable.List[AnyRef] = ref match {
+    case o: immutable.List[AnyRef]@unchecked => o
+    case _ => throw new InternalRuntimeError(s"Unexpected non-list value: '$ref'.")
+  }
+
+  /**
+    * Casts the given `ref` to a Flix set value.
+    */
+  @inline
+  def cast2set(ref: AnyRef): immutable.Set[AnyRef] = ref match {
+    case o: immutable.Set[AnyRef]@unchecked => o
+    case _ => throw new InternalRuntimeError(s"Unexpected non-set value: '$ref'.")
+  }
+
+  /**
+    * Casts the given `ref` to a Flix map value.
+    */
+  @inline
+  def cast2map(ref: AnyRef): immutable.Map[AnyRef, AnyRef] = ref match {
+    case o: immutable.Map[AnyRef, AnyRef]@unchecked => o
+    case _ => throw new InternalRuntimeError(s"Unexpected non-map value: '$ref'.")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Pretty Printing                                                         //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Returns a pretty printed formatting of the given Flix `ref`.
+    */
+  def pretty(ref: AnyRef): String = ref match {
+    case Value.Unit => "()"
+    case o: java.lang.Boolean => o.booleanValue().toString
+    case o: java.lang.Character => o.charValue().toString
+    case o: java.lang.Byte => o.byteValue().toString
+    case o: java.lang.Short => o.shortValue().toString
+    case o: java.lang.Integer => o.intValue().toString
+    case o: java.lang.Long => o.longValue().toString
+    case o: java.lang.String => o
+    case o: Value.Tag => s"${o.tag}(${pretty(o.value)})"
+    case Value.Tuple(elms) => "(" + elms.map(pretty).mkString(",") + ")"
+    case _ => ref.toString
+  }
 
 }

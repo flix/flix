@@ -1,8 +1,9 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{IType, Invokable, IValue, Flix}
 import ca.uwaterloo.flix.language.ast.Type
-import ca.uwaterloo.flix.runtime.{Invokable, Value}
+import ca.uwaterloo.flix.language.ast.Type.Lambda
+import ca.uwaterloo.flix.runtime.Value
 import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite {
@@ -312,12 +313,14 @@ class TestResolver extends FunSuite {
           |  fn f(x: Int): Bool = g(x)
           |};
        """.stripMargin
-    val result = new Flix()
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType)
+    flix
       .addStr(input)
-      .addHook("A::g", Type.Lambda(List(Type.Int), Type.Bool), new Invokable {
-        def apply(args: Array[Value]): Value = Value.mkBool(true)
+      .addHook("A::g", tpe, new Invokable {
+        def apply(args: Array[IValue]) = flix.mkTrue
       })
-      .compile()
+    val result = flix.compile()
     assert(result.isSuccess)
   }
 
@@ -327,12 +330,14 @@ class TestResolver extends FunSuite {
           |  fn f(x: Bool, y: Int, z: Str): Bool = g(x, y, z)
           |};
        """.stripMargin
-    val result = new Flix()
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkInt32Type, flix.mkStrType), flix.mkBoolType)
+    flix
       .addStr(input)
-      .addHook("A::g", Type.Lambda(List(Type.Bool, Type.Int, Type.Str), Type.Bool), new Invokable {
-        def apply(args: Array[Value]): Value = Value.mkBool(true)
+      .addHook("A::g", tpe, new Invokable {
+        def apply(args: Array[IValue]) = flix.mkTrue
       })
-      .compile()
+    val result = flix.compile()
     assert(result.isSuccess)
   }
 
@@ -344,12 +349,14 @@ class TestResolver extends FunSuite {
           |  R(x, y, z) :- f(x, y, z), R(x, y, z).
           |};
        """.stripMargin
-    val result = new Flix()
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkInt32Type, flix.mkStrType), flix.mkBoolType)
+    flix
       .addStr(input)
-      .addHook("A::f", Type.Lambda(List(Type.Bool, Type.Int, Type.Str), Type.Bool), new Invokable {
-        def apply(args: Array[Value]): Value = Value.mkBool(true)
+      .addHook("A::f", tpe, new Invokable {
+        def apply(args: Array[IValue]) = flix.mkTrue
       })
-      .compile()
+    val result = flix.compile()
     assert(result.isSuccess)
   }
 
@@ -361,12 +368,14 @@ class TestResolver extends FunSuite {
           |  R(x, y, f(x, y, z)) :- R(x, y, z).
           |};
        """.stripMargin
-    val result = new Flix()
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkStrType), flix.mkStrType)
+    flix
       .addStr(input)
-      .addHook("A::f", Type.Lambda(List(Type.Int, Type.Str), Type.Str), new Invokable {
-        def apply(args: Array[Value]): Value = Value.mkStr("foo")
+      .addHook("A::f", tpe, new Invokable {
+        def apply(args: Array[IValue]) = flix.mkStr("foo")
       })
-      .compile()
+    val result = flix.compile()
     println(result)
     assert(result.isSuccess)
   }

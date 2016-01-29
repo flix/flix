@@ -30,14 +30,14 @@ object FInt {
     * A common super-type for all int operations.
     */
   sealed trait IntOperator extends LibraryOperator {
-    def eval(args: Array[Value]): Value = this match {
+    def eval(args: Array[AnyRef]): AnyRef = this match {
       // Int Constants.
-      case `minValue` => Value.mkInt(minValue())
-      case `maxValue` => Value.mkInt(maxValue())
+      case `minValue` => Value.mkInt32(minValue())
+      case `maxValue` => Value.mkInt32(maxValue())
       // Int Operations.
-      case `abs` => Value.mkInt(abs(args(0).toInt))
-      case `min` => Value.mkInt(min(args(0).toInt, args(1).toInt))
-      case `max` => Value.mkInt(min(args(0).toInt, args(1).toInt))
+      case `abs` => Value.mkInt32(abs(Value.cast2int32(args(0))))
+      case `min` => Value.mkInt32(min(Value.cast2int32(args(0)), Value.cast2int32(args(1))))
+      case `max` => Value.mkInt32(min(Value.cast2int32(args(0)), Value.cast2int32(args(1))))
       // Int Conversions.
       case `toChar` => ???
     }

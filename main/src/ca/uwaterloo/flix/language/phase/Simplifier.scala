@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.{Type, BinaryOperator, SimplifiedAst, TypedAst}
+import ca.uwaterloo.flix.language.ast.BinaryOperator.Equal
+import ca.uwaterloo.flix.language.ast._
 
 /**
   * A phase that simplifies a Typed AST by:
@@ -49,7 +50,7 @@ object Simplifier {
     def simplify(tast: TypedAst.Definition.BoundedLattice)(implicit genSym: GenSym): SimplifiedAst.Definition.Lattice = tast match {
       case TypedAst.Definition.BoundedLattice(tpe, bot, top, leq, lub, glb, loc) =>
         import Expression.{simplify => s}
-        SimplifiedAst.Definition.Lattice(tpe, s(bot), s(top), s(leq), s(lub), s(glb), /* TODO */ ???, loc)
+        SimplifiedAst.Definition.Lattice(tpe, s(bot), s(top), s(leq), s(lub), s(glb), loc)
     }
 
     def simplify(tast: TypedAst.Definition.Constant)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant =
@@ -92,15 +93,24 @@ object Simplifier {
         // TODO: Variable numbering
         SimplifiedAst.Expression.Let(ident, -1, simplify(e1), simplify(e2), tpe, loc)
 
-      case TypedAst.Expression.Match(exp, rules, tpe, loc) =>
-        // val name = genSym.fresh()
-        // TODO: This should probably be in a let binding
-        val valueExp = simplify(exp)
-        val zero = SimplifiedAst.Expression.MatchError(tpe, loc)
-        //        rules.foldRight(zero: SimplifiedAst.Expression) {
-        //          case (rule, acc) => Pattern.simplify(valueExp, rule, acc)
-        //        }
-        ???
+      case TypedAst.Expression.Match(exp0, rules, tpe, loc) =>
+        import SimplifiedAst.{Expression => SExp}
+
+        val err = SExp.MatchError(tpe, loc)
+        val matchVar = genSym.fresh2()
+        val matchExp = simplify(exp0)
+        val lambdaVars = rules.map(_ => genSym.fresh2())
+
+        val zero = SExp.Apply2(lambdaVars.head, List(), Type.Lambda(List.empty, tpe), loc)
+        val result = (rules zip lambdaVars.sliding(2).toList).foldLeft(zero: SExp) {
+          case (exp, ((pat, body), List(currName, nextName))) =>
+            val lambdaBody = Pattern.simplify(List(pat), List(matchVar), simplify(body), SExp.Apply2(nextName, List.empty, tpe, loc))
+            val lambda = SExp.Lambda(Ast.Annotations(List.empty), List.empty, lambdaBody, Type.Lambda(List.empty, tpe), loc)
+            SExp.Let(currName, -1, lambda, exp, tpe, loc)
+        }
+        val inner = SExp.Let(lambdaVars.last, -1, Pattern.simplify(List(rules.last._1), List(matchVar), simplify(rules.last._2), err), result, tpe, loc)
+        SExp.Let(matchVar, -1, matchExp, inner, tpe, loc)
+
       case TypedAst.Expression.Tag(enum, tag, e, tpe, loc) =>
         SimplifiedAst.Expression.Tag(enum, tag, simplify(e), tpe, loc)
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
@@ -114,6 +124,93 @@ object Simplifier {
 
   object Pattern {
 
+    import TypedAst.Pattern._
+    import SimplifiedAst.{Expression => SExp}
+
+    // TODO: Have some one carefully peer-review this. esp. w.r.t. types.
+
+    /**
+      * Eliminates pattern matching.
+      */
+    def simplify(xs: List[TypedAst.Pattern],
+                 ys: List[Name.Ident],
+                 succ: SExp,
+                 fail: SExp)(implicit genSym: GenSym): SExp = (xs, ys) match {
+      /**
+        * There are no more patterns and variables to match.
+        *
+        * The pattern was match successfully and we simply return the body expression.
+        */
+      case (Nil, Nil) => succ
+
+      /**
+        * Matching a wildcard is guaranteed to succeed.
+        *
+        * We proceed by recursion on the remaining patterns and variables.
+        */
+      case (Wildcard(tpe, loc) :: ps, v :: vs) =>
+        simplify(ps, vs, succ, fail)
+
+      /**
+        * Matching a variable is guaranteed to succeed.
+        *
+        * We proceed by constructing a let-binding that binds the value
+        * of the match variable `ident` to the variable `v`.
+        * The body of the let-binding is computed by recursion on the
+        * remaining patterns and variables.
+        */
+      case (Var(ident, tpe, loc) :: ps, v :: vs) =>
+        val exp = simplify(ps, vs, succ, fail)
+        SExp.Let(ident, -1, SExp.Var(v, -1, tpe, loc), exp, succ.tpe, loc)
+
+      /**
+        * Matching a literal may succeed or fail.
+        *
+        * We generate a binary expression testing whether the literal `lit`
+        * matches the variable `v` and then we generate an if-then-else
+        * expression where the consequent expression is determined by
+        * recursion on the remaining patterns and variables and the
+        * alternative expression is `fail`.
+        */
+      case (Lit(lit, tpe, loc) :: ps, v :: vs) =>
+        val exp = simplify(ps, vs, succ, fail)
+        val cond = SExp.Binary(Equal, Literal.simplify(lit), SExp.Var(v, -1, tpe, loc), Type.Bool, loc)
+        SExp.IfThenElse(cond, exp, fail, succ.tpe, loc)
+
+      /**
+        * Matching a tag may succeed or fail.
+        *
+        * We generate a binary expression testing whether the tag name `tag`
+        * matches the tag extracted from the variable `v` and then we generate
+        * an if-then-else expression where the consequent expression is determined
+        * by recursion on the remaining patterns and variables together with the
+        * nested pattern of the tag added in front and a new fresh variable holding
+        * the value of the tag.
+        */
+      case (Tag(enum, tag, pat, tpe, loc) :: ps, v :: vs) =>
+        val cond = SExp.CheckTag(tag, SExp.Var(v, -1, tpe, loc), loc)
+        val freshVar = genSym.fresh2()
+        val consequent = SExp.Let(freshVar, -1, SExp.GetTagValue(SExp.Var(v, -1, tpe, loc), pat.tpe, loc), succ, succ.tpe, loc)
+        SExp.IfThenElse(cond, consequent, fail, succ.tpe, loc)
+
+      /**
+        * Matching a tuple may succeed or fail.
+        *
+        * We generate a fresh variable and let-binding for each component of the
+        * tuple and then we recurse on the nested patterns and freshly generated
+        * variables.
+        */
+      case (Tuple(elms, tpe, loc) :: ps, v :: vs) =>
+        val freshVars = elms.map(_ => genSym.fresh2())
+        val zero = simplify(elms ::: ps, freshVars ::: vs, succ, fail)
+        (elms zip freshVars zipWithIndex).foldRight(zero) {
+          case (((pat, name), idx), exp) =>
+            SExp.Let(name, -1, SExp.TupleAt(SExp.Var(v, -1, pat.tpe, loc), -1, pat.tpe, loc), exp, succ.tpe, loc)
+        }
+
+    }
+
+    // TODO: Remove
     def genCode(patterns: List[TypedAst.Pattern],
                 variables: List[SimplifiedAst.Expression.Var],
                 body: SimplifiedAst.Expression,

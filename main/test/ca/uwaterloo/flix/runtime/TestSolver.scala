@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Invokable, IValue, Flix}
+import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast.{Type, Name}
 import org.scalatest.FunSuite
 
@@ -83,7 +84,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(s).solve().get
     val A = model.relations(NameA).toList
-    assert(A contains List(Value.mkInt(1), Value.mkInt(3)))
+    assert(A contains List(Value.mkInt32(1), Value.mkInt32(3)))
   }
 
   test("Cross02") {
@@ -100,8 +101,8 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(s).solve().get
     val A = model.relations(NameA).toList
-    assert(A contains List(Value.mkInt(1), Value.mkInt(5)))
-    assert(A contains List(Value.mkInt(1), Value.mkInt(5)))
+    assert(A contains List(Value.mkInt32(1), Value.mkInt32(5)))
+    assert(A contains List(Value.mkInt32(1), Value.mkInt32(5)))
   }
 
   test("Cross03") {
@@ -117,7 +118,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(s).solve().get
     val A = model.relations(NameA).toList
-    assert(A contains List(Value.mkInt(2), Value.mkInt(2)))
+    assert(A contains List(Value.mkInt32(2), Value.mkInt32(2)))
   }
 
   test("Cross04") {
@@ -133,7 +134,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(s).solve().get
     val A = model.relations(NameA).toList
-    assert(A contains List(Value.mkInt(1), Value.mkStr("a"), Value.mkInt(3)))
+    assert(A contains List(Value.mkInt32(1), Value.mkStr("a"), Value.mkInt32(3)))
   }
 
   test("Cross05") {
@@ -150,7 +151,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(s).solve().get
     val A = model.relations(NameA).toList
-    assert(A contains List(Value.mkInt(2), Value.mkStr("b"), Value.mkInt(2)))
+    assert(A contains List(Value.mkInt32(2), Value.mkStr("b"), Value.mkInt32(2)))
   }
 
   test("Cross06") {
@@ -166,7 +167,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(s).solve().get
     val A = model.relations(NameA).toList
-    assert(A contains List(Value.mkInt(1), Value.mkStr("b"), Value.mkInt(3)))
+    assert(A contains List(Value.mkInt32(1), Value.mkStr("b"), Value.mkInt32(3)))
   }
 
   test("Cross07") {
@@ -182,7 +183,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(s).solve().get
     val A = model.relations(NameA).toList
-    assert(A contains List(Value.mkInt(1), Value.mkStr("b"), Value.mkInt(3)))
+    assert(A contains List(Value.mkInt32(1), Value.mkStr("b"), Value.mkInt32(3)))
   }
 
   test("Cross08") {
@@ -199,7 +200,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(s).solve().get
     val R = model.relations(NameR).toList
-    assert(R contains List(Value.mkInt(2)))
+    assert(R contains List(Value.mkInt32(2)))
   }
 
   test("Cross09") {
@@ -219,7 +220,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(s).solve().get
     val R = model.relations(NameR).toList
-    assert(R contains List(Value.mkInt(3)))
+    assert(R contains List(Value.mkInt32(3)))
   }
 
   test("Cross10") {
@@ -239,7 +240,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(s).solve().get
     val R = model.relations(NameR).toList
-    assert(R contains List(Value.mkInt(3)))
+    assert(R contains List(Value.mkInt32(3)))
   }
 
   test("Cross11") {
@@ -257,7 +258,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(s).solve().get
     val R = model.relations(NameR).toList
-    assert(R contains List(Value.mkInt(3), Value.mkInt(5)))
+    assert(R contains List(Value.mkInt32(3), Value.mkInt32(5)))
   }
 
   test("Cross12") {
@@ -277,7 +278,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(s).solve().get
     val R = model.relations(NameR).toList
-    assert(R contains List(Value.mkInt(1), Value.mkInt(7)))
+    assert(R contains List(Value.mkInt32(1), Value.mkInt32(7)))
   }
 
   test("Cross13") {
@@ -299,10 +300,10 @@ class TestSolver extends FunSuite {
     val A = model.relations(NameA).toList
     val B = model.relations(NameB).toList
     val C = model.relations(NameC).toList
-    assert(C contains List(Value.mkInt(1), Value.mkInt(3)))
-    assert(A contains List(Value.mkInt(1), Value.mkInt(5)))
-    assert(B contains List(Value.mkInt(1), Value.mkInt(6)))
-    assert(C contains List(Value.mkInt(7), Value.mkInt(6)))
+    assert(C contains List(Value.mkInt32(1), Value.mkInt32(3)))
+    assert(A contains List(Value.mkInt32(1), Value.mkInt32(5)))
+    assert(B contains List(Value.mkInt32(1), Value.mkInt32(6)))
+    assert(C contains List(Value.mkInt32(7), Value.mkInt32(6)))
   }
 
   test("Cross14") {
@@ -342,10 +343,10 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(s).solve().get
     val C = model.relations(NameC).toList
-    assert(C contains List(Value.mkInt(1), Value.mkInt(6)))
-    assert(C contains List(Value.mkInt(1), Value.mkInt(8)))
-    assert(C contains List(Value.mkInt(3), Value.mkInt(6)))
-    assert(C contains List(Value.mkInt(3), Value.mkInt(8)))
+    assert(C contains List(Value.mkInt32(1), Value.mkInt32(6)))
+    assert(C contains List(Value.mkInt32(1), Value.mkInt32(8)))
+    assert(C contains List(Value.mkInt32(3), Value.mkInt32(6)))
+    assert(C contains List(Value.mkInt32(3), Value.mkInt32(8)))
   }
 
   test("Lattice01") {
@@ -360,9 +361,9 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(Parity.Definition).addStr(s).solve().get
     val A = model.lattices(NameA).toMap
-    assert(A(List(Value.mkInt(1))).head == Parity.Odd)
-    assert(A(List(Value.mkInt(2))).head == Parity.Even)
-    assert(A(List(Value.mkInt(3))).head == Parity.Top)
+    assert(A(List(Value.mkInt32(1))).head == Parity.Odd)
+    assert(A(List(Value.mkInt32(2))).head == Parity.Even)
+    assert(A(List(Value.mkInt32(3))).head == Parity.Top)
   }
 
   test("Lattice02") {
@@ -376,7 +377,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(Parity.Definition).addStr(s).solve().get
     val A = model.lattices(NameA).toMap
-    assert(A(List(Value.mkInt(1))).head == Parity.Top)
+    assert(A(List(Value.mkInt32(1))).head == Parity.Top)
   }
 
   test("Lattice03") {
@@ -392,7 +393,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(Parity.Definition).addStr(s).solve().get
     val A = model.lattices(NameA).toMap
-    assert(A(List(Value.mkInt(3))).head == Parity.Top)
+    assert(A(List(Value.mkInt32(3))).head == Parity.Top)
   }
 
   test("NotEqual01") {
@@ -407,14 +408,14 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(s).solve().get
     val B = model.relations(NameB).toList
-    assert(B contains List(Value.mkInt(1), Value.mkInt(2)))
-    assert(B contains List(Value.mkInt(1), Value.mkInt(3)))
-    assert(B contains List(Value.mkInt(1), Value.mkInt(4)))
-    assert(B contains List(Value.mkInt(4), Value.mkInt(1)))
-    assert(!(B contains List(Value.mkInt(1), Value.mkInt(1))))
-    assert(!(B contains List(Value.mkInt(2), Value.mkInt(2))))
-    assert(!(B contains List(Value.mkInt(3), Value.mkInt(3))))
-    assert(!(B contains List(Value.mkInt(4), Value.mkInt(4))))
+    assert(B contains List(Value.mkInt32(1), Value.mkInt32(2)))
+    assert(B contains List(Value.mkInt32(1), Value.mkInt32(3)))
+    assert(B contains List(Value.mkInt32(1), Value.mkInt32(4)))
+    assert(B contains List(Value.mkInt32(4), Value.mkInt32(1)))
+    assert(!(B contains List(Value.mkInt32(1), Value.mkInt32(1))))
+    assert(!(B contains List(Value.mkInt32(2), Value.mkInt32(2))))
+    assert(!(B contains List(Value.mkInt32(3), Value.mkInt32(3))))
+    assert(!(B contains List(Value.mkInt32(4), Value.mkInt32(4))))
   }
 
   test("NotEqual02") {
@@ -430,8 +431,8 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(s).solve().get
     val B = model.relations(NameB).toList
-    assert(B contains List(Value.mkInt(1), Value.mkInt(2)))
-    assert(!(B contains List(Value.mkInt(2), Value.mkInt(2))))
+    assert(B contains List(Value.mkInt32(1), Value.mkInt32(2)))
+    assert(!(B contains List(Value.mkInt32(2), Value.mkInt32(2))))
   }
 
   test("NotEqual03") {
@@ -448,8 +449,8 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(s).solve().get
     val B = model.relations(NameB).toList
-    assert(B contains List(Value.mkInt(1), Value.mkInt(3)))
-    assert(!(B contains List(Value.mkInt(1), Value.mkInt(1))))
+    assert(B contains List(Value.mkInt32(1), Value.mkInt32(3)))
+    assert(!(B contains List(Value.mkInt32(1), Value.mkInt32(1))))
   }
 
   test("Loop01") {
@@ -467,8 +468,8 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().addStr(s).solve().get
     val B = model.relations(NameB).toSet
-    assert(B contains List(Value.mkInt(1)))
-    assert(B contains List(Value.mkInt(4)))
+    assert(B contains List(Value.mkInt32(1)))
+    assert(B contains List(Value.mkInt32(4)))
   }
 
   test("FilterHook01") {
@@ -482,17 +483,20 @@ class TestSolver extends FunSuite {
         |B(x) :- f(x), A(x).
       """.stripMargin
 
-    val model = new Flix()
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkStrType)
+    flix
       .addStr(s)
-        .addHook("f", Type.Lambda(List(Type.Int), Type.Str), new Invokable {
-          override def apply(args: Array[Value]): Value = Value.mkBool(args(0).toInt == 1)
-        })
-      .solve()
+      .addHook("f", tpe, new Invokable {
+        override def apply(args: Array[IValue]): IValue = flix.mkBool(args(0) == flix.mkInt32(1))
+      })
+
+    val model = flix.solve()
       .get
 
     val B = model.relations(NameB).toSet
-    assert(B contains List(Value.mkInt(1)))
-    assert(!(B contains List(Value.mkInt(2))))
+    assert(B contains List(Value.mkInt32(1)))
+    assert(!(B contains List(Value.mkInt32(2))))
   }
 
 }

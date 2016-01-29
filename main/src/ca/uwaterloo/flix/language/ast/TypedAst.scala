@@ -627,6 +627,8 @@ object TypedAst {
       val asArray: Array[TypedAst.Pattern] = elms.toArray
     }
 
+    // TODO: Add for opt, list, map, ???
+
   }
 
   /**

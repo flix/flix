@@ -48,14 +48,14 @@ class TestExamples extends FunSuite {
 
     val A = model.lattices(Name.Resolved.mk(List("Belnap", "A"))).toMap
 
-    assertResult(List(Tru))(A(List(Value.mkInt(1))))
-    assertResult(List(Fls))(A(List(Value.mkInt(2))))
-    assertResult(List(Top))(A(List(Value.mkInt(3))))
-    assertResult(None)(A.get(List(Value.mkInt(4))))
-    assertResult(List(Tru))(A(List(Value.mkInt(5))))
-    assertResult(List(Fls))(A(List(Value.mkInt(6))))
-    assertResult(List(Tru))(A(List(Value.mkInt(7))))
-    assertResult(List(Tru))(A(List(Value.mkInt(8))))
+    assertResult(List(Tru))(A(List(Value.mkInt32(1))))
+    assertResult(List(Fls))(A(List(Value.mkInt32(2))))
+    assertResult(List(Top))(A(List(Value.mkInt32(3))))
+    assertResult(None)(A.get(List(Value.mkInt32(4))))
+    assertResult(List(Tru))(A(List(Value.mkInt32(5))))
+    assertResult(List(Fls))(A(List(Value.mkInt32(6))))
+    assertResult(List(Tru))(A(List(Value.mkInt32(7))))
+    assertResult(List(Tru))(A(List(Value.mkInt32(8))))
   }
 
   test("Parity.flix") {
@@ -97,14 +97,14 @@ class TestExamples extends FunSuite {
 
     val A = model.lattices(Name.Resolved.mk(List("Parity", "A"))).toMap
 
-    assertResult(List(Odd))(A(List(Value.mkInt(1))))
-    assertResult(List(Evn))(A(List(Value.mkInt(2))))
-    assertResult(List(Top))(A(List(Value.mkInt(3))))
-    assertResult(None)(A.get(List(Value.mkInt(4))))
-    assertResult(List(Odd))(A(List(Value.mkInt(5))))
-    assertResult(List(Evn))(A(List(Value.mkInt(6))))
-    assertResult(List(Evn))(A(List(Value.mkInt(7))))
-    assertResult(List(Odd))(A(List(Value.mkInt(8))))
+    assertResult(List(Odd))(A(List(Value.mkInt32(1))))
+    assertResult(List(Evn))(A(List(Value.mkInt32(2))))
+    assertResult(List(Top))(A(List(Value.mkInt32(3))))
+    assertResult(None)(A.get(List(Value.mkInt32(4))))
+    assertResult(List(Odd))(A(List(Value.mkInt32(5))))
+    assertResult(List(Evn))(A(List(Value.mkInt32(6))))
+    assertResult(List(Evn))(A(List(Value.mkInt32(7))))
+    assertResult(List(Odd))(A(List(Value.mkInt32(8))))
   }
 
   test("Sign.flix") {
@@ -147,15 +147,15 @@ class TestExamples extends FunSuite {
 
     val A = model.lattices(Name.Resolved.mk(List("Sign", "A"))).toMap
 
-    assertResult(List(Neg))(A(List(Value.mkInt(1))))
-    assertResult(List(Zer))(A(List(Value.mkInt(2))))
-    assertResult(List(Pos))(A(List(Value.mkInt(3))))
-    assertResult(List(Top))(A(List(Value.mkInt(4))))
-    assertResult(None)(A.get(List(Value.mkInt(5))))
-    assertResult(List(Pos))(A(List(Value.mkInt(6))))
-    assertResult(List(Top))(A(List(Value.mkInt(7))))
-    assertResult(List(Zer))(A(List(Value.mkInt(8))))
-    assertResult(List(Pos))(A(List(Value.mkInt(9))))
+    assertResult(List(Neg))(A(List(Value.mkInt32(1))))
+    assertResult(List(Zer))(A(List(Value.mkInt32(2))))
+    assertResult(List(Pos))(A(List(Value.mkInt32(3))))
+    assertResult(List(Top))(A(List(Value.mkInt32(4))))
+    assertResult(None)(A.get(List(Value.mkInt32(5))))
+    assertResult(List(Pos))(A(List(Value.mkInt32(6))))
+    assertResult(List(Top))(A(List(Value.mkInt32(7))))
+    assertResult(List(Zer))(A(List(Value.mkInt32(8))))
+    assertResult(List(Pos))(A(List(Value.mkInt32(9))))
   }
 
   test("Constant.flix") {
@@ -188,20 +188,20 @@ class TestExamples extends FunSuite {
 
     val Constant = Name.Resolved.mk(List("Constant", "Constant"))
 
-    val Zer = Value.mkTag(Constant, "Cst", Value.mkInt(0))
-    val One = Value.mkTag(Constant, "Cst", Value.mkInt(1))
-    val Two = Value.mkTag(Constant, "Cst", Value.mkInt(2))
+    val Zer = Value.mkTag(Constant, "Cst", Value.mkInt32(0))
+    val One = Value.mkTag(Constant, "Cst", Value.mkInt32(1))
+    val Two = Value.mkTag(Constant, "Cst", Value.mkInt32(2))
     val Top = Value.mkTag(Constant, "Top", Value.Unit)
 
     val A = model.lattices(Name.Resolved.mk(List("Constant", "A"))).toMap
 
-    assertResult(List(Zer))(A(List(Value.mkInt(0))))
-    assertResult(List(One))(A(List(Value.mkInt(1))))
-    assertResult(List(Two))(A(List(Value.mkInt(2))))
-    assertResult(List(Top))(A(List(Value.mkInt(3))))
-    assertResult(None)(A.get(List(Value.mkInt(4))))
-    assertResult(List(Two))(A(List(Value.mkInt(5))))
-    assertResult(List(Two))(A(List(Value.mkInt(6))))
+    assertResult(List(Zer))(A(List(Value.mkInt32(0))))
+    assertResult(List(One))(A(List(Value.mkInt32(1))))
+    assertResult(List(Two))(A(List(Value.mkInt32(2))))
+    assertResult(List(Top))(A(List(Value.mkInt32(3))))
+    assertResult(None)(A.get(List(Value.mkInt32(4))))
+    assertResult(List(Two))(A(List(Value.mkInt32(5))))
+    assertResult(List(Two))(A(List(Value.mkInt32(6))))
   }
 
   test("ConstantSign.flix") {
@@ -239,22 +239,22 @@ class TestExamples extends FunSuite {
 
     val ConstantSign = Name.Resolved.mk(List("ConstantSign", "ConstSign"))
 
-    val Zer = Value.mkTag(ConstantSign, "Cst", Value.mkInt(0))
-    val One = Value.mkTag(ConstantSign, "Cst", Value.mkInt(1))
+    val Zer = Value.mkTag(ConstantSign, "Cst", Value.mkInt32(0))
+    val One = Value.mkTag(ConstantSign, "Cst", Value.mkInt32(1))
     val Pos = Value.mkTag(ConstantSign, "Pos", Value.Unit)
     val Top = Value.mkTag(ConstantSign, "Top", Value.Unit)
 
     val A = model.lattices(Name.Resolved.mk(List("ConstantSign", "A"))).toMap
 
-    assertResult(List(Zer))(A(List(Value.mkInt(2))))
-    assertResult(List(One))(A(List(Value.mkInt(3))))
-    assertResult(List(Top))(A(List(Value.mkInt(4))))
-    assertResult(List(Top))(A(List(Value.mkInt(4))))
-    assertResult(List(Pos))(A(List(Value.mkInt(5))))
-    assertResult(None)(A.get(List(Value.mkInt(6))))
-    assertResult(None)(A.get(List(Value.mkInt(7))))
-    assertResult(List(Pos))(A(List(Value.mkInt(8))))
-    assertResult(List(One))(A(List(Value.mkInt(9))))
+    assertResult(List(Zer))(A(List(Value.mkInt32(2))))
+    assertResult(List(One))(A(List(Value.mkInt32(3))))
+    assertResult(List(Top))(A(List(Value.mkInt32(4))))
+    assertResult(List(Top))(A(List(Value.mkInt32(4))))
+    assertResult(List(Pos))(A(List(Value.mkInt32(5))))
+    assertResult(None)(A.get(List(Value.mkInt32(6))))
+    assertResult(None)(A.get(List(Value.mkInt32(7))))
+    assertResult(List(Pos))(A(List(Value.mkInt32(8))))
+    assertResult(List(One))(A(List(Value.mkInt32(9))))
   }
 
   test("Dimension.flix") {

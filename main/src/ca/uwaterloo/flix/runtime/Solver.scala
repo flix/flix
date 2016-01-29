@@ -1,10 +1,11 @@
 package ca.uwaterloo.flix.runtime
 
+import ca.uwaterloo.flix.api.{IValue, WrappedValue}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, TypedAst}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
-import ca.uwaterloo.flix.util.{Verbosity, Debugger, Options, AsciiTable}
+import ca.uwaterloo.flix.util.{Verbosity, Debugger, Options}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -12,66 +13,66 @@ import scala.collection.mutable
 object Solver {
 
   /**
-   * A case class representing a solver context.
-   */
+    * A case class representing a solver context.
+    */
   case class SolverContext(root: TypedAst.Root, options: Options)
 
 }
 
 /**
- * A solver based on semi-naive evaluation.
- */
+  * A solver based on semi-naive evaluation.
+  */
 class Solver(implicit val sCtx: Solver.SolverContext) {
 
   /**
-   * The primary data store that holds all relations and lattices.
-   */
-  val dataStore = new DataStore()
+    * The primary data store that holds all relations and lattices.
+    */
+  val dataStore = new DataStore[AnyRef]()
 
   /**
-   * The work list of pending predicate names and their associated values.
-   */
-  val worklist = new mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, Value])]
+    * The work list of pending predicate names and their associated values.
+    */
+  val worklist = new mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]
 
   /**
-   * The runtime performance monitor.
-   */
+    * The runtime performance monitor.
+    */
   val monitor = new Monitor(this)
 
   /**
-   * The current state of the solver.
-   */
+    * The current state of the solver.
+    */
   @volatile
   var paused: Boolean = false
 
   /**
-   * Returns the number of elements in the worklist.
-   */
+    * Returns the number of elements in the worklist.
+    */
   def getQueueSize = worklist.length
 
   /**
-   * Returns the number of facts in the database.
-   */
+    * Returns the number of facts in the database.
+    */
   def getNumberOfFacts: Int = dataStore.numberOfFacts
 
   /**
-   * Pauses the solver.
-   */
+    * Pauses the solver.
+    */
   def pause(): Unit = synchronized {
     paused = true
   }
 
   /**
-   * Resumes the fixpoint computation.
-   */
+    * Resumes the fixpoint computation.
+    */
   def resume(): Unit = synchronized {
     paused = false
     notify()
   }
 
   /**
-   * Solves the current Flix program.
-   */
+    * Solves the current Flix program.
+    */
   def solve(): Model = {
 
     if (sCtx.options.debugger == Debugger.Enabled) {
@@ -84,9 +85,11 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       shell.start()
     }
 
-    val constants = sCtx.root.constants.foldLeft(Map.empty[Name.Resolved, Value]) {
+    val constants = sCtx.root.constants.foldLeft(Map.empty[Name.Resolved, AnyRef]) {
       case (macc, (name, constant)) => constant.exp match {
-        case e: TypedAst.Expression.Lambda if e.args == Nil => macc + (name -> Interpreter.eval(e.body, sCtx.root))
+        case e: TypedAst.Expression.Lambda if e.args == Nil =>
+          val v = Interpreter.eval(e.body, sCtx.root)
+          macc + (name -> v)
         case _ => macc
       }
     }
@@ -134,12 +137,12 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     }
 
     // construct the model.
-    val relations = dataStore.relations.foldLeft(Map.empty[Name.Resolved, Iterable[List[Value]]]) {
+    val relations = dataStore.relations.foldLeft(Map.empty[Name.Resolved, Iterable[List[AnyRef]]]) {
       case (macc, (name, relation)) =>
         val table = relation.scan.toIterable.map(_.toList)
         macc + ((name, table))
     }
-    val lattices = dataStore.lattices.foldLeft(Map.empty[Name.Resolved, Iterable[(List[Value], List[Value])]]) {
+    val lattices = dataStore.lattices.foldLeft(Map.empty[Name.Resolved, Iterable[(List[AnyRef], List[AnyRef])]]) {
       case (macc, (name, lattice)) =>
         val table = lattice.scan.toIterable.map {
           case (keys, values) => (keys.toArray.toList, values.toList)
@@ -156,9 +159,9 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     }.toList
 
   /**
-   * Processes an inferred `fact` for the relation or lattice with the `name`.
-   */
-  def inferredFact(name: Name.Resolved, fact: Array[Value], enqueue: Boolean): Unit = sCtx.root.collections(name) match {
+    * Processes an inferred `fact` for the relation or lattice with the `name`.
+    */
+  def inferredFact(name: Name.Resolved, fact: Array[AnyRef], enqueue: Boolean): Unit = sCtx.root.collections(name) match {
     case r: TypedAst.Collection.Relation =>
       val changed = dataStore.relations(name).inferredFact(fact)
       if (changed && enqueue) {
@@ -173,12 +176,12 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-   * Evaluates the given head predicate `p` under the given environment `env0`.
-   */
-  def evalHead(p: Predicate.Head, env0: mutable.Map[String, Value], enqueue: Boolean): Unit = p match {
+    * Evaluates the given head predicate `p` under the given environment `env0`.
+    */
+  def evalHead(p: Predicate.Head, env0: mutable.Map[String, AnyRef], enqueue: Boolean): Unit = p match {
     case p: Predicate.Head.Relation =>
       val terms = p.termsArray
-      val fact = new Array[Value](p.arity)
+      val fact = new Array[AnyRef](p.arity)
       var i = 0
       while (i < fact.length) {
         fact(i) = Interpreter.evalHeadTerm(terms(i), sCtx.root, env0)
@@ -195,9 +198,9 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
 
 
   /**
-   * Evaluates the body of the given `rule` under the given initial environment `env0`.
-   */
-  def evalBody(rule: Constraint.Rule, env0: mutable.Map[String, Value]): Unit = {
+    * Evaluates the body of the given `rule` under the given initial environment `env0`.
+    */
+  def evalBody(rule: Constraint.Rule, env0: mutable.Map[String, AnyRef]): Unit = {
     val t = System.nanoTime()
 
     cross(rule, rule.collections, env0)
@@ -207,9 +210,9 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-   * Computes the cross product of all collections in the body.
-   */
-  def cross(rule: Constraint.Rule, ps: List[Predicate.Body.Collection], row: mutable.Map[String, Value]): Unit = ps match {
+    * Computes the cross product of all collections in the body.
+    */
+  def cross(rule: Constraint.Rule, ps: List[Predicate.Body.Collection], row: mutable.Map[String, AnyRef]): Unit = ps match {
     case Nil =>
       // cross product complete, now filter
       loop(rule, rule.loops, row)
@@ -221,7 +224,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       }
 
       // evaluate all terms in the predicate.
-      val pat = new Array[Value](p.arity)
+      val pat = new Array[AnyRef](p.arity)
       var i = 0
       while (i < pat.length) {
         pat(i) = eval(p.termsArray(i), row)
@@ -248,12 +251,12 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-   * Unfolds the given loop predicates `ps` over the initial `row`.
-   */
-  def loop(rule: Constraint.Rule, ps: List[Predicate.Body.Loop], row: mutable.Map[String, Value]): Unit = ps match {
+    * Unfolds the given loop predicates `ps` over the initial `row`.
+    */
+  def loop(rule: Constraint.Rule, ps: List[Predicate.Body.Loop], row: mutable.Map[String, AnyRef]): Unit = ps match {
     case Nil => filter(rule, rule.filters, row)
     case Predicate.Body.Loop(name, term, _, _) :: rest =>
-      val result = Interpreter.evalHeadTerm(term, sCtx.root, row).asInstanceOf[Value.Set].elms
+      val result = Value.cast2set(Interpreter.evalHeadTerm(term, sCtx.root, row))
       for (x <- result) {
         val newRow = row.clone()
         newRow.update(name.name, x)
@@ -262,16 +265,16 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-   * Filters the given `row` through all filter functions in the body.
-   */
+    * Filters the given `row` through all filter functions in the body.
+    */
   @tailrec
-  private def filter(rule: Constraint.Rule, ps: List[Predicate.Body.ApplyFilter], row: mutable.Map[String, Value]): Unit = ps match {
+  private def filter(rule: Constraint.Rule, ps: List[Predicate.Body.ApplyFilter], row: mutable.Map[String, AnyRef]): Unit = ps match {
     case Nil =>
       // filter with hook functions
       filterHook(rule, rule.filterHooks, row)
     case (pred: Predicate.Body.ApplyFilter) :: xs =>
       val lambda = sCtx.root.constants(pred.name)
-      val args = new Array[Value](pred.termsAsArray.length)
+      val args = new Array[AnyRef](pred.termsAsArray.length)
       var i = 0
       while (i < args.length) {
         args(i) = Interpreter.evalBodyTerm(pred.termsAsArray(i), row)
@@ -286,30 +289,41 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Filters the given `row` through all filter hook functions in the body.
     */
   @tailrec
-  private def filterHook(rule: Constraint.Rule, ps: List[Predicate.Body.ApplyHookFilter], row: mutable.Map[String, Value]): Unit = ps match {
+  private def filterHook(rule: Constraint.Rule, ps: List[Predicate.Body.ApplyHookFilter], row: mutable.Map[String, AnyRef]): Unit = ps match {
     case Nil =>
       // filter complete, now check disjointness
       disjoint(rule, rule.disjoint, row)
     case (pred: Predicate.Body.ApplyHookFilter) :: xs =>
 
-      val args = new Array[Value](pred.termsAsArray.length)
+      val args = new Array[AnyRef](pred.termsAsArray.length)
       var i = 0
       while (i < args.length) {
         args(i) = Interpreter.evalBodyTerm(pred.termsAsArray(i), row)
         i = i + 1
       }
 
-      val result = pred.hook.inv.apply(args)
-      if (Value.cast2bool(result)) {
-        filterHook(rule, xs, row)
+      pred.hook match {
+        case Ast.Hook.Safe(name, inv, tpe) =>
+          val wargs = args map {
+            case arg => new WrappedValue(arg): IValue
+          }
+          val result = inv.apply(wargs).getUnsafeRef
+          if (Value.cast2bool(result)) {
+            filterHook(rule, xs, row)
+          }
+        case Ast.Hook.Unsafe(name, inv, tpe) =>
+          val result = inv.apply(args)
+          if (Value.cast2bool(result)) {
+            filterHook(rule, xs, row)
+          }
       }
   }
 
   /**
-   * Filters the given `row` through all disjointness filters in the body.
-   */
+    * Filters the given `row` through all disjointness filters in the body.
+    */
   @tailrec
-  private def disjoint(rule: Constraint.Rule, ps: List[Predicate.Body.NotEqual], row: mutable.Map[String, Value]): Unit = ps match {
+  private def disjoint(rule: Constraint.Rule, ps: List[Predicate.Body.NotEqual], row: mutable.Map[String, AnyRef]): Unit = ps match {
     case Nil =>
       // rule body complete, evaluate the head.
       evalHead(rule.head, row, enqueue = true)
@@ -322,23 +336,23 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-   * Evaluates the given body term `t` to a value.
-   *
-   * Returns `null` if the term is a free variable.
-   */
-  def eval(t: TypedAst.Term.Body, env: mutable.Map[String, Value]): Value = t match {
+    * Evaluates the given body term `t` to a value.
+    *
+    * Returns `null` if the term is a free variable.
+    */
+  def eval(t: TypedAst.Term.Body, env: mutable.Map[String, AnyRef]): AnyRef = t match {
     case t: TypedAst.Term.Body.Wildcard => null
     case t: TypedAst.Term.Body.Var => env.getOrElse(t.ident.name, null)
     case t: TypedAst.Term.Body.Lit => Interpreter.evalLit(t.lit)
   }
 
   /**
-   * Returns all dependencies of the given `name` along with an environment.
-   */
-  def dependencies(name: Name.Resolved, fact: Array[Value]): Unit = {
+    * Returns all dependencies of the given `name` along with an environment.
+    */
+  def dependencies(name: Name.Resolved, fact: Array[AnyRef]): Unit = {
 
-    def unify(pat: Array[String], fact: Array[Value], limit: Int): mutable.Map[String, Value] = {
-      val env = mutable.Map.empty[String, Value]
+    def unify(pat: Array[String], fact: Array[AnyRef], limit: Int): mutable.Map[String, AnyRef] = {
+      val env = mutable.Map.empty[String, AnyRef]
       var i = 0
       while (i < limit) {
         val varName = pat(i)

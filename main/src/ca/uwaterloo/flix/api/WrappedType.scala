@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.Type
 
-protected final class WrappedType(val tpe: Type) extends IType {
+final class WrappedType(val tpe: Type) extends IType {
 
   def isUnit: Boolean =
     tpe == Type.Unit
@@ -30,6 +30,11 @@ protected final class WrappedType(val tpe: Type) extends IType {
 
   def isEnum: Boolean = tpe match {
     case Type.Enum(cases) => true
+    case _ => false
+  }
+
+  def isFunction: Boolean = tpe match {
+    case Type.Lambda(args, retTpe) => true
     case _ => false
   }
 
@@ -65,32 +70,32 @@ protected final class WrappedType(val tpe: Type) extends IType {
 
   def getTupleParams: Array[IType] = tpe match {
     case Type.Tuple(elms) => elms.map(t => new WrappedType(t)).toArray
-    case _ => throw new UnsupportedOperationException(s"Unexpected type: $tpe")
+    case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   def getOptParam: IType = tpe match {
     case Type.Opt(elm) => new WrappedType(elm)
-    case _ => throw new UnsupportedOperationException(s"Unexpected type: $tpe")
+    case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   def getListParam: IType = tpe match {
     case Type.Lst(elm) => new WrappedType(elm)
-    case _ => throw new UnsupportedOperationException(s"Unexpected type: $tpe")
+    case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   def getSetParam: IType = tpe match {
     case Type.Set(elm) => new WrappedType(elm)
-    case _ => throw new UnsupportedOperationException(s"Unexpected type: $tpe")
+    case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   def getMapKeyParam: IType = tpe match {
     case Type.Map(k, v) => new WrappedType(k)
-    case _ => throw new UnsupportedOperationException(s"Unexpected type: $tpe")
+    case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   def getMapValueParam: IType = tpe match {
     case Type.Map(k, v) => new WrappedType(v)
-    case _ => throw new UnsupportedOperationException(s"Unexpected type: $tpe")
+    case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   override def equals(other: Any): Boolean = other match {
