@@ -1,18 +1,18 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.Invokable
+import java.util
+
 import ca.uwaterloo.flix.language.ast.{Ast, Name, TypedAst}
 import ca.uwaterloo.flix.runtime.Interpreter.InternalRuntimeError
-import scala.collection.immutable
-import scala.collection.mutable
 
-import java.util
+import scala.collection.{immutable, mutable}
 
 object Value {
 
   /////////////////////////////////////////////////////////////////////////////
   // Unit                                                                    //
   /////////////////////////////////////////////////////////////////////////////
+
   /**
     * The Unit value.
     */
@@ -21,6 +21,7 @@ object Value {
   /////////////////////////////////////////////////////////////////////////////
   // Bools                                                                   //
   /////////////////////////////////////////////////////////////////////////////
+
   /**
     * The true value.
     */
@@ -51,6 +52,7 @@ object Value {
   /////////////////////////////////////////////////////////////////////////////
   // Chars                                                                   //
   /////////////////////////////////////////////////////////////////////////////
+
   /**
     * Constructs a char value from the given char `c`.
     */
@@ -69,6 +71,7 @@ object Value {
   /////////////////////////////////////////////////////////////////////////////
   // Ints                                                                    //
   /////////////////////////////////////////////////////////////////////////////
+
   /**
     * Constructs an int8 value from the given byte `b`.
     */
@@ -150,11 +153,12 @@ object Value {
   /////////////////////////////////////////////////////////////////////////////
   // Closures                                                                //
   /////////////////////////////////////////////////////////////////////////////
+
   /**
     * Flix internal representation of closures.
     */
   final case class Closure(formals: Array[String], body: TypedAst.Expression, env: mutable.Map[String, AnyRef]) {
-    // TODO: Why override equals?
+    // We override `equals` since otherwise the `formals` Array is compared using reference equality.
     override def equals(obj: scala.Any): Boolean = obj match {
       case that: Value.Closure =>
         util.Arrays.equals(this.formals.asInstanceOf[Array[AnyRef]], that.formals.asInstanceOf[Array[AnyRef]]) &&
@@ -187,6 +191,7 @@ object Value {
   /////////////////////////////////////////////////////////////////////////////
   // Strings                                                                 //
   /////////////////////////////////////////////////////////////////////////////
+
   /**
     * Constructs a str from the given string `s`.
     */
@@ -205,6 +210,7 @@ object Value {
   /////////////////////////////////////////////////////////////////////////////
   // Tags                                                                    //
   /////////////////////////////////////////////////////////////////////////////
+
   /**
     * Flix internal representation of tags.
     */
@@ -229,7 +235,7 @@ object Value {
     * Constructs the tag for the given enum name `e`, tag name `t` and tag value `v`.
     */
   @inline
-  def mkTag(e: Name.Resolved, t: java.lang.String, v: AnyRef) = {
+  def mkTag(e: Name.Resolved, t: java.lang.String, v: AnyRef): Value.Tag = {
     val triple = (e, t, v)
     if (tagCache.contains(triple)) {
       tagCache(triple)
@@ -279,6 +285,7 @@ object Value {
   /////////////////////////////////////////////////////////////////////////////
   // Opt, List, Set, Map                                                     //
   /////////////////////////////////////////////////////////////////////////////
+
   /**
     * Constructs the `None` value.
     */
@@ -353,6 +360,7 @@ object Value {
   /////////////////////////////////////////////////////////////////////////////
   // Pretty Printing                                                         //
   /////////////////////////////////////////////////////////////////////////////
+
   /**
     * Returns a pretty printed formatting of the given Flix `ref`.
     */

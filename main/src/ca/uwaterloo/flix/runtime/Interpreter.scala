@@ -46,6 +46,7 @@ object Interpreter {
    * example, the `exp` of Apply(exp, args, _, _), we directly call
    * `evalGeneral`.
    */
+  @tailrec
   private def evalInt(expr: Expression, root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): Int = expr match {
     case Expression.Lit(literal, _, _) => Value.cast2int32(evalLit(literal))
     case Expression.Var(ident, _, loc) => Value.cast2int32(env(ident.name))
@@ -107,7 +108,8 @@ object Interpreter {
       throw new InternalRuntimeError(s"Type of binary expression is not Type.Int.")
   }
 
-  @tailrec private def evalIntSwitch(rules: List[(Expression, Expression)], root: Root, env: mutable.Map[String, AnyRef]): Int = {
+  @tailrec
+  private def evalIntSwitch(rules: List[(Expression, Expression)], root: Root, env: mutable.Map[String, AnyRef]): Int = {
     val ((test, exp) :: rest) = rules
     val cond = evalBool(test, root, env)
     if (cond) evalInt(exp, root, env) else evalIntSwitch(rest, root, env)
@@ -120,7 +122,8 @@ object Interpreter {
    * Subexpressions are evaluated by calling specialized eval whenever
    * possible.
    */
-  @tailrec private def evalBool(expr: Expression, root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): Boolean = expr match {
+  @tailrec
+  private def evalBool(expr: Expression, root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): Boolean = expr match {
     case Expression.Lit(literal, _, _) => Value.cast2bool(evalLit(literal))
     case Expression.Var(ident, _, loc) => Value.cast2bool(env(ident.name))
     case Expression.Ref(name, _, _) => evalBool(root.constants(name).exp, root, env)
@@ -177,7 +180,8 @@ object Interpreter {
       throw new InternalRuntimeError(s"Type of binary expression is not Type.Bool.")
   }
 
-  @tailrec private def evalBoolSwitch(rules: List[(Expression, Expression)], root: Root, env: mutable.Map[String, AnyRef]): Boolean = {
+  @tailrec
+  private def evalBoolSwitch(rules: List[(Expression, Expression)], root: Root, env: mutable.Map[String, AnyRef]): Boolean = {
     val ((test, exp) :: rest) = rules
     val cond = evalBool(test, root, env)
     if (cond) evalBool(exp, root, env) else evalBoolSwitch(rest, root, env)
@@ -276,7 +280,8 @@ object Interpreter {
     }
   }
 
-  @tailrec private def evalGeneralSwitch(rules: List[(Expression, Expression)], root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
+  @tailrec
+  private def evalGeneralSwitch(rules: List[(Expression, Expression)], root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
     val ((test, exp) :: rest) = rules
     val cond = evalBool(test, root, env)
     if (cond) eval(exp, root, env) else evalGeneralSwitch(rest, root, env)
