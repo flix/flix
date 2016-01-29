@@ -161,7 +161,9 @@ class Flix {
         if (options.verify == Verify.Enabled) {
           implicit val genSym = new GenSym()
           val sast = Simplifier.simplify(ast)
-          Verifier.checkAll(sast)
+          for (r <- Verifier.checkAll(sast)) {
+            Console.println(r.message)
+          }
         }
 
         new Solver()(Solver.SolverContext(ast, options)).solve()

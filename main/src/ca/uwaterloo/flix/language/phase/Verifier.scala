@@ -678,7 +678,7 @@ object Verifier {
     val properties = collectProperties(root)
 
     // attempt to verify each property.
-    properties flatMap checkProperty
+    properties flatMap (p => checkProperty(p, root))
   }
 
   /**
@@ -687,7 +687,7 @@ object Verifier {
     * Returns `None` if the property is satisfied.
     * Otherwise returns `Some` containing the verification error.
     */
-  def checkProperty(property: Property): Option[VerifierError] = {
+  def checkProperty(property: Property, root: SimplifiedAst.Root): Option[VerifierError] = {
     // the base expression
     val exp0 = property.formula.e
 
@@ -696,7 +696,7 @@ object Verifier {
 
     // attempt to verify that the property holds under each environment.
     val violations = envs flatMap {
-      case env0 => PartialEvaluator.eval(exp0, env0, identity) match {
+      case env0 => PartialEvaluator.eval(exp0, root, env0) match {
         case Expression.True =>
           // Case 1: The partial evaluator proved the property.
           Nil
