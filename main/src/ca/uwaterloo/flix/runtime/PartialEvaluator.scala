@@ -40,13 +40,19 @@ object PartialEvaluator {
           case _ => ???
         }
 
-
+      /**
+        * Var Expressions/
+        */
+      case Var(name, offset, tpe, loc) => env0.get(name.name) match {
+        case None => throw new InternalRuntimeError(s"Unknown name: '$name'.")
+        case Some(e) => k(e)
+      }
 
       /**
         * Ref Expressions.
         */
       case Ref(name, tpe, loc) => root.constants.get(name) match {
-        case None => throw new InternalRuntimeError(s"Unknown name '$name'.")
+        case None => throw new InternalRuntimeError(s"Unknown name: '$name'.")
         case Some(defn) => k(defn.exp)
       }
 
