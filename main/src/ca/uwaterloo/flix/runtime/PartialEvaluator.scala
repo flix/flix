@@ -34,7 +34,7 @@ object PartialEvaluator {
           case List(exp1, exp2) =>
             eval(exp1, env0, {
               case e1 => eval(exp2, env0, {
-                case e2 => Tuple(List(e1, e2), tpe, loc)
+                case e2 => k(Tuple(List(e1, e2), tpe, loc))
               })
             })
           case _ => ???
@@ -45,7 +45,7 @@ object PartialEvaluator {
         */
       case Var(name, offset, tpe, loc) => env0.get(name.name) match {
         case None => throw new InternalRuntimeError(s"Unknown name: '$name'.")
-        case Some(e) => k(e)
+        case Some(e) => eval(e, env0, k)
       }
 
       /**
@@ -211,6 +211,7 @@ object PartialEvaluator {
     case True => true
     case False => true
     case v: Tag => isValue(v.exp)
+    case v: Tuple => v.elms.forall(isValue)
     case _ => false
   }
 
