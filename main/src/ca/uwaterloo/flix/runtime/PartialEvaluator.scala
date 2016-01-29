@@ -46,7 +46,7 @@ object PartialEvaluator {
       case Int64(lit) => k(Int64(lit))
       case Int(lit) => k(Int(lit)) // TODO
 
-        // TODO
+      // TODO
       case v: Closure => k(v)
 
       /**
@@ -222,16 +222,26 @@ object PartialEvaluator {
       case Apply3(lambda, actuals, tpe, loc) =>
         // Partially evaluate the lambda expression.
         eval(lambda, env0, {
-          case Lambda(annotations, formals, body, _, _) =>
+          case Lambda(_, formals, body, _, _) =>
             // Case 1: The application expression is a lambda abstraction.
             // Match the formals with the actuals.
             // TODO: This should probably evaluate each parameter before swapping it in?
             val env1 = (formals zip actuals).foldLeft(env0) {
               case (env, (formal, actual)) => env + (formal.ident.name -> actual)
             }
+            // And evaluate the body expression.
             eval(body, env1, k)
+          case Closure(formals, body, env1, _, _) =>
+            // Case 2: The lambda expression is a closure.
+            // Match the formals with the actuals.
+            val env2 = (formals zip actuals).foldLeft(env1) {
+              case (env, (formal, actual)) => env + (formal.ident.name -> actual)
+            }
+
+            // And evaluate the body expression.
+            eval(body, env2, k)
           case r1 =>
-            // Case 3: The application expression is residual.
+            // Case 3: The lambda expression is residual.
             // Partially evaluate the arguments and (re)-construct the residual.
             ???
         })
@@ -257,7 +267,8 @@ object PartialEvaluator {
       /**
         * Tuple Expressions.
         */
-      case TupleAt(base, offset, tpe, loc) =>
+      case TupleAt(exp, offset, tpe, loc) =>
+        println(exp0)
         ??? // TODO
 
       case Tuple(elms, tpe, loc) =>
