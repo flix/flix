@@ -26,6 +26,14 @@ object PartialEvaluator {
       case Unit => k(exp0)
 
       /**
+        * Tag Expressions.
+        */
+      case Tag(enum, tag, exp1, tpe, loc) =>
+        eval(exp1, env0, {
+          case e1 => k(Tag(enum, tag, e1, tpe, loc))
+        })
+
+      /**
         * Tuple Expressions.
         */
       case Tuple(elms, tpe, loc) =>
