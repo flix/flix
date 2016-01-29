@@ -26,6 +26,12 @@ object PartialEvaluator {
       case Unit => k(exp0)
 
       /**
+        * Tuple Expressions.
+        */
+      case Tuple(elms, tpe, loc) =>
+        ???
+
+      /**
         * Ref Expressions.
         */
       case Ref(name, tpe, loc) => root.constants.get(name) match {
@@ -100,6 +106,19 @@ object PartialEvaluator {
       }
 
       /**
+        * Let Expressions.
+        */
+      case Let(name, offset, exp1, exp2, tpe, loc) =>
+        // Partially evaluate the bound value exp1.
+        eval(exp1, env0, {
+          case e if isValue(e) =>
+            // Case 1: The bound
+            ???
+          case r =>
+            ???
+        })
+
+      /**
         * If-then-else Expressions.
         */
       case IfThenElse(exp1, exp2, exp3, tpe, loc) =>
@@ -121,9 +140,10 @@ object PartialEvaluator {
       /**
         * Apply Expressions.
         */
-      case Apply3(e0, actuals, tpe, loc) =>
-        // Partially evaluate e.
-        eval(e0, env0, {
+      // TODO: Verify
+      case Apply3(lambda, actuals, tpe, loc) =>
+        // Partially evaluate the lambda expression.
+        eval(lambda, env0, {
           case Lambda(annotations, formals, body, _, _) =>
             // Case 1: The application expression is a lambda abstraction.
             // Match the formals with the actuals.
@@ -142,4 +162,12 @@ object PartialEvaluator {
 
     eval(exp0, env0, x => x)
   }
+
+  private def isValue(e: Expression): Boolean = e match {
+    case True => true
+    case False => true
+    case v: Tag => isValue(v.exp)
+    case _ => false
+  }
+
 }
