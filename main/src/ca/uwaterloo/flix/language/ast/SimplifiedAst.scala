@@ -35,7 +35,7 @@ object SimplifiedAst {
                      loc: SourceLocation) extends SimplifiedAst.Definition
 
     /**
-      * An AST node that represents the definition of a function.
+      * A typed AST node that represents the definition of a function.
       *
       * @param name the resolved name of the function.
       * @param args the arguments of the function, for debugging purposes.
@@ -93,7 +93,6 @@ object SimplifiedAst {
 
   sealed trait Expression extends SimplifiedAst {
     def tpe: Type
-
     def loc: SourceLocation
   }
 
@@ -118,50 +117,42 @@ object SimplifiedAst {
 
     case object Unit extends SimplifiedAst.Expression {
       final val tpe = Type.Unit
-
       final val loc = SourceLocation.Unknown
     }
 
     case object True extends SimplifiedAst.Expression {
       final val tpe = Type.Bool
-
       final val loc = SourceLocation.Unknown
     }
 
     case object False extends SimplifiedAst.Expression {
       final val tpe = Type.Bool
-
       final val loc = SourceLocation.Unknown
     }
 
-    // TODO: Eventually we'll want to use the specialized ints below, so we'll remove this later
+    // TODO: Eventually we'll want to use the specialized ints below, and this will alias to Int32
     case class Int(lit: scala.Int) extends SimplifiedAst.Expression {
       final val tpe = Type.Int
-
       final val loc = SourceLocation.Unknown
     }
 
     case class Int8(lit: scala.Byte) extends SimplifiedAst.Expression {
       final val tpe = Type.Int8
-
       final val loc = SourceLocation.Unknown
     }
 
     case class Int16(lit: scala.Short) extends SimplifiedAst.Expression {
       final val tpe = Type.Int16
-
       final val loc = SourceLocation.Unknown
     }
 
     case class Int32(lit: scala.Int) extends SimplifiedAst.Expression {
       final val tpe = Type.Int32
-
       final val loc = SourceLocation.Unknown
     }
 
     case class Int64(lit: scala.Long) extends SimplifiedAst.Expression {
       final val tpe = Type.Int64
-
       final val loc = SourceLocation.Unknown
     }
 
@@ -209,8 +200,8 @@ object SimplifiedAst {
       * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
       */
     case class LoadInt32(e: SimplifiedAst.Expression, offset: scala.Int) extends SimplifiedAst.LoadExpression {
+      // If we had unsigned ints, would be 0xFFFFFFFF
       val mask = -1
-      // if we had unsigned ints, would be 0xFFFFFFFF
       val tpe = Type.Int32
     }
 
@@ -304,7 +295,7 @@ object SimplifiedAst {
       * @param name the name of the function being called.
       * @param args the function arguments.
       * @param tpe  the return type of the function.
-      * @param loc  the source location.
+      * @param loc  the source location of the expression.
       */
     case class Apply(name: Name.Resolved,
                      args: List[SimplifiedAst.Expression],
@@ -368,7 +359,7 @@ object SimplifiedAst {
       * @param exp1   the value of the bound variable.
       * @param exp2   the body expression in which the bound variable is visible.
       * @param tpe    the type of the expression (which is equivalent to the type of the body expression).
-      * @param loc    the source location.
+      * @param loc    the source location of the expression.
       */
     case class Let(ident: Name.Ident,
                    offset: scala.Int,
@@ -377,11 +368,78 @@ object SimplifiedAst {
                    tpe: Type,
                    loc: SourceLocation) extends SimplifiedAst.Expression
 
-
+    /**
+      * A typed AST node representing a check-tag expression, i.e. check if the tag expression matches the given tag
+      * identifier.
+      *
+      * @param tag the tag identifier.
+      * @param exp the tag expression to check.
+      * @param loc the source location of the expression.
+      */
     case class CheckTag(tag: Name.Ident,
                         exp: SimplifiedAst.Expression,
                         loc: SourceLocation) extends SimplifiedAst.Expression {
       final val tpe: Type = Type.Bool
+    }
+
+    /**
+      * A typed AST node representing a dereference of the inner value of a tag, i.e. destruct a tag.
+      *
+      * @param exp the tag expression to destruct.
+      * @param tpe the type of the inner tag value.
+      * @param loc the source location of the expression.
+      */
+    case class GetTagValue(exp: SimplifiedAst.Expression,
+                           tpe: Type,
+                           loc: SourceLocation) extends SimplifiedAst.Expression
+
+    /**
+      * A typed AST node representing a tagged expression.
+      *
+      * @param enum the name of the enum.
+      * @param tag  the name of the tag.
+      * @param exp  the expression.
+      * @param tpe  the type of the expression.
+      * @param loc  The source location of the tag.
+      */
+    case class Tag(enum: Name.Resolved,
+                   tag: Name.Ident,
+                   exp: SimplifiedAst.Expression,
+                   tpe: Type.Enum,
+                   loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = {
+        val inner = exp match {
+          case Expression.Unit => ""
+          case _ => s"($exp)"
+        }
+        tag.name + inner
+      }
+    }
+
+    /**
+      * A typed AST node representing an index into a tuple, i.e. destruct a tuple.
+      *
+      * @param base   the tuple expression to index into.
+      * @param offset the (0-based) offset of the tuple.
+      * @param tpe    the type of the expression.
+      * @param loc    the source location of the tuple.
+      */
+    case class GetTupleIndex(base: SimplifiedAst.Expression,
+                             offset: scala.Int,
+                             tpe: Type,
+                             loc: SourceLocation) extends SimplifiedAst.Expression
+
+    /**
+      * A typed AST node representing a tuple expression.
+      *
+      * @param elms the elements of the tuple.
+      * @param tpe  the type of the tuple.
+      * @param loc  the source location of the tuple.
+      */
+    case class Tuple(elms: List[SimplifiedAst.Expression],
+                     tpe: Type.Tuple,
+                     loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = "(" + elms.mkString(",") + ")"
     }
 
     case class CheckNil(exp: SimplifiedAst.Expression, loc: SourceLocation) {
@@ -392,53 +450,30 @@ object SimplifiedAst {
       final val tpe: Type = Type.Bool
     }
 
-
-    // Destructs a Tag
-    case class GetTagValue(exp: SimplifiedAst.Expression,
-                           tpe: Type,
-                           loc: SourceLocation) extends SimplifiedAst.Expression
-
-    // Destructs a Tuple
-    // TODO: Rename to GetTupleIndex
-    case class TupleAt(base: SimplifiedAst.Expression,
-                       offset: scala.Int,
-                       tpe: Type,
-                       loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class Tag(enum: Name.Resolved,
-                   tag: Name.Ident,
-                   exp: SimplifiedAst.Expression,
-                   tpe: Type.Enum,
-                   loc: SourceLocation) extends SimplifiedAst.Expression {
-      override def toString: String = {
-        val inner = exp match {
-          case SimplifiedAst.Expression.Unit => ""
-          case _ => "(" + exp.toString + ")"
-        }
-        tag.name + inner
-      }
-    }
-
-
-    case class Tuple(elms: List[SimplifiedAst.Expression],
-                     tpe: Type.Tuple,
-                     loc: SourceLocation) extends SimplifiedAst.Expression {
-      override def toString: String = "(" + elms.mkString(",") + ")"
-    }
-
     case class Set(elms: List[SimplifiedAst.Expression],
                    tpe: Type.Set,
                    loc: SourceLocation) extends SimplifiedAst.Expression
 
+    /**
+      * A typed AST node representing an error.
+      *
+      * @param tpe the type of the error.
+      * @param loc the source location of the error.
+      */
     case class Error(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
+    /**
+      * A typed AST node representing a match error.
+      *
+      * @param tpe the type of the error.
+      * @param loc the source location of the error.
+      */
     case class MatchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
   }
 
   sealed trait Predicate extends SimplifiedAst {
     def tpe: Type
-
     def loc: SourceLocation
   }
 
@@ -487,7 +522,6 @@ object SimplifiedAst {
 
     sealed trait Head extends SimplifiedAst {
       def tpe: Type
-
       def loc: SourceLocation
     }
 
@@ -508,7 +542,6 @@ object SimplifiedAst {
 
     sealed trait Body extends SimplifiedAst {
       def tpe: Type
-
       def loc: SourceLocation
     }
 

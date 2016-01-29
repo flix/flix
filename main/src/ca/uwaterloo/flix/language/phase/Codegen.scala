@@ -1,12 +1,19 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Definition, Expression, LoadExpression, StoreExpression}
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.runtime.Value
+import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.util.CheckClassAdapter
 import org.objectweb.asm.{ClassVisitor, ClassWriter, Label, MethodVisitor}
+
+// TODO: For now, we hardcode the type descriptors for all the Value objects
+// There's no nice way of using reflection to get the type of a companion object.
+// Later, we'll rewrite Value in a Java-like style so reflection is easier
+
+// TODO: Debugging information
 
 object Codegen {
 
@@ -24,27 +31,20 @@ object Codegen {
    * Returns the internal name of the JVM type that `tpe` maps to.
    */
   def descriptor(tpe: Type): String = tpe match {
-    case Type.Var(x) => ???
-    case Type.Unit => ???
-    case Type.Bool => "Z"   // JVM boolean
-    case Type.Int8 => "B"   // JVM byte (8 bits)
-    case Type.Int16 => "S"  // JVM short (16 bits)
-    case Type.Int32 | Type.Int => "I"  // JVM int (32 bits)
-    case Type.Int64 => "J"  // JVM long (64 bits)
-    case Type.Str => ???
-    case Type.Tag(enum, tag, t) => ???
-    case Type.Enum(cases) => ???
-    case Type.Tuple(elms) => ???
-    case Type.Opt(elmType) => ???
-    case Type.Lst(elmType) => ???
-    case Type.Set(elmType) => ???
-    case Type.Map(k, v) => ???
+    case Type.Unit => "Lca/uwaterloo/flix/runtime/Value$Unit$;"
+    case Type.Bool => asm.Type.BOOLEAN_TYPE.getDescriptor
+    case Type.Int8 => asm.Type.BYTE_TYPE.getDescriptor
+    case Type.Int16 => asm.Type.SHORT_TYPE.getDescriptor
+    case Type.Int32 | Type.Int => asm.Type.INT_TYPE.getDescriptor
+    case Type.Int64 => asm.Type.LONG_TYPE.getDescriptor
+    case Type.Str => asm.Type.getDescriptor(classOf[java.lang.String])
+    case Type.Tag(_, _, _) | Type.Enum(_) =>
+      // TODO: Can we return something of Type.Tag? Looks like we only return Type.Enum, which is a set of Type.Tags.
+      asm.Type.getDescriptor(classOf[Value.Tag])
+    case Type.Tuple(elms) => asm.Type.getDescriptor(classOf[Value.Tuple])
     case Type.Lambda(args, retTpe) => s"""(${ args.map(descriptor).mkString })${descriptor(retTpe)}"""
-    case Type.Predicate(terms) => ???
-    case Type.Native(name) => ???
-    case Type.Char => ???
-    case Type.Abs(name, t) => ???
-    case Type.Any => ???
+    case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) | Type.Native(_) |
+         Type.Char | Type.Abs(_, _) | Type.Any => ???
   }
 
   /*
@@ -57,8 +57,8 @@ object Codegen {
     val classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
     val visitor = new CheckClassAdapter(classWriter)
 
-    // Initialize the visitor to create a class
-    visitor.visit(V1_7, ACC_PUBLIC + ACC_SUPER, context.clazz, null, "java/lang/Object", null)
+    // Initialize the visitor to create a class.
+    visitor.visit(V1_8, ACC_PUBLIC + ACC_SUPER, context.clazz, null, "java/lang/Object", null)
 
     compileConstructor(context, visitor)
     functions.foreach(compileFunction(context, visitor))
@@ -86,31 +86,17 @@ object Codegen {
    * The Flix function A::B::C::foo is compiled as the method A$B$C$foo.
    */
   private def compileFunction(context: Context, visitor: ClassVisitor)(function: Definition.Function): Unit = {
-    // TODO: Debug information
     val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, decorate(function.name), descriptor(function.tpe), null, null)
     mv.visitCode()
 
     compileExpression(context, mv)(function.body)
 
     function.tpe.retTpe match {
-      case Type.Var(x) => ???
-      case Type.Unit => ???
       case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
-      case Type.Str => ???
-      case Type.Tag(enum, tag, tpe) => ???
-      case Type.Enum(cases) => ???
-      case Type.Tuple(elms) => ???
-      case Type.Opt(elmType) => ???
-      case Type.Lst(elmType) => ???
-      case Type.Set(elmType) => ???
-      case Type.Map(k, v) => ???
-      case Type.Lambda(args, retTpe) => ???
-      case Type.Predicate(terms) => ???
-      case Type.Native(name) => ???
-      case Type.Char => ???
-      case Type.Abs(name, t) => ???
-      case Type.Any => ???
+      case Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) => mv.visitInsn(ARETURN)
+      case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
+           Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
     }
 
     // Dummy large numbers so the bytecode checker can run. Afterwards, the ASM library calculates the proper maxes.
@@ -119,52 +105,50 @@ object Codegen {
   }
 
   private def compileExpression(context: Context, visitor: MethodVisitor)(expr: Expression): Unit = expr match {
-    case Unit => ???
-    case True => visitor.visitInsn(ICONST_1)
-    case False => visitor.visitInsn(ICONST_0)
-    case Int(i) => compileInt(visitor)(i)
-    case Int8(b) => compileInt(visitor)(b)
-    case Int16(s) => compileInt(visitor)(s)
-    case Int32(i) => compileInt(visitor)(i)
-    case Int64(l) => compileInt(visitor)(l, isLong = true)
-    case Str(s, loc) => ???
+    case Expression.Unit =>
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$Unit$", "MODULE$",
+        "Lca/uwaterloo/flix/runtime/Value$Unit$;")
+
+    case Expression.True => visitor.visitInsn(ICONST_1)
+    case Expression.False => visitor.visitInsn(ICONST_0)
+    case Expression.Int(i) => compileInt(visitor)(i)
+    case Expression.Int8(b) => compileInt(visitor)(b)
+    case Expression.Int16(s) => compileInt(visitor)(s)
+    case Expression.Int32(i) => compileInt(visitor)(i)
+    case Expression.Int64(l) => compileInt(visitor)(l, isLong = true)
+    case Expression.Str(s, _) => visitor.visitLdcInsn(s)
+
     case load: LoadExpression => compileLoadExpr(context, visitor)(load)
     case store: StoreExpression => compileStoreExpr(context, visitor)(store)
-    case Var(ident, offset, tpe, loc) =>
-      tpe match {
-        case Type.Var(x) => ???
-        case Type.Unit => ???
-        case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ILOAD, offset)
-        case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
-        case Type.Str => ???
-        case Type.Tag(name, id, typ) => ???
-        case Type.Enum(cases) => ???
-        case Type.Tuple(elms) => ???
-        case Type.Opt(elmType) => ???
-        case Type.Lst(elmType) => ???
-        case Type.Set(elmType) => ???
-        case Type.Map(k, v) => ???
-        case Type.Lambda(args, retTpe) => ???
-        case Type.Predicate(terms) => ???
-        case Type.Native(name) => ???
-        case Type.Char => ???
-        case Type.Abs(name, t) => ???
-        case Type.Any => ???
-      }
-    case Ref(name, tpe, loc) => ???
-    case Lambda(annotations, args, body, tpe, loc) => ???
-    case Apply(name, args, tpe, loc) =>
+
+    case Expression.Var(ident, offset, tpe, loc) => tpe match {
+      case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ILOAD, offset)
+      case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
+      case Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) =>
+        visitor.visitVarInsn(ALOAD, offset)
+      case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
+           Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
+    }
+
+    case Expression.Ref(name, tpe, loc) => ???
+    case Expression.Lambda(annotations, args, body, tpe, loc) => ???
+    case Expression.Closure(args, body, env, tpe, loc) => ???
+
+    case Expression.Apply(name, args, _, _) =>
       args.foreach(compileExpression(context, visitor))
       visitor.visitMethodInsn(INVOKESTATIC, context.clazz, decorate(name),
         descriptor(context.getFunction(name).tpe), false)
-    case Unary(op, exp, tpe, loc) => compileUnaryExpr(context, visitor)(op, exp, tpe)
-    case Binary(op, exp1, exp2, tpe, loc) => op match {
-      case o: ArithmeticOperator => compileArithmeticExpr(context, visitor)(o, exp1, exp2, tpe)
-      case o: ComparisonOperator => compileComparisonExpr(context, visitor)(o, exp1, exp2, tpe)
-      case o: LogicalOperator => compileLogicalExpr(context, visitor)(o, exp1, exp2, tpe)
-      case o: BitwiseOperator => compileBitwiseExpr(context, visitor)(o, exp1, exp2, tpe)
+    case Expression.Apply3(lambda, args, tpe, loc) => ???
+
+    case Expression.Unary(op, exp, _, _) => compileUnaryExpr(context, visitor)(op, exp)
+    case Expression.Binary(op, exp1, exp2, _, _) => op match {
+      case o: ArithmeticOperator => compileArithmeticExpr(context, visitor)(o, exp1, exp2)
+      case o: ComparisonOperator => compileComparisonExpr(context, visitor)(o, exp1, exp2)
+      case o: LogicalOperator => compileLogicalExpr(context, visitor)(o, exp1, exp2)
+      case o: BitwiseOperator => compileBitwiseExpr(context, visitor)(o, exp1, exp2)
     }
-    case IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
       val ifElse = new Label()
       val ifEnd = new Label()
       compileExpression(context, visitor)(exp1)
@@ -174,35 +158,182 @@ object Codegen {
       visitor.visitLabel(ifElse)
       compileExpression(context, visitor)(exp3)
       visitor.visitLabel(ifEnd)
-    case Let(ident, offset, exp1, exp2, tpe, loc) =>
+
+    case Expression.Let(ident, offset, exp1, exp2, _, _) =>
       compileExpression(context, visitor)(exp1)
       exp1.tpe match {
-        case Type.Var(x) => ???
-        case Type.Unit => ???
         case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ISTORE, offset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
-        case Type.Str => ???
-        case Type.Tag(name, id, typ) => ???
-        case Type.Enum(cases) => ???
-        case Type.Tuple(elms) => ???
-        case Type.Opt(elmType) => ???
-        case Type.Lst(elmType) => ???
-        case Type.Set(elmType) => ???
-        case Type.Map(k, v) => ???
-        case Type.Lambda(args, retTpe) => ???
-        case Type.Predicate(terms) => ???
-        case Type.Native(name) => ???
-        case Type.Char => ???
-        case Type.Abs(name, t) => ???
-        case Type.Any => ???
+        case Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) =>
+          visitor.visitVarInsn(ASTORE, offset)
+        case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
+             Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
       }
       compileExpression(context, visitor)(exp2)
-    case Tag(enum, tag, exp, tpe, loc) => ???
-    case TupleAt(base, offset, tpe, loc) => ???
-    case Tuple(elms, tpe, loc) => ???
-    case Set(elms, tpe, loc) => ???
-    case Error(tpe, loc) => ???
-    case MatchError(tpe, loc) => ???
+
+    case Expression.CheckTag(tag, exp, _) =>
+      // Get the tag string of `exp` (compiled as a tag) and compare to `tag.name`.
+      compileExpression(context, visitor)(exp)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tag", "tag", "()Ljava/lang/String;",
+        false)
+      visitor.visitLdcInsn(tag.name)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false)
+
+    case Expression.GetTagValue(exp, tpe, _) =>
+      // Compile `exp` as a tag expression, get its inner `value`, and unbox if necessary.
+      compileExpression(context, visitor)(exp)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tag", "value",
+        "()Ljava/lang/Object;", false)
+      compileUnbox(context, visitor)(tpe)
+
+    case Expression.Tag(enum, tag, exp, _, _) =>
+      // Load the Value companion object, then the arguments, and finally call `Value.mkTag`.
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
+        "Lca/uwaterloo/flix/runtime/Value$;")
+
+      // Load `enum` as a string, by calling `Name.Resolved.mk`
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/Name$Resolved$", "MODULE$",
+        "Lca/uwaterloo/flix/language/ast/Name$Resolved$;")
+      visitor.visitLdcInsn(enum.parts.mkString("::"))
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/Name$Resolved$", "mk",
+        "(Ljava/lang/String;)Lca/uwaterloo/flix/language/ast/Name$Resolved;", false)
+
+      // Load `tag.name` and box `exp` if necessary.
+      visitor.visitLdcInsn(tag.name)
+      compileBoxedExpr(context, visitor)(exp)
+
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkTag",
+        "(Lca/uwaterloo/flix/language/ast/Name$Resolved;Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
+
+    case Expression.GetTupleIndex(base, offset, tpe, _) =>
+      // Compile the tuple expression, load the tuple array, compile the offset, load the array element, and unbox if
+      // necessary.
+      compileExpression(context, visitor)(base)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "elms",
+        "()[Ljava/lang/Object;", false)
+      compileInt(visitor)(offset)
+      visitor.visitInsn(AALOAD)
+      compileUnbox(context, visitor)(tpe)
+
+    case Expression.Tuple(elms, _, _) =>
+      // TODO: What is our limit on tuples? We've been using [2-5]; Scala supports [2-22]
+      if (elms.size < 2 || elms.size > 5)
+        throw new InternalCompilerError("Tuple must contain 2 to 5 elements, inclusive.")
+
+      // Create the array to hold the tuple elements.
+      compileInt(visitor)(elms.size)
+      visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(classOf[AnyRef]))
+
+      // Iterate over elms, boxing them and slotting each one into the array.
+      elms.zipWithIndex.foreach { case (e, i) =>
+        // Duplicate the array reference, otherwise AASTORE will consume it.
+        visitor.visitInsn(DUP)
+        compileInt(visitor)(i)
+        compileBoxedExpr(context, visitor)(e)
+        visitor.visitInsn(AASTORE)
+      }
+
+      // Now construct a Value.Tuple: create a reference, load the arguments, and call the constructor.
+      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/Value$Tuple")
+
+      // We use dup_x1 and swap to manipulate the stack so we can avoid using a local variable.
+      // Stack before: array, tuple (top)
+      // Stack after: tuple, tuple, array (top)
+      visitor.visitInsn(DUP_X1)
+      visitor.visitInsn(SWAP)
+
+      // Finally, call the constructor, which pops the reference (tuple) and argument (array).
+      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "<init>",
+        "([Ljava/lang/Object;)V", false)
+
+    case Expression.Set(elms, tpe, loc) => ???
+
+    case Expression.Error(_, loc) => compileThrow(context, visitor)(s"Runtime error at ${loc.format}")
+    case Expression.MatchError(_, loc) => compileThrow(context, visitor)(s"Match error at ${loc.format}")
+  }
+
+  /*
+   * Some types (e.g. bool, int, str) need to be boxed as Flix values.
+   * Other types (e.g. tag, tuple) are already Flix values.
+   */
+  private def compileBoxedExpr(context: Context, visitor: MethodVisitor)(exp: Expression): Unit = exp.tpe match {
+    case Type.Bool =>
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
+        "Lca/uwaterloo/flix/runtime/Value$;")
+      exp match {
+        case Expression.True =>
+          visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "True",
+            "()Ljava/lang/Object;", false)
+        case Expression.False =>
+          visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "False",
+            "()Ljava/lang/Object;", false)
+        case _ =>
+          compileExpression(context, visitor)(exp)
+          visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkBool",
+            "(Z)Ljava/lang/Object;", false)
+      }
+    case Type.Int8 =>
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
+        "Lca/uwaterloo/flix/runtime/Value$;")
+      compileExpression(context, visitor)(exp)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt8",
+        "(I)Ljava/lang/Object;", false)
+    case Type.Int16 =>
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
+        "Lca/uwaterloo/flix/runtime/Value$;")
+      compileExpression(context, visitor)(exp)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt16",
+        "(I)Ljava/lang/Object;", false)
+    case Type.Int32 | Type.Int =>
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
+        "Lca/uwaterloo/flix/runtime/Value$;")
+      compileExpression(context, visitor)(exp)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt32",
+        "(I)Ljava/lang/Object;", false)
+    case Type.Int64 =>
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
+        "Lca/uwaterloo/flix/runtime/Value$;")
+      compileExpression(context, visitor)(exp)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt64",
+        "(J)Ljava/lang/Object;", false)
+    case Type.Str =>
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
+        "Lca/uwaterloo/flix/runtime/Value$;")
+      compileExpression(context, visitor)(exp)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkStr",
+        "(Ljava/lang/String;)Ljava/lang/Object;", false)
+    case Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) =>
+      compileExpression(context, visitor)(exp)
+    case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
+         Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
+  }
+
+  /*
+   * The value at the top of the stack is boxed as a Flix Value, and needs to be unboxed (e.g. to an int, boolean, or
+   * String), or it needs to be cast to a specific Value type (e.g. Value.Unit.type, Value.Tag).
+   */
+  private def compileUnbox(context: Context, visitor: MethodVisitor)(tpe: Type): Unit = tpe match {
+    case Type.Unit => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Unit$")
+    case Type.Bool =>
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Boolean")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false)
+    case Type.Int8 =>
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Byte")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Byte", "byteValue", "()B", false)
+    case Type.Int16 =>
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Short")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Short", "shortValue", "()S", false)
+    case Type.Int32 | Type.Int =>
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Integer")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false)
+    case Type.Int64 =>
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Long")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J", false)
+    case Type.Str => visitor.visitTypeInsn(CHECKCAST, "java/lang/String")
+    case Type.Tag(_, _, _) | Type.Enum(_) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tag")
+    case Type.Tuple(_) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tuple")
+    case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
+         Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
   }
 
   /*
@@ -309,9 +440,8 @@ object Codegen {
     if (isLong && scala.Int.MinValue <= i && i <= scala.Int.MaxValue && i != 0 && i != 1) visitor.visitInsn(I2L)
   }
 
-  private def compileUnaryExpr(context: Context, visitor: MethodVisitor)
-                              (op: UnaryOperator, expr: Expression, tpe: Type): Unit = {
-    compileExpression(context, visitor)(expr)
+  private def compileUnaryExpr(context: Context, visitor: MethodVisitor)(op: UnaryOperator, e: Expression): Unit = {
+    compileExpression(context, visitor)(e)
     op match {
       case UnaryOperator.LogicalNot =>
         val condElse = new Label()
@@ -323,8 +453,8 @@ object Codegen {
         visitor.visitInsn(ICONST_0)
         visitor.visitLabel(condEnd)
       case UnaryOperator.Plus => // nop
-      case UnaryOperator.Minus => compileUnaryMinusExpr(context, visitor)(tpe)
-      case UnaryOperator.BitwiseNegate => compileUnaryNegateExpr(context, visitor)(tpe)
+      case UnaryOperator.Minus => compileUnaryMinusExpr(context, visitor)(e.tpe)
+      case UnaryOperator.BitwiseNegate => compileUnaryNegateExpr(context, visitor)(e.tpe)
     }
   }
 
@@ -412,7 +542,7 @@ object Codegen {
    *     11111111 11111111 11111111 10000000 = -128
    */
   private def compileArithmeticExpr(context: Context, visitor: MethodVisitor)
-                                   (o: ArithmeticOperator, e1: Expression, e2: Expression, tpe: Type): Unit = {
+                                   (o: ArithmeticOperator, e1: Expression, e2: Expression): Unit = {
     compileExpression(context, visitor)(e1)
     compileExpression(context, visitor)(e2)
     val (intOp, longOp) = o match {
@@ -422,7 +552,7 @@ object Codegen {
       case BinaryOperator.Divide => (IDIV, LDIV)
       case BinaryOperator.Modulo => (IREM, LREM)
     }
-    tpe match {
+    e1.tpe match {
       case Type.Int8 =>
         visitor.visitInsn(intOp)
         visitor.visitInsn(I2B)
@@ -434,12 +564,12 @@ object Codegen {
       case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
            Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
            Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any =>
-        throw new InternalCompilerError(s"Can't apply $o to type $tpe.")
+        throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
     }
   }
 
   private def compileComparisonExpr(context: Context, visitor: MethodVisitor)
-                                   (o: ComparisonOperator, e1: Expression, e2: Expression, tpe: Type): Unit = {
+                                   (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
     compileExpression(context, visitor)(e1)
     compileExpression(context, visitor)(e2)
     val condElse = new Label()
@@ -453,6 +583,9 @@ object Codegen {
       case BinaryOperator.NotEqual => (IF_ICMPEQ, IFEQ)
     }
     e1.tpe match {
+      case Type.Bool if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+        // Booleans can be compared for equality.
+        visitor.visitJumpInsn(intOp, condElse)
       case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitJumpInsn(intOp, condElse)
       case Type.Int64 =>
         visitor.visitInsn(LCMP)
@@ -460,7 +593,7 @@ object Codegen {
       case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
            Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
            Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any =>
-        throw new InternalCompilerError(s"Can't apply $o to type $tpe.")
+        throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
     }
     visitor.visitInsn(ICONST_1)
     visitor.visitJumpInsn(GOTO, condEnd)
@@ -470,10 +603,11 @@ object Codegen {
   }
 
   /*
-   * Note that these expressions do short-circuit evaluation.
+   * Note that LogicalAnd, LogicalOr, and Implication do short-circuit evaluation.
+   * Implication and Biconditional are rewritten to their logical equivalents, and then compiled.
    */
   private def compileLogicalExpr(context: Context, visitor: MethodVisitor)
-                                (o: LogicalOperator, e1: Expression, e2: Expression, tpe: Type): Unit = o match {
+                                (o: LogicalOperator, e1: Expression, e2: Expression): Unit = o match {
     case BinaryOperator.LogicalAnd =>
       val andFalseBranch = new Label()
       val andEnd = new Label()
@@ -500,6 +634,13 @@ object Codegen {
       visitor.visitLabel(orFalseBranch)
       visitor.visitInsn(ICONST_0)
       visitor.visitLabel(orEnd)
+    case BinaryOperator.Implication =>
+      // (e1 ==> e2) === (!e1 || e2)
+      val notExp = Expression.Unary(UnaryOperator.LogicalNot, e1, Type.Bool, e1.loc)
+      compileLogicalExpr(context, visitor)(BinaryOperator.LogicalOr, notExp, e2)
+    case BinaryOperator.Biconditional =>
+      // (e1 <==> e2) === (e1 == e2)
+      compileComparisonExpr(context, visitor)(BinaryOperator.Equal, e1, e2)
   }
 
   /*
@@ -546,7 +687,7 @@ object Codegen {
    * Note: the right-hand operand of a shift (i.e. the shift amount) *must* be Int32.
    */
   private def compileBitwiseExpr(context: Context, visitor: MethodVisitor)
-                                (o: BitwiseOperator, e1: Expression, e2: Expression, tpe: Type): Unit = {
+                                (o: BitwiseOperator, e1: Expression, e2: Expression): Unit = {
     compileExpression(context, visitor)(e1)
     compileExpression(context, visitor)(e2)
     val (intOp, longOp) = o match {
@@ -556,7 +697,7 @@ object Codegen {
       case BinaryOperator.BitwiseLeftShift => (ISHL, LSHL)
       case BinaryOperator.BitwiseRightShift => (ISHR, LSHR)
     }
-    tpe match {
+    e1.tpe match {
       case Type.Int8 =>
         visitor.visitInsn(intOp)
         if (intOp == ISHL) visitor.visitInsn(I2B)
@@ -568,8 +709,17 @@ object Codegen {
       case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
            Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
            Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any =>
-        throw new InternalCompilerError(s"Can't apply $o to type $tpe.")
+        throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
     }
+  }
+
+  // TODO: A better exception to throw?
+  private def compileThrow(context: Context, visitor: MethodVisitor)(message: String): Unit = {
+    visitor.visitTypeInsn(NEW, "java/lang/RuntimeException")
+    visitor.visitInsn(DUP)
+    visitor.visitLdcInsn(message)
+    visitor.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V", false)
+    visitor.visitInsn(ATHROW)
   }
 
 }

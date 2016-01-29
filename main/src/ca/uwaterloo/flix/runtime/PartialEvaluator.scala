@@ -267,7 +267,7 @@ object PartialEvaluator {
       /**
         * Tuple Expressions.
         */
-      case TupleAt(exp, offset, tpe, loc) =>
+      case GetTupleIndex(exp, offset, tpe, loc) =>
         // Partially evaluate the tuple expression exp.
         eval(exp, env0, {
           case Tuple(elms, _, _) =>

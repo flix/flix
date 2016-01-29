@@ -23,10 +23,7 @@ object Type {
     */
   case object Bool extends Type
 
-  /**
-    * An AST node representing the Integer type.
-    */
-  // TODO: The specialized int types exist below, so eventually we should get rid of this
+  // TODO: Eventually we'll want to use the specialized ints below, and this will alias to Int32
   case object Int extends Type
 
   /**
