@@ -6239,7 +6239,7 @@ class TestCodegen extends FunSuite {
       body = Let(toIdent("x"), 0,
         exp1 = Tuple(List(Str("un", loc), False, Int64(12345), Unit, Int8(-2)),
           Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc),
-        exp2 = TupleAt(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc), 0, Type.Str, loc),
+        exp2 = GetTupleIndex(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc), 0, Type.Str, loc),
         Type.Str, loc),
       Type.Lambda(List(), Type.Str), loc)
 
@@ -6254,7 +6254,7 @@ class TestCodegen extends FunSuite {
       body = Let(toIdent("x"), 0,
         exp1 = Tuple(List(Str("un", loc), False, Int64(12345), Unit, Int8(-2)),
           Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc),
-        exp2 = TupleAt(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc), 1, Type.Bool, loc),
+        exp2 = GetTupleIndex(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc), 1, Type.Bool, loc),
         Type.Bool, loc),
       Type.Lambda(List(), Type.Bool), loc)
 
@@ -6269,7 +6269,7 @@ class TestCodegen extends FunSuite {
       body = Let(toIdent("x"), 0,
         exp1 = Tuple(List(Str("un", loc), False, Int64(12345), Unit, Int8(-2)),
           Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc),
-        exp2 = TupleAt(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc), 2, Type.Int64, loc),
+        exp2 = GetTupleIndex(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc), 2, Type.Int64, loc),
         Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
 
@@ -6284,7 +6284,7 @@ class TestCodegen extends FunSuite {
       body = Let(toIdent("x"), 0,
         exp1 = Tuple(List(Str("un", loc), False, Int64(12345), Unit, Int8(-2)),
           Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc),
-        exp2 = TupleAt(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc), 3, Type.Unit, loc),
+        exp2 = GetTupleIndex(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc), 3, Type.Unit, loc),
         Type.Unit, loc),
       Type.Lambda(List(), Type.Unit), loc)
 
@@ -6299,7 +6299,7 @@ class TestCodegen extends FunSuite {
       body = Let(toIdent("x"), 0,
         exp1 = Tuple(List(Str("un", loc), False, Int64(12345), Unit, Int8(-2)),
           Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc),
-        exp2 = TupleAt(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc), 4, Type.Int8, loc),
+        exp2 = GetTupleIndex(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc), 4, Type.Int8, loc),
         Type.Int8, loc),
       Type.Lambda(List(), Type.Int8), loc)
 
@@ -6314,7 +6314,7 @@ class TestCodegen extends FunSuite {
       body = Let(toIdent("x"), 0,
         exp1 = Tuple(List(Tag(constPropName, identV, Int32(111), enumTpe, loc), Tag(constPropName, identB, Unit, enumTpe, loc)),
           Type.Tuple(List(enumTpe, enumTpe)), loc),
-        exp2 = TupleAt(Var(toIdent("x"), 0, enumTpe, loc), 1, enumTpe, loc),
+        exp2 = GetTupleIndex(Var(toIdent("x"), 0, enumTpe, loc), 1, enumTpe, loc),
         enumTpe, loc),
       Type.Lambda(List(), enumTpe), loc)
 
@@ -6330,12 +6330,12 @@ class TestCodegen extends FunSuite {
         Tuple(List(Int16(123), Int32(456)), Type.Tuple(List(Type.Int16, Type.Int32)), loc),
         Tuple(List(Str("654", loc), Str("321", loc)), Type.Tuple(List(Type.Str, Type.Str)), loc)),
         Type.Tuple(List(Type.Tuple(List(Type.Int16, Type.Int32)), Type.Tuple(List(Type.Str, Type.Str)))), loc),
-      exp2 = TupleAt(Var(toIdent("y"), 1, Type.Tuple(List(Type.Tuple(List(Type.Int16, Type.Int32)), Type.Tuple(List(Type.Str, Type.Str)))), loc), 0, Type.Tuple(List(Type.Int32, Type.Int32)), loc),
+      exp2 = GetTupleIndex(Var(toIdent("y"), 1, Type.Tuple(List(Type.Tuple(List(Type.Int16, Type.Int32)), Type.Tuple(List(Type.Str, Type.Str)))), loc), 0, Type.Tuple(List(Type.Int32, Type.Int32)), loc),
       Type.Tuple(List(Type.Int16, Type.Int32)), loc)
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
         exp1 = innerLet,
-        exp2 = TupleAt(Var(toIdent("x"), 0, Type.Tuple(List(Type.Int16, Type.Int32)), loc), 0, Type.Int16, loc),
+        exp2 = GetTupleIndex(Var(toIdent("x"), 0, Type.Tuple(List(Type.Int16, Type.Int32)), loc), 0, Type.Int16, loc),
         Type.Int16, loc),
       Type.Lambda(List(), Type.Int16), loc)
 

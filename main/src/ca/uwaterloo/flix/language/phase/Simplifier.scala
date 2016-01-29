@@ -101,10 +101,10 @@ object Simplifier {
         val matchExp = simplify(exp0)
         val lambdaVars = rules.map(_ => genSym.fresh2())
 
-        val zero = SExp.Apply2(lambdaVars.head, List(), Type.Lambda(List.empty, tpe), loc)
+        val zero = SExp.Apply3(SExp.Var(lambdaVars.head, -1, /* TODO: Verify type */ exp0.tpe, loc), List(), Type.Lambda(List.empty, tpe), loc)
         val result = (rules zip lambdaVars.sliding(2).toList).foldLeft(zero: SExp) {
           case (exp, ((pat, body), List(currName, nextName))) =>
-            val lambdaBody = Pattern.simplify(List(pat), List(matchVar), simplify(body), SExp.Apply2(nextName, List.empty, tpe, loc))
+            val lambdaBody = Pattern.simplify(List(pat), List(matchVar), simplify(body), SExp.Apply3(SExp.Var(nextName, -1, /* TODO: Verify type. */ Type.Lambda(List.empty, body.tpe), loc), List.empty, tpe, loc))
             val lambda = SExp.Lambda(Ast.Annotations(List.empty), List.empty, lambdaBody, Type.Lambda(List.empty, tpe), loc)
             SExp.Let(currName, -1, lambda, exp, tpe, loc)
         }
@@ -205,7 +205,7 @@ object Simplifier {
         val zero = simplify(elms ::: ps, freshVars ::: vs, succ, fail)
         (elms zip freshVars zipWithIndex).foldRight(zero) {
           case (((pat, name), idx), exp) =>
-            SExp.Let(name, -1, SExp.TupleAt(SExp.Var(v, -1, pat.tpe, loc), -1, pat.tpe, loc), exp, succ.tpe, loc)
+            SExp.Let(name, -1, SExp.GetTupleIndex(SExp.Var(v, -1, pat.tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
         }
 
     }

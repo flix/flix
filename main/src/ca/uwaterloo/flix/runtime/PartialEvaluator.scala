@@ -1,7 +1,9 @@
 package ca.uwaterloo.flix.runtime
 
+import ca.uwaterloo.flix.language.ast.BinaryOperator.{LogicalAnd, LogicalOr}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
+import ca.uwaterloo.flix.language.ast.UnaryOperator.LogicalNot
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, SimplifiedAst, UnaryOperator}
 import ca.uwaterloo.flix.runtime.Interpreter.InternalRuntimeError
 
@@ -21,32 +23,36 @@ object PartialEvaluator {
       */
     def eval(exp0: Expression, env0: Map[String, Expression], k: Cont): Expression = exp0 match {
       /**
-        * Constant Expressions.
+        * Unit Expression.
         */
       case Unit => k(exp0)
 
       /**
-        * Tag Expressions.
+        * True Expression.
         */
-      case Tag(enum, tag, exp1, tpe, loc) =>
-        eval(exp1, env0, {
-          case e1 => k(Tag(enum, tag, e1, tpe, loc))
-        })
+      case True => k(True)
 
       /**
-        * Tuple Expressions.
+        * False Expression.
         */
-      case Tuple(elms, tpe, loc) =>
-        // TODO: Use fold with continuation
-        elms match {
-          case List(exp1, exp2) =>
-            eval(exp1, env0, {
-              case e1 => eval(exp2, env0, {
-                case e2 => k(Tuple(List(e1, e2), tpe, loc))
-              })
-            })
-          case _ => ???
-        }
+      case False => k(False)
+
+      /**
+        * Int Expressions.
+        */
+      case Int8(lit) => k(Int8(lit))
+      case Int16(lit) => k(Int16(lit))
+      case Int32(lit) => k(Int32(lit))
+      case Int64(lit) => k(Int64(lit))
+      case Int(lit) => k(Int(lit)) // TODO
+
+      // TODO
+      case v: Closure => k(v)
+
+      /**
+        * Str Expression.
+        */
+      case Str(lit, loc) => k(Str(lit, loc))
 
       /**
         * Var Expressions/
@@ -91,6 +97,24 @@ object PartialEvaluator {
         * Binary Expressions.
         */
       case Binary(op, exp1, exp2, tpe, loc) => op match {
+
+        case BinaryOperator.Plus => ??? // TODO
+        case BinaryOperator.Minus => ??? // TODO
+        case BinaryOperator.Times => ??? // TODO
+        case BinaryOperator.Divide => ??? // TODO
+        case BinaryOperator.Modulo => ??? // TODO
+
+        case BinaryOperator.Less => ??? // TODO
+        case BinaryOperator.LessEqual => ??? // TODO
+        case BinaryOperator.Greater => ??? // TODO
+        case BinaryOperator.GreaterEqual => ??? // TODO
+
+        case BinaryOperator.Equal => ??? // TODO
+        case BinaryOperator.NotEqual => ??? // TODO
+
+        /**
+          * LogicalOr.
+          */
         case BinaryOperator.LogicalOr =>
           // Partially evaluate exp1.
           eval(exp1, env0, {
@@ -109,8 +133,9 @@ object PartialEvaluator {
             })
           })
 
-        // TODO: Eq for boolean ops.
-
+        /**
+          * LogicalAnd.
+          */
         case BinaryOperator.LogicalAnd =>
           // Partially evaluate exp1.
           eval(exp1, env0, {
@@ -128,6 +153,30 @@ object PartialEvaluator {
               case r2 => k(Binary(BinaryOperator.LogicalAnd, r1, r2, tpe, loc))
             })
           })
+
+        /**
+          * Logical Implication.
+          */
+        case BinaryOperator.Implication =>
+          // Rewrite and partially evaluate the result.
+          k(Binary(BinaryOperator.LogicalOr, Unary(LogicalNot, exp1, tpe, loc), exp2, tpe, loc))
+
+        /**
+          * Logical Biconditional.
+          */
+        case BinaryOperator.Biconditional =>
+          // Rewrite and partially evaluate the result.
+          k(Binary(BinaryOperator.LogicalAnd,
+            Binary(BinaryOperator.Implication, exp1, exp2, tpe, loc),
+            Binary(BinaryOperator.Implication, exp2, exp1, tpe, loc),
+            tpe, loc))
+
+        case BinaryOperator.BitwiseAnd => ??? // TODO
+        case BinaryOperator.BitwiseOr => ??? // TODO
+        case BinaryOperator.BitwiseXor => ??? // TODO
+        case BinaryOperator.BitwiseLeftShift => ??? // TODO
+        case BinaryOperator.BitwiseRightShift => ??? // TODO
+
       }
 
       /**
@@ -137,9 +186,11 @@ object PartialEvaluator {
         // Partially evaluate the bound value exp1.
         eval(exp1, env0, {
           case e if isValue(e) =>
-            // Case 1: The bound
-            ???
+            // Case 1: The bound value expression exp1 is a value.
+            // Extend the environment and evaluate the body expression exp2.
+            eval(exp2, env0 + (name.name -> e), k)
           case r =>
+            println(r)
             ???
         })
 
@@ -166,22 +217,96 @@ object PartialEvaluator {
         * Apply Expressions.
         */
       // TODO: Verify
+      case Apply(_, _, _, _) => ???
+
       case Apply3(lambda, actuals, tpe, loc) =>
         // Partially evaluate the lambda expression.
         eval(lambda, env0, {
-          case Lambda(annotations, formals, body, _, _) =>
+          case Lambda(_, formals, body, _, _) =>
             // Case 1: The application expression is a lambda abstraction.
             // Match the formals with the actuals.
             // TODO: This should probably evaluate each parameter before swapping it in?
             val env1 = (formals zip actuals).foldLeft(env0) {
               case (env, (formal, actual)) => env + (formal.ident.name -> actual)
             }
+            // And evaluate the body expression.
             eval(body, env1, k)
+          case Closure(formals, body, env1, _, _) =>
+            // Case 2: The lambda expression is a closure.
+            // Match the formals with the actuals.
+            val env2 = (formals zip actuals).foldLeft(env1) {
+              case (env, (formal, actual)) => env + (formal.ident.name -> actual)
+            }
+
+            // And evaluate the body expression.
+            eval(body, env2, k)
           case r1 =>
-            // Case 2: The application expression is residual.
+            // Case 3: The lambda expression is residual.
             // Partially evaluate the arguments and (re)-construct the residual.
             ???
         })
+
+      /**
+        * Lambda Expressions.
+        */
+      case Lambda(ann, args, body, tpe, loc) =>
+        k(Closure(args, body, env0, tpe, loc))
+
+      /**
+        * Tag Expressions.
+        */
+      case CheckTag(tag, exp, loc) => ???
+
+      case GetTagValue(exp, tpe, loc) => ???
+
+      case Tag(enum, tag, exp1, tpe, loc) =>
+        eval(exp1, env0, {
+          case e1 => k(Tag(enum, tag, e1, tpe, loc))
+        })
+
+      /**
+        * Tuple Expressions.
+        */
+      case GetTupleIndex(exp, offset, tpe, loc) =>
+        // Partially evaluate the tuple expression exp.
+        eval(exp, env0, {
+          case Tuple(elms, _, _) =>
+            // Case 1: The tuple expression is a tuple. Project the component.
+            k(elms(offset))
+          case r =>
+            // Case 2: The tuple expression is residual. Reconstruct the expression.
+            println(r)
+            ??? // TODO
+        })
+
+      case Tuple(elms, tpe, loc) =>
+        // TODO: Use fold with continuation
+        elms match {
+          case List(exp1, exp2) =>
+            eval(exp1, env0, {
+              case e1 => eval(exp2, env0, {
+                case e2 => k(Tuple(List(e1, e2), tpe, loc))
+              })
+            })
+          case _ => ???
+        }
+
+      case o: LoadBool => ??? // TODO: To be eliminated from this phase.
+      case o: LoadInt8 => ??? // TODO: To be eliminated from this phase.
+      case o: LoadInt16 => ??? // TODO: To be eliminated from this phase.
+      case o: LoadInt32 => ??? // TODO: To be eliminated from this phase.
+      case o: StoreBool => ??? // TODO: To be eliminated from this phase.
+      case o: StoreInt8 => ??? // TODO: To be eliminated from this phase.
+      case o: StoreInt16 => ??? // TODO: To be eliminated from this phase.
+      case o: StoreInt32 => ??? // TODO: To be eliminated from this phase.
+
+      case Set(elms, tpe, loc) => ??? // TODO
+
+      /**
+        * Error Expressions.
+        */
+      case Error(tpe, loc) => k(Error(tpe, loc))
+      case MatchError(tpe, loc) => k(MatchError(tpe, loc))
 
     }
 
@@ -216,10 +341,18 @@ object PartialEvaluator {
   //  (lambda (v) v)))
 
   private def isValue(e: Expression): Boolean = e match {
+    case Unit => true
     case True => true
     case False => true
+    case v: Int8 => true
+    case v: Int16 => true
+    case v: Int32 => true
+    case v: Int64 => true
+    case v: Int => true
+    case v: Str => true
     case v: Tag => isValue(v.exp)
     case v: Tuple => v.elms.forall(isValue)
+    case v: Closure => true
     case _ => false
   }
 

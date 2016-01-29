@@ -132,11 +132,13 @@ object Codegen {
 
     case Expression.Ref(name, tpe, loc) => ???
     case Expression.Lambda(annotations, args, body, tpe, loc) => ???
+    case Expression.Closure(args, body, env, tpe, loc) => ???
 
     case Expression.Apply(name, args, _, _) =>
       args.foreach(compileExpression(context, visitor))
       visitor.visitMethodInsn(INVOKESTATIC, context.clazz, decorate(name),
         descriptor(context.getFunction(name).tpe), false)
+    case Expression.Apply3(lambda, args, tpe, loc) => ???
 
     case Expression.Unary(op, exp, _, _) => compileUnaryExpr(context, visitor)(op, exp)
     case Expression.Binary(op, exp1, exp2, _, _) => op match {
@@ -203,7 +205,7 @@ object Codegen {
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkTag",
         "(Lca/uwaterloo/flix/language/ast/Name$Resolved;Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
 
-    case Expression.TupleAt(base, offset, tpe, _) =>
+    case Expression.GetTupleIndex(base, offset, tpe, _) =>
       // Compile the tuple expression, load the tuple array, compile the offset, load the array element, and unbox if
       // necessary.
       compileExpression(context, visitor)(base)

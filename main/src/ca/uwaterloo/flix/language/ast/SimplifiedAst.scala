@@ -277,7 +277,17 @@ object SimplifiedAst {
                       args: List[SimplifiedAst.FormalArg],
                       body: SimplifiedAst.Expression,
                       tpe: Type.Lambda,
-                      loc: SourceLocation) extends SimplifiedAst.Expression
+                      loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = "λ(" + args.map(_.tpe).mkString(", ") + ") " + body
+    }
+
+
+    // TODO: Eliminate once we have lambda lifting
+    case class Closure(args: List[SimplifiedAst.FormalArg],
+                       body: SimplifiedAst.Expression,
+                       env: Map[String, SimplifiedAst.Expression],
+                       tpe: Type,
+                       loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
       * A typed AST node representing a function call.
@@ -292,11 +302,6 @@ object SimplifiedAst {
                      tpe: Type,
                      loc: SourceLocation) extends SimplifiedAst.Expression
 
-    // TODO:
-    case class Apply2(name: Name.Ident,
-                     args: List[SimplifiedAst.Expression],
-                     tpe: Type,
-                     loc: SourceLocation) extends SimplifiedAst.Expression
     // TODO:
     case class Apply3(lambda: SimplifiedAst.Expression,
                       args: List[SimplifiedAst.Expression],
@@ -401,7 +406,15 @@ object SimplifiedAst {
                    tag: Name.Ident,
                    exp: SimplifiedAst.Expression,
                    tpe: Type.Enum,
-                   loc: SourceLocation) extends SimplifiedAst.Expression
+                   loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = {
+        val inner = exp match {
+          case Expression.Unit => ""
+          case _ => s"($exp)"
+        }
+        tag.name + inner
+      }
+    }
 
     /**
       * A typed AST node representing an index into a tuple, i.e. destruct a tuple.
@@ -411,10 +424,10 @@ object SimplifiedAst {
       * @param tpe    the type of the expression.
       * @param loc    the source location of the tuple.
       */
-    case class TupleAt(base: SimplifiedAst.Expression,
-                       offset: scala.Int,
-                       tpe: Type,
-                       loc: SourceLocation) extends SimplifiedAst.Expression
+    case class GetTupleIndex(base: SimplifiedAst.Expression,
+                             offset: scala.Int,
+                             tpe: Type,
+                             loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
       * A typed AST node representing a tuple expression.
@@ -425,7 +438,17 @@ object SimplifiedAst {
       */
     case class Tuple(elms: List[SimplifiedAst.Expression],
                      tpe: Type.Tuple,
-                     loc: SourceLocation) extends SimplifiedAst.Expression
+                     loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = "(" + elms.mkString(",") + ")"
+    }
+
+    case class CheckNil(exp: SimplifiedAst.Expression, loc: SourceLocation) {
+      final val tpe: Type = Type.Bool
+    }
+
+    case class CheckCons(exp: SimplifiedAst.Expression, loc: SourceLocation) {
+      final val tpe: Type = Type.Bool
+    }
 
     case class Set(elms: List[SimplifiedAst.Expression],
                    tpe: Type.Set,
