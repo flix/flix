@@ -46,6 +46,9 @@ object PartialEvaluator {
       case Int64(lit) => k(Int64(lit))
       case Int(lit) => k(Int(lit)) // TODO
 
+        // TODO
+      case v: Closure => k(v)
+
       /**
         * Str Expression.
         */
@@ -215,10 +218,6 @@ object PartialEvaluator {
         */
       // TODO: Verify
       case Apply(_, _, _, _) => ???
-      case Apply2(_, _, _, _) =>
-        println(env0)
-        println(exp0)
-        ???
 
       case Apply3(lambda, actuals, tpe, loc) =>
         // Partially evaluate the lambda expression.
@@ -232,7 +231,7 @@ object PartialEvaluator {
             }
             eval(body, env1, k)
           case r1 =>
-            // Case 2: The application expression is residual.
+            // Case 3: The application expression is residual.
             // Partially evaluate the arguments and (re)-construct the residual.
             ???
         })

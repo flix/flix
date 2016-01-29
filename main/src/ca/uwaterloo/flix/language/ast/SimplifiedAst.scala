@@ -312,12 +312,6 @@ object SimplifiedAst {
                      loc: SourceLocation) extends SimplifiedAst.Expression
 
     // TODO:
-    case class Apply2(name: Name.Ident,
-                      args: List[SimplifiedAst.Expression],
-                      tpe: Type,
-                      loc: SourceLocation) extends SimplifiedAst.Expression
-
-    // TODO:
     case class Apply3(lambda: SimplifiedAst.Expression,
                       args: List[SimplifiedAst.Expression],
                       tpe: Type,
