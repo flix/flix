@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{FlixError, Flix}
+import ca.uwaterloo.flix.api.FlixError
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
@@ -732,17 +732,35 @@ object Verifier {
   /**
     * Enumerates all possible environments of the given universally quantified variables.
     */
+  // TODO: replace string by name?
   def enumerate(q: List[Var]): List[Map[String, Expression]] = {
+    val genSym = new GenSym
+
     def visit(tpe: Type): List[Expression] = tpe match {
       case Type.Unit => List(Expression.Unit)
       case Type.Bool => List(Expression.True, Expression.False)
-      case Type.Int => List(Expression.Var(???, ???, Type.Int, SourceLocation.Unknown)) // TODO: Need genSym
+      case Type.Int => List(Expression.Var(genSym.fresh2(), -1, Type.Int, SourceLocation.Unknown))
       case Type.Tuple(elms) => ???
-      case Type.Enum(cases) => ???
+      case t@Type.Enum(cases) =>
+        val enum = cases.head._2.enum
+        val r = cases flatMap {
+          case (tagName, tagType) =>
+            val tag = Name.Ident(SourcePosition.Unknown, tagName, SourcePosition.Unknown)
+            visit(tagType.tpe) map {
+              case e => Expression.Tag(enum, tag, e, t, SourceLocation.Unknown)
+            }
+        }
+        r.toList
       case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
     }
 
-    ???
+    val result = q map {
+      case name => visit(name.tpe) map {
+        case exp => name.ident.name -> exp
+      }
+    }
+
+    result.transpose.map(_.toMap)
   }
 
   /**
@@ -767,8 +785,8 @@ object Verifier {
         Property.MeetSemiLattice.GreatestElement(l),
         Property.MeetSemiLattice.LowerBound(l),
         Property.MeetSemiLattice.GreatestLowerBound(l)
-//        Property.AscendingChainCondition.HeightNonNegative(l), // TODO
-//        Property.AscendingChainCondition.HeightStrictlyDecreasing(l) // TODO
+        //        Property.AscendingChainCondition.HeightNonNegative(l), // TODO
+        //        Property.AscendingChainCondition.HeightStrictlyDecreasing(l) // TODO
       )
     }
 
