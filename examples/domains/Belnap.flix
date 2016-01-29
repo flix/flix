@@ -107,4 +107,6 @@ namespace Belnap {
         case _                              => Belnap.Top
     }
 
+    let Belnap<> = (Belnap.Bot, Belnap.Top, leq, lub, glb)
+
 }

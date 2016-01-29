@@ -373,12 +373,12 @@ object Verifier {
         val formula = {
           val x = mkVar("x")
 
-          ∀(x)(Expression.Binary(BinaryOperator.GreaterEqual, lattice.acc(x), Expression.Int(0), Type.Bool, SourceLocation.Unknown))
+          ∀(x)(Expression.Binary(BinaryOperator.GreaterEqual, ???, Expression.Int(0), Type.Bool, SourceLocation.Unknown))
         }
 
         def fail(env0: Map[String, Expression]): VerifierError = {
           val x = env0.get("x")
-          HeightNonNegativeError(x, lattice.acc.loc)
+          HeightNonNegativeError(x, ???)
         }
       }
 
@@ -396,14 +396,14 @@ object Verifier {
           ∀(x, y)(
             →(
               ∧(⊑(x, y), ¬(≡(x, y))),
-              Expression.Binary(BinaryOperator.Greater, lattice.acc(x), lattice.acc(y), Type.Bool, SourceLocation.Unknown)
+              Expression.Binary(BinaryOperator.Greater, ???, ???, Type.Bool, SourceLocation.Unknown)
             ))
         }
 
         def fail(env0: Map[String, Expression]): VerifierError = {
           val x = env0.get("x")
           val y = env0.get("y")
-          HeightStrictlyDecreasingError(x, y, lattice.acc.loc)
+          HeightStrictlyDecreasingError(x, y, ???)
         }
       }
 
@@ -766,9 +766,9 @@ object Verifier {
         Property.JoinSemiLattice.LeastUpperBound(l),
         Property.MeetSemiLattice.GreatestElement(l),
         Property.MeetSemiLattice.LowerBound(l),
-        Property.MeetSemiLattice.GreatestLowerBound(l),
-        Property.AscendingChainCondition.HeightNonNegative(l),
-        Property.AscendingChainCondition.HeightStrictlyDecreasing(l)
+        Property.MeetSemiLattice.GreatestLowerBound(l)
+//        Property.AscendingChainCondition.HeightNonNegative(l), // TODO
+//        Property.AscendingChainCondition.HeightStrictlyDecreasing(l) // TODO
       )
     }
 
@@ -806,7 +806,7 @@ object Verifier {
     * Returns a variable expression of the given name `s`.
     */
   def mkVar2(s: String, tpe: Type): Expression.Var = {
-    Var(Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown), ???, tpe, SourceLocation.Unknown)
+    Var(Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown), -1, tpe, SourceLocation.Unknown)
   }
 
   /**
@@ -853,10 +853,10 @@ object Verifier {
 
   implicit class RichLambda(val f: Expression.Lambda) {
     def apply(e1: Expression): Expression =
-      Expression.Apply(???, List(e1), f.tpe.retTpe, SourceLocation.Unknown)
+      Expression.Apply3(f, List(e1), f.tpe.retTpe, SourceLocation.Unknown)
 
     def apply(e1: Expression, e2: Expression): Expression =
-      Expression.Apply(???, List(e1, e2), f.tpe.retTpe, SourceLocation.Unknown)
+      Expression.Apply3(f, List(e1, e2), f.tpe.retTpe, SourceLocation.Unknown)
   }
 
   /**
@@ -888,21 +888,21 @@ object Verifier {
       */
     // TODO: Function needs to be a name, not an arbitrary expression
     def ⊑(e1: Expression, e2: Expression): Expression =
-      Apply(???, List(e1, e2), e1.tpe, SourceLocation.Unknown)
+      Apply3(lattice.leq, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
     /**
       * Returns the least upper bound of the two expressions `e1` and `e2`.
       */
     // TODO: Function needs to be a name, not an arbitrary expression
     def ⊔(e1: Expression, e2: Expression): Expression =
-      Apply(???, List(e1, e2), e1.tpe, SourceLocation.Unknown)
+      Apply3(lattice.lub, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
     /**
       * Returns the greatest lower bound of the two expressions `e1` and `e2`.
       */
     // TODO: Function needs to be a name, not an arbitrary expression
     def ⊓(e1: Expression, e2: Expression): Expression =
-      Apply(???, List(e1, e2), e1.tpe, SourceLocation.Unknown)
+      Apply3(lattice.glb, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
     /**
       * Returns the widening of the two expressions `e1` and `e2`.
