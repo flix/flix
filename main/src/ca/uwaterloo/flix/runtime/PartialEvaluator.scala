@@ -183,9 +183,9 @@ object PartialEvaluator {
         // Partially evaluate the bound value exp1.
         eval(exp1, env0, {
           case e if isValue(e) =>
-            // Case 1: The bound
-            println(e)
-            ???
+            // Case 1: The bound value expression exp1 is a value.
+            // Extend the environment and evaluate the body expression exp2.
+            eval(exp2, env0 + (name.name -> e), k)
           case r =>
             println(r)
             ???
@@ -215,7 +215,11 @@ object PartialEvaluator {
         */
       // TODO: Verify
       case Apply(_, _, _, _) => ???
-      case Apply2(_, _, _, _) => ???
+      case Apply2(_, _, _, _) =>
+        println(env0)
+        println(exp0)
+        ???
+
       case Apply3(lambda, actuals, tpe, loc) =>
         // Partially evaluate the lambda expression.
         eval(lambda, env0, {
@@ -236,7 +240,8 @@ object PartialEvaluator {
       /**
         * Lambda Expressions.
         */
-      case Lambda(ann, args, body, tpe, loc) => ??? // TODO
+      case Lambda(ann, args, body, tpe, loc) =>
+        k(Closure(args, body, env0, tpe, loc))
 
       /**
         * Tag Expressions.
@@ -321,10 +326,15 @@ object PartialEvaluator {
     case Unit => true
     case True => true
     case False => true
-    case v: Int8 => true // TODO rest
+    case v: Int8 => true
+    case v: Int16 => true
+    case v: Int32 => true
+    case v: Int64 => true
+    case v: Int => true
     case v: Str => true
     case v: Tag => isValue(v.exp)
     case v: Tuple => v.elms.forall(isValue)
+    case v: Closure => true
     case _ => false
   }
 

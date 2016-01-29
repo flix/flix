@@ -286,7 +286,17 @@ object SimplifiedAst {
                       args: List[SimplifiedAst.FormalArg],
                       body: SimplifiedAst.Expression,
                       tpe: Type.Lambda,
-                      loc: SourceLocation) extends SimplifiedAst.Expression
+                      loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = "λ(" + args.map(_.tpe).mkString(", ") + ") " + body
+    }
+
+
+    // TODO: Eliminate once we have lambda lifting
+    case class Closure(args: List[SimplifiedAst.FormalArg],
+                       body: SimplifiedAst.Expression,
+                       env: Map[String, SimplifiedAst.Expression],
+                       tpe: Type,
+                       loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
       * A typed AST node representing a function call.
@@ -414,7 +424,6 @@ object SimplifiedAst {
         tag.name + inner
       }
     }
-
 
 
     case class Tuple(elms: List[SimplifiedAst.Expression],
