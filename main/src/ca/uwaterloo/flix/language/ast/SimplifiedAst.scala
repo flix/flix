@@ -303,9 +303,10 @@ object SimplifiedAst {
 
     // TODO:
     case class Apply2(name: Name.Ident,
-                     args: List[SimplifiedAst.Expression],
-                     tpe: Type,
-                     loc: SourceLocation) extends SimplifiedAst.Expression
+                      args: List[SimplifiedAst.Expression],
+                      tpe: Type,
+                      loc: SourceLocation) extends SimplifiedAst.Expression
+
     // TODO:
     case class Apply3(lambda: SimplifiedAst.Expression,
                       args: List[SimplifiedAst.Expression],
@@ -373,34 +374,54 @@ object SimplifiedAst {
                    loc: SourceLocation) extends SimplifiedAst.Expression
 
 
-
     case class CheckTag(tag: Name.Ident,
                         exp: SimplifiedAst.Expression,
                         loc: SourceLocation) extends SimplifiedAst.Expression {
       final val tpe: Type = Type.Bool
     }
 
+    case class CheckNil(exp: SimplifiedAst.Expression, loc: SourceLocation) {
+      final val tpe: Type = Type.Bool
+    }
+
+    case class CheckCons(exp: SimplifiedAst.Expression, loc: SourceLocation) {
+      final val tpe: Type = Type.Bool
+    }
+
 
     // Destructs a Tag
     case class GetTagValue(exp: SimplifiedAst.Expression,
-                     tpe: Type,
-                     loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class Tag(enum: Name.Resolved,
-                   tag: Name.Ident,
-                   exp: SimplifiedAst.Expression,
-                   tpe: Type.Enum,
-                   loc: SourceLocation) extends SimplifiedAst.Expression
+                           tpe: Type,
+                           loc: SourceLocation) extends SimplifiedAst.Expression
 
     // Destructs a Tuple
+    // TODO: Rename to GetTupleIndex
     case class TupleAt(base: SimplifiedAst.Expression,
                        offset: scala.Int,
                        tpe: Type,
                        loc: SourceLocation) extends SimplifiedAst.Expression
 
+    case class Tag(enum: Name.Resolved,
+                   tag: Name.Ident,
+                   exp: SimplifiedAst.Expression,
+                   tpe: Type.Enum,
+                   loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = {
+        val inner = exp match {
+          case SimplifiedAst.Expression.Unit => ""
+          case _ => "(" + exp.toString + ")"
+        }
+        tag.name + inner
+      }
+    }
+
+
+
     case class Tuple(elms: List[SimplifiedAst.Expression],
                      tpe: Type.Tuple,
-                     loc: SourceLocation) extends SimplifiedAst.Expression
+                     loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = "(" + elms.mkString(",") + ")"
+    }
 
     case class Set(elms: List[SimplifiedAst.Expression],
                    tpe: Type.Set,

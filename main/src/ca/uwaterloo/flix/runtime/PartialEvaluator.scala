@@ -38,9 +38,13 @@ object PartialEvaluator {
       case False => k(False)
 
       /**
-        * Int Expression.
+        * Int Expressions.
         */
-      case Int(lit) => k(Int(lit))
+      case Int8(lit) => k(Int8(lit))
+      case Int16(lit) => k(Int16(lit))
+      case Int32(lit) => k(Int32(lit))
+      case Int64(lit) => k(Int64(lit))
+      case Int(lit) => k(Int(lit)) // TODO
 
       /**
         * Str Expression.
@@ -90,6 +94,24 @@ object PartialEvaluator {
         * Binary Expressions.
         */
       case Binary(op, exp1, exp2, tpe, loc) => op match {
+
+        case BinaryOperator.Plus => ??? // TODO
+        case BinaryOperator.Minus => ??? // TODO
+        case BinaryOperator.Times => ??? // TODO
+        case BinaryOperator.Divide => ??? // TODO
+        case BinaryOperator.Modulo => ??? // TODO
+
+        case BinaryOperator.Less => ??? // TODO
+        case BinaryOperator.LessEqual => ??? // TODO
+        case BinaryOperator.Greater => ??? // TODO
+        case BinaryOperator.GreaterEqual => ??? // TODO
+
+        case BinaryOperator.Equal => ??? // TODO
+        case BinaryOperator.NotEqual => ??? // TODO
+
+        /**
+          * LogicalOr.
+          */
         case BinaryOperator.LogicalOr =>
           // Partially evaluate exp1.
           eval(exp1, env0, {
@@ -108,6 +130,9 @@ object PartialEvaluator {
             })
           })
 
+        /**
+          * LogicalAnd.
+          */
         case BinaryOperator.LogicalAnd =>
           // Partially evaluate exp1.
           eval(exp1, env0, {
@@ -126,16 +151,29 @@ object PartialEvaluator {
             })
           })
 
+        /**
+          * Logical Implication.
+          */
         case BinaryOperator.Implication =>
           // Rewrite and partially evaluate the result.
           k(Binary(BinaryOperator.LogicalOr, Unary(LogicalNot, exp1, tpe, loc), exp2, tpe, loc))
 
+        /**
+          * Logical Biconditional.
+          */
         case BinaryOperator.Biconditional =>
           // Rewrite and partially evaluate the result.
           k(Binary(BinaryOperator.LogicalAnd,
             Binary(BinaryOperator.Implication, exp1, exp2, tpe, loc),
             Binary(BinaryOperator.Implication, exp2, exp1, tpe, loc),
             tpe, loc))
+
+        case BinaryOperator.BitwiseAnd => ??? // TODO
+        case BinaryOperator.BitwiseOr => ??? // TODO
+        case BinaryOperator.BitwiseXor => ??? // TODO
+        case BinaryOperator.BitwiseLeftShift => ??? // TODO
+        case BinaryOperator.BitwiseRightShift => ??? // TODO
+
       }
 
       /**
@@ -146,8 +184,10 @@ object PartialEvaluator {
         eval(exp1, env0, {
           case e if isValue(e) =>
             // Case 1: The bound
+            println(e)
             ???
           case r =>
+            println(r)
             ???
         })
 
@@ -174,6 +214,8 @@ object PartialEvaluator {
         * Apply Expressions.
         */
       // TODO: Verify
+      case Apply(_, _, _, _) => ???
+      case Apply2(_, _, _, _) => ???
       case Apply3(lambda, actuals, tpe, loc) =>
         // Partially evaluate the lambda expression.
         eval(lambda, env0, {
@@ -192,8 +234,17 @@ object PartialEvaluator {
         })
 
       /**
+        * Lambda Expressions.
+        */
+      case Lambda(ann, args, body, tpe, loc) => ??? // TODO
+
+      /**
         * Tag Expressions.
         */
+      case CheckTag(tag, exp, loc) => ???
+
+      case GetTagValue(exp, tpe, loc) => ???
+
       case Tag(enum, tag, exp1, tpe, loc) =>
         eval(exp1, env0, {
           case e1 => k(Tag(enum, tag, e1, tpe, loc))
@@ -202,6 +253,9 @@ object PartialEvaluator {
       /**
         * Tuple Expressions.
         */
+      case TupleAt(base, offset, tpe, loc) =>
+        ??? // TODO
+
       case Tuple(elms, tpe, loc) =>
         // TODO: Use fold with continuation
         elms match {
@@ -213,6 +267,23 @@ object PartialEvaluator {
             })
           case _ => ???
         }
+
+      case o: LoadBool => ??? // TODO: To be eliminated from this phase.
+      case o: LoadInt8 => ??? // TODO: To be eliminated from this phase.
+      case o: LoadInt16 => ??? // TODO: To be eliminated from this phase.
+      case o: LoadInt32 => ??? // TODO: To be eliminated from this phase.
+      case o: StoreBool => ??? // TODO: To be eliminated from this phase.
+      case o: StoreInt8 => ??? // TODO: To be eliminated from this phase.
+      case o: StoreInt16 => ??? // TODO: To be eliminated from this phase.
+      case o: StoreInt32 => ??? // TODO: To be eliminated from this phase.
+
+      case Set(elms, tpe, loc) => ??? // TODO
+
+      /**
+        * Error Expressions.
+        */
+      case Error(tpe, loc) => k(Error(tpe, loc))
+      case MatchError(tpe, loc) => k(MatchError(tpe, loc))
 
     }
 
@@ -247,8 +318,11 @@ object PartialEvaluator {
   //  (lambda (v) v)))
 
   private def isValue(e: Expression): Boolean = e match {
+    case Unit => true
     case True => true
     case False => true
+    case v: Int8 => true // TODO rest
+    case v: Str => true
     case v: Tag => isValue(v.exp)
     case v: Tuple => v.elms.forall(isValue)
     case _ => false
