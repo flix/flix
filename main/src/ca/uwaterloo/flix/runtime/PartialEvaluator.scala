@@ -268,8 +268,16 @@ object PartialEvaluator {
         * Tuple Expressions.
         */
       case TupleAt(exp, offset, tpe, loc) =>
-        println(exp0)
-        ??? // TODO
+        // Partially evaluate the tuple expression exp.
+        eval(exp, env0, {
+          case Tuple(elms, _, _) =>
+            // Case 1: The tuple expression is a tuple. Project the component.
+            k(elms(offset))
+          case r =>
+            // Case 2: The tuple expression is residual. Reconstruct the expression.
+            println(r)
+            ??? // TODO
+        })
 
       case Tuple(elms, tpe, loc) =>
         // TODO: Use fold with continuation

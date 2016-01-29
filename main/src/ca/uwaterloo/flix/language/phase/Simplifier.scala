@@ -205,7 +205,7 @@ object Simplifier {
         val zero = simplify(elms ::: ps, freshVars ::: vs, succ, fail)
         (elms zip freshVars zipWithIndex).foldRight(zero) {
           case (((pat, name), idx), exp) =>
-            SExp.Let(name, -1, SExp.TupleAt(SExp.Var(v, -1, pat.tpe, loc), -1, pat.tpe, loc), exp, succ.tpe, loc)
+            SExp.Let(name, -1, SExp.TupleAt(SExp.Var(v, -1, pat.tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
         }
 
     }
