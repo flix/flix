@@ -29,7 +29,18 @@ object PartialEvaluator {
         * Tuple Expressions.
         */
       case Tuple(elms, tpe, loc) =>
-        ???
+        // TODO: Use fold with continuation
+        elms match {
+          case List(exp1, exp2) =>
+            eval(exp1, env0, {
+              case e1 => eval(exp2, env0, {
+                case e2 => Tuple(List(e1, e2), tpe, loc)
+              })
+            })
+          case _ => ???
+        }
+
+
 
       /**
         * Ref Expressions.
@@ -162,6 +173,33 @@ object PartialEvaluator {
 
     eval(exp0, env0, x => x)
   }
+
+  // http://www.lshift.net/blog/2007/06/11/folds-and-continuation-passing-style/
+
+  //  Here’s the direct-style left-fold function:
+  //
+  //    (define (foldl kons knil xs)
+  //  (if (null? xs)
+  //    knil
+  //    (foldl kons (kons (car xs) knil) (cdr xs))))
+  //  and here’s the continuation-passing left-fold function:
+  //
+  //    (define (foldl-k kons knil xs k)
+  //  (if (null? xs)
+  //    (k knil)
+  //      (kons (car xs) knil (lambda (v) (foldl-k kons v (cdr xs) k)))))
+  //  Note that kons takes three arguments here, where in the direct-style version, it takes two.
+  //
+  //    One benefit of having CPS folds available is that they expose more control over the loop. For instance, using a normal fold, there’s no way to terminate the iteration early, but using a CPS fold, your three-argument kons routine can simply omit invoking its continuation parameter (presumably choosing some other continuation to run instead). This means that operations like (short-circuiting) contains?, any, and every can be written with CPS fold, but not with plain direct-style fold:
+  //
+  //    (define (contains? predicate val elements)
+  //  (foldl-k (lambda (elt acc k)
+  //  (if (predicate elt val)
+  //  #t ;; note: skips the offered continuation!
+  //  (k acc)))
+  //  #f
+  //  elements
+  //  (lambda (v) v)))
 
   private def isValue(e: Expression): Boolean = e match {
     case True => true
