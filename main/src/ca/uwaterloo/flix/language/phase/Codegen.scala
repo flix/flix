@@ -138,12 +138,12 @@ object Codegen {
       visitor.visitMethodInsn(INVOKESTATIC, context.clazz, decorate(name),
         descriptor(context.getFunction(name).tpe), false)
 
-    case Expression.Unary(op, exp, tpe, _) => compileUnaryExpr(context, visitor)(op, exp, tpe)
-    case Expression.Binary(op, exp1, exp2, tpe, _) => op match {
-      case o: ArithmeticOperator => compileArithmeticExpr(context, visitor)(o, exp1, exp2, tpe)
-      case o: ComparisonOperator => compileComparisonExpr(context, visitor)(o, exp1, exp2, tpe)
-      case o: LogicalOperator => compileLogicalExpr(context, visitor)(o, exp1, exp2, tpe)
-      case o: BitwiseOperator => compileBitwiseExpr(context, visitor)(o, exp1, exp2, tpe)
+    case Expression.Unary(op, exp, _, _) => compileUnaryExpr(context, visitor)(op, exp)
+    case Expression.Binary(op, exp1, exp2, _, _) => op match {
+      case o: ArithmeticOperator => compileArithmeticExpr(context, visitor)(o, exp1, exp2)
+      case o: ComparisonOperator => compileComparisonExpr(context, visitor)(o, exp1, exp2)
+      case o: LogicalOperator => compileLogicalExpr(context, visitor)(o, exp1, exp2)
+      case o: BitwiseOperator => compileBitwiseExpr(context, visitor)(o, exp1, exp2)
     }
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
@@ -438,9 +438,8 @@ object Codegen {
     if (isLong && scala.Int.MinValue <= i && i <= scala.Int.MaxValue && i != 0 && i != 1) visitor.visitInsn(I2L)
   }
 
-  private def compileUnaryExpr(context: Context, visitor: MethodVisitor)
-                              (op: UnaryOperator, expr: Expression, tpe: Type): Unit = {
-    compileExpression(context, visitor)(expr)
+  private def compileUnaryExpr(context: Context, visitor: MethodVisitor)(op: UnaryOperator, e: Expression): Unit = {
+    compileExpression(context, visitor)(e)
     op match {
       case UnaryOperator.LogicalNot =>
         val condElse = new Label()
@@ -452,8 +451,8 @@ object Codegen {
         visitor.visitInsn(ICONST_0)
         visitor.visitLabel(condEnd)
       case UnaryOperator.Plus => // nop
-      case UnaryOperator.Minus => compileUnaryMinusExpr(context, visitor)(tpe)
-      case UnaryOperator.BitwiseNegate => compileUnaryNegateExpr(context, visitor)(tpe)
+      case UnaryOperator.Minus => compileUnaryMinusExpr(context, visitor)(e.tpe)
+      case UnaryOperator.BitwiseNegate => compileUnaryNegateExpr(context, visitor)(e.tpe)
     }
   }
 
@@ -541,7 +540,7 @@ object Codegen {
    *     11111111 11111111 11111111 10000000 = -128
    */
   private def compileArithmeticExpr(context: Context, visitor: MethodVisitor)
-                                   (o: ArithmeticOperator, e1: Expression, e2: Expression, tpe: Type): Unit = {
+                                   (o: ArithmeticOperator, e1: Expression, e2: Expression): Unit = {
     compileExpression(context, visitor)(e1)
     compileExpression(context, visitor)(e2)
     val (intOp, longOp) = o match {
@@ -551,7 +550,7 @@ object Codegen {
       case BinaryOperator.Divide => (IDIV, LDIV)
       case BinaryOperator.Modulo => (IREM, LREM)
     }
-    tpe match {
+    e1.tpe match {
       case Type.Int8 =>
         visitor.visitInsn(intOp)
         visitor.visitInsn(I2B)
@@ -563,12 +562,12 @@ object Codegen {
       case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
            Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
            Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any =>
-        throw new InternalCompilerError(s"Can't apply $o to type $tpe.")
+        throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
     }
   }
 
   private def compileComparisonExpr(context: Context, visitor: MethodVisitor)
-                                   (o: ComparisonOperator, e1: Expression, e2: Expression, tpe: Type): Unit = {
+                                   (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
     compileExpression(context, visitor)(e1)
     compileExpression(context, visitor)(e2)
     val condElse = new Label()
@@ -582,6 +581,9 @@ object Codegen {
       case BinaryOperator.NotEqual => (IF_ICMPEQ, IFEQ)
     }
     e1.tpe match {
+      case Type.Bool if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+        // Booleans can be compared for equality.
+        visitor.visitJumpInsn(intOp, condElse)
       case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitJumpInsn(intOp, condElse)
       case Type.Int64 =>
         visitor.visitInsn(LCMP)
@@ -589,7 +591,7 @@ object Codegen {
       case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
            Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
            Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any =>
-        throw new InternalCompilerError(s"Can't apply $o to type $tpe.")
+        throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
     }
     visitor.visitInsn(ICONST_1)
     visitor.visitJumpInsn(GOTO, condEnd)
@@ -599,10 +601,11 @@ object Codegen {
   }
 
   /*
-   * Note that these expressions do short-circuit evaluation.
+   * Note that LogicalAnd, LogicalOr, and Implication do short-circuit evaluation.
+   * Implication and Biconditional are rewritten to their logical equivalents, and then compiled.
    */
   private def compileLogicalExpr(context: Context, visitor: MethodVisitor)
-                                (o: LogicalOperator, e1: Expression, e2: Expression, tpe: Type): Unit = o match {
+                                (o: LogicalOperator, e1: Expression, e2: Expression): Unit = o match {
     case BinaryOperator.LogicalAnd =>
       val andFalseBranch = new Label()
       val andEnd = new Label()
@@ -629,8 +632,13 @@ object Codegen {
       visitor.visitLabel(orFalseBranch)
       visitor.visitInsn(ICONST_0)
       visitor.visitLabel(orEnd)
-    case BinaryOperator.Implication => ???
-    case BinaryOperator.Biconditional => ???
+    case BinaryOperator.Implication =>
+      // (e1 ==> e2) === (!e1 || e2)
+      val notExp = Expression.Unary(UnaryOperator.LogicalNot, e1, Type.Bool, e1.loc)
+      compileLogicalExpr(context, visitor)(BinaryOperator.LogicalOr, notExp, e2)
+    case BinaryOperator.Biconditional =>
+      // (e1 <==> e2) === (e1 == e2)
+      compileComparisonExpr(context, visitor)(BinaryOperator.Equal, e1, e2)
   }
 
   /*
@@ -677,7 +685,7 @@ object Codegen {
    * Note: the right-hand operand of a shift (i.e. the shift amount) *must* be Int32.
    */
   private def compileBitwiseExpr(context: Context, visitor: MethodVisitor)
-                                (o: BitwiseOperator, e1: Expression, e2: Expression, tpe: Type): Unit = {
+                                (o: BitwiseOperator, e1: Expression, e2: Expression): Unit = {
     compileExpression(context, visitor)(e1)
     compileExpression(context, visitor)(e2)
     val (intOp, longOp) = o match {
@@ -687,7 +695,7 @@ object Codegen {
       case BinaryOperator.BitwiseLeftShift => (ISHL, LSHL)
       case BinaryOperator.BitwiseRightShift => (ISHR, LSHR)
     }
-    tpe match {
+    e1.tpe match {
       case Type.Int8 =>
         visitor.visitInsn(intOp)
         if (intOp == ISHL) visitor.visitInsn(I2B)
@@ -699,7 +707,7 @@ object Codegen {
       case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
            Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
            Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any =>
-        throw new InternalCompilerError(s"Can't apply $o to type $tpe.")
+        throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
     }
   }
 

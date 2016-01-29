@@ -4540,6 +4540,144 @@ class TestCodegen extends FunSuite {
     intercept[RuntimeException] { code.call(name) }
   }
 
+  test("Codegen - Binary.Implication01") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Implication,
+        True,
+        True,
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.Implication02") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Implication,
+        True,
+        False,
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.Implication03") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Implication,
+        False,
+        False,
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.Implication04") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Implication,
+        False,
+        True,
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.Implication05") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Implication,
+        False,
+        Error(Type.Bool, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.Implication06") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Implication,
+        True,
+        Error(Type.Bool, loc),
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    intercept[RuntimeException] { code.call(name) }
+  }
+
+  test("Codegen - Binary.Biconditional01") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Biconditional,
+        True,
+        True,
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.Biconditional02") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Biconditional,
+        True,
+        False,
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(false)(result)
+  }
+
+  test("Codegen - Binary.Biconditional03") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Biconditional,
+        False,
+        False,
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(true)(result)
+  }
+
+  test("Codegen - Binary.Biconditional04") {
+    val definition = Function(name, args = List(),
+      body = Binary(BinaryOperator.Biconditional,
+        False,
+        True,
+        Type.Bool, loc),
+      Type.Lambda(List(), Type.Bool), loc)
+
+    val code = new CompiledCode(List(definition))
+    val result = code.call(name)
+
+    assertResult(false)(result)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Binary operators -- bitwise                                             //
   //                                                                         //
