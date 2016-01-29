@@ -1,7 +1,9 @@
 package ca.uwaterloo.flix.runtime
 
+import ca.uwaterloo.flix.language.ast.BinaryOperator.{LogicalAnd, LogicalOr}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
+import ca.uwaterloo.flix.language.ast.UnaryOperator.LogicalNot
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, SimplifiedAst, UnaryOperator}
 import ca.uwaterloo.flix.runtime.Interpreter.InternalRuntimeError
 
@@ -21,32 +23,29 @@ object PartialEvaluator {
       */
     def eval(exp0: Expression, env0: Map[String, Expression], k: Cont): Expression = exp0 match {
       /**
-        * Constant Expressions.
+        * Unit Expression.
         */
       case Unit => k(exp0)
 
       /**
-        * Tag Expressions.
+        * True Expression.
         */
-      case Tag(enum, tag, exp1, tpe, loc) =>
-        eval(exp1, env0, {
-          case e1 => k(Tag(enum, tag, e1, tpe, loc))
-        })
+      case True => k(True)
 
       /**
-        * Tuple Expressions.
+        * False Expression.
         */
-      case Tuple(elms, tpe, loc) =>
-        // TODO: Use fold with continuation
-        elms match {
-          case List(exp1, exp2) =>
-            eval(exp1, env0, {
-              case e1 => eval(exp2, env0, {
-                case e2 => k(Tuple(List(e1, e2), tpe, loc))
-              })
-            })
-          case _ => ???
-        }
+      case False => k(False)
+
+      /**
+        * Int Expression.
+        */
+      case Int(lit) => k(Int(lit))
+
+      /**
+        * Str Expression.
+        */
+      case Str(lit, loc) => k(Str(lit, loc))
 
       /**
         * Var Expressions/
@@ -109,8 +108,6 @@ object PartialEvaluator {
             })
           })
 
-        // TODO: Eq for boolean ops.
-
         case BinaryOperator.LogicalAnd =>
           // Partially evaluate exp1.
           eval(exp1, env0, {
@@ -128,6 +125,17 @@ object PartialEvaluator {
               case r2 => k(Binary(BinaryOperator.LogicalAnd, r1, r2, tpe, loc))
             })
           })
+
+        case BinaryOperator.Implication =>
+          // Rewrite and partially evaluate the result.
+          k(Binary(BinaryOperator.LogicalOr, Unary(LogicalNot, exp1, tpe, loc), exp2, tpe, loc))
+
+        case BinaryOperator.Biconditional =>
+          // Rewrite and partially evaluate the result.
+          k(Binary(BinaryOperator.LogicalAnd,
+            Binary(BinaryOperator.Implication, exp1, exp2, tpe, loc),
+            Binary(BinaryOperator.Implication, exp2, exp1, tpe, loc),
+            tpe, loc))
       }
 
       /**
@@ -182,6 +190,29 @@ object PartialEvaluator {
             // Partially evaluate the arguments and (re)-construct the residual.
             ???
         })
+
+      /**
+        * Tag Expressions.
+        */
+      case Tag(enum, tag, exp1, tpe, loc) =>
+        eval(exp1, env0, {
+          case e1 => k(Tag(enum, tag, e1, tpe, loc))
+        })
+
+      /**
+        * Tuple Expressions.
+        */
+      case Tuple(elms, tpe, loc) =>
+        // TODO: Use fold with continuation
+        elms match {
+          case List(exp1, exp2) =>
+            eval(exp1, env0, {
+              case e1 => eval(exp2, env0, {
+                case e2 => k(Tuple(List(e1, e2), tpe, loc))
+              })
+            })
+          case _ => ???
+        }
 
     }
 
