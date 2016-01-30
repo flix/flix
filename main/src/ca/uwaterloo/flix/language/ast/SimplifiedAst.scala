@@ -292,7 +292,9 @@ object SimplifiedAst {
                        body: SimplifiedAst.Expression,
                        env: Map[String, SimplifiedAst.Expression],
                        tpe: Type,
-                       loc: SourceLocation) extends SimplifiedAst.Expression
+                       loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = "Closure(<>)"
+    }
 
     /**
       * A typed AST node representing a function call.
@@ -341,7 +343,9 @@ object SimplifiedAst {
                       exp1: SimplifiedAst.Expression,
                       exp2: SimplifiedAst.Expression,
                       tpe: Type,
-                      loc: SourceLocation) extends SimplifiedAst.Expression
+                      loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = "Binary(" + op + ", " + exp1 + ", " + exp2 + ")"
+    }
 
     /**
       * A typed AST node representing an if-then-else expression.

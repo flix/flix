@@ -20,7 +20,7 @@ object PartialEvaluator {
       *
       * Applies the continuation `k` to the result of the evaluation.
       */
-    def eval(exp0: Expression, env0: Map[String, Expression], k: Cont): Expression = { println(exp0); exp0 match {
+    def eval(exp0: Expression, env0: Map[String, Expression], k: Cont): Expression = exp0 match {
       /**
         * Unit Expression.
         */
@@ -108,7 +108,9 @@ object PartialEvaluator {
         case BinaryOperator.Greater => ??? // TODO
         case BinaryOperator.GreaterEqual => ??? // TODO
 
-        case BinaryOperator.Equal => ??? // TODO
+        case BinaryOperator.Equal =>
+          println(exp0)
+          ??? // TODO
         case BinaryOperator.NotEqual => ??? // TODO
 
         /**
@@ -255,7 +257,20 @@ object PartialEvaluator {
         * Tag Expressions.
         */
       case CheckTag(tag, exp, loc) =>
-        ???
+        // Partially evaluate the nested expression exp.
+        eval(exp, env0, {
+          case Tag(_, tag1, exp1, _, _) =>
+            // Case 1: The nested expression is a tag. Perform the tag check.
+            if (tag.name == tag1.name)
+            // Case 1.1: The tags are the same. Return true.
+              k(True)
+            else
+            // Case 1.2: The tags are different. Return false.
+              k(False)
+          case r =>
+            // Case 2: The nested value is residual (re)-construct the expression.
+            ???
+        })
 
       case GetTagValue(exp, tpe, loc) => ???
 
@@ -309,7 +324,7 @@ object PartialEvaluator {
       case Error(tpe, loc) => k(Error(tpe, loc))
       case MatchError(tpe, loc) => k(MatchError(tpe, loc))
 
-    }}
+    }
 
     eval(exp0, env0, x => x)
   }
