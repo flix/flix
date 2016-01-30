@@ -459,7 +459,7 @@ object SimplifiedAst {
     case class Tuple(elms: List[SimplifiedAst.Expression],
                      tpe: Type.Tuple,
                      loc: SourceLocation) extends SimplifiedAst.Expression {
-      override def toString: String = "(" + elms.mkString(" ,") + ")"
+      override def toString: String = "(" + elms.mkString(", ") + ")"
     }
 
     case class CheckNil(exp: SimplifiedAst.Expression, loc: SourceLocation) {
