@@ -38,11 +38,10 @@ object Codegen {
     case Type.Int32 | Type.Int => asm.Type.INT_TYPE.getDescriptor
     case Type.Int64 => asm.Type.LONG_TYPE.getDescriptor
     case Type.Str => asm.Type.getDescriptor(classOf[java.lang.String])
-    case Type.Tag(_, _, _) | Type.Enum(_) =>
-      // TODO: Can we return something of Type.Tag? Looks like we only return Type.Enum, which is a set of Type.Tags.
-      asm.Type.getDescriptor(classOf[Value.Tag])
+    case Type.Enum(_) => asm.Type.getDescriptor(classOf[Value.Tag])
     case Type.Tuple(elms) => asm.Type.getDescriptor(classOf[Value.Tuple])
     case Type.Lambda(args, retTpe) => s"""(${ args.map(descriptor).mkString })${descriptor(retTpe)}"""
+    case Type.Tag(_, _, _) => throw new InternalCompilerError(s"No corresponding JVM type for $tpe.")
     case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) | Type.Native(_) |
          Type.Char | Type.Abs(_, _) | Type.Any => ???
   }
@@ -94,7 +93,9 @@ object Codegen {
     function.tpe.retTpe match {
       case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
-      case Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) => mv.visitInsn(ARETURN)
+      case Type.Unit | Type.Str | Type.Enum(_) | Type.Tuple(_) => mv.visitInsn(ARETURN)
+      case Type.Tag(_, _, _) =>
+        throw new InternalCompilerError(s"Functions can't return type ${function.tpe.retTpe}.")
       case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
            Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
     }
@@ -124,8 +125,9 @@ object Codegen {
     case Expression.Var(ident, offset, tpe, loc) => tpe match {
       case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ILOAD, offset)
       case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
-      case Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) =>
+      case Type.Unit | Type.Str | Type.Enum(_) | Type.Tuple(_) =>
         visitor.visitVarInsn(ALOAD, offset)
+      case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type $tpe.")
       case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
            Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
     }
@@ -164,8 +166,9 @@ object Codegen {
       exp1.tpe match {
         case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ISTORE, offset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
-        case Type.Unit | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) =>
+        case Type.Unit | Type.Str | Type.Enum(_) | Type.Tuple(_) =>
           visitor.visitVarInsn(ASTORE, offset)
+        case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type ${exp1.tpe}.")
         case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
              Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
       }
@@ -298,8 +301,9 @@ object Codegen {
       compileExpression(context, visitor)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkStr",
         "(Ljava/lang/String;)Ljava/lang/Object;", false)
-    case Type.Unit | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) =>
+    case Type.Unit | Type.Enum(_) | Type.Tuple(_) =>
       compileExpression(context, visitor)(exp)
+    case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type ${exp.tpe}.")
     case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
          Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
   }
@@ -326,8 +330,9 @@ object Codegen {
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Long")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J", false)
     case Type.Str => visitor.visitTypeInsn(CHECKCAST, "java/lang/String")
-    case Type.Tag(_, _, _) | Type.Enum(_) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tag")
+    case Type.Enum(_) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tag")
     case Type.Tuple(_) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tuple")
+    case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type $tpe.")
     case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
          Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any => ???
   }
