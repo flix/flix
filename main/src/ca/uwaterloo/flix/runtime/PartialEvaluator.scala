@@ -1,6 +1,5 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.BinaryOperator.{LogicalAnd, LogicalOr}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast.UnaryOperator.LogicalNot
@@ -109,7 +108,9 @@ object PartialEvaluator {
         case BinaryOperator.Greater => ??? // TODO
         case BinaryOperator.GreaterEqual => ??? // TODO
 
-        case BinaryOperator.Equal => ??? // TODO
+        case BinaryOperator.Equal =>
+          println(exp0)
+          ??? // TODO
         case BinaryOperator.NotEqual => ??? // TODO
 
         /**
@@ -255,7 +256,21 @@ object PartialEvaluator {
       /**
         * Tag Expressions.
         */
-      case CheckTag(tag, exp, loc) => ???
+      case CheckTag(tag, exp, loc) =>
+        // Partially evaluate the nested expression exp.
+        eval(exp, env0, {
+          case Tag(_, tag1, exp1, _, _) =>
+            // Case 1: The nested expression is a tag. Perform the tag check.
+            if (tag.name == tag1.name)
+            // Case 1.1: The tags are the same. Return true.
+              k(True)
+            else
+            // Case 1.2: The tags are different. Return false.
+              k(False)
+          case r =>
+            // Case 2: The nested value is residual (re)-construct the expression.
+            ???
+        })
 
       case GetTagValue(exp, tpe, loc) => ???
 
@@ -268,6 +283,7 @@ object PartialEvaluator {
         * Tuple Expressions.
         */
       case GetTupleIndex(exp, offset, tpe, loc) =>
+        // TODO: deal with tuple before recursing.
         // Partially evaluate the tuple expression exp.
         eval(exp, env0, {
           case Tuple(elms, _, _) =>
