@@ -93,6 +93,7 @@ object SimplifiedAst {
 
   sealed trait Expression extends SimplifiedAst {
     def tpe: Type
+
     def loc: SourceLocation
   }
 
@@ -268,9 +269,13 @@ object SimplifiedAst {
     case class Var(ident: Name.Ident,
                    offset: scala.Int,
                    tpe: Type,
-                   loc: SourceLocation) extends SimplifiedAst.Expression
+                   loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = ident.name
+    }
 
-    case class Ref(name: Name.Resolved, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Ref(name: Name.Resolved, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = "Ref(" + name.fqn + ")"
+    }
 
     // TODO: Lambda lift?
     case class Lambda(annotations: Ast.Annotations,
@@ -306,7 +311,9 @@ object SimplifiedAst {
     case class Apply3(lambda: SimplifiedAst.Expression,
                       args: List[SimplifiedAst.Expression],
                       tpe: Type,
-                      loc: SourceLocation) extends SimplifiedAst.Expression
+                      loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = "Apply(" + lambda + ", [" + args.mkString(",") + "])"
+    }
 
 
     /**
@@ -349,7 +356,9 @@ object SimplifiedAst {
                           exp2: SimplifiedAst.Expression,
                           exp3: SimplifiedAst.Expression,
                           tpe: Type,
-                          loc: SourceLocation) extends SimplifiedAst.Expression
+                          loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = "IfThenElse(" + exp1 + ", " + exp2 + ", " + exp3 + ")"
+    }
 
     /**
       * A typed AST node representing a let expression.
@@ -366,7 +375,9 @@ object SimplifiedAst {
                    exp1: SimplifiedAst.Expression,
                    exp2: SimplifiedAst.Expression,
                    tpe: Type,
-                   loc: SourceLocation) extends SimplifiedAst.Expression
+                   loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = "Let(" + ident.name + " = " + exp1 + " in " + exp2 + ")"
+    }
 
     /**
       * A typed AST node representing a check-tag expression, i.e. check if the tag expression matches the given tag
@@ -380,6 +391,7 @@ object SimplifiedAst {
                         exp: SimplifiedAst.Expression,
                         loc: SourceLocation) extends SimplifiedAst.Expression {
       final val tpe: Type = Type.Bool
+      override def toString: String = "CheckTag(" + tag.name + ", " + exp + ")"
     }
 
     /**
@@ -391,7 +403,9 @@ object SimplifiedAst {
       */
     case class GetTagValue(exp: SimplifiedAst.Expression,
                            tpe: Type,
-                           loc: SourceLocation) extends SimplifiedAst.Expression
+                           loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = "GetTagValue(" + exp + ")"
+    }
 
     /**
       * A typed AST node representing a tagged expression.
@@ -427,7 +441,9 @@ object SimplifiedAst {
     case class GetTupleIndex(base: SimplifiedAst.Expression,
                              offset: scala.Int,
                              tpe: Type,
-                             loc: SourceLocation) extends SimplifiedAst.Expression
+                             loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = base + "[" + offset + "]"
+    }
 
     /**
       * A typed AST node representing a tuple expression.
@@ -439,7 +455,7 @@ object SimplifiedAst {
     case class Tuple(elms: List[SimplifiedAst.Expression],
                      tpe: Type.Tuple,
                      loc: SourceLocation) extends SimplifiedAst.Expression {
-      override def toString: String = "(" + elms.mkString(",") + ")"
+      override def toString: String = "(" + elms.mkString(" ,") + ")"
     }
 
     case class CheckNil(exp: SimplifiedAst.Expression, loc: SourceLocation) {
@@ -474,6 +490,7 @@ object SimplifiedAst {
 
   sealed trait Predicate extends SimplifiedAst {
     def tpe: Type
+
     def loc: SourceLocation
   }
 
@@ -522,6 +539,7 @@ object SimplifiedAst {
 
     sealed trait Head extends SimplifiedAst {
       def tpe: Type
+
       def loc: SourceLocation
     }
 
@@ -536,12 +554,15 @@ object SimplifiedAst {
       case class Apply(name: Name.Resolved,
                        args: List[SimplifiedAst.Term.Head],
                        tpe: Type,
-                       loc: SourceLocation) extends SimplifiedAst.Term.Head
+                       loc: SourceLocation) extends SimplifiedAst.Term.Head {
+
+      }
 
     }
 
     sealed trait Body extends SimplifiedAst {
       def tpe: Type
+
       def loc: SourceLocation
     }
 

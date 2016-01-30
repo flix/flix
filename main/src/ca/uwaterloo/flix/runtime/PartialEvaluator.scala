@@ -1,6 +1,5 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.BinaryOperator.{LogicalAnd, LogicalOr}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast.UnaryOperator.LogicalNot
@@ -21,7 +20,7 @@ object PartialEvaluator {
       *
       * Applies the continuation `k` to the result of the evaluation.
       */
-    def eval(exp0: Expression, env0: Map[String, Expression], k: Cont): Expression = exp0 match {
+    def eval(exp0: Expression, env0: Map[String, Expression], k: Cont): Expression = { println(exp0); exp0 match {
       /**
         * Unit Expression.
         */
@@ -255,7 +254,8 @@ object PartialEvaluator {
       /**
         * Tag Expressions.
         */
-      case CheckTag(tag, exp, loc) => ???
+      case CheckTag(tag, exp, loc) =>
+        ???
 
       case GetTagValue(exp, tpe, loc) => ???
 
@@ -268,6 +268,7 @@ object PartialEvaluator {
         * Tuple Expressions.
         */
       case GetTupleIndex(exp, offset, tpe, loc) =>
+        // TODO: deal with tuple before recursing.
         // Partially evaluate the tuple expression exp.
         eval(exp, env0, {
           case Tuple(elms, _, _) =>
@@ -308,7 +309,7 @@ object PartialEvaluator {
       case Error(tpe, loc) => k(Error(tpe, loc))
       case MatchError(tpe, loc) => k(MatchError(tpe, loc))
 
-    }
+    }}
 
     eval(exp0, env0, x => x)
   }
