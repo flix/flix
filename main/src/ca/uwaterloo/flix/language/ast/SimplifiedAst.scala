@@ -119,16 +119,19 @@ object SimplifiedAst {
     case object Unit extends SimplifiedAst.Expression {
       final val tpe = Type.Unit
       final val loc = SourceLocation.Unknown
+      override def toString: String = "#U"
     }
 
     case object True extends SimplifiedAst.Expression {
       final val tpe = Type.Bool
       final val loc = SourceLocation.Unknown
+      override def toString: String = "#t"
     }
 
     case object False extends SimplifiedAst.Expression {
       final val tpe = Type.Bool
       final val loc = SourceLocation.Unknown
+      override def toString: String = "#f"
     }
 
     // TODO: Eventually we'll want to use the specialized ints below, and this will alias to Int32
