@@ -216,10 +216,6 @@ object Codegen {
       compileUnbox(context, visitor)(tpe)
 
     case Expression.Tuple(elms, _, _) =>
-      // TODO: What is our limit on tuples? We've been using [2-5]; Scala supports [2-22]
-      if (elms.size < 2 || elms.size > 5)
-        throw new InternalCompilerError("Tuple must contain 2 to 5 elements, inclusive.")
-
       // Create the array to hold the tuple elements.
       compileInt(visitor)(elms.size)
       visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(classOf[AnyRef]))
