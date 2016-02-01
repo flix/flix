@@ -109,8 +109,23 @@ object PartialEvaluator {
         case BinaryOperator.GreaterEqual => ??? // TODO
 
         case BinaryOperator.Equal =>
-          println(exp0)
-          ??? // TODO
+          // Partially evaluate exp1.
+          eval(exp1, env0, {
+            case e1 =>
+              // Partially evaluate exp2.
+              eval(exp2, env0, {
+                case e2 =>
+                  if (mustBeEqual(e1, e2, env0)) {
+                    // Case 1: The expressions are semantically equivalent. Return true.
+                    k(True)
+                  } else if (mustNotBeEqual(e1, e2, env0)) {
+                    k(False)
+                  } else {
+                    // Case 2: The expressions may or may not be equal. Reconstruct the expression.
+                    k(Binary(op, e1, e2, tpe, loc))
+                  }
+              })
+          })
         case BinaryOperator.NotEqual => ??? // TODO
 
         /**
@@ -370,6 +385,45 @@ object PartialEvaluator {
     case v: Tuple => v.elms.forall(isValue)
     case v: Closure => true
     case _ => false
+  }
+
+  /**
+    * Returns the canonical form the given expression `e`.
+    *
+    * A canonical form is a standard way to represent a class of expressions.
+    *
+    * For example, the following expressions are all equivalent:
+    * - x > 0
+    * - 0 < x
+    * - x >= 0 && x != 0
+    * - 0 <= x && x != 0
+    *
+    * This function attempts to pick a "standard form" of such expression.
+    */
+  private def canonical(e: Expression): Expression = e match {
+    case _ => e
+  }
+
+  /**
+    * Returns `true` iff the two given expressions `exp1` and `exp2` are
+    * semantically equivalent under the given environment `env0`.
+    *
+    * Returns `false` if the expressions are not equal or it is unknown if they are equal.
+    */
+  def mustBeEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
+    case (True, True) => true
+    case (False, False) => true
+    case (Tag(_, tag1, e1, _, _), Tag(_, tag2, e2, _, _)) =>
+      tag1.name == tag2.name && mustBeEqual(e1, e2, env0)
+    case (Tuple(elms1, _, _), Tuple(elms2, _, _)) => (elms1 zip elms2) forall {
+      case (e1, e2) => mustBeEqual(e1, e2, env0)
+    }
+    //case _ => false
+  }
+
+  def mustNotBeEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
+    case (True, False) => true
+
   }
 
 }
