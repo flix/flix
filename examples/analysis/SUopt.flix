@@ -22,9 +22,9 @@
   index Copy({to, from}, {from});
   index Store({label, to, from}, {to}, {from});
   index Load({label, to, from}, {label}, {from});
-  index CFG({label, to}, {label});
-  index FIStore({to}, {from})
-  index FILoad({from})
+  index CFG({label, to}, {label}, {to});
+  index FIStore({to}, {from});
+  index FILoad({from});
 
   index Pt({variable, target}, {variable});
   index PtH({object, target}, {object});
@@ -118,5 +118,3 @@ def top(e: Int): SULattice = SULattice.Top;
 Kill(l,f(b)) :- Store(l,p,q), Pt(p,b).
 Kill(l, top(42)) :- Phi(l,_,_).
 
-print Pt.
-print PtH.
