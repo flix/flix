@@ -294,6 +294,7 @@ object PartialEvaluator {
             // Case 3: The lambda expression is residual.
             // Partially evaluate the arguments and (re)-construct the residual.
             println(exp0)
+            println(exp0.tpe)
             println(env0)
             ???
         })

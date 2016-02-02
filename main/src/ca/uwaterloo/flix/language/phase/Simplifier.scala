@@ -108,7 +108,9 @@ object Simplifier {
             val lambda = SExp.Lambda(Ast.Annotations(List.empty), List.empty, lambdaBody, Type.Lambda(List.empty, tpe), loc)
             SExp.Let(currName, -1, lambda, exp, tpe, loc)
         }
-        val inner = SExp.Let(lambdaVars.last, -1, Pattern.simplify(List(rules.last._1), List(matchVar), simplify(rules.last._2), err), result, tpe, loc)
+        val lamBody = Pattern.simplify(List(rules.last._1), List(matchVar), simplify(rules.last._2), err)
+        val lam = SExp.Lambda(Ast.Annotations(List.empty), List.empty, lamBody, Type.Lambda(List.empty, tpe), loc)
+        val inner = SExp.Let(lambdaVars.last, -1, lam, result, tpe, loc)
         SExp.Let(matchVar, -1, matchExp, inner, tpe, loc)
 
       case TypedAst.Expression.Tag(enum, tag, e, tpe, loc) =>
