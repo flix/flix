@@ -116,7 +116,6 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.Unit => ExecutableAst.Expression.Unit
       case SimplifiedAst.Expression.True => ExecutableAst.Expression.True
       case SimplifiedAst.Expression.False => ExecutableAst.Expression.False
-      case SimplifiedAst.Expression.Int(lit) => ExecutableAst.Expression.Int(lit)
       case SimplifiedAst.Expression.Int8(lit) => ExecutableAst.Expression.Int8(lit)
       case SimplifiedAst.Expression.Int16(lit) => ExecutableAst.Expression.Int16(lit)
       case SimplifiedAst.Expression.Int32(lit) => ExecutableAst.Expression.Int32(lit)
@@ -183,7 +182,7 @@ object CreateExecutableAst {
     object Head {
       def toExecutable(sast: SimplifiedAst.Predicate.Head): ExecutableAst.Predicate.Head = sast match {
         case SimplifiedAst.Predicate.Head.Relation(name, terms, tpe, loc) =>
-          ExecutableAst.Predicate.Head.Relation (name, terms.map(Term.toExecutable).toArray, tpe, loc)
+          ExecutableAst.Predicate.Head.Relation(name, terms.map(Term.toExecutable).toArray, tpe, loc)
       }
     }
 
