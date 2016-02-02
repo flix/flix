@@ -118,7 +118,7 @@ object ParsedAst {
       * @param e     the expression.
       * @param sp2   the position of the last character in the definition.
       */
-    case class Value(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, e: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
+    case class Value(sp1: SourcePosition, ident: Name.Ident, tpe: Type, e: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -133,7 +133,7 @@ object ParsedAst {
       * @param body        the body expression of the function.
       * @param sp2         the position of the last character in the definition.
       */
-    case class Function(sp1: SourcePosition, annotations: Seq[ParsedAst.Annotation], ident: Name.Ident, formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
+    case class Function(sp1: SourcePosition, annotations: Seq[ParsedAst.Annotation], ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -145,7 +145,7 @@ object ParsedAst {
       * @param cases the variants of the enum.
       * @param sp2   the position of the last character in the definition.
       */
-    case class Enum(sp1: SourcePosition, ident: Name.Ident, cases: Seq[ParsedAst.Type.Tag], sp2: SourcePosition) extends ParsedAst.Definition {
+    case class Enum(sp1: SourcePosition, ident: Name.Ident, cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Definition {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -157,7 +157,7 @@ object ParsedAst {
       * @param elms the components of the lattice.
       * @param sp2  the position of the last character in the definition.
       */
-    case class BoundedLattice(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Definition {
+    case class BoundedLattice(sp1: SourcePosition, tpe: Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Definition {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -406,7 +406,7 @@ object ParsedAst {
       * @param body    the body expression of the lambda.
       * @param sp2     the position of the last character in the expression.
       */
-    case class Lambda(sp1: SourcePosition, formals: Seq[FormalArg], tpe: ParsedAst.Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+    case class Lambda(sp1: SourcePosition, formals: Seq[FormalArg], tpe: Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -553,7 +553,7 @@ object ParsedAst {
       * @param tpe the ascribed type.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Ascribe(sp1: SourcePosition, e: ParsedAst.Expression, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression {
+    case class Ascribe(sp1: SourcePosition, e: ParsedAst.Expression, tpe: Type, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -564,7 +564,7 @@ object ParsedAst {
       * @param tpe the type of the error expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Error(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression {
+    case class Error(sp1: SourcePosition, tpe: Type, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -840,67 +840,9 @@ object ParsedAst {
       * @param tpe  the type.
       * @param sp2  the position of the last character in the term.
       */
-    case class Ascribe(sp1: SourcePosition, term: ParsedAst.Term, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Term {
+    case class Ascribe(sp1: SourcePosition, term: ParsedAst.Term, tpe: Type, sp2: SourcePosition) extends ParsedAst.Term {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
-
-  }
-
-  /**
-    * AST node for Types.
-    */
-  @deprecated("will be replaced by Type in language.ast", "0.1")
-  sealed trait Type extends ParsedAst
-
-  object Type {
-
-    /**
-      * An AST node that represent the unit type.
-      */
-    case object Unit extends ParsedAst.Type
-
-    /**
-      * An AST node that represent a reference to a named type.
-      *
-      * @param name the name of the type.
-      */
-    case class Named(name: Name.Unresolved) extends ParsedAst.Type
-
-    /**
-      * An AST node that represents a tagged type.
-      *
-      * @param ident the tag name.
-      * @param tpe   the type of nested components.
-      */
-    case class Tag(ident: Name.Ident, tpe: ParsedAst.Type) extends ParsedAst.Type
-
-    /**
-      * An AST node that represent a tuple type.
-      *
-      * @param elms the type of the individual elements.
-      */
-    case class Tuple(elms: Seq[ParsedAst.Type]) extends ParsedAst.Type
-
-    /**
-      * An AST node that represent a function type.
-      *
-      * @param formals the type of the arguments.
-      * @param retTpe  the return type.
-      */
-    case class Function(formals: Seq[ParsedAst.Type], retTpe: ParsedAst.Type) extends ParsedAst.Type
-
-    /**
-      * An AST node that represent a parametric type.
-      *
-      * @param name the ambiguous name.
-      * @param elms the type of the type parameters.
-      */
-    case class Parametric(name: Name.Unresolved, elms: Seq[ParsedAst.Type]) extends ParsedAst.Type
-
-    /**
-      * An AST node that represents a native type.
-      */
-    case object Native extends ParsedAst.Type
 
   }
 
@@ -919,7 +861,7 @@ object ParsedAst {
     /**
       * The type of elements in `this` interpretation.
       */
-    def tpe: ParsedAst.Type
+    def tpe: Type
   }
 
   object Interpretation {
@@ -929,27 +871,16 @@ object ParsedAst {
       *
       * @param tpe the type of the attribute.
       */
-    case class Set(tpe: ParsedAst.Type) extends ParsedAst.Interpretation
+    case class Set(tpe: Type) extends ParsedAst.Interpretation
 
     /**
       * An AST node representing a lattice-based interpretation of an attribute in a relation.
       *
       * @param tpe the type of the attribute.
       */
-    case class Lattice(tpe: ParsedAst.Type) extends ParsedAst.Interpretation
+    case class Lattice(tpe: Type) extends ParsedAst.Interpretation
 
   }
-
-  /**
-    * An AST node representing a formal argument of a function.
-    *
-    * @param ident       the name of the argument.
-    * @param annotations a sequence of annotations associated with the formal argument.
-    * @param tpe         the type of the argument.
-    */
-  case class FormalArg(ident: Name.Ident, annotations: Seq[ParsedAst.Annotation], tpe: ParsedAst.Type) extends ParsedAst
-
-  // TODO: Should the annotations be placed on the type instead?
 
   /**
     * An AST node representing an annotation.
@@ -961,5 +892,23 @@ object ParsedAst {
   case class Annotation(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst {
     def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
   }
+
+  /**
+    *
+    * @param sp1
+    * @param sp2
+    */
+  case class Case(sp1: SourcePosition, ident: Name.Ident, tpe: Type, sp2: SourcePosition) extends ParsedAst {
+    def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+  }
+
+  /**
+    * An AST node representing a formal argument of a function.
+    *
+    * @param ident       the name of the argument.
+    * @param annotations a sequence of annotations associated with the formal argument.
+    * @param tpe         the type of the argument.
+    */
+  case class FormalArg(ident: Name.Ident, annotations: Seq[ParsedAst.Annotation], tpe: Type) extends ParsedAst
 
 }

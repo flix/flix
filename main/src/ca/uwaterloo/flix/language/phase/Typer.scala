@@ -293,7 +293,7 @@ object Typer {
           val cases = defn.cases.map {
             case (tag, tpe) => tag -> tpe.asInstanceOf[Type.Tag]
           }
-          TypedAst.Literal.Tag(name, ident, visit(rlit), Type.Enum(cases), loc)
+          TypedAst.Literal.Tag(name, ident, visit(rlit), Type.Enum(name, cases), loc)
         case ResolvedAst.Literal.Tuple(relms, loc) =>
           val elms = relms map visit
           TypedAst.Literal.Tuple(elms, Type.Tuple(elms map (_.tpe)), loc)
@@ -495,7 +495,7 @@ object Typer {
               val cases = enum.cases.mapValues(t => t.asInstanceOf[Type.Tag])
               val caze = cases(tagName.name)
               expect(caze.tpe, e.tpe, e.loc) map {
-                _ => TypedAst.Expression.Tag(enumName, tagName, e, Type.Enum(cases), loc)
+                _ => TypedAst.Expression.Tag(enumName, tagName, e, Type.Enum(enumName, cases), loc)
               }
           }
 
@@ -547,7 +547,7 @@ object Typer {
           case _ => TypedAst.Pattern.Lit(lit, tpe, loc)
         }
       case ResolvedAst.Pattern.Tag(enumName, tagName, rpat, loc) => tpe match {
-        case Type.Enum(cases) => cases.get(tagName.name) match {
+        case Type.Enum(name, cases) => cases.get(tagName.name) match {
           case Some(tag) if enumName == tag.enum => {
             typer(rpat, tag.tpe, root) map {
               case pat => TypedAst.Pattern.Tag(enumName, tagName, pat, Type.Tag(enumName, tagName, pat.tpe), loc)
@@ -824,7 +824,7 @@ object Typer {
       val enumAndTag = enumName.parts.mkString("::") + "." + tagName.name
       val nested = s"(${prettyPrint(tpe)}})"
       enumAndTag + nested
-    case Type.Enum(cases) =>
+    case Type.Enum(name, cases) =>
       s"Enum(${cases.head._2.enum})"
     case Type.Tuple(elms) => "(" + elms.map(prettyPrint).mkString(", ") + ")"
     case Type.Set(elms) => "Set(" + prettyPrint(elms) + ")"

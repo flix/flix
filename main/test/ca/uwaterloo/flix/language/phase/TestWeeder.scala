@@ -16,24 +16,26 @@ class TestWeeder extends FunSuite {
   // Enums                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   test("DuplicateTag01") {
-    val past = ParsedAst.Definition.Enum(SP, Ident, Seq(
-      ParsedAst.Type.Tag(ident("x"), ParsedAst.Type.Unit),
-      ParsedAst.Type.Tag(ident("x"), ParsedAst.Type.Unit)
-    ), SP)
-
-    val result = Weeder.Definition.compile(past)
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Red
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateTag])
   }
 
   test("DuplicateTag02") {
-    val past = ParsedAst.Definition.Enum(SP, Ident, Seq(
-      ParsedAst.Type.Tag(ident("x"), ParsedAst.Type.Unit),
-      ParsedAst.Type.Tag(ident("y"), ParsedAst.Type.Unit),
-      ParsedAst.Type.Tag(ident("x"), ParsedAst.Type.Unit)
-    ), SP)
-
-    val result = Weeder.Definition.compile(past)
-    assert(result.isFailure)
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Blu,
+        |  case Red
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateTag])
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -65,8 +67,8 @@ class TestWeeder extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("DuplicateAttribute01") {
     val past = ParsedAst.Definition.Relation(SP, Ident, Seq(
-      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(ParsedAst.Type.Unit)),
-      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(ParsedAst.Type.Unit))
+      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(Type.Unit)),
+      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(Type.Unit))
     ), SP)
 
     val result = Weeder.Definition.compile(past)
@@ -75,10 +77,10 @@ class TestWeeder extends FunSuite {
 
   test("DuplicateAttribute02") {
     val past = ParsedAst.Definition.Relation(SP, Ident, Seq(
-      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(ParsedAst.Type.Unit)),
-      ParsedAst.Attribute(ident("y"), ParsedAst.Interpretation.Set(ParsedAst.Type.Unit)),
-      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(ParsedAst.Type.Unit)),
-      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(ParsedAst.Type.Unit))
+      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(Type.Unit)),
+      ParsedAst.Attribute(ident("y"), ParsedAst.Interpretation.Set(Type.Unit)),
+      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(Type.Unit)),
+      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(Type.Unit))
     ), SP)
 
     val result = Weeder.Definition.compile(past)

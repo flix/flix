@@ -29,7 +29,7 @@ final class WrappedType(val tpe: Type) extends IType {
     tpe == Type.Str
 
   def isEnum: Boolean = tpe match {
-    case Type.Enum(cases) => true
+    case Type.Enum(name, cases) => true
     case _ => false
   }
 

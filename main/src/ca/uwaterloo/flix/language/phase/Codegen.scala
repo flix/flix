@@ -38,7 +38,7 @@ object Codegen {
     case Type.Int32 | Type.Int => asm.Type.INT_TYPE.getDescriptor
     case Type.Int64 => asm.Type.LONG_TYPE.getDescriptor
     case Type.Str => asm.Type.getDescriptor(classOf[java.lang.String])
-    case Type.Enum(_) => asm.Type.getDescriptor(classOf[Value.Tag])
+    case Type.Enum(_, _) => asm.Type.getDescriptor(classOf[Value.Tag])
     case Type.Tuple(elms) => asm.Type.getDescriptor(classOf[Value.Tuple])
     case Type.Lambda(args, retTpe) => s"""(${ args.map(descriptor).mkString })${descriptor(retTpe)}"""
     case Type.Tag(_, _, _) => throw new InternalCompilerError(s"No corresponding JVM type for $tpe.")
@@ -93,7 +93,7 @@ object Codegen {
     function.tpe.retTpe match {
       case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
-      case Type.Unit | Type.Str | Type.Enum(_) | Type.Tuple(_) => mv.visitInsn(ARETURN)
+      case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) => mv.visitInsn(ARETURN)
       case Type.Tag(_, _, _) =>
         throw new InternalCompilerError(s"Functions can't return type ${function.tpe.retTpe}.")
       case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
@@ -125,7 +125,7 @@ object Codegen {
     case Expression.Var(ident, offset, tpe, loc) => tpe match {
       case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ILOAD, offset)
       case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
-      case Type.Unit | Type.Str | Type.Enum(_) | Type.Tuple(_) =>
+      case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) =>
         visitor.visitVarInsn(ALOAD, offset)
       case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type $tpe.")
       case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
@@ -166,7 +166,7 @@ object Codegen {
       exp1.tpe match {
         case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ISTORE, offset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
-        case Type.Unit | Type.Str | Type.Enum(_) | Type.Tuple(_) =>
+        case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) =>
           visitor.visitVarInsn(ASTORE, offset)
         case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type ${exp1.tpe}.")
         case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
@@ -301,7 +301,7 @@ object Codegen {
       compileExpression(context, visitor)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkStr",
         "(Ljava/lang/String;)Ljava/lang/Object;", false)
-    case Type.Unit | Type.Enum(_) | Type.Tuple(_) =>
+    case Type.Unit | Type.Enum(_, _) | Type.Tuple(_) =>
       compileExpression(context, visitor)(exp)
     case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type ${exp.tpe}.")
     case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
@@ -330,7 +330,7 @@ object Codegen {
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Long")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J", false)
     case Type.Str => visitor.visitTypeInsn(CHECKCAST, "java/lang/String")
-    case Type.Enum(_) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tag")
+    case Type.Enum(_, _) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tag")
     case Type.Tuple(_) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tuple")
     case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type $tpe.")
     case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
@@ -486,7 +486,7 @@ object Codegen {
       visitor.visitInsn(I2S)
     case Type.Int32 | Type.Int => visitor.visitInsn(INEG)
     case Type.Int64 => visitor.visitInsn(LNEG)
-    case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
+    case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
          Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
          Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any =>
       throw new InternalCompilerError(s"Can't apply UnaryOperator.Minus to type $tpe.")
@@ -515,7 +515,7 @@ object Codegen {
       case Type.Int64 =>
         visitor.visitInsn(I2L)
         visitor.visitInsn(LXOR)
-      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
+      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
            Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
            Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any =>
         throw new InternalCompilerError(s"Can't apply UnaryOperator.Negate to type $tpe.")
@@ -562,7 +562,7 @@ object Codegen {
         visitor.visitInsn(I2S)
       case Type.Int32 | Type.Int => visitor.visitInsn(intOp)
       case Type.Int64 => visitor.visitInsn(longOp)
-      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
+      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
            Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
            Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any =>
         throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
@@ -591,7 +591,7 @@ object Codegen {
       case Type.Int64 =>
         visitor.visitInsn(LCMP)
         visitor.visitJumpInsn(longOp, condElse)
-      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
+      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
            Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
            Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any =>
         throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
@@ -707,7 +707,7 @@ object Codegen {
         if (intOp == ISHL) visitor.visitInsn(I2S)
       case Type.Int32 | Type.Int => visitor.visitInsn(intOp)
       case Type.Int64 => visitor.visitInsn(longOp)
-      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_) | Type.Tuple(_) |
+      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
            Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
            Type.Predicate(_) | Type.Native(_) | Type.Char | Type.Abs(_, _) | Type.Any =>
         throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")

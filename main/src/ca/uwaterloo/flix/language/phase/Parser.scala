@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import java.util.zip.ZipFile
 
+import ca.uwaterloo.flix.language.ast.{Type => PType}
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import org.parboiled2._
 
@@ -10,7 +11,6 @@ import scala.io.Source
 
 // TODO: Parse whitespace more "tightly" to improve source positions.
 // TODO: Add support for characters.
-// TODO: Add support for lattice symbols ⊥, etc.
 
 /**
   * A parser for the Flix language.
@@ -69,15 +69,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def EnumDefinition: Rule1[ParsedAst.Definition.Enum] = {
-    def UnitCase: Rule1[ParsedAst.Type.Tag] = rule {
-      atomic("case") ~ WS ~ Ident ~> ((ident: Name.Ident) => ParsedAst.Type.Tag(ident, ParsedAst.Type.Unit))
+    def UnitCase: Rule1[ParsedAst.Case] = rule {
+      SP ~ atomic("case") ~ WS ~ Ident ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) => ParsedAst.Case(sp1, ident, PType.Unit, sp2))
     }
 
-    def NestedCase: Rule1[ParsedAst.Type.Tag] = rule {
-      atomic("case") ~ WS ~ Ident ~ Type ~> ParsedAst.Type.Tag
+    def NestedCase: Rule1[ParsedAst.Case] = rule {
+      SP ~ atomic("case") ~ WS ~ Ident ~ Type  ~ SP ~> ParsedAst.Case
     }
 
-    def Cases: Rule1[Seq[ParsedAst.Type.Tag]] = rule {
+    def Cases: Rule1[Seq[ParsedAst.Case]] = rule {
       // NB: NestedCase must be parsed before UnitCase.
       oneOrMore(NestedCase | UnitCase).separatedBy(optWS ~ "," ~ optWS)
     }
@@ -426,29 +426,29 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
-  def Type: Rule1[ParsedAst.Type] = rule {
-    FunctionType | TupleType | ParametricType | NativeType | NamedType
+  def Type: Rule1[PType] = rule {
+    LambdaType | TupleType | SetType | ParametricType | NativeType | NamedType
   }
 
-  def NamedType: Rule1[ParsedAst.Type.Named] = rule {
-    QName ~> ParsedAst.Type.Named
+  def NamedType: Rule1[PType] = rule {
+    QName ~> PType.Named
   }
 
-  def NativeType: Rule1[ParsedAst.Type] = rule {
-    atomic("Native") ~> (() => ParsedAst.Type.Native)
+  def NativeType: Rule1[PType] = rule {
+    atomic("Native") ~> (() => PType.Native("foo")) // TODO: foo
   }
 
-  def TupleType: Rule1[ParsedAst.Type] = {
-    def Unit: Rule1[ParsedAst.Type] = rule {
-      atomic("()") ~ optWS ~> (() => ParsedAst.Type.Unit)
+  def TupleType: Rule1[PType] = {
+    def Unit: Rule1[PType] = rule {
+      atomic("()") ~ optWS ~> (() => PType.Unit)
     }
 
-    def Singleton: Rule1[ParsedAst.Type] = rule {
+    def Singleton: Rule1[PType] = rule {
       "(" ~ optWS ~ Type ~ optWS ~ ")" ~ optWS
     }
 
-    def Tuple: Rule1[ParsedAst.Type] = rule {
-      "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~> ParsedAst.Type.Tuple
+    def Tuple: Rule1[PType] = rule {
+      "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~> ((xs: Seq[PType]) => PType.Tuple(xs.toList))
     }
 
     rule {
@@ -456,12 +456,16 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
   }
 
-  def FunctionType: Rule1[ParsedAst.Type] = rule {
-    "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~> ParsedAst.Type.Function
+  def LambdaType: Rule1[PType] = rule {
+    "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~> ((xs: Seq[PType], r: PType) => PType.Lambda(xs.toList, r))
   }
 
-  def ParametricType: Rule1[ParsedAst.Type.Parametric] = rule {
-    QName ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ optWS ~> ParsedAst.Type.Parametric
+  def SetType: Rule1[PType] = rule {
+    atomic("Set") ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optWS ~> PType.Set
+  }
+
+  def ParametricType: Rule1[PType] = rule {
+    QName ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ optWS ~> PType.Parametric
   }
 
   /////////////////////////////////////////////////////////////////////////////

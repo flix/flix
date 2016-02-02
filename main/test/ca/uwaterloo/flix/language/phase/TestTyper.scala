@@ -216,7 +216,7 @@ class TestTyper extends FunSuite {
     val enums = Map(enumName -> ResolvedAst.Definition.Enum(enumName, Map("Qux" -> Type.Tag(enumName, tagName, Type.Unit)), SL))
     val root = Root.copy(enums = enums)
     val result = Typer.Literal.typer(rast, root)
-    assertResult(Type.Enum(Map("Qux" -> Type.Tag(enumName, tagName, Type.Unit))))(result.tpe)
+    assertResult(Type.Enum(enumName, Map("Qux" -> Type.Tag(enumName, tagName, Type.Unit))))(result.tpe)
   }
 
   test("Literal.Tuple") {
@@ -650,7 +650,7 @@ class TestTyper extends FunSuite {
       ), SL)
     ))
 
-    val expectedType = Type.Enum(Map("Qux" -> Type.Tag(enumName, tagName, Type.Unit)))
+    val expectedType = Type.Enum(enumName, Map("Qux" -> Type.Tag(enumName, tagName, Type.Unit)))
     val actualType = Typer.Expression.typer(rast, root).get.tpe
     assertResult(expectedType)(actualType)
   }
@@ -669,7 +669,7 @@ class TestTyper extends FunSuite {
       ), SL)
     ))
 
-    val expectedType = Type.Enum(Map(
+    val expectedType = Type.Enum(enumName, Map(
       "A" -> Type.Tag(enumName, tagName, Type.Unit),
       "B" -> Type.Tag(enumName, tagName, Type.Bool),
       "C" -> Type.Tag(enumName, tagName, Type.Int),
@@ -814,7 +814,7 @@ class TestTyper extends FunSuite {
     val tagName = ident("Qux")
     val x = ident("x")
     val rast = ResolvedAst.Pattern.Tag(RName, tagName, ResolvedAst.Pattern.Var(x, SL), SL)
-    val tpe = Type.Enum(Map("Qux" -> Type.Tag(RName, tagName, Type.Unit)))
+    val tpe = Type.Enum(Name.Resolved.mk("foo"), Map("Qux" -> Type.Tag(RName, tagName, Type.Unit)))
     val result = Typer.Pattern.typer(rast, tpe, Root)
     assertResult(Type.Unit)(result.get.freeVars(x.name))
   }
@@ -1018,6 +1018,13 @@ class TestTyper extends FunSuite {
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Types                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO
+
 
   def ident(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
 

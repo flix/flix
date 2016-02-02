@@ -32,7 +32,7 @@ class TestCodegen extends FunSuite {
   val tagTpeB = Type.Tag(constPropName, identB, Type.Unit)
   val tagTpeV = Type.Tag(constPropName, identV, Type.Int)
   val tagTpeT = Type.Tag(constPropName, identT, Type.Unit)
-  val enumTpe = Type.Enum(Map("ConstProp.Bot" -> tagTpeB, "ConstProp.Val" -> tagTpeV, "ConstProp.Top" -> tagTpeT))
+  val enumTpe = Type.Enum(Name.Resolved.mk("ConstProp"), Map("ConstProp.Bot" -> tagTpeB, "ConstProp.Val" -> tagTpeV, "ConstProp.Top" -> tagTpeT))
 
   class CompiledCode(definitions: List[Definition], debug: Boolean = false) {
     object Loader extends ClassLoader {
@@ -5976,7 +5976,7 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tag02") {
-    val enum = Type.Enum(Map("ConstProp.Val" -> Type.Tag(constPropName, identV, Type.Bool)))
+    val enum = Type.Enum(Name.Resolved.mk("ConstProp"), Map("ConstProp.Val" -> Type.Tag(constPropName, identV, Type.Bool)))
     val definition = Function(name, args = List(),
       body = Tag(constPropName, identV, True, enum, loc),
       Type.Lambda(List(), enum), loc)
@@ -6001,7 +6001,7 @@ class TestCodegen extends FunSuite {
   test("Codegen - Tag04") {
     val tagName = Name.Resolved.mk("abc")
     val ident = toIdent("def")
-    val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
+    val enum = Type.Enum(Name.Resolved.mk("ConstProp"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
     val definition = Function(name, args = List(),
       body = Tag(tagName, ident, True, enum, loc),
       Type.Lambda(List(), enum), loc)
@@ -6015,7 +6015,7 @@ class TestCodegen extends FunSuite {
   test("Codegen - Tag05") {
     val tagName = Name.Resolved.mk("abc")
     val ident = toIdent("def")
-    val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
+    val enum = Type.Enum(Name.Resolved.mk("ConstProp"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
     val definition = Function(name, args = List(),
       body = Tag(tagName, ident, False, enum, loc),
       Type.Lambda(List(), enum), loc)
@@ -6029,7 +6029,7 @@ class TestCodegen extends FunSuite {
   test("Codegen - Tag06") {
     val tagName = Name.Resolved.mk("abc")
     val ident = toIdent("def")
-    val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
+    val enum = Type.Enum(Name.Resolved.mk("ConstProp"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
     val definition = Function(name, args = List("x"),
       body = Tag(tagName, ident, Var(toIdent("x"), 0, Type.Bool, loc), enum, loc),
       Type.Lambda(List(Type.Bool), enum), loc)
@@ -6043,7 +6043,7 @@ class TestCodegen extends FunSuite {
   test("Codegen - Tag07") {
     val tagName = Name.Resolved.mk("abc")
     val ident = toIdent("def")
-    val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Str)))
+    val enum = Type.Enum(Name.Resolved.mk("ConstProp"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Str)))
     val definition = Function(name, args = List(),
       body = Tag(tagName, ident, Str("hello", loc), enum, loc),
       Type.Lambda(List(), enum), loc)
@@ -6057,7 +6057,7 @@ class TestCodegen extends FunSuite {
   test("Codegen - Tag08") {
     val tagName = Name.Resolved.mk("abc")
     val ident = toIdent("def")
-    val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int, Type.Str)))))
+    val enum = Type.Enum(Name.Resolved.mk("abc"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int, Type.Str)))))
     val definition = Function(name, args = List(),
       body = Tag(tagName, ident, Tuple(List(Int32(1), Str("one", loc)),
         Type.Tuple(List(Type.Int, Type.Str)), loc), enum, loc),
@@ -6136,7 +6136,7 @@ class TestCodegen extends FunSuite {
   test("Codegen - GetTagValue03") {
     val tagName = Name.Resolved.mk("abc")
     val ident = toIdent("def")
-    val enum = Type.Enum(Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int, Type.Str)))))
+    val enum = Type.Enum(Name.Resolved.mk("abc"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int, Type.Str)))))
 
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,

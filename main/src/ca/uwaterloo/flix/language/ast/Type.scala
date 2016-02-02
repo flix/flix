@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.ast
 
+// TODO: Cleanup this class.
 
 /**
   * A common super-type for types.
@@ -65,7 +66,14 @@ object Type {
     *
     * @param cases a map from tag names to tag types.
     */
-  case class Enum(cases: scala.collection.immutable.Map[String, Type.Tag]) extends Type
+  case class Enum(name: Name.Resolved, cases: scala.collection.immutable.Map[String, Type.Tag]) extends Type
+
+
+  // TDOO: need this one?
+  case class UnresolvedEnum(name: Name.Ident, cases: scala.collection.immutable.Map[String, Type.Tag]) extends Type
+
+  case class UnresolvedTag(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends Type
+
 
   /**
     * An AST node representing a tuple type.
@@ -77,21 +85,6 @@ object Type {
     val asArray: Array[Type] = elms.toArray
   }
 
-  // TODO: Document
-  case class Opt(elmType: Type) extends Type
-
-  // TODO: Document
-  case class Lst(elmType: Type) extends Type
-
-  /**
-    * An AST node representing a set type.
-    *
-    * @param elmType the types of the elements.
-    */
-  case class Set(elmType: Type) extends Type
-
-  // TODO: Document
-  case class Map(key: Type, value: Type) extends Type
 
 
   /**
@@ -112,8 +105,36 @@ object Type {
   /**
     * An AST node that represents a native type.
     */
-  case class Native(name: String) extends Type
+  case class Native(name: String) extends Type // TODO: remove name
 
+
+
+
+  /**
+    * An AST node that represent a parametric type.
+    *
+    * @param name the ambiguous name.
+    * @param elms the type of the type parameters.
+    */
+  case class Parametric(name: Name.Unresolved, elms: Seq[Type]) extends Type
+
+
+
+  // TODO: Document
+  case class Opt(elmType: Type) extends Type
+
+  // TODO: Document
+  case class Lst(elmType: Type) extends Type
+
+  /**
+    * An AST node representing a set type.
+    *
+    * @param elmType the types of the elements.
+    */
+  case class Set(elmType: Type) extends Type
+
+  // TODO: Document
+  case class Map(key: Type, value: Type) extends Type
 
   // TODO
   case object Char extends Type
@@ -124,5 +145,14 @@ object Type {
 
   // TODO: Remove or rename to error???
   case object Any extends Type
+
+
+  /**
+    * An AST node that represent a reference to a named type.
+    *
+    * @param name the name of the type.
+    */
+  case class Named(name: Name.Unresolved) extends Type
+
 
 }

@@ -450,8 +450,8 @@ object Weeder {
       * Compiles the given parsed value declaration `past` to a weeded definition.
       */
     def compile(past: ParsedAst.Definition.Value): Validation[WeededAst.Definition.Constant, WeederError] =
-      @@(Expression.compile(past.e), Type.compile(past.tpe)) map {
-        case (exp, tpe) => WeededAst.Definition.Constant(past.ident, exp, tpe, past.loc)
+      Expression.compile(past.e) map {
+        case exp => WeededAst.Definition.Constant(past.ident, exp, past.tpe, past.loc)
       }
 
     /**
@@ -468,16 +468,16 @@ object Weeder {
         case ParsedAst.FormalArg(ident, annotations, tpe) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> ident)
-            Type.compile(tpe) map (t => WeededAst.FormalArg(ident, t))
+            WeededAst.FormalArg(ident, tpe).toSuccess
           case Some(otherIdent) =>
             DuplicateFormal(ident.name, otherIdent.loc, ident.loc).toFailure
         }
       })
 
-      @@(annotationsVal, formalsVal, Expression.compile(past.body), Type.compile(past.tpe)) map {
-        case (anns, args, body, retType) =>
-          val exp = WeededAst.Expression.Lambda(anns, args, body, retType, past.body.loc)
-          val tpe = WeededAst.Type.Function(args map (_.tpe), retType)
+      @@(annotationsVal, formalsVal, Expression.compile(past.body)) map {
+        case (anns, args, body) =>
+          val exp = WeededAst.Expression.Lambda(anns, args, body, past.tpe, past.body.loc)
+          val tpe = Type.Lambda(args map (_.tpe), past.tpe)
           WeededAst.Definition.Constant(past.ident, exp, tpe, past.loc)
       }
     }
@@ -489,11 +489,13 @@ object Weeder {
       */
     def compile(past: ParsedAst.Definition.Enum): Validation[WeededAst.Definition.Enum, WeederError] = {
       // check duplicate tags.
-      Validation.fold[ParsedAst.Type.Tag, Map[String, WeededAst.Type.Tag], WeederError](past.cases, Map.empty) {
-        case (macc, tag@ParsedAst.Type.Tag(tagName, _)) => macc.get(tagName.name) match {
-          case None => Type.compile(tag) map (tpe => macc + (tagName.name -> tpe.asInstanceOf[WeededAst.Type.Tag]))
-          case Some(otherTag) => DuplicateTag(tagName.name, otherTag.tag.loc, tagName.loc).toFailure
-        }
+      Validation.fold[ParsedAst.Case, Map[String, Type.UnresolvedTag], WeederError](past.cases, Map.empty) {
+        case (macc, caze: ParsedAst.Case) =>
+          val tagName = caze.ident.name
+          macc.get(tagName) match {
+            case None => (macc + (tagName -> Type.UnresolvedTag(past.ident, caze.ident, caze.tpe))).toSuccess
+            case Some(otherTag) => DuplicateTag(tagName, otherTag.tag.loc, caze.loc).toFailure
+          }
       } map {
         case m => WeededAst.Definition.Enum(past.ident, m, past.loc)
       }
@@ -504,10 +506,9 @@ object Weeder {
       */
     def compile(past: ParsedAst.Definition.BoundedLattice): Validation[WeededAst.Definition.BoundedLattice, WeederError] = {
       // check lattice definition.
-      val tpeVal = Type.compile(past.tpe)
       val elmsVal = @@(past.elms.toList.map(Expression.compile))
-      @@(tpeVal, elmsVal) flatMap {
-        case (tpe, List(bot, top, leq, lub, glb)) => WeededAst.Definition.BoundedLattice(tpe, bot, top, leq, lub, glb, past.loc).toSuccess
+      elmsVal flatMap {
+        case List(bot, top, leq, lub, glb) => WeededAst.Definition.BoundedLattice(past.tpe, bot, top, leq, lub, glb, past.loc).toSuccess
         case _ => IllegalBoundedLattice(past.loc).toFailure
       }
     }
@@ -523,7 +524,8 @@ object Weeder {
           case None =>
             seen += (ident.name -> ident)
             interp match {
-              case i: ParsedAst.Interpretation.Set => Type.compile(interp.tpe) map (tpe => WeededAst.Attribute(ident, tpe, WeededAst.Interpretation.Set))
+              case i: ParsedAst.Interpretation.Set =>
+                WeededAst.Attribute(ident, interp.tpe, WeededAst.Interpretation.Set).toSuccess
               case i: ParsedAst.Interpretation.Lattice =>
                 IllegalLatticeAttributeInRelation(ident.loc).toFailure
             }
@@ -550,8 +552,10 @@ object Weeder {
           case None =>
             seen += (ident.name -> ident)
             interp match {
-              case i: ParsedAst.Interpretation.Set => Type.compile(interp.tpe) map (tpe => WeededAst.Attribute(ident, tpe, WeededAst.Interpretation.Set))
-              case i: ParsedAst.Interpretation.Lattice => Type.compile(interp.tpe) map (tpe => WeededAst.Attribute(ident, tpe, WeededAst.Interpretation.Lattice))
+              case i: ParsedAst.Interpretation.Set =>
+                WeededAst.Attribute(ident, interp.tpe, WeededAst.Interpretation.Set).toSuccess
+              case i: ParsedAst.Interpretation.Lattice =>
+                WeededAst.Attribute(ident, interp.tpe, WeededAst.Interpretation.Lattice).toSuccess
             }
           case Some(otherIdent) =>
             DuplicateAttribute(ident.name, otherIdent.loc, ident.loc).toFailure
@@ -647,11 +651,11 @@ object Weeder {
         }
 
       case exp: ParsedAst.Expression.Lambda =>
-        val argsVal = @@(exp.formals map {
-          case ParsedAst.FormalArg(ident, annotations, tpe) => Type.compile(tpe) map (t => WeededAst.FormalArg(ident, t))
-        })
-        @@(argsVal, Type.compile(exp.tpe), compile(exp.body)) map {
-          case (args, tpe, body) => WeededAst.Expression.Lambda(Ast.Annotations(List.empty), args, body, tpe, exp.loc)
+        val args = exp.formals map {
+          case ParsedAst.FormalArg(ident, annotations, tpe) => WeededAst.FormalArg(ident, tpe)
+        }
+        compile(exp.body) map {
+          case body => WeededAst.Expression.Lambda(Ast.Annotations(List.empty), args.toList, body, exp.tpe, exp.loc)
         }
 
       case exp: ParsedAst.Expression.Unary =>
@@ -741,14 +745,12 @@ object Weeder {
         }
 
       case exp: ParsedAst.Expression.Ascribe =>
-        @@(compile(exp.e), Type.compile(exp.tpe)) map {
-          case (e, tpe) => WeededAst.Expression.Ascribe(e, tpe, exp.loc)
+        compile(exp.e) map {
+          case e => WeededAst.Expression.Ascribe(e, exp.tpe, exp.loc)
         }
 
       case exp: ParsedAst.Expression.Error =>
-        Type.compile(exp.tpe) map {
-          case tpe => WeededAst.Expression.Error(tpe, exp.loc)
-        }
+        WeededAst.Expression.Error(exp.tpe, exp.loc).toSuccess
 
       case exp: ParsedAst.Expression.Bot =>
         val name = Name.Unresolved(exp.sp1, List("⊥"), exp.sp2)
@@ -882,8 +884,8 @@ object Weeder {
           case lit => WeededAst.Term.Head.Lit(lit, term.loc)
         }
         case term: ParsedAst.Term.Ascribe =>
-          @@(compile(term.term, aliases), Type.compile(term.tpe)) map {
-            case (t, tpe) => WeededAst.Term.Head.Ascribe(t, tpe, term.loc)
+          compile(term.term, aliases) map {
+            case t => WeededAst.Term.Head.Ascribe(t, term.tpe, term.loc)
           }
         case term: ParsedAst.Term.Apply =>
           @@(term.args map (t => compile(t, aliases))) map {
@@ -907,41 +909,14 @@ object Weeder {
           case lit => WeededAst.Term.Body.Lit(lit, term.loc)
         }
         case term: ParsedAst.Term.Ascribe =>
-          @@(compile(term.term), Type.compile(term.tpe)) map {
-            case (t, tpe) => WeededAst.Term.Body.Ascribe(t, tpe, term.loc)
+          compile(term.term) map {
+            case t => WeededAst.Term.Body.Ascribe(t, term.tpe, term.loc)
           }
         case term: ParsedAst.Term.Apply => IllegalBodyTerm("Function calls may not occur in body predicates.", term.loc).toFailure
         case term: ParsedAst.Term.Infix => IllegalBodyTerm("Function calls may not occur in body predicates.", term.loc).toFailure
       }
     }
 
-  }
-
-  object Type {
-    /**
-      * Weeds the given parsed type `past`.
-      */
-    def compile(past: ParsedAst.Type): Validation[WeededAst.Type, WeederError] = past match {
-      case ParsedAst.Type.Unit => WeededAst.Type.Unit.toSuccess
-      case ParsedAst.Type.Named(name) => WeededAst.Type.Named(name).toSuccess
-      case ParsedAst.Type.Function(pformals, pret) =>
-        val formalTypeVal = @@(pformals map compile)
-        val returnTypeVal = compile(pret)
-        @@(formalTypeVal, returnTypeVal) map {
-          case (formals, retTpe) => WeededAst.Type.Function(formals, retTpe)
-        }
-      case ParsedAst.Type.Tag(ident, ptype) => compile(ptype) map {
-        case tpe => WeededAst.Type.Tag(ident, tpe)
-      }
-      case ParsedAst.Type.Tuple(pelms) => @@(pelms map compile) map {
-        case elms => WeededAst.Type.Tuple(elms)
-      }
-      case ParsedAst.Type.Parametric(Name.Unresolved(_, List("Set"), _), Seq(tpe)) =>
-        compile(tpe) map WeededAst.Type.Set
-      case ParsedAst.Type.Parametric(name, pelms) =>
-        Unsupported("Parametric types are not yet supported.", name.loc).toFailure
-      case ParsedAst.Type.Native => WeededAst.Type.Native.toSuccess
-    }
   }
 
   object Annotations {

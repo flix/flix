@@ -263,7 +263,7 @@ class Flix {
         macc + (tagName -> tag)
     }
 
-    new WrappedType(new Type.Enum(cases))
+    new WrappedType(new Type.Enum(Name.Resolved.mk(enumName), cases))
   }
 
   /**

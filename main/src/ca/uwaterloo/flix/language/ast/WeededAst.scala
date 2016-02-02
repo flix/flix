@@ -71,7 +71,7 @@ object WeededAst {
       * @param tpe   the declared type of the expression.
       * @param loc   the source location.
       */
-    case class Constant(ident: Name.Ident, e: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Definition
+    case class Constant(ident: Name.Ident, e: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Definition
 
     /**
       * An AST node that represents an enum definition.
@@ -80,7 +80,7 @@ object WeededAst {
       * @param cases the cases of the enum.
       * @param loc   the source location.
       */
-    case class Enum(ident: Name.Ident, cases: Map[String, WeededAst.Type.Tag], loc: SourceLocation) extends WeededAst.Definition
+    case class Enum(ident: Name.Ident, cases: Map[String, Type.UnresolvedTag], loc: SourceLocation) extends WeededAst.Definition
 
     /**
       * An AST node that represents a bounded lattice definition.
@@ -93,7 +93,7 @@ object WeededAst {
       * @param glb the greatest lower bound.
       * @param loc the source location.
       */
-    case class BoundedLattice(tpe: WeededAst.Type, bot: WeededAst.Expression, top: WeededAst.Expression, leq: WeededAst.Expression,
+    case class BoundedLattice(tpe: Type, bot: WeededAst.Expression, top: WeededAst.Expression, leq: WeededAst.Expression,
                               lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Definition
 
 
@@ -287,7 +287,7 @@ object WeededAst {
       * @param retTpe      the declared return type.
       * @param loc         the source location.
       */
-    case class Lambda(annotations: Ast.Annotations, formals: List[WeededAst.FormalArg], body: WeededAst.Expression, retTpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+    case class Lambda(annotations: Ast.Annotations, formals: List[WeededAst.FormalArg], body: WeededAst.Expression, retTpe: Type, loc: SourceLocation) extends WeededAst.Expression
 
     /**
       * An AST node that represents a call expression.
@@ -387,7 +387,7 @@ object WeededAst {
       * @param tpe the ascribed type.
       * @param loc the source location.
       */
-    case class Ascribe(e: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+    case class Ascribe(e: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Expression
 
     /**
       * An AST node that represents an error expression.
@@ -395,7 +395,7 @@ object WeededAst {
       * @param tpe the type of the expression.
       * @param loc the source location.
       */
-    case class Error(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+    case class Error(tpe: Type, loc: SourceLocation) extends WeededAst.Expression
 
   }
 
@@ -615,7 +615,7 @@ object WeededAst {
         * @param tpe  the typed of the ascribed term.
         * @param loc  the source location.
         */
-      case class Ascribe(term: Head, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Term.Head
+      case class Ascribe(term: Head, tpe: Type, loc: SourceLocation) extends WeededAst.Term.Head
 
     }
 
@@ -656,71 +656,10 @@ object WeededAst {
         * @param tpe  the typed of the ascribed term.
         * @param loc  the source location.
         */
-      case class Ascribe(term: Body, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Term.Body
+      case class Ascribe(term: Body, tpe: Type, loc: SourceLocation) extends WeededAst.Term.Body
 
     }
 
-  }
-
-  /**
-    * A common super-type for AST nodes that represent types. 
-    */
-  @deprecated("will be replaced by Type in language.ast", "0.1")
-  sealed trait Type extends WeededAst
-
-  object Type {
-
-    /**
-      * An AST node that represents the unit type.
-      */
-    case object Unit extends WeededAst.Type
-
-    /**
-      * An AST node that represent a reference to a named type.
-      *
-      * @param name the name of the type.
-      */
-    case class Named(name: Name.Unresolved) extends WeededAst.Type
-
-    /**
-      * An AST node that represents a tagged type.
-      *
-      * @param tag the tag name.
-      * @param tpe the nested type.
-      */
-    case class Tag(tag: Name.Ident, tpe: WeededAst.Type) extends WeededAst.Type
-
-    /**
-      * An AST node that represents an enum type.
-      *
-      * @param name  the name of the enum.
-      * @param cases the cases of the enum.
-      */
-    case class Enum(name: Name.Resolved, cases: Map[String, WeededAst.Type.Tag]) extends WeededAst.Type
-
-    /**
-      * An AST node that represents a tuple type.
-      *
-      * @param elms the type of the tuple elements.
-      */
-    case class Tuple(elms: List[WeededAst.Type]) extends WeededAst.Type
-
-    /**
-      * An AST node that represents a set type.
-      *
-      * @param elms the type of the elements.
-      */
-    case class Set(elms: WeededAst.Type) extends WeededAst.Type
-
-    /**
-      * An AST node that represents a function type.
-      *
-      * @param args   the type of the arguments.
-      * @param retTpe the return type.
-      */
-    case class Function(args: List[WeededAst.Type], retTpe: WeededAst.Type) extends WeededAst.Type
-
-    case object Native extends WeededAst.Type
   }
 
   /**
@@ -730,7 +669,7 @@ object WeededAst {
     * @param tpe    the declared type of the attribute.
     * @param interp the interpretation of the attribute.
     */
-  case class Attribute(ident: Name.Ident, tpe: WeededAst.Type, interp: WeededAst.Interpretation) extends WeededAst
+  case class Attribute(ident: Name.Ident, tpe: Type, interp: WeededAst.Interpretation) extends WeededAst
 
   /**
     * An AST node that represents an attribute interpretation.
@@ -757,6 +696,6 @@ object WeededAst {
     * @param ident the name of the argument.
     * @param tpe   the type of the argument.
     */
-  case class FormalArg(ident: Name.Ident, tpe: WeededAst.Type) extends WeededAst
+  case class FormalArg(ident: Name.Ident, tpe: Type) extends WeededAst
 
 }

@@ -746,7 +746,7 @@ object Verifier {
       case Type.Bool => List(Expression.True, Expression.False)
       case Type.Int => List(Expression.Var(genSym.fresh2(), -1, Type.Int, SourceLocation.Unknown))
       case Type.Tuple(elms) => ???
-      case t@Type.Enum(cases) =>
+      case t@Type.Enum(name, cases) =>
         val enum = cases.head._2.enum
         val r = cases flatMap {
           case (tagName, tagType) =>
