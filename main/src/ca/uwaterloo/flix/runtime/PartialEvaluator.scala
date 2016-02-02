@@ -73,19 +73,31 @@ object PartialEvaluator {
         * Unary Expressions.
         */
       case Unary(op, exp, _, _) => op match {
+        /**
+          * Unary Logical Not.
+          */
         case UnaryOperator.LogicalNot => eval(exp0, env0, {
           case True => k(False)
           case False => k(True)
           case residual => k(residual)
         })
 
+        /**
+          * Unary Plus.
+          */
         case UnaryOperator.Plus => eval(exp, env0, k)
 
+        /**
+          * Unary Minus.
+          */
         case UnaryOperator.Minus => eval(exp, env0, {
           case Int(i) => k(Int(-i))
           case residual => k(residual)
         })
 
+        /**
+          * Unary Bitwise Negation.
+          */
         case UnaryOperator.BitwiseNegate => eval(exp, env0, {
           case Int(i) => Int(~i)
           case residual => k(residual)
@@ -97,7 +109,24 @@ object PartialEvaluator {
         */
       case Binary(op, exp1, exp2, tpe, loc) => op match {
 
-        case BinaryOperator.Plus => ??? // TODO
+        /**
+          * Arithmetic Plus.
+          */
+        case BinaryOperator.Plus =>
+          // Partially evaluate exp1.
+          eval(exp1, env0, {
+            case e1 =>
+              // Partially evaluate exp2.
+              eval(exp2, env0, {
+                case e2 => (e1, e2) match {
+                  case (Int(x), Int(y)) => k(Int(x + y))
+                  case (Int(0), _) => k(e2)
+                  case (_, Int(0)) => k(e1)
+                  case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
+                }
+              })
+          })
+
         case BinaryOperator.Minus => ??? // TODO
         case BinaryOperator.Times => ??? // TODO
         case BinaryOperator.Divide => ??? // TODO
@@ -402,6 +431,18 @@ object PartialEvaluator {
     */
   private def canonical(e: Expression): Expression = e match {
     case _ => e
+  }
+
+  sealed trait Eq
+
+  object Eq {
+
+    case class Equal() extends Eq
+
+    case class NotEq() extends Eq
+
+    case object Unknown extends Eq
+
   }
 
   /**
