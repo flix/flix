@@ -26,6 +26,7 @@ object Verifier {
       */
     val formula: Formula
 
+    def name: String
 
     def fail(env0: Map[String, Expression]): VerifierError
   }
@@ -42,6 +43,8 @@ object Verifier {
 
         ∀(x, y, z)(≡(f(x, f(y, z)), f(f(x, y), z)))
       }
+
+      val name = "Associativity(" + f + ")"
 
       def fail(env0: Map[String, Expression]): VerifierError = {
         val x = env0.get("x")
@@ -61,6 +64,8 @@ object Verifier {
 
         ∀(x, y)(≡(f(x, y), f(y, x)))
       }
+
+      val name = "Commutativity(" + f + ")"
 
       def fail(env0: Map[String, Expression]): VerifierError = {
         val x = env0.get("x")
@@ -88,6 +93,8 @@ object Verifier {
           ∀(x)(⊑(x, x))
         }
 
+        val name = "Reflexivity(" + lattice.tpe + ")"
+
         override def fail(env0: Map[String, Expression]): VerifierError = {
           val x = env0.get("x")
           ReflexivityError(x, lattice.leq.loc)
@@ -109,6 +116,8 @@ object Verifier {
           ∀(x, y)(→(∧(⊑(x, y), ⊑(y, x)), ≡(x, y)))
         }
 
+        val name = "AntiSymmetry(" + lattice.tpe + ")"
+
         def fail(env0: Map[String, Expression]): VerifierError = {
           val x = env0.get("x")
           val y = env0.get("y")
@@ -129,6 +138,8 @@ object Verifier {
 
           ∀(x, y, z)(→(∧(⊑(x, y), ⊑(y, z)), ⊑(x, z)))
         }
+
+        val name = "Transitivity(" + lattice.tpe + ")"
 
         def fail(env0: Map[String, Expression]): VerifierError = {
           val x = env0.get("x")
@@ -159,6 +170,8 @@ object Verifier {
           ∀(x)(⊑(⊥(), x))
         }
 
+        val name = "LeastElement(" + lattice.tpe + ")"
+
         def fail(env0: Map[String, Expression]): VerifierError = {
           val x = env0.get("x")
           LeastElementError(x, lattice.leq.loc)
@@ -179,6 +192,8 @@ object Verifier {
 
           ∀(x, y)(∧(⊑(x, ⊔(x, y)), ⊑(y, ⊔(x, y))))
         }
+
+        val name = "UpperBound(" + lattice.tpe + ")"
 
         def fail(env0: Map[String, Expression]): VerifierError = {
           val x = env0.get("x")
@@ -201,6 +216,8 @@ object Verifier {
 
           ∀(x, y, z)(→(∧(⊑(x, z), ⊑(y, z)), ⊑(⊔(x, y), z)))
         }
+
+        val name = "LeastUpperBound(" + lattice.tpe + ")"
 
         def fail(env0: Map[String, Expression]): VerifierError = {
           val x = env0.get("x")
@@ -231,6 +248,8 @@ object Verifier {
           ∀(x)(⊑(x, ⊤()))
         }
 
+        val name = "GreatestElement(" + lattice.tpe + ")"
+
         def fail(env0: Map[String, Expression]): VerifierError = {
           val x = env0.get("x")
           GreatestElementError(x, lattice.leq.loc)
@@ -251,6 +270,8 @@ object Verifier {
 
           ∀(x, y)(∧(⊑(⊓(x, y), x), ⊑(⊓(x, y), y)))
         }
+
+        val name = "LowerBound(" + lattice.tpe + ")"
 
         def fail(env0: Map[String, Expression]): VerifierError = {
           val x = env0.get("x")
@@ -274,6 +295,8 @@ object Verifier {
           ∀(x, y, z)(→(∧(⊑(z, x), ⊑(z, y)), ⊑(z, ⊓(x, y))))
         }
 
+        val name = "GreatestLowerBound(" + lattice.tpe + ")"
+
         def fail(env0: Map[String, Expression]): VerifierError = {
           val x = env0.get("x")
           val y = env0.get("y")
@@ -295,6 +318,8 @@ object Verifier {
         val retLat = root.lattices(retTpe)
         ∀()(≡(f(argLat.bot), retLat.bot))
       }
+
+      val name = "Strict1(" + f + ")"
 
       def fail(env0: Map[String, Expression]): VerifierError = {
         StrictError(f.loc)
@@ -318,6 +343,8 @@ object Verifier {
 
       }
 
+      val name = "Strict2(" + f + ")"
+
       def fail(env0: Map[String, Expression]): VerifierError = {
         StrictError(f.loc)
       }
@@ -335,6 +362,8 @@ object Verifier {
 
         ∀(x, y)(→(lat1.⊑(x, y), lat2.⊑(f(x), f(y))))
       }
+
+      val name = "Monotone1(" + f + ")"
 
       def fail(env0: Map[String, Expression]): VerifierError = {
         MonotoneError(f.loc)
@@ -354,6 +383,8 @@ object Verifier {
 
         ∀(x1, y1, x2, y2)(→(∧(lat1.⊑(x1, x2), lat2.⊑(y1, y2)), lat3.⊑(f(x1, y1), f(x2, y2))))
       }
+
+      val name = "Monotone2(" + f + ")"
 
       def fail(env0: Map[String, Expression]): VerifierError = {
         MonotoneError(f.loc)
@@ -375,6 +406,8 @@ object Verifier {
 
           ∀(x)(Expression.Binary(BinaryOperator.GreaterEqual, ???, Expression.Int(0), Type.Bool, SourceLocation.Unknown))
         }
+
+        val name = "HeightNonNegative(" + lattice.tpe + ")"
 
         def fail(env0: Map[String, Expression]): VerifierError = {
           val x = env0.get("x")
@@ -399,6 +432,8 @@ object Verifier {
               Expression.Binary(BinaryOperator.Greater, ???, ???, Type.Bool, SourceLocation.Unknown)
             ))
         }
+
+        val name = "HeightStrictlyDecreasing(" + lattice.tpe + ")"
 
         def fail(env0: Map[String, Expression]): VerifierError = {
           val x = env0.get("x")
@@ -701,7 +736,6 @@ object Verifier {
       case env0 => PartialEvaluator.eval(exp0, root, env0) match {
         case Expression.True =>
           // Case 1: The partial evaluator proved the property.
-          Console.println("Successfully proved: " + property)
           Nil
         case Expression.False =>
           // Case 2: The partial evaluator disproved the property.
@@ -730,6 +764,14 @@ object Verifier {
           })
       }
     }
+
+
+    implicit val consoleCtx = Compiler.ConsoleCtx
+
+    if (violations.isEmpty)
+      Console.println(consoleCtx.cyan("✓ ") + property.name)
+    else
+      Console.println(consoleCtx.red("! ") + property.name)
 
     violations.headOption
   }

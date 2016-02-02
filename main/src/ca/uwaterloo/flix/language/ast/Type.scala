@@ -5,7 +5,28 @@ import scala.collection.immutable
 /**
   * A common super-type for types.
   */
-sealed trait Type
+sealed trait Type {
+  /**
+    * Returns a human readable string representation of `this` type.
+    */
+  override def toString: String = this match {
+    case Type.Var(x) => "Var(" + x + ")"
+    case Type.Unit => "Unit"
+    case Type.Bool => "Bool"
+    case Type.Char => "Char"
+    case Type.Int8 => "Int8"
+    case Type.Int16 => "Int16"
+    case Type.Int32 => "Int32"
+    case Type.Int64 => "Int64"
+    case Type.Str => "Str"
+    case Type.Native => "Native"
+    case Type.Tag(enum, tag, tpe) => tag.name + "(" + tpe + ")"
+    case Type.UnresolvedTag(enum, tag, tpe) => "?" + tag.name + "(" + tpe + ")"
+    case Type.Enum(enum, cases) => enum.fqn
+    case Type.Tuple(elms) => "(" + elms.mkString(". ") + ")"
+
+  }
+}
 
 object Type {
 
