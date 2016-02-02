@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
+import scala.collection.immutable
+
 /**
   * A common super-type for types.
   */
@@ -48,6 +50,11 @@ object Type {
   case object Str extends Type
 
   /**
+    * An AST node that represents a native type.
+    */
+  case object Native extends Type
+
+  /**
     * An AST node representing the type of a tag.
     *
     * @param enum the namespace of the tag.
@@ -57,15 +64,15 @@ object Type {
   case class Tag(enum: Name.Resolved, tag: Name.Ident, tpe: Type) extends Type
 
   /**
-    * An AST node representing an enum type (a set of tags).
+    * An AST node representing an enum type.
     *
+    * @param name  the fully qualified name of the enum.
     * @param cases a map from tag names to tag types.
     */
-  case class Enum(name: Name.Resolved, cases: scala.collection.immutable.Map[String, Type.Tag]) extends Type
+  case class Enum(name: Name.Resolved, cases: immutable.Map[String, Type.Tag]) extends Type
 
-
+  // TODO: DOC
   case class UnresolvedTag(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends Type
-
 
   /**
     * An AST node representing a tuple type.
@@ -76,8 +83,6 @@ object Type {
     @deprecated("removed", "0.1")
     val asArray: Array[Type] = elms.toArray
   }
-
-
 
   /**
     * An AST node representing a function type.
@@ -94,13 +99,6 @@ object Type {
     */
   case class Predicate(terms: List[Type]) extends Type
 
-  /**
-    * An AST node that represents a native type.
-    */
-  case class Native(name: String) extends Type // TODO: remove name
-
-
-
 
   /**
     * An AST node that represent a parametric type.
@@ -109,7 +107,6 @@ object Type {
     * @param elms the type of the type parameters.
     */
   case class Parametric(name: Name.Unresolved, elms: Seq[Type]) extends Type
-
 
 
   // TODO: Document

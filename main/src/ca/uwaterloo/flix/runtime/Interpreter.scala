@@ -30,7 +30,7 @@ object Interpreter {
     case Type.Bool => if (evalBool(expr, root, env)) Value.True else Value.False
     case Type.Str => evalGeneral(expr, root, env)
     case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
-         Type.Set(_) | Type.Lambda(_, _) | Type.Predicate(_) | Type.Native(_) | Type.Any =>
+         Type.Set(_) | Type.Lambda(_, _) | Type.Predicate(_) | Type.Native | Type.Any =>
       evalGeneral(expr, root, env)
   }
 

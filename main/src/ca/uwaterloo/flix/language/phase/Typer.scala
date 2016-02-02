@@ -831,7 +831,7 @@ object Typer {
     case Type.Lambda(args, retTpe) =>
       "(" + args.map(prettyPrint).mkString(", ") + ") -> " + prettyPrint(retTpe)
     case Type.Predicate(terms) => s"Predicate(${terms map prettyPrint})"
-    case Type.Native(name) => s"#$name"
+    case Type.Native => s"native"
   }
 
   private def prettyPrint(pat: ResolvedAst.Pattern): String = pat match {

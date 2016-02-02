@@ -326,7 +326,7 @@ class Flix {
     if (name == null)
       throw new IllegalArgumentException("Argument 'name' must be non-null.")
 
-    new WrappedType(Type.Native(name))
+    new WrappedType(Type.Native)
   }
 
   /**

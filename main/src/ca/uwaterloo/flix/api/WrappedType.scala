@@ -64,7 +64,7 @@ final class WrappedType(val tpe: Type) extends IType {
   }
 
   def isNative: Boolean = tpe match {
-    case Type.Native(fqn) => true
+    case Type.Native => true
     case _ => false
   }
 

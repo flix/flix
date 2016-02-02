@@ -435,7 +435,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def NativeType: Rule1[PType] = rule {
-    atomic("Native") ~> (() => PType.Native("foo")) // TODO: foo
+    atomic("Native") ~> (() => PType.Native)
   }
 
   def TupleType: Rule1[PType] = {
