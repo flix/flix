@@ -468,6 +468,7 @@ object PartialEvaluator {
     * Returns `true` iff `exp1` and `exp2` *cannot* evaluate to the same value under the given environment `env0`.
     */
   private def mustNotBeEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
+    case (Unit, Unit) => false
     case (True, False) => true
     case (False, True) => true
     case (Tag(_, tag1, e1, _, _), Tag(_, tag2, e2, _, _)) =>
@@ -491,7 +492,7 @@ object PartialEvaluator {
     * This function attempts to pick a "standard form" of such an expression.
     */
   private def canonical(e: Expression): Expression = e match {
-    case _ => e
+    case Unit => Unit
   }
 
 
