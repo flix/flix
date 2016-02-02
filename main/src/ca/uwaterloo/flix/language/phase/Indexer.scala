@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.TypedAst.{Predicate, Term}
-import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Predicate, Term}
+import ca.uwaterloo.flix.language.ast.{Name, ExecutableAst}
 
 import scala.collection.mutable
 
@@ -12,7 +12,7 @@ object Indexer {
   /**
     * Returns an index selection strategy based on left-to-right evaluation of constraint rules.
     */
-  def index(root: TypedAst.Root): Map[Name.Resolved, Set[Seq[Int]]] = {
+  def index(root: ExecutableAst.Root): Map[Name.Resolved, Set[Seq[Int]]] = {
     val indexes = mutable.Map.empty[Name.Resolved, Set[Seq[Int]]]
 
     // iterate through each rule.
@@ -22,11 +22,11 @@ object Indexer {
       // iterate through each collection predicate in the body.
       for (body <- constraint.body) {
         body match {
-          case Predicate.Body.Collection(name, pterms, _, _) =>
+          case Predicate.Body.Collection(name, pterms, _, _, _) =>
             // determine the terms usable for indexing based on whether the predicate refers to a relation or lattice.
             val terms = root.collections(name) match {
-              case r: TypedAst.Collection.Relation => pterms
-              case l: TypedAst.Collection.Lattice => pterms take l.keys.length
+              case r: ExecutableAst.Collection.Relation => pterms
+              case l: ExecutableAst.Collection.Lattice => pterms take l.keys.length
             }
 
             // compute the indices of the determinate (i.e. known) terms.
@@ -37,7 +37,7 @@ object Indexer {
                   xs :+ i
                 else
                   xs
-              case (xs, (t: Term.Body.Lit, i)) => xs :+ i
+              case (xs, (t: Term.Body.Exp, i)) => xs :+ i
             }
 
             // if one or more terms are determinate then an index would be useful.
@@ -56,10 +56,10 @@ object Indexer {
     // ensure every collection has at least one index.
     for ((name, collection) <- root.collections) {
       collection match {
-        case r: TypedAst.Collection.Relation =>
+        case r: ExecutableAst.Collection.Relation =>
           val idxs = indexes.getOrElse(name, Set.empty)
           indexes(name) = idxs + Seq(0) // + r.attributes.indices // TODO
-        case l: TypedAst.Collection.Lattice =>
+        case l: ExecutableAst.Collection.Lattice =>
           val idxs = indexes.getOrElse(name, Set.empty)
           indexes(name) = idxs + l.keys.indices
       }
@@ -71,8 +71,8 @@ object Indexer {
         case None => // no user defined index.
         case Some(index) =>
           val attributes = collection match {
-            case r: TypedAst.Collection.Relation => r.attributes
-            case l: TypedAst.Collection.Lattice => l.keys
+            case r: ExecutableAst.Collection.Relation => r.attributes
+            case l: ExecutableAst.Collection.Lattice => l.keys
           }
 
           indexes(name) = index.indexes.map(idx => idx.map(v => var2offset(v.name, attributes))).toSet
@@ -83,13 +83,12 @@ object Indexer {
     indexes.toMap
   }
 
-  private def var2offset(varName: String, attributes: List[TypedAst.Attribute]): Int = {
-    def rec(xs: List[TypedAst.Attribute], i: Int): Int = xs match {
-      case Nil => throw new RuntimeException() // TODO
-      case y :: ys if varName == y.ident.name => i
-      case y :: ys => rec(ys, i + 1)
+  private def var2offset(varName: String, attributes: Array[ExecutableAst.Attribute]): Int = {
+    var i = 0
+    while (i < attributes.length) {
+      if (varName == attributes(i).ident.name) return i
+      i = i + 1
     }
-
-    rec(attributes, 0)
+    throw new RuntimeException // TODO
   }
 }

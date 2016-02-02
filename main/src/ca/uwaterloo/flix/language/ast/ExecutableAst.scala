@@ -60,12 +60,12 @@ object ExecutableAst {
     case class Fact(head: ExecutableAst.Predicate.Head) extends ExecutableAst.Constraint
 
     case class Rule(head: ExecutableAst.Predicate.Head,
-                    body: Array[ExecutableAst.Predicate.Body],
-                    collections: Array[ExecutableAst.Predicate.Body.Collection],
-                    filters: Array[ExecutableAst.Predicate.Body.ApplyFilter],
-                    hookFilters: Array[ExecutableAst.Predicate.Body.ApplyHookFilter],
-                    disjoint: Array[ExecutableAst.Predicate.Body.NotEqual],
-                    loops: Array[ExecutableAst.Predicate.Body.Loop]) extends ExecutableAst.Constraint {
+                    body: List[ExecutableAst.Predicate.Body],
+                    collections: List[ExecutableAst.Predicate.Body.Collection],
+                    filters: List[ExecutableAst.Predicate.Body.ApplyFilter],
+                    filterHooks: List[ExecutableAst.Predicate.Body.ApplyHookFilter],
+                    disjoint: List[ExecutableAst.Predicate.Body.NotEqual],
+                    loops: List[ExecutableAst.Predicate.Body.Loop]) extends ExecutableAst.Constraint {
       var elapsedTime: Long = 0
       var hitcount: Int = 0
     }
@@ -493,7 +493,31 @@ object ExecutableAst {
 
     }
 
-    sealed trait Body extends ExecutableAst.Predicate
+    sealed trait Body extends ExecutableAst.Predicate {
+      /**
+        * Returns the set of free variables in the term.
+        */
+      // TODO: Move
+      def freeVars: Set[String] = this match {
+        case ExecutableAst.Predicate.Body.Collection(_, terms, _, _, _) => terms.foldLeft(Set.empty[String]) {
+          case (xs, t: ExecutableAst.Term.Body.Wildcard) => xs
+          case (xs, t: ExecutableAst.Term.Body.Var) => xs + t.ident.name
+          case (xs, t: ExecutableAst.Term.Body.Exp) => xs
+        }
+        case ExecutableAst.Predicate.Body.ApplyFilter(_, terms, _, _) => terms.foldLeft(Set.empty[String]) {
+          case (xs, t: ExecutableAst.Term.Body.Wildcard) => xs
+          case (xs, t: ExecutableAst.Term.Body.Var) => xs + t.ident.name
+          case (xs, t: ExecutableAst.Term.Body.Exp) => xs
+        }
+        case ExecutableAst.Predicate.Body.ApplyHookFilter(_, terms, _, _) => terms.foldLeft(Set.empty[String]) {
+          case (xs, t: ExecutableAst.Term.Body.Wildcard) => xs
+          case (xs, t: ExecutableAst.Term.Body.Var) => xs + t.ident.name
+          case (xs, t: ExecutableAst.Term.Body.Exp) => xs
+        }
+        case ExecutableAst.Predicate.Body.NotEqual(x, y, _, _) => Set(x.name, y.name)
+        case ExecutableAst.Predicate.Body.Loop(_, _, _, _) => ???
+      }
+    }
 
     object Body {
 

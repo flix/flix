@@ -85,7 +85,8 @@ object CreateExecutableAst {
 
     def toExecutable(sast: SimplifiedAst.Constraint.Rule): ExecutableAst.Constraint.Rule = {
       val head = Predicate.Head.toExecutable(sast.head)
-      val body = sast.body.map(Predicate.Body.toExecutable).toArray
+      // TODO(magnus): Convert lists to arrays (and refactor Solver)
+      val body = sast.body.map(Predicate.Body.toExecutable)
       val collections = body.collect { case p: ExecutableAst.Predicate.Body.Collection => p }
       val filters = body.collect { case p: ExecutableAst.Predicate.Body.ApplyFilter => p }
       val hookFilters = body.collect { case p: ExecutableAst.Predicate.Body.ApplyHookFilter => p }

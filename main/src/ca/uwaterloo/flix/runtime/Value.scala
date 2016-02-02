@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.runtime
 
 import java.util
 
-import ca.uwaterloo.flix.language.ast.{Ast, Name, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, ExecutableAst}
 import ca.uwaterloo.flix.runtime.Interpreter.InternalRuntimeError
 
 import scala.collection.{immutable, mutable}
@@ -157,7 +157,7 @@ object Value {
   /**
     * Flix internal representation of closures.
     */
-  final case class Closure(formals: Array[String], body: TypedAst.Expression, env: mutable.Map[String, AnyRef]) {
+  final case class Closure(formals: Array[String], body: ExecutableAst.Expression, env: mutable.Map[String, AnyRef]) {
     // We override `equals` since otherwise the `formals` Array is compared using reference equality.
     override def equals(obj: scala.Any): Boolean = obj match {
       case that: Value.Closure =>

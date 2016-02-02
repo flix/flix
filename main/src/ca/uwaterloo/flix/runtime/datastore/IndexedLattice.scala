@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime.datastore
 
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.ExecutableAst
 import ca.uwaterloo.flix.runtime.{Value, Interpreter, Solver}
 
 import scala.annotation.switch
@@ -10,7 +10,7 @@ import java.util
 
 import scala.reflect.ClassTag
 
-class IndexedLattice[ValueType <: AnyRef](lattice: TypedAst.Collection.Lattice, indexes: Set[Int])(implicit sCtx: Solver.SolverContext, m: ClassTag[ValueType]) extends IndexedCollection[ValueType] {
+class IndexedLattice[ValueType <: AnyRef](lattice: ExecutableAst.Collection.Lattice, indexes: Set[Int])(implicit sCtx: Solver.SolverContext, m: ClassTag[ValueType]) extends IndexedCollection[ValueType] {
   /**
     * A map from indexes to a map from keys to rows (represented as map from keys to elements).
     */
@@ -29,9 +29,9 @@ class IndexedLattice[ValueType <: AnyRef](lattice: TypedAst.Collection.Lattice, 
   /**
     * The lattice operations associated with each lattice.
     */
-  private val latticeOps: Array[TypedAst.Definition.BoundedLattice] = lattice.values.map {
-    case TypedAst.Attribute(_, tpe) => sCtx.root.lattices(tpe)
-  }.toArray
+  private val latticeOps: Array[ExecutableAst.Definition.Lattice] = lattice.values.map {
+    case ExecutableAst.Attribute(_, tpe) => sCtx.root.lattices(tpe)
+  }
 
   /**
     * The bottom element(s).

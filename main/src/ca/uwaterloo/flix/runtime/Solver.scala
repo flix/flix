@@ -1,8 +1,8 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.{IValue, WrappedValue}
-import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Name, TypedAst}
+import ca.uwaterloo.flix.language.ast.ExecutableAst._
+import ca.uwaterloo.flix.language.ast.{Ast, Name, ExecutableAst}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.util.{Verbosity, Debugger, Options}
@@ -15,7 +15,7 @@ object Solver {
   /**
     * A case class representing a solver context.
     */
-  case class SolverContext(root: TypedAst.Root, options: Options)
+  case class SolverContext(root: ExecutableAst.Root, options: Options)
 
 }
 
@@ -93,7 +93,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
 
     val constants = sCtx.root.constants.foldLeft(Map.empty[Name.Resolved, AnyRef]) {
       case (macc, (name, constant)) => constant.exp match {
-        case e: TypedAst.Expression.Lambda if e.args == Nil =>
+        case e: ExecutableAst.Expression.Lambda if e.args.isEmpty =>
           val v = Interpreter.eval(e.body, sCtx.root)
           macc + (name -> v)
         case _ => macc
@@ -130,7 +130,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
 
     if (sCtx.options.verbosity != Verbosity.Silent) {
       val solverTime = elapsed / 1000000
-      val initialFacts = sCtx.root.facts.size
+      val initialFacts = sCtx.root.facts.length
       val totalFacts = dataStore.numberOfFacts
       val throughput = (1000 * totalFacts) / (solverTime + 1)
       Console.println(f"Successfully solved in $solverTime%,d msec.")
@@ -162,7 +162,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   def getModel: Model = model
 
   // TODO: Move
-  def getRuleStats: List[(TypedAst.Constraint.Rule, Int, Long)] =
+  def getRuleStats: List[(ExecutableAst.Constraint.Rule, Int, Long)] =
     sCtx.root.rules.toSeq.sortBy(_.elapsedTime).reverse.map {
       case r => (r, r.hitcount, r.elapsedTime)
     }.toList
@@ -171,13 +171,13 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Processes an inferred `fact` for the relation or lattice with the `name`.
     */
   def inferredFact(name: Name.Resolved, fact: Array[AnyRef], enqueue: Boolean): Unit = sCtx.root.collections(name) match {
-    case r: TypedAst.Collection.Relation =>
+    case r: ExecutableAst.Collection.Relation =>
       val changed = dataStore.relations(name).inferredFact(fact)
       if (changed && enqueue) {
         dependencies(r.name, fact)
       }
 
-    case l: TypedAst.Collection.Lattice =>
+    case l: ExecutableAst.Collection.Lattice =>
       val changed = dataStore.lattices(name).inferredFact(fact)
       if (changed && enqueue) {
         dependencies(l.name, fact)
@@ -189,7 +189,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     */
   def evalHead(p: Predicate.Head, env0: mutable.Map[String, AnyRef], enqueue: Boolean): Unit = p match {
     case p: Predicate.Head.Relation =>
-      val terms = p.termsArray
+      val terms = p.terms
       val fact = new Array[AnyRef](p.arity)
       var i = 0
       while (i < fact.length) {
@@ -230,7 +230,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       val pat = new Array[AnyRef](p.arity)
       var i = 0
       while (i < pat.length) {
-        pat(i) = eval(p.termsArray(i), row)
+        pat(i) = eval(p.terms(i), row)
         i = i + 1
       }
 
@@ -277,10 +277,10 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       filterHook(rule, rule.filterHooks, row)
     case (pred: Predicate.Body.ApplyFilter) :: xs =>
       val lambda = sCtx.root.constants(pred.name)
-      val args = new Array[AnyRef](pred.termsAsArray.length)
+      val args = new Array[AnyRef](pred.terms.length)
       var i = 0
       while (i < args.length) {
-        args(i) = Interpreter.evalBodyTerm(pred.termsAsArray(i), row)
+        args(i) = Interpreter.evalBodyTerm(pred.terms(i), row)
         i = i + 1
       }
       val result = Interpreter.evalCall(lambda.exp, args, sCtx.root, row)
@@ -298,10 +298,10 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       disjoint(rule, rule.disjoint, row)
     case (pred: Predicate.Body.ApplyHookFilter) :: xs =>
 
-      val args = new Array[AnyRef](pred.termsAsArray.length)
+      val args = new Array[AnyRef](pred.terms.length)
       var i = 0
       while (i < args.length) {
-        args(i) = Interpreter.evalBodyTerm(pred.termsAsArray(i), row)
+        args(i) = Interpreter.evalBodyTerm(pred.terms(i), row)
         i = i + 1
       }
 
@@ -343,10 +343,10 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     *
     * Returns `null` if the term is a free variable.
     */
-  def eval(t: TypedAst.Term.Body, env: mutable.Map[String, AnyRef]): AnyRef = t match {
-    case t: TypedAst.Term.Body.Wildcard => null
-    case t: TypedAst.Term.Body.Var => env.getOrElse(t.ident.name, null)
-    case t: TypedAst.Term.Body.Lit => Interpreter.evalLit(t.lit)
+  def eval(t: ExecutableAst.Term.Body, env: mutable.Map[String, AnyRef]): AnyRef = t match {
+    case t: ExecutableAst.Term.Body.Wildcard => null
+    case t: ExecutableAst.Term.Body.Var => env.getOrElse(t.ident.name, null)
+    case t: ExecutableAst.Term.Body.Exp => ???
   }
 
   /**
@@ -369,13 +369,13 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     val collection = sCtx.root.collections(name)
     for ((rule, p) <- sCtx.root.dependenciesOf(name)) {
       collection match {
-        case r: TypedAst.Collection.Relation =>
+        case r: ExecutableAst.Collection.Relation =>
           // unify all terms with their values.
           val env = unify(p.index2var, fact, fact.length)
           if (env != null) {
             worklist += ((rule, env))
           }
-        case l: TypedAst.Collection.Lattice =>
+        case l: ExecutableAst.Collection.Lattice =>
           // unify only key terms with their values.
           val numberOfKeys = l.keys.length
           val env = unify(p.index2var, fact, numberOfKeys)
