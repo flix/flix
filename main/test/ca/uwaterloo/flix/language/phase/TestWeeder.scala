@@ -319,55 +319,6 @@ class TestWeeder extends FunSuite {
     assert(result.isFailure)
   }
 
-  test("IllegalHeadPredicate.Read01") {
-    val input = "Read#(x, y)."
-    val past = new Parser(SourceInput.Str(input)).FactDeclaration.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.isFailure)
-  }
-
-  test("IllegalHeadPredicate.Read02") {
-    val input = "Read#(x, y) :- A(x, y)."
-    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.isFailure)
-  }
-
-  test("IllegalBodyPredicate.Trace01") {
-    val input = "A(x, y) :- Trace#(x, y)."
-    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.isFailure)
-  }
-
-  test("IllegalBodyPredicate.Write01") {
-    val input = "A(x, y) :- Write#(x, y)."
-    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.isFailure)
-  }
-
-  test("IllegalBodyPredicate.Error01") {
-    val input = "A(x, y) :- Error#(x, y)."
-    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.isFailure)
-  }
-
-  test("IllegalReadPredicate01") {
-    val input = "A(x, y) :- Read#(\"a.txt\")."
-    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.isFailure)
-  }
-
-  test("IllegalWritePredicate01") {
-    val input = "Write#(\"a.txt\") :- A(x)."
-    val past = new Parser(SourceInput.Str(input)).RuleDeclaration.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.isFailure)
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Terms                                                                   //
   /////////////////////////////////////////////////////////////////////////////

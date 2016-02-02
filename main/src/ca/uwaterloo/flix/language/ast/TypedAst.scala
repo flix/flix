@@ -679,35 +679,6 @@ object TypedAst {
         @deprecated("moved to ExecutableAST", "0.1")
         val termsArray: Array[TypedAst.Term.Head] = terms.toArray
       }
-
-      /**
-        * A typed trace predicate that occurs in the head of a rule.
-        *
-        * @param terms the terms of the predicate.
-        * @param tpe   the type of the predicate.
-        * @param loc   the source location.
-        */
-      case class Trace(terms: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
-
-      /**
-        * A typed write predicate that occurs in the head of a rule.
-        *
-        * @param terms the terms of the predicate.
-        * @param path  the path to write to.
-        * @param tpe   the type of the predicate.
-        * @param loc   the source location.
-        */
-      case class Write(terms: List[TypedAst.Term.Head], path: TypedAst.Term.Head, tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
-
-      /**
-        * A typed error predicate that occurs in the head of a rule.
-        *
-        * @param terms the terms of the predicate.
-        * @param tpe   the type of the predicate.
-        * @param loc   the source location.
-        */
-      case class Error(terms: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
-
     }
 
     /**
@@ -735,7 +706,6 @@ object TypedAst {
           case (xs, t: TypedAst.Term.Body.Lit) => xs
         }
         case TypedAst.Predicate.Body.NotEqual(x, y, _, _) => Set(x.name, y.name)
-        case TypedAst.Predicate.Body.Read(terms, body, _, _) => ???
         case TypedAst.Predicate.Body.Loop(_, _, _, _) => ???
       }
     }
@@ -829,17 +799,6 @@ object TypedAst {
         * @param loc   the source location.
         */
       case class Loop(ident: Name.Ident, term: TypedAst.Term.Head, tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Body
-
-      /**
-        * A typed read predicate that occurs in the head of a rule.
-        *
-        * @param terms the terms of the predicate.
-        * @param path  the path to read from.
-        * @param tpe   the type of the predicate.
-        * @param loc   the source location.
-        */
-      case class Read(terms: List[TypedAst.Term.Body], path: TypedAst.Term.Body, tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Body
-
 
     }
 

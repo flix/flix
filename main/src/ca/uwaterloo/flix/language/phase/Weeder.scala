@@ -146,21 +146,6 @@ object Weeder {
     }
 
     /**
-      * An error raised to indicate that a predicate is not allowed in the body rule.
-      *
-      * @param loc the location where the illegal predicate occurs.
-      */
-    case class IllegalBodyPredicate(loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-            |${consoleCtx.red(s">> Illegal predicate in the body of a rule.")}
-           |
-            |${loc.underline}
-         """.stripMargin
-    }
-
-    /**
       * An error raised to indicate that a read predicate has too few arguments.
       *
       * @param loc the location where the illegal predicate occurs.
@@ -811,25 +796,8 @@ object Weeder {
             case terms => WeededAst.Predicate.Head.Relation(p.name, terms, p.loc)
           }
 
-        case p: ParsedAst.Predicate.Trace =>
-          @@(p.terms.map(t => Term.Head.compile(t, aliases))) map {
-            case terms => WeededAst.Predicate.Head.Trace(terms, p.loc)
-          }
-
-        case p: ParsedAst.Predicate.Write =>
-          @@(p.terms.map(t => Term.Head.compile(t, aliases))) flatMap {
-            case terms if terms.size < 2 => IllegalWritePredicate(p.loc).toFailure
-            case terms => WeededAst.Predicate.Head.Write(terms.dropRight(1), terms.last, p.loc).toSuccess
-          }
-
-        case p: ParsedAst.Predicate.Error =>
-          @@(p.terms map (t => Term.Head.compile(t, aliases))) map {
-            case terms => WeededAst.Predicate.Head.Error(terms, p.loc)
-          }
-
         case p: ParsedAst.Predicate.Alias => IllegalHeadPredicate(p.loc).toFailure
         case p: ParsedAst.Predicate.Loop => IllegalHeadPredicate(p.loc).toFailure
-        case p: ParsedAst.Predicate.Read => IllegalHeadPredicate(p.loc).toFailure
         case p: ParsedAst.Predicate.NotEqual => IllegalHeadPredicate(p.loc).toFailure
       }
 
@@ -853,15 +821,6 @@ object Weeder {
           case term => WeededAst.Predicate.Body.Loop(p.ident, term, p.loc)
         }
 
-        case p: ParsedAst.Predicate.Read =>
-          @@(p.terms.map(t => Term.Body.compile(t))) flatMap {
-            case terms if terms.size < 2 => IllegalReadPredicate(p.loc).toFailure
-            case terms => WeededAst.Predicate.Body.Read(terms.dropRight(1), terms.last, p.loc).toSuccess
-          }
-
-        case p: ParsedAst.Predicate.Trace => IllegalBodyPredicate(p.loc).toFailure
-        case p: ParsedAst.Predicate.Write => IllegalBodyPredicate(p.loc).toFailure
-        case p: ParsedAst.Predicate.Error => IllegalBodyPredicate(p.loc).toFailure
         case p: ParsedAst.Predicate.Alias => throw Compiler.InternalCompilerError("Alias predicate should already have been eliminated.")
       }
     }

@@ -251,31 +251,6 @@ object ResolvedAst {
         */
       case class Relation(name: Name.Resolved, terms: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
-      /**
-        * A special trace predicate that occurs in the head of a rule.
-        *
-        * @param terms the terms of the predicate.
-        * @param loc   the source location.
-        */
-      case class Trace(terms: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Predicate.Head
-
-      /**
-        * A special write predicate that occurs in the head of a fact/rule.
-        *
-        * @param terms the terms of the predicate.
-        * @param path  the path to write to.
-        * @param loc   the source location.
-        */
-      case class Write(terms: List[ResolvedAst.Term.Head], path: ResolvedAst.Term.Head, loc: SourceLocation) extends ResolvedAst.Predicate.Head
-
-      /**
-        * A special error predicate that occurs in the head of a fact/rule.
-        *
-        * @param terms the terms of the predicate.
-        * @param loc   the source location.
-        */
-      case class Error(terms: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Predicate.Head
-
     }
 
     /**
@@ -329,11 +304,6 @@ object ResolvedAst {
         * @param loc   the source location.
         */
       case class Loop(ident: Name.Ident, term: ResolvedAst.Term.Head, loc: SourceLocation) extends ResolvedAst.Predicate.Body
-
-      /**
-        * A special read predicate that occurs in the body of a rule.
-        */
-      case class Read(terms: List[ResolvedAst.Term.Body], path: ResolvedAst.Term.Body, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
     }
 

@@ -188,12 +188,6 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         i = i + 1
       }
       inferredFact(p.name, fact, enqueue)
-    case p: Predicate.Head.Trace =>
-      val row = p.terms map (t => Value.pretty(Interpreter.evalHeadTerm(t, sCtx.root, env0)))
-      val out = "Trace(" + row.mkString(", ") + ")"
-      Console.println(out)
-    case p: Predicate.Head.Write => // NOP - used when the fixpoint has been found.
-    case p: Predicate.Head.Error => // NOP - used when the fixpoint has been found.
   }
 
 

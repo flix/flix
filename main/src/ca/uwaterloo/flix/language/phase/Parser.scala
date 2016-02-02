@@ -341,7 +341,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    FunctionOrRelationPredicate | NotEqualPredicate | TracePredicate | ReadPredicate | WritePredicate | ErrorPredicate | AliasPredicate | LoopPredicate
+    FunctionOrRelationPredicate | NotEqualPredicate | AliasPredicate | LoopPredicate
   }
 
   def FunctionOrRelationPredicate: Rule1[ParsedAst.Predicate.Ambiguous] = rule {
@@ -350,22 +350,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def NotEqualPredicate: Rule1[ParsedAst.Predicate.NotEqual] = rule {
     SP ~ Ident ~ optWS ~ atomic("!=") ~ optWS ~ Ident ~ SP ~> ParsedAst.Predicate.NotEqual
-  }
-
-  def TracePredicate: Rule1[ParsedAst.Predicate.Trace] = rule {
-    SP ~ atomic("Trace#") ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Trace
-  }
-
-  def ReadPredicate: Rule1[ParsedAst.Predicate.Read] = rule {
-    SP ~ atomic("Read#") ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Read
-  }
-
-  def WritePredicate: Rule1[ParsedAst.Predicate.Write] = rule {
-    SP ~ atomic("Write#") ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Write
-  }
-
-  def ErrorPredicate: Rule1[ParsedAst.Predicate.Error] = rule {
-    SP ~ atomic("Error#") ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Error
   }
 
   def AliasPredicate: Rule1[ParsedAst.Predicate.Alias] = rule {

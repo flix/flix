@@ -490,31 +490,6 @@ object WeededAst {
         */
       case class Relation(name: Name.Unresolved, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
-      /**
-        * An AST node that represents the special trace predicate.
-        *
-        * @param terms the terms of the predicate.
-        * @param loc   the source location.
-        */
-      case class Trace(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
-
-      /**
-        * An AST node that represents the special write predicate.
-        *
-        * @param terms the terms of the predicate.
-        * @param path  the path to write to.
-        * @param loc   the source location.
-        */
-      case class Write(terms: List[WeededAst.Term.Head], path: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Predicate.Head
-
-      /**
-        * An AST node that represents the special error predicate.
-        *
-        * @param terms the terms of the predicate.
-        * @param loc   the source location.
-        */
-      case class Error(terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
-
     }
 
     /**
@@ -550,15 +525,6 @@ object WeededAst {
         * @param loc   the source location.
         */
       case class Loop(ident: Name.Ident, term: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Predicate.Body
-
-      /**
-        * An AST node that represents the special read predicate.
-        *
-        * @param terms the terms of the predicate.
-        * @param path  the path to read from.
-        * @param loc   the source location.
-        */
-      case class Read(terms: List[WeededAst.Term.Body], path: WeededAst.Term.Body, loc: SourceLocation) extends WeededAst.Predicate.Body
 
     }
 

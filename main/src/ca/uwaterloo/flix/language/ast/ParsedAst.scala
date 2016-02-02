@@ -29,6 +29,10 @@ import scala.collection.immutable.Seq
 //      case #Set{42} => singleton with literao 42
 //      case #Set{x, 42, y, rest...} => // set with two elements x and y, and 42, and rest...
 //    }
+// TODO: Introduce type classes.
+// TODO: Introduce type bounds.
+// TODO: Introduce extern.
+// TODO: Why have literals?
 
 
 /**
@@ -254,14 +258,9 @@ object ParsedAst {
 
   }
 
-  // TODO: Introduce type classes.
-  // TODO: Introduce type bounds.
-  // TODO: Introduce extern.
-
   /**
     * A common super-type for AST node that represents literals.
     */
-  // TODO: Why have literals?
   sealed trait Literal {
     /**
       * Returns the source location of `this` literal.
@@ -717,50 +716,6 @@ object ParsedAst {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
-    /**
-      * An AST node that represents the special trace predicate.
-      *
-      * @param sp1   the position of the first character in the predicate.
-      * @param terms the terms of the predicate.
-      * @param sp2   the position of the last character in the predicate.
-      */
-    case class Trace(sp1: SourcePosition, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
-      * An AST node that represents the special read predicate.
-      *
-      * @param sp1   the position of the first character in the predicate.
-      * @param terms the terms of the predicate.
-      * @param sp2   the position of the last character in the predicate.
-      */
-    case class Read(sp1: SourcePosition, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
-      * An AST node that represents the special write predicate.
-      *
-      * @param sp1   the position of the first character in the predicate.
-      * @param terms the terms of the predicate.
-      * @param sp2   the position of the last character in the predicate.
-      */
-    case class Write(sp1: SourcePosition, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
-      * An AST node that represents the special error predicate.
-      *
-      * @param sp1   the position of the first character in the predicate.
-      * @param terms the terms of the predicate.
-      * @param sp2   the position of the last character in the predicate.
-      */
-    case class Error(sp1: SourcePosition, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
   }
 
   /**
@@ -894,9 +849,12 @@ object ParsedAst {
   }
 
   /**
+    * An AST node representing a case declaration.
     *
-    * @param sp1
-    * @param sp2
+    * @param sp1   the position of the first character in the case declaration.
+    * @param ident the name of the declared tag.
+    * @param tpe   the type of the declared tag
+    * @param sp2   the position of the last character in the case declaration.
     */
   case class Case(sp1: SourcePosition, ident: Name.Ident, tpe: Type, sp2: SourcePosition) extends ParsedAst {
     def loc: SourceLocation = SourceLocation.mk(sp1, sp2)

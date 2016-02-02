@@ -605,26 +605,6 @@ object Typer {
               }
           }
 
-        case ResolvedAst.Predicate.Head.Trace(rterms, loc) =>
-          // TODO: This needs to use proper unification
-          @@(rterms map (t => Term.typer(t, Type.Var("x"), root))) map {
-            // TODO: The use of Type.Bool here is kind of spurious.
-            case terms => TypedAst.Predicate.Head.Trace(terms, Type.Bool, loc)
-          }
-
-        case ResolvedAst.Predicate.Head.Write(rterms, rpath, loc) =>
-          // TODO: This needs to use proper unification
-          @@(@@(rterms map (t => Term.typer(t, Type.Var("x"), root))), Term.typer(rpath, Type.Str, root)) map {
-            // TODO: The use of Type.Bool here is kind of spurious.
-            case (terms, path) => TypedAst.Predicate.Head.Write(terms, path, Type.Bool, loc)
-          }
-
-        case ResolvedAst.Predicate.Head.Error(rterms, loc) =>
-          // TODO: This needs to use proper unification
-          @@(rterms map (t => Term.typer(t, Type.Var("x"), root))) map {
-            // TODO: The use of Type.Bool here is kind of spurious.
-            case terms => TypedAst.Predicate.Head.Error(terms, Type.Bool, loc)
-          }
       }
     }
 
@@ -687,13 +667,6 @@ object Typer {
         case ResolvedAst.Predicate.Body.Loop(ident, rterm, loc) =>
           Term.typer(rterm, Type.Any, root) map {
             case term => TypedAst.Predicate.Body.Loop(ident, term, Type.Bool, loc) // TODO: Type
-          }
-
-        case ResolvedAst.Predicate.Body.Read(rterms, rpath, loc) =>
-          // TODO: This needs to use proper unification
-          @@(@@(rterms map (t => Term.typer(t, Type.Var("x"), root))), Term.typer(rpath, Type.Str, root)) map {
-            // TODO: The use of Type.Bool here is kind of spurious.
-            case (terms, path) => TypedAst.Predicate.Body.Read(terms, path, Type.Bool, loc)
           }
 
       }

@@ -787,21 +787,6 @@ object Resolver {
               case terms => ResolvedAst.Predicate.Head.Relation(rname, terms, loc)
             }
           }
-
-        case WeededAst.Predicate.Head.Trace(wterms, loc) =>
-          @@(wterms map (t => Term.Head.resolve(t, namespace, syms))) map {
-            case terms => ResolvedAst.Predicate.Head.Trace(terms, loc)
-          }
-
-        case WeededAst.Predicate.Head.Write(wterms, wpath, loc) =>
-          @@(@@(wterms map (t => Term.Head.resolve(t, namespace, syms))), Term.Head.resolve(wpath, namespace, syms)) map {
-            case (terms, path) => ResolvedAst.Predicate.Head.Write(terms, path, loc)
-          }
-
-        case WeededAst.Predicate.Head.Error(wterms, loc) =>
-          @@(wterms map (t => Term.Head.resolve(t, namespace, syms))) map {
-            case terms => ResolvedAst.Predicate.Head.Error(terms, loc)
-          }
       }
     }
 
@@ -830,11 +815,6 @@ object Resolver {
         case WeededAst.Predicate.Body.Loop(ident, term, loc) =>
           Term.Head.resolve(term, namespace, syms) map {
             case term => ResolvedAst.Predicate.Body.Loop(ident, term, loc)
-          }
-
-        case WeededAst.Predicate.Body.Read(wterms, wpath, loc) =>
-          @@(@@(wterms map (t => Term.Body.resolve(t, namespace, syms))), Term.Body.resolve(wpath, namespace, syms)) map {
-            case (terms, path) => ResolvedAst.Predicate.Body.Read(terms, path, loc)
           }
       }
     }

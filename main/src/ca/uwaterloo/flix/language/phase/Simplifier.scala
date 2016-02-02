@@ -272,9 +272,6 @@ object Simplifier {
       def simplify(tast: TypedAst.Predicate.Head)(implicit genSym: GenSym): SimplifiedAst.Predicate.Head = tast match {
         case TypedAst.Predicate.Head.Relation(name, terms, tpe, loc) =>
           SimplifiedAst.Predicate.Head.Relation(name, terms map Term.simplify, tpe, loc)
-        case TypedAst.Predicate.Head.Error(terms, tpe, loc) => throw new UnsupportedOperationException // TODO: To be removed?
-        case TypedAst.Predicate.Head.Trace(terms, tpe, loc) => throw new UnsupportedOperationException // TODO: To be removed?
-        case TypedAst.Predicate.Head.Write(terms, path, tpe, loc) => throw new UnsupportedOperationException // TODO: To be removed?
       }
     }
 
@@ -288,7 +285,6 @@ object Simplifier {
           SimplifiedAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc)
         case TypedAst.Predicate.Body.Loop(ident, term, tpe, loc) =>
           SimplifiedAst.Predicate.Body.Loop(ident, Term.simplify(term), tpe, loc)
-        case TypedAst.Predicate.Body.Read(terms, path, tpe, loc) => throw new UnsupportedOperationException // TODO: to be removed?
       }
     }
 
