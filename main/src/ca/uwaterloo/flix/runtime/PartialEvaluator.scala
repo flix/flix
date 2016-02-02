@@ -333,7 +333,7 @@ object PartialEvaluator {
             k(e)
           case r =>
             // Case 2: The expression is residual. Reconstruct the expression.
-            GetTagValue(r, tpe, loc)
+            k(GetTagValue(r, tpe, loc))
         })
 
       case Tag(enum, tag, exp1, tpe, loc) =>

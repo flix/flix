@@ -699,10 +699,11 @@ object Verifier {
       case env0 => PartialEvaluator.eval(exp0, root, env0) match {
         case Expression.True =>
           // Case 1: The partial evaluator proved the property.
-          Console.println("Proved: " + property)
+          Console.println("Successfully proved: " + property)
           Nil
         case Expression.False =>
           // Case 2: The partial evaluator disproved the property.
+          Console.println("Failed to prove: " + property)
           List(property.fail(env0))
         case residual =>
           // Case 3: The partial evaluator reduced the expression, but it is still residual.
