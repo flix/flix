@@ -113,8 +113,6 @@ object ResolvedAst {
 
     case class AssertRule(rule: ResolvedAst.Constraint.Rule, loc: SourceLocation) extends ResolvedAst.Directive
 
-    case class Print(name: Name.Resolved, loc: SourceLocation) extends ResolvedAst.Directive
-
   }
 
   sealed trait Literal

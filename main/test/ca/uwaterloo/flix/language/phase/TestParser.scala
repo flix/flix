@@ -222,12 +222,6 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Directive.AssertRule])
   }
 
-  test("Directive.Print01") {
-    val input = "print H."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Directive.Print])
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////

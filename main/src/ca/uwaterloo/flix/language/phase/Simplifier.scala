@@ -67,7 +67,6 @@ object Simplifier {
     def simplify(tast: TypedAst.Directive)(implicit genSym: GenSym): SimplifiedAst.Directive = tast match {
       case TypedAst.Directive.AssertFact(fact, loc) => throw new UnsupportedOperationException // TODO: To be removed?
       case TypedAst.Directive.AssertRule(rule, loc) => throw new UnsupportedOperationException // TODO: To be removed?
-      case TypedAst.Directive.Print(name, loc) => throw new UnsupportedOperationException // TODO: To be removed?
     }
   }
 

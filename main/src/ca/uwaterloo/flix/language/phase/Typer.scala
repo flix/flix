@@ -272,7 +272,6 @@ object Typer {
       case ResolvedAst.Directive.AssertRule(rule, loc) => Constraint.typer(rule, root) map {
         case r => TypedAst.Directive.AssertRule(r, loc)
       }
-      case ResolvedAst.Directive.Print(name, loc) => TypedAst.Directive.Print(name, loc).toSuccess
     }
 
   }

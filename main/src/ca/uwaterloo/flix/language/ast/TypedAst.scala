@@ -222,13 +222,6 @@ object TypedAst {
       case d: TypedAst.Directive.AssertRule => d
     }
 
-    /**
-      * A collection print directives in the program.
-      */
-    @deprecated("moved to ExecutableAST", "0.1")
-    val prints: List[TypedAst.Directive.Print] = directives collect {
-      case d: TypedAst.Directive.Print => d
-    }
   }
 
   /**
@@ -253,15 +246,6 @@ object TypedAst {
       * @param loc  the source location of the directive.
       */
     case class AssertRule(rule: TypedAst.Constraint.Rule, loc: SourceLocation) extends TypedAst.Directive
-
-    /**
-      * A typed directive asserting that relation should be printed.
-      *
-      * @param name the name of the relation.
-      * @param loc  the source location of the directive.
-      */
-    case class Print(name: Name.Resolved, loc: SourceLocation) extends TypedAst.Directive
-
   }
 
   /**

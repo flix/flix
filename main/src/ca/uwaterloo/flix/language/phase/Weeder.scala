@@ -558,7 +558,6 @@ object Weeder {
       case d: ParsedAst.Directive.AssertRule => Declaration.compile(d.rule) map {
         case rule => WeededAst.Directive.AssertRule(rule, d.loc)
       }
-      case d: ParsedAst.Directive.Print => WeededAst.Directive.Print(d.name, d.loc).toSuccess
     }
 
   }

@@ -564,9 +564,6 @@ object Resolver {
             case r => List(ResolvedAst.Directive.AssertRule(r, loc))
           }
 
-        case WeededAst.Directive.Print(name, loc) => syms.lookupRelation(name, namespace) map {
-          case (rname, defn) => List(ResolvedAst.Directive.Print(rname, loc))
-        }
         case _ => List.empty[ResolvedAst.Directive].toSuccess
       }
 

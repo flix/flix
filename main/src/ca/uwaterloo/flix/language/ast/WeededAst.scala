@@ -169,14 +169,6 @@ object WeededAst {
       */
     case class AssertRule(rule: WeededAst.Declaration.Rule, loc: SourceLocation) extends WeededAst.Directive
 
-    /**
-      * An AST node that represents a directive to print a relation.
-      *
-      * @param name the name of the relation.
-      * @param loc  the source location.
-      */
-    case class Print(name: Name.Unresolved, loc: SourceLocation) extends WeededAst.Directive
-
   }
 
   /**

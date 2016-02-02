@@ -312,9 +312,4 @@ class TestExamples extends FunSuite {
     assert(model.isSuccess)
   }
 
-  ignore("University.flix") {
-    val model = new Flix().addPath("./examples/entities/University.flix").solve()
-    assert(model.isSuccess)
-  }
-
 }

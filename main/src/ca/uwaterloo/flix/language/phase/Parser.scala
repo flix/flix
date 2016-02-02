@@ -132,7 +132,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // NB: AssertRuleDirective must be parsed before AssertFactDirective.
   def Directive: Rule1[ParsedAst.Directive] = rule {
-    AssertRuleDirective | AssertFactDirective | PrintDirective
+    AssertRuleDirective | AssertFactDirective
   }
 
   def AssertFactDirective: Rule1[ParsedAst.Directive.AssertFact] = rule {
@@ -141,10 +141,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def AssertRuleDirective: Rule1[ParsedAst.Directive.AssertRule] = rule {
     SP ~ atomic("assert") ~ WS ~ RuleDeclaration ~ SP ~> ParsedAst.Directive.AssertRule
-  }
-
-  def PrintDirective: Rule1[ParsedAst.Directive.Print] = rule {
-    SP ~ atomic("print") ~ WS ~ QName ~ optDotOrSC ~ SP ~> ParsedAst.Directive.Print
   }
 
   /////////////////////////////////////////////////////////////////////////////
