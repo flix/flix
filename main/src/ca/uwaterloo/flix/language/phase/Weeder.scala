@@ -231,7 +231,7 @@ object Weeder {
       *
       * @param loc the location where the illegal definition occurs.
       */
-    case class IllegalBoundedLattice(loc: SourceLocation) extends WeederError {
+    case class IllegalLattice(loc: SourceLocation) extends WeederError {
       val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
@@ -510,7 +510,7 @@ object Weeder {
       val elmsVal = @@(past.elms.toList.map(Expression.compile))
       elmsVal flatMap {
         case List(bot, top, leq, lub, glb) => WeededAst.Definition.BoundedLattice(past.tpe, bot, top, leq, lub, glb, past.loc).toSuccess
-        case _ => IllegalBoundedLattice(past.loc).toFailure
+        case _ => IllegalLattice(past.loc).toFailure
       }
     }
 

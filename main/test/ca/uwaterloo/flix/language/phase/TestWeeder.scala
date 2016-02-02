@@ -189,6 +189,25 @@ class TestWeeder extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Illegal Lattice                                                         //
+  /////////////////////////////////////////////////////////////////////////////
+  test("IllegalLattice01") {
+    val input =
+      """let Foo<> = (1, 2)
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalLattice])
+  }
+
+  test("IllegalLattice02") {
+    val input =
+      """let Foo<> = (1, 2, 3, 4, 5, 6, 7, 8, 9)
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalLattice])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Non Linear Pattern                                                      //
   /////////////////////////////////////////////////////////////////////////////
   test("NonLinearPattern01") {
