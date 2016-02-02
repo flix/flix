@@ -160,7 +160,7 @@ object ExecutableAst {
     }
 
     case class Int(lit: scala.Int) extends ExecutableAst.Expression {
-      final val tpe = Type.Int
+      final val tpe = Type.Int32
     }
 
     case class Str(lit: java.lang.String) extends ExecutableAst.Expression {

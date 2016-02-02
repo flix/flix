@@ -30,7 +30,7 @@ class TestCodegen extends FunSuite {
   val identT = toIdent("Top")
 
   val tagTpeB = Type.Tag(constPropName, identB, Type.Unit)
-  val tagTpeV = Type.Tag(constPropName, identV, Type.Int)
+  val tagTpeV = Type.Tag(constPropName, identV, Type.Int32)
   val tagTpeT = Type.Tag(constPropName, identT, Type.Unit)
   val enumTpe = Type.Enum(Name.Resolved.mk("ConstProp"), Map("ConstProp.Bot" -> tagTpeB, "ConstProp.Val" -> tagTpeV, "ConstProp.Top" -> tagTpeT))
 
@@ -6057,10 +6057,10 @@ class TestCodegen extends FunSuite {
   test("Codegen - Tag08") {
     val tagName = Name.Resolved.mk("abc")
     val ident = toIdent("def")
-    val enum = Type.Enum(Name.Resolved.mk("abc"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int, Type.Str)))))
+    val enum = Type.Enum(Name.Resolved.mk("abc"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int32, Type.Str)))))
     val definition = Function(name, args = List(),
       body = Tag(tagName, ident, Tuple(List(Int32(1), Str("one", loc)),
-        Type.Tuple(List(Type.Int, Type.Str)), loc), enum, loc),
+        Type.Tuple(List(Type.Int32, Type.Str)), loc), enum, loc),
       Type.Lambda(List(), enum), loc)
 
     val code = new CompiledCode(List(definition))
@@ -6136,12 +6136,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - GetTagValue03") {
     val tagName = Name.Resolved.mk("abc")
     val ident = toIdent("def")
-    val enum = Type.Enum(Name.Resolved.mk("abc"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int, Type.Str)))))
+    val enum = Type.Enum(Name.Resolved.mk("abc"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int32, Type.Str)))))
 
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
         exp1 = Tag(tagName, ident, Tuple(List(Int32(1), Str("one", loc)),
-          Type.Tuple(List(Type.Int, Type.Str)), loc), enum, loc),
+          Type.Tuple(List(Type.Int32, Type.Str)), loc), enum, loc),
         exp2 = GetTagValue(Var(toIdent("x"), 0, enum, loc), Type.Tuple(List(Type.Int32, Type.Str)), loc),
         Type.Unit, loc),
       Type.Lambda(List(), Type.Tuple(List(Type.Int32, Type.Str))), loc)

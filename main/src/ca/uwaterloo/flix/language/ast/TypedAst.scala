@@ -307,7 +307,7 @@ object TypedAst {
       * @param loc the source location.
       */
     case class Int(lit: scala.Int, loc: SourceLocation) extends TypedAst.Literal {
-      final val tpe = Type.Int
+      final val tpe = Type.Int32
     }
 
     /**

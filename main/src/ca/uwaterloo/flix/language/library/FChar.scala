@@ -73,7 +73,7 @@ object FChar {
   // Char Conversions                                                        //
   /////////////////////////////////////////////////////////////////////////////
   object toInt extends CharOperator {
-    val tpe = Type.Char ~> Type.Int
+    val tpe = Type.Char ~> Type.Int32
   }
 
   object toLower extends CharOperator {

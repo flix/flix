@@ -380,13 +380,13 @@ object Typer {
             }
           case UnaryOperator.Plus | UnaryOperator.Minus =>
             visit(re, env) flatMap {
-              case e => expect(Type.Int, e.tpe, loc) map {
+              case e => expect(Type.Int32, e.tpe, loc) map {
                 case tpe => TypedAst.Expression.Unary(op, e, tpe, loc)
               }
             }
           case UnaryOperator.BitwiseNegate =>
             visit(re, env) flatMap {
-              case e => expect(Type.Int, e.tpe, loc) map {
+              case e => expect(Type.Int32, e.tpe, loc) map {
                 case tpe => TypedAst.Expression.Unary(op, e, tpe, loc)
               }
             }
@@ -396,8 +396,8 @@ object Typer {
         case ResolvedAst.Expression.Binary(op, re1, re2, loc) => op match {
           case _: ArithmeticOperator =>
             @@(visit(re1, env), visit(re2, env)) flatMap {
-              case (e1, e2) => @@(expect(Type.Int, e1.tpe, e1.loc), expect(Type.Int, e2.tpe, e2.loc)) map {
-                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, Type.Int, loc)
+              case (e1, e2) => @@(expect(Type.Int32, e1.tpe, e1.loc), expect(Type.Int32, e2.tpe, e2.loc)) map {
+                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, Type.Int32, loc)
               }
             }
           case _: EqualityOperator =>
@@ -408,7 +408,7 @@ object Typer {
             }
           case _: ComparisonOperator =>
             @@(visit(re1, env), visit(re2, env)) flatMap {
-              case (e1, e2) => @@(expect(Type.Int, e1.tpe, e1.loc), expect(Type.Int, e2.tpe, e2.loc)) map {
+              case (e1, e2) => @@(expect(Type.Int32, e1.tpe, e1.loc), expect(Type.Int32, e2.tpe, e2.loc)) map {
                 case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc)
               }
             }
@@ -420,8 +420,8 @@ object Typer {
             }
           case _: BitwiseOperator =>
             @@(visit(re1, env), visit(re2, env)) flatMap {
-              case (e1, e2) => @@(expect(Type.Int, e1.tpe, e1.loc), expect(Type.Int, e2.tpe, e2.loc)) map {
-                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, Type.Int, loc)
+              case (e1, e2) => @@(expect(Type.Int32, e1.tpe, e1.loc), expect(Type.Int32, e2.tpe, e2.loc)) map {
+                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, Type.Int32, loc)
               }
             }
         }
@@ -818,7 +818,7 @@ object Typer {
     case Type.Var(x) => s"Var($x)"
     case Type.Unit => s"()"
     case Type.Bool => s"Bool"
-    case Type.Int => s"Int"
+    case Type.Int32 => s"Int"
     case Type.Str => s"Str"
     case Type.Tag(enumName, tagName, t) =>
       val enumAndTag = enumName.parts.mkString("::") + "." + tagName.name

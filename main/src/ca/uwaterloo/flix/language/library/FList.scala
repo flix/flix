@@ -179,7 +179,7 @@ object FList {
   }
 
   object length extends ListOperator {
-    val tpe = Lst(A) ~> Int
+    val tpe = Lst(A) ~> Int32
   }
 
   object append extends ListOperator {
@@ -187,7 +187,7 @@ object FList {
   }
 
   object at extends ListOperator {
-    val tpe = (Int, Lst(A)) ~> A
+    val tpe = (Int32, Lst(A)) ~> A
   }
 
   object memberOf extends ListOperator {
@@ -195,7 +195,7 @@ object FList {
   }
 
   object indexOf extends ListOperator {
-    val tpe = (A, Lst(A)) ~> Int
+    val tpe = (A, Lst(A)) ~> Int32
   }
 
   object findLeft extends ListOperator {
@@ -210,11 +210,11 @@ object FList {
   // List Building                                                           //
   /////////////////////////////////////////////////////////////////////////////
   object range extends ListOperator {
-    val tpe = (Int, Int) ~> Lst(Int)
+    val tpe = (Int32, Int32) ~> Lst(Int32)
   }
 
   object repeat extends ListOperator {
-    val tpe = (A, Int) ~> Lst(A)
+    val tpe = (A, Int32) ~> Lst(A)
   }
 
   object scanLeft extends ListOperator {
@@ -233,7 +233,7 @@ object FList {
   }
 
   object mapWithIndex extends ListOperator {
-    val tpe = ((A, Int) ~> B, Lst(A)) ~> Lst(B)
+    val tpe = ((A, Int32) ~> B, Lst(A)) ~> Lst(B)
   }
 
   object flatMap extends ListOperator {
@@ -245,19 +245,19 @@ object FList {
   }
 
   object rotateLeft extends ListOperator {
-    val tpe = (Int, Lst(A)) ~> Lst(A)
+    val tpe = (Int32, Lst(A)) ~> Lst(A)
   }
 
   object rotateRight extends ListOperator {
-    val tpe = (Int, Lst(A)) ~> Lst(A)
+    val tpe = (Int32, Lst(A)) ~> Lst(A)
   }
 
   object replace extends ListOperator {
-    val tpe = (Int, A, Lst(A)) ~> Lst(A)
+    val tpe = (Int32, A, Lst(A)) ~> Lst(A)
   }
 
   object patch extends ListOperator {
-    val tpe = (Int, Int, Lst(A), Lst(A)) ~> Lst(A)
+    val tpe = (Int32, Int32, Lst(A), Lst(A)) ~> Lst(A)
   }
 
   object permutations extends ListOperator {
@@ -326,7 +326,7 @@ object FList {
   // Special Folds                                                           //
   /////////////////////////////////////////////////////////////////////////////
   object count extends ListOperator {
-    val tpe = (A ~> Bool, Lst(A)) ~> Int
+    val tpe = (A ~> Bool, Lst(A)) ~> Int32
   }
 
   object concat extends ListOperator {
@@ -357,7 +357,7 @@ object FList {
   }
 
   object slice extends ListOperator {
-    val tpe = (Int, Int, Lst(A)) ~> Lst(A)
+    val tpe = (Int32, Int32, Lst(A)) ~> Lst(A)
   }
 
   object partition extends ListOperator {
@@ -369,7 +369,7 @@ object FList {
   }
 
   object drop extends ListOperator {
-    val tpe = (Int, Lst(A)) ~> Lst(A)
+    val tpe = (Int32, Lst(A)) ~> Lst(A)
   }
 
   object dropWhile extends ListOperator {
@@ -377,7 +377,7 @@ object FList {
   }
 
   object take extends ListOperator {
-    val tpe = (Int, Lst(A)) ~> Lst(A)
+    val tpe = (Int32, Lst(A)) ~> Lst(A)
   }
 
   object takeWhile extends ListOperator {
@@ -388,19 +388,19 @@ object FList {
   // Aggregation and Sorting                                                 //
   /////////////////////////////////////////////////////////////////////////////
   object sum extends ListOperator {
-    val tpe = Lst(Int) ~> Int
+    val tpe = Lst(Int32) ~> Int32
   }
 
   object product extends ListOperator {
-    val tpe = Lst(Int) ~> Int
+    val tpe = Lst(Int32) ~> Int32
   }
 
   object min extends ListOperator {
-    val tpe = Lst(Int) ~> Int
+    val tpe = Lst(Int32) ~> Int32
   }
 
   object max extends ListOperator {
-    val tpe = Lst(Int) ~> Int
+    val tpe = Lst(Int32) ~> Int32
   }
 
   object minBy extends ListOperator {

@@ -907,7 +907,7 @@ object Resolver {
         case Type.Unit => Type.Unit.toSuccess
         case Type.Named(name) => name.parts match {
           case Seq("Bool") => Type.Bool.toSuccess
-          case Seq("Int") => Type.Int.toSuccess
+          case Seq("Int") => Type.Int32.toSuccess
           case Seq("Str") => Type.Str.toSuccess
           case _ => syms.lookupType(name, namespace) flatMap (tpe => visit(tpe))
         }

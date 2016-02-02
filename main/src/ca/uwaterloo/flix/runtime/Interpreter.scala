@@ -26,7 +26,7 @@ object Interpreter {
    * Assumes all input has been type-checked.
    */
   def eval(expr: Expression, root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef = expr.tpe match {
-    case Type.Int => Value.mkInt32(evalInt(expr, root, env))
+    case Type.Int32 => Value.mkInt32(evalInt(expr, root, env))
     case Type.Bool => if (evalBool(expr, root, env)) Value.True else Value.False
     case Type.Str => evalGeneral(expr, root, env)
     case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |

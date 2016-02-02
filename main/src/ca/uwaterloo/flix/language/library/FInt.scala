@@ -47,13 +47,13 @@ object FInt {
   // Int Constants                                                           //
   /////////////////////////////////////////////////////////////////////////////
   object minValue extends IntOperator {
-    val tpe = () ~> Type.Int
+    val tpe = () ~> Type.Int32
 
     def apply(): Int = Int.MinValue
   }
 
   object maxValue extends IntOperator {
-    val tpe = () ~> Type.Int
+    val tpe = () ~> Type.Int32
 
     def apply(): Int = Int.MaxValue
   }
@@ -62,19 +62,19 @@ object FInt {
   // Int Operations                                                          //
   /////////////////////////////////////////////////////////////////////////////
   object abs extends IntOperator {
-    val tpe = (Type.Int, Type.Int) ~> Type.Int
+    val tpe = (Type.Int32, Type.Int32) ~> Type.Int32
 
     def apply(x: Int): Int = math.abs(x)
   }
 
   object min extends IntOperator {
-    val tpe = (Type.Int, Type.Int) ~> Type.Int
+    val tpe = (Type.Int32, Type.Int32) ~> Type.Int32
 
     def apply(x: Int, y: Int): Int = math.min(x, y)
   }
 
   object max extends IntOperator {
-    val tpe = (Type.Int, Type.Int) ~> Type.Int
+    val tpe = (Type.Int32, Type.Int32) ~> Type.Int32
 
     def apply(x: Int, y: Int): Int = math.max(x, y)
   }
@@ -83,7 +83,7 @@ object FInt {
   // Int Conversions                                                         //
   /////////////////////////////////////////////////////////////////////////////
   object toChar extends IntOperator {
-    val tpe = Type.Int ~> Type.Char
+    val tpe = Type.Int32 ~> Type.Char
 
     def apply(x: Int): Char = ???
   }

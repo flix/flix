@@ -1,7 +1,5 @@
 package ca.uwaterloo.flix.language.ast
 
-// TODO: Cleanup this class.
-
 /**
   * A common super-type for types.
   */
@@ -23,9 +21,6 @@ object Type {
     * An AST node representing the Boolean type.
     */
   case object Bool extends Type
-
-  // TODO: Eventually we'll want to use the specialized ints below, and this will alias to Int32
-  case object Int extends Type
 
   /**
     * An AST node representing the 8-bit signed integer type, i.e. a byte.
@@ -68,9 +63,6 @@ object Type {
     */
   case class Enum(name: Name.Resolved, cases: scala.collection.immutable.Map[String, Type.Tag]) extends Type
 
-
-  // TDOO: need this one?
-  case class UnresolvedEnum(name: Name.Ident, cases: scala.collection.immutable.Map[String, Type.Tag]) extends Type
 
   case class UnresolvedTag(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends Type
 

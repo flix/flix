@@ -35,7 +35,7 @@ object Codegen {
     case Type.Bool => asm.Type.BOOLEAN_TYPE.getDescriptor
     case Type.Int8 => asm.Type.BYTE_TYPE.getDescriptor
     case Type.Int16 => asm.Type.SHORT_TYPE.getDescriptor
-    case Type.Int32 | Type.Int => asm.Type.INT_TYPE.getDescriptor
+    case Type.Int32 | Type.Int32 => asm.Type.INT_TYPE.getDescriptor
     case Type.Int64 => asm.Type.LONG_TYPE.getDescriptor
     case Type.Str => asm.Type.getDescriptor(classOf[java.lang.String])
     case Type.Enum(_, _) => asm.Type.getDescriptor(classOf[Value.Tag])
@@ -91,7 +91,7 @@ object Codegen {
     compileExpression(context, mv)(function.body)
 
     function.tpe.retTpe match {
-      case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => mv.visitInsn(IRETURN)
+      case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int32 => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) => mv.visitInsn(ARETURN)
       case Type.Tag(_, _, _) =>
@@ -123,7 +123,7 @@ object Codegen {
     case store: StoreExpression => compileStoreExpr(context, visitor)(store)
 
     case Expression.Var(ident, offset, tpe, loc) => tpe match {
-      case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ILOAD, offset)
+      case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int32 => visitor.visitVarInsn(ILOAD, offset)
       case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
       case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) =>
         visitor.visitVarInsn(ALOAD, offset)
@@ -164,7 +164,7 @@ object Codegen {
     case Expression.Let(ident, offset, exp1, exp2, _, _) =>
       compileExpression(context, visitor)(exp1)
       exp1.tpe match {
-        case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitVarInsn(ISTORE, offset)
+        case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int32 => visitor.visitVarInsn(ISTORE, offset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
         case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) =>
           visitor.visitVarInsn(ASTORE, offset)
@@ -283,7 +283,7 @@ object Codegen {
       compileExpression(context, visitor)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt16",
         "(I)Ljava/lang/Object;", false)
-    case Type.Int32 | Type.Int =>
+    case Type.Int32 | Type.Int32 =>
       visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
         "Lca/uwaterloo/flix/runtime/Value$;")
       compileExpression(context, visitor)(exp)
@@ -323,7 +323,7 @@ object Codegen {
     case Type.Int16 =>
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Short")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Short", "shortValue", "()S", false)
-    case Type.Int32 | Type.Int =>
+    case Type.Int32 | Type.Int32 =>
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Integer")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false)
     case Type.Int64 =>
@@ -484,7 +484,7 @@ object Codegen {
     case Type.Int16 =>
       visitor.visitInsn(INEG)
       visitor.visitInsn(I2S)
-    case Type.Int32 | Type.Int => visitor.visitInsn(INEG)
+    case Type.Int32 | Type.Int32 => visitor.visitInsn(INEG)
     case Type.Int64 => visitor.visitInsn(LNEG)
     case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
          Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
@@ -510,7 +510,7 @@ object Codegen {
   private def compileUnaryNegateExpr(context: Context, visitor: MethodVisitor)(tpe: Type): Unit = {
     visitor.visitInsn(ICONST_M1)
     tpe match {
-      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int =>
+      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int32 =>
         visitor.visitInsn(IXOR)
       case Type.Int64 =>
         visitor.visitInsn(I2L)
@@ -560,7 +560,7 @@ object Codegen {
       case Type.Int16 =>
         visitor.visitInsn(intOp)
         visitor.visitInsn(I2S)
-      case Type.Int32 | Type.Int => visitor.visitInsn(intOp)
+      case Type.Int32 | Type.Int32 => visitor.visitInsn(intOp)
       case Type.Int64 => visitor.visitInsn(longOp)
       case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
            Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
@@ -587,7 +587,7 @@ object Codegen {
       case Type.Bool if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
         // Booleans can be compared for equality.
         visitor.visitJumpInsn(intOp, condElse)
-      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int => visitor.visitJumpInsn(intOp, condElse)
+      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int32 => visitor.visitJumpInsn(intOp, condElse)
       case Type.Int64 =>
         visitor.visitInsn(LCMP)
         visitor.visitJumpInsn(longOp, condElse)
@@ -705,7 +705,7 @@ object Codegen {
       case Type.Int16 =>
         visitor.visitInsn(intOp)
         if (intOp == ISHL) visitor.visitInsn(I2S)
-      case Type.Int32 | Type.Int => visitor.visitInsn(intOp)
+      case Type.Int32 | Type.Int32 => visitor.visitInsn(intOp)
       case Type.Int64 => visitor.visitInsn(longOp)
       case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
            Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |

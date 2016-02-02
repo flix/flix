@@ -41,11 +41,11 @@ class TestTyper extends FunSuite {
       BinaryOperator.Plus,
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(21, SL), SL),
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
-    val tpe = Type.Int
+    val tpe = Type.Int32
     val rast = ResolvedAst.Definition.Constant(RName, exp, tpe, SL)
 
     val result = Typer.Definition.typer(rast, Root)
-    assertResult(Type.Int)(result.get.tpe)
+    assertResult(Type.Int32)(result.get.tpe)
   }
 
   test("Definition.Constant04") {
@@ -71,14 +71,14 @@ class TestTyper extends FunSuite {
     // fn (x: Int): Int = x
     val exp = ResolvedAst.Expression.Lambda(
       Ast.Annotations(List.empty),
-      formals = List(ResolvedAst.FormalArg(x, Type.Int)),
-      retTpe = Type.Int,
+      formals = List(ResolvedAst.FormalArg(x, Type.Int32)),
+      retTpe = Type.Int32,
       body = ResolvedAst.Expression.Var(x, SL), SL)
-    val tpe = Type.Lambda(List(Type.Int), Type.Int)
+    val tpe = Type.Lambda(List(Type.Int32), Type.Int32)
     val rast = ResolvedAst.Definition.Constant(RName, exp, tpe, SL)
 
     val result = Typer.Definition.typer(rast, Root)
-    val expectedType = Type.Lambda(List(Type.Int), Type.Int)
+    val expectedType = Type.Lambda(List(Type.Int32), Type.Int32)
     assertResult(expectedType)(result.get.tpe)
   }
 
@@ -114,7 +114,7 @@ class TestTyper extends FunSuite {
   test("Definition.Relation02") {
     val rast = ResolvedAst.Collection.Relation(RName, List(
       ResolvedAst.Attribute(Ident, Type.Bool),
-      ResolvedAst.Attribute(Ident, Type.Int),
+      ResolvedAst.Attribute(Ident, Type.Int32),
       ResolvedAst.Attribute(Ident, Type.Str)
     ), SL)
 
@@ -131,7 +131,7 @@ class TestTyper extends FunSuite {
     val root = Root.copy(collections = Map(
       rname -> ResolvedAst.Collection.Relation(rname, List(
         ResolvedAst.Attribute(Ident, Type.Str),
-        ResolvedAst.Attribute(Ident, Type.Int)
+        ResolvedAst.Attribute(Ident, Type.Int32)
       ), SL)
     ))
 
@@ -153,9 +153,9 @@ class TestTyper extends FunSuite {
 
     val root = Root.copy(collections = Map(
       rname -> ResolvedAst.Collection.Relation(rname, List(
-        ResolvedAst.Attribute(Ident, Type.Int),
-        ResolvedAst.Attribute(Ident, Type.Int),
-        ResolvedAst.Attribute(Ident, Type.Int)
+        ResolvedAst.Attribute(Ident, Type.Int32),
+        ResolvedAst.Attribute(Ident, Type.Int32),
+        ResolvedAst.Attribute(Ident, Type.Int32)
       ), SL)
     ))
 
@@ -199,7 +199,7 @@ class TestTyper extends FunSuite {
   test("Literal.Int") {
     val rast = ResolvedAst.Literal.Int(42, SL)
     val result = Typer.Literal.typer(rast, Root)
-    assertResult(Type.Int)(result.tpe)
+    assertResult(Type.Int32)(result.tpe)
   }
 
   test("Literal.Str") {
@@ -225,7 +225,7 @@ class TestTyper extends FunSuite {
       ResolvedAst.Literal.Int(42, SL),
       ResolvedAst.Literal.Str("foo", SL)), SL)
     val result = Typer.Literal.typer(rast, Root)
-    assertResult(Type.Tuple(List(Type.Bool, Type.Int, Type.Str)))(result.tpe)
+    assertResult(Type.Tuple(List(Type.Bool, Type.Int32, Type.Str)))(result.tpe)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -251,10 +251,10 @@ class TestTyper extends FunSuite {
       ResolvedAst.Expression.Var(y, SL)
       , SL)
 
-    val env = Map("x" -> Type.Int, "y" -> Type.Int)
+    val env = Map("x" -> Type.Int32, "y" -> Type.Int32)
 
     val result = Typer.Expression.typer(rast, Root, env)
-    assertResult(Type.Int)(result.get.tpe)
+    assertResult(Type.Int32)(result.get.tpe)
   }
 
   test("Expression.Var03") {
@@ -268,7 +268,7 @@ class TestTyper extends FunSuite {
     val env = Map("x" -> Type.Bool)
 
     val result = Typer.Expression.typer(rast, Root, env)
-    assertResult(Type.Int)(result.get.tpe)
+    assertResult(Type.Int32)(result.get.tpe)
   }
 
   test("Expression.Ref01") {
@@ -294,11 +294,11 @@ class TestTyper extends FunSuite {
       rname -> ResolvedAst.Definition.Constant(
         name = rname,
         exp = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL),
-        tpe = Type.Int
+        tpe = Type.Int32
         , SL)))
 
     val result = Typer.Expression.typer(rast, root)
-    assertResult(Type.Int)(result.get.tpe)
+    assertResult(Type.Int32)(result.get.tpe)
   }
 
   test("Expression.Lambda01") {
@@ -306,12 +306,12 @@ class TestTyper extends FunSuite {
 
     val rast = ResolvedAst.Expression.Lambda(
       Ast.Annotations(List.empty),
-      formals = List(ResolvedAst.FormalArg(x, Type.Int)),
+      formals = List(ResolvedAst.FormalArg(x, Type.Int32)),
       retTpe = Type.Unit,
       body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL)
       , SL)
 
-    val expectedType = Type.Lambda(List(Type.Int), Type.Unit)
+    val expectedType = Type.Lambda(List(Type.Int32), Type.Unit)
     val actualType = Typer.Expression.typer(rast, Root).get.tpe
     assertResult(expectedType)(actualType)
   }
@@ -327,7 +327,7 @@ class TestTyper extends FunSuite {
       formals = List(
         ResolvedAst.FormalArg(x, Type.Unit),
         ResolvedAst.FormalArg(y, Type.Bool),
-        ResolvedAst.FormalArg(z, Type.Int),
+        ResolvedAst.FormalArg(z, Type.Int32),
         ResolvedAst.FormalArg(w, Type.Str)
       ),
       retTpe = Type.Str,
@@ -338,7 +338,7 @@ class TestTyper extends FunSuite {
       args = List(
         Type.Unit,
         Type.Bool,
-        Type.Int,
+        Type.Int32,
         Type.Str
       ), retTpe = Type.Str)
     val actualType = Typer.Expression.typer(rast, Root).get.tpe
@@ -356,7 +356,7 @@ class TestTyper extends FunSuite {
       formals = List(
         ResolvedAst.FormalArg(x, Type.Unit),
         ResolvedAst.FormalArg(y, Type.Bool),
-        ResolvedAst.FormalArg(z, Type.Int),
+        ResolvedAst.FormalArg(z, Type.Int32),
         ResolvedAst.FormalArg(w, Type.Str)
       ),
       retTpe = Type.Unit,
@@ -373,7 +373,7 @@ class TestTyper extends FunSuite {
       lambda =
         ResolvedAst.Expression.Lambda(
           Ast.Annotations(List.empty),
-          formals = List(ResolvedAst.FormalArg(x, Type.Int)),
+          formals = List(ResolvedAst.FormalArg(x, Type.Int32)),
           retTpe = Type.Unit,
           body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL)
           , SL),
@@ -394,10 +394,10 @@ class TestTyper extends FunSuite {
           Ast.Annotations(List.empty),
           formals = List(
             ResolvedAst.FormalArg(x, Type.Bool),
-            ResolvedAst.FormalArg(y, Type.Int),
+            ResolvedAst.FormalArg(y, Type.Int32),
             ResolvedAst.FormalArg(z, Type.Str)
           ),
-          retTpe = Type.Int,
+          retTpe = Type.Int32,
           body = ResolvedAst.Expression.Var(y, SL)
           , SL),
       args = List(
@@ -407,7 +407,7 @@ class TestTyper extends FunSuite {
       ), SL)
 
     val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int)(result.get.tpe)
+    assertResult(Type.Int32)(result.get.tpe)
   }
 
   test("Expression.Apply.TypeError.IllegalArgumentType") {
@@ -421,10 +421,10 @@ class TestTyper extends FunSuite {
           Ast.Annotations(List.empty),
           formals = List(
             ResolvedAst.FormalArg(x, Type.Bool),
-            ResolvedAst.FormalArg(y, Type.Int),
+            ResolvedAst.FormalArg(y, Type.Int32),
             ResolvedAst.FormalArg(z, Type.Str)
           ),
-          retTpe = Type.Int,
+          retTpe = Type.Int32,
           body = ResolvedAst.Expression.Var(y, SL), SL
         ),
       args = List(
@@ -446,13 +446,13 @@ class TestTyper extends FunSuite {
   test("Expression.Unary02") {
     val rast = ResolvedAst.Expression.Unary(UnaryOperator.Plus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
     val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int)(result.get.tpe)
+    assertResult(Type.Int32)(result.get.tpe)
   }
 
   test("Expression.Unary03") {
     val rast = ResolvedAst.Expression.Unary(UnaryOperator.Minus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
     val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int)(result.get.tpe)
+    assertResult(Type.Int32)(result.get.tpe)
   }
 
   test("Expression.Unary.NonBooleanValue") {
@@ -486,7 +486,7 @@ class TestTyper extends FunSuite {
     val e2 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL)
     val rast = ResolvedAst.Expression.Binary(BinaryOperator.Minus, e1, e2, SL)
     val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int)(result.get.tpe)
+    assertResult(Type.Int32)(result.get.tpe)
   }
 
   test("Expression.Binary03") {
@@ -520,7 +520,7 @@ class TestTyper extends FunSuite {
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL)
       , SL)
     val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int)(result.get.tpe)
+    assertResult(Type.Int32)(result.get.tpe)
   }
 
   test("Expression.IfThenElse02") {
@@ -570,7 +570,7 @@ class TestTyper extends FunSuite {
       ResolvedAst.Expression.Var(Ident, SL)
       , SL)
     val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int)(result.get.tpe)
+    assertResult(Type.Int32)(result.get.tpe)
   }
 
   test("Expression.Let.TypeError") {
@@ -593,7 +593,7 @@ class TestTyper extends FunSuite {
     )
 
     val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int)(result.get.tpe)
+    assertResult(Type.Int32)(result.get.tpe)
   }
 
   test("Expression.Match02") {
@@ -606,7 +606,7 @@ class TestTyper extends FunSuite {
     )
 
     val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int)(result.get.tpe)
+    assertResult(Type.Int32)(result.get.tpe)
   }
 
   test("Expression.Match03") {
@@ -623,7 +623,7 @@ class TestTyper extends FunSuite {
     )
 
     val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int)(result.get.tpe)
+    assertResult(Type.Int32)(result.get.tpe)
   }
 
   test("Expression.Match.TypeError") {
@@ -664,7 +664,7 @@ class TestTyper extends FunSuite {
       enumName -> ResolvedAst.Definition.Enum(enumName, Map(
         "A" -> Type.Tag(enumName, tagName, Type.Unit),
         "B" -> Type.Tag(enumName, tagName, Type.Bool),
-        "C" -> Type.Tag(enumName, tagName, Type.Int),
+        "C" -> Type.Tag(enumName, tagName, Type.Int32),
         "D" -> Type.Tag(enumName, tagName, Type.Str)
       ), SL)
     ))
@@ -672,7 +672,7 @@ class TestTyper extends FunSuite {
     val expectedType = Type.Enum(enumName, Map(
       "A" -> Type.Tag(enumName, tagName, Type.Unit),
       "B" -> Type.Tag(enumName, tagName, Type.Bool),
-      "C" -> Type.Tag(enumName, tagName, Type.Int),
+      "C" -> Type.Tag(enumName, tagName, Type.Int32),
       "D" -> Type.Tag(enumName, tagName, Type.Str)
     ))
     val actualType = Typer.Expression.typer(rast, root).get.tpe
@@ -688,7 +688,7 @@ class TestTyper extends FunSuite {
       enumName -> ResolvedAst.Definition.Enum(enumName, Map(
         "A" -> Type.Tag(enumName, tagName, Type.Unit),
         "B" -> Type.Tag(enumName, tagName, Type.Bool),
-        "C" -> Type.Tag(enumName, tagName, Type.Int),
+        "C" -> Type.Tag(enumName, tagName, Type.Int32),
         "D" -> Type.Tag(enumName, tagName, Type.Str)
       ), SL)
     ))
@@ -702,7 +702,7 @@ class TestTyper extends FunSuite {
     val e2 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL)
     val rast = ResolvedAst.Expression.Tuple(List(e1, e2), SL)
     val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Tuple(List(Type.Bool, Type.Int)))(result.get.tpe)
+    assertResult(Type.Tuple(List(Type.Bool, Type.Int32)))(result.get.tpe)
   }
 
   test("Expression.Tuple02") {
@@ -711,7 +711,7 @@ class TestTyper extends FunSuite {
     val e3 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo", SL), SL)
     val rast = ResolvedAst.Expression.Tuple(List(e1, e2, e3), SL)
     val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Tuple(List(Type.Bool, Type.Int, Type.Str)))(result.get.tpe)
+    assertResult(Type.Tuple(List(Type.Bool, Type.Int32, Type.Str)))(result.get.tpe)
   }
 
   test("Expression.Tuple03") {
@@ -739,7 +739,7 @@ class TestTyper extends FunSuite {
   test("Expression.Ascribe02") {
     val rast = ResolvedAst.Expression.Ascribe(
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
-      Type.Int
+      Type.Int32
       , SL)
     val result = Typer.Expression.typer(rast, Root)
     assert(result.isFailure)
@@ -752,17 +752,17 @@ class TestTyper extends FunSuite {
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL)
       , SL)
     val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int)(result.get.tpe)
+    assertResult(Type.Int32)(result.get.tpe)
   }
 
   test("Expression.Error02") {
     val rast = ResolvedAst.Expression.IfThenElse(
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
-      ResolvedAst.Expression.Error(Type.Int, SourceLocation.Unknown),
+      ResolvedAst.Expression.Error(Type.Int32, SourceLocation.Unknown),
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL)
       , SL)
     val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int)(result.get.tpe)
+    assertResult(Type.Int32)(result.get.tpe)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -798,7 +798,7 @@ class TestTyper extends FunSuite {
       ResolvedAst.Pattern.Var(x, SL),
       ResolvedAst.Pattern.Var(y, SL)
     ), SL)
-    val tpe = Type.Tuple(List(Type.Bool, Type.Int))
+    val tpe = Type.Tuple(List(Type.Bool, Type.Int32))
     val result = Typer.Pattern.typer(rast, tpe, Root)
     assertResult(tpe)(result.get.tpe)
   }
@@ -843,7 +843,7 @@ class TestTyper extends FunSuite {
     val tpe = Type.Tuple(List(
       Type.Unit,
       Type.Bool,
-      Type.Int,
+      Type.Int32,
       Type.Str
     ))
     val result = Typer.Pattern.typer(rast, tpe, Root)
@@ -871,7 +871,7 @@ class TestTyper extends FunSuite {
       rname -> ResolvedAst.Collection.Relation(rname, List(
         ResolvedAst.Attribute(x, Type.Unit),
         ResolvedAst.Attribute(y, Type.Bool),
-        ResolvedAst.Attribute(z, Type.Int),
+        ResolvedAst.Attribute(z, Type.Int32),
         ResolvedAst.Attribute(w, Type.Str)
       ), SL)
     ))
@@ -885,7 +885,7 @@ class TestTyper extends FunSuite {
       ), SL)
 
     val expectedType = Type.Predicate(List(
-      Type.Unit, Type.Bool, Type.Int, Type.Str
+      Type.Unit, Type.Bool, Type.Int32, Type.Str
     ))
     val actualType = Typer.Predicate.Head.typer(rast, root).get.tpe
     assertResult(expectedType)(actualType)
@@ -904,7 +904,7 @@ class TestTyper extends FunSuite {
       rname -> ResolvedAst.Collection.Relation(rname, List(
         ResolvedAst.Attribute(x, Type.Unit),
         ResolvedAst.Attribute(y, Type.Bool),
-        ResolvedAst.Attribute(z, Type.Int),
+        ResolvedAst.Attribute(z, Type.Int32),
         ResolvedAst.Attribute(w, Type.Str)
       ), SL)
     ))
@@ -918,7 +918,7 @@ class TestTyper extends FunSuite {
       ), SL)
 
     val expectedType = Type.Predicate(List(
-      Type.Unit, Type.Bool, Type.Int, Type.Str
+      Type.Unit, Type.Bool, Type.Int32, Type.Str
     ))
     val actualType = Typer.Predicate.Head.typer(rast, root).get.tpe
     assertResult(expectedType)(actualType)
@@ -972,7 +972,7 @@ class TestTyper extends FunSuite {
       rname -> ResolvedAst.Collection.Relation(rname, List(
         ResolvedAst.Attribute(x, Type.Unit),
         ResolvedAst.Attribute(y, Type.Bool),
-        ResolvedAst.Attribute(z, Type.Int),
+        ResolvedAst.Attribute(z, Type.Int32),
         ResolvedAst.Attribute(w, Type.Str)
       ), SL)
     ))
@@ -986,7 +986,7 @@ class TestTyper extends FunSuite {
       ), SL)
 
     val expectedType = Type.Predicate(List(
-      Type.Unit, Type.Bool, Type.Int, Type.Str
+      Type.Unit, Type.Bool, Type.Int32, Type.Str
     ))
     val actualType = Typer.Predicate.Body.typer(rast, root).get.tpe
     assertResult(expectedType)(actualType)

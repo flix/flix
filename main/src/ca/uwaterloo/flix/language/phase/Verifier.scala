@@ -744,7 +744,7 @@ object Verifier {
     def visit(tpe: Type): List[Expression] = tpe match {
       case Type.Unit => List(Expression.Unit)
       case Type.Bool => List(Expression.True, Expression.False)
-      case Type.Int => List(Expression.Var(genSym.fresh2(), -1, Type.Int, SourceLocation.Unknown))
+      case Type.Int32 => List(Expression.Var(genSym.fresh2(), -1, Type.Int32, SourceLocation.Unknown))
       case Type.Tuple(elms) => ???
       case t@Type.Enum(name, cases) =>
         val enum = cases.head._2.enum
@@ -1016,7 +1016,7 @@ object Verifier {
       case BinaryOperator.Equal | BinaryOperator.NotEqual =>
         val (f1, f2) = tpe match {
           case Type.Bool => (visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
-          case Type.Int => (visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+          case Type.Int32 => (visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
           case _ => throw new InternalCompilerError(s"Illegal type: $tpe.")
         }
         if (op == BinaryOperator.Equal)

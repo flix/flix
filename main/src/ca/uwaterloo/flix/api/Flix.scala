@@ -219,7 +219,7 @@ class Flix {
   /**
     * Returns the int32 type.
     */
-  def mkInt32Type: IType = new WrappedType(Type.Int)
+  def mkInt32Type: IType = new WrappedType(Type.Int32)
 
   /**
     * Returns the int64 type.
