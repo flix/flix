@@ -190,7 +190,8 @@ object Simplifier {
       case (Tag(enum, tag, pat, tpe, loc) :: ps, v :: vs) =>
         val cond = SExp.CheckTag(tag, SExp.Var(v, -1, tpe, loc), loc)
         val freshVar = genSym.fresh2()
-        val consequent = SExp.Let(freshVar, -1, SExp.GetTagValue(SExp.Var(v, -1, tpe, loc), pat.tpe, loc), succ, succ.tpe, loc)
+        val exp = SExp.Let(freshVar, -1, SExp.GetTagValue(SExp.Var(v, -1, tpe, loc), pat.tpe, loc), succ, succ.tpe, loc)
+        val consequent = simplify(pat :: ps, freshVar :: vs, exp, fail)
         SExp.IfThenElse(cond, consequent, fail, succ.tpe, loc)
 
       /**
