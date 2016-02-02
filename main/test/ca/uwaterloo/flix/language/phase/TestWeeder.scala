@@ -8,6 +8,77 @@ import scala.collection.immutable.Seq
 
 class TestWeeder extends FunSuite {
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Duplicate Alias                                                         //
+  /////////////////////////////////////////////////////////////////////////////
+  test("DuplicateAlias01") {
+    val input =
+      """P(x, y) :- A(x), y := 21, y := 42.
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAlias])
+  }
+
+  test("DuplicateAlias02") {
+    val input =
+      """P(x, y) :- A(x), y := 21, z := 84, y := 42.
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAlias])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Duplicate Annotation                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+  test("DuplicateAnnotation01") {
+    val input =
+      """@strict @strict
+        |fn foo(x: Int): Int = 42
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAnnotation])
+  }
+
+  test("DuplicateAnnotation02") {
+    val input =
+      """@strict @monotone @strict @monotone
+        |fn foo(x: Int): Int = 42
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAnnotation])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Duplicate Attribute                                                     //
+  /////////////////////////////////////////////////////////////////////////////
+  test("DuplicateAttribute01") {
+    val input =
+      """rel A(x: Int, x: Int)
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAttribute])
+  }
+
+  test("DuplicateAttribute02") {
+    val past = ParsedAst.Definition.Relation(SP, Ident, Seq(
+      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(Type.Unit)),
+      ParsedAst.Attribute(ident("y"), ParsedAst.Interpretation.Set(Type.Unit)),
+      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(Type.Unit)),
+      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(Type.Unit))
+    ), SP)
+
+    val result = Weeder.Definition.compile(past)
+    assertResult(2)(result.errors.size)
+  }
+
+
+
+
+
+
+
+
+
 
 
   /////////////////////////////////////////////////////////////////////////////
@@ -63,27 +134,7 @@ class TestWeeder extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Lattices and Relations                                                  //
   /////////////////////////////////////////////////////////////////////////////
-  test("DuplicateAttribute01") {
-    val past = ParsedAst.Definition.Relation(SP, Ident, Seq(
-      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(Type.Unit)),
-      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(Type.Unit))
-    ), SP)
 
-    val result = Weeder.Definition.compile(past)
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAttribute])
-  }
-
-  test("DuplicateAttribute02") {
-    val past = ParsedAst.Definition.Relation(SP, Ident, Seq(
-      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(Type.Unit)),
-      ParsedAst.Attribute(ident("y"), ParsedAst.Interpretation.Set(Type.Unit)),
-      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(Type.Unit)),
-      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(Type.Unit))
-    ), SP)
-
-    val result = Weeder.Definition.compile(past)
-    assertResult(2)(result.errors.size)
-  }
 
   test("IllegalAttribute01") {
     val input = "rel A(b: Int, c: Int<>)."
@@ -338,31 +389,7 @@ class TestWeeder extends FunSuite {
     assert(result.isInstanceOf[WeededAst.Declaration.Fact])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Annotations                                                             //
-  /////////////////////////////////////////////////////////////////////////////
 
-  test("DuplicateAnnotation01") {
-    val input =
-      """@strict @strict
-        |fn foo(x: Int): Int = 42
-        |
-      """.stripMargin
-    val result = new Flix().addStr(input).solve()
-
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAnnotation])
-  }
-
-  test("DuplicateAnnotation02") {
-    val input =
-      """@strict @monotone @strict @monotone
-        |fn foo(x: Int): Int = 42
-        |
-      """.stripMargin
-    val result = new Flix().addStr(input).solve()
-
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAnnotation])
-  }
 
   test("IllegalAnnotation01") {
     val input =
@@ -379,6 +406,7 @@ class TestWeeder extends FunSuite {
   // TODO: Use source code directly in tests.
   val SP = SourcePosition.Unknown
   val Ident = ident("x")
+
   def ident(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
 
 }

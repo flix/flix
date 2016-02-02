@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.Compiler
-import ca.uwaterloo.flix.language.ast.Name.Unresolved
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
