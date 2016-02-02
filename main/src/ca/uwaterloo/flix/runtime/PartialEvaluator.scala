@@ -13,6 +13,11 @@ object PartialEvaluator {
     */
   type Cont = Expression => Expression
 
+  /**
+    * Partially evaluates the given expression `exp0` under the given environment `env0`
+    *
+    * Returns the residual expression.
+    */
   def eval(exp0: Expression, root: SimplifiedAst.Root, env0: Map[String, Expression]): Expression = {
 
     /**
@@ -373,6 +378,82 @@ object PartialEvaluator {
     eval(exp0, env0, x => x)
   }
 
+  /**
+    * Returns `true` iff the given expression `e` is a value.
+    */
+  private def isValue(e: Expression): Boolean = e match {
+    case Unit => true
+    case True => true
+    case False => true
+    case v: Int8 => true
+    case v: Int16 => true
+    case v: Int32 => true
+    case v: Int64 => true
+    case v: Int => true
+    case v: Str => true
+    case v: Tag => isValue(v.exp)
+    case v: Tuple => v.elms.forall(isValue)
+    case v: Closure => true
+    case _ => false
+  }
+
+
+  sealed trait Eq
+
+  object Eq {
+
+    case class Equal() extends Eq
+
+    case class NotEq() extends Eq
+
+    case object Unknown extends Eq
+
+  }
+
+
+  def syntacticEqual(exp1: Expression, exp2: Expression,  env0: Map[String, Expression]): Boolean = ???
+
+  /**
+    * Returns `true` iff the two given expressions `exp1` and `exp2` are
+    * semantically equivalent under the given environment `env0`.
+    *
+    * Returns `false` if the expressions are not equal or it is unknown if they are equal.
+    */
+  def mustBeEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
+    case (True, True) => true
+    case (False, False) => true
+    case (Tag(_, tag1, e1, _, _), Tag(_, tag2, e2, _, _)) =>
+      tag1.name == tag2.name && mustBeEqual(e1, e2, env0)
+    case (Tuple(elms1, _, _), Tuple(elms2, _, _)) => (elms1 zip elms2) forall {
+      case (e1, e2) => mustBeEqual(e1, e2, env0)
+    }
+    //case _ => false
+  }
+
+  def mustNotBeEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
+    case (True, False) => true
+
+  }
+
+  /**
+    * Returns the canonical form the given expression `e`.
+    *
+    * A canonical form is a standard way to represent a class of expressions.
+    *
+    * For example, the following expressions are all equivalent:
+    * - x > 0
+    * - 0 < x
+    * - x >= 0 && x != 0
+    * - 0 <= x && x != 0
+    *
+    * This function attempts to pick a "standard form" of such an expression.
+    */
+  private def canonical(e: Expression): Expression = e match {
+    case _ => e
+  }
+
+
+
   // http://www.lshift.net/blog/2007/06/11/folds-and-continuation-passing-style/
 
   //  Here’s the direct-style left-fold function:
@@ -399,72 +480,4 @@ object PartialEvaluator {
   //  #f
   //  elements
   //  (lambda (v) v)))
-
-  private def isValue(e: Expression): Boolean = e match {
-    case Unit => true
-    case True => true
-    case False => true
-    case v: Int8 => true
-    case v: Int16 => true
-    case v: Int32 => true
-    case v: Int64 => true
-    case v: Int => true
-    case v: Str => true
-    case v: Tag => isValue(v.exp)
-    case v: Tuple => v.elms.forall(isValue)
-    case v: Closure => true
-    case _ => false
-  }
-
-  /**
-    * Returns the canonical form the given expression `e`.
-    *
-    * A canonical form is a standard way to represent a class of expressions.
-    *
-    * For example, the following expressions are all equivalent:
-    * - x > 0
-    * - 0 < x
-    * - x >= 0 && x != 0
-    * - 0 <= x && x != 0
-    *
-    * This function attempts to pick a "standard form" of such expression.
-    */
-  private def canonical(e: Expression): Expression = e match {
-    case _ => e
-  }
-
-  sealed trait Eq
-
-  object Eq {
-
-    case class Equal() extends Eq
-
-    case class NotEq() extends Eq
-
-    case object Unknown extends Eq
-
-  }
-
-  /**
-    * Returns `true` iff the two given expressions `exp1` and `exp2` are
-    * semantically equivalent under the given environment `env0`.
-    *
-    * Returns `false` if the expressions are not equal or it is unknown if they are equal.
-    */
-  def mustBeEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
-    case (True, True) => true
-    case (False, False) => true
-    case (Tag(_, tag1, e1, _, _), Tag(_, tag2, e2, _, _)) =>
-      tag1.name == tag2.name && mustBeEqual(e1, e2, env0)
-    case (Tuple(elms1, _, _), Tuple(elms2, _, _)) => (elms1 zip elms2) forall {
-      case (e1, e2) => mustBeEqual(e1, e2, env0)
-    }
-    //case _ => false
-  }
-
-  def mustNotBeEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
-    case (True, False) => true
-
-  }
-
 }
