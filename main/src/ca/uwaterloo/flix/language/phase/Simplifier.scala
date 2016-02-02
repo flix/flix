@@ -66,8 +66,8 @@ object Simplifier {
 
     def simplify(tast: TypedAst.Directive)(implicit genSym: GenSym): SimplifiedAst.Directive = tast match {
       case TypedAst.Directive.AssertFact(fact, loc) => throw new UnsupportedOperationException // TODO: To be removed?
-      case TypedAst.Directive.AssertRule(fact, loc) => throw new UnsupportedOperationException // TODO: To be removed?
-      case TypedAst.Directive.Print(fact, loc) => throw new UnsupportedOperationException // TODO: To be removed?
+      case TypedAst.Directive.AssertRule(rule, loc) => throw new UnsupportedOperationException // TODO: To be removed?
+      case TypedAst.Directive.Print(name, loc) => throw new UnsupportedOperationException // TODO: To be removed?
     }
   }
 
@@ -259,7 +259,7 @@ object Simplifier {
       case TypedAst.Literal.Bool(b, loc) =>
         if (b) SimplifiedAst.Expression.True else SimplifiedAst.Expression.False
       case TypedAst.Literal.Int(i, loc) => SimplifiedAst.Expression.Int(i)
-      case TypedAst.Literal.Str(s, loc) => SimplifiedAst.Expression.Str(s, loc)
+      case TypedAst.Literal.Str(s, loc) => SimplifiedAst.Expression.Str(s)
       case TypedAst.Literal.Tag(enum, tag, lit, tpe, loc) => SimplifiedAst.Expression.Tag(enum, tag, simplify(lit), tpe, loc)
       case TypedAst.Literal.Tuple(elms, tpe, loc) => SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
       case TypedAst.Literal.Set(elms, tpe, loc) => SimplifiedAst.Expression.Set(elms map simplify, tpe, loc)
@@ -299,7 +299,7 @@ object Simplifier {
 
     def simplify(tast: TypedAst.Term.Body)(implicit genSym: GenSym): SimplifiedAst.Term.Body = tast match {
       case TypedAst.Term.Body.Wildcard(tpe, loc) => SimplifiedAst.Term.Body.Wildcard(tpe, loc)
-      case TypedAst.Term.Body.Var(ident, tpe, loc) => SimplifiedAst.Term.Body.Var(genSym.of(ident), tpe, loc)
+      case TypedAst.Term.Body.Var(ident, tpe, loc) => SimplifiedAst.Term.Body.Var(ident, genSym.of(ident), tpe, loc)
       case TypedAst.Term.Body.Lit(lit, tpe, loc) => SimplifiedAst.Term.Body.Exp(Literal.simplify(lit), tpe, loc)
     }
   }

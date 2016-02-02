@@ -719,7 +719,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Str01") {
     val definition = Function(name, args = List(),
-      body = Str("foobar", loc),
+      body = Str("foobar"),
       Type.Lambda(List(), Type.Str), loc)
 
     val code = new CompiledCode(List(definition))
@@ -730,7 +730,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Str02") {
     val definition = Function(name, args = List(),
-      body = Str("", loc),
+      body = Str(""),
       Type.Lambda(List(), Type.Str), loc)
 
     val code = new CompiledCode(List(definition))
@@ -1098,7 +1098,7 @@ class TestCodegen extends FunSuite {
   test("Codegen - Let15") {
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
-        exp1 = Str("helloworld", loc),
+        exp1 = Str("helloworld"),
         exp2 = Var(toIdent("x"), 0, Type.Str, loc),
         Type.Str, loc),
       Type.Lambda(List(), Type.Str), loc)
@@ -6045,7 +6045,7 @@ class TestCodegen extends FunSuite {
     val ident = toIdent("def")
     val enum = Type.Enum(Name.Resolved.mk("ConstProp"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Str)))
     val definition = Function(name, args = List(),
-      body = Tag(tagName, ident, Str("hello", loc), enum, loc),
+      body = Tag(tagName, ident, Str("hello"), enum, loc),
       Type.Lambda(List(), enum), loc)
 
     val code = new CompiledCode(List(definition))
@@ -6059,7 +6059,7 @@ class TestCodegen extends FunSuite {
     val ident = toIdent("def")
     val enum = Type.Enum(Name.Resolved.mk("abc"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int32, Type.Str)))))
     val definition = Function(name, args = List(),
-      body = Tag(tagName, ident, Tuple(List(Int32(1), Str("one", loc)),
+      body = Tag(tagName, ident, Tuple(List(Int32(1), Str("one")),
         Type.Tuple(List(Type.Int32, Type.Str)), loc), enum, loc),
       Type.Lambda(List(), enum), loc)
 
@@ -6140,7 +6140,7 @@ class TestCodegen extends FunSuite {
 
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
-        exp1 = Tag(tagName, ident, Tuple(List(Int32(1), Str("one", loc)),
+        exp1 = Tag(tagName, ident, Tuple(List(Int32(1), Str("one")),
           Type.Tuple(List(Type.Int32, Type.Str)), loc), enum, loc),
         exp2 = GetTagValue(Var(toIdent("x"), 0, enum, loc), Type.Tuple(List(Type.Int32, Type.Str)), loc),
         Type.Unit, loc),
@@ -6180,7 +6180,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Tuple03") {
     val definition = Function(name, args = List(),
-      body = Tuple(List(Str("un", loc), Str("deux", loc), Str("trois", loc), Str("quatre", loc)),
+      body = Tuple(List(Str("un"), Str("deux"), Str("trois"), Str("quatre")),
         Type.Tuple(List(Type.Str, Type.Str, Type.Str, Type.Str)), loc),
       Type.Lambda(List(), Type.Tuple(List(Type.Str, Type.Str, Type.Str, Type.Str))), loc)
 
@@ -6192,7 +6192,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Tuple04") {
     val definition = Function(name, args = List(),
-      body = Tuple(List(Str("un", loc), False, Int64(12345), Unit, Int8(-2)),
+      body = Tuple(List(Str("un"), False, Int64(12345), Unit, Int8(-2)),
         Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc),
       Type.Lambda(List(), Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8))), loc)
 
@@ -6220,7 +6220,7 @@ class TestCodegen extends FunSuite {
     val definition = Function(name, args = List(),
       body = Tuple(List(
         Tuple(List(Int32(123), Int32(456)), Type.Tuple(List(Type.Int32, Type.Int32)), loc),
-        Tuple(List(Str("654", loc), Str("321", loc)), Type.Tuple(List(Type.Str, Type.Str)), loc)),
+        Tuple(List(Str("654"), Str("321")), Type.Tuple(List(Type.Str, Type.Str)), loc)),
         Type.Tuple(List(Type.Tuple(List(Type.Int32, Type.Int32)), Type.Tuple(List(Type.Str, Type.Str)))), loc),
       Type.Lambda(List(), Type.Tuple(List(Type.Tuple(List(Type.Int32, Type.Int32)), Type.Tuple(List(Type.Str, Type.Str))))), loc)
 
@@ -6237,7 +6237,7 @@ class TestCodegen extends FunSuite {
   test("Codegen - TupleAt01") {
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
-        exp1 = Tuple(List(Str("un", loc), False, Int64(12345), Unit, Int8(-2)),
+        exp1 = Tuple(List(Str("un"), False, Int64(12345), Unit, Int8(-2)),
           Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc),
         exp2 = GetTupleIndex(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc), 0, Type.Str, loc),
         Type.Str, loc),
@@ -6252,7 +6252,7 @@ class TestCodegen extends FunSuite {
   test("Codegen - TupleAt02") {
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
-        exp1 = Tuple(List(Str("un", loc), False, Int64(12345), Unit, Int8(-2)),
+        exp1 = Tuple(List(Str("un"), False, Int64(12345), Unit, Int8(-2)),
           Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc),
         exp2 = GetTupleIndex(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc), 1, Type.Bool, loc),
         Type.Bool, loc),
@@ -6267,7 +6267,7 @@ class TestCodegen extends FunSuite {
   test("Codegen - TupleAt03") {
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
-        exp1 = Tuple(List(Str("un", loc), False, Int64(12345), Unit, Int8(-2)),
+        exp1 = Tuple(List(Str("un"), False, Int64(12345), Unit, Int8(-2)),
           Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc),
         exp2 = GetTupleIndex(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc), 2, Type.Int64, loc),
         Type.Int64, loc),
@@ -6282,7 +6282,7 @@ class TestCodegen extends FunSuite {
   test("Codegen - TupleAt04") {
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
-        exp1 = Tuple(List(Str("un", loc), False, Int64(12345), Unit, Int8(-2)),
+        exp1 = Tuple(List(Str("un"), False, Int64(12345), Unit, Int8(-2)),
           Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc),
         exp2 = GetTupleIndex(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc), 3, Type.Unit, loc),
         Type.Unit, loc),
@@ -6297,7 +6297,7 @@ class TestCodegen extends FunSuite {
   test("Codegen - TupleAt05") {
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
-        exp1 = Tuple(List(Str("un", loc), False, Int64(12345), Unit, Int8(-2)),
+        exp1 = Tuple(List(Str("un"), False, Int64(12345), Unit, Int8(-2)),
           Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc),
         exp2 = GetTupleIndex(Var(toIdent("x"), 0, Type.Tuple(List(Type.Str, Type.Bool, Type.Int64, Type.Unit, Type.Int8)), loc), 4, Type.Int8, loc),
         Type.Int8, loc),
@@ -6328,7 +6328,7 @@ class TestCodegen extends FunSuite {
     val innerLet = Let(toIdent("y"), 1,
       exp1 = Tuple(List(
         Tuple(List(Int16(123), Int32(456)), Type.Tuple(List(Type.Int16, Type.Int32)), loc),
-        Tuple(List(Str("654", loc), Str("321", loc)), Type.Tuple(List(Type.Str, Type.Str)), loc)),
+        Tuple(List(Str("654"), Str("321")), Type.Tuple(List(Type.Str, Type.Str)), loc)),
         Type.Tuple(List(Type.Tuple(List(Type.Int16, Type.Int32)), Type.Tuple(List(Type.Str, Type.Str)))), loc),
       exp2 = GetTupleIndex(Var(toIdent("y"), 1, Type.Tuple(List(Type.Tuple(List(Type.Int16, Type.Int32)), Type.Tuple(List(Type.Str, Type.Str)))), loc), 0, Type.Tuple(List(Type.Int32, Type.Int32)), loc),
       Type.Tuple(List(Type.Int16, Type.Int32)), loc)

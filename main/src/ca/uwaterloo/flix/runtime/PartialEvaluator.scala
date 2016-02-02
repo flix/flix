@@ -56,7 +56,7 @@ object PartialEvaluator {
       /**
         * Str Expression.
         */
-      case Str(lit, loc) => k(Str(lit, loc))
+      case Str(lit) => k(Str(lit))
 
       /**
         * Var Expressions/

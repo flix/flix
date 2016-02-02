@@ -117,7 +117,7 @@ object Codegen {
     case Expression.Int16(s) => compileInt(visitor)(s)
     case Expression.Int32(i) => compileInt(visitor)(i)
     case Expression.Int64(l) => compileInt(visitor)(l, isLong = true)
-    case Expression.Str(s, _) => visitor.visitLdcInsn(s)
+    case Expression.Str(s) => visitor.visitLdcInsn(s)
 
     case load: LoadExpression => compileLoadExpr(context, visitor)(load)
     case store: StoreExpression => compileStoreExpr(context, visitor)(store)

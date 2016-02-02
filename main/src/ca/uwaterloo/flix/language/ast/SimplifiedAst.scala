@@ -160,8 +160,9 @@ object SimplifiedAst {
       final val loc = SourceLocation.Unknown
     }
 
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends SimplifiedAst.Expression {
+    case class Str(lit: java.lang.String) extends SimplifiedAst.Expression {
       final val tpe = Type.Str
+      final val loc = SourceLocation.Unknown
     }
 
     /**
@@ -230,8 +231,8 @@ object SimplifiedAst {
       * @param v      the value to be stored.
       */
     case class StoreInt8(e: SimplifiedAst.Expression,
-                         offset: scala.Int, v:
-                         SimplifiedAst.Expression) extends SimplifiedAst.StoreExpression {
+                         offset: scala.Int,
+                         v: SimplifiedAst.Expression) extends SimplifiedAst.StoreExpression {
       val mask = 0xFFL
     }
 
@@ -243,8 +244,8 @@ object SimplifiedAst {
       * @param v      the value to be stored.
       */
     case class StoreInt16(e: SimplifiedAst.Expression,
-                          offset: scala.Int, v:
-                          SimplifiedAst.Expression) extends SimplifiedAst.StoreExpression {
+                          offset: scala.Int,
+                          v: SimplifiedAst.Expression) extends SimplifiedAst.StoreExpression {
       val mask = 0xFFFFL
     }
 
@@ -256,8 +257,8 @@ object SimplifiedAst {
       * @param v      the value to be stored.
       */
     case class StoreInt32(e: SimplifiedAst.Expression,
-                          offset: scala.Int, v:
-                          SimplifiedAst.Expression) extends SimplifiedAst.StoreExpression {
+                          offset: scala.Int,
+                          v: SimplifiedAst.Expression) extends SimplifiedAst.StoreExpression {
       val mask = 0xFFFFFFFFL
     }
 
@@ -331,7 +332,8 @@ object SimplifiedAst {
       */
     case class Unary(op: UnaryOperator,
                      exp: SimplifiedAst.Expression,
-                     tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+                     tpe: Type,
+                     loc: SourceLocation) extends SimplifiedAst.Expression  {
       override def toString: String = "Unary(" + op + ", " + exp + ")"
     }
 
@@ -467,11 +469,11 @@ object SimplifiedAst {
       override def toString: String = "(" + elms.mkString(", ") + ")"
     }
 
-    case class CheckNil(exp: SimplifiedAst.Expression, loc: SourceLocation) {
+    case class CheckNil(exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
       final val tpe: Type = Type.Bool
     }
 
-    case class CheckCons(exp: SimplifiedAst.Expression, loc: SourceLocation) {
+    case class CheckCons(exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
       final val tpe: Type = Type.Bool
     }
 
@@ -579,7 +581,7 @@ object SimplifiedAst {
 
       case class Wildcard(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
 
-      case class Var(v: scala.Int, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
+      case class Var(ident: Name.Ident, v: scala.Int, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
 
       // TODO: Lambda lift?
       case class Exp(e: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
