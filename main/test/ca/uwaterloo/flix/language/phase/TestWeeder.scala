@@ -130,7 +130,6 @@ class TestWeeder extends FunSuite {
         |fn foo(x: Int): Int = 42
       """.stripMargin
     val result = new Flix().addStr(input).solve()
-
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalAnnotation])
   }
 
@@ -140,8 +139,53 @@ class TestWeeder extends FunSuite {
         |fn foo(x: Int): Int = 42
       """.stripMargin
     val result = new Flix().addStr(input).solve()
-
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalAnnotation])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Illegal Body Term                                                       //
+  /////////////////////////////////////////////////////////////////////////////
+  test("IllegalBodyTerm01") {
+    val input =
+      """P(x) :- A(f(x)).
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalBodyTerm])
+  }
+
+  test("IllegalBodyTerm02") {
+    val input =
+      """P(x) :- A(x), B(f(x)), C(x).
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalBodyTerm])
+  }
+
+  test("IllegalBodyTerm03") {
+    val input =
+      """P(x, y) :- A(x, y), B(x `f` y).
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalBodyTerm])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Illegal Head Term                                                       //
+  /////////////////////////////////////////////////////////////////////////////
+  test("IllegalHeadTerm01") {
+    val input =
+      """P(_).
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalHeadTerm])
+  }
+
+  test("IllegalHeadTerm02") {
+    val input =
+      """P(x, _, z) :- A(x, z).
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalHeadTerm])
   }
 
   /////////////////////////////////////////////////////////////////////////////

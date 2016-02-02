@@ -21,6 +21,8 @@ object Weeder {
 
   object WeederError {
 
+    // TODO: Sort errors by alphabetical.
+
     implicit val consoleCtx = Compiler.ConsoleCtx
 
     /**
