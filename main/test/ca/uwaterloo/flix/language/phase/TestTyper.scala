@@ -1019,13 +1019,22 @@ class TestTyper extends FunSuite {
     assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
   }
 
+  def ident(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
+
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO
+  ignore("Type.Int8.Ascribe") {
+    val input = "fn f(): Int8 = 42 : Int8"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
 
-
-  def ident(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
+  ignore("Type.Int8.Plus") {
+    val input = "fn f(x: Int8, y: Int8): Int8 = x + y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
 
 }
