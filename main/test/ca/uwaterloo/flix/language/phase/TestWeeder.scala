@@ -8,9 +8,7 @@ import scala.collection.immutable.Seq
 
 class TestWeeder extends FunSuite {
 
-  // TODO: Use source code directly in tests.
-  val SP = SourcePosition.Unknown
-  val Ident = ident("x")
+
 
   /////////////////////////////////////////////////////////////////////////////
   // Enums                                                                   //
@@ -378,6 +376,9 @@ class TestWeeder extends FunSuite {
   }
 
 
+  // TODO: Use source code directly in tests.
+  val SP = SourcePosition.Unknown
+  val Ident = ident("x")
   def ident(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
 
 }

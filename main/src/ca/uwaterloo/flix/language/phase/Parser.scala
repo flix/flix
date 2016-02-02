@@ -431,7 +431,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def NamedType: Rule1[PType] = rule {
-    QName ~> PType.Named
+    QName ~> PType.Unresolved
   }
 
   def NativeType: Rule1[PType] = rule {

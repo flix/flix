@@ -905,7 +905,7 @@ object Resolver {
     def resolve(wast: Type, namespace: List[String], syms: SymbolTable): Validation[Type, ResolverError] = {
       def visit(wast: Type): Validation[Type, ResolverError] = wast match {
         case Type.Unit => Type.Unit.toSuccess
-        case Type.Named(name) => name.parts match {
+        case Type.Unresolved(name) => name.parts match {
           case Seq("Bool") => Type.Bool.toSuccess
           case Seq("Int") => Type.Int32.toSuccess
           case Seq("Str") => Type.Str.toSuccess

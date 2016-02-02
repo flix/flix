@@ -20,32 +20,37 @@ object Type {
   case object Unit extends Type
 
   /**
-    * An AST node representing the Boolean type.
+    * An AST node representing the Bool type.
     */
   case object Bool extends Type
 
   /**
-    * An AST node representing the 8-bit signed integer type, i.e. a byte.
+    * An AST node representing the Char type.
+    */
+  case object Char extends Type
+
+  /**
+    * An AST node representing the 8-bit signed integer type.
     */
   case object Int8 extends Type
 
   /**
-    * An AST node representing the 16-bit signed integer type, i.e. a short.
+    * An AST node representing the 16-bit signed integer type.
     */
   case object Int16 extends Type
 
   /**
-    * An AST node representing the 32-bit signed integer type, i.e. an int.
+    * An AST node representing the 32-bit signed integer type.
     */
   case object Int32 extends Type
 
   /**
-    * An AST node representing the 64-bit signed integer type, i.e. a long.
+    * An AST node representing the 64-bit signed integer type.
     */
   case object Int64 extends Type
 
   /**
-    * An AST node representing the String type.
+    * An AST node representing the Str type.
     */
   case object Str extends Type
 
@@ -57,11 +62,21 @@ object Type {
   /**
     * An AST node representing the type of a tag.
     *
-    * @param enum the namespace of the tag.
+    * @param enum the fully qualified name of the enum.
     * @param tag  the name of the tag.
     * @param tpe  the type of the nested value.
     */
   case class Tag(enum: Name.Resolved, tag: Name.Ident, tpe: Type) extends Type
+
+  /**
+    * An AST node representing the unresolved type of a tag.
+    *
+    * @param enum the unresolved enum name.
+    * @param tag  the name of the tag.
+    * @param tpe  the type of the nested value.
+    */
+  @deprecated("to be removed", "0.1.0")
+  case class UnresolvedTag(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends Type
 
   /**
     * An AST node representing an enum type.
@@ -71,21 +86,15 @@ object Type {
     */
   case class Enum(name: Name.Resolved, cases: immutable.Map[String, Type.Tag]) extends Type
 
-  // TODO: DOC
-  case class UnresolvedTag(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends Type
-
   /**
     * An AST node representing a tuple type.
     *
     * @param elms the types of the elements.
     */
-  case class Tuple(elms: List[Type]) extends Type {
-    @deprecated("removed", "0.1")
-    val asArray: Array[Type] = elms.toArray
-  }
+  case class Tuple(elms: List[Type]) extends Type
 
   /**
-    * An AST node representing a function type.
+    * An AST node representing a lambda type.
     *
     * @param args   the type of the arguments.
     * @param retTpe the type of the return type.
@@ -95,10 +104,9 @@ object Type {
   /**
     * An AST node representing a predicate type.
     *
-    * @param terms the terms of the predicate.
+    * @param terms the type of predicate terms.
     */
   case class Predicate(terms: List[Type]) extends Type
-
 
   /**
     * An AST node that represent a parametric type.
@@ -106,42 +114,50 @@ object Type {
     * @param name the ambiguous name.
     * @param elms the type of the type parameters.
     */
+  // TODO: check with pierce book and see how this should be represented.
   case class Parametric(name: Name.Unresolved, elms: Seq[Type]) extends Type
 
-
-  // TODO: Document
-  case class Opt(elmType: Type) extends Type
-
-  // TODO: Document
-  case class Lst(elmType: Type) extends Type
+  /**
+    * An AST node representing an Opt type.
+    *
+    * @param tpe the type of the wrapped value.
+    */
+  case class Opt(tpe: Type) extends Type
 
   /**
-    * An AST node representing a set type.
+    * An AST node representing a List type.
     *
-    * @param elmType the types of the elements.
+    * @param tpe the type of the list elements.
     */
-  case class Set(elmType: Type) extends Type
+  case class Lst(tpe: Type) extends Type
 
-  // TODO: Document
+  /**
+    * An AST node representing a Set type.
+    *
+    * @param tpe the type of the set elements.
+    */
+  case class Set(tpe: Type) extends Type
+
+  /**
+    * An AST node representing a Map type.
+    *
+    * @param key   the type of the keys.
+    * @param value the type of the values.
+    */
   case class Map(key: Type, value: Type) extends Type
 
-  // TODO
-  case object Char extends Type
+  /**
+    * An AST node that represent a reference to an unresolved type.
+    *
+    * @param name the name of the unresolved type.
+    */
+  @deprecated("to be removed", "0.1.0")
+  case class Unresolved(name: Name.Unresolved) extends Type
 
-  // TODO
+  // TODO: check with pierce book and see how this should be represented.
   case class Abs(name: Var, tpe: Type) extends Type
 
-
-  // TODO: Remove or rename to error???
+  @deprecated("to be removed", "0.1.0")
   case object Any extends Type
-
-
-  /**
-    * An AST node that represent a reference to a named type.
-    *
-    * @param name the name of the type.
-    */
-  case class Named(name: Name.Unresolved) extends Type
-
 
 }

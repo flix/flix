@@ -1102,74 +1102,74 @@ class TestParser extends FunSuite {
   test("Type.Lambda01") {
     val input = "(A) -> B"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
-    assert(result.retTpe.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda02") {
     val input = "(A, B) -> C"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.forall(_.isInstanceOf[Type.Named]))
-    assert(result.retTpe.isInstanceOf[Type.Named])
+    assert(result.args.forall(_.isInstanceOf[Type.Unresolved]))
+    assert(result.retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda03") {
     val input = "((A, B)) -> C"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
     assert(result.args.head.isInstanceOf[Type.Tuple])
-    assert(result.args.head.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
-    assert(result.retTpe.isInstanceOf[Type.Named])
+    assert(result.args.head.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
+    assert(result.retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda04") {
     val input = "(A) -> (B, C)"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Tuple])
-    assert(result.retTpe.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
+    assert(result.retTpe.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
   }
 
   test("Type.Lambda05") {
     val input = "(A) -> (B) -> C"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda06") {
     val input = "(A) -> ((B) -> C)"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda07") {
     val input = "((A) -> B) -> C"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
     assert(result.args.head.isInstanceOf[Type.Lambda])
-    assert(result.args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
-    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
-    assert(result.retTpe.isInstanceOf[Type.Named])
+    assert(result.args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
+    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda08") {
     val input = "(A, B, C) -> D"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.forall(_.isInstanceOf[Type.Named]))
-    assert(result.retTpe.isInstanceOf[Type.Named])
+    assert(result.args.forall(_.isInstanceOf[Type.Unresolved]))
+    assert(result.retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda09") {
     val input = "((A, B), C) -> D"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
     assert(result.args(0).isInstanceOf[Type.Tuple])
-    assert(result.args(0).asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
-    assert(result.args(1).isInstanceOf[Type.Named])
-    assert(result.retTpe.isInstanceOf[Type.Named])
+    assert(result.args(0).asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
+    assert(result.args(1).isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda10") {
@@ -1177,128 +1177,128 @@ class TestParser extends FunSuite {
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
     assert(result.args.head.isInstanceOf[Type.Tuple])
     assert(result.args.head.asInstanceOf[Type.Tuple].elms(0).isInstanceOf[Type.Tuple])
-    assert(result.args.head.asInstanceOf[Type.Tuple].elms(0).asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
-    assert(result.args.head.asInstanceOf[Type.Tuple].elms(1).isInstanceOf[Type.Named])
-    assert(result.retTpe.isInstanceOf[Type.Named])
+    assert(result.args.head.asInstanceOf[Type.Tuple].elms(0).asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
+    assert(result.args.head.asInstanceOf[Type.Tuple].elms(1).isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda11") {
     val input = "(A, (B, C)) -> D"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args(0).isInstanceOf[Type.Named])
+    assert(result.args(0).isInstanceOf[Type.Unresolved])
     assert(result.args(1).isInstanceOf[Type.Tuple])
-    assert(result.args(1).asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
-    assert(result.retTpe.isInstanceOf[Type.Named])
+    assert(result.args(1).asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
+    assert(result.retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda12") {
     val input = "((A, (B, C))) -> D"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
     assert(result.args.head.isInstanceOf[Type.Tuple])
-    assert(result.args.head.asInstanceOf[Type.Tuple].elms(0).isInstanceOf[Type.Named])
+    assert(result.args.head.asInstanceOf[Type.Tuple].elms(0).isInstanceOf[Type.Unresolved])
     assert(result.args.head.asInstanceOf[Type.Tuple].elms(1).isInstanceOf[Type.Tuple])
-    assert(result.args.head.asInstanceOf[Type.Tuple].elms(1).asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
-    assert(result.retTpe.isInstanceOf[Type.Named])
+    assert(result.args.head.asInstanceOf[Type.Tuple].elms(1).asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
+    assert(result.retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda13") {
     val input = "((A, B, C)) -> D"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
     assert(result.args.head.isInstanceOf[Type.Tuple])
-    assert(result.args.head.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
-    assert(result.retTpe.isInstanceOf[Type.Named])
+    assert(result.args.head.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
+    assert(result.retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda14") {
     val input = "(A, B) -> (C, D)"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.forall(_.isInstanceOf[Type.Named]))
+    assert(result.args.forall(_.isInstanceOf[Type.Unresolved]))
     assert(result.retTpe.isInstanceOf[Type.Tuple])
-    assert(result.retTpe.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
+    assert(result.retTpe.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
   }
 
   test("Type.Lambda15") {
     val input = "((A, B)) -> (C, D)"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
     assert(result.args.head.isInstanceOf[Type.Tuple])
-    assert(result.args.head.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
+    assert(result.args.head.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
     assert(result.retTpe.isInstanceOf[Type.Tuple])
-    assert(result.retTpe.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
+    assert(result.retTpe.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
   }
 
   test("Type.Lambda16") {
     val input = "(A) -> (B, C, D)"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Tuple])
-    assert(result.retTpe.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
+    assert(result.retTpe.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
   }
 
   test("Type.Lambda17") {
     val input = "(A) -> ((B, C), D)"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Tuple])
     assert(result.retTpe.asInstanceOf[Type.Tuple].elms(0).isInstanceOf[Type.Tuple])
-    assert(result.retTpe.asInstanceOf[Type.Tuple].elms(0).asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
-    assert(result.retTpe.asInstanceOf[Type.Tuple].elms(1).isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Tuple].elms(0).asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
+    assert(result.retTpe.asInstanceOf[Type.Tuple].elms(1).isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda18") {
     val input = "(A) -> (B, (C, D))"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Tuple])
-    assert(result.retTpe.asInstanceOf[Type.Tuple].elms(0).isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Tuple].elms(0).isInstanceOf[Type.Unresolved])
     assert(result.retTpe.asInstanceOf[Type.Tuple].elms(1).isInstanceOf[Type.Tuple])
-    assert(result.retTpe.asInstanceOf[Type.Tuple].elms(1).asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
+    assert(result.retTpe.asInstanceOf[Type.Tuple].elms(1).asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
   }
 
   test("Type.Lambda19") {
     val input = "(A, B) -> (C) -> D"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.forall(_.isInstanceOf[Type.Named]))
+    assert(result.args.forall(_.isInstanceOf[Type.Unresolved]))
     assert(result.retTpe.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda20") {
     val input = "(A, B) -> ((C) -> D)"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.forall(_.isInstanceOf[Type.Named]))
+    assert(result.args.forall(_.isInstanceOf[Type.Unresolved]))
     assert(result.retTpe.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda21") {
     val input = "((A, B) -> C) -> D"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
     assert(result.args.head.isInstanceOf[Type.Lambda])
-    assert(result.args.head.asInstanceOf[Type.Lambda].args.forall(_.isInstanceOf[Type.Named]))
-    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
-    assert(result.retTpe.isInstanceOf[Type.Named])
+    assert(result.args.head.asInstanceOf[Type.Lambda].args.forall(_.isInstanceOf[Type.Unresolved]))
+    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda22") {
     val input = "((A, B)) -> (C) -> D"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
     assert(result.args.head.isInstanceOf[Type.Tuple])
-    assert(result.args.head.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
+    assert(result.args.head.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
     assert(result.retTpe.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda23") {
     val input = "((A, B)) -> ((C) -> D)"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
     assert(result.args.head.isInstanceOf[Type.Tuple])
-    assert(result.args.head.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
+    assert(result.args.head.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
     assert(result.retTpe.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda24") {
@@ -1306,153 +1306,153 @@ class TestParser extends FunSuite {
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
     assert(result.args.head.isInstanceOf[Type.Lambda])
     assert(result.args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Tuple])
-    assert(result.args.head.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
-    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
-    assert(result.retTpe.isInstanceOf[Type.Named])
+    assert(result.args.head.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
+    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda25") {
     val input = "(A) -> (B, C) -> D"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.forall(_.isInstanceOf[Type.Named]))
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.forall(_.isInstanceOf[Type.Unresolved]))
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda26") {
     val input = "(A) -> ((B, C) -> D)"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.forall(_.isInstanceOf[Type.Named]))
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.forall(_.isInstanceOf[Type.Unresolved]))
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda27") {
     val input = "((A) -> (B, C)) -> D"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
     assert(result.args.head.isInstanceOf[Type.Lambda])
-    assert(result.args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
     assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Tuple])
-    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
-    assert(result.retTpe.isInstanceOf[Type.Named])
+    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
+    assert(result.retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda28") {
     val input = "(A) -> ((B, C)) -> D"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Lambda])
     assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Tuple])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda29") {
     val input = "(A) -> (((B, C)) -> D)"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Lambda])
     assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Tuple])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda30") {
     val input = "(A) -> (B) -> (C, D)"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Tuple])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
   }
 
   test("Type.Lambda31") {
     val input = "(A) -> ((B) -> (C, D))"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Tuple])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
   }
 
   test("Type.Lambda32") {
     val input = "((A) -> (B)) -> (C, D)"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
     assert(result.args.head.isInstanceOf[Type.Lambda])
-    assert(result.args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
-    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
+    assert(result.args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
+    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Tuple])
-    assert(result.retTpe.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Named]))
+    assert(result.retTpe.asInstanceOf[Type.Tuple].elms.forall(_.isInstanceOf[Type.Unresolved]))
   }
 
   test("Type.Lambda33") {
     val input = "(A) -> (B) -> (C) -> D"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda34") {
     val input = "(A) -> ((B) -> (C) -> D)"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda35") {
     val input = "(A) -> ((B) -> ((C) -> D))"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda36") {
     val input = "(A) -> (((B) -> (C)) -> D)"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Lambda])
     assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda37") {
     val input = "((A) -> (B) -> (C)) -> D"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
     assert(result.args.head.isInstanceOf[Type.Lambda])
-    assert(result.args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
     assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Lambda])
-    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
-    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
-    assert(result.retTpe.isInstanceOf[Type.Named])
+    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
+    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda38") {
     val input = "((A) -> ((B) -> (C))) -> D"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
     assert(result.args.head.isInstanceOf[Type.Lambda])
-    assert(result.args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
     assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Lambda])
-    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
-    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
-    assert(result.retTpe.isInstanceOf[Type.Named])
+    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
+    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda39") {
@@ -1460,21 +1460,21 @@ class TestParser extends FunSuite {
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
     assert(result.args.head.isInstanceOf[Type.Lambda])
     assert(result.args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Lambda])
-    assert(result.args.head.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
-    assert(result.args.head.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
-    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
-    assert(result.retTpe.isInstanceOf[Type.Named])
+    assert(result.args.head.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
+    assert(result.args.head.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
+    assert(result.args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Lambda40") {
     val input = "(A) -> ((B) -> (C)) -> D"
     val result = new Parser(SourceInput.Str(input)).Type.run().get.asInstanceOf[Type.Lambda]
-    assert(result.args.head.isInstanceOf[Type.Named])
+    assert(result.args.head.isInstanceOf[Type.Unresolved])
     assert(result.retTpe.isInstanceOf[Type.Lambda])
     assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Lambda])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Named])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
-    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Named])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Lambda].args.head.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].args.head.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
+    assert(result.retTpe.asInstanceOf[Type.Lambda].retTpe.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Tuple01") {
@@ -1488,7 +1488,7 @@ class TestParser extends FunSuite {
     val input = "(A)"
     val result = new Parser(SourceInput.Str(input)).Type.run()
     assert(result.isSuccess)
-    assert(result.get.isInstanceOf[Type.Named])
+    assert(result.get.isInstanceOf[Type.Unresolved])
   }
 
   test("Type.Tuple03") {
