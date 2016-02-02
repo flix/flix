@@ -24,6 +24,16 @@ sealed trait Type {
     case Type.UnresolvedTag(enum, tag, tpe) => "?" + tag.name + "(" + tpe + ")"
     case Type.Enum(enum, cases) => enum.fqn
     case Type.Tuple(elms) => "(" + elms.mkString(". ") + ")"
+    case Type.Lambda(args, r) => "λ(" + args.mkString(", ") + ") -> " + r
+    case Type.Parametric(name, elms) => "Parametric(" + name + ", " + elms.mkString(", ") + ")"
+    case Type.Opt(tpe) => "Opt[" + tpe + "]"
+    case Type.Lst(tpe) => "Lst[" + tpe + "]"
+    case Type.Set(tpe) => "Set[" + tpe + "]"
+    case Type.Map(key, value) => "Map[" + key + ", " + value + "]"
+    case Type.Unresolved(name) => "?" + name
+    case Type.Abs(name, tpe) => ??? // TODO
+    case Type.Any => "Any"
+    case Type.Predicate(terms) => "Predicate(" + terms.mkString(", ") + ")"
 
   }
 }
@@ -123,13 +133,6 @@ object Type {
   case class Lambda(args: List[Type], retTpe: Type) extends Type
 
   /**
-    * An AST node representing a predicate type.
-    *
-    * @param terms the type of predicate terms.
-    */
-  case class Predicate(terms: List[Type]) extends Type
-
-  /**
     * An AST node that represent a parametric type.
     *
     * @param name the ambiguous name.
@@ -168,6 +171,13 @@ object Type {
   case class Map(key: Type, value: Type) extends Type
 
   /**
+    * An AST node representing a predicate type.
+    *
+    * @param terms the type of predicate terms.
+    */
+  case class Predicate(terms: List[Type]) extends Type
+
+  /**
     * An AST node that represent a reference to an unresolved type.
     *
     * @param name the name of the unresolved type.
@@ -176,6 +186,7 @@ object Type {
   case class Unresolved(name: Name.Unresolved) extends Type
 
   // TODO: check with pierce book and see how this should be represented.
+  @deprecated("to be removed", "0.1.0")
   case class Abs(name: Var, tpe: Type) extends Type
 
   @deprecated("to be removed", "0.1.0")
