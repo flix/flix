@@ -11,17 +11,13 @@ class TestWeeder extends FunSuite {
   // Duplicate Alias                                                         //
   /////////////////////////////////////////////////////////////////////////////
   test("DuplicateAlias01") {
-    val input =
-      """P(x, y) :- A(x), y := 21, y := 42.
-      """.stripMargin
+    val input = "P(x, y) :- A(x), y := 21, y := 42. "
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAlias])
   }
 
   test("DuplicateAlias02") {
-    val input =
-      """P(x, y) :- A(x), y := 21, z := 84, y := 42.
-      """.stripMargin
+    val input = "P(x, y) :- A(x), y := 21, z := 84, y := 42."
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAlias])
   }
@@ -51,25 +47,19 @@ class TestWeeder extends FunSuite {
   // Duplicate Attribute                                                     //
   /////////////////////////////////////////////////////////////////////////////
   test("DuplicateAttribute01") {
-    val input =
-      """rel A(x: Int, x: Int)
-      """.stripMargin
+    val input = "rel A(x: Int, x: Int)"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAttribute])
   }
 
   test("DuplicateAttribute02") {
-    val input =
-      """rel A(x: Int, y: Int, x: Int)
-      """.stripMargin
+    val input = "rel A(x: Int, y: Int, x: Int)   "
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAttribute])
   }
 
   test("DuplicateAttribute03") {
-    val input =
-      """rel A(x: Bool, x: Int, x: Str)
-      """.stripMargin
+    val input = "rel A(x: Bool, x: Int, x: Str)"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAttribute])
   }
@@ -146,25 +136,19 @@ class TestWeeder extends FunSuite {
   // Illegal Body Term                                                       //
   /////////////////////////////////////////////////////////////////////////////
   test("IllegalBodyTerm01") {
-    val input =
-      """P(x) :- A(f(x)).
-      """.stripMargin
+    val input = "P(x) :- A(f(x))."
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalBodyTerm])
   }
 
   test("IllegalBodyTerm02") {
-    val input =
-      """P(x) :- A(x), B(f(x)), C(x).
-      """.stripMargin
+    val input = "P(x) :- A(x), B(f(x)), C(x)."
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalBodyTerm])
   }
 
   test("IllegalBodyTerm03") {
-    val input =
-      """P(x, y) :- A(x, y), B(x `f` y).
-      """.stripMargin
+    val input = "P(x, y) :- A(x, y), B(x `f` y)."
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalBodyTerm])
   }
@@ -173,17 +157,13 @@ class TestWeeder extends FunSuite {
   // Illegal Head Term                                                       //
   /////////////////////////////////////////////////////////////////////////////
   test("IllegalHeadTerm01") {
-    val input =
-      """P(_).
-      """.stripMargin
+    val input = "P(_)."
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalHeadTerm])
   }
 
   test("IllegalHeadTerm02") {
-    val input =
-      """P(x, _, z) :- A(x, z).
-      """.stripMargin
+    val input = "P(x, _, z) :- A(x, z)."
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalHeadTerm])
   }
@@ -192,19 +172,36 @@ class TestWeeder extends FunSuite {
   // Illegal Lattice                                                         //
   /////////////////////////////////////////////////////////////////////////////
   test("IllegalLattice01") {
-    val input =
-      """let Foo<> = (1, 2)
-      """.stripMargin
+    val input = "let Foo<> = (1, 2)"
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalLattice])
   }
 
   test("IllegalLattice02") {
-    val input =
-      """let Foo<> = (1, 2, 3, 4, 5, 6, 7, 8, 9)
-      """.stripMargin
+    val input = "let Foo<> = (1, 2, 3, 4, 5, 6, 7, 8, 9)"
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalLattice])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Illegal Lattice Attribute in Relation                                   //
+  /////////////////////////////////////////////////////////////////////////////
+  test("IllegalLatticeAttributeInRelation01") {
+    val input = "rel A(b: Int, c: Int<>)"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalLatticeAttributeInRelation])
+  }
+
+  test("IllegalLatticeAttributeInRelation02") {
+    val input = "rel A(b: Int<>, c: Int)"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalLatticeAttributeInRelation])
+  }
+
+  test("IllegalLatticeAttributeInRelation03") {
+    val input = "rel A(b: Int<>, c: Int<>)"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalLatticeAttributeInRelation])
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -242,57 +239,9 @@ class TestWeeder extends FunSuite {
 
 
 
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  // BoundedLattices                                                         //
-  /////////////////////////////////////////////////////////////////////////////
-  test("IllegalBoundedLattice01") {
-    val input = "let Foo<> = (bot)"
-    val past = new Parser(SourceInput.Str(input)).BoundedLatticeDefinition.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.isFailure)
-  }
-
-  test("IllegalBoundedLattice02") {
-    val input = "let Foo<> = (bot, top)"
-    val past = new Parser(SourceInput.Str(input)).BoundedLatticeDefinition.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.isFailure)
-  }
-
-  test("IllegalBoundedLattice03") {
-    val input = "let Foo<> = (1, 2, 3, 4, 5, 6, 7)"
-    val past = new Parser(SourceInput.Str(input)).BoundedLatticeDefinition.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.isFailure)
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Lattices and Relations                                                  //
   /////////////////////////////////////////////////////////////////////////////
-
-
-  test("IllegalAttribute01") {
-    val input = "rel A(b: Int, c: Int<>)."
-    val past = new Parser(SourceInput.Str(input)).Definition.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalLatticeAttributeInRelation])
-  }
-
-  test("IllegalAttribute02") {
-    val input = "rel A(b: Int<>, c: Int)."
-    val past = new Parser(SourceInput.Str(input)).Definition.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalLatticeAttributeInRelation])
-  }
-
-  test("IllegalAttribute03") {
-    val input = "rel A(b: Int<>, c: Int<>)."
-    val past = new Parser(SourceInput.Str(input)).Definition.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalLatticeAttributeInRelation])
-  }
 
   test("IllegalNonLatticeAttribute01") {
     val input = "lat A(b: Int)."
@@ -491,10 +440,6 @@ class TestWeeder extends FunSuite {
     val result = Weeder.Declaration.compile(past)
     assert(result.isInstanceOf[WeededAst.Declaration.Fact])
   }
-
-
-
-
 
 
   // TODO: Use source code directly in tests.
