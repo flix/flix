@@ -48,7 +48,6 @@ object PartialEvaluator {
       case Int16(lit) => k(Int16(lit))
       case Int32(lit) => k(Int32(lit))
       case Int64(lit) => k(Int64(lit))
-      case Int(lit) => k(Int(lit)) // TODO: Int is deprecated.
 
       // TODO
       case v: Closure => k(v)
@@ -96,7 +95,7 @@ object PartialEvaluator {
           * Unary Minus.
           */
         case UnaryOperator.Minus => eval(exp, env0, {
-          case Int(i) => k(Int(-i))
+          case Int32(i) => k(Int32(-i))
           case residual => k(residual)
         })
 
@@ -104,7 +103,7 @@ object PartialEvaluator {
           * Unary Bitwise Negation.
           */
         case UnaryOperator.BitwiseNegate => eval(exp, env0, {
-          case Int(i) => Int(~i)
+          case Int32(i) => Int32(~i)
           case residual => k(residual)
         })
       }
@@ -124,9 +123,9 @@ object PartialEvaluator {
               // Partially evaluate exp2.
               eval(exp2, env0, {
                 case e2 => (e1, e2) match {
-                  case (Int(x), Int(y)) => k(Int(x + y))
-                  case (Int(0), _) => k(e2)
-                  case (_, Int(0)) => k(e1)
+                  case (Int32(x), Int32(y)) => k(Int32(x + y))
+                  case (Int32(0), _) => k(e2)
+                  case (_, Int32(0)) => k(e1)
                   case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
                 }
               })
@@ -404,7 +403,6 @@ object PartialEvaluator {
     case v: Int16 => true
     case v: Int32 => true
     case v: Int64 => true
-    case v: Int => true
     case v: Str => true
     case v: Tag => isValue(v.exp)
     case v: Tuple => v.elms.forall(isValue)

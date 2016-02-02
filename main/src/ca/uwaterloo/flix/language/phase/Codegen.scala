@@ -112,7 +112,6 @@ object Codegen {
 
     case Expression.True => visitor.visitInsn(ICONST_1)
     case Expression.False => visitor.visitInsn(ICONST_0)
-    case Expression.Int(i) => compileInt(visitor)(i)
     case Expression.Int8(b) => compileInt(visitor)(b)
     case Expression.Int16(s) => compileInt(visitor)(s)
     case Expression.Int32(i) => compileInt(visitor)(i)
