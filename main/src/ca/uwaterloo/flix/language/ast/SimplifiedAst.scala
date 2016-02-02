@@ -331,7 +331,9 @@ object SimplifiedAst {
       */
     case class Unary(op: UnaryOperator,
                      exp: SimplifiedAst.Expression,
-                     tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+                     tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = "Unary(" + op + ", " + exp + ")"
+    }
 
     /**
       * A typed AST node representing a binary expression.
