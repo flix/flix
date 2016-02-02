@@ -160,8 +160,9 @@ object SimplifiedAst {
       final val loc = SourceLocation.Unknown
     }
 
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends SimplifiedAst.Expression {
+    case class Str(lit: java.lang.String) extends SimplifiedAst.Expression {
       final val tpe = Type.Str
+      final val loc = SourceLocation.Unknown
     }
 
     /**

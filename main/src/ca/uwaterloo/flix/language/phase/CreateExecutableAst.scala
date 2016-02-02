@@ -121,7 +121,7 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.Int16(lit) => ExecutableAst.Expression.Int16(lit)
       case SimplifiedAst.Expression.Int32(lit) => ExecutableAst.Expression.Int32(lit)
       case SimplifiedAst.Expression.Int64(lit) => ExecutableAst.Expression.Int64(lit)
-      case SimplifiedAst.Expression.Str(lit, loc) => ExecutableAst.Expression.Str(lit, loc)
+      case SimplifiedAst.Expression.Str(lit) => ExecutableAst.Expression.Str(lit)
       case SimplifiedAst.Expression.LoadBool(e, offset) => ExecutableAst.Expression.LoadBool(toExecutable(e), offset)
       case SimplifiedAst.Expression.LoadInt8(e, offset) => ExecutableAst.Expression.LoadInt8(toExecutable(e), offset)
       case SimplifiedAst.Expression.LoadInt16(e, offset) => ExecutableAst.Expression.LoadInt16(toExecutable(e), offset)

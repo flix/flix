@@ -158,8 +158,9 @@ object ExecutableAst {
       final val loc = SourceLocation.Unknown
     }
 
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends ExecutableAst.Expression {
+    case class Str(lit: java.lang.String) extends ExecutableAst.Expression {
       final val tpe = Type.Str
+      final val loc = SourceLocation.Unknown
     }
 
     /**

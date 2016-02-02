@@ -259,7 +259,7 @@ object Simplifier {
       case TypedAst.Literal.Bool(b, loc) =>
         if (b) SimplifiedAst.Expression.True else SimplifiedAst.Expression.False
       case TypedAst.Literal.Int(i, loc) => SimplifiedAst.Expression.Int(i)
-      case TypedAst.Literal.Str(s, loc) => SimplifiedAst.Expression.Str(s, loc)
+      case TypedAst.Literal.Str(s, loc) => SimplifiedAst.Expression.Str(s)
       case TypedAst.Literal.Tag(enum, tag, lit, tpe, loc) => SimplifiedAst.Expression.Tag(enum, tag, simplify(lit), tpe, loc)
       case TypedAst.Literal.Tuple(elms, tpe, loc) => SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
       case TypedAst.Literal.Set(elms, tpe, loc) => SimplifiedAst.Expression.Set(elms map simplify, tpe, loc)
