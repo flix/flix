@@ -44,7 +44,7 @@ object Verifier {
         ∀(x, y, z)(≡(f(x, f(y, z)), f(f(x, y), z)))
       }
 
-      val name = "Associativity(" + f + ")"
+      val name = "Associativity(" + f.loc.format + ")"
 
       def fail(env0: Map[String, Expression]): VerifierError = {
         val x = env0.get("x")
@@ -65,7 +65,7 @@ object Verifier {
         ∀(x, y)(≡(f(x, y), f(y, x)))
       }
 
-      val name = "Commutativity(" + f + ")"
+      val name = "Commutativity(" + f.loc.format + ")"
 
       def fail(env0: Map[String, Expression]): VerifierError = {
         val x = env0.get("x")
@@ -319,7 +319,7 @@ object Verifier {
         ∀()(≡(f(argLat.bot), retLat.bot))
       }
 
-      val name = "Strict1(" + f + ")"
+      val name = "Strict1(" + f.loc.format + ")"
 
       def fail(env0: Map[String, Expression]): VerifierError = {
         StrictError(f.loc)
@@ -343,7 +343,7 @@ object Verifier {
 
       }
 
-      val name = "Strict2(" + f + ")"
+      val name = "Strict2(" + f.loc.format + ")"
 
       def fail(env0: Map[String, Expression]): VerifierError = {
         StrictError(f.loc)
@@ -363,7 +363,7 @@ object Verifier {
         ∀(x, y)(→(lat1.⊑(x, y), lat2.⊑(f(x), f(y))))
       }
 
-      val name = "Monotone1(" + f + ")"
+      val name = "Monotone1(" + f.loc.format + ")"
 
       def fail(env0: Map[String, Expression]): VerifierError = {
         MonotoneError(f.loc)
@@ -384,7 +384,7 @@ object Verifier {
         ∀(x1, y1, x2, y2)(→(∧(lat1.⊑(x1, x2), lat2.⊑(y1, y2)), lat3.⊑(f(x1, y1), f(x2, y2))))
       }
 
-      val name = "Monotone2(" + f + ")"
+      val name = "Monotone2(" + f.loc.format + ")"
 
       def fail(env0: Map[String, Expression]): VerifierError = {
         MonotoneError(f.loc)
