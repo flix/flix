@@ -205,6 +205,50 @@ class TestWeeder extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Illegal Lattice Attribute in Relation                                   //
+  /////////////////////////////////////////////////////////////////////////////
+  test("IllegalNonLatticeAttribute01") {
+    val input = "lat A(b: Int)"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalNonLatticeAttribute])
+  }
+
+  test("IllegalNonLatticeAttribute02") {
+    val input = "lat A(b: Int, c: Int)"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalNonLatticeAttribute])
+  }
+
+  test("IllegalNonLatticeAttribute03") {
+    val input = "lat A(b: Int, c: Int, d: Int)"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalNonLatticeAttribute])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // IllegalMixedAttributes                                                  //
+  /////////////////////////////////////////////////////////////////////////////
+  test("IllegalMixedAttributes01") {
+    val input = "lat A(b: Int, c: Int<>, d: Int, e: Int<>)"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalMixedAttributes])
+  }
+
+  test("IllegalMixedAttributes02") {
+    val input = "lat A(b: Int, c: Int<>, d: Int, e: Int, f: Int<>)"
+    val past = new Parser(SourceInput.Str(input)).Definition.run().get
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalMixedAttributes])
+  }
+
+  test("IllegalMixedAttributes03") {
+    val input = "lat A(b: Int<>, c: Int, d: Int<>, e: Int, f: Int<>)"
+    val past = new Parser(SourceInput.Str(input)).Definition.run().get
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalMixedAttributes])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Non Linear Pattern                                                      //
   /////////////////////////////////////////////////////////////////////////////
   test("NonLinearPattern01") {
@@ -239,51 +283,7 @@ class TestWeeder extends FunSuite {
 
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Lattices and Relations                                                  //
-  /////////////////////////////////////////////////////////////////////////////
 
-  test("IllegalNonLatticeAttribute01") {
-    val input = "lat A(b: Int)."
-    val past = new Parser(SourceInput.Str(input)).Definition.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalNonLatticeAttribute])
-  }
-
-  test("IllegalNonLatticeAttribute02") {
-    val input = "lat A(b: Int, c: Int)."
-    val past = new Parser(SourceInput.Str(input)).Definition.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalNonLatticeAttribute])
-  }
-
-  test("IllegalNonLatticeAttribute03") {
-    val input = "lat A(b: Int, c: Int, d: Int)."
-    val past = new Parser(SourceInput.Str(input)).Definition.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalNonLatticeAttribute])
-  }
-
-  test("IllegalMixedAttributes01") {
-    val input = "lat A(b: Int, c: Int<>, d: Int, e: Int<>)."
-    val past = new Parser(SourceInput.Str(input)).Definition.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalMixedAttributes])
-  }
-
-  test("IllegalMixedAttributes02") {
-    val input = "lat A(b: Int, c: Int<>, d: Int, e: Int, f: Int<>)."
-    val past = new Parser(SourceInput.Str(input)).Definition.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalMixedAttributes])
-  }
-
-  test("IllegalMixedAttributes03") {
-    val input = "lat A(b: Int<>, c: Int, d: Int<>, e: Int, f: Int<>)."
-    val past = new Parser(SourceInput.Str(input)).Definition.run().get
-    val result = Weeder.Declaration.compile(past)
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalMixedAttributes])
-  }
 
 
 
