@@ -691,6 +691,8 @@ object Verifier {
     // the base expression
     val exp0 = property.formula.e
 
+    //println("Checking: " + exp0)
+
     // a sequence of environments under which the base expression must hold.
     val envs = enumerate(property.formula.q)
 

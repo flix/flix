@@ -81,7 +81,7 @@ object PartialEvaluator {
         /**
           * Unary Logical Not.
           */
-        case UnaryOperator.LogicalNot => eval(exp0, env0, {
+        case UnaryOperator.LogicalNot => eval(exp, env0, {
           case True => k(False)
           case False => k(True)
           case residual => k(residual)
@@ -269,9 +269,6 @@ object PartialEvaluator {
       /**
         * Apply Expressions.
         */
-      // TODO: Verify
-      case Apply(_, _, _, _) => ???
-
       case Apply3(lambda, actuals, tpe, loc) =>
         // Partially evaluate the lambda expression.
         eval(lambda, env0, {
@@ -296,6 +293,8 @@ object PartialEvaluator {
           case r1 =>
             // Case 3: The lambda expression is residual.
             // Partially evaluate the arguments and (re)-construct the residual.
+            println(exp0)
+            println(env0)
             ???
         })
 
@@ -369,14 +368,6 @@ object PartialEvaluator {
           case _ => ???
         }
 
-      case o: LoadBool => ??? // TODO: To be eliminated from this phase.
-      case o: LoadInt8 => ??? // TODO: To be eliminated from this phase.
-      case o: LoadInt16 => ??? // TODO: To be eliminated from this phase.
-      case o: LoadInt32 => ??? // TODO: To be eliminated from this phase.
-      case o: StoreBool => ??? // TODO: To be eliminated from this phase.
-      case o: StoreInt8 => ??? // TODO: To be eliminated from this phase.
-      case o: StoreInt16 => ??? // TODO: To be eliminated from this phase.
-      case o: StoreInt32 => ??? // TODO: To be eliminated from this phase.
 
       case Set(elms, tpe, loc) => ??? // TODO
 
@@ -386,6 +377,16 @@ object PartialEvaluator {
       case Error(tpe, loc) => k(Error(tpe, loc))
       case MatchError(tpe, loc) => k(MatchError(tpe, loc))
 
+
+      case Apply(_, _, _, _) => ??? // TODO: To be eliminated from this phase.
+      case o: LoadBool => ??? // TODO: To be eliminated from this phase.
+      case o: LoadInt8 => ??? // TODO: To be eliminated from this phase.
+      case o: LoadInt16 => ??? // TODO: To be eliminated from this phase.
+      case o: LoadInt32 => ??? // TODO: To be eliminated from this phase.
+      case o: StoreBool => ??? // TODO: To be eliminated from this phase.
+      case o: StoreInt8 => ??? // TODO: To be eliminated from this phase.
+      case o: StoreInt16 => ??? // TODO: To be eliminated from this phase.
+      case o: StoreInt32 => ??? // TODO: To be eliminated from this phase.
     }
 
     eval(exp0, env0, x => x)
