@@ -940,6 +940,7 @@ object Weeder {
         compile(tpe) map WeededAst.Type.Set
       case ParsedAst.Type.Parametric(name, pelms) =>
         Unsupported("Parametric types are not yet supported.", name.loc).toFailure
+      case ParsedAst.Type.Native => WeededAst.Type.Native.toSuccess
     }
   }
 

@@ -1528,6 +1528,13 @@ class TestParser extends FunSuite {
     assert(result.get.isInstanceOf[ParsedAst.Type.Parametric])
   }
 
+  test("Type.Native01") {
+    val input = "Native"
+    val result = new Parser(SourceInput.Str(input)).Type.run()
+    assert(result.isSuccess)
+    assertResult(result.get)(ParsedAst.Type.Native)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Identifiers & Names                                                     //
   /////////////////////////////////////////////////////////////////////////////

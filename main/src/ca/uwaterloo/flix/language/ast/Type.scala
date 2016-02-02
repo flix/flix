@@ -111,8 +111,6 @@ object Type {
 
   /**
     * An AST node that represents a native type.
-    *
-    * @param name the fully qualified name of the type.
     */
   case class Native(name: String) extends Type
 

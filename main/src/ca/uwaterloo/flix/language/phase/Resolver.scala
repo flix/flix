@@ -931,6 +931,7 @@ object Resolver {
           @@(argsVal, retTypeVal) map {
             case (args, retTpe) => Type.Lambda(args, retTpe)
           }
+        case WeededAst.Type.Native => Type.Native("foo").toSuccess // TODO: Dont give a name.
       }
 
       visit(wast)

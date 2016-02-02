@@ -427,11 +427,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   def Type: Rule1[ParsedAst.Type] = rule {
-    FunctionType | TupleType | ParametricType | NamedType
+    FunctionType | TupleType | ParametricType | NativeType | NamedType
   }
 
   def NamedType: Rule1[ParsedAst.Type.Named] = rule {
     QName ~> ParsedAst.Type.Named
+  }
+
+  def NativeType: Rule1[ParsedAst.Type] = rule {
+    atomic("Native") ~> (() => ParsedAst.Type.Native)
   }
 
   def TupleType: Rule1[ParsedAst.Type] = {

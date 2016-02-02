@@ -720,6 +720,7 @@ object WeededAst {
       */
     case class Function(args: List[WeededAst.Type], retTpe: WeededAst.Type) extends WeededAst.Type
 
+    case object Native extends WeededAst.Type
   }
 
   /**

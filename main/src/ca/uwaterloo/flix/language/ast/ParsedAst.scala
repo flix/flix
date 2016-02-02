@@ -897,6 +897,11 @@ object ParsedAst {
       */
     case class Parametric(name: Name.Unresolved, elms: Seq[ParsedAst.Type]) extends ParsedAst.Type
 
+    /**
+      * An AST node that represents a native type.
+      */
+    case object Native extends ParsedAst.Type
+
   }
 
   /**
