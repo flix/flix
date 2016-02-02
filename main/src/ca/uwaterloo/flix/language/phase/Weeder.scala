@@ -146,51 +146,19 @@ object Weeder {
     }
 
     /**
-      * An error raised to indicate that a read predicate has too few arguments.
+      * An error raised to indicate the presence of an illegal annotation.
       *
-      * @param loc the location where the illegal predicate occurs.
+      * @param name the name of the illegal annotation.
+      * @param loc  the location of the annotation.
       */
-    case class IllegalReadPredicate(loc: SourceLocation) extends WeederError {
+    case class IllegalAnnotation(name: String, loc: SourceLocation) extends WeederError {
       val message =
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
-            |${consoleCtx.red(s">> Too few arguments for Read# predicate.")}
+           |${consoleCtx.red(s">> Illegal annotation '$name'.")}
            |
-            |${loc.underline}
-           |A Read# predicate must have atleast two arguments.
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that a write predicate has too few arguments.
-      *
-      * @param loc the location where the illegal predicate occurs.
-      */
-    case class IllegalWritePredicate(loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
+           |${loc.underline}
            |
-            |${consoleCtx.red(s">> Too few arguments for Write# predicate.")}
-           |
-            |${loc.underline}
-           |A Write# predicate must have atleast two arguments.
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that an illegal term occurs in a head predicate.
-      *
-      * @param msg the error message.
-      * @param loc the location where the illegal term occurs.
-      */
-    case class IllegalHeadTerm(msg: String, loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-            |${consoleCtx.red(s">> Illegal term in the head of a fact/rule.")}
-           |
-            |${loc.underline}
-           |$msg
          """.stripMargin
     }
 
@@ -205,6 +173,23 @@ object Weeder {
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
             |${consoleCtx.red(s">> Illegal term in the body of a rule.")}
+           |
+            |${loc.underline}
+           |$msg
+         """.stripMargin
+    }
+
+    /**
+      * An error raised to indicate that an illegal term occurs in a head predicate.
+      *
+      * @param msg the error message.
+      * @param loc the location where the illegal term occurs.
+      */
+    case class IllegalHeadTerm(msg: String, loc: SourceLocation) extends WeederError {
+      val message =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+            |${consoleCtx.red(s">> Illegal term in the head of a fact/rule.")}
            |
             |${loc.underline}
            |$msg
@@ -264,23 +249,6 @@ object Weeder {
            |The last attribute of lattice must have a lattice interpretation.
            |
             |Tip: Change the interpretation of the last attribute (adding <>) or change the lattice to a relation (replace lat by rel).
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate the presence of an illegal annotation.
-      *
-      * @param name the name of the illegal annotation.
-      * @param loc  the location of the annotation.
-      */
-    case class IllegalAnnotation(name: String, loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> Illegal annotation '$name'.")}
-           |
-           |${loc.underline}
-           |
          """.stripMargin
     }
 
