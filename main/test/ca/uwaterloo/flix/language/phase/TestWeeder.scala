@@ -4,7 +4,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import org.scalatest.FunSuite
 
-import scala.collection.immutable.Seq
 
 class TestWeeder extends FunSuite {
 
@@ -60,29 +59,44 @@ class TestWeeder extends FunSuite {
   }
 
   test("DuplicateAttribute02") {
-    val past = ParsedAst.Definition.Relation(SP, Ident, Seq(
-      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(Type.Unit)),
-      ParsedAst.Attribute(ident("y"), ParsedAst.Interpretation.Set(Type.Unit)),
-      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(Type.Unit)),
-      ParsedAst.Attribute(ident("x"), ParsedAst.Interpretation.Set(Type.Unit))
-    ), SP)
-
-    val result = Weeder.Definition.compile(past)
-    assertResult(2)(result.errors.size)
+    val input =
+      """rel A(x: Int, y: Int, x: Int)
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAttribute])
   }
 
-
-
-
-
-
-
-
-
-
+  test("DuplicateAttribute03") {
+    val input =
+      """rel A(x: Bool, x: Int, x: Str)
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAttribute])
+  }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Enums                                                                   //
+  // Duplicate Formal                                                        //
+  /////////////////////////////////////////////////////////////////////////////
+  test("DuplicateFormal01") {
+    val input = "fn f(x: Int, x: Int): Int = 42"
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
+  }
+
+  test("DuplicateFormal02") {
+    val input = "fn f(x: Int, y: Int, x: Int): Int = 42"
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
+  }
+
+  test("DuplicateFormal03") {
+    val input = "fn f(x: Bool, x: Int, x: Str): Int = 42"
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Duplicate Tag                                                           //
   /////////////////////////////////////////////////////////////////////////////
   test("DuplicateTag01") {
     val input =
@@ -106,6 +120,66 @@ class TestWeeder extends FunSuite {
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateTag])
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Illegal Annotation                                                      //
+  /////////////////////////////////////////////////////////////////////////////
+  test("IllegalAnnotation01") {
+    val input =
+      """@abc
+        |fn foo(x: Int): Int = 42
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalAnnotation])
+  }
+
+  test("IllegalAnnotation02") {
+    val input =
+      """@foobarbaz
+        |fn foo(x: Int): Int = 42
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalAnnotation])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Non Linear Pattern                                                      //
+  /////////////////////////////////////////////////////////////////////////////
+  test("NonLinearPattern01") {
+    val input =
+      """fn f(): Bool = match (21, 42) with {
+        |  case (x, x) => true
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.NonLinearPattern])
+  }
+
+  test("NonLinearPattern02") {
+    val input =
+      """fn f(): Bool = match (21, 42, 84) with {
+        |  case (x, x, x) => true
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.NonLinearPattern])
+  }
+
+  test("NonLinearPattern03") {
+    val input =
+      """fn f(): Bool = match (1, (2, (3, 4))) with {
+        |  case (x, (y, (z, x))) => true
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.NonLinearPattern])
+  }
+
+
+
+
 
   /////////////////////////////////////////////////////////////////////////////
   // BoundedLattices                                                         //
@@ -199,42 +273,8 @@ class TestWeeder extends FunSuite {
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalMixedAttributes])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Expressions                                                             //
-  /////////////////////////////////////////////////////////////////////////////
-  test("DuplicateFormal01") {
-    val input = "fn f(x: Int, x: Int): Int = 42"
-    val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
-  }
 
-  test("DuplicateFormal02") {
-    val input = "fn f(x: Int, y: Int, x: Int): Int = 42"
-    val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
-  }
 
-  test("DuplicateFormal03") {
-    val input = "fn f(x: Bool, x: Int, x: Str): Int = 42"
-    val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
-  }
-
-  test("NonLinearPattern01") {
-    val input = "(x, x)"
-    val past = new Parser(SourceInput.Str(input)).Pattern.run().get
-    val result = Weeder.Pattern.compile(past)
-    assert(result.isFailure)
-    assertResult(1)(result.errors.size)
-  }
-
-  test("NonLinearPattern02") {
-    val input = "(x, (y, (z, x, y)))"
-    val past = new Parser(SourceInput.Str(input)).Pattern.run().get
-    val result = Weeder.Pattern.compile(past)
-    assert(result.isFailure)
-    assertResult(2)(result.errors.size)
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Predicates, Facts and Rules                                             //
@@ -391,16 +431,7 @@ class TestWeeder extends FunSuite {
 
 
 
-  test("IllegalAnnotation01") {
-    val input =
-      """@foobar
-        |fn foo(x: Int): Int = 42
-        |
-      """.stripMargin
-    val result = new Flix().addStr(input).solve()
 
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalAnnotation])
-  }
 
 
   // TODO: Use source code directly in tests.
