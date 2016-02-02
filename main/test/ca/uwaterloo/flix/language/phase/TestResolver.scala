@@ -1,9 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{IType, Invokable, IValue, Flix}
-import ca.uwaterloo.flix.language.ast.Type
-import ca.uwaterloo.flix.language.ast.Type.Lambda
-import ca.uwaterloo.flix.runtime.Value
+import ca.uwaterloo.flix.api.{Invokable, IValue, Flix}
+
 import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite {
@@ -376,7 +374,6 @@ class TestResolver extends FunSuite {
         def apply(args: Array[IValue]) = flix.mkStr("foo")
       })
     val result = flix.compile()
-    println(result)
     assert(result.isSuccess)
   }
 

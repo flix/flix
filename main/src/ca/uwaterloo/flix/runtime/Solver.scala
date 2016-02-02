@@ -46,6 +46,12 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   var paused: Boolean = false
 
   /**
+    * The model (if it exists).
+    */
+  @volatile
+  var model: Model = null
+
+  /**
     * Returns the number of elements in the worklist.
     */
   def getQueueSize = worklist.length
@@ -149,8 +155,11 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         }
         macc + ((name, table))
     }
-    Model(sCtx.root, constants, relations, lattices)
+    model = Model(sCtx.root, constants, relations, lattices)
+    model
   }
+
+  def getModel: Model = model
 
   // TODO: Move
   def getRuleStats: List[(TypedAst.Constraint.Rule, Int, Long)] =

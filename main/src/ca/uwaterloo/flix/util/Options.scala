@@ -6,6 +6,7 @@ object Options {
     */
   val Default = Options(
     debugger = Debugger.Disabled,
+    Nil,
     verbosity = Verbosity.Normal,
     verify = Verify.Disabled
   )
@@ -15,10 +16,11 @@ object Options {
   * General Flix options.
   *
   * @param debugger  enable or disable the built-in web-based debugger.
+  * @param print     a list of things to print.
   * @param verbosity the level of verbosity.
   * @param verify    enable or disable the built-in verifier.
   */
-case class Options(debugger: Debugger, verbosity: Verbosity, verify: Verify)
+case class Options(debugger: Debugger, print: List[String], verbosity: Verbosity, verify: Verify)
 
 
 /**

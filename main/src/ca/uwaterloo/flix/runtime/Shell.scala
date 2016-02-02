@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.util.Version
+import ca.uwaterloo.flix.util.{PrettyPrint, Version}
 
 class Shell(solver: Solver) extends Thread {
 
@@ -25,6 +25,11 @@ class Shell(solver: Solver) extends Thread {
      * Prints some basic status information about the fixpoint computation.
      */
     case object Status extends Input
+
+    /**
+      * Prints the given constant, relation or lattice.
+      */
+    case class Print(name: String) extends Input
 
     /**
      * Pauses the fixpoint computation.
@@ -93,6 +98,7 @@ class Shell(solver: Solver) extends Thread {
     case "resume" | "unpause" | "continue" => Input.Unpause
     case "exit" | "quit" => Input.Exit
     case "abort" => Input.Abort
+    case s if s.startsWith("print") => Input.Print(s.substring("print ".length))
     case _ => Input.Unknown(line)
   }
 
@@ -118,6 +124,13 @@ class Shell(solver: Solver) extends Thread {
 
     case Input.Abort =>
       System.exit(1)
+
+    case Input.Print(name) =>
+      val m = solver.getModel
+      if (m == null)
+        Console.println("Model not yet computed.")
+      else
+        PrettyPrint.print(name, m)
 
     case Input.Help =>
       Console.println("Available commands:")
