@@ -48,7 +48,7 @@ object PartialEvaluator {
       case Int16(lit) => k(Int16(lit))
       case Int32(lit) => k(Int32(lit))
       case Int64(lit) => k(Int64(lit))
-      case Int(lit) => k(Int(lit)) // TODO
+      case Int(lit) => k(Int(lit)) // TODO: Int is deprecated.
 
       // TODO
       case v: Closure => k(v)
@@ -142,25 +142,28 @@ object PartialEvaluator {
         case BinaryOperator.Greater => ??? // TODO
         case BinaryOperator.GreaterEqual => ??? // TODO
 
+        /**
+          * Equal.
+          */
         case BinaryOperator.Equal =>
           // Partially evaluate exp1.
           eval(exp1, env0, {
             case e1 =>
               // Partially evaluate exp2.
               eval(exp2, env0, {
-                case e2 =>
-                  if (mustBeEqual(e1, e2, env0)) {
-                    // Case 1: The expressions are semantically equivalent. Return true.
-                    k(True)
-                  } else if (mustNotBeEqual(e1, e2, env0)) {
-                    k(False)
-                  } else {
-                    // Case 2: The expressions may or may not be equal. Reconstruct the expression.
-                    k(Binary(op, e1, e2, tpe, loc))
-                  }
+                case e2 => syntacticEqual(e1, e2, env0) match {
+                  case Eq.Equal => k(True)
+                  case Eq.NotEq => k(False)
+                  case Eq.Unknown => k(Binary(op, e1, e2, tpe, loc))
+                }
               })
           })
-        case BinaryOperator.NotEqual => ??? // TODO
+
+        /**
+          * Not Equal.
+          */
+        case BinaryOperator.NotEqual =>
+          k(Unary(UnaryOperator.LogicalNot, Binary(BinaryOperator.Equal, exp1, exp2, tpe, loc), tpe, loc))
 
         /**
           * LogicalOr.
@@ -321,7 +324,17 @@ object PartialEvaluator {
             ???
         })
 
-      case GetTagValue(exp, tpe, loc) => ???
+      case GetTagValue(exp, tpe, loc) =>
+        // Partially evaluate exp.
+        eval(exp, env0, {
+          case Tag(_, _, e, _, _) =>
+            // Case 1: The expression exp evaluates to a tag.
+            // The result is inner expression
+            k(e)
+          case r =>
+            // Case 2: The expression is residual. Reconstruct the expression.
+            GetTagValue(r, tpe, loc)
+        })
 
       case Tag(enum, tag, exp1, tpe, loc) =>
         eval(exp1, env0, {
@@ -398,28 +411,47 @@ object PartialEvaluator {
   }
 
 
+  /**
+    * A common super-type for the result of an equality comparison.
+    */
   sealed trait Eq
 
   object Eq {
 
-    case class Equal() extends Eq
+    /**
+      * The two expressions must evaluate the same value.
+      */
+    case object Equal extends Eq
 
-    case class NotEq() extends Eq
+    /**
+      * The two expressions must not evaluate to the same value.
+      */
+    case object NotEq extends Eq
 
+    /**
+      * It is unknown whether the two expressions evaluate to the same value.
+      */
     case object Unknown extends Eq
 
   }
 
-
-  def syntacticEqual(exp1: Expression, exp2: Expression,  env0: Map[String, Expression]): Boolean = ???
+  /**
+    * Returns an `Eq` result depending on whether the two expressions
+    * `exp1` and `exp2` can evaluate to the same value.
+    */
+  private def syntacticEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Eq =
+    if (mustBeEqual(exp1, exp2, env0))
+      Eq.Equal
+    else if (mustNotBeEqual(exp1, exp2, env0))
+      Eq.NotEq
+    else
+      Eq.Unknown
 
   /**
-    * Returns `true` iff the two given expressions `exp1` and `exp2` are
-    * semantically equivalent under the given environment `env0`.
-    *
-    * Returns `false` if the expressions are not equal or it is unknown if they are equal.
+    * Returns `true` iff `exp1` and `exp2` *must* evaluate to the same value under the given environment `env0`.
     */
-  def mustBeEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
+  private def mustBeEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
+    case (Unit, Unit) => true
     case (True, True) => true
     case (False, False) => true
     case (Tag(_, tag1, e1, _, _), Tag(_, tag2, e2, _, _)) =>
@@ -430,9 +462,17 @@ object PartialEvaluator {
     //case _ => false
   }
 
-  def mustNotBeEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
+  /**
+    * Returns `true` iff `exp1` and `exp2` *cannot* evaluate to the same value under the given environment `env0`.
+    */
+  private def mustNotBeEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
     case (True, False) => true
-
+    case (False, True) => true
+    case (Tag(_, tag1, e1, _, _), Tag(_, tag2, e2, _, _)) =>
+      tag1.name != tag2.name || mustNotBeEqual(e1, e2, env0)
+    case (Tuple(elms1, _, _), Tuple(elms2, _, _)) => (elms1 zip elms2) exists {
+      case (e1, e2) => mustNotBeEqual(e1, e2, env0)
+    }
   }
 
   /**
@@ -451,7 +491,6 @@ object PartialEvaluator {
   private def canonical(e: Expression): Expression = e match {
     case _ => e
   }
-
 
 
   // http://www.lshift.net/blog/2007/06/11/folds-and-continuation-passing-style/
