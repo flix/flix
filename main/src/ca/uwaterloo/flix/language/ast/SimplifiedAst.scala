@@ -134,12 +134,6 @@ object SimplifiedAst {
       override def toString: String = "#f"
     }
 
-    // TODO: Eventually we'll want to use the specialized ints below, and this will alias to Int32
-    case class Int(lit: scala.Int) extends SimplifiedAst.Expression {
-      final val tpe = Type.Int32
-      final val loc = SourceLocation.Unknown
-    }
-
     case class Int8(lit: scala.Byte) extends SimplifiedAst.Expression {
       final val tpe = Type.Int8
       final val loc = SourceLocation.Unknown

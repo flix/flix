@@ -404,7 +404,7 @@ object Verifier {
         val formula = {
           val x = mkVar("x")
 
-          ∀(x)(Expression.Binary(BinaryOperator.GreaterEqual, ???, Expression.Int(0), Type.Bool, SourceLocation.Unknown))
+          ∀(x)(Expression.Binary(BinaryOperator.GreaterEqual, ???, Expression.Int32(0), Type.Bool, SourceLocation.Unknown))
         }
 
         val name = "HeightNonNegative(" + lattice.tpe + ")"
@@ -1012,7 +1012,7 @@ object Verifier {
     * (In addition to all tags, tuples, sets, maps, etc.)
     */
   def visitArithExpr(e0: Expression, ctx: Context): ArithExpr = e0 match {
-    case Int(i) => ctx.mkInt(i)
+    case Int32(i) => ctx.mkInt(i)
     case Var(name, offset, tpe, loc) => ctx.mkIntConst(name.name)
     case Unary(op, e1, tpe, loc) => op match {
       case UnaryOperator.Plus => visitArithExpr(e1, ctx)
@@ -1087,7 +1087,7 @@ object Verifier {
     * (In addition to all tags, tuples, sets, maps, etc.)
     */
   def visitBitVecExpr(e0: Expression, ctx: Context): BitVecExpr = e0 match {
-    case Int(i) => ctx.mkBV(i, 32)
+    case Int32(i) => ctx.mkBV(i, 32)
     case Unary(op, e1, tpe, loc) => op match {
       case UnaryOperator.BitwiseNegate => ctx.mkBVNot(visitBitVecExpr(e1, ctx))
       case _ => throw new InternalCompilerError(s"Illegal unary operator: $op.")
@@ -1206,7 +1206,7 @@ object Verifier {
   def model2env(model: Model): Map[String, Expression] = {
     def visit(exp: Expr): Expression = exp match {
       case e: BoolExpr => if (e.isTrue) True else False
-      case e: IntNum => Int(e.getInt)
+      case e: IntNum => Int32(e.getInt)
       case _ => throw new InternalCompilerError(s"Unexpected Z3 expression: $exp.")
     }
 
