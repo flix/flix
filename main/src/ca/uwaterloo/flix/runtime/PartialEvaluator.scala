@@ -480,7 +480,7 @@ object PartialEvaluator {
           case e if isValue(e) => // TODO: Why?
             // Case 1: The bound value expression exp1 is a value.
             // Extend the environment and evaluate the body expression exp2.
-            eval(exp2, env0 + (name.name -> e), k)
+            eval(exp2, env0 + (name.name -> e), k) // TODO: Carefull with substi.
           case r =>
             println(r)
             ???
@@ -510,6 +510,7 @@ object PartialEvaluator {
         */
       case Apply3(lambda, actuals, tpe, loc) =>
         // Partially evaluate the lambda expression.
+        // TODO: Carefull with substi.
         eval(lambda, env0, {
           case Lambda(_, formals, body, _, _) =>
             // Case 1: The application expression is a lambda abstraction.
@@ -623,11 +624,11 @@ object PartialEvaluator {
       * Overloaded eval that partially evaluates the two arguments `exp1` and `exp2` under the environment `env0`.
       */
     def eval2(exp1: Expression, exp2: Expression, env0: Map[String, Expression], k: Cont2): Expression =
-    eval(exp1, env0, {
-      case e1 => eval(exp2, env0, {
-        case e2 => k(e1, e2)
+      eval(exp1, env0, {
+        case e1 => eval(exp2, env0, {
+          case e2 => k(e1, e2)
+        })
       })
-    })
 
     /**
       * Overloaded eval that partially evaluates the given list of expressions `exps` under the environment `env0`.
@@ -690,14 +691,16 @@ object PartialEvaluator {
   }
 
   /**
-    * Returns an `Eq` result depending on whether the two expressions
-    * `exp1` and `exp2` can evaluate to the same value.
+    * Compares the two expressions `exp1` and `exp2` under the environment `env0`.
+    *
+    * Returns `Eq.Equal` if evaluation of `exp1` and `exp2` is *guaranteed* to produce the *same* value.
+    * Returns `Eq.NotEqual` if evaluation of `exp1` and `exp2` is *guaranteed* to produce *different* values.
+    * Returns `Eq.Unknown` if the procedure cannot determine whether the two expressions may or may not produce the same value.
     */
-  // TODO: Implement rest
   private def isEq(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Eq =
-    if (mustBeEqual(exp1, exp2, env0))
+    if (mustEq(exp1, exp2, env0))
       Eq.Equal
-    else if (mustNotBeEqual(exp1, exp2, env0))
+    else if (mustNotEq(exp1, exp2, env0))
       Eq.NotEq
     else
       Eq.Unknown
@@ -706,14 +709,14 @@ object PartialEvaluator {
     * Returns `true` iff `exp1` and `exp2` *must* evaluate to the same value under the given environment `env0`.
     */
   // TODO: Implement rest
-  private def mustBeEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
+  private def mustEq(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
     case (Unit, Unit) => true
     case (True, True) => true
     case (False, False) => true
     case (Tag(_, tag1, e1, _, _), Tag(_, tag2, e2, _, _)) =>
-      tag1.name == tag2.name && mustBeEqual(e1, e2, env0)
+      tag1.name == tag2.name && mustEq(e1, e2, env0)
     case (Tuple(elms1, _, _), Tuple(elms2, _, _)) => (elms1 zip elms2) forall {
-      case (e1, e2) => mustBeEqual(e1, e2, env0)
+      case (e1, e2) => mustEq(e1, e2, env0)
     }
     //case _ => false
   }
@@ -722,14 +725,14 @@ object PartialEvaluator {
     * Returns `true` iff `exp1` and `exp2` *cannot* evaluate to the same value under the given environment `env0`.
     */
   // TODO: Implement rest
-  private def mustNotBeEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
+  private def mustNotEq(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
     case (Unit, Unit) => false
     case (True, False) => true
     case (False, True) => true
     case (Tag(_, tag1, e1, _, _), Tag(_, tag2, e2, _, _)) =>
-      tag1.name != tag2.name || mustNotBeEqual(e1, e2, env0)
+      tag1.name != tag2.name || mustNotEq(e1, e2, env0)
     case (Tuple(elms1, _, _), Tuple(elms2, _, _)) => (elms1 zip elms2) exists {
-      case (e1, e2) => mustNotBeEqual(e1, e2, env0)
+      case (e1, e2) => mustNotEq(e1, e2, env0)
     }
   }
 
