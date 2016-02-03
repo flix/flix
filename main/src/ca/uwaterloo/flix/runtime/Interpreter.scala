@@ -323,7 +323,7 @@ object Interpreter {
     case Pattern.Var(ident, _, _) => env.update(ident.name, value)
     case Pattern.Tag(_, _, innerPat, _, _) => unify(innerPat, Value.cast2tag(value).value, env)
     case p: Pattern.Tuple =>
-      val elms = value.asInstanceOf[Value.Tuple].elms
+      val elms = Value.cast2tuple(value)
       var i = 0
       while (i < p.asArray.length) {
         unify(p.asArray(i), elms(i), env)
@@ -339,8 +339,8 @@ object Interpreter {
       case v: Value.Tag if name == v.enum && ident.name == v.tag => canUnify(innerPat, v.value)
       case _ => false
     }
-    case p: Pattern.Tuple => value match {
-      case Value.Tuple(elms) =>
+    case p: Pattern.Tuple =>
+      val elms = Value.cast2tuple(value)
         var i = 0
         while (i < p.asArray.length) {
           val result = canUnify(p.asArray(i), elms(i))
@@ -348,8 +348,6 @@ object Interpreter {
           i = i + 1
         }
         true
-      case _ => false
-    }
     case Pattern.Wildcard(_, _) | Pattern.Var(_, _, _) => true
   }
 

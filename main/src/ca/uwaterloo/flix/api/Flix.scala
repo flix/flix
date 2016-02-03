@@ -320,12 +320,9 @@ class Flix {
   }
 
   /**
-    * Returns the native type for the given fully qualified `name`.
+    * Returns the native type.
     */
-  def mkNative(name: String): IType = {
-    if (name == null)
-      throw new IllegalArgumentException("Argument 'name' must be non-null.")
-
+  def mkNativeType: IType = {
     new WrappedType(Type.Native)
   }
 

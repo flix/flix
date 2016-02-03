@@ -279,6 +279,7 @@ object Value {
   def cast2tuple(ref: AnyRef): Array[AnyRef] = ref match {
     case o: Array[AnyRef] => o
     case o: Tuple => o.elms // TODO: remove
+    case o: Product => o.productIterator.toArray.asInstanceOf[Array[AnyRef]] // TODO: See if this works, and think about better solution.
     case _ => throw new InternalRuntimeError(s"Unexpected non-tuple value: '$ref'.")
   }
 
