@@ -63,7 +63,8 @@ object ExecutableAst {
     case class Rule(head: ExecutableAst.Predicate.Head,
                     body: Array[ExecutableAst.Predicate.Body],
                     collections: Array[ExecutableAst.Predicate.Body.Collection],
-                    filters: Array[ExecutableAst.Predicate.Body.Function],
+                    filters: Array[ExecutableAst.Predicate.Body.ApplyFilter],
+                    hookFilters: Array[ExecutableAst.Predicate.Body.ApplyHookFilter],
                     disjoint: Array[ExecutableAst.Predicate.Body.NotEqual],
                     loops: Array[ExecutableAst.Predicate.Body.Loop]) extends ExecutableAst.Constraint {
       var elapsedTime: Long = 0
@@ -74,8 +75,7 @@ object ExecutableAst {
 
   case class Directives(directives: Array[ExecutableAst.Directive],
                         assertedFacts: Array[ExecutableAst.Directive.AssertFact],
-                        assertedRules: Array[ExecutableAst.Directive.AssertRule],
-                        prints: Array[ExecutableAst.Directive.Print]) extends ExecutableAst
+                        assertedRules: Array[ExecutableAst.Directive.AssertRule]) extends ExecutableAst
 
   sealed trait Directive
 
@@ -84,8 +84,6 @@ object ExecutableAst {
     case class AssertFact(fact: ExecutableAst.Constraint.Fact, loc: SourceLocation) extends ExecutableAst.Directive
 
     case class AssertRule(rule: ExecutableAst.Constraint.Rule, loc: SourceLocation) extends ExecutableAst.Directive
-
-    case class Print(name: Name.Resolved, loc: SourceLocation) extends ExecutableAst.Directive
 
   }
 
@@ -279,6 +277,8 @@ object ExecutableAst {
                       loc: SourceLocation) extends ExecutableAst.Expression {
       override def toString: String = "λ(" + args.map(_.tpe).mkString(", ") + ") " + body
     }
+
+    case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     // TODO: Eliminate once we have lambda lifting
     case class Closure(args: Array[ExecutableAst.FormalArg],
@@ -523,10 +523,15 @@ object ExecutableAst {
         val arity: Int = terms.length
       }
 
-      case class Function(name: Name.Resolved,
-                          terms: Array[ExecutableAst.Term.Body],
-                          tpe: Type.Lambda,
-                          loc: SourceLocation) extends ExecutableAst.Predicate.Body
+      case class ApplyFilter(name: Name.Resolved,
+                             terms: Array[ExecutableAst.Term.Body],
+                             tpe: Type.Lambda,
+                             loc: SourceLocation) extends ExecutableAst.Predicate.Body
+
+      case class ApplyHookFilter(hook: Ast.Hook,
+                                 terms: Array[ExecutableAst.Term.Body],
+                                 tpe: Type.Lambda,
+                                 loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
       case class NotEqual(ident1: Name.Ident,
                           ident2: Name.Ident,
@@ -556,7 +561,15 @@ object ExecutableAst {
 
       case class Exp(e: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
-      case class Apply(name: Name.Resolved, args: Array[ExecutableAst.Term.Head], tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
+      case class Apply(name: Name.Resolved,
+                       args: Array[ExecutableAst.Term.Head],
+                       tpe: Type,
+                       loc: SourceLocation) extends ExecutableAst.Term.Head
+
+      case class ApplyHook(hook: Ast.Hook,
+                           args: Array[ExecutableAst.Term.Head],
+                           tpe: Type,
+                           loc: SourceLocation) extends ExecutableAst.Term.Head
 
     }
 

@@ -88,10 +88,11 @@ object CreateExecutableAst {
       val head = Predicate.Head.toExecutable(sast.head)
       val body = sast.body.map(Predicate.Body.toExecutable).toArray
       val collections = body.collect { case p: ExecutableAst.Predicate.Body.Collection => p }
-      val filters = body.collect { case p: ExecutableAst.Predicate.Body.Function => p }
+      val filters = body.collect { case p: ExecutableAst.Predicate.Body.ApplyFilter => p }
+      val hookFilters = body.collect { case p: ExecutableAst.Predicate.Body.ApplyHookFilter => p }
       val disjoint = body.collect { case p: ExecutableAst.Predicate.Body.NotEqual => p }
       val loops = body.collect { case p: ExecutableAst.Predicate.Body.Loop => p }
-      ExecutableAst.Constraint.Rule(head, body, collections, filters, disjoint, loops)
+      ExecutableAst.Constraint.Rule(head, body, collections, filters, hookFilters, disjoint, loops)
     }
   }
 
@@ -100,14 +101,12 @@ object CreateExecutableAst {
       val directives = sast.directives.map(toExecutable).toArray
       val assertedFacts = directives.collect { case d: ExecutableAst.Directive.AssertFact => d }
       val assertedRules = directives.collect { case d: ExecutableAst.Directive.AssertRule => d }
-      val prints = directives.collect { case d: ExecutableAst.Directive.Print => d }
-      ExecutableAst.Directives(directives, assertedFacts, assertedRules, prints)
+      ExecutableAst.Directives(directives, assertedFacts, assertedRules)
     }
 
     def toExecutable(sast: SimplifiedAst.Directive): ExecutableAst.Directive = sast match {
       case SimplifiedAst.Directive.AssertFact(fact, loc) => throw new UnsupportedOperationException // TODO: To be removed?
       case SimplifiedAst.Directive.AssertRule(rule, loc) => throw new UnsupportedOperationException // TODO: To be removed?
-      case SimplifiedAst.Directive.Print(name, loc) => throw new UnsupportedOperationException // TODO: To be removed?
     }
   }
 
@@ -139,6 +138,7 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.Lambda(annotations, args, body, tpe, loc) =>
         val argsArray = args.map(CreateExecutableAst.toExecutable).toArray
         ExecutableAst.Expression.Lambda(annotations, argsArray, toExecutable(body), tpe, loc)
+      case SimplifiedAst.Expression.Hook(hook, tpe, loc) => ExecutableAst.Expression.Hook(hook, tpe, loc)
       case SimplifiedAst.Expression.Closure(args, body, env, tpe, loc) =>
         val argsArray = args.map(CreateExecutableAst.toExecutable).toArray
         ExecutableAst.Expression.Closure(argsArray, toExecutable(body), env.mapValues(toExecutable), tpe, loc)
@@ -188,7 +188,7 @@ object CreateExecutableAst {
 
     object Body {
       def toExecutable(sast: SimplifiedAst.Predicate.Body): ExecutableAst.Predicate.Body = sast match {
-        case SimplifiedAst.Predicate.Body.Collection(n, terms, tpe, loc) =>
+        case SimplifiedAst.Predicate.Body.Collection(name, terms, tpe, loc) =>
           val termsArray = terms.map(Term.toExecutable).toArray
           val index2var: Array[String] = {
             val r = new Array[String](termsArray.length)
@@ -203,10 +203,13 @@ object CreateExecutableAst {
             }
             r
           }
-          ExecutableAst.Predicate.Body.Collection(n, termsArray, index2var, tpe, loc)
-        case SimplifiedAst.Predicate.Body.Function(name, terms, tpe, loc) =>
+          ExecutableAst.Predicate.Body.Collection(name, termsArray, index2var, tpe, loc)
+        case SimplifiedAst.Predicate.Body.ApplyFilter(name, terms, tpe, loc) =>
           val termsArray = terms.map(Term.toExecutable).toArray
-          ExecutableAst.Predicate.Body.Function(name, termsArray, tpe, loc)
+          ExecutableAst.Predicate.Body.ApplyFilter(name, termsArray, tpe, loc)
+        case SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms, tpe, loc) =>
+          val termsArray = terms.map(Term.toExecutable).toArray
+          ExecutableAst.Predicate.Body.ApplyHookFilter(hook, termsArray, tpe, loc)
         case SimplifiedAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc) =>
           ExecutableAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc)
         case SimplifiedAst.Predicate.Body.Loop(ident, term, tpe, loc) =>
@@ -224,6 +227,9 @@ object CreateExecutableAst {
       case SimplifiedAst.Term.Head.Apply(name, args, tpe, loc) =>
         val argsArray = args.map(Term.toExecutable).toArray
         ExecutableAst.Term.Head.Apply(name, argsArray, tpe, loc)
+      case SimplifiedAst.Term.Head.ApplyHook(hook, args, tpe, loc) =>
+        val argsArray = args.map(Term.toExecutable).toArray
+        ExecutableAst.Term.Head.ApplyHook(hook, argsArray, tpe, loc)
     }
 
     def toExecutable(sast: SimplifiedAst.Term.Body): ExecutableAst.Term.Body = sast match {

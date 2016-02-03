@@ -77,6 +77,7 @@ object Simplifier {
         // TODO: Variable numbering
         SimplifiedAst.Expression.Var(ident, -1, tpe, loc)
       case TypedAst.Expression.Ref(name, tpe, loc) => SimplifiedAst.Expression.Ref(name, tpe, loc)
+      case TypedAst.Expression.Hook(hook, tpe, loc) => SimplifiedAst.Expression.Hook(hook, tpe, loc)
       case TypedAst.Expression.Lambda(annotations, args, body, tpe, loc) =>
         SimplifiedAst.Expression.Lambda(annotations, args map Simplifier.simplify, simplify(body), tpe, loc)
       case TypedAst.Expression.Apply(e, args, tpe, loc) =>
@@ -88,6 +89,7 @@ object Simplifier {
         SimplifiedAst.Expression.Binary(op, simplify(e1), simplify(e2), tpe, loc)
       case TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc) =>
         SimplifiedAst.Expression.IfThenElse(simplify(e1), simplify(e2), simplify(e3), tpe, loc)
+      case TypedAst.Expression.Switch(rules, tpe, loc) => ???
       case TypedAst.Expression.Let(ident, e1, e2, tpe, loc) =>
         // TODO: Variable numbering
         SimplifiedAst.Expression.Let(ident, -1, simplify(e1), simplify(e2), tpe, loc)
@@ -279,7 +281,9 @@ object Simplifier {
         case TypedAst.Predicate.Body.Collection(name, terms, tpe, loc) =>
           SimplifiedAst.Predicate.Body.Collection(name, terms map Term.simplify, tpe, loc)
         case TypedAst.Predicate.Body.ApplyFilter(name, terms, tpe, loc) =>
-          SimplifiedAst.Predicate.Body.Function(name, terms map Term.simplify, tpe, loc)
+          SimplifiedAst.Predicate.Body.ApplyFilter(name, terms map Term.simplify, tpe, loc)
+        case TypedAst.Predicate.Body.ApplyHookFilter(hook, terms, tpe, loc) =>
+          SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms map Term.simplify, tpe, loc)
         case TypedAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc) =>
           SimplifiedAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc)
         case TypedAst.Predicate.Body.Loop(ident, term, tpe, loc) =>
@@ -294,6 +298,7 @@ object Simplifier {
       case TypedAst.Term.Head.Var(ident, tpe, loc) => SimplifiedAst.Term.Head.Var(ident, tpe, loc)
       case TypedAst.Term.Head.Lit(lit, tpe, loc) => SimplifiedAst.Term.Head.Exp(Literal.simplify(lit), tpe, loc)
       case TypedAst.Term.Head.Apply(name, args, tpe, loc) => SimplifiedAst.Term.Head.Apply(name, args map simplify, tpe, loc)
+      case TypedAst.Term.Head.ApplyHook(hook, args, tpe, loc) => SimplifiedAst.Term.Head.ApplyHook(hook, args map simplify, tpe, loc)
     }
 
     def simplify(tast: TypedAst.Term.Body)(implicit genSym: GenSym): SimplifiedAst.Term.Body = tast match {
