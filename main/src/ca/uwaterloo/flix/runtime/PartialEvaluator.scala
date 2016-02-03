@@ -18,6 +18,11 @@ object PartialEvaluator {
   type Cont2 = (Expression, Expression) => Expression
 
   /**
+    * The type of the continuation used by evaln.
+    */
+  type ContN = List[Expression] => Expression
+
+  /**
     * Partially evaluates the given expression `exp0` under the given environment `env0`
     *
     * Returns the residual expression.
@@ -621,11 +626,25 @@ object PartialEvaluator {
       * Overloaded eval that partially evaluates the two arguments `exp1` and `exp2` under the environment `env0`.
       */
     def eval2(exp1: Expression, exp2: Expression, env0: Map[String, Expression], k: Cont2): Expression =
-      eval(exp1, env0, {
-        case e1 => eval(exp2, env0, {
-          case e2 => k(e1, e2)
-        })
+    eval(exp1, env0, {
+      case e1 => eval(exp2, env0, {
+        case e2 => k(e1, e2)
       })
+    })
+
+    /**
+      * Overloaded eval that partially evaluates the given list of expressions `exps` under the environment `env0`.
+      */
+    def evaln(exps: List[Expression], env0: Map[String, Expression], k: ContN): Expression = {
+      def visit(es: List[Expression], rs: List[Expression]): Expression = es match {
+        case Nil => k(rs.reverse)
+        case x :: xs => eval(x, env0, {
+          case e => visit(xs, e :: rs)
+        })
+      }
+
+      visit(exps, Nil)
+    }
 
     eval(exp0, env0, x => x)
   }
