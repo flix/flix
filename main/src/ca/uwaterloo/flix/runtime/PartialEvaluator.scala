@@ -175,12 +175,47 @@ object PartialEvaluator {
             case (x, Int64(0)) => k(x)
 
             // Reconstruction
+            case (r1, r2) => k(Binary(op, r1, r2, tpe, loc)) // TODO: Use syntacticequal???
+          })
+
+        /**
+          * Arithmetic Multiplication.
+          */
+        case BinaryOperator.Times =>
+          // Partially evaluate both exp1 and exp2.
+          eval2(exp1, exp2, env0, {
+            // Concrete execution.
+            case (Int8(x), Int8(y)) => k(Int8(byte(x * y)))
+            case (Int16(x), Int16(y)) => k(Int16(short(x * y)))
+            case (Int32(x), Int32(y)) => k(Int32(x * y))
+            case (Int64(x), Int64(y)) => k(Int64(x * y))
+
+            // Identity laws.
+            case (Int8(0), _) => k(Int8(0))
+            case (Int16(0), _) => k(Int16(0))
+            case (Int32(0), _) => k(Int32(0))
+            case (Int64(0), _) => k(Int64(0))
+            case (_, Int8(0)) => k(Int8(0))
+            case (_, Int16(0)) => k(Int16(0))
+            case (_, Int32(0)) => k(Int32(0))
+            case (_, Int64(0)) => k(Int64(0))
+
+            case (Int8(1), y) => k(y)
+            case (Int16(1), y) => k(y)
+            case (Int32(1), y) => k(y)
+            case (Int64(1), y) => k(y)
+            case (x, Int8(1)) => k(x)
+            case (x, Int16(1)) => k(x)
+            case (x, Int32(1)) => k(x)
+            case (x, Int64(1)) => k(x)
+
+            // Reconstruction
             case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
           })
 
 
-        case BinaryOperator.Times => ??? // TODO
         case BinaryOperator.Divide => ??? // TODO
+
         case BinaryOperator.Modulo => ??? // TODO
 
         case BinaryOperator.Less => ??? // TODO

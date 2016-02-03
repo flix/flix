@@ -726,8 +726,6 @@ object Verifier {
     // the base expression
     val exp0 = property.formula.e
 
-    //println("Checking: " + exp0)
-
     // a sequence of environments under which the base expression must hold.
     val envs = enumerate(property.formula.q)
 
@@ -739,7 +737,6 @@ object Verifier {
           Nil
         case Expression.False =>
           // Case 2: The partial evaluator disproved the property.
-          Console.println("Failed to prove: " + property)
           List(property.fail(env0))
         case residual =>
           // Case 3: The partial evaluator reduced the expression, but it is still residual.
@@ -771,7 +768,7 @@ object Verifier {
     if (violations.isEmpty)
       Console.println(consoleCtx.cyan("✓ ") + property.name)
     else
-      Console.println(consoleCtx.red("! ") + property.name)
+      Console.println(consoleCtx.red("✗ ") + property.name)
 
     violations.headOption
   }
