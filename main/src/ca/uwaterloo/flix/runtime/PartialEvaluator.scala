@@ -578,16 +578,9 @@ object PartialEvaluator {
         * Tuple Expressions.
         */
       case Tuple(elms, tpe, loc) =>
-        // TODO: Use fold with continuation
-        elms match {
-          case List(exp1, exp2) =>
-            eval(exp1, env0, {
-              case e1 => eval(exp2, env0, {
-                case e2 => k(Tuple(List(e1, e2), tpe, loc))
-              })
-            })
-          case _ => ???
-        }
+        evaln(elms, env0, {
+          case xs => k(Tuple(xs, tpe, loc))
+        })
 
       /**
         * GetTupleIndex Expressions.
@@ -621,6 +614,8 @@ object PartialEvaluator {
       case o: StoreInt16 => ??? // TODO: To be eliminated from this phase.
       case o: StoreInt32 => ??? // TODO: To be eliminated from this phase.
     }
+
+    // TODO: Consider whether to move these out?
 
     /**
       * Overloaded eval that partially evaluates the two arguments `exp1` and `exp2` under the environment `env0`.
