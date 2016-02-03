@@ -55,7 +55,9 @@ object PartialEvaluator {
       case Int32(lit) => k(Int32(lit))
       case Int64(lit) => k(Int64(lit))
 
-      // TODO
+      /**
+        * Closure Expressions.
+        */
       case v: Closure => k(v)
 
       /**
@@ -175,9 +177,9 @@ object PartialEvaluator {
               // TODO: Decide if we want to do this.
               case Eq.Equal => tpe match {
                 case Type.Int8 => k(Int8(0))
-                case Type.Int8 => k(Int16(0))
-                case Type.Int8 => k(Int32(0))
-                case Type.Int8 => k(Int64(0))
+                case Type.Int16 => k(Int16(0))
+                case Type.Int32 => k(Int32(0))
+                case Type.Int64 => k(Int64(0))
                 case _ => throw new InternalCompilerError(s"Illegal type: '$tpe'.")
               }
               case _ => k(Binary(op, r1, r2, tpe, loc))
@@ -314,6 +316,7 @@ object PartialEvaluator {
           * Greater-than or equal.
           */
         case BinaryOperator.GreaterEqual =>
+          // Partially evaluate both exp1 and exp2.
           eval2(exp1, exp2, env0, {
             case (e1, e2) =>
               k(Binary(BinaryOperator.LogicalOr,
@@ -327,18 +330,13 @@ object PartialEvaluator {
           * Equal.
           */
         case BinaryOperator.Equal =>
-          // TODO: Rewrite to recurse on both args?
-          // Partially evaluate exp1.
-          eval(exp1, env0, {
-            case e1 =>
-              // Partially evaluate exp2.
-              eval(exp2, env0, {
-                case e2 => syntacticEqual(e1, e2, env0) match {
-                  case Eq.Equal => k(True)
-                  case Eq.NotEq => k(False)
-                  case Eq.Unknown => k(Binary(op, e1, e2, tpe, loc))
-                }
-              })
+          // Partially evaluate both exp1 and exp2.
+          eval2(exp1, exp2, env0, {
+            case (e1, e2) => syntacticEqual(e1, e2, env0) match {
+              case Eq.Equal => k(True)
+              case Eq.NotEq => k(False)
+              case Eq.Unknown => k(Binary(op, e1, e2, tpe, loc))
+            }
           })
 
         /**
@@ -627,16 +625,17 @@ object PartialEvaluator {
           case _ => ???
         }
 
-
-      case Set(elms, tpe, loc) => ??? // TODO
-
       /**
         * Error Expressions.
         */
       case Error(tpe, loc) => k(Error(tpe, loc))
+
+      /**
+        * Match Error Expressions.
+        */
       case MatchError(tpe, loc) => k(MatchError(tpe, loc))
 
-
+      case Set(elms, tpe, loc) => ??? // TODO
       case Apply(_, _, _, _) => ??? // TODO: To be eliminated from this phase.
       case o: LoadBool => ??? // TODO: To be eliminated from this phase.
       case o: LoadInt8 => ??? // TODO: To be eliminated from this phase.
