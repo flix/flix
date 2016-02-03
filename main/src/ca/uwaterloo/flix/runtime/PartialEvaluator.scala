@@ -264,7 +264,6 @@ object PartialEvaluator {
             case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
           })
 
-
         /**
           * Less-than.
           */
@@ -281,13 +280,11 @@ object PartialEvaluator {
             case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
           })
 
-
         /**
           * Less-than or equal.
           */
         case BinaryOperator.LessEqual =>
           ??? // TODO
-
 
         /**
           * Greater-than.
@@ -305,13 +302,13 @@ object PartialEvaluator {
             case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
           })
 
-
         case BinaryOperator.GreaterEqual => ??? // TODO
 
         /**
           * Equal.
           */
         case BinaryOperator.Equal =>
+          // TODO: Rewrite to recurse on both args?
           // Partially evaluate exp1.
           eval(exp1, env0, {
             case e1 =>
@@ -335,6 +332,7 @@ object PartialEvaluator {
           * LogicalOr.
           */
         case BinaryOperator.LogicalOr =>
+          // TODO: Rewrite to recurse on both args?
           // Partially evaluate exp1.
           eval(exp1, env0, {
             // Case 1: exp1 is true. The result is true.
@@ -356,6 +354,7 @@ object PartialEvaluator {
           * LogicalAnd.
           */
         case BinaryOperator.LogicalAnd =>
+          // TODO: Rewrite to recurse on both args?
           // Partially evaluate exp1.
           eval(exp1, env0, {
             // Case 1: exp1 is true. The result is exp2.
@@ -393,12 +392,34 @@ object PartialEvaluator {
         /**
           * Bitwise And.
           */
-        case BinaryOperator.BitwiseAnd => ??? // TODO
+        case BinaryOperator.BitwiseAnd =>
+          // Partially evaluate both exp1 and exp2.
+          eval2(exp1, exp2, env0, {
+            // Concrete execution.
+            case (Int8(x), Int8(y)) => k(Int8(byte(x & y)))
+            case (Int16(x), Int16(y)) => k(Int16(short(x & y)))
+            case (Int32(x), Int32(y)) => k(Int32(x & y))
+            case (Int64(x), Int64(y)) => k(Int64(x & y))
+
+            // Reconstruction
+            case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
+          })
 
         /**
           * Bitwise Or.
           */
-        case BinaryOperator.BitwiseOr => ??? // TODO
+        case BinaryOperator.BitwiseOr =>
+          // Partially evaluate both exp1 and exp2.
+          eval2(exp1, exp2, env0, {
+            // Concrete execution.
+            case (Int8(x), Int8(y)) => k(Int8(byte(x | y)))
+            case (Int16(x), Int16(y)) => k(Int16(short(x | y)))
+            case (Int32(x), Int32(y)) => k(Int32(x | y))
+            case (Int64(x), Int64(y)) => k(Int64(x | y))
+
+            // Reconstruction
+            case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
+          })
 
         /**
           * Bitwise Xor.
