@@ -390,11 +390,63 @@ object PartialEvaluator {
             Binary(BinaryOperator.Implication, exp2, exp1, tpe, loc),
             tpe, loc))
 
+        /**
+          * Bitwise And.
+          */
         case BinaryOperator.BitwiseAnd => ??? // TODO
+
+        /**
+          * Bitwise Or.
+          */
         case BinaryOperator.BitwiseOr => ??? // TODO
-        case BinaryOperator.BitwiseXor => ??? // TODO
-        case BinaryOperator.BitwiseLeftShift => ??? // TODO
-        case BinaryOperator.BitwiseRightShift => ??? // TODO
+
+        /**
+          * Bitwise Xor.
+          */
+        case BinaryOperator.BitwiseXor =>
+          // Partially evaluate both exp1 and exp2.
+          eval2(exp1, exp2, env0, {
+            // Concrete execution.
+            case (Int8(x), Int8(y)) => k(Int8(byte(x ^ y)))
+            case (Int16(x), Int16(y)) => k(Int16(short(x ^ y)))
+            case (Int32(x), Int32(y)) => k(Int32(x ^ y))
+            case (Int64(x), Int64(y)) => k(Int64(x ^ y))
+
+            // Reconstruction
+            case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
+          })
+
+        /**
+          * Bitwise Left Shift.
+          */
+        case BinaryOperator.BitwiseLeftShift =>
+          // Partially evaluate both exp1 and exp2.
+          eval2(exp1, exp2, env0, {
+            // Concrete execution.
+            case (Int8(x), Int8(y)) => k(Int8(byte(x << y)))
+            case (Int16(x), Int16(y)) => k(Int16(short(x << y)))
+            case (Int32(x), Int32(y)) => k(Int32(x << y))
+            case (Int64(x), Int64(y)) => k(Int64(x << y))
+
+            // Reconstruction
+            case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
+          })
+
+        /**
+          * Bitwise Right Shift.
+          */
+        case BinaryOperator.BitwiseRightShift =>
+          // Partially evaluate both exp1 and exp2.
+          eval2(exp1, exp2, env0, {
+            // Concrete execution.
+            case (Int8(x), Int8(y)) => k(Int8(byte(x >> y)))
+            case (Int16(x), Int16(y)) => k(Int16(short(x >> y)))
+            case (Int32(x), Int32(y)) => k(Int32(x >> y))
+            case (Int64(x), Int64(y)) => k(Int64(x >> y))
+
+            // Reconstruction
+            case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
+          })
 
       }
 
