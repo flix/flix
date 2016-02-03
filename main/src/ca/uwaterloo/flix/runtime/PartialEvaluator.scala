@@ -172,18 +172,19 @@ object PartialEvaluator {
             case (x, Int32(0)) => k(x)
             case (x, Int64(0)) => k(x)
 
-            // Equality check and reconstruction.
-            case (r1, r2) => syntacticEqual(r1, r2, env0) match {
-              // TODO: Decide if we want to do this.
-              case Eq.Equal => tpe match {
-                case Type.Int8 => k(Int8(0))
-                case Type.Int16 => k(Int16(0))
-                case Type.Int32 => k(Int32(0))
-                case Type.Int64 => k(Int64(0))
-                case _ => throw new InternalCompilerError(s"Illegal type: '$tpe'.")
+            // Residuals.
+            case (r1, r2) =>
+              // Equality Law: x - x = 0
+              syntacticEqual(r1, r2, env0) match {
+                case Eq.Equal => tpe match {
+                  case Type.Int8 => k(Int8(0))
+                  case Type.Int16 => k(Int16(0))
+                  case Type.Int32 => k(Int32(0))
+                  case Type.Int64 => k(Int64(0))
+                  case _ => throw new InternalCompilerError(s"Illegal type: '$tpe'.")
+                }
+                case _ => k(Binary(op, r1, r2, tpe, loc))
               }
-              case _ => k(Binary(op, r1, r2, tpe, loc))
-            }
           })
 
         /**
@@ -349,44 +350,24 @@ object PartialEvaluator {
           * LogicalOr.
           */
         case BinaryOperator.LogicalOr =>
-          // TODO: Rewrite to recurse on both args?
-          // Partially evaluate exp1.
-          eval(exp1, env0, {
-            // Case 1: exp1 is true. The result is true.
-            case True => k(True)
-            // Case 2: exp1 is false. The result is exp2.
-            case False => eval(exp2, env0, k)
-            // Case 3: exp1 is residual. Partially evaluate exp2.
-            case r1 => eval(exp2, env0, {
-              // Case 3.1: exp2 is true. The result is true.
-              case True => k(True)
-              // Case 3.2: exp2 is false. The result is the exp1 (i.e. its residual).
-              case False => k(r1)
-              // Case 3.3: exp2 is also residual. The result is residual.
-              case r2 => k(Binary(BinaryOperator.LogicalOr, r1, r2, tpe, loc))
-            })
+          // Partially evaluate both exp1 and exp2.
+          eval2(exp1, exp2, env0, {
+            case (True, _) => k(True)
+            case (_, True) => k(True)
+            case (False, False) => k(False)
+            case (r1, r2) => k(Binary(BinaryOperator.LogicalOr, r1, r2, tpe, loc))
           })
 
         /**
           * LogicalAnd.
           */
         case BinaryOperator.LogicalAnd =>
-          // TODO: Rewrite to recurse on both args?
-          // Partially evaluate exp1.
-          eval(exp1, env0, {
-            // Case 1: exp1 is true. The result is exp2.
-            case True => eval(exp2, env0, k)
-            // Case 2: exp1 is false. The result is false.
-            case False => k(False)
-            // Case 3: exp1 is residual. Partially evaluate exp2.
-            case r1 => eval(exp2, env0, {
-              // Case 3.1: exp2 is true. The result is exp1 (i.e. its residual).
-              case True => k(r1)
-              // Case 3.2: exp2 is false. The result is false.
-              case False => k(False)
-              // Case 3.3: exp3 is also residual. The result is residual.
-              case r2 => k(Binary(BinaryOperator.LogicalAnd, r1, r2, tpe, loc))
-            })
+          // Partially evaluate both exp1 and exp2.
+          eval2(exp1, exp2, env0, {
+            case (True, True) => k(True)
+            case (False, _) => k(False)
+            case (_, False) => k(False)
+            case (r1, r2) => k(Binary(BinaryOperator.LogicalAnd, r1, r2, tpe, loc))
           })
 
         /**
