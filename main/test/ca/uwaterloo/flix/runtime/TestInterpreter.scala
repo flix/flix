@@ -2190,6 +2190,38 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkStr("ghi"))(result)
   }
 
+  test("Interpreter - Scala.Tuple01") {
+    import ca.uwaterloo.flix.api.InvokableUnsafe
+
+    val s =
+      """
+        |rel A(x: Native, y: Native);
+        |rel B(x: Native);
+        |
+        |def fst(t: (Native, Native)): Native = match t with {
+        |  case (x, w) => x
+        |}
+        |def snd(t: (Native, Native)): Native = match t with {
+        |  case (w, y) => y
+        |}
+        |
+        |B(f()).
+        |A(fst(t), snd(t)) :- B(t).
+      """.stripMargin
+
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(), flix.mkNativeType)
+    flix
+      .addStr(s)
+      .addHookUnsafe("f", tpe, new InvokableUnsafe {
+        override def apply(args: Array[AnyRef]): AnyRef = ("abc", 22)
+      })
+
+    val model = flix.solve().get
+    val A = model.relations(Name.Resolved.mk(List("A"))).toSet
+    assert(A.contains(List("abc", new java.lang.Integer(22))))
+  }
+
   test("Interpreter - Expression.Match.Error01") {
     // 123 match { case 321 => Unit }
     val rules = List((Pattern.Lit(Literal.Int(321, loc), Type.Int32, loc), Expression.Lit(Literal.Unit(loc), Type.Unit, loc)))
