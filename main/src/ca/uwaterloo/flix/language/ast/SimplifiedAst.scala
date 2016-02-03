@@ -87,8 +87,6 @@ object SimplifiedAst {
 
     case class AssertRule(rule: SimplifiedAst.Constraint.Rule, loc: SourceLocation) extends SimplifiedAst.Directive
 
-    case class Print(name: Name.Resolved, loc: SourceLocation) extends SimplifiedAst.Directive
-
   }
 
   sealed trait Expression extends SimplifiedAst {
@@ -284,6 +282,7 @@ object SimplifiedAst {
       override def toString: String = "λ(" + args.map(_.tpe).mkString(", ") + ") " + body
     }
 
+    case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     // TODO: Eliminate once we have lambda lifting
     case class Closure(args: List[SimplifiedAst.FormalArg],
@@ -521,10 +520,15 @@ object SimplifiedAst {
                             tpe: Type.Predicate,
                             loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
-      case class Function(name: Name.Resolved,
-                          terms: List[SimplifiedAst.Term.Body],
-                          tpe: Type.Lambda,
-                          loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+      case class ApplyFilter(name: Name.Resolved,
+                            terms: List[SimplifiedAst.Term.Body],
+                            tpe: Type.Lambda,
+                            loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+
+      case class ApplyHookFilter(hook: Ast.Hook,
+                                 terms: List[SimplifiedAst.Term.Body],
+                                 tpe: Type.Lambda,
+                                 loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class NotEqual(ident1: Name.Ident,
                           ident2: Name.Ident,
@@ -562,6 +566,11 @@ object SimplifiedAst {
                        loc: SourceLocation) extends SimplifiedAst.Term.Head {
 
       }
+
+      case class ApplyHook(hook: Ast.Hook,
+                           args: List[SimplifiedAst.Term.Head],
+                           tpe: Type,
+                           loc: SourceLocation) extends SimplifiedAst.Term.Head
 
     }
 
