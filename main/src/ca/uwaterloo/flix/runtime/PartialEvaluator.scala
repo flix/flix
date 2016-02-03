@@ -246,7 +246,23 @@ object PartialEvaluator {
           * Arithmetic Modulus.
           */
         case BinaryOperator.Modulo =>
-          ??? // TODO
+          // Partially evaluate both exp1 and exp2.
+          eval2(exp1, exp2, env0, {
+            // Concrete execution.
+            case (Int8(x), Int8(y)) if y != 0 => k(Int8(byte(x % y)))
+            case (Int16(x), Int16(y)) if y != 0 => k(Int16(short(x % y)))
+            case (Int32(x), Int32(y)) if y != 0 => k(Int32(x % y))
+            case (Int64(x), Int64(y)) if y != 0 => k(Int64(x % y))
+
+            // Identity Laws: Modulus by One.
+            case (x, Int8(1)) => k(Int8(0))
+            case (x, Int16(1)) => k(Int16(0))
+            case (x, Int32(1)) => k(Int32(0))
+            case (x, Int64(1)) => k(Int64(0))
+
+            // Reconstruction
+            case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
+          })
 
 
         case BinaryOperator.Less => ??? // TODO
