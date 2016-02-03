@@ -466,7 +466,6 @@ object PartialEvaluator {
             // Reconstruction
             case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
           })
-
       }
 
       /**
@@ -475,7 +474,7 @@ object PartialEvaluator {
       case Let(name, offset, exp1, exp2, tpe, loc) =>
         // Partially evaluate the bound value exp1.
         eval(exp1, env0, {
-          case e if isValue(e) =>
+          case e if isValue(e) => // TODO: Why?
             // Case 1: The bound value expression exp1 is a value.
             // Extend the environment and evaluate the body expression exp2.
             eval(exp2, env0 + (name.name -> e), k)
@@ -545,41 +544,49 @@ object PartialEvaluator {
       /**
         * Tag Expressions.
         */
-      case CheckTag(tag, exp, loc) =>
-        // Partially evaluate the nested expression exp.
-        eval(exp, env0, {
-          case Tag(_, tag1, exp1, _, _) =>
-            // Case 1: The nested expression is a tag. Perform the tag check.
-            if (tag.name == tag1.name)
-            // Case 1.1: The tags are the same. Return true.
-              k(True)
-            else
-            // Case 1.2: The tags are different. Return false.
-              k(False)
-          case r =>
-            // Case 2: The nested value is residual (re)-construct the expression.
-            ???
-        })
-
-      case GetTagValue(exp, tpe, loc) =>
-        // Partially evaluate exp.
-        eval(exp, env0, {
-          case Tag(_, _, e, _, _) =>
-            // Case 1: The expression exp evaluates to a tag.
-            // The result is inner expression
-            k(e)
-          case r =>
-            // Case 2: The expression is residual. Reconstruct the expression.
-            k(GetTagValue(r, tpe, loc))
-        })
-
       case Tag(enum, tag, exp1, tpe, loc) =>
         eval(exp1, env0, {
           case e1 => k(Tag(enum, tag, e1, tpe, loc))
         })
 
       /**
+        * CheckTag Expressions.
+        */
+      case CheckTag(tag1, exp, loc) =>
+        // Partially evaluate the nested expression exp.
+        eval(exp, env0, {
+          case Tag(_, tag2, _, _, _) =>
+            if (tag1.name == tag2.name) k(True) else k(False)
+          case r => k(CheckTag(tag1, r, loc))
+        })
+
+      /**
+        * GetTagValue Expression.
+        */
+      case GetTagValue(exp, tpe, loc) =>
+        // Partially evaluate exp.
+        eval(exp, env0, {
+          case Tag(_, _, e, _, _) => k(e)
+          case r => k(GetTagValue(r, tpe, loc))
+        })
+
+      /**
         * Tuple Expressions.
+        */
+      case Tuple(elms, tpe, loc) =>
+        // TODO: Use fold with continuation
+        elms match {
+          case List(exp1, exp2) =>
+            eval(exp1, env0, {
+              case e1 => eval(exp2, env0, {
+                case e2 => k(Tuple(List(e1, e2), tpe, loc))
+              })
+            })
+          case _ => ???
+        }
+
+      /**
+        * GetTupleIndex Expressions.
         */
       case GetTupleIndex(exp, offset, tpe, loc) =>
         // TODO: deal with tuple before recursing.
@@ -594,18 +601,6 @@ object PartialEvaluator {
             ??? // TODO
         })
 
-      case Tuple(elms, tpe, loc) =>
-        // TODO: Use fold with continuation
-        elms match {
-          case List(exp1, exp2) =>
-            eval(exp1, env0, {
-              case e1 => eval(exp2, env0, {
-                case e2 => k(Tuple(List(e1, e2), tpe, loc))
-              })
-            })
-          case _ => ???
-        }
-
       /**
         * Error Expressions.
         */
@@ -616,6 +611,7 @@ object PartialEvaluator {
         */
       case MatchError(tpe, loc) => k(MatchError(tpe, loc))
 
+      //  ----------------------- TODO: To be removed/refactored ---------------------------------
       case Set(elms, tpe, loc) => ??? // TODO
       case Apply(_, _, _, _) => ??? // TODO: To be eliminated from this phase.
       case o: LoadBool => ??? // TODO: To be eliminated from this phase.
@@ -688,6 +684,7 @@ object PartialEvaluator {
     * Returns an `Eq` result depending on whether the two expressions
     * `exp1` and `exp2` can evaluate to the same value.
     */
+  // TODO: Implement rest
   private def syntacticEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Eq =
     if (mustBeEqual(exp1, exp2, env0))
       Eq.Equal
@@ -699,6 +696,7 @@ object PartialEvaluator {
   /**
     * Returns `true` iff `exp1` and `exp2` *must* evaluate to the same value under the given environment `env0`.
     */
+  // TODO: Implement rest
   private def mustBeEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
     case (Unit, Unit) => true
     case (True, True) => true
@@ -714,6 +712,7 @@ object PartialEvaluator {
   /**
     * Returns `true` iff `exp1` and `exp2` *cannot* evaluate to the same value under the given environment `env0`.
     */
+  // TODO: Implement rest
   private def mustNotBeEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
     case (Unit, Unit) => false
     case (True, False) => true
@@ -738,6 +737,7 @@ object PartialEvaluator {
     *
     * This function attempts to pick a "standard form" of such an expression.
     */
+  // TODO: Implement?
   private def canonical(e: Expression): Expression = e match {
     case Unit => Unit
   }
@@ -752,30 +752,4 @@ object PartialEvaluator {
     */
   private def short(i: Int): Short = i.asInstanceOf[Short]
 
-  // http://www.lshift.net/blog/2007/06/11/folds-and-continuation-passing-style/
-
-  //  Here’s the direct-style left-fold function:
-  //
-  //    (define (foldl kons knil xs)
-  //  (if (null? xs)
-  //    knil
-  //    (foldl kons (kons (car xs) knil) (cdr xs))))
-  //  and here’s the continuation-passing left-fold function:
-  //
-  //    (define (foldl-k kons knil xs k)
-  //  (if (null? xs)
-  //    (k knil)
-  //      (kons (car xs) knil (lambda (v) (foldl-k kons v (cdr xs) k)))))
-  //  Note that kons takes three arguments here, where in the direct-style version, it takes two.
-  //
-  //    One benefit of having CPS folds available is that they expose more control over the loop. For instance, using a normal fold, there’s no way to terminate the iteration early, but using a CPS fold, your three-argument kons routine can simply omit invoking its continuation parameter (presumably choosing some other continuation to run instead). This means that operations like (short-circuiting) contains?, any, and every can be written with CPS fold, but not with plain direct-style fold:
-  //
-  //    (define (contains? predicate val elements)
-  //  (foldl-k (lambda (elt acc k)
-  //  (if (predicate elt val)
-  //  #t ;; note: skips the offered continuation!
-  //  (k acc)))
-  //  #f
-  //  elements
-  //  (lambda (v) v)))
 }
