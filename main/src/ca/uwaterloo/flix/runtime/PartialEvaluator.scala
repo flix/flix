@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
+import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast.UnaryOperator.LogicalNot
@@ -136,7 +137,7 @@ object PartialEvaluator {
             case (Int32(x), Int32(y)) => k(Int32(x + y))
             case (Int64(x), Int64(y)) => k(Int64(x + y))
 
-            // Identity laws.
+            // Identity Laws: Addition by One.
             case (Int8(0), y) => k(y)
             case (Int16(0), y) => k(y)
             case (Int32(0), y) => k(y)
@@ -163,19 +164,24 @@ object PartialEvaluator {
             case (Int32(x), Int32(y)) => k(Int32(x - y))
             case (Int64(x), Int64(y)) => k(Int64(x - y))
 
-            // Identity laws.
-            case (Int8(0), y) => k(Unary(UnaryOperator.Minus, y, Type.Int8, exp1.loc))
-            case (Int16(0), y) => k(Unary(UnaryOperator.Minus, y, Type.Int16, exp1.loc))
-            case (Int32(0), y) => k(Unary(UnaryOperator.Minus, y, Type.Int32, exp1.loc))
-            case (Int64(0), y) => k(Unary(UnaryOperator.Minus, y, Type.Int64, exp1.loc))
-
+            // Identity Laws: Subtraction by One.
             case (x, Int8(0)) => k(x)
             case (x, Int16(0)) => k(x)
             case (x, Int32(0)) => k(x)
             case (x, Int64(0)) => k(x)
 
-            // Reconstruction
-            case (r1, r2) => k(Binary(op, r1, r2, tpe, loc)) // TODO: Use syntacticequal???
+            // Equality check and reconstruction.
+            case (r1, r2) => syntacticEqual(r1, r2, env0) match {
+              // TODO: Decide if we want to do this.
+              case Eq.Equal => tpe match {
+                case Type.Int8 => k(Int8(0))
+                case Type.Int8 => k(Int16(0))
+                case Type.Int8 => k(Int32(0))
+                case Type.Int8 => k(Int64(0))
+                case _ => throw new InternalCompilerError(s"Illegal type: '$tpe'.")
+              }
+              case _ => k(Binary(op, r1, r2, tpe, loc))
+            }
           })
 
         /**
@@ -190,7 +196,7 @@ object PartialEvaluator {
             case (Int32(x), Int32(y)) => k(Int32(x * y))
             case (Int64(x), Int64(y)) => k(Int64(x * y))
 
-            // Identity laws.
+            // Identity Laws: Multiplication by Zero.
             case (Int8(0), _) => k(Int8(0))
             case (Int16(0), _) => k(Int16(0))
             case (Int32(0), _) => k(Int32(0))
@@ -200,6 +206,7 @@ object PartialEvaluator {
             case (_, Int32(0)) => k(Int32(0))
             case (_, Int64(0)) => k(Int64(0))
 
+            // Identity Laws: Multiplication by One.
             case (Int8(1), y) => k(y)
             case (Int16(1), y) => k(y)
             case (Int32(1), y) => k(y)
@@ -213,10 +220,34 @@ object PartialEvaluator {
             case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
           })
 
+        /**
+          * Arithmetic Division.
+          */
+        case BinaryOperator.Divide =>
+          // Partially evaluate both exp1 and exp2.
+          eval2(exp1, exp2, env0, {
+            // Concrete execution.
+            case (Int8(x), Int8(y)) if y != 0 => k(Int8(byte(x / y)))
+            case (Int16(x), Int16(y)) if y != 0 => k(Int16(short(x / y)))
+            case (Int32(x), Int32(y)) if y != 0 => k(Int32(x / y))
+            case (Int64(x), Int64(y)) if y != 0 => k(Int64(x / y))
 
-        case BinaryOperator.Divide => ??? // TODO
+            // Identity Laws: Division by One.
+            case (x, Int8(1)) => k(x)
+            case (x, Int16(1)) => k(x)
+            case (x, Int32(1)) => k(x)
+            case (x, Int64(1)) => k(x)
 
-        case BinaryOperator.Modulo => ??? // TODO
+            // Reconstruction
+            case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
+          })
+
+        /**
+          * Arithmetic Modulus.
+          */
+        case BinaryOperator.Modulo =>
+          ??? // TODO
+
 
         case BinaryOperator.Less => ??? // TODO
         case BinaryOperator.LessEqual => ??? // TODO
