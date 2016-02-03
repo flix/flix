@@ -264,6 +264,7 @@ object PartialEvaluator {
             case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
           })
 
+
         /**
           * Less-than.
           */
@@ -280,6 +281,7 @@ object PartialEvaluator {
             case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
           })
 
+
         /**
           * Less-than or equal.
           */
@@ -287,7 +289,23 @@ object PartialEvaluator {
           ??? // TODO
 
 
-        case BinaryOperator.Greater => ??? // TODO
+        /**
+          * Greater-than.
+          */
+        case BinaryOperator.Greater =>
+          // Partially evaluate both exp1 and exp2.
+          eval2(exp1, exp2, env0, {
+            // Concrete execution.
+            case (Int8(x), Int8(y)) => if (x > y) k(True) else k(False)
+            case (Int16(x), Int16(y)) => if (x > y) k(True) else k(False)
+            case (Int32(x), Int32(y)) => if (x > y) k(True) else k(False)
+            case (Int64(x), Int64(y)) => if (x > y) k(True) else k(False)
+
+            // Reconstruction
+            case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
+          })
+
+
         case BinaryOperator.GreaterEqual => ??? // TODO
 
         /**
