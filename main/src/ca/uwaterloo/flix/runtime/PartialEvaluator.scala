@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.runtime
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast.UnaryOperator.LogicalNot
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, SimplifiedAst, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, SimplifiedAst, Type, UnaryOperator}
 import ca.uwaterloo.flix.runtime.Interpreter.InternalRuntimeError
 
 object PartialEvaluator {
@@ -128,7 +128,7 @@ object PartialEvaluator {
           * Arithmetic Addition.
           */
         case BinaryOperator.Plus =>
-          // Partially evaluate exp1 and exp2.
+          // Partially evaluate both exp1 and exp2.
           eval2(exp1, exp2, env0, {
             // Concrete execution.
             case (Int8(x), Int8(y)) => k(Int8(byte(x + y)))
@@ -151,7 +151,34 @@ object PartialEvaluator {
             case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
           })
 
-        case BinaryOperator.Minus => ??? // TODO
+        /**
+          * Arithmetic Subtraction.
+          */
+        case BinaryOperator.Minus =>
+          // Partially evaluate both exp1 and exp2.
+          eval2(exp1, exp2, env0, {
+            // Concrete execution.
+            case (Int8(x), Int8(y)) => k(Int8(byte(x - y)))
+            case (Int16(x), Int16(y)) => k(Int16(short(x - y)))
+            case (Int32(x), Int32(y)) => k(Int32(x - y))
+            case (Int64(x), Int64(y)) => k(Int64(x - y))
+
+            // Identity laws.
+            case (Int8(0), y) => k(Unary(UnaryOperator.Minus, y, Type.Int8, exp1.loc))
+            case (Int16(0), y) => k(Unary(UnaryOperator.Minus, y, Type.Int16, exp1.loc))
+            case (Int32(0), y) => k(Unary(UnaryOperator.Minus, y, Type.Int32, exp1.loc))
+            case (Int64(0), y) => k(Unary(UnaryOperator.Minus, y, Type.Int64, exp1.loc))
+
+            case (x, Int8(0)) => k(x)
+            case (x, Int16(0)) => k(x)
+            case (x, Int32(0)) => k(x)
+            case (x, Int64(0)) => k(x)
+
+            // Reconstruction
+            case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
+          })
+
+
         case BinaryOperator.Times => ??? // TODO
         case BinaryOperator.Divide => ??? // TODO
         case BinaryOperator.Modulo => ??? // TODO
