@@ -885,6 +885,10 @@ object Resolver {
         case Type.Unresolved(name) => name.parts match {
           case Seq("Bool") => Type.Bool.toSuccess
           case Seq("Int") => Type.Int32.toSuccess
+          case Seq("Int8") => Type.Int8.toSuccess
+          case Seq("Int16") => Type.Int16.toSuccess
+          case Seq("Int32") => Type.Int32.toSuccess
+          case Seq("Int64") => Type.Int64.toSuccess
           case Seq("Str") => Type.Str.toSuccess
           case _ => syms.lookupType(name, namespace) flatMap (tpe => visit(tpe))
         }

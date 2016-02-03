@@ -395,8 +395,12 @@ object Typer {
         case ResolvedAst.Expression.Binary(op, re1, re2, loc) => op match {
           case _: ArithmeticOperator =>
             @@(visit(re1, env), visit(re2, env)) flatMap {
-              case (e1, e2) => @@(expect(Type.Int32, e1.tpe, e1.loc), expect(Type.Int32, e2.tpe, e2.loc)) map {
-                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, Type.Int32, loc)
+              case (e1, e2) => (e1.tpe, e2.tpe) match {
+                case (Type.Int8, Type.Int8) => TypedAst.Expression.Binary(op, e1, e2, Type.Int8, loc).toSuccess
+                case (Type.Int16, Type.Int16) => TypedAst.Expression.Binary(op, e1, e2, Type.Int16, loc).toSuccess
+                case (Type.Int32, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int32, loc).toSuccess
+                case (Type.Int64, Type.Int64) => TypedAst.Expression.Binary(op, e1, e2, Type.Int64, loc).toSuccess
+                case (t1, t2) => TypeError.ExpectedEqualTypes(t1, t2, e1.loc, e2.loc).toFailure
               }
             }
           case _: EqualityOperator =>
@@ -407,8 +411,12 @@ object Typer {
             }
           case _: ComparisonOperator =>
             @@(visit(re1, env), visit(re2, env)) flatMap {
-              case (e1, e2) => @@(expect(Type.Int32, e1.tpe, e1.loc), expect(Type.Int32, e2.tpe, e2.loc)) map {
-                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc)
+              case (e1, e2) => (e1.tpe, e2.tpe) match {
+                case (Type.Int8, Type.Int8) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
+                case (Type.Int16, Type.Int16) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
+                case (Type.Int32, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
+                case (Type.Int64, Type.Int64) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
+                case (t1, t2) => TypeError.ExpectedEqualTypes(t1, t2, e1.loc, e2.loc).toFailure
               }
             }
           case _: LogicalOperator =>
@@ -419,8 +427,12 @@ object Typer {
             }
           case _: BitwiseOperator =>
             @@(visit(re1, env), visit(re2, env)) flatMap {
-              case (e1, e2) => @@(expect(Type.Int32, e1.tpe, e1.loc), expect(Type.Int32, e2.tpe, e2.loc)) map {
-                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, Type.Int32, loc)
+              case (e1, e2) => (e1.tpe, e2.tpe) match {
+                case (Type.Int8, Type.Int8) => TypedAst.Expression.Binary(op, e1, e2, Type.Int8, loc).toSuccess
+                case (Type.Int16, Type.Int16) => TypedAst.Expression.Binary(op, e1, e2, Type.Int16, loc).toSuccess
+                case (Type.Int32, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int32, loc).toSuccess
+                case (Type.Int64, Type.Int64) => TypedAst.Expression.Binary(op, e1, e2, Type.Int64, loc).toSuccess
+                case (t1, t2) => TypeError.ExpectedEqualTypes(t1, t2, e1.loc, e2.loc).toFailure
               }
             }
         }
@@ -790,7 +802,10 @@ object Typer {
     case Type.Var(x) => s"Var($x)"
     case Type.Unit => s"()"
     case Type.Bool => s"Bool"
-    case Type.Int32 => s"Int"
+    case Type.Int8 => s"Int8"
+    case Type.Int16 => s"Int16"
+    case Type.Int32 => s"Int32"
+    case Type.Int64 => s"Int64"
     case Type.Str => s"Str"
     case Type.Tag(enumName, tagName, t) =>
       val enumAndTag = enumName.parts.mkString("::") + "." + tagName.name

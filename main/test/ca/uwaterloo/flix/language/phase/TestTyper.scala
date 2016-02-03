@@ -1031,10 +1031,70 @@ class TestTyper extends FunSuite {
     result.get
   }
 
-  ignore("Type.Int8.Plus") {
+  test("Type.Int8.Plus") {
     val input = "fn f(x: Int8, y: Int8): Int8 = x + y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
+  test("Type.Int8.Times") {
+    val input = "fn f(x: Int8, y: Int8): Int8 = x * y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  ignore("Type.Int16.Ascribe") {
+    val input = "fn f(): Int16 = 42 : Int16"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Type.Int16.Plus") {
+    val input = "fn f(x: Int16, y: Int16): Int16 = x + y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Type.Int16.Times") {
+    val input = "fn f(x: Int16, y: Int16): Int16 = x * y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Type.Int32.Ascribe") {
+    val input = "fn f(): Int32 = 42 : Int32"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Type.Int32.Plus") {
+    val input = "fn f(x: Int32, y: Int32): Int32 = x + y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Type.Int32.Times") {
+    val input = "fn f(x: Int32, y: Int32): Int32 = x * y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  ignore("Type.Int64.Ascribe") {
+    val input = "fn f(): Int64 = 42 : Int64"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Type.Int64.Plus") {
+    val input = "fn f(x: Int64, y: Int64): Int64 = x + y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Type.Int64.Times") {
+    val input = "fn f(x: Int64, y: Int64): Int64 = x * y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+  
 }
