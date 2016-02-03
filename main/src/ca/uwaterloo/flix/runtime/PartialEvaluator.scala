@@ -284,7 +284,15 @@ object PartialEvaluator {
           * Less-than or equal.
           */
         case BinaryOperator.LessEqual =>
-          ??? // TODO
+          // Partially evaluate both exp1 and exp2.
+          eval2(exp1, exp2, env0, {
+            case (e1, e2) =>
+              k(Binary(BinaryOperator.LogicalOr,
+                Binary(BinaryOperator.Less, e1, e2, Type.Bool, loc),
+                Binary(BinaryOperator.Equal, e1, e2, Type.Bool, loc),
+                Type.Bool, loc
+              ))
+          })
 
         /**
           * Greater-than.
@@ -302,7 +310,18 @@ object PartialEvaluator {
             case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
           })
 
-        case BinaryOperator.GreaterEqual => ??? // TODO
+        /**
+          * Greater-than or equal.
+          */
+        case BinaryOperator.GreaterEqual =>
+          eval2(exp1, exp2, env0, {
+            case (e1, e2) =>
+              k(Binary(BinaryOperator.LogicalOr,
+                Binary(BinaryOperator.Greater, e1, e2, Type.Bool, loc),
+                Binary(BinaryOperator.Equal, e1, e2, Type.Bool, loc),
+                Type.Bool, loc
+              ))
+          })
 
         /**
           * Equal.
