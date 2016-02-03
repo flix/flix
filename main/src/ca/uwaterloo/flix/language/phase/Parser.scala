@@ -396,7 +396,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def ApplyTerm: Rule1[ParsedAst.Term.Apply] = rule {
-    SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy("," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Term.Apply
+    SP ~ QName ~ optWS ~ "(" ~ zeroOrMore(Term).separatedBy("," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Term.Apply
   }
 
   def InfixTerm: Rule1[ParsedAst.Term.Infix] = rule {
