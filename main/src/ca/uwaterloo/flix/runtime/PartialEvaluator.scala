@@ -1,11 +1,9 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
-import ca.uwaterloo.flix.language.ast.UnaryOperator.LogicalNot
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, SimplifiedAst, Type, UnaryOperator}
-import ca.uwaterloo.flix.runtime.Interpreter.InternalRuntimeError
+import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 
 object PartialEvaluator {
 
@@ -69,7 +67,7 @@ object PartialEvaluator {
         * Var Expressions/
         */
       case Var(name, offset, tpe, loc) => env0.get(name.name) match {
-        case None => throw new InternalRuntimeError(s"Unresolved variable: '$name'.")
+        case None => throw new InternalCompilerError(s"Unresolved variable: '$name'.")
         case Some(e) => eval(e, env0, k)
       }
 
@@ -77,7 +75,7 @@ object PartialEvaluator {
         * Ref Expressions.
         */
       case Ref(name, tpe, loc) => root.constants.get(name) match {
-        case None => throw new InternalRuntimeError(s"Unresolved reference: '$name'.")
+        case None => throw new InternalCompilerError(s"Unresolved reference: '$name'.")
         case Some(defn) => k(defn.exp)
       }
 
@@ -375,7 +373,7 @@ object PartialEvaluator {
           */
         case BinaryOperator.Implication =>
           // Rewrite and partially evaluate the result.
-          k(Binary(BinaryOperator.LogicalOr, Unary(LogicalNot, exp1, tpe, loc), exp2, tpe, loc))
+          k(Binary(BinaryOperator.LogicalOr, Unary(UnaryOperator.LogicalNot, exp1, tpe, loc), exp2, tpe, loc))
 
         /**
           * Logical Biconditional.
@@ -553,10 +551,12 @@ object PartialEvaluator {
         * CheckTag Expressions.
         */
       case CheckTag(tag1, exp, loc) =>
-        // Partially evaluate the nested expression exp.
         eval(exp, env0, {
           case Tag(_, tag2, _, _, _) =>
-            if (tag1.name == tag2.name) k(True) else k(False)
+            if (tag1.name == tag2.name)
+              k(True)
+            else
+              k(False)
           case r => k(CheckTag(tag1, r, loc))
         })
 
@@ -564,7 +564,6 @@ object PartialEvaluator {
         * GetTagValue Expression.
         */
       case GetTagValue(exp, tpe, loc) =>
-        // Partially evaluate exp.
         eval(exp, env0, {
           case Tag(_, _, e, _, _) => k(e)
           case r => k(GetTagValue(r, tpe, loc))
@@ -589,16 +588,9 @@ object PartialEvaluator {
         * GetTupleIndex Expressions.
         */
       case GetTupleIndex(exp, offset, tpe, loc) =>
-        // TODO: deal with tuple before recursing.
-        // Partially evaluate the tuple expression exp.
         eval(exp, env0, {
-          case Tuple(elms, _, _) =>
-            // Case 1: The tuple expression is a tuple. Project the component.
-            k(elms(offset))
-          case r =>
-            // Case 2: The tuple expression is residual. Reconstruct the expression.
-            println(r)
-            ??? // TODO
+          case Tuple(elms, _, _) => k(elms(offset))
+          case r => GetTupleIndex(r, offset, tpe, loc)
         })
 
       /**
@@ -611,6 +603,7 @@ object PartialEvaluator {
         */
       case MatchError(tpe, loc) => k(MatchError(tpe, loc))
 
+      // TODO: Rename GetTupleIndex etc.
       //  ----------------------- TODO: To be removed/refactored ---------------------------------
       case Set(elms, tpe, loc) => ??? // TODO
       case Apply(_, _, _, _) => ??? // TODO: To be eliminated from this phase.
