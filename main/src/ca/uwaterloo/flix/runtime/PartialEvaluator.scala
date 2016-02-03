@@ -178,7 +178,7 @@ object PartialEvaluator {
             // Residuals.
             case (r1, r2) =>
               // Equality Law: x - x = 0
-              syntacticEqual(r1, r2, env0) match {
+              isEq(r1, r2, env0) match {
                 case Eq.Equal => tpe match {
                   case Type.Int8 => k(Int8(0))
                   case Type.Int16 => k(Int16(0))
@@ -336,7 +336,7 @@ object PartialEvaluator {
         case BinaryOperator.Equal =>
           // Partially evaluate both exp1 and exp2.
           eval2(exp1, exp2, env0, {
-            case (e1, e2) => syntacticEqual(e1, e2, env0) match {
+            case (e1, e2) => isEq(e1, e2, env0) match {
               case Eq.Equal => k(True)
               case Eq.NotEq => k(False)
               case Eq.Unknown => k(Binary(op, e1, e2, tpe, loc))
@@ -613,6 +613,8 @@ object PartialEvaluator {
       case o: StoreInt8 => ??? // TODO: To be eliminated from this phase.
       case o: StoreInt16 => ??? // TODO: To be eliminated from this phase.
       case o: StoreInt32 => ??? // TODO: To be eliminated from this phase.
+      case o: CheckNil => ??? // TODO
+      case o: CheckCons => ??? // TODO
     }
 
     // TODO: Consider whether to move these out?
@@ -692,7 +694,7 @@ object PartialEvaluator {
     * `exp1` and `exp2` can evaluate to the same value.
     */
   // TODO: Implement rest
-  private def syntacticEqual(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Eq =
+  private def isEq(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Eq =
     if (mustBeEqual(exp1, exp2, env0))
       Eq.Equal
     else if (mustNotBeEqual(exp1, exp2, env0))
