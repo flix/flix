@@ -81,15 +81,15 @@ object Simplifier {
       case TypedAst.Expression.Lambda(annotations, args, body, tpe, loc) =>
         SimplifiedAst.Expression.Lambda(annotations, args map Simplifier.simplify, simplify(body), tpe, loc)
       case TypedAst.Expression.Apply(e, args, tpe, loc) =>
-        // TODO: Function needs to be a name, not an arbitrary expression
-        SimplifiedAst.Expression.Apply(???, args map simplify, tpe, loc)
+        SimplifiedAst.Expression.Apply3(simplify(e), args map simplify, tpe, loc)
       case TypedAst.Expression.Unary(op, e, tpe, loc) =>
         SimplifiedAst.Expression.Unary(op, simplify(e), tpe, loc)
       case TypedAst.Expression.Binary(op, e1, e2, tpe, loc) =>
         SimplifiedAst.Expression.Binary(op, simplify(e1), simplify(e2), tpe, loc)
       case TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc) =>
         SimplifiedAst.Expression.IfThenElse(simplify(e1), simplify(e2), simplify(e3), tpe, loc)
-      case TypedAst.Expression.Switch(rules, tpe, loc) => ???
+      case TypedAst.Expression.Switch(rules, tpe, loc) =>
+        ??? // TODO
       case TypedAst.Expression.Let(ident, e1, e2, tpe, loc) =>
         // TODO: Variable numbering
         SimplifiedAst.Expression.Let(ident, -1, simplify(e1), simplify(e2), tpe, loc)
