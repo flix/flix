@@ -1,9 +1,9 @@
 package ca.uwaterloo.flix.runtime
 
+import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, SimplifiedAst, Type, UnaryOperator}
-import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 
 object PartialEvaluator {
 
@@ -602,23 +602,25 @@ object PartialEvaluator {
         */
       case MatchError(tpe, loc) => k(MatchError(tpe, loc))
 
-      // TODO: Rename GetTupleIndex etc.
-      //  ----------------------- TODO: To be removed/refactored ---------------------------------
-      case Set(elms, tpe, loc) => ??? // TODO
-      case Apply(_, _, _, _) => ??? // TODO: To be eliminated from this phase.
-      case o: LoadBool => ??? // TODO: To be eliminated from this phase.
-      case o: LoadInt8 => ??? // TODO: To be eliminated from this phase.
-      case o: LoadInt16 => ??? // TODO: To be eliminated from this phase.
-      case o: LoadInt32 => ??? // TODO: To be eliminated from this phase.
-      case o: StoreBool => ??? // TODO: To be eliminated from this phase.
-      case o: StoreInt8 => ??? // TODO: To be eliminated from this phase.
-      case o: StoreInt16 => ??? // TODO: To be eliminated from this phase.
-      case o: StoreInt32 => ??? // TODO: To be eliminated from this phase.
-      case o: CheckNil => ??? // TODO
-      case o: CheckCons => ??? // TODO
-    }
+      // TODO: Unsupported
+      case Set(elms, tpe, loc) => throw new InternalCompilerError("Not Yet Supported. Sorry.")
+      case o: CheckNil => throw new InternalCompilerError("Not Yet Supported. Sorry.")
+      case o: CheckCons => throw new InternalCompilerError("Not Yet Supported. Sorry.")
 
-    // TODO: Consider whether to move these out?
+      // TODO: This will be eliminated.
+      case Apply(_, _, _, _) => ???
+
+      // TODO: These will be moved to a different AST.
+      case o: LoadBool => throw new InternalCompilerError("Unsupported.")
+      case o: LoadInt8 => throw new InternalCompilerError("Unsupported.")
+      case o: LoadInt16 => throw new InternalCompilerError("Unsupported.")
+      case o: LoadInt32 => throw new InternalCompilerError("Unsupported.")
+      case o: StoreBool => throw new InternalCompilerError("Unsupported.")
+      case o: StoreInt8 => throw new InternalCompilerError("Unsupported.")
+      case o: StoreInt16 => throw new InternalCompilerError("Unsupported.")
+      case o: StoreInt32 => throw new InternalCompilerError("Unsupported.")
+
+    }
 
     /**
       * Overloaded eval that partially evaluates the two arguments `exp1` and `exp2` under the environment `env0`.
@@ -713,6 +715,47 @@ object PartialEvaluator {
     case (Unit, Unit) => true
     case (True, True) => true
     case (False, False) => true
+    case (Int8(i1), Int8(i2)) => i1 == i2
+    case (Int16(i1), Int16(i2)) => i1 == i2
+    case (Int32(i1), Int32(i2)) => i1 == i2
+    case (Int64(i1), Int64(i2)) => i1 == i2
+    case (Str(s1), Str(s2)) => s1 == s2
+    case (Var(ident1, _, _, _), Var(ident2, _, _, _)) =>
+      val e1 = env0(ident1.name)
+      val e2 = env0(ident2.name)
+      mustEq(e1, e2, env0)
+    case (Ref(name1, _, _), Ref(name2, _, _)) =>
+      name1.fqn == name2.fqn
+    case (Lambda(_, _, body1, _, _), Lambda(_, _, body2, _, _)) =>
+      mustEq(body1, body2, env0)
+    case (Apply3(lambda1, actuals1, _, _), Apply3(lambda2, actuals2, _, _)) =>
+      val eqLambdas = mustEq(lambda1, lambda2, env0)
+      val eqActuals = (actuals1 zip actuals2).forall {
+        case (e1, e2) => mustEq(e1, e2, env0)
+      }
+      eqLambdas && eqActuals
+    case (Unary(op1, e1, _, _), Unary(op2, e2, _, _)) =>
+      val eqOp = op1 == op2
+      val eqExp = mustEq(e1, e2, env0)
+      eqOp && eqExp
+    case (Binary(op1, e11, e12, _, _), Binary(op2, e21, e22, _, _)) =>
+      val eqOp = op1 == op2
+      val eq1Exp = mustEq(e11, e21, env0)
+      val eq2Exp = mustEq(e12, e22, env0)
+      eqOp && eq1Exp && eq2Exp
+    case (IfThenElse(e11, e12, e13, _, _), IfThenElse(e21, e22, e23, _, _)) =>
+      val eq1Exp = mustEq(e11, e21, env0)
+      val eq2Exp = mustEq(e12, e22, env0)
+      val eq3Exp = mustEq(e13, e23, env0)
+      eq1Exp && eq2Exp && eq3Exp
+    case (Let(ident1, _, e11, e12, _, _), Let(ident2, _, e21, e22, _, _)) =>
+      val eqIdent = ident1.name == ident2.name
+      val eqExp1 = mustEq(e11, e21, env0)
+      val eqExp2 = mustEq(e12, e22, env0)
+      eqIdent && eqExp1 && eqExp2
+
+
+
     case (Tag(_, tag1, e1, _, _), Tag(_, tag2, e2, _, _)) =>
       tag1.name == tag2.name && mustEq(e1, e2, env0)
     case (Tuple(elms1, _, _), Tuple(elms2, _, _)) => (elms1 zip elms2) forall {
@@ -734,24 +777,6 @@ object PartialEvaluator {
     case (Tuple(elms1, _, _), Tuple(elms2, _, _)) => (elms1 zip elms2) exists {
       case (e1, e2) => mustNotEq(e1, e2, env0)
     }
-  }
-
-  /**
-    * Returns the canonical form the given expression `e`.
-    *
-    * A canonical form is a standard way to represent a class of expressions.
-    *
-    * For example, the following expressions are all equivalent:
-    * - x > 0
-    * - 0 < x
-    * - x >= 0 && x != 0
-    * - 0 <= x && x != 0
-    *
-    * This function attempts to pick a "standard form" of such an expression.
-    */
-  // TODO: Implement?
-  private def canonical(e: Expression): Expression = e match {
-    case Unit => Unit
   }
 
   /**
