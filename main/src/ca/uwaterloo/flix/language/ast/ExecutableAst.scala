@@ -467,6 +467,13 @@ object ExecutableAst {
       */
     case class MatchError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
+    /**
+      * A typed AST node representing a switch error.
+      *
+      * @param tpe the type of the error.
+      * @param loc the source location of the error.
+      */
+    case class SwitchError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
   }
 
   sealed trait Predicate extends ExecutableAst {

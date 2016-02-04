@@ -157,6 +157,7 @@ object CreateExecutableAst {
         ExecutableAst.Expression.Set(elmsArray, tpe, loc)
       case SimplifiedAst.Expression.Error(tpe, loc) => ExecutableAst.Expression.Error(tpe, loc)
       case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)
+      case SimplifiedAst.Expression.SwitchError(tpe, loc) => ExecutableAst.Expression.SwitchError(tpe, loc)
     }
   }
 

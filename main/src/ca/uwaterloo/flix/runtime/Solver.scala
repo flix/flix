@@ -280,7 +280,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       val args = new Array[AnyRef](pred.terms.length)
       var i = 0
       while (i < args.length) {
-        args(i) = Interpreter.evalBodyTerm(pred.terms(i), row)
+        args(i) = Interpreter.evalBodyTerm(pred.terms(i), sCtx.root, row)
         i = i + 1
       }
       val result = Interpreter.evalCall(lambda.exp, args, sCtx.root, row)
@@ -301,7 +301,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       val args = new Array[AnyRef](pred.terms.length)
       var i = 0
       while (i < args.length) {
-        args(i) = Interpreter.evalBodyTerm(pred.terms(i), row)
+        args(i) = Interpreter.evalBodyTerm(pred.terms(i), sCtx.root, row)
         i = i + 1
       }
 
@@ -346,7 +346,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   def eval(t: ExecutableAst.Term.Body, env: mutable.Map[String, AnyRef]): AnyRef = t match {
     case t: ExecutableAst.Term.Body.Wildcard => null
     case t: ExecutableAst.Term.Body.Var => env.getOrElse(t.ident.name, null)
-    case t: ExecutableAst.Term.Body.Exp => ???
+    case t: ExecutableAst.Term.Body.Exp => Interpreter.eval(t.e, sCtx.root, env)
   }
 
   /**

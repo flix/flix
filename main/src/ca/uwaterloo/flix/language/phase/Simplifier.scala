@@ -115,6 +115,7 @@ object Simplifier {
         /**
           * Second, we generate a synthetic rule that matches anything and always throws a match error.
           */
+        // TODO: Is there still a bug with the fallthrough?
         val fallthrough = (TypedAst.Pattern.Wildcard(tpe, loc), TypedAst.Expression.Error(tpe, loc)) // TODO: This should be a match error.
 
         /**
