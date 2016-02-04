@@ -749,19 +749,28 @@ object PartialEvaluator {
       val eq3Exp = mustEq(e13, e23, env0)
       eq1Exp && eq2Exp && eq3Exp
     case (Let(ident1, _, e11, e12, _, _), Let(ident2, _, e21, e22, _, _)) =>
+      // TODO: Improve under substition.
       val eqIdent = ident1.name == ident2.name
       val eqExp1 = mustEq(e11, e21, env0)
       val eqExp2 = mustEq(e12, e22, env0)
       eqIdent && eqExp1 && eqExp2
-
-
-
+    case (CheckTag(tag1, e1, _), CheckTag(tag2, e2, _)) =>
+      val eqTag = tag1.name == tag2.name
+      val eqExp = mustEq(e1, e2, env0)
+      eqTag && eqExp
+    case (GetTagValue(e1, _, _), GetTagValue(e2, _, _)) =>
+      mustEq(e1, e2, env0)
     case (Tag(_, tag1, e1, _, _), Tag(_, tag2, e2, _, _)) =>
-      tag1.name == tag2.name && mustEq(e1, e2, env0)
+      val eqTag = tag1.name == tag2.name
+      val eqExp = mustEq(e1, e2, env0)
+      eqTag && eqExp
     case (Tuple(elms1, _, _), Tuple(elms2, _, _)) => (elms1 zip elms2) forall {
       case (e1, e2) => mustEq(e1, e2, env0)
     }
-    //case _ => false
+
+
+
+    case _ => false
   }
 
   /**
