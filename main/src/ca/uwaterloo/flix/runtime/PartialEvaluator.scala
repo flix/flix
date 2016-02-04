@@ -546,6 +546,12 @@ object PartialEvaluator {
         k(Closure(args, body, env0, tpe, loc))
 
       /**
+        * Hook Expressions.
+        */
+      case Hook(hook, tpe, loc) =>
+        k(Hook(hook, tpe, loc))
+
+      /**
         * Tag Expressions.
         */
       case Tag(enum, tag, exp1, tpe, loc) =>
@@ -710,7 +716,6 @@ object PartialEvaluator {
   /**
     * Returns `true` iff `exp1` and `exp2` *must* evaluate to the same value under the given environment `env0`.
     */
-  // TODO: Implement rest
   private def mustEq(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
     case (Unit, Unit) => true
     case (True, True) => true
@@ -767,9 +772,15 @@ object PartialEvaluator {
     case (Tuple(elms1, _, _), Tuple(elms2, _, _)) => (elms1 zip elms2) forall {
       case (e1, e2) => mustEq(e1, e2, env0)
     }
-
-
-
+    case (GetTupleIndex(e1, offset1, _, _), GetTupleIndex(e2, offset2, _, _)) =>
+      val eqExp = mustEq(e1, e2, env0)
+      val eqOffset = offset1 == offset2
+      eqExp && eqOffset
+    case (Error(_, _), Error(_, _)) => true
+    case (MatchError(_, _), MatchError(_, _)) => true
+    case (CheckNil(_, _), CheckNil(_, _)) => throw new InternalCompilerError("Unsupported.")
+    case (CheckCons(_, _), CheckCons(_, _)) => throw new InternalCompilerError("Unsupported.")
+    case (Set(_, _, _), Set(_, _, _)) => throw new InternalCompilerError("Unsupported.")
     case _ => false
   }
 
