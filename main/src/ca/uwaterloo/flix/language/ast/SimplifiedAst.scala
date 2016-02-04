@@ -480,7 +480,9 @@ object SimplifiedAst {
       * @param tpe the type of the error.
       * @param loc the source location of the error.
       */
-    case class Error(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Error(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = "Error"
+    }
 
     /**
       * A typed AST node representing a match error.
@@ -488,7 +490,9 @@ object SimplifiedAst {
       * @param tpe the type of the error.
       * @param loc the source location of the error.
       */
-    case class MatchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class MatchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = "MatchError"
+    }
 
     /**
       * A typed AST node representing a switch error.
@@ -496,7 +500,9 @@ object SimplifiedAst {
       * @param tpe the type of the error.
       * @param loc the source location of the error.
       */
-    case class SwitchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class SwitchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = "SwitchError"
+    }
   }
 
   sealed trait Predicate extends SimplifiedAst {
