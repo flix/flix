@@ -89,7 +89,13 @@ object Simplifier {
       case TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc) =>
         SimplifiedAst.Expression.IfThenElse(simplify(e1), simplify(e2), simplify(e3), tpe, loc)
       case TypedAst.Expression.Switch(rules, tpe, loc) =>
-        ??? // TODO
+        val zero = SimplifiedAst.Expression.SwitchError(tpe, loc)
+        rules.foldRight(zero: SimplifiedAst.Expression) {
+          case ((e1, e2), acc) =>
+            val cond = simplify(e1)
+            val body = simplify(e2)
+            SimplifiedAst.Expression.IfThenElse(cond, body, acc, tpe, loc)
+        }
       case TypedAst.Expression.Let(ident, e1, e2, tpe, loc) =>
         // TODO: Variable numbering
         SimplifiedAst.Expression.Let(ident, -1, simplify(e1), simplify(e2), tpe, loc)
@@ -127,8 +133,8 @@ object Simplifier {
 
   object Pattern {
 
-    import TypedAst.Pattern._
     import SimplifiedAst.{Expression => SExp}
+    import TypedAst.Pattern._
 
     // TODO: Have some one carefully peer-review this. esp. w.r.t. types.
 
