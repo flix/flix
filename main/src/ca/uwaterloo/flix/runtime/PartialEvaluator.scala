@@ -38,7 +38,7 @@ object PartialEvaluator {
       /**
         * Unit Expression.
         */
-      case Unit => k(exp0)
+      case Unit => k(Unit)
 
       /**
         * True Expression.
