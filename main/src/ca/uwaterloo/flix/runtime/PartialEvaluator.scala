@@ -475,16 +475,16 @@ object PartialEvaluator {
       /**
         * Let Expressions.
         */
-      case Let(name, offset, exp1, exp2, tpe, loc) =>
+      case Let(ident, offset, exp1, exp2, tpe, loc) =>
         // Partially evaluate the bound value exp1.
         eval(exp1, env0, {
-          case e if isValue(e) => // TODO: Why?
-            // Case 1: The bound value expression exp1 is a value.
-            // Extend the environment and evaluate the body expression exp2.
-            eval(exp2, env0 + (name.name -> e), k) // TODO: Carefull with substi.
-          case r =>
-            println(r)
-            ???
+          case e =>
+            // Rename all occurrences of ident to avoid capture.
+            val src = ident
+            val dst = genSym.fresh2()
+            val body = rename(src, dst, exp2)
+            val extEnv = env0 + (dst.name -> e)
+            eval(body, extEnv, k)
         })
 
       /**
@@ -657,25 +657,6 @@ object PartialEvaluator {
   }
 
   /**
-    * Returns `true` iff the given expression `e` is a value.
-    */
-  private def isValue(e: Expression): Boolean = e match {
-    case Unit => true
-    case True => true
-    case False => true
-    case v: Int8 => true
-    case v: Int16 => true
-    case v: Int32 => true
-    case v: Int64 => true
-    case v: Str => true
-    case v: Tag => isValue(v.exp)
-    case v: Tuple => v.elms.forall(isValue)
-    case v: Closure => true
-    case _ => false
-  }
-
-
-  /**
     * A common super-type for the result of an equality comparison.
     */
   sealed trait Eq
@@ -813,7 +794,7 @@ object PartialEvaluator {
   /**
     * Replaces every free occurrence of the variable name `src` by the name `dst` in the given expression `exp`.
     */
-  private def rename(src: String, dst: String, exp: Expression): Expression = exp match {
+  private def rename(src: Name.Ident, dst: Name.Ident, exp: Expression): Expression = exp match {
     case Unit => Unit
     case True => True
     case False => False
@@ -823,8 +804,8 @@ object PartialEvaluator {
     case Int64(i) => Int64(i)
     case Str(s) => Str(s)
     case Var(ident, offset, tpe, loc) =>
-      if (ident.name == src)
-        Var(ident.copy(name = dst), offset, tpe, loc)
+      if (ident.name == src.name)
+        Var(dst, offset, tpe, loc)
       else
         Var(ident, offset, tpe, loc)
     case Ref(name, tpe, loc) => Ref(name, tpe, loc)
@@ -845,7 +826,7 @@ object PartialEvaluator {
     case IfThenElse(e1, e2, e3, tpe, loc) =>
       IfThenElse(rename(src, dst, e1), rename(src, dst, e2), rename(src, dst, e3), tpe, loc)
     case Let(ident, offset, e1, e2, tpe, loc) =>
-      if (ident.name == src)
+      if (ident.name == src.name)
         Let(ident, offset, rename(src, dst, e1), e2, tpe, loc)
       else
         Let(ident, offset, rename(src, dst, e1), rename(src, dst, e2), tpe, loc)

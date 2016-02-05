@@ -781,7 +781,7 @@ object Verifier {
     */
   // TODO: replace string by name?
   def enumerate(q: List[Var]): List[Map[String, Expression]] = {
-    val genSym = new GenSym
+    val genSym = new GenSym // TODO: This one actually has to come from somewhere else.
 
     def visit(tpe: Type): List[Expression] = tpe match {
       case Type.Unit => List(Expression.Unit)
