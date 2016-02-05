@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.runtime
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, SimplifiedAst, Type, UnaryOperator}
+import ca.uwaterloo.flix.language.ast._
 
 object PartialEvaluator {
 
@@ -787,7 +787,6 @@ object PartialEvaluator {
   /**
     * Returns `true` iff `exp1` and `exp2` *cannot* evaluate to the same value under the given environment `env0`.
     */
-  // TODO: Implement rest
   private def mustNotEq(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
     case (Unit, Unit) => false
     case (True, False) => true
@@ -797,6 +796,7 @@ object PartialEvaluator {
     case (Tuple(elms1, _, _), Tuple(elms2, _, _)) => (elms1 zip elms2) exists {
       case (e1, e2) => mustNotEq(e1, e2, env0)
     }
+    // TODO: Implement rest
   }
 
   /**
@@ -808,5 +808,40 @@ object PartialEvaluator {
     * Short-hand for casting an Int to a Short.
     */
   private def short(i: Int): Short = i.asInstanceOf[Short]
+
+  /**
+    * Replaces every free occurrence of the variable name `src` by the name `dst` in the given expression `exp`.
+    */
+  private def rename(src: String, dst: String, exp: Expression): Expression = exp match {
+    case Unit => Unit
+    case True => True
+    case False => False
+    case Int8(i) => Int8(i)
+    case Int16(i) => Int16(i)
+    case Int32(i) => Int32(i)
+    case Int64(i) => Int64(i)
+    case Str(s) => Str(s)
+    case Var(ident, offset, tpe, loc) =>
+      if (ident.name == src)
+        Var(ident.copy(name = dst), offset, tpe, loc)
+      else
+        Var(ident, offset, tpe, loc)
+    case Ref(name, tpe, loc) => Ref(name, tpe, loc)
+    case lambda@Lambda(ann, args, body, tpe, loc) =>
+      val bound = args.exists(_.ident.name == src)
+      if (bound)
+        lambda
+      else
+        lambda.copy(body = rename(src, dst, body))
+    case Hook(hook, tpe, loc) => Hook(hook, tpe, loc)
+    case Closure(args, body, env, tpe, loc) => ??? // TODO what?
+    case Apply3(lambda, args, tpe, loc) =>
+      Apply3(rename(src, dst, lambda), args.map(a => rename(src, dst, a)), tpe, loc)
+    case Unary(op, exp, tpe, loc) =>
+      Unary(op, rename(src, dst, exp), tpe, loc)
+
+
+    case Apply(name, args, tpe ,loc) => ??? // TODO: deprecated
+  }
 
 }

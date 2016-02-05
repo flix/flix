@@ -4,6 +4,8 @@ sealed trait SimplifiedAst
 
 object SimplifiedAst {
 
+  // TODO: Order of elements.
+
   case class Root(constants: Map[Name.Resolved, SimplifiedAst.Definition.Constant],
                   directives: SimplifiedAst.Directives,
                   lattices: Map[Type, SimplifiedAst.Definition.Lattice],
@@ -301,6 +303,7 @@ object SimplifiedAst {
       * @param tpe  the return type of the function.
       * @param loc  the source location of the expression.
       */
+    @deprecated("to be removed", "0.1.0")
     case class Apply(name: Name.Resolved,
                      args: List[SimplifiedAst.Expression],
                      tpe: Type,
