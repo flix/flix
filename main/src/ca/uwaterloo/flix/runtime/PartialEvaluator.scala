@@ -827,21 +827,44 @@ object PartialEvaluator {
       else
         Var(ident, offset, tpe, loc)
     case Ref(name, tpe, loc) => Ref(name, tpe, loc)
-    case lambda@Lambda(ann, args, body, tpe, loc) =>
+    case Lambda(ann, args, body, tpe, loc) =>
       val bound = args.exists(_.ident.name == src)
       if (bound)
-        lambda
+        Lambda(ann, args, body, tpe, loc)
       else
-        lambda.copy(body = rename(src, dst, body))
+        Lambda(ann, args, rename(src, dst, body), tpe, loc)
     case Hook(hook, tpe, loc) => Hook(hook, tpe, loc)
     case Closure(args, body, env, tpe, loc) => ??? // TODO what?
     case Apply3(lambda, args, tpe, loc) =>
       Apply3(rename(src, dst, lambda), args.map(a => rename(src, dst, a)), tpe, loc)
-    case Unary(op, exp, tpe, loc) =>
-      Unary(op, rename(src, dst, exp), tpe, loc)
-
-
-    case Apply(name, args, tpe ,loc) => ??? // TODO: deprecated
+    case Unary(op, e, tpe, loc) =>
+      Unary(op, rename(src, dst, e), tpe, loc)
+    case Binary(op, e1, e2, tpe, loc) =>
+      Binary(op, rename(src, dst, e1), rename(src, dst, e2), tpe, loc)
+    case IfThenElse(e1, e2, e3, tpe, loc) =>
+      IfThenElse(rename(src, dst, e1), rename(src, dst, e2), rename(src, dst, e3), tpe, loc)
+    case Let(ident, offset, e1, e2, tpe, loc) =>
+      if (ident.name == src)
+        Let(ident, offset, rename(src, dst, e1), e2, tpe, loc)
+      else
+        Let(ident, offset, rename(src, dst, e1), rename(src, dst, e2), tpe, loc)
+    case Tag(enum, tag, e, tpe, loc) =>
+      Tag(enum, tag, rename(src, dst, e), tpe, loc)
+    case CheckTag(tag, e, loc) =>
+      CheckTag(tag, rename(src, dst, e), loc)
+    case GetTagValue(e, tpe, loc) =>
+      GetTagValue(rename(src, dst, e), tpe, loc)
+    case Tuple(elms, tpe, loc) =>
+      Tuple(elms map (e => rename(src, dst, e)), tpe, loc)
+    case GetTupleIndex(e, offset, tpe, loc) =>
+      GetTupleIndex(rename(src, dst, e), offset, tpe, loc)
+    case Error(tpe, loc) => Error(tpe, loc)
+    case MatchError(tpe, loc) => MatchError(tpe, loc)
+    case SwitchError(tpe, loc) => SwitchError(tpe, loc)
+    case Set(elms, tpe, loc) => throw new InternalCompilerError("Unsupported.")
+    case CheckNil(e, loc) => throw new InternalCompilerError("Unsupported.")
+    case CheckCons(e, loc) => throw new InternalCompilerError("Unsupported.")
+    case Apply(name, args, tpe, loc) => ??? // TODO: deprecated
   }
 
 }
