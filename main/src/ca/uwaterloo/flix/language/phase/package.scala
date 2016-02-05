@@ -4,6 +4,8 @@ import ca.uwaterloo.flix.language.ast.{SourcePosition, SimplifiedAst, Name}
 
 package object phase {
 
+  // TODO: Cleanup
+
   class GenSym() {
     private var number: Int = 0
 
@@ -13,16 +15,6 @@ package object phase {
       Name.Ident(SourcePosition.Unknown, "tmp" + number, SourcePosition.Unknown)
     }
 
-    //  TODO: return Name.Ident
-    def fresh(): SimplifiedAst.Expression.Var = ???
-
-
-
-    // TODO: Maintain map from s to Int
-    def of(s: Name.Ident): Int = {
-      number = number + 1
-      number
-    }
   }
 
 }

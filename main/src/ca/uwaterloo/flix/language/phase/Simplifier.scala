@@ -221,43 +221,6 @@ object Simplifier {
         }
 
     }
-
-    // TODO: Remove
-    def genCode(patterns: List[TypedAst.Pattern],
-                variables: List[SimplifiedAst.Expression.Var],
-                body: SimplifiedAst.Expression,
-                fail: SimplifiedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = patterns match {
-      case Nil => body
-
-      case TypedAst.Pattern.Wildcard(tpe, loc) :: rest => genCode(rest, variables.tail, body, fail)
-
-      case TypedAst.Pattern.Var(ident, tpe, loc) :: rest =>
-        SimplifiedAst.Expression.Let(ident, -1, variables.head, body, body.tpe, loc)
-
-      case TypedAst.Pattern.Lit(lit, tpe, loc) :: rest =>
-        val cond = SimplifiedAst.Expression.Binary(
-          BinaryOperator.Equal,
-          Literal.simplify(lit),
-          variables.head,
-          Type.Bool,
-          loc
-        )
-        SimplifiedAst.Expression.IfThenElse(cond, genCode(rest, variables.tail, body, fail), fail, body.tpe, loc)
-
-      case TypedAst.Pattern.Tag(enum, tag, pat, tpe, loc) :: rest =>
-        val cond = SimplifiedAst.Expression.CheckTag(tag, variables.head, loc)
-        val v = genSym.fresh()
-        val e = SimplifiedAst.Expression.Let(v.ident, -1, SimplifiedAst.Expression.GetTagValue(variables.head, variables.head.tpe, loc), body, body.tpe, loc)
-        val thenExp = genCode(pat :: rest, v :: variables.tail, e, fail)
-        val elseExp = fail
-
-        SimplifiedAst.Expression.IfThenElse(cond, thenExp, elseExp, body.tpe, loc)
-
-      case TypedAst.Pattern.Tuple(elms, tpe, loc) :: rest =>
-        ??? // TODO
-
-    }
-
   }
 
   object Literal {
@@ -309,7 +272,7 @@ object Simplifier {
 
     def simplify(tast: TypedAst.Term.Body)(implicit genSym: GenSym): SimplifiedAst.Term.Body = tast match {
       case TypedAst.Term.Body.Wildcard(tpe, loc) => SimplifiedAst.Term.Body.Wildcard(tpe, loc)
-      case TypedAst.Term.Body.Var(ident, tpe, loc) => SimplifiedAst.Term.Body.Var(ident, genSym.of(ident), tpe, loc)
+      case TypedAst.Term.Body.Var(ident, tpe, loc) => SimplifiedAst.Term.Body.Var(ident, -1, tpe, loc)
       case TypedAst.Term.Body.Lit(lit, tpe, loc) => SimplifiedAst.Term.Body.Exp(Literal.simplify(lit), tpe, loc)
     }
   }

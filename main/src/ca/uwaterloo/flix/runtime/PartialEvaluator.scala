@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.phase.GenSym
 
 object PartialEvaluator {
 
@@ -27,7 +28,7 @@ object PartialEvaluator {
     *
     * Returns the residual expression.
     */
-  def eval(exp0: Expression, root: SimplifiedAst.Root, env0: Map[String, Expression]): Expression = {
+  def eval(exp0: Expression, env0: Map[String, Expression], root: SimplifiedAst.Root, genSym: GenSym): Expression = {
 
     /**
       * Partially evaluates the given expression `exp0` under the given environment `env0`.
