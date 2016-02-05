@@ -101,6 +101,6 @@ package object ast {
     *
     * @param parser the time spent in the parser.
     */
-  case class Time(parser: Long, weeder: Long, resolver: Long, typer: Long)
+  case class Time(parser: Long, weeder: Long, resolver: Long, typer: Long, verifier: Long)
 
 }

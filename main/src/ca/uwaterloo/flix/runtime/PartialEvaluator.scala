@@ -6,6 +6,8 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.GenSym
 
+import scala.collection.immutable
+
 object PartialEvaluator {
 
   /**
@@ -29,12 +31,14 @@ object PartialEvaluator {
     * Returns the residual expression.
     */
   def eval(exp0: Expression, env0: Map[String, Expression], root: SimplifiedAst.Root, genSym: GenSym): Expression = {
+    // TODO: Remove env from arguments.
 
     /**
       * Partially evaluates the given expression `exp0` under the given environment `env0`.
       *
       * Applies the continuation `k` to the result of the evaluation.
       */
+    // TODO: Remove env from arguments.
     def eval(exp0: Expression, env0: Map[String, Expression], k: Cont): Expression = exp0 match {
       /**
         * Unit Expression.
@@ -609,6 +613,11 @@ object PartialEvaluator {
         */
       case MatchError(tpe, loc) => k(MatchError(tpe, loc))
 
+      /**
+        * Switch Error Expressions.
+        */
+      case SwitchError(tpe, loc) => k(SwitchError(tpe, loc))
+
       // TODO: Unsupported
       case Set(elms, tpe, loc) => throw new InternalCompilerError("Not Yet Supported. Sorry.")
       case o: CheckNil => throw new InternalCompilerError("Not Yet Supported. Sorry.")
@@ -792,6 +801,58 @@ object PartialEvaluator {
   private def short(i: Int): Short = i.asInstanceOf[Short]
 
   /**
+    * Returns all free (unbound) variables in the given expression.
+    */
+  private def freeVars(exp: Expression, root: SimplifiedAst.Root): immutable.Set[Name.Ident] = exp match {
+    case Unit => immutable.Set.empty
+    case True => immutable.Set.empty
+    case False => immutable.Set.empty
+    case Int8(i) => immutable.Set.empty
+    case Int16(i) => immutable.Set.empty
+    case Int32(i) => immutable.Set.empty
+    case Int64(i) => immutable.Set.empty
+    case Str(s) => immutable.Set.empty
+    case Var(ident, offset, tpe, loc) => immutable.Set(ident)
+    case Ref(name, tpe, loc) => immutable.Set.empty
+    case Lambda(ann, args, body, tpe, loc) =>
+      val bound = args.map(a => a.ident).toSet
+      val free = freeVars(body, root)
+      free -- bound
+    case Closure(args, body, env, tpe, loc) =>
+      ??? // TODO what?
+    case Hook(hook, tpe, loc) => immutable.Set.empty
+    case Apply3(lambda, args, tpe, loc) => args.foldLeft(freeVars(lambda, root)) {
+      case (macc, arg) => macc ++ freeVars(arg, root)
+    }
+    case Unary(op, e, tpe, loc) =>
+      freeVars(e, root)
+    case Binary(op, e1, e2, tpe, loc) =>
+      freeVars(e1, root) ++ freeVars(e2, root)
+    case IfThenElse(e1, e2, e3, tpe, loc) =>
+      freeVars(e1, root) ++ freeVars(e2, root) ++ freeVars(e3, root)
+    case Let(ident, offset, e1, e2, tpe, loc) =>
+      freeVars(e1, root) ++ (freeVars(e2, root) - ident)
+    case Tag(enum, tag, e, tpe, loc) =>
+      freeVars(e, root)
+    case CheckTag(tag, e, loc) =>
+      freeVars(e, root)
+    case GetTagValue(e, tpe, loc) =>
+      freeVars(e, root)
+    case Tuple(elms, tpe, loc) => elms.foldLeft(immutable.Set.empty[Name.Ident]) {
+      case (sacc, e) => sacc ++ freeVars(e, root)
+    }
+    case GetTupleIndex(e, offset, tpe, loc) =>
+      freeVars(e, root)
+    case Error(tpe, loc) => immutable.Set.empty
+    case MatchError(tpe, loc) => immutable.Set.empty
+    case SwitchError(tpe, loc) => immutable.Set.empty
+    case Set(elms, tpe, loc) => throw new InternalCompilerError("Unsupported.")
+    case CheckNil(e, loc) => throw new InternalCompilerError("Unsupported.")
+    case CheckCons(e, loc) => throw new InternalCompilerError("Unsupported.")
+    case Apply(name, args, tpe, loc) => ??? // TODO: deprecated
+  }
+
+  /**
     * Replaces every free occurrence of the variable name `src` by the name `dst` in the given expression `exp`.
     */
   private def rename(src: Name.Ident, dst: Name.Ident, exp: Expression): Expression = exp match {
@@ -848,5 +909,11 @@ object PartialEvaluator {
     case CheckCons(e, loc) => throw new InternalCompilerError("Unsupported.")
     case Apply(name, args, tpe, loc) => ??? // TODO: deprecated
   }
+
+  /**
+    * Replaces all free (unbound) occurrences of `ident` with the ``
+    */
+  private def substitute(ident: Name.Ident, r: Expression, body: Expression): Expression = ???
+
 
 }
