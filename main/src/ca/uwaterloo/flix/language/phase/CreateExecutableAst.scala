@@ -139,9 +139,6 @@ object CreateExecutableAst {
         val argsArray = args.map(CreateExecutableAst.toExecutable).toArray
         ExecutableAst.Expression.Lambda(annotations, argsArray, toExecutable(body), tpe, loc)
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => ExecutableAst.Expression.Hook(hook, tpe, loc)
-      case SimplifiedAst.Expression.Closure(args, body, env, tpe, loc) =>
-        val argsArray = args.map(CreateExecutableAst.toExecutable).toArray
-        ExecutableAst.Expression.Closure(argsArray, toExecutable(body), env.mapValues(toExecutable), tpe, loc)
       case SimplifiedAst.Expression.Apply(name, args, tpe, loc) =>
         val argsArray = args.map(toExecutable).toArray
         ExecutableAst.Expression.Apply(name, argsArray, tpe, loc)

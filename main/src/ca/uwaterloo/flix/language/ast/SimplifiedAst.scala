@@ -286,15 +286,6 @@ object SimplifiedAst {
 
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    // TODO: To be removed.
-    case class Closure(args: List[SimplifiedAst.FormalArg],
-                       body: SimplifiedAst.Expression,
-                       env: Map[String, SimplifiedAst.Expression],
-                       tpe: Type,
-                       loc: SourceLocation) extends SimplifiedAst.Expression {
-      override def toString: String = "Closure(<>)"
-    }
-
     /**
       * A typed AST node representing a function call.
       *

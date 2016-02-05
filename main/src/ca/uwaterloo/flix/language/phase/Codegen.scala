@@ -133,7 +133,6 @@ object Codegen {
 
     case Expression.Ref(name, tpe, loc) => ???
     case Expression.Lambda(annotations, args, body, tpe, loc) => ???
-    case Expression.Closure(args, body, env, tpe, loc) => ???
 
     case Expression.Apply(name, args, _, _) =>
       args.foreach(compileExpression(context, visitor))

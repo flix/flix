@@ -30,16 +30,14 @@ object PartialEvaluator {
     *
     * Returns the residual expression.
     */
-  def eval(exp0: Expression, env0: Map[String, Expression], root: SimplifiedAst.Root, genSym: GenSym): Expression = {
-    // TODO: Remove env from arguments.
+  def eval(exp0: Expression, env0: Map[String, Expression], root: SimplifiedAst.Root)(implicit genSym: GenSym): Expression = {
 
     /**
       * Partially evaluates the given expression `exp0` under the given environment `env0`.
       *
       * Applies the continuation `k` to the result of the evaluation.
       */
-    // TODO: Remove env from arguments.
-    def eval(exp0: Expression, env0: Map[String, Expression], k: Cont): Expression = exp0 match {
+    def eval(exp0: Expression, k: Cont): Expression = exp0 match {
       /**
         * Unit Expression.
         */
@@ -64,11 +62,6 @@ object PartialEvaluator {
       case Int64(lit) => k(Int64(lit))
 
       /**
-        * Closure Expressions.
-        */
-      case v: Closure => k(v)
-
-      /**
         * Str Expression.
         */
       case Str(lit) => k(Str(lit))
@@ -76,10 +69,8 @@ object PartialEvaluator {
       /**
         * Var Expressions/
         */
-      case Var(name, offset, tpe, loc) => env0.get(name.name) match {
-        case None => throw new InternalCompilerError(s"Unresolved variable: '$name'.")
-        case Some(e) => eval(e, env0, k)
-      }
+      case Var(name, offset, tpe, loc) =>
+        ??? // k(Var(name, offset, tpe, loc))
 
       /**
         * Ref Expressions.
@@ -96,7 +87,7 @@ object PartialEvaluator {
         /**
           * Unary Logical Not.
           */
-        case UnaryOperator.LogicalNot => eval(exp, env0, {
+        case UnaryOperator.LogicalNot => eval(exp, {
           case True => k(False)
           case False => k(True)
           case residual => k(residual)
@@ -105,12 +96,12 @@ object PartialEvaluator {
         /**
           * Unary Plus.
           */
-        case UnaryOperator.Plus => eval(exp, env0, k)
+        case UnaryOperator.Plus => eval(exp, k)
 
         /**
           * Unary Minus.
           */
-        case UnaryOperator.Minus => eval(exp, env0, {
+        case UnaryOperator.Minus => eval(exp, {
           case Int8(i) => k(Int8(byte(-i)))
           case Int16(i) => k(Int16(short(-i)))
           case Int32(i) => k(Int32(-i))
@@ -121,7 +112,7 @@ object PartialEvaluator {
         /**
           * Unary Bitwise Negation.
           */
-        case UnaryOperator.BitwiseNegate => eval(exp, env0, {
+        case UnaryOperator.BitwiseNegate => eval(exp, {
           case Int8(i) => k(Int8(byte(~i)))
           case Int16(i) => k(Int16(short(~i)))
           case Int32(i) => k(Int32(~i))
@@ -140,7 +131,7 @@ object PartialEvaluator {
           */
         case BinaryOperator.Plus =>
           // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, env0, {
+          eval2(exp1, exp2, {
             // Concrete execution.
             case (Int8(x), Int8(y)) => k(Int8(byte(x + y)))
             case (Int16(x), Int16(y)) => k(Int16(short(x + y)))
@@ -167,7 +158,7 @@ object PartialEvaluator {
           */
         case BinaryOperator.Minus =>
           // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, env0, {
+          eval2(exp1, exp2, {
             // Concrete execution.
             case (Int8(x), Int8(y)) => k(Int8(byte(x - y)))
             case (Int16(x), Int16(y)) => k(Int16(short(x - y)))
@@ -183,7 +174,7 @@ object PartialEvaluator {
             // Residuals.
             case (r1, r2) =>
               // Equality Law: x - x = 0
-              isEq(r1, r2, env0) match {
+              isEq(r1, r2) match {
                 case Eq.Equal => tpe match {
                   case Type.Int8 => k(Int8(0))
                   case Type.Int16 => k(Int16(0))
@@ -200,7 +191,7 @@ object PartialEvaluator {
           */
         case BinaryOperator.Times =>
           // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, env0, {
+          eval2(exp1, exp2, {
             // Concrete execution.
             case (Int8(x), Int8(y)) => k(Int8(byte(x * y)))
             case (Int16(x), Int16(y)) => k(Int16(short(x * y)))
@@ -236,7 +227,7 @@ object PartialEvaluator {
           */
         case BinaryOperator.Divide =>
           // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, env0, {
+          eval2(exp1, exp2, {
             // Concrete execution.
             case (Int8(x), Int8(y)) if y != 0 => k(Int8(byte(x / y)))
             case (Int16(x), Int16(y)) if y != 0 => k(Int16(short(x / y)))
@@ -258,7 +249,7 @@ object PartialEvaluator {
           */
         case BinaryOperator.Modulo =>
           // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, env0, {
+          eval2(exp1, exp2, {
             // Concrete execution.
             case (Int8(x), Int8(y)) if y != 0 => k(Int8(byte(x % y)))
             case (Int16(x), Int16(y)) if y != 0 => k(Int16(short(x % y)))
@@ -280,7 +271,7 @@ object PartialEvaluator {
           */
         case BinaryOperator.Less =>
           // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, env0, {
+          eval2(exp1, exp2, {
             // Concrete execution.
             case (Int8(x), Int8(y)) => if (x < y) k(True) else k(False)
             case (Int16(x), Int16(y)) => if (x < y) k(True) else k(False)
@@ -296,7 +287,7 @@ object PartialEvaluator {
           */
         case BinaryOperator.LessEqual =>
           // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, env0, {
+          eval2(exp1, exp2, {
             case (e1, e2) =>
               k(Binary(BinaryOperator.LogicalOr,
                 Binary(BinaryOperator.Less, e1, e2, Type.Bool, loc),
@@ -310,7 +301,7 @@ object PartialEvaluator {
           */
         case BinaryOperator.Greater =>
           // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, env0, {
+          eval2(exp1, exp2, {
             // Concrete execution.
             case (Int8(x), Int8(y)) => if (x > y) k(True) else k(False)
             case (Int16(x), Int16(y)) => if (x > y) k(True) else k(False)
@@ -326,7 +317,7 @@ object PartialEvaluator {
           */
         case BinaryOperator.GreaterEqual =>
           // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, env0, {
+          eval2(exp1, exp2, {
             case (e1, e2) =>
               k(Binary(BinaryOperator.LogicalOr,
                 Binary(BinaryOperator.Greater, e1, e2, Type.Bool, loc),
@@ -340,8 +331,8 @@ object PartialEvaluator {
           */
         case BinaryOperator.Equal =>
           // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, env0, {
-            case (e1, e2) => isEq(e1, e2, env0) match {
+          eval2(exp1, exp2, {
+            case (e1, e2) => isEq(e1, e2) match {
               case Eq.Equal => k(True)
               case Eq.NotEq => k(False)
               case Eq.Unknown => k(Binary(op, e1, e2, tpe, loc))
@@ -359,7 +350,7 @@ object PartialEvaluator {
           */
         case BinaryOperator.LogicalOr =>
           // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, env0, {
+          eval2(exp1, exp2, {
             case (True, _) => k(True)
             case (_, True) => k(True)
             case (False, False) => k(False)
@@ -371,7 +362,7 @@ object PartialEvaluator {
           */
         case BinaryOperator.LogicalAnd =>
           // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, env0, {
+          eval2(exp1, exp2, {
             case (True, True) => k(True)
             case (False, _) => k(False)
             case (_, False) => k(False)
@@ -400,7 +391,7 @@ object PartialEvaluator {
           */
         case BinaryOperator.BitwiseAnd =>
           // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, env0, {
+          eval2(exp1, exp2, {
             // Concrete execution.
             case (Int8(x), Int8(y)) => k(Int8(byte(x & y)))
             case (Int16(x), Int16(y)) => k(Int16(short(x & y)))
@@ -416,7 +407,7 @@ object PartialEvaluator {
           */
         case BinaryOperator.BitwiseOr =>
           // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, env0, {
+          eval2(exp1, exp2, {
             // Concrete execution.
             case (Int8(x), Int8(y)) => k(Int8(byte(x | y)))
             case (Int16(x), Int16(y)) => k(Int16(short(x | y)))
@@ -432,7 +423,7 @@ object PartialEvaluator {
           */
         case BinaryOperator.BitwiseXor =>
           // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, env0, {
+          eval2(exp1, exp2, {
             // Concrete execution.
             case (Int8(x), Int8(y)) => k(Int8(byte(x ^ y)))
             case (Int16(x), Int16(y)) => k(Int16(short(x ^ y)))
@@ -448,7 +439,7 @@ object PartialEvaluator {
           */
         case BinaryOperator.BitwiseLeftShift =>
           // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, env0, {
+          eval2(exp1, exp2, {
             // Concrete execution.
             case (Int8(x), Int8(y)) => k(Int8(byte(x << y)))
             case (Int16(x), Int16(y)) => k(Int16(short(x << y)))
@@ -464,7 +455,7 @@ object PartialEvaluator {
           */
         case BinaryOperator.BitwiseRightShift =>
           // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, env0, {
+          eval2(exp1, exp2, {
             // Concrete execution.
             case (Int8(x), Int8(y)) => k(Int8(byte(x >> y)))
             case (Int16(x), Int16(y)) => k(Int16(short(x >> y)))
@@ -481,15 +472,15 @@ object PartialEvaluator {
         */
       case IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         // Partially evaluate exp1.
-        eval(exp1, env0, {
+        eval(exp1, {
           // Case 1: The condition is true. The result is exp2.
-          case True => eval(exp2, env0, k)
+          case True => eval(exp2, k)
           // Case 2: The condition is false. The result is exp3.
-          case False => eval(exp3, env0, k)
+          case False => eval(exp3, k)
           // Case 3: The condition is residual.
           // Partially evaluate exp2 and exp3 and (re-)construct the residual.
-          case r1 => eval(exp2, env0, {
-            case r2 => eval(exp3, env0, {
+          case r1 => eval(exp2, {
+            case r2 => eval(exp3, {
               case r3 => k(IfThenElse(r1, r2, r3, tpe, loc))
             })
           })
@@ -500,9 +491,9 @@ object PartialEvaluator {
         */
       case Let(ident, offset, exp1, exp2, tpe, loc) =>
         // Partially evaluate the bound value exp1.
-        eval(exp1, env0, {
+        eval(exp1, {
           case e =>
-            eval(substitute(ident, e, exp2, genSym), env0, k)
+            eval(substitute(ident, e, exp2), k)
         })
 
 
@@ -511,59 +502,25 @@ object PartialEvaluator {
         */
       case Apply3(lambda, args, tpe, loc) =>
         // Partially evaluate the argument expressions.
-        evaln(args, env0, {
+        evaln(args, {
           case actuals =>
             // Partially evaluate the lambda expression.
-            eval(lambda, env0, {
+            eval(lambda, {
               case Lambda(_, formals, body, _, _) =>
                 // Substitute actuals for formals.
                 val result = (formals zip actuals).foldLeft(body) {
                   case (acc, (formal, actual)) =>
                     val src = formal.ident
                     val dst = actual
-                    substitute(src, dst, acc, genSym)
+                    substitute(src, dst, acc)
                 }
                 // Evaluate the result body.
-                eval(result, env0, k)
+                eval(result, k)
               case r =>
                 println(r)
                 ???
             })
         })
-
-      //      /**
-      //        * Apply Expressions.
-      //        */
-      //      case Apply3(lambda, actuals, tpe, loc) =>
-      //        // Partially evaluate the lambda expression.
-      //        // TODO: Carefull with substi.
-      //        eval(lambda, env0, {
-      //          case Lambda(_, formals, body, _, _) =>
-      //            // Case 1: The application expression is a lambda abstraction.
-      //            // Match the formals with the actuals.
-      //            // TODO: This should probably evaluate each parameter before swapping it in?
-      //            val env1 = (formals zip actuals).foldLeft(env0) {
-      //              case (env, (formal, actual)) => env + (formal.ident.name -> actual)
-      //            }
-      //            // And evaluate the body expression.
-      //            eval(body, env1, k)
-      //          case Closure(formals, body, env1, _, _) =>
-      //            // Case 2: The lambda expression is a closure.
-      //            // Match the formals with the actuals.
-      //            val env2 = (formals zip actuals).foldLeft(env1) {
-      //              case (env, (formal, actual)) => env + (formal.ident.name -> actual)
-      //            }
-      //
-      //            // And evaluate the body expression.
-      //            eval(body, env2, k)
-      //          case r1 =>
-      //            // Case 3: The lambda expression is residual.
-      //            // Partially evaluate the arguments and (re)-construct the residual.
-      //            println(exp0)
-      //            println(exp0.tpe)
-      //            println(env0)
-      //            ???
-      //        })
 
       /**
         * Lambda Expressions.
@@ -581,7 +538,7 @@ object PartialEvaluator {
         * Tag Expressions.
         */
       case Tag(enum, tag, exp1, tpe, loc) =>
-        eval(exp1, env0, {
+        eval(exp1, {
           case e1 => k(Tag(enum, tag, e1, tpe, loc))
         })
 
@@ -589,7 +546,7 @@ object PartialEvaluator {
         * CheckTag Expressions.
         */
       case CheckTag(tag1, exp, loc) =>
-        eval(exp, env0, {
+        eval(exp, {
           case Tag(_, tag2, _, _, _) =>
             if (tag1.name == tag2.name)
               k(True)
@@ -602,7 +559,7 @@ object PartialEvaluator {
         * GetTagValue Expression.
         */
       case GetTagValue(exp, tpe, loc) =>
-        eval(exp, env0, {
+        eval(exp, {
           case Tag(_, _, e, _, _) => k(e)
           case r => k(GetTagValue(r, tpe, loc))
         })
@@ -611,7 +568,7 @@ object PartialEvaluator {
         * Tuple Expressions.
         */
       case Tuple(elms, tpe, loc) =>
-        evaln(elms, env0, {
+        evaln(elms, {
           case xs => k(Tuple(xs, tpe, loc))
         })
 
@@ -619,7 +576,7 @@ object PartialEvaluator {
         * GetTupleIndex Expressions.
         */
       case GetTupleIndex(exp, offset, tpe, loc) =>
-        eval(exp, env0, {
+        eval(exp, {
           case Tuple(elms, _, _) => k(elms(offset))
           case r => GetTupleIndex(r, offset, tpe, loc)
         })
@@ -651,9 +608,9 @@ object PartialEvaluator {
     /**
       * Overloaded eval that partially evaluates the two arguments `exp1` and `exp2` under the environment `env0`.
       */
-    def eval2(exp1: Expression, exp2: Expression, env0: Map[String, Expression], k: Cont2): Expression =
-      eval(exp1, env0, {
-        case e1 => eval(exp2, env0, {
+    def eval2(exp1: Expression, exp2: Expression, k: Cont2): Expression =
+      eval(exp1, {
+        case e1 => eval(exp2, {
           case e2 => k(e1, e2)
         })
       })
@@ -661,10 +618,10 @@ object PartialEvaluator {
     /**
       * Overloaded eval that partially evaluates the given list of expressions `exps` under the environment `env0`.
       */
-    def evaln(exps: List[Expression], env0: Map[String, Expression], k: ContN): Expression = {
+    def evaln(exps: List[Expression], k: ContN): Expression = {
       def visit(es: List[Expression], rs: List[Expression]): Expression = es match {
         case Nil => k(rs.reverse)
-        case x :: xs => eval(x, env0, {
+        case x :: xs => eval(x, {
           case e => visit(xs, e :: rs)
         })
       }
@@ -672,7 +629,16 @@ object PartialEvaluator {
       visit(exps, Nil)
     }
 
-    eval(exp0, env0, x => x)
+    /**
+      * The actual call to get things started.
+      */
+    val sexp = env0.foldLeft(exp0) {
+      case (acc, (name, e)) =>
+        val src = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
+        val dst = e
+        substitute(src, dst, acc)
+    }
+    eval(sexp, x => x)
   }
 
   /**
@@ -706,10 +672,10 @@ object PartialEvaluator {
     * Returns `Eq.NotEqual` if evaluation of `exp1` and `exp2` is *guaranteed* to produce *different* values.
     * Returns `Eq.Unknown` if the procedure cannot determine whether the two expressions may or may not produce the same value.
     */
-  private def isEq(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Eq =
-    if (mustEq(exp1, exp2, env0))
+  private def isEq(exp1: Expression, exp2: Expression): Eq =
+    if (mustEq(exp1, exp2))
       Eq.Equal
-    else if (mustNotEq(exp1, exp2, env0))
+    else if (mustNotEq(exp1, exp2))
       Eq.NotEq
     else
       Eq.Unknown
@@ -717,7 +683,7 @@ object PartialEvaluator {
   /**
     * Returns `true` iff `exp1` and `exp2` *must* evaluate to the same value under the given environment `env0`.
     */
-  private def mustEq(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
+  private def mustEq(exp1: Expression, exp2: Expression): Boolean = (exp1, exp2) match {
     case (Unit, Unit) => true
     case (True, True) => true
     case (False, False) => true
@@ -726,55 +692,52 @@ object PartialEvaluator {
     case (Int32(i1), Int32(i2)) => i1 == i2
     case (Int64(i1), Int64(i2)) => i1 == i2
     case (Str(s1), Str(s2)) => s1 == s2
-    case (Var(ident1, _, _, _), Var(ident2, _, _, _)) =>
-      val e1 = env0(ident1.name)
-      val e2 = env0(ident2.name)
-      mustEq(e1, e2, env0)
+    case (Var(ident1, _, _, _), Var(ident2, _, _, _)) => ident1.name == ident2.name
     case (Ref(name1, _, _), Ref(name2, _, _)) =>
       name1.fqn == name2.fqn
     case (Lambda(_, _, body1, _, _), Lambda(_, _, body2, _, _)) =>
-      mustEq(body1, body2, env0)
+      mustEq(body1, body2)
     case (Apply3(lambda1, actuals1, _, _), Apply3(lambda2, actuals2, _, _)) =>
-      val eqLambdas = mustEq(lambda1, lambda2, env0)
+      val eqLambdas = mustEq(lambda1, lambda2)
       val eqActuals = (actuals1 zip actuals2).forall {
-        case (e1, e2) => mustEq(e1, e2, env0)
+        case (e1, e2) => mustEq(e1, e2)
       }
       eqLambdas && eqActuals
     case (Unary(op1, e1, _, _), Unary(op2, e2, _, _)) =>
       val eqOp = op1 == op2
-      val eqExp = mustEq(e1, e2, env0)
+      val eqExp = mustEq(e1, e2)
       eqOp && eqExp
     case (Binary(op1, e11, e12, _, _), Binary(op2, e21, e22, _, _)) =>
       val eqOp = op1 == op2
-      val eq1Exp = mustEq(e11, e21, env0)
-      val eq2Exp = mustEq(e12, e22, env0)
+      val eq1Exp = mustEq(e11, e21)
+      val eq2Exp = mustEq(e12, e22)
       eqOp && eq1Exp && eq2Exp
     case (IfThenElse(e11, e12, e13, _, _), IfThenElse(e21, e22, e23, _, _)) =>
-      val eq1Exp = mustEq(e11, e21, env0)
-      val eq2Exp = mustEq(e12, e22, env0)
-      val eq3Exp = mustEq(e13, e23, env0)
+      val eq1Exp = mustEq(e11, e21)
+      val eq2Exp = mustEq(e12, e22)
+      val eq3Exp = mustEq(e13, e23)
       eq1Exp && eq2Exp && eq3Exp
     case (Let(ident1, _, e11, e12, _, _), Let(ident2, _, e21, e22, _, _)) =>
       // TODO: Improve under substition.
       val eqIdent = ident1.name == ident2.name
-      val eqExp1 = mustEq(e11, e21, env0)
-      val eqExp2 = mustEq(e12, e22, env0)
+      val eqExp1 = mustEq(e11, e21)
+      val eqExp2 = mustEq(e12, e22)
       eqIdent && eqExp1 && eqExp2
     case (CheckTag(tag1, e1, _), CheckTag(tag2, e2, _)) =>
       val eqTag = tag1.name == tag2.name
-      val eqExp = mustEq(e1, e2, env0)
+      val eqExp = mustEq(e1, e2)
       eqTag && eqExp
     case (GetTagValue(e1, _, _), GetTagValue(e2, _, _)) =>
-      mustEq(e1, e2, env0)
+      mustEq(e1, e2)
     case (Tag(_, tag1, e1, _, _), Tag(_, tag2, e2, _, _)) =>
       val eqTag = tag1.name == tag2.name
-      val eqExp = mustEq(e1, e2, env0)
+      val eqExp = mustEq(e1, e2)
       eqTag && eqExp
     case (Tuple(elms1, _, _), Tuple(elms2, _, _)) => (elms1 zip elms2) forall {
-      case (e1, e2) => mustEq(e1, e2, env0)
+      case (e1, e2) => mustEq(e1, e2)
     }
     case (GetTupleIndex(e1, offset1, _, _), GetTupleIndex(e2, offset2, _, _)) =>
-      val eqExp = mustEq(e1, e2, env0)
+      val eqExp = mustEq(e1, e2)
       val eqOffset = offset1 == offset2
       eqExp && eqOffset
     case (Error(_, _), Error(_, _)) => true
@@ -788,14 +751,14 @@ object PartialEvaluator {
   /**
     * Returns `true` iff `exp1` and `exp2` *cannot* evaluate to the same value under the given environment `env0`.
     */
-  private def mustNotEq(exp1: Expression, exp2: Expression, env0: Map[String, Expression]): Boolean = (exp1, exp2) match {
+  private def mustNotEq(exp1: Expression, exp2: Expression): Boolean = (exp1, exp2) match {
     case (Unit, Unit) => false
     case (True, False) => true
     case (False, True) => true
     case (Tag(_, tag1, e1, _, _), Tag(_, tag2, e2, _, _)) =>
-      tag1.name != tag2.name || mustNotEq(e1, e2, env0)
+      tag1.name != tag2.name || mustNotEq(e1, e2)
     case (Tuple(elms1, _, _), Tuple(elms2, _, _)) => (elms1 zip elms2) exists {
-      case (e1, e2) => mustNotEq(e1, e2, env0)
+      case (e1, e2) => mustNotEq(e1, e2)
     }
     // TODO: Implement rest
   }
@@ -825,11 +788,6 @@ object PartialEvaluator {
     case Var(ident, offset, tpe, loc) => immutable.Set(ident)
     case Ref(name, tpe, loc) => immutable.Set.empty // TODO
     case Lambda(ann, args, body, tpe, loc) =>
-      val bound = args.map(a => a.ident).toSet
-      val free = freeVars(body, root)
-      free -- bound
-    case Closure(args, body, env, tpe, loc) =>
-      // TODO: Remove closure?
       val bound = args.map(a => a.ident).toSet
       val free = freeVars(body, root)
       free -- bound
@@ -890,9 +848,6 @@ object PartialEvaluator {
       else
         Lambda(ann, args, rename(src, dst, body), tpe, loc)
     case Hook(hook, tpe, loc) => Hook(hook, tpe, loc)
-    case clo@Closure(args, body, env, tpe, loc) =>
-      clo // TODO what?
-
     case Apply3(lambda, args, tpe, loc) =>
       Apply3(rename(src, dst, lambda), args.map(a => rename(src, dst, a)), tpe, loc)
     case Unary(op, e, tpe, loc) =>
@@ -929,7 +884,7 @@ object PartialEvaluator {
     * Replaces all free (unbound) occurrences of the variable `ident`
     * with the expression `exp` in the expression `exp`.
     */
-  private def substitute(src: Name.Ident, dst: Expression, exp: Expression, genSym: GenSym): Expression = {
+  private def substitute(src: Name.Ident, dst: Expression, exp: Expression)(implicit genSym: GenSym): Expression = {
 
     def visit(src: Name.Ident, dst: Expression, exp: Expression): Expression = exp match {
       case Unit => Unit
@@ -947,17 +902,20 @@ object PartialEvaluator {
           Var(ident, offset, tpe, loc)
       case Ref(name, tpe, loc) => Ref(name, tpe, loc) // TODO
       case Lambda(ann, args, body, tpe, loc) =>
-        // TODO: This jus talways replaces every arg
-        val body2 = args.foldLeft(body) {
-          case (acc, arg) =>
-            val argVar = arg.ident
-            val freshVar = genSym.fresh2()
-            rename(argVar, freshVar, acc)
+       val bound = args.exists(a => a.ident.name == src.name)
+        if (bound)
+          Lambda(ann, args, visit(src, dst, body), tpe, loc)
+        else {
+          // TODO: This jus talways replaces every arg
+          val body2 = args.foldLeft(body) {
+            case (acc, arg) =>
+              val argVar = arg.ident
+              val freshVar = genSym.fresh2()
+              rename(argVar, freshVar, acc)
+          }
+          Lambda(ann, args, visit(src, dst, body2), tpe, loc)
         }
-        Lambda(ann, args, visit(src, dst, body2), tpe, loc)
 
-      case clo@Closure(args, body, env, tpe, loc) =>
-        clo // TODO what?
       case Hook(hook, tpe, loc) => Hook(hook, tpe, loc)
       case Apply3(lambda, args, tpe, loc) =>
         Apply3(visit(src, dst, lambda), args.map(a => visit(src, dst, a)), tpe, loc)
@@ -970,9 +928,7 @@ object PartialEvaluator {
       case Let(ident, offset, e1, e2, tpe, loc) =>
         // TODO: Document
         if (ident.name == src.name) {
-          val freshVar = genSym.fresh2()
-          val body = rename(ident, freshVar, e2)
-          Let(freshVar, offset, visit(src, dst, e1), visit(src, dst, body), tpe, loc)
+          Let(ident, offset, visit(src, dst, e1), e2, tpe, loc)
         } else
           Let(ident, offset, visit(src, dst, e1), visit(src, dst, e2), tpe, loc)
       case Tag(enum, tag, e, tpe, loc) =>

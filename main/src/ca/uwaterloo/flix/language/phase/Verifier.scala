@@ -710,13 +710,13 @@ object Verifier {
     */
   def checkAll(root: SimplifiedAst.Root): List[VerifierError] = {
     // new symbol generator
-    val genSym = new GenSym
+    implicit val genSym = new GenSym
 
     // find all properties to verify.
     val properties = collectProperties(root)
 
     // attempt to verify each property.
-    properties flatMap (p => checkProperty(p, root, genSym))
+    properties flatMap (p => checkProperty(p, root))
   }
 
   /**
@@ -725,7 +725,7 @@ object Verifier {
     * Returns `None` if the property is satisfied.
     * Otherwise returns `Some` containing the verification error.
     */
-  def checkProperty(property: Property, root: SimplifiedAst.Root, genSym: GenSym): Option[VerifierError] = {
+  def checkProperty(property: Property, root: SimplifiedAst.Root)(implicit genSym: GenSym): Option[VerifierError] = {
     // the base expression
     val exp0 = property.formula.e
 
@@ -734,7 +734,7 @@ object Verifier {
 
     // attempt to verify that the property holds under each environment.
     val violations = envs flatMap {
-      case env0 => PartialEvaluator.eval(exp0, env0, root, genSym) match {
+      case env0 => PartialEvaluator.eval(exp0, env0, root) match {
         case Expression.True =>
           // Case 1: The partial evaluator proved the property.
           Nil
