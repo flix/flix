@@ -286,7 +286,7 @@ object SimplifiedAst {
 
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    // TODO: Eliminate once we have lambda lifting
+    // TODO: To be removed.
     case class Closure(args: List[SimplifiedAst.FormalArg],
                        body: SimplifiedAst.Expression,
                        env: Map[String, SimplifiedAst.Expression],

@@ -477,21 +477,6 @@ object PartialEvaluator {
       }
 
       /**
-        * Let Expressions.
-        */
-      case Let(ident, offset, exp1, exp2, tpe, loc) =>
-        // Partially evaluate the bound value exp1.
-        eval(exp1, env0, {
-          case e =>
-            // Rename all occurrences of ident to avoid capture.
-            val src = ident
-            val dst = genSym.fresh2()
-            val body = rename(src, dst, exp2)
-            val extEnv = env0 + (dst.name -> e)
-            eval(body, extEnv, k)
-        })
-
-      /**
         * If-then-else Expressions.
         */
       case IfThenElse(exp1, exp2, exp3, tpe, loc) =>
@@ -511,44 +496,80 @@ object PartialEvaluator {
         })
 
       /**
+        * Let Expressions.
+        */
+      case Let(ident, offset, exp1, exp2, tpe, loc) =>
+        // Partially evaluate the bound value exp1.
+        eval(exp1, env0, {
+          case e =>
+            eval(substitute(ident, e, exp2, genSym), env0, k)
+        })
+
+
+      /**
         * Apply Expressions.
         */
-      case Apply3(lambda, actuals, tpe, loc) =>
-        // Partially evaluate the lambda expression.
-        // TODO: Carefull with substi.
-        eval(lambda, env0, {
-          case Lambda(_, formals, body, _, _) =>
-            // Case 1: The application expression is a lambda abstraction.
-            // Match the formals with the actuals.
-            // TODO: This should probably evaluate each parameter before swapping it in?
-            val env1 = (formals zip actuals).foldLeft(env0) {
-              case (env, (formal, actual)) => env + (formal.ident.name -> actual)
-            }
-            // And evaluate the body expression.
-            eval(body, env1, k)
-          case Closure(formals, body, env1, _, _) =>
-            // Case 2: The lambda expression is a closure.
-            // Match the formals with the actuals.
-            val env2 = (formals zip actuals).foldLeft(env1) {
-              case (env, (formal, actual)) => env + (formal.ident.name -> actual)
-            }
-
-            // And evaluate the body expression.
-            eval(body, env2, k)
-          case r1 =>
-            // Case 3: The lambda expression is residual.
-            // Partially evaluate the arguments and (re)-construct the residual.
-            println(exp0)
-            println(exp0.tpe)
-            println(env0)
-            ???
+      case Apply3(lambda, args, tpe, loc) =>
+        // Partially evaluate the argument expressions.
+        evaln(args, env0, {
+          case actuals =>
+            // Partially evaluate the lambda expression.
+            eval(lambda, env0, {
+              case Lambda(_, formals, body, _, _) =>
+                // Substitute actuals for formals.
+                val result = (formals zip actuals).foldLeft(body) {
+                  case (acc, (formal, actual)) =>
+                    val src = formal.ident
+                    val dst = actual
+                    substitute(src, dst, acc, genSym)
+                }
+                // Evaluate the result body.
+                eval(result, env0, k)
+              case r =>
+                println(r)
+                ???
+            })
         })
+
+      //      /**
+      //        * Apply Expressions.
+      //        */
+      //      case Apply3(lambda, actuals, tpe, loc) =>
+      //        // Partially evaluate the lambda expression.
+      //        // TODO: Carefull with substi.
+      //        eval(lambda, env0, {
+      //          case Lambda(_, formals, body, _, _) =>
+      //            // Case 1: The application expression is a lambda abstraction.
+      //            // Match the formals with the actuals.
+      //            // TODO: This should probably evaluate each parameter before swapping it in?
+      //            val env1 = (formals zip actuals).foldLeft(env0) {
+      //              case (env, (formal, actual)) => env + (formal.ident.name -> actual)
+      //            }
+      //            // And evaluate the body expression.
+      //            eval(body, env1, k)
+      //          case Closure(formals, body, env1, _, _) =>
+      //            // Case 2: The lambda expression is a closure.
+      //            // Match the formals with the actuals.
+      //            val env2 = (formals zip actuals).foldLeft(env1) {
+      //              case (env, (formal, actual)) => env + (formal.ident.name -> actual)
+      //            }
+      //
+      //            // And evaluate the body expression.
+      //            eval(body, env2, k)
+      //          case r1 =>
+      //            // Case 3: The lambda expression is residual.
+      //            // Partially evaluate the arguments and (re)-construct the residual.
+      //            println(exp0)
+      //            println(exp0.tpe)
+      //            println(env0)
+      //            ???
+      //        })
 
       /**
         * Lambda Expressions.
         */
       case Lambda(ann, args, body, tpe, loc) =>
-        k(Closure(args, body, env0, tpe, loc))
+        k(Lambda(ann, args, body, tpe, loc))
 
       /**
         * Hook Expressions.
@@ -625,17 +646,6 @@ object PartialEvaluator {
 
       // TODO: This will be eliminated.
       case Apply(_, _, _, _) => ???
-
-      // TODO: These will be moved to a different AST.
-      case o: LoadBool => throw new InternalCompilerError("Unsupported.")
-      case o: LoadInt8 => throw new InternalCompilerError("Unsupported.")
-      case o: LoadInt16 => throw new InternalCompilerError("Unsupported.")
-      case o: LoadInt32 => throw new InternalCompilerError("Unsupported.")
-      case o: StoreBool => throw new InternalCompilerError("Unsupported.")
-      case o: StoreInt8 => throw new InternalCompilerError("Unsupported.")
-      case o: StoreInt16 => throw new InternalCompilerError("Unsupported.")
-      case o: StoreInt32 => throw new InternalCompilerError("Unsupported.")
-
     }
 
     /**
@@ -813,13 +823,16 @@ object PartialEvaluator {
     case Int64(i) => immutable.Set.empty
     case Str(s) => immutable.Set.empty
     case Var(ident, offset, tpe, loc) => immutable.Set(ident)
-    case Ref(name, tpe, loc) => immutable.Set.empty
+    case Ref(name, tpe, loc) => immutable.Set.empty // TODO
     case Lambda(ann, args, body, tpe, loc) =>
       val bound = args.map(a => a.ident).toSet
       val free = freeVars(body, root)
       free -- bound
     case Closure(args, body, env, tpe, loc) =>
-      ??? // TODO what?
+      // TODO: Remove closure?
+      val bound = args.map(a => a.ident).toSet
+      val free = freeVars(body, root)
+      free -- bound
     case Hook(hook, tpe, loc) => immutable.Set.empty
     case Apply3(lambda, args, tpe, loc) => args.foldLeft(freeVars(lambda, root)) {
       case (macc, arg) => macc ++ freeVars(arg, root)
@@ -869,7 +882,7 @@ object PartialEvaluator {
         Var(dst, offset, tpe, loc)
       else
         Var(ident, offset, tpe, loc)
-    case Ref(name, tpe, loc) => Ref(name, tpe, loc)
+    case Ref(name, tpe, loc) => Ref(name, tpe, loc) // TODO
     case Lambda(ann, args, body, tpe, loc) =>
       val bound = args.exists(_.ident.name == src)
       if (bound)
@@ -877,7 +890,9 @@ object PartialEvaluator {
       else
         Lambda(ann, args, rename(src, dst, body), tpe, loc)
     case Hook(hook, tpe, loc) => Hook(hook, tpe, loc)
-    case Closure(args, body, env, tpe, loc) => ??? // TODO what?
+    case clo@Closure(args, body, env, tpe, loc) =>
+      clo // TODO what?
+
     case Apply3(lambda, args, tpe, loc) =>
       Apply3(rename(src, dst, lambda), args.map(a => rename(src, dst, a)), tpe, loc)
     case Unary(op, e, tpe, loc) =>
@@ -911,9 +926,76 @@ object PartialEvaluator {
   }
 
   /**
-    * Replaces all free (unbound) occurrences of `ident` with the ``
+    * Replaces all free (unbound) occurrences of the variable `ident`
+    * with the expression `exp` in the expression `exp`.
     */
-  private def substitute(ident: Name.Ident, r: Expression, body: Expression): Expression = ???
+  private def substitute(src: Name.Ident, dst: Expression, exp: Expression, genSym: GenSym): Expression = {
+
+    def visit(src: Name.Ident, dst: Expression, exp: Expression): Expression = exp match {
+      case Unit => Unit
+      case True => True
+      case False => False
+      case Int8(i) => Int8(i)
+      case Int16(i) => Int16(i)
+      case Int32(i) => Int32(i)
+      case Int64(i) => Int64(i)
+      case Str(s) => Str(s)
+      case Var(ident, offset, tpe, loc) =>
+        if (ident.name == src.name)
+          dst
+        else
+          Var(ident, offset, tpe, loc)
+      case Ref(name, tpe, loc) => Ref(name, tpe, loc) // TODO
+      case Lambda(ann, args, body, tpe, loc) =>
+        // TODO: This jus talways replaces every arg
+        val body2 = args.foldLeft(body) {
+          case (acc, arg) =>
+            val argVar = arg.ident
+            val freshVar = genSym.fresh2()
+            rename(argVar, freshVar, acc)
+        }
+        Lambda(ann, args, visit(src, dst, body2), tpe, loc)
+
+      case clo@Closure(args, body, env, tpe, loc) =>
+        clo // TODO what?
+      case Hook(hook, tpe, loc) => Hook(hook, tpe, loc)
+      case Apply3(lambda, args, tpe, loc) =>
+        Apply3(visit(src, dst, lambda), args.map(a => visit(src, dst, a)), tpe, loc)
+      case Unary(op, e, tpe, loc) =>
+        Unary(op, visit(src, dst, e), tpe, loc)
+      case Binary(op, e1, e2, tpe, loc) =>
+        Binary(op, visit(src, dst, e1), visit(src, dst, e2), tpe, loc)
+      case IfThenElse(e1, e2, e3, tpe, loc) =>
+        IfThenElse(visit(src, dst, e1), visit(src, dst, e2), visit(src, dst, e3), tpe, loc)
+      case Let(ident, offset, e1, e2, tpe, loc) =>
+        // TODO: Document
+        if (ident.name == src.name) {
+          val freshVar = genSym.fresh2()
+          val body = rename(ident, freshVar, e2)
+          Let(freshVar, offset, visit(src, dst, e1), visit(src, dst, body), tpe, loc)
+        } else
+          Let(ident, offset, visit(src, dst, e1), visit(src, dst, e2), tpe, loc)
+      case Tag(enum, tag, e, tpe, loc) =>
+        Tag(enum, tag, visit(src, dst, e), tpe, loc)
+      case CheckTag(tag, e, loc) =>
+        CheckTag(tag, visit(src, dst, e), loc)
+      case GetTagValue(e, tpe, loc) =>
+        GetTagValue(visit(src, dst, e), tpe, loc)
+      case Tuple(elms, tpe, loc) =>
+        Tuple(elms map (e => visit(src, dst, e)), tpe, loc)
+      case GetTupleIndex(e, offset, tpe, loc) =>
+        GetTupleIndex(visit(src, dst, e), offset, tpe, loc)
+      case Error(tpe, loc) => Error(tpe, loc)
+      case MatchError(tpe, loc) => MatchError(tpe, loc)
+      case SwitchError(tpe, loc) => SwitchError(tpe, loc)
+      case Set(elms, tpe, loc) => throw new InternalCompilerError("Unsupported.")
+      case CheckNil(e, loc) => throw new InternalCompilerError("Unsupported.")
+      case CheckCons(e, loc) => throw new InternalCompilerError("Unsupported.")
+      case Apply(name, args, tpe, loc) => ??? // TODO: deprecated
+    }
+
+    visit(src, dst, exp)
+  }
 
 
 }
