@@ -842,7 +842,7 @@ object PartialEvaluator {
         Var(ident, offset, tpe, loc)
     case Ref(name, tpe, loc) => Ref(name, tpe, loc) // TODO
     case Lambda(ann, args, body, tpe, loc) =>
-      val bound = args.exists(_.ident.name == src)
+      val bound = args.exists(_.ident.name == src.name)
       if (bound)
         Lambda(ann, args, body, tpe, loc)
       else
@@ -902,9 +902,9 @@ object PartialEvaluator {
           Var(ident, offset, tpe, loc)
       case Ref(name, tpe, loc) => Ref(name, tpe, loc) // TODO
       case Lambda(ann, args, body, tpe, loc) =>
-       val bound = args.exists(a => a.ident.name == src.name)
+        val bound = args.exists(a => a.ident.name == src.name)
         if (bound)
-          Lambda(ann, args, visit(src, dst, body), tpe, loc)
+          Lambda(ann, args, body, tpe, loc)
         else {
           // TODO: This jus talways replaces every arg
           val body2 = args.foldLeft(body) {
@@ -926,11 +926,19 @@ object PartialEvaluator {
       case IfThenElse(e1, e2, e3, tpe, loc) =>
         IfThenElse(visit(src, dst, e1), visit(src, dst, e2), visit(src, dst, e3), tpe, loc)
       case Let(ident, offset, e1, e2, tpe, loc) =>
-        // TODO: Document
-        if (ident.name == src.name) {
+        // Check if the name is bound.
+        val bound = ident.name == src.name
+        if (bound) {
+          // Case 1: Substitute in the value expression.
           Let(ident, offset, visit(src, dst, e1), e2, tpe, loc)
-        } else
-          Let(ident, offset, visit(src, dst, e1), visit(src, dst, e2), tpe, loc)
+        } else {
+          // Case 2: Substitute in the value and body expressions.
+          // Generate a fresh variable for the let-binding to avoid capture.
+          val freshVar = genSym.fresh2()
+          val bodyExp = rename(ident, freshVar, e2)
+          Let(freshVar, offset, visit(src, dst, e1), visit(src, dst, bodyExp), tpe, loc)
+        }
+
       case Tag(enum, tag, e, tpe, loc) =>
         Tag(enum, tag, visit(src, dst, e), tpe, loc)
       case CheckTag(tag, e, loc) =>
