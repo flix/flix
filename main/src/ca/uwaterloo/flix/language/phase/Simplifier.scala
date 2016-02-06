@@ -111,7 +111,7 @@ object Simplifier {
           * The structure of the generate code is as follows:
           *
           * let v' = v in
-          *   ...
+          * ...
           */
 
         /**
@@ -126,7 +126,7 @@ object Simplifier {
         /**
           * Second, we generate a synthetic rule that matches anything and always throws a match error.
           */
-        val fallthrough = (TypedAst.Pattern.Wildcard, TypedAst.Expression.Error(tpe, loc)) // TODO: This should be a match error.
+        val fallthrough = (TypedAst.Pattern.Wildcard(tpe, loc), TypedAst.Expression.Error(tpe, loc)) // TODO: This should be a match error.
 
         /**
           * Third, we construct all the cases (with the fallthrough) and generate a fresh variable name for each.
@@ -138,31 +138,40 @@ object Simplifier {
           * Fourth, we construct the inner most expression.
           * This is a call to the first lambda variable which triggers the pattern match.
           */
-        val Xzero = SExp.Apply3(SExp.Var(vars.head, -1, Type.Lambda(List(), tpe), loc), List(), tpe, loc)
+        val zero = SExp.Apply3(SExp.Var(vars.head, -1, Type.Lambda(List(), tpe), loc), List(), tpe, loc)
 
         /**
-          * Fifth, we fold over each case and generate all the remaning lambdas.
+          * Fifth, we fold over each case and generate all the remaining lambdas.
           * During the fold, we track the name of the current and of the next lambda variable.
           */
-
-
-        val lambdaVars = rules.map(_ => genSym.fresh2())
-
-        val zero = SExp.Apply3(SExp.Var(lambdaVars.head, -1, /* TODO: Verify type */ exp0.tpe, loc), List(), Type.Lambda(List.empty, tpe), loc)
-        val result = (rules zip lambdaVars.sliding(2).toList).foldLeft(zero: SExp) {
+        val result = (cases zip vars.sliding(2).toList).foldLeft(zero: SExp) {
           case (exp, ((pat, body), List(currName, nextName))) =>
-            val lambdaBody = Pattern.simplify(List(pat), List(matchVar), simplify(body), SExp.Apply3(SExp.Var(nextName, -1, /* TODO: Verify type. */ Type.Lambda(List.empty, body.tpe), loc), List.empty, tpe, loc))
-            val lambda = SExp.Lambda(Ast.Annotations(List.empty), List.empty, lambdaBody, Type.Lambda(List.empty, tpe), loc)
-            SExp.Let(currName, -1, lambda, exp, tpe, loc)
+            // Construct the let-binding for this lambda.
+            SExp.Let(
+              ident = currName,
+              offset = -1,
+              // Construct the lambda.
+              exp1 = SExp.Lambda(
+                annotations = Ast.Annotations(List.empty),
+                args = List.empty,
+                // Construct the body.
+                body = Pattern.simplify(
+                  xs = List(pat),
+                  ys = List(matchVar),
+                  succ = simplify(body),
+                  fail = SExp.Apply3(
+                    SExp.Var(nextName, -1, /* TODO: Verify type. */ Type.Lambda(List.empty, body.tpe), loc), List.empty, tpe, loc)
+                ),
+                tpe = Type.Lambda(List.empty, tpe),
+                loc = loc),
+              exp2 = exp,
+              tpe, loc)
         }
 
-        val err = SExp.MatchError(tpe, loc)
-        val lamBody = Pattern.simplify(List(rules.last._1), List(matchVar), simplify(rules.last._2), err)
-        val lam = SExp.Lambda(Ast.Annotations(List.empty), List.empty, lamBody, Type.Lambda(List.empty, tpe), loc)
-        val inner = SExp.Let(lambdaVars.last, -1, lam, result, tpe, loc)
-
-        // Finally, we can generate the outer let binding the match value expression.
-        SExp.Let(matchVar, -1, matchExp, inner, tpe, loc)
+        /**
+          * Sixth, construct the outer let binding for the match value expression.
+          */
+        SExp.Let(matchVar, -1, matchExp, result, tpe, loc)
 
       case TypedAst.Expression.Tag(enum, tag, e, tpe, loc) =>
         SimplifiedAst.Expression.Tag(enum, tag, simplify(e), tpe, loc)
