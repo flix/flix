@@ -6,8 +6,6 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.GenSym
 
-import scala.collection.immutable
-
 object PartialEvaluator {
 
   /**
@@ -70,7 +68,7 @@ object PartialEvaluator {
         * Var Expressions/
         */
       case Var(name, offset, tpe, loc) =>
-        ??? // k(Var(name, offset, tpe, loc))
+        ??? // k(Var(name, offset, tpe, loc)) // TODO
 
       /**
         * Ref Expressions.
@@ -517,8 +515,7 @@ object PartialEvaluator {
                 // Evaluate the result body.
                 eval(result, k)
               case r =>
-                println(r)
-                ???
+                k(Apply3(r, actuals, tpe, loc))
             })
         })
 
@@ -596,12 +593,9 @@ object PartialEvaluator {
         */
       case SwitchError(tpe, loc) => k(SwitchError(tpe, loc))
 
-      // TODO: Unsupported
       case Set(elms, tpe, loc) => throw new InternalCompilerError("Not Yet Supported. Sorry.")
       case o: CheckNil => throw new InternalCompilerError("Not Yet Supported. Sorry.")
       case o: CheckCons => throw new InternalCompilerError("Not Yet Supported. Sorry.")
-
-      // TODO: This will be eliminated.
       case Apply(_, _, _, _) => ???
     }
 
@@ -718,7 +712,6 @@ object PartialEvaluator {
       val eq3Exp = mustEq(e13, e23)
       eq1Exp && eq2Exp && eq3Exp
     case (Let(ident1, _, e11, e12, _, _), Let(ident2, _, e21, e22, _, _)) =>
-      // TODO: Improve under substition.
       val eqIdent = ident1.name == ident2.name
       val eqExp1 = mustEq(e11, e21)
       val eqExp2 = mustEq(e12, e22)
@@ -764,67 +757,7 @@ object PartialEvaluator {
   }
 
   /**
-    * Short-hand for casting an Int to a Byte.
-    */
-  private def byte(i: Int): Byte = i.asInstanceOf[Byte]
-
-  /**
-    * Short-hand for casting an Int to a Short.
-    */
-  private def short(i: Int): Short = i.asInstanceOf[Short]
-
-  /**
-    * Returns all free (unbound) variables in the given expression.
-    */
-  private def freeVars(exp: Expression, root: SimplifiedAst.Root): immutable.Set[Name.Ident] = exp match {
-    case Unit => immutable.Set.empty
-    case True => immutable.Set.empty
-    case False => immutable.Set.empty
-    case Int8(i) => immutable.Set.empty
-    case Int16(i) => immutable.Set.empty
-    case Int32(i) => immutable.Set.empty
-    case Int64(i) => immutable.Set.empty
-    case Str(s) => immutable.Set.empty
-    case Var(ident, offset, tpe, loc) => immutable.Set(ident)
-    case Ref(name, tpe, loc) => immutable.Set.empty // TODO
-    case Lambda(ann, args, body, tpe, loc) =>
-      val bound = args.map(a => a.ident).toSet
-      val free = freeVars(body, root)
-      free -- bound
-    case Hook(hook, tpe, loc) => immutable.Set.empty
-    case Apply3(lambda, args, tpe, loc) => args.foldLeft(freeVars(lambda, root)) {
-      case (macc, arg) => macc ++ freeVars(arg, root)
-    }
-    case Unary(op, e, tpe, loc) =>
-      freeVars(e, root)
-    case Binary(op, e1, e2, tpe, loc) =>
-      freeVars(e1, root) ++ freeVars(e2, root)
-    case IfThenElse(e1, e2, e3, tpe, loc) =>
-      freeVars(e1, root) ++ freeVars(e2, root) ++ freeVars(e3, root)
-    case Let(ident, offset, e1, e2, tpe, loc) =>
-      freeVars(e1, root) ++ (freeVars(e2, root) - ident)
-    case Tag(enum, tag, e, tpe, loc) =>
-      freeVars(e, root)
-    case CheckTag(tag, e, loc) =>
-      freeVars(e, root)
-    case GetTagValue(e, tpe, loc) =>
-      freeVars(e, root)
-    case Tuple(elms, tpe, loc) => elms.foldLeft(immutable.Set.empty[Name.Ident]) {
-      case (sacc, e) => sacc ++ freeVars(e, root)
-    }
-    case GetTupleIndex(e, offset, tpe, loc) =>
-      freeVars(e, root)
-    case Error(tpe, loc) => immutable.Set.empty
-    case MatchError(tpe, loc) => immutable.Set.empty
-    case SwitchError(tpe, loc) => immutable.Set.empty
-    case Set(elms, tpe, loc) => throw new InternalCompilerError("Unsupported.")
-    case CheckNil(e, loc) => throw new InternalCompilerError("Unsupported.")
-    case CheckCons(e, loc) => throw new InternalCompilerError("Unsupported.")
-    case Apply(name, args, tpe, loc) => ??? // TODO: deprecated
-  }
-
-  /**
-    * Replaces every free occurrence of the variable name `src` by the name `dst` in the given expression `exp`.
+    * Renames all free occurrence of the variable name `src` by the name `dst` in the given expression `exp`.
     */
   private def rename(src: Name.Ident, dst: Name.Ident, exp: Expression): Expression = exp match {
     case Unit => Unit
@@ -840,7 +773,7 @@ object PartialEvaluator {
         Var(dst, offset, tpe, loc)
       else
         Var(ident, offset, tpe, loc)
-    case Ref(name, tpe, loc) => Ref(name, tpe, loc) // TODO
+    case Ref(name, tpe, loc) => Ref(name, tpe, loc)
     case Lambda(ann, args, body, tpe, loc) =>
       val bound = args.exists(_.ident.name == src.name)
       if (bound)
@@ -877,7 +810,7 @@ object PartialEvaluator {
     case Set(elms, tpe, loc) => throw new InternalCompilerError("Unsupported.")
     case CheckNil(e, loc) => throw new InternalCompilerError("Unsupported.")
     case CheckCons(e, loc) => throw new InternalCompilerError("Unsupported.")
-    case Apply(name, args, tpe, loc) => ??? // TODO: deprecated
+    case Apply(name, args, tpe, loc) => ???
   }
 
   /**
@@ -885,8 +818,7 @@ object PartialEvaluator {
     * with the expression `exp` in the expression `exp`.
     */
   private def substitute(src: Name.Ident, dst: Expression, exp: Expression)(implicit genSym: GenSym): Expression = {
-
-    def visit(src: Name.Ident, dst: Expression, exp: Expression): Expression = exp match {
+    def visit(exp: Expression): Expression = exp match {
       case Unit => Unit
       case True => True
       case False => False
@@ -900,66 +832,76 @@ object PartialEvaluator {
           dst
         else
           Var(ident, offset, tpe, loc)
-      case Ref(name, tpe, loc) => Ref(name, tpe, loc) // TODO
+      case Ref(name, tpe, loc) => Ref(name, tpe, loc)
       case Lambda(ann, args, body, tpe, loc) =>
+        // Check if the name is bound by a formal argument.
         val bound = args.exists(a => a.ident.name == src.name)
-        if (bound)
+        if (bound) {
+          // Case 1: A name is bound by a formal argument.
           Lambda(ann, args, body, tpe, loc)
-        else {
-          // TODO: This jus talways replaces every arg
-          val body2 = args.foldLeft(body) {
+        } else {
+          // Case 2: Substitute in the body.
+          val result = args.foldLeft(body) {
             case (acc, arg) =>
+              // Introduce fresh variables for every formal argument to avoid capture.
               val argVar = arg.ident
               val freshVar = genSym.fresh2()
               rename(argVar, freshVar, acc)
           }
-          Lambda(ann, args, visit(src, dst, body2), tpe, loc)
+          Lambda(ann, args, visit(result), tpe, loc)
         }
-
       case Hook(hook, tpe, loc) => Hook(hook, tpe, loc)
       case Apply3(lambda, args, tpe, loc) =>
-        Apply3(visit(src, dst, lambda), args.map(a => visit(src, dst, a)), tpe, loc)
+        Apply3(visit(lambda), args.map(a => visit(a)), tpe, loc)
       case Unary(op, e, tpe, loc) =>
-        Unary(op, visit(src, dst, e), tpe, loc)
+        Unary(op, visit(e), tpe, loc)
       case Binary(op, e1, e2, tpe, loc) =>
-        Binary(op, visit(src, dst, e1), visit(src, dst, e2), tpe, loc)
+        Binary(op, visit(e1), visit(e2), tpe, loc)
       case IfThenElse(e1, e2, e3, tpe, loc) =>
-        IfThenElse(visit(src, dst, e1), visit(src, dst, e2), visit(src, dst, e3), tpe, loc)
+        IfThenElse(visit(e1), visit(e2), visit(e3), tpe, loc)
       case Let(ident, offset, e1, e2, tpe, loc) =>
         // Check if the name is bound.
         val bound = ident.name == src.name
         if (bound) {
           // Case 1: Substitute in the value expression.
-          Let(ident, offset, visit(src, dst, e1), e2, tpe, loc)
+          Let(ident, offset, visit(e1), e2, tpe, loc)
         } else {
           // Case 2: Substitute in the value and body expressions.
           // Generate a fresh variable for the let-binding to avoid capture.
           val freshVar = genSym.fresh2()
           val bodyExp = rename(ident, freshVar, e2)
-          Let(freshVar, offset, visit(src, dst, e1), visit(src, dst, bodyExp), tpe, loc)
+          Let(freshVar, offset, visit(e1), visit(bodyExp), tpe, loc)
         }
-
       case Tag(enum, tag, e, tpe, loc) =>
-        Tag(enum, tag, visit(src, dst, e), tpe, loc)
+        Tag(enum, tag, visit(e), tpe, loc)
       case CheckTag(tag, e, loc) =>
-        CheckTag(tag, visit(src, dst, e), loc)
+        CheckTag(tag, visit(e), loc)
       case GetTagValue(e, tpe, loc) =>
-        GetTagValue(visit(src, dst, e), tpe, loc)
+        GetTagValue(visit(e), tpe, loc)
       case Tuple(elms, tpe, loc) =>
-        Tuple(elms map (e => visit(src, dst, e)), tpe, loc)
+        Tuple(elms map (e => visit(e)), tpe, loc)
       case GetTupleIndex(e, offset, tpe, loc) =>
-        GetTupleIndex(visit(src, dst, e), offset, tpe, loc)
+        GetTupleIndex(visit(e), offset, tpe, loc)
       case Error(tpe, loc) => Error(tpe, loc)
       case MatchError(tpe, loc) => MatchError(tpe, loc)
       case SwitchError(tpe, loc) => SwitchError(tpe, loc)
       case Set(elms, tpe, loc) => throw new InternalCompilerError("Unsupported.")
       case CheckNil(e, loc) => throw new InternalCompilerError("Unsupported.")
       case CheckCons(e, loc) => throw new InternalCompilerError("Unsupported.")
-      case Apply(name, args, tpe, loc) => ??? // TODO: deprecated
+      case Apply(name, args, tpe, loc) => ???
     }
 
-    visit(src, dst, exp)
+    visit(exp)
   }
 
+  /**
+    * Short-hand for casting an Int to a Byte.
+    */
+  private def byte(i: Int): Byte = i.asInstanceOf[Byte]
+
+  /**
+    * Short-hand for casting an Int to a Short.
+    */
+  private def short(i: Int): Short = i.asInstanceOf[Short]
 
 }
