@@ -841,14 +841,22 @@ object PartialEvaluator {
           Lambda(ann, args, body, tpe, loc)
         } else {
           // Case 2: Substitute in the body.
-          val result = args.foldLeft(body) {
-            case (acc, arg) =>
-              // Introduce fresh variables for every formal argument to avoid capture.
+          val freshVars = args.map(_ => genSym.fresh2())
+
+          // Introduce fresh variables for every formal argument to avoid capture.
+          // Rename arguments.
+          val args2 = (args zip freshVars) map {
+            case (arg, freshVar) => arg.copy(ident = freshVar)
+          }
+
+          // Rename in body.
+          val body2 = (args zip freshVars).foldLeft(body) {
+            case (acc, (arg, freshVar)) =>
               val argVar = arg.ident
-              val freshVar = genSym.fresh2()
               rename(argVar, freshVar, acc)
           }
-          Lambda(ann, args, visit(result), tpe, loc)
+
+          Lambda(ann, args2, visit(body2), tpe, loc)
         }
       case Hook(hook, tpe, loc) => Hook(hook, tpe, loc)
       case Apply3(lambda, args, tpe, loc) =>
