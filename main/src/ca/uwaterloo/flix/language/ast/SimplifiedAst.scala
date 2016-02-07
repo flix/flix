@@ -119,18 +119,21 @@ object SimplifiedAst {
     case object Unit extends SimplifiedAst.Expression {
       final val tpe = Type.Unit
       final val loc = SourceLocation.Unknown
+
       override def toString: String = "#U"
     }
 
     case object True extends SimplifiedAst.Expression {
       final val tpe = Type.Bool
       final val loc = SourceLocation.Unknown
+
       override def toString: String = "#t"
     }
 
     case object False extends SimplifiedAst.Expression {
       final val tpe = Type.Bool
       final val loc = SourceLocation.Unknown
+
       override def toString: String = "#f"
     }
 
@@ -320,7 +323,7 @@ object SimplifiedAst {
     case class Unary(op: UnaryOperator,
                      exp: SimplifiedAst.Expression,
                      tpe: Type,
-                     loc: SourceLocation) extends SimplifiedAst.Expression  {
+                     loc: SourceLocation) extends SimplifiedAst.Expression {
       override def toString: String = "Unary(" + op + ", " + exp + ")"
     }
 
@@ -355,6 +358,11 @@ object SimplifiedAst {
                           exp3: SimplifiedAst.Expression,
                           tpe: Type,
                           loc: SourceLocation) extends SimplifiedAst.Expression {
+        // TODO: Built infrastructure for this.
+      // type invariants.
+      assert(exp1.tpe == Type.Bool, s"Expected Type.Bool but got '${exp1.tpe}'.")
+      assert(exp2.tpe == exp3.tpe, s"Expected equal types, but got '${exp1.tpe}' and '${exp2.tpe}'.")
+
       override def toString: String = "IfThenElse(" + exp1 + ", " + exp2 + ", " + exp3 + ")"
     }
 
@@ -389,6 +397,7 @@ object SimplifiedAst {
                         exp: SimplifiedAst.Expression,
                         loc: SourceLocation) extends SimplifiedAst.Expression {
       final val tpe: Type = Type.Bool
+
       override def toString: String = "CheckTag(" + tag.name + ", " + exp + ")"
     }
 
@@ -497,6 +506,7 @@ object SimplifiedAst {
     case class SwitchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
       override def toString: String = "SwitchError"
     }
+
   }
 
   sealed trait Predicate extends SimplifiedAst {
@@ -528,9 +538,9 @@ object SimplifiedAst {
                             loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class ApplyFilter(name: Name.Resolved,
-                            terms: List[SimplifiedAst.Term.Body],
-                            tpe: Type.Lambda,
-                            loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+                             terms: List[SimplifiedAst.Term.Body],
+                             tpe: Type.Lambda,
+                             loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class ApplyHookFilter(hook: Ast.Hook,
                                  terms: List[SimplifiedAst.Term.Body],
