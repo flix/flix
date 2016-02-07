@@ -314,4 +314,6 @@ namespace SignAlt {
     @strict @monotone
     fn lessEqual(e1: Sign, e2: Sign): Belnap::Belnap = Belnap::or(e1 `less` e2, e1 `eq` e2)
 
+    let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb)
+
 }
