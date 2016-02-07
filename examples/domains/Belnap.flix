@@ -57,20 +57,13 @@ namespace Belnap {
     /**
      * Over-approximates the logical `not` operator.
      */
-     @strict @monotone
-     fn not(e: Belnap): Belnap = match e with {
-         case Belnap.Bot     => Belnap.Bot
-         case Belnap.True    => Belnap.False
-         case Belnap.Top     => Belnap.Bot // TODO: Deliberately incorrect.
-     }
-
-//    @strict @monotone
-//    fn not(e: Belnap): Belnap = match e with {
-//        case Belnap.Bot     => Belnap.Bot
-//        case Belnap.True    => Belnap.False
-//        case Belnap.False   => Belnap.True
-//        case Belnap.Top     => Belnap.Top
-//    }
+    @strict @monotone
+    fn not(e: Belnap): Belnap = match e with {
+        case Belnap.Bot     => Belnap.Bot
+        case Belnap.True    => Belnap.False
+        case Belnap.False   => Belnap.True
+        case Belnap.Top     => Belnap.Bot // TODO: This is incorrect. so why doesnt the verifier catch it?
+    }
 
     /**
      * Over-approximates the logical `and` operator.
