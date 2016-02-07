@@ -231,4 +231,6 @@ namespace Parity {
     @strict @monotone
     fn lessEqual(e1: Parity, e2: Parity): Belnap::Belnap = Belnap::or(e1 `less` e2, e1 `eq` e2)
 
+    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb)
+
 }
