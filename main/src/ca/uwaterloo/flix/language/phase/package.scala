@@ -9,7 +9,7 @@ package object phase {
   // TODO: Cleanup
 
   class GenSym() {
-    private var number: Int = new Random().nextInt() // TODO
+    private var number: Int = new Random().nextInt(5000) // TODO
 
     // TODO: Consider allowing a "seed" variable.
     def fresh2(): Name.Ident = {

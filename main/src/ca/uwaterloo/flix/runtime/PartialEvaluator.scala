@@ -67,8 +67,7 @@ object PartialEvaluator {
       /**
         * Var Expressions/
         */
-      case Var(name, offset, tpe, loc) =>
-        ??? // k(Var(name, offset, tpe, loc)) // TODO
+      case Var(name, offset, tpe, loc) => k(Var(name, offset, tpe, loc))
 
       /**
         * Ref Expressions.
@@ -596,7 +595,7 @@ object PartialEvaluator {
       case Set(elms, tpe, loc) => throw new InternalCompilerError("Not Yet Supported. Sorry.")
       case o: CheckNil => throw new InternalCompilerError("Not Yet Supported. Sorry.")
       case o: CheckCons => throw new InternalCompilerError("Not Yet Supported. Sorry.")
-      case Apply(_, _, _, _) => ???
+      case Apply(_, _, _, _) => throw new InternalCompilerError("Deprecated.")
     }
 
     /**
@@ -675,7 +674,7 @@ object PartialEvaluator {
       Eq.Unknown
 
   /**
-    * Returns `true` iff `exp1` and `exp2` *must* evaluate to the same value under the given environment `env0`.
+    * Returns `true` iff `exp1` and `exp2` *must* evaluate to the same value.
     */
   private def mustEq(exp1: Expression, exp2: Expression): Boolean = (exp1, exp2) match {
     case (Unit, Unit) => true
@@ -686,11 +685,16 @@ object PartialEvaluator {
     case (Int32(i1), Int32(i2)) => i1 == i2
     case (Int64(i1), Int64(i2)) => i1 == i2
     case (Str(s1), Str(s2)) => s1 == s2
-    case (Var(ident1, _, _, _), Var(ident2, _, _, _)) => ident1.name == ident2.name
+    case (Var(ident1, _, _, _), Var(ident2, _, _, _)) =>
+      ident1.name == ident2.name
     case (Ref(name1, _, _), Ref(name2, _, _)) =>
       name1.fqn == name2.fqn
-    case (Lambda(_, _, body1, _, _), Lambda(_, _, body2, _, _)) =>
-      mustEq(body1, body2)
+    case (Lambda(_, args1, body1, _, _), Lambda(_, args2, body2, _, _)) =>
+      val eqArgs = (args1 zip args2).forall {
+        case (arg1, arg2) => arg1.ident.name == arg2.ident.name
+      }
+      val eqBody = mustEq(body1, body2)
+      eqArgs && eqBody
     case (Apply3(lambda1, actuals1, _, _), Apply3(lambda2, actuals2, _, _)) =>
       val eqLambdas = mustEq(lambda1, lambda2)
       val eqActuals = (actuals1 zip actuals2).forall {
@@ -742,18 +746,30 @@ object PartialEvaluator {
   }
 
   /**
-    * Returns `true` iff `exp1` and `exp2` *cannot* evaluate to the same value under the given environment `env0`.
+    * Returns `true` iff `exp1` and `exp2` *cannot* evaluate to the same value.
+    *
+    * NB: Determining that two expressions must evaluate to different values
+    * is much more difficult than deciding if they evaluate to the same value!
     */
   private def mustNotEq(exp1: Expression, exp2: Expression): Boolean = (exp1, exp2) match {
-    case (Unit, Unit) => false
     case (True, False) => true
     case (False, True) => true
+    case (Int8(i1), Int8(i2)) => i1 != i2
+    case (Int16(i1), Int16(i2)) => i1 != i2
+    case (Int32(i1), Int32(i2)) => i1 != i2
+    case (Int64(i1), Int64(i2)) => i1 != i2
+    case (Str(s1), Str(s2)) => s1 != s2
+    case (Var(ident1, _, _, _), Var(ident2, _, _, _)) =>
+      ident1.name != ident2.name
+    case (Ref(name1, _, _), Ref(name2, _, _)) =>
+      name1.fqn != name2.fqn
     case (Tag(_, tag1, e1, _, _), Tag(_, tag2, e2, _, _)) =>
       tag1.name != tag2.name || mustNotEq(e1, e2)
     case (Tuple(elms1, _, _), Tuple(elms2, _, _)) => (elms1 zip elms2) exists {
       case (e1, e2) => mustNotEq(e1, e2)
     }
-    // TODO: Implement rest
+    // NB: Several cases omitted due to their difficulty in implementation.
+    case _ => false
   }
 
   /**
@@ -775,11 +791,17 @@ object PartialEvaluator {
         Var(ident, offset, tpe, loc)
     case Ref(name, tpe, loc) => Ref(name, tpe, loc)
     case Lambda(ann, args, body, tpe, loc) =>
+      // Check if the variable `src` is bound by a formal argument.
       val bound = args.exists(_.ident.name == src.name)
-      if (bound)
+      if (bound) {
+        // Case 1: The variable `src` is bound by the lambda.
+        // Nothing more to be done, so return the original lambda.
         Lambda(ann, args, body, tpe, loc)
-      else
+      } else {
+        // Case 2: The variable `src` is *NOT* bound by the lambda.
+        // Continue renaming in the body expression.
         Lambda(ann, args, rename(src, dst, body), tpe, loc)
+      }
     case Hook(hook, tpe, loc) => Hook(hook, tpe, loc)
     case Apply3(lambda, args, tpe, loc) =>
       Apply3(rename(src, dst, lambda), args.map(a => rename(src, dst, a)), tpe, loc)
@@ -790,10 +812,17 @@ object PartialEvaluator {
     case IfThenElse(e1, e2, e3, tpe, loc) =>
       IfThenElse(rename(src, dst, e1), rename(src, dst, e2), rename(src, dst, e3), tpe, loc)
     case Let(ident, offset, e1, e2, tpe, loc) =>
-      if (ident.name == src.name)
+      // Check if variable `src` is bound by the let-binding.
+      val bound = ident.name == src.name
+      if (bound) {
+        // Case 1: The variable `src` is bound by the lambda.
+        // Only perform renaming inside the value expression, but not its body.
         Let(ident, offset, rename(src, dst, e1), e2, tpe, loc)
-      else
+      } else {
+        // Case 2: The variable `src` is *NOT* bound by the lambda.
+        // Perform renaming inside both the value and body expressions.
         Let(ident, offset, rename(src, dst, e1), rename(src, dst, e2), tpe, loc)
+      }
     case Tag(enum, tag, e, tpe, loc) =>
       Tag(enum, tag, rename(src, dst, e), tpe, loc)
     case CheckTag(tag, e, loc) =>
@@ -810,7 +839,7 @@ object PartialEvaluator {
     case Set(elms, tpe, loc) => throw new InternalCompilerError("Unsupported.")
     case CheckNil(e, loc) => throw new InternalCompilerError("Unsupported.")
     case CheckCons(e, loc) => throw new InternalCompilerError("Unsupported.")
-    case Apply(name, args, tpe, loc) => ???
+    case Apply(name, args, tpe, loc) => throw new InternalCompilerError("Deprecated feature.")
   }
 
   /**
@@ -834,16 +863,20 @@ object PartialEvaluator {
           Var(ident, offset, tpe, loc)
       case Ref(name, tpe, loc) => Ref(name, tpe, loc)
       case Lambda(ann, args, body, tpe, loc) =>
-        // Check if the name is bound by a formal argument.
+        // Check if the variable `src` is bound by a formal argument.
         val bound = args.exists(a => a.ident.name == src.name)
         if (bound) {
-          // Case 1: A name is bound by a formal argument.
+          // Case 1: The variable `src` is bound by a formal argument.
+          // Nothing more to be done, so return the original lambda.
           Lambda(ann, args, body, tpe, loc)
         } else {
-          // Case 2: Substitute in the body.
-          val freshVars = args.map(_ => genSym.fresh2())
+          // Case 2: The variable `src` is *NOT* bound by a formal argument.
+          // Generate a fresh variable for the formal argument to avoid capture,
+          // rename the argument and perform substitution in the body.
 
           // Introduce fresh variables for every formal argument to avoid capture.
+          val freshVars = args.map(_ => genSym.fresh2())
+
           // Rename arguments.
           val args2 = (args zip freshVars) map {
             case (arg, freshVar) => arg.copy(ident = freshVar)
@@ -868,14 +901,16 @@ object PartialEvaluator {
       case IfThenElse(e1, e2, e3, tpe, loc) =>
         IfThenElse(visit(e1), visit(e2), visit(e3), tpe, loc)
       case Let(ident, offset, e1, e2, tpe, loc) =>
-        // Check if the name is bound.
+        // Check if the variable `src` is bound by the let-binding.
         val bound = ident.name == src.name
         if (bound) {
-          // Case 1: Substitute in the value expression.
+          // Case 1: The variable `src` is bound by the let.
+          // Only perform substitution inside the value expression, but not the body.
           Let(ident, offset, visit(e1), e2, tpe, loc)
         } else {
-          // Case 2: Substitute in the value and body expressions.
-          // Generate a fresh variable for the let-binding to avoid capture.
+          // Case 2: The variable `src` is *NOT* bound by the let.
+          // Generate a fresh variable for the let-binding to avoid capture
+          // and perform substitution in both the value and body expressions.
           val freshVar = genSym.fresh2()
           val bodyExp = rename(ident, freshVar, e2)
           Let(freshVar, offset, visit(e1), visit(bodyExp), tpe, loc)
@@ -896,7 +931,7 @@ object PartialEvaluator {
       case Set(elms, tpe, loc) => throw new InternalCompilerError("Unsupported.")
       case CheckNil(e, loc) => throw new InternalCompilerError("Unsupported.")
       case CheckCons(e, loc) => throw new InternalCompilerError("Unsupported.")
-      case Apply(name, args, tpe, loc) => ???
+      case Apply(name, args, tpe, loc) => throw new InternalCompilerError("Deprecated feature.")
     }
 
     visit(exp)

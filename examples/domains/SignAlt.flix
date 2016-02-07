@@ -9,7 +9,7 @@ namespace SignAlt {
     /**
      * The elements of the (alternative) sign lattice.
      *
-     * Notice that Neg and Pos implicitely includes zero.
+     * Notice that Neg and Pos implicitly includes zero.
      */
     enum Sign {
                   case Top,

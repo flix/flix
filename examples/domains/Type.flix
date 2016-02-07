@@ -93,4 +93,6 @@ namespace Type {
         case _                          => Type.Err
     }
 
+    let Type<> = (Type.Bot, Type.Err, leq, lub, glb)
+
 }
