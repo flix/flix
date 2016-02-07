@@ -744,7 +744,7 @@ object Verifier {
         case residual =>
           // Case 3: The partial evaluator reduced the expression, but it is still residual.
           // Must translate the expression into an SMT formula and attempt to prove it.
-
+          println("Residual Expression: " + residual)
           mkContext(ctx => {
             // Check if the negation of the expression has a model.
             // If so, the property does not hold.
@@ -782,6 +782,10 @@ object Verifier {
   // TODO: replace string by name?
   def enumerate(q: List[Var]): List[Map[String, Expression]] = {
     val genSym = new GenSym // TODO: This one actually has to come from somewhere else.
+
+    // Unqualified formula. Used the empty environment.
+    if (q.isEmpty)
+      return List(Map.empty)
 
     def visit(tpe: Type): List[Expression] = tpe match {
       case Type.Unit => List(Expression.Unit)

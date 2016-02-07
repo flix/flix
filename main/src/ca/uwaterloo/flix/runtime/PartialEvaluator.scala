@@ -351,6 +351,8 @@ object PartialEvaluator {
             case (True, _) => k(True)
             case (_, True) => k(True)
             case (False, False) => k(False)
+            case (False, r2) => k(r2)
+            case (r1, False) => k(r1)
             case (r1, r2) => k(Binary(BinaryOperator.LogicalOr, r1, r2, tpe, loc))
           })
 
@@ -363,6 +365,8 @@ object PartialEvaluator {
             case (True, True) => k(True)
             case (False, _) => k(False)
             case (_, False) => k(False)
+            case (True, r2) => k(r2)
+            case (r1, True) => k(r1)
             case (r1, r2) => k(Binary(BinaryOperator.LogicalAnd, r1, r2, tpe, loc))
           })
 
