@@ -18,9 +18,12 @@ class TestTyper extends FunSuite {
   val RName = Name.Resolved.mk(List("foo", "bar"))
 
   /////////////////////////////////////////////////////////////////////////////
-  // Definitions                                                             //
+  // POSITIVE TEST CASES                                                     //
   /////////////////////////////////////////////////////////////////////////////
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Definitions (Positive)                                                  //
+  /////////////////////////////////////////////////////////////////////////////
   ignore("Definition.Constant01") {
     val input = "fn f(): Unit = ()"
     val result = new Flix().addStr(input).compile()
@@ -34,89 +37,27 @@ class TestTyper extends FunSuite {
   }
 
   test("Definition.Constant03") {
-    val exp = ResolvedAst.Expression.Binary(
-      BinaryOperator.Plus,
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(21, SL), SL),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
-    val tpe = Type.Int32
-    val rast = ResolvedAst.Definition.Constant(RName, exp, tpe, SL)
-
-    val result = Typer.Definition.typer(rast, Root)
-    assertResult(Type.Int32)(result.get.tpe)
+    val input = "fn f(x: Bool): Bool = x"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
   test("Definition.Constant04") {
-    val x = ident("x")
-
-    // fn (x: Unit): Unit = ()
-    val exp = ResolvedAst.Expression.Lambda(
-      Ast.Annotations(List.empty),
-      formals = List(ResolvedAst.FormalArg(x, Type.Unit)),
-      retTpe = Type.Unit,
-      body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL), SL)
-    val tpe = Type.Lambda(List(Type.Unit), Type.Unit)
-    val rast = ResolvedAst.Definition.Constant(RName, exp, tpe, SL)
-
-    val result = Typer.Definition.typer(rast, Root)
-    val expectedType = Type.Lambda(List(Type.Unit), Type.Unit)
-    assertResult(expectedType)(result.get.tpe)
-  }
-
-  test("Definition.Constant05") {
-    val x = ident("x")
-
-    // fn (x: Int): Int = x
-    val exp = ResolvedAst.Expression.Lambda(
-      Ast.Annotations(List.empty),
-      formals = List(ResolvedAst.FormalArg(x, Type.Int32)),
-      retTpe = Type.Int32,
-      body = ResolvedAst.Expression.Var(x, SL), SL)
-    val tpe = Type.Lambda(List(Type.Int32), Type.Int32)
-    val rast = ResolvedAst.Definition.Constant(RName, exp, tpe, SL)
-
-    val result = Typer.Definition.typer(rast, Root)
-    val expectedType = Type.Lambda(List(Type.Int32), Type.Int32)
-    assertResult(expectedType)(result.get.tpe)
-  }
-
-  test("Definition.BoundedLattice.TypeError01") {
-    val input =
-      """let Int<> = (0, 1, 2, 3, 4);
-      """.stripMargin
+    val input = "fn f(x: Int): Int = x"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
-  }
-
-  test("Definition.BoundedLattice.TypeError02") {
-    val input =
-      """|def leq(x: Int, y: Int): Bool = true;
-        |def lub(x: Int, y: Int): Int = 42;
-        |def glb(x: Int, y: Int): Int = 21;
-        |
-        |let Int<> = (0, 1, lub, leq, glb);
-      """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+    result.get
   }
 
   test("Definition.Relation01") {
-    val rast = ResolvedAst.Collection.Relation(RName, List(
-      ResolvedAst.Attribute(Ident, Type.Bool)
-    ), SL)
-
-    val result = Typer.Definition.typer(rast, Root)
-    assert(result.isSuccess)
+    val input = "rel R(x: Bool)"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
   test("Definition.Relation02") {
-    val rast = ResolvedAst.Collection.Relation(RName, List(
-      ResolvedAst.Attribute(Ident, Type.Bool),
-      ResolvedAst.Attribute(Ident, Type.Int32),
-      ResolvedAst.Attribute(Ident, Type.Str)
-    ), SL)
-
-    val result = Typer.Definition.typer(rast, Root)
-    assert(result.isSuccess)
+    val input = "rel R(x: Bool, y: Int, z: Str)"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1303,5 +1244,27 @@ class TestTyper extends FunSuite {
     val result = new Flix().addStr(input).compile()
     result.get
   }
+
+
+  test("Definition.BoundedLattice.TypeError01") {
+    val input =
+      """let Int<> = (0, 1, 2, 3, 4);
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+  }
+
+  test("Definition.BoundedLattice.TypeError02") {
+    val input =
+      """|def leq(x: Int, y: Int): Bool = true;
+        |def lub(x: Int, y: Int): Int = 42;
+        |def glb(x: Int, y: Int): Int = 21;
+        |
+        |let Int<> = (0, 1, lub, leq, glb);
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+  }
+
 
 }
