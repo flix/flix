@@ -64,54 +64,22 @@ class TestTyper extends FunSuite {
   // Constraints                                                             //
   /////////////////////////////////////////////////////////////////////////////
   test("Constraint.Fact01") {
-    val rname = Name.Resolved.mk(List("Student"))
-
-    val root = Root.copy(collections = Map(
-      rname -> ResolvedAst.Collection.Relation(rname, List(
-        ResolvedAst.Attribute(Ident, Type.Str),
-        ResolvedAst.Attribute(Ident, Type.Int32)
-      ), SL)
-    ))
-
-    val rast = ResolvedAst.Constraint.Fact(ResolvedAst.Predicate.Head.Relation(
-      rname, List(
-        ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Str("John Doe", SL), SL),
-        ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Int(42, SL), SL)
-      ), SL)
-    )
-    val result = Typer.Constraint.typer(rast, root)
-    assert(result.isSuccess)
+    val input =
+      """rel R(x: Bool, y: Int, z: Str)
+        |R(true, 42, "foo").
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
   test("Constraint.Rule01") {
-    val rname = Name.Resolved.mk(List("Edge"))
-    val x = ident("x")
-    val y = ident("y")
-    val z = ident("z")
-
-    val root = Root.copy(collections = Map(
-      rname -> ResolvedAst.Collection.Relation(rname, List(
-        ResolvedAst.Attribute(Ident, Type.Int32),
-        ResolvedAst.Attribute(Ident, Type.Int32),
-        ResolvedAst.Attribute(Ident, Type.Int32)
-      ), SL)
-    ))
-
-    val head = ResolvedAst.Predicate.Head.Relation(rname, List(ResolvedAst.Term.Head.Var(x, SL), ResolvedAst.Term.Head.Var(z, SL)), SL)
-
-    val body = List(
-      ResolvedAst.Predicate.Body.Relation(rname, List(ResolvedAst.Term.Body.Var(x, SL), ResolvedAst.Term.Body.Var(y, SL)), SL),
-      ResolvedAst.Predicate.Body.Relation(rname, List(ResolvedAst.Term.Body.Var(y, SL), ResolvedAst.Term.Body.Var(z, SL)), SL)
-    )
-
-    val rast = ResolvedAst.Constraint.Rule(head, body)
-    val result = Typer.Constraint.typer(rast, root)
-    assert(result.isSuccess)
+    val input =
+      """rel R(x: Int, y: Int)
+        |R(x, y) :- R(y, x).
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Lattices                                                                //
-  /////////////////////////////////////////////////////////////////////////////
 
   /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
@@ -280,27 +248,7 @@ class TestTyper extends FunSuite {
     assertResult(expectedType)(actualType)
   }
 
-  test("Expression.Lambda.TypeError") {
-    val x = ident("x")
-    val y = ident("y")
-    val z = ident("z")
-    val w = ident("w")
 
-    val rast = ResolvedAst.Expression.Lambda(
-      Ast.Annotations(List.empty),
-      formals = List(
-        ResolvedAst.FormalArg(x, Type.Unit),
-        ResolvedAst.FormalArg(y, Type.Bool),
-        ResolvedAst.FormalArg(z, Type.Int32),
-        ResolvedAst.FormalArg(w, Type.Str)
-      ),
-      retTpe = Type.Unit,
-      body = ResolvedAst.Expression.Var(w, SL)
-      , SL)
-
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
-  }
 
   test("Expression.Apply01") {
     val x = ident("x")
@@ -1266,5 +1214,25 @@ class TestTyper extends FunSuite {
     assert(result.errors.head.isInstanceOf[Typer.TypeError])
   }
 
+  test("Expression.Lambda.TypeError") {
+    val x = ident("x")
+    val y = ident("y")
+    val z = ident("z")
+    val w = ident("w")
 
+    val rast = ResolvedAst.Expression.Lambda(
+      Ast.Annotations(List.empty),
+      formals = List(
+        ResolvedAst.FormalArg(x, Type.Unit),
+        ResolvedAst.FormalArg(y, Type.Bool),
+        ResolvedAst.FormalArg(z, Type.Int32),
+        ResolvedAst.FormalArg(w, Type.Str)
+      ),
+      retTpe = Type.Unit,
+      body = ResolvedAst.Expression.Var(w, SL)
+      , SL)
+
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
+  }
 }
