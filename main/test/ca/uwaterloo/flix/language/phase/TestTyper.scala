@@ -7,6 +7,7 @@ import org.scalatest.FunSuite
 class TestTyper extends FunSuite {
 
   // TODO: Consider using real syntax?
+  def ident(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
 
   @deprecated
   val SL = SourceLocation.Unknown
@@ -84,6 +85,8 @@ class TestTyper extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
+  // TODO: Sort
+
   ignore("Expression.Unit") {
     val input = "fn f(): Unit = ()"
     val result = new Flix().addStr(input).compile()
@@ -700,6 +703,41 @@ class TestTyper extends FunSuite {
     result.get
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Ascribe (Positive)                                                      //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Expression.Ascribe01") {
+    val input = "fn f(): Bool = true : Bool"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Ascribe02") {
+    val input = "fn f(): Int = 42 : Int"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Ascribe03") {
+    val input = "fn f(x: Int8, y: Int16, z: Int32): (Int32, Int16, Int8) = (z, y, x) : (Int32, Int16, Int8)"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Error (Positive)                                                        //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Expression.Error01") {
+    val input = "fn f(): Bool = ??? : Bool"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Error02") {
+    val input = "fn f(): Int = ??? : Int"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
 
 
 
@@ -781,44 +819,6 @@ class TestTyper extends FunSuite {
 
     val result = Typer.Expression.typer(rast, root)
     assert(result.isFailure)
-  }
-
-  test("Expression.Ascribe01") {
-    val rast = ResolvedAst.Expression.Ascribe(
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
-      Type.Bool
-      , SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Bool)(result.get.tpe)
-  }
-
-  test("Expression.Ascribe02") {
-    val rast = ResolvedAst.Expression.Ascribe(
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
-      Type.Int32
-      , SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
-  }
-
-  test("Expression.Error01") {
-    val rast = ResolvedAst.Expression.IfThenElse(
-      ResolvedAst.Expression.Error(Type.Bool, SourceLocation.Unknown),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(21, SL), SL),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL)
-      , SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int32)(result.get.tpe)
-  }
-
-  test("Expression.Error02") {
-    val rast = ResolvedAst.Expression.IfThenElse(
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
-      ResolvedAst.Expression.Error(Type.Int32, SourceLocation.Unknown),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL)
-      , SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int32)(result.get.tpe)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1075,7 +1075,6 @@ class TestTyper extends FunSuite {
     assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
   }
 
-  def ident(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
 
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
