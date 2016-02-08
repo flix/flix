@@ -149,12 +149,17 @@ impl Lattice[E: PreOrder + Norm] {
 // TODO: How to deal with these?
 // TODO: Need some notion of function type here?
 class Strict[A: JoinSemiLattice, B: JoinSemiLattice] {
-    fn f(a: A): B
-
     // and then even this requirement cant readily be described?
     // how do you even disambiguate bot?
-    law Strict(): Bool = f(bot) == bot
+    law Strict(f: A => B): Bool = f(bot) == bot
 }
+
+prop Strict[]
+
+impl Strict[Sign, Belnap] {
+
+}
+
 
 impl Strict for (A => B) {
     // ... ?
