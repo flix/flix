@@ -601,6 +601,41 @@ class TestTyper extends FunSuite {
     result.get
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Tuple (Positive)                                                        //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Expression.Tuple01") {
+    val input = "fn f(): (Int, Int, Int) = (1, 2, 3)"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Tuple02") {
+    val input = "fn f(x: Int8, y: Int16, z: Int32, w: Int64): (Int64, Int32, Int16, Int8) = (w, z, y, x)"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Tuple03") {
+    val input = "fn f(): (Int, (Int, (Int, Int))) = (1, (2, (3, 4)))"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Tuple04") {
+    val input = "fn f(): (((Int, Int), Int), Int) = (((1, 2), 3), 4)"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Tuple05") {
+    val input = "fn f(): (Bool, Int, Str) = (true, 42, \"foo\")"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+
+
 
   test("Expression.Unary.NonBooleanValue") {
     val rast = ResolvedAst.Expression.Unary(UnaryOperator.LogicalNot, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
@@ -720,36 +755,6 @@ class TestTyper extends FunSuite {
 
     val result = Typer.Expression.typer(rast, root)
     assert(result.isFailure)
-  }
-
-  test("Expression.Tuple01") {
-    val e1 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
-    val e2 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL)
-    val rast = ResolvedAst.Expression.Tuple(List(e1, e2), SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Tuple(List(Type.Bool, Type.Int32)))(result.get.tpe)
-  }
-
-  test("Expression.Tuple02") {
-    val e1 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
-    val e2 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL)
-    val e3 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo", SL), SL)
-    val rast = ResolvedAst.Expression.Tuple(List(e1, e2, e3), SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Tuple(List(Type.Bool, Type.Int32, Type.Str)))(result.get.tpe)
-  }
-
-  test("Expression.Tuple03") {
-    val e1 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
-    val e2 = ResolvedAst.Expression.Tuple(List(
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL)
-    ), SL)
-    val rast = ResolvedAst.Expression.Tuple(List(e1, e2), SL)
-    val result = Typer.Expression.typer(rast, Root)
-    val tpe1 = Type.Bool
-    val tpe2 = Type.Tuple(List(Type.Unit, Type.Unit))
-    assertResult(Type.Tuple(List(tpe1, tpe2)))(result.get.tpe)
   }
 
   test("Expression.Ascribe01") {
