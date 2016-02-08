@@ -427,23 +427,176 @@ class TestTyper extends FunSuite {
     assert(result.isFailure)
   }
 
-  test("Expression.Unary01") {
-    val rast = ResolvedAst.Expression.Unary(UnaryOperator.LogicalNot, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL), SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Bool)(result.get.tpe)
+  test("Expression.Unary.Not") {
+    val input = "fn f(x: Bool): Bool = !x"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
-  test("Expression.Unary02") {
-    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Plus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int32)(result.get.tpe)
+  test("Expression.Unary.NotNot") {
+    val input = "fn f(x: Bool): Bool = !!x"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
-  test("Expression.Unary03") {
-    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Minus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int32)(result.get.tpe)
+  test("Expression.Unary.Plus01") {
+    val input = "fn f(): Int = +42"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
+
+  test("Expression.Unary.Plus02") {
+    val input = "fn f(x: Int): Int = +x"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Unary.Minus01") {
+    val input = "fn f(): Int = -42"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Unary.Minus02") {
+    val input = "fn f(x: Int): Int = -x"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Unary.BitwiseNegate01") {
+    val input = "fn f(): Int = ~42"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Unary.BitwiseNegate02") {
+    val input = "fn f(x: Int): Int = ~x"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.Plus") {
+    val input = "fn f(x: Int, y: Int): Int = x + y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.Minus") {
+    val input = "fn f(x: Int, y: Int): Int = x - y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.Times") {
+    val input = "fn f(x: Int, y: Int): Int = x * y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.Divide") {
+    val input = "fn f(x: Int, y: Int): Int = x / y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.Modulo") {
+    val input = "fn f(x: Int, y: Int): Int = x % y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.Less") {
+    val input = "fn f(x: Int, y: Int): Bool = x < y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.LessEqual") {
+    val input = "fn f(x: Int, y: Int): Bool = x <= y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.Greater") {
+    val input = "fn f(x: Int, y: Int): Bool = x > y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.GreaterEqual") {
+    val input = "fn f(x: Int, y: Int): Bool = x >= y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.Equal01") {
+    val input = "fn f(x: Bool, y: Bool): Bool = x == y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.Equal02") {
+    val input = "fn f(x: Int, y: Int): Bool = x == y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.Equal03") {
+    val input = "fn f(x: Str, y: Str): Bool = x == y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.Equal04") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Green,
+        |  case Blue
+        |}
+        |
+        |fn f(x: Color, y: Color): Bool = x == Color.Red
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+
+  test("Expression.Binary.NotEqual01") {
+    val input = "fn f(x: Bool, y: Bool): Bool = x != y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.NotEqual02") {
+    val input = "fn f(x: Int, y: Int): Bool = x != y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.NotEqual03") {
+    val input = "fn f(x: Str, y: Str): Bool = x != y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.NotEqual04") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Green,
+        |  case Blue
+        |}
+        |
+        |fn f(x: Color, y: Color): Bool = x != Color.Red
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+
 
   test("Expression.Unary.NonBooleanValue") {
     val rast = ResolvedAst.Expression.Unary(UnaryOperator.LogicalNot, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
@@ -459,46 +612,6 @@ class TestTyper extends FunSuite {
 
   test("Expression.Unary.NonIntegerValue02") {
     val rast = ResolvedAst.Expression.Unary(UnaryOperator.Minus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL), SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
-  }
-
-  test("Expression.Binary01") {
-    val e1 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
-    val e2 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(false, SL), SL)
-    val rast = ResolvedAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Bool)(result.get.tpe)
-  }
-
-  test("Expression.Binary02") {
-    val e1 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(21, SL), SL)
-    val e2 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL)
-    val rast = ResolvedAst.Expression.Binary(BinaryOperator.Minus, e1, e2, SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int32)(result.get.tpe)
-  }
-
-  test("Expression.Binary03") {
-    val e1 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(21, SL), SL)
-    val e2 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL)
-    val rast = ResolvedAst.Expression.Binary(BinaryOperator.LessEqual, e1, e2, SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Bool)(result.get.tpe)
-  }
-
-  test("Expression.Binary.MismatchedValues") {
-    val e1 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
-    val e2 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL)
-    val rast = ResolvedAst.Expression.Binary(BinaryOperator.Plus, e1, e2, SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
-  }
-
-  test("Expression.Binary.MismatchedOperator") {
-    val e1 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
-    val e2 = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(false, SL), SL)
-    val rast = ResolvedAst.Expression.Binary(BinaryOperator.Plus, e1, e2, SL)
     val result = Typer.Expression.typer(rast, Root)
     assert(result.isFailure)
   }
