@@ -567,7 +567,18 @@ class TestTyper extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Match (Positive)                                                        //
   /////////////////////////////////////////////////////////////////////////////
-  test("Expression.Match01") {
+  test("Expression.Match.Wildcard") {
+    val input =
+      """fn f(): Int = match true with {
+        |  case _ => 42
+        |}
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Match.Literal01") {
     val input =
       """fn f(): Int = match true with {
         |  case true => 42
@@ -579,9 +590,9 @@ class TestTyper extends FunSuite {
     result.get
   }
 
-  test("Expression.Match02") {
+  test("Expression.Match.Literal02") {
     val input =
-      """fn f(): Bool = match 42 with {
+      """fn f(): Bool = match 1 with {
         |  case 1 => true
         |  case 2 => true
         |  case 3 => true
@@ -592,7 +603,31 @@ class TestTyper extends FunSuite {
     result.get
   }
 
-  test("Expression.Match03") {
+  test("Expression.Match.Var01") {
+    val input =
+      """fn f(): Int = match 42 with {
+        |  case x => x
+        |}
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Match.Var02") {
+    val input =
+      """fn f(): Int = match (21, 42) with {
+        |  case (x, y) => x + y
+        |}
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+
+
+  test("Expression.Match.Mixed") {
     val input =
       """fn f(): Bool = match (true, 42, "foo") with {
         |  case (false, 21, "bar") => true
@@ -602,6 +637,47 @@ class TestTyper extends FunSuite {
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
+  }
+
+
+  test("Pattern.Tag01") {
+    val tagName = ident("Qux")
+    val x = ident("x")
+    val rast = ResolvedAst.Pattern.Tag(RName, tagName, ResolvedAst.Pattern.Var(x, SL), SL)
+    val tpe = Type.Enum(Name.Resolved.mk("foo"), Map("Qux" -> Type.Tag(RName, tagName, Type.Unit)))
+    val result = Typer.Pattern.typer(rast, tpe, Root)
+    assertResult(Type.Unit)(result.get.freeVars(x.name))
+  }
+
+  test("Pattern.Tuple01") {
+    val rast = ResolvedAst.Pattern.Tuple(List(
+      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Unit(SL), SL),
+      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
+    ), SL)
+    val tpe = Type.Tuple(List(
+      Type.Unit,
+      Type.Bool
+    ))
+    val result = Typer.Pattern.typer(rast, tpe, Root)
+    assertResult(tpe)(result.get.tpe)
+  }
+
+  test("Pattern.Tuple02") {
+    val rast = ResolvedAst.Pattern.Tuple(List(
+      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Unit(SL), SL),
+      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
+      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Int(42, SL), SL),
+      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Str("foo", SL), SL)
+    ), SL)
+
+    val tpe = Type.Tuple(List(
+      Type.Unit,
+      Type.Bool,
+      Type.Int32,
+      Type.Str
+    ))
+    val result = Typer.Pattern.typer(rast, tpe, Root)
+    assertResult(tpe)(result.get.tpe)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -821,97 +897,7 @@ class TestTyper extends FunSuite {
     assert(result.isFailure)
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Patterns                                                                //
-  /////////////////////////////////////////////////////////////////////////////
-  test("Pattern.Wildcard") {
-    val rast = ResolvedAst.Pattern.Wildcard(SourceLocation.Unknown)
-    val tpe = Type.Bool
-    val result = Typer.Pattern.typer(rast, tpe, Root)
-    assert(result.isSuccess)
-  }
 
-  test("Pattern.Variable01") {
-    val x = ident("x")
-    val rast = ResolvedAst.Pattern.Var(x, SL)
-    val tpe = Type.Bool
-    val result = Typer.Pattern.typer(rast, tpe, Root)
-    assertResult(tpe)(result.get.freeVars(x.name))
-  }
-
-  test("Pattern.Variable02") {
-    val x = ident("x")
-    val rast = ResolvedAst.Pattern.Var(x, SL)
-    val tpe = Type.Tuple(List(Type.Bool))
-    val result = Typer.Pattern.typer(rast, tpe, Root)
-    assertResult(tpe)(result.get.freeVars(x.name))
-  }
-
-  test("Pattern.Variable03") {
-    val x = ident("x")
-    val y = ident("y")
-    val rast = ResolvedAst.Pattern.Tuple(List(
-      ResolvedAst.Pattern.Var(x, SL),
-      ResolvedAst.Pattern.Var(y, SL)
-    ), SL)
-    val tpe = Type.Tuple(List(Type.Bool, Type.Int32))
-    val result = Typer.Pattern.typer(rast, tpe, Root)
-    assertResult(tpe)(result.get.tpe)
-  }
-
-  test("Pattern.Literal") {
-    val rast = ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
-    val tpe = Type.Bool
-    val result = Typer.Pattern.typer(rast, tpe, Root)
-    assertResult(tpe)(result.get.tpe)
-  }
-
-  test("Pattern.Tag01") {
-    val tagName = ident("Qux")
-    val x = ident("x")
-    val rast = ResolvedAst.Pattern.Tag(RName, tagName, ResolvedAst.Pattern.Var(x, SL), SL)
-    val tpe = Type.Enum(Name.Resolved.mk("foo"), Map("Qux" -> Type.Tag(RName, tagName, Type.Unit)))
-    val result = Typer.Pattern.typer(rast, tpe, Root)
-    assertResult(Type.Unit)(result.get.freeVars(x.name))
-  }
-
-  test("Pattern.Tuple01") {
-    val rast = ResolvedAst.Pattern.Tuple(List(
-      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Unit(SL), SL),
-      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
-    ), SL)
-    val tpe = Type.Tuple(List(
-      Type.Unit,
-      Type.Bool
-    ))
-    val result = Typer.Pattern.typer(rast, tpe, Root)
-    assertResult(tpe)(result.get.tpe)
-  }
-
-  test("Pattern.Tuple02") {
-    val rast = ResolvedAst.Pattern.Tuple(List(
-      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Unit(SL), SL),
-      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
-      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Int(42, SL), SL),
-      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Str("foo", SL), SL)
-    ), SL)
-
-    val tpe = Type.Tuple(List(
-      Type.Unit,
-      Type.Bool,
-      Type.Int32,
-      Type.Str
-    ))
-    val result = Typer.Pattern.typer(rast, tpe, Root)
-    assertResult(tpe)(result.get.tpe)
-  }
-
-  test("Pattern.TypeError") {
-    val rast = ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Unit(SL), SL)
-    val tpe = Type.Bool
-    val result = Typer.Pattern.typer(rast, tpe, Root)
-    assert(result.isFailure)
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Predicates & Terms                                                      //
@@ -1196,6 +1182,12 @@ class TestTyper extends FunSuite {
   }
 
 
+  test("Pattern.TypeError") {
+    val rast = ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Unit(SL), SL)
+    val tpe = Type.Bool
+    val result = Typer.Pattern.typer(rast, tpe, Root)
+    assert(result.isFailure)
+  }
   test("Expression.Apply.TypeError.IllegalArgumentType") {
     val x = ident("x")
     val y = ident("y")
