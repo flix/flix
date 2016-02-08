@@ -154,11 +154,11 @@ class Strict[A: JoinSemiLattice, B: JoinSemiLattice] {
     law Strict(f: A => B): Bool = f(bot) == bot
 }
 
-prop Strict[]
-
-impl Strict[Sign, Belnap] {
-
+prop Strict[A: JoinSemiLattice, B: JoinSemiLattice](f: A => B) {
+    law Strict(f: A => B): Bool = f(bot) == bot
 }
+
+is Strict[Sign, Belnap](Sign::mayEq)
 
 
 impl Strict for (A => B) {
