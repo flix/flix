@@ -431,6 +431,9 @@ class TestTyper extends FunSuite {
     assert(result.isFailure)
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Unary (Positive)                                                        //
+  /////////////////////////////////////////////////////////////////////////////
   test("Expression.Unary.Not") {
     val input = "fn f(x: Bool): Bool = !x"
     val result = new Flix().addStr(input).compile()
@@ -479,6 +482,9 @@ class TestTyper extends FunSuite {
     result.get
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Binary (Positive)                                                       //
+  /////////////////////////////////////////////////////////////////////////////
   test("Expression.Binary.Plus") {
     val input = "fn f(x: Int, y: Int): Int = x + y"
     val result = new Flix().addStr(input).compile()
@@ -566,7 +572,6 @@ class TestTyper extends FunSuite {
     result.get
   }
 
-
   test("Expression.Binary.NotEqual01") {
     val input = "fn f(x: Bool, y: Bool): Bool = x != y"
     val result = new Flix().addStr(input).compile()
@@ -648,24 +653,58 @@ class TestTyper extends FunSuite {
     result.get
   }
 
-
-  test("Expression.Unary.NonBooleanValue") {
-    val rast = ResolvedAst.Expression.Unary(UnaryOperator.LogicalNot, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
+  test("Expression.Binary.BitwiseAnd01") {
+    val input = "fn f(): Int = 1 & 2"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
-  test("Expression.Unary.NonIntegerValue01") {
-    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Plus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL), SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
+  test("Expression.Binary.BitwiseAnd02") {
+    val input = "fn f(x: Int, y: Int): Int = x & y"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
-  test("Expression.Unary.NonIntegerValue02") {
-    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Minus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL), SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
+  test("Expression.Binary.BitwiseOr01") {
+    val input = "fn f(): Int = 1 | 2"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
+
+  test("Expression.Binary.BitwiseOr02") {
+    val input = "fn f(x: Int, y: Int): Int = x | y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.BitwiseXor01") {
+    val input = "fn f(): Int = 1 ^ 2"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.BitwiseXor02") {
+    val input = "fn f(x: Int, y: Int): Int = x ^ y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.BitwiseLeftShift") {
+    val input = "fn f(x: Int): Int = x << 1"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.BitwiseRightShift") {
+    val input = "fn f(x: Int): Int = x >> 1"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // If Then Else (Positive)                                                 //
+  /////////////////////////////////////////////////////////////////////////////
+
 
   test("Expression.IfThenElse01") {
     val rast = ResolvedAst.Expression.IfThenElse(
@@ -687,25 +726,6 @@ class TestTyper extends FunSuite {
     assertResult(Type.Str)(result.get.tpe)
   }
 
-  test("Expression.IfThenElse.NonBooleanCondition") {
-    val rast = ResolvedAst.Expression.IfThenElse(
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(1, SL), SL),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(2, SL), SL),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(3, SL), SL)
-      , SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
-  }
-
-  test("Expression.IfThenElse.ThenElseMismatch") {
-    val rast = ResolvedAst.Expression.IfThenElse(
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(2, SL), SL),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo", SL), SL)
-      , SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
-  }
 
   test("Expression.Let01") {
     val rast = ResolvedAst.Expression.Let(
@@ -725,6 +745,46 @@ class TestTyper extends FunSuite {
       , SL)
     val result = Typer.Expression.typer(rast, Root)
     assertResult(Type.Int32)(result.get.tpe)
+  }
+
+
+
+  test("Expression.Unary.NonBooleanValue") {
+    val rast = ResolvedAst.Expression.Unary(UnaryOperator.LogicalNot, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
+  }
+
+  test("Expression.Unary.NonIntegerValue01") {
+    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Plus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL), SL)
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
+  }
+
+  test("Expression.Unary.NonIntegerValue02") {
+    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Minus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL), SL)
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
+  }
+
+  test("Expression.IfThenElse.NonBooleanCondition") {
+    val rast = ResolvedAst.Expression.IfThenElse(
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(1, SL), SL),
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(2, SL), SL),
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(3, SL), SL)
+      , SL)
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
+  }
+
+  test("Expression.IfThenElse.ThenElseMismatch") {
+    val rast = ResolvedAst.Expression.IfThenElse(
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(2, SL), SL),
+      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo", SL), SL)
+      , SL)
+    val result = Typer.Expression.typer(rast, Root)
+    assert(result.isFailure)
   }
 
   test("Expression.Let.TypeError") {
