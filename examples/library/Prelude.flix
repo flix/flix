@@ -177,7 +177,7 @@ class Monotone[E: PartialOrder] {
 
 // TODO: use word "impl"? for ?
 // TODO: class or concept?
-impl PartialOrder Sign {
+impl PartialOrder[Sign] {
 
     fn leq(x: Sign, y: Sign): Bool = ???
 
