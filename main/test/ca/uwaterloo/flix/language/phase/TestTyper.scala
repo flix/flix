@@ -602,6 +602,72 @@ class TestTyper extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Tag (Positive)                                                          //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Expression.Tag01") {
+    val input =
+      """enum Color {
+        |  case Red
+        |}
+        |
+        |fn f(c: Color): Color = c
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Tag02") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Green,
+        |  case Blue
+        |}
+        |
+        |fn f(): Color = Color.Red
+        |fn g(): Color = Color.Green
+        |fn h(): Color = Color.Blue
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Tag03") {
+    val input =
+      """enum Color {
+        |  case Red(Bool),
+        |  case Green(Int),
+        |  case Blue(Str)
+        |}
+        |
+        |fn f(x: Bool): Color = Color.Red(x)
+        |fn g(x: Int): Color = Color.Green(x)
+        |fn h(x: Str): Color = Color.Blue(x)
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Tag04") {
+    val input =
+      """enum Intensity {
+        |  case Bright,
+        |  case Dark
+        |}
+        |
+        |enum Color {
+        |  case Red(Intensity),
+        |  case Green(Intensity),
+        |  case Blue(Intensity)
+        |}
+        |
+        |fn f(x: Bool): Color = Color.Green(Intensity.Dark)
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Tuple (Positive)                                                        //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.Tuple01") {
@@ -697,46 +763,6 @@ class TestTyper extends FunSuite {
 
     val result = Typer.Expression.typer(rast, Root)
     assert(result.isFailure)
-  }
-
-  test("Expression.Tag01") {
-    val enumName = Name.Resolved.mk(List("Foo", "Bar"))
-    val tagName = ident("Qux")
-    val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL), SL)
-
-    val root = Root.copy(enums = Map(
-      enumName -> ResolvedAst.Definition.Enum(enumName, Map(
-        "Qux" -> Type.Tag(enumName, tagName, Type.Unit)
-      ), SL)
-    ))
-
-    val expectedType = Type.Enum(enumName, Map("Qux" -> Type.Tag(enumName, tagName, Type.Unit)))
-    val actualType = Typer.Expression.typer(rast, root).get.tpe
-    assertResult(expectedType)(actualType)
-  }
-
-  test("Expression.Tag02") {
-    val enumName = Name.Resolved.mk(List("Foo", "Bar"))
-    val tagName = ident("C")
-    val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
-
-    val root = Root.copy(enums = Map(
-      enumName -> ResolvedAst.Definition.Enum(enumName, Map(
-        "A" -> Type.Tag(enumName, tagName, Type.Unit),
-        "B" -> Type.Tag(enumName, tagName, Type.Bool),
-        "C" -> Type.Tag(enumName, tagName, Type.Int32),
-        "D" -> Type.Tag(enumName, tagName, Type.Str)
-      ), SL)
-    ))
-
-    val expectedType = Type.Enum(enumName, Map(
-      "A" -> Type.Tag(enumName, tagName, Type.Unit),
-      "B" -> Type.Tag(enumName, tagName, Type.Bool),
-      "C" -> Type.Tag(enumName, tagName, Type.Int32),
-      "D" -> Type.Tag(enumName, tagName, Type.Str)
-    ))
-    val actualType = Typer.Expression.typer(rast, root).get.tpe
-    assertResult(expectedType)(actualType)
   }
 
   test("Expression.Tag.TypeError") {
