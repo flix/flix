@@ -2,7 +2,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
-
 import org.scalatest.FunSuite
 
 class TestTyper extends FunSuite {
@@ -18,22 +17,16 @@ class TestTyper extends FunSuite {
   // Definitions                                                             //
   /////////////////////////////////////////////////////////////////////////////
 
-  test("Definition.Constant01") {
-    val exp = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL)
-    val tpe = Type.Unit
-    val rast = ResolvedAst.Definition.Constant(RName, exp, tpe, SL)
-
-    val result = Typer.Definition.typer(rast, Root)
-    assertResult(Type.Unit)(result.get.tpe)
+  ignore("Definition.Constant01") {
+    val input = "fn f(): Unit = ()"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
   test("Definition.Constant02") {
-    val exp = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
-    val tpe = Type.Bool
-    val rast = ResolvedAst.Definition.Constant(RName, exp, tpe, SL)
-
-    val result = Typer.Definition.typer(rast, Root)
-    assertResult(Type.Bool)(result.get.tpe)
+    val input = "fn f(): Bool = true"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
   test("Definition.Constant03") {
@@ -176,50 +169,53 @@ class TestTyper extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   /////////////////////////////////////////////////////////////////////////////
-  // Literals                                                                //
+  // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  test("Literal.Unit") {
-    val rast = ResolvedAst.Literal.Unit(SL)
-    val result = Typer.Literal.typer(rast, Root)
-    assertResult(Type.Unit)(result.tpe)
+  ignore("Expression.Unit") {
+    val input = "fn f(): Unit = ()"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
-  test("Literal.Bool.True") {
-    val rast = ResolvedAst.Literal.Bool(true, SL)
-    val result = Typer.Literal.typer(rast, Root)
-    assertResult(Type.Bool)(result.tpe)
+  test("Expression.Bool.True") {
+    val input = "fn f(): Bool = true"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
-  test("Literal.Bool.False") {
-    val rast = ResolvedAst.Literal.Bool(false, SL)
-    val result = Typer.Literal.typer(rast, Root)
-    assertResult(Type.Bool)(result.tpe)
+  test("Expression.Bool.False") {
+    val input = "fn f(): Bool = false"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
-  test("Literal.Int") {
-    val rast = ResolvedAst.Literal.Int(42, SL)
-    val result = Typer.Literal.typer(rast, Root)
-    assertResult(Type.Int32)(result.tpe)
+  test("Expression.Int") {
+    val input = "fn f(): Int = 42"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
-  test("Literal.Str") {
-    val rast = ResolvedAst.Literal.Str("foo", SL)
-    val result = Typer.Literal.typer(rast, Root)
-    assertResult(Type.Str)(result.tpe)
+  test("Expression.Str") {
+    val input = "fn f(): Str = \"foo\""
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
-  test("Literal.Tag") {
-    val enumName = Name.Resolved.mk(List("foo", "bar", "baz"))
-    val tagName = ident("Qux")
-    val literal = ResolvedAst.Literal.Unit(SL)
-    val rast = ResolvedAst.Literal.Tag(enumName, tagName, literal, SL)
-    val enums = Map(enumName -> ResolvedAst.Definition.Enum(enumName, Map("Qux" -> Type.Tag(enumName, tagName, Type.Unit)), SL))
-    val root = Root.copy(enums = enums)
-    val result = Typer.Literal.typer(rast, root)
-    assertResult(Type.Enum(enumName, Map("Qux" -> Type.Tag(enumName, tagName, Type.Unit))))(result.tpe)
+  test("Expression.Tag") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Green,
+        |  case Blue
+        |}
+        |
+        |fn f(): Color = Color.Red
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
-  test("Literal.Tuple") {
+  test("Expression.Tuple") {
     val rast = ResolvedAst.Literal.Tuple(List(
       ResolvedAst.Literal.Bool(true, SL),
       ResolvedAst.Literal.Int(42, SL),
@@ -228,9 +224,6 @@ class TestTyper extends FunSuite {
     assertResult(Type.Tuple(List(Type.Bool, Type.Int32, Type.Str)))(result.tpe)
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Expressions                                                             //
-  /////////////////////////////////////////////////////////////////////////////
   test("Expression.Var01") {
     val x = ident("x")
 
@@ -998,8 +991,8 @@ class TestTyper extends FunSuite {
   test("NoSuchLattice01") {
     val input =
       s"""namespace A {
-         |  lat A(x: Int, y: Int<>);
-         |};
+          |  lat A(x: Int, y: Int<>);
+          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
@@ -1008,12 +1001,12 @@ class TestTyper extends FunSuite {
   test("NoSuchLattice02") {
     val input =
       s"""namespace A {
-         |  enum Elm {
-         |    case Foo
-         |  }
-         |
+          |  enum Elm {
+          |    case Foo
+          |  }
+          |
          |  lat A(x: Int, y: Elm<>);
-         |};
+          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
@@ -1096,5 +1089,5 @@ class TestTyper extends FunSuite {
     val result = new Flix().addStr(input).compile()
     result.get
   }
-  
+
 }
