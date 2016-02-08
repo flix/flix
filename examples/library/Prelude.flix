@@ -54,10 +54,9 @@ class PartialOrder[E] {
  * A join semi lattice is a partial order equipped with
  * a bottom element `bot` and a least upper bound operator `lub`.
  *
- * A join semi lattice must satisfy X laws:
+ * A join semi lattice must satisfy the laws:
  */
 class JoinSemiLattice[E: PartialOrder] {
-
     /**
      * Returns the least element of the lattice.
      */
@@ -85,7 +84,24 @@ class JoinSemiLattice[E: PartialOrder] {
 
 }
 
+/**
+ * A meet semi lattice is a partial order equipped with
+ * a top element `top` and a greatest upper bound operator `glb`.
+ *
+ * A meet semi lattice must satisfy the laws:
+ */
 class MeetSemiLattice[E] {
+    /**
+     * Returns the greatest element of the lattice.
+     */
+    fn top: E
+
+    /**
+     * Alias for the greatest element of the lattice.
+     */
+    fn ⊤: E
+
+
     // top, glb
 }
 
@@ -108,13 +124,27 @@ class NarrowOperator[E] {
     law LowerBound(x: E, y: E): Bool =
 }
 
+
 class PreOrder[E] {
-
+    // ... if this has a different name?
+    fn leq2()
 }
 
-class NormOperator[E] {
-
+/**
+ *
+ */
+class NormOperator[E: PreOrder] {
+    fn norm(x: E): E
 }
+
+impl Lattice[E: PreOrder + Norm] {
+    // disambiguate?
+    fn bot = norm(bot)
+
+    // disambiguate?
+    fn leq(x: E, y: E): Bool = leq2(norm(x), norm(y))
+}
+
 
 // TODO: How to deal with these?
 // TODO: Need some notion of function type here?
@@ -122,6 +152,7 @@ class Strict[A: JoinSemiLattice, B: JoinSemiLattice] {
     fn f(a: A): B
 
     // and then even this requirement cant readily be described?
+    // how do you even disambiguate bot?
     law Strict(): Bool = f(bot) == bot
 }
 
@@ -152,19 +183,6 @@ impl PartialOrder Sign {
 
 }
 
-namespace std::ops {
-
-    class Add[E] {
-        fn add(x: E, y: E): E
-    }
-
-    impl Add for Int32 {
-        fn add(x: Int32, y: Int32): Int32 = native
-    }
-
-}
-
-
 impl PartialOrder for (A: PartialOrder, B: PartialOrder) {
 
     fn leq(x: (A, B), y: (A, B)): Bool =
@@ -174,51 +192,6 @@ impl PartialOrder for (A: PartialOrder, B: PartialOrder) {
 
 }
 
-//
-//idris:
-//The class and instance keywords have been deprecated. The class keyword has been replaced by interface. Instances are now called implementations and are introduced by giving the interface name and parameters. For example:
-//interface Eq a where
-//    (==) : ty -> ty -> Bool
-//    (/=) : ty -> ty -> Bool
-//
-//    (==) x y = not (/=) x y
-//    (/=) x y = not (==) x y
-//
-//Eq Bool where
-//    True  == True  = True
-//    True  == False = False
-//    False == True  = False
-//    False == False = True
-//
-//Eq a => Eq (Maybe a) where
-//    Nothing  == Nothing  = True
-//    Nothing  == (Just _) = False
-//    (Just _) == Nothing  = False
-//    (Just a) == (Just b) = a == b
-//This is as before, but without the instance keyword.
-//
-//The rationale for this change is that interfaces as implemented in Idris have several differences from Haskell type classes, even though they have a lot in common. They can be parameterised by things which are not types (including values and interfaces themselves). They are primarily for overloading interfaces, rather than classifying types, and hence there can be multiple implementations.
-//
-//New Fractional interface, with functions (/) and recip.
-
-
-//// rust:
-//trait HasArea {
-//    fn area(&self) -> f64;
-//}
-//
-//impl HasArea for Circle {
-//    fn area(&self) -> f64 {
-//        std::f64::consts::PI * (self.radius * self.radius)
-//    }
-//}
-//impl HasArea for Square {
-//    fn area(&self) -> f64 {
-//        self.side * self.side
-//    }
-//}
-//
-//
 //You’ve seen that you can bound a generic type parameter with a trait:
 //
 //fn foo<T: Clone>(x: T) {
