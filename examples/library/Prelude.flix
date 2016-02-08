@@ -2,14 +2,18 @@
 
 // ops to impl:  ∀, ¬, ∧, ∨, →, ↔, ≡, ⊥, ⊤, ⊑, ⊔, ⊓, ▽, △
 
+// Scala code:
+// case class Class(className: Ident, constraints: Set[ContextBound], typeVars: List[Ident])
+// case class Impl(className: Ident, constraints: Set[ContextBound], forType: Type, defs: List[Definition])
+// case class ContextBound(typeVar: Ident, className: Ident)
 
 /**
- * A partial order is a set E equipped with a partial order function `leq`.
+ * A partial order is a set E equipped with a partial order `leq`.
  *
  * Informally,
- * If `leq(x, y)` then `x` is less than or equal to `y`.
- * If `leq(x, y)` and `leq(y, x)` are both true then `x == y`.
- * Finally, if neither `leq(x, y)` and `leq(y, x)` are true then `x` and `y` are incomparable.
+ *  - If `leq(x, y)` then `x` is less than or equal to `y`.
+ *  - If `leq(x, y)` and `leq(y, x)` are both true then `x == y`.
+ *  - Finally, if neither `leq(x, y)` and `leq(y, x)` are true then `x` and `y` are incomparable.
  *
  * A partial order must satisfy three laws:
  *   - Reflexivity
@@ -17,7 +21,6 @@
  *   - Transitivity
  */
 class PartialOrder[E] {
-
     /**
      * Returns `true` iff the element `x` is less than or equal to the element `y`.
      */
@@ -45,22 +48,39 @@ class PartialOrder[E] {
      * equal to `z`.
      */
     law Transitivity(x: E, y: E, z: E): Bool = (x ⊑ y ∧ y ⊑ z) → (x ⊑ z)
-
 }
 
 /**
  * A join semi lattice is a partial order equipped with
- * a bottom element and a least upper bound operator.
+ * a bottom element `bot` and a least upper bound operator `lub`.
  *
  * A join semi lattice must satisfy X laws:
  */
 class JoinSemiLattice[E: PartialOrder] {
 
+    /**
+     * Returns the least element of the lattice.
+     */
+    fn bot: E
 
+    /**
+     *
+     */
+    fn lub(x: E, y: E): E
 
-    // bot, lub
+    /**
+     * Alias for the least element of the lattice.
+     */
+    fn ⊥: E
 
+    /**
+     *
+     */
     law LeastElement(x: E): Bool = ⊥ ⊑ x
+
+    // upperbound
+
+    // greatest upper bound
 
 
 }
