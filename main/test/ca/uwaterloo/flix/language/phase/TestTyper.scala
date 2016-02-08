@@ -8,9 +8,13 @@ class TestTyper extends FunSuite {
 
   // TODO: Consider using real syntax?
 
+  @deprecated
   val SL = SourceLocation.Unknown
+  @deprecated
   val Root = ResolvedAst.Root(Map.empty, List.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty, Map.empty, new Time(0, 0, 0, 0, 0))
+  @deprecated
   val Ident = ident("x")
+  @deprecated
   val RName = Name.Resolved.mk(List("foo", "bar"))
 
   /////////////////////////////////////////////////////////////////////////////
@@ -596,6 +600,53 @@ class TestTyper extends FunSuite {
     result.get
   }
 
+  test("Expression.Binary.LogicalAnd01") {
+    val input = "fn f(): Bool = true && false"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.LogicalAnd02") {
+    val input = "fn f(x: Bool, y: Bool): Bool = x && y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.LogicalOr01") {
+    val input = "fn f(): Bool = true || false"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.LogicalOr02") {
+    val input = "fn f(x: Bool, y: Bool): Bool = x || y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.Implication01") {
+    val input = "fn f(): Bool = true ==> false"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.Implication02") {
+    val input = "fn f(x: Bool, y: Bool): Bool = x ==> y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.Biconditional01") {
+    val input = "fn f(): Bool = true <==> false"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Binary.Biconditional02") {
+    val input = "fn f(x: Bool, y: Bool): Bool = x <==> y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
 
 
   test("Expression.Unary.NonBooleanValue") {
