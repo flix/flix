@@ -160,6 +160,15 @@ prop Strict[A: JoinSemiLattice, B: JoinSemiLattice](f: A => B) {
 
 is Strict[Sign, Belnap](Sign::mayEq)
 
+alternative
+
+law Strict[A, B](f: A => B): Bool where A: JoinSemiLattice, B: JoinSemiLattice
+  = f(bot) == bot
+
+// instance of Law.
+Strict(Sign/mayEq)
+
+
 
 impl Strict for (A => B) {
     // ... ?
