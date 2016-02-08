@@ -704,49 +704,84 @@ class TestTyper extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // If Then Else (Positive)                                                 //
   /////////////////////////////////////////////////////////////////////////////
-
-
   test("Expression.IfThenElse01") {
-    val rast = ResolvedAst.Expression.IfThenElse(
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(21, SL), SL),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL)
-      , SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int32)(result.get.tpe)
+    val input = "fn f(): Int = if (true) 1 else 2"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
   test("Expression.IfThenElse02") {
-    val rast = ResolvedAst.Expression.IfThenElse(
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(false, SL), SL),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("a", SL), SL),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("b", SL), SL)
-      , SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Str)(result.get.tpe)
+    val input = "fn f(x: Bool, y: Int, z: Int): Int = if (x) y else z"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
+  test("Expression.IfThenElse03") {
+    val input = "fn f(x: Int, y: Int, z: Int): Int = if (x != y) y else z"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Let (Positive)                                                          //
+  /////////////////////////////////////////////////////////////////////////////
   test("Expression.Let01") {
-    val rast = ResolvedAst.Expression.Let(
-      Ident,
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(2, SL), SL),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo", SL), SL)
-      , SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Str)(result.get.tpe)
+    val input = "fn f(): Int = let x = 42 in x"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
   test("Expression.Let02") {
-    val rast = ResolvedAst.Expression.Let(
-      Ident,
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(2, SL), SL),
-      ResolvedAst.Expression.Var(Ident, SL)
-      , SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int32)(result.get.tpe)
+    val input = "fn f(x: Int): Int = let y = 42 in x + y"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
+  test("Expression.Let03") {
+    val input = "fn f(x: Bool): Int = let x = 42 in x"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Match (Positive)                                                        //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Expression.Match01") {
+    val input =
+      """fn f(): Int = match true with {
+        |  case true => 42
+        |  case false => 21
+        |}
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Match02") {
+    val input =
+      """fn f(): Bool = match 42 with {
+        |  case 1 => true
+        |  case 2 => true
+        |  case 3 => true
+        |}
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Match03") {
+    val input =
+      """fn f(): Bool = match (true, 42, "foo") with {
+        |  case (false, 21, "bar") => true
+        |  case (x, y, z) => x
+        |}
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
 
 
   test("Expression.Unary.NonBooleanValue") {
@@ -797,48 +832,6 @@ class TestTyper extends FunSuite {
     assert(result.isFailure)
   }
 
-  test("Expression.Match01") {
-    val rast = ResolvedAst.Expression.Match(
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
-      List(
-        ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(true, SL), SL) -> ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(21, SL), SL),
-        ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(false, SL), SL) -> ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL)
-      ), SL
-    )
-
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int32)(result.get.tpe)
-  }
-
-  test("Expression.Match02") {
-    val rast = ResolvedAst.Expression.Match(
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL),
-      List(
-        ResolvedAst.Pattern.Var(Ident, SL) -> ResolvedAst.Expression.Var(Ident, SL),
-        ResolvedAst.Pattern.Var(Ident, SL) -> ResolvedAst.Expression.Var(Ident, SL)
-      ), SL
-    )
-
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int32)(result.get.tpe)
-  }
-
-  test("Expression.Match03") {
-    val rast = ResolvedAst.Expression.Match(
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Tuple(List(
-        ResolvedAst.Literal.Bool(true, SL), ResolvedAst.Literal.Int(42, SL)
-      ), SL), SL),
-      List(
-        ResolvedAst.Pattern.Tuple(List(
-          ResolvedAst.Pattern.Wildcard(SourceLocation.Unknown),
-          ResolvedAst.Pattern.Var(Ident, SL)
-        ), SL) -> ResolvedAst.Expression.Var(Ident, SL)
-      ), SL
-    )
-
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int32)(result.get.tpe)
-  }
 
   test("Expression.Match.TypeError") {
     val rast = ResolvedAst.Expression.Match(
