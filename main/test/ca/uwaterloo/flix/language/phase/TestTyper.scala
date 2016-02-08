@@ -216,12 +216,9 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Tuple") {
-    val rast = ResolvedAst.Literal.Tuple(List(
-      ResolvedAst.Literal.Bool(true, SL),
-      ResolvedAst.Literal.Int(42, SL),
-      ResolvedAst.Literal.Str("foo", SL)), SL)
-    val result = Typer.Literal.typer(rast, Root)
-    assertResult(Type.Tuple(List(Type.Bool, Type.Int32, Type.Str)))(result.tpe)
+    val input = "fn f(): (Bool, Int, Str) = (true, 42, \"foo\")"
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
   test("Expression.Var01") {
