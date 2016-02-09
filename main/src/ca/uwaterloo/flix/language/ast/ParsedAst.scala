@@ -33,7 +33,8 @@ import scala.collection.immutable.Seq
 // TODO: Introduce type bounds.
 // TODO: Introduce extern.
 // TODO: Why have literals?
-// TODO: Probably merge fact and rule.
+
+// TODO: Why split into declaration and definition?
 
 
 /**
@@ -74,6 +75,8 @@ object ParsedAst {
     case class Namespace(sp1: SourcePosition, name: Name.Unresolved, body: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
+
+    // TODO: Probably merge fact and rule.
 
     /**
       * An AST node that represents a fact declaration.
@@ -183,7 +186,6 @@ object ParsedAst {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
-
     /**
       * An AST node that represents an index definition.
       *
@@ -193,6 +195,19 @@ object ParsedAst {
       * @param sp2     the position of the last character in the definition.
       */
     case class Index(sp1: SourcePosition, ident: Name.Ident, indexes: Seq[Seq[Name.Ident]], sp2: SourcePosition) extends ParsedAst.Definition {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents a type class definition.
+      *
+      * @param sp1     the position of the first character in the definition.
+      * @param ident   the name of the type class.
+      * @param tparams the type parameters of the type class.
+      * @param bounds  the context bounds (i.e. type parameter constraints).
+      * @param sp2     the position of the last character in the definition.
+      */
+    case class Class(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Name.Ident], bounds: Seq[ContextBound], body: Seq[ParsedAst.Definition.Function], sp2: SourcePosition) extends ParsedAst.Definition {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -208,6 +223,7 @@ object ParsedAst {
     def loc: SourceLocation
   }
 
+  // TODO: Eliminate literals.
   object Literal {
 
     /**
@@ -808,5 +824,15 @@ object ParsedAst {
     * @param tpe         the type of the argument.
     */
   case class FormalArg(ident: Name.Ident, annotations: Seq[ParsedAst.Annotation], tpe: Type) extends ParsedAst
+
+  /**
+    * A context bound is a type class constraint on one more type parameters.
+    *
+    * @param sp1     the position of the first character in the context bound.
+    * @param ident   the name of the type class.
+    * @param tparams the type params of the class.
+    * @param sp2     the position of the last character in the context bound.
+    */
+  case class ContextBound(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst
 
 }

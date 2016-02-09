@@ -51,7 +51,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Definition: Rule1[ParsedAst.Definition] = rule {
-    FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition | IndexDefinition
+    FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition | IndexDefinition | ClassDefinition
   }
 
   def FunctionDefinition: Rule1[ParsedAst.Definition.Function] = {
@@ -77,7 +77,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def NestedCase: Rule1[ParsedAst.Case] = rule {
-      SP ~ atomic("case") ~ WS ~ Ident ~ Type  ~ SP ~> ParsedAst.Case
+      SP ~ atomic("case") ~ WS ~ Ident ~ Type ~ SP ~> ParsedAst.Case
     }
 
     def Cases: Rule1[Seq[ParsedAst.Case]] = rule {
@@ -106,6 +106,33 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def LatticeDefinition: Rule1[ParsedAst.Definition.Lattice] = rule {
     SP ~ atomic("lat") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.Lattice
+  }
+
+  def ClassDefinition: Rule1[ParsedAst.Definition.Class] = {
+
+    def TypeParams: Rule1[Seq[Name.Ident]] = rule {
+      "[" ~ oneOrMore(Ident).separatedBy(optWS ~ "," ~ optWS) ~ "]"
+    }
+
+    def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
+      SP ~ Ident ~ TypeParams ~ SP ~> ParsedAst.ContextBound
+    }
+
+    def ContextBounds: Rule1[Seq[ParsedAst.ContextBound]] = rule {
+      optional(optWS ~ atomic("=>") ~ optWS ~ oneOrMore(ContextBound).separatedBy(optWS ~ "," ~ optWS) ~ optWS) ~>
+        ((o: Option[Seq[ParsedAst.ContextBound]]) => o match {
+          case None => Seq.empty
+          case Some(xs) => xs
+        })
+    }
+
+    def ClassBody: Rule1[Seq[ParsedAst.Definition.Function]] = rule {
+      "{" ~ optWS ~ zeroOrMore(FunctionDefinition).separatedBy(WS) ~ optWS ~ "}"
+    }
+
+    rule {
+      SP ~ atomic("class") ~ WS ~ Ident ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ClassBody ~ SP ~> ParsedAst.Definition.Class
+    }
   }
 
   def Interpretation: Rule1[ParsedAst.Interpretation] = rule {

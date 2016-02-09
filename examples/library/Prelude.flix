@@ -56,7 +56,7 @@ class PartialOrder[E] {
  *
  * A join semi lattice must satisfy the laws:
  */
-class JoinSemiLattice[E: PartialOrder] {
+class JoinSemiLattice[E] => PartialOrder[E] {
     /**
      * Returns the least element of the lattice.
      */
@@ -80,8 +80,6 @@ class JoinSemiLattice[E: PartialOrder] {
     // upperbound
 
     // greatest upper bound
-
-
 }
 
 /**

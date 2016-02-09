@@ -177,6 +177,46 @@ class TestParser extends FunSuite {
     assert(result.isSuccess)
   }
 
+  test("Definition.Class01") {
+    val input =
+      """class Eq[A] {
+        |  /* ... */
+        |}
+      """.stripMargin
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Class])
+  }
+
+  test("Definition.Class02") {
+    val input =
+      """class Coerce[A, B] {
+        |  /* ... */
+        |}
+      """.stripMargin
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Class])
+  }
+
+  test("Definition.Class03") {
+    val input =
+      """class Eq[A] => PartialOrd[A] {
+        |  /* ... */
+        |}
+      """.stripMargin
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Class])
+  }
+
+  test("Definition.Class04") {
+    val input =
+      """class Eq[A] => PartialOrd[A], PreOrd[A] {
+        |  /* ... */
+        |}
+      """.stripMargin
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Class])
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
