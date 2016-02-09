@@ -572,7 +572,6 @@ class TestTyper extends FunSuite {
       """fn f(): Int = match true with {
         |  case _ => 42
         |}
-        |
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
@@ -584,7 +583,6 @@ class TestTyper extends FunSuite {
         |  case true => 42
         |  case false => 21
         |}
-        |
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
@@ -597,7 +595,6 @@ class TestTyper extends FunSuite {
         |  case 2 => true
         |  case 3 => true
         |}
-        |
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
@@ -608,7 +605,6 @@ class TestTyper extends FunSuite {
       """fn f(): Int = match 42 with {
         |  case x => x
         |}
-        |
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
@@ -619,13 +615,10 @@ class TestTyper extends FunSuite {
       """fn f(): Int = match (21, 42) with {
         |  case (x, y) => x + y
         |}
-        |
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
   }
-
-
 
   test("Expression.Match.Mixed") {
     val input =
@@ -633,51 +626,37 @@ class TestTyper extends FunSuite {
         |  case (false, 21, "bar") => true
         |  case (x, y, z) => x
         |}
-        |
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
-
-  test("Pattern.Tag01") {
-    val tagName = ident("Qux")
-    val x = ident("x")
-    val rast = ResolvedAst.Pattern.Tag(RName, tagName, ResolvedAst.Pattern.Var(x, SL), SL)
-    val tpe = Type.Enum(Name.Resolved.mk("foo"), Map("Qux" -> Type.Tag(RName, tagName, Type.Unit)))
-    val result = Typer.Pattern.typer(rast, tpe, Root)
-    assertResult(Type.Unit)(result.get.freeVars(x.name))
+  test("Expression.Match.Tuple01") {
+    val input =
+      """fn f(): Int = match (true, 42, "foo") with {
+        |  case (false, 21, "bar") => 42
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
-  test("Pattern.Tuple01") {
-    val rast = ResolvedAst.Pattern.Tuple(List(
-      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Unit(SL), SL),
-      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
-    ), SL)
-    val tpe = Type.Tuple(List(
-      Type.Unit,
-      Type.Bool
-    ))
-    val result = Typer.Pattern.typer(rast, tpe, Root)
-    assertResult(tpe)(result.get.tpe)
-  }
-
-  test("Pattern.Tuple02") {
-    val rast = ResolvedAst.Pattern.Tuple(List(
-      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Unit(SL), SL),
-      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
-      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Int(42, SL), SL),
-      ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Str("foo", SL), SL)
-    ), SL)
-
-    val tpe = Type.Tuple(List(
-      Type.Unit,
-      Type.Bool,
-      Type.Int32,
-      Type.Str
-    ))
-    val result = Typer.Pattern.typer(rast, tpe, Root)
-    assertResult(tpe)(result.get.tpe)
+  test("Expression.Match.Tag01") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Green,
+        |  case Blue
+        |}
+        |
+        |fn f(x: Color): Int = match x with {
+        |  case Color.Red => 1
+        |  case Color.Green => 2
+        |  case Color.Blue => 3
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1181,6 +1160,9 @@ class TestTyper extends FunSuite {
   // NEGATIVE TEST CASES                                                     //
   /////////////////////////////////////////////////////////////////////////////
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Unary (Negative)                                                        //
+  /////////////////////////////////////////////////////////////////////////////
   test("Expression.Unary.LogicalNot.TypeError") {
     val input = "fn f(): Bool = !42"
     val result = new Flix().addStr(input).compile()
@@ -1205,6 +1187,9 @@ class TestTyper extends FunSuite {
     assert(result.errors.head.isInstanceOf[Typer.TypeError])
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // If Then Else (Negative)                                                 //
+  /////////////////////////////////////////////////////////////////////////////
   test("Expression.IfThenElse.TypeError.NonBooleanCondition") {
     val input = "fn f(): Int = if (42) 1 else 2"
     val result = new Flix().addStr(input).compile()
