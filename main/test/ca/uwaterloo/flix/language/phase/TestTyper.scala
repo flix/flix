@@ -817,44 +817,6 @@ class TestTyper extends FunSuite {
 
 
 
-  test("Expression.Unary.NonBooleanValue") {
-    val rast = ResolvedAst.Expression.Unary(UnaryOperator.LogicalNot, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
-  }
-
-  test("Expression.Unary.NonIntegerValue01") {
-    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Plus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL), SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
-  }
-
-  test("Expression.Unary.NonIntegerValue02") {
-    val rast = ResolvedAst.Expression.Unary(UnaryOperator.Minus, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL), SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
-  }
-
-  test("Expression.IfThenElse.NonBooleanCondition") {
-    val rast = ResolvedAst.Expression.IfThenElse(
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(1, SL), SL),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(2, SL), SL),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(3, SL), SL)
-      , SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
-  }
-
-  test("Expression.IfThenElse.ThenElseMismatch") {
-    val rast = ResolvedAst.Expression.IfThenElse(
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(2, SL), SL),
-      ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo", SL), SL)
-      , SL)
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
-  }
-
   test("Expression.Let.TypeError") {
     val rast = ResolvedAst.Expression.Let(
       Ident,
@@ -1214,4 +1176,45 @@ class TestTyper extends FunSuite {
     val result = Typer.Expression.typer(rast, Root)
     assert(result.isFailure)
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // NEGATIVE TEST CASES                                                     //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Unary.LogicalNot.TypeError") {
+    val input = "fn f(): Bool = !42"
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+  }
+
+  test("Expression.Unary.Plus.TypeError") {
+    val input = "fn f(): Int = +true"
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+  }
+
+  test("Expression.Unary.Minus.TypeError") {
+    val input = "fn f(): Int = -true"
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+  }
+
+  test("Expression.Unary.BitwiseNegate.TypeError") {
+    val input = "fn f(): Int = ~true"
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+  }
+
+  test("Expression.IfThenElse.TypeError.NonBooleanCondition") {
+    val input = "fn f(): Int = if (42) 1 else 2"
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+  }
+
+  test("Expression.IfThenElse.TypeError.MismatchedBranches") {
+    val input = "fn f(): Int = if (true) true else 1234"
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+  }
+
 }
