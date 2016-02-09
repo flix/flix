@@ -115,8 +115,6 @@ object Typer {
       case (name, constant) => Definition.typer(constant, root) map (defn => name -> defn)
     }
 
-    // directives
-    val directivesVal = @@(root.directives.map(directive => Directive.typer(directive, root)))
 
     // lattices
     val latticesVal = Validation.fold(root.lattices) {
@@ -138,10 +136,10 @@ object Typer {
     val rulesVal = @@(root.rules.map(rule => Constraint.typer(rule, root)))
 
     // putting it all together
-    @@(constantsVal, directivesVal, latticesVal, relationsVal, indexesVal, factsVal, rulesVal) map {
-      case (constants, directives, lattices, relations, indexes, facts, rules) =>
+    @@(constantsVal, latticesVal, relationsVal, indexesVal, factsVal, rulesVal) map {
+      case (constants, lattices, relations, indexes, facts, rules) =>
         val e = System.nanoTime()
-        TypedAst.Root(constants, TypedAst.Directives(directives), lattices, relations, indexes, facts, rules, root.hooks, root.time.copy(typer = e - b))
+        TypedAst.Root(constants, lattices, relations, indexes, facts, rules, root.hooks, root.time.copy(typer = e - b))
     }
   }
 
@@ -258,22 +256,6 @@ object Typer {
         case (head, body) => TypedAst.Constraint.Rule(head, body)
       }
     }
-  }
-
-  object Directive {
-
-    /**
-      * Types the given resolved directive `rast`.
-      */
-    def typer(rast: ResolvedAst.Directive, root: ResolvedAst.Root): Validation[TypedAst.Directive, TypeError] = rast match {
-      case ResolvedAst.Directive.AssertFact(fact, loc) => Constraint.typer(fact, root) map {
-        case f => TypedAst.Directive.AssertFact(f, loc)
-      }
-      case ResolvedAst.Directive.AssertRule(rule, loc) => Constraint.typer(rule, root) map {
-        case r => TypedAst.Directive.AssertRule(r, loc)
-      }
-    }
-
   }
 
   object Literal {

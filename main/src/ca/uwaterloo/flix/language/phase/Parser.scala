@@ -43,7 +43,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // NB: RuleDeclaration must be parsed before FactDeclaration.
   def Declaration: Rule1[ParsedAst.Declaration] = rule {
-    NamespaceDeclaration | RuleDeclaration | FactDeclaration | Definition | Directive
+    NamespaceDeclaration | RuleDeclaration | FactDeclaration | Definition
   }
 
   def NamespaceDeclaration: Rule1[ParsedAst.Declaration.Namespace] = rule {
@@ -51,11 +51,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Definition: Rule1[ParsedAst.Definition] = rule {
-    ValueDefinition | FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition | IndexDefinition
-  }
-
-  def ValueDefinition: Rule1[ParsedAst.Definition.Value] = rule {
-    SP ~ atomic("val") ~ WS ~ Ident ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Value
+    FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition | IndexDefinition
   }
 
   def FunctionDefinition: Rule1[ParsedAst.Definition.Function] = {
@@ -63,8 +59,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       zeroOrMore(Annotation).separatedBy(WS)
     }
 
+    def Parameters: Rule1[Seq[ParsedAst.FormalArg]] = rule {
+      optional("(" ~ optWS ~ ArgumentList ~ optWS ~ ")") ~> ((o: Option[Seq[ParsedAst.FormalArg]]) => o match {
+        case None => Seq.empty
+        case Some(xs) => xs
+      })
+    }
+
     rule {
-      SP ~ Annotations ~ optWS ~ (atomic("def") | atomic("fn")) ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ ArgumentList ~ optWS ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Function
+      SP ~ Annotations ~ optWS ~ (atomic("def") | atomic("fn")) ~ WS ~ Ident ~ optWS ~ Parameters ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Function
     }
   }
 
@@ -125,22 +128,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     rule {
       SP ~ atomic("index") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ oneOrMore(Indexes).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.Index
     }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Directives                                                              //
-  /////////////////////////////////////////////////////////////////////////////
-  // NB: AssertRuleDirective must be parsed before AssertFactDirective.
-  def Directive: Rule1[ParsedAst.Directive] = rule {
-    AssertRuleDirective | AssertFactDirective
-  }
-
-  def AssertFactDirective: Rule1[ParsedAst.Directive.AssertFact] = rule {
-    SP ~ atomic("assert") ~ WS ~ FactDeclaration ~ SP ~> ParsedAst.Directive.AssertFact
-  }
-
-  def AssertRuleDirective: Rule1[ParsedAst.Directive.AssertRule] = rule {
-    SP ~ atomic("assert") ~ WS ~ RuleDeclaration ~ SP ~> ParsedAst.Directive.AssertRule
   }
 
   /////////////////////////////////////////////////////////////////////////////

@@ -65,18 +65,6 @@ class TestParser extends FunSuite {
     assert(result.isSuccess)
   }
 
-  test("Definition.Value01") {
-    val input = "val v: Int = 42;"
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Value])
-  }
-
-  test("Definition.Value02") {
-    val input = "val v: Int = 1 + 1;"
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Value])
-  }
-
   test("Definition.Function01") {
     val input = "def foo(): Int = 42"
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
@@ -187,39 +175,6 @@ class TestParser extends FunSuite {
     val input = "index A({x}, {y}, {x, w}, {x, y, z, w});"
     val result = new Parser(SourceInput.Str(input)).IndexDefinition.run()
     assert(result.isSuccess)
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Directives                                                              //
-  /////////////////////////////////////////////////////////////////////////////
-  test("Directive.Assert01") {
-    val input = "assert P(42)."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Directive.AssertFact])
-  }
-
-  test("Directive.Assert02") {
-    val input = "assert P(21, 42, \"foo\")."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Directive.AssertFact])
-  }
-
-  test("Directive.Assert03") {
-    val input = "assert P(1, f(2))."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Directive.AssertFact])
-  }
-
-  test("Directive.Assert07") {
-    val input = "assert H(x) :- A(x)."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Directive.AssertRule])
-  }
-
-  test("Directive.Assert08") {
-    val input = "assert H(x, z) :- A(x, y), B(y, z)."
-    val result = new Parser(SourceInput.Str(input)).Declaration.run().get
-    assert(result.isInstanceOf[ParsedAst.Directive.AssertRule])
   }
 
   /////////////////////////////////////////////////////////////////////////////

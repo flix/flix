@@ -1,18 +1,15 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{Invokable, IValue, Flix}
-
+import ca.uwaterloo.flix.api.{Flix, IValue, Invokable}
 import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite {
 
   test("DuplicateDefinition01") {
     val input =
-      s"""namespace A {
-          |  val foo: Int = 42;
-          |
-         |  val foo: Int = 21;
-          |};
+      s"""
+         |fn f: Int = 42
+         |fn f: Int = 21
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
@@ -20,13 +17,10 @@ class TestResolver extends FunSuite {
 
   test("DuplicateDefinition02") {
     val input =
-      s"""namespace A {
-          |  val foo: Bool = true;
-          |
-         |  val foo: Int = 42;
-          |
-         |  val foo: Str = "bar";
-          |};
+      s"""
+         |fn f: Int = 42
+         |fn f: Int = 21
+         |fn f: Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
@@ -34,11 +28,10 @@ class TestResolver extends FunSuite {
 
   test("DuplicateDefinition03") {
     val input =
-      s"""namespace A {
-          |  def foo(x: Int): Int = 42;
-          |
-         |  def foo(x: Int): Int = 21;
-          |};
+      s"""
+         |fn f(x: Int): Int = 42
+         |fn f(x: Int): Int = 21
+         |fn f(x: Int): Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
@@ -46,11 +39,10 @@ class TestResolver extends FunSuite {
 
   test("DuplicateDefinition04") {
     val input =
-      s"""namespace A {
-          |  val foo: Int = 42;
-          |
-         |  def foo(x: Int): Int = 21;
-          |};
+      s"""
+         |fn f: Int = 42
+         |fn f(x: Int): Int = 21
+         |fn f(x: Bool, y: Int, z: String): Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
@@ -58,13 +50,14 @@ class TestResolver extends FunSuite {
 
   test("DuplicateDefinition05") {
     val input =
-      s"""namespace A {
-          |  val foo: Int = 42;
-          |};
-          |
+      s"""
          |namespace A {
-          |  val foo: Int = 21;
-          |};
+         |  fn f: Int = 42
+         |}
+         |
+         |namespace A {
+         |  fn f: Int = 21
+         |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
@@ -72,37 +65,35 @@ class TestResolver extends FunSuite {
 
   test("DuplicateDefinition06") {
     val input =
-      s"""namespace A::B::C {
-          |  val foo: Int = 42;
-          |};
-          |
+      s"""
+         |namespace A::B::C {
+         |  fn f: Int = 42
+         |}
+         |
          |namespace A {
-          |  namespace B {
-          |    namespace C {
-          |      val foo: Int = 21;
-          |    }
-          |  };
-          |};
+         |  namespace B {
+         |    namespace C {
+         |      fn f: Int = 21
+         |    }
+         |  }
+         |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
   }
 
   test("IllegalConstantName01") {
-    val input =
-      s"""namespace A {
-          |  val F: Int = 42;
-          |};
-       """.stripMargin
+    val input = "fn F: Int = 42"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
   }
 
   test("IllegalConstantName02") {
     val input =
-      s"""namespace A {
-          |  val Foo: Int = 42;
-          |};
+      s"""
+         |namespace A {
+         |  fn Foo: Int = 42
+         |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
@@ -110,9 +101,10 @@ class TestResolver extends FunSuite {
 
   test("IllegalConstantName03") {
     val input =
-      s"""namespace A {
-          |  val FOO: Int = 42;
-          |};
+      s"""
+         |namespace A {
+         |  fn FOO: Int = 42
+         |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
@@ -120,29 +112,10 @@ class TestResolver extends FunSuite {
 
   test("IllegalConstantName04") {
     val input =
-      s"""namespace A {
-          |  def F(x: Int): Int = x;
-          |};
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
-  }
-
-  test("IllegalConstantName05") {
-    val input =
-      s"""namespace A {
-          |  def Foo(x: Int): Int = x;
-          |};
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
-  }
-
-  test("IllegalConstantName06") {
-    val input =
-      s"""namespace A {
-          |  def FOO(x: Int): Int = x;
-          |};
+      s"""
+         |namespace A {
+         |  fn F(x: Int): Int = 42
+         |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
@@ -150,9 +123,10 @@ class TestResolver extends FunSuite {
 
   test("IllegalRelationName01") {
     val input =
-      s"""namespace A {
-          |  rel f(x: Int)
-          |};
+      s"""
+         |namespace A {
+         |  rel f(x: Int)
+         |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
@@ -160,9 +134,10 @@ class TestResolver extends FunSuite {
 
   test("IllegalRelationName02") {
     val input =
-      s"""namespace A {
-          |  rel foo(x: Int)
-          |};
+      s"""
+         |namespace A {
+         |  rel foo(x: Int)
+         |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
@@ -170,9 +145,10 @@ class TestResolver extends FunSuite {
 
   test("IllegalRelationName03") {
     val input =
-      s"""namespace A {
-          |  rel fOO(x: Int)
-          |};
+      s"""
+         |namespace A {
+         |  rel fOO(x: Int)
+         |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
@@ -180,9 +156,10 @@ class TestResolver extends FunSuite {
 
   test("UnresolvedConstantReference01") {
     val input =
-      s"""namespace A {
-          |  val x: Int = y;
-          |};
+      s"""
+         |namespace A {
+         |  fn f: Int = x;
+         |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
@@ -190,9 +167,10 @@ class TestResolver extends FunSuite {
 
   test("UnresolvedConstantReference02") {
     val input =
-      s"""namespace A {
-          |  def foo(x: Int, y: Int): Int = x + y + z;
-          |};
+      s"""
+         |namespace A {
+         |  fn f(x: Int, y: Int): Int = x + y + z;
+         |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
@@ -200,9 +178,10 @@ class TestResolver extends FunSuite {
 
   test("UnresolvedEnumReference01") {
     val input =
-      s"""namespace A {
-          |  val x: Int = Foo.Bar
-          |};
+      s"""
+         |namespace A {
+         |  fn f: Int = Foo.Bar
+         |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference])
@@ -210,9 +189,10 @@ class TestResolver extends FunSuite {
 
   test("UnresolvedEnumReference02") {
     val input =
-      s"""namespace A {
-          |  val x: Int = Foo::Bar.Qux(true)
-          |};
+      s"""
+         |namespace A {
+         |  fn f: Int = Foo::Bar.Qux(true)
+         |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference])
@@ -220,14 +200,15 @@ class TestResolver extends FunSuite {
 
   test("UnresolvedTagReference01") {
     val input =
-      s"""namespace A {
-          |  enum B {
-          |    case Foo,
-          |    case Bar
-          |  }
-          |
-         |  val b: B = B.Qux;
-          |};
+      s"""
+         |namespace A {
+         |  enum B {
+         |    case Foo,
+         |    case Bar
+         |  }
+         |
+         |  fn f: B = B.Qux;
+         |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
@@ -235,14 +216,15 @@ class TestResolver extends FunSuite {
 
   test("UnresolvedTagReference02") {
     val input =
-      s"""namespace A {
-          |  enum B {
-          |    case Foo,
-          |    case Bar
-          |  }
-          |
-         |  val x: B = B.Qux(1 + 2);
-          |};
+      s"""
+         |namespace A {
+         |  enum B {
+         |    case Foo,
+         |    case Bar
+         |  }
+         |
+         |  fn f: B = B.Qux(1 + 2);
+         |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
@@ -250,16 +232,17 @@ class TestResolver extends FunSuite {
 
   test("UnresolvedTagReference03") {
     val input =
-      s"""namespace A {
-          |  enum B {
-          |    case Foo,
-          |    case Bar
-          |  }
-          |
-         |  def foo(b: B): Int = match b with {
-          |    case B.Qux => 42;
-          |  }
-          |};
+      s"""
+         |namespace A {
+         |  enum B {
+         |    case Foo,
+         |    case Bar
+         |  }
+         |
+         |  fn f(b: B): Int = match b with {
+         |    case B.Qux => 42;
+         |  }
+         |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
@@ -286,11 +269,7 @@ class TestResolver extends FunSuite {
   }
 
   test("UnresolvedTypeReference01") {
-    val input =
-      s"""namespace A {
-          |  val x: Foo = 42;
-          |};
-       """.stripMargin
+    val input = "fn x: Foo = 42"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
   }

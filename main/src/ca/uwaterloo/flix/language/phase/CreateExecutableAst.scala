@@ -14,7 +14,6 @@ object CreateExecutableAst {
 
   def toExecutable(sast: SimplifiedAst.Root): ExecutableAst.Root = {
     val constants = sast.constants.mapValues(Definition.toExecutable)
-    val directives = Directives.toExecutable(sast.directives)
     val lattices = sast.lattices.mapValues(Definition.toExecutable)
     val collections = sast.collections.mapValues(Collection.toExecutable)
     val indexes = sast.indexes.mapValues(Definition.toExecutable)
@@ -49,7 +48,7 @@ object CreateExecutableAst {
       result.toMap
     }
 
-    ExecutableAst.Root(constants, directives, lattices, collections, indexes, facts, rules, time, dependenciesOf)
+    ExecutableAst.Root(constants, lattices, collections, indexes, facts, rules, time, dependenciesOf)
   }
 
   object Definition {
@@ -93,20 +92,6 @@ object CreateExecutableAst {
       val disjoint = body.collect { case p: ExecutableAst.Predicate.Body.NotEqual => p }
       val loops = body.collect { case p: ExecutableAst.Predicate.Body.Loop => p }
       ExecutableAst.Constraint.Rule(head, body, collections, filters, hookFilters, disjoint, loops)
-    }
-  }
-
-  object Directives {
-    def toExecutable(sast: SimplifiedAst.Directives): ExecutableAst.Directives = {
-      val directives = sast.directives.map(toExecutable).toArray
-      val assertedFacts = directives.collect { case d: ExecutableAst.Directive.AssertFact => d }
-      val assertedRules = directives.collect { case d: ExecutableAst.Directive.AssertRule => d }
-      ExecutableAst.Directives(directives, assertedFacts, assertedRules)
-    }
-
-    def toExecutable(sast: SimplifiedAst.Directive): ExecutableAst.Directive = sast match {
-      case SimplifiedAst.Directive.AssertFact(fact, loc) => throw new UnsupportedOperationException // TODO: To be removed?
-      case SimplifiedAst.Directive.AssertRule(rule, loc) => throw new UnsupportedOperationException // TODO: To be removed?
     }
   }
 

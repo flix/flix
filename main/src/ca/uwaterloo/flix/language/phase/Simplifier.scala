@@ -14,7 +14,6 @@ object Simplifier {
 
   def simplify(tast: TypedAst.Root)(implicit genSym: GenSym): SimplifiedAst.Root = {
     val constants = tast.constants.mapValues(Definition.simplify)
-    val directives = Directives.simplify(tast.directives)
     val lattices = tast.lattices.mapValues(Definition.simplify)
     val collections = tast.collections.mapValues(Collection.simplify)
     val indexes = tast.indexes.mapValues(Definition.simplify)
@@ -22,7 +21,7 @@ object Simplifier {
     val rules = tast.rules.map(Constraint.simplify)
     val time = tast.time
 
-    SimplifiedAst.Root(constants, directives, lattices, collections, indexes, facts, rules, time)
+    SimplifiedAst.Root(constants, lattices, collections, indexes, facts, rules, time)
   }
 
   object Collection {
@@ -58,16 +57,6 @@ object Simplifier {
 
     def simplify(tast: TypedAst.Definition.Index)(implicit genSym: GenSym): SimplifiedAst.Definition.Index =
       SimplifiedAst.Definition.Index(tast.name, tast.indexes, tast.loc)
-  }
-
-  object Directives {
-    def simplify(tast: TypedAst.Directives)(implicit genSym: GenSym): SimplifiedAst.Directives =
-      SimplifiedAst.Directives(tast.directives map simplify)
-
-    def simplify(tast: TypedAst.Directive)(implicit genSym: GenSym): SimplifiedAst.Directive = tast match {
-      case TypedAst.Directive.AssertFact(fact, loc) => throw new UnsupportedOperationException // TODO: To be removed?
-      case TypedAst.Directive.AssertRule(rule, loc) => throw new UnsupportedOperationException // TODO: To be removed?
-    }
   }
 
   object Expression {

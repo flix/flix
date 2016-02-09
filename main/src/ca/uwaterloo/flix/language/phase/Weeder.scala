@@ -340,7 +340,6 @@ object Weeder {
       case d: ParsedAst.Declaration.Fact => Declaration.compile(d)
       case d: ParsedAst.Declaration.Rule => Declaration.compile(d)
       case d: ParsedAst.Definition => Definition.compile(d)
-      case d: ParsedAst.Directive => Directive.compile(d)
     }
 
     /**
@@ -391,7 +390,6 @@ object Weeder {
       */
     // TODO: Inline all calls into this function...
     def compile(past: ParsedAst.Definition): Validation[WeededAst.Declaration, WeederError] = past match {
-      case d: ParsedAst.Definition.Value => Definition.compile(d)
       case d: ParsedAst.Definition.Function => Definition.compile(d)
       case d: ParsedAst.Definition.Enum => Definition.compile(d)
       case d: ParsedAst.Definition.BoundedLattice => Definition.compile(d)
@@ -399,14 +397,6 @@ object Weeder {
       case d: ParsedAst.Definition.Lattice => Definition.compile(d)
       case d: ParsedAst.Definition.Index => Definition.compile(d)
     }
-
-    /**
-      * Compiles the given parsed value declaration `past` to a weeded definition.
-      */
-    def compile(past: ParsedAst.Definition.Value): Validation[WeededAst.Definition.Constant, WeederError] =
-      Expression.compile(past.e) map {
-        case exp => WeededAst.Definition.Constant(past.ident, exp, past.tpe, past.loc)
-      }
 
     /**
       * Compiles the given parsed function declaration `past` to a weeded definition.
@@ -542,22 +532,6 @@ object Weeder {
     def compile(past: ParsedAst.Definition.Index): Validation[WeededAst.Definition.Index, WeederError] = {
       // TODO: Check duplicated attributes.
       WeededAst.Definition.Index(past.ident, past.indexes, past.loc).toSuccess
-    }
-
-  }
-
-  object Directive {
-
-    /**
-      * Compiles the given parsed directive `past` to a weeded directive.
-      */
-    def compile(past: ParsedAst.Directive): Validation[WeededAst.Declaration, WeederError] = past match {
-      case d: ParsedAst.Directive.AssertFact => Declaration.compile(d.fact) map {
-        case fact => WeededAst.Directive.AssertFact(fact, d.loc)
-      }
-      case d: ParsedAst.Directive.AssertRule => Declaration.compile(d.rule) map {
-        case rule => WeededAst.Directive.AssertRule(rule, d.loc)
-      }
     }
 
   }

@@ -33,6 +33,7 @@ import scala.collection.immutable.Seq
 // TODO: Introduce type bounds.
 // TODO: Introduce extern.
 // TODO: Why have literals?
+// TODO: Probably merge fact and rule.
 
 
 /**
@@ -114,19 +115,6 @@ object ParsedAst {
   object Definition {
 
     /**
-      * An AST node that represents a value definition.
-      *
-      * @param sp1   the position of the first character in the definition.
-      * @param ident the name of the value.
-      * @param tpe   the declared type of the value.
-      * @param e     the expression.
-      * @param sp2   the position of the last character in the definition.
-      */
-    case class Value(sp1: SourcePosition, ident: Name.Ident, tpe: Type, e: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
       * An AST node that represents a function definition.
       *
       * @param sp1         the position of the first character in the definition.
@@ -205,42 +193,6 @@ object ParsedAst {
       * @param sp2     the position of the last character in the definition.
       */
     case class Index(sp1: SourcePosition, ident: Name.Ident, indexes: Seq[Seq[Name.Ident]], sp2: SourcePosition) extends ParsedAst.Definition {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-  }
-
-  /**
-    * A common super-type for AST nodes that represent directives.
-    */
-  sealed trait Directive extends ParsedAst.Declaration {
-    /**
-      * Returns the source location of `this` directive.
-      */
-    def loc: SourceLocation
-  }
-
-  object Directive {
-
-    /**
-      * An AST node that represents a fact assertion.
-      *
-      * @param sp1  the position of the first character in the directive.
-      * @param fact the asserted fact.
-      * @param sp2  the position of the last character in the directive.
-      */
-    case class AssertFact(sp1: SourcePosition, fact: ParsedAst.Declaration.Fact, sp2: SourcePosition) extends Directive {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
-      * An AST node that represents a rule assertion.
-      *
-      * @param sp1  the position of the first character in the directive.
-      * @param rule the asserted rule.
-      * @param sp2  the position of the last character in the directive.
-      */
-    case class AssertRule(sp1: SourcePosition, rule: ParsedAst.Declaration.Rule, sp2: SourcePosition) extends Directive {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 

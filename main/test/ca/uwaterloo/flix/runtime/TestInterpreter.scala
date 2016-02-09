@@ -13,7 +13,7 @@ import scala.collection.mutable
 // Older tests were written before the front-end was completely implemented, so they had to directly construct ASTs.
 
 class TestInterpreter extends FunSuite {
-  val root = Root(Map(), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
+  val root = Root(Map(), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
 
   val loc = SourceLocation.Unknown
 
@@ -280,7 +280,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Ref01") {
     val name = Name.Resolved.mk(List("foo", "bar", "baz"))
     val const = Definition.Constant(name, Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Bool, loc)
-    val root = Root(Map(name -> const), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
+    val root = Root(Map(name -> const), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
     val input = Expression.Lit(Literal.Str("hello", loc), Type.Str, loc)
     val result = Interpreter.eval(input, root)
     assertResult(Value.mkStr("hello"))(result)
@@ -289,7 +289,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Ref02") {
     val name = Name.Resolved.mk(List("foo", "bar", "baz"))
     val const = Definition.Constant(name, Expression.Lit(Literal.Int(5, loc), Type.Int32, loc), Type.Int32, loc)
-    val root = Root(Map(name -> const), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
+    val root = Root(Map(name -> const), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
     val input = Expression.Ref(name, Type.Int32, loc)
     val result = Interpreter.eval(input, root)
     assertResult(Value.mkInt32(5))(result)
@@ -298,7 +298,7 @@ class TestInterpreter extends FunSuite {
   test("Interpreter - Expression.Ref03") {
     val name = Name.Resolved.mk(List("foo", "bar", "baz"))
     val const = Definition.Constant(name, Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Bool, loc)
-    val root = Root(Map(name -> const), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
+    val root = Root(Map(name -> const), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
     val input = Expression.Ref(name, Type.Bool, loc)
     val result = Interpreter.eval(input, root)
     assertResult(Value.False)(result)
@@ -309,7 +309,7 @@ class TestInterpreter extends FunSuite {
     val name02 = Name.Resolved.mk(List("abc", "def", "ghi"))
     val const01 = Definition.Constant(name01, Expression.Lit(Literal.Str("foo", loc), Type.Str, loc), Type.Str, loc)
     val const02 = Definition.Constant(name01, Expression.Lit(Literal.Str("bar", loc), Type.Str, loc), Type.Str, loc)
-    val root = Root(Map(name01 -> const01, name02 -> const02), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
+    val root = Root(Map(name01 -> const01, name02 -> const02), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
     val input = Expression.Ref(name02, Type.Str, loc)
     val result = Interpreter.eval(input, root)
     assertResult(Value.mkStr("bar"))(result)
@@ -680,16 +680,16 @@ class TestInterpreter extends FunSuite {
   }
 
   test("Interpreter - UnaryOperator.UnaryNegate01") {
-    val input = "val x: Int = ~42"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = ~42"
+    val model =  new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(~42))(result)
   }
 
   test("Interpreter - UnaryOperator.UnaryNegate02") {
-    val input = "val x: Int = ~~42"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = ~~42"
+    val model =  new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(42))(result)
   }
 
@@ -973,114 +973,114 @@ class TestInterpreter extends FunSuite {
   }
 
   test("Interpreter - BinaryOperator.BitwiseAnd01") {
-    val input = "val x: Int = 42 & 65535"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = 42 & 65535"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(42 & 65535))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseAnd02") {
-    val input = "val x: Int = 42 & 0"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = 42 & 0"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(42 & 0))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseAnd03") {
-    val input = "val x: Int = 42 & 42"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = 42 & 42"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(42 & 42))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseOr01") {
-    val input = "val x: Int = 42 | 65535"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = 42 | 65535"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(42 | 65535))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseOr02") {
-    val input = "val x: Int = 42 | 0"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = 42 | 0"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(42 | 0))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseOr03") {
-    val input = "val x: Int = 42 | 42"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = 42 | 42"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(42 | 42))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseXor01") {
-    val input = "val x: Int = 42 ^ 65535"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = 42 ^ 65535"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(42 ^ 65535))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseXor02") {
-    val input = "val x: Int = 42 ^ 0"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = 42 ^ 0"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(42 ^ 0))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseXor03") {
-    val input = "val x: Int = 42 ^ 42"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = 42 ^ 42"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(42 ^ 42))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseLeftShift01") {
-    val input = "val x: Int = 4 << 0"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = 4 << 0"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(4 << 0))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseLeftShift02") {
-    val input = "val x: Int = 4 << 14"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = 4 << 14"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(4 << 14))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseLeftShift03") {
-    val input = "val x: Int = 4 << 29"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = 4 << 29"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(4 << 29))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseLeftShift04") {
-    val input = "val x: Int = 4 << 30"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = 4 << 30"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(4 << 30))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseRightShift01") {
-    val input = "val x: Int = 12345 >> 20"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = 12345 >> 20"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(12345 >> 20))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseRightShift02") {
-    val input = "val x: Int = 12345 >> 10"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = 12345 >> 10"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(12345 >> 10))(result)
   }
 
   test("Interpreter - BinaryOperator.BitwiseRightShift03") {
-    val input = "val x: Int = 12345 >> 0"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Int = 12345 >> 0"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(12345 >> 0))(result)
   }
 
@@ -1615,40 +1615,40 @@ class TestInterpreter extends FunSuite {
 
   test("Interpreter - Switch01") {
     val input =
-      """val x: Int = switch {
+      """fn f: Int = switch {
         |  case -42 < 0 => 1
         |  case -42 > 0 => 2
         |  case true    => 3
         |}
       """.stripMargin
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(1))(result)
   }
 
   test("Interpreter - Switch02") {
     val input =
-      """val x: Int = switch {
+      """fn f: Int = switch {
         |  case 42 < 0 => 1
         |  case 42 > 0 => 2
         |  case true   => 3
         |}
       """.stripMargin
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(2))(result)
   }
 
   test("Interpreter - Switch03") {
     val input =
-      """val x: Int = switch {
+      """fn f: Int = switch {
         |  case 0 < 0 => 1
         |  case 0 > 0 => 2
         |  case true  => 3
         |}
       """.stripMargin
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(3))(result)
   }
 
@@ -2374,23 +2374,23 @@ class TestInterpreter extends FunSuite {
   }
 
   test("Interpreter - Expression.Set01") {
-    val input = "val x: Set[Int] = #{1, 4, 2}"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Set[Int] = #{1, 4, 2}"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(Value.mkInt32(1), Value.mkInt32(4), Value.mkInt32(2))))(result)
   }
 
   test("Interpreter - Expression.Set02") {
-    val input = "val x: Set[Int] = #{1 + 2, 3 * 4, 5 - 6}"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Set[Int] = #{1 + 2, 3 * 4, 5 - 6}"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(Value.mkInt32(-1), Value.mkInt32(12), Value.mkInt32(3))))(result)
   }
 
   test("Interpreter - Expression.Set03") {
-    val input = "val x: Set[(Int, Bool)] = #{(1 + 2, true), (2 + 1, !false), (4 * 7, true), (5, true && false)}"
-    val tree = new Flix().addStr(input).compile().get.constants.head._2.exp
-    val result = Interpreter.eval(tree, root)
+    val input = "fn f: Set[(Int, Bool)] = #{(1 + 2, true), (2 + 1, !false), (4 * 7, true), (5, true && false)}"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(
       Value.Tuple(Array(Value.mkInt32(3), Value.True)),
       Value.Tuple(Array(Value.mkInt32(28), Value.True)),
@@ -2612,7 +2612,7 @@ class TestInterpreter extends FunSuite {
       Ast.Annotations(List.empty),
       List(), Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Lambda(List(), Type.Bool), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
 
     // foo.bar()
     val apply = Term.Head.Apply(name01, List(), Type.Bool, loc)
@@ -2627,7 +2627,7 @@ class TestInterpreter extends FunSuite {
       List(FormalArg(ident01, Type.Int32)), Expression.Lit(Literal.Int(3, loc), Type.Int32, loc),
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
 
     // foo.bar(4)
     val apply = Term.Head.Apply(name01, List(Term.Head.Lit(Literal.Int(4, loc), Type.Int32, loc)), Type.Int32, loc)
@@ -2642,7 +2642,7 @@ class TestInterpreter extends FunSuite {
       List(FormalArg(ident01, Type.Int32)), Expression.Var(ident01, Type.Int32, loc),
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
 
     // foo.bar(5)
     val apply = Term.Head.Apply(name01, List(Term.Head.Lit(Literal.Int(5, loc), Type.Int32, loc)), Type.Int32, loc)
@@ -2662,7 +2662,7 @@ class TestInterpreter extends FunSuite {
         Type.Int32, loc),
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
 
     // foo.bar(42)
     val apply = Term.Head.Apply(name01, List(Term.Head.Lit(Literal.Int(42, loc), Type.Int32, loc)), Type.Int32, loc)
@@ -2682,7 +2682,7 @@ class TestInterpreter extends FunSuite {
         Type.Int32, loc),
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
 
     // foo.bar(100)
     val apply = Term.Head.Apply(name01, List(Term.Head.Lit(Literal.Int(100, loc), Type.Int32, loc)), Type.Int32, loc)
@@ -2702,7 +2702,7 @@ class TestInterpreter extends FunSuite {
         Type.Int32, loc),
       Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
 
     // foo.bar(3, 4)
     val apply = Term.Head.Apply(name01, List(
@@ -2725,7 +2725,7 @@ class TestInterpreter extends FunSuite {
         Type.Bool, loc),
       Type.Lambda(List(Type.Bool, Type.Bool), Type.Bool), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
 
     // foo.bar(false, true)
     val apply = Term.Head.Apply(name01, List(
@@ -2752,7 +2752,7 @@ class TestInterpreter extends FunSuite {
         Type.Int32, loc),
       Type.Lambda(List(Type.Int32, Type.Int32, Type.Int32), Type.Int32), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
 
     // foo.bar(2, 42, 5)
     val apply = Term.Head.Apply(name01, List(
@@ -2783,7 +2783,7 @@ class TestInterpreter extends FunSuite {
       Expression.Apply(lambda, List(Expression.Lit(Literal.Int(3, loc), Type.Int32, loc)),
         Type.Lambda(List(Type.Int32), Type.Int32), loc),
       Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
 
     // foo.bar(3)(4)
     val apply = Term.Head.Apply(
@@ -2805,7 +2805,7 @@ class TestInterpreter extends FunSuite {
         Type.Int32, loc),
       Type.Lambda(List(Type.Lambda(List(Type.Int32), Type.Int32), Type.Int32), Type.Int32), loc)
     val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-    val root = Root(Map(name01 -> definition), TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
+    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
     val innerLambda = Expression.Lambda(
       Ast.Annotations(List.empty),
       List(FormalArg(ident01, Type.Int32)),
@@ -2837,7 +2837,7 @@ class TestInterpreter extends FunSuite {
     val definition01 = Definition.Constant(name01, lambda01, Type.Lambda(List(), Type.Bool), loc)
     val definition02 = Definition.Constant(name02, lambda02, Type.Lambda(List(), Type.Bool), loc)
     val root = Root(Map(name01 -> definition01, name02 -> definition02),
-      TypedAst.Directives(List()), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
+      Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
 
     // abc.def()
     val apply = Term.Head.Apply(name02, List(), Type.Bool, loc)

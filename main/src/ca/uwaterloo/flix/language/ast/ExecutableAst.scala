@@ -7,7 +7,6 @@ sealed trait ExecutableAst
 object ExecutableAst {
 
   case class Root(constants: Map[Name.Resolved, ExecutableAst.Definition.Constant],
-                  directives: ExecutableAst.Directives,
                   lattices: Map[Type, ExecutableAst.Definition.Lattice],
                   collections: Map[Name.Resolved, ExecutableAst.Collection],
                   indexes: Map[Name.Resolved, ExecutableAst.Definition.Index],
@@ -70,20 +69,6 @@ object ExecutableAst {
       var elapsedTime: Long = 0
       var hitcount: Int = 0
     }
-
-  }
-
-  case class Directives(directives: Array[ExecutableAst.Directive],
-                        assertedFacts: Array[ExecutableAst.Directive.AssertFact],
-                        assertedRules: Array[ExecutableAst.Directive.AssertRule]) extends ExecutableAst
-
-  sealed trait Directive
-
-  object Directive {
-
-    case class AssertFact(fact: ExecutableAst.Constraint.Fact, loc: SourceLocation) extends ExecutableAst.Directive
-
-    case class AssertRule(rule: ExecutableAst.Constraint.Rule, loc: SourceLocation) extends ExecutableAst.Directive
 
   }
 

@@ -7,7 +7,6 @@ object SimplifiedAst {
   // TODO: Order of elements.
 
   case class Root(constants: Map[Name.Resolved, SimplifiedAst.Definition.Constant],
-                  directives: SimplifiedAst.Directives,
                   lattices: Map[Type, SimplifiedAst.Definition.Lattice],
                   collections: Map[Name.Resolved, SimplifiedAst.Collection],
                   indexes: Map[Name.Resolved, SimplifiedAst.Definition.Index],

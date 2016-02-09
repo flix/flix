@@ -27,7 +27,6 @@ object TypedAst {
     * @param time        the time spent in each compiler phase.
     */
   case class Root(constants: Map[Name.Resolved, TypedAst.Definition.Constant],
-                  directives: TypedAst.Directives,
                   lattices: Map[Type, TypedAst.Definition.BoundedLattice],
                   collections: Map[Name.Resolved, TypedAst.Collection],
                   indexes: Map[Name.Resolved, TypedAst.Definition.Index],
@@ -200,52 +199,6 @@ object TypedAst {
 
     }
 
-  }
-
-  /**
-    * A container class for all typed directives.
-    */
-  case class Directives(directives: List[TypedAst.Directive]) extends TypedAst {
-    /**
-      * A collection fact assertions in the program.
-      */
-    @deprecated("moved to ExecutableAST", "0.1")
-    val assertedFacts: List[TypedAst.Directive.AssertFact] = directives collect {
-      case d: TypedAst.Directive.AssertFact => d
-    }
-
-    /**
-      * A collection of rule assertions in the program.
-      */
-    @deprecated("moved to ExecutableAST", "0.1")
-    val assertedRules: List[TypedAst.Directive.AssertRule] = directives collect {
-      case d: TypedAst.Directive.AssertRule => d
-    }
-
-  }
-
-  /**
-    * A common super-type for typed directives.
-    */
-  sealed trait Directive
-
-  object Directive {
-
-    /**
-      * A typed directive asserting a fact.
-      *
-      * @param fact the asserted fact.
-      * @param loc  the source location of the directive.
-      */
-    case class AssertFact(fact: TypedAst.Constraint.Fact, loc: SourceLocation) extends TypedAst.Directive
-
-    /**
-      * A typed directive asserting a rule.
-      *
-      * @param rule the asserted rule.
-      * @param loc  the source location of the directive.
-      */
-    case class AssertRule(rule: TypedAst.Constraint.Rule, loc: SourceLocation) extends TypedAst.Directive
   }
 
   /**

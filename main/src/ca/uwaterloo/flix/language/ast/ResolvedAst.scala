@@ -1,7 +1,5 @@
 package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.{Field, Method}
-
 trait ResolvedAst
 
 // TODO: DOC
@@ -10,7 +8,6 @@ object ResolvedAst {
 
   // TODO: Add directives.
   case class Root(constants: Map[Name.Resolved, ResolvedAst.Definition.Constant],
-                  directives: List[ResolvedAst.Directive],
                   enums: Map[Name.Resolved, ResolvedAst.Definition.Enum],
                   lattices: Map[Type, ResolvedAst.Definition.BoundedLattice],
                   collections: Map[Name.Resolved, ResolvedAst.Collection],
@@ -102,16 +99,6 @@ object ResolvedAst {
       * @param body the body predicates.
       */
     case class Rule(head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body]) extends ResolvedAst.Constraint
-
-  }
-
-  sealed trait Directive
-
-  object Directive {
-
-    case class AssertFact(fact: ResolvedAst.Constraint.Fact, loc: SourceLocation) extends ResolvedAst.Directive
-
-    case class AssertRule(rule: ResolvedAst.Constraint.Rule, loc: SourceLocation) extends ResolvedAst.Directive
 
   }
 
