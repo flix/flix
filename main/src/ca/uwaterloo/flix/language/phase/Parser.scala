@@ -59,16 +59,20 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       zeroOrMore(Annotation).separatedBy(WS)
     }
 
-    def Parameters: Rule1[Seq[ParsedAst.FormalArg]] = rule {
-      optional("(" ~ optWS ~ ArgumentList ~ optWS ~ ")") ~> ((o: Option[Seq[ParsedAst.FormalArg]]) => o match {
-        case None => Seq.empty
-        case Some(xs) => xs
-      })
-    }
-
     rule {
-      SP ~ Annotations ~ optWS ~ (atomic("def") | atomic("fn")) ~ WS ~ Ident ~ optWS ~ Parameters ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Function
+      SP ~ Annotations ~ optWS ~ (atomic("def") | atomic("fn")) ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Function
     }
+  }
+
+  def SignatureDefinition: Rule1[ParsedAst.Definition.Signature] =  rule {
+    SP ~ optWS ~ atomic("fn") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC~> ParsedAst.Definition.Signature
+  }
+
+  def FormalParams: Rule1[Seq[ParsedAst.FormalArg]] = rule {
+    optional("(" ~ optWS ~ ArgumentList ~ optWS ~ ")") ~> ((o: Option[Seq[ParsedAst.FormalArg]]) => o match {
+      case None => Seq.empty
+      case Some(xs) => xs
+    })
   }
 
   def EnumDefinition: Rule1[ParsedAst.Definition.Enum] = {
@@ -126,8 +130,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
         })
     }
 
-    def ClassBody: Rule1[Seq[ParsedAst.Definition.Function]] = rule {
-      "{" ~ optWS ~ zeroOrMore(FunctionDefinition).separatedBy(WS) ~ optWS ~ "}"
+    def ClassBody: Rule1[Seq[ParsedAst.Definition]] = rule {
+      "{" ~ optWS ~ zeroOrMore(FunctionDefinition | SignatureDefinition).separatedBy(WS) ~ optWS ~ "}"
     }
 
     rule {

@@ -180,7 +180,7 @@ class TestParser extends FunSuite {
   test("Definition.Class01") {
     val input =
       """class Eq[A] {
-        |  /* ... */
+        |  fn eq(x: A, y: B): Bool
         |}
       """.stripMargin
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
@@ -190,7 +190,7 @@ class TestParser extends FunSuite {
   test("Definition.Class02") {
     val input =
       """class Coerce[A, B] {
-        |  /* ... */
+        |  fn coerce(a: A): B
         |}
       """.stripMargin
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
@@ -199,8 +199,9 @@ class TestParser extends FunSuite {
 
   test("Definition.Class03") {
     val input =
-      """class Eq[A] => PartialOrd[A] {
-        |  /* ... */
+      """class Ord[A] => Eq[A] {
+        |  fn eq(x: A, y: A): Bool
+        |  fn lessEq(x: A, y: A): Bool
         |}
       """.stripMargin
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
