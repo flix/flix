@@ -480,8 +480,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Identifiers & Names                                                     //
   /////////////////////////////////////////////////////////////////////////////
-  def LegalIdentifier: Rule1[String] = rule {
-    capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum | "_" | "$") ~ zeroOrMore("'"))
+  def LegalIdentifier: Rule1[String] = {
+    // TODO: Improve
+    rule {
+      capture((CharPredicate.Alpha | "⊥" | "⊑") ~ zeroOrMore(CharPredicate.AlphaNum | "_" | "$" | "⊥" | "⊑" ) ~ zeroOrMore("'"))
+    }
   }
 
   // TODO: Intern strings?
