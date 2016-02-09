@@ -361,10 +361,14 @@ class TestInterpreter extends FunSuite {
   // TODO: LoadExpression and StoreExpression tests
   // {Load,Store}Expressions are generated, and not explicitly written in a Flix program
 
-//  /////////////////////////////////////////////////////////////////////////////
-//  // Expressions - Var                                                       //
-//  /////////////////////////////////////////////////////////////////////////////
-//
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Var                                                          //
+  //                                                                         //
+  // Tested indirectly by Expression.{Lambda, Let}.                          //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: Combine Expression.Var tests with Expression.Lambda and Expression.Let
+
 //  test("Interpreter - Expression.Var01") {
 //    val input = Expression.Lit(Literal.Str("hello", loc), Type.Str, loc)
 //    val env = mutable.Map(ident01.name -> Value.False)
@@ -392,49 +396,63 @@ class TestInterpreter extends FunSuite {
 //    val result = Interpreter.eval(input, root, env)
 //    assertResult(Value.mkStr("bar"))(result)
 //  }
-//
-//  /////////////////////////////////////////////////////////////////////////////
-//  // Expressions - Ref                                                       //
-//  /////////////////////////////////////////////////////////////////////////////
-//
-//  test("Interpreter - Expression.Ref01") {
-//    val name = Name.Resolved.mk(List("foo", "bar", "baz"))
-//    val const = Definition.Constant(name, Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Bool, loc)
-//    val root = Root(Map(name -> const), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
-//    val input = Expression.Lit(Literal.Str("hello", loc), Type.Str, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkStr("hello"))(result)
-//  }
-//
-//  test("Interpreter - Expression.Ref02") {
-//    val name = Name.Resolved.mk(List("foo", "bar", "baz"))
-//    val const = Definition.Constant(name, Expression.Lit(Literal.Int(5, loc), Type.Int32, loc), Type.Int32, loc)
-//    val root = Root(Map(name -> const), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
-//    val input = Expression.Ref(name, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(5))(result)
-//  }
-//
-//  test("Interpreter - Expression.Ref03") {
-//    val name = Name.Resolved.mk(List("foo", "bar", "baz"))
-//    val const = Definition.Constant(name, Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Bool, loc)
-//    val root = Root(Map(name -> const), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
-//    val input = Expression.Ref(name, Type.Bool, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.False)(result)
-//  }
-//
-//  test("Interpreter - Expression.Ref04") {
-//    val name01 = Name.Resolved.mk(List("foo", "bar", "baz"))
-//    val name02 = Name.Resolved.mk(List("abc", "def", "ghi"))
-//    val const01 = Definition.Constant(name01, Expression.Lit(Literal.Str("foo", loc), Type.Str, loc), Type.Str, loc)
-//    val const02 = Definition.Constant(name01, Expression.Lit(Literal.Str("bar", loc), Type.Str, loc), Type.Str, loc)
-//    val root = Root(Map(name01 -> const01, name02 -> const02), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
-//    val input = Expression.Ref(name02, Type.Str, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkStr("bar"))(result)
-//  }
-//
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Ref                                                          //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Ref.01") {
+    val input =
+      """namespace Foo::Bar {
+        |  fn x: Bool = false
+        |  fn f: Str = "foo"
+        |}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("Foo::Bar::f"))
+    assertResult(Value.mkStr("foo"))(result)
+  }
+
+  // TODO: Does it really have to be x() instead of x?
+  test("Expression.Ref.02") {
+    val input =
+      """namespace Foo {
+        |  fn x: Int = 5
+        |  fn f: Int = x()
+        |}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("Foo::f"))
+    assertResult(Value.mkInt32(5))(result)
+  }
+
+  test("Expression.Ref.03") {
+    val input =
+      """namespace Foo {
+        |  fn x: Bool = true
+        |  fn y: Bool = false
+        |  fn f: Bool = y()
+        |}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("Foo::f"))
+    assertResult(Value.False)(result)
+  }
+
+  test("Expression.Ref.04") {
+    val input =
+      """namespace Foo {
+        |  fn x: Str = "hello"
+        |}
+        |namespace Bar {
+        |  fn x: Str = Foo::x()
+        |}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("Bar::x"))
+    assertResult(Value.mkStr("hello"))(result)
+  }
+
 //  /////////////////////////////////////////////////////////////////////////////
 //  // Expressions - Lambda and Apply                                          //
 //  /////////////////////////////////////////////////////////////////////////////
