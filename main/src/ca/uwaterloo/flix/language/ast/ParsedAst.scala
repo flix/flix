@@ -133,6 +133,20 @@ object ParsedAst {
     }
 
     /**
+      * An AST node that represents a law definition.
+      *
+      * @param sp1         the position of the first character in the definition.
+      * @param ident       the name of the function.
+      * @param formals     the formals (i.e. parameters and their types).
+      * @param tpe         the return type.
+      * @param body        the body expression of the function.
+      * @param sp2         the position of the last character in the definition.
+      */
+    case class Law(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
       * An AST node that represents a function signature.
       *
       * @param sp1         the position of the first character in the definition.

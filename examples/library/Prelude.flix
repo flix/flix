@@ -119,13 +119,13 @@ class NarrowOperator[E] {
     /**
      *
      */
-    law LowerBound(x: E, y: E): Bool =
+    law LowerBound(x: E, y: E): Bool = true
 }
 
 
 class PreOrder[E] {
     // ... if this has a different name?
-    fn leq2()
+    fn leq2(x: E, y: E): Bool = true
 }
 
 /**

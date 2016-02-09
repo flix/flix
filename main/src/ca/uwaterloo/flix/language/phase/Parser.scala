@@ -64,8 +64,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
   }
 
-  def SignatureDefinition: Rule1[ParsedAst.Definition.Signature] =  rule {
-    SP ~ optWS ~ atomic("fn") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC~> ParsedAst.Definition.Signature
+  def SignatureDefinition: Rule1[ParsedAst.Definition.Signature] = rule {
+    SP ~ atomic("fn") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC~> ParsedAst.Definition.Signature
+  }
+
+  def LawDefinition: Rule1[ParsedAst.Definition.Law] =     rule {
+    SP ~ atomic("law") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Law
   }
 
   def FormalParams: Rule1[Seq[ParsedAst.FormalArg]] = rule {
@@ -131,7 +135,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def ClassBody: Rule1[Seq[ParsedAst.Definition]] = rule {
-      "{" ~ optWS ~ zeroOrMore(FunctionDefinition | SignatureDefinition).separatedBy(WS) ~ optWS ~ "}"
+      "{" ~ optWS ~ zeroOrMore(FunctionDefinition | SignatureDefinition | LawDefinition).separatedBy(WS) ~ optWS ~ "}"
     }
 
     rule {
@@ -481,9 +485,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Identifiers & Names                                                     //
   /////////////////////////////////////////////////////////////////////////////
   def LegalIdentifier: Rule1[String] = {
-    // TODO: Improve
     rule {
-      capture((CharPredicate.Alpha | "⊥" | "⊑") ~ zeroOrMore(CharPredicate.AlphaNum | "_" | "$" | "⊥" | "⊑" ) ~ zeroOrMore("'"))
+      capture((CharPredicate.Alpha | "⊥" | "⊤" | "⊑" | "⊔" | "⊓" | "▽" | "△") ~ zeroOrMore(CharPredicate.AlphaNum | "_" | "$" | "⊥" | "⊑" ) ~ zeroOrMore("'"))
     }
   }
 
