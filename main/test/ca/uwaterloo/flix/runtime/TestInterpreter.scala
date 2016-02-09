@@ -453,6 +453,9 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkStr("hello"))(result)
   }
 
+  // TODO: Lambda, Hook, Closure, Apply, Apply3
+  // Skip for now, come back later.
+
 //  /////////////////////////////////////////////////////////////////////////////
 //  // Expressions - Lambda and Apply                                          //
 //  /////////////////////////////////////////////////////////////////////////////
@@ -758,79 +761,371 @@ class TestInterpreter extends FunSuite {
 //    assert(executed)
 //    assertResult(Value.mkInt32(123))(result)
 //  }
-//
-//  /////////////////////////////////////////////////////////////////////////////
-//  // Expressions - Unary                                                     //
-//  /////////////////////////////////////////////////////////////////////////////
-//
-//  test("Interpreter - UnaryOperator.Not01") {
-//    val input = Expression.Unary(
-//      UnaryOperator.LogicalNot,
-//      Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
-//      Type.Bool, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.False)(result)
-//  }
-//
-//  test("Interpreter - UnaryOperator.Not02") {
-//    val input = Expression.Unary(
-//      UnaryOperator.LogicalNot,
-//      Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
-//      Type.Bool, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.True)(result)
-//  }
-//
-//  test("Interpreter - UnaryOperator.UnaryPlus01") {
-//    val input = Expression.Unary(
-//      UnaryOperator.Plus,
-//      Expression.Lit(Literal.Int(23, loc), Type.Int32, loc),
-//      Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(23))(result)
-//  }
-//
-//  test("Interpreter - UnaryOperator.UnaryPlus02") {
-//    val input = Expression.Unary(
-//      UnaryOperator.Plus,
-//      Expression.Lit(Literal.Int(-4, loc), Type.Int32, loc),
-//      Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(-4))(result)
-//  }
-//
-//  test("Interpreter - UnaryOperator.UnaryMinus01") {
-//    val input = Expression.Unary(
-//      UnaryOperator.Minus,
-//      Expression.Lit(Literal.Int(23, loc), Type.Int32, loc),
-//      Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(-23))(result)
-//  }
-//
-//  test("Interpreter - UnaryOperator.UnaryMinus02") {
-//    val input = Expression.Unary(
-//      UnaryOperator.Minus,
-//      Expression.Lit(Literal.Int(-4, loc), Type.Int32, loc),
-//      Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(4))(result)
-//  }
-//
-//  test("Interpreter - UnaryOperator.UnaryNegate01") {
-//    val input = "fn f: Int = ~42"
-//    val model =  new Flix().addStr(input).solve().get
-//    val result = model.constants(Name.Resolved.mk("f"))
-//    assertResult(Value.mkInt32(~42))(result)
-//  }
-//
-//  test("Interpreter - UnaryOperator.UnaryNegate02") {
-//    val input = "fn f: Int = ~~42"
-//    val model =  new Flix().addStr(input).solve().get
-//    val result = model.constants(Name.Resolved.mk("f"))
-//    assertResult(Value.mkInt32(42))(result)
-//  }
-//
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Unary                                                        //
+  // UnaryOperator.{LogicalNot,Plus,Minus,BitwiseNegate}                     //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Unary - UnaryOperator.LogicalNot.01") {
+    val input = "fn f: Bool = !true"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.False)(result)
+  }
+
+  test("Expression.Unary - UnaryOperator.LogicalNot.02") {
+    val input = "fn f: Bool = !false"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.True)(result)
+  }
+
+  test("Expression.Unary - UnaryOperator.Plus.01") {
+    val input =
+      s"""fn f01: Int = +0
+         |fn f02: Int = +36000
+         |fn f03: Int = +(-36000)
+         |fn f04: Int = +${Int.MaxValue}
+         |fn f05: Int = +${Int.MinValue}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("f01"))
+    val result02 = model.constants(Name.Resolved.mk("f02"))
+    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result05 = model.constants(Name.Resolved.mk("f05"))
+    assertResult(Value.mkInt32(0))(result01)
+    assertResult(Value.mkInt32(36000))(result02)
+    assertResult(Value.mkInt32(-36000))(result03)
+    assertResult(Value.mkInt32(Int.MaxValue))(result04)
+    assertResult(Value.mkInt32(Int.MinValue))(result05)
+  }
+
+  ignore("Expression.Unary - UnaryOperator.Plus.02") {
+    val input =
+      s"""fn f01: Int8 = +0
+         |fn f02: Int8 = +36
+         |fn f03: Int8 = +(-36)
+         |fn f04: Int8 = +${Byte.MaxValue}
+         |fn f05: Int8 = +${Byte.MinValue}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("f01"))
+    val result02 = model.constants(Name.Resolved.mk("f02"))
+    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result05 = model.constants(Name.Resolved.mk("f05"))
+    assertResult(Value.mkInt8(0))(result01)
+    assertResult(Value.mkInt8(36))(result02)
+    assertResult(Value.mkInt8(-36))(result03)
+    assertResult(Value.mkInt8(Byte.MaxValue))(result04)
+    assertResult(Value.mkInt8(Byte.MinValue))(result05)
+  }
+
+  ignore("Expression.Unary - UnaryOperator.Plus.03") {
+    val input =
+      s"""fn f01: Int16 = +0
+         |fn f02: Int16 = +3600
+         |fn f03: Int16 = +(-3600)
+         |fn f04: Int16 = +${Short.MaxValue}
+         |fn f05: Int16 = +${Short.MinValue}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("f01"))
+    val result02 = model.constants(Name.Resolved.mk("f02"))
+    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result05 = model.constants(Name.Resolved.mk("f05"))
+    assertResult(Value.mkInt16(0))(result01)
+    assertResult(Value.mkInt16(3600))(result02)
+    assertResult(Value.mkInt16(-3600))(result03)
+    assertResult(Value.mkInt16(Short.MaxValue))(result04)
+    assertResult(Value.mkInt16(Short.MinValue))(result05)
+  }
+
+  test("Expression.Unary - UnaryOperator.Plus.04") {
+    val input =
+      s"""fn f01: Int32 = +0
+         |fn f02: Int32 = +36000
+         |fn f03: Int32 = +(-36000)
+         |fn f04: Int32 = +${Int.MaxValue}
+         |fn f05: Int32 = +${Int.MinValue}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("f01"))
+    val result02 = model.constants(Name.Resolved.mk("f02"))
+    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result05 = model.constants(Name.Resolved.mk("f05"))
+    assertResult(Value.mkInt32(0))(result01)
+    assertResult(Value.mkInt32(36000))(result02)
+    assertResult(Value.mkInt32(-36000))(result03)
+    assertResult(Value.mkInt32(Int.MaxValue))(result04)
+    assertResult(Value.mkInt32(Int.MinValue))(result05)
+  }
+
+  ignore("Expression.Unary - UnaryOperator.Plus.05") {
+    val input =
+      s"""fn f01: Int64 = +0
+         |fn f02: Int64 = +3600000000
+         |fn f03: Int64 = +(-3600000000)
+         |fn f04: Int64 = +${Long.MaxValue}
+         |fn f05: Int64 = +${Long.MinValue}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("f01"))
+    val result02 = model.constants(Name.Resolved.mk("f02"))
+    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result05 = model.constants(Name.Resolved.mk("f05"))
+    assertResult(Value.mkInt64(0))(result01)
+    assertResult(Value.mkInt64(3600000000L))(result02)
+    assertResult(Value.mkInt64(-3600000000L))(result03)
+    assertResult(Value.mkInt64(Long.MaxValue))(result04)
+    assertResult(Value.mkInt64(Long.MinValue))(result05)
+  }
+
+  test("Expression.Unary - UnaryOperator.Minus.01") {
+    val input =
+      s"""fn f01: Int = -0
+         |fn f02: Int = -36000
+         |fn f03: Int = -(-36000)
+         |fn f04: Int = -${Int.MaxValue}
+         |fn f05: Int = -${Int.MinValue}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("f01"))
+    val result02 = model.constants(Name.Resolved.mk("f02"))
+    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result05 = model.constants(Name.Resolved.mk("f05"))
+    assertResult(Value.mkInt32(0))(result01)
+    assertResult(Value.mkInt32(-36000))(result02)
+    assertResult(Value.mkInt32(36000))(result03)
+    assertResult(Value.mkInt32(-Int.MaxValue))(result04)
+    assertResult(Value.mkInt32(Int.MinValue))(result05)
+  }
+
+  ignore("Expression.Unary - UnaryOperator.Minus.02") {
+    val input =
+      s"""fn f01: Int8 = -0
+          |fn f02: Int8 = -36
+          |fn f03: Int8 = -(-36)
+          |fn f04: Int8 = -${Byte.MaxValue}
+          |fn f05: Int8 = -${Byte.MinValue}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("f01"))
+    val result02 = model.constants(Name.Resolved.mk("f02"))
+    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result05 = model.constants(Name.Resolved.mk("f05"))
+    assertResult(Value.mkInt8(0))(result01)
+    assertResult(Value.mkInt8(-36))(result02)
+    assertResult(Value.mkInt8(36))(result03)
+    assertResult(Value.mkInt8(-Byte.MaxValue))(result04)
+    assertResult(Value.mkInt8(Byte.MinValue))(result05)
+  }
+
+  ignore("Expression.Unary - UnaryOperator.Minus.03") {
+    val input =
+      s"""fn f01: Int16 = -0
+          |fn f02: Int16 = -3600
+          |fn f03: Int16 = -(-3600)
+          |fn f04: Int16 = -${Short.MaxValue}
+          |fn f05: Int16 = -${Short.MinValue}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("f01"))
+    val result02 = model.constants(Name.Resolved.mk("f02"))
+    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result05 = model.constants(Name.Resolved.mk("f05"))
+    assertResult(Value.mkInt16(0))(result01)
+    assertResult(Value.mkInt16(-3600))(result02)
+    assertResult(Value.mkInt16(3600))(result03)
+    assertResult(Value.mkInt16(-Short.MaxValue))(result04)
+    assertResult(Value.mkInt16(Short.MinValue))(result05)
+  }
+
+  test("Expression.Unary - UnaryOperator.Minus.04") {
+    val input =
+      s"""fn f01: Int32 = -0
+         |fn f02: Int32 = -36000
+         |fn f03: Int32 = -(-36000)
+         |fn f04: Int32 = -${Int.MaxValue}
+         |fn f05: Int32 = -${Int.MinValue}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("f01"))
+    val result02 = model.constants(Name.Resolved.mk("f02"))
+    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result05 = model.constants(Name.Resolved.mk("f05"))
+    assertResult(Value.mkInt32(0))(result01)
+    assertResult(Value.mkInt32(-36000))(result02)
+    assertResult(Value.mkInt32(36000))(result03)
+    assertResult(Value.mkInt32(-Int.MaxValue))(result04)
+    assertResult(Value.mkInt32(Int.MinValue))(result05)
+  }
+
+  ignore("Expression.Unary - UnaryOperator.Minus.05") {
+    val input =
+      s"""fn f01: Int64 = -0
+          |fn f02: Int64 = -3600000000
+          |fn f03: Int64 = -(-3600000000)
+          |fn f04: Int64 = -${Long.MaxValue}
+          |fn f05: Int64 = -${Long.MinValue}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("f01"))
+    val result02 = model.constants(Name.Resolved.mk("f02"))
+    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result05 = model.constants(Name.Resolved.mk("f05"))
+    assertResult(Value.mkInt64(0))(result01)
+    assertResult(Value.mkInt64(-3600000000L))(result02)
+    assertResult(Value.mkInt64(3600000000L))(result03)
+    assertResult(Value.mkInt64(-Long.MaxValue))(result04)
+    assertResult(Value.mkInt64(Long.MinValue))(result05)
+  }
+
+  test("Expression.Unary - UnaryOperator.BitwiseNegate.01") {
+    val input =
+      s"""fn f01: Int = ~0
+         |fn f02: Int = ~1
+         |fn f03: Int = ~(-1)
+         |fn f04: Int = ~36000
+         |fn f05: Int = ~(-36000)
+         |fn f06: Int = ~${Int.MaxValue}
+         |fn f07: Int = ~${Int.MinValue}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("f01"))
+    val result02 = model.constants(Name.Resolved.mk("f02"))
+    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result07 = model.constants(Name.Resolved.mk("f07"))
+    assertResult(Value.mkInt32(-1))(result01)
+    assertResult(Value.mkInt32(-2))(result02)
+    assertResult(Value.mkInt32(0))(result03)
+    assertResult(Value.mkInt32(-36001))(result04)
+    assertResult(Value.mkInt32(35999))(result05)
+    assertResult(Value.mkInt32(Int.MinValue))(result06)
+    assertResult(Value.mkInt32(Int.MaxValue))(result07)
+  }
+
+  ignore("Expression.Unary - UnaryOperator.BitwiseNegate.02") {
+    val input =
+      s"""fn f01: Int8 = ~0
+          |fn f02: Int8 = ~1
+          |fn f03: Int8 = ~(-1)
+          |fn f04: Int8 = ~42
+          |fn f05: Int8 = ~(-42)
+          |fn f06: Int8 = ~${Byte.MaxValue}
+          |fn f07: Int8 = ~${Byte.MinValue}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("f01"))
+    val result02 = model.constants(Name.Resolved.mk("f02"))
+    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result07 = model.constants(Name.Resolved.mk("f07"))
+    assertResult(Value.mkInt8(-1))(result01)
+    assertResult(Value.mkInt8(-2))(result02)
+    assertResult(Value.mkInt8(0))(result03)
+    assertResult(Value.mkInt8(-43))(result04)
+    assertResult(Value.mkInt8(41))(result05)
+    assertResult(Value.mkInt8(Byte.MinValue))(result06)
+    assertResult(Value.mkInt8(Byte.MaxValue))(result07)
+  }
+
+  ignore("Expression.Unary - UnaryOperator.BitwiseNegate.03") {
+    val input =
+      s"""fn f01: Int16 = ~0
+          |fn f02: Int16 = ~1
+          |fn f03: Int16 = ~(-1)
+          |fn f04: Int16 = ~420
+          |fn f05: Int16 = ~(-420)
+          |fn f06: Int16 = ~${Short.MaxValue}
+          |fn f07: Int16 = ~${Short.MinValue}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("f01"))
+    val result02 = model.constants(Name.Resolved.mk("f02"))
+    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result07 = model.constants(Name.Resolved.mk("f07"))
+    assertResult(Value.mkInt16(-1))(result01)
+    assertResult(Value.mkInt16(-2))(result02)
+    assertResult(Value.mkInt16(0))(result03)
+    assertResult(Value.mkInt16(-421))(result04)
+    assertResult(Value.mkInt16(419))(result05)
+    assertResult(Value.mkInt16(Short.MinValue))(result06)
+    assertResult(Value.mkInt16(Short.MaxValue))(result07)
+  }
+
+  test("Expression.Unary - UnaryOperator.BitwiseNegate.04") {
+    val input =
+      s"""fn f01: Int32 = ~0
+         |fn f02: Int32 = ~1
+         |fn f03: Int32 = ~(-1)
+         |fn f04: Int32 = ~36000
+         |fn f05: Int32 = ~(-36000)
+         |fn f06: Int32 = ~${Int.MaxValue}
+         |fn f07: Int32 = ~${Int.MinValue}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("f01"))
+    val result02 = model.constants(Name.Resolved.mk("f02"))
+    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result07 = model.constants(Name.Resolved.mk("f07"))
+    assertResult(Value.mkInt32(-1))(result01)
+    assertResult(Value.mkInt32(-2))(result02)
+    assertResult(Value.mkInt32(0))(result03)
+    assertResult(Value.mkInt32(-36001))(result04)
+    assertResult(Value.mkInt32(35999))(result05)
+    assertResult(Value.mkInt32(Int.MinValue))(result06)
+    assertResult(Value.mkInt32(Int.MaxValue))(result07)
+  }
+
+  ignore("Expression.Unary - UnaryOperator.BitwiseNegate.05") {
+    val input =
+      s"""fn f01: Int64 = ~0
+          |fn f02: Int64 = ~1
+          |fn f03: Int64 = ~(-1)
+          |fn f04: Int64 = ~10000000000
+          |fn f05: Int64 = ~(-10000000000)
+          |fn f06: Int64 = ~${Long.MaxValue}
+          |fn f07: Int64 = ~${Long.MinValue}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("f01"))
+    val result02 = model.constants(Name.Resolved.mk("f02"))
+    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result07 = model.constants(Name.Resolved.mk("f07"))
+    assertResult(Value.mkInt64(-1))(result01)
+    assertResult(Value.mkInt64(-2))(result02)
+    assertResult(Value.mkInt64(0))(result03)
+    assertResult(Value.mkInt64(-10000000001L))(result04)
+    assertResult(Value.mkInt64(9999999999L))(result05)
+    assertResult(Value.mkInt64(Long.MinValue))(result06)
+    assertResult(Value.mkInt64(Long.MaxValue))(result07)
+  }
+
 //  /////////////////////////////////////////////////////////////////////////////
 //  // Expressions - Binary                                                    //
 //  /////////////////////////////////////////////////////////////////////////////

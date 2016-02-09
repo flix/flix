@@ -1332,6 +1332,8 @@ class TestCodegen extends FunSuite {
     assertResult(false)(result)
   }
 
+  // TODO: UnaryOperator.Plus tests applied to Int8, Int16, Int32, and Int64
+
   test("Codegen - Unary.Plus01") {
     val definition = Function(name, args = List(),
       body = Unary(UnaryOperator.Plus, Int32(42), Type.Int32, loc),
