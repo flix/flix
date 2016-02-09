@@ -38,88 +38,201 @@ class TestInterpreter extends FunSuite {
     val enumTpe = Type.Enum(Name.Resolved.mk("ConstProp"), Map("ConstProp.Bot" -> tagTpeB, "ConstProp.Val" -> tagTpeV, "ConstProp.Top" -> tagTpeT))
   }
 
-//  /////////////////////////////////////////////////////////////////////////////
-//  // Expressions - Literals                                                  //
-//  /////////////////////////////////////////////////////////////////////////////
-//
-//  test("Interpreter - Literal.Unit") {
-//    val input = Expression.Lit(Literal.Unit(loc), Type.Unit, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.Unit)(result)
-//  }
-//
-//  test("Interpreter - Literal.Bool01") {
-//    val input = Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.True)(result)
-//  }
-//
-//  test("Interpreter - Literal.Bool02") {
-//    val input = Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.False)(result)
-//  }
-//
-//  test("Interpreter - Literal.Int01") {
-//    val input = Expression.Lit(Literal.Int(-242, loc), Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(-242))(result)
-//  }
-//
-//  test("Interpreter - Literal.Int02") {
-//    val input = Expression.Lit(Literal.Int(-42, loc), Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(-42))(result)
-//  }
-//
-//  test("Interpreter - Literal.Int03") {
-//    val input = Expression.Lit(Literal.Int(0, loc), Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(0))(result)
-//  }
-//
-//  test("Interpreter - Literal.Int04") {
-//    val input = Expression.Lit(Literal.Int(98, loc), Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(98))(result)
-//  }
-//
-//  test("Interpreter - Literal.Int05") {
-//    val input = Expression.Lit(Literal.Int(91238, loc), Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(91238))(result)
-//  }
-//
-//  test("Interpreter - Literal.Str01") {
-//    val input = Expression.Lit(Literal.Str("", loc), Type.Str, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkStr(""))(result)
-//  }
-//
-//  test("Interpreter - Literal.Str02") {
-//    val input = Expression.Lit(Literal.Str("Hello World!", loc), Type.Str, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkStr("Hello World!"))(result)
-//  }
-//
-//  test("Interpreter - Literal.Str03") {
-//    val input = Expression.Lit(Literal.Str("asdf", loc), Type.Str, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkStr("asdf"))(result)
-//  }
-//
-//  test("Interpreter - Literal.Str04") {
-//    val input = Expression.Lit(Literal.Str("foobar", loc), Type.Str, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkStr("foobar"))(result)
-//  }
-//
-//  test("Interpreter - Literal.Str05") {
-//    val input = Expression.Lit(Literal.Str("\"\"\"", loc), Type.Str, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkStr("\"\"\""))(result)
-//  }
-//
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.{Unit,Bool,Int8,Int16,Int32,Int64,Str}                       //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Unit") {
+    val input = "fn f: () = ()"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.Unit)(result)
+  }
+
+  test("Expression.Bool.01") {
+    val input = "fn f: Bool = true"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.True)(result)
+  }
+
+  test("Expression.Bool.02") {
+    val input = "fn f: Bool = false"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.False)(result)
+  }
+
+  test("Expression.Int.01") {
+    val input = "fn f: Int = 0"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(0))(result)
+  }
+
+  test("Expression.Int.02") {
+    val input = "fn f: Int = -254542"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(-254542))(result)
+  }
+
+  test("Expression.Int.03") {
+    val input = "fn f: Int = 45649878"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(45649878))(result)
+  }
+
+  test("Expression.Int.04") {
+    val input = s"fn f: Int = ${Int.MaxValue}"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(Int.MaxValue))(result)
+  }
+
+  test("Expression.Int.05") {
+    val input = s"fn f: Int = ${Int.MinValue}"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(Int.MinValue))(result)
+  }
+
+  ignore("Expression.Int8.01") {
+    val input = "fn f: Int8 = -105"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt8(-105))(result)
+  }
+
+  ignore("Expression.Int8.02") {
+    val input = "fn f: Int8 = 121"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt8(121))(result)
+  }
+
+  ignore("Expression.Int8.03") {
+    val input = s"fn f: Int8 = ${Byte.MaxValue}"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt8(Byte.MaxValue))(result)
+  }
+
+  ignore("Expression.Int8.04") {
+    val input = s"fn f: Int8 = ${Byte.MinValue}"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt8(Byte.MinValue))(result)
+  }
+
+  ignore("Expression.Int16.01") {
+    val input = "fn f: Int16 = -5320"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt16(-5320))(result)
+  }
+
+  ignore("Expression.Int16.02") {
+    val input = "fn f: Int16 = 4568"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt16(4568))(result)
+  }
+
+  ignore("Expression.Int16.03") {
+    val input = s"fn f: Int16 = ${Short.MaxValue}"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt16(Short.MaxValue))(result)
+  }
+
+  ignore("Expression.Int16.04") {
+    val input = s"fn f: Int16 = ${Short.MinValue}"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt16(Short.MinValue))(result)
+  }
+
+  test("Expression.Int32.01") {
+    val input = "fn f: Int32 = -254542"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(-254542))(result)
+  }
+
+  test("Expression.Int32.02") {
+    val input = "fn f: Int32 = 45649878"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(45649878))(result)
+  }
+
+  test("Expression.Int32.03") {
+    val input = s"fn f: Int32 = ${Int.MaxValue}"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(Int.MaxValue))(result)
+  }
+
+  test("Expression.Int32.04") {
+    val input = s"fn f: Int32 = ${Int.MinValue}"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(Int.MinValue))(result)
+  }
+
+  ignore("Expression.Int64.01") {
+    val input = "fn f: Int64 = -254454121542"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt64(-254454121542L))(result)
+  }
+
+  ignore("Expression.Int64.02") {
+    val input = "fn f: Int64 = 45641198784545"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt64(45641198784545L))(result)
+  }
+
+  ignore("Expression.Int64.03") {
+    val input = s"fn f: Int64 = ${Long.MaxValue}"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt64(Long.MaxValue))(result)
+  }
+
+  ignore("Expression.Int64.04") {
+    val input = s"fn f: Int64 = ${Long.MinValue}"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt64(Long.MinValue))(result)
+  }
+
+  test("Expression.Str.01") {
+    val input = """fn f: Str = """""
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkStr(""))(result)
+  }
+
+  test("Expression.Str.02") {
+    val input = """fn f: Str = "Hello World!""""
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkStr("Hello World!"))(result)
+  }
+
+  test("Expression.Str.03") {
+    val input = """fn f: Str = "asdf""""
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkStr("asdf"))(result)
+  }
+
+  // TODO: Merge Literal.{Tuple,Tag,Set} tests with Expression.{Tuple,Tag,Set} tests
+
 //  test("Interpreter - Literal.Tuple01") {
 //    val input = Expression.Lit(
 //      Literal.Tuple(List(Literal.Int(42, loc), Literal.Bool(false, loc), Literal.Str("hi", loc)),
@@ -240,7 +353,14 @@ class TestInterpreter extends FunSuite {
 //    val result = Interpreter.eval(input, root)
 //    assertResult(Value.mkSet(Set(Value.Tuple(Array(Value.mkInt32(3), Value.mkStr("three"))))))(result)
 //  }
-//
+
+  /////////////////////////////////////////////////////////////////////////////
+  // LoadExpression and StoreExpression                                      //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: LoadExpression and StoreExpression tests
+  // {Load,Store}Expressions are generated, and not explicitly written in a Flix program
+
 //  /////////////////////////////////////////////////////////////////////////////
 //  // Expressions - Var                                                       //
 //  /////////////////////////////////////////////////////////////////////////////
