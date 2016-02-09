@@ -11,6 +11,7 @@ import scala.io.Source
 
 // TODO: Parse whitespace more "tightly" to improve source positions.
 // TODO: Add support for characters.
+// TODO: Add pattern matching let* pattern = exp
 
 /**
   * A parser for the Flix language.
@@ -51,7 +52,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Definition: Rule1[ParsedAst.Definition] = rule {
-    FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition | IndexDefinition | ClassDefinition
+    FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition | IndexDefinition | ClassDefinition | ImplDefinition
   }
 
   def FunctionDefinition: Rule1[ParsedAst.Definition.Function] = {
@@ -118,8 +119,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def ClassDefinition: Rule1[ParsedAst.Definition.Class] = {
 
-    def TypeParams: Rule1[Seq[Name.Ident]] = rule {
-      "[" ~ oneOrMore(Ident).separatedBy(optWS ~ "," ~ optWS) ~ "]"
+    def TypeParams: Rule1[Seq[Type]] = rule {
+      "[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]"
     }
 
     def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
@@ -140,6 +141,33 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     rule {
       SP ~ atomic("class") ~ WS ~ Ident ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ClassBody ~ SP ~> ParsedAst.Definition.Class
+    }
+  }
+
+  def ImplDefinition: Rule1[ParsedAst.Definition.Impl] = {
+
+    def TypeParams: Rule1[Seq[Type]] = rule {
+      "[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]"
+    }
+
+    def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
+      SP ~ Ident ~ TypeParams ~ SP ~> ParsedAst.ContextBound
+    }
+
+    def ContextBounds: Rule1[Seq[ParsedAst.ContextBound]] = rule {
+      optional(optWS ~ atomic("<=") ~ optWS ~ oneOrMore(ContextBound).separatedBy(optWS ~ "," ~ optWS) ~ optWS) ~>
+        ((o: Option[Seq[ParsedAst.ContextBound]]) => o match {
+          case None => Seq.empty
+          case Some(xs) => xs
+        })
+    }
+
+    def ImplBody: Rule1[Seq[ParsedAst.Definition.Function]] = rule {
+      "{" ~ optWS ~ zeroOrMore(FunctionDefinition).separatedBy(WS) ~ optWS ~ "}"
+    }
+
+    rule {
+      SP ~ atomic("impl") ~ WS ~ Ident ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Definition.Impl
     }
   }
 

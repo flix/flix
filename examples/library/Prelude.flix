@@ -131,79 +131,73 @@ class PreOrder[E] {
 /**
  *
  */
-class NormOperator[E: PreOrder] {
+// class PreOrder e => NormOperator e
+class NormOperator[E] => PreOrder[E] {
     fn norm(x: E): E
 }
 
-impl Lattice[E: PreOrder + Norm] {
+impl PartialOrder[Sign] {
+    /* ... */
+}
+
+impl JoinSemiLattice[Sign] {
+    /* ... */
+}
+
+
+impl PartialOrder[(A, B)] <= PartialOrder[A], PartialOrder[B] {
+
+//    fn leq(x: (A, B), y: (A, B)): Bool =
+//        let (xa, xb) = x in
+//        let (ya, yb) = y in
+//            leq(xa, xb) && leq(ya, yb)
+
+}
+
+
+// instance PreOrder e, Norm e => Lattice e
+impl Lattice[E] <= PreOrder[E], Norm[E] {
     // disambiguate?
-    fn bot = norm(bot)
+    fn bot: E = norm(bot)
 
     // disambiguate?
     fn leq(x: E, y: E): Bool = leq2(norm(x), norm(y))
 }
 
 
+
 // TODO: How to deal with these?
 // TODO: Need some notion of function type here?
-class Strict[A: JoinSemiLattice, B: JoinSemiLattice] {
+class Strict[A, B] => JoinSemiLattice[A], JoinSemiLattice[B] {
     // and then even this requirement cant readily be described?
     // how do you even disambiguate bot?
-    law Strict(f: A => B): Bool = f(bot) == bot
+    law Strict(f: (A) -> B): Bool = f(bot) == bot
 }
 
-prop Strict[A: JoinSemiLattice, B: JoinSemiLattice](f: A => B) {
-    law Strict(f: A => B): Bool = f(bot) == bot
-}
+//prop Strict[A: JoinSemiLattice, B: JoinSemiLattice](f: A => B) {
+//    law Strict(f: A => B): Bool = f(bot) == bot
+//}
+//
+//is Strict[Sign, Belnap](Sign::mayEq)
+//
+//alternative
 
-is Strict[Sign, Belnap](Sign::mayEq)
-
-alternative
-
-fn Strict[A, B](f: A => B): Bool where A: JoinSemiLattice, B: JoinSemiLattice
-  = f(bot) == bot
-
-// instance of Law.
-law Strict(Sign/mayEq)
-
-
-
-impl Strict for (A => B) {
-    // ... ?
-}
-
-//or how about this:
-class Strict[A => B] where A: PartialOrder, B: PartialOrder {
-    law Strict(f: A => B): Bool = f(bot) == bot
-}
-// this seems closer to what we want, since A => B is truly the member of this class.
-
-instance Strict[MySpecificFun]
-// the above could be rewritten with @strict
-
-
-// TODO: How to deal with these?
-class Monotone[E: PartialOrder] {
-    fn f(e: E): E
-}
+//fn Strict[A, B](f: A => B): Bool where A: JoinSemiLattice, B: JoinSemiLattice
+//  = f(bot) == bot
+//
+//// instance of Law.
+//law Strict(Sign/mayEq)
+//
+//// TODO: How to deal with these?
+//class Monotone[E: PartialOrder] {
+//    fn f(e: E): E
+//}
 
 // TODO: use word "impl"? for ?
 // TODO: class or concept?
 impl PartialOrder[Sign] {
-
-    fn leq(x: Sign, y: Sign): Bool = ???
-
+    fn leq(x: Sign, y: Sign): Bool = true
 }
-
-impl PartialOrder for (A: PartialOrder, B: PartialOrder) {
-
-    fn leq(x: (A, B), y: (A, B)): Bool =
-        let (xa, xb) = x in
-        let (ya, yb) = y in
-            leq(xa, xb) && leq(ya, yb)
-
-}
-
 
 //fn bar<T, K>(x: T, y: K) where T: Clone, K: Clone + Debug {
 //    x.clone();

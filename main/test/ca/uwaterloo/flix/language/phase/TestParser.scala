@@ -218,6 +218,74 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Definition.Class])
   }
 
+  test("Definition.Law01") {
+    val input = "law f(): Bool = true"
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Law])
+  }
+
+  test("Definition.Law02") {
+    val input = "law f(x: Int): Bool = x % 2 == 0"
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Law])
+  }
+
+  test("Definition.Law03") {
+    val input = "law f(x: Int, y: Int): Bool = x > y"
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Law])
+  }
+
+  test("Definition.Impl01") {
+    val input =
+      """impl Eq[Int] {
+        |  /* ... */
+        |}
+      """.stripMargin
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Impl])
+  }
+
+  test("Definition.Impl01") {
+    val input =
+      """impl Eq[Int] {
+        |  /* ... */
+        |}
+      """.stripMargin
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Impl])
+  }
+
+  test("Definition.Impl02") {
+    val input =
+      """impl Eq[(Int, Int)] {
+        |  /* ... */
+        |}
+      """.stripMargin
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Impl])
+  }
+
+  test("Definition.Impl03") {
+    val input =
+      """impl Ord[Int] <= Eq[Int] {
+        |  /* ... */
+        |}
+      """.stripMargin
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Impl])
+  }
+
+  test("Definition.Impl04") {
+    val input =
+      """impl A[Int, Int] <= B[Int], C[Int] {
+        |  /* ... */
+        |}
+      """.stripMargin
+    val result = new Parser(SourceInput.Str(input)).Definition.run().get
+    assert(result.isInstanceOf[ParsedAst.Definition.Impl])
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////

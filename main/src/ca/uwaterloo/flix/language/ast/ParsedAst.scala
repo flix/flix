@@ -234,9 +234,23 @@ object ParsedAst {
       * @param bounds  the context bounds (i.e. type parameter constraints).
       * @param sp2     the position of the last character in the definition.
       */
-    case class Class(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Name.Ident], bounds: Seq[ContextBound], body: Seq[ParsedAst.Definition], sp2: SourcePosition) extends ParsedAst.Definition {
+    case class Class(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Type], bounds: Seq[ContextBound], body: Seq[ParsedAst.Definition], sp2: SourcePosition) extends ParsedAst.Definition {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
+
+    /**
+      * An AST node that represents a type class implementation.
+      *
+      * @param sp1     the position of the first character in the definition.
+      * @param ident   the name of the type class.
+      * @param tparams the type parameters of the type class.
+      * @param bounds  the context bounds (i.e. type parameter constraints).
+      * @param sp2     the position of the last character in the definition.
+      */
+    case class Impl(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Type], bounds: Seq[ContextBound], body: Seq[ParsedAst.Definition.Function], sp2: SourcePosition) extends ParsedAst.Definition {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
 
   }
 
@@ -860,6 +874,6 @@ object ParsedAst {
     * @param tparams the type params of the class.
     * @param sp2     the position of the last character in the context bound.
     */
-  case class ContextBound(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst
+  case class ContextBound(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Type], sp2: SourcePosition) extends ParsedAst
 
 }
