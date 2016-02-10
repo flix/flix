@@ -231,29 +231,8 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkStr("asdf"))(result)
   }
 
-  // TODO: Merge Literal.{Tuple,Set} tests with Expression.{Tuple,Set} tests
+  // TODO: Merge Literal.Set tests with Expression.Set tests
 
-//  test("Interpreter - Literal.Tuple01") {
-//    val input = Expression.Lit(
-//      Literal.Tuple(List(Literal.Int(42, loc), Literal.Bool(false, loc), Literal.Str("hi", loc)),
-//        Type.Tuple(List(Type.Int32, Type.Bool, Type.Str)), loc),
-//      Type.Tuple(List(Type.Int32, Type.Bool, Type.Str)), loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.Tuple(Array(Value.mkInt32(42), Value.False, Value.mkStr("hi"))))(result)
-//  }
-//
-//  test("Interpreter - Literal.Tuple02") {
-//    val input = Expression.Lit(
-//      Literal.Tuple(List(
-//        Literal.Int(4, loc),
-//        Literal.Tuple(List(Literal.Int(12, loc), Literal.Int(8, loc)),
-//          Type.Tuple(List(Type.Int32, Type.Int32)), loc)),
-//        Type.Tuple(List(Type.Int32, Type.Tuple(List(Type.Int32, Type.Int32)))), loc),
-//      Type.Tuple(List(Type.Int32, Type.Tuple(List(Type.Int32, Type.Int32)))), loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.Tuple(Array(Value.mkInt32(4), Value.Tuple(Array(Value.mkInt32(12), Value.mkInt32(8))))))(result)
-//  }
-//
 //  test("Interpreter - Literal.Set01") {
 //    val input = Expression.Lit(Literal.Set(List(), Type.Set(Type.Int32), loc), Type.Set(Type.Int32), loc)
 //    val result = Interpreter.eval(input, root)
@@ -2707,6 +2686,69 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt64(320000000000L)))(result)
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.GetTupleIndex                                                //
+  // Tested indirectly by pattern matching.                                  //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: Come back to this later
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Tuple                                                        //
+  /////////////////////////////////////////////////////////////////////////////
+
+  ignore("Expression.Tuple.01") {
+    val input = "fn f: (Int16, Int32) = (321, 5)"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.Tuple(Array(Value.mkInt16(321), Value.mkInt32(5))))(result)
+  }
+
+  test("Expression.Tuple.02") {
+    val input = "fn f: (Bool, Bool, Bool) = (true, true, false)"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.Tuple(Array(true, true, false).map(Value.mkBool)))(result)
+  }
+
+  test("Expression.Tuple.03") {
+    val input = """fn f: (Str, Str, Str, Str) = ("un", "deux", "trois", "quatre")"""
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.Tuple(Array("un", "deux", "trois", "quatre").map(Value.mkStr)))(result)
+  }
+
+  ignore("Expression.Tuple.04") {
+    val input = """fn f: (Str, Bool, Int64, (), Int8) = ("un", false, 12345, (), -2)"""
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.Tuple(Array(Value.mkStr("un"), Value.False, Value.mkInt64(12345), Value.Unit, Value.mkInt8(-2))))(result)
+  }
+
+  test("Expression.Tuple.05") {
+    val input =
+      """enum ConstProp { case Top, case Val(Int), case Bot }
+        |fn f: (ConstProp, ConstProp) = (ConstProp.Val(111), ConstProp.Bot)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.Tuple(Array(Value.mkTag(Name.Resolved.mk("ConstProp"), "Val", Value.mkInt32(111)), Value.mkTag(Name.Resolved.mk("ConstProp"), "Bot", Value.Unit))))(result)
+  }
+
+  test("Expression.Tuple.06") {
+    val input = """fn f: ((Int, Int), (Str, Str)) = ((123, 456), ("654", "321"))"""
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.Tuple(Array(Value.Tuple(Array(123, 456).map(Value.mkInt32)), Value.Tuple(Array("654", "321").map(Value.mkStr)))))(result)
+  }
+
+  test("Expression.Tuple.07") {
+    val input = """fn f: (Int, Bool, Str) = (40 + 2, !(-12 < 22), if (true) "hi" else "hello")"""
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.Tuple(Array(Value.mkInt32(42), Value.False, Value.mkStr("hi"))))(result)
+  }
+
 //  /////////////////////////////////////////////////////////////////////////////
 //  // Expressions - Switch                                                    //
 //  /////////////////////////////////////////////////////////////////////////////
@@ -3330,56 +3372,8 @@ class TestInterpreter extends FunSuite {
 //  }
 //
 //  /////////////////////////////////////////////////////////////////////////////
-//  // Expressions - Tuples, Tags, and Sets                                    //
+//  // Expressions - Sets                                                      //
 //  /////////////////////////////////////////////////////////////////////////////
-//
-//  test("Interpreter - Expression.Tuple01") {
-//    val input = Expression.Tuple(List(
-//      Expression.Lit(Literal.Int(42, loc), Type.Int32, loc),
-//      Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
-//      Expression.Lit(Literal.Str("hi", loc), Type.Str, loc)),
-//      Type.Tuple(List(Type.Int32, Type.Bool, Type.Str)), loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.Tuple(Array(Value.mkInt32(42), Value.False, Value.mkStr("hi"))))(result)
-//  }
-//
-//  test("Interpreter - Expression.Tuple02") {
-//    val input = Expression.Tuple(List(
-//      Expression.Lit(Literal.Int(4, loc), Type.Int32, loc),
-//      Expression.Tuple(List(Expression.Lit(Literal.Int(12, loc), Type.Int32, loc),
-//        Expression.Lit(Literal.Int(8, loc), Type.Int32, loc)), Type.Tuple(List(Type.Int32, Type.Int32)), loc)),
-//      Type.Tuple(List(Type.Int32, Type.Tuple(List(Type.Int32, Type.Int32)))), loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.Tuple(Array(Value.mkInt32(4), Value.Tuple(Array(Value.mkInt32(12), Value.mkInt32(8))))))(result)
-//  }
-//
-//  test("Interpreter - Expression.Tuple03") {
-//    val input = Expression.Tuple(List(
-//      // 40 + 2
-//      Expression.Binary(
-//        BinaryOperator.Plus,
-//        Expression.Lit(Literal.Int(40, loc), Type.Int32, loc),
-//        Expression.Lit(Literal.Int(2, loc), Type.Int32, loc),
-//        Type.Int32, loc),
-//      // !(-12 < 22)
-//      Expression.Unary(
-//        UnaryOperator.LogicalNot,
-//        Expression.Binary(
-//          BinaryOperator.Less,
-//          Expression.Lit(Literal.Int(-12, loc), Type.Int32, loc),
-//          Expression.Lit(Literal.Int(22, loc), Type.Int32, loc),
-//          Type.Bool, loc),
-//        Type.Bool, loc),
-//      // if (true) "hi" else "hello"
-//      Expression.IfThenElse(
-//        Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
-//        Expression.Lit(Literal.Str("hi", loc), Type.Str, loc),
-//        Expression.Lit(Literal.Str("hello", loc), Type.Str, loc),
-//        Type.Str, loc)),
-//      Type.Tuple(List(Type.Int32, Type.Bool, Type.Str)), loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.Tuple(Array(Value.mkInt32(42), Value.False, Value.mkStr("hi"))))(result)
-//  }
 //
 //  test("Interpreter - Expression.Set01") {
 //    val input = "fn f: Set[Int] = #{1, 4, 2}"
