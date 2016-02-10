@@ -7,17 +7,17 @@ NB: Not every program admitted by this grammar is a valid Flix program.
 ```no-lang
 Program         A  =  D ...                         Declaration
             
-Declaration     D  =  namespace Name                Namespace
-                   |                                Function
-                   |                                Law
-                   |                                Signature
-                                                    Enum
-                   |                                 Relation
-                   |                                 Lattice
-                   |  index Name()                  Index
-                   |  Fact                           Fact
-                   |  Rule                           Rule
+Declaration     D  =  namespace Name                Namespace declaration.
+                   |                                Function declaration.
+                   |                                Law declaration.
+                   |                                Signature declaration.
+                   |  enum { EnumCase ... }         Enum declaration.
+                   |  rel Name()                    Relation declaration.
+                   |  lat ()                        Lattice declaration.
+                   |  index Name()                  Index declaration.
+                   |  c                             Constraint declaration.
 
+EnumCase           = case Name(T, ..., T)           Enum case.
 
 Value           v  =  ()                            Unit
                    |  true | false                  Boolean
@@ -65,8 +65,10 @@ Predicate       P  =  Name(t, ..., t)               Table predicate
                    |  x := t                        Alias predicate
 
 
-Term            t  = 
-wildcard, var, lit, appyl, infix, ascribe
+Term            t  =  _                             Wildcard term.
+                   |  x                             Variable term.
+                   |  v                             Value term.
+                   |  Name(t, ..., t)               Apply term.
 
 
 Type            T  =  Name                          Named type
