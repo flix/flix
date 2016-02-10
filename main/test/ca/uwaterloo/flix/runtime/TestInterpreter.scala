@@ -2741,6 +2741,15 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkSet(Set(Value.mkInt64(10000000000L))))(result)
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Error                                                        //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Interpreter - Expression.Error01") {
+    val input = "fn f: Bool = ???: Bool"
+    intercept[RuntimeException] { new Flix().addStr(input).solve().get }
+  }
+
 //  /////////////////////////////////////////////////////////////////////////////
 //  // Expressions - Switch                                                    //
 //  /////////////////////////////////////////////////////////////////////////////
@@ -3358,17 +3367,6 @@ class TestInterpreter extends FunSuite {
 //    // 123 match { case 321 => Unit }
 //    val rules = List((Pattern.Lit(Literal.Int(321, loc), Type.Int32, loc), Expression.Lit(Literal.Unit(loc), Type.Unit, loc)))
 //    val input = Expression.Match(Expression.Lit(Literal.Int(123, loc), Type.Int32, loc), rules, Type.Int32, loc)
-//    intercept[RuntimeException] {
-//      Interpreter.eval(input, root)
-//    }
-//  }
-//
-//  /////////////////////////////////////////////////////////////////////////////
-//  // Expressions - Error                                                     //
-//  /////////////////////////////////////////////////////////////////////////////
-//
-//  test("Interpreter - Expression.Error01") {
-//    val input = Expression.Error(Type.Unit, loc)
 //    intercept[RuntimeException] {
 //      Interpreter.eval(input, root)
 //    }
