@@ -4700,19 +4700,19 @@ class TestCodegen extends FunSuite {
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseAnd,
-        Int8(42),
+        Int8(40),
         Int8(0xFF.toByte),
         Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def02 = Function(name02, args = List(),
       body = Binary(BinaryOperator.BitwiseAnd,
-        Int8(42),
-        Int8(42),
+        Int8(40),
+        Int8(40),
         Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def03 = Function(name03, args = List(),
       body = Binary(BinaryOperator.BitwiseAnd,
-        Int8(42),
+        Int8(40),
         Int8(0),
         Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
@@ -4737,8 +4737,8 @@ class TestCodegen extends FunSuite {
     val result04 = code.call(name04)
     val result05 = code.call(name05)
 
-    assertResult(42)(result01)
-    assertResult(42)(result02)
+    assertResult(40)(result01)
+    assertResult(40)(result02)
     assertResult(0)(result03)
     assertResult(0xFF.toByte)(result04)
     assertResult((-1).toByte)(result05)
@@ -4755,19 +4755,19 @@ class TestCodegen extends FunSuite {
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseAnd,
-        Int16(420),
+        Int16(400),
         Int16(0xFFFF.toShort),
         Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def02 = Function(name02, args = List(),
       body = Binary(BinaryOperator.BitwiseAnd,
-        Int16(420),
-        Int16(420),
+        Int16(400),
+        Int16(400),
         Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def03 = Function(name03, args = List(),
       body = Binary(BinaryOperator.BitwiseAnd,
-        Int16(420),
+        Int16(400),
         Int16(0),
         Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
@@ -4792,8 +4792,8 @@ class TestCodegen extends FunSuite {
     val result04 = code.call(name04)
     val result05 = code.call(name05)
 
-    assertResult(420)(result01)
-    assertResult(420)(result02)
+    assertResult(400)(result01)
+    assertResult(400)(result02)
     assertResult(0)(result03)
     assertResult(0xFFFF.toShort)(result04)
     assertResult((-1).toShort)(result05)
@@ -4865,19 +4865,19 @@ class TestCodegen extends FunSuite {
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseAnd,
-        Int64(10000000000L),
+        Int64(40000000000L),
         Int64(0xFFFFFFFFFFFFFFFFL),
         Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
     val def02 = Function(name02, args = List(),
       body = Binary(BinaryOperator.BitwiseAnd,
-        Int64(10000000000L),
-        Int64(10000000000L),
+        Int64(40000000000L),
+        Int64(40000000000L),
         Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
     val def03 = Function(name03, args = List(),
       body = Binary(BinaryOperator.BitwiseAnd,
-        Int64(10000000000L),
+        Int64(40000000000L),
         Int64(0),
         Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
@@ -4902,8 +4902,8 @@ class TestCodegen extends FunSuite {
     val result04 = code.call(name04)
     val result05 = code.call(name05)
 
-    assertResult(10000000000L)(result01)
-    assertResult(10000000000L)(result02)
+    assertResult(40000000000L)(result01)
+    assertResult(40000000000L)(result02)
     assertResult(0L)(result03)
     assertResult(0xFFFFFFFFFFFFFFFFL)(result04)
     assertResult(-1L)(result05)
@@ -4920,19 +4920,19 @@ class TestCodegen extends FunSuite {
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseOr,
-        Int8(42),
+        Int8(40),
         Int8(0xFF.toByte),
         Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def02 = Function(name02, args = List(),
       body = Binary(BinaryOperator.BitwiseOr,
-        Int8(42),
-        Int8(42),
+        Int8(40),
+        Int8(40),
         Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def03 = Function(name03, args = List(),
       body = Binary(BinaryOperator.BitwiseOr,
-        Int8(42),
+        Int8(40),
         Int8(0),
         Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
@@ -4958,8 +4958,8 @@ class TestCodegen extends FunSuite {
     val result05 = code.call(name05)
 
     assertResult(0xFF.toByte)(result01)
-    assertResult(42)(result02)
-    assertResult(42)(result03)
+    assertResult(40)(result02)
+    assertResult(40)(result03)
     assertResult(0xFF.toByte)(result04)
     assertResult((-1).toByte)(result05)
   }
@@ -4975,19 +4975,19 @@ class TestCodegen extends FunSuite {
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseOr,
-        Int16(420),
+        Int16(400),
         Int16(0xFFFF.toShort),
         Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def02 = Function(name02, args = List(),
       body = Binary(BinaryOperator.BitwiseOr,
-        Int16(420),
-        Int16(420),
+        Int16(400),
+        Int16(400),
         Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def03 = Function(name03, args = List(),
       body = Binary(BinaryOperator.BitwiseOr,
-        Int16(420),
+        Int16(400),
         Int16(0),
         Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
@@ -5013,8 +5013,8 @@ class TestCodegen extends FunSuite {
     val result05 = code.call(name05)
 
     assertResult(0xFFFF.toShort)(result01)
-    assertResult(420)(result02)
-    assertResult(420)(result03)
+    assertResult(400)(result02)
+    assertResult(400)(result03)
     assertResult(0xFFFF.toShort)(result04)
     assertResult((-1).toShort)(result05)
   }
@@ -5085,19 +5085,19 @@ class TestCodegen extends FunSuite {
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseOr,
-        Int64(10000000000L),
+        Int64(40000000000L),
         Int64(0xFFFFFFFFFFFFFFFFL),
         Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
     val def02 = Function(name02, args = List(),
       body = Binary(BinaryOperator.BitwiseOr,
-        Int64(10000000000L),
-        Int64(10000000000L),
+        Int64(40000000000L),
+        Int64(40000000000L),
         Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
     val def03 = Function(name03, args = List(),
       body = Binary(BinaryOperator.BitwiseOr,
-        Int64(10000000000L),
+        Int64(40000000000L),
         Int64(0),
         Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
@@ -5123,8 +5123,8 @@ class TestCodegen extends FunSuite {
     val result05 = code.call(name05)
 
     assertResult(0xFFFFFFFFFFFFFFFFL)(result01)
-    assertResult(10000000000L)(result02)
-    assertResult(10000000000L)(result03)
+    assertResult(40000000000L)(result02)
+    assertResult(40000000000L)(result03)
     assertResult(0xFFFFFFFFFFFFFFFFL)(result04)
     assertResult(-1L)(result05)
   }
@@ -5140,19 +5140,19 @@ class TestCodegen extends FunSuite {
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseXor,
-        Int8(42),
+        Int8(40),
         Int8(0xFF.toByte),
         Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def02 = Function(name02, args = List(),
       body = Binary(BinaryOperator.BitwiseXor,
-        Int8(42),
-        Int8(42),
+        Int8(40),
+        Int8(40),
         Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def03 = Function(name03, args = List(),
       body = Binary(BinaryOperator.BitwiseXor,
-        Int8(42),
+        Int8(40),
         Int8(0),
         Type.Int8, loc),
       Type.Lambda(List(), Type.Int32), loc)
@@ -5177,9 +5177,9 @@ class TestCodegen extends FunSuite {
     val result04 = code.call(name04)
     val result05 = code.call(name05)
 
-    assertResult(-43)(result01)
+    assertResult(-41)(result01)
     assertResult(0)(result02)
-    assertResult(42)(result03)
+    assertResult(40)(result03)
     assertResult(0)(result04)
     assertResult(0)(result05)
   }
@@ -5195,19 +5195,19 @@ class TestCodegen extends FunSuite {
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseXor,
-        Int16(420),
+        Int16(400),
         Int16(0xFFFF.toShort),
         Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def02 = Function(name02, args = List(),
       body = Binary(BinaryOperator.BitwiseXor,
-        Int16(420),
-        Int16(420),
+        Int16(400),
+        Int16(400),
         Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val def03 = Function(name03, args = List(),
       body = Binary(BinaryOperator.BitwiseXor,
-        Int16(420),
+        Int16(400),
         Int16(0),
         Type.Int16, loc),
       Type.Lambda(List(), Type.Int32), loc)
@@ -5232,9 +5232,9 @@ class TestCodegen extends FunSuite {
     val result04 = code.call(name04)
     val result05 = code.call(name05)
 
-    assertResult(-421)(result01)
+    assertResult(-401)(result01)
     assertResult(0)(result02)
-    assertResult(420)(result03)
+    assertResult(400)(result03)
     assertResult(0)(result04)
     assertResult(0)(result05)
   }
@@ -5305,19 +5305,19 @@ class TestCodegen extends FunSuite {
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseXor,
-        Int64(10000000000L),
+        Int64(40000000000L),
         Int64(0xFFFFFFFFFFFFFFFFL),
         Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
     val def02 = Function(name02, args = List(),
       body = Binary(BinaryOperator.BitwiseXor,
-        Int64(10000000000L),
-        Int64(10000000000L),
+        Int64(40000000000L),
+        Int64(40000000000L),
         Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
     val def03 = Function(name03, args = List(),
       body = Binary(BinaryOperator.BitwiseXor,
-        Int64(10000000000L),
+        Int64(40000000000L),
         Int64(0),
         Type.Int64, loc),
       Type.Lambda(List(), Type.Int64), loc)
@@ -5342,9 +5342,9 @@ class TestCodegen extends FunSuite {
     val result04 = code.call(name04)
     val result05 = code.call(name05)
 
-    assertResult(-10000000001L)(result01)
+    assertResult(-40000000001L)(result01)
     assertResult(0L)(result02)
-    assertResult(10000000000L)(result03)
+    assertResult(40000000000L)(result03)
     assertResult(0L)(result04)
     assertResult(0L)(result05)
   }
@@ -5362,25 +5362,25 @@ class TestCodegen extends FunSuite {
         Int8(0x08),
         Int32(0),
         Type.Int8, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int8), loc)
     val def02 = Function(name02, args = List(),
       body = Binary(BinaryOperator.BitwiseLeftShift,
         Int8(0x08),
         Int32(2),
         Type.Int8, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int8), loc)
     val def03 = Function(name03, args = List(),
       body = Binary(BinaryOperator.BitwiseLeftShift,
         Int8(0x08),
         Int32(4),
         Type.Int8, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int8), loc)
     val def04 = Function(name04, args = List(),
       body = Binary(BinaryOperator.BitwiseLeftShift,
         Int8(0x08),
         Int32(5),
         Type.Int8, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int8), loc)
 
     val code = new CompiledCode(List(def01, def02, def03, def04))
 
@@ -5408,25 +5408,25 @@ class TestCodegen extends FunSuite {
         Int16(0x08),
         Int32(0),
         Type.Int16, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int16), loc)
     val def02 = Function(name02, args = List(),
       body = Binary(BinaryOperator.BitwiseLeftShift,
         Int16(0x08),
         Int32(8),
         Type.Int16, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int16), loc)
     val def03 = Function(name03, args = List(),
       body = Binary(BinaryOperator.BitwiseLeftShift,
         Int16(0x08),
         Int32(12),
         Type.Int16, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int16), loc)
     val def04 = Function(name04, args = List(),
       body = Binary(BinaryOperator.BitwiseLeftShift,
         Int16(0x08),
         Int32(13),
         Type.Int16, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int16), loc)
 
     val code = new CompiledCode(List(def01, def02, def03, def04))
 
@@ -5543,28 +5543,28 @@ class TestCodegen extends FunSuite {
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseRightShift,
-        Int8(123),
+        Int8(120),
         Int32(0),
         Type.Int8, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int8), loc)
     val def02 = Function(name02, args = List(),
       body = Binary(BinaryOperator.BitwiseRightShift,
-        Int8(123),
+        Int8(120),
         Int32(2),
         Type.Int8, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int8), loc)
     val def03 = Function(name03, args = List(),
       body = Binary(BinaryOperator.BitwiseRightShift,
-        Int8(123),
+        Int8(120),
         Int32(7),
         Type.Int8, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int8), loc)
     val def04 = Function(name04, args = List(),
       body = Binary(BinaryOperator.BitwiseRightShift,
-        Int8(-123),
+        Int8(-120),
         Int32(2),
         Type.Int8, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int8), loc)
 
     val code = new CompiledCode(List(def01, def02, def03, def04))
 
@@ -5573,10 +5573,10 @@ class TestCodegen extends FunSuite {
     val result03 = code.call(name03)
     val result04 = code.call(name04)
 
-    assertResult(123)(result01)
+    assertResult(120)(result01)
     assertResult(30)(result02)
     assertResult(0)(result03)
-    assertResult(-31)(result04)
+    assertResult(-30)(result04)
   }
 
   test("Codegen - Binary.BitwiseRightShift02") {
@@ -5592,25 +5592,25 @@ class TestCodegen extends FunSuite {
         Int16(12000),
         Int32(0),
         Type.Int16, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int16), loc)
     val def02 = Function(name02, args = List(),
       body = Binary(BinaryOperator.BitwiseRightShift,
         Int16(12000),
         Int32(2),
         Type.Int16, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int16), loc)
     val def03 = Function(name03, args = List(),
       body = Binary(BinaryOperator.BitwiseRightShift,
         Int16(12000),
         Int32(15),
         Type.Int16, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int16), loc)
     val def04 = Function(name04, args = List(),
       body = Binary(BinaryOperator.BitwiseRightShift,
         Int16(-12000),
         Int32(2),
         Type.Int16, loc),
-      Type.Lambda(List(), Type.Int32), loc)
+      Type.Lambda(List(), Type.Int16), loc)
 
     val code = new CompiledCode(List(def01, def02, def03, def04))
 
