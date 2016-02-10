@@ -231,7 +231,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkStr("asdf"))(result)
   }
 
-  // TODO: Merge Literal.{Tuple,Tag,Set} tests with Expression.{Tuple,Tag,Set} tests
+  // TODO: Merge Literal.{Tuple,Set} tests with Expression.{Tuple,Set} tests
 
 //  test("Interpreter - Literal.Tuple01") {
 //    val input = Expression.Lit(
@@ -252,64 +252,6 @@ class TestInterpreter extends FunSuite {
 //      Type.Tuple(List(Type.Int32, Type.Tuple(List(Type.Int32, Type.Int32)))), loc)
 //    val result = Interpreter.eval(input, root)
 //    assertResult(Value.Tuple(Array(Value.mkInt32(4), Value.Tuple(Array(Value.mkInt32(12), Value.mkInt32(8))))))(result)
-//  }
-//
-//  test("Interpreter - Literal.Tag01") {
-//    val name = Name.Resolved.mk(List("foo", "bar"))
-//    val ident = toIdent("baz")
-//    val tagTpe = Type.Tag(name, ident, Type.Str)
-//    val enumTpe = Type.Enum(Name.Resolved.mk("ConstProp"), Map("foo.bar.baz" -> tagTpe))
-//    val input = Expression.Lit(Literal.Tag(name, ident, Literal.Str("hello world", loc), enumTpe, loc), tagTpe, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkTag(name, "baz", Value.mkStr("hello world")))(result)
-//  }
-//
-//  test("Interpreter - Literal.Tag02") {
-//    val name = Name.Resolved.mk(List("Family"))
-//    val ident = toIdent("NameAndAge")
-//    val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int32)))
-//    val enumTpe = Type.Enum(Name.Resolved.mk("Family"), Map("Family.NameAndAge" -> tagTpe))
-//    val input = Expression.Lit(Literal.Tag(name, ident,
-//      Literal.Tuple(List(Literal.Str("James", loc), Literal.Int(42, loc)),
-//        Type.Tuple(List(Type.Str, Type.Int32)), loc), enumTpe, loc), tagTpe, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkTag(name, "NameAndAge", Value.Tuple(Array(Value.mkStr("James"), Value.mkInt32(42)))))(result)
-//  }
-//
-//  test("Interpreter - Literal.Tag03") {
-//    import ConstantPropTagDefs._
-//    val input = Expression.Lit(Literal.Tag(name, identB, Literal.Unit(loc), enumTpe, loc), tagTpeB, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkTag(name, "Bot", Value.Unit))(result)
-//  }
-//
-//  test("Interpreter - Literal.Tag04") {
-//    import ConstantPropTagDefs._
-//    val input = Expression.Lit(Literal.Tag(name, identT, Literal.Unit(loc), enumTpe, loc), tagTpeT, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkTag(name, "Top", Value.Unit))(result)
-//  }
-//
-//  test("Interpreter - Literal.Tag05") {
-//    import ConstantPropTagDefs._
-//    val input = Expression.Lit(Literal.Tag(name, identV, Literal.Int(0, loc), enumTpe, loc), tagTpeV, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkTag(name, "Val", Value.mkInt32(0)))(result)
-//
-//  }
-//
-//  test("Interpreter - Literal.Tag06") {
-//    import ConstantPropTagDefs._
-//    val input = Expression.Lit(Literal.Tag(name, identV, Literal.Int(-240, loc), enumTpe, loc), tagTpeV, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkTag(name, "Val", Value.mkInt32(-240)))(result)
-//  }
-//
-//  test("Interpreter - Literal.Tag07") {
-//    import ConstantPropTagDefs._
-//    val input = Expression.Lit(Literal.Tag(name, identV, Literal.Int(1241, loc), enumTpe, loc), tagTpeV, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkTag(name, "Val", Value.mkInt32(1241)))(result)
 //  }
 //
 //  test("Interpreter - Literal.Set01") {
@@ -363,11 +305,11 @@ class TestInterpreter extends FunSuite {
 
   /////////////////////////////////////////////////////////////////////////////
   // Expression.Var                                                          //
-  //                                                                         //
   // Tested indirectly by Expression.{Lambda, Let}.                          //
   /////////////////////////////////////////////////////////////////////////////
 
   // TODO: Combine Expression.Var tests with Expression.Lambda and Expression.Let
+  // Skip for now, come back later.
 
 //  test("Interpreter - Expression.Var01") {
 //    val input = Expression.Lit(Literal.Str("hello", loc), Type.Str, loc)
@@ -454,6 +396,7 @@ class TestInterpreter extends FunSuite {
   }
 
   // TODO: Lambda, Hook, Closure, Apply, Apply3
+  // Combine Expression.Var tests with Expression.Lambda and Expression.Let
   // Skip for now, come back later.
 
 //  /////////////////////////////////////////////////////////////////////////////
@@ -2622,6 +2565,148 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(5678))(result02)
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Let                                                          //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: Combine Expression.Var tests with Expression.Lambda and Expression.Let
+  // Skip for now, come back later.
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.{CheckTag,GetTagValue}                                       //
+  // Tested indirectly by pattern matching.                                  //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: Come back to this later
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Tag                                                          //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Tag.01") {
+    val input =
+      """enum ConstProp { case Top, case Val(Int), case Bot }
+        |fn f: ConstProp = ConstProp.Top
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkTag(Name.Resolved.mk("ConstProp"), "Top", Value.Unit))(result)
+  }
+
+  test("Expression.Tag.02") {
+    val input =
+      """enum ConstProp { case Top, case Val(Int), case Bot }
+        |fn f: ConstProp = ConstProp.Val(42)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkTag(Name.Resolved.mk("ConstProp"), "Val", Value.mkInt32(42)))(result)
+  }
+
+  test("Expression.Tag.03") {
+    val input =
+      """enum ConstProp { case Top, case Val(Int), case Bot }
+        |fn f: ConstProp = ConstProp.Bot
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkTag(Name.Resolved.mk("ConstProp"), "Bot", Value.Unit))(result)
+  }
+
+  test("Expression.Tag.04") {
+    val input =
+      """enum Val { case Val(Bool) }
+        |fn f: Val = Val.Val(true)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.True))(result)
+  }
+
+  test("Expression.Tag.05") {
+    val input =
+      """enum Val { case Val(Bool) }
+        |fn f(x: Bool): Val = Val.Val(x)
+        |fn g01: Val = f(true)
+        |fn g02: Val = f(false)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.True))(result01)
+    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.False))(result02)
+  }
+
+  test("Expression.Tag.06") {
+    val input =
+      """enum Val { case Val(Str) }
+        |fn f: Val = Val.Val("hi")
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkStr("hi")))(result)
+  }
+
+  test("Expression.Tag.07") {
+    val input =
+      """enum Val { case Val(Int, Str) }
+        |fn f: Val = Val.Val(1, "one")
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.Tuple(Array(Value.mkInt32(1), "one"))))(result)
+  }
+
+  test("Expression.Tag.08") {
+    val input =
+      """enum Val { case Val(Str) }
+        |fn f: Val = Val.Val(if (!(4 != 4)) "foo" else "bar")
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkStr("foo")))(result)
+  }
+
+  test("Expression.Tag.09") {
+    val input =
+      """enum Val { case Val(Str, Int) }
+        |fn f: Val = Val.Val("ABC", 20 + 22)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.Tuple(Array("ABC", Value.mkInt32(42)))))(result)
+  }
+
+  ignore("Expression.Tag.10") {
+    val input =
+      """enum Val { case Val(Int8) }
+        |fn f: Val = Val.Val(32)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt8(32)))(result)
+  }
+
+  ignore("Expression.Tag.11") {
+    val input =
+      """enum Val { case Val(Int16) }
+        |fn f: Val = Val.Val(3200)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt16(3200)))(result)
+  }
+
+  ignore("Expression.Tag.12") {
+    val input =
+      """enum Val { case Val(Int64) }
+        |fn f: Val = Val.Val(320000000000)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt64(320000000000L)))(result)
+  }
+
 //  /////////////////////////////////////////////////////////////////////////////
 //  // Expressions - Switch                                                    //
 //  /////////////////////////////////////////////////////////////////////////////
@@ -3294,96 +3379,6 @@ class TestInterpreter extends FunSuite {
 //      Type.Tuple(List(Type.Int32, Type.Bool, Type.Str)), loc)
 //    val result = Interpreter.eval(input, root)
 //    assertResult(Value.Tuple(Array(Value.mkInt32(42), Value.False, Value.mkStr("hi"))))(result)
-//  }
-//
-//  test("Interpreter - Expression.Tag01") {
-//    val name = Name.Resolved.mk(List("foo", "bar"))
-//    val ident = toIdent("baz")
-//    val tagTpe = Type.Tag(name, ident, Type.Str)
-//    val enumTpe = Type.Enum(name, Map("foo.bar.baz" -> tagTpe))
-//    val input = Expression.Tag(name, ident,
-//      // if (!(4 != 4)) "hello world" else "asdfasdf"
-//      Expression.IfThenElse(
-//        Expression.Unary(
-//          UnaryOperator.LogicalNot,
-//          Expression.Binary(
-//            BinaryOperator.NotEqual,
-//            Expression.Lit(Literal.Int(4, loc), Type.Int32, loc),
-//            Expression.Lit(Literal.Int(4, loc), Type.Int32, loc),
-//            Type.Bool, loc),
-//          Type.Bool, loc),
-//        Expression.Lit(Literal.Str("hello world", loc), Type.Str, loc),
-//        Expression.Lit(Literal.Str("asdfasdf", loc), Type.Str, loc),
-//        Type.Str, loc),
-//      enumTpe, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkTag(name, "baz", Value.mkStr("hello world")))(result)
-//  }
-//
-//  test("Interpreter - Expression.Tag02") {
-//    val name = Name.Resolved.mk(List("Family"))
-//    val ident = toIdent("NameAndAge")
-//    val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int32)))
-//    val enumTpe = Type.Enum(name, Map("Family.NameAndAge" -> tagTpe))
-//    val input = Expression.Tag(name, ident, Expression.Tuple(List(
-//      Expression.Lit(Literal.Str("James", loc), Type.Str, loc),
-//      // 20 + 22
-//      Expression.Binary(
-//        BinaryOperator.Plus,
-//        Expression.Lit(Literal.Int(20, loc), Type.Int32, loc),
-//        Expression.Lit(Literal.Int(22, loc), Type.Int32, loc),
-//        Type.Int32, loc)),
-//      Type.Tuple(List(Type.Str, Type.Int32)), loc), enumTpe, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkTag(name, "NameAndAge", Value.Tuple(Array(Value.mkStr("James"), Value.mkInt32(42)))))(result)
-//  }
-//
-//  test("Interpreter - Expression.Tag03") {
-//    import ConstantPropTagDefs._
-//    val input = Expression.Tag(name, identB, Expression.Lit(Literal.Unit(loc), Type.Unit, loc), enumTpe, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkTag(name, "Bot", Value.Unit))(result)
-//  }
-//
-//  test("Interpreter - Expression.Tag04") {
-//    import ConstantPropTagDefs._
-//    val input = Expression.Tag(name, identT, Expression.Lit(Literal.Unit(loc), Type.Unit, loc), enumTpe, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkTag(name, "Top", Value.Unit))(result)
-//  }
-//
-//  test("Interpreter - Expression.Tag05") {
-//    import ConstantPropTagDefs._
-//    val input = Expression.Tag(name, identV,
-//      // 123 - 123
-//      Expression.Binary(
-//        BinaryOperator.Minus,
-//        Expression.Lit(Literal.Int(123, loc), Type.Int32, loc),
-//        Expression.Lit(Literal.Int(123, loc), Type.Int32, loc),
-//        Type.Int32, loc),
-//      enumTpe, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkTag(name, "Val", Value.mkInt32(0)))(result)
-//  }
-//
-//  test("Interpreter - Expression.Tag06") {
-//    import ConstantPropTagDefs._
-//    val input = Expression.Tag(name, identV,
-//      // -240
-//      Expression.Unary(
-//        UnaryOperator.Minus,
-//        Expression.Lit(Literal.Int(240, loc), Type.Int32, loc),
-//        Type.Int32, loc),
-//      enumTpe, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkTag(name, "Val", Value.mkInt32(-240)))(result)
-//  }
-//
-//  test("Interpreter - Expression.Tag07") {
-//    import ConstantPropTagDefs._
-//    val input = Expression.Tag(name, identV, Expression.Lit(Literal.Int(1241, loc), Type.Int32, loc), enumTpe, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkTag(name, "Val", Value.mkInt32(1241)))(result)
 //  }
 //
 //  test("Interpreter - Expression.Set01") {
