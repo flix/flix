@@ -231,50 +231,6 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkStr("asdf"))(result)
   }
 
-  // TODO: Merge Literal.Set tests with Expression.Set tests
-
-//  test("Interpreter - Literal.Set01") {
-//    val input = Expression.Lit(Literal.Set(List(), Type.Set(Type.Int32), loc), Type.Set(Type.Int32), loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkSet(Set()))(result)
-//  }
-//
-//  test("Interpreter - Literal.Set02") {
-//    val input = Expression.Lit(Literal.Set(List(), Type.Set(Type.Bool), loc), Type.Set(Type.Bool), loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkSet(Set()))(result)
-//  }
-//
-//  test("Interpreter - Literal.Set03") {
-//    val input = Expression.Lit(Literal.Set(List(
-//      Literal.Int(3, loc),
-//      Literal.Int(100, loc),
-//      Literal.Int(44, loc)
-//    ), Type.Set(Type.Int32), loc), Type.Set(Type.Int32), loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkSet(Set(3, 100, 44).map(Value.mkInt32)))(result)
-//  }
-//
-//  test("Interpreter - Literal.Set04") {
-//    val input = Expression.Lit(Literal.Set(List(
-//      Literal.Bool(true, loc)
-//    ), Type.Set(Type.Bool), loc), Type.Set(Type.Bool), loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkSet(Set(Value.True)))(result)
-//  }
-//
-//  test("Interpreter - Literal.Set05") {
-//    val input = Expression.Lit(Literal.Set(
-//      List(Literal.Tuple(List(
-//        Literal.Int(3, loc),
-//        Literal.Str("three", loc)), Type.Tuple(List(Type.Int32, Type.Str)),
-//        loc)),
-//      Type.Set(Type.Tuple(List(Type.Int32, Type.Str))), loc),
-//      Type.Set(Type.Tuple(List(Type.Int32, Type.Str))), loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkSet(Set(Value.Tuple(Array(Value.mkInt32(3), Value.mkStr("three"))))))(result)
-//  }
-
   /////////////////////////////////////////////////////////////////////////////
   // LoadExpression and StoreExpression                                      //
   /////////////////////////////////////////////////////////////////////////////
@@ -2749,6 +2705,42 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Tuple(Array(Value.mkInt32(42), Value.False, Value.mkStr("hi"))))(result)
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Set                                                          //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Set.01") {
+    val input = "fn f: Set[Int] = #{1, 4, 2}"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkSet(Set(1, 4, 2).map(Value.mkInt32)))(result)
+  }
+
+  ignore("Expression.Set.02") {
+    val input = "fn f: Set[Int8] = #{1 + 2, 3 * 4, 5 - 6}"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkSet(Set(3, 12, -1).map(Value.mkInt8)))(result)
+  }
+
+  ignore("Expression.Set.03") {
+    val input = "fn f: Set[(Int16, Bool)] = #{(1 + 2, true), (2 + 1, !false), (4 * 7, true), (5, true && false)}"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkSet(Set(
+      Value.Tuple(Array(Value.mkInt16(3), Value.True)),
+      Value.Tuple(Array(Value.mkInt16(28), Value.True)),
+      Value.Tuple(Array(Value.mkInt16(5), Value.False))
+    )))(result)
+  }
+
+  ignore("Expression.Set.04") {
+    val input = "fn f: Set[Int64] = #{10000000000}"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkSet(Set(Value.mkInt64(10000000000L))))(result)
+  }
+
 //  /////////////////////////////////////////////////////////////////////////////
 //  // Expressions - Switch                                                    //
 //  /////////////////////////////////////////////////////////////////////////////
@@ -3369,35 +3361,6 @@ class TestInterpreter extends FunSuite {
 //    intercept[RuntimeException] {
 //      Interpreter.eval(input, root)
 //    }
-//  }
-//
-//  /////////////////////////////////////////////////////////////////////////////
-//  // Expressions - Sets                                                      //
-//  /////////////////////////////////////////////////////////////////////////////
-//
-//  test("Interpreter - Expression.Set01") {
-//    val input = "fn f: Set[Int] = #{1, 4, 2}"
-//    val model = new Flix().addStr(input).solve().get
-//    val result = model.constants(Name.Resolved.mk("f"))
-//    assertResult(Value.mkSet(Set(Value.mkInt32(1), Value.mkInt32(4), Value.mkInt32(2))))(result)
-//  }
-//
-//  test("Interpreter - Expression.Set02") {
-//    val input = "fn f: Set[Int] = #{1 + 2, 3 * 4, 5 - 6}"
-//    val model = new Flix().addStr(input).solve().get
-//    val result = model.constants(Name.Resolved.mk("f"))
-//    assertResult(Value.mkSet(Set(Value.mkInt32(-1), Value.mkInt32(12), Value.mkInt32(3))))(result)
-//  }
-//
-//  test("Interpreter - Expression.Set03") {
-//    val input = "fn f: Set[(Int, Bool)] = #{(1 + 2, true), (2 + 1, !false), (4 * 7, true), (5, true && false)}"
-//    val model = new Flix().addStr(input).solve().get
-//    val result = model.constants(Name.Resolved.mk("f"))
-//    assertResult(Value.mkSet(Set(
-//      Value.Tuple(Array(Value.mkInt32(3), Value.True)),
-//      Value.Tuple(Array(Value.mkInt32(28), Value.True)),
-//      Value.Tuple(Array(Value.mkInt32(5), Value.False))
-//    )))(result)
 //  }
 //
 //  /////////////////////////////////////////////////////////////////////////////
