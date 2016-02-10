@@ -243,37 +243,6 @@ class TestInterpreter extends FunSuite {
   // Tested indirectly by Expression.{Lambda, Let}.                          //
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Combine Expression.Var tests with Expression.Lambda and Expression.Let
-  // Skip for now, come back later.
-
-//  test("Interpreter - Expression.Var01") {
-//    val input = Expression.Lit(Literal.Str("hello", loc), Type.Str, loc)
-//    val env = mutable.Map(ident01.name -> Value.False)
-//    val result = Interpreter.eval(input, root, env)
-//    assertResult(Value.mkStr("hello"))(result)
-//  }
-//
-//  test("Interpreter - Expression.Var02") {
-//    val input = Expression.Var(ident01, Type.Int32, loc)
-//    val env = mutable.Map(ident01.name -> Value.mkInt32(5))
-//    val result = Interpreter.eval(input, root, env)
-//    assertResult(Value.mkInt32(5))(result)
-//  }
-//
-//  test("Interpreter - Expression.Var03") {
-//    val input = Expression.Var(ident01, Type.Bool, loc)
-//    val env = mutable.Map(ident01.name -> Value.False)
-//    val result = Interpreter.eval(input, root, env)
-//    assertResult(Value.False)(result)
-//  }
-//
-//  test("Interpreter - Expression.Var04") {
-//    val input = Expression.Var(ident02, Type.Str, loc)
-//    val env = mutable.Map(ident01.name -> Value.mkStr("foo"), ident02.name -> Value.mkStr("bar"))
-//    val result = Interpreter.eval(input, root, env)
-//    assertResult(Value.mkStr("bar"))(result)
-//  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Expression.Ref                                                          //
   /////////////////////////////////////////////////////////////////////////////
@@ -2504,8 +2473,210 @@ class TestInterpreter extends FunSuite {
   // Expression.Let                                                          //
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Combine Expression.Var tests with Expression.Lambda and Expression.Let
-  // Skip for now, come back later.
+  test("Expression.Let.01") {
+    val input = "fn f: Int = let x = true in 42"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(42))(result)
+  }
+
+  ignore("Expression.Let.02") {
+    val input = "fn f: Int8 = let x: Int8 = 42 in x"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(42))(result)
+  }
+
+  ignore("Expression.Let.03") {
+    val input = "fn f: Int16 = let x: Int16 = 1 in x + 2"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(3))(result)
+  }
+
+  test("Expression.Let.04") {
+    val input = """fn f: Str = let x = false in if (x) "abz" else "xyz""""
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkStr("xyz"))(result)
+  }
+
+  test("Expression.Let.05") {
+    val input = "fn f: Int = let x = 14 - 3 in x + 2"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(13))(result)
+  }
+
+  test("Expression.Let.06") {
+    val input =
+      """fn f: Int = let x = 14 - 3 in
+        |              let y = 2 * 4 in
+        |                x + y
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(19))(result)
+  }
+
+  test("Expression.Let.07") {
+    val input =
+      """fn f: Int = let x = 1 in
+        |              let y = x + 2 in
+        |                let z = y + 3 in
+        |                  z
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(6))(result)
+  }
+
+  test("Expression.Let.08") {
+    val input =
+      """fn f(a: Int, b: Int, c: Int): Int = let x = 1337 in
+        |                                      let y = -101010 in
+        |                                        let z = 42 in
+        |                                          y
+        |fn g: Int = f(-1337, 101010, -42)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkInt32(-101010))(result)
+  }
+
+  test("Expression.Let.09") {
+    val input =
+      """fn f(a: Int, b: Int, c: Int): Int = let x = 1337 in
+        |                                      let y = -101010 in
+        |                                        let z = 42 in
+        |                                          b
+        |fn g: Int = f(-1337, 101010, -42)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkInt32(101010))(result)
+  }
+
+  ignore("Expression.Let.10") {
+    val input = "fn f: Int64 = let x: Int64 = 0 in x"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt64(0))(result)
+  }
+
+  ignore("Expression.Let.11") {
+    val input =
+      """fn f: Int64 = let x: Int64 = 1337 in
+        |                let y: Int64 = -101010 in
+        |                  let z: Int64 = 42 in
+        |                    y
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt64(-101010))(result)
+  }
+
+  ignore("Expression.Let.12") {
+    val input =
+      """fn f: Int64 = let x: Int32 = 1337 in
+        |                let y: Int64 = -101010 in
+        |                  let z: Int64 = 42 in
+        |                    y
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt64(-101010))(result)
+  }
+
+  ignore("Expression.Let.13") {
+    val input =
+      """fn f(a: Int64, b: Int64, c: Int64): Int = let x: Int64 = 1337 in
+        |                                            let y: Int64 = -101010 in
+        |                                              let z: Int64 = 42 in
+        |                                                y
+        |fn g: Int = f(-1337, 101010, -42)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkInt64(-101010))(result)
+  }
+
+  ignore("Expression.Let.14") {
+    val input =
+      """fn f(a: Int32, b: Int64, c: Int64): Int = let x: Int32 = 1337 in
+        |                                            let y: Int64 = -101010 in
+        |                                              let z: Int64 = 42 in
+        |                                                y
+        |fn g: Int = f(-1337, 101010, -42)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkInt64(-101010))(result)
+  }
+
+  ignore("Expression.Let.15") {
+    val input =
+      """fn f(a: Int64, b: Int64, c: Int64): Int = let x: Int64 = 1337 in
+        |                                            let y: Int64 = -101010 in
+        |                                              let z: Int64 = 42 in
+        |                                                b
+        |fn g: Int = f(-1337, 101010, -42)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkInt64(101010))(result)
+  }
+
+  ignore("Expression.Let.16") {
+    val input =
+      """fn f(a: Int32, b: Int64, c: Int64): Int = let x: Int32 = 1337 in
+        |                                            let y: Int64 = -101010 in
+        |                                              let z: Int64 = 42 in
+        |                                                b
+        |fn g: Int = f(-1337, 101010, -42)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkInt64(101010))(result)
+  }
+
+  test("Expression.Let.17") {
+    val input =
+      """enum ConstProp { case Top, case Val(Int), case Bot }
+        |fn f: ConstProp = let x = ConstProp.Val(42) in x
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkTag(Name.Resolved.mk("ConstProp"), "Val", Value.mkInt32(42)))(result)
+  }
+
+  test("Expression.Let.18") {
+    val input = "fn f: () = let x = () in x"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.Unit)(result)
+  }
+
+  test("Expression.Let.19") {
+    val input = """fn f: Str = let x = "helloworld" in x"""
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkStr("helloworld"))(result)
+  }
+
+  test("Expression.Let.20") {
+    val input = """fn f: (Int, Int) = let x = (123, 456) in x"""
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.Tuple(Array(123, 456).map(Value.mkInt32)))(result)
+  }
+
+  test("Expression.Let.21") {
+    val input = """fn f: Set[Int] = let x = #{9, 99, 999} in x"""
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkSet(Set(9, 99, 999).map(Value.mkInt32)))(result)
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Expression.{CheckTag,GetTagValue}                                       //
@@ -2791,119 +2962,6 @@ class TestInterpreter extends FunSuite {
 //    val model = new Flix().addStr(input).solve().get
 //    val result = model.constants(Name.Resolved.mk("f"))
 //    assertResult(Value.mkInt32(3))(result)
-//  }
-//
-//  /////////////////////////////////////////////////////////////////////////////
-//  // Expressions - Let                                                       //
-//  /////////////////////////////////////////////////////////////////////////////
-//
-//  test("Interpreter - Expression.Let01") {
-//    // let x = true in 42
-//    val input = Expression.Let(ident01, Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
-//      Expression.Lit(Literal.Int(42, loc), Type.Int32, loc), Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(42))(result)
-//  }
-//
-//  test("Interpreter - Expression.Let02") {
-//    // let x = 24 in x
-//    val input = Expression.Let(ident01, Expression.Lit(Literal.Int(24, loc), Type.Int32, loc),
-//      Expression.Var(ident01, Type.Int32, loc), Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(24))(result)
-//  }
-//
-//  test("Interpreter - Expression.Let03") {
-//    // let x = 1 in x + 2
-//    val input = Expression.Let(ident01, Expression.Lit(Literal.Int(1, loc), Type.Int32, loc),
-//      Expression.Binary(
-//        BinaryOperator.Plus,
-//        Expression.Var(ident01, Type.Int32, loc),
-//        Expression.Lit(Literal.Int(2, loc), Type.Int32, loc),
-//        Type.Int32, loc),
-//      Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(3))(result)
-//  }
-//
-//  test("Interpreter - Expression.Let04") {
-//    // let x = false in if x then "abc" else "xyz"
-//    val input = Expression.Let(ident01, Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
-//      Expression.IfThenElse(
-//        Expression.Var(ident01, Type.Bool, loc),
-//        Expression.Lit(Literal.Str("abc", loc), Type.Str, loc),
-//        Expression.Lit(Literal.Str("xyz", loc), Type.Str, loc),
-//        Type.Str, loc),
-//      Type.Str, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkStr("xyz"))(result)
-//  }
-//
-//  test("Interpreter - Expression.Let05") {
-//    // let x = 14 - 3 in x + 2
-//    val input = Expression.Let(ident01,
-//      Expression.Binary(
-//        BinaryOperator.Minus,
-//        Expression.Lit(Literal.Int(14, loc), Type.Int32, loc),
-//        Expression.Lit(Literal.Int(3, loc), Type.Int32, loc),
-//        Type.Int32, loc),
-//      Expression.Binary(
-//        BinaryOperator.Plus,
-//        Expression.Var(ident01, Type.Int32, loc),
-//        Expression.Lit(Literal.Int(2, loc), Type.Int32, loc),
-//        Type.Int32, loc),
-//      Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(13))(result)
-//  }
-//
-//  test("Interpreter - Expression.Let06") {
-//    // let x = 14 - 3 in let y = 2 * 4 in x + y
-//    val input = Expression.Let(ident01,
-//      Expression.Binary(
-//        BinaryOperator.Minus,
-//        Expression.Lit(Literal.Int(14, loc), Type.Int32, loc),
-//        Expression.Lit(Literal.Int(3, loc), Type.Int32, loc),
-//        Type.Int32, loc),
-//      Expression.Let(ident02,
-//        Expression.Binary(
-//          BinaryOperator.Times,
-//          Expression.Lit(Literal.Int(2, loc), Type.Int32, loc),
-//          Expression.Lit(Literal.Int(4, loc), Type.Int32, loc),
-//          Type.Int32, loc),
-//        Expression.Binary(
-//          BinaryOperator.Plus,
-//          Expression.Var(ident01, Type.Int32, loc),
-//          Expression.Var(ident02, Type.Int32, loc),
-//          Type.Int32, loc),
-//        Type.Int32, loc),
-//      Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(19))(result)
-//  }
-//
-//  test("Interpreter - Expression.Let07") {
-//    // let x = 1 in let y = x + 2 in let z = y + 3 in z
-//    val input = Expression.Let(ident01,
-//      Expression.Lit(Literal.Int(1, loc), Type.Int32, loc),
-//      Expression.Let(ident02,
-//        Expression.Binary(
-//          BinaryOperator.Plus,
-//          Expression.Var(ident01, Type.Int32, loc),
-//          Expression.Lit(Literal.Int(2, loc), Type.Int32, loc),
-//          Type.Int32, loc),
-//        Expression.Let(ident03,
-//          Expression.Binary(
-//            BinaryOperator.Plus,
-//            Expression.Var(ident02, Type.Int32, loc),
-//            Expression.Lit(Literal.Int(3, loc), Type.Int32, loc),
-//            Type.Int32, loc),
-//          Expression.Var(ident03, Type.Int32, loc),
-//          Type.Int32, loc),
-//        Type.Int32, loc),
-//      Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(6))(result)
 //  }
 //
 //  /////////////////////////////////////////////////////////////////////////////
