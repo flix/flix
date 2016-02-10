@@ -585,10 +585,21 @@ object Weeder {
           case body => WeededAst.Expression.Lambda(Ast.Annotations(List.empty), args.toList, body, exp.tpe, exp.loc)
         }
 
-      case exp: ParsedAst.Expression.Unary =>
-        compile(exp.e) map {
+      // TODO: Hack to support negative integer literals.
+      case exp: ParsedAst.Expression.Unary => exp.e match {
+        case ParsedAst.Expression.Lit(sp1, lit: ParsedAst.Literal.Int, sp2) => exp.op match {
+          case UnaryOperator.Minus => Literal.compile(lit.copy(lit = "-" + lit.lit)) map {
+            case r => WeededAst.Expression.Lit(r, exp.loc)
+          }
+          case _ =>
+            compile(exp.e) map {
+              case e => WeededAst.Expression.Unary(exp.op, e, exp.loc)
+            }
+        }
+        case _ => compile(exp.e) map {
           case e => WeededAst.Expression.Unary(exp.op, e, exp.loc)
         }
+      }
 
       case exp: ParsedAst.Expression.Binary =>
         @@(compile(exp.e1), compile(exp.e2)) map {
