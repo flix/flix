@@ -1808,6 +1808,159 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.False)(result06)
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Binary (Logical)                                             //
+  // BinaryOperator.{LogicalAnd,LogicalOr,Implication,Biconditional}         //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Binary - BinaryOperator.LogicalAnd.01") {
+    val input = "fn f: Bool = true && true"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.True)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalAnd.02") {
+    val input = "fn f: Bool = true && false"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.False)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalAnd.03") {
+    val input = "fn f: Bool = false && false"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.False)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalAnd.04") {
+    val input = "fn f: Bool = false && true"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.False)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalAnd.05") {
+    val input = "fn f: Bool = false && ???: Bool"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.False)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalAnd.06") {
+    val input = "fn f: Bool = true && ???: Bool"
+    intercept[RuntimeException] { new Flix().addStr(input).solve().get }
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalOr.01") {
+    val input = "fn f: Bool = true || true"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.True)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalOr.02") {
+    val input = "fn f: Bool = true || false"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.True)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalOr.03") {
+    val input = "fn f: Bool = false || false"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.False)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalOr.04") {
+    val input = "fn f: Bool = false || true"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.True)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalOr.05") {
+    val input = "fn f: Bool = true || ???: Bool"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.True)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalOr.06") {
+    val input = "fn f: Bool = false || ???: Bool"
+    intercept[RuntimeException] { new Flix().addStr(input).solve().get }
+  }
+
+  test("Expression.Binary - BinaryOperator.Implication.01") {
+    val input = "fn f: Bool = true ==> true"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.True)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.Implication.02") {
+    val input = "fn f: Bool = true ==> false"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.False)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.Implication.03") {
+    val input = "fn f: Bool = false ==> false"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.True)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.Implication.04") {
+    val input = "fn f: Bool = false ==> true"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.True)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.Implication.05") {
+    val input = "fn f: Bool = false ==> ???: Bool"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.True)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.Implication.06") {
+    val input = "fn f: Bool = true ==> ???: Bool"
+    intercept[RuntimeException] { new Flix().addStr(input).solve().get }
+  }
+
+  test("Expression.Binary - BinaryOperator.Biconditional.01") {
+    val input = "fn f: Bool = true <==> true"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.True)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.Biconditional.02") {
+    val input = "fn f: Bool = true <==> false"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.False)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.Biconditional.03") {
+    val input = "fn f: Bool = false <==> false"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.True)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.Biconditional.04") {
+    val input = "fn f: Bool = false <==> true"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.False)(result)
+  }
+
 //  test("Interpreter - BinaryOperator.BitwiseAnd01") {
 //    val input = "fn f: Int = 42 & 65535"
 //    val model = new Flix().addStr(input).solve().get
@@ -1918,72 +2071,6 @@ class TestInterpreter extends FunSuite {
 //    val model = new Flix().addStr(input).solve().get
 //    val result = model.constants(Name.Resolved.mk("f"))
 //    assertResult(Value.mkInt32(12345 >> 0))(result)
-//  }
-//
-//  test("Interpreter - BinaryOperator.And01") {
-//    val input = Expression.Binary(
-//      BinaryOperator.LogicalAnd,
-//      Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
-//      Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
-//      Type.Bool, loc
-//    )
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.True)(result)
-//  }
-//
-//  test("Interpreter - BinaryOperator.And02") {
-//    val input = Expression.Binary(
-//      BinaryOperator.LogicalAnd,
-//      Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
-//      Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
-//      Type.Bool, loc
-//    )
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.False)(result)
-//  }
-//
-//  test("Interpreter - BinaryOperator.And03") {
-//    val input = Expression.Binary(
-//      BinaryOperator.LogicalAnd,
-//      Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
-//      Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
-//      Type.Bool, loc
-//    )
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.False)(result)
-//  }
-//
-//  test("Interpreter - BinaryOperator.Or01") {
-//    val input = Expression.Binary(
-//      BinaryOperator.LogicalOr,
-//      Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
-//      Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
-//      Type.Bool, loc
-//    )
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.True)(result)
-//  }
-//
-//  test("Interpreter - BinaryOperator.Or02") {
-//    val input = Expression.Binary(
-//      BinaryOperator.LogicalOr,
-//      Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
-//      Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
-//      Type.Bool, loc
-//    )
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.True)(result)
-//  }
-//
-//  test("Interpreter - BinaryOperator.Or03") {
-//    val input = Expression.Binary(
-//      BinaryOperator.LogicalOr,
-//      Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
-//      Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
-//      Type.Bool, loc
-//    )
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.False)(result)
 //  }
 //
 //  /////////////////////////////////////////////////////////////////////////////
