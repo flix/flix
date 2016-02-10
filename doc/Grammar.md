@@ -11,7 +11,7 @@ Declaration     D  =  namespace Name                Namespace declaration.
                    |                                Function declaration.
                    |                                Law declaration.
                    |                                Signature declaration.
-                   |  enum { EnumCase ... }         Enum declaration.
+                   |  enum { EnumCase, ... }        Enum declaration.
                    |  rel Name()                    Relation declaration.
                    |  lat ()                        Lattice declaration.
                    |  index Name()                  Index declaration.
@@ -19,25 +19,25 @@ Declaration     D  =  namespace Name                Namespace declaration.
 
 EnumCase           = case Name(T, ..., T)           Enum case.
 
-Value           v  =  ()                            Unit
-                   |  true | false                  Boolean
-                   |  [Int]                         Int
-                   |  [Str]                         Str
-                   |  Name.v                        Tagged
-                   |  (v_1, ..., v_n)               Tuple
-               
+Value           v  =  ()                            Unit value.
+                   |  [Bool]                        Boolean value.
+                   |  [Int]                         Int value.
+                   |  [Str]                         Str value.
+                   |  Name . Tag v                  Tagged value.
+                   |  (v, ..., v)                   Tuple value.
+
 
 Expr            e  =  v                             Value expression.
                    |  x                             Variable expression.
-                   |  e(e, ..., e)                  Call expression.
+                   |  e (e, ..., e)                 Call expression.
                    |  e `e` e                       Infix call expression.
                    |  op e                          Unary expression.
                    |  e op e                        Binary expression.
                    |  let x = e in e                Let expression.
                    |  if (e) then e else e          If-then-else expression.
                    |  switch { SCase ... }          Switch expression.
-                   |  match e with { MCase... }     Match expression.
-                   |  Name.Tag e                    Tag expression.
+                   |  match e with { MCase ... }    Match expression.
+                   |  Name . Tag e                  Tag expression.
                    |  (e, ..., e)                   Tuple expression.
                    |  e : T                         Ascribe expression.
                    |  ??? : T                       Error expression.
