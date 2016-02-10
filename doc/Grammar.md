@@ -42,51 +42,61 @@ Expr            e  =  v                             Value
                    |  e : T                         Ascribe expression
                    |  ??? : T                       Error expression
                    | bot | top
+
                
-SCase              =  case e => e                   Switch case
-MCase              =  case p => e                   Match case                  
+SCase              =  case e => e                   Switch case.
+MCase              =  case p => e                   Match case.
 
 
-Pattern         p  =  _                             Wildcard
-                   |  x                             Variable
-                   |  true | false                  Boolean
-                   |  ...  
-                   |  Name p                        Tag pattern
-                   |  (p, ..., p)                   Tuple pattern
+Pattern         p  =  _                             Wildcard pattern.
+                   |  x                             Variable pattern.
+                   |  ()                            Unit pattern. 
+                   |  true | false                  Boolean pattern.
+                   |  [Int]                         Integer pattern.
+                   |  [Str]                         String pattern.
+                   |  Name.p                        Tag pattern.
+                   |  (p, ..., p)                   Tuple pattern.
 
 
-Constraint      C  =  P.                            Fact
-                   |  P :-  P, ..., P.              Rule
+Constraint      C  =  P.                            Fact.
+                   |  P :-  P, ..., P.              Rule.
 
 
-Predicate       P  =  Name(t, ..., t)               Table predicate
-                   |  x != y                        Not Equal predicate
-                   |  x <- t                        Loop predicate
-                   |  x := t                        Alias predicate
+Predicate       P  =  Name(t, ..., t)               Table predicate.
+                   |  x != y                        Not Equal predicate. [1]
+                   |  x <- t                        Loop predicate. [2]
+                   |  x := t                        Alias predicate. [3]
 
 
-Term            t  =  _                             Wildcard term.
+Term            t  =  _                             Wildcard term. [4]
                    |  x                             Variable term.
                    |  v                             Value term.
-                   |  Name(t, ..., t)               Apply term.
+                   |  Name(t, ..., t)               Apply term. [5]
 
 
-Type            T  =  Name                          Named type
-                   |  Unit                          Unit type
-                   |  Bool                          Bool type
-                   |  Char                          Char type
-                   |  Int                           Alias for Int32
-                   |  Int8                          Unsigned  8 bit int type
-                   |  Int16                         Unsigned 16 bit int type
-                   |  Int32                         Unsigned 32 bit int type
-                   |  Int64                         Unsigned 64 bit int type
-                   |  Str                           String type
-                   |  Native                        Native type
-                   |  (T_1, ..., T_n)               Tuple type
-                   |  (T1, ..., T_n) -> T           Lambda type
-                   |  Opt[T]                        Option type
-                   |  Lst[T]                        List type
-                   |  Set[T]                        Set type
-                   |  Map[T_1, T_2]                 Map type
+Type            T  =  Name                          Named type.
+                   |  Unit                          Unit type.
+                   |  Bool                          Bool type.
+                   |  Char                          Char type.
+                   |  Int8                          Unsigned  8 bit int type.
+                   |  Int16                         Unsigned 16 bit int type.
+                   |  Int32                         Unsigned 32 bit int type. [6]
+                   |  Int64                         Unsigned 64 bit int type.
+                   |  Str                           String type.
+                   |  Native                        Native type.
+                   |  (T, ..., T)                   Tuple type.
+                   |  (T, ..., T) -> T              Lambda type.
+                   |  Opt[T]                        Option type.
+                   |  Lst[T]                        List type.
+                   |  Set[T]                        Set type.
+                   |  Map[T, T]                     Map type.
+
+[1]: A not equal predicate must appear in the body of a constraint.
+[2]: A loop predicate must appear in the body of a constraint.
+[3]: An alias predicate must appear in the body of a constraint.
+[4]: A wildcard term may only appear in the body of a constraint.
+[5]: An apply term may only appear in the head of a constraint.
+[6]: The alias `Int` may be used.
+
 
 ```
