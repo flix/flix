@@ -7,29 +7,44 @@ NB: Not every program admitted by this grammar is a valid Flix program.
 ```no-lang
 Program         A  =  D ...                         Declaration
             
-Declaration     D  =  namespace Name                Namespace declaration.
-                   |                                Function declaration.
-                   |                                Law declaration.
-                   |                                Signature declaration.
-                   |  enum { EnumCase, ... }        Enum declaration.
-                   |  rel Name()                    Relation declaration.
-                   |  lat ()                        Lattice declaration.
-                   |  index Name()                  Index declaration.
-                   |  c                             Constraint declaration.
+Declaration     D  =  namespace Name { D ... }      Namespace declaration.
+                   |  Enum                          Enum declaration.
+                   |  Function                      Function declaration.
+                   |  Relation                      Relation declaration.
+                   |  Lattice                       Lattice declaration.
+                   |  Index                         Index declaration.
+                   |  Constraint                    Constraint declaration.
 
-EnumCase           = case Name(T, ..., T)           Enum case.
+
+Enum               =  enum { EnumCase, ... }        Enum declaration.
+EnumCase           =  case Name(T, ...)             Enum case.
+
+
+Function           =  fn Name Args? : T = e         Function declaration.
+Args               =  ((x: T), ...)                 Formal arguments.
+
+
+Relation           =  rel Name(x: T, ...)           Relation declaration.
+
+
+Lattice            =  lat Name(x: T(<>)?, ...)      Lattice declaration.
+
+
+Index              =  index Name(IndexKey, ...)     Index declaration.
+IndexKey           =  { x, ... }                    Index Keys
+
 
 Value           v  =  ()                            Unit value.
                    |  [Bool]                        Boolean value.
                    |  [Int]                         Int value.
                    |  [Str]                         Str value.
                    |  Name . Tag v                  Tagged value.
-                   |  (v, ..., v)                   Tuple value.
+                   |  (v, ...)                      Tuple value.
 
 
 Expr            e  =  v                             Value expression.
                    |  x                             Variable expression.
-                   |  e (e, ..., e)                 Call expression.
+                   |  e (e, ...)                    Call expression.
                    |  e `e` e                       Infix call expression.
                    |  op e                          Unary expression.
                    |  e op e                        Binary expression.
@@ -38,7 +53,7 @@ Expr            e  =  v                             Value expression.
                    |  switch { SCase ... }          Switch expression.
                    |  match e with { MCase ... }    Match expression.
                    |  Name . Tag e                  Tag expression.
-                   |  (e, ..., e)                   Tuple expression.
+                   |  (e, ...)                      Tuple expression.
                    |  e : T                         Ascribe expression.
                    |  ??? : T                       Error expression.
 
@@ -54,14 +69,14 @@ Pattern         p  =  _                             Wildcard pattern.
                    |  [Int]                         Integer pattern.
                    |  [Str]                         String pattern.
                    |  Name . Tag p                  Tag pattern.
-                   |  (p, ..., p)                   Tuple pattern.
+                   |  (p, ...)                      Tuple pattern.
 
 
 Constraint      C  =  P.                            Fact.
-                   |  P :-  P, ..., P.              Rule.
+                   |  P :-  P, ... .                Rule.
 
 
-Predicate       P  =  Name(t, ..., t)               Table predicate.
+Predicate       P  =  Name(t, ...)                  Table predicate.
                    |  x != y                        Not Equal predicate. [1]
                    |  x <- t                        Loop predicate. [2]
                    |  x := t                        Alias predicate. [3]
@@ -70,7 +85,7 @@ Predicate       P  =  Name(t, ..., t)               Table predicate.
 Term            t  =  _                             Wildcard term. [4]
                    |  x                             Variable term.
                    |  v                             Value term.
-                   |  Name(t, ..., t)               Apply term. [5]
+                   |  Name(t, ...)                  Apply term. [5]
 
 
 Type            T  =  Name                          Named type.
@@ -83,8 +98,8 @@ Type            T  =  Name                          Named type.
                    |  Int64                         Unsigned 64 bit int type.
                    |  Str                           String type.
                    |  Native                        Native type.
-                   |  (T, ..., T)                   Tuple type.
-                   |  (T, ..., T) -> T              Lambda type.
+                   |  (T, ...)                      Tuple type.
+                   |  (T, ...) -> T                 Lambda type.
                    |  Opt[T]                        Option type.
                    |  Lst[T]                        List type.
                    |  Set[T]                        Set type.
