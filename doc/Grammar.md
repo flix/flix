@@ -1,17 +1,22 @@
 # Flix Grammar #
 
-```
-Program            =  D ...                         Declaration
+An informal, readable version of the Flix grammar. 
+
+NB: Not every program admitted by this grammar is a valid Flix program.
+
+```no-lang
+Program         A  =  D ...                         Declaration
             
 Declaration     D  =  namespace Name                Namespace
                    |                                Function
-                   |                                 Law
+                   |                                Law
                    |                                Signature
                                                     Enum
-                                                    Relation
-                                                    Lattice
-                                                    Index
-                   |  c                             Constraint
+                   |                                 Relation
+                   |                                 Lattice
+                   |  index Name()                  Index
+                   |  Fact                           Fact
+                   |  Rule                           Rule
 
 
 Value           v  =  ()                            Unit
@@ -32,43 +37,54 @@ Expr            e  =  v                             Value
                    |  if (e) then e else e          If-then-else
                    |  switch { SCase ... }          Switch
                    |  match e with { MCase... }     Match
-                   |  Tag
-                   | Tuple
-                   | Ascribe
-                   | Error
+                   |  Name.e                        Tag expression
+                   |  (e, ..., e)                   Tuple expression
+                   |  e : T                         Ascribe expression
+                   |  ??? : T                       Error expression
                    | bot | top
                
-               
+SCase              =  case e => e                   Switch case
+MCase              =  case p => e                   Match case                  
+
+
 Pattern         p  =  _                             Wildcard
                    |  x                             Variable
                    |  true | false                  Boolean
                    |  ...  
-                   |  Tag
-                   |  tupl
+                   |  Name p                        Tag pattern
+                   |  (p, ..., p)                   Tuple pattern
 
-rule
 
-predicate
+Constraint      C  =  P.                            Fact
+                   |  P :-  P, ..., P.              Rule
 
-term
+
+Predicate       P  =  Name(t, ..., t)               Table predicate
+                   |  x != y                        Not Equal predicate
+                   |  x <- t                        Loop predicate
+                   |  x := t                        Alias predicate
+
+
+Term            t  = 
 wildcard, var, lit, appyl, infix, ascribe
 
-Type        T  =  Name                          Named type
-               |  Unit                          Unit type
-               |  Bool                          Bool type
-               |  Char                          Char type
-               |  Int                           Alias for Int32
-               |  Int8                          Unsigned  8 bit int type
-               |  Int16                         Unsigned 16 bit int type
-               |  Int32                         Unsigned 32 bit int type
-               |  Int64                         Unsigned 64 bit int type
-               |  Str                           String type
-               |  Native                        Native type
-               |  (T_1, ..., T_n)               Tuple type
-               |  (T1, ..., T_n) -> T           Lambda type
-               |  Opt[T]                        Option type
-               |  Lst[T]                        List type
-               |  Set[T]                        Set type
-               |  Map[T_1, T_2]                 Map type
+
+Type            T  =  Name                          Named type
+                   |  Unit                          Unit type
+                   |  Bool                          Bool type
+                   |  Char                          Char type
+                   |  Int                           Alias for Int32
+                   |  Int8                          Unsigned  8 bit int type
+                   |  Int16                         Unsigned 16 bit int type
+                   |  Int32                         Unsigned 32 bit int type
+                   |  Int64                         Unsigned 64 bit int type
+                   |  Str                           String type
+                   |  Native                        Native type
+                   |  (T_1, ..., T_n)               Tuple type
+                   |  (T1, ..., T_n) -> T           Lambda type
+                   |  Opt[T]                        Option type
+                   |  Lst[T]                        List type
+                   |  Set[T]                        Set type
+                   |  Map[T_1, T_2]                 Map type
 
 ```
