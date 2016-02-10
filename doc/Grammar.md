@@ -1,36 +1,57 @@
 # Flix Grammar #
 
 ```
-Program     p  =  declaration            
+Program            =  D ...                         Declaration
+            
+Declaration     D  =  namespace Name                Namespace
+                   |                                Function
+                   |                                 Law
+                   |                                Signature
+                                                    Enum
+                                                    Relation
+                                                    Lattice
+                                                    Index
+                   |  c                             Constraint
 
 
-Value       v  =  ()                            Unit
-               |  true | false                  Boolean
-               |  [Int]                         Int
-               |  [Str]                         Str
-               |  Name.v                        Tagged
-               |  (v_1, ..., v_n)               Tuple
+Value           v  =  ()                            Unit
+                   |  true | false                  Boolean
+                   |  [Int]                         Int
+                   |  [Str]                         Str
+                   |  Name.v                        Tagged
+                   |  (v_1, ..., v_n)               Tuple
                
 
-Expr        e  =  v                             Value
-               |  x                             Var
-               |  e(e_1, ..., e_n)              App
-               |  e_1 `e` e_2                   Infix
-               |  op e                          Unary
-               |  e_1 op e_2                    Binary
-               |  let x = e in e                Let-binding
-               |  if (e) then e else e          If-then-else
-               |  switch { SCase ... }          Switch
-               |  match e with { MCase... }     Match
-               |  Tag
-               | Tuple
-               | Ascribe
-               | Error
-               | bot | top
+Expr            e  =  v                             Value
+                   |  x                             Var
+                   |  e(e_1, ..., e_n)              App
+                   |  e_1 `e` e_2                   Infix
+                   |  op e                          Unary
+                   |  e_1 op e_2                    Binary
+                   |  let x = e in e                Let-binding
+                   |  if (e) then e else e          If-then-else
+                   |  switch { SCase ... }          Switch
+                   |  match e with { MCase... }     Match
+                   |  Tag
+                   | Tuple
+                   | Ascribe
+                   | Error
+                   | bot | top
                
-Pattern
+               
+Pattern         p  =  _                             Wildcard
+                   |  x                             Variable
+                   |  true | false                  Boolean
+                   |  ...  
+                   |  Tag
+                   |  tupl
 
-wildcard, var, lit, tag, tuple
+rule
+
+predicate
+
+term
+wildcard, var, lit, appyl, infix, ascribe
 
 Type        T  =  Name                          Named type
                |  Unit                          Unit type
