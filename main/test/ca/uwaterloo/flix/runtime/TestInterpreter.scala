@@ -2462,69 +2462,166 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt64(-3000000000L))(result04)
   }
 
-//  /////////////////////////////////////////////////////////////////////////////
-//  // Expressions - If Then Else                                              //
-//  /////////////////////////////////////////////////////////////////////////////
-//
-//  test("Interpreter - Expression.IfThenElse01") {
-//    val input = Expression.IfThenElse(
-//      Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
-//      Expression.Lit(Literal.Str("foo", loc), Type.Str, loc),
-//      Expression.Lit(Literal.Str("bar", loc), Type.Str, loc),
-//      Type.Str, loc
-//    )
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkStr("foo"))(result)
-//  }
-//
-//  test("Interpreter - Expression.IfThenElse02") {
-//    val input = Expression.IfThenElse(
-//      Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
-//      Expression.Lit(Literal.Str("foo", loc), Type.Str, loc),
-//      Expression.Lit(Literal.Str("bar", loc), Type.Str, loc),
-//      Type.Str, loc
-//    )
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkStr("bar"))(result)
-//  }
-//
-//  test("Interpreter - Expression.IfThenElse03") {
-//    // if (20 % 7 >= 3 || 25 - 5 == 4) "foo" else "bar"
-//    val input = Expression.IfThenElse(
-//      Expression.Binary(
-//        BinaryOperator.LogicalOr,
-//        Expression.Binary(
-//          BinaryOperator.GreaterEqual,
-//          Expression.Binary(
-//            BinaryOperator.Modulo,
-//            Expression.Lit(Literal.Int(20, loc), Type.Int32, loc),
-//            Expression.Lit(Literal.Int(7, loc), Type.Int32, loc),
-//            Type.Int32, loc
-//          ),
-//          Expression.Lit(Literal.Int(3, loc), Type.Int32, loc),
-//          Type.Bool
-//          , loc),
-//        Expression.Binary(
-//          BinaryOperator.Equal,
-//          Expression.Binary(
-//            BinaryOperator.Minus,
-//            Expression.Lit(Literal.Int(25, loc), Type.Int32, loc),
-//            Expression.Lit(Literal.Int(5, loc), Type.Int32, loc),
-//            Type.Int32, loc
-//          ),
-//          Expression.Lit(Literal.Int(4, loc), Type.Int32, loc),
-//          Type.Bool
-//          , loc),
-//        Type.Bool, loc
-//      ),
-//      Expression.Lit(Literal.Str("foo", loc), Type.Str, loc),
-//      Expression.Lit(Literal.Str("bar", loc), Type.Str, loc),
-//      Type.Str
-//      , loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkStr("foo"))(result)
-//  }
-//
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.IfThenElse                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.IfThenElse.01") {
+    val input = "fn f: Int = if (false) 42 + 10 else 42 - 10"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(32))(result)
+  }
+
+  test("Expression.IfThenElse.02") {
+    val input = "fn f: Int = if (true) 42 + 10 else 42 - 10"
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(52))(result)
+  }
+
+  test("Expression.IfThenElse.03") {
+    val input =
+      """fn f(x: Bool): Int = if (x) (if (false) 1 else 2) else (if (true) 3 else 4)
+        |fn g01: Int = f(true)
+        |fn g02: Int = f(false)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    assertResult(Value.mkInt32(2))(result01)
+    assertResult(Value.mkInt32(3))(result02)
+  }
+
+  test("Expression.IfThenElse.04") {
+    val input =
+      """fn f(x: Bool): Int = if (if (!x) true else false) 1234 else 5678
+        |fn g01: Int = f(true)
+        |fn g02: Int = f(false)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    assertResult(Value.mkInt32(5678))(result01)
+    assertResult(Value.mkInt32(1234))(result02)
+  }
+
+  test("Expression.IfThenElse.05") {
+    val input =
+      """fn f(x: Bool, y: Bool): Int = if (x && y) 1234 else 5678
+        |fn g01: Int = f(true, true)
+        |fn g02: Int = f(false, true)
+        |fn g03: Int = f(true, false)
+        |fn g04: Int = f(false, false)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    assertResult(Value.mkInt32(1234))(result01)
+    assertResult(Value.mkInt32(5678))(result02)
+    assertResult(Value.mkInt32(5678))(result03)
+    assertResult(Value.mkInt32(5678))(result04)
+  }
+
+  test("Expression.IfThenElse.06") {
+    val input =
+      """fn f(x: Bool, y: Bool): Int = if (x || y) 1234 else 5678
+        |fn g01: Int = f(true, true)
+        |fn g02: Int = f(false, true)
+        |fn g03: Int = f(true, false)
+        |fn g04: Int = f(false, false)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    assertResult(Value.mkInt32(1234))(result01)
+    assertResult(Value.mkInt32(1234))(result02)
+    assertResult(Value.mkInt32(1234))(result03)
+    assertResult(Value.mkInt32(5678))(result04)
+  }
+
+  ignore("Expression.IfThenElse.07") {
+    val input =
+      """fn f(x: Int8, y: Int8): Int8 = if (x < y) 12 else 56
+        |fn g01: Int8 = f(5, 24)
+        |fn g02: Int8 = f(5, 5)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    assertResult(Value.mkInt8(12))(result01)
+    assertResult(Value.mkInt8(56))(result02)
+  }
+
+  ignore("Expression.IfThenElse.08") {
+    val input =
+      """fn f(x: Int16, y: Int16): Int16 = if (x <= y) 1234 else 5678
+        |fn g01: Int16 = f(500, 500)
+        |fn g02: Int16 = f(500, 200)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    assertResult(Value.mkInt16(1234))(result01)
+    assertResult(Value.mkInt16(5678))(result02)
+  }
+
+  test("Expression.IfThenElse.09") {
+    val input =
+      """fn f(x: Int32, y: Int32): Int32 = if (x > y) 12341234 else 56785678
+        |fn g01: Int32 = f(2400000, 500000)
+        |fn g02: Int32 = f(500000, 500000)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    assertResult(Value.mkInt32(12341234))(result01)
+    assertResult(Value.mkInt32(56785678))(result02)
+  }
+
+  ignore("Expression.IfThenElse.10") {
+    val input =
+      """fn f(x: Int64, y: Int64): Int64 = if (x >= y) 123412341234 else 567856785678
+        |fn g01: Int64 = f(50000000000, 50000000000)
+        |fn g02: Int64 = f(20000000000, 50000000000)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    assertResult(Value.mkInt64(123412341234L))(result01)
+    assertResult(Value.mkInt64(567856785678L))(result02)
+  }
+
+  test("Expression.IfThenElse.11") {
+    val input =
+      """fn f(x: Int, y: Int): Int = if (x == y) 1234 else 5678
+        |fn g01: Int = f(5, 5)
+        |fn g02: Int = f(2, 5)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    assertResult(Value.mkInt32(1234))(result01)
+    assertResult(Value.mkInt32(5678))(result02)
+  }
+
+  test("Expression.IfThenElse.12") {
+    val input =
+      """fn f(x: Int, y: Int): Int = if (x != y) 1234 else 5678
+        |fn g01: Int = f(2, 5)
+        |fn g02: Int = f(5, 5)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    assertResult(Value.mkInt32(1234))(result01)
+    assertResult(Value.mkInt32(5678))(result02)
+  }
+
 //  /////////////////////////////////////////////////////////////////////////////
 //  // Expressions - Switch                                                    //
 //  /////////////////////////////////////////////////////////////////////////////

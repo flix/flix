@@ -5849,17 +5849,17 @@ class TestCodegen extends FunSuite {
           Var(toIdent("x"), 0, Type.Int8, loc),
           Var(toIdent("y"), 1, Type.Int8, loc),
           Type.Bool, loc),
-        Int32(1234),
-        Int32(5678),
-        Type.Int32, loc),
-      Type.Lambda(List(Type.Int8, Type.Int8), Type.Int32), loc)
+        Int8(12),
+        Int8(56),
+        Type.Int8, loc),
+      Type.Lambda(List(Type.Int8, Type.Int8), Type.Int8), loc)
 
     val code = new CompiledCode(List(definition))
     val result01 = code.call(name, List(java.lang.Byte.TYPE, java.lang.Byte.TYPE), List(5.toByte, 24.toByte).map(_.asInstanceOf[Object]))
     val result02 = code.call(name, List(java.lang.Byte.TYPE, java.lang.Byte.TYPE), List(5.toByte, 5.toByte).map(_.asInstanceOf[Object]))
 
-    assertResult(1234)(result01)
-    assertResult(5678)(result02)
+    assertResult(12)(result01)
+    assertResult(56)(result02)
   }
 
   test("Codegen - IfThenElse08") {
@@ -5869,10 +5869,10 @@ class TestCodegen extends FunSuite {
           Var(toIdent("x"), 0, Type.Int16, loc),
           Var(toIdent("y"), 1, Type.Int16, loc),
           Type.Bool, loc),
-        Int32(1234),
-        Int32(5678),
+        Int16(1234),
+        Int16(5678),
         Type.Int32, loc),
-      Type.Lambda(List(Type.Int16, Type.Int16), Type.Int32), loc)
+      Type.Lambda(List(Type.Int16, Type.Int16), Type.Int16), loc)
 
     val code = new CompiledCode(List(definition))
     val result01 = code.call(name, List(java.lang.Short.TYPE, java.lang.Short.TYPE), List(500.toShort, 500.toShort).map(_.asInstanceOf[Object]))
@@ -5889,8 +5889,8 @@ class TestCodegen extends FunSuite {
           Var(toIdent("x"), 0, Type.Int32, loc),
           Var(toIdent("y"), 1, Type.Int32, loc),
           Type.Bool, loc),
-        Int32(1234),
-        Int32(5678),
+        Int32(12341234),
+        Int32(56785678),
         Type.Int32, loc),
       Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
 
@@ -5898,8 +5898,8 @@ class TestCodegen extends FunSuite {
     val result01 = code.call(name, List(java.lang.Integer.TYPE, java.lang.Integer.TYPE), List(2400000, 500000).map(_.asInstanceOf[Object]))
     val result02 = code.call(name, List(java.lang.Integer.TYPE, java.lang.Integer.TYPE), List(500000, 500000).map(_.asInstanceOf[Object]))
 
-    assertResult(1234)(result01)
-    assertResult(5678)(result02)
+    assertResult(12341234)(result01)
+    assertResult(56785678)(result02)
   }
 
   test("Codegen - IfThenElse10") {
@@ -5909,17 +5909,17 @@ class TestCodegen extends FunSuite {
           Var(toIdent("x"), 0, Type.Int64, loc),
           Var(toIdent("y"), 2, Type.Int64, loc),
           Type.Bool, loc),
-        Int32(1234),
-        Int32(5678),
-        Type.Int32, loc),
-      Type.Lambda(List(Type.Int64, Type.Int64), Type.Int32), loc)
+        Int64(123412341234L),
+        Int64(567856785678L),
+        Type.Int64, loc),
+      Type.Lambda(List(Type.Int64, Type.Int64), Type.Int64), loc)
 
     val code = new CompiledCode(List(definition))
     val result01 = code.call(name, List(java.lang.Long.TYPE, java.lang.Long.TYPE), List(50000000000L, 50000000000L).map(_.asInstanceOf[Object]))
     val result02 = code.call(name, List(java.lang.Long.TYPE, java.lang.Long.TYPE), List(20000000000L, 50000000000L).map(_.asInstanceOf[Object]))
 
-    assertResult(1234)(result01)
-    assertResult(5678)(result02)
+    assertResult(123412341234L)(result01)
+    assertResult(567856785678L)(result02)
   }
 
   test("Codegen - IfThenElse11") {
