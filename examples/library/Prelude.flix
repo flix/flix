@@ -8,6 +8,7 @@
  *  - If neither `leq(x, y)` and `leq(y, x)` are true then `x` and `y` are incomparable.
  */
 class PartialOrder[E] {
+
     /**
      * Returns `true` iff the element `x` is less than or equal to the element `y`.
      */
@@ -35,6 +36,7 @@ class PartialOrder[E] {
      * equal to `z`.
      */
     law Transitivity(x: E, y: E, z: E): Bool = (x ⊑ y ∧ y ⊑ z) → (x ⊑ z)
+
 }
 
 
@@ -42,6 +44,7 @@ class PartialOrder[E] {
  * A join semi lattice is a partial order equipped with a bottom element and a least upper bound.
  */
 class JoinSemiLattice[E] => PartialOrder[E] {
+
     /**
      * Returns the least element of the lattice.
      */
@@ -75,32 +78,58 @@ class JoinSemiLattice[E] => PartialOrder[E] {
     law UpperBound(x: E, y: E): Bool = (x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y))
 
     /**
-     * The least upper bound law requires that the least upper bound operator return
+     * The least upper bound law requires that the least upper bound operator returns
      * the smallest element that is larger than its two arguments.
      */
-     law LeastUpperBound(x: E, y: E, z: E): Bool = ((x ⊑ z) ∧ (y ⊑ z)) → (x ⊔ y) ⊑ z
+    law LeastUpperBound(x: E, y: E, z: E): Bool = ((x ⊑ z) ∧ (y ⊑ z)) → (x ⊔ y) ⊑ z
 
 }
 
+
 /**
- * A meet semi lattice is a partial order equipped with
- * a top element `top` and a greatest upper bound operator `glb`.
- *
- * A meet semi lattice must satisfy the laws:
+ * A meet semi lattice is a partial order equipped with a top element and a greatest lower bound.
  */
-class MeetSemiLattice[E] {
+class MeetSemiLattice[E] => PartialOrder[E] {
+
     /**
      * Returns the greatest element of the lattice.
      */
     fn top: E
 
     /**
+     * Returns the greatest lower bound of the two elements `x` and `y`.
+     */
+    fn glb(x: E, y: E): E
+
+
+    /**
      * Alias for the greatest element of the lattice.
      */
     fn ⊤: E
 
+    /**
+     * Alias for the greatest lower bound operator.
+     */
+    fn ⊓(x: E, y: E): E = glb(x, y)
 
-    // top, glb
+    /**
+     * The greatest element law requires that every element of the lattice is
+     * greater than or equal to the top element.
+     */
+    law GreatestElement(x: E): Bool = x ⊑ ⊤
+
+    /**
+     * The lower bound law requires that the greatest lower bound operator returns an
+     * element that is less than or equal to each of its arguments.
+     */
+    law LowerBound(x: E, y: E): Bool = ((x ⊓ y) ⊑ x) ∧ ((x ⊓ y) ⊑ y)
+
+    /**
+     * The greatest lower bound law requires that the greatest lower bound operator returns
+     * the largest element that is smaller than its two arguments.
+     */
+    law GreatestLowerBound(x: E, y: E, z: E): Bool = ((z ⊑ x) ∧ (z ⊑ y)) → (z ⊑ (x ⊓ y))
+
 }
 
 
