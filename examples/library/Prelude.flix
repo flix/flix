@@ -20,18 +20,18 @@ class PartialOrder[E] {
     fn ⊑(x: E, y: E): Bool = leq(x, y)
 
     /**
-     * The reflexivity law requires that any element is less than or equal to itself.
+     * The reflexivity law asserts that any element is less than or equal to itself.
      */
     law Reflexivity(x: E): Bool = x ⊑ x
 
     /**
-     * The anti-symmetry law requires that if `x` is less than or equal to `y`
+     * The anti-symmetry law asserts that if `x` is less than or equal to `y`
      * and vice versa then the two elements must be equal.
      */
     law AntiSymmetry(x: E, y: E): Bool = (x ⊑ y ∧ y ⊑ x) → (x ≡ y)
 
     /**
-     * The transitivity law requires that if `x` less than or equal to `y`
+     * The transitivity law asserts that if `x` less than or equal to `y`
      * and `y` is less than or equal to `z` then `x` must be less than or
      * equal to `z`.
      */
@@ -66,19 +66,19 @@ class JoinSemiLattice[E] => PartialOrder[E] {
     fn ⊑(x: E, y: E): E = lub(x, y)
 
     /**
-     * The least element law requires that every element of the lattice is
+     * The least element law asserts that every element of the lattice is
      * less than or equal to the bottom element.
      */
     law LeastElement(x: E): Bool = ⊥ ⊑ x
 
     /**
-     * The upper bound law requires that the least upper bound operator returns an
+     * The upper bound law asserts that the least upper bound operator returns an
      * element that is greater than or equal to each of its arguments.
      */
     law UpperBound(x: E, y: E): Bool = (x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y))
 
     /**
-     * The least upper bound law requires that the least upper bound operator returns
+     * The least upper bound law asserts that the least upper bound operator returns
      * the smallest element that is larger than its two arguments.
      */
     law LeastUpperBound(x: E, y: E, z: E): Bool = ((x ⊑ z) ∧ (y ⊑ z)) → (x ⊔ y) ⊑ z
@@ -113,19 +113,19 @@ class MeetSemiLattice[E] => PartialOrder[E] {
     fn ⊓(x: E, y: E): E = glb(x, y)
 
     /**
-     * The greatest element law requires that every element of the lattice is
+     * The greatest element law asserts that every element of the lattice is
      * greater than or equal to the top element.
      */
     law GreatestElement(x: E): Bool = x ⊑ ⊤
 
     /**
-     * The lower bound law requires that the greatest lower bound operator returns an
+     * The lower bound law asserts that the greatest lower bound operator returns an
      * element that is less than or equal to each of its arguments.
      */
     law LowerBound(x: E, y: E): Bool = ((x ⊓ y) ⊑ x) ∧ ((x ⊓ y) ⊑ y)
 
     /**
-     * The greatest lower bound law requires that the greatest lower bound operator returns
+     * The greatest lower bound law asserts that the greatest lower bound operator returns
      * the largest element that is smaller than its two arguments.
      */
     law GreatestLowerBound(x: E, y: E, z: E): Bool = ((z ⊑ x) ∧ (z ⊑ y)) → (z ⊑ (x ⊓ y))
@@ -133,9 +133,41 @@ class MeetSemiLattice[E] => PartialOrder[E] {
 }
 
 
+/**
+ * A lattice is a join semi lattice and a meet semi lattice.
+ */
+class Lattice[E] => JoinSemiLattice[E], MeetSemiLattice[E] {
+    /* no defs. */
+    /* no laws. */
+}
 
+
+/**
+ * A bounded lattice is lattice that satisfies the ascending chain condition.
+
+ * Specifically, a bounded lattice must provide a height function `h` that maps every lattice
+ * element to a non-negative number that is decreasing according to the partial order.
+ */
 class BoundedLattice[E] {
-    // height?
+
+    /**
+     * Returns a non-negative integer that is decreasing according to the partial order.
+     */
+    fn h(e: E): Int
+
+    /**
+     * The non-negative law asserts that the `h` function is non-negative for any element.
+     */
+    law NonNegative(x: E): Bool = h(x) >= 0
+
+    /**
+     * The ascending-chain law asserts that if an element `x` is strictly less than an
+     * element `y` then f(x) must be strictly larger than f(y).
+     *
+     * Intuitively, every time we move upwards in the lattice the value of f(x) decreases.
+     */
+    law AscendingChain(x: E, y: E): Bool = (x ⊑ y) → (f(x) > f(y))
+
 }
 
 
@@ -171,9 +203,6 @@ impl PartialOrder[Sign] {
     /* ... */
 }
 
-impl JoinSemiLattice[Sign] {
-    /* ... */
-}
 
 
 impl PartialOrder[(A, B)] <= PartialOrder[A], PartialOrder[B] {
@@ -241,7 +270,12 @@ impl PartialOrder[Sign] {
 
 // ops to impl:  ∀, ¬, ∧, ∨, →, ↔, ≡, ⊥, ⊤, ⊑, ⊔, ⊓, ▽, △
 
-// Scala code:
-// case class Class(className: Ident, constraints: Set[ContextBound], typeVars: List[Ident])
-// case class Impl(className: Ident, constraints: Set[ContextBound], forType: Type, defs: List[Definition])
-// case class ContextBound(typeVar: Ident, className: Ident)
+/**
+ * Example implementation.
+ */
+// TODO: Can we implement this and get the super-classes for free?
+// TODO: It seem in haskell we must implement each class
+impl BoundedLattice[Sign] {
+    /* ... */
+}
+
