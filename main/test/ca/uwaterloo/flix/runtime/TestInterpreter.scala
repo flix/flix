@@ -240,7 +240,7 @@ class TestInterpreter extends FunSuite {
 
   /////////////////////////////////////////////////////////////////////////////
   // Expression.Var                                                          //
-  // Tested indirectly by Expression.{Lambda, Let}.                          //
+  // Tested indirectly by Expression.{Lambda,Let}.                           //
   /////////////////////////////////////////////////////////////////////////////
 
   /////////////////////////////////////////////////////////////////////////////
@@ -299,240 +299,189 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkStr("hello"))(result)
   }
 
-  // TODO: Lambda, Hook, Closure, Apply, Apply3
-  // Combine Expression.Var tests with Expression.Lambda and Expression.Let
-  // Skip for now, come back later.
+  // TODO: Tests will change when we do lambda lifting (e.g. Apply vs Apply3)
+  // Do we allow anonymous functions?
 
-//  /////////////////////////////////////////////////////////////////////////////
-//  // Expressions - Lambda and Apply                                          //
-//  /////////////////////////////////////////////////////////////////////////////
-//
-//  test("Interpreter - Expression.Lambda01") {
-//    // () => false
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(), Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Lambda(List(), Type.Bool), loc)
-//    val expected = Value.Closure(lambda.args.map(_.ident.name).toArray, lambda.body, mutable.Map())
-//    val closure = Interpreter.eval(lambda, root)
-//    assertResult(expected)(closure)
-//
-//    // (() => false)()
-//    val apply = Expression.Apply(lambda, List(), Type.Bool, loc)
-//    val value = Interpreter.eval(apply, root)
-//    assertResult(Value.False)(value)
-//  }
-//
-//  test("Interpreter - Expression.Lambda02") {
-//    // x => 3
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Int32)), Expression.Lit(Literal.Int(3, loc), Type.Int32, loc),
-//      Type.Lambda(List(Type.Int32), Type.Int32), loc)
-//    val expected = Value.Closure(lambda.args.map(_.ident.name).toArray, lambda.body, mutable.Map())
-//    val closure = Interpreter.eval(lambda, root)
-//    assertResult(expected)(closure)
-//
-//    // (x => 3)(4)
-//    val apply = Expression.Apply(lambda, List(Expression.Lit(Literal.Int(4, loc), Type.Int32, loc)), Type.Int32, loc)
-//    val value = Interpreter.eval(apply, root)
-//    assertResult(Value.mkInt32(3))(value)
-//  }
-//
-//  test("Interpreter - Expression.Lambda03") {
-//    // x => x
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Int32)), Expression.Var(ident01, Type.Int32, loc),
-//      Type.Lambda(List(Type.Int32), Type.Int32), loc)
-//    val expected = Value.Closure(lambda.args.map(_.ident.name).toArray, lambda.body, mutable.Map())
-//    val closure = Interpreter.eval(lambda, root)
-//    assertResult(expected)(closure)
-//
-//    // (x => x)(5)
-//    val apply = Expression.Apply(lambda, List(Expression.Lit(Literal.Int(5, loc), Type.Int32, loc)), Type.Int32, loc)
-//    val value = Interpreter.eval(apply, root)
-//    assertResult(Value.mkInt32(5))(value)
-//  }
-//
-//  test("Interpreter - Expression.Lambda04") {
-//    // x => 1 + 2
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Int32)),
-//      Expression.Binary(
-//        BinaryOperator.Plus,
-//        Expression.Lit(Literal.Int(1, loc), Type.Int32, loc),
-//        Expression.Lit(Literal.Int(2, loc), Type.Int32, loc),
-//        Type.Int32, loc),
-//      Type.Lambda(List(Type.Int32), Type.Int32), loc)
-//    val expected = Value.Closure(lambda.args.map(_.ident.name).toArray, lambda.body, mutable.Map())
-//    val closure = Interpreter.eval(lambda, root)
-//    assertResult(expected)(closure)
-//
-//    // (x => 1 + 2)(42)
-//    val apply = Expression.Apply(lambda, List(Expression.Lit(Literal.Int(42, loc), Type.Int32, loc)), Type.Int32, loc)
-//    val value = Interpreter.eval(apply, root)
-//    assertResult(Value.mkInt32(3))(value)
-//  }
-//
-//  test("Interpreter - Expression.Lambda05") {
-//    // x => x + 2
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Int32)),
-//      Expression.Binary(
-//        BinaryOperator.Plus,
-//        Expression.Var(ident01, Type.Int32, loc),
-//        Expression.Lit(Literal.Int(2, loc), Type.Int32, loc),
-//        Type.Int32, loc),
-//      Type.Lambda(List(Type.Int32), Type.Int32), loc)
-//    val expected = Value.Closure(lambda.args.map(_.ident.name).toArray, lambda.body, mutable.Map())
-//    val closure = Interpreter.eval(lambda, root)
-//    assertResult(expected)(closure)
-//
-//    // (x => x + 2)(100)
-//    val apply = Expression.Apply(lambda, List(Expression.Lit(Literal.Int(100, loc), Type.Int32, loc)), Type.Int32, loc)
-//    val value = Interpreter.eval(apply, root)
-//    assertResult(Value.mkInt32(102))(value)
-//  }
-//
-//  test("Interpreter - Expression.Lambda06") {
-//    // (x, y) => x + y
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Int32), FormalArg(ident02, Type.Int32)),
-//      Expression.Binary(
-//        BinaryOperator.Plus,
-//        Expression.Var(ident01, Type.Int32, loc),
-//        Expression.Var(ident02, Type.Int32, loc),
-//        Type.Int32, loc),
-//      Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
-//    val expected = Value.Closure(lambda.args.map(_.ident.name).toArray, lambda.body, mutable.Map())
-//    val closure = Interpreter.eval(lambda, root)
-//    assertResult(expected)(closure)
-//
-//    // (x, y => x + y)(3, 4)
-//    val apply = Expression.Apply(lambda, List(
-//      Expression.Lit(Literal.Int(3, loc), Type.Int32, loc),
-//      Expression.Lit(Literal.Int(4, loc), Type.Int32, loc)),
-//      Type.Int32, loc)
-//    val value = Interpreter.eval(apply, root)
-//    assertResult(Value.mkInt32(7))(value)
-//  }
-//
-//  test("Interpreter - Expression.Lambda07") {
-//    // (x, y) => if (x) then true else y
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Bool), FormalArg(ident02, Type.Bool)),
-//      Expression.IfThenElse(
-//        Expression.Var(ident01, Type.Bool, loc),
-//        Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
-//        Expression.Var(ident02, Type.Bool, loc),
-//        Type.Bool, loc),
-//      Type.Lambda(List(Type.Bool, Type.Bool), Type.Bool), loc)
-//    val expected = Value.Closure(lambda.args.map(_.ident.name).toArray, lambda.body, mutable.Map())
-//    val closure = Interpreter.eval(lambda, root)
-//    assertResult(expected)(closure)
-//
-//    // ((x, y) => if (x) then true else y)(false, true)
-//    val apply = Expression.Apply(lambda, List(
-//      Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc),
-//      Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc)),
-//      Type.Bool, loc)
-//    val value = Interpreter.eval(apply, root)
-//    assertResult(Value.True)(value)
-//  }
-//
-//  test("Interpreter - Expression.Lambda08") {
-//    // (x, y, z) => x + (y + z)
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Int32), FormalArg(ident02, Type.Int32), FormalArg(ident03, Type.Int32)),
-//      Expression.Binary(
-//        BinaryOperator.Plus,
-//        Expression.Var(ident01, Type.Int32, loc),
-//        Expression.Binary(
-//          BinaryOperator.Plus,
-//          Expression.Var(ident02, Type.Int32, loc),
-//          Expression.Var(ident03, Type.Int32, loc),
-//          Type.Int32, loc),
-//        Type.Int32, loc),
-//      Type.Lambda(List(Type.Int32, Type.Int32, Type.Int32), Type.Int32), loc)
-//    val expected = Value.Closure(lambda.args.map(_.ident.name).toArray, lambda.body, mutable.Map())
-//    val closure = Interpreter.eval(lambda, root)
-//    assertResult(expected)(closure)
-//
-//    // (x, y, z => x + (y + z))(2, 42, 5)
-//    val apply = Expression.Apply(lambda, List(
-//      Expression.Lit(Literal.Int(2, loc), Type.Int32, loc),
-//      Expression.Lit(Literal.Int(42, loc), Type.Int32, loc),
-//      Expression.Lit(Literal.Int(5, loc), Type.Int32, loc)),
-//      Type.Int32, loc)
-//    val value = Interpreter.eval(apply, root)
-//    assertResult(Value.mkInt32(49))(value)
-//  }
-//
-//  test("Interpreter - Expression.Lambda09") {
-//    // x => (y => x + y)
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Int32)),
-//      Expression.Lambda(
-//        Ast.Annotations(List.empty),
-//        List(FormalArg(ident02, Type.Int32)),
-//        Expression.Binary(
-//          BinaryOperator.Plus,
-//          Expression.Var(ident01, Type.Int32, loc),
-//          Expression.Var(ident02, Type.Int32, loc),
-//          Type.Int32, loc),
-//        Type.Lambda(List(Type.Int32), Type.Int32), loc),
-//      Type.Lambda(List(Type.Int32), Type.Lambda(List(Type.Int32), Type.Int32)), loc)
-//    val expected = Value.Closure(lambda.args.map(_.ident.name).toArray, lambda.body, mutable.Map())
-//    val closure = Interpreter.eval(lambda, root)
-//    assertResult(expected)(closure)
-//
-//    // (x => (y => x + y)(3)(4)
-//    val apply = Expression.Apply(
-//      Expression.Apply(lambda, List(Expression.Lit(Literal.Int(3, loc), Type.Int32, loc)),
-//        Type.Lambda(List(Type.Int32), Type.Int32), loc),
-//      List(Expression.Lit(Literal.Int(4, loc), Type.Int32, loc)),
-//      Type.Int32, loc)
-//    val value = Interpreter.eval(apply, root)
-//    assertResult(Value.mkInt32(7))(value)
-//  }
-//
-//  test("Interpreter - Expression.Lambda10") {
-//    // x, y => x(y)
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Lambda(List(Type.Int32), Type.Int32)), FormalArg(ident02, Type.Int32)),
-//      Expression.Apply(
-//        Expression.Var(ident01, Type.Lambda(List(Type.Int32), Type.Int32), loc),
-//        List(Expression.Var(ident02, Type.Int32, loc)),
-//        Type.Int32, loc),
-//      Type.Lambda(List(Type.Lambda(List(Type.Int32), Type.Int32), Type.Int32), Type.Int32), loc)
-//    val expected = Value.Closure(lambda.args.map(_.ident.name).toArray, lambda.body, mutable.Map())
-//    val closure = Interpreter.eval(lambda, root)
-//    assertResult(expected)(closure)
-//
-//    // (x, y => x(y))((x => x + 1), 5)
-//    val apply = Expression.Apply(lambda, List(
-//      Expression.Lambda(
-//        Ast.Annotations(List.empty),
-//        List(FormalArg(ident01, Type.Int32)),
-//        Expression.Binary(
-//          BinaryOperator.Plus,
-//          Expression.Var(ident01, Type.Int32, loc),
-//          Expression.Lit(Literal.Int(1, loc), Type.Int32, loc),
-//          Type.Int32, loc),
-//        Type.Lambda(List(Type.Int32), Type.Int32), loc),
-//      Expression.Lit(Literal.Int(5, loc), Type.Int32, loc)),
-//      Type.Int32, loc)
-//    val value = Interpreter.eval(apply, root)
-//    assertResult(Value.mkInt32(6))(value)
-//  }
-//
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.{Lambda,Apply}                                               //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Lambda.01") {
+    val input =
+      """namespace A::B { fn f: Bool = false }
+        |namespace A { fn g: Bool = A::B::f() }
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("A::g"))
+    assertResult(Value.False)(result)
+  }
+
+  test("Expression.Lambda.02") {
+    val input =
+      """namespace A { fn f(x: Int): Int = 24 }
+        |fn g: Int = A::f(3)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkInt32(24))(result)
+  }
+
+  test("Expression.Lambda.03") {
+    val input =
+      """namespace A { fn f(x: Int): Int = x }
+        |namespace A { fn g: Int = f(3) }
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("A::g"))
+    assertResult(Value.mkInt32(3))(result)
+  }
+
+  ignore("Expression.Lambda.04") {
+    val input =
+      """fn f(x: Int64, y: Int64): Int64 = x * y - 6
+        |fn g: Int64 = f(3, 42)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkInt32(120))(result)
+  }
+
+  test("Expression.Lambda.05") {
+    val input =
+      """namespace A { fn f(x: Int32): Int32 = let y = B::g(x + 1) in y * y }
+        |namespace B { fn g(x: Int32): Int32 = x - 4 }
+        |namespace C { fn h: Int32 = A::f(5) + B::g(0) }
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("C::h"))
+    assertResult(Value.mkInt32(0))(result)
+  }
+
+  ignore("Expression.Lambda.06") {
+    val input =
+      """fn f(x: Int16): Int16 = g(x + 1)
+        |fn g(x: Int16): Int16 = h(x + 10)
+        |fn h(x: Int16): Int16 = x * x
+        |fn x: Int16 = f(3)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("x"))
+    assertResult(Value.mkInt32(196))(result)
+  }
+
+  ignore("Expression.Lambda.07") {
+    val input =
+      """fn f(x: Int8, y: Int8): Int = x - y
+        |fn g(x: Int8): Int8 = x * 3
+        |fn h(x: Int8): Int8 = g(x - 1)
+        |fn x: Int8 = let x = 7 in f(g(3), h(h(x)))
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("x"))
+    assertResult(Value.mkInt32(-42))(result)
+  }
+
+  test("Expression.Lambda.08") {
+    val input =
+      """fn f(x: Bool, y: Bool): Bool = if (x) true else y
+        |fn g01: Bool = f(true, true)
+        |fn g02: Bool = f(true, false)
+        |fn g03: Bool = f(false, false)
+        |fn g04: Bool = f(false, true)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    assertResult(Value.True)(result01)
+    assertResult(Value.True)(result02)
+    assertResult(Value.False)(result03)
+    assertResult(Value.True)(result04)
+  }
+
+  test("Expression.Lambda.09") {
+    val input =
+      """fn f(x: Bool, y: Bool): Bool = if (x) y else false
+        |fn g01: Bool = f(true, true)
+        |fn g02: Bool = f(true, false)
+        |fn g03: Bool = f(false, false)
+        |fn g04: Bool = f(false, true)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    assertResult(Value.True)(result01)
+    assertResult(Value.False)(result02)
+    assertResult(Value.False)(result03)
+    assertResult(Value.False)(result04)
+  }
+
+  test("Expression.Lambda.10") {
+    val input =
+      """fn f(x: Int, y: Int, z: Int): Int = x + y + z
+        |fn g: Int = f(2, 42, 5)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkInt32(49))(result)
+  }
+
+  test("Expression.Lambda.11") {
+    val input =
+      """fn f(x: (Int) -> Int, y: Int): Int = x(y)
+        |fn g(x: Int): Int = x + 1
+        |fn h: Int = f(g, 5)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("h"))
+    assertResult(Value.mkInt32(6))(result)
+  }
+
+  test("Expression.Lambda.12") {
+    val input =
+      """fn f(x: (Int) -> Int): (Int) -> Int = x
+        |fn g(x: Int): Int = x + 5
+        |fn h: Int = (f(g))(40)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("h"))
+    assertResult(Value.mkInt32(45))(result)
+  }
+
+  test("Expression.Lambda.13") {
+    val input =
+      """enum Val { case Val(Int) }
+        |fn f(x: Int): Val = Val.Val(x)
+        |fn g: Val = f(111)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt32(111)))(result)
+  }
+
+  test("Expression.Lambda.14") {
+    val input =
+      """fn f(a: Int, b: Int, c: Str, d: Int, e: Bool, f: ()): (Int, Int, Str, Int, Bool, ()) = (a, b, c, d, e, f)
+        |fn g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.Tuple(Array(Value.mkInt32(24), Value.mkInt32(53), Value.mkStr("qwertyuiop"), Value.mkInt32(9978), Value.False, Value.Unit)))(result)
+  }
+
+  test("Expression.Lambda.15") {
+    val input =
+      """fn f(a: Int, b: Int, c: Int): Set[Int] = #{a, b, c}
+        |fn g: Set[Int] = f(24, 53, 24)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkSet(Set(Value.mkInt32(24), Value.mkInt32(53), Value.mkInt32(24))))(result)
+  }
+
 //  /////////////////////////////////////////////////////////////////////////////
 //  // Expressions - Hook and Apply                                            //
 //  /////////////////////////////////////////////////////////////////////////////
