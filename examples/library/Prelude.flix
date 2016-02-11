@@ -69,12 +69,17 @@ class JoinSemiLattice[E] => PartialOrder[E] {
     law LeastElement(x: E): Bool = ⊥ ⊑ x
 
     /**
-     * The upper bound law requires that the `lub` operator returns an
+     * The upper bound law requires that the least upper bound operator returns an
      * element that is greater than or equal to each of its arguments.
      */
     law UpperBound(x: E, y: E): Bool = (x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y))
 
-    // greatest upper bound
+    /**
+     * The least upper bound law requires that the least upper bound operator return
+     * the smallest element that is larger than its two arguments.
+     */
+     law LeastUpperBound(x: E, y: E, z: E): Bool = ((x ⊑ z) ∧ (y ⊑ z)) → (x ⊔ y) ⊑ z
+
 }
 
 /**
@@ -97,6 +102,8 @@ class MeetSemiLattice[E] {
 
     // top, glb
 }
+
+
 
 class BoundedLattice[E] {
     // height?
