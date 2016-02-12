@@ -271,12 +271,11 @@ impl Lattice[E] <= PreOrder[E], Norm[E] {
  */
 impl PartialOrder[(A, B)] <= PartialOrder[A], PartialOrder[B] {
 
-//    fn leq(x: (A, B), y: (A, B)): Bool =
-//        let (xa, xb) = x in
-//        let (ya, yb) = y in
-//            leq(xa, xb) && leq(ya, yb)
+    fn leq(x: (A, B), y: (A, B)): Bool = ???: Bool
 
 }
+
+// TODO: Lattice defined by lub and glb.
 
 
 
@@ -310,6 +309,8 @@ class Strict[A, B] => JoinSemiLattice[A], JoinSemiLattice[B] {
 //class Monotone[E: PartialOrder] {
 //    fn f(e: E): E
 //}
+
+// TODO: Commutativity, Associativity
 
 // TODO: use word "impl"? for ?
 // TODO: class or concept?
