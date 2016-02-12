@@ -224,6 +224,7 @@ class Narrowing[E] => MeetSemiLattice[E] {
 
 }
 
+// TODO: Widening and narrowing? What are their super classes?
 
 /**
  * A pre order or quasi order is a type E equipped with a pre order.
@@ -280,46 +281,29 @@ impl PartialOrder[(A, B)] <= PartialOrder[A], PartialOrder[B] {
 /**
  * The commutative law asserts that for a binary operator `f` the result of f(x, y) is equal to f(y, x).
  */
-// law Commutativity[A, B](f: (A, A) => B, x: A, y: A): Bool = f(x, y) ≡ f(y, x)
+// law Commutativity[T](f: (T, T) -> T) =
+//   ∀(x: T, y: T). f(x, y) ≡ f(y, x)
 
 /**
- *
+ * The associative law asserts that for a binary operator `f` the result of f(x, f(y, z)) is equal to f(f(x, y), z).
  */
-// law
+// law Associativity[T](f: (T, T) -> T) =
+//   ∀(x: T, y: T, z: T). f(x, f(y, z)) ≡ f(f(x, y), z)
+
+/**
+ * The strictness law asserts that a function `f` applied to bottom must yield bottom.
+ */
+// law Strict1[A: JoinSemiLattice, B: JoinSemiLattice](f: (A) -> B) =
+//   f(⊥) ≡ ⊥
+// law Strict2[A: JoinSemiLattice, B: JoinSemiLattice, C: JoinSemiLattice](f: (A, B) -> C) =
+//   ∀(x: A, y: B). (f(⊥, y) ≡ ⊥) ∧ (f(x, ⊥) ≡ ⊥)
+
+/**
+ * The monotonicity law asserts that a function `f` is order-preserving.
+ */
 
 
 
-
-// TODO: How to deal with these?
-// TODO: Need some notion of function type here?
-class Strict[A, B] => JoinSemiLattice[A], JoinSemiLattice[B] {
-    // and then even this requirement cant readily be described?
-    // how do you even disambiguate bot?
-    law Strict(f: (A) -> B): Bool = f(bot) == bot
-}
-
-//prop Strict[A: JoinSemiLattice, B: JoinSemiLattice](f: A => B) {
-//    law Strict(f: A => B): Bool = f(bot) == bot
-//}
-//
-//is Strict[Sign, Belnap](Sign::mayEq)
-//
-//alternative
-
-//fn Strict[A, B](f: A => B): Bool where A: JoinSemiLattice, B: JoinSemiLattice
-//  = f(bot) == bot
-//
-//// instance of Law.
-//law Strict(Sign/mayEq)
-//
-//// TODO: How to deal with these?
-//class Monotone[E: PartialOrder] {
-//    fn f(e: E): E
-//}
-
-// TODO: Commutativity, Associativity
-
-// TODO: use word "impl"? for ?
 // TODO: class or concept?
 impl PartialOrder[Sign] {
     fn leq(x: Sign, y: Sign): Bool = true
@@ -332,16 +316,4 @@ impl PartialOrder[Sign] {
 //}
 //
 
-// TODO: Everything in here is experimental and not yet implemented.
-
 // ops to impl:  ∀, ¬, ∧, ∨, →, ↔, ≡, ⊥, ⊤, ⊑, ⊔, ⊓, ▽, △
-
-/**
- * Example implementation.
- */
-// TODO: Can we implement this and get the super-classes for free?
-// TODO: It seem in haskell we must implement each class
-impl BoundedLattice[Sign] {
-    /* ... */
-}
-
