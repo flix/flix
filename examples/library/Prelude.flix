@@ -225,10 +225,20 @@ class Narrowing[E] => MeetSemiLattice[E] {
 }
 
 
-
+/**
+ * A pre order or quasi order is a type E equipped with a pre order.
+ *
+ * A pre order is like to a partial order, but is not required to satisfy the anti-symmetry law.
+ */
 class PreOrder[E] {
-    // ... if this has a different name?
-    fn leq2(x: E, y: E): Bool = true
+
+    /**
+     * Returns `true` iff the element `x` is less than or equal to the element `y`.
+     */
+    fn leq2(x: E, y: E): Bool
+
+
+
 }
 
 
