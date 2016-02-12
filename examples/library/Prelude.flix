@@ -171,18 +171,57 @@ class BoundedLattice[E] {
 }
 
 
+/**
+ * A widening operator equips a join semi lattice with an operator `widen`
+ * that accelerates the computation towards the fixpoint.
+ */
+class Widening[E] => JoinSemiLattice[E] {
 
-class WidenOperator[E] {
+    /**
+     * The widening operator. Returns an upper bound on `x` and `y`.
+     */
+    fn widen(x: E, y: E): E
+
+    /**
+     * Alias for the widening operator `widen`.
+     */
+    fn ▽(x: E, y: E): E = widen(x, y)
+
+    /**
+     * The upper bound law asserts that the widening operator returns an
+     * element that is greater than or equal to each of its arguments.
+     */
+    law UpperBound(x: E, y: E): Bool = (x ⊑ (x ▽ y)) ∧ (y ⊑ (x ▽ y))
+
+    // TODO: Chain conditions?
 
 }
 
-class NarrowOperator[E] {
-    fn narrow(x: E): E
+
+/**
+ * A narrowing operator equips meet semi lattice with an operator `narrow`
+ * that may improve precision after computation with widening.
+ */
+class Narrowing[E] => MeetSemiLattice[E] {
+
+    /**
+     * The narrowing operator. Returns an element between `x` and `y`.
+     */
+    fn narrow(x: E, y: Y): E
+
+    /**
+     * Alias for the narrowing operator.
+     */
+    fn △(x: E, y: E): E = narrow(x, y)
 
     /**
      *
      */
-    law LowerBound(x: E, y: E): Bool = true
+    // TODO: Name of law?
+    law Widening(x: E, y: E): Bool = (x ⊑ y) → ((x ⊑ (x △ y)) ∧ ((x △ y) ⊑ y))
+
+    // TODO: Chain conditions?
+
 }
 
 
