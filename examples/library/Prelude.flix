@@ -225,10 +225,14 @@ class Narrowing[E] => MeetSemiLattice[E] {
 }
 
 
+
 class PreOrder[E] {
     // ... if this has a different name?
     fn leq2(x: E, y: E): Bool = true
 }
+
+
+
 
 /**
  *
@@ -242,8 +246,19 @@ impl PartialOrder[Sign] {
     /* ... */
 }
 
+// instance PreOrder e, Norm e => Lattice e
+impl Lattice[E] <= PreOrder[E], Norm[E] {
+    // disambiguate?
+    fn bot: E = norm(bot)
+
+    // disambiguate?
+    fn leq(x: E, y: E): Bool = leq2(norm(x), norm(y))
+}
 
 
+/**
+ * on pairs
+ */
 impl PartialOrder[(A, B)] <= PartialOrder[A], PartialOrder[B] {
 
 //    fn leq(x: (A, B), y: (A, B)): Bool =
@@ -254,14 +269,8 @@ impl PartialOrder[(A, B)] <= PartialOrder[A], PartialOrder[B] {
 }
 
 
-// instance PreOrder e, Norm e => Lattice e
-impl Lattice[E] <= PreOrder[E], Norm[E] {
-    // disambiguate?
-    fn bot: E = norm(bot)
 
-    // disambiguate?
-    fn leq(x: E, y: E): Bool = leq2(norm(x), norm(y))
-}
+
 
 
 
