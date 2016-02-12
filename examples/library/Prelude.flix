@@ -224,8 +224,6 @@ class Narrowing[E] => PartialOrder[E] {
 
 }
 
-// TODO: Widening and narrowing? What are their super classes?
-
 
 /**
  * The commutative law asserts that for a binary operator `f` the result of f(x, y) is equal to f(y, x).
@@ -256,6 +254,7 @@ class Narrowing[E] => PartialOrder[E] {
 //law Monotone2[A: PartialOrder, B: PartialOrder, R: PartialOrder](f: (A, B) -> R) =
 //  ∀(x1: A, y1: A, x2: B, y2: B). ((x1 ⊑ y1) ∧ (x2 ⊑ y2)) → (f(x) ⊑ f(y))
 
+// TODO: Isomorphisms?
 
 
 /**
@@ -348,4 +347,3 @@ impl PartialOrder[E] <= LeastUpperBound[E] {
     fn leq(x: E, y: E): Bool = lub2(x, y) == y
 }
 
-// ∀, ¬, ∧, ∨, →, ↔, ≡, ⊥, ⊤, ⊑, ⊔, ⊓, ▽, △
