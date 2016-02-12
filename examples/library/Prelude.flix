@@ -175,7 +175,7 @@ class BoundedLattice[E] {
  * A widening operator equips a join semi lattice with an operator `widen`
  * that accelerates the computation towards the fixpoint.
  */
-class Widening[E] => JoinSemiLattice[E] {
+class Widening[E] => PartialOrder[E] {
 
     /**
      * The widening operator. Returns an upper bound on `x` and `y`.
@@ -202,7 +202,7 @@ class Widening[E] => JoinSemiLattice[E] {
  * A narrowing operator equips meet semi lattice with an operator `narrow`
  * that may improve precision after computation with widening.
  */
-class Narrowing[E] => MeetSemiLattice[E] {
+class Narrowing[E] => Widening[E] {
 
     /**
      * The narrowing operator. Returns an element between `x` and `y`.
@@ -218,7 +218,7 @@ class Narrowing[E] => MeetSemiLattice[E] {
      *
      */
     // TODO: Name of law?
-    law Widening(x: E, y: E): Bool = (x ⊑ y) → ((x ⊑ (x △ y)) ∧ ((x △ y) ⊑ y))
+    law WideningLaw(x: E, y: E): Bool = (x ⊑ y) → ((x ⊑ (x △ y)) ∧ ((x △ y) ⊑ y))
 
     // TODO: Chain conditions?
 
@@ -226,21 +226,6 @@ class Narrowing[E] => MeetSemiLattice[E] {
 
 // TODO: Widening and narrowing? What are their super classes?
 
-/**
- * A pre order or quasi order is a type E equipped with a pre order.
- *
- * A pre order is like to a partial order, but is not required to satisfy the anti-symmetry law.
- */
-class PreOrder[E] {
-
-    /**
-     * Returns `true` iff the element `x` is less than or equal to the element `y`.
-     */
-    fn leq2(x: E, y: E): Bool
-
-
-
-}
 
 /**
  * The commutative law asserts that for a binary operator `f` the result of f(x, y) is equal to f(y, x).
@@ -272,6 +257,19 @@ class PreOrder[E] {
 //  ∀(x1: A, y1: A, x2: B, y2: B). ((x1 ⊑ y1) ∧ (x2 ⊑ y2)) → (f(x) ⊑ f(y))
 
 
+
+/**
+ * A pre order or quasi order is a type E equipped with a pre order.
+ *
+ * A pre order is like to a partial order, but is not required to satisfy the anti-symmetry law.
+ */
+class PreOrder[E] {
+    /**
+     * Returns `true` iff the element `x` is less than or equal to the element `y`.
+     */
+    fn leq2(x: E, y: E): Bool
+}
+
 /**
  *
  */
@@ -280,8 +278,6 @@ class PreOrder[E] {
 class NormOperator[E] => PreOrder[E] {
     fn norm(x: E): E
 }
-
-
 
 // instance PreOrder e, Norm e => Lattice e
 impl Lattice[E] <= PreOrder[E], Norm[E] {
@@ -293,21 +289,30 @@ impl Lattice[E] <= PreOrder[E], Norm[E] {
 }
 
 
+
 /**
  * A pair of partial orders is a partial order.
  */
 impl PartialOrder[(A, B)] <= PartialOrder[A], PartialOrder[B] {
-
-    // TODO: Implement.
     fn leq(x: (A, B), y: (A, B)): Bool = ???: Bool
-
 }
 
 
-// TODO: Lattice defined by lub and glb.
+///////////////////////////////////////////////////////////////////////////////
+/// Extension of theoretical but perhaps not practical interest.            ///
+///////////////////////////////////////////////////////////////////////////////
+/**
+ * We can define a class of types that are equipped with a least upper bound.
+ */
+class LeastUpperBound[E] {
+    fn lub2(x: E, y: E): E
+}
 
-
-
-
+/**
+ * A least upper bound gives rise to a partial order.
+ */
+impl PartialOrder[E] <= LeastUpperBound[E] {
+    fn leq(x: E, y: E): Bool = lub2(x, y) == y
+}
 
 // ∀, ¬, ∧, ∨, →, ↔, ≡, ⊥, ⊤, ⊑, ⊔, ⊓, ▽, △
