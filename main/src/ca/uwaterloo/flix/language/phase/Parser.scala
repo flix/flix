@@ -514,7 +514,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   def LegalIdentifier: Rule1[String] = {
     rule {
-      capture((CharPredicate.Alpha | "⊥" | "⊤" | "⊑" | "⊔" | "⊓" | "▽" | "△") ~ zeroOrMore(CharPredicate.AlphaNum | "_" | "$" | "⊥" | "⊑" ) ~ zeroOrMore("'"))
+      // TODO: Cleanup
+      capture((CharPredicate.Alpha | "⊥" | "⊤" | "⊑" | "⊔" | "⊓" | "▽" | "△" | "⊡") ~ zeroOrMore(CharPredicate.AlphaNum | "_" | "$" | "⊥" | "⊑" ) ~ zeroOrMore("'"))
     }
   }
 

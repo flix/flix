@@ -148,7 +148,7 @@ class Lattice[E] => JoinSemiLattice[E], MeetSemiLattice[E] {
  * Specifically, a bounded lattice must provide a height function `h` that maps every lattice
  * element to a non-negative number that is decreasing according to the partial order.
  */
-class BoundedLattice[E] {
+class BoundedLattice[E] => Lattice[E] {
 
     /**
      * Returns a non-negative integer that is decreasing according to the partial order.
@@ -202,7 +202,7 @@ class Widening[E] => PartialOrder[E] {
  * A narrowing operator equips meet semi lattice with an operator `narrow`
  * that may improve precision after computation with widening.
  */
-class Narrowing[E] => Widening[E] {
+class Narrowing[E] => PartialOrder[E] {
 
     /**
      * The narrowing operator. Returns an element between `x` and `y`.
@@ -259,35 +259,68 @@ class Narrowing[E] => Widening[E] {
 
 
 /**
- * A pre order or quasi order is a type E equipped with a pre order.
- *
- * A pre order is like to a partial order, but is not required to satisfy the anti-symmetry law.
+ * A pre order or quasi order is almost a partial order.
  */
 class PreOrder[E] {
+
     /**
      * Returns `true` iff the element `x` is less than or equal to the element `y`.
      */
     fn leq2(x: E, y: E): Bool
+
+    /**
+     * The reflexivity law asserts that any element is less than or equal to itself.
+     */
+    law Reflexivity(x: E): Bool = x ⊑ x
+
+    /**
+     * The transitivity law asserts that if `x` less than or equal to `y`
+     * and `y` is less than or equal to `z` then `x` must be less than or
+     * equal to `z`.
+     */
+    law Transitivity(x: E, y: E, z: E): Bool = (x ⊑ y ∧ y ⊑ z) → (x ⊑ z)
+
 }
+
 
 /**
- *
+ * A norm equips a pre order with an operator turning it into a partial order.
  */
-//TODO
-// class PreOrder e => NormOperator e
-class NormOperator[E] => PreOrder[E] {
+class Norm[E] => PreOrder[E] {
+
+    /**
+     * Returns the "representative" element of the element `x`.
+     */
     fn norm(x: E): E
+
+    /**
+     * Alias for the norm.
+     */
+    fn ⊡(x: E): E = norm(x)
+
+    /**
+     * The anti-symmetry law asserts that if `x` is less than or equal to `y`
+     * and vice versa then the two elements must be equal.
+     */
+    law AntiSymmetry(x: E, y: E): Bool =
+        let x1 = ⊡(x) in
+        let y1 = ⊡(y) in
+            (x1 ⊑ y1 ∧ y1 ⊑ x1) → (x1 ≡ y1)
+
 }
 
-// instance PreOrder e, Norm e => Lattice e
-impl Lattice[E] <= PreOrder[E], Norm[E] {
-    // disambiguate?
-    fn bot: E = norm(bot)
 
-    // disambiguate?
-    fn leq(x: E, y: E): Bool = leq2(norm(x), norm(y))
+/**
+ * A pre order equipped with a norm is a partial order.
+ */
+impl PartialOrder[E] <= PreOrder[E], Norm[E] {
+
+    /**
+     * Returns `true` iff the element `x` is less than or equal to the element `y`.
+     */
+    fn leq(x: E, y: E): Bool = ⊡(x) ⊑ ⊡(y)
+
 }
-
 
 
 /**
