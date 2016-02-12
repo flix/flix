@@ -277,7 +277,11 @@ impl PartialOrder[(A, B)] <= PartialOrder[A], PartialOrder[B] {
 
 // TODO: Lattice defined by lub and glb.
 
-
+/**
+ * The commutative law asserts that for a binary operator `f`
+ * the result of f(x, y) is equal to f(y, x).
+ */
+// law Commutativity[A, B](f: (A, A) => B, x: A, y: A): Bool = f(x, y) ≡ f(y, x)
 
 
 
