@@ -242,42 +242,6 @@ class PreOrder[E] {
 
 }
 
-
-
-
-/**
- *
- */
-// class PreOrder e => NormOperator e
-class NormOperator[E] => PreOrder[E] {
-    fn norm(x: E): E
-}
-
-impl PartialOrder[Sign] {
-    /* ... */
-}
-
-// instance PreOrder e, Norm e => Lattice e
-impl Lattice[E] <= PreOrder[E], Norm[E] {
-    // disambiguate?
-    fn bot: E = norm(bot)
-
-    // disambiguate?
-    fn leq(x: E, y: E): Bool = leq2(norm(x), norm(y))
-}
-
-
-/**
- * on pairs
- */
-impl PartialOrder[(A, B)] <= PartialOrder[A], PartialOrder[B] {
-
-    fn leq(x: (A, B), y: (A, B)): Bool = ???: Bool
-
-}
-
-// TODO: Lattice defined by lub and glb.
-
 /**
  * The commutative law asserts that for a binary operator `f` the result of f(x, y) is equal to f(y, x).
  */
@@ -293,27 +257,57 @@ impl PartialOrder[(A, B)] <= PartialOrder[A], PartialOrder[B] {
 /**
  * The strictness law asserts that a function `f` applied to bottom must yield bottom.
  */
-// law Strict1[A: JoinSemiLattice, B: JoinSemiLattice](f: (A) -> B) =
+// law Strict1[A: PartialOrder, R: PartialOrder](f: (A) -> R) =
 //   f(⊥) ≡ ⊥
-// law Strict2[A: JoinSemiLattice, B: JoinSemiLattice, C: JoinSemiLattice](f: (A, B) -> C) =
+// law Strict2[A: PartialOrder, B: PartialOrder, R: PartialOrder](f: (A, B) -> R) =
 //   ∀(x: A, y: B). (f(⊥, y) ≡ ⊥) ∧ (f(x, ⊥) ≡ ⊥)
 
 /**
  * The monotonicity law asserts that a function `f` is order-preserving.
  */
+//law Monotone1[A: PartialOrder, R: PartialOrder](f: A -> R) =
+//  ∀(x: A, y: A). (x ⊑ y) → (f(x) ⊑ f(y))
+
+//law Monotone2[A: PartialOrder, B: PartialOrder, R: PartialOrder](f: (A, B) -> R) =
+//  ∀(x1: A, y1: A, x2: B, y2: B). ((x1 ⊑ y1) ∧ (x2 ⊑ y2)) → (f(x) ⊑ f(y))
 
 
-
-// TODO: class or concept?
-impl PartialOrder[Sign] {
-    fn leq(x: Sign, y: Sign): Bool = true
+/**
+ *
+ */
+//TODO
+// class PreOrder e => NormOperator e
+class NormOperator[E] => PreOrder[E] {
+    fn norm(x: E): E
 }
 
-//fn bar<T, K>(x: T, y: K) where T: Clone, K: Clone + Debug {
-//    x.clone();
-//    y.clone();
-//    println!("{:?}", y);
-//}
-//
 
-// ops to impl:  ∀, ¬, ∧, ∨, →, ↔, ≡, ⊥, ⊤, ⊑, ⊔, ⊓, ▽, △
+
+// instance PreOrder e, Norm e => Lattice e
+impl Lattice[E] <= PreOrder[E], Norm[E] {
+    // disambiguate?
+    fn bot: E = norm(bot)
+
+    // disambiguate?
+    fn leq(x: E, y: E): Bool = leq2(norm(x), norm(y))
+}
+
+
+/**
+ * A pair of partial orders is a partial order.
+ */
+impl PartialOrder[(A, B)] <= PartialOrder[A], PartialOrder[B] {
+
+    // TODO: Implement.
+    fn leq(x: (A, B), y: (A, B)): Bool = ???: Bool
+
+}
+
+
+// TODO: Lattice defined by lub and glb.
+
+
+
+
+
+// ∀, ¬, ∧, ∨, →, ↔, ≡, ⊥, ⊤, ⊑, ⊔, ⊓, ▽, △
