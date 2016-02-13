@@ -150,12 +150,12 @@ var App = React.createClass({displayName: "App",
                                    unregisterRefreshCallback: this.unregisterRefreshCallback, 
                                    notifyConnectionError: this.notifyConnectionError});
         }
-        if (pageName === "performance/indexes") {
-            page = React.createElement(IndexesPage, {registerRefreshCallback: this.registerRefreshCallback, 
-                                unregisterRefreshCallback: this.unregisterRefreshCallback, 
-                                notifyConnectionError: this.notifyConnectionError});
+        if (pageName === "performance/index/hits") {
+            page = React.createElement(IndexHitsPage, {registerRefreshCallback: this.registerRefreshCallback, 
+                                  unregisterRefreshCallback: this.unregisterRefreshCallback, 
+                                  notifyConnectionError: this.notifyConnectionError});
         }
-        if (pageName === "performance/indexes/misses") {
+        if (pageName === "performance/index/misses") {
             page = React.createElement(IndexMissesPage, {registerRefreshCallback: this.registerRefreshCallback, 
                                     unregisterRefreshCallback: this.unregisterRefreshCallback, 
                                     notifyConnectionError: this.notifyConnectionError});
@@ -244,11 +244,11 @@ var Menu = React.createClass({displayName: "Menu",
                                 React.createElement("li", {onClick: () => this.props.changePage({name: "performance/predicates"})}, 
                                     React.createElement("a", {href: "#"}, "Predicates")
                                 ), 
-                                React.createElement("li", {onClick: () => this.props.changePage({name: "performance/indexes"})}, 
-                                    React.createElement("a", {href: "#"}, "Indexes")
+                                React.createElement("li", {onClick: () => this.props.changePage({name: "performance/index/hits"})}, 
+                                    React.createElement("a", {href: "#"}, "Index Hits")
                                 ), 
-                                React.createElement("li", {onClick: () => this.props.changePage({name: "performance/indexes/misses"})}, 
-                                    React.createElement("a", {href: "#"}, "Indexes Misses")
+                                React.createElement("li", {onClick: () => this.props.changePage({name: "performance/index/misses"})}, 
+                                    React.createElement("a", {href: "#"}, "Index Misses")
                                 )
                             )
                         )
@@ -726,7 +726,7 @@ var PredicatesPage = React.createClass({displayName: "PredicatesPage",
 /**
  * Indexes page.
  */
-var IndexesPage = React.createClass({displayName: "IndexesPage",
+var IndexHitsPage = React.createClass({displayName: "IndexHitsPage",
     propTypes: {
         registerRefreshCallback: React.PropTypes.func.isRequired,
         unregisterRefreshCallback: React.PropTypes.func.isRequired,
@@ -760,7 +760,7 @@ var IndexesPage = React.createClass({displayName: "IndexesPage",
      * Retrieves JSON data from the server.
      */
     refresh: function () {
-        Common.ajax(URL + '/performance/indexes', this.notifyConnectionError, data => {
+        Common.ajax(URL + '/performance/index/hits', this.notifyConnectionError, data => {
             this.setState({indexes: data})
         });
     },
@@ -783,7 +783,7 @@ var IndexesPage = React.createClass({displayName: "IndexesPage",
 
                 React.createElement("div", {className: "panel panel-default"}, 
                     React.createElement("div", {className: "panel-body"}, 
-                        "The table shows the usage of indexes for each relation and lattice."
+                        "The table shows the usage of indexes for each relation (Lattice not yet supported (!))."
                     )
                 ), 
 
@@ -831,7 +831,7 @@ var IndexMissesPage = React.createClass({displayName: "IndexMissesPage",
      * Retrieves JSON data from the server.
      */
     refresh: function () {
-        Common.ajax(URL + '/performance/indexes/misses', this.notifyConnectionError, data => {
+        Common.ajax(URL + '/performance/index/misses', this.notifyConnectionError, data => {
             this.setState({indexes: data})
         });
     },

@@ -60,8 +60,8 @@ class DataStore[ValueType <: AnyRef](implicit sCtx: Solver.SolverContext, m: Cla
     return result
   }
 
-  def indexStats: List[(String, String, Int)] = relations.flatMap {
-    case (name, relation) => relation.getIndexHitCounts.map {
+  def indexHits: List[(String, String, Int)] = relations.flatMap {
+    case (name, relation) => relation.getIndexHits.map {
       case (index, count) => (name.toString, "{" + index.mkString(", ") + "}", count)
     }
   }.toSeq.sortBy(_._3).reverse.toList

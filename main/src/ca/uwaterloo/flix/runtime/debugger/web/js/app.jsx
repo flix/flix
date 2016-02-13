@@ -150,12 +150,12 @@ var App = React.createClass({
                                    unregisterRefreshCallback={this.unregisterRefreshCallback}
                                    notifyConnectionError={this.notifyConnectionError}/>;
         }
-        if (pageName === "performance/indexes") {
-            page = <IndexesPage registerRefreshCallback={this.registerRefreshCallback}
-                                unregisterRefreshCallback={this.unregisterRefreshCallback}
-                                notifyConnectionError={this.notifyConnectionError}/>;
+        if (pageName === "performance/index/hits") {
+            page = <IndexHitsPage registerRefreshCallback={this.registerRefreshCallback}
+                                  unregisterRefreshCallback={this.unregisterRefreshCallback}
+                                  notifyConnectionError={this.notifyConnectionError}/>;
         }
-        if (pageName === "performance/indexes/misses") {
+        if (pageName === "performance/index/misses") {
             page = <IndexMissesPage registerRefreshCallback={this.registerRefreshCallback}
                                     unregisterRefreshCallback={this.unregisterRefreshCallback}
                                     notifyConnectionError={this.notifyConnectionError}/>;
@@ -244,11 +244,11 @@ var Menu = React.createClass({
                                 <li onClick={() => this.props.changePage({name: "performance/predicates"})}>
                                     <a href="#">Predicates</a>
                                 </li>
-                                <li onClick={() => this.props.changePage({name: "performance/indexes"})}>
-                                    <a href="#">Indexes</a>
+                                <li onClick={() => this.props.changePage({name: "performance/index/hits"})}>
+                                    <a href="#">Index Hits</a>
                                 </li>
-                                <li onClick={() => this.props.changePage({name: "performance/indexes/misses"})}>
-                                    <a href="#">Indexes Misses</a>
+                                <li onClick={() => this.props.changePage({name: "performance/index/misses"})}>
+                                    <a href="#">Index Misses</a>
                                 </li>
                             </ul>
                         </li>
@@ -726,7 +726,7 @@ var PredicatesPage = React.createClass({
 /**
  * Indexes page.
  */
-var IndexesPage = React.createClass({
+var IndexHitsPage = React.createClass({
     propTypes: {
         registerRefreshCallback: React.PropTypes.func.isRequired,
         unregisterRefreshCallback: React.PropTypes.func.isRequired,
@@ -760,7 +760,7 @@ var IndexesPage = React.createClass({
      * Retrieves JSON data from the server.
      */
     refresh: function () {
-        Common.ajax(URL + '/performance/indexes', this.notifyConnectionError, data => {
+        Common.ajax(URL + '/performance/index/hits', this.notifyConnectionError, data => {
             this.setState({indexes: data})
         });
     },
@@ -783,7 +783,7 @@ var IndexesPage = React.createClass({
 
                 <div className="panel panel-default">
                     <div className="panel-body">
-                        The table shows the usage of indexes for each relation and lattice.
+                        The table shows the usage of indexes for each relation (Lattice not yet supported (!)).
                     </div>
                 </div>
 
@@ -831,7 +831,7 @@ var IndexMissesPage = React.createClass({
      * Retrieves JSON data from the server.
      */
     refresh: function () {
-        Common.ajax(URL + '/performance/indexes/misses', this.notifyConnectionError, data => {
+        Common.ajax(URL + '/performance/index/misses', this.notifyConnectionError, data => {
             this.setState({indexes: data})
         });
     },

@@ -287,10 +287,10 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns index performance statistics.
+   * Returns index hits statistics.
    */
-  class GetIndexPerformance extends JsonHandler {
-    def json: JValue = JArray(solver.dataStore.indexStats.map {
+  class GetIndexHits extends JsonHandler {
+    def json: JValue = JArray(solver.dataStore.indexHits.map {
       case (name, index, hits) => JObject(List(
         JField("name", JString(name)),
         JField("index", JString(index)),
@@ -300,7 +300,7 @@ class RestServer(solver: Solver) {
   }
 
   /**
-    * Returns index performance statistics.
+    * Returns index misses statistics.
     */
   class GetIndexMisses extends JsonHandler {
     def json: JValue = JArray(solver.dataStore.indexMisses.map {
@@ -347,8 +347,8 @@ class RestServer(solver: Solver) {
     server.createContext("/telemetry", new GetTelemetry())
     server.createContext("/performance/rules", new GetRulePerformance())
     server.createContext("/performance/predicates", new GetPredicatePerformance())
-    server.createContext("/performance/indexes", new GetIndexPerformance())
-    server.createContext("/performance/indexes/misses", new GetIndexMisses())
+    server.createContext("/performance/index/hits", new GetIndexHits())
+    server.createContext("/performance/index/misses", new GetIndexMisses())
     server.createContext("/compiler/phases", new GetCompilerPhasePerformance())
 
     // mount file handler.

@@ -24,12 +24,12 @@ final class IndexedRelation[ValueType](relation: TypedAst.Collection.Relation, i
   private val store = mutable.Map.empty[Int, mutable.Map[Key[ValueType], mutable.ArrayBuffer[Array[ValueType]]]]
 
   /**
-    * A map from indexes to number of successful usages.
+    * A map from indexes to number of index hits.
     */
   private val indexHits = mutable.Map.empty[Int, Int]
 
   /**
-    * A map from indexes to number of unsuccessful usages.
+    * A map from indexes to number of index misses.
     */
   private val indexMisses = mutable.Map.empty[Int, Int]
 
@@ -65,7 +65,7 @@ final class IndexedRelation[ValueType](relation: TypedAst.Collection.Relation, i
   /**
     * Returns the number of indexed lookups.
     */
-  def getIndexHitCounts: Map[Seq[String], Int] = indexHits.toMap.map {
+  def getIndexHits: Map[Seq[String], Int] = indexHits.toMap.map {
     case (idx, count) =>
       val columns = (0 until 31).filter(n => BitOps.getBit(vec = idx, bit = n))
       val names = columns map (column => relation.attributes(column).ident.name)
