@@ -29,6 +29,11 @@ final class IndexedRelation[ValueType](relation: TypedAst.Collection.Relation, i
   private val indexHits = mutable.Map.empty[Int, Int]
 
   /**
+    * A map from indexes to number of unsuccessful usages.
+    */
+  private val indexMisses = mutable.Map.empty[Int, Int]
+
+  /**
     * Records the number of indexed lookups, i.e. exact lookups.
     */
   private var indexedLookups = 0
@@ -61,6 +66,16 @@ final class IndexedRelation[ValueType](relation: TypedAst.Collection.Relation, i
     * Returns the number of indexed lookups.
     */
   def getIndexHitCounts: Map[Seq[String], Int] = indexHits.toMap.map {
+    case (idx, count) =>
+      val columns = (0 until 31).filter(n => BitOps.getBit(vec = idx, bit = n))
+      val names = columns map (column => relation.attributes(column).ident.name)
+      names -> count
+  }
+
+  /**
+    * Returns the number of indexed misses.
+    */
+  def getIndexMisses: Map[Seq[String], Int] = indexMisses.toMap.map {
     case (idx, count) =>
       val columns = (0 until 31).filter(n => BitOps.getBit(vec = idx, bit = n))
       val names = columns map (column => relation.attributes(column).ident.name)
@@ -127,6 +142,7 @@ final class IndexedRelation[ValueType](relation: TypedAst.Collection.Relation, i
       store(idx).getOrElse(key, mutable.ArrayBuffer.empty).iterator
     } else {
       // case 2: No exact index available. Check if there is an approximate index.
+      indexMisses.update(idx, indexMisses.getOrElse(idx, 0) + 1)
       idx = getApproximateIndex(indexes, pat)
       val table = if (idx != 0) {
         // case 2.1: An approximate index exists. Use it.

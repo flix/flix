@@ -155,6 +155,11 @@ var App = React.createClass({
                                 unregisterRefreshCallback={this.unregisterRefreshCallback}
                                 notifyConnectionError={this.notifyConnectionError}/>;
         }
+        if (pageName === "performance/indexes/misses") {
+            page = <IndexMissesPage registerRefreshCallback={this.registerRefreshCallback}
+                                    unregisterRefreshCallback={this.unregisterRefreshCallback}
+                                    notifyConnectionError={this.notifyConnectionError}/>;
+        }
         if (pageName === "compiler/phases") {
             page = <PhasesPage registerRefreshCallback={this.registerRefreshCallback}
                                unregisterRefreshCallback={this.unregisterRefreshCallback}
@@ -241,6 +246,9 @@ var Menu = React.createClass({
                                 </li>
                                 <li onClick={() => this.props.changePage({name: "performance/indexes"})}>
                                     <a href="#">Indexes</a>
+                                </li>
+                                <li onClick={() => this.props.changePage({name: "performance/indexes/misses"})}>
+                                    <a href="#">Indexes Misses</a>
                                 </li>
                             </ul>
                         </li>
@@ -785,6 +793,77 @@ var IndexesPage = React.createClass({
     }
 });
 
+
+/**
+ * Indexes page.
+ */
+var IndexMissesPage = React.createClass({
+    propTypes: {
+        registerRefreshCallback: React.PropTypes.func.isRequired,
+        unregisterRefreshCallback: React.PropTypes.func.isRequired,
+        notifyConnectionError: React.PropTypes.func.isRequired
+    },
+
+    /**
+     * The state is an array of indexes where an index is a {name, index, misses} object.
+     * @returns {{indexes: Array}}
+     */
+    getInitialState: function () {
+        return {indexes: []};
+    },
+
+    /**
+     * Refresh the AJAX data on mount. Register the component as refreshable.
+     */
+    componentDidMount: function () {
+        this.refresh();
+        this.props.registerRefreshCallback(this.refresh);
+    },
+
+    /**
+     * Un-register the component as refreshable.
+     */
+    componentWillUnmount: function () {
+        this.props.unregisterRefreshCallback(this.refresh);
+    },
+
+    /**
+     * Retrieves JSON data from the server.
+     */
+    refresh: function () {
+        Common.ajax(URL + '/performance/indexes/misses', this.notifyConnectionError, data => {
+            this.setState({indexes: data})
+        });
+    },
+
+    /**
+     * Renders the component.
+     */
+    render: function () {
+        var table = {
+            cols: ["Name", "Index", "Index Misses"],
+            align: ["left", "left", "right"],
+            rows: this.state.indexes.map(row => [row.name, row.index, numeral(row["misses"]).format('0,0')])
+        };
+
+        return (
+            <div>
+                <div className="page-header">
+                    <h1>Performance / Indexes</h1>
+                </div>
+
+                <div className="panel panel-default">
+                    <div className="panel-body">
+                        The table shows the indexes misses for each relation. (Lattice not yet supported (!)).
+                    </div>
+                </div>
+
+                <Table table={table}/>
+            </div>
+        );
+    }
+});
+
 /**
  * Phases page.
  */
@@ -907,7 +986,7 @@ var TableRow = React.createClass({
     render: function () {
         return (
             <tr>
-                {this.props.row.map((elm, idx) =>  <td className={getAlignment(idx, this.props.align)}>{elm}</td>)}
+                {this.props.row.map((elm, idx) => <td className={getAlignment(idx, this.props.align)}>{elm}</td>)}
             </tr>
         );
     }

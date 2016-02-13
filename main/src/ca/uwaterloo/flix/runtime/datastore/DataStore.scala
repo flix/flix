@@ -66,6 +66,12 @@ class DataStore[ValueType <: AnyRef](implicit sCtx: Solver.SolverContext, m: Cla
     }
   }.toSeq.sortBy(_._3).reverse.toList
 
+  def indexMisses: List[(String, String, Int)] = relations.flatMap {
+    case (name, relation) => relation.getIndexMisses.map {
+      case (index, count) => (name.toString, "{" + index.mkString(", ") + "}", count)
+    }
+  }.toSeq.sortBy(_._3).reverse.toList
+
   def predicateStats: List[(String, Int, Int, Int, Int)] = relations.map {
     case (name, relation) => (
       name.toString,
