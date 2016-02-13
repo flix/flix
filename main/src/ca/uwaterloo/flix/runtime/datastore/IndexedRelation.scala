@@ -142,7 +142,9 @@ final class IndexedRelation[ValueType](relation: TypedAst.Collection.Relation, i
       store(idx).getOrElse(key, mutable.ArrayBuffer.empty).iterator
     } else {
       // case 2: No exact index available. Check if there is an approximate index.
-      indexMisses.update(idx, indexMisses.getOrElse(idx, 0) + 1)
+      val indexMiss = getIndex(pat) // NB: Only used for the next line
+      indexMisses.update(indexMiss, indexMisses.getOrElse(indexMiss, 0) + 1)
+
       idx = getApproximateIndex(indexes, pat)
       val table = if (idx != 0) {
         // case 2.1: An approximate index exists. Use it.

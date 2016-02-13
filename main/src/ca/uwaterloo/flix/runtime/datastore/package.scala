@@ -121,12 +121,9 @@ package object datastore {
 
   /**
     * Returns an index matching all the non-null columns in the given pattern `pat`.
-    *
-    * An exact index only returns rows that match the pattern.
-    *
-    * Returns zero if no such index exists.
     */
-  def getExactIndex[ValueType](indexes: Set[Int], pat: Array[ValueType]): Int = {
+  @inline
+  def getIndex[ValueType](pat: Array[ValueType]): Int = {
     var index = 0
     var i = 0
     while (i < pat.length) {
@@ -137,7 +134,18 @@ package object datastore {
       }
       i = i + 1
     }
+    index
+  }
 
+  /**
+    * Returns an index matching all the non-null columns in the given pattern `pat`.
+    *
+    * An exact index only returns rows that match the pattern.
+    *
+    * Returns zero if no such index exists.
+    */
+  def getExactIndex[ValueType](indexes: Set[Int], pat: Array[ValueType]): Int = {
+    val index = getIndex(pat)
     if (indexes contains index) index else 0
   }
 

@@ -304,10 +304,10 @@ class RestServer(solver: Solver) {
     */
   class GetIndexMisses extends JsonHandler {
     def json: JValue = JArray(solver.dataStore.indexMisses.map {
-      case (name, index, hits) => JObject(List(
+      case (name, index, misses) => JObject(List(
         JField("name", JString(name)),
         JField("index", JString(index)),
-        JField("misses", JInt(hits))
+        JField("misses", JInt(misses))
       ))
     })
   }
