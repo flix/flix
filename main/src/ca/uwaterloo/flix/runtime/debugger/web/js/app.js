@@ -778,7 +778,7 @@ var IndexHitsPage = React.createClass({displayName: "IndexHitsPage",
         return (
             React.createElement("div", null, 
                 React.createElement("div", {className: "page-header"}, 
-                    React.createElement("h1", null, "Performance / Indexes")
+                    React.createElement("h1", null, "Performance / Index / Hits")
                 ), 
 
                 React.createElement("div", {className: "panel panel-default"}, 
@@ -849,7 +849,7 @@ var IndexMissesPage = React.createClass({displayName: "IndexMissesPage",
         return (
             React.createElement("div", null, 
                 React.createElement("div", {className: "page-header"}, 
-                    React.createElement("h1", null, "Performance / Indexes")
+                    React.createElement("h1", null, "Performance / Index / Misses")
                 ), 
 
                 React.createElement("div", {className: "panel panel-default"}, 

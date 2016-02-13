@@ -778,7 +778,7 @@ var IndexHitsPage = React.createClass({
         return (
             <div>
                 <div className="page-header">
-                    <h1>Performance / Indexes</h1>
+                    <h1>Performance / Index / Hits</h1>
                 </div>
 
                 <div className="panel panel-default">
@@ -849,7 +849,7 @@ var IndexMissesPage = React.createClass({
         return (
             <div>
                 <div className="page-header">
-                    <h1>Performance / Indexes</h1>
+                    <h1>Performance / Index / Misses</h1>
                 </div>
 
                 <div className="panel panel-default">
