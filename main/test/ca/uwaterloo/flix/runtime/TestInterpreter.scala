@@ -3526,54 +3526,122 @@ class TestInterpreter extends FunSuite {
   // Expression.Error                                                        //
   /////////////////////////////////////////////////////////////////////////////
 
-  test("Interpreter - Expression.Error01") {
+  test("Expression.Error.01") {
     val input = "fn f: Bool = ???: Bool"
     intercept[RuntimeException] { new Flix().addStr(input).solve().get }
   }
 
-//  /////////////////////////////////////////////////////////////////////////////
-//  // Expressions - Switch                                                    //
-//  /////////////////////////////////////////////////////////////////////////////
-//
-//  test("Interpreter - Switch01") {
-//    val input =
-//      """fn f: Int = switch {
-//        |  case -42 < 0 => 1
-//        |  case -42 > 0 => 2
-//        |  case true    => 3
-//        |}
-//      """.stripMargin
-//    val model = new Flix().addStr(input).solve().get
-//    val result = model.constants(Name.Resolved.mk("f"))
-//    assertResult(Value.mkInt32(1))(result)
-//  }
-//
-//  test("Interpreter - Switch02") {
-//    val input =
-//      """fn f: Int = switch {
-//        |  case 42 < 0 => 1
-//        |  case 42 > 0 => 2
-//        |  case true   => 3
-//        |}
-//      """.stripMargin
-//    val model = new Flix().addStr(input).solve().get
-//    val result = model.constants(Name.Resolved.mk("f"))
-//    assertResult(Value.mkInt32(2))(result)
-//  }
-//
-//  test("Interpreter - Switch03") {
-//    val input =
-//      """fn f: Int = switch {
-//        |  case 0 < 0 => 1
-//        |  case 0 > 0 => 2
-//        |  case true  => 3
-//        |}
-//      """.stripMargin
-//    val model = new Flix().addStr(input).solve().get
-//    val result = model.constants(Name.Resolved.mk("f"))
-//    assertResult(Value.mkInt32(3))(result)
-//  }
-//
+  /////////////////////////////////////////////////////////////////////////////
+  // Switch expressions                                                      //
+  // These don't exist in the ExecutableAst because they're desugared to     //
+  // Expression.IfThenElse.                                                  //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Switch.01") {
+    val input =
+      """fn f(x: Bool): Int = switch {
+        |  case x => 1
+        |  case !x => 0
+        |}
+        |fn g01: Int = f(true)
+        |fn g02: Int = f(false)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    assertResult(Value.mkInt32(1))(result01)
+    assertResult(Value.mkInt32(0))(result02)
+  }
+
+  test("Switch.02") {
+    val input =
+      """fn f(x: Bool): Int = switch {
+        |  case x => 100
+        |  case true => 20
+        |}
+        |fn g01: Int = f(true)
+        |fn g02: Int = f(false)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    assertResult(Value.mkInt32(100))(result01)
+    assertResult(Value.mkInt32(20))(result02)
+  }
+
+  test("Switch.03") {
+    val input =
+      """fn f(x: Bool): Int = switch {
+        |  case x => 1
+        |  case !x => 0
+        |  case true => ???: Int
+        |}
+        |fn g01: Int = f(true)
+        |fn g02: Int = f(false)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    assertResult(Value.mkInt32(1))(result01)
+    assertResult(Value.mkInt32(0))(result02)
+  }
+
+  test("Switch.04") {
+    val input =
+      """fn f(x: Int): Str = switch {
+        |  case x < 0 => "negative"
+        |  case x == 0 => "zero"
+        |  case x == 1 => "one"
+        |  case x == 2 => "two"
+        |  case x >= 3 => "many"
+        |}
+        |fn g01: Str = f(-2)
+        |fn g02: Str = f(-1)
+        |fn g03: Str = f(0)
+        |fn g04: Str = f(1)
+        |fn g05: Str = f(2)
+        |fn g06: Str = f(3)
+        |fn g07: Str = f(4)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result05 = model.constants(Name.Resolved.mk("g05"))
+    val result06 = model.constants(Name.Resolved.mk("g06"))
+    val result07 = model.constants(Name.Resolved.mk("g07"))
+    assertResult(Value.mkStr("negative"))(result01)
+    assertResult(Value.mkStr("negative"))(result02)
+    assertResult(Value.mkStr("zero"))(result03)
+    assertResult(Value.mkStr("one"))(result04)
+    assertResult(Value.mkStr("two"))(result05)
+    assertResult(Value.mkStr("many"))(result06)
+    assertResult(Value.mkStr("many"))(result07)
+  }
+
+  test("Switch.05") {
+    val input =
+      """fn f(x: Bool): Int = switch {
+        |  case x => 1
+        |}
+        |fn g01: Int = f(true)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("g01"))
+    assertResult(Value.mkInt32(1))(result)
+  }
+
+  test("Switch.06") {
+    val input =
+      """fn f(x: Bool): Int = switch {
+        |  case x => 1
+        |}
+        |fn g01: Int = f(false)
+      """.stripMargin
+    intercept[RuntimeException] { new Flix().addStr(input).solve().get }
+  }
+
 //  /////////////////////////////////////////////////////////////////////////////
 //  // Expressions - Match                                                     //
 //  /////////////////////////////////////////////////////////////////////////////
