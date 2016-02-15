@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.{Invokable, IValue, Flix}
+import ca.uwaterloo.flix.api.{Invokable, InvokableUnsafe, IValue, Flix}
 import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast.TypedAst.{Definition, Expression, Literal, Pattern, Term, FormalArg, Root}
 import ca.uwaterloo.flix.language.ast._
@@ -61,6 +61,66 @@ class TestInterpreter extends FunSuite {
     }
     implicit def f6h(f: Function6[IValue,IValue,IValue,IValue,IValue,IValue,IValue]): Invokable = new Invokable {
       override def apply(args: Array[IValue]): IValue = f(args(0), args(1), args(2), args(3), args(4), args(5))
+    }
+  }
+
+  object HookUnsafeHelpers {
+    type JBool = java.lang.Boolean
+    type JByte = java.lang.Byte
+    type JShort = java.lang.Short
+    type JInt = java.lang.Integer
+    type JLong = java.lang.Long
+
+    case class MyObject(x: Int)
+
+    implicit def f0h[R <: AnyRef](f: Function0[R]): InvokableUnsafe = new InvokableUnsafe {
+      override def apply(args: Array[AnyRef]): AnyRef = f(
+      )
+    }
+    implicit def f1h[P0,R <: AnyRef](f: Function1[P0,R]): InvokableUnsafe = new InvokableUnsafe {
+      override def apply(args: Array[AnyRef]): AnyRef = f(
+        args(0).asInstanceOf[P0]
+      )
+    }
+    implicit def f2h[P0,P1,R <: AnyRef](f: Function2[P0,P1,R]): InvokableUnsafe = new InvokableUnsafe {
+      override def apply(args: Array[AnyRef]): AnyRef = f(
+        args(0).asInstanceOf[P0],
+        args(1).asInstanceOf[P1]
+      )
+    }
+    implicit def f3h[P0,P1,P2,R <: AnyRef](f: Function3[P0,P1,P2,R]): InvokableUnsafe = new InvokableUnsafe {
+      override def apply(args: Array[AnyRef]): AnyRef = f(
+        args(0).asInstanceOf[P0],
+        args(1).asInstanceOf[P1],
+        args(2).asInstanceOf[P2]
+      )
+    }
+    implicit def f4h[P0,P1,P2,P3,R <: AnyRef](f: Function4[P0,P1,P2,P3,R]): InvokableUnsafe = new InvokableUnsafe {
+      override def apply(args: Array[AnyRef]): AnyRef = f(
+        args(0).asInstanceOf[P0],
+        args(1).asInstanceOf[P1],
+        args(2).asInstanceOf[P2],
+        args(3).asInstanceOf[P3]
+      )
+    }
+    implicit def f5h[P0,P1,P2,P3,P4,R <: AnyRef](f: Function5[P0,P1,P2,P3,P4,R]): InvokableUnsafe = new InvokableUnsafe {
+      override def apply(args: Array[AnyRef]): AnyRef = f(
+        args(0).asInstanceOf[P0],
+        args(1).asInstanceOf[P1],
+        args(2).asInstanceOf[P2],
+        args(3).asInstanceOf[P3],
+        args(4).asInstanceOf[P4]
+      )
+    }
+    implicit def f6h[P0,P1,P2,P3,P4,P5,R <: AnyRef](f: Function6[P0,P1,P2,P3,P4,P5,R]): InvokableUnsafe = new InvokableUnsafe {
+      override def apply(args: Array[AnyRef]): AnyRef = f(
+        args(0).asInstanceOf[P0],
+        args(1).asInstanceOf[P1],
+        args(2).asInstanceOf[P2],
+        args(3).asInstanceOf[P3],
+        args(4).asInstanceOf[P4],
+        args(5).asInstanceOf[P5]
+      )
     }
   }
 
@@ -835,6 +895,329 @@ class TestInterpreter extends FunSuite {
     assertResult(MyObject(1000))(result)
     assert(executed)
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.{Hook,Apply} - Hook.Unsafe                                   //
+  // Re-implements Expression.Lambda tests but using (unsafe) hooks instead. //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Hook - Hook.Unsafe.01") {
+    import HookUnsafeHelpers._
+    val input = "namespace A { fn g: Bool = A::B::f() }"
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(), flix.mkBoolType)
+    def nativeF(): JBool = { executed = true; false }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("A::B::f", tpe, nativeF _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("A::g"))
+    assertResult(Value.False)(result)
+    assert(executed)
+  }
+
+  test("Expression.Hook - Hook.Unsafe.02") {
+    import HookUnsafeHelpers._
+    val input = "fn g: Int = A::f(3)"
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+    def nativeF(x: JInt): JInt = { executed = true; 24 }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("A::f", tpe, nativeF _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkInt32(24))(result)
+    assert(executed)
+  }
+
+  test("Expression.Hook - Hook.Unsafe.03") {
+    import HookUnsafeHelpers._
+    val input = "namespace A { fn g: Int = f(3) }"
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+    def nativeF(x: JInt): JInt = { executed = true; x }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("A::f", tpe, nativeF _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("A::g"))
+    assertResult(Value.mkInt32(3))(result)
+    assert(executed)
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.04") {
+    import HookUnsafeHelpers._
+    val input = "fn g: Int64 = f(3, 42)"
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt64Type, flix.mkInt64Type), flix.mkInt64Type)
+    def nativeF(x: JLong, y: JLong): JLong = { executed = true; x * y - 6 }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkInt64(120))(result)
+    assert(executed)
+  }
+
+  test("Expression.Hook - Hook.Unsafe.05") {
+    import HookUnsafeHelpers._
+    val input = "namespace C { fn h: Int32 = A::f(5) + B::g(0) }"
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+    def nativeF(x: JInt): JInt = { val y = nativeG(x + 1); y * y }
+    def nativeG(x: JInt): JInt = { executed = true; x - 4 }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("A::f", tpe, nativeF _)
+      .addHookUnsafe("B::g", tpe, nativeG _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("C::h"))
+    assertResult(Value.mkInt32(0))(result)
+    assert(executed)
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.06") {
+    import HookUnsafeHelpers._
+    val input = "fn x: Int16 = f(3)"
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt16Type), flix.mkInt16Type)
+    def nativeF(x: JShort): JShort = nativeG((x + 1).toShort)
+    def nativeG(x: JShort): JShort = nativeH((x + 10).toShort)
+    def nativeH(x: JShort): JShort = { executed = true; (x * x).toShort }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .addHookUnsafe("g", tpe, nativeG _)
+      .addHookUnsafe("h", tpe, nativeH _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("x"))
+    assertResult(Value.mkInt16(196))(result)
+    assert(executed)
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.07") {
+    import HookUnsafeHelpers._
+    val input = "fn x: Int8 = let x = 7 in f(g(3), h(h(x)))"
+    var executed = false
+    val flix = new Flix()
+    val tpe1 = flix.mkFunctionType(Array(flix.mkInt8Type), flix.mkInt8Type)
+    val tpe2 = flix.mkFunctionType(Array(flix.mkInt8Type, flix.mkInt8Type), flix.mkInt8Type)
+    def nativeF(x: JByte, y: JByte): JByte = (x - y).toByte
+    def nativeG(x: JByte): JByte = (x * 3).toByte
+    def nativeH(x: JByte): JByte = { executed = true; nativeG((x - 1).toByte) }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe2, nativeF _)
+      .addHookUnsafe("g", tpe1, nativeG _)
+      .addHookUnsafe("h", tpe1, nativeH _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("x"))
+    assertResult(Value.mkInt8(-42))(result)
+    assert(executed)
+  }
+
+  test("Expression.Hook - Hook.Unsafe.08") {
+    import HookUnsafeHelpers._
+    val input =
+      """fn g01: Bool = f(true, true)
+        |fn g02: Bool = f(true, false)
+        |fn g03: Bool = f(false, false)
+        |fn g04: Bool = f(false, true)
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkBoolType), flix.mkBoolType)
+    def nativeF(x: JBool, y: JBool): JBool = { executed = true; if (x) true else y }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    assertResult(Value.True)(result01)
+    assertResult(Value.True)(result02)
+    assertResult(Value.False)(result03)
+    assertResult(Value.True)(result04)
+    assert(executed)
+  }
+
+  test("Expression.Hook - Hook.Unsafe.09") {
+    import HookUnsafeHelpers._
+    val input =
+      """fn g01: Bool = f(true, true)
+        |fn g02: Bool = f(true, false)
+        |fn g03: Bool = f(false, false)
+        |fn g04: Bool = f(false, true)
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkBoolType), flix.mkBoolType)
+    def nativeF(x: JBool, y: JBool): JBool = { executed = true; if (x) y else false }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    assertResult(Value.True)(result01)
+    assertResult(Value.False)(result02)
+    assertResult(Value.False)(result03)
+    assertResult(Value.False)(result04)
+    assert(executed)
+  }
+
+  test("Expression.Hook - Hook.Unsafe.10") {
+    import HookUnsafeHelpers._
+    val input = "fn g: Int = f(2, 42, 5)"
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkInt32Type, flix.mkInt32Type), flix.mkInt32Type)
+    def nativeF(x: JInt, y: JInt, z: JInt): JInt = { executed = true; x + y + z }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkInt32(49))(result)
+    assert(executed)
+  }
+
+  test("Expression.Hook - Hook.Unsafe.11") {
+    import HookUnsafeHelpers._
+    val input = "fn h: Int = f(g, 5)"
+    var executed = false
+    val flix = new Flix()
+    val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+    val tpeF = flix.mkFunctionType(Array(tpeG, flix.mkInt32Type), flix.mkInt32Type)
+    def nativeF(x: Value.HookClosure, y: JInt) = x.hook.asInstanceOf[Ast.Hook.Unsafe].inv(Array(y))
+    def nativeG(x: JInt): JInt = { executed = true; x + 1 }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpeF, nativeF _)
+      .addHookUnsafe("g", tpeG, nativeG _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("h"))
+    assertResult(Value.mkInt32(6))(result)
+    assert(executed)
+  }
+
+  test("Expression.Hook - Hook.Unsafe.12") {
+    import HookUnsafeHelpers._
+    val input = "fn h: Int = (f(g))(40)"
+    var executed = false
+    val flix = new Flix()
+    val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+    val tpeF = flix.mkFunctionType(Array(tpeG), tpeG)
+    def nativeF(x: Value.HookClosure): Value.HookClosure = x
+    def nativeG(x: JInt): JInt = { executed = true; x + 5 }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpeF, nativeF _)
+      .addHookUnsafe("g", tpeG, nativeG _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("h"))
+    assertResult(Value.mkInt32(45))(result)
+    assert(executed)
+  }
+
+  // TODO: This test fails because Tag.tag (a Name.Ident) compares the source location.
+  // Note that in the Flix program, Val has a real source location, but mkTagType uses Unknown.
+  // TODO: mkTagType should be taking an IType instead of a Type?
+  ignore("Expression.Hook - Hook.Unsafe.13") {
+    import HookUnsafeHelpers._
+    val input =
+      """enum Val { case Val(Int) }
+        |fn g: Val = f(111)
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tagTpe = flix.mkTagType("Val", "Val", Type.Int32)
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkEnumType("Val", Array(tagTpe)))
+    def nativeF(x: JInt): Value.Tag = { executed = true; Value.mkTag(Name.Resolved.mk("Val"), "Val", x) }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt32(111)))(result)
+    assert(executed)
+  }
+
+  test("Expression.Hook - Hook.Unsafe.14") {
+    import HookUnsafeHelpers._
+    val input = """fn g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())"""
+    var executed = false
+    val flix = new Flix()
+    val tpes = Array(flix.mkInt32Type, flix.mkInt32Type, flix.mkStrType, flix.mkInt32Type, flix.mkBoolType, flix.mkUnitType)
+    val tpe = flix.mkFunctionType(tpes, flix.mkTupleType(tpes))
+    def nativeF(a: JInt, b: JInt, c: String, d: JInt, e: JBool, f: Value.Unit.type): Value.Tuple = {
+      executed = true
+      Value.Tuple(Array(a, b, c, d, e, f))
+    }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+    .solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.Tuple(Array(Value.mkInt32(24), Value.mkInt32(53), Value.mkStr("qwertyuiop"), Value.mkInt32(9978), Value.False, Value.Unit)))(result)
+    assert(executed)
+  }
+
+  test("Expression.Hook - Hook.Unsafe.15") {
+    import HookUnsafeHelpers._
+    val input = "fn g: Set[Int] = f(24, 53, 24)"
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkInt32Type, flix.mkInt32Type), flix.mkSetType(flix.mkInt32Type))
+    def nativeF(x: JInt, y: JInt, z: JInt): Set[JInt] = { executed = true; Set(x, y, z) }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkSet(Set(Value.mkInt32(24), Value.mkInt32(53), Value.mkInt32(24))))(result)
+    assert(executed)
+  }
+
+  test("Expression.Hook - Hook.Unsafe.16") {
+    import HookUnsafeHelpers._
+    val input = "fn h: Native = g(f(999))"
+    var executed = false
+    val flix = new Flix()
+    val tpeF = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkNativeType)
+    val tpeG = flix.mkFunctionType(Array(flix.mkNativeType), flix.mkNativeType)
+    def nativeF(x: JInt): MyObject = MyObject(x)
+    def nativeG(o: MyObject): MyObject = {
+      executed = true
+      MyObject(o.x + 1)
+    }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpeF, nativeF _)
+      .addHookUnsafe("g", tpeG, nativeG _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("h"))
+    assertResult(MyObject(1000))(result)
+    assert(executed)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Closure                                                      //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: Expression.Closure?
 
   /////////////////////////////////////////////////////////////////////////////
   // Expression.Unary                                                        //
