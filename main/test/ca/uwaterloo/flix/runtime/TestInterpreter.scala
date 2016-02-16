@@ -9,6 +9,10 @@ import org.scalatest.FunSuite
 
 import scala.collection.mutable
 
+// TODO: Need to set Flix options to Silent, otherwise test output is too noisy.
+
+// TODO: Intercept tests should catch a more specific exception, otherwise real bugs will be masked.
+
 // NOTE: When writing a new test, call the parser on a string, and then the interpreter on the resulting AST.
 // Older tests were written before the front-end was completely implemented, so they had to directly construct ASTs.
 
@@ -3293,8 +3297,6 @@ class TestInterpreter extends FunSuite {
   // Tested indirectly by pattern matching.                                  //
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Come back to this later
-
   /////////////////////////////////////////////////////////////////////////////
   // Expression.Tag                                                          //
   /////////////////////////////////////////////////////////////////////////////
@@ -3428,8 +3430,6 @@ class TestInterpreter extends FunSuite {
   // Tested indirectly by pattern matching.                                  //
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Come back to this later
-
   /////////////////////////////////////////////////////////////////////////////
   // Expression.Tuple                                                        //
   /////////////////////////////////////////////////////////////////////////////
@@ -3487,6 +3487,11 @@ class TestInterpreter extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Expression.{CheckNil,CheckCons}                                         //
+  // Tested indirectly by pattern matching.                                  //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////////////////////
   // Expression.Set                                                          //
   /////////////////////////////////////////////////////////////////////////////
 
@@ -3530,6 +3535,11 @@ class TestInterpreter extends FunSuite {
     val input = "fn f: Bool = ???: Bool"
     intercept[RuntimeException] { new Flix().addStr(input).solve().get }
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.{Match,Switch}Error                                          //
+  // Tested indirectly by switch expressions and pattern matching.           //
+  /////////////////////////////////////////////////////////////////////////////
 
   /////////////////////////////////////////////////////////////////////////////
   // Switch expressions                                                      //
@@ -3642,472 +3652,689 @@ class TestInterpreter extends FunSuite {
     intercept[RuntimeException] { new Flix().addStr(input).solve().get }
   }
 
-//  /////////////////////////////////////////////////////////////////////////////
-//  // Expressions - Match                                                     //
-//  /////////////////////////////////////////////////////////////////////////////
-//
-//  test("Interpreter - Pattern.Wildcard01") {
-//    // Unit match { case _ => 11 }
-//    val rules = List((Pattern.Wildcard(Type.Int32, loc), Expression.Lit(Literal.Int(11, loc), Type.Int32, loc)))
-//    val input = Expression.Match(Expression.Lit(Literal.Unit(loc), Type.Unit, loc), rules, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(11))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Var01") {
-//    // 3 match { case x => x }
-//    val rules = List((Pattern.Var(ident01, Type.Int32, loc), Expression.Var(ident01, Type.Int32, loc)))
-//    val input = Expression.Match(Expression.Lit(Literal.Int(3, loc), Type.Int32, loc), rules, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(3))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Var02") {
-//    // 3 match { case x => x + 11 }
-//    val rules = List((Pattern.Var(ident01, Type.Int32, loc), Expression.Binary(
-//      BinaryOperator.Plus,
-//      Expression.Var(ident01, Type.Int32, loc),
-//      Expression.Lit(Literal.Int(11, loc), Type.Int32, loc),
-//      Type.Int32, loc)))
-//    val input = Expression.Match(Expression.Lit(Literal.Int(3, loc), Type.Int32, loc), rules, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(14))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Literal.Unit01") {
-//    // Unit match { case Unit => true }
-//    val rules = List((Pattern.Lit(Literal.Unit(loc), Type.Unit, loc), Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc)))
-//    val input = Expression.Match(Expression.Lit(Literal.Unit(loc), Type.Unit, loc), rules, Type.Bool, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.True)(result)
-//  }
-//
-//  test("Interpreter - Pattern.Literal.Bool01") {
-//    // true match { case true => 30 }
-//    val rules = List((Pattern.Lit(Literal.Bool(true, loc), Type.Bool, loc), Expression.Lit(Literal.Int(30, loc), Type.Int32, loc)))
-//    val input = Expression.Match(Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc), rules, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(30))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Literal.Bool02") {
-//    // true match { case false => 0; case _ => 1 }
-//    val rules = List(
-//      (Pattern.Lit(Literal.Bool(false, loc), Type.Bool, loc), Expression.Lit(Literal.Int(0, loc), Type.Int32, loc)),
-//      (Pattern.Wildcard(Type.Bool, loc), Expression.Lit(Literal.Int(1, loc), Type.Int32, loc)))
-//    val input = Expression.Match(Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc), rules, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(1))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Literal.Int01") {
-//    // 87 match { case 87 => 1 }
-//    val rules = List((Pattern.Lit(Literal.Int(87, loc), Type.Int32, loc), Expression.Lit(Literal.Int(1, loc), Type.Int32, loc)))
-//    val input = Expression.Match(Expression.Lit(Literal.Int(87, loc), Type.Int32, loc), rules, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(1))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Literal.Int02") {
-//    // 87 match { case 86 => "foo"; case _ => "bar" }
-//    val rules = List(
-//      (Pattern.Lit(Literal.Int(86, loc), Type.Int32, loc), Expression.Lit(Literal.Str("foo", loc), Type.Str, loc)),
-//      (Pattern.Wildcard(Type.Int32, loc), Expression.Lit(Literal.Str("bar", loc), Type.Str, loc)))
-//    val input = Expression.Match(Expression.Lit(Literal.Int(87, loc), Type.Int32, loc), rules, Type.Str, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkStr("bar"))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Literal.Str01") {
-//    // "hello" match { case "hello" => "world" }
-//    val rules = List(
-//      (Pattern.Lit(Literal.Str("hello", loc), Type.Str, loc), Expression.Lit(Literal.Str("world", loc), Type.Str, loc)))
-//    val input = Expression.Match(Expression.Lit(Literal.Str("hello", loc), Type.Str, loc), rules, Type.Str, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkStr("world"))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Literal.Str02") {
-//    // "hello" match { case "bonjour" => 1; case "hola" => 2; case _ => 0 }
-//    val rules = List(
-//      (Pattern.Lit(Literal.Str("bonjour", loc), Type.Str, loc), Expression.Lit(Literal.Int(1, loc), Type.Int32, loc)),
-//      (Pattern.Lit(Literal.Str("hola", loc), Type.Str, loc), Expression.Lit(Literal.Int(2, loc), Type.Int32, loc)),
-//      (Pattern.Wildcard(Type.Str, loc), Expression.Lit(Literal.Int(0, loc), Type.Int32, loc)))
-//    val input = Expression.Match(Expression.Lit(Literal.Str("hello", loc), Type.Str, loc), rules, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(0))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Literal.Tag01") {
-//    // foo.bar.baz "hello world" match { case foo.bar.baz "hello world" => true }
-//    val name = Name.Resolved.mk(List("foo", "bar"))
-//    val ident = toIdent("baz")
-//    val tagTpe = Type.Tag(name, ident, Type.Str)
-//    val enumTpe = Type.Enum(Name.Resolved.mk("Family"), Map("foo.bar.baz" -> tagTpe))
-//    val rules = List(
-//      (Pattern.Lit(Literal.Tag(name, ident, Literal.Str("hello world", loc), enumTpe, loc), tagTpe, loc),
-//        Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc)))
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tag(name, ident, Literal.Str("hello world", loc), enumTpe, loc), tagTpe, loc),
-//      rules, Type.Bool, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.True)(result)
-//  }
-//
-//  test("Interpreter - Pattern.Literal.Tag02") {
-//    // NameAndAge ("James", 42) match { case NameAndAge ("James", 40) => true; case _ => false }
-//    val name = Name.Resolved.mk(List("Family"))
-//    val ident = toIdent("NameAndAge")
-//    val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int32)))
-//    val enumTpe = Type.Enum(Name.Resolved.mk("Family"), Map("Family.NameAndAge" -> tagTpe))
-//    val rules = List(
-//      (Pattern.Lit(Literal.Tag(name, ident,
-//        Literal.Tuple(List(Literal.Str("James", loc), Literal.Int(40, loc)), Type.Tuple(List(Type.Str, Type.Int32)), loc),
-//        enumTpe, loc), tagTpe, loc), Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc)),
-//      (Pattern.Wildcard(enumTpe, loc), Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc)))
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tag(name, ident,
-//        Literal.Tuple(List(Literal.Str("James", loc), Literal.Int(42, loc)),
-//          Type.Tuple(List(Type.Str, Type.Int32)), loc), enumTpe, loc), tagTpe, loc),
-//      rules, Type.Bool, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.False)(result)
-//  }
-//
-//  test("Interpreter - Pattern.Literal.Tag03") {
-//    // ConstProp.Val 4 match { case ConstProp.Bot => true; case _ => false }
-//    import ConstantPropTagDefs._
-//    val rules = List(
-//      (Pattern.Lit(Literal.Tag(name, identB, Literal.Unit(loc), enumTpe, loc), tagTpeB, loc),
-//        Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc)),
-//      (Pattern.Wildcard(enumTpe, loc), Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc))
-//    )
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tag(name, identV, Literal.Int(4, loc), enumTpe, loc), tagTpeV, loc),
-//      rules, Type.Bool, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.False)(result)
-//  }
-//
-//  test("Interpreter - Pattern.Literal.Tag04") {
-//    // ConstProp.Val 4 match { case ConstProp.Top => true; case _ => false }
-//    import ConstantPropTagDefs._
-//    val rules = List(
-//      (Pattern.Lit(Literal.Tag(name, identT, Literal.Unit(loc), enumTpe, loc), tagTpeT, loc),
-//        Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc)),
-//      (Pattern.Wildcard(enumTpe, loc), Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc))
-//    )
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tag(name, identV, Literal.Int(4, loc), enumTpe, loc), tagTpeV, loc),
-//      rules, Type.Bool, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.False)(result)
-//  }
-//
-//  test("Interpreter - Pattern.Literal.Tag05") {
-//    // ConstProp.Val 4 match { case ConstProp.Val 4 => true; case _ => false }
-//    import ConstantPropTagDefs._
-//    val rules = List(
-//      (Pattern.Lit(Literal.Tag(name, identV, Literal.Int(4, loc), enumTpe, loc), tagTpeV, loc),
-//        Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc)),
-//      (Pattern.Wildcard(enumTpe, loc), Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc))
-//    )
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tag(name, identV, Literal.Int(4, loc), enumTpe, loc), tagTpeV, loc),
-//      rules, Type.Bool, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.True)(result)
-//  }
-//
-//  test("Interpreter - Pattern.Literal.Tag06") {
-//    // ConstProp.Val 4 match { case ConstProp.Val 5 => true; case _ => false }
-//    import ConstantPropTagDefs._
-//    val rules = List(
-//      (Pattern.Lit(Literal.Tag(name, identV, Literal.Int(5, loc), enumTpe, loc), tagTpeV, loc),
-//        Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc)),
-//      (Pattern.Wildcard(enumTpe, loc), Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc))
-//    )
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tag(name, identV, Literal.Int(4, loc), enumTpe, loc), tagTpeV, loc),
-//      rules, Type.Bool, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.False)(result)
-//  }
-//
-//  test("Interpreter - Pattern.Literal.Tuple01") {
-//    // ("hi", true) match { case ("hi", false) => 1; case _ => 2 }
-//    val rules = List(
-//      (Pattern.Lit(Literal.Tuple(List(Literal.Str("hi", loc), Literal.Bool(false, loc)),
-//        Type.Tuple(List(Type.Str, Type.Bool)), loc),
-//        Type.Tuple(List(Type.Str, Type.Bool)), loc), Expression.Lit(Literal.Int(1, loc), Type.Int32, loc)),
-//      (Pattern.Wildcard(Type.Tuple(List(Type.Str, Type.Bool)), loc), Expression.Lit(Literal.Int(2, loc), Type.Int32, loc)))
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tuple(List(Literal.Str("hi", loc), Literal.Bool(true, loc)),
-//        Type.Tuple(List(Type.Str, Type.Bool)), loc), Type.Tuple(List(Type.Str, Type.Bool)), loc),
-//      rules, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(2))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Literal.Tuple02") {
-//    // (4, (12, 8)) match { case (4, (12, 8)) => 24 }
-//    val rules = List((Pattern.Lit(
-//      Literal.Tuple(List(
-//        Literal.Int(4, loc),
-//        Literal.Tuple(List(Literal.Int(12, loc), Literal.Int(8, loc)),
-//          Type.Tuple(List(Type.Int32, Type.Int32)), loc)),
-//        Type.Tuple(List(Type.Int32, Type.Tuple(List(Type.Int32, Type.Int32)))), loc),
-//      Type.Tuple(List(Type.Int32, Type.Tuple(List(Type.Int32, Type.Int32)))), loc),
-//      Expression.Lit(Literal.Int(24, loc), Type.Int32, loc)))
-//    val input = Expression.Match(Expression.Lit(
-//      Literal.Tuple(List(
-//        Literal.Int(4, loc),
-//        Literal.Tuple(List(Literal.Int(12, loc), Literal.Int(8, loc)),
-//          Type.Tuple(List(Type.Int32, Type.Int32)), loc)),
-//        Type.Tuple(List(Type.Int32, Type.Tuple(List(Type.Int32, Type.Int32)))), loc),
-//      Type.Tuple(List(Type.Int32, Type.Tuple(List(Type.Int32, Type.Int32)))), loc),
-//      rules, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(24))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Tag01") {
-//    // NameAndAge ("James", 42) match { case NameAndAge (_, age) => age }
-//    val name = Name.Resolved.mk(List("Family"))
-//    val ident = toIdent("NameAndAge")
-//    val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int32)))
-//    val enumTpe = Type.Enum(name, Map("Family.NameAndAge" -> tagTpe))
-//    val rules = List(
-//      (Pattern.Tag(name, ident,
-//        Pattern.Tuple(List(Pattern.Wildcard(Type.Str, loc), Pattern.Var(ident01, Type.Int32, loc)),
-//          Type.Tuple(List(Type.Str, Type.Int32)), loc), tagTpe, loc), Expression.Var(ident01, Type.Int32, loc)))
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tag(name, ident,
-//        Literal.Tuple(List(Literal.Str("James", loc), Literal.Int(42, loc)),
-//          Type.Tuple(List(Type.Str, Type.Int32)), loc), enumTpe, loc), tagTpe, loc),
-//      rules, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(42))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Tag02") {
-//    // NameAndAge ("James", 42) match { case NameAndAge ("James", age) => age; case NameAndAge _ => 0 }
-//    val name = Name.Resolved.mk(List("Family"))
-//    val ident = toIdent("NameAndAge")
-//    val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int32)))
-//    val enumTpe = Type.Enum(name, Map("Family.NameAndAge" -> tagTpe))
-//    val rules = List(
-//      (Pattern.Tag(name, ident,
-//        Pattern.Tuple(List(Pattern.Lit(Literal.Str("James", loc), Type.Str, loc), Pattern.Var(ident01, Type.Int32, loc)),
-//          Type.Tuple(List(Type.Str, Type.Int32)), loc), tagTpe, loc), Expression.Var(ident01, Type.Int32, loc)),
-//      (Pattern.Wildcard(Type.Str, loc), Expression.Lit(Literal.Int(0, loc), Type.Int32, loc)))
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tag(name, ident,
-//        Literal.Tuple(List(Literal.Str("James", loc), Literal.Int(42, loc)),
-//          Type.Tuple(List(Type.Str, Type.Int32)), loc), enumTpe, loc), tagTpe, loc),
-//      rules, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(42))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Tag03") {
-//    // NameAndAge ("John", 42) match { case NameAndAge ("James", age) => age; case NameAndAge _ => 0 }
-//    val name = Name.Resolved.mk(List("Family"))
-//    val ident = toIdent("NameAndAge")
-//    val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int32)))
-//    val enumTpe = Type.Enum(name, Map("Family.NameAndAge" -> tagTpe))
-//    val rules = List(
-//      (Pattern.Tag(name, ident,
-//        Pattern.Tuple(List(Pattern.Lit(Literal.Str("James", loc), Type.Str, loc), Pattern.Var(ident01, Type.Int32, loc)),
-//          Type.Tuple(List(Type.Str, Type.Int32)), loc), tagTpe, loc), Expression.Var(ident01, Type.Int32, loc)),
-//      (Pattern.Wildcard(Type.Str, loc), Expression.Lit(Literal.Int(0, loc), Type.Int32, loc)))
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tag(name, ident,
-//        Literal.Tuple(List(Literal.Str("John", loc), Literal.Int(42, loc)),
-//          Type.Tuple(List(Type.Str, Type.Int32)), loc), enumTpe, loc), tagTpe, loc),
-//      rules, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(0))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Tag04") {
-//    // ConstProp.Top match {
-//    //   case ConstProp.Top => 0
-//    //   case ConstProp.Val v => v
-//    //   case ConstProp.Bot => 0
-//    // }
-//    import ConstantPropTagDefs._
-//    val rules = List(
-//      (Pattern.Lit(Literal.Tag(name, identT, Literal.Unit(loc), enumTpe, loc), tagTpeT, loc),
-//        Expression.Lit(Literal.Int(0, loc), Type.Int32, loc)),
-//      (Pattern.Tag(name, identV, Pattern.Var(ident01, Type.Int32, loc), tagTpeV, loc), Expression.Var(ident01, Type.Int32, loc)),
-//      (Pattern.Lit(Literal.Tag(name, identB, Literal.Unit(loc), enumTpe, loc), tagTpeB, loc),
-//        Expression.Lit(Literal.Int(0, loc), Type.Int32, loc)))
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tag(name, identT, Literal.Unit(loc), enumTpe, loc), tagTpeT, loc), rules, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(0))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Tag05") {
-//    // ConstProp.Bot match {
-//    //   case ConstProp.Top => 0
-//    //   case ConstProp.Val v => v
-//    //   case ConstProp.Bot => 0
-//    // }
-//    import ConstantPropTagDefs._
-//    val rules = List(
-//      (Pattern.Lit(Literal.Tag(name, identT, Literal.Unit(loc), enumTpe, loc), tagTpeT, loc),
-//        Expression.Lit(Literal.Int(0, loc), Type.Int32, loc)),
-//      (Pattern.Tag(name, identV, Pattern.Var(ident01, Type.Int32, loc), tagTpeV, loc), Expression.Var(ident01, Type.Int32, loc)),
-//      (Pattern.Lit(Literal.Tag(name, identB, Literal.Unit(loc), enumTpe, loc), tagTpeB, loc),
-//        Expression.Lit(Literal.Int(0, loc), Type.Int32, loc)))
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tag(name, identB, Literal.Unit(loc), enumTpe, loc), tagTpeB, loc), rules, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(0))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Tag06") {
-//    // ConstProp.Val 42 match {
-//    //   case ConstProp.Top => 0
-//    //   case ConstProp.Val v => v
-//    //   case ConstProp.Bot => 0
-//    // }
-//    import ConstantPropTagDefs._
-//    val rules = List(
-//      (Pattern.Lit(Literal.Tag(name, identT, Literal.Unit(loc), enumTpe, loc), tagTpeT, loc),
-//        Expression.Lit(Literal.Int(0, loc), Type.Int32, loc)),
-//      (Pattern.Tag(name, identV, Pattern.Var(ident01, Type.Int32, loc), tagTpeV, loc), Expression.Var(ident01, Type.Int32, loc)),
-//      (Pattern.Lit(Literal.Tag(name, identB, Literal.Unit(loc), enumTpe, loc), tagTpeB, loc),
-//        Expression.Lit(Literal.Int(0, loc), Type.Int32, loc)))
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tag(name, identV, Literal.Int(42, loc), enumTpe, loc), tagTpeV, loc), rules, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(42))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Tag07") {
-//    // ConstProp.Val 100 match {
-//    //   case ConstProp.Top => 0
-//    //   case ConstProp.Val v => v
-//    //   case ConstProp.Bot => 0
-//    // }
-//    import ConstantPropTagDefs._
-//    val rules = List(
-//      (Pattern.Lit(Literal.Tag(name, identT, Literal.Unit(loc), enumTpe, loc), tagTpeT, loc),
-//        Expression.Lit(Literal.Int(0, loc), Type.Int32, loc)),
-//      (Pattern.Tag(name, identV, Pattern.Var(ident01, Type.Int32, loc), tagTpeV, loc), Expression.Var(ident01, Type.Int32, loc)),
-//      (Pattern.Lit(Literal.Tag(name, identB, Literal.Unit(loc), enumTpe, loc), tagTpeB, loc),
-//        Expression.Lit(Literal.Int(0, loc), Type.Int32, loc)))
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tag(name, identV, Literal.Int(100, loc), enumTpe, loc), tagTpeV, loc), rules, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(100))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Tuple01") {
-//    // (5, 6) match { case (x, y) => x + y }
-//    val rules = List(
-//      (Pattern.Tuple(List(Pattern.Var(ident01, Type.Int32, loc), Pattern.Var(ident02, Type.Int32, loc)),
-//        Type.Tuple(List(Type.Int32, Type.Int32)), loc), Expression.Binary(BinaryOperator.Plus,
-//        Expression.Var(ident01, Type.Int32, loc), Expression.Var(ident02, Type.Int32, loc), Type.Int32, loc)))
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tuple(List(Literal.Int(5, loc), Literal.Int(6, loc)),
-//        Type.Tuple(List(Type.Int32, Type.Int32)), loc), Type.Tuple(List(Type.Int32, Type.Int32)), loc), rules, Type.Int32, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkInt32(11))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Tuple02") {
-//    // (5, 6) match { case (5, 6) => "abc"; case (5, _) => "def"; case (_, _) => "ghi" }
-//    val rules = List(
-//      (Pattern.Tuple(List(Pattern.Lit(Literal.Int(5, loc), Type.Int32, loc), Pattern.Lit(Literal.Int(6, loc), Type.Int32, loc)),
-//        Type.Tuple(List(Type.Int32, Type.Int32)), loc), Expression.Lit(Literal.Str("abc", loc), Type.Str, loc)),
-//      (Pattern.Tuple(List(Pattern.Lit(Literal.Int(5, loc), Type.Int32, loc), Pattern.Wildcard(Type.Int32, loc)),
-//        Type.Tuple(List(Type.Int32, Type.Int32)), loc), Expression.Lit(Literal.Str("def", loc), Type.Str, loc)),
-//      (Pattern.Tuple(List(Pattern.Wildcard(Type.Int32, loc), Pattern.Wildcard(Type.Int32, loc)),
-//        Type.Tuple(List(Type.Int32, Type.Int32)), loc), Expression.Lit(Literal.Str("ghi", loc), Type.Str, loc)))
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tuple(List(Literal.Int(5, loc), Literal.Int(6, loc)),
-//        Type.Tuple(List(Type.Int32, Type.Int32)), loc), Type.Tuple(List(Type.Int32, Type.Int32)), loc), rules, Type.Str, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkStr("abc"))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Tuple03") {
-//    // (5, 16) match { case (5, 6) => "abc"; case (5, _) => "def"; case (_, _) => "ghi" }
-//    val rules = List(
-//      (Pattern.Tuple(List(Pattern.Lit(Literal.Int(5, loc), Type.Int32, loc), Pattern.Lit(Literal.Int(6, loc), Type.Int32, loc)),
-//        Type.Tuple(List(Type.Int32, Type.Int32)), loc), Expression.Lit(Literal.Str("abc", loc), Type.Str, loc)),
-//      (Pattern.Tuple(List(Pattern.Lit(Literal.Int(5, loc), Type.Int32, loc), Pattern.Wildcard(Type.Int32, loc)),
-//        Type.Tuple(List(Type.Int32, Type.Int32)), loc), Expression.Lit(Literal.Str("def", loc), Type.Str, loc)),
-//      (Pattern.Tuple(List(Pattern.Wildcard(Type.Int32, loc), Pattern.Wildcard(Type.Int32, loc)),
-//        Type.Tuple(List(Type.Int32, Type.Int32)), loc), Expression.Lit(Literal.Str("ghi", loc), Type.Str, loc)))
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tuple(List(Literal.Int(5, loc), Literal.Int(16, loc)),
-//        Type.Tuple(List(Type.Int32, Type.Int32)), loc), Type.Tuple(List(Type.Int32, Type.Int32)), loc), rules, Type.Str, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkStr("def"))(result)
-//  }
-//
-//  test("Interpreter - Pattern.Tuple04") {
-//    // (15, 16) match { case (5, 6) => "abc"; case (5, _) => "def"; case (_, _) => "ghi" }
-//    val rules = List(
-//      (Pattern.Tuple(List(Pattern.Lit(Literal.Int(5, loc), Type.Int32, loc), Pattern.Lit(Literal.Int(6, loc), Type.Int32, loc)),
-//        Type.Tuple(List(Type.Int32, Type.Int32)), loc), Expression.Lit(Literal.Str("abc", loc), Type.Str, loc)),
-//      (Pattern.Tuple(List(Pattern.Lit(Literal.Int(5, loc), Type.Int32, loc), Pattern.Wildcard(Type.Int32, loc)),
-//        Type.Tuple(List(Type.Int32, Type.Int32)), loc), Expression.Lit(Literal.Str("def", loc), Type.Str, loc)),
-//      (Pattern.Tuple(List(Pattern.Wildcard(Type.Int32, loc), Pattern.Wildcard(Type.Int32, loc)),
-//        Type.Tuple(List(Type.Int32, Type.Int32)), loc), Expression.Lit(Literal.Str("ghi", loc), Type.Str, loc)))
-//    val input = Expression.Match(
-//      Expression.Lit(Literal.Tuple(List(Literal.Int(15, loc), Literal.Int(16, loc)),
-//        Type.Tuple(List(Type.Int32, Type.Int32)), loc), Type.Tuple(List(Type.Int32, Type.Int32)), loc), rules, Type.Str, loc)
-//    val result = Interpreter.eval(input, root)
-//    assertResult(Value.mkStr("ghi"))(result)
-//  }
-//
-//  test("Interpreter - Scala.Tuple01") {
-//    import ca.uwaterloo.flix.api.InvokableUnsafe
-//
-//    val s =
-//      """
-//        |rel A(x: Native, y: Native);
-//        |rel B(x: Native);
-//        |
-//        |def fst(t: (Native, Native)): Native = match t with {
-//        |  case (x, w) => x
-//        |}
-//        |def snd(t: (Native, Native)): Native = match t with {
-//        |  case (w, y) => y
-//        |}
-//        |
-//        |B(f()).
-//        |A(fst(t), snd(t)) :- B(t).
-//      """.stripMargin
-//
-//    val flix = new Flix()
-//    val tpe = flix.mkFunctionType(Array(), flix.mkNativeType)
-//    flix
-//      .addStr(s)
-//      .addHookUnsafe("f", tpe, new InvokableUnsafe {
-//        override def apply(args: Array[AnyRef]): AnyRef = ("abc", 22)
-//      })
-//
-//    val model = flix.solve().get
-//    val A = model.relations(Name.Resolved.mk(List("A"))).toSet
-//    assert(A.contains(List("abc", new java.lang.Integer(22))))
-//  }
-//
-//  test("Interpreter - Expression.Match.Error01") {
-//    // 123 match { case 321 => Unit }
-//    val rules = List((Pattern.Lit(Literal.Int(321, loc), Type.Int32, loc), Expression.Lit(Literal.Unit(loc), Type.Unit, loc)))
-//    val input = Expression.Match(Expression.Lit(Literal.Int(123, loc), Type.Int32, loc), rules, Type.Int32, loc)
-//    intercept[RuntimeException] {
-//      Interpreter.eval(input, root)
-//    }
-//  }
-//
+  /////////////////////////////////////////////////////////////////////////////
+  // Match expressions (pattern matching)                                    //
+  // These don't exist in the ExecutableAst because they're desugared into   //
+  // primitives (e.g. CheckTag, GetTagValue, GetTupleIndex).                 //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Match.Wildcard.01") {
+    val input =
+      """fn f: Int = match () with {
+        |  case _ => 11
+        |}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(11))(result)
+  }
+
+  test("Match.Wildcard.02") {
+    val input =
+      """fn f: Int = match 42 with {
+        |  case _ => 11
+        |}
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkInt32(11))(result)
+  }
+
+  test("Match.Wildcard.03") {
+    val input =
+      """fn f(x: Int): Int = match x with {
+        |  case _ => 11
+        |}
+        |fn g01: Int = f(-1)
+        |fn g02: Int = f(0)
+        |fn g03: Int = f(1)
+        |fn g04: Int = f(99999)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    assertResult(Value.mkInt32(11))(result01)
+    assertResult(Value.mkInt32(11))(result02)
+    assertResult(Value.mkInt32(11))(result03)
+    assertResult(Value.mkInt32(11))(result04)
+  }
+
+  test("Match.Var.01") {
+    val input =
+      """fn f(x: Int): Int = match x with {
+        |  case a => 1
+        |}
+        |fn g: Int = f(3)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkInt32(1))(result)
+  }
+
+  test("Match.Var.02") {
+    val input =
+      """fn f(x: Int): Int = match x with {
+        |  case a => a
+        |}
+        |fn g: Int = f(3)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkInt32(3))(result)
+  }
+
+  test("Match.Var.03") {
+    val input =
+      """fn f(x: Int): Int = match x with {
+        |  case a => a + 11
+        |}
+        |fn g: Int = f(3)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkInt32(14))(result)
+  }
+
+  test("Match.Literal.01") {
+    val input =
+      """fn f(x: ()): Bool = match x with {
+        |  case () => true
+        |}
+        |fn g: Bool = f(())
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.True)(result)
+  }
+
+  test("Match.Literal.02") {
+    val input =
+      """fn f(x: Bool): Int = match x with {
+        |  case true => 30
+        |  case false => 81
+        |}
+        |fn g01: Int = f(true)
+        |fn g02: Int = f(false)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    assertResult(Value.mkInt32(30))(result01)
+    assertResult(Value.mkInt32(81))(result02)
+  }
+
+  test("Match.Literal.03") {
+    val input =
+      """fn f(x: Bool): Int = match x with {
+        |  case true => 30
+        |  case _ => 81
+        |}
+        |fn g01: Int = f(true)
+        |fn g02: Int = f(false)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    assertResult(Value.mkInt32(30))(result01)
+    assertResult(Value.mkInt32(81))(result02)
+  }
+
+  test("Match.Literal.04") {
+    val input =
+      """fn f(x: Int): Str = match x with {
+        |  case -1 => "minus one"
+        |  case 0 => "zero"
+        |  case 1 => "one"
+        |  case _ => "unknown"
+        |}
+        |fn g01: Str = f(-1)
+        |fn g02: Str = f(0)
+        |fn g03: Str = f(1)
+        |fn g04: Str = f(2)
+        |fn g05: Str = f(3)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result05 = model.constants(Name.Resolved.mk("g05"))
+    assertResult(Value.mkStr("minus one"))(result01)
+    assertResult(Value.mkStr("zero"))(result02)
+    assertResult(Value.mkStr("one"))(result03)
+    assertResult(Value.mkStr("unknown"))(result04)
+    assertResult(Value.mkStr("unknown"))(result05)
+  }
+
+  ignore("Match.Literal.05") {
+    val input =
+      s"""fn f(x: Int8): Str = match x with {
+         |  case ${Byte.MinValue} => "min"
+         |  case -2 => "a"
+         |  case 6 => "b"
+         |  case ${Byte.MaxValue} => "max"
+         |  case _ => "unknown"
+         |}
+         |fn g01: Str = f(${Byte.MinValue})
+         |fn g02: Str = f(-2)
+         |fn g03: Str = f(6)
+         |fn g04: Str = f(${Byte.MaxValue})
+         |fn g05: Str = f(0)
+       """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result05 = model.constants(Name.Resolved.mk("g05"))
+    assertResult(Value.mkStr("min"))(result01)
+    assertResult(Value.mkStr("a"))(result02)
+    assertResult(Value.mkStr("b"))(result03)
+    assertResult(Value.mkStr("max"))(result04)
+    assertResult(Value.mkStr("unknown"))(result05)
+  }
+
+  ignore("Match.Literal.06") {
+    val input =
+      s"""fn f(x: Int16): Str = match x with {
+          |  case ${Short.MinValue} => "min"
+          |  case -211 => "a"
+          |  case 623 => "b"
+          |  case ${Short.MaxValue} => "max"
+          |  case _ => "unknown"
+          |}
+          |fn g01: Str = f(${Short.MinValue})
+          |fn g02: Str = f(-211)
+          |fn g03: Str = f(623)
+          |fn g04: Str = f(${Short.MaxValue})
+          |fn g05: Str = f(0)
+       """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result05 = model.constants(Name.Resolved.mk("g05"))
+    assertResult(Value.mkStr("min"))(result01)
+    assertResult(Value.mkStr("a"))(result02)
+    assertResult(Value.mkStr("b"))(result03)
+    assertResult(Value.mkStr("max"))(result04)
+    assertResult(Value.mkStr("unknown"))(result05)
+  }
+
+  test("Match.Literal.07") {
+    val input =
+      s"""fn f(x: Int32): Str = match x with {
+          |  case ${Int.MinValue} => "min"
+          |  case -2136541 => "a"
+          |  case 6254523 => "b"
+          |  case ${Int.MaxValue} => "max"
+          |  case _ => "unknown"
+          |}
+          |fn g01: Str = f(${Int.MinValue})
+          |fn g02: Str = f(-2136541)
+          |fn g03: Str = f(6254523)
+          |fn g04: Str = f(${Int.MaxValue})
+          |fn g05: Str = f(0)
+       """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result05 = model.constants(Name.Resolved.mk("g05"))
+    assertResult(Value.mkStr("min"))(result01)
+    assertResult(Value.mkStr("a"))(result02)
+    assertResult(Value.mkStr("b"))(result03)
+    assertResult(Value.mkStr("max"))(result04)
+    assertResult(Value.mkStr("unknown"))(result05)
+  }
+
+  ignore("Match.Literal.08") {
+    val input =
+      s"""fn f(x: Int64): Str = match x with {
+          |  case ${Long.MinValue} => "min"
+          |  case -213645454545541 => "a"
+          |  case 6287816254523 => "b"
+          |  case ${Long.MaxValue} => "max"
+          |  case _ => "unknown"
+          |}
+          |fn g01: Str = f(${Long.MinValue})
+          |fn g02: Str = f(-213645454545541)
+          |fn g03: Str = f(6287816254523)
+          |fn g04: Str = f(${Long.MaxValue})
+          |fn g05: Str = f(0)
+       """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result05 = model.constants(Name.Resolved.mk("g05"))
+    assertResult(Value.mkStr("min"))(result01)
+    assertResult(Value.mkStr("a"))(result02)
+    assertResult(Value.mkStr("b"))(result03)
+    assertResult(Value.mkStr("max"))(result04)
+    assertResult(Value.mkStr("unknown"))(result05)
+  }
+
+  test("Match.Literal.09") {
+    val input =
+      """fn f(x: Str): Str = match x with {
+        |  case "one" => "un"
+        |  case "two" => "deux"
+        |  case "three" => "trois"
+        |  case _ => "???"
+        |}
+        |fn g01: Str = f("one")
+        |fn g02: Str = f("two")
+        |fn g03: Str = f("three")
+        |fn g04: Str = f("four")
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    assertResult(Value.mkStr("un"))(result01)
+    assertResult(Value.mkStr("deux"))(result02)
+    assertResult(Value.mkStr("trois"))(result03)
+    assertResult(Value.mkStr("???"))(result04)
+  }
+
+  test("Match.Literal.10") {
+    val input =
+      """enum Foo { case Bar, case Baz, case Abc(Int,Str), case Xyz }
+        |fn f(x: Foo): Int = match x with {
+        |  case Foo.Bar => 1
+        |  case Foo.Baz => 2
+        |  case Foo.Abc(42, "hi") => 3
+        |  case _ => 0
+        |}
+        |fn g01: Int = f(Foo.Bar)
+        |fn g02: Int = f(Foo.Baz)
+        |fn g03: Int = f(Foo.Abc(42, "hi"))
+        |fn g04: Int = f(Foo.Abc(42, "hi!"))
+        |fn g05: Int = f(Foo.Abc(41, "hi"))
+        |fn g06: Int = f(Foo.Abc(40, "a"))
+        |fn g07: Int = f(Foo.Xyz)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result05 = model.constants(Name.Resolved.mk("g05"))
+    val result06 = model.constants(Name.Resolved.mk("g06"))
+    val result07 = model.constants(Name.Resolved.mk("g07"))
+    assertResult(Value.mkInt32(1))(result01)
+    assertResult(Value.mkInt32(2))(result02)
+    assertResult(Value.mkInt32(3))(result03)
+    assertResult(Value.mkInt32(0))(result04)
+    assertResult(Value.mkInt32(0))(result05)
+    assertResult(Value.mkInt32(0))(result06)
+    assertResult(Value.mkInt32(0))(result07)
+  }
+
+  test("Match.Literal.11") {
+    val input =
+      """fn f(x: Str, y: Bool): Int = match (x, y) with {
+        |  case ("hi", false) => 1
+        |  case _ => 2
+        |}
+        |fn g01: Int = f("hi", true)
+        |fn g02: Int = f("hi", false)
+        |fn g03: Int = f("abc", true)
+        |fn g04: Int = f("abc", false)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    assertResult(Value.mkInt32(2))(result01)
+    assertResult(Value.mkInt32(1))(result02)
+    assertResult(Value.mkInt32(2))(result03)
+    assertResult(Value.mkInt32(2))(result04)
+  }
+
+  test("Match.Literal.12") {
+    val input =
+      """fn f(x: (Int, (Int, Int))): Int = match x with {
+        |  case (4, (12, 8)) => 1
+        |  case (4, (12, 0)) => 2
+        |  case (1, (12, 8)) => 3
+        |  case _ => 4
+        |}
+        |fn g01: Int = f((4, (12, 8)))
+        |fn g02: Int = f((4, (12, 0)))
+        |fn g03: Int = f((1, (12, 8)))
+        |fn g04: Int = f((1, (12, 0)))
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    assertResult(Value.mkInt32(1))(result01)
+    assertResult(Value.mkInt32(2))(result02)
+    assertResult(Value.mkInt32(3))(result03)
+    assertResult(Value.mkInt32(4))(result04)
+  }
+
+  test("Match.Tag.01") {
+    val input =
+      """enum NameAndAge { case T(Str,Int) }
+        |fn f(x: NameAndAge): Int = match x with {
+        |  case NameAndAge.T(_, age) => age
+        |}
+        |fn g01: Int = f(NameAndAge.T("James", 42))
+        |fn g02: Int = f(NameAndAge.T("John", 21))
+        |fn g03: Int = f(NameAndAge.T("James", 5))
+        |fn g04: Int = f(NameAndAge.T("Mary", 33))
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    assertResult(Value.mkInt32(42))(result01)
+    assertResult(Value.mkInt32(21))(result02)
+    assertResult(Value.mkInt32(5))(result03)
+    assertResult(Value.mkInt32(33))(result04)
+  }
+
+  test("Match.Tag.02") {
+    val input =
+      """enum NameAndAge { case T(Str,Int) }
+        |fn f(x: NameAndAge): Int = match x with {
+        |  case NameAndAge.T("James", age) => age
+        |  case _ => -1
+        |}
+        |fn g01: Int = f(NameAndAge.T("James", 42))
+        |fn g02: Int = f(NameAndAge.T("John", 21))
+        |fn g03: Int = f(NameAndAge.T("James", 5))
+        |fn g04: Int = f(NameAndAge.T("Mary", 33))
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    assertResult(Value.mkInt32(42))(result01)
+    assertResult(Value.mkInt32(-1))(result02)
+    assertResult(Value.mkInt32(5))(result03)
+    assertResult(Value.mkInt32(-1))(result04)
+  }
+
+  test("Match.Tag.03") {
+    val input =
+      """enum ConstProp { case Top, case Val(Int), case Bot }
+        |fn f(x: ConstProp): Int = match x with {
+        |  case ConstProp.Top => -1
+        |  case ConstProp.Val(v) => v
+        |  case ConstProp.Bot => -2
+        |}
+        |fn g01: Int = f(ConstProp.Top)
+        |fn g02: Int = f(ConstProp.Val(42))
+        |fn g03: Int = f(ConstProp.Val(-24))
+        |fn g04: Int = f(ConstProp.Bot)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    assertResult(Value.mkInt32(-1))(result01)
+    assertResult(Value.mkInt32(42))(result02)
+    assertResult(Value.mkInt32(-24))(result03)
+    assertResult(Value.mkInt32(-2))(result04)
+  }
+
+  test("Match.Tag.04") {
+    val input =
+      """enum BoolTag { case Top, case B(Bool), case Bot }
+        |fn f(x: BoolTag): Int = match x with {
+        |  case BoolTag.Top => 0
+        |  case BoolTag.B(b) => if (b) 1 else -1
+        |  case BoolTag.Bot => 0
+        |}
+        |fn g01: Int = f(BoolTag.Top)
+        |fn g02: Int = f(BoolTag.B(true))
+        |fn g03: Int = f(BoolTag.B(false))
+        |fn g04: Int = f(BoolTag.Bot)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    assertResult(Value.mkInt32(0))(result01)
+    assertResult(Value.mkInt32(1))(result02)
+    assertResult(Value.mkInt32(-1))(result03)
+    assertResult(Value.mkInt32(0))(result04)
+  }
+
+  test("Match.Tuple.01") {
+    val input =
+      """fn f(x: Int, y: Int): Int = match (x, y) with {
+        |  case (a, b) => a + b
+        |}
+        |fn g01: Int = f(5, 6)
+        |fn g02: Int = f(6, 5)
+        |fn g03: Int = f(100, 23)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    assertResult(Value.mkInt32(11))(result01)
+    assertResult(Value.mkInt32(11))(result02)
+    assertResult(Value.mkInt32(123))(result03)
+  }
+
+  test("Match.Tuple.02") {
+    val input =
+      """fn f(x: Int, y: Bool): Str = match (x, y) with {
+        |  case (5, true) => "abc"
+        |  case (5, _) => "def"
+        |  case (_, true) => "ghi"
+        |  case (_, _) => "jkl"
+        |}
+        |fn g01: Str = f(5, true)
+        |fn g02: Str = f(5, false)
+        |fn g03: Str = f(6, true)
+        |fn g04: Str = f(0, false)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    assertResult(Value.mkStr("abc"))(result01)
+    assertResult(Value.mkStr("def"))(result02)
+    assertResult(Value.mkStr("ghi"))(result03)
+    assertResult(Value.mkStr("jkl"))(result04)
+  }
+
+  test("Match.Tuple.03") {
+    val input =
+      """fn f(x: Int, y: Int, z: Int): Int = match (x, (y, z)) with {
+        |  case (1, (2, 3)) => -1
+        |  case (1, (2, _)) => -2
+        |  case (1, (_, 3)) => -3
+        |  case (1, _) => -4
+        |  case (_, (a, b)) => a + b
+        |}
+        |fn g01: Int = f(1, 2, 3)
+        |fn g02: Int = f(1, 2, 4)
+        |fn g03: Int = f(1, 3, 3)
+        |fn g04: Int = f(1, 5, 5)
+        |fn g05: Int = f(2, 2, 3)
+        |fn g06: Int = f(2, 10, 20)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result05 = model.constants(Name.Resolved.mk("g05"))
+    val result06 = model.constants(Name.Resolved.mk("g06"))
+    assertResult(Value.mkInt32(-1))(result01)
+    assertResult(Value.mkInt32(-2))(result02)
+    assertResult(Value.mkInt32(-3))(result03)
+    assertResult(Value.mkInt32(-4))(result04)
+    assertResult(Value.mkInt32(5))(result05)
+    assertResult(Value.mkInt32(30))(result06)
+  }
+
+  test("Match.Tuple.04") {
+    val input =
+      """enum ConstProp { case Top, case Val(Int), case Bot }
+        |fn f(x: ConstProp, y: ConstProp): Int = match (x, y) with {
+        |  case (ConstProp.Top, ConstProp.Top) => 1
+        |  case (ConstProp.Bot, ConstProp.Bot) => 2
+        |  case (ConstProp.Val(v1), ConstProp.Val(v2)) => if (v1 == v2) 3 else 4
+        |  case _ => 5
+        |}
+        |fn g01: Int = f(ConstProp.Top, ConstProp.Top)
+        |fn g02: Int = f(ConstProp.Bot, ConstProp.Bot)
+        |fn g03: Int = f(ConstProp.Val(42), ConstProp.Val(42))
+        |fn g04: Int = f(ConstProp.Val(42), ConstProp.Val(0))
+        |fn g05: Int = f(ConstProp.Val(0), ConstProp.Val(42))
+        |fn g06: Int = f(ConstProp.Top, ConstProp.Bot)
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result05 = model.constants(Name.Resolved.mk("g05"))
+    val result06 = model.constants(Name.Resolved.mk("g06"))
+    assertResult(Value.mkInt32(1))(result01)
+    assertResult(Value.mkInt32(2))(result02)
+    assertResult(Value.mkInt32(3))(result03)
+    assertResult(Value.mkInt32(4))(result04)
+    assertResult(Value.mkInt32(4))(result05)
+    assertResult(Value.mkInt32(5))(result06)
+  }
+
+  test("Match.Tuple.05") {
+    val input =
+      """enum NameAndAge { case T(Str,Int) }
+        |fn f(x: Int, y: NameAndAge): Int = match (x, y) with {
+        |  case (1, NameAndAge.T("James", _)) => 1
+        |  case (a, NameAndAge.T("James", b)) => a + b
+        |  case (_, NameAndAge.T(_, 24)) => 2
+        |  case _ => -1
+        |}
+        |fn g01: Int = f(1, NameAndAge.T("James", 20))
+        |fn g02: Int = f(1, NameAndAge.T("John", 53))
+        |fn g03: Int = f(2, NameAndAge.T("James", 20))
+        |fn g04: Int = f(2, NameAndAge.T("John", 53))
+        |fn g05: Int = f(3, NameAndAge.T("Mary", 24))
+        |fn g06: Int = f(3, NameAndAge.T("Anne", 18))
+        |fn g07: Int = f(4, NameAndAge.T("Charles", 64))
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val result01 = model.constants(Name.Resolved.mk("g01"))
+    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result05 = model.constants(Name.Resolved.mk("g05"))
+    val result06 = model.constants(Name.Resolved.mk("g06"))
+    val result07 = model.constants(Name.Resolved.mk("g07"))
+    assertResult(Value.mkInt32(1))(result01)
+    assertResult(Value.mkInt32(-1))(result02)
+    assertResult(Value.mkInt32(22))(result03)
+    assertResult(Value.mkInt32(-1))(result04)
+    assertResult(Value.mkInt32(2))(result05)
+    assertResult(Value.mkInt32(-1))(result06)
+    assertResult(Value.mkInt32(-1))(result07)
+  }
+
+  test("Match.Tuple.06") {
+    import HookUnsafeHelpers._
+    val input =
+      """fn fst(t: (Native, Native)): Native = match t with {
+        |  case (x, _) => x
+        |}
+        |fn g: (Native, Native) = f(12)
+        |fn h: Native = fst(g())
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkTupleType(Array(flix.mkNativeType, flix.mkNativeType)))
+    def nativeF(x: Int): (MyObject, MyObject) = { executed = true; (MyObject(x), MyObject(x * 2)) }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("h"))
+    assertResult(MyObject(12))(result)
+    assert(executed)
+  }
+
+  test("Match.Tuple.07") {
+    import HookUnsafeHelpers._
+    val input =
+      """fn fst(t: (Native, Native)): Native = match t with {
+        |  case (x, _) => x
+        |}
+        |fn g: (Native, Native) = f(12)
+        |fn h: Native = fst(g())
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkTupleType(Array(flix.mkNativeType, flix.mkNativeType)))
+    def nativeF(x: Int): (Int, String) = { executed = true; (x, x.toString) }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("h"))
+    assertResult(Value.mkInt32(12))(result)
+    assert(executed)
+  }
+
+  test("Match.Tuple.08") {
+    import HookUnsafeHelpers._
+    val input =
+      """fn fst(t: (Int, Str)): Int = match t with {
+        |  case (x, _) => x
+        |}
+        |fn g: (Int, Str) = f(12)
+        |fn h: Int = fst(g())
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkTupleType(Array(flix.mkInt32Type, flix.mkStrType)))
+    def nativeF(x: Int): (Int, String) = { executed = true; (x, x.toString) }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("h"))
+    assertResult(Value.mkInt32(12))(result)
+    assert(executed)
+  }
+
+  // TODO: Bug in the simplifier causes a NoSuchElementException.
+  // However, the test catches this exception and so the test passes.
+  test("Match.Error.01") {
+    val input =
+      """fn f(x: Int): Bool = match x with {
+        |  case 321 => true
+        |}
+        |fn g: Bool = f(123)
+      """.stripMargin
+    intercept[RuntimeException] { new Flix().addStr(input).solve().get }
+  }
+
+  // TODO: opt, list, map, ???
+
 //  /////////////////////////////////////////////////////////////////////////////
 //  // evalHeadTerm - Var                                                      //
 //  /////////////////////////////////////////////////////////////////////////////
