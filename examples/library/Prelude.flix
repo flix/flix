@@ -242,8 +242,10 @@ class Narrowing[E] => PartialOrder[E] {
  */
 // law Strict1[A: PartialOrder, R: PartialOrder](f: (A) -> R) =
 //   f(⊥) ≡ ⊥
-// law Strict2[A: PartialOrder, B: PartialOrder, R: PartialOrder](f: (A, B) -> R) =
-//   ∀(x: A, y: B). (f(⊥, y) ≡ ⊥) ∧ (f(x, ⊥) ≡ ⊥)
+fn Strict2[A: PartialOrder, B: PartialOrder, R: PartialOrder](f: (A, B) -> R): Prop =
+   ∀(x: A, y: B). (f(⊥, y) ≡ ⊥) ∧ (f(x, ⊥) ≡ ⊥)
+
+law Strict2myFoo: Prop = Strict2(myFoo)
 
 /**
  * The monotonicity law asserts that a function `f` is order-preserving.
@@ -270,7 +272,7 @@ class PreOrder[E] {
     /**
      * The reflexivity law asserts that any element is less than or equal to itself.
      */
-    law Reflexivity(x: E): Bool = x ⊑ x
+    law Reflexivity: Prop = ∀(x). x ⊑ x
 
     /**
      * The transitivity law asserts that if `x` less than or equal to `y`
