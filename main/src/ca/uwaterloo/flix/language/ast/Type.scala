@@ -20,6 +20,7 @@ sealed trait Type {
     case Type.Int64 => "Int64"
     case Type.Str => "Str"
     case Type.Native => "Native"
+    case Type.Proposition => "Prop"
     case Type.Tag(enum, tag, tpe) => tag.name + "(" + tpe + ")"
     case Type.UnresolvedTag(enum, tag, tpe) => "?" + tag.name + "(" + tpe + ")"
     case Type.Enum(enum, cases) => enum.fqn
@@ -46,42 +47,42 @@ object Type {
   case class Var(x: String) extends Type
 
   /**
-    * An AST node representing the Unit type.
+    * An AST node that represents the Unit type.
     */
   case object Unit extends Type
 
   /**
-    * An AST node representing the Bool type.
+    * An AST node that represents the Bool type.
     */
   case object Bool extends Type
 
   /**
-    * An AST node representing the Char type.
+    * An AST node that represents the Char type.
     */
   case object Char extends Type
 
   /**
-    * An AST node representing the 8-bit signed integer type.
+    * An AST node that represents the 8-bit signed integer type.
     */
   case object Int8 extends Type
 
   /**
-    * An AST node representing the 16-bit signed integer type.
+    * An AST node that represents the 16-bit signed integer type.
     */
   case object Int16 extends Type
 
   /**
-    * An AST node representing the 32-bit signed integer type.
+    * An AST node that represents the 32-bit signed integer type.
     */
   case object Int32 extends Type
 
   /**
-    * An AST node representing the 64-bit signed integer type.
+    * An AST node that represents the 64-bit signed integer type.
     */
   case object Int64 extends Type
 
   /**
-    * An AST node representing the Str type.
+    * An AST node that represents the Str type.
     */
   case object Str extends Type
 
@@ -91,7 +92,12 @@ object Type {
   case object Native extends Type
 
   /**
-    * An AST node representing the type of a tag.
+    * An AST node that represents the proposition type.
+    */
+  case object Proposition extends Type
+
+  /**
+    * An AST node that represents the type of a tag.
     *
     * @param enum the fully qualified name of the enum.
     * @param tag  the name of the tag.
@@ -100,7 +106,7 @@ object Type {
   case class Tag(enum: Name.Resolved, tag: Name.Ident, tpe: Type) extends Type
 
   /**
-    * An AST node representing the unresolved type of a tag.
+    * An AST node that represents the unresolved type of a tag.
     *
     * @param enum the unresolved enum name.
     * @param tag  the name of the tag.
@@ -110,7 +116,7 @@ object Type {
   case class UnresolvedTag(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends Type
 
   /**
-    * An AST node representing an enum type.
+    * An AST node that represents an enum type.
     *
     * @param name  the fully qualified name of the enum.
     * @param cases a map from tag names to tag types.
@@ -118,14 +124,14 @@ object Type {
   case class Enum(name: Name.Resolved, cases: immutable.Map[String, Type.Tag]) extends Type
 
   /**
-    * An AST node representing a tuple type.
+    * An AST node that represents a tuple type.
     *
     * @param elms the types of the elements.
     */
   case class Tuple(elms: List[Type]) extends Type
 
   /**
-    * An AST node representing a lambda type.
+    * An AST node that represents a lambda type.
     *
     * @param args   the type of the arguments.
     * @param retTpe the type of the return type.
@@ -142,28 +148,28 @@ object Type {
   case class Parametric(name: Name.Unresolved, elms: Seq[Type]) extends Type
 
   /**
-    * An AST node representing an Opt type.
+    * An AST node that represents an Opt type.
     *
     * @param tpe the type of the wrapped value.
     */
   case class Opt(tpe: Type) extends Type
 
   /**
-    * An AST node representing a List type.
+    * An AST node that represents a List type.
     *
     * @param tpe the type of the list elements.
     */
   case class Lst(tpe: Type) extends Type
 
   /**
-    * An AST node representing a Set type.
+    * An AST node that represents a Set type.
     *
     * @param tpe the type of the set elements.
     */
   case class Set(tpe: Type) extends Type
 
   /**
-    * An AST node representing a Map type.
+    * An AST node that represents a Map type.
     *
     * @param key   the type of the keys.
     * @param value the type of the values.
@@ -171,7 +177,7 @@ object Type {
   case class Map(key: Type, value: Type) extends Type
 
   /**
-    * An AST node representing a predicate type.
+    * An AST node that represents a predicate type.
     *
     * @param terms the type of predicate terms.
     */
