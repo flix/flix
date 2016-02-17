@@ -167,6 +167,7 @@ class BoundedLattice[E] => Lattice[E] {
      * Intuitively, every time we move upwards in the lattice the value of f(x) decreases.
      */
     law AscendingChain: Prop = ∀(x: E, y: E). (x ⊑ y) → (f(x) > f(y))
+    // TODO: This does not prove descendingchain. We need to split h into two: distUp, distDn.
 
 }
 
@@ -194,7 +195,7 @@ class Widening[E] => PartialOrder[E] {
      */
     law Covering: Prop = ∀(x: E, y: E). (x ⊑ (x ▽ y)) ∧ (y ⊑ (x ▽ y))
 
-    // TODO: Copy + paste AscendingChain law here?
+    // TODO: AscendingChain law here?
 
 }
 
