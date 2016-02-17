@@ -119,10 +119,10 @@ HeapPointsTo(S.In, s2, o1, f, o2) :- CFG(s1, s2), HeapPointsTo(S.In, s1, o1, f, 
  */
 
 // Listen expression v1.listen(event, v2).
-rel Listen(io: S, s: Stm, v1: Variable, e: Event, v2: Variable)
+rel Listen(s: Stm, v1: Variable, e: Event, v2: Variable)
 
 // Emit expression v1.emit(event, v2).
-rel Emit(io: S, s: Stm, v1: Variable, e: Event, v2: Variable)
+rel Emit(s: Stm, v1: Variable, e: Event, v2: Variable)
 
 /**
  * Derived relations.
@@ -135,6 +135,15 @@ rel Listener(io: S, s: Stm, o: Object, e: Event, l: Object)
 rel Queue(io: S, s: Stm, o: Object, e: Event, l: Object) // TODO: Need to model argument too..
 
 
+// Listen rule: v1.listen(event, v2).
+Listener(S.Out, s, o, e, l) :- Listen(s, v1, e, v2),
+                               VarPointsTo(S.In, s, v1, o),
+                               VarPointsTo(S.In, s, v2, l).
 
+// Emit rule: v1.emit(event, v2).
+Queue(S.Out, s, o, e, l) :- Emit(v1, e, _),
+                            VarPointsTo(S.In, s, v1, o),
+                            Listener(S.In, s, o, e, l).
 
 // TODO: Flow sensitivity and strong updates.
+// TODO: Replace 'f' by 'p' and 'm' by 'f'.
