@@ -17,8 +17,8 @@ enum S { case In, case Out }
 
 enum Context {
     case None,
-    case Listener(Set[Str]),
-    case Events(Set[Str])
+    case EventSensitive(Set[(Object, Event)]),
+    case ListenerSensitive(Set[(Object, Event, Object)])
 }
 
 /**
@@ -58,13 +58,13 @@ rel CFG(s1: Stm, s2: Stm)
 /**
  * Analysis Relations.
  */
-// The variable points-to graph immediately before statement `s`.
+// Variable `v` points-to object `o` at statement `s`.
 rel VarPointsTo(io: S, s: Stm, v: Variable, o: Object)
 
-// The heap points-to graph immediately before statement `s`.
+// Field `f` of object `o1` points-to object `o2` at statement `s`.
 rel HeapPointsTo(io: S, s: Stm, o1: Object, f: Field, o2: Object)
 
-// The call graph.
+// Call at statement `s` to function object `m`.
 rel CallGraph(s: Stm, m: Object)
 
 /**
@@ -109,15 +109,32 @@ VarPointsTo(S.In, s2, v, o) :- CFG(s1, s2), VarPointsTo(S.In, s1, v, o).
 HeapPointsTo(S.In, s2, o1, f, o2) :- CFG(s1, s2), HeapPointsTo(S.Out, s1, o1, f, o2).
 HeapPointsTo(S.In, s2, o1, f, o2) :- CFG(s1, s2), HeapPointsTo(S.In, s1, o1, f, o2).
 
+
 /**
- * Events
+ * Events.
  */
 
-// Events
-// Listener: Addr x Event -> Lam*
-// Queue: Addr x Event -> (Lam x Val)*
+/**
+ * Input relations.
+ */
 
-// Event sensitive (Addr x Event) Set
-// Listener sensitive (Addr x event x Lambda) Set
+// Listen expression v1.listen(event, v2).
+rel Listen(io: S, s: Stm, v1: Variable, e: Event, v2: Variable)
+
+// Emit expression v1.emit(event, v2).
+rel Emit(io: S, s: Stm, v1: Variable, e: Event, v2: Variable)
+
+/**
+ * Derived relations.
+ */
+
+// Listener `l` registered on object `o` for event `e` at statement `s`.
+rel Listener(io: S, s: Stm, o: Object, e: Event, l: Object)
+
+// Listener `l` is enqueue on object `o` for event `e` at statement `s`.
+rel Queue(io: S, s: Stm, o: Object, e: Event, l: Object) // TODO: Need to model argument too..
+
+
+
 
 // TODO: Flow sensitivity and strong updates.
