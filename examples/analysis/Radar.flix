@@ -12,7 +12,8 @@ enum Object { case Object(Str) }
 enum Event { case Event(Str) }
 enum Field { case Field(Str) }
 enum Variable { case Var(Str) }
-enum Stm { case In(Str), case Out(Str) }
+enum Stm { case Stm(Str)}
+enum S { case In, case Out }
 
 enum Context {
     case None,
@@ -58,7 +59,7 @@ rel CFG(s1: Stm, s2: Stm)
  * Analysis Relations.
  */
 // The variable points-to graph immediately before statement `s`.
-rel VarPointsTo(s: Stm, v: Variable, o: Object)
+rel VarPointsTo(io: S, s: Stm, v: Variable, o: Object)
 
 // The heap points-to graph immediately before statement `s`.
 rel HeapPointsTo(s: Stm, o1: Object, f: Field, o2: Object)
@@ -70,10 +71,10 @@ rel CallGraph(s: Stm, m: Object)
  * Analysis Rules.
  */
 // NewObject rule.
-VarPointsTo(s2, v, o) :- CFG(s1, s2), NewObj(s1, v, o).
+VarPointsTo(S.Out, s, v, o) :- NewObj(s, v, o).
 
 // Assign rule.
-VarPointsTo(s2, v2, o) :- CFG(s1, s2), Assign(v1, v2), VarPointsTo(v1, o).
+VarPointsTo(S.Out, s, v2, o) :- Assign(v1, v2), VarPointsTo(S.In, s, v1, o).
 
 // Load rule.
 VarPointsTo(s2, v1, o2) :- Load(s1, v1, v2, f),
