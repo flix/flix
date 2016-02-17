@@ -21,7 +21,7 @@ enum Context {
 }
 
 /**
- * Inputs.
+ * Input Relations.
  */
 // Object creation expression: s: v1 = new Object().
 rel NewObj(s: Stm, v: Variable, o: Object)
@@ -55,7 +55,7 @@ rel CFG(s1: Stm, s2: Stm)
 
 
 /**
- * Analysis.
+ * Analysis Relations.
  */
 // The variable points-to graph immediately before statement `s`.
 rel VarPointsTo(s: Stm, v: Variable, o: Object)
@@ -63,6 +63,9 @@ rel VarPointsTo(s: Stm, v: Variable, o: Object)
 // The heap points-to graph immediately before statement `s`.
 rel HeapPointsTo(s: Stm, o1: Object, f: Field, o2: Object)
 
+/**
+ * Analysis Rules.
+ */
 // NewObject rule.
 VarPointsTo(s2, v, o) :- CFG(s1, s2), NewObj(s1, v, o).
 
@@ -70,17 +73,23 @@ VarPointsTo(s2, v, o) :- CFG(s1, s2), NewObj(s1, v, o).
 VarPointsTo(s2, v2, o) :- CFG(s1, s2), Assign(v1, v2), VarPointsTo(v1, o).
 
 // Load rule.
-
+VarPointsTo(s2, v1, o2) :- Load(s1, v1, v2, f),
+                           VarPointsTo(s1, v2, o1)
+                           HeapPointsTo(s1, o1, f, o2).
 
 // Store rule.
+HeapPointsTo(s2, o1, f, o2) :- Store(s1, v1, f, v2),
+                               VarPointsTo(s1, v1, o1),
+                               VarPointsTo(s1, v2, o2).
 
 // Call Actual --> Formal
+
 
 // Call Return --> Call Result
 
 
 // Data flow along the control-flow graph.
-//HeapPointsTo(s2, o1, f, o2) :- CFG(s1, s2), HeapPointsTo()
+// HeapPointsTo(s2, o1, f, o2) :- CFG(s1, s2), HeapPointsTo()
 
 
 /**
