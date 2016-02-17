@@ -35,8 +35,8 @@ rel Load(s: Stm, v1: Variable, v2: Variable, f: Field)
 // Field store expression: s: v1.f = v2
 rel Store(s: Stm, v1: Variable, f: Field, v2: Variable)
 
-// Call expressions: s: v1(v2).
-rel Call(s: Stm, v1: Variable, v2: Variable)
+// Call expressions: s: v1(...).
+rel Call(s: Stm, v1: Variable)
 
 // Argument (as seen from the caller).
 rel CallActual(s: Stm, v: Variable)
@@ -63,6 +63,9 @@ rel VarPointsTo(s: Stm, v: Variable, o: Object)
 // The heap points-to graph immediately before statement `s`.
 rel HeapPointsTo(s: Stm, o1: Object, f: Field, o2: Object)
 
+// The call graph.
+rel CallGraph(s: Stm, m: Object)
+
 /**
  * Analysis Rules.
  */
@@ -82,7 +85,15 @@ HeapPointsTo(s2, o1, f, o2) :- Store(s1, v1, f, v2),
                                VarPointsTo(s1, v1, o1),
                                VarPointsTo(s1, v2, o2).
 
+// Call graph.
+CallGraph(s, m) :- Call(s, v),
+                   VarPointsTo(s, v, m).
+
 // Call Actual --> Formal
+VarPointsTo(s2, v2, o) :- CallGraph(s1, m),
+                          CallActual(s1, v1),
+                          VarPointsTo(v1, o)
+                          CallFormal(s2, m, v2).
 
 
 // Call Return --> Call Result
