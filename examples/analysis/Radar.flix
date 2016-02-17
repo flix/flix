@@ -8,7 +8,7 @@
 /**
  * Input types.
  */
-enum AllocSite { case AllocSite(Str) }
+enum Object { case Object(Str) }
 enum Event { case Event(Str) }
 enum Field { case Field(Str) }
 enum Variable { case Var(Str) }
@@ -18,7 +18,7 @@ enum Stm { case Stm(Str) }
  * Input Relations.
  */
 // Object creation expression: s: v1 = new Object().
-rel NewObj(s: Stm, v: Variable, o: AllocSite)
+rel NewObj(s: Stm, v: Variable, o: Object)
 
 // Assignment expression: s: v1 = v2.
 rel Assign(s: Stm, v1: Variable, v2: Variable)
@@ -33,10 +33,10 @@ rel Store(s: Stm, v1: Variable, f: Field, v2: Variable)
 rel Call(s: Stm, v1: Variable, v2: Variable)
 
 // Argument (as seen from the callee).
-rel MethodFormal(s: Stm, m: AllocSite, v: Variable)
+rel MethodFormal(s: Stm, m: Object, v: Variable)
 
 // Return (as seen from the callee).
-rel MethodReturn(s: Stm, m: AllocSite, v: Variable)
+rel MethodReturn(s: Stm, m: Object, v: Variable)
 
 // Control-flow Graph edge s1 -> s2.
 rel CFG(s1: Stm, s2: Stm)
@@ -47,13 +47,26 @@ rel CFG(s1: Stm, s2: Stm)
 /**
  * Derived Relations.
  */
+
 enum Context {
     case None,
     case Listener(Set[Str]),
     case Events(Set[Str])
 }
 
-//rel VarPointsTo(v: )
+// The variable points-to graph immediately before statement `s`.
+rel VarPointsTo(s: Stm, v: Variable, o: Object)
+
+// The heap points-to graph immediately before statement `s`.
+
+
+// NewObject rule.
+VarPointsTo(s2, v, o) :- CFG(s1, s2), NewObj(s1, v, o).
+
+// Assign rule.
+VarPointsTo(s2, v2, o) :- CFG(s1, s2), Assign(v1, v2), VarPointsTo(v1, o).
+
+
 
 //rel HeapPointsTo()
 
