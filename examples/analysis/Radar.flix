@@ -32,11 +32,17 @@ rel Store(s: Stm, v1: Variable, f: Field, v2: Variable)
 // Call expressions: s: v1(v2).
 rel Call(s: Stm, v1: Variable, v2: Variable)
 
+// Argument (as seen from the caller).
+rel CallActual(s: Stm, v: Variable)
+
 // Argument (as seen from the callee).
-rel MethodFormal(s: Stm, m: Object, v: Variable)
+rel CallFormal(s: Stm, m: Object, v: Variable)
 
 // Return (as seen from the callee).
-rel MethodReturn(s: Stm, m: Object, v: Variable)
+rel CallReturn(s: Stm, v: Variable)
+
+// Return (as seen from the caller).
+rel CallResult(s: Stm, v: Variable)
 
 // Control-flow Graph edge s1 -> s2.
 rel CFG(s1: Stm, s2: Stm)
@@ -58,7 +64,7 @@ enum Context {
 rel VarPointsTo(s: Stm, v: Variable, o: Object)
 
 // The heap points-to graph immediately before statement `s`.
-
+rel HeapPointsTo(s: Stm, o1: Object, f: Field, o2: Object)
 
 // NewObject rule.
 VarPointsTo(s2, v, o) :- CFG(s1, s2), NewObj(s1, v, o).
@@ -66,9 +72,13 @@ VarPointsTo(s2, v, o) :- CFG(s1, s2), NewObj(s1, v, o).
 // Assign rule.
 VarPointsTo(s2, v2, o) :- CFG(s1, s2), Assign(v1, v2), VarPointsTo(v1, o).
 
+// Load rule.
 
+// Store rule.
 
-//rel HeapPointsTo()
+// Call Argument rule.
 
-// rel CallActual (as seen from the call site).
-// rel CallReturn (as seen from the clal site).
+// Call Return rule.
+
+// Data flow along the control-flow graph.
+//HeapPointsTo(s2, o1, f, o2) :- CFG(s1, s2), HeapPointsTo()
