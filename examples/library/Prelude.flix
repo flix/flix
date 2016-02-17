@@ -330,7 +330,13 @@ impl PartialOrder[E] <= PreOrder[E], Norm[E] {
  * A pair of partial orders is a partial order.
  */
 impl PartialOrder[(A, B)] <= PartialOrder[A], PartialOrder[B] {
-    fn leq(x: (A, B), y: (A, B)): Bool = ???: Bool
+
+    /**
+     * Returns `true` if the pair `xs` is pairwise smaller than the pair `ys`
+     * with respect to the partial order on A and B.
+     */
+    fn leq(xs: (A, B), ys: (A, B)): Bool = ???: Bool
+
 }
 
 
