@@ -101,10 +101,9 @@ VarPointsTo(s2, v2, o) :- CallGraph(s2, m),
                           VarPointsTo(s1, v1, o),
                           CallResult(s2, v2).
 
-
 // Data flow along the control-flow graph.
-// HeapPointsTo(s2, o1, f, o2) :- CFG(s1, s2), HeapPointsTo()
-
+VarPointsTo(s2, v, o) :- CFG(s1, s2), VarPointsTo(s1, v, o).
+HeapPointsTo(s2, o1, f, o2) :- CFG(s1, s2), HeapPointsTo(s1, o1, f, o2).
 
 /**
  * Events
@@ -116,3 +115,5 @@ VarPointsTo(s2, v2, o) :- CallGraph(s2, m),
 
 // Event sensitive (Addr x Event) Set
 // Listener sensitive (Addr x event x Lambda) Set
+
+// TODO: Flow sensitivity and strong updates.
