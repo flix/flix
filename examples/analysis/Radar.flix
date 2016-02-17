@@ -78,7 +78,7 @@ rel CallGraph(s: Stm, m: Object)
 VarPointsTo(S.Out, s, v, o) :- NewObj(s, v, o).
 
 // Assign Rule: s: v1 = v2
-VarPointsTo(S.Out, s, v2, o) :- Assign(v1, v2), VarPointsTo(S.In, s, v1, o).
+VarPointsTo(S.Out, s, v1, o) :- Assign(s, v1, v2), VarPointsTo(S.In, s, v2, o).
 
 // Load rule: v1 = v2.f
 VarPointsTo(S.Out, s, v1, o2) :- Load(s, v1, v2, f),
@@ -148,6 +148,15 @@ Listener(S.Out, s, o, e, l) :- Listen(s, v1, e, v2),
 Queue(S.Out, s, o, e, l) :- Emit(v1, e, _),
                             VarPointsTo(S.In, s, v1, o),
                             Listener(S.In, s, o, e, l).
+
+// TODO: 1. Call event listeners in the queue. (modelling the event loop)
+// TODO: 2. New to add edge to CFG s.t. the main function enters the event loop when complete.
+         // or with similar means.
+         // If the last statement in main is sX
+         // then I would add the fact:
+         // CFG(sX, "EventLoop").
+
+// TODO: 3. Implement the context sensitive policies.
 
 // TODO: Flow sensitivity and strong updates.
 // TODO: Replace 'f' by 'p' and 'm' by 'f'.
