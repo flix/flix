@@ -12,10 +12,16 @@ enum Object { case Object(Str) }
 enum Event { case Event(Str) }
 enum Field { case Field(Str) }
 enum Variable { case Var(Str) }
-enum Stm { case Stm(Str) }
+enum Stm { case In(Str), case Out(Str) }
+
+enum Context {
+    case None,
+    case Listener(Set[Str]),
+    case Events(Set[Str])
+}
 
 /**
- * Input Relations.
+ * Inputs.
  */
 // Object creation expression: s: v1 = new Object().
 rel NewObj(s: Stm, v: Variable, o: Object)
@@ -47,19 +53,10 @@ rel CallResult(s: Stm, v: Variable)
 // Control-flow Graph edge s1 -> s2.
 rel CFG(s1: Stm, s2: Stm)
 
-// Events
-
 
 /**
- * Derived Relations.
+ * Analysis.
  */
-
-enum Context {
-    case None,
-    case Listener(Set[Str]),
-    case Events(Set[Str])
-}
-
 // The variable points-to graph immediately before statement `s`.
 rel VarPointsTo(s: Stm, v: Variable, o: Object)
 
@@ -74,11 +71,25 @@ VarPointsTo(s2, v2, o) :- CFG(s1, s2), Assign(v1, v2), VarPointsTo(v1, o).
 
 // Load rule.
 
+
 // Store rule.
 
-// Call Argument rule.
+// Call Actual --> Formal
 
-// Call Return rule.
+// Call Return --> Call Result
+
 
 // Data flow along the control-flow graph.
 //HeapPointsTo(s2, o1, f, o2) :- CFG(s1, s2), HeapPointsTo()
+
+
+/**
+ * Events
+ */
+
+// Events
+// Listener: Addr x Event -> Lam*
+// Queue: Addr x Event -> (Lam x Val)*
+
+// Event sensitive (Addr x Event) Set
+// Listener sensitive (Addr x event x Lambda) Set
