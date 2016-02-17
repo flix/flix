@@ -37,7 +37,7 @@ rel Load(s: Stm, v1: Variable, v2: Variable, f: Field)
 rel Store(s: Stm, v1: Variable, f: Field, v2: Variable)
 
 // Call expressions: s: v1(...).
-rel Call(s: Stm, v1: Variable)
+rel Call(s: Stm, v: Variable)
 
 // Argument (as seen from the caller).
 rel CallActual(s: Stm, v: Variable)
@@ -62,7 +62,7 @@ rel CFG(s1: Stm, s2: Stm)
 rel VarPointsTo(io: S, s: Stm, v: Variable, o: Object)
 
 // The heap points-to graph immediately before statement `s`.
-rel HeapPointsTo(s: Stm, o1: Object, f: Field, o2: Object)
+rel HeapPointsTo(io: S, s: Stm, o1: Object, f: Field, o2: Object)
 
 // The call graph.
 rel CallGraph(s: Stm, m: Object)
@@ -70,37 +70,37 @@ rel CallGraph(s: Stm, m: Object)
 /**
  * Analysis Rules.
  */
-// NewObject rule.
+// NewObj Rule: s: v = new Object()
 VarPointsTo(S.Out, s, v, o) :- NewObj(s, v, o).
 
-// Assign rule.
+// Assign Rule: s: v1 = v2
 VarPointsTo(S.Out, s, v2, o) :- Assign(v1, v2), VarPointsTo(S.In, s, v1, o).
 
-// Load rule.
-VarPointsTo(s2, v1, o2) :- Load(s1, v1, v2, f),
-                           VarPointsTo(s1, v2, o1)
-                           HeapPointsTo(s1, o1, f, o2).
+// Load rule: v1 = v2.f
+VarPointsTo(S.Out, s, v1, o2) :- Load(s, v1, v2, f),
+                                 VarPointsTo(S.In, s, v2, o1)
+                                 HeapPointsTo(S.In, s, o1, f, o2).
 
-// Store rule.
-HeapPointsTo(s2, o1, f, o2) :- Store(s1, v1, f, v2),
-                               VarPointsTo(s1, v1, o1),
-                               VarPointsTo(s1, v2, o2).
+// Store rule: v1.f = v2
+HeapPointsTo(S.Out, s, o1, f, o2) :- Store(s, v1, f, v2),
+                                     VarPointsTo(S.In, s, v1, o1),
+                                     VarPointsTo(S.In, s, v2, o2).
 
 // Call graph.
 CallGraph(s, m) :- Call(s, v),
-                   VarPointsTo(s, v, m).
+                   VarPointsTo(S.In, s, v, m).
 
-// Call Actual --> Formal
-VarPointsTo(s2, v2, o) :- CallGraph(s1, m),
-                          CallActual(s1, v1),
-                          VarPointsTo(v1, o)
-                          CallFormal(s2, m, v2).
+// Call Actual(s1) --> Formal(s2)
+VarPointsTo(S.In, s2, v2, o) :- CallGraph(s1, m),  // TODO: Make sure calls are matched.
+                                CallActual(s1, v1),
+                                VarPointsTo(S.In, s1, v1, o)
+                                CallFormal(s2, m, v2).
 
-// Call Return --> Call Result
-VarPointsTo(s2, v2, o) :- CallGraph(s2, m),
-                          CallReturn(s1, v1),
-                          VarPointsTo(s1, v1, o),
-                          CallResult(s2, v2).
+// Call Return(s1) --> Call Result(s2)
+VarPointsTo(S.Out, s2, v2, o) :- CallGraph(s2, m), // TODO: Make sure calls are matched.
+                                 CallResult(s2, v2),
+                                 CallReturn(s1, v1),
+                                 VarPointsTo(S.In, s1, v1, o).
 
 // Data flow along the control-flow graph.
 VarPointsTo(s2, v, o) :- CFG(s1, s2), VarPointsTo(s1, v, o).
