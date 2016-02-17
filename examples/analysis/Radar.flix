@@ -9,18 +9,39 @@
  * Input types.
  */
 enum AllocSite { case AllocSite(Str) }
+enum Event { case Event(Str) }
 enum Field { case Field(Str) }
-enum Var { case Var(Str) }
+enum Variable { case Var(Str) }
+enum Stm { case Stm(Str) }
 
 /**
  * Input Relations.
  */
-// Object creation expression: v1 = new Object().
-rel NewObj(v1: Variable, o: AllocSite)
+// Object creation expression: s: v1 = new Object().
+rel NewObj(s: Stm, v: Variable, o: AllocSite)
 
-// Assignment expression: v1 = v2.
-rel Assign(v1: Variable, v2: Variable)
+// Assignment expression: s: v1 = v2.
+rel Assign(s: Stm, v1: Variable, v2: Variable)
 
+// Field load expression: s: v1 = v2.f
+rel Load(s: Stm, v1: Variable, v2: Variable, f: Field)
+
+// Field store expression: s: v1.f = v2
+rel Store(s: Stm, v1: Variable, f: Field, v2: Variable)
+
+// Call expressions: s: v1(v2).
+rel Call(s: Stm, v1: Variable, v2: Variable)
+
+// Argument (as seen from the callee).
+rel MethodFormal(s: Stm, m: AllocSite, v: Variable)
+
+// Return (as seen from the callee).
+rel MethodReturn(s: Stm, m: AllocSite, v: Variable)
+
+// Control-flow Graph edge s1 -> s2.
+rel CFG(s1: Stm, s2: Stm)
+
+// Events
 
 
 /**
@@ -32,6 +53,9 @@ enum Context {
     case Events(Set[Str])
 }
 
-rel VarPointsTo(v: )
+//rel VarPointsTo(v: )
 
-rel HeapPointsTo()
+//rel HeapPointsTo()
+
+// rel CallActual (as seen from the call site).
+// rel CallReturn (as seen from the clal site).
