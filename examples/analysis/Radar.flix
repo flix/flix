@@ -78,7 +78,7 @@ VarPointsTo(S.Out, s, v2, o) :- Assign(v1, v2), VarPointsTo(S.In, s, v1, o).
 
 // Load rule: v1 = v2.f
 VarPointsTo(S.Out, s, v1, o2) :- Load(s, v1, v2, f),
-                                 VarPointsTo(S.In, s, v2, o1)
+                                 VarPointsTo(S.In, s, v2, o1),
                                  HeapPointsTo(S.In, s, o1, f, o2).
 
 // Store rule: v1.f = v2
@@ -93,7 +93,7 @@ CallGraph(s, m) :- Call(s, v),
 // Call Actual(s1) --> Formal(s2)
 VarPointsTo(S.In, s2, v2, o) :- CallGraph(s1, m),  // TODO: Make sure calls are matched.
                                 CallActual(s1, v1),
-                                VarPointsTo(S.In, s1, v1, o)
+                                VarPointsTo(S.In, s1, v1, o),
                                 CallFormal(s2, m, v2).
 
 // Call Return(s1) --> Call Result(s2)
@@ -103,8 +103,11 @@ VarPointsTo(S.Out, s2, v2, o) :- CallGraph(s2, m), // TODO: Make sure calls are 
                                  VarPointsTo(S.In, s1, v1, o).
 
 // Data flow along the control-flow graph.
-VarPointsTo(s2, v, o) :- CFG(s1, s2), VarPointsTo(s1, v, o).
-HeapPointsTo(s2, o1, f, o2) :- CFG(s1, s2), HeapPointsTo(s1, o1, f, o2).
+VarPointsTo(S.In, s2, v, o) :- CFG(s1, s2), VarPointsTo(S.Out, s1, v, o).
+VarPointsTo(S.In, s2, v, o) :- CFG(s1, s2), VarPointsTo(S.In, s1, v, o).
+
+HeapPointsTo(S.In, s2, o1, f, o2) :- CFG(s1, s2), HeapPointsTo(S.Out, s1, o1, f, o2).
+HeapPointsTo(S.In, s2, o1, f, o2) :- CFG(s1, s2), HeapPointsTo(S.In, s1, o1, f, o2).
 
 /**
  * Events
