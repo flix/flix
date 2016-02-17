@@ -122,10 +122,10 @@ HeapPointsTo(S.In, s2, o1, f, o2) :- CFG(s1, s2), HeapPointsTo(S.In, s1, o1, f, 
  * Input relations.
  */
 
-// Listen expression v1.listen(event, v2).
+// Listen expression v1.listen(e, v2).
 rel Listen(s: Stm, v1: Variable, e: Event, v2: Variable)
 
-// Emit expression v1.emit(event, v2).
+// Emit expression v1.emit(e, v2).
 rel Emit(s: Stm, v1: Variable, e: Event, v2: Variable)
 
 /**
