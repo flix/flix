@@ -4335,527 +4335,831 @@ class TestInterpreter extends FunSuite {
 
   // TODO: opt, list, map, ???
 
-//  /////////////////////////////////////////////////////////////////////////////
-//  // evalHeadTerm - Var                                                      //
-//  /////////////////////////////////////////////////////////////////////////////
-//
-//  test("evalHeadTerm - Var01") {
-//    val input = Term.Head.Lit(Literal.Str("hello", loc), Type.Str, loc)
-//    val env = mutable.Map.empty[String, AnyRef] + (ident01.name -> Value.False)
-//    val result = Interpreter.evalHeadTerm(input, root, env)
-//    assertResult(Value.mkStr("hello"))(result)
-//  }
-//
-//  test("evalHeadTerm - Var02") {
-//    val input = Term.Head.Var(ident01, Type.Int32, loc)
-//    val env = mutable.Map.empty[String, AnyRef] + (ident01.name -> Value.mkInt32(5))
-//    val result = Interpreter.evalHeadTerm(input, root, env)
-//    assertResult(Value.mkInt32(5))(result)
-//  }
-//
-//  test("evalHeadTerm - Var03") {
-//    val input = Term.Head.Var(ident01, Type.Bool, loc)
-//    val env = mutable.Map.empty[String, AnyRef] + (ident01.name -> Value.False)
-//    val result = Interpreter.evalHeadTerm(input, root, env)
-//    assertResult(Value.False)(result)
-//  }
-//
-//  test("evalHeadTerm - Var04") {
-//    val input = Term.Head.Var(ident02, Type.Str, loc)
-//    val env = mutable.Map.empty[String, AnyRef] +(ident01.name -> Value.mkStr("foo"), ident02.name -> Value.mkStr("bar"))
-//    val result = Interpreter.evalHeadTerm(input, root, env)
-//    assertResult(Value.mkStr("bar"))(result)
-//  }
-//
-//  /////////////////////////////////////////////////////////////////////////////
-//  // evalHeadTerm - Literals                                                 //
-//  /////////////////////////////////////////////////////////////////////////////
-//
-//  test("evalHeadTerm - Literal.Unit") {
-//    val input = Term.Head.Lit(Literal.Unit(loc), Type.Unit, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.Unit)(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Bool01") {
-//    val input = Term.Head.Lit(Literal.Bool(true, loc), Type.Bool, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.True)(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Bool02") {
-//    val input = Term.Head.Lit(Literal.Bool(false, loc), Type.Bool, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.False)(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Int01") {
-//    val input = Term.Head.Lit(Literal.Int(-242, loc), Type.Int32, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.mkInt32(-242))(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Int02") {
-//    val input = Term.Head.Lit(Literal.Int(-42, loc), Type.Int32, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.mkInt32(-42))(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Int03") {
-//    val input = Term.Head.Lit(Literal.Int(0, loc), Type.Int32, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.mkInt32(0))(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Int04") {
-//    val input = Term.Head.Lit(Literal.Int(98, loc), Type.Int32, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.mkInt32(98))(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Int05") {
-//    val input = Term.Head.Lit(Literal.Int(91238, loc), Type.Int32, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.mkInt32(91238))(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Str01") {
-//    val input = Term.Head.Lit(Literal.Str("", loc), Type.Str, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.mkStr(""))(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Str02") {
-//    val input = Term.Head.Lit(Literal.Str("Hello World!", loc), Type.Str, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.mkStr("Hello World!"))(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Str03") {
-//    val input = Term.Head.Lit(Literal.Str("asdf", loc), Type.Str, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.mkStr("asdf"))(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Str04") {
-//    val input = Term.Head.Lit(Literal.Str("foobar", loc), Type.Str, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.mkStr("foobar"))(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Str05") {
-//    val input = Term.Head.Lit(Literal.Str("\"\"\"", loc), Type.Str, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.mkStr("\"\"\""))(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Tuple01") {
-//    val input = Term.Head.Lit(
-//      Literal.Tuple(List(Literal.Int(42, loc), Literal.Bool(false, loc), Literal.Str("hi", loc)),
-//        Type.Tuple(List(Type.Int32, Type.Bool, Type.Str)), loc),
-//      Type.Tuple(List(Type.Int32, Type.Bool, Type.Str)), loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.Tuple(Array(Value.mkInt32(42), Value.False, Value.mkStr("hi"))))(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Tuple02") {
-//    val input = Term.Head.Lit(
-//      Literal.Tuple(List(
-//        Literal.Int(4, loc),
-//        Literal.Tuple(List(Literal.Int(12, loc), Literal.Int(8, loc)),
-//          Type.Tuple(List(Type.Int32, Type.Int32)), loc)),
-//        Type.Tuple(List(Type.Int32, Type.Tuple(List(Type.Int32, Type.Int32)))), loc),
-//      Type.Tuple(List(Type.Int32, Type.Tuple(List(Type.Int32, Type.Int32)))), loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.Tuple(Array(Value.mkInt32(4), Value.Tuple(Array(Value.mkInt32(12), Value.mkInt32(8))))))(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Tag01") {
-//    val name = Name.Resolved.mk(List("foo", "bar"))
-//    val ident = toIdent("baz")
-//    val tagTpe = Type.Tag(name, ident, Type.Str)
-//    val enumTpe = Type.Enum(Name.Resolved.mk("foo"), Map("foo.bar.baz" -> tagTpe))
-//    val input = Term.Head.Lit(Literal.Tag(name, ident, Literal.Str("hello world", loc), enumTpe, loc), tagTpe, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.mkTag(name, "baz", Value.mkStr("hello world")))(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Tag02") {
-//    val name = Name.Resolved.mk(List("Family"))
-//    val ident = toIdent("NameAndAge")
-//    val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int32)))
-//    val enumTpe = Type.Enum(Name.Resolved.mk("ConstProp"), Map("Family.NameAndAge" -> tagTpe))
-//    val input = Term.Head.Lit(Literal.Tag(name, ident,
-//      Literal.Tuple(List(Literal.Str("James", loc), Literal.Int(42, loc)),
-//        Type.Tuple(List(Type.Str, Type.Int32)), loc), enumTpe, loc), tagTpe, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.mkTag(name, "NameAndAge", Value.Tuple(Array(Value.mkStr("James"), Value.mkInt32(42)))))(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Tag03") {
-//    import ConstantPropTagDefs._
-//    val input = Term.Head.Lit(Literal.Tag(name, identB, Literal.Unit(loc), enumTpe, loc), tagTpeB, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.mkTag(name, "Bot", Value.Unit))(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Tag04") {
-//    import ConstantPropTagDefs._
-//    val input = Term.Head.Lit(Literal.Tag(name, identT, Literal.Unit(loc), enumTpe, loc), tagTpeT, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.mkTag(name, "Top", Value.Unit))(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Tag05") {
-//    import ConstantPropTagDefs._
-//    val input = Term.Head.Lit(Literal.Tag(name, identV, Literal.Int(0, loc), enumTpe, loc), tagTpeV, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.mkTag(name, "Val", Value.mkInt32(0)))(result)
-//
-//  }
-//
-//  test("evalHeadTerm - Literal.Tag06") {
-//    import ConstantPropTagDefs._
-//    val input = Term.Head.Lit(Literal.Tag(name, identV, Literal.Int(-240, loc), enumTpe, loc), tagTpeV, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.mkTag(name, "Val", Value.mkInt32(-240)))(result)
-//  }
-//
-//  test("evalHeadTerm - Literal.Tag07") {
-//    import ConstantPropTagDefs._
-//    val input = Term.Head.Lit(Literal.Tag(name, identV, Literal.Int(1241, loc), enumTpe, loc), tagTpeV, loc)
-//    val result = Interpreter.evalHeadTerm(input, root, mutable.Map.empty)
-//    assertResult(Value.mkTag(name, "Val", Value.mkInt32(1241)))(result)
-//  }
-//
-//  /////////////////////////////////////////////////////////////////////////////
-//  // evalHeadTerm - Apply                                                    //
-//  /////////////////////////////////////////////////////////////////////////////
-//
-//  test("evalHeadTerm - Apply01") {
-//    // def foo.bar = () => false
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(), Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Lambda(List(), Type.Bool), loc)
-//    val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-//    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
-//
-//    // foo.bar()
-//    val apply = Term.Head.Apply(name01, List(), Type.Bool, loc)
-//    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
-//    assertResult(Value.False)(value)
-//  }
-//
-//  test("evalHeadTerm - Apply02") {
-//    // def foo.bar = x => 3
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Int32)), Expression.Lit(Literal.Int(3, loc), Type.Int32, loc),
-//      Type.Lambda(List(Type.Int32), Type.Int32), loc)
-//    val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-//    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
-//
-//    // foo.bar(4)
-//    val apply = Term.Head.Apply(name01, List(Term.Head.Lit(Literal.Int(4, loc), Type.Int32, loc)), Type.Int32, loc)
-//    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
-//    assertResult(Value.mkInt32(3))(value)
-//  }
-//
-//  test("evalHeadTerm - Apply03") {
-//    // def foo.bar = x => x
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Int32)), Expression.Var(ident01, Type.Int32, loc),
-//      Type.Lambda(List(Type.Int32), Type.Int32), loc)
-//    val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-//    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
-//
-//    // foo.bar(5)
-//    val apply = Term.Head.Apply(name01, List(Term.Head.Lit(Literal.Int(5, loc), Type.Int32, loc)), Type.Int32, loc)
-//    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
-//    assertResult(Value.mkInt32(5))(value)
-//  }
-//
-//  test("evalHeadTerm - Apply04") {
-//    // def foo.bar = x => 1 + 2
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Int32)),
-//      Expression.Binary(
-//        BinaryOperator.Plus,
-//        Expression.Lit(Literal.Int(1, loc), Type.Int32, loc),
-//        Expression.Lit(Literal.Int(2, loc), Type.Int32, loc),
-//        Type.Int32, loc),
-//      Type.Lambda(List(Type.Int32), Type.Int32), loc)
-//    val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-//    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
-//
-//    // foo.bar(42)
-//    val apply = Term.Head.Apply(name01, List(Term.Head.Lit(Literal.Int(42, loc), Type.Int32, loc)), Type.Int32, loc)
-//    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
-//    assertResult(Value.mkInt32(3))(value)
-//  }
-//
-//  test("evalHeadTerm - Apply05") {
-//    // def foo.bar = x => x + 2
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Int32)),
-//      Expression.Binary(
-//        BinaryOperator.Plus,
-//        Expression.Var(ident01, Type.Int32, loc),
-//        Expression.Lit(Literal.Int(2, loc), Type.Int32, loc),
-//        Type.Int32, loc),
-//      Type.Lambda(List(Type.Int32), Type.Int32), loc)
-//    val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-//    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
-//
-//    // foo.bar(100)
-//    val apply = Term.Head.Apply(name01, List(Term.Head.Lit(Literal.Int(100, loc), Type.Int32, loc)), Type.Int32, loc)
-//    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
-//    assertResult(Value.mkInt32(102))(value)
-//  }
-//
-//  test("evalHeadTerm - Apply06") {
-//    // def foo.bar = (x, y) => x + y
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Int32), FormalArg(ident02, Type.Int32)),
-//      Expression.Binary(
-//        BinaryOperator.Plus,
-//        Expression.Var(ident01, Type.Int32, loc),
-//        Expression.Var(ident02, Type.Int32, loc),
-//        Type.Int32, loc),
-//      Type.Lambda(List(Type.Int32, Type.Int32), Type.Int32), loc)
-//    val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-//    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
-//
-//    // foo.bar(3, 4)
-//    val apply = Term.Head.Apply(name01, List(
-//      Term.Head.Lit(Literal.Int(3, loc), Type.Int32, loc),
-//      Term.Head.Lit(Literal.Int(4, loc), Type.Int32, loc)),
-//      Type.Int32, loc)
-//    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
-//    assertResult(Value.mkInt32(7))(value)
-//  }
-//
-//  test("evalHeadTerm - Apply07") {
-//    // def foo.bar = (x, y) => if (x) then true else y
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Bool), FormalArg(ident02, Type.Bool)),
-//      Expression.IfThenElse(
-//        Expression.Var(ident01, Type.Bool, loc),
-//        Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc),
-//        Expression.Var(ident02, Type.Bool, loc),
-//        Type.Bool, loc),
-//      Type.Lambda(List(Type.Bool, Type.Bool), Type.Bool), loc)
-//    val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-//    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
-//
-//    // foo.bar(false, true)
-//    val apply = Term.Head.Apply(name01, List(
-//      Term.Head.Lit(Literal.Bool(false, loc), Type.Bool, loc),
-//      Term.Head.Lit(Literal.Bool(true, loc), Type.Bool, loc)),
-//      Type.Bool, loc)
-//    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
-//    assertResult(Value.True)(value)
-//  }
-//
-//  test("evalHeadTerm - Apply08") {
-//    // def foo.bar = (x, y, z) => x + (y + z)
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Int32), FormalArg(ident02, Type.Int32), FormalArg(ident03, Type.Int32)),
-//      Expression.Binary(
-//        BinaryOperator.Plus,
-//        Expression.Var(ident01, Type.Int32, loc),
-//        Expression.Binary(
-//          BinaryOperator.Plus,
-//          Expression.Var(ident02, Type.Int32, loc),
-//          Expression.Var(ident03, Type.Int32, loc),
-//          Type.Int32, loc),
-//        Type.Int32, loc),
-//      Type.Lambda(List(Type.Int32, Type.Int32, Type.Int32), Type.Int32), loc)
-//    val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-//    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
-//
-//    // foo.bar(2, 42, 5)
-//    val apply = Term.Head.Apply(name01, List(
-//      Term.Head.Lit(Literal.Int(2, loc), Type.Int32, loc),
-//      Term.Head.Lit(Literal.Int(42, loc), Type.Int32, loc),
-//      Term.Head.Lit(Literal.Int(5, loc), Type.Int32, loc)),
-//      Type.Int32, loc)
-//    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
-//    assertResult(Value.mkInt32(49))(value)
-//  }
-//
-//  test("evalHeadTerm - Apply09") {
-//    // def foo.bar = x => (y => x + y)
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Int32)),
-//      Expression.Lambda(
-//        Ast.Annotations(List.empty),
-//        List(FormalArg(ident02, Type.Int32)),
-//        Expression.Binary(
-//          BinaryOperator.Plus,
-//          Expression.Var(ident01, Type.Int32, loc),
-//          Expression.Var(ident02, Type.Int32, loc),
-//          Type.Int32, loc),
-//        Type.Lambda(List(Type.Int32), Type.Int32), loc),
-//      Type.Lambda(List(Type.Int32), Type.Lambda(List(Type.Int32), Type.Int32)), loc)
-//    val definition = Definition.Constant(name01,
-//      Expression.Apply(lambda, List(Expression.Lit(Literal.Int(3, loc), Type.Int32, loc)),
-//        Type.Lambda(List(Type.Int32), Type.Int32), loc),
-//      Type.Lambda(List(), Type.Bool), loc)
-//    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
-//
-//    // foo.bar(3)(4)
-//    val apply = Term.Head.Apply(
-//      name01,
-//      List(Term.Head.Lit(Literal.Int(4, loc), Type.Int32, loc)),
-//      Type.Int32, loc)
-//    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
-//    assertResult(Value.mkInt32(7))(value)
-//  }
-//
-//  test("evalHeadTerm - Apply10") {
-//    // def foo.bar = x, y => x(y)
-//    val lambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Lambda(List(Type.Int32), Type.Int32)), FormalArg(ident02, Type.Int32)),
-//      Expression.Apply(
-//        Expression.Var(ident01, Type.Lambda(List(Type.Int32), Type.Int32), loc),
-//        List(Expression.Var(ident02, Type.Int32, loc)),
-//        Type.Int32, loc),
-//      Type.Lambda(List(Type.Lambda(List(Type.Int32), Type.Int32), Type.Int32), Type.Int32), loc)
-//    val definition = Definition.Constant(name01, lambda, Type.Lambda(List(), Type.Bool), loc)
-//    val root = Root(Map(name01 -> definition), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
-//    val innerLambda = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(FormalArg(ident01, Type.Int32)),
-//      Expression.Binary(
-//        BinaryOperator.Plus,
-//        Expression.Var(ident01, Type.Int32, loc),
-//        Expression.Lit(Literal.Int(1, loc), Type.Int32, loc),
-//        Type.Int32, loc),
-//      Type.Lambda(List(Type.Int32), Type.Int32), loc)
-//    val closure = Interpreter.eval(innerLambda, root, mutable.Map())
-//
-//    // foo.bar((x => x + 1), 5)
-//    val apply = Term.Head.Apply(name01, List(Term.Head.Var(ident03, Type.Lambda(List(Type.Int32), Type.Int32), loc),
-//      Term.Head.Lit(Literal.Int(5, loc), Type.Int32, loc)),
-//      Type.Int32, loc)
-//    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty[String, AnyRef] + (ident03.name -> closure))
-//    assertResult(Value.mkInt32(6))(value)
-//  }
-//
-//  test("evalHeadTerm - Apply11") {
-//    // def foo.bar = () => false
-//    // def abc.def = () => true
-//    val lambda01 = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(), Expression.Lit(Literal.Bool(false, loc), Type.Bool, loc), Type.Lambda(List(), Type.Bool), loc)
-//    val lambda02 = Expression.Lambda(
-//      Ast.Annotations(List.empty),
-//      List(), Expression.Lit(Literal.Bool(true, loc), Type.Bool, loc), Type.Lambda(List(), Type.Bool), loc)
-//    val definition01 = Definition.Constant(name01, lambda01, Type.Lambda(List(), Type.Bool), loc)
-//    val definition02 = Definition.Constant(name02, lambda02, Type.Lambda(List(), Type.Bool), loc)
-//    val root = Root(Map(name01 -> definition01, name02 -> definition02),
-//      Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
-//
-//    // abc.def()
-//    val apply = Term.Head.Apply(name02, List(), Type.Bool, loc)
-//    val value = Interpreter.evalHeadTerm(apply, root, mutable.Map.empty)
-//    assertResult(Value.True)(value)
-//  }
-//
-//  /////////////////////////////////////////////////////////////////////////////
-//  // Expressions - Hook and Apply                                            //
-//  /////////////////////////////////////////////////////////////////////////////
-//
-//  test("evalHeadTerm - HookApply01") {
-//    val input =
-//      s"""namespace A {
-//          |  fn f(x: Int): Bool = g(x)
-//          |  rel S(x: Int)
-//          |  rel T(x: Bool)
-//          |  S(42).
-//          |  T(f(x)) :- S(x).
-//          |};
-//       """.stripMargin
-//    var counter = 0
-//    val flix = new Flix()
-//    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType)
-//    flix
-//      .addStr(input)
-//      .addHook("A::g", tpe, new Invokable {
-//        def apply(args: Array[IValue]): IValue = {
-//          counter += 1
-//          flix.mkTrue
-//        }
-//      })
-//    val model = flix.solve()
-//    val result = model.get.relations(Name.Resolved.mk("A::T")).toSet
-//    assertResult(1)(counter)
-//    assertResult(Set(List(Value.True)))(result)
-//  }
-//
-//  test("evalHeadTerm - HookApply02") {
-//    val input =
-//      s"""namespace A {
-//          |  fn f(x: Int, y: Int): Int = g(x, y)
-//          |  rel S(x: Int, y: Int)
-//          |  rel T(x: Int)
-//          |  S(40, 2).
-//          |  S(2, 40).
-//          |  S(1, 5).
-//          |  T(f(x, y)) :- S(x, y).
-//          |};
-//       """.stripMargin
-//    var counter = 0
-//    val flix = new Flix()
-//    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkInt32Type), flix.mkInt32Type)
-//    flix
-//      .addStr(input)
-//      .addHook("A::g", tpe, new Invokable {
-//        def apply(args: Array[IValue]): IValue = {
-//          counter += 1
-//          flix.mkInt32(args(0).getInt32 + args(1).getInt32)
-//        }
-//      })
-//    val model = flix.solve()
-//    val result = model.get.relations(Name.Resolved.mk("A::T")).toSet
-//    assertResult(3)(counter)
-//    assertResult(Set(List(Value.mkInt32(42)), List(Value.mkInt32(6))))(result)
-//  }
-//
-//  test("evalHeadTerm - HookApply03") {
-//    val input =
-//      s"""namespace A {
-//          |  fn f(x: Int): Int = g()
-//          |  rel T(x: Int)
-//          |  T(f(42)).
-//          |};
-//       """.stripMargin
-//    var counter = 0
-//    val flix = new Flix()
-//    val tpe = flix.mkFunctionType(Array(), flix.mkInt32Type)
-//    flix
-//      .addStr(input)
-//      .addHook("A::g", tpe, new Invokable {
-//        def apply(args: Array[IValue]): IValue = {
-//          counter += 1
-//          flix.mkInt32(123)
-//        }
-//      })
-//    val model = flix.solve()
-//    val result = model.get.relations(Name.Resolved.mk("A::T")).toSet
-//    assertResult(1)(counter)
-//    assertResult(Set(List(Value.mkInt32(123))))(result)
-//  }
-//
+  /////////////////////////////////////////////////////////////////////////////
+  // Term.Head.Var                                                           //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Term.Head.Var.01") {
+    val input =
+      """rel A(x: Bool);
+        |rel B(x: Bool);
+        |
+        |A(true).
+        |
+        |B(x) :- A(x).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val B = model.relations(Name.Resolved.mk("B")).toSet
+    assertResult(B)(Set(List(Value.True)))
+  }
+
+  test("Term.Head.Var.02") {
+    val input =
+      """rel A(x: Int);
+        |rel B(x: Int);
+        |
+        |A(1).
+        |A(2).
+        |A(3).
+        |
+        |B(x) :- A(x).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val B = model.relations(Name.Resolved.mk("B")).toSet
+    assertResult(B)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
+  }
+
+  test("Term.Head.Var.03") {
+    val input =
+      """rel A(x: Str);
+        |rel B(x: Str);
+        |
+        |A("one").
+        |A("two").
+        |A("three").
+        |
+        |B(x) :- A(x).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val B = model.relations(Name.Resolved.mk("B")).toSet
+    assertResult(B)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
+  }
+
+  // TODO: This is a bug in the parser?
+  ignore("Term.Head.Var.04") {
+    val input =
+      """rel A(x: Int);
+        |rel B(x: Int);
+        |rel C(t: (Int, Int));
+        |
+        |A(1).
+        |A(2).
+        |B(3).
+        |
+        |C((x, y)) :- A(x), B(y).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val B = model.relations(Name.Resolved.mk("B")).toSet
+    assertResult(B)(Set(List(Value.Tuple(Array(1, 3).map(Value.mkInt32))), List(Value.Tuple(Array(2, 3).map(Value.mkInt32)))))
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Term.Head.Exp                                                           //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Term.Head.Exp.01") {
+    val input =
+      """rel A(x: ());
+        |
+        |A(()).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(List(Value.Unit)))
+  }
+
+  test("Term.Head.Exp.02") {
+    val input =
+      """rel A(x: Bool);
+        |
+        |A(true).
+        |A(false).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(true, false).map(x => List(Value.mkBool(x))))
+  }
+
+  ignore("Term.Head.Exp.03") {
+    val input =
+      """rel A(x: Int8);
+        |
+        |A(1).
+        |A(2).
+        |A(3).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt8(x))))
+  }
+
+  ignore("Term.Head.Exp.04") {
+    val input =
+      """rel A(x: Int16);
+        |
+        |A(1).
+        |A(2).
+        |A(3).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
+  }
+
+  test("Term.Head.Exp.05") {
+    val input =
+      """rel A(x: Int32);
+        |
+        |A(1).
+        |A(2).
+        |A(3).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
+  }
+
+  ignore("Term.Head.Exp.06") {
+    val input =
+      """rel A(x: Int64);
+        |
+        |A(1).
+        |A(2).
+        |A(3).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt64(x))))
+  }
+
+  test("Term.Head.Exp.07") {
+    val input =
+      """rel A(x: Str);
+        |
+        |A("one").
+        |A("two").
+        |A("three").
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
+  }
+
+  test("Term.Head.Exp.08") {
+    val input =
+      """rel A(x: (Int, Str));
+        |
+        |A((1, "one")).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))))
+  }
+
+  test("Term.Head.Exp.09") {
+    val input =
+      """enum Foo { case Foo(Int,Str) }
+        |rel A(x: Foo);
+        |
+        |A(Foo.Foo(1, "one")).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(List(Value.mkTag(Name.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
+  }
+
+  test("Term.Head.Exp.10") {
+    val input =
+      """rel A(x: (Int, Int));
+        |
+        |A((1, 2)).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))))
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Term.Head.Apply                                                         //
+  // These tests simply re-implement the Term.Head.Exp tests using Apply.    //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Term.Head.Apply.01") {
+    val input =
+      """rel A(x: ());
+        |fn f(x: Int): () = ()
+        |
+        |A(f(0)).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(List(Value.Unit)))
+  }
+
+  test("Term.Head.Apply.02") {
+    val input =
+      """rel A(x: Bool);
+        |fn f(x: Int): Bool = x == 0
+        |
+        |A(f(0)).
+        |A(f(1)).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(true, false).map(x => List(Value.mkBool(x))))
+  }
+
+  ignore("Term.Head.Apply.03") {
+    val input =
+      """rel A(x: Int8);
+        |fn f(x: Int8): Int8 = x + 1
+        |
+        |A(f(0)).
+        |A(f(1)).
+        |A(f(2)).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt8(x))))
+  }
+
+  ignore("Term.Head.Apply.04") {
+    val input =
+      """rel A(x: Int16);
+        |fn f(x: Int16): Int16 = x + 1
+        |
+        |A(f(0)).
+        |A(f(1)).
+        |A(f(2)).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
+  }
+
+  test("Term.Head.Apply.05") {
+    val input =
+      """rel A(x: Int32);
+        |fn f(x: Int32): Int32 = x + 1
+        |
+        |A(f(0)).
+        |A(f(1)).
+        |A(f(2)).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
+  }
+
+  ignore("Term.Head.Apply.06") {
+    val input =
+      """rel A(x: Int64);
+        |fn f(x: Int64): Int64 = x + 1
+        |
+        |A(f(0)).
+        |A(f(1)).
+        |A(f(2)).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt64(x))))
+  }
+
+  test("Term.Head.Apply.07") {
+    val input =
+      """rel A(x: Str);
+        |fn f(x: Str): Str = x
+        |
+        |A(f("one")).
+        |A(f("two")).
+        |A(f("three")).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
+  }
+
+  test("Term.Head.Apply.08") {
+    val input =
+      """rel A(x: (Int, Str));
+        |fn f(x: Int): (Int, Str) = (x, "one")
+        |
+        |A(f(1)).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))))
+  }
+
+  test("Term.Head.Apply.09") {
+    val input =
+      """enum Foo { case Foo(Int,Str) }
+        |rel A(x: Foo);
+        |fn f(x: Str): Foo = Foo.Foo(1, x)
+        |
+        |A(f("one")).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(List(Value.mkTag(Name.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
+  }
+
+  test("Term.Head.Apply.10") {
+    val input =
+      """rel A(x: (Int, Int));
+        |fn f(x: Int, y: Int): (Int, Int) = (x, y)
+        |
+        |A(f(1, 2)).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))))
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Term.Head.ApplyHook - Hook.Safe                                         //
+  // These tests simply re-implement the Term.Head.Exp tests using ApplyHook.//
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Term.Head.ApplyHook - Hook.Safe.01") {
+    import HookSafeHelpers._
+    val input =
+      """rel A(x: ());
+        |
+        |A(f(0)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkUnitType)
+    def nativeF(x: IValue): IValue = { executed = true; flix.mkUnit }
+    val model = flix
+      .addStr(input)
+      .addHook("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(List(Value.Unit)))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Safe.02") {
+    import HookSafeHelpers._
+    val input =
+      """rel A(x: Bool);
+        |
+        |A(f(0)).
+        |A(f(1)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType)
+    def nativeF(x: IValue): IValue = { executed = true; flix.mkBool(x.getInt32 == 0) }
+    val model = flix
+      .addStr(input)
+      .addHook("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(true, false).map(x => List(Value.mkBool(x))))
+    assert(executed)
+  }
+
+  ignore("Term.Head.ApplyHook - Hook.Safe.03") {
+    import HookSafeHelpers._
+    val input =
+      """rel A(x: Int8);
+        |
+        |A(f(0)).
+        |A(f(1)).
+        |A(f(2)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt8Type), flix.mkInt8Type)
+    def nativeF(x: IValue): IValue = { executed = true; flix.mkInt8(x.getInt8 + 1) }
+    val model = flix
+      .addStr(input)
+      .addHook("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt8(x))))
+    assert(executed)
+  }
+
+  ignore("Term.Head.ApplyHook - Hook.Safe.04") {
+    import HookSafeHelpers._
+    val input =
+      """rel A(x: Int16);
+        |
+        |A(f(0)).
+        |A(f(1)).
+        |A(f(2)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt16Type), flix.mkInt16Type)
+    def nativeF(x: IValue): IValue = { executed = true; flix.mkInt16(x.getInt16 + 1) }
+    val model = flix
+      .addStr(input)
+      .addHook("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Safe.05") {
+    import HookSafeHelpers._
+    val input =
+      """rel A(x: Int32);
+        |
+        |A(f(0)).
+        |A(f(1)).
+        |A(f(2)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+    def nativeF(x: IValue): IValue = { executed = true; flix.mkInt32(x.getInt32 + 1) }
+    val model = flix
+      .addStr(input)
+      .addHook("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
+    assert(executed)
+  }
+
+  ignore("Term.Head.ApplyHook - Hook.Safe.06") {
+    import HookSafeHelpers._
+    val input =
+      """rel A(x: Int64);
+        |
+        |A(f(0)).
+        |A(f(1)).
+        |A(f(2)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt64Type), flix.mkInt64Type)
+    def nativeF(x: IValue): IValue = { executed = true; flix.mkInt64(x.getInt64 + 1) }
+    val model = flix
+      .addStr(input)
+      .addHook("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt64(x))))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Safe.07") {
+    import HookSafeHelpers._
+    val input =
+      """rel A(x: Str);
+        |
+        |A(f("one")).
+        |A(f("two")).
+        |A(f("three")).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkStrType), flix.mkStrType)
+    def nativeF(x: IValue): IValue = { executed = true; x }
+    val model = flix
+      .addStr(input)
+      .addHook("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Safe.08") {
+    import HookSafeHelpers._
+    val input =
+      """rel A(x: (Int, Str));
+        |
+        |A(f(1)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkTupleType(Array(flix.mkInt32Type, flix.mkStrType)))
+    def nativeF(x: IValue): IValue = { executed = true; flix.mkTuple(Array(x, flix.mkStr("one"))) }
+    val model = flix
+      .addStr(input)
+      .addHook("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))))
+    assert(executed)
+  }
+
+  // TODO: This test fails because Tag.tag (a Name.Ident) compares the source location.
+  // Note that in the Flix program, Val has a real source location, but mkTagType uses Unknown.
+  // TODO: mkTagType should be taking an IType instead of a Type?
+  ignore("Term.Head.ApplyHook - Hook.Safe.09") {
+    import HookSafeHelpers._
+    val input =
+      """enum Foo { case Foo(Int,Str) }
+        |rel A(x: Foo);
+        |
+        |A(f("one")).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tagTpe = flix.mkTagType("Foo", "Foo", Type.Tuple(List(Type.Int32, Type.Str)))
+    val tpe = flix.mkFunctionType(Array(flix.mkStrType), flix.mkEnumType("Foo", Array(tagTpe)))
+    def nativeF(x: IValue): IValue = {
+      executed = true
+      flix.mkTag("Foo", "Foo", flix.mkTuple(Array(flix.mkInt32(1), x)))
+    }
+    val model = flix
+      .addStr(input)
+      .addHook("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(List(Value.mkTag(Name.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Safe.10") {
+    import HookSafeHelpers._
+    val input =
+      """rel A(x: (Int, Int));
+        |
+        |A(f(1, 2)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkInt32Type), flix.mkTupleType(Array(flix.mkInt32Type, flix.mkInt32Type)))
+    def nativeF(x: IValue, y: IValue): IValue = { executed = true; flix.mkTuple(Array(x, y)) }
+    val model = flix
+      .addStr(input)
+      .addHook("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Safe.11") {
+    import HookSafeHelpers._
+    val input =
+      """rel A(x: Native);
+        |
+        |A(f(1)).
+        |A(f(2)).
+        |A(f(3)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkNativeType)
+    def nativeF(x: IValue): IValue = { executed = true; flix.mkNative(MyObject(x.getInt32)) }
+    val model = flix
+      .addStr(input)
+      .addHook("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(MyObject(x))))
+    assert(executed)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Term.Head.ApplyHook - Hook.Unsafe                                       //
+  // These tests are not too thorough because evalHeadTerm defers to the     //
+  // main interpreter implementation (eval), which *is* tested thoroughly.   //
+  // These tests simply re-implement the Term.Head.Exp tests using ApplyHook.//
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Term.Head.ApplyHook - Hook.Unsafe.01") {
+    import HookUnsafeHelpers._
+    val input =
+      """rel A(x: ());
+        |
+        |A(f(0)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkUnitType)
+    def nativeF(x: Int): Value.Unit.type = { executed = true; Value.Unit }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(List(Value.Unit)))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Unsafe.02") {
+    import HookUnsafeHelpers._
+    val input =
+      """rel A(x: Bool);
+        |
+        |A(f(0)).
+        |A(f(1)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType)
+    def nativeF(x: JInt): JBool = { executed = true; x == 0 }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(true, false).map(x => List(Value.mkBool(x))))
+    assert(executed)
+  }
+
+  ignore("Term.Head.ApplyHook - Hook.Unsafe.03") {
+    import HookUnsafeHelpers._
+    val input =
+      """rel A(x: Int8);
+        |
+        |A(f(0)).
+        |A(f(1)).
+        |A(f(2)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt8Type), flix.mkInt8Type)
+    def nativeF(x: JByte): JByte = { executed = true; (x + 1).toByte }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt8(x))))
+    assert(executed)
+  }
+
+  ignore("Term.Head.ApplyHook - Hook.Unsafe.04") {
+    import HookUnsafeHelpers._
+    val input =
+      """rel A(x: Int16);
+        |
+        |A(f(0)).
+        |A(f(1)).
+        |A(f(2)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt16Type), flix.mkInt16Type)
+    def nativeF(x: JShort): JShort = { executed = true; (x + 1).toShort }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Unsafe.05") {
+    import HookUnsafeHelpers._
+    val input =
+      """rel A(x: Int32);
+        |
+        |A(f(0)).
+        |A(f(1)).
+        |A(f(2)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+    def nativeF(x: JInt): JInt = { executed = true; x + 1 }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
+    assert(executed)
+  }
+
+  ignore("Term.Head.ApplyHook - Hook.Unsafe.06") {
+    import HookUnsafeHelpers._
+    val input =
+      """rel A(x: Int64);
+        |
+        |A(f(0)).
+        |A(f(1)).
+        |A(f(2)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt64Type), flix.mkInt64Type)
+    def nativeF(x: JLong): JLong = { executed = true; x + 1 }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt64(x))))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Unsafe.07") {
+    import HookUnsafeHelpers._
+    val input =
+      """rel A(x: Str);
+        |
+        |A(f("one")).
+        |A(f("two")).
+        |A(f("three")).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkStrType), flix.mkStrType)
+    def nativeF(x: String): String = { executed = true; x }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Unsafe.08") {
+    import HookUnsafeHelpers._
+    val input =
+      """rel A(x: (Int, Str));
+        |
+        |A(f(1)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkTupleType(Array(flix.mkInt32Type, flix.mkStrType)))
+    def nativeF(x: JInt): Value.Tuple = { executed = true; Value.Tuple(Array(x, "one")) }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))))
+    assert(executed)
+  }
+
+  // TODO: This test fails because Tag.tag (a Name.Ident) compares the source location.
+  // Note that in the Flix program, Val has a real source location, but mkTagType uses Unknown.
+  // TODO: mkTagType should be taking an IType instead of a Type?
+  ignore("Term.Head.ApplyHook - Hook.Unsafe.09") {
+    import HookUnsafeHelpers._
+    val input =
+      """enum Foo { case Foo(Int,Str) }
+        |rel A(x: Foo);
+        |
+        |A(f("one")).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tagTpe = flix.mkTagType("Foo", "Foo", Type.Tuple(List(Type.Int32, Type.Str)))
+    val tpe = flix.mkFunctionType(Array(flix.mkStrType), flix.mkEnumType("Foo", Array(tagTpe)))
+    def nativeF(x: String): Value.Tag = {
+      executed = true
+      Value.mkTag(Name.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), x)))
+    }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(List(Value.mkTag(Name.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Unsafe.10") {
+    import HookUnsafeHelpers._
+    val input =
+      """rel A(x: (Int, Int));
+        |
+        |A(f(1, 2)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkInt32Type), flix.mkTupleType(Array(flix.mkInt32Type, flix.mkInt32Type)))
+    def nativeF(x: JInt, y: JInt): Value.Tuple = { executed = true; Value.Tuple(Array(x, y)) }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Unsafe.11") {
+    import HookUnsafeHelpers._
+    val input =
+      """rel A(x: Native);
+        |
+        |A(f(1)).
+        |A(f(2)).
+        |A(f(3)).
+      """.stripMargin
+    var executed = false
+    val flix = new Flix()
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkNativeType)
+    def nativeF(x: JInt): MyObject = { executed = true; MyObject(x) }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(MyObject(x))))
+    assert(executed)
+  }
+
 //  /////////////////////////////////////////////////////////////////////////////
 //  // evalBodyTerm - Var                                                      //
 //  /////////////////////////////////////////////////////////////////////////////
