@@ -95,8 +95,11 @@ VarPointsTo(s2, v2, o) :- CallGraph(s1, m),
                           VarPointsTo(v1, o)
                           CallFormal(s2, m, v2).
 
-
 // Call Return --> Call Result
+VarPointsTo(s2, v2, o) :- CallGraph(s2, m),
+                          CallReturn(s1, v1),
+                          VarPointsTo(s1, v1, o),
+                          CallResult(s2, v2).
 
 
 // Data flow along the control-flow graph.
