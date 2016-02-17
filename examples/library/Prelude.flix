@@ -188,12 +188,13 @@ class Widening[E] => PartialOrder[E] {
     fn ▽(x: E, y: E): E = widen(x, y)
 
     /**
-     * The upper bound law asserts that the widening operator returns an
+     * The covering law asserts that the widening operator returns an
      * element that is greater than or equal to each of its arguments.
+     * It is equivalent to the upper bound law.
      */
-    law UpperBound: Prop = ∀(x: E, y: E). (x ⊑ (x ▽ y)) ∧ (y ⊑ (x ▽ y))
+    law Covering: Prop = ∀(x: E, y: E). (x ⊑ (x ▽ y)) ∧ (y ⊑ (x ▽ y))
 
-    // TODO: Chain conditions?
+    // TODO: Copy + paste AscendingChain law here?
 
 }
 
@@ -215,12 +216,12 @@ class Narrowing[E] => PartialOrder[E] {
     fn △(x: E, y: E): E = narrow(x, y)
 
     /**
-     *
+     * The bounding law asserts that the narrowing operator returns an
+     * element that is bounded or "squeezed" between its two arguments.
      */
-    // TODO: Name of law?
-    law WideningLaw: Prop = ∀(x: E, y: E). (x ⊑ y) → ((x ⊑ (x △ y)) ∧ ((x △ y) ⊑ y))
+    law Bounding: Prop = ∀(x: E, y: E). (x ⊑ y) → ((x ⊑ (x △ y)) ∧ ((x △ y) ⊑ y))
 
-    // TODO: Chain conditions?
+    // TODO: Descending chain condition.
 
 }
 
@@ -349,5 +350,3 @@ class LeastUpperBound[E] {
 impl PartialOrder[E] <= LeastUpperBound[E] {
     fn leq(x: E, y: E): Bool = lub2(x, y) == y
 }
-
-// TODO: Remove unnecessary paranthesis

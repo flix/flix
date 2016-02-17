@@ -482,7 +482,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   def Type: Rule1[PType] = rule {
-    LambdaType | TupleType | SetType | ParametricType | NativeType | NamedType
+    LambdaType | TupleType | SetType | ParametricType | NativeType | PropType | NamedType
   }
 
   def NamedType: Rule1[PType] = rule {
@@ -494,7 +494,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     atomic("Native") ~> (() => PType.Native)
   }
 
-  def Prop: Rule1[PType] = rule {
+  def PropType: Rule1[PType] = rule {
     atomic("Prop") ~> (() => PType.Proposition)
   }
 
