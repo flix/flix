@@ -2,10 +2,10 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.{IValue, WrappedValue}
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Name, ExecutableAst}
+import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Name}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
-import ca.uwaterloo.flix.util.{Verbosity, Debugger, Options}
+import ca.uwaterloo.flix.util.{Debugger, Options, Verbosity}
 
 import scala.annotation.tailrec
 import scala.collection.mutable

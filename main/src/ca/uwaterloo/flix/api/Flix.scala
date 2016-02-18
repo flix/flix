@@ -5,9 +5,9 @@ import java.nio.file.{Files, Path, Paths}
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.{CreateExecutableAst, GenSym, Verifier, Simplifier}
+import ca.uwaterloo.flix.language.phase.{CreateExecutableAst, GenSym, Simplifier, Verifier}
 import ca.uwaterloo.flix.runtime.{Model, Solver, Value}
-import ca.uwaterloo.flix.util.{Verify, Options, Validation}
+import ca.uwaterloo.flix.util.{Options, Validation, Verify}
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}

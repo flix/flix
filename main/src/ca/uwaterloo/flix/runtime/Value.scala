@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.runtime
 
 import java.util
 
-import ca.uwaterloo.flix.language.ast.{Ast, Name, ExecutableAst}
+import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Name}
 import ca.uwaterloo.flix.runtime.Interpreter.InternalRuntimeError
 
 import scala.collection.{immutable, mutable}

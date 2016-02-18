@@ -59,6 +59,7 @@ object ExecutableAst {
 
     case class Fact(head: ExecutableAst.Predicate.Head) extends ExecutableAst.Constraint
 
+    // TODO(magnus): Change lists to arrays
     case class Rule(head: ExecutableAst.Predicate.Head,
                     body: List[ExecutableAst.Predicate.Body],
                     collections: List[ExecutableAst.Predicate.Body.Collection],

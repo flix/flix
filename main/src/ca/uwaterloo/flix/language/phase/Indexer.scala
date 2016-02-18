@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Predicate, Term}
-import ca.uwaterloo.flix.language.ast.{Name, ExecutableAst}
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, Name}
 
 import scala.collection.mutable
 
