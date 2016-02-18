@@ -52,7 +52,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Definition: Rule1[ParsedAst.Definition] = rule {
-    FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition | IndexDefinition | ClassDefinition | ImplDefinition
+    FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition | IndexDefinition | LawDefinition | ClassDefinition | ImplDefinition
   }
 
   def FunctionDefinition: Rule1[ParsedAst.Definition.Function] = {
@@ -69,8 +69,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     SP ~ atomic("fn") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC~> ParsedAst.Definition.Signature
   }
 
-  def LawDefinition: Rule1[ParsedAst.Definition.Law] =     rule {
-    SP ~ atomic("law") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Law
+  def LawDefinition: Rule1[ParsedAst.Definition.Law] = rule {
+    SP ~ atomic("law") ~ WS ~ Ident ~ optWS ~ TypeParams ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Law
   }
 
   def FormalParams: Rule1[Seq[ParsedAst.FormalArg]] = rule {
@@ -78,6 +78,22 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       case None => Seq.empty
       case Some(xs) => xs
     })
+  }
+
+  def TypeParams: Rule1[Seq[ParsedAst.ContextBound]] = {
+    def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
+      SP ~ Ident ~ optional(optWS ~ ":" ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, bound: Option[PType], sp2: SourcePosition) => bound match {
+        case None => ParsedAst.ContextBound(sp1, ident, Seq.empty, sp2)
+        case Some(tpe) => ParsedAst.ContextBound(sp1, ident, Seq(tpe), sp2)
+      })
+    }
+
+    rule {
+      optional("[" ~ optWS ~ oneOrMore(ContextBound).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.ContextBound]]) => o match {
+        case None => Seq.empty
+        case Some(xs) => xs
+      })
+    }
   }
 
   def EnumDefinition: Rule1[ParsedAst.Definition.Enum] = {
@@ -239,7 +255,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def SimpleExpression: Rule1[ParsedAst.Expression] = rule {
     LetExpression | IfThenElseExpression | SwitchExpression | MatchExpression | TagExpression | TupleExpression |
-      SetExpression | LiteralExpression | LambdaExpression | BotExpression | TopExpression | VariableExpression | ErrorExpression
+      SetExpression | LiteralExpression | LambdaExpression | ExistentialExpression | UniversalExpression | BotExpression |
+      TopExpression | VariableExpression | ErrorExpression
   }
 
   def LiteralExpression: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -322,6 +339,14 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def LambdaExpression: Rule1[ParsedAst.Expression.Lambda] = rule {
     SP ~ atomic("fn") ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Lambda
+  }
+
+  def ExistentialExpression: Rule1[ParsedAst.Expression.Existential] = rule {
+    SP ~ atomic("∃" | "\\exists") ~ optWS ~ FormalParams ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Existential
+  }
+
+  def UniversalExpression: Rule1[ParsedAst.Expression.Universal] = rule {
+    SP ~ atomic("∀" | "\\forall") ~ optWS ~ FormalParams ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Universal
   }
 
   def ErrorExpression: Rule1[ParsedAst.Expression] = rule {
@@ -457,15 +482,20 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   def Type: Rule1[PType] = rule {
-    LambdaType | TupleType | SetType | ParametricType | NativeType | NamedType
+    LambdaType | TupleType | SetType | ParametricType | NativeType | PropType | NamedType
   }
 
   def NamedType: Rule1[PType] = rule {
     QName ~> PType.Unresolved
   }
 
+  // TODO: Move these later in the pipeline.
   def NativeType: Rule1[PType] = rule {
     atomic("Native") ~> (() => PType.Native)
+  }
+
+  def PropType: Rule1[PType] = rule {
+    atomic("Prop") ~> (() => PType.Proposition)
   }
 
   def TupleType: Rule1[PType] = {

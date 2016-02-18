@@ -801,6 +801,63 @@ class TestParser extends FunSuite {
     assertResult(ExtendedBinaryOperator.Leq)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
   }
 
+  test("Expression.Existential01") {
+    val input = "∃(x: Bool). true"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Existential])
+  }
+
+  test("Expression.Existential02") {
+    val input = "∃(x: Int, y: Int). x == y"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Existential])
+  }
+
+  test("Expression.Existential03") {
+    val input = "\\exists(x: Bool). true"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Existential])
+  }
+
+  test("Expression.Existential04") {
+    val input = "\\exists(x: Int, y: Int). x == y"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Existential])
+  }
+
+  test("Expression.Universal01") {
+    val input = "∀(x: Bool). true"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Universal])
+  }
+
+  test("Expression.Universal02") {
+    val input = "∀(x: Int, y: Int). x == y"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Universal])
+  }
+
+  test("Expression.Universal03") {
+    val input = "\\forall(x: Bool). true"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Universal])
+  }
+
+  test("Expression.Universal04") {
+    val input = "\\forall(x: Int, y: Int). x == y"
+    val result = new Parser(SourceInput.Str(input)).Expression.run()
+    assert(result.isSuccess)
+    assert(result.get.isInstanceOf[ParsedAst.Expression.Universal])
+  }
+
+
   /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
   /////////////////////////////////////////////////////////////////////////////
@@ -1503,6 +1560,13 @@ class TestParser extends FunSuite {
     val result = new Parser(SourceInput.Str(input)).Type.run()
     assert(result.isSuccess)
     assertResult(result.get)(Type.Native)
+  }
+
+  test("Type.Prop01") {
+    val input = "Prop"
+    val result = new Parser(SourceInput.Str(input)).Type.run()
+    assert(result.isSuccess)
+    assertResult(result.get)(Type.Proposition)
   }
 
   /////////////////////////////////////////////////////////////////////////////
