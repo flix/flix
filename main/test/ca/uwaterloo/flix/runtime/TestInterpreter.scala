@@ -5160,197 +5160,181 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-//  /////////////////////////////////////////////////////////////////////////////
-//  // evalBodyTerm - Var                                                      //
-//  /////////////////////////////////////////////////////////////////////////////
-//
-//  test("evalBodyTerm - Var01") {
-//    val input = Term.Body.Lit(Literal.Str("hello", loc), Type.Str, loc)
-//    val env = mutable.Map(ident01.name -> Value.False)
-//    val result = Interpreter.evalBodyTerm(input, env)
-//    assertResult(Value.mkStr("hello"))(result)
-//  }
-//
-//  test("evalBodyTerm - Var02") {
-//    val input = Term.Body.Var(ident01, Type.Int32, loc)
-//    val env = mutable.Map(ident01.name -> Value.mkInt32(5))
-//    val result = Interpreter.evalBodyTerm(input, env)
-//    assertResult(Value.mkInt32(5))(result)
-//  }
-//
-//  test("evalBodyTerm - Var03") {
-//    val input = Term.Body.Var(ident01, Type.Bool, loc)
-//    val env = mutable.Map(ident01.name -> Value.False)
-//    val result = Interpreter.evalBodyTerm(input, env)
-//    assertResult(Value.False)(result)
-//  }
-//
-//  test("evalBodyTerm - Var04") {
-//    val input = Term.Body.Var(ident02, Type.Str, loc)
-//    val env = mutable.Map(ident01.name -> Value.mkStr("foo"), ident02.name -> Value.mkStr("bar"))
-//    val result = Interpreter.evalBodyTerm(input, env)
-//    assertResult(Value.mkStr("bar"))(result)
-//  }
-//
-//  /////////////////////////////////////////////////////////////////////////////
-//  // evalBodyTerm - Literals                                                 //
-//  /////////////////////////////////////////////////////////////////////////////
-//
-//  test("evalBodyTerm - Literal.Unit") {
-//    val input = Term.Body.Lit(Literal.Unit(loc), Type.Unit, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.Unit)(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Bool01") {
-//    val input = Term.Body.Lit(Literal.Bool(true, loc), Type.Bool, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.True)(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Bool02") {
-//    val input = Term.Body.Lit(Literal.Bool(false, loc), Type.Bool, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.False)(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Int01") {
-//    val input = Term.Body.Lit(Literal.Int(-242, loc), Type.Int32, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.mkInt32(-242))(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Int02") {
-//    val input = Term.Body.Lit(Literal.Int(-42, loc), Type.Int32, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.mkInt32(-42))(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Int03") {
-//    val input = Term.Body.Lit(Literal.Int(0, loc), Type.Int32, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.mkInt32(0))(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Int04") {
-//    val input = Term.Body.Lit(Literal.Int(98, loc), Type.Int32, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.mkInt32(98))(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Int05") {
-//    val input = Term.Body.Lit(Literal.Int(91238, loc), Type.Int32, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.mkInt32(91238))(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Str01") {
-//    val input = Term.Body.Lit(Literal.Str("", loc), Type.Str, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.mkStr(""))(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Str02") {
-//    val input = Term.Body.Lit(Literal.Str("Hello World!", loc), Type.Str, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.mkStr("Hello World!"))(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Str03") {
-//    val input = Term.Body.Lit(Literal.Str("asdf", loc), Type.Str, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.mkStr("asdf"))(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Str04") {
-//    val input = Term.Body.Lit(Literal.Str("foobar", loc), Type.Str, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.mkStr("foobar"))(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Str05") {
-//    val input = Term.Body.Lit(Literal.Str("\"\"\"", loc), Type.Str, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.mkStr("\"\"\""))(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Tuple01") {
-//    val input = Term.Body.Lit(
-//      Literal.Tuple(List(Literal.Int(42, loc), Literal.Bool(false, loc), Literal.Str("hi", loc)),
-//        Type.Tuple(List(Type.Int32, Type.Bool, Type.Str)), loc),
-//      Type.Tuple(List(Type.Int32, Type.Bool, Type.Str)), loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.Tuple(Array(Value.mkInt32(42), Value.False, Value.mkStr("hi"))))(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Tuple02") {
-//    val input = Term.Body.Lit(
-//      Literal.Tuple(List(
-//        Literal.Int(4, loc),
-//        Literal.Tuple(List(Literal.Int(12, loc), Literal.Int(8, loc)),
-//          Type.Tuple(List(Type.Int32, Type.Int32)), loc)),
-//        Type.Tuple(List(Type.Int32, Type.Tuple(List(Type.Int32, Type.Int32)))), loc),
-//      Type.Tuple(List(Type.Int32, Type.Tuple(List(Type.Int32, Type.Int32)))), loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.Tuple(Array(Value.mkInt32(4), Value.Tuple(Array(Value.mkInt32(12), Value.mkInt32(8))))))(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Tag01") {
-//    val name = Name.Resolved.mk(List("foo", "bar"))
-//    val ident = toIdent("baz")
-//    val tagTpe = Type.Tag(name, ident, Type.Str)
-//    val enumTpe = Type.Enum(Name.Resolved.mk("foo"), Map("foo.bar.baz" -> tagTpe))
-//    val input = Term.Body.Lit(Literal.Tag(name, ident, Literal.Str("hello world", loc), enumTpe, loc), tagTpe, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.mkTag(name, "baz", Value.mkStr("hello world")))(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Tag02") {
-//    val name = Name.Resolved.mk(List("Family"))
-//    val ident = toIdent("NameAndAge")
-//    val tagTpe = Type.Tag(name, ident, Type.Tuple(List(Type.Str, Type.Int32)))
-//    val enumTpe = Type.Enum(Name.Resolved.mk("Family"), Map("Family.NameAndAge" -> tagTpe))
-//    val input = Term.Body.Lit(Literal.Tag(name, ident,
-//      Literal.Tuple(List(Literal.Str("James", loc), Literal.Int(42, loc)),
-//        Type.Tuple(List(Type.Str, Type.Int32)), loc), enumTpe, loc), tagTpe, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.mkTag(name, "NameAndAge", Value.Tuple(Array(Value.mkStr("James"), Value.mkInt32(42)))))(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Tag03") {
-//    import ConstantPropTagDefs._
-//    val input = Term.Body.Lit(Literal.Tag(name, identB, Literal.Unit(loc), enumTpe, loc), tagTpeB, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.mkTag(name, "Bot", Value.Unit))(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Tag04") {
-//    import ConstantPropTagDefs._
-//    val input = Term.Body.Lit(Literal.Tag(name, identT, Literal.Unit(loc), enumTpe, loc), tagTpeT, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.mkTag(name, "Top", Value.Unit))(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Tag05") {
-//    import ConstantPropTagDefs._
-//    val input = Term.Body.Lit(Literal.Tag(name, identV, Literal.Int(0, loc), enumTpe, loc), tagTpeV, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.mkTag(name, "Val", Value.mkInt32(0)))(result)
-//
-//  }
-//
-//  test("evalBodyTerm - Literal.Tag06") {
-//    import ConstantPropTagDefs._
-//    val input = Term.Body.Lit(Literal.Tag(name, identV, Literal.Int(-240, loc), enumTpe, loc), tagTpeV, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.mkTag(name, "Val", Value.mkInt32(-240)))(result)
-//  }
-//
-//  test("evalBodyTerm - Literal.Tag07") {
-//    import ConstantPropTagDefs._
-//    val input = Term.Body.Lit(Literal.Tag(name, identV, Literal.Int(1241, loc), enumTpe, loc), tagTpeV, loc)
-//    val result = Interpreter.evalBodyTerm(input, mutable.Map())
-//    assertResult(Value.mkTag(name, "Val", Value.mkInt32(1241)))(result)
-//  }
+  /////////////////////////////////////////////////////////////////////////////
+  // Term.Body.Wildcard                                                      //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO? Do we even need this? (It's not implemented in the interpreter.)
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Term.Body.Var                                                           //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Term.Body.Var.01") {
+    val input =
+      """rel A(x: Bool, y: Bool);
+        |rel B(x: Bool);
+        |fn f(x: Bool): Bool = x
+        |
+        |A(true, true).
+        |A(false, true).
+        |
+        |B(y) :- f(x), A(x, y).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val B = model.relations(Name.Resolved.mk("B")).toSet
+    assertResult(B)(Set(List(Value.True)))
+  }
+
+  test("Term.Body.Var.02") {
+    val input =
+      """rel A(x: Int);
+        |rel B(x: Int);
+        |fn f(x: Int): Bool = x % 2 == 0
+        |
+        |A(0).
+        |A(1).
+        |A(2).
+        |A(3).
+        |
+        |B(x) :- f(x), A(x).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val B = model.relations(Name.Resolved.mk("B")).toSet
+    assertResult(B)(Set(0, 2).map(x => List(Value.mkInt32(x))))
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Term.Body.Exp                                                           //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Term.Body.Exp.01") {
+    val input =
+      """rel A(x: Int);
+        |fn f(x: Bool): Bool = x
+        |
+        |A(1) :- f(true).
+        |A(2) :- f(true).
+        |A(3) :- f(true).
+        |A(4) :- f(false).
+        |A(5) :- f(false).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
+  }
+
+  ignore("Term.Body.Exp.02") {
+    val input =
+      """rel A(x: Int);
+        |fn f(x: Int8): Bool = x >= 0
+        |
+        |A(1) :- f(0).
+        |A(2) :- f(0).
+        |A(3) :- f(0).
+        |A(4) :- f(-1).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
+  }
+
+  ignore("Term.Body.Exp.03") {
+    val input =
+      """rel A(x: Int);
+        |fn f(x: Int16): Bool = x >= 0
+        |
+        |A(1) :- f(0).
+        |A(2) :- f(0).
+        |A(3) :- f(0).
+        |A(4) :- f(-200).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
+  }
+
+  test("Term.Body.Exp.04") {
+    val input =
+      """rel A(x: Int);
+        |fn f(x: Int32): Bool = x >= 0
+        |
+        |A(1) :- f(0).
+        |A(2) :- f(0).
+        |A(3) :- f(0).
+        |A(4) :- f(-200000).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
+  }
+
+  ignore("Term.Body.Exp.05") {
+    val input =
+      """rel A(x: Int);
+        |fn f(x: Int64): Bool = x >= 0
+        |
+        |A(1) :- f(0).
+        |A(2) :- f(0).
+        |A(3) :- f(0).
+        |A(4) :- f(-20000000000).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
+  }
+
+  test("Term.Body.Exp.06") {
+    val input =
+      """rel A(x: Int);
+        |fn f(x: Str): Bool = true
+        |
+        |A(1) :- f("foo").
+        |A(2) :- f("bar").
+        |A(3) :- f("baz").
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
+  }
+
+  test("Term.Body.Exp.07") {
+    val input =
+      """rel A(x: Int);
+        |fn f(x: (Int, Str)): Bool = match x with {
+        |  case (a, "abc") => a >= 0
+        |  case _ => false
+        |}
+        |
+        |A(1) :- f((0, "abc")).
+        |A(2) :- f((0, "abc")).
+        |A(3) :- f((0, "abc")).
+        |A(4) :- f((-1, "abc")).
+        |A(5) :- f((0, "xyz")).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
+  }
+
+  test("Term.Body.Exp.08") {
+    val input =
+      """enum Val { case Top, case Val(Int), case Bot }
+        |rel A(x: Int);
+        |fn f(x: Val): Bool = match x with {
+        |  case Val.Val(v) => v >= 0
+        |  case _ => false
+        |}
+        |
+        |A(1) :- f(Val.Val(0)).
+        |A(2) :- f(Val.Val(0)).
+        |A(3) :- f(Val.Val(0)).
+        |A(4) :- f(Val.Val(-1)).
+        |A(5) :- f(Val.Top).
+      """.stripMargin
+    val model = new Flix().addStr(input).solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
+  }
 
 }
