@@ -135,25 +135,26 @@ object ParsedAst {
     /**
       * An AST node that represents a law definition.
       *
-      * @param sp1         the position of the first character in the definition.
-      * @param ident       the name of the function.
-      * @param formals     the formals (i.e. parameters and their types).
-      * @param tpe         the return type.
-      * @param body        the body expression of the function.
-      * @param sp2         the position of the last character in the definition.
+      * @param sp1     the position of the first character in the definition.
+      * @param ident   the name of the function.
+      * @param tparams the type parameters.
+      * @param params  the value parameters.
+      * @param tpe     the return type.
+      * @param body    the body expression of the function.
+      * @param sp2     the position of the last character in the definition.
       */
-    case class Law(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
+    case class Law(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], params: Seq[FormalArg], tpe: Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
     /**
       * An AST node that represents a function signature.
       *
-      * @param sp1         the position of the first character in the definition.
-      * @param ident       the name of the function.
-      * @param formals     the formals (i.e. parameters and their types).
-      * @param tpe         the return type.
-      * @param sp2         the position of the last character in the definition.
+      * @param sp1     the position of the first character in the definition.
+      * @param ident   the name of the function.
+      * @param formals the formals (i.e. parameters and their types).
+      * @param tpe     the return type.
+      * @param sp2     the position of the last character in the definition.
       */
     case class Signature(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, sp2: SourcePosition) extends ParsedAst.Definition {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
@@ -581,6 +582,30 @@ object ParsedAst {
       * @param sp2 the position of the last character in the expression.
       */
     case class Top(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents an existentially quantified expression.
+      *
+      * @param sp1    the position of the first character in the expression.
+      * @param params the existentially quantified variables.
+      * @param body   the existentially quantified expression.
+      * @param sp2    the position of the last character in the expression.
+      */
+    case class Existential(sp1: SourcePosition, params: Seq[FormalArg], body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents a universally quantified expression.
+      *
+      * @param sp1    the position of the first character in the expression.
+      * @param params the universally quantified variables.
+      * @param body   the universally quantified expression.
+      * @param sp2    the position of the last character in the expression.
+      */
+    case class Universal(sp1: SourcePosition, params: Seq[FormalArg], body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
