@@ -1,11 +1,9 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.{Invokable, InvokableUnsafe, IValue, Flix}
+import ca.uwaterloo.flix.api.{Flix, IValue, Invokable, InvokableUnsafe}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Type}
-
+import ca.uwaterloo.flix.util.{Debugger, Options, Verbosity, Verify}
 import org.scalatest.FunSuite
-
-// TODO: Need to set Flix options to Silent, otherwise test output is too noisy.
 
 // TODO: Intercept tests should catch a more specific exception, otherwise real bugs will be masked.
 
@@ -97,195 +95,207 @@ class TestInterpreter extends FunSuite {
     }
   }
 
+  def createFlix() = {
+    val options = Options(
+      debugger = Debugger.Disabled,
+      print = Nil,
+      verbosity = Verbosity.Silent,
+      verify = Verify.Disabled
+    )
+    new Flix().setOptions(options)
+  }
+
+  def getModel(input: String) = createFlix().addStr(input).solve().get
+
   /////////////////////////////////////////////////////////////////////////////
   // Expression.{Unit,Bool,Int8,Int16,Int32,Int64,Str}                       //
   /////////////////////////////////////////////////////////////////////////////
 
   test("Expression.Unit") {
     val input = "fn f: () = ()"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.Unit)(result)
   }
 
   test("Expression.Bool.01") {
     val input = "fn f: Bool = true"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Bool.02") {
     val input = "fn f: Bool = false"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Int.01") {
     val input = "fn f: Int = 0"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(0))(result)
   }
 
   test("Expression.Int.02") {
     val input = "fn f: Int = -254542"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(-254542))(result)
   }
 
   test("Expression.Int.03") {
     val input = "fn f: Int = 45649878"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(45649878))(result)
   }
 
   test("Expression.Int.04") {
     val input = s"fn f: Int = ${Int.MaxValue}"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(Int.MaxValue))(result)
   }
 
   test("Expression.Int.05") {
     val input = s"fn f: Int = ${Int.MinValue}"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(Int.MinValue))(result)
   }
 
   ignore("Expression.Int8.01") {
     val input = "fn f: Int8 = -105"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt8(-105))(result)
   }
 
   ignore("Expression.Int8.02") {
     val input = "fn f: Int8 = 121"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt8(121))(result)
   }
 
   ignore("Expression.Int8.03") {
     val input = s"fn f: Int8 = ${Byte.MaxValue}"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt8(Byte.MaxValue))(result)
   }
 
   ignore("Expression.Int8.04") {
     val input = s"fn f: Int8 = ${Byte.MinValue}"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt8(Byte.MinValue))(result)
   }
 
   ignore("Expression.Int16.01") {
     val input = "fn f: Int16 = -5320"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt16(-5320))(result)
   }
 
   ignore("Expression.Int16.02") {
     val input = "fn f: Int16 = 4568"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt16(4568))(result)
   }
 
   ignore("Expression.Int16.03") {
     val input = s"fn f: Int16 = ${Short.MaxValue}"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt16(Short.MaxValue))(result)
   }
 
   ignore("Expression.Int16.04") {
     val input = s"fn f: Int16 = ${Short.MinValue}"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt16(Short.MinValue))(result)
   }
 
   test("Expression.Int32.01") {
     val input = "fn f: Int32 = -254542"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(-254542))(result)
   }
 
   test("Expression.Int32.02") {
     val input = "fn f: Int32 = 45649878"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(45649878))(result)
   }
 
   test("Expression.Int32.03") {
     val input = s"fn f: Int32 = ${Int.MaxValue}"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(Int.MaxValue))(result)
   }
 
   test("Expression.Int32.04") {
     val input = s"fn f: Int32 = ${Int.MinValue}"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(Int.MinValue))(result)
   }
 
   ignore("Expression.Int64.01") {
     val input = "fn f: Int64 = -254454121542"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt64(-254454121542L))(result)
   }
 
   ignore("Expression.Int64.02") {
     val input = "fn f: Int64 = 45641198784545"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt64(45641198784545L))(result)
   }
 
   ignore("Expression.Int64.03") {
     val input = s"fn f: Int64 = ${Long.MaxValue}"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt64(Long.MaxValue))(result)
   }
 
   ignore("Expression.Int64.04") {
     val input = s"fn f: Int64 = ${Long.MinValue}"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt64(Long.MinValue))(result)
   }
 
   test("Expression.Str.01") {
     val input = """fn f: Str = """""
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkStr(""))(result)
   }
 
   test("Expression.Str.02") {
     val input = """fn f: Str = "Hello World!""""
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkStr("Hello World!"))(result)
   }
 
   test("Expression.Str.03") {
     val input = """fn f: Str = "asdf""""
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkStr("asdf"))(result)
   }
@@ -313,7 +323,7 @@ class TestInterpreter extends FunSuite {
         |  fn f: Str = "foo"
         |}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("Foo::Bar::f"))
     assertResult(Value.mkStr("foo"))(result)
   }
@@ -326,7 +336,7 @@ class TestInterpreter extends FunSuite {
         |  fn f: Int = x()
         |}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("Foo::f"))
     assertResult(Value.mkInt32(5))(result)
   }
@@ -339,7 +349,7 @@ class TestInterpreter extends FunSuite {
         |  fn f: Bool = y()
         |}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("Foo::f"))
     assertResult(Value.False)(result)
   }
@@ -353,7 +363,7 @@ class TestInterpreter extends FunSuite {
         |  fn x: Str = Foo::x()
         |}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("Bar::x"))
     assertResult(Value.mkStr("hello"))(result)
   }
@@ -370,7 +380,7 @@ class TestInterpreter extends FunSuite {
       """namespace A::B { fn f: Bool = false }
         |namespace A { fn g: Bool = A::B::f() }
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("A::g"))
     assertResult(Value.False)(result)
   }
@@ -380,7 +390,7 @@ class TestInterpreter extends FunSuite {
       """namespace A { fn f(x: Int): Int = 24 }
         |fn g: Int = A::f(3)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt32(24))(result)
   }
@@ -390,7 +400,7 @@ class TestInterpreter extends FunSuite {
       """namespace A { fn f(x: Int): Int = x }
         |namespace A { fn g: Int = f(3) }
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("A::g"))
     assertResult(Value.mkInt32(3))(result)
   }
@@ -400,7 +410,7 @@ class TestInterpreter extends FunSuite {
       """fn f(x: Int64, y: Int64): Int64 = x * y - 6
         |fn g: Int64 = f(3, 42)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt32(120))(result)
   }
@@ -411,7 +421,7 @@ class TestInterpreter extends FunSuite {
         |namespace B { fn g(x: Int32): Int32 = x - 4 }
         |namespace C { fn h: Int32 = A::f(5) + B::g(0) }
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("C::h"))
     assertResult(Value.mkInt32(0))(result)
   }
@@ -423,7 +433,7 @@ class TestInterpreter extends FunSuite {
         |fn h(x: Int16): Int16 = x * x
         |fn x: Int16 = f(3)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("x"))
     assertResult(Value.mkInt32(196))(result)
   }
@@ -435,7 +445,7 @@ class TestInterpreter extends FunSuite {
         |fn h(x: Int8): Int8 = g(x - 1)
         |fn x: Int8 = let x = 7 in f(g(3), h(h(x)))
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("x"))
     assertResult(Value.mkInt32(-42))(result)
   }
@@ -448,7 +458,7 @@ class TestInterpreter extends FunSuite {
         |fn g03: Bool = f(false, false)
         |fn g04: Bool = f(false, true)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -467,7 +477,7 @@ class TestInterpreter extends FunSuite {
         |fn g03: Bool = f(false, false)
         |fn g04: Bool = f(false, true)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -483,7 +493,7 @@ class TestInterpreter extends FunSuite {
       """fn f(x: Int, y: Int, z: Int): Int = x + y + z
         |fn g: Int = f(2, 42, 5)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt32(49))(result)
   }
@@ -494,7 +504,7 @@ class TestInterpreter extends FunSuite {
         |fn g(x: Int): Int = x + 1
         |fn h: Int = f(g, 5)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("h"))
     assertResult(Value.mkInt32(6))(result)
   }
@@ -505,7 +515,7 @@ class TestInterpreter extends FunSuite {
         |fn g(x: Int): Int = x + 5
         |fn h: Int = (f(g))(40)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("h"))
     assertResult(Value.mkInt32(45))(result)
   }
@@ -516,7 +526,7 @@ class TestInterpreter extends FunSuite {
         |fn f(x: Int): Val = Val.Val(x)
         |fn g: Val = f(111)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt32(111)))(result)
   }
@@ -526,7 +536,7 @@ class TestInterpreter extends FunSuite {
       """fn f(a: Int, b: Int, c: Str, d: Int, e: Bool, f: ()): (Int, Int, Str, Int, Bool, ()) = (a, b, c, d, e, f)
         |fn g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.Tuple(Array(Value.mkInt32(24), Value.mkInt32(53), Value.mkStr("qwertyuiop"), Value.mkInt32(9978), Value.False, Value.Unit)))(result)
   }
@@ -536,7 +546,7 @@ class TestInterpreter extends FunSuite {
       """fn f(a: Int, b: Int, c: Int): Set[Int] = #{a, b, c}
         |fn g: Set[Int] = f(24, 53, 24)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkSet(Set(Value.mkInt32(24), Value.mkInt32(53), Value.mkInt32(24))))(result)
   }
@@ -550,7 +560,7 @@ class TestInterpreter extends FunSuite {
     import HookSafeHelpers._
     val input = "namespace A { fn g: Bool = A::B::f() }"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(), flix.mkBoolType)
     def nativeF(): IValue = { executed = true; flix.mkFalse }
     val model = flix
@@ -566,7 +576,7 @@ class TestInterpreter extends FunSuite {
     import HookSafeHelpers._
     val input = "fn g: Int = A::f(3)"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: IValue): IValue = { executed = true; flix.mkInt32(24) }
     val model = flix
@@ -582,7 +592,7 @@ class TestInterpreter extends FunSuite {
     import HookSafeHelpers._
     val input = "namespace A { fn g: Int = f(3) }"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: IValue): IValue = { executed = true; x }
     val model = flix
@@ -598,7 +608,7 @@ class TestInterpreter extends FunSuite {
     import HookSafeHelpers._
     val input = "fn g: Int64 = f(3, 42)"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt64Type, flix.mkInt64Type), flix.mkInt64Type)
     def nativeF(x: IValue, y: IValue): IValue = { executed = true; flix.mkInt64(x.getInt64 * y.getInt64 - 6) }
     val model = flix
@@ -614,7 +624,7 @@ class TestInterpreter extends FunSuite {
     import HookSafeHelpers._
     val input = "namespace C { fn h: Int32 = A::f(5) + B::g(0) }"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: IValue): IValue = {
       val y = nativeG(flix.mkInt32(x.getInt32 + 1))
@@ -635,7 +645,7 @@ class TestInterpreter extends FunSuite {
     import HookSafeHelpers._
     val input = "fn x: Int16 = f(3)"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt16Type), flix.mkInt16Type)
     def nativeF(x: IValue): IValue = nativeG(flix.mkInt16(x.getInt16 + 1))
     def nativeG(x: IValue): IValue = nativeH(flix.mkInt16(x.getInt16 + 10))
@@ -655,7 +665,7 @@ class TestInterpreter extends FunSuite {
     import HookSafeHelpers._
     val input = "fn x: Int8 = let x = 7 in f(g(3), h(h(x)))"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe1 = flix.mkFunctionType(Array(flix.mkInt8Type), flix.mkInt8Type)
     val tpe2 = flix.mkFunctionType(Array(flix.mkInt8Type, flix.mkInt8Type), flix.mkInt8Type)
     def nativeF(x: IValue, y: IValue): IValue = flix.mkInt8(x.getInt8 - y.getInt8)
@@ -681,7 +691,7 @@ class TestInterpreter extends FunSuite {
         |fn g04: Bool = f(false, true)
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkBoolType), flix.mkBoolType)
     def nativeF(x: IValue, y: IValue): IValue = { executed = true; if (x.getBool) flix.mkTrue else y }
     val model = flix
@@ -708,7 +718,7 @@ class TestInterpreter extends FunSuite {
         |fn g04: Bool = f(false, true)
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkBoolType), flix.mkBoolType)
     def nativeF(x: IValue, y: IValue): IValue = { executed = true; if (x.getBool) y else flix.mkFalse }
     val model = flix
@@ -730,7 +740,7 @@ class TestInterpreter extends FunSuite {
     import HookSafeHelpers._
     val input = "fn g: Int = f(2, 42, 5)"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkInt32Type, flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: IValue, y: IValue, z: IValue): IValue = {
       executed = true
@@ -749,7 +759,7 @@ class TestInterpreter extends FunSuite {
     import HookSafeHelpers._
     val input = "fn h: Int = f(g, 5)"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     val tpeF = flix.mkFunctionType(Array(tpeG, flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: IValue, y: IValue): IValue = {
@@ -772,7 +782,7 @@ class TestInterpreter extends FunSuite {
     import HookSafeHelpers._
     val input = "fn h: Int = (f(g))(40)"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     val tpeF = flix.mkFunctionType(Array(tpeG), tpeG)
     def nativeF(x: IValue): IValue = x
@@ -797,7 +807,7 @@ class TestInterpreter extends FunSuite {
         |fn g: Val = f(111)
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tagTpe = flix.mkTagType("Val", "Val", Type.Int32)
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkEnumType("Val", Array(tagTpe)))
     def nativeF(x: IValue): IValue = { executed = true; flix.mkTag("Val", "Val", x) }
@@ -814,7 +824,7 @@ class TestInterpreter extends FunSuite {
     import HookSafeHelpers._
     val input = """fn g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())"""
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpes = Array(flix.mkInt32Type, flix.mkInt32Type, flix.mkStrType, flix.mkInt32Type, flix.mkBoolType, flix.mkUnitType)
     val tpe = flix.mkFunctionType(tpes, flix.mkTupleType(tpes))
     def nativeF(a: IValue, b: IValue, c: IValue, d: IValue, e: IValue, f: IValue): IValue = {
@@ -834,7 +844,7 @@ class TestInterpreter extends FunSuite {
     import HookSafeHelpers._
     val input = "fn g: Set[Int] = f(24, 53, 24)"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkInt32Type, flix.mkInt32Type), flix.mkSetType(flix.mkInt32Type))
     def nativeF(x: IValue, y: IValue, z: IValue): IValue = { executed = true; flix.mkSet(Set(x, y, z)) }
     val model = flix
@@ -850,7 +860,7 @@ class TestInterpreter extends FunSuite {
     import HookSafeHelpers._
     val input = "fn h: Native = g(f(999))"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpeF = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkNativeType)
     val tpeG = flix.mkFunctionType(Array(flix.mkNativeType), flix.mkNativeType)
     def nativeF(x: IValue): IValue = flix.mkNative(MyObject(x.getInt32))
@@ -880,7 +890,7 @@ class TestInterpreter extends FunSuite {
     import HookUnsafeHelpers._
     val input = "namespace A { fn g: Bool = A::B::f() }"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(), flix.mkBoolType)
     def nativeF(): JBool = { executed = true; false }
     val model = flix
@@ -896,7 +906,7 @@ class TestInterpreter extends FunSuite {
     import HookUnsafeHelpers._
     val input = "fn g: Int = A::f(3)"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: JInt): JInt = { executed = true; 24 }
     val model = flix
@@ -912,7 +922,7 @@ class TestInterpreter extends FunSuite {
     import HookUnsafeHelpers._
     val input = "namespace A { fn g: Int = f(3) }"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: JInt): JInt = { executed = true; x }
     val model = flix
@@ -928,7 +938,7 @@ class TestInterpreter extends FunSuite {
     import HookUnsafeHelpers._
     val input = "fn g: Int64 = f(3, 42)"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt64Type, flix.mkInt64Type), flix.mkInt64Type)
     def nativeF(x: JLong, y: JLong): JLong = { executed = true; x * y - 6 }
     val model = flix
@@ -944,7 +954,7 @@ class TestInterpreter extends FunSuite {
     import HookUnsafeHelpers._
     val input = "namespace C { fn h: Int32 = A::f(5) + B::g(0) }"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: JInt): JInt = { val y = nativeG(x + 1); y * y }
     def nativeG(x: JInt): JInt = { executed = true; x - 4 }
@@ -962,7 +972,7 @@ class TestInterpreter extends FunSuite {
     import HookUnsafeHelpers._
     val input = "fn x: Int16 = f(3)"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt16Type), flix.mkInt16Type)
     def nativeF(x: JShort): JShort = nativeG((x + 1).toShort)
     def nativeG(x: JShort): JShort = nativeH((x + 10).toShort)
@@ -982,7 +992,7 @@ class TestInterpreter extends FunSuite {
     import HookUnsafeHelpers._
     val input = "fn x: Int8 = let x = 7 in f(g(3), h(h(x)))"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe1 = flix.mkFunctionType(Array(flix.mkInt8Type), flix.mkInt8Type)
     val tpe2 = flix.mkFunctionType(Array(flix.mkInt8Type, flix.mkInt8Type), flix.mkInt8Type)
     def nativeF(x: JByte, y: JByte): JByte = (x - y).toByte
@@ -1008,7 +1018,7 @@ class TestInterpreter extends FunSuite {
         |fn g04: Bool = f(false, true)
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkBoolType), flix.mkBoolType)
     def nativeF(x: JBool, y: JBool): JBool = { executed = true; if (x) true else y }
     val model = flix
@@ -1035,7 +1045,7 @@ class TestInterpreter extends FunSuite {
         |fn g04: Bool = f(false, true)
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkBoolType), flix.mkBoolType)
     def nativeF(x: JBool, y: JBool): JBool = { executed = true; if (x) y else false }
     val model = flix
@@ -1057,7 +1067,7 @@ class TestInterpreter extends FunSuite {
     import HookUnsafeHelpers._
     val input = "fn g: Int = f(2, 42, 5)"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkInt32Type, flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: JInt, y: JInt, z: JInt): JInt = { executed = true; x + y + z }
     val model = flix
@@ -1073,7 +1083,7 @@ class TestInterpreter extends FunSuite {
     import HookUnsafeHelpers._
     val input = "fn h: Int = f(g, 5)"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     val tpeF = flix.mkFunctionType(Array(tpeG, flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: Value.HookClosure, y: JInt) = x.hook.asInstanceOf[Ast.Hook.Unsafe].inv(Array(y))
@@ -1092,7 +1102,7 @@ class TestInterpreter extends FunSuite {
     import HookUnsafeHelpers._
     val input = "fn h: Int = (f(g))(40)"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     val tpeF = flix.mkFunctionType(Array(tpeG), tpeG)
     def nativeF(x: Value.HookClosure): Value.HookClosure = x
@@ -1117,7 +1127,7 @@ class TestInterpreter extends FunSuite {
         |fn g: Val = f(111)
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tagTpe = flix.mkTagType("Val", "Val", Type.Int32)
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkEnumType("Val", Array(tagTpe)))
     def nativeF(x: JInt): Value.Tag = { executed = true; Value.mkTag(Name.Resolved.mk("Val"), "Val", x) }
@@ -1134,7 +1144,7 @@ class TestInterpreter extends FunSuite {
     import HookUnsafeHelpers._
     val input = """fn g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())"""
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpes = Array(flix.mkInt32Type, flix.mkInt32Type, flix.mkStrType, flix.mkInt32Type, flix.mkBoolType, flix.mkUnitType)
     val tpe = flix.mkFunctionType(tpes, flix.mkTupleType(tpes))
     def nativeF(a: JInt, b: JInt, c: String, d: JInt, e: JBool, f: Value.Unit.type): Value.Tuple = {
@@ -1154,7 +1164,7 @@ class TestInterpreter extends FunSuite {
     import HookUnsafeHelpers._
     val input = "fn g: Set[Int] = f(24, 53, 24)"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkInt32Type, flix.mkInt32Type), flix.mkSetType(flix.mkInt32Type))
     def nativeF(x: JInt, y: JInt, z: JInt): Set[JInt] = { executed = true; Set(x, y, z) }
     val model = flix
@@ -1170,7 +1180,7 @@ class TestInterpreter extends FunSuite {
     import HookUnsafeHelpers._
     val input = "fn h: Native = g(f(999))"
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpeF = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkNativeType)
     val tpeG = flix.mkFunctionType(Array(flix.mkNativeType), flix.mkNativeType)
     def nativeF(x: JInt): MyObject = MyObject(x)
@@ -1201,14 +1211,14 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Unary - UnaryOperator.LogicalNot.01") {
     val input = "fn f: Bool = !true"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Unary - UnaryOperator.LogicalNot.02") {
     val input = "fn f: Bool = !false"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
@@ -1221,7 +1231,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int = +${Int.MaxValue}
          |fn f05: Int = +${Int.MinValue}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1242,7 +1252,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int8 = +${Byte.MaxValue}
          |fn f05: Int8 = +${Byte.MinValue}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1263,7 +1273,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int16 = +${Short.MaxValue}
          |fn f05: Int16 = +${Short.MinValue}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1284,7 +1294,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int32 = +${Int.MaxValue}
          |fn f05: Int32 = +${Int.MinValue}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1305,7 +1315,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int64 = +${Long.MaxValue}
          |fn f05: Int64 = +${Long.MinValue}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1326,7 +1336,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int = -${Int.MaxValue}
          |fn f05: Int = -${Int.MinValue}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1347,7 +1357,7 @@ class TestInterpreter extends FunSuite {
           |fn f04: Int8 = -${Byte.MaxValue}
           |fn f05: Int8 = -${Byte.MinValue}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1368,7 +1378,7 @@ class TestInterpreter extends FunSuite {
           |fn f04: Int16 = -${Short.MaxValue}
           |fn f05: Int16 = -${Short.MinValue}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1389,7 +1399,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int32 = -${Int.MaxValue}
          |fn f05: Int32 = -${Int.MinValue}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1410,7 +1420,7 @@ class TestInterpreter extends FunSuite {
           |fn f04: Int64 = -${Long.MaxValue}
           |fn f05: Int64 = -${Long.MinValue}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1433,7 +1443,7 @@ class TestInterpreter extends FunSuite {
          |fn f06: Int = ~${Int.MaxValue}
          |fn f07: Int = ~${Int.MinValue}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1460,7 +1470,7 @@ class TestInterpreter extends FunSuite {
           |fn f06: Int8 = ~${Byte.MaxValue}
           |fn f07: Int8 = ~${Byte.MinValue}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1487,7 +1497,7 @@ class TestInterpreter extends FunSuite {
           |fn f06: Int16 = ~${Short.MaxValue}
           |fn f07: Int16 = ~${Short.MinValue}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1514,7 +1524,7 @@ class TestInterpreter extends FunSuite {
          |fn f06: Int32 = ~${Int.MaxValue}
          |fn f07: Int32 = ~${Int.MinValue}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1541,7 +1551,7 @@ class TestInterpreter extends FunSuite {
           |fn f06: Int64 = ~${Long.MaxValue}
           |fn f07: Int64 = ~${Long.MinValue}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1571,7 +1581,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int = -100000 + 400000
          |fn f05: Int = ${Int.MinValue} + -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1592,7 +1602,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int8 = -10 + 40
          |fn f05: Int8 = ${Byte.MinValue} + -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1613,7 +1623,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int16 = -1000 + 4000
          |fn f05: Int16 = ${Short.MinValue} + -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1634,7 +1644,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int32 = -100000 + 400000
          |fn f05: Int32 = ${Int.MinValue} + -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1655,7 +1665,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int64 = -10000000000 + 40000000000
          |fn f05: Int64 = ${Long.MinValue} + -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1676,7 +1686,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int = -100000 - 400000
          |fn f05: Int = ${Int.MaxValue} - -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1697,7 +1707,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int8 = -10 - 40
          |fn f05: Int8 = ${Byte.MaxValue} - -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1718,7 +1728,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int16 = -1000 - 4000
          |fn f05: Int16 = ${Short.MaxValue} - -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1739,7 +1749,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int32 = -100000 - 400000
          |fn f05: Int32 = ${Int.MaxValue} - -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1760,7 +1770,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int64 = -10000000000 - 40000000000
          |fn f05: Int64 = ${Long.MaxValue} - -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1781,7 +1791,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int = -200 * -300
          |fn f05: Int = ${Int.MinValue} * -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1802,7 +1812,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int8 = -2 * -3
          |fn f05: Int8 = ${Byte.MinValue} * -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1823,7 +1833,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int16 = -20 * -30
          |fn f05: Int16 = ${Short.MinValue} * -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1844,7 +1854,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int32 = -200 * -300
          |fn f05: Int32 = ${Int.MinValue} * -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1865,7 +1875,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int64 = -200000 * -300000
          |fn f05: Int64 = ${Long.MinValue} * -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1886,7 +1896,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int = -3 / 1200000
          |fn f05: Int = ${Int.MinValue} / -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1907,7 +1917,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int8 = -3 / 12
          |fn f05: Int8 = ${Byte.MinValue} / -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1928,7 +1938,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int16 = -3 / 12000
          |fn f05: Int16 = ${Short.MinValue} / -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1949,7 +1959,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int32 = -3 / 1200000
          |fn f05: Int32 = ${Int.MinValue} / -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1970,7 +1980,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int64 = -3 / 120000000000
          |fn f05: Int64 = ${Long.MinValue} / -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -1991,7 +2001,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int = 1200000 % -500000
          |fn f05: Int = -1200000 % -500000
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2012,7 +2022,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int8 = 12 % -5
          |fn f05: Int8 = -12 % -5
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2033,7 +2043,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int16 = 12000 % -5000
          |fn f05: Int16 = -12000 % -5000
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2054,7 +2064,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int32 = 1200000 % -500000
          |fn f05: Int32 = -1200000 % -500000
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2075,7 +2085,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int64 = 120000000000 % -50000000000
          |fn f05: Int64 = -120000000000 % -50000000000
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2105,7 +2115,7 @@ class TestInterpreter extends FunSuite {
          |fn f05: Bool = -30000 < -120000
          |fn f06: Bool = -30000 < -30000
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2129,7 +2139,7 @@ class TestInterpreter extends FunSuite {
          |fn f05: Bool = -30000 <= -120000
          |fn f06: Bool = -30000 <= -30000
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2153,7 +2163,7 @@ class TestInterpreter extends FunSuite {
          |fn f05: Bool = -30000 > -120000
          |fn f06: Bool = -30000 > -30000
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2177,7 +2187,7 @@ class TestInterpreter extends FunSuite {
          |fn f05: Bool = -30000 >= -120000
          |fn f06: Bool = -30000 >= -30000
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2201,7 +2211,7 @@ class TestInterpreter extends FunSuite {
          |fn f05: Bool = -30000 == -120000
          |fn f06: Bool = -30000 == -30000
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2225,7 +2235,7 @@ class TestInterpreter extends FunSuite {
          |fn f05: Bool = -30000 != -120000
          |fn f06: Bool = -30000 != -30000
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2247,148 +2257,148 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.LogicalAnd.01") {
     val input = "fn f: Bool = true && true"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalAnd.02") {
     val input = "fn f: Bool = true && false"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalAnd.03") {
     val input = "fn f: Bool = false && false"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalAnd.04") {
     val input = "fn f: Bool = false && true"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalAnd.05") {
     val input = "fn f: Bool = false && ???: Bool"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalAnd.06") {
     val input = "fn f: Bool = true && ???: Bool"
-    intercept[RuntimeException] { new Flix().addStr(input).solve().get }
+    intercept[RuntimeException] { getModel(input) }
   }
 
   test("Expression.Binary - BinaryOperator.LogicalOr.01") {
     val input = "fn f: Bool = true || true"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalOr.02") {
     val input = "fn f: Bool = true || false"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalOr.03") {
     val input = "fn f: Bool = false || false"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalOr.04") {
     val input = "fn f: Bool = false || true"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalOr.05") {
     val input = "fn f: Bool = true || ???: Bool"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalOr.06") {
     val input = "fn f: Bool = false || ???: Bool"
-    intercept[RuntimeException] { new Flix().addStr(input).solve().get }
+    intercept[RuntimeException] { getModel(input) }
   }
 
   test("Expression.Binary - BinaryOperator.Implication.01") {
     val input = "fn f: Bool = true ==> true"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.Implication.02") {
     val input = "fn f: Bool = true ==> false"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Binary - BinaryOperator.Implication.03") {
     val input = "fn f: Bool = false ==> false"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.Implication.04") {
     val input = "fn f: Bool = false ==> true"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.Implication.05") {
     val input = "fn f: Bool = false ==> ???: Bool"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.Implication.06") {
     val input = "fn f: Bool = true ==> ???: Bool"
-    intercept[RuntimeException] { new Flix().addStr(input).solve().get }
+    intercept[RuntimeException] { getModel(input) }
   }
 
   test("Expression.Binary - BinaryOperator.Biconditional.01") {
     val input = "fn f: Bool = true <==> true"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.Biconditional.02") {
     val input = "fn f: Bool = true <==> false"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Binary - BinaryOperator.Biconditional.03") {
     val input = "fn f: Bool = false <==> false"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.Biconditional.04") {
     val input = "fn f: Bool = false <==> true"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
@@ -2407,7 +2417,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int = ${0xFFFFFFFF} & ${0xFFFFFFFF}
          |fn f05: Int = -1 & -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2428,7 +2438,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int8 = ${0xFF.toByte} & ${0xFF.toByte}
          |fn f05: Int8 = -1 & -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2449,7 +2459,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int16 = ${0xFFFF.toShort} & ${0xFFFF.toShort}
          |fn f05: Int16 = -1 & -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2470,7 +2480,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int32 = ${0xFFFFFFFF} & ${0xFFFFFFFF}
          |fn f05: Int32 = -1 & -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2491,7 +2501,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int64 = ${0xFFFFFFFFFFFFFFFFL} & ${0xFFFFFFFFFFFFFFFFL}
          |fn f05: Int64 = -1 & -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2512,7 +2522,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int = ${0xFFFFFFFF} | ${0xFFFFFFFF}
          |fn f05: Int = -1 | -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2533,7 +2543,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int8 = ${0xFF.toByte} | ${0xFF.toByte}
          |fn f05: Int8 = -1 | -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2554,7 +2564,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int16 = ${0xFFFF.toShort} | ${0xFFFF.toShort}
          |fn f05: Int16 = -1 | -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2575,7 +2585,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int32 = ${0xFFFFFFFF} | ${0xFFFFFFFF}
          |fn f05: Int32 = -1 | -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2596,7 +2606,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int64 = ${0xFFFFFFFFFFFFFFFFL} | ${0xFFFFFFFFFFFFFFFFL}
          |fn f05: Int64 = -1 | -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2617,7 +2627,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int = ${0xFFFFFFFF} ^ ${0xFFFFFFFF}
          |fn f05: Int = -1 ^ -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2638,7 +2648,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int8 = ${0xFF.toByte} ^ ${0xFF.toByte}
          |fn f05: Int8 = -1 ^ -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2659,7 +2669,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int16 = ${0xFFFF.toShort} ^ ${0xFFFF.toShort}
          |fn f05: Int16 = -1 ^ -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2680,7 +2690,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int32 = ${0xFFFFFFFF} ^ ${0xFFFFFFFF}
          |fn f05: Int32 = -1 ^ -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2701,7 +2711,7 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int64 = ${0xFFFFFFFFFFFFFFFFL} ^ ${0xFFFFFFFFFFFFFFFFL}
          |fn f05: Int64 = -1 ^ -1
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2721,7 +2731,7 @@ class TestInterpreter extends FunSuite {
          |fn f03: Int = ${0x08} << 28
          |fn f04: Int = ${0x08} << 29
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2739,7 +2749,7 @@ class TestInterpreter extends FunSuite {
          |fn f03: Int8 = ${0x08} << 4
          |fn f04: Int8 = ${0x08} << 5
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2757,7 +2767,7 @@ class TestInterpreter extends FunSuite {
          |fn f03: Int16 = ${0x08} << 12
          |fn f04: Int16 = ${0x08} << 13
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2775,7 +2785,7 @@ class TestInterpreter extends FunSuite {
          |fn f03: Int32 = ${0x08} << 28
          |fn f04: Int32 = ${0x08} << 29
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2793,7 +2803,7 @@ class TestInterpreter extends FunSuite {
          |fn f03: Int64 = ${0x08} << 60
          |fn f04: Int64 = ${0x08} << 61
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2811,7 +2821,7 @@ class TestInterpreter extends FunSuite {
          |fn f03: Int = 120000 >> 31
          |fn f04: Int = -120000 >> 2
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2829,7 +2839,7 @@ class TestInterpreter extends FunSuite {
          |fn f03: Int8 = 120 >> 7
          |fn f04: Int8 = -120 >> 2
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2847,7 +2857,7 @@ class TestInterpreter extends FunSuite {
          |fn f03: Int16 = 12000 >> 15
          |fn f04: Int16 = -12000 >> 2
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2865,7 +2875,7 @@ class TestInterpreter extends FunSuite {
          |fn f03: Int32 = 120000 >> 31
          |fn f04: Int32 = -120000 >> 2
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2883,7 +2893,7 @@ class TestInterpreter extends FunSuite {
          |fn f03: Int64 = 12000000000 >> 63
          |fn f04: Int64 = -12000000000 >> 2
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
     val result03 = model.constants(Name.Resolved.mk("f03"))
@@ -2900,14 +2910,14 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.IfThenElse.01") {
     val input = "fn f: Int = if (false) 42 + 10 else 42 - 10"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(32))(result)
   }
 
   test("Expression.IfThenElse.02") {
     val input = "fn f: Int = if (true) 42 + 10 else 42 - 10"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(52))(result)
   }
@@ -2918,7 +2928,7 @@ class TestInterpreter extends FunSuite {
         |fn g01: Int = f(true)
         |fn g02: Int = f(false)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     assertResult(Value.mkInt32(2))(result01)
@@ -2931,7 +2941,7 @@ class TestInterpreter extends FunSuite {
         |fn g01: Int = f(true)
         |fn g02: Int = f(false)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     assertResult(Value.mkInt32(5678))(result01)
@@ -2946,7 +2956,7 @@ class TestInterpreter extends FunSuite {
         |fn g03: Int = f(true, false)
         |fn g04: Int = f(false, false)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -2965,7 +2975,7 @@ class TestInterpreter extends FunSuite {
         |fn g03: Int = f(true, false)
         |fn g04: Int = f(false, false)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -2982,7 +2992,7 @@ class TestInterpreter extends FunSuite {
         |fn g01: Int8 = f(5, 24)
         |fn g02: Int8 = f(5, 5)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     assertResult(Value.mkInt8(12))(result01)
@@ -2995,7 +3005,7 @@ class TestInterpreter extends FunSuite {
         |fn g01: Int16 = f(500, 500)
         |fn g02: Int16 = f(500, 200)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     assertResult(Value.mkInt16(1234))(result01)
@@ -3008,7 +3018,7 @@ class TestInterpreter extends FunSuite {
         |fn g01: Int32 = f(2400000, 500000)
         |fn g02: Int32 = f(500000, 500000)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     assertResult(Value.mkInt32(12341234))(result01)
@@ -3021,7 +3031,7 @@ class TestInterpreter extends FunSuite {
         |fn g01: Int64 = f(50000000000, 50000000000)
         |fn g02: Int64 = f(20000000000, 50000000000)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     assertResult(Value.mkInt64(123412341234L))(result01)
@@ -3034,7 +3044,7 @@ class TestInterpreter extends FunSuite {
         |fn g01: Int = f(5, 5)
         |fn g02: Int = f(2, 5)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     assertResult(Value.mkInt32(1234))(result01)
@@ -3047,7 +3057,7 @@ class TestInterpreter extends FunSuite {
         |fn g01: Int = f(2, 5)
         |fn g02: Int = f(5, 5)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     assertResult(Value.mkInt32(1234))(result01)
@@ -3060,35 +3070,35 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Let.01") {
     val input = "fn f: Int = let x = true in 42"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(42))(result)
   }
 
   ignore("Expression.Let.02") {
     val input = "fn f: Int8 = let x: Int8 = 42 in x"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(42))(result)
   }
 
   ignore("Expression.Let.03") {
     val input = "fn f: Int16 = let x: Int16 = 1 in x + 2"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(3))(result)
   }
 
   test("Expression.Let.04") {
     val input = """fn f: Str = let x = false in if (x) "abz" else "xyz""""
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkStr("xyz"))(result)
   }
 
   test("Expression.Let.05") {
     val input = "fn f: Int = let x = 14 - 3 in x + 2"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(13))(result)
   }
@@ -3100,7 +3110,7 @@ class TestInterpreter extends FunSuite {
         |    let y = 2 * 4 in
         |      x + y
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(19))(result)
   }
@@ -3113,7 +3123,7 @@ class TestInterpreter extends FunSuite {
         |      let z = y + 3 in
         |        z
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(6))(result)
   }
@@ -3127,7 +3137,7 @@ class TestInterpreter extends FunSuite {
         |        y
         |fn g: Int = f(-1337, 101010, -42)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt32(-101010))(result)
   }
@@ -3141,14 +3151,14 @@ class TestInterpreter extends FunSuite {
         |        b
         |fn g: Int = f(-1337, 101010, -42)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt32(101010))(result)
   }
 
   ignore("Expression.Let.10") {
     val input = "fn f: Int64 = let x: Int64 = 0 in x"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt64(0))(result)
   }
@@ -3161,7 +3171,7 @@ class TestInterpreter extends FunSuite {
         |      let z: Int64 = 42 in
         |        y
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt64(-101010))(result)
   }
@@ -3174,7 +3184,7 @@ class TestInterpreter extends FunSuite {
         |      let z: Int64 = 42 in
         |        y
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt64(-101010))(result)
   }
@@ -3188,7 +3198,7 @@ class TestInterpreter extends FunSuite {
         |        y
         |fn g: Int = f(-1337, 101010, -42)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt64(-101010))(result)
   }
@@ -3202,7 +3212,7 @@ class TestInterpreter extends FunSuite {
         |        y
         |fn g: Int = f(-1337, 101010, -42)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt64(-101010))(result)
   }
@@ -3216,7 +3226,7 @@ class TestInterpreter extends FunSuite {
         |        b
         |fn g: Int = f(-1337, 101010, -42)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt64(101010))(result)
   }
@@ -3230,7 +3240,7 @@ class TestInterpreter extends FunSuite {
         |        b
         |fn g: Int = f(-1337, 101010, -42)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt64(101010))(result)
   }
@@ -3240,35 +3250,35 @@ class TestInterpreter extends FunSuite {
       """enum ConstProp { case Top, case Val(Int), case Bot }
         |fn f: ConstProp = let x = ConstProp.Val(42) in x
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkTag(Name.Resolved.mk("ConstProp"), "Val", Value.mkInt32(42)))(result)
   }
 
   test("Expression.Let.18") {
     val input = "fn f: () = let x = () in x"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.Unit)(result)
   }
 
   test("Expression.Let.19") {
     val input = """fn f: Str = let x = "helloworld" in x"""
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkStr("helloworld"))(result)
   }
 
   test("Expression.Let.20") {
     val input = """fn f: (Int, Int) = let x = (123, 456) in x"""
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.Tuple(Array(123, 456).map(Value.mkInt32)))(result)
   }
 
   test("Expression.Let.21") {
     val input = """fn f: Set[Int] = let x = #{9, 99, 999} in x"""
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(9, 99, 999).map(Value.mkInt32)))(result)
   }
@@ -3287,7 +3297,7 @@ class TestInterpreter extends FunSuite {
       """enum ConstProp { case Top, case Val(Int), case Bot }
         |fn f: ConstProp = ConstProp.Top
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkTag(Name.Resolved.mk("ConstProp"), "Top", Value.Unit))(result)
   }
@@ -3297,7 +3307,7 @@ class TestInterpreter extends FunSuite {
       """enum ConstProp { case Top, case Val(Int), case Bot }
         |fn f: ConstProp = ConstProp.Val(42)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkTag(Name.Resolved.mk("ConstProp"), "Val", Value.mkInt32(42)))(result)
   }
@@ -3307,7 +3317,7 @@ class TestInterpreter extends FunSuite {
       """enum ConstProp { case Top, case Val(Int), case Bot }
         |fn f: ConstProp = ConstProp.Bot
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkTag(Name.Resolved.mk("ConstProp"), "Bot", Value.Unit))(result)
   }
@@ -3317,7 +3327,7 @@ class TestInterpreter extends FunSuite {
       """enum Val { case Val(Bool) }
         |fn f: Val = Val.Val(true)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.True))(result)
   }
@@ -3329,7 +3339,7 @@ class TestInterpreter extends FunSuite {
         |fn g01: Val = f(true)
         |fn g02: Val = f(false)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.True))(result01)
@@ -3341,7 +3351,7 @@ class TestInterpreter extends FunSuite {
       """enum Val { case Val(Str) }
         |fn f: Val = Val.Val("hi")
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkStr("hi")))(result)
   }
@@ -3351,7 +3361,7 @@ class TestInterpreter extends FunSuite {
       """enum Val { case Val(Int, Str) }
         |fn f: Val = Val.Val(1, "one")
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.Tuple(Array(Value.mkInt32(1), "one"))))(result)
   }
@@ -3361,7 +3371,7 @@ class TestInterpreter extends FunSuite {
       """enum Val { case Val(Str) }
         |fn f: Val = Val.Val(if (!(4 != 4)) "foo" else "bar")
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkStr("foo")))(result)
   }
@@ -3371,7 +3381,7 @@ class TestInterpreter extends FunSuite {
       """enum Val { case Val(Str, Int) }
         |fn f: Val = Val.Val("ABC", 20 + 22)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.Tuple(Array("ABC", Value.mkInt32(42)))))(result)
   }
@@ -3381,7 +3391,7 @@ class TestInterpreter extends FunSuite {
       """enum Val { case Val(Int8) }
         |fn f: Val = Val.Val(32)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt8(32)))(result)
   }
@@ -3391,7 +3401,7 @@ class TestInterpreter extends FunSuite {
       """enum Val { case Val(Int16) }
         |fn f: Val = Val.Val(3200)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt16(3200)))(result)
   }
@@ -3401,7 +3411,7 @@ class TestInterpreter extends FunSuite {
       """enum Val { case Val(Int64) }
         |fn f: Val = Val.Val(320000000000)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt64(320000000000L)))(result)
   }
@@ -3417,28 +3427,28 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Tuple.01") {
     val input = "fn f: (Int16, Int32) = (321, 5)"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.Tuple(Array(Value.mkInt16(321), Value.mkInt32(5))))(result)
   }
 
   test("Expression.Tuple.02") {
     val input = "fn f: (Bool, Bool, Bool) = (true, true, false)"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.Tuple(Array(true, true, false).map(Value.mkBool)))(result)
   }
 
   test("Expression.Tuple.03") {
     val input = """fn f: (Str, Str, Str, Str) = ("un", "deux", "trois", "quatre")"""
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.Tuple(Array("un", "deux", "trois", "quatre").map(Value.mkStr)))(result)
   }
 
   ignore("Expression.Tuple.04") {
     val input = """fn f: (Str, Bool, Int64, (), Int8) = ("un", false, 12345, (), -2)"""
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.Tuple(Array(Value.mkStr("un"), Value.False, Value.mkInt64(12345), Value.Unit, Value.mkInt8(-2))))(result)
   }
@@ -3448,21 +3458,21 @@ class TestInterpreter extends FunSuite {
       """enum ConstProp { case Top, case Val(Int), case Bot }
         |fn f: (ConstProp, ConstProp) = (ConstProp.Val(111), ConstProp.Bot)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.Tuple(Array(Value.mkTag(Name.Resolved.mk("ConstProp"), "Val", Value.mkInt32(111)), Value.mkTag(Name.Resolved.mk("ConstProp"), "Bot", Value.Unit))))(result)
   }
 
   test("Expression.Tuple.06") {
     val input = """fn f: ((Int, Int), (Str, Str)) = ((123, 456), ("654", "321"))"""
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.Tuple(Array(Value.Tuple(Array(123, 456).map(Value.mkInt32)), Value.Tuple(Array("654", "321").map(Value.mkStr)))))(result)
   }
 
   test("Expression.Tuple.07") {
     val input = """fn f: (Int, Bool, Str) = (40 + 2, !(-12 < 22), if (true) "hi" else "hello")"""
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.Tuple(Array(Value.mkInt32(42), Value.False, Value.mkStr("hi"))))(result)
   }
@@ -3478,21 +3488,21 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Set.01") {
     val input = "fn f: Set[Int] = #{1, 4, 2}"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(1, 4, 2).map(Value.mkInt32)))(result)
   }
 
   ignore("Expression.Set.02") {
     val input = "fn f: Set[Int8] = #{1 + 2, 3 * 4, 5 - 6}"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(3, 12, -1).map(Value.mkInt8)))(result)
   }
 
   ignore("Expression.Set.03") {
     val input = "fn f: Set[(Int16, Bool)] = #{(1 + 2, true), (2 + 1, !false), (4 * 7, true), (5, true && false)}"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(
       Value.Tuple(Array(Value.mkInt16(3), Value.True)),
@@ -3503,7 +3513,7 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Set.04") {
     val input = "fn f: Set[Int64] = #{10000000000}"
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(Value.mkInt64(10000000000L))))(result)
   }
@@ -3514,7 +3524,7 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Error.01") {
     val input = "fn f: Bool = ???: Bool"
-    intercept[RuntimeException] { new Flix().addStr(input).solve().get }
+    intercept[RuntimeException] { getModel(input) }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -3537,7 +3547,7 @@ class TestInterpreter extends FunSuite {
         |fn g01: Int = f(true)
         |fn g02: Int = f(false)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     assertResult(Value.mkInt32(1))(result01)
@@ -3553,7 +3563,7 @@ class TestInterpreter extends FunSuite {
         |fn g01: Int = f(true)
         |fn g02: Int = f(false)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     assertResult(Value.mkInt32(100))(result01)
@@ -3570,7 +3580,7 @@ class TestInterpreter extends FunSuite {
         |fn g01: Int = f(true)
         |fn g02: Int = f(false)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     assertResult(Value.mkInt32(1))(result01)
@@ -3594,7 +3604,7 @@ class TestInterpreter extends FunSuite {
         |fn g06: Str = f(3)
         |fn g07: Str = f(4)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -3618,7 +3628,7 @@ class TestInterpreter extends FunSuite {
         |}
         |fn g01: Int = f(true)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g01"))
     assertResult(Value.mkInt32(1))(result)
   }
@@ -3630,7 +3640,7 @@ class TestInterpreter extends FunSuite {
         |}
         |fn g01: Int = f(false)
       """.stripMargin
-    intercept[RuntimeException] { new Flix().addStr(input).solve().get }
+    intercept[RuntimeException] { getModel(input) }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -3645,7 +3655,7 @@ class TestInterpreter extends FunSuite {
         |  case _ => 11
         |}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(11))(result)
   }
@@ -3656,7 +3666,7 @@ class TestInterpreter extends FunSuite {
         |  case _ => 11
         |}
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(11))(result)
   }
@@ -3671,7 +3681,7 @@ class TestInterpreter extends FunSuite {
         |fn g03: Int = f(1)
         |fn g04: Int = f(99999)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -3689,7 +3699,7 @@ class TestInterpreter extends FunSuite {
         |}
         |fn g: Int = f(3)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt32(1))(result)
   }
@@ -3701,7 +3711,7 @@ class TestInterpreter extends FunSuite {
         |}
         |fn g: Int = f(3)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt32(3))(result)
   }
@@ -3713,7 +3723,7 @@ class TestInterpreter extends FunSuite {
         |}
         |fn g: Int = f(3)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt32(14))(result)
   }
@@ -3725,7 +3735,7 @@ class TestInterpreter extends FunSuite {
         |}
         |fn g: Bool = f(())
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.True)(result)
   }
@@ -3739,7 +3749,7 @@ class TestInterpreter extends FunSuite {
         |fn g01: Int = f(true)
         |fn g02: Int = f(false)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     assertResult(Value.mkInt32(30))(result01)
@@ -3755,7 +3765,7 @@ class TestInterpreter extends FunSuite {
         |fn g01: Int = f(true)
         |fn g02: Int = f(false)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     assertResult(Value.mkInt32(30))(result01)
@@ -3776,7 +3786,7 @@ class TestInterpreter extends FunSuite {
         |fn g04: Str = f(2)
         |fn g05: Str = f(3)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -3804,7 +3814,7 @@ class TestInterpreter extends FunSuite {
          |fn g04: Str = f(${Byte.MaxValue})
          |fn g05: Str = f(0)
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -3832,7 +3842,7 @@ class TestInterpreter extends FunSuite {
           |fn g04: Str = f(${Short.MaxValue})
           |fn g05: Str = f(0)
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -3860,7 +3870,7 @@ class TestInterpreter extends FunSuite {
           |fn g04: Str = f(${Int.MaxValue})
           |fn g05: Str = f(0)
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -3888,7 +3898,7 @@ class TestInterpreter extends FunSuite {
           |fn g04: Str = f(${Long.MaxValue})
           |fn g05: Str = f(0)
        """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -3914,7 +3924,7 @@ class TestInterpreter extends FunSuite {
         |fn g03: Str = f("three")
         |fn g04: Str = f("four")
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -3942,7 +3952,7 @@ class TestInterpreter extends FunSuite {
         |fn g06: Int = f(Foo.Abc(40, "a"))
         |fn g07: Int = f(Foo.Xyz)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -3970,7 +3980,7 @@ class TestInterpreter extends FunSuite {
         |fn g03: Int = f("abc", true)
         |fn g04: Int = f("abc", false)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -3994,7 +4004,7 @@ class TestInterpreter extends FunSuite {
         |fn g03: Int = f((1, (12, 8)))
         |fn g04: Int = f((1, (12, 0)))
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -4016,7 +4026,7 @@ class TestInterpreter extends FunSuite {
         |fn g03: Int = f(NameAndAge.T("James", 5))
         |fn g04: Int = f(NameAndAge.T("Mary", 33))
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -4039,7 +4049,7 @@ class TestInterpreter extends FunSuite {
         |fn g03: Int = f(NameAndAge.T("James", 5))
         |fn g04: Int = f(NameAndAge.T("Mary", 33))
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -4063,7 +4073,7 @@ class TestInterpreter extends FunSuite {
         |fn g03: Int = f(ConstProp.Val(-24))
         |fn g04: Int = f(ConstProp.Bot)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -4087,7 +4097,7 @@ class TestInterpreter extends FunSuite {
         |fn g03: Int = f(BoolTag.B(false))
         |fn g04: Int = f(BoolTag.Bot)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -4107,7 +4117,7 @@ class TestInterpreter extends FunSuite {
         |fn g02: Int = f(6, 5)
         |fn g03: Int = f(100, 23)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -4129,7 +4139,7 @@ class TestInterpreter extends FunSuite {
         |fn g03: Str = f(6, true)
         |fn g04: Str = f(0, false)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -4156,7 +4166,7 @@ class TestInterpreter extends FunSuite {
         |fn g05: Int = f(2, 2, 3)
         |fn g06: Int = f(2, 10, 20)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -4187,7 +4197,7 @@ class TestInterpreter extends FunSuite {
         |fn g05: Int = f(ConstProp.Val(0), ConstProp.Val(42))
         |fn g06: Int = f(ConstProp.Top, ConstProp.Bot)
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -4219,7 +4229,7 @@ class TestInterpreter extends FunSuite {
         |fn g06: Int = f(3, NameAndAge.T("Anne", 18))
         |fn g07: Int = f(4, NameAndAge.T("Charles", 64))
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
     val result03 = model.constants(Name.Resolved.mk("g03"))
@@ -4246,7 +4256,7 @@ class TestInterpreter extends FunSuite {
         |fn h: Native = fst(g())
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkTupleType(Array(flix.mkNativeType, flix.mkNativeType)))
     def nativeF(x: Int): (MyObject, MyObject) = { executed = true; (MyObject(x), MyObject(x * 2)) }
     val model = flix
@@ -4268,7 +4278,7 @@ class TestInterpreter extends FunSuite {
         |fn h: Native = fst(g())
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkTupleType(Array(flix.mkNativeType, flix.mkNativeType)))
     def nativeF(x: Int): (Int, String) = { executed = true; (x, x.toString) }
     val model = flix
@@ -4290,7 +4300,7 @@ class TestInterpreter extends FunSuite {
         |fn h: Int = fst(g())
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkTupleType(Array(flix.mkInt32Type, flix.mkStrType)))
     def nativeF(x: Int): (Int, String) = { executed = true; (x, x.toString) }
     val model = flix
@@ -4311,7 +4321,7 @@ class TestInterpreter extends FunSuite {
         |}
         |fn g: Bool = f(123)
       """.stripMargin
-    intercept[RuntimeException] { new Flix().addStr(input).solve().get }
+    intercept[RuntimeException] { getModel(input) }
   }
 
   // TODO: opt, list, map, ???
@@ -4329,7 +4339,7 @@ class TestInterpreter extends FunSuite {
         |
         |B(x) :- A(x).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val B = model.relations(Name.Resolved.mk("B")).toSet
     assertResult(B)(Set(List(Value.True)))
   }
@@ -4345,7 +4355,7 @@ class TestInterpreter extends FunSuite {
         |
         |B(x) :- A(x).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val B = model.relations(Name.Resolved.mk("B")).toSet
     assertResult(B)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
@@ -4361,7 +4371,7 @@ class TestInterpreter extends FunSuite {
         |
         |B(x) :- A(x).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val B = model.relations(Name.Resolved.mk("B")).toSet
     assertResult(B)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
   }
@@ -4379,7 +4389,7 @@ class TestInterpreter extends FunSuite {
         |
         |C((x, y)) :- A(x), B(y).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val B = model.relations(Name.Resolved.mk("B")).toSet
     assertResult(B)(Set(List(Value.Tuple(Array(1, 3).map(Value.mkInt32))), List(Value.Tuple(Array(2, 3).map(Value.mkInt32)))))
   }
@@ -4394,7 +4404,7 @@ class TestInterpreter extends FunSuite {
         |
         |A(()).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(List(Value.Unit)))
   }
@@ -4406,7 +4416,7 @@ class TestInterpreter extends FunSuite {
         |A(true).
         |A(false).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(true, false).map(x => List(Value.mkBool(x))))
   }
@@ -4419,7 +4429,7 @@ class TestInterpreter extends FunSuite {
         |A(2).
         |A(3).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt8(x))))
   }
@@ -4432,7 +4442,7 @@ class TestInterpreter extends FunSuite {
         |A(2).
         |A(3).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
   }
@@ -4445,7 +4455,7 @@ class TestInterpreter extends FunSuite {
         |A(2).
         |A(3).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
@@ -4458,7 +4468,7 @@ class TestInterpreter extends FunSuite {
         |A(2).
         |A(3).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt64(x))))
   }
@@ -4471,7 +4481,7 @@ class TestInterpreter extends FunSuite {
         |A("two").
         |A("three").
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
   }
@@ -4482,7 +4492,7 @@ class TestInterpreter extends FunSuite {
         |
         |A((1, "one")).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))))
   }
@@ -4494,7 +4504,7 @@ class TestInterpreter extends FunSuite {
         |
         |A(Foo.Foo(1, "one")).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(List(Value.mkTag(Name.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
   }
@@ -4505,7 +4515,7 @@ class TestInterpreter extends FunSuite {
         |
         |A((1, 2)).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))))
   }
@@ -4522,7 +4532,7 @@ class TestInterpreter extends FunSuite {
         |
         |A(f(0)).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(List(Value.Unit)))
   }
@@ -4535,7 +4545,7 @@ class TestInterpreter extends FunSuite {
         |A(f(0)).
         |A(f(1)).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(true, false).map(x => List(Value.mkBool(x))))
   }
@@ -4549,7 +4559,7 @@ class TestInterpreter extends FunSuite {
         |A(f(1)).
         |A(f(2)).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt8(x))))
   }
@@ -4563,7 +4573,7 @@ class TestInterpreter extends FunSuite {
         |A(f(1)).
         |A(f(2)).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
   }
@@ -4577,7 +4587,7 @@ class TestInterpreter extends FunSuite {
         |A(f(1)).
         |A(f(2)).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
@@ -4591,7 +4601,7 @@ class TestInterpreter extends FunSuite {
         |A(f(1)).
         |A(f(2)).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt64(x))))
   }
@@ -4605,7 +4615,7 @@ class TestInterpreter extends FunSuite {
         |A(f("two")).
         |A(f("three")).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
   }
@@ -4617,7 +4627,7 @@ class TestInterpreter extends FunSuite {
         |
         |A(f(1)).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))))
   }
@@ -4630,7 +4640,7 @@ class TestInterpreter extends FunSuite {
         |
         |A(f("one")).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(List(Value.mkTag(Name.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
   }
@@ -4642,7 +4652,7 @@ class TestInterpreter extends FunSuite {
         |
         |A(f(1, 2)).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))))
   }
@@ -4660,7 +4670,7 @@ class TestInterpreter extends FunSuite {
         |A(f(0)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkUnitType)
     def nativeF(x: IValue): IValue = { executed = true; flix.mkUnit }
     val model = flix
@@ -4681,7 +4691,7 @@ class TestInterpreter extends FunSuite {
         |A(f(1)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType)
     def nativeF(x: IValue): IValue = { executed = true; flix.mkBool(x.getInt32 == 0) }
     val model = flix
@@ -4703,7 +4713,7 @@ class TestInterpreter extends FunSuite {
         |A(f(2)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt8Type), flix.mkInt8Type)
     def nativeF(x: IValue): IValue = { executed = true; flix.mkInt8(x.getInt8 + 1) }
     val model = flix
@@ -4725,7 +4735,7 @@ class TestInterpreter extends FunSuite {
         |A(f(2)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt16Type), flix.mkInt16Type)
     def nativeF(x: IValue): IValue = { executed = true; flix.mkInt16(x.getInt16 + 1) }
     val model = flix
@@ -4747,7 +4757,7 @@ class TestInterpreter extends FunSuite {
         |A(f(2)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: IValue): IValue = { executed = true; flix.mkInt32(x.getInt32 + 1) }
     val model = flix
@@ -4769,7 +4779,7 @@ class TestInterpreter extends FunSuite {
         |A(f(2)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt64Type), flix.mkInt64Type)
     def nativeF(x: IValue): IValue = { executed = true; flix.mkInt64(x.getInt64 + 1) }
     val model = flix
@@ -4791,7 +4801,7 @@ class TestInterpreter extends FunSuite {
         |A(f("three")).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkStrType), flix.mkStrType)
     def nativeF(x: IValue): IValue = { executed = true; x }
     val model = flix
@@ -4811,7 +4821,7 @@ class TestInterpreter extends FunSuite {
         |A(f(1)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkTupleType(Array(flix.mkInt32Type, flix.mkStrType)))
     def nativeF(x: IValue): IValue = { executed = true; flix.mkTuple(Array(x, flix.mkStr("one"))) }
     val model = flix
@@ -4835,7 +4845,7 @@ class TestInterpreter extends FunSuite {
         |A(f("one")).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tagTpe = flix.mkTagType("Foo", "Foo", Type.Tuple(List(Type.Int32, Type.Str)))
     val tpe = flix.mkFunctionType(Array(flix.mkStrType), flix.mkEnumType("Foo", Array(tagTpe)))
     def nativeF(x: IValue): IValue = {
@@ -4859,7 +4869,7 @@ class TestInterpreter extends FunSuite {
         |A(f(1, 2)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkInt32Type), flix.mkTupleType(Array(flix.mkInt32Type, flix.mkInt32Type)))
     def nativeF(x: IValue, y: IValue): IValue = { executed = true; flix.mkTuple(Array(x, y)) }
     val model = flix
@@ -4881,7 +4891,7 @@ class TestInterpreter extends FunSuite {
         |A(f(3)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkNativeType)
     def nativeF(x: IValue): IValue = { executed = true; flix.mkNative(MyObject(x.getInt32)) }
     val model = flix
@@ -4908,7 +4918,7 @@ class TestInterpreter extends FunSuite {
         |A(f(0)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkUnitType)
     def nativeF(x: JInt): Value.Unit.type = { executed = true; Value.Unit }
     val model = flix
@@ -4929,7 +4939,7 @@ class TestInterpreter extends FunSuite {
         |A(f(1)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType)
     def nativeF(x: JInt): JBool = { executed = true; x == 0 }
     val model = flix
@@ -4951,7 +4961,7 @@ class TestInterpreter extends FunSuite {
         |A(f(2)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt8Type), flix.mkInt8Type)
     def nativeF(x: JByte): JByte = { executed = true; (x + 1).toByte }
     val model = flix
@@ -4973,7 +4983,7 @@ class TestInterpreter extends FunSuite {
         |A(f(2)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt16Type), flix.mkInt16Type)
     def nativeF(x: JShort): JShort = { executed = true; (x + 1).toShort }
     val model = flix
@@ -4995,7 +5005,7 @@ class TestInterpreter extends FunSuite {
         |A(f(2)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: JInt): JInt = { executed = true; x + 1 }
     val model = flix
@@ -5017,7 +5027,7 @@ class TestInterpreter extends FunSuite {
         |A(f(2)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt64Type), flix.mkInt64Type)
     def nativeF(x: JLong): JLong = { executed = true; x + 1 }
     val model = flix
@@ -5039,7 +5049,7 @@ class TestInterpreter extends FunSuite {
         |A(f("three")).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkStrType), flix.mkStrType)
     def nativeF(x: String): String = { executed = true; x }
     val model = flix
@@ -5059,7 +5069,7 @@ class TestInterpreter extends FunSuite {
         |A(f(1)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkTupleType(Array(flix.mkInt32Type, flix.mkStrType)))
     def nativeF(x: JInt): Value.Tuple = { executed = true; Value.Tuple(Array(x, "one")) }
     val model = flix
@@ -5083,7 +5093,7 @@ class TestInterpreter extends FunSuite {
         |A(f("one")).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tagTpe = flix.mkTagType("Foo", "Foo", Type.Tuple(List(Type.Int32, Type.Str)))
     val tpe = flix.mkFunctionType(Array(flix.mkStrType), flix.mkEnumType("Foo", Array(tagTpe)))
     def nativeF(x: String): Value.Tag = {
@@ -5107,7 +5117,7 @@ class TestInterpreter extends FunSuite {
         |A(f(1, 2)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkInt32Type), flix.mkTupleType(Array(flix.mkInt32Type, flix.mkInt32Type)))
     def nativeF(x: JInt, y: JInt): Value.Tuple = { executed = true; Value.Tuple(Array(x, y)) }
     val model = flix
@@ -5129,7 +5139,7 @@ class TestInterpreter extends FunSuite {
         |A(f(3)).
       """.stripMargin
     var executed = false
-    val flix = new Flix()
+    val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkNativeType)
     def nativeF(x: JInt): MyObject = { executed = true; MyObject(x) }
     val model = flix
@@ -5162,7 +5172,7 @@ class TestInterpreter extends FunSuite {
         |
         |B(y) :- f(x), A(x, y).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val B = model.relations(Name.Resolved.mk("B")).toSet
     assertResult(B)(Set(List(Value.True)))
   }
@@ -5180,7 +5190,7 @@ class TestInterpreter extends FunSuite {
         |
         |B(x) :- f(x), A(x).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val B = model.relations(Name.Resolved.mk("B")).toSet
     assertResult(B)(Set(0, 2).map(x => List(Value.mkInt32(x))))
   }
@@ -5200,7 +5210,7 @@ class TestInterpreter extends FunSuite {
         |A(4) :- f(false).
         |A(5) :- f(false).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
@@ -5215,7 +5225,7 @@ class TestInterpreter extends FunSuite {
         |A(3) :- f(0).
         |A(4) :- f(-1).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
@@ -5230,7 +5240,7 @@ class TestInterpreter extends FunSuite {
         |A(3) :- f(0).
         |A(4) :- f(-200).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
@@ -5245,7 +5255,7 @@ class TestInterpreter extends FunSuite {
         |A(3) :- f(0).
         |A(4) :- f(-200000).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
@@ -5260,7 +5270,7 @@ class TestInterpreter extends FunSuite {
         |A(3) :- f(0).
         |A(4) :- f(-20000000000).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
@@ -5274,7 +5284,7 @@ class TestInterpreter extends FunSuite {
         |A(2) :- f("bar").
         |A(3) :- f("baz").
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
@@ -5293,7 +5303,7 @@ class TestInterpreter extends FunSuite {
         |A(4) :- f((-1, "abc")).
         |A(5) :- f((0, "xyz")).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
@@ -5313,7 +5323,7 @@ class TestInterpreter extends FunSuite {
         |A(4) :- f(Val.Val(-1)).
         |A(5) :- f(Val.Top).
       """.stripMargin
-    val model = new Flix().addStr(input).solve().get
+    val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
