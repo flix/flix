@@ -1,46 +1,15 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.{Invokable, InvokableUnsafe, IValue, Flix}
-import ca.uwaterloo.flix.language.ast.Type.Lambda
-import ca.uwaterloo.flix.language.ast.TypedAst.{Definition, Expression, Literal, Pattern, Term, FormalArg, Root}
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.Compiler
-import org.scalatest.FunSuite
+import ca.uwaterloo.flix.language.ast.{Ast, Name, Type}
 
-import scala.collection.mutable
+import org.scalatest.FunSuite
 
 // TODO: Need to set Flix options to Silent, otherwise test output is too noisy.
 
 // TODO: Intercept tests should catch a more specific exception, otherwise real bugs will be masked.
 
-// NOTE: When writing a new test, call the parser on a string, and then the interpreter on the resulting AST.
-// Older tests were written before the front-end was completely implemented, so they had to directly construct ASTs.
-
 class TestInterpreter extends FunSuite {
-  val root = Root(Map(), Map(), Map(), Map(), List(), List(), Map.empty, new Time(0, 0, 0, 0, 0))
-
-  val loc = SourceLocation.Unknown
-
-  val name01 = Name.Resolved.mk(List("foo.bar"))
-  val name02 = Name.Resolved.mk(List("abc.def"))
-
-  def toIdent(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
-
-  val ident01 = toIdent("x")
-  val ident02 = toIdent("y")
-  val ident03 = toIdent("z")
-
-  object ConstantPropTagDefs {
-    val name = Name.Resolved.mk(List("ConstProp"))
-    val identB = toIdent("Bot")
-    val identV = toIdent("Val")
-    val identT = toIdent("Top")
-
-    val tagTpeB = Type.Tag(name, identB, Type.Unit)
-    val tagTpeV = Type.Tag(name, identV, Type.Int32)
-    val tagTpeT = Type.Tag(name, identT, Type.Unit)
-    val enumTpe = Type.Enum(Name.Resolved.mk("ConstProp"), Map("ConstProp.Bot" -> tagTpeB, "ConstProp.Val" -> tagTpeV, "ConstProp.Top" -> tagTpeT))
-  }
 
   object HookSafeHelpers {
     case class MyObject(x: Int)
@@ -903,6 +872,8 @@ class TestInterpreter extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Expression.{Hook,Apply} - Hook.Unsafe                                   //
   // Re-implements Expression.Lambda tests but using (unsafe) hooks instead. //
+  // Note that native functions need to be annotated with JBool, JInt, etc.  //
+  // This is necessary so that implicits are properly called.                //
   /////////////////////////////////////////////////////////////////////////////
 
   test("Expression.Hook - Hook.Unsafe.01") {
@@ -3124,9 +3095,10 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Let.06") {
     val input =
-      """fn f: Int = let x = 14 - 3 in
-        |              let y = 2 * 4 in
-        |                x + y
+      """fn f: Int =
+        |  let x = 14 - 3 in
+        |    let y = 2 * 4 in
+        |      x + y
       """.stripMargin
     val model = new Flix().addStr(input).solve().get
     val result = model.constants(Name.Resolved.mk("f"))
@@ -3135,10 +3107,11 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Let.07") {
     val input =
-      """fn f: Int = let x = 1 in
-        |              let y = x + 2 in
-        |                let z = y + 3 in
-        |                  z
+      """fn f: Int =
+        |  let x = 1 in
+        |    let y = x + 2 in
+        |      let z = y + 3 in
+        |        z
       """.stripMargin
     val model = new Flix().addStr(input).solve().get
     val result = model.constants(Name.Resolved.mk("f"))
@@ -3147,10 +3120,11 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Let.08") {
     val input =
-      """fn f(a: Int, b: Int, c: Int): Int = let x = 1337 in
-        |                                      let y = -101010 in
-        |                                        let z = 42 in
-        |                                          y
+      """fn f(a: Int, b: Int, c: Int): Int =
+        |  let x = 1337 in
+        |    let y = -101010 in
+        |      let z = 42 in
+        |        y
         |fn g: Int = f(-1337, 101010, -42)
       """.stripMargin
     val model = new Flix().addStr(input).solve().get
@@ -3160,10 +3134,11 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Let.09") {
     val input =
-      """fn f(a: Int, b: Int, c: Int): Int = let x = 1337 in
-        |                                      let y = -101010 in
-        |                                        let z = 42 in
-        |                                          b
+      """fn f(a: Int, b: Int, c: Int): Int =
+        |  let x = 1337 in
+        |    let y = -101010 in
+        |      let z = 42 in
+        |        b
         |fn g: Int = f(-1337, 101010, -42)
       """.stripMargin
     val model = new Flix().addStr(input).solve().get
@@ -3180,10 +3155,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Let.11") {
     val input =
-      """fn f: Int64 = let x: Int64 = 1337 in
-        |                let y: Int64 = -101010 in
-        |                  let z: Int64 = 42 in
-        |                    y
+      """fn f: Int64 =
+        |  let x: Int64 = 1337 in
+        |    let y: Int64 = -101010 in
+        |      let z: Int64 = 42 in
+        |        y
       """.stripMargin
     val model = new Flix().addStr(input).solve().get
     val result = model.constants(Name.Resolved.mk("f"))
@@ -3192,10 +3168,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Let.12") {
     val input =
-      """fn f: Int64 = let x: Int32 = 1337 in
-        |                let y: Int64 = -101010 in
-        |                  let z: Int64 = 42 in
-        |                    y
+      """fn f: Int64 =
+        |  let x: Int32 = 1337 in
+        |    let y: Int64 = -101010 in
+        |      let z: Int64 = 42 in
+        |        y
       """.stripMargin
     val model = new Flix().addStr(input).solve().get
     val result = model.constants(Name.Resolved.mk("f"))
@@ -3204,10 +3181,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Let.13") {
     val input =
-      """fn f(a: Int64, b: Int64, c: Int64): Int = let x: Int64 = 1337 in
-        |                                            let y: Int64 = -101010 in
-        |                                              let z: Int64 = 42 in
-        |                                                y
+      """fn f(a: Int64, b: Int64, c: Int64): Int =
+        |  let x: Int64 = 1337 in
+        |    let y: Int64 = -101010 in
+        |      let z: Int64 = 42 in
+        |        y
         |fn g: Int = f(-1337, 101010, -42)
       """.stripMargin
     val model = new Flix().addStr(input).solve().get
@@ -3217,10 +3195,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Let.14") {
     val input =
-      """fn f(a: Int32, b: Int64, c: Int64): Int = let x: Int32 = 1337 in
-        |                                            let y: Int64 = -101010 in
-        |                                              let z: Int64 = 42 in
-        |                                                y
+      """fn f(a: Int32, b: Int64, c: Int64): Int =
+        |  let x: Int32 = 1337 in
+        |    let y: Int64 = -101010 in
+        |      let z: Int64 = 42 in
+        |        y
         |fn g: Int = f(-1337, 101010, -42)
       """.stripMargin
     val model = new Flix().addStr(input).solve().get
@@ -3230,10 +3209,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Let.15") {
     val input =
-      """fn f(a: Int64, b: Int64, c: Int64): Int = let x: Int64 = 1337 in
-        |                                            let y: Int64 = -101010 in
-        |                                              let z: Int64 = 42 in
-        |                                                b
+      """fn f(a: Int64, b: Int64, c: Int64): Int =
+        |  let x: Int64 = 1337 in
+        |    let y: Int64 = -101010 in
+        |      let z: Int64 = 42 in
+        |        b
         |fn g: Int = f(-1337, 101010, -42)
       """.stripMargin
     val model = new Flix().addStr(input).solve().get
@@ -3243,10 +3223,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Let.16") {
     val input =
-      """fn f(a: Int32, b: Int64, c: Int64): Int = let x: Int32 = 1337 in
-        |                                            let y: Int64 = -101010 in
-        |                                              let z: Int64 = 42 in
-        |                                                b
+      """fn f(a: Int32, b: Int64, c: Int64): Int =
+        |  let x: Int32 = 1337 in
+        |    let y: Int64 = -101010 in
+        |      let z: Int64 = 42 in
+        |        b
         |fn g: Int = f(-1337, 101010, -42)
       """.stripMargin
     val model = new Flix().addStr(input).solve().get
@@ -4914,9 +4895,9 @@ class TestInterpreter extends FunSuite {
 
   /////////////////////////////////////////////////////////////////////////////
   // Term.Head.ApplyHook - Hook.Unsafe                                       //
-  // These tests are not too thorough because evalHeadTerm defers to the     //
-  // main interpreter implementation (eval), which *is* tested thoroughly.   //
   // These tests simply re-implement the Term.Head.Exp tests using ApplyHook.//
+  // Note that native functions need to be annotated with JBool, JInt, etc.  //
+  // This is necessary so that implicits are properly called.                //
   /////////////////////////////////////////////////////////////////////////////
 
   test("Term.Head.ApplyHook - Hook.Unsafe.01") {
@@ -4929,7 +4910,7 @@ class TestInterpreter extends FunSuite {
     var executed = false
     val flix = new Flix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkUnitType)
-    def nativeF(x: Int): Value.Unit.type = { executed = true; Value.Unit }
+    def nativeF(x: JInt): Value.Unit.type = { executed = true; Value.Unit }
     val model = flix
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
