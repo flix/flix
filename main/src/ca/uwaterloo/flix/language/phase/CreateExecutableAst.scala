@@ -171,6 +171,12 @@ object CreateExecutableAst {
     }
 
     object Body {
+      private def freeVars(terms: List[SimplifiedAst.Term.Body]): Set[String] = terms.foldLeft(Set.empty[String]) {
+        case (xs, t: SimplifiedAst.Term.Body.Wildcard) => xs
+        case (xs, t: SimplifiedAst.Term.Body.Var) => xs + t.ident.name
+        case (xs, t: SimplifiedAst.Term.Body.Exp) => xs
+      }
+
       def toExecutable(sast: SimplifiedAst.Predicate.Body): ExecutableAst.Predicate.Body = sast match {
         case SimplifiedAst.Predicate.Body.Collection(name, terms, tpe, loc) =>
           val termsArray = terms.map(Term.toExecutable).toArray
@@ -187,17 +193,19 @@ object CreateExecutableAst {
             }
             r
           }
-          ExecutableAst.Predicate.Body.Collection(name, termsArray, index2var, tpe, loc)
+          ExecutableAst.Predicate.Body.Collection(name, termsArray, index2var, freeVars(terms), tpe, loc)
         case SimplifiedAst.Predicate.Body.ApplyFilter(name, terms, tpe, loc) =>
           val termsArray = terms.map(Term.toExecutable).toArray
-          ExecutableAst.Predicate.Body.ApplyFilter(name, termsArray, tpe, loc)
+          ExecutableAst.Predicate.Body.ApplyFilter(name, termsArray, freeVars(terms), tpe, loc)
         case SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms, tpe, loc) =>
           val termsArray = terms.map(Term.toExecutable).toArray
-          ExecutableAst.Predicate.Body.ApplyHookFilter(hook, termsArray, tpe, loc)
+          ExecutableAst.Predicate.Body.ApplyHookFilter(hook, termsArray, freeVars(terms), tpe, loc)
         case SimplifiedAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc) =>
-          ExecutableAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc)
+          val freeVars = Set(ident1.name, ident2.name)
+          ExecutableAst.Predicate.Body.NotEqual(ident1, ident2, freeVars, tpe, loc)
         case SimplifiedAst.Predicate.Body.Loop(ident, term, tpe, loc) =>
-          ExecutableAst.Predicate.Body.Loop(ident, Term.toExecutable(term), tpe, loc)
+          val freeVars = Set.empty[String] // TODO
+          ExecutableAst.Predicate.Body.Loop(ident, Term.toExecutable(term), freeVars, tpe, loc)
       }
     }
 

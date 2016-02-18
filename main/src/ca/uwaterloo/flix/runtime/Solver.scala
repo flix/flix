@@ -258,7 +258,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     */
   def loop(rule: Constraint.Rule, ps: List[Predicate.Body.Loop], row: mutable.Map[String, AnyRef]): Unit = ps match {
     case Nil => filter(rule, rule.filters, row)
-    case Predicate.Body.Loop(name, term, _, _) :: rest =>
+    case Predicate.Body.Loop(name, term, _, _, _) :: rest =>
       val result = Value.cast2set(Interpreter.evalHeadTerm(term, sCtx.root, row))
       for (x <- result) {
         val newRow = row.clone()
@@ -330,7 +330,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     case Nil =>
       // rule body complete, evaluate the head.
       evalHead(rule.head, row, enqueue = true)
-    case Predicate.Body.NotEqual(ident1, ident2, _, _) :: xs =>
+    case Predicate.Body.NotEqual(ident1, ident2, _, _, _) :: xs =>
       val value1 = row(ident1.name)
       val value2 = row(ident2.name)
       if (value1 != value2) {

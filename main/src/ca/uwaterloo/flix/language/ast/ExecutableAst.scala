@@ -504,26 +504,7 @@ object ExecutableAst {
       /**
         * Returns the set of free variables in the term.
         */
-      // TODO: Move
-      def freeVars: Set[String] = this match {
-        case ExecutableAst.Predicate.Body.Collection(_, terms, _, _, _) => terms.foldLeft(Set.empty[String]) {
-          case (xs, t: ExecutableAst.Term.Body.Wildcard) => xs
-          case (xs, t: ExecutableAst.Term.Body.Var) => xs + t.ident.name
-          case (xs, t: ExecutableAst.Term.Body.Exp) => xs
-        }
-        case ExecutableAst.Predicate.Body.ApplyFilter(_, terms, _, _) => terms.foldLeft(Set.empty[String]) {
-          case (xs, t: ExecutableAst.Term.Body.Wildcard) => xs
-          case (xs, t: ExecutableAst.Term.Body.Var) => xs + t.ident.name
-          case (xs, t: ExecutableAst.Term.Body.Exp) => xs
-        }
-        case ExecutableAst.Predicate.Body.ApplyHookFilter(_, terms, _, _) => terms.foldLeft(Set.empty[String]) {
-          case (xs, t: ExecutableAst.Term.Body.Wildcard) => xs
-          case (xs, t: ExecutableAst.Term.Body.Var) => xs + t.ident.name
-          case (xs, t: ExecutableAst.Term.Body.Exp) => xs
-        }
-        case ExecutableAst.Predicate.Body.NotEqual(x, y, _, _) => Set(x.name, y.name)
-        case ExecutableAst.Predicate.Body.Loop(_, _, _, _) => ???
-      }
+      val freeVars: Set[String]
     }
 
     object Body {
@@ -531,6 +512,7 @@ object ExecutableAst {
       case class Collection(name: Name.Resolved,
                             terms: Array[ExecutableAst.Term.Body],
                             index2var: Array[String],
+                            freeVars: Set[String],
                             tpe: Type.Predicate,
                             loc: SourceLocation) extends ExecutableAst.Predicate.Body {
         /**
@@ -541,21 +523,25 @@ object ExecutableAst {
 
       case class ApplyFilter(name: Name.Resolved,
                              terms: Array[ExecutableAst.Term.Body],
+                             freeVars: Set[String],
                              tpe: Type.Lambda,
                              loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
       case class ApplyHookFilter(hook: Ast.Hook,
                                  terms: Array[ExecutableAst.Term.Body],
+                                 freeVars: Set[String],
                                  tpe: Type.Lambda,
                                  loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
       case class NotEqual(ident1: Name.Ident,
                           ident2: Name.Ident,
+                          freeVars: Set[String],
                           tpe: Type,
                           loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
       case class Loop(ident: Name.Ident,
                       term: ExecutableAst.Term.Head,
+                      freeVars: Set[String],
                       tpe: Type,
                       loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
