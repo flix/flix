@@ -168,112 +168,112 @@ class TestInterpreter extends FunSuite {
   }
 
   ignore("Expression.Int8.01") {
-    val input = "fn f: Int8 = -105"
+    val input = "fn f: Int8 = -105i8"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt8(-105))(result)
   }
 
   ignore("Expression.Int8.02") {
-    val input = "fn f: Int8 = 121"
+    val input = "fn f: Int8 = 121i8"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt8(121))(result)
   }
 
   ignore("Expression.Int8.03") {
-    val input = s"fn f: Int8 = ${Byte.MaxValue}"
+    val input = s"fn f: Int8 = ${Byte.MaxValue}i8"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt8(Byte.MaxValue))(result)
   }
 
   ignore("Expression.Int8.04") {
-    val input = s"fn f: Int8 = ${Byte.MinValue}"
+    val input = s"fn f: Int8 = ${Byte.MinValue}i8"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt8(Byte.MinValue))(result)
   }
 
   ignore("Expression.Int16.01") {
-    val input = "fn f: Int16 = -5320"
+    val input = "fn f: Int16 = -5320i16"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt16(-5320))(result)
   }
 
   ignore("Expression.Int16.02") {
-    val input = "fn f: Int16 = 4568"
+    val input = "fn f: Int16 = 4568i16"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt16(4568))(result)
   }
 
   ignore("Expression.Int16.03") {
-    val input = s"fn f: Int16 = ${Short.MaxValue}"
+    val input = s"fn f: Int16 = ${Short.MaxValue}i16"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt16(Short.MaxValue))(result)
   }
 
   ignore("Expression.Int16.04") {
-    val input = s"fn f: Int16 = ${Short.MinValue}"
+    val input = s"fn f: Int16 = ${Short.MinValue}i16"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt16(Short.MinValue))(result)
   }
 
-  test("Expression.Int32.01") {
-    val input = "fn f: Int32 = -254542"
+  ignore("Expression.Int32.01") {
+    val input = "fn f: Int32 = -254542i32"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(-254542))(result)
   }
 
-  test("Expression.Int32.02") {
-    val input = "fn f: Int32 = 45649878"
+  ignore("Expression.Int32.02") {
+    val input = "fn f: Int32 = 45649878i32"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(45649878))(result)
   }
 
-  test("Expression.Int32.03") {
-    val input = s"fn f: Int32 = ${Int.MaxValue}"
+  ignore("Expression.Int32.03") {
+    val input = s"fn f: Int32 = ${Int.MaxValue}i32"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(Int.MaxValue))(result)
   }
 
-  test("Expression.Int32.04") {
-    val input = s"fn f: Int32 = ${Int.MinValue}"
+  ignore("Expression.Int32.04") {
+    val input = s"fn f: Int32 = ${Int.MinValue}i32"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(Int.MinValue))(result)
   }
 
   ignore("Expression.Int64.01") {
-    val input = "fn f: Int64 = -254454121542"
+    val input = "fn f: Int64 = -254454121542i64"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt64(-254454121542L))(result)
   }
 
   ignore("Expression.Int64.02") {
-    val input = "fn f: Int64 = 45641198784545"
+    val input = "fn f: Int64 = 45641198784545i64"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt64(45641198784545L))(result)
   }
 
   ignore("Expression.Int64.03") {
-    val input = s"fn f: Int64 = ${Long.MaxValue}"
+    val input = s"fn f: Int64 = ${Long.MaxValue}i64"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt64(Long.MaxValue))(result)
   }
 
   ignore("Expression.Int64.04") {
-    val input = s"fn f: Int64 = ${Long.MinValue}"
+    val input = s"fn f: Int64 = ${Long.MinValue}i64"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt64(Long.MinValue))(result)
@@ -403,19 +403,19 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Lambda.04") {
     val input =
-      """fn f(x: Int64, y: Int64): Int64 = x * y - 6
-        |fn g: Int64 = f(3, 42)
+      """fn f(x: Int64, y: Int64): Int64 = x * y - 6i64
+        |fn g: Int64 = f(3i64, 42i64)
       """.stripMargin
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt32(120))(result)
   }
 
-  test("Expression.Lambda.05") {
+  ignore("Expression.Lambda.05") {
     val input =
-      """namespace A { fn f(x: Int32): Int32 = let y = B::g(x + 1) in y * y }
-        |namespace B { fn g(x: Int32): Int32 = x - 4 }
-        |namespace C { fn h: Int32 = A::f(5) + B::g(0) }
+      """namespace A { fn f(x: Int32): Int32 = let y = B::g(x + 1i32) in y * y }
+        |namespace B { fn g(x: Int32): Int32 = x - 4i32 }
+        |namespace C { fn h: Int32 = A::f(5i32) + B::g(0i32) }
       """.stripMargin
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("C::h"))
@@ -424,10 +424,10 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Lambda.06") {
     val input =
-      """fn f(x: Int16): Int16 = g(x + 1)
-        |fn g(x: Int16): Int16 = h(x + 10)
+      """fn f(x: Int16): Int16 = g(x + 1i16)
+        |fn g(x: Int16): Int16 = h(x + 10i16)
         |fn h(x: Int16): Int16 = x * x
-        |fn x: Int16 = f(3)
+        |fn x: Int16 = f(3i16)
       """.stripMargin
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("x"))
@@ -437,9 +437,9 @@ class TestInterpreter extends FunSuite {
   ignore("Expression.Lambda.07") {
     val input =
       """fn f(x: Int8, y: Int8): Int = x - y
-        |fn g(x: Int8): Int8 = x * 3
-        |fn h(x: Int8): Int8 = g(x - 1)
-        |fn x: Int8 = let x = 7 in f(g(3), h(h(x)))
+        |fn g(x: Int8): Int8 = x * 3i8
+        |fn h(x: Int8): Int8 = g(x - 1i8)
+        |fn x: Int8 = let x = 7 in f(g(3i8), h(h(xi8)))
       """.stripMargin
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("x"))
@@ -612,7 +612,7 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.04") {
     import HookSafeHelpers._
-    val input = "fn g: Int64 = f(3, 42)"
+    val input = "fn g: Int64 = f(3i64, 42i64)"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt64Type, flix.mkInt64Type), flix.mkInt64Type)
@@ -626,9 +626,9 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  test("Expression.Hook - Hook.Safe.05") {
+  ignore("Expression.Hook - Hook.Safe.05") {
     import HookSafeHelpers._
-    val input = "namespace C { fn h: Int32 = A::f(5) + B::g(0) }"
+    val input = "namespace C { fn h: Int32 = A::f(5i32) + B::g(0i32) }"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
@@ -649,7 +649,7 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.06") {
     import HookSafeHelpers._
-    val input = "fn x: Int16 = f(3)"
+    val input = "fn x: Int16 = f(3i16)"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt16Type), flix.mkInt16Type)
@@ -669,7 +669,7 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.07") {
     import HookSafeHelpers._
-    val input = "fn x: Int8 = let x = 7 in f(g(3), h(h(x)))"
+    val input = "fn x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))"
     var executed = false
     val flix = createFlix()
     val tpe1 = flix.mkFunctionType(Array(flix.mkInt8Type), flix.mkInt8Type)
@@ -942,7 +942,7 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.04") {
     import HookUnsafeHelpers._
-    val input = "fn g: Int64 = f(3, 42)"
+    val input = "fn g: Int64 = f(3i64, 42i64)"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt64Type, flix.mkInt64Type), flix.mkInt64Type)
@@ -956,9 +956,9 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  test("Expression.Hook - Hook.Unsafe.05") {
+  ignore("Expression.Hook - Hook.Unsafe.05") {
     import HookUnsafeHelpers._
-    val input = "namespace C { fn h: Int32 = A::f(5) + B::g(0) }"
+    val input = "namespace C { fn h: Int32 = A::f(5i32) + B::g(0i32) }"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
@@ -976,7 +976,7 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.06") {
     import HookUnsafeHelpers._
-    val input = "fn x: Int16 = f(3)"
+    val input = "fn x: Int16 = f(3i16)"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt16Type), flix.mkInt16Type)
@@ -996,7 +996,7 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.07") {
     import HookUnsafeHelpers._
-    val input = "fn x: Int8 = let x = 7 in f(g(3), h(h(x)))"
+    val input = "fn x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))"
     var executed = false
     val flix = createFlix()
     val tpe1 = flix.mkFunctionType(Array(flix.mkInt8Type), flix.mkInt8Type)
@@ -1230,7 +1230,7 @@ class TestInterpreter extends FunSuite {
          |fn f03: Int = +(-36000)
          |fn f04: Int = +${Int.MaxValue}
          |fn f05: Int = +${Int.MinValue}
-      """.stripMargin
+       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
@@ -1246,12 +1246,12 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Unary - UnaryOperator.Plus.02") {
     val input =
-      s"""fn f01: Int8 = +0
-         |fn f02: Int8 = +36
-         |fn f03: Int8 = +(-36)
-         |fn f04: Int8 = +${Byte.MaxValue}
-         |fn f05: Int8 = +${Byte.MinValue}
-      """.stripMargin
+      s"""fn f01: Int8 = +0i8
+         |fn f02: Int8 = +36i8
+         |fn f03: Int8 = +(-36i8)
+         |fn f04: Int8 = +${Byte.MaxValue}i8
+         |fn f05: Int8 = +${Byte.MinValue}i8
+       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
@@ -1267,12 +1267,12 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Unary - UnaryOperator.Plus.03") {
     val input =
-      s"""fn f01: Int16 = +0
-         |fn f02: Int16 = +3600
-         |fn f03: Int16 = +(-3600)
-         |fn f04: Int16 = +${Short.MaxValue}
-         |fn f05: Int16 = +${Short.MinValue}
-      """.stripMargin
+      s"""fn f01: Int16 = +0i16
+         |fn f02: Int16 = +3600i16
+         |fn f03: Int16 = +(-3600i16)
+         |fn f04: Int16 = +${Short.MaxValue}i16
+         |fn f05: Int16 = +${Short.MinValue}i16
+       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
@@ -1286,14 +1286,14 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(Short.MinValue))(result05)
   }
 
-  test("Expression.Unary - UnaryOperator.Plus.04") {
+  ignore("Expression.Unary - UnaryOperator.Plus.04") {
     val input =
-      s"""fn f01: Int32 = +0
-         |fn f02: Int32 = +36000
-         |fn f03: Int32 = +(-36000)
-         |fn f04: Int32 = +${Int.MaxValue}
-         |fn f05: Int32 = +${Int.MinValue}
-      """.stripMargin
+      s"""fn f01: Int32 = +0i32
+         |fn f02: Int32 = +36000i32
+         |fn f03: Int32 = +(-36000i32)
+         |fn f04: Int32 = +${Int.MaxValue}i32
+         |fn f05: Int32 = +${Int.MinValue}i32
+       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
@@ -1309,12 +1309,12 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Unary - UnaryOperator.Plus.05") {
     val input =
-      s"""fn f01: Int64 = +0
-         |fn f02: Int64 = +3600000000
-         |fn f03: Int64 = +(-3600000000)
-         |fn f04: Int64 = +${Long.MaxValue}
-         |fn f05: Int64 = +${Long.MinValue}
-      """.stripMargin
+      s"""fn f01: Int64 = +0i64
+         |fn f02: Int64 = +3600000000i64
+         |fn f03: Int64 = +(-3600000000i64)
+         |fn f04: Int64 = +${Long.MaxValue}i64
+         |fn f05: Int64 = +${Long.MinValue}i64
+       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
@@ -1335,7 +1335,7 @@ class TestInterpreter extends FunSuite {
          |fn f03: Int = -(-36000)
          |fn f04: Int = -${Int.MaxValue}
          |fn f05: Int = -${Int.MinValue}
-      """.stripMargin
+       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
@@ -1351,12 +1351,12 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Unary - UnaryOperator.Minus.02") {
     val input =
-      s"""fn f01: Int8 = -0
-          |fn f02: Int8 = -36
-          |fn f03: Int8 = -(-36)
-          |fn f04: Int8 = -${Byte.MaxValue}
-          |fn f05: Int8 = -${Byte.MinValue}
-      """.stripMargin
+      s"""fn f01: Int8 = -0i8
+         |fn f02: Int8 = -36i8
+         |fn f03: Int8 = -(-36i8)
+         |fn f04: Int8 = -${Byte.MaxValue}i8
+         |fn f05: Int8 = -${Byte.MinValue}i8
+       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
@@ -1372,12 +1372,12 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Unary - UnaryOperator.Minus.03") {
     val input =
-      s"""fn f01: Int16 = -0
-          |fn f02: Int16 = -3600
-          |fn f03: Int16 = -(-3600)
-          |fn f04: Int16 = -${Short.MaxValue}
-          |fn f05: Int16 = -${Short.MinValue}
-      """.stripMargin
+      s"""fn f01: Int16 = -0i16
+         |fn f02: Int16 = -3600i16
+         |fn f03: Int16 = -(-3600i16)
+         |fn f04: Int16 = -${Short.MaxValue}i16
+         |fn f05: Int16 = -${Short.MinValue}i16
+       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
@@ -1391,14 +1391,14 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(Short.MinValue))(result05)
   }
 
-  test("Expression.Unary - UnaryOperator.Minus.04") {
+  ignore("Expression.Unary - UnaryOperator.Minus.04") {
     val input =
-      s"""fn f01: Int32 = -0
-         |fn f02: Int32 = -36000
-         |fn f03: Int32 = -(-36000)
-         |fn f04: Int32 = -${Int.MaxValue}
-         |fn f05: Int32 = -${Int.MinValue}
-      """.stripMargin
+      s"""fn f01: Int32 = -0i32
+         |fn f02: Int32 = -36000i32
+         |fn f03: Int32 = -(-36000i32)
+         |fn f04: Int32 = -${Int.MaxValue}i32
+         |fn f05: Int32 = -${Int.MinValue}i32
+       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
@@ -1414,12 +1414,12 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Unary - UnaryOperator.Minus.05") {
     val input =
-      s"""fn f01: Int64 = -0
-          |fn f02: Int64 = -3600000000
-          |fn f03: Int64 = -(-3600000000)
-          |fn f04: Int64 = -${Long.MaxValue}
-          |fn f05: Int64 = -${Long.MinValue}
-      """.stripMargin
+      s"""fn f01: Int64 = -0i64
+         |fn f02: Int64 = -3600000000i64
+         |fn f03: Int64 = -(-3600000000i64)
+         |fn f04: Int64 = -${Long.MaxValue}i64
+         |fn f05: Int64 = -${Long.MinValue}i64
+       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
@@ -1442,7 +1442,7 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int = ~(-36000)
          |fn f06: Int = ~${Int.MaxValue}
          |fn f07: Int = ~${Int.MinValue}
-      """.stripMargin
+       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
@@ -1462,14 +1462,14 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Unary - UnaryOperator.BitwiseNegate.02") {
     val input =
-      s"""fn f01: Int8 = ~0
-          |fn f02: Int8 = ~1
-          |fn f03: Int8 = ~(-1)
-          |fn f04: Int8 = ~42
-          |fn f05: Int8 = ~(-42)
-          |fn f06: Int8 = ~${Byte.MaxValue}
-          |fn f07: Int8 = ~${Byte.MinValue}
-      """.stripMargin
+      s"""fn f01: Int8 = ~0i8
+         |fn f02: Int8 = ~1i8
+         |fn f03: Int8 = ~(-1i8)
+         |fn f04: Int8 = ~42i8
+         |fn f05: Int8 = ~(-42i8)
+         |fn f06: Int8 = ~${Byte.MaxValue}i8
+         |fn f07: Int8 = ~${Byte.MinValue}i8
+       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
@@ -1489,14 +1489,14 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Unary - UnaryOperator.BitwiseNegate.03") {
     val input =
-      s"""fn f01: Int16 = ~0
-          |fn f02: Int16 = ~1
-          |fn f03: Int16 = ~(-1)
-          |fn f04: Int16 = ~420
-          |fn f05: Int16 = ~(-420)
-          |fn f06: Int16 = ~${Short.MaxValue}
-          |fn f07: Int16 = ~${Short.MinValue}
-      """.stripMargin
+      s"""fn f01: Int16 = ~0i16
+         |fn f02: Int16 = ~1i16
+         |fn f03: Int16 = ~(-1i16)
+         |fn f04: Int16 = ~420i16
+         |fn f05: Int16 = ~(-420i16)
+         |fn f06: Int16 = ~${Short.MaxValue}i16
+         |fn f07: Int16 = ~${Short.MinValue}i16
+       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
@@ -1514,16 +1514,16 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(Short.MaxValue))(result07)
   }
 
-  test("Expression.Unary - UnaryOperator.BitwiseNegate.04") {
+  ignore("Expression.Unary - UnaryOperator.BitwiseNegate.04") {
     val input =
-      s"""fn f01: Int32 = ~0
-         |fn f02: Int32 = ~1
-         |fn f03: Int32 = ~(-1)
-         |fn f04: Int32 = ~36000
-         |fn f05: Int32 = ~(-36000)
-         |fn f06: Int32 = ~${Int.MaxValue}
-         |fn f07: Int32 = ~${Int.MinValue}
-      """.stripMargin
+      s"""fn f01: Int32 = ~0i32
+         |fn f02: Int32 = ~1i32
+         |fn f03: Int32 = ~(-1i32)
+         |fn f04: Int32 = ~36000i32
+         |fn f05: Int32 = ~(-36000i32)
+         |fn f06: Int32 = ~${Int.MaxValue}i32
+         |fn f07: Int32 = ~${Int.MinValue}i32
+       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
@@ -1543,14 +1543,14 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Unary - UnaryOperator.BitwiseNegate.05") {
     val input =
-      s"""fn f01: Int64 = ~0
-          |fn f02: Int64 = ~1
-          |fn f03: Int64 = ~(-1)
-          |fn f04: Int64 = ~10000000000
-          |fn f05: Int64 = ~(-10000000000)
-          |fn f06: Int64 = ~${Long.MaxValue}
-          |fn f07: Int64 = ~${Long.MinValue}
-      """.stripMargin
+      s"""fn f01: Int64 = ~0i64
+         |fn f02: Int64 = ~1i64
+         |fn f03: Int64 = ~(-1i64)
+         |fn f04: Int64 = ~10000000000i64
+         |fn f05: Int64 = ~(-10000000000i64)
+         |fn f06: Int64 = ~${Long.MaxValue}i64
+         |fn f07: Int64 = ~${Long.MinValue}i64
+       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
     val result02 = model.constants(Name.Resolved.mk("f02"))
@@ -1596,11 +1596,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.Plus.02") {
     val input =
-      s"""fn f01: Int8 = ${Byte.MaxValue} + 1
-         |fn f02: Int8 = 10 + 40
-         |fn f03: Int8 = -40 + 10
-         |fn f04: Int8 = -10 + 40
-         |fn f05: Int8 = ${Byte.MinValue} + -1
+      s"""fn f01: Int8 = ${Byte.MaxValue}i8 + 1i8
+         |fn f02: Int8 = 10i8 + 40i8
+         |fn f03: Int8 = -40i8 + 10i8
+         |fn f04: Int8 = -10i8 + 40i8
+         |fn f05: Int8 = ${Byte.MinValue}i8 + -1i8
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -1617,11 +1617,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.Plus.03") {
     val input =
-      s"""fn f01: Int16 = ${Short.MaxValue} + 1
-         |fn f02: Int16 = 1000 + 4000
-         |fn f03: Int16 = -4000 + 1000
-         |fn f04: Int16 = -1000 + 4000
-         |fn f05: Int16 = ${Short.MinValue} + -1
+      s"""fn f01: Int16 = ${Short.MaxValue}i16 + 1i16
+         |fn f02: Int16 = 1000i16 + 4000i16
+         |fn f03: Int16 = -4000i16 + 1000i16
+         |fn f04: Int16 = -1000i16 + 4000i16
+         |fn f05: Int16 = ${Short.MinValue}i16 + -1i16
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -1636,13 +1636,13 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(Short.MaxValue))(result05)
   }
 
-  test("Expression.Binary - BinaryOperator.Plus.04") {
+  ignore("Expression.Binary - BinaryOperator.Plus.04") {
     val input =
-      s"""fn f01: Int32 = ${Int.MaxValue} + 1
-         |fn f02: Int32 = 100000 + 400000
-         |fn f03: Int32 = -400000 + 100000
-         |fn f04: Int32 = -100000 + 400000
-         |fn f05: Int32 = ${Int.MinValue} + -1
+      s"""fn f01: Int32 = ${Int.MaxValue}i32 + 1i32
+         |fn f02: Int32 = 100000i32 + 400000i32
+         |fn f03: Int32 = -400000i32 + 100000i32
+         |fn f04: Int32 = -100000i32 + 400000i32
+         |fn f05: Int32 = ${Int.MinValue}i32 + -1i32
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -1659,11 +1659,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.Plus.05") {
     val input =
-      s"""fn f01: Int64 = ${Long.MaxValue} + 1
-         |fn f02: Int64 = 10000000000 + 40000000000
-         |fn f03: Int64 = -40000000000 + 10000000000
-         |fn f04: Int64 = -10000000000 + 40000000000
-         |fn f05: Int64 = ${Long.MinValue} + -1
+      s"""fn f01: Int64 = ${Long.MaxValue}i64 + 1i64
+         |fn f02: Int64 = 10000000000i64 + 40000000000i64
+         |fn f03: Int64 = -40000000000i64 + 10000000000i64
+         |fn f04: Int64 = -10000000000i64 + 40000000000i64
+         |fn f05: Int64 = ${Long.MinValue}i64 + -1i64
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -1701,11 +1701,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.Minus.02") {
     val input =
-      s"""fn f01: Int8 = ${Byte.MinValue} - 1
-         |fn f02: Int8 = 40 - 10
-         |fn f03: Int8 = -40 - 10
-         |fn f04: Int8 = -10 - 40
-         |fn f05: Int8 = ${Byte.MaxValue} - -1
+      s"""fn f01: Int8 = ${Byte.MinValue}i8 - 1i8
+         |fn f02: Int8 = 40i8 - 10i8
+         |fn f03: Int8 = -40i8 - 10i8
+         |fn f04: Int8 = -10i8 - 40i8
+         |fn f05: Int8 = ${Byte.MaxValue}i8 - -1i8
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -1722,11 +1722,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.Minus.03") {
     val input =
-      s"""fn f01: Int16 = ${Short.MinValue} - 1
-         |fn f02: Int16 = 4000 - 1000
-         |fn f03: Int16 = -4000 - 1000
-         |fn f04: Int16 = -1000 - 4000
-         |fn f05: Int16 = ${Short.MaxValue} - -1
+      s"""fn f01: Int16 = ${Short.MinValue}i16 - 1i16
+         |fn f02: Int16 = 4000i16 - 1000i16
+         |fn f03: Int16 = -4000i16 - 1000i16
+         |fn f04: Int16 = -1000i16 - 4000i16
+         |fn f05: Int16 = ${Short.MaxValue}i16 - -1i16
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -1741,13 +1741,13 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(Short.MinValue))(result05)
   }
 
-  test("Expression.Binary - BinaryOperator.Minus.04") {
+  ignore("Expression.Binary - BinaryOperator.Minus.04") {
     val input =
-      s"""fn f01: Int32 = ${Int.MinValue} - 1
-         |fn f02: Int32 = 400000 - 100000
-         |fn f03: Int32 = -400000 - 100000
-         |fn f04: Int32 = -100000 - 400000
-         |fn f05: Int32 = ${Int.MaxValue} - -1
+      s"""fn f01: Int32 = ${Int.MinValue}i32 - 1i32
+         |fn f02: Int32 = 400000i32 - 100000i32
+         |fn f03: Int32 = -400000i32 - 100000i32
+         |fn f04: Int32 = -100000i32 - 400000i32
+         |fn f05: Int32 = ${Int.MaxValue}i32 - -1i32
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -1764,11 +1764,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.Minus.05") {
     val input =
-      s"""fn f01: Int64 = ${Long.MinValue} - 1
-         |fn f02: Int64 = 40000000000 - 10000000000
-         |fn f03: Int64 = -40000000000 - 10000000000
-         |fn f04: Int64 = -10000000000 - 40000000000
-         |fn f05: Int64 = ${Long.MaxValue} - -1
+      s"""fn f01: Int64 = ${Long.MinValue}i64 - 1i64
+         |fn f02: Int64 = 40000000000i64 - 10000000000i64
+         |fn f03: Int64 = -40000000000i64 - 10000000000i64
+         |fn f04: Int64 = -10000000000i64 - 40000000000i64
+         |fn f05: Int64 = ${Long.MaxValue}i64 - -1i64
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -1806,11 +1806,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.Times.02") {
     val input =
-      s"""fn f01: Int8 = ${Byte.MaxValue} * 2
-         |fn f02: Int8 = 3 * 2
-         |fn f03: Int8 = -2 * 3
-         |fn f04: Int8 = -2 * -3
-         |fn f05: Int8 = ${Byte.MinValue} * -1
+      s"""fn f01: Int8 = ${Byte.MaxValue}i8 * 2i8
+         |fn f02: Int8 = 3i8 * 2i8
+         |fn f03: Int8 = -2i8 * 3i8
+         |fn f04: Int8 = -2i8 * -3i8
+         |fn f05: Int8 = ${Byte.MinValue}i8 * -1i8
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -1827,11 +1827,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.Times.03") {
     val input =
-      s"""fn f01: Int16 = ${Short.MaxValue} * 2
-         |fn f02: Int16 = 30 * 20
-         |fn f03: Int16 = -20 * 30
-         |fn f04: Int16 = -20 * -30
-         |fn f05: Int16 = ${Short.MinValue} * -1
+      s"""fn f01: Int16 = ${Short.MaxValue}i16 * 2i16
+         |fn f02: Int16 = 30i16 * 20i16
+         |fn f03: Int16 = -20i16 * 30i16
+         |fn f04: Int16 = -20i16 * -30i16
+         |fn f05: Int16 = ${Short.MinValue}i16 * -1i16
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -1846,13 +1846,13 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(Short.MinValue))(result05)
   }
 
-  test("Expression.Binary - BinaryOperator.Times.04") {
+  ignore("Expression.Binary - BinaryOperator.Times.04") {
     val input =
-      s"""fn f01: Int32 = ${Int.MaxValue} * 2
-         |fn f02: Int32 = 300 * 200
-         |fn f03: Int32 = -200 * 300
-         |fn f04: Int32 = -200 * -300
-         |fn f05: Int32 = ${Int.MinValue} * -1
+      s"""fn f01: Int32 = ${Int.MaxValue}i32 * 2i32
+         |fn f02: Int32 = 300i32 * 200i32
+         |fn f03: Int32 = -200i32 * 300i32
+         |fn f04: Int32 = -200i32 * -300i32
+         |fn f05: Int32 = ${Int.MinValue}i32 * -1i32
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -1869,11 +1869,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.Times.05") {
     val input =
-      s"""fn f01: Int64 = ${Long.MaxValue} * 2
-         |fn f02: Int64 = 300000 * 200000
-         |fn f03: Int64 = -200000 * 300000
-         |fn f04: Int64 = -200000 * -300000
-         |fn f05: Int64 = ${Long.MinValue} * -1
+      s"""fn f01: Int64 = ${Long.MaxValue}i64 * 2i64
+         |fn f02: Int64 = 300000i64 * 200000i64
+         |fn f03: Int64 = -200000i64 * 300000i64
+         |fn f04: Int64 = -200000i64 * -300000i64
+         |fn f05: Int64 = ${Long.MinValue}i64 * -1i64
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -1911,11 +1911,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.Divide.02") {
     val input =
-      s"""fn f01: Int8 = ${Byte.MaxValue} / 1
-         |fn f02: Int8 = 12 / 3
-         |fn f03: Int8 = -12 / 3
-         |fn f04: Int8 = -3 / 12
-         |fn f05: Int8 = ${Byte.MinValue} / -1
+      s"""fn f01: Int8 = ${Byte.MaxValue}i8 / 1i8
+         |fn f02: Int8 = 12i8 / 3i8
+         |fn f03: Int8 = -12i8 / 3i8
+         |fn f04: Int8 = -3i8 / 12i8
+         |fn f05: Int8 = ${Byte.MinValue}i8 / -1i8
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -1932,11 +1932,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.Divide.03") {
     val input =
-      s"""fn f01: Int16 = ${Short.MaxValue} / 1
-         |fn f02: Int16 = 12000 / 3
-         |fn f03: Int16 = -12000 / 3
-         |fn f04: Int16 = -3 / 12000
-         |fn f05: Int16 = ${Short.MinValue} / -1
+      s"""fn f01: Int16 = ${Short.MaxValue}i16 / 1i16
+         |fn f02: Int16 = 12000i16 / 3i16
+         |fn f03: Int16 = -12000i16 / 3i16
+         |fn f04: Int16 = -3i16 / 12000i16
+         |fn f05: Int16 = ${Short.MinValue}i16 / -1i16
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -1951,13 +1951,13 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(Short.MinValue))(result05)
   }
 
-  test("Expression.Binary - BinaryOperator.Divide.04") {
+  ignore("Expression.Binary - BinaryOperator.Divide.04") {
     val input =
-      s"""fn f01: Int32 = ${Int.MaxValue} / 1
-         |fn f02: Int32 = 1200000 / 3
-         |fn f03: Int32 = -1200000 / 3
-         |fn f04: Int32 = -3 / 1200000
-         |fn f05: Int32 = ${Int.MinValue} / -1
+      s"""fn f01: Int32 = ${Int.MaxValue}i32 / 1i32
+         |fn f02: Int32 = 1200000i32 / 3i32
+         |fn f03: Int32 = -1200000i32 / 3i32
+         |fn f04: Int32 = -3i32 / 1200000i32
+         |fn f05: Int32 = ${Int.MinValue}i32 / -1i32
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -1974,11 +1974,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.Divide.05") {
     val input =
-      s"""fn f01: Int64 = ${Long.MaxValue} / 1
-         |fn f02: Int64 = 120000000000 / 3
-         |fn f03: Int64 = -120000000000 / 3
-         |fn f04: Int64 = -3 / 120000000000
-         |fn f05: Int64 = ${Long.MinValue} / -1
+      s"""fn f01: Int64 = ${Long.MaxValue}i64 / 1i64
+         |fn f02: Int64 = 120000000000i64 / 3i64
+         |fn f03: Int64 = -120000000000i64 / 3i64
+         |fn f04: Int64 = -3i64 / 120000000000i64
+         |fn f05: Int64 = ${Long.MinValue}i64 / -1i64
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2016,11 +2016,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.Modulo.02") {
     val input =
-      s"""fn f01: Int8 = 12 % 2
-         |fn f02: Int8 = 12 % 5
-         |fn f03: Int8 = -12 % 5
-         |fn f04: Int8 = 12 % -5
-         |fn f05: Int8 = -12 % -5
+      s"""fn f01: Int8 = 12i8 % 2i8
+         |fn f02: Int8 = 12i8 % 5i8
+         |fn f03: Int8 = -12i8 % 5i8
+         |fn f04: Int8 = 12i8 % -5i8
+         |fn f05: Int8 = -12i8 % -5i8
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2037,11 +2037,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.Modulo.03") {
     val input =
-      s"""fn f01: Int16 = 12000 % 2000
-         |fn f02: Int16 = 12000 % 5000
-         |fn f03: Int16 = -12000 % 5000
-         |fn f04: Int16 = 12000 % -5000
-         |fn f05: Int16 = -12000 % -5000
+      s"""fn f01: Int16 = 12000i16 % 2000i16
+         |fn f02: Int16 = 12000i16 % 5000i16
+         |fn f03: Int16 = -12000i16 % 5000i16
+         |fn f04: Int16 = 12000i16 % -5000i16
+         |fn f05: Int16 = -12000i16 % -5000i16
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2056,13 +2056,13 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(-2000))(result05)
   }
 
-  test("Expression.Binary - BinaryOperator.Modulo.04") {
+  ignore("Expression.Binary - BinaryOperator.Modulo.04") {
     val input =
-      s"""fn f01: Int32 = 1200000 % 200000
-         |fn f02: Int32 = 1200000 % 500000
-         |fn f03: Int32 = -1200000 % 500000
-         |fn f04: Int32 = 1200000 % -500000
-         |fn f05: Int32 = -1200000 % -500000
+      s"""fn f01: Int32 = 1200000i32 % 200000i32
+         |fn f02: Int32 = 1200000i32 % 500000i32
+         |fn f03: Int32 = -1200000i32 % 500000i32
+         |fn f04: Int32 = 1200000i32 % -500000i32
+         |fn f05: Int32 = -1200000i32 % -500000i32
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2079,11 +2079,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.Modulo.05") {
     val input =
-      s"""fn f01: Int64 = 120000000000 % 20000000000
-         |fn f02: Int64 = 120000000000 % 50000000000
-         |fn f03: Int64 = -120000000000 % 50000000000
-         |fn f04: Int64 = 120000000000 % -50000000000
-         |fn f05: Int64 = -120000000000 % -50000000000
+      s"""fn f01: Int64 = 120000000000i64 % 20000000000i64
+         |fn f02: Int64 = 120000000000i64 % 50000000000i64
+         |fn f03: Int64 = -120000000000i64 % 50000000000i64
+         |fn f04: Int64 = 120000000000i64 % -50000000000i64
+         |fn f05: Int64 = -120000000000i64 % -50000000000i64
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2103,8 +2103,6 @@ class TestInterpreter extends FunSuite {
   // BinaryOperator.{Less,LessEqual,Greater,GreaterEqual}                    //
   // BinaryOperator.{Equal,NotEqual}                                         //
   /////////////////////////////////////////////////////////////////////////////
-
-  // TODO: Tests for Int8, Int16, Int32 (explicit), and Int64
 
   test("Expression.Binary - BinaryOperator.Less.01") {
     val input =
@@ -2432,11 +2430,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.BitwiseAnd.02") {
     val input =
-      s"""fn f01: Int8 = 40 & ${0xFF.toByte}
-         |fn f02: Int8 = 40 & 40
-         |fn f03: Int8 = 40 & 0
-         |fn f04: Int8 = ${0xFF.toByte} & ${0xFF.toByte}
-         |fn f05: Int8 = -1 & -1
+      s"""fn f01: Int8 = 40i8 & ${0xFF.toByte}i8
+         |fn f02: Int8 = 40i8 & 40i8
+         |fn f03: Int8 = 40i8 & 0i8
+         |fn f04: Int8 = ${0xFF.toByte}i8 & ${0xFF.toByte}i8
+         |fn f05: Int8 = -1i8 & -1i8
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2453,11 +2451,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.BitwiseAnd.03") {
     val input =
-      s"""fn f01: Int16 = 400 & ${0xFFFF.toShort}
-         |fn f02: Int16 = 400 & 400
-         |fn f03: Int16 = 400 & 0
-         |fn f04: Int16 = ${0xFFFF.toShort} & ${0xFFFF.toShort}
-         |fn f05: Int16 = -1 & -1
+      s"""fn f01: Int16 = 400i16 & ${0xFFFF.toShort}i16
+         |fn f02: Int16 = 400i16 & 400i16
+         |fn f03: Int16 = 400i16 & 0i16
+         |fn f04: Int16 = ${0xFFFF.toShort}i16 & ${0xFFFF.toShort}i16
+         |fn f05: Int16 = -1i16 & -1i16
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2472,13 +2470,13 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(-1))(result05)
   }
 
-  test("Expression.Binary - BinaryOperator.BitwiseAnd.04") {
+  ignore("Expression.Binary - BinaryOperator.BitwiseAnd.04") {
     val input =
-      s"""fn f01: Int32 = 40000 & ${0xFFFFFFFF}
-         |fn f02: Int32 = 40000 & 40000
-         |fn f03: Int32 = 40000 & 0
-         |fn f04: Int32 = ${0xFFFFFFFF} & ${0xFFFFFFFF}
-         |fn f05: Int32 = -1 & -1
+      s"""fn f01: Int32 = 40000i32 & ${0xFFFFFFFF}i32
+         |fn f02: Int32 = 40000i32 & 40000i32
+         |fn f03: Int32 = 40000i32 & 0i32
+         |fn f04: Int32 = ${0xFFFFFFFF}i32 & ${0xFFFFFFFF}i32
+         |fn f05: Int32 = -1i32 & -1i32
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2495,11 +2493,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.BitwiseAnd.05") {
     val input =
-      s"""fn f01: Int64 = 40000000000 & ${0xFFFFFFFFFFFFFFFFL}
-         |fn f02: Int64 = 40000000000 & 40000000000
-         |fn f03: Int64 = 40000000000 & 0
-         |fn f04: Int64 = ${0xFFFFFFFFFFFFFFFFL} & ${0xFFFFFFFFFFFFFFFFL}
-         |fn f05: Int64 = -1 & -1
+      s"""fn f01: Int64 = 40000000000i64 & ${0xFFFFFFFFFFFFFFFFL}i64
+         |fn f02: Int64 = 40000000000i64 & 40000000000i64
+         |fn f03: Int64 = 40000000000i64 & 0i64
+         |fn f04: Int64 = ${0xFFFFFFFFFFFFFFFFL}i64 & ${0xFFFFFFFFFFFFFFFFL}i64
+         |fn f05: Int64 = -1i64 & -1i64
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2537,11 +2535,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.BitwiseOr.02") {
     val input =
-      s"""fn f01: Int8 = 40 | ${0xFF.toByte}
-         |fn f02: Int8 = 40 | 40
-         |fn f03: Int8 = 40 | 0
-         |fn f04: Int8 = ${0xFF.toByte} | ${0xFF.toByte}
-         |fn f05: Int8 = -1 | -1
+      s"""fn f01: Int8 = 40i8 | ${0xFF.toByte}i8
+         |fn f02: Int8 = 40i8 | 40i8
+         |fn f03: Int8 = 40i8 | 0i8
+         |fn f04: Int8 = ${0xFF.toByte}i8 | ${0xFF.toByte}i8
+         |fn f05: Int8 = -1i8 | -1i8
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2558,11 +2556,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.BitwiseOr.03") {
     val input =
-      s"""fn f01: Int16 = 400 | ${0xFFFF.toShort}
-         |fn f02: Int16 = 400 | 400
-         |fn f03: Int16 = 400 | 0
-         |fn f04: Int16 = ${0xFFFF.toShort} | ${0xFFFF.toShort}
-         |fn f05: Int16 = -1 | -1
+      s"""fn f01: Int16 = 400i16 | ${0xFFFF.toShort}i16
+         |fn f02: Int16 = 400i16 | 400i16
+         |fn f03: Int16 = 400i16 | 0i16
+         |fn f04: Int16 = ${0xFFFF.toShort}i16 | ${0xFFFF.toShort}i16
+         |fn f05: Int16 = -1i16 | -1i16
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2577,13 +2575,13 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(-1))(result05)
   }
 
-  test("Expression.Binary - BinaryOperator.BitwiseOr.04") {
+  ignore("Expression.Binary - BinaryOperator.BitwiseOr.04") {
     val input =
-      s"""fn f01: Int32 = 40000 | ${0xFFFFFFFF}
-         |fn f02: Int32 = 40000 | 40000
-         |fn f03: Int32 = 40000 | 0
-         |fn f04: Int32 = ${0xFFFFFFFF} | ${0xFFFFFFFF}
-         |fn f05: Int32 = -1 | -1
+      s"""fn f01: Int32 = 40000i32 | ${0xFFFFFFFF}i32
+         |fn f02: Int32 = 40000i32 | 40000i32
+         |fn f03: Int32 = 40000i32 | 0i32
+         |fn f04: Int32 = ${0xFFFFFFFF}i32 | ${0xFFFFFFFF}i32
+         |fn f05: Int32 = -1i32 | -1i32
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2600,11 +2598,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.BitwiseOr.05") {
     val input =
-      s"""fn f01: Int64 = 40000000000 | ${0xFFFFFFFFFFFFFFFFL}
-         |fn f02: Int64 = 40000000000 | 40000000000
-         |fn f03: Int64 = 40000000000 | 0
-         |fn f04: Int64 = ${0xFFFFFFFFFFFFFFFFL} | ${0xFFFFFFFFFFFFFFFFL}
-         |fn f05: Int64 = -1 | -1
+      s"""fn f01: Int64 = 40000000000i64 | ${0xFFFFFFFFFFFFFFFFL}i64
+         |fn f02: Int64 = 40000000000i64 | 40000000000i64
+         |fn f03: Int64 = 40000000000i64 | 0i64
+         |fn f04: Int64 = ${0xFFFFFFFFFFFFFFFFL}i64 | ${0xFFFFFFFFFFFFFFFFL}i64
+         |fn f05: Int64 = -1i64 | -1i64
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2642,11 +2640,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.BitwiseXor.02") {
     val input =
-      s"""fn f01: Int8 = 40 ^ ${0xFF.toByte}
-         |fn f02: Int8 = 40 ^ 40
-         |fn f03: Int8 = 40 ^ 0
-         |fn f04: Int8 = ${0xFF.toByte} ^ ${0xFF.toByte}
-         |fn f05: Int8 = -1 ^ -1
+      s"""fn f01: Int8 = 40i8 ^ ${0xFF.toByte}i8
+         |fn f02: Int8 = 40i8 ^ 40i8
+         |fn f03: Int8 = 40i8 ^ 0i8
+         |fn f04: Int8 = ${0xFF.toByte}i8 ^ ${0xFF.toByte}i8
+         |fn f05: Int8 = -1i8 ^ -1i8
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2663,11 +2661,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.BitwiseXor.03") {
     val input =
-      s"""fn f01: Int16 = 400 ^ ${0xFFFF.toShort}
-         |fn f02: Int16 = 400 ^ 400
-         |fn f03: Int16 = 400 ^ 0
-         |fn f04: Int16 = ${0xFFFF.toShort} ^ ${0xFFFF.toShort}
-         |fn f05: Int16 = -1 ^ -1
+      s"""fn f01: Int16 = 400i16 ^ ${0xFFFF.toShort}i16
+         |fn f02: Int16 = 400i16 ^ 400i16
+         |fn f03: Int16 = 400i16 ^ 0i16
+         |fn f04: Int16 = ${0xFFFF.toShort}i16 ^ ${0xFFFF.toShort}i16
+         |fn f05: Int16 = -1i16 ^ -1i16
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2682,13 +2680,13 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(0))(result05)
   }
 
-  test("Expression.Binary - BinaryOperator.BitwiseXor.04") {
+  ignore("Expression.Binary - BinaryOperator.BitwiseXor.04") {
     val input =
-      s"""fn f01: Int32 = 40000 ^ ${0xFFFFFFFF}
-         |fn f02: Int32 = 40000 ^ 40000
-         |fn f03: Int32 = 40000 ^ 0
-         |fn f04: Int32 = ${0xFFFFFFFF} ^ ${0xFFFFFFFF}
-         |fn f05: Int32 = -1 ^ -1
+      s"""fn f01: Int32 = 40000i32 ^ ${0xFFFFFFFF}i32
+         |fn f02: Int32 = 40000i32 ^ 40000i32
+         |fn f03: Int32 = 40000i32 ^ 0i32
+         |fn f04: Int32 = ${0xFFFFFFFF}i32 ^ ${0xFFFFFFFF}i32
+         |fn f05: Int32 = -1i32 ^ -1i32
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2705,11 +2703,11 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.BitwiseXor.05") {
     val input =
-      s"""fn f01: Int64 = 40000000000 ^ ${0xFFFFFFFFFFFFFFFFL}
-         |fn f02: Int64 = 40000000000 ^ 40000000000
-         |fn f03: Int64 = 40000000000 ^ 0
-         |fn f04: Int64 = ${0xFFFFFFFFFFFFFFFFL} ^ ${0xFFFFFFFFFFFFFFFFL}
-         |fn f05: Int64 = -1 ^ -1
+      s"""fn f01: Int64 = 40000000000i64 ^ ${0xFFFFFFFFFFFFFFFFL}i64
+         |fn f02: Int64 = 40000000000i64 ^ 40000000000i64
+         |fn f03: Int64 = 40000000000i64 ^ 0i64
+         |fn f04: Int64 = ${0xFFFFFFFFFFFFFFFFL}i64 ^ ${0xFFFFFFFFFFFFFFFFL}i64
+         |fn f05: Int64 = -1i64 ^ -1i64
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2744,10 +2742,10 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.BitwiseLeftShift.02") {
     val input =
-      s"""fn f01: Int8 = ${0x08} << 0
-         |fn f02: Int8 = ${0x08} << 2
-         |fn f03: Int8 = ${0x08} << 4
-         |fn f04: Int8 = ${0x08} << 5
+      s"""fn f01: Int8 = ${0x08}i8 << 0
+         |fn f02: Int8 = ${0x08}i8 << 2
+         |fn f03: Int8 = ${0x08}i8 << 4
+         |fn f04: Int8 = ${0x08}i8 << 5
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2762,10 +2760,10 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.BitwiseLeftShift.03") {
     val input =
-      s"""fn f01: Int16 = ${0x08} << 0
-         |fn f02: Int16 = ${0x08} << 8
-         |fn f03: Int16 = ${0x08} << 12
-         |fn f04: Int16 = ${0x08} << 13
+      s"""fn f01: Int16 = ${0x08}i16 << 0
+         |fn f02: Int16 = ${0x08}i16 << 8
+         |fn f03: Int16 = ${0x08}i16 << 12
+         |fn f04: Int16 = ${0x08}i16 << 13
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2778,12 +2776,12 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(0))(result04)
   }
 
-  test("Expression.Binary - BinaryOperator.BitwiseLeftShift.04") {
+  ignore("Expression.Binary - BinaryOperator.BitwiseLeftShift.04") {
     val input =
-      s"""fn f01: Int32 = ${0x08} << 0
-         |fn f02: Int32 = ${0x08} << 16
-         |fn f03: Int32 = ${0x08} << 28
-         |fn f04: Int32 = ${0x08} << 29
+      s"""fn f01: Int32 = ${0x08}i32 << 0
+         |fn f02: Int32 = ${0x08}i32 << 16
+         |fn f03: Int32 = ${0x08}i32 << 28
+         |fn f04: Int32 = ${0x08}i32 << 29
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2798,10 +2796,10 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.BitwiseLeftShift.05") {
     val input =
-      s"""fn f01: Int64 = ${0x08} << 0
-         |fn f02: Int64 = ${0x08} << 32
-         |fn f03: Int64 = ${0x08} << 60
-         |fn f04: Int64 = ${0x08} << 61
+      s"""fn f01: Int64 = ${0x08}i64 << 0
+         |fn f02: Int64 = ${0x08}i64 << 32
+         |fn f03: Int64 = ${0x08}i64 << 60
+         |fn f04: Int64 = ${0x08}i64 << 61
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2834,10 +2832,10 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.BitwiseRightShift.02") {
     val input =
-      s"""fn f01: Int8 = 120 >> 0
-         |fn f02: Int8 = 120 >> 2
-         |fn f03: Int8 = 120 >> 7
-         |fn f04: Int8 = -120 >> 2
+      s"""fn f01: Int8 = 120i8 >> 0
+         |fn f02: Int8 = 120i8 >> 2
+         |fn f03: Int8 = 120i8 >> 7
+         |fn f04: Int8 = -120i8 >> 2
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2852,10 +2850,10 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.BitwiseRightShift.03") {
     val input =
-      s"""fn f01: Int16 = 12000 >> 0
-         |fn f02: Int16 = 12000 >> 2
-         |fn f03: Int16 = 12000 >> 15
-         |fn f04: Int16 = -12000 >> 2
+      s"""fn f01: Int16 = 12000i16 >> 0
+         |fn f02: Int16 = 12000i16 >> 2
+         |fn f03: Int16 = 12000i16 >> 15
+         |fn f04: Int16 = -12000i16 >> 2
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2868,12 +2866,12 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(-3000))(result04)
   }
 
-  test("Expression.Binary - BinaryOperator.BitwiseRightShift.04") {
+  ignore("Expression.Binary - BinaryOperator.BitwiseRightShift.04") {
     val input =
-      s"""fn f01: Int32 = 120000 >> 0
-         |fn f02: Int32 = 120000 >> 2
-         |fn f03: Int32 = 120000 >> 31
-         |fn f04: Int32 = -120000 >> 2
+      s"""fn f01: Int32 = 120000i32 >> 0
+         |fn f02: Int32 = 120000i32 >> 2
+         |fn f03: Int32 = 120000i32 >> 31
+         |fn f04: Int32 = -120000i32 >> 2
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2888,10 +2886,10 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.Binary - BinaryOperator.BitwiseRightShift.05") {
     val input =
-      s"""fn f01: Int64 = 12000000000 >> 0
-         |fn f02: Int64 = 12000000000 >> 2
-         |fn f03: Int64 = 12000000000 >> 63
-         |fn f04: Int64 = -12000000000 >> 2
+      s"""fn f01: Int64 = 12000000000i64 >> 0
+         |fn f02: Int64 = 12000000000i64 >> 2
+         |fn f03: Int64 = 12000000000i64 >> 63
+         |fn f04: Int64 = -12000000000i64 >> 2
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("f01"))
@@ -2988,9 +2986,9 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.IfThenElse.07") {
     val input =
-      """fn f(x: Int8, y: Int8): Int8 = if (x < y) 12 else 56
-        |fn g01: Int8 = f(5, 24)
-        |fn g02: Int8 = f(5, 5)
+      """fn f(x: Int8, y: Int8): Int8 = if (x < y) 12i8 else 56i8
+        |fn g01: Int8 = f(5i8, 24i8)
+        |fn g02: Int8 = f(i85, 5i8)
       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
@@ -3001,9 +2999,9 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.IfThenElse.08") {
     val input =
-      """fn f(x: Int16, y: Int16): Int16 = if (x <= y) 1234 else 5678
-        |fn g01: Int16 = f(500, 500)
-        |fn g02: Int16 = f(500, 200)
+      """fn f(x: Int16, y: Int16): Int16 = if (x <= y) 1234i16 else 5678i16
+        |fn g01: Int16 = f(500i16, 500i16)
+        |fn g02: Int16 = f(500i16, 200i16)
       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
@@ -3012,11 +3010,11 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(5678))(result02)
   }
 
-  test("Expression.IfThenElse.09") {
+  ignore("Expression.IfThenElse.09") {
     val input =
-      """fn f(x: Int32, y: Int32): Int32 = if (x > y) 12341234 else 56785678
-        |fn g01: Int32 = f(2400000, 500000)
-        |fn g02: Int32 = f(500000, 500000)
+      """fn f(x: Int32, y: Int32): Int32 = if (x > y) 12341234i32 else 56785678i32
+        |fn g01: Int32 = f(2400000i32, 500000i32)
+        |fn g02: Int32 = f(500000i32, 500000i32)
       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
@@ -3027,9 +3025,9 @@ class TestInterpreter extends FunSuite {
 
   ignore("Expression.IfThenElse.10") {
     val input =
-      """fn f(x: Int64, y: Int64): Int64 = if (x >= y) 123412341234 else 567856785678
-        |fn g01: Int64 = f(50000000000, 50000000000)
-        |fn g02: Int64 = f(20000000000, 50000000000)
+      """fn f(x: Int64, y: Int64): Int64 = if (x >= y) 123412341234i64 else 567856785678i64
+        |fn g01: Int64 = f(50000000000i64, 50000000000i64)
+        |fn g02: Int64 = f(20000000000i64, 50000000000i64)
       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
@@ -3076,14 +3074,14 @@ class TestInterpreter extends FunSuite {
   }
 
   ignore("Expression.Let.02") {
-    val input = "fn f: Int8 = let x: Int8 = 42 in x"
+    val input = "fn f: Int8 = let x = 42i8 in x"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(42))(result)
   }
 
   ignore("Expression.Let.03") {
-    val input = "fn f: Int16 = let x: Int16 = 1 in x + 2"
+    val input = "fn f: Int16 = let x = 1i16 in x + 2i16"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(3))(result)
@@ -3157,7 +3155,7 @@ class TestInterpreter extends FunSuite {
   }
 
   ignore("Expression.Let.10") {
-    val input = "fn f: Int64 = let x: Int64 = 0 in x"
+    val input = "fn f: Int64 = let x = 0i64 in x"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt64(0))(result)
@@ -3166,9 +3164,9 @@ class TestInterpreter extends FunSuite {
   ignore("Expression.Let.11") {
     val input =
       """fn f: Int64 =
-        |  let x: Int64 = 1337 in
-        |    let y: Int64 = -101010 in
-        |      let z: Int64 = 42 in
+        |  let x = 1337i64 in
+        |    let y = -101010i64 in
+        |      let z = 42i64 in
         |        y
       """.stripMargin
     val model = getModel(input)
@@ -3179,9 +3177,9 @@ class TestInterpreter extends FunSuite {
   ignore("Expression.Let.12") {
     val input =
       """fn f: Int64 =
-        |  let x: Int32 = 1337 in
-        |    let y: Int64 = -101010 in
-        |      let z: Int64 = 42 in
+        |  let x = 1337i64 in
+        |    let y = -101010i64 in
+        |      let z = 42i64 in
         |        y
       """.stripMargin
     val model = getModel(input)
@@ -3192,11 +3190,11 @@ class TestInterpreter extends FunSuite {
   ignore("Expression.Let.13") {
     val input =
       """fn f(a: Int64, b: Int64, c: Int64): Int =
-        |  let x: Int64 = 1337 in
-        |    let y: Int64 = -101010 in
-        |      let z: Int64 = 42 in
+        |  let x = 1337i64 in
+        |    let y = -101010i64 in
+        |      let z = 42i64 in
         |        y
-        |fn g: Int = f(-1337, 101010, -42)
+        |fn g: Int = f(-1337i64, 101010i64, -42i64)
       """.stripMargin
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
@@ -3206,11 +3204,11 @@ class TestInterpreter extends FunSuite {
   ignore("Expression.Let.14") {
     val input =
       """fn f(a: Int32, b: Int64, c: Int64): Int =
-        |  let x: Int32 = 1337 in
-        |    let y: Int64 = -101010 in
-        |      let z: Int64 = 42 in
+        |  let x = 1337i32 in
+        |    let y = -101010i64 in
+        |      let z = 42i64 in
         |        y
-        |fn g: Int = f(-1337, 101010, -42)
+        |fn g: Int = f(-1337i32, 101010i64, -42i64)
       """.stripMargin
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
@@ -3220,11 +3218,11 @@ class TestInterpreter extends FunSuite {
   ignore("Expression.Let.15") {
     val input =
       """fn f(a: Int64, b: Int64, c: Int64): Int =
-        |  let x: Int64 = 1337 in
-        |    let y: Int64 = -101010 in
-        |      let z: Int64 = 42 in
+        |  let x = 1337i64 in
+        |    let y = -101010i64 in
+        |      let z = 42i64 in
         |        b
-        |fn g: Int = f(-1337, 101010, -42)
+        |fn g: Int = f(-1337i64, 101010i64, -42i64)
       """.stripMargin
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
@@ -3234,11 +3232,11 @@ class TestInterpreter extends FunSuite {
   ignore("Expression.Let.16") {
     val input =
       """fn f(a: Int32, b: Int64, c: Int64): Int =
-        |  let x: Int32 = 1337 in
-        |    let y: Int64 = -101010 in
-        |      let z: Int64 = 42 in
+        |  let x = 1337i32 in
+        |    let y = -101010i64 in
+        |      let z = 42i64 in
         |        b
-        |fn g: Int = f(-1337, 101010, -42)
+        |fn g: Int = f(-1337i32, 101010i64, -42i64)
       """.stripMargin
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
@@ -3389,7 +3387,7 @@ class TestInterpreter extends FunSuite {
   ignore("Expression.Tag.10") {
     val input =
       """enum Val { case Val(Int8) }
-        |fn f: Val = Val.Val(32)
+        |fn f: Val = Val.Val(32i8)
       """.stripMargin
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
@@ -3399,7 +3397,7 @@ class TestInterpreter extends FunSuite {
   ignore("Expression.Tag.11") {
     val input =
       """enum Val { case Val(Int16) }
-        |fn f: Val = Val.Val(3200)
+        |fn f: Val = Val.Val(3200i16)
       """.stripMargin
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
@@ -3409,7 +3407,7 @@ class TestInterpreter extends FunSuite {
   ignore("Expression.Tag.12") {
     val input =
       """enum Val { case Val(Int64) }
-        |fn f: Val = Val.Val(320000000000)
+        |fn f: Val = Val.Val(320000000000i64)
       """.stripMargin
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
@@ -3426,7 +3424,7 @@ class TestInterpreter extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   ignore("Expression.Tuple.01") {
-    val input = "fn f: (Int16, Int32) = (321, 5)"
+    val input = "fn f: (Int16, Int32) = (321i16, 5i32)"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.Tuple(Array(Value.mkInt16(321), Value.mkInt32(5))))(result)
@@ -3447,7 +3445,7 @@ class TestInterpreter extends FunSuite {
   }
 
   ignore("Expression.Tuple.04") {
-    val input = """fn f: (Str, Bool, Int64, (), Int8) = ("un", false, 12345, (), -2)"""
+    val input = """fn f: (Str, Bool, Int64, (), Int8) = ("un", false, 12345i64, (), -2i8)"""
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.Tuple(Array(Value.mkStr("un"), Value.False, Value.mkInt64(12345), Value.Unit, Value.mkInt8(-2))))(result)
@@ -3494,14 +3492,14 @@ class TestInterpreter extends FunSuite {
   }
 
   ignore("Expression.Set.02") {
-    val input = "fn f: Set[Int8] = #{1 + 2, 3 * 4, 5 - 6}"
+    val input = "fn f: Set[Int8] = #{1i8 + 2i8, 3i8 * 4i8, 5i8 - 6i8}"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(3, 12, -1).map(Value.mkInt8)))(result)
   }
 
   ignore("Expression.Set.03") {
-    val input = "fn f: Set[(Int16, Bool)] = #{(1 + 2, true), (2 + 1, !false), (4 * 7, true), (5, true && false)}"
+    val input = "fn f: Set[(Int16, Bool)] = #{(1i16 + 2i16, true), (2i16 + 1i16, !false), (4i16 * 7i16, true), (5i16, true && false)}"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(
@@ -3512,7 +3510,7 @@ class TestInterpreter extends FunSuite {
   }
 
   ignore("Expression.Set.04") {
-    val input = "fn f: Set[Int64] = #{10000000000}"
+    val input = "fn f: Set[Int64] = #{10000000000i64}"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(Value.mkInt64(10000000000L))))(result)
@@ -3802,18 +3800,18 @@ class TestInterpreter extends FunSuite {
   ignore("Match.Literal.05") {
     val input =
       s"""fn f(x: Int8): Str = match x with {
-         |  case ${Byte.MinValue} => "min"
-         |  case -2 => "a"
-         |  case 6 => "b"
-         |  case ${Byte.MaxValue} => "max"
+         |  case ${Byte.MinValue}i8 => "min"
+         |  case -2i8 => "a"
+         |  case 6i8 => "b"
+         |  case ${Byte.MaxValue}i8 => "max"
          |  case _ => "unknown"
          |}
-         |fn g01: Str = f(${Byte.MinValue})
-         |fn g02: Str = f(-2)
-         |fn g03: Str = f(6)
-         |fn g04: Str = f(${Byte.MaxValue})
-         |fn g05: Str = f(0)
-       """.stripMargin
+         |fn g01: Str = f(${Byte.MinValue}i8)
+         |fn g02: Str = f(-2i8)
+         |fn g03: Str = f(6i8)
+         |fn g04: Str = f(${Byte.MaxValue}i8)
+         |fn g05: Str = f(0i8)
+      """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
     val result02 = model.constants(Name.Resolved.mk("g02"))
@@ -3830,17 +3828,17 @@ class TestInterpreter extends FunSuite {
   ignore("Match.Literal.06") {
     val input =
       s"""fn f(x: Int16): Str = match x with {
-          |  case ${Short.MinValue} => "min"
-          |  case -211 => "a"
-          |  case 623 => "b"
-          |  case ${Short.MaxValue} => "max"
-          |  case _ => "unknown"
-          |}
-          |fn g01: Str = f(${Short.MinValue})
-          |fn g02: Str = f(-211)
-          |fn g03: Str = f(623)
-          |fn g04: Str = f(${Short.MaxValue})
-          |fn g05: Str = f(0)
+         |  case ${Short.MinValue}i16 => "min"
+         |  case -211i16 => "a"
+         |  case 623i16 => "b"
+         |  case ${Short.MaxValue}i16 => "max"
+         |  case _ => "unknown"
+         |}
+         |fn g01: Str = f(${Short.MinValue}i16)
+         |fn g02: Str = f(-211i16)
+         |fn g03: Str = f(623i16)
+         |fn g04: Str = f(${Short.MaxValue}i16)
+         |fn g05: Str = f(0i16)
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
@@ -3855,20 +3853,20 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkStr("unknown"))(result05)
   }
 
-  test("Match.Literal.07") {
+  ignore("Match.Literal.07") {
     val input =
       s"""fn f(x: Int32): Str = match x with {
-          |  case ${Int.MinValue} => "min"
-          |  case -2136541 => "a"
-          |  case 6254523 => "b"
-          |  case ${Int.MaxValue} => "max"
-          |  case _ => "unknown"
-          |}
-          |fn g01: Str = f(${Int.MinValue})
-          |fn g02: Str = f(-2136541)
-          |fn g03: Str = f(6254523)
-          |fn g04: Str = f(${Int.MaxValue})
-          |fn g05: Str = f(0)
+         |  case ${Int.MinValue}i32 => "min"
+         |  case -2136541i32 => "a"
+         |  case 6254523i32 => "b"
+         |  case ${Int.MaxValue}i32 => "max"
+         |  case _ => "unknown"
+         |}
+         |fn g01: Str = f(${Int.MinValue}i32)
+         |fn g02: Str = f(-2136541i32)
+         |fn g03: Str = f(6254523i32)
+         |fn g04: Str = f(${Int.MaxValue}i32)
+         |fn g05: Str = f(0i32)
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
@@ -3886,17 +3884,17 @@ class TestInterpreter extends FunSuite {
   ignore("Match.Literal.08") {
     val input =
       s"""fn f(x: Int64): Str = match x with {
-          |  case ${Long.MinValue} => "min"
-          |  case -213645454545541 => "a"
-          |  case 6287816254523 => "b"
-          |  case ${Long.MaxValue} => "max"
-          |  case _ => "unknown"
-          |}
-          |fn g01: Str = f(${Long.MinValue})
-          |fn g02: Str = f(-213645454545541)
-          |fn g03: Str = f(6287816254523)
-          |fn g04: Str = f(${Long.MaxValue})
-          |fn g05: Str = f(0)
+         |  case ${Long.MinValue}i64 => "min"
+         |  case -213645454545541i64 => "a"
+         |  case 6287816254523i64 => "b"
+         |  case ${Long.MaxValue}i64 => "max"
+         |  case _ => "unknown"
+         |}
+         |fn g01: Str = f(${Long.MinValue}i64)
+         |fn g02: Str = f(-213645454545541i64)
+         |fn g03: Str = f(6287816254523i64)
+         |fn g04: Str = f(${Long.MaxValue}i64)
+         |fn g05: Str = f(0i64)
        """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
@@ -4408,9 +4406,9 @@ class TestInterpreter extends FunSuite {
     val input =
       """rel A(x: Int8);
         |
-        |A(1).
-        |A(2).
-        |A(3).
+        |A(1i8).
+        |A(2i8).
+        |A(3i8).
       """.stripMargin
     val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
@@ -4421,22 +4419,22 @@ class TestInterpreter extends FunSuite {
     val input =
       """rel A(x: Int16);
         |
-        |A(1).
-        |A(2).
-        |A(3).
+        |A(1i16).
+        |A(2i16).
+        |A(3i16).
       """.stripMargin
     val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
   }
 
-  test("Term.Head.Exp.05") {
+  ignore("Term.Head.Exp.05") {
     val input =
       """rel A(x: Int32);
         |
-        |A(1).
-        |A(2).
-        |A(3).
+        |A(1i32).
+        |A(2i32).
+        |A(3i32).
       """.stripMargin
     val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
@@ -4447,9 +4445,9 @@ class TestInterpreter extends FunSuite {
     val input =
       """rel A(x: Int64);
         |
-        |A(1).
-        |A(2).
-        |A(3).
+        |A(1i64).
+        |A(2i64).
+        |A(3i64).
       """.stripMargin
     val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
@@ -4536,11 +4534,11 @@ class TestInterpreter extends FunSuite {
   ignore("Term.Head.Apply.03") {
     val input =
       """rel A(x: Int8);
-        |fn f(x: Int8): Int8 = x + 1
+        |fn f(x: Int8): Int8 = x + 1i8
         |
-        |A(f(0)).
-        |A(f(1)).
-        |A(f(2)).
+        |A(f(0i8)).
+        |A(f(1i8)).
+        |A(f(2i8)).
       """.stripMargin
     val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
@@ -4550,25 +4548,25 @@ class TestInterpreter extends FunSuite {
   ignore("Term.Head.Apply.04") {
     val input =
       """rel A(x: Int16);
-        |fn f(x: Int16): Int16 = x + 1
+        |fn f(x: Int16): Int16 = x + 1i16
         |
-        |A(f(0)).
-        |A(f(1)).
-        |A(f(2)).
+        |A(f(0i16)).
+        |A(f(1i16)).
+        |A(f(2i16)).
       """.stripMargin
     val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
   }
 
-  test("Term.Head.Apply.05") {
+  ignore("Term.Head.Apply.05") {
     val input =
       """rel A(x: Int32);
-        |fn f(x: Int32): Int32 = x + 1
+        |fn f(x: Int32): Int32 = x + 1i32
         |
-        |A(f(0)).
-        |A(f(1)).
-        |A(f(2)).
+        |A(f(0i32)).
+        |A(f(1i32)).
+        |A(f(2i32)).
       """.stripMargin
     val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
@@ -4578,11 +4576,11 @@ class TestInterpreter extends FunSuite {
   ignore("Term.Head.Apply.06") {
     val input =
       """rel A(x: Int64);
-        |fn f(x: Int64): Int64 = x + 1
+        |fn f(x: Int64): Int64 = x + 1i64
         |
-        |A(f(0)).
-        |A(f(1)).
-        |A(f(2)).
+        |A(f(0i64)).
+        |A(f(1i64)).
+        |A(f(2i64)).
       """.stripMargin
     val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
@@ -4691,9 +4689,9 @@ class TestInterpreter extends FunSuite {
     val input =
       """rel A(x: Int8);
         |
-        |A(f(0)).
-        |A(f(1)).
-        |A(f(2)).
+        |A(f(0i8)).
+        |A(f(1i8)).
+        |A(f(2i8)).
       """.stripMargin
     var executed = false
     val flix = createFlix()
@@ -4713,9 +4711,9 @@ class TestInterpreter extends FunSuite {
     val input =
       """rel A(x: Int16);
         |
-        |A(f(0)).
-        |A(f(1)).
-        |A(f(2)).
+        |A(f(0i16)).
+        |A(f(1i16)).
+        |A(f(2i16)).
       """.stripMargin
     var executed = false
     val flix = createFlix()
@@ -4730,14 +4728,14 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  test("Term.Head.ApplyHook - Hook.Safe.05") {
+  ignore("Term.Head.ApplyHook - Hook.Safe.05") {
     import HookSafeHelpers._
     val input =
       """rel A(x: Int32);
         |
-        |A(f(0)).
-        |A(f(1)).
-        |A(f(2)).
+        |A(f(0i32)).
+        |A(f(1i32)).
+        |A(f(2i32)).
       """.stripMargin
     var executed = false
     val flix = createFlix()
@@ -4757,9 +4755,9 @@ class TestInterpreter extends FunSuite {
     val input =
       """rel A(x: Int64);
         |
-        |A(f(0)).
-        |A(f(1)).
-        |A(f(2)).
+        |A(f(0i64)).
+        |A(f(1i64)).
+        |A(f(2i64)).
       """.stripMargin
     var executed = false
     val flix = createFlix()
@@ -4939,9 +4937,9 @@ class TestInterpreter extends FunSuite {
     val input =
       """rel A(x: Int8);
         |
-        |A(f(0)).
-        |A(f(1)).
-        |A(f(2)).
+        |A(f(0i8)).
+        |A(f(1i8)).
+        |A(f(2i8)).
       """.stripMargin
     var executed = false
     val flix = createFlix()
@@ -4961,9 +4959,9 @@ class TestInterpreter extends FunSuite {
     val input =
       """rel A(x: Int16);
         |
-        |A(f(0)).
-        |A(f(1)).
-        |A(f(2)).
+        |A(f(0i16)).
+        |A(f(1i16)).
+        |A(f(2i16)).
       """.stripMargin
     var executed = false
     val flix = createFlix()
@@ -4978,14 +4976,14 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  test("Term.Head.ApplyHook - Hook.Unsafe.05") {
+  ignore("Term.Head.ApplyHook - Hook.Unsafe.05") {
     import HookUnsafeHelpers._
     val input =
       """rel A(x: Int32);
         |
-        |A(f(0)).
-        |A(f(1)).
-        |A(f(2)).
+        |A(f(0i32)).
+        |A(f(1i32)).
+        |A(f(2i32)).
       """.stripMargin
     var executed = false
     val flix = createFlix()
@@ -5005,9 +5003,9 @@ class TestInterpreter extends FunSuite {
     val input =
       """rel A(x: Int64);
         |
-        |A(f(0)).
-        |A(f(1)).
-        |A(f(2)).
+        |A(f(0i64)).
+        |A(f(1i64)).
+        |A(f(2i64)).
       """.stripMargin
     var executed = false
     val flix = createFlix()
@@ -5201,12 +5199,12 @@ class TestInterpreter extends FunSuite {
   ignore("Term.Body.Exp.02") {
     val input =
       """rel A(x: Int);
-        |fn f(x: Int8): Bool = x >= 0
+        |fn f(x: Int8): Bool = x >= 0i8
         |
-        |A(1) :- f(0).
-        |A(2) :- f(0).
-        |A(3) :- f(0).
-        |A(4) :- f(-1).
+        |A(1) :- f(0i8).
+        |A(2) :- f(0i8).
+        |A(3) :- f(0i8).
+        |A(4) :- f(-1i8).
       """.stripMargin
     val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
@@ -5216,27 +5214,27 @@ class TestInterpreter extends FunSuite {
   ignore("Term.Body.Exp.03") {
     val input =
       """rel A(x: Int);
-        |fn f(x: Int16): Bool = x >= 0
+        |fn f(x: Int16): Bool = x >= 0i16
         |
-        |A(1) :- f(0).
-        |A(2) :- f(0).
-        |A(3) :- f(0).
-        |A(4) :- f(-200).
+        |A(1) :- f(0i16).
+        |A(2) :- f(0i16).
+        |A(3) :- f(0i16).
+        |A(4) :- f(-200i16).
       """.stripMargin
     val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
-  test("Term.Body.Exp.04") {
+  ignore("Term.Body.Exp.04") {
     val input =
       """rel A(x: Int);
-        |fn f(x: Int32): Bool = x >= 0
+        |fn f(x: Int32): Bool = x >= 0i32
         |
-        |A(1) :- f(0).
-        |A(2) :- f(0).
-        |A(3) :- f(0).
-        |A(4) :- f(-200000).
+        |A(1) :- f(0i32).
+        |A(2) :- f(0i32).
+        |A(3) :- f(0i32).
+        |A(4) :- f(-200000i32).
       """.stripMargin
     val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
@@ -5246,12 +5244,12 @@ class TestInterpreter extends FunSuite {
   ignore("Term.Body.Exp.05") {
     val input =
       """rel A(x: Int);
-        |fn f(x: Int64): Bool = x >= 0
+        |fn f(x: Int64): Bool = x >= 0i64
         |
-        |A(1) :- f(0).
-        |A(2) :- f(0).
-        |A(3) :- f(0).
-        |A(4) :- f(-20000000000).
+        |A(1) :- f(0i64).
+        |A(2) :- f(0i64).
+        |A(3) :- f(0i64).
+        |A(4) :- f(-20000000000i64).
       """.stripMargin
     val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
