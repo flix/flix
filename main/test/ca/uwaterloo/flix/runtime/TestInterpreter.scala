@@ -328,7 +328,6 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkStr("foo"))(result)
   }
 
-  // TODO: Does it really have to be x() instead of x?
   test("Expression.Ref.02") {
     val input =
       """namespace Foo {
@@ -367,9 +366,6 @@ class TestInterpreter extends FunSuite {
     val result = model.constants(Name.Resolved.mk("Bar::x"))
     assertResult(Value.mkStr("hello"))(result)
   }
-
-  // TODO: Tests will change when we do lambda lifting (e.g. Apply vs Apply3)
-  // Do we allow anonymous functions?
 
   /////////////////////////////////////////////////////////////////////////////
   // Expression.{Lambda,Apply}                                               //
@@ -511,6 +507,16 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Lambda.12") {
     val input =
+      """fn f(x: (Int) -> Int, y: Int): Int = x(y)
+        |fn g: Int = f(fn (x: Int): Int = x + 1, 5)
+      """.stripMargin
+    val model = getModel(input)
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkInt32(6))(result)
+  }
+
+  test("Expression.Lambda.13") {
+    val input =
       """fn f(x: (Int) -> Int): (Int) -> Int = x
         |fn g(x: Int): Int = x + 5
         |fn h: Int = (f(g))(40)
@@ -520,7 +526,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(45))(result)
   }
 
-  test("Expression.Lambda.13") {
+  test("Expression.Lambda.14") {
     val input =
       """enum Val { case Val(Int) }
         |fn f(x: Int): Val = Val.Val(x)
@@ -531,7 +537,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt32(111)))(result)
   }
 
-  test("Expression.Lambda.14") {
+  test("Expression.Lambda.15") {
     val input =
       """fn f(a: Int, b: Int, c: Str, d: Int, e: Bool, f: ()): (Int, Int, Str, Int, Bool, ()) = (a, b, c, d, e, f)
         |fn g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())
@@ -541,7 +547,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Tuple(Array(Value.mkInt32(24), Value.mkInt32(53), Value.mkStr("qwertyuiop"), Value.mkInt32(9978), Value.False, Value.Unit)))(result)
   }
 
-  test("Expression.Lambda.15") {
+  test("Expression.Lambda.16") {
     val input =
       """fn f(a: Int, b: Int, c: Int): Set[Int] = #{a, b, c}
         |fn g: Set[Int] = f(24, 53, 24)
@@ -798,7 +804,7 @@ class TestInterpreter extends FunSuite {
   }
 
   // TODO: This test fails because Tag.tag (a Name.Ident) compares the source location.
-  // Note that in the Flix program, Val has a real source location, but mkTagType uses Unknown.
+  // See https://github.com/magnus-madsen/flix/issues/119
   // TODO: mkTagType should be taking an IType instead of a Type?
   ignore("Expression.Hook - Hook.Safe.13") {
     import HookSafeHelpers._
@@ -1118,7 +1124,7 @@ class TestInterpreter extends FunSuite {
   }
 
   // TODO: This test fails because Tag.tag (a Name.Ident) compares the source location.
-  // Note that in the Flix program, Val has a real source location, but mkTagType uses Unknown.
+  // See https://github.com/magnus-madsen/flix/issues/119
   // TODO: mkTagType should be taking an IType instead of a Type?
   ignore("Expression.Hook - Hook.Unsafe.13") {
     import HookUnsafeHelpers._
@@ -1197,12 +1203,6 @@ class TestInterpreter extends FunSuite {
     assertResult(MyObject(1000))(result)
     assert(executed)
   }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Expression.Closure                                                      //
-  /////////////////////////////////////////////////////////////////////////////
-
-  // TODO: Expression.Closure?
 
   /////////////////////////////////////////////////////////////////////////////
   // Expression.Unary                                                        //
@@ -4314,6 +4314,7 @@ class TestInterpreter extends FunSuite {
 
   // TODO: Bug in the simplifier causes a NoSuchElementException.
   // However, the test catches this exception and so the test passes.
+  // See https://github.com/magnus-madsen/flix/issues/118
   test("Match.Error.01") {
     val input =
       """fn f(x: Int): Bool = match x with {
@@ -4324,7 +4325,7 @@ class TestInterpreter extends FunSuite {
     intercept[RuntimeException] { getModel(input) }
   }
 
-  // TODO: opt, list, map, ???
+  // TODO: Tests for future expressions, e.g. opt, list, map
 
   /////////////////////////////////////////////////////////////////////////////
   // Term.Head.Var                                                           //
@@ -4374,24 +4375,6 @@ class TestInterpreter extends FunSuite {
     val model = getModel(input)
     val B = model.relations(Name.Resolved.mk("B")).toSet
     assertResult(B)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
-  }
-
-  // TODO: This is a bug in the parser?
-  ignore("Term.Head.Var.04") {
-    val input =
-      """rel A(x: Int);
-        |rel B(x: Int);
-        |rel C(t: (Int, Int));
-        |
-        |A(1).
-        |A(2).
-        |B(3).
-        |
-        |C((x, y)) :- A(x), B(y).
-      """.stripMargin
-    val model = getModel(input)
-    val B = model.relations(Name.Resolved.mk("B")).toSet
-    assertResult(B)(Set(List(Value.Tuple(Array(1, 3).map(Value.mkInt32))), List(Value.Tuple(Array(2, 3).map(Value.mkInt32)))))
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -4834,7 +4817,7 @@ class TestInterpreter extends FunSuite {
   }
 
   // TODO: This test fails because Tag.tag (a Name.Ident) compares the source location.
-  // Note that in the Flix program, Val has a real source location, but mkTagType uses Unknown.
+  // See https://github.com/magnus-madsen/flix/issues/119
   // TODO: mkTagType should be taking an IType instead of a Type?
   ignore("Term.Head.ApplyHook - Hook.Safe.09") {
     import HookSafeHelpers._
@@ -5082,7 +5065,7 @@ class TestInterpreter extends FunSuite {
   }
 
   // TODO: This test fails because Tag.tag (a Name.Ident) compares the source location.
-  // Note that in the Flix program, Val has a real source location, but mkTagType uses Unknown.
+  // See https://github.com/magnus-madsen/flix/issues/119
   // TODO: mkTagType should be taking an IType instead of a Type?
   ignore("Term.Head.ApplyHook - Hook.Unsafe.09") {
     import HookUnsafeHelpers._
@@ -5155,7 +5138,7 @@ class TestInterpreter extends FunSuite {
   // Term.Body.Wildcard                                                      //
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO? Do we even need this? (It's not implemented in the interpreter.)
+  // TODO: See issue #65: https://github.com/magnus-madsen/flix/issues/65
 
   /////////////////////////////////////////////////////////////////////////////
   // Term.Body.Var                                                           //
