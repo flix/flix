@@ -24,7 +24,7 @@ namespace Interval {
     fn leq(e1: Interval, e2: Interval): Bool = match (e1, e2) with {
         case (Interval.Bot, _)                                  => true
         case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
-            b1 <= b2 && e1 <= e2
+            b2 <= b1 && e1 <= e2
         case (_, Interval.Top)                                  => true
         case _                                                  => false
     }
