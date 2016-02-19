@@ -82,11 +82,11 @@ object Interpreter {
       Value.cast2int32(tuple(offset))
     case Expression.Unit | Expression.True | Expression.False | Expression.Int8(_) | Expression.Int16(_) |
          Expression.Int64(_) | Expression.Str(_) | Expression.LoadBool(_, _) | Expression.LoadInt8(_, _) |
-         Expression.LoadInt16(_, _) | Expression.LoadInt32(_, _) | Expression.StoreBool(_, _, _) |
-         Expression.StoreInt8(_, _, _) | Expression.StoreInt16(_, _, _) | Expression.StoreInt32(_, _, _) |
-         Expression.Lambda(_, _, _, _, _) | Expression.Hook(_, _, _) | Expression.Closure(_, _, _, _, _) |
-         Expression.CheckTag(_, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
-         Expression.CheckNil(_, _) | Expression.CheckCons(_, _) | Expression.Set(_, _, _) =>
+         Expression.LoadInt16(_, _) | Expression.StoreBool(_, _, _) | Expression.StoreInt8(_, _, _) |
+         Expression.StoreInt16(_, _, _) | Expression.StoreInt32(_, _, _) | Expression.Lambda(_, _, _, _, _) |
+         Expression.Hook(_, _, _) | Expression.Closure(_, _, _, _, _) | Expression.CheckTag(_, _, _) |
+         Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) | Expression.CheckNil(_, _) |
+         Expression.CheckCons(_, _) | Expression.Set(_, _, _) =>
       throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int.")
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Runtime error at ${loc.format}.")
     case Expression.MatchError(tpe, loc) => throw new RuntimeException(s"Match error at ${loc.format}.")
