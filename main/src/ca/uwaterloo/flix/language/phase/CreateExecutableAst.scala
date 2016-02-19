@@ -171,6 +171,8 @@ object CreateExecutableAst {
     }
 
     object Body {
+      // TODO: Should we move this to the Indexer (the only place that accesses freeVars)?
+      // Also, figure out the actual implementation for Predicate.Body.Loop
       private def freeVars(terms: List[SimplifiedAst.Term.Body]): Set[String] = terms.foldLeft(Set.empty[String]) {
         case (xs, t: SimplifiedAst.Term.Body.Wildcard) => xs
         case (xs, t: SimplifiedAst.Term.Body.Var) => xs + t.ident.name
