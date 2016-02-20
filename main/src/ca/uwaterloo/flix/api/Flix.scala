@@ -234,7 +234,7 @@ class Flix {
   /**
     * Returns the Tag type for the given `enumName` with the `tagName` and nested type `tpe`.
     */
-  def mkTagType(enumName: String, tagName: String, tpe: Type): IType = {
+  def mkTagType(enumName: String, tagName: String, tpe: IType): IType = {
     if (enumName == null)
       throw new IllegalArgumentException("Argument 'enumName' must be non-null.")
     if (tagName == null)
@@ -244,7 +244,7 @@ class Flix {
 
     val enum = Name.Resolved.mk(enumName)
     val tag = Name.Ident(SourcePosition.Unknown, tagName, SourcePosition.Unknown)
-    new WrappedType(new Type.Tag(enum, tag, tpe))
+    new WrappedType(new Type.Tag(enum, tag, tpe.asInstanceOf[WrappedType].tpe))
   }
 
   /**
