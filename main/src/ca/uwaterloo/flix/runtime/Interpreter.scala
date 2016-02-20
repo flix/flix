@@ -25,16 +25,12 @@ object Interpreter {
    *
    * Assumes all input has been type-checked.
    */
-  def eval(expr: Expression, root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef = expr.tpe match {
-    case Type.Bool => if (evalBool(expr, root, env)) Value.True else Value.False
-    case Type.Int32 => Value.mkInt32(evalInt(expr, root, env))
-    case Type.Str => evalGeneral(expr, root, env)
-    case Type.Var(_) | Type.Unit | Type.Char | Type.Int8 | Type.Int16 | Type.Int64 | Type.Str | Type.Native |
-         Type.Proposition | Type.Tag(_, _, _) | Type.UnresolvedTag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
-         Type.Lambda(_, _) | Type.Parametric(_, _) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) |
-         Type.Predicate(_) | Type.Unresolved(_) | Type.Abs(_, _) | Type.Any =>
-      evalGeneral(expr, root, env)
-  }
+  def eval(expr: Expression, root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef =
+    expr.tpe match {
+      case Type.Bool => Value.mkBool(evalBool(expr, root, env))
+      case Type.Int32 => Value.mkInt32(evalInt(expr, root, env))
+      case _ => evalGeneral(expr, root, env)
+    }
 
   /*
    * Evaluates expressions of type `Type.Int32`, returning an unwrapped
@@ -80,25 +76,17 @@ object Interpreter {
     case Expression.GetTupleIndex(base, offset, _, _) =>
       val tuple = Value.cast2tuple(evalGeneral(base, root, env))
       Value.cast2int32(tuple(offset))
-    case Expression.Unit | Expression.True | Expression.False | Expression.Int8(_) | Expression.Int16(_) |
-         Expression.Int64(_) | Expression.Str(_) | Expression.LoadBool(_, _) | Expression.LoadInt8(_, _) |
-         Expression.LoadInt16(_, _) | Expression.StoreBool(_, _, _) | Expression.StoreInt8(_, _, _) |
-         Expression.StoreInt16(_, _, _) | Expression.StoreInt32(_, _, _) | Expression.Lambda(_, _, _, _, _) |
-         Expression.Hook(_, _, _) | Expression.Closure(_, _, _, _, _) | Expression.CheckTag(_, _, _) |
-         Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) | Expression.CheckNil(_, _) |
-         Expression.CheckCons(_, _) | Expression.Set(_, _, _) =>
-      throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int.")
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Runtime error at ${loc.format}.")
     case Expression.MatchError(tpe, loc) => throw new RuntimeException(s"Match error at ${loc.format}.")
     case Expression.SwitchError(tpe, loc) => throw new RuntimeException(s"Switch error at ${loc.format}.")
+    case _ => throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int32.")
   }
 
   private def evalIntUnary(op: UnaryOperator, e: Expression, root: Root, env: mutable.Map[String, AnyRef]): Int = op match {
     case UnaryOperator.Plus => +evalInt(e, root, env)
     case UnaryOperator.Minus => -evalInt(e, root, env)
     case UnaryOperator.BitwiseNegate => ~evalInt(e, root, env)
-    case UnaryOperator.LogicalNot =>
-      throw new InternalRuntimeError(s"Type of unary expression is not Type.Int.")
+    case _ => throw new InternalRuntimeError(s"Type of unary expression is not Type.Int32.")
   }
 
   private def evalIntBinary(op: BinaryOperator, e1: Expression, e2: Expression, root: Root, env: mutable.Map[String, AnyRef]): Int = op match {
@@ -112,10 +100,7 @@ object Interpreter {
     case BinaryOperator.BitwiseXor => evalInt(e1, root, env) ^ evalInt(e2, root, env)
     case BinaryOperator.BitwiseLeftShift => evalInt(e1, root, env) << evalInt(e2, root, env)
     case BinaryOperator.BitwiseRightShift => evalInt(e1, root, env) >> evalInt(e2, root, env)
-    case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual |
-         BinaryOperator.Equal | BinaryOperator.NotEqual | BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr |
-         BinaryOperator.Implication | BinaryOperator.Biconditional =>
-      throw new InternalRuntimeError(s"Type of binary expression is not Type.Int.")
+    case _ => throw new InternalRuntimeError(s"Type of binary expression is not Type.Int32.")
   }
 
   /*
@@ -161,22 +146,15 @@ object Interpreter {
       Value.cast2bool(tuple(offset))
     case Expression.CheckNil(exp, _) => ???
     case Expression.CheckCons(exp, _) => ???
-    case Expression.Unit | Expression.Int8(_) | Expression.Int16(_) | Expression.Int32(_) | Expression.Int64(_) |
-         Expression.Str(_) | Expression.LoadInt8(_, _) | Expression.LoadInt16(_, _) | Expression.LoadInt32(_, _) |
-         Expression.StoreBool(_, _, _) | Expression.StoreInt8(_, _, _) | Expression.StoreInt16(_, _, _) |
-         Expression.StoreInt32(_, _, _) | Expression.Lambda(_, _, _, _, _) | Expression.Hook(_, _, _) |
-         Expression.Closure(_, _, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
-         Expression.Set(_, _, _) =>
-      throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
     case Expression.Error(tpe, loc) => throw new RuntimeException(s"Runtime error at ${loc.format}.")
     case Expression.MatchError(tpe, loc) => throw new RuntimeException(s"Match error at ${loc.format}.")
     case Expression.SwitchError(tpe, loc) => throw new RuntimeException(s"Switch error at ${loc.format}.")
+    case _ => throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
   }
 
   private def evalBoolUnary(op: UnaryOperator, e: Expression, root: Root, env: mutable.Map[String, AnyRef]): Boolean = op match {
     case UnaryOperator.LogicalNot => !evalBool(e, root, env)
-    case UnaryOperator.Plus | UnaryOperator.Minus | UnaryOperator.BitwiseNegate =>
-      throw new InternalRuntimeError(s"Type of unary expression is not Type.Bool.")
+    case _ => throw new InternalRuntimeError(s"Type of unary expression is not Type.Bool.")
   }
 
   private def evalBoolBinary(op: BinaryOperator, e1: Expression, e2: Expression, root: Root, env: mutable.Map[String, AnyRef]): Boolean = op match {
@@ -190,10 +168,7 @@ object Interpreter {
     case BinaryOperator.LogicalOr => evalBool(e1, root, env) || evalBool(e2, root, env)
     case BinaryOperator.Implication => !evalBool(e1, root, env) || evalBool(e2, root, env)
     case BinaryOperator.Biconditional => evalBool(e1, root, env) == evalBool(e2, root, env)
-    case BinaryOperator.Plus | BinaryOperator.Minus | BinaryOperator.Times | BinaryOperator.Divide |
-         BinaryOperator.Modulo | BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor |
-         BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
-      throw new InternalRuntimeError(s"Type of binary expression is not Type.Bool.")
+    case _ => throw new InternalRuntimeError(s"Type of binary expression is not Type.Bool.")
   }
 
   /*
@@ -215,7 +190,7 @@ object Interpreter {
       val e = Value.cast2int64(evalGeneral(load.e, root, env))
       val result = (e >> load.offset).toInt & load.mask
       load match {
-        case _: Expression.LoadBool => if (result != 0) Value.True else Value.False
+        case _: Expression.LoadBool => Value.mkBool(result != 0)
         case _: Expression.LoadInt8 => Value.mkInt8(result)
         case _: Expression.LoadInt16 => Value.mkInt16(result)
         case _: Expression.LoadInt32 => Value.mkInt32(result)
@@ -254,8 +229,7 @@ object Interpreter {
     case Expression.Let(ident, _, exp1, exp2, _, _) =>
       val newEnv = env + (ident.name -> eval(exp1, root, env))
       eval(exp2, root, newEnv)
-    case Expression.CheckTag(tag, exp, _) =>
-      if (Value.cast2tag(evalGeneral(exp, root, env)).tag == tag.name) Value.True else Value.False
+    case Expression.CheckTag(tag, exp, _) => Value.mkBool(Value.cast2tag(evalGeneral(exp, root, env)).tag == tag.name)
     case Expression.GetTagValue(exp, _, _) => Value.cast2tag(evalGeneral(exp, root, env)).value
     case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
     case Expression.GetTupleIndex(base, offset, _, _) => Value.cast2tuple(evalGeneral(base, root, env))(offset)
@@ -275,38 +249,28 @@ object Interpreter {
     case Expression.SwitchError(tpe, loc) => throw new RuntimeException(s"Switch error at ${loc.format}.")
   }
 
-  // TODO: Can this be cleaned up?
   private def evalGeneralUnary(op: UnaryOperator, e: Expression, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
     val v = eval(e, root, env)
     op match {
-      case UnaryOperator.LogicalNot => if (Value.cast2bool(v)) Value.False else Value.True
+      case UnaryOperator.LogicalNot => Value.mkBool(Value.cast2bool(v))
       case UnaryOperator.Plus => v // nop
       case UnaryOperator.Minus => e.tpe match {
         case Type.Int8 => Value.mkInt8(-Value.cast2int8(v))
         case Type.Int16 => Value.mkInt16(-Value.cast2int16(v))
         case Type.Int32 => Value.mkInt32(-Value.cast2int32(v))
         case Type.Int64 => Value.mkInt64(-Value.cast2int64(v))
-        case Type.Var(_) | Type.Unit | Type.Bool | Type.Char | Type.Str | Type.Native | Type.Proposition |
-             Type.Tag(_, _, _) | Type.UnresolvedTag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.Parametric(_, _) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) |
-             Type.Unresolved(_) | Type.Abs(_, _) | Type.Any =>
-          throw new InternalRuntimeError(s"Can't apply UnaryOperator.$op to type ${e.tpe}.")
+        case _ => throw new InternalRuntimeError(s"Can't apply UnaryOperator.$op to type ${e.tpe}.")
       }
       case UnaryOperator.BitwiseNegate => e.tpe match {
         case Type.Int8 => Value.mkInt8(~Value.cast2int8(v))
         case Type.Int16 => Value.mkInt16(~Value.cast2int16(v))
         case Type.Int32 => Value.mkInt32(~Value.cast2int32(v))
         case Type.Int64 => Value.mkInt64(~Value.cast2int64(v))
-        case Type.Var(_) | Type.Unit | Type.Bool | Type.Char | Type.Str | Type.Native | Type.Proposition |
-             Type.Tag(_, _, _) | Type.UnresolvedTag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.Parametric(_, _) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) |
-             Type.Unresolved(_) | Type.Abs(_, _) | Type.Any =>
-          throw new InternalRuntimeError(s"Can't apply UnaryOperator.$op to type ${e.tpe}.")
+        case _ => throw new InternalRuntimeError(s"Can't apply UnaryOperator.$op to type ${e.tpe}.")
       }
     }
   }
 
-  // TODO: Can this be cleaned up?
   private def evalGeneralBinary(op: BinaryOperator, e1: Expression, e2: Expression, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
     val v1 = eval(e1, root, env)
     val v2 = eval(e2, root, env)
@@ -316,164 +280,108 @@ object Interpreter {
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) + Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) + Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) + Value.cast2int64(v2))
-        case Type.Var(_) | Type.Unit | Type.Bool | Type.Char | Type.Str | Type.Native | Type.Proposition |
-             Type.Tag(_, _, _) | Type.UnresolvedTag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.Parametric(_, _) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) |
-             Type.Unresolved(_) | Type.Abs(_, _) | Type.Any =>
-          throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
       }
       case BinaryOperator.Minus => e1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) - Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) - Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) - Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) - Value.cast2int64(v2))
-        case Type.Var(_) | Type.Unit | Type.Bool | Type.Char | Type.Str | Type.Native | Type.Proposition |
-             Type.Tag(_, _, _) | Type.UnresolvedTag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.Parametric(_, _) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) |
-             Type.Unresolved(_) | Type.Abs(_, _) | Type.Any =>
-          throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
       }
       case BinaryOperator.Times => e1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) * Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) * Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) * Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) * Value.cast2int64(v2))
-        case Type.Var(_) | Type.Unit | Type.Bool | Type.Char | Type.Str | Type.Native | Type.Proposition |
-             Type.Tag(_, _, _) | Type.UnresolvedTag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.Parametric(_, _) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) |
-             Type.Unresolved(_) | Type.Abs(_, _) | Type.Any =>
-          throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
       }
       case BinaryOperator.Divide => e1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) / Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) / Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) / Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) / Value.cast2int64(v2))
-        case Type.Var(_) | Type.Unit | Type.Bool | Type.Char | Type.Str | Type.Native | Type.Proposition |
-             Type.Tag(_, _, _) | Type.UnresolvedTag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.Parametric(_, _) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) |
-             Type.Unresolved(_) | Type.Abs(_, _) | Type.Any =>
-          throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
       }
       case BinaryOperator.Modulo => e1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) % Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) % Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) % Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) % Value.cast2int64(v2))
-        case Type.Var(_) | Type.Unit | Type.Bool | Type.Char | Type.Str | Type.Native | Type.Proposition |
-             Type.Tag(_, _, _) | Type.UnresolvedTag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.Parametric(_, _) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) |
-             Type.Unresolved(_) | Type.Abs(_, _) | Type.Any =>
-          throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
       }
 
       case BinaryOperator.Less => e1.tpe match {
-        case Type.Int8 => if (Value.cast2int8(v1) < Value.cast2int8(v2)) Value.True else Value.False
-        case Type.Int16 => if (Value.cast2int16(v1) < Value.cast2int16(v2)) Value.True else Value.False
-        case Type.Int32 => if (Value.cast2int32(v1) < Value.cast2int32(v2)) Value.True else Value.False
-        case Type.Int64 => if (Value.cast2int64(v1) < Value.cast2int64(v2)) Value.True else Value.False
-        case Type.Var(_) | Type.Unit | Type.Bool | Type.Char | Type.Str | Type.Native | Type.Proposition |
-             Type.Tag(_, _, _) | Type.UnresolvedTag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.Parametric(_, _) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) |
-             Type.Unresolved(_) | Type.Abs(_, _) | Type.Any =>
-          throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+        case Type.Int8 => Value.mkBool(Value.cast2int8(v1) < Value.cast2int8(v2))
+        case Type.Int16 => Value.mkBool(Value.cast2int16(v1) < Value.cast2int16(v2))
+        case Type.Int32 => Value.mkBool(Value.cast2int32(v1) < Value.cast2int32(v2))
+        case Type.Int64 => Value.mkBool(Value.cast2int64(v1) < Value.cast2int64(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
       }
       case BinaryOperator.LessEqual => e1.tpe match {
-        case Type.Int8 => if (Value.cast2int8(v1) <= Value.cast2int8(v2)) Value.True else Value.False
-        case Type.Int16 => if (Value.cast2int16(v1) <= Value.cast2int16(v2)) Value.True else Value.False
-        case Type.Int32 => if (Value.cast2int32(v1) <= Value.cast2int32(v2)) Value.True else Value.False
-        case Type.Int64 => if (Value.cast2int64(v1) <= Value.cast2int64(v2)) Value.True else Value.False
-        case Type.Var(_) | Type.Unit | Type.Bool | Type.Char | Type.Str | Type.Native | Type.Proposition |
-             Type.Tag(_, _, _) | Type.UnresolvedTag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.Parametric(_, _) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) |
-             Type.Unresolved(_) | Type.Abs(_, _) | Type.Any =>
-          throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+        case Type.Int8 => Value.mkBool(Value.cast2int8(v1) <= Value.cast2int8(v2))
+        case Type.Int16 => Value.mkBool(Value.cast2int16(v1) <= Value.cast2int16(v2))
+        case Type.Int32 => Value.mkBool(Value.cast2int32(v1) <= Value.cast2int32(v2))
+        case Type.Int64 => Value.mkBool(Value.cast2int64(v1) <= Value.cast2int64(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
       }
       case BinaryOperator.Greater => e1.tpe match {
-        case Type.Int8 => if (Value.cast2int8(v1) > Value.cast2int8(v2)) Value.True else Value.False
-        case Type.Int16 => if (Value.cast2int16(v1) > Value.cast2int16(v2)) Value.True else Value.False
-        case Type.Int32 => if (Value.cast2int32(v1) > Value.cast2int32(v2)) Value.True else Value.False
-        case Type.Int64 => if (Value.cast2int64(v1) > Value.cast2int64(v2)) Value.True else Value.False
-        case Type.Var(_) | Type.Unit | Type.Bool | Type.Char | Type.Str | Type.Native | Type.Proposition |
-             Type.Tag(_, _, _) | Type.UnresolvedTag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.Parametric(_, _) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) |
-             Type.Unresolved(_) | Type.Abs(_, _) | Type.Any =>
-          throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+        case Type.Int8 => Value.mkBool(Value.cast2int8(v1) > Value.cast2int8(v2))
+        case Type.Int16 => Value.mkBool(Value.cast2int16(v1) > Value.cast2int16(v2))
+        case Type.Int32 => Value.mkBool(Value.cast2int32(v1) > Value.cast2int32(v2))
+        case Type.Int64 => Value.mkBool(Value.cast2int64(v1) > Value.cast2int64(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
       }
       case BinaryOperator.GreaterEqual => e1.tpe match {
-        case Type.Int8 => if (Value.cast2int8(v1) >= Value.cast2int8(v2)) Value.True else Value.False
-        case Type.Int16 => if (Value.cast2int16(v1) >= Value.cast2int16(v2)) Value.True else Value.False
-        case Type.Int32 => if (Value.cast2int32(v1) >= Value.cast2int32(v2)) Value.True else Value.False
-        case Type.Int64 => if (Value.cast2int64(v1) >= Value.cast2int64(v2)) Value.True else Value.False
-        case Type.Var(_) | Type.Unit | Type.Bool | Type.Char | Type.Str | Type.Native | Type.Proposition |
-             Type.Tag(_, _, _) | Type.UnresolvedTag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.Parametric(_, _) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) |
-             Type.Unresolved(_) | Type.Abs(_, _) | Type.Any =>
-          throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+        case Type.Int8 => Value.mkBool(Value.cast2int8(v1) >= Value.cast2int8(v2))
+        case Type.Int16 => Value.mkBool(Value.cast2int16(v1) >= Value.cast2int16(v2))
+        case Type.Int32 => Value.mkBool(Value.cast2int32(v1) >= Value.cast2int32(v2))
+        case Type.Int64 => Value.mkBool(Value.cast2int64(v1) >= Value.cast2int64(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
       }
 
-      case BinaryOperator.Equal => if (v1 == v2) Value.True else Value.False
-      case BinaryOperator.NotEqual => if (v1 != v2) Value.True else Value.False
+      case BinaryOperator.Equal => Value.mkBool(v1 == v2)
+      case BinaryOperator.NotEqual => Value.mkBool(v1 != v2)
 
-      case BinaryOperator.LogicalAnd => if (Value.cast2bool(v1) && Value.cast2bool(v2)) Value.True else Value.False
-      case BinaryOperator.LogicalOr => if (Value.cast2bool(v1) || Value.cast2bool(v2)) Value.True else Value.False
-      case BinaryOperator.Implication => if (!Value.cast2bool(v1) || Value.cast2bool(v2)) Value.True else Value.False
-      case BinaryOperator.Biconditional => if (Value.cast2bool(v1) == Value.cast2bool(v2)) Value.True else Value.False
+      case BinaryOperator.LogicalAnd => Value.mkBool(Value.cast2bool(v1) && Value.cast2bool(v2))
+      case BinaryOperator.LogicalOr => Value.mkBool(Value.cast2bool(v1) || Value.cast2bool(v2))
+      case BinaryOperator.Implication => Value.mkBool(!Value.cast2bool(v1) || Value.cast2bool(v2))
+      case BinaryOperator.Biconditional => Value.mkBool(Value.cast2bool(v1) == Value.cast2bool(v2))
 
       case BinaryOperator.BitwiseAnd => e1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) & Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) & Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) & Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) & Value.cast2int64(v2))
-        case Type.Var(_) | Type.Unit | Type.Bool | Type.Char | Type.Str | Type.Native | Type.Proposition |
-             Type.Tag(_, _, _) | Type.UnresolvedTag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.Parametric(_, _) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) |
-             Type.Unresolved(_) | Type.Abs(_, _) | Type.Any =>
-          throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
       }
       case BinaryOperator.BitwiseOr => e1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) | Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) | Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) | Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) | Value.cast2int64(v2))
-        case Type.Var(_) | Type.Unit | Type.Bool | Type.Char | Type.Str | Type.Native | Type.Proposition |
-             Type.Tag(_, _, _) | Type.UnresolvedTag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.Parametric(_, _) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) |
-             Type.Unresolved(_) | Type.Abs(_, _) | Type.Any =>
-          throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
       }
       case BinaryOperator.BitwiseXor => e1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) ^ Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) ^ Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) ^ Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) ^ Value.cast2int64(v2))
-        case Type.Var(_) | Type.Unit | Type.Bool | Type.Char | Type.Str | Type.Native | Type.Proposition |
-             Type.Tag(_, _, _) | Type.UnresolvedTag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.Parametric(_, _) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) |
-             Type.Unresolved(_) | Type.Abs(_, _) | Type.Any =>
-          throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
       }
       case BinaryOperator.BitwiseLeftShift => e1.tpe match {
-        case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) << Value.cast2int8(v2))
-        case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) << Value.cast2int16(v2))
+        case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) << Value.cast2int32(v2))
+        case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) << Value.cast2int32(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) << Value.cast2int32(v2))
-        case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) << Value.cast2int64(v2))
-        case Type.Var(_) | Type.Unit | Type.Bool | Type.Char | Type.Str | Type.Native | Type.Proposition |
-             Type.Tag(_, _, _) | Type.UnresolvedTag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.Parametric(_, _) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) |
-             Type.Unresolved(_) | Type.Abs(_, _) | Type.Any =>
-          throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+        case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) << Value.cast2int32(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
       }
       case BinaryOperator.BitwiseRightShift => e1.tpe match {
-        case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) >> Value.cast2int8(v2))
-        case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) >> Value.cast2int16(v2))
+        case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) >> Value.cast2int32(v2))
+        case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) >> Value.cast2int32(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) >> Value.cast2int32(v2))
-        case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) >> Value.cast2int64(v2))
-        case Type.Var(_) | Type.Unit | Type.Bool | Type.Char | Type.Str | Type.Native | Type.Proposition |
-             Type.Tag(_, _, _) | Type.UnresolvedTag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.Parametric(_, _) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) |
-             Type.Unresolved(_) | Type.Abs(_, _) | Type.Any =>
-          throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+        case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) >> Value.cast2int32(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
       }
     }
   }
@@ -505,9 +413,7 @@ object Interpreter {
       }
       hook match {
         case Ast.Hook.Safe(name, inv, _) =>
-          val wargs = evalArgs map {
-            case arg => new WrappedValue(arg): IValue
-          }
+          val wargs: Array[IValue] = evalArgs.map(new WrappedValue(_))
           inv(wargs).getUnsafeRef
         case Ast.Hook.Unsafe(name, inv, _) =>
           inv(evalArgs)
@@ -521,7 +427,7 @@ object Interpreter {
   }
 
   def evalCall(function: Expression, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef =
-    (evalGeneral(function, root, env): @unchecked) match {
+    evalGeneral(function, root, env) match {
       case Value.Closure(formals, body, closureEnv) =>
         var i = 0
         while (i < formals.length) {
@@ -531,13 +437,12 @@ object Interpreter {
         eval(body, root, closureEnv)
       case Value.HookClosure(hook) => hook match {
         case Ast.Hook.Safe(name, inv, _) =>
-          val wargs = args map {
-            case arg => new WrappedValue(arg): IValue
-          }
+          val wargs: Array[IValue] = args.map(new WrappedValue(_))
           inv(wargs).getUnsafeRef
         case Ast.Hook.Unsafe(name, inv, _) =>
           inv(args)
       }
+      case _ => throw new InternalRuntimeError(s"Trying to call a non-function: $function.")
     }
 
   def eval2(closure: AnyRef, arg1: AnyRef, arg2: AnyRef, root: Root): AnyRef = {
