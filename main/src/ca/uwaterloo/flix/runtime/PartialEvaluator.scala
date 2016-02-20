@@ -135,7 +135,7 @@ object PartialEvaluator {
             case (Int32(x), Int32(y)) => k(Int32(x + y))
             case (Int64(x), Int64(y)) => k(Int64(x + y))
 
-            // Identity Laws: Addition by One.
+            // Identity Laws: Addition by Zero.
             case (Int8(0), y) => k(y)
             case (Int16(0), y) => k(y)
             case (Int32(0), y) => k(y)
@@ -162,7 +162,7 @@ object PartialEvaluator {
             case (Int32(x), Int32(y)) => k(Int32(x - y))
             case (Int64(x), Int64(y)) => k(Int64(x - y))
 
-            // Identity Laws: Subtraction by One.
+            // Identity Laws: Subtraction by Zero.
             case (x, Int8(0)) => k(x)
             case (x, Int16(0)) => k(x)
             case (x, Int32(0)) => k(x)

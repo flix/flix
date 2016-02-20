@@ -805,7 +805,6 @@ class TestInterpreter extends FunSuite {
 
   // TODO: This test fails because Tag.tag (a Name.Ident) compares the source location.
   // See https://github.com/magnus-madsen/flix/issues/119
-  // TODO: mkTagType should be taking an IType instead of a Type?
   ignore("Expression.Hook - Hook.Safe.13") {
     import HookSafeHelpers._
     val input =
@@ -814,7 +813,7 @@ class TestInterpreter extends FunSuite {
       """.stripMargin
     var executed = false
     val flix = createFlix()
-    val tagTpe = flix.mkTagType("Val", "Val", Type.Int32)
+    val tagTpe = flix.mkTagType("Val", "Val", flix.mkInt32Type)
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkEnumType("Val", Array(tagTpe)))
     def nativeF(x: IValue): IValue = { executed = true; flix.mkTag("Val", "Val", x) }
     val model = flix
@@ -1125,7 +1124,6 @@ class TestInterpreter extends FunSuite {
 
   // TODO: This test fails because Tag.tag (a Name.Ident) compares the source location.
   // See https://github.com/magnus-madsen/flix/issues/119
-  // TODO: mkTagType should be taking an IType instead of a Type?
   ignore("Expression.Hook - Hook.Unsafe.13") {
     import HookUnsafeHelpers._
     val input =
@@ -1134,7 +1132,7 @@ class TestInterpreter extends FunSuite {
       """.stripMargin
     var executed = false
     val flix = createFlix()
-    val tagTpe = flix.mkTagType("Val", "Val", Type.Int32)
+    val tagTpe = flix.mkTagType("Val", "Val", flix.mkInt32Type)
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkEnumType("Val", Array(tagTpe)))
     def nativeF(x: JInt): Value.Tag = { executed = true; Value.mkTag(Name.Resolved.mk("Val"), "Val", x) }
     val model = flix
@@ -5392,7 +5390,6 @@ class TestInterpreter extends FunSuite {
 
   // TODO: This test fails because Tag.tag (a Name.Ident) compares the source location.
   // See https://github.com/magnus-madsen/flix/issues/119
-  // TODO: mkTagType should be taking an IType instead of a Type?
   ignore("Term.Head.ApplyHook - Hook.Safe.09") {
     import HookSafeHelpers._
     val input =
@@ -5403,7 +5400,8 @@ class TestInterpreter extends FunSuite {
       """.stripMargin
     var executed = false
     val flix = createFlix()
-    val tagTpe = flix.mkTagType("Foo", "Foo", Type.Tuple(List(Type.Int32, Type.Str)))
+    val tupleTpe = flix.mkTupleType(Array(flix.mkInt32Type, flix.mkStrType))
+    val tagTpe = flix.mkTagType("Foo", "Foo", tupleTpe)
     val tpe = flix.mkFunctionType(Array(flix.mkStrType), flix.mkEnumType("Foo", Array(tagTpe)))
     def nativeF(x: IValue): IValue = {
       executed = true
@@ -5640,7 +5638,6 @@ class TestInterpreter extends FunSuite {
 
   // TODO: This test fails because Tag.tag (a Name.Ident) compares the source location.
   // See https://github.com/magnus-madsen/flix/issues/119
-  // TODO: mkTagType should be taking an IType instead of a Type?
   ignore("Term.Head.ApplyHook - Hook.Unsafe.09") {
     import HookUnsafeHelpers._
     val input =
@@ -5651,7 +5648,8 @@ class TestInterpreter extends FunSuite {
       """.stripMargin
     var executed = false
     val flix = createFlix()
-    val tagTpe = flix.mkTagType("Foo", "Foo", Type.Tuple(List(Type.Int32, Type.Str)))
+    val tupleTpe = flix.mkTupleType(Array(flix.mkInt32Type, flix.mkStrType))
+    val tagTpe = flix.mkTagType("Foo", "Foo", tupleTpe)
     val tpe = flix.mkFunctionType(Array(flix.mkStrType), flix.mkEnumType("Foo", Array(tagTpe)))
     def nativeF(x: String): Value.Tag = {
       executed = true
