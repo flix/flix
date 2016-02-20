@@ -322,10 +322,9 @@ impl PartialOrder[E] <= PreOrder[E], Norm[E] {
     /**
      * Returns `true` iff the element `x` is less than or equal to the element `y`.
      */
-    fn leq(x: E, y: E): Bool = ⊡(x) ⊑ ⊡(y)
+    fn leq(x: E, y: E): Bool = ⊡(x) ⊑ ⊡(y) // TODO: Need name for leq.
 
 }
-
 
 /**
  * A pair of partial orders is a partial order.
@@ -344,6 +343,10 @@ impl PartialOrder[(A, B)] <= PartialOrder[A], PartialOrder[B] {
 ///////////////////////////////////////////////////////////////////////////////
 /// Extension of theoretical but perhaps not practical interest.            ///
 ///////////////////////////////////////////////////////////////////////////////
+
+// TODO: Add NatInc, NatDec
+
+
 /**
  * We can define a class of types that are equipped with a least upper bound.
  */
