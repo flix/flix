@@ -5,7 +5,6 @@ import java.net.{BindException, InetSocketAddress}
 import java.nio.file.{Paths, Files}
 import java.util.concurrent.Executors
 
-import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.runtime.{Value, Monitor, Solver}
 import ca.uwaterloo.flix.runtime.datastore.{IndexedLattice, IndexedRelation}
 
@@ -217,12 +216,11 @@ class RestServer(solver: Solver) {
   /**
    * Returns all the rows in the relation.
    *
-   * @param ast the AST declaration of the relation.
    * @param relation a reference to the datastore backing the relation.
    */
-  class ListRelation(ast: TypedAst.Collection.Relation, relation: IndexedRelation[AnyRef]) extends JsonHandler {
+  class ListRelation(relation: IndexedRelation[AnyRef]) extends JsonHandler {
     def json: JValue = JObject(
-      JField("cols", JArray(ast.attributes.map(a => JString(a.ident.name)))),
+      JField("cols", JArray(relation.relation.attributes.toList.map(a => JString(a.ident.name)))),
       JField("rows", JArray(relation.scan.toList.map {
         case row => JArray(row.toList.map(e => JString(Value.pretty(e))))
       })))
@@ -231,13 +229,12 @@ class RestServer(solver: Solver) {
   /**
    * Returns all the rows in the lattice.
    *
-   * @param ast the AST declaration of the lattice.
-   * @param relation a reference to the datastore backing the lattice.
+   * @param lattice a reference to the datastore backing the lattice.
    */
-  class ListLattice(ast: TypedAst.Collection.Lattice, relation: IndexedLattice[AnyRef]) extends JsonHandler {
+  class ListLattice(lattice: IndexedLattice[AnyRef]) extends JsonHandler {
     def json: JValue = JObject(
-      JField("cols", JArray(ast.keys.map(a => JString(a.ident.name)) ::: ast.values.map(a => JString(a.ident.name)))),
-      JField("rows", JArray(relation.scan.toList.map {
+      JField("cols", JArray(lattice.lattice.keys.toList.map(a => JString(a.ident.name)) ::: lattice.lattice.values.toList.map(a => JString(a.ident.name)))),
+      JField("rows", JArray(lattice.scan.toList.map {
         case (key, elms) => JArray(key.toArray.map(k => JString(Value.pretty(k))).toList ::: elms.map(e => JString(Value.pretty(e))).toList)
       })))
   }
@@ -338,11 +335,11 @@ class RestServer(solver: Solver) {
     server.createContext("/status", new GetStatus())
     server.createContext("/relations", new GetRelations())
     for ((name, relation) <- solver.dataStore.relations) {
-      server.createContext("/relation/" + name, new ListRelation(solver.sCtx.root.collections(name).asInstanceOf[TypedAst.Collection.Relation], relation))
+      server.createContext("/relation/" + name, new ListRelation(relation))
     }
     server.createContext("/lattices", new GetLattices())
     for ((name, lattice) <- solver.dataStore.lattices) {
-      server.createContext("/lattice/" + name, new ListLattice(solver.sCtx.root.collections(name).asInstanceOf[TypedAst.Collection.Lattice], lattice))
+      server.createContext("/lattice/" + name, new ListLattice(lattice))
     }
     server.createContext("/telemetry", new GetTelemetry())
     server.createContext("/performance/rules", new GetRulePerformance())

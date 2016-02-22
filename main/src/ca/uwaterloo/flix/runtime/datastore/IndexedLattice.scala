@@ -10,7 +10,7 @@ import java.util
 
 import scala.reflect.ClassTag
 
-class IndexedLattice[ValueType <: AnyRef](lattice: ExecutableAst.Collection.Lattice, indexes: Set[Int])(implicit sCtx: Solver.SolverContext, m: ClassTag[ValueType]) extends IndexedCollection[ValueType] {
+class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Collection.Lattice, indexes: Set[Int])(implicit sCtx: Solver.SolverContext, m: ClassTag[ValueType]) extends IndexedCollection[ValueType] {
   /**
     * A map from indexes to a map from keys to rows (represented as map from keys to elements).
     */
