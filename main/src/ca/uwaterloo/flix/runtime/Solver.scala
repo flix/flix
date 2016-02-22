@@ -93,7 +93,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
 
     val constants = sCtx.root.constants.foldLeft(Map.empty[Name.Resolved, AnyRef]) {
       case (macc, (name, constant)) => constant.exp match {
-        case e: ExecutableAst.Expression.Lambda if e.args.isEmpty =>
+        case e: ExecutableAst.Expression.Lambda if e.args.length == 0 =>
           val v = Interpreter.eval(e.body, sCtx.root)
           macc + (name -> v)
         case _ => macc
