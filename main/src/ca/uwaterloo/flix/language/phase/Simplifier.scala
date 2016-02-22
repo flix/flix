@@ -13,10 +13,10 @@ import ca.uwaterloo.flix.language.ast._
 object Simplifier {
 
   def simplify(tast: TypedAst.Root)(implicit genSym: GenSym): SimplifiedAst.Root = {
-    val constants = tast.constants.mapValues(Definition.simplify)
-    val lattices = tast.lattices.mapValues(Definition.simplify)
-    val collections = tast.collections.mapValues(Collection.simplify)
-    val indexes = tast.indexes.mapValues(Definition.simplify)
+    val constants = tast.constants.map { case (k, v) => k -> Definition.simplify(v) }
+    val lattices = tast.lattices.map { case (k, v) => k -> Definition.simplify(v) }
+    val collections = tast.collections.map { case (k, v) => k -> Collection.simplify(v) }
+    val indexes = tast.indexes.map { case (k, v) => k -> Definition.simplify(v) }
     val facts = tast.facts.map(Constraint.simplify)
     val rules = tast.rules.map(Constraint.simplify)
     val time = tast.time

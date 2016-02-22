@@ -370,9 +370,7 @@ object Resolver {
 
       case defn@WeededAst.Definition.Enum(ident, cases, loc) =>
         val rname = toRName(ident, namespace)
-        val cases = defn.cases.mapValues {
-          case Type.UnresolvedTag(_, tag, tpe) => Type.Tag(rname, tag, tpe)
-        }
+        val cases = defn.cases.map { case (k, Type.UnresolvedTag(_, tag, tpe)) => k -> Type.Tag(rname, tag, tpe) }
         syms.enums.get(rname) match {
           case None => syms.copy(
             enums = syms.enums + (rname -> defn),

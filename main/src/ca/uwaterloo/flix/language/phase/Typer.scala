@@ -485,7 +485,7 @@ object Typer {
           visit(re, env) flatMap {
             case e =>
               val enum = root.enums(enumName)
-              val cases = enum.cases.mapValues(t => t.asInstanceOf[Type.Tag])
+              val cases = enum.cases.map { case (k, v) => k -> v.asInstanceOf[Type.Tag] }
               val caze = cases(tagName.name)
               expect(caze.tpe, e.tpe, e.loc) map {
                 _ => TypedAst.Expression.Tag(enumName, tagName, e, Type.Enum(enumName, cases), loc)
