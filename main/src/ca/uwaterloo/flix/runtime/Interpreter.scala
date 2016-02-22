@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.{IValue, WrappedValue}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Literal, Pattern, Term, Root}
+import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Type, BinaryOperator, UnaryOperator}
 
 import scala.annotation.tailrec
@@ -25,17 +25,15 @@ object Interpreter {
    *
    * Assumes all input has been type-checked.
    */
-  def eval(expr: Expression, root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef = expr.tpe match {
-    case Type.Int32 => Value.mkInt32(evalInt(expr, root, env))
-    case Type.Bool => if (evalBool(expr, root, env)) Value.True else Value.False
-    case Type.Str => evalGeneral(expr, root, env)
-    case Type.Var(_) | Type.Unit | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
-         Type.Set(_) | Type.Lambda(_, _) | Type.Predicate(_) | Type.Native | Type.Any =>
-      evalGeneral(expr, root, env)
-  }
+  def eval(expr: Expression, root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef =
+    expr.tpe match {
+      case Type.Bool => Value.mkBool(evalBool(expr, root, env))
+      case Type.Int32 => Value.mkInt32(evalInt(expr, root, env))
+      case _ => evalGeneral(expr, root, env)
+    }
 
   /*
-   * Evaluates expressions of type `Type.Int`, returning an unwrapped
+   * Evaluates expressions of type `Type.Int32`, returning an unwrapped
    * `scala.Int`. Performs casting as necessary.
    *
    * Subexpressions are evaluated by calling specialized eval whenever
@@ -48,50 +46,49 @@ object Interpreter {
    */
   @tailrec
   private def evalInt(expr: Expression, root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): Int = expr match {
-    case Expression.Lit(literal, _, _) => Value.cast2int32(evalLit(literal))
-    case Expression.Var(ident, _, loc) => Value.cast2int32(env(ident.name))
+    case Expression.Int32(lit) => lit
+    case load: Expression.LoadInt32 =>
+      val bitvec = Value.cast2int64(evalGeneral(load.e, root, env))
+      val shifted = bitvec >> load.offset
+      (shifted & load.mask).toInt
+    case Expression.Var(ident, _, _, loc) => Value.cast2int32(env(ident.name))
     case Expression.Ref(name, _, _) => evalInt(root.constants(name).exp, root, env)
-    case apply: Expression.Apply =>
-      val evalArgs = new Array[AnyRef](apply.argsAsArray.length)
+    case Expression.Apply(name, args, _, _) => ???
+    case Expression.Apply3(exp, args, _, _) =>
+      val evalArgs = new Array[AnyRef](args.length)
       var i = 0
       while (i < evalArgs.length) {
-        evalArgs(i) = eval(apply.argsAsArray(i), root, env)
+        evalArgs(i) = eval(args(i), root, env)
         i = i + 1
       }
-      Value.cast2int32(evalCall(apply.exp, evalArgs, root, env))
+      Value.cast2int32(evalCall(exp, evalArgs, root, env))
     case Expression.Unary(op, exp, _, _) => evalIntUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => evalIntBinary(op, exp1, exp2, root, env)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
       val cond = evalBool(exp1, root, env)
       if (cond) evalInt(exp2, root, env) else evalInt(exp3, root, env)
-    case Expression.Switch(rules, _, _) => evalIntSwitch(rules, root, env)
-    case Expression.Let(ident, exp1, exp2, _, _) =>
-      // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
+    case Expression.Let(ident, _, exp1, exp2, _, _) =>
       val newEnv = env + (ident.name -> eval(exp1, root, env))
       evalInt(exp2, root, newEnv)
-    case m: Expression.Match =>
-      val value = eval(m.exp, root, env)
-      val newEnv = env.clone()
-      val result = matchRule(m.rulesAsArray, value, newEnv)
-      if (result != null)
-        evalInt(result, root, newEnv)
-      else
-        throw new RuntimeException(s"Unmatched value $value.")
-    case Expression.Lambda(_, _, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
-         Expression.Set(_, _, _) | Expression.Hook(_, _, _) =>
-      throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int.")
-    case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
+    case Expression.GetTagValue(exp, _, _) =>
+      val tag = Value.cast2tag(evalGeneral(exp, root, env))
+      Value.cast2int32(tag.value)
+    case Expression.GetTupleIndex(base, offset, _, _) =>
+      val tuple = Value.cast2tuple(evalGeneral(base, root, env))
+      Value.cast2int32(tuple(offset))
+    case Expression.Error(tpe, loc) => throw new RuntimeException(s"Runtime error at ${loc.format}.")
+    case Expression.MatchError(tpe, loc) => throw new RuntimeException(s"Match error at ${loc.format}.")
+    case Expression.SwitchError(tpe, loc) => throw new RuntimeException(s"Switch error at ${loc.format}.")
+    case _ => throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Int32.")
   }
 
   private def evalIntUnary(op: UnaryOperator, e: Expression, root: Root, env: mutable.Map[String, AnyRef]): Int = op match {
     case UnaryOperator.Plus => +evalInt(e, root, env)
     case UnaryOperator.Minus => -evalInt(e, root, env)
     case UnaryOperator.BitwiseNegate => ~evalInt(e, root, env)
-    case UnaryOperator.LogicalNot =>
-      throw new InternalRuntimeError(s"Type of unary expression is not Type.Int.")
+    case _ => throw new InternalRuntimeError(s"Type of unary expression is not Type.Int32.")
   }
 
-  // TODO: Document semantics of modulo on negative operands
   private def evalIntBinary(op: BinaryOperator, e1: Expression, e2: Expression, root: Root, env: mutable.Map[String, AnyRef]): Int = op match {
     case BinaryOperator.Plus => evalInt(e1, root, env) + evalInt(e2, root, env)
     case BinaryOperator.Minus => evalInt(e1, root, env) - evalInt(e2, root, env)
@@ -103,16 +100,7 @@ object Interpreter {
     case BinaryOperator.BitwiseXor => evalInt(e1, root, env) ^ evalInt(e2, root, env)
     case BinaryOperator.BitwiseLeftShift => evalInt(e1, root, env) << evalInt(e2, root, env)
     case BinaryOperator.BitwiseRightShift => evalInt(e1, root, env) >> evalInt(e2, root, env)
-    case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual |
-         BinaryOperator.Equal | BinaryOperator.NotEqual | BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr =>
-      throw new InternalRuntimeError(s"Type of binary expression is not Type.Int.")
-  }
-
-  @tailrec
-  private def evalIntSwitch(rules: List[(Expression, Expression)], root: Root, env: mutable.Map[String, AnyRef]): Int = {
-    val ((test, exp) :: rest) = rules
-    val cond = evalBool(test, root, env)
-    if (cond) evalInt(exp, root, env) else evalIntSwitch(rest, root, env)
+    case _ => throw new InternalRuntimeError(s"Type of binary expression is not Type.Int32.")
   }
 
   /*
@@ -124,45 +112,49 @@ object Interpreter {
    */
   @tailrec
   private def evalBool(expr: Expression, root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): Boolean = expr match {
-    case Expression.Lit(literal, _, _) => Value.cast2bool(evalLit(literal))
-    case Expression.Var(ident, _, loc) => Value.cast2bool(env(ident.name))
+    case Expression.True => true
+    case Expression.False => false
+    case load: Expression.LoadBool =>
+      val bitvec = Value.cast2int64(evalGeneral(load.e, root, env))
+      val shifted = bitvec >> load.offset
+      (shifted & load.mask) != 0
+    case Expression.Var(ident, _, _, loc) => Value.cast2bool(env(ident.name))
     case Expression.Ref(name, _, _) => evalBool(root.constants(name).exp, root, env)
-    case apply: Expression.Apply =>
-      val evalArgs = new Array[AnyRef](apply.argsAsArray.length)
+    case Expression.Apply(name, args, _, _) => ???
+    case Expression.Apply3(exp, args, _, _) =>
+      val evalArgs = new Array[AnyRef](args.length)
       var i = 0
       while (i < evalArgs.length) {
-        evalArgs(i) = eval(apply.argsAsArray(i), root, env)
+        evalArgs(i) = eval(args(i), root, env)
         i = i + 1
       }
-      Value.cast2bool(evalCall(apply.exp, evalArgs, root, env))
+      Value.cast2bool(evalCall(exp, evalArgs, root, env))
     case Expression.Unary(op, exp, _, _) => evalBoolUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => evalBoolBinary(op, exp1, exp2, root, env)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
       val cond = Value.cast2bool(eval(exp1, root, env))
       if (cond) evalBool(exp2, root, env) else evalBool(exp3, root, env)
-    case Expression.Switch(rules, _, _) => evalBoolSwitch(rules, root, env)
-    case Expression.Let(ident, exp1, exp2, _, _) =>
-      // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
+    case Expression.Let(ident, _, exp1, exp2, _, _) =>
       val newEnv = env + (ident.name -> eval(exp1, root, env))
       evalBool(exp2, root, newEnv)
-    case m: Expression.Match =>
-      val value = eval(m.exp, root, env)
-      val newEnv = env.clone()
-      val result = matchRule(m.rulesAsArray, value, newEnv)
-      if (result != null)
-        evalBool(result, root, newEnv)
-      else
-        throw new RuntimeException(s"Unmatched value $value.")
-    case Expression.Lambda(_, _, _, _, _) | Expression.Tag(_, _, _, _, _) | Expression.Tuple(_, _, _) |
-         Expression.Set(_, _, _) | Expression.Hook(_, _, _) =>
-      throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
-    case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
+    case Expression.CheckTag(tag, exp, _) => Value.cast2tag(evalGeneral(exp, root, env)).tag == tag.name
+    case Expression.GetTagValue(exp, _, _) =>
+      val tag = Value.cast2tag(evalGeneral(exp, root, env))
+      Value.cast2bool(tag.value)
+    case Expression.GetTupleIndex(base, offset, _, _) =>
+      val tuple = Value.cast2tuple(evalGeneral(base, root, env))
+      Value.cast2bool(tuple(offset))
+    case Expression.CheckNil(exp, _) => ???
+    case Expression.CheckCons(exp, _) => ???
+    case Expression.Error(tpe, loc) => throw new RuntimeException(s"Runtime error at ${loc.format}.")
+    case Expression.MatchError(tpe, loc) => throw new RuntimeException(s"Match error at ${loc.format}.")
+    case Expression.SwitchError(tpe, loc) => throw new RuntimeException(s"Switch error at ${loc.format}.")
+    case _ => throw new InternalRuntimeError(s"Expression $expr has type ${expr.tpe} instead of Type.Bool.")
   }
 
   private def evalBoolUnary(op: UnaryOperator, e: Expression, root: Root, env: mutable.Map[String, AnyRef]): Boolean = op match {
     case UnaryOperator.LogicalNot => !evalBool(e, root, env)
-    case UnaryOperator.Plus | UnaryOperator.Minus | UnaryOperator.BitwiseNegate =>
-      throw new InternalRuntimeError(s"Type of unary expression is not Type.Bool.")
+    case _ => throw new InternalRuntimeError(s"Type of unary expression is not Type.Bool.")
   }
 
   private def evalBoolBinary(op: BinaryOperator, e1: Expression, e2: Expression, root: Root, env: mutable.Map[String, AnyRef]): Boolean = op match {
@@ -174,17 +166,9 @@ object Interpreter {
     case BinaryOperator.NotEqual => eval(e1, root, env) != eval(e2, root, env)
     case BinaryOperator.LogicalAnd => evalBool(e1, root, env) && evalBool(e2, root, env)
     case BinaryOperator.LogicalOr => evalBool(e1, root, env) || evalBool(e2, root, env)
-    case BinaryOperator.Plus | BinaryOperator.Minus | BinaryOperator.Times | BinaryOperator.Divide |
-         BinaryOperator.Modulo | BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor |
-         BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
-      throw new InternalRuntimeError(s"Type of binary expression is not Type.Bool.")
-  }
-
-  @tailrec
-  private def evalBoolSwitch(rules: List[(Expression, Expression)], root: Root, env: mutable.Map[String, AnyRef]): Boolean = {
-    val ((test, exp) :: rest) = rules
-    val cond = evalBool(test, root, env)
-    if (cond) evalBool(exp, root, env) else evalBoolSwitch(rest, root, env)
+    case BinaryOperator.Implication => !evalBool(e1, root, env) || evalBool(e2, root, env)
+    case BinaryOperator.Biconditional => evalBool(e1, root, env) == evalBool(e2, root, env)
+    case _ => throw new InternalRuntimeError(s"Type of binary expression is not Type.Bool.")
   }
 
   /*
@@ -194,64 +178,96 @@ object Interpreter {
    * specialized eval whenever possible.
    */
   def evalGeneral(expr: Expression, root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef = expr match {
-    case Expression.Lit(literal, _, _) => evalLit(literal)
-    case Expression.Var(ident, _, loc) => env(ident.name)
+    case Expression.Unit => Value.Unit
+    case Expression.True => Value.True
+    case Expression.False => Value.False
+    case Expression.Int8(lit) => Value.mkInt8(lit)
+    case Expression.Int16(lit) => Value.mkInt16(lit)
+    case Expression.Int32(lit) => Value.mkInt32(lit)
+    case Expression.Int64(lit) => Value.mkInt64(lit)
+    case Expression.Str(lit) => Value.mkStr(lit)
+    case load: LoadExpression =>
+      val e = Value.cast2int64(evalGeneral(load.e, root, env))
+      val result = (e >> load.offset).toInt & load.mask
+      load match {
+        case _: Expression.LoadBool => Value.mkBool(result != 0)
+        case _: Expression.LoadInt8 => Value.mkInt8(result)
+        case _: Expression.LoadInt16 => Value.mkInt16(result)
+        case _: Expression.LoadInt32 => Value.mkInt32(result)
+      }
+    case store: StoreExpression =>
+      val e = Value.cast2int64(evalGeneral(store.e, root, env))
+      val v = Value.cast2int64(evalGeneral(store.v, root, env))
+      val result = (e & store.targetMask) | ((v & store.mask) << store.offset)
+      Value.mkInt64(result)
+    case Expression.Var(ident, _, _, loc) => env(ident.name)
     case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
-    case Expression.Hook(hook, _, _) => Value.HookClosure(hook)
-    case exp: Expression.Lambda =>
-      val formals = new Array[String](exp.argsAsArray.length)
+    case Expression.Lambda(annotations, args, body, _, _) =>
+      val formals = new Array[String](args.length)
       var i = 0
       while (i < formals.length) {
-        formals(i) = exp.argsAsArray(i).ident.name
+        formals(i) = args(i).ident.name
         i = i + 1
       }
-      Value.Closure(formals, exp.body, env.clone())
-    case apply: Expression.Apply =>
-      val evalArgs = new Array[AnyRef](apply.argsAsArray.length)
+      Value.Closure(formals, body, env.clone())
+    case Expression.Hook(hook, _, _) => Value.HookClosure(hook)
+    case Expression.Closure(args, body, clEnv, _, _) => ???
+    case Expression.Apply(name, args, _, _) => ???
+    case Expression.Apply3(exp, args, _, _) =>
+      val evalArgs = new Array[AnyRef](args.length)
       var i = 0
       while (i < evalArgs.length) {
-        evalArgs(i) = eval(apply.argsAsArray(i), root, env)
+        evalArgs(i) = eval(args(i), root, env)
         i = i + 1
       }
-      evalCall(apply.exp, evalArgs, root, env)
+      evalCall(exp, evalArgs, root, env)
     case Expression.Unary(op, exp, _, _) => evalGeneralUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => evalGeneralBinary(op, exp1, exp2, root, env)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
       val cond = evalBool(exp1, root, env)
       if (cond) eval(exp2, root, env) else eval(exp3, root, env)
-    case Expression.Switch(rules, _, _) => evalGeneralSwitch(rules, root, env)
-    case Expression.Let(ident, exp1, exp2, _, _) =>
-      // TODO: Right now Let only supports a single binding. Does it make sense to allow a list of bindings?
+    case Expression.Let(ident, _, exp1, exp2, _, _) =>
       val newEnv = env + (ident.name -> eval(exp1, root, env))
       eval(exp2, root, newEnv)
-    case m: Expression.Match =>
-      val value = eval(m.exp, root, env)
-      val newEnv = env.clone()
-      val result = matchRule(m.rulesAsArray, value, newEnv)
-      if (result != null)
-        eval(result, root, newEnv)
-      else
-        throw new RuntimeException(s"Unmatched value $value.")
+    case Expression.CheckTag(tag, exp, _) => Value.mkBool(Value.cast2tag(evalGeneral(exp, root, env)).tag == tag.name)
+    case Expression.GetTagValue(exp, _, _) => Value.cast2tag(evalGeneral(exp, root, env)).value
     case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
-    case exp: Expression.Tuple =>
-      val elms = new Array[AnyRef](exp.asArray.length)
+    case Expression.GetTupleIndex(base, offset, _, _) => Value.cast2tuple(evalGeneral(base, root, env))(offset)
+    case Expression.Tuple(elms, _, _) =>
+      val evalElms = new Array[AnyRef](elms.length)
       var i = 0
-      while (i < elms.length) {
-        elms(i) = eval(exp.asArray(i), root, env)
+      while (i < evalElms.length) {
+        evalElms(i) = eval(elms(i), root, env)
         i = i + 1
       }
-      Value.Tuple(elms)
+      Value.Tuple(evalElms)
+    case Expression.CheckNil(exp, _) => ???
+    case Expression.CheckCons(exp, _) => ???
     case Expression.Set(elms, _, _) => Value.mkSet(elms.map(e => eval(e, root, env)).toSet)
-    case Expression.Error(tpe, loc) => throw new RuntimeException(s"Error at ${loc.format}.")
+    case Expression.Error(tpe, loc) => throw new RuntimeException(s"Runtime error at ${loc.format}.")
+    case Expression.MatchError(tpe, loc) => throw new RuntimeException(s"Match error at ${loc.format}.")
+    case Expression.SwitchError(tpe, loc) => throw new RuntimeException(s"Switch error at ${loc.format}.")
   }
 
   private def evalGeneralUnary(op: UnaryOperator, e: Expression, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
     val v = eval(e, root, env)
     op match {
-      case UnaryOperator.LogicalNot => if (Value.cast2bool(v)) Value.False else Value.True
-      case UnaryOperator.Plus => Value.mkInt32(+Value.cast2int32(v))
-      case UnaryOperator.Minus => Value.mkInt32(-Value.cast2int32(v))
-      case UnaryOperator.BitwiseNegate => Value.mkInt32(~Value.cast2int32(v))
+      case UnaryOperator.LogicalNot => Value.mkBool(Value.cast2bool(v))
+      case UnaryOperator.Plus => v // nop
+      case UnaryOperator.Minus => e.tpe match {
+        case Type.Int8 => Value.mkInt8(-Value.cast2int8(v))
+        case Type.Int16 => Value.mkInt16(-Value.cast2int16(v))
+        case Type.Int32 => Value.mkInt32(-Value.cast2int32(v))
+        case Type.Int64 => Value.mkInt64(-Value.cast2int64(v))
+        case _ => throw new InternalRuntimeError(s"Can't apply UnaryOperator.$op to type ${e.tpe}.")
+      }
+      case UnaryOperator.BitwiseNegate => e.tpe match {
+        case Type.Int8 => Value.mkInt8(~Value.cast2int8(v))
+        case Type.Int16 => Value.mkInt16(~Value.cast2int16(v))
+        case Type.Int32 => Value.mkInt32(~Value.cast2int32(v))
+        case Type.Int64 => Value.mkInt64(~Value.cast2int64(v))
+        case _ => throw new InternalRuntimeError(s"Can't apply UnaryOperator.$op to type ${e.tpe}.")
+      }
     }
   }
 
@@ -259,96 +275,115 @@ object Interpreter {
     val v1 = eval(e1, root, env)
     val v2 = eval(e2, root, env)
     op match {
-      case BinaryOperator.Plus => Value.mkInt32(Value.cast2int32(v1) + Value.cast2int32(v2))
-      case BinaryOperator.Minus => Value.mkInt32(Value.cast2int32(v1) - Value.cast2int32(v2))
-      case BinaryOperator.Times => Value.mkInt32(Value.cast2int32(v1) * Value.cast2int32(v2))
-      case BinaryOperator.Divide => Value.mkInt32(Value.cast2int32(v1) / Value.cast2int32(v2))
-      case BinaryOperator.Modulo => Value.mkInt32(Value.cast2int32(v1) % Value.cast2int32(v2))
-      case BinaryOperator.Less => if (Value.cast2int32(v1) < Value.cast2int32(v2)) Value.True else Value.False
-      case BinaryOperator.LessEqual => if (Value.cast2int32(v1) <= Value.cast2int32(v2)) Value.True else Value.False
-      case BinaryOperator.Greater => if (Value.cast2int32(v1) > Value.cast2int32(v2)) Value.True else Value.False
-      case BinaryOperator.GreaterEqual => if (Value.cast2int32(v1) >= Value.cast2int32(v2)) Value.True else Value.False
-      case BinaryOperator.Equal => if (v1 == v2) Value.True else Value.False
-      case BinaryOperator.NotEqual => if (v1 != v2) Value.True else Value.False
-      case BinaryOperator.LogicalAnd => if (Value.cast2bool(v1) && Value.cast2bool(v2)) Value.True else Value.False
-      case BinaryOperator.LogicalOr => if (Value.cast2bool(v1) || Value.cast2bool(v2)) Value.True else Value.False
-      case BinaryOperator.BitwiseAnd => Value.mkInt32(Value.cast2int32(v1) & Value.cast2int32(v2))
-      case BinaryOperator.BitwiseOr => Value.mkInt32(Value.cast2int32(v1) | Value.cast2int32(v2))
-      case BinaryOperator.BitwiseXor => Value.mkInt32(Value.cast2int32(v1) ^ Value.cast2int32(v2))
-      case BinaryOperator.BitwiseLeftShift => Value.mkInt32(Value.cast2int32(v1) << Value.cast2int32(v2))
-      case BinaryOperator.BitwiseRightShift => Value.mkInt32(Value.cast2int32(v1) >> Value.cast2int32(v2))
-    }
-  }
-
-  @tailrec
-  private def evalGeneralSwitch(rules: List[(Expression, Expression)], root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
-    val ((test, exp) :: rest) = rules
-    val cond = evalBool(test, root, env)
-    if (cond) eval(exp, root, env) else evalGeneralSwitch(rest, root, env)
-  }
-
-  def evalLit(lit: Literal): AnyRef = lit match {
-    case Literal.Unit(_) => Value.Unit
-    case Literal.Bool(b, _) => if (b) Value.True else Value.False
-    case Literal.Int(i, _) => Value.mkInt32(i)
-    case Literal.Str(s, _) => Value.mkStr(s)
-    case Literal.Tag(name, ident, innerLit, _, _) => Value.mkTag(name, ident.name, evalLit(innerLit))
-    case tpl: Literal.Tuple =>
-      val lits = new Array[AnyRef](tpl.asArray.length)
-      var i = 0
-      while (i < lits.length) {
-        lits(i) = evalLit(tpl.asArray(i))
-        i = i + 1
+      case BinaryOperator.Plus => e1.tpe match {
+        case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) + Value.cast2int8(v2))
+        case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) + Value.cast2int16(v2))
+        case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) + Value.cast2int32(v2))
+        case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) + Value.cast2int64(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
       }
-      Value.Tuple(lits)
-    case Literal.Set(elms, _, _) => Value.mkSet(elms.map(evalLit).toSet)
-  }
-
-  private def matchRule(rules: Array[(Pattern, Expression)], value: AnyRef, env: mutable.Map[String, AnyRef]): Expression = {
-    var i = 0
-    while (i < rules.length) {
-      val rule = rules(i)
-      if (canUnify(rule._1, value)) {
-        unify(rule._1, value, env)
-        return rule._2
+      case BinaryOperator.Minus => e1.tpe match {
+        case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) - Value.cast2int8(v2))
+        case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) - Value.cast2int16(v2))
+        case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) - Value.cast2int32(v2))
+        case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) - Value.cast2int64(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
       }
-      i = i + 1
-    }
-    null
-  }
-
-  // Assuming `pattern` can unify with `value`, updates the given `env`.
-  // Bad things will happen if `pattern` does not unify with `value`.
-  private def unify(pattern: Pattern, value: AnyRef, env: mutable.Map[String, AnyRef]): Unit = pattern match {
-    case Pattern.Var(ident, _, _) => env.update(ident.name, value)
-    case Pattern.Tag(_, _, innerPat, _, _) => unify(innerPat, Value.cast2tag(value).value, env)
-    case p: Pattern.Tuple =>
-      val elms = Value.cast2tuple(value)
-      var i = 0
-      while (i < p.asArray.length) {
-        unify(p.asArray(i), elms(i), env)
-        i = i + 1
+      case BinaryOperator.Times => e1.tpe match {
+        case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) * Value.cast2int8(v2))
+        case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) * Value.cast2int16(v2))
+        case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) * Value.cast2int32(v2))
+        case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) * Value.cast2int64(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
       }
-    case Pattern.Wildcard(_, _) | Pattern.Lit(_, _, _) => Unit
-  }
+      case BinaryOperator.Divide => e1.tpe match {
+        case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) / Value.cast2int8(v2))
+        case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) / Value.cast2int16(v2))
+        case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) / Value.cast2int32(v2))
+        case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) / Value.cast2int64(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+      }
+      case BinaryOperator.Modulo => e1.tpe match {
+        case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) % Value.cast2int8(v2))
+        case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) % Value.cast2int16(v2))
+        case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) % Value.cast2int32(v2))
+        case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) % Value.cast2int64(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+      }
 
-  // Returns `true` if `pattern` can unify with `value`. Returns `false` otherwise.
-  private def canUnify(pattern: Pattern, value: AnyRef): Boolean = pattern match {
-    case Pattern.Lit(lit, _, _) => evalLit(lit) == value
-    case Pattern.Tag(name, ident, innerPat, _, _) => value match {
-      case v: Value.Tag if name == v.enum && ident.name == v.tag => canUnify(innerPat, v.value)
-      case _ => false
+      case BinaryOperator.Less => e1.tpe match {
+        case Type.Int8 => Value.mkBool(Value.cast2int8(v1) < Value.cast2int8(v2))
+        case Type.Int16 => Value.mkBool(Value.cast2int16(v1) < Value.cast2int16(v2))
+        case Type.Int32 => Value.mkBool(Value.cast2int32(v1) < Value.cast2int32(v2))
+        case Type.Int64 => Value.mkBool(Value.cast2int64(v1) < Value.cast2int64(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+      }
+      case BinaryOperator.LessEqual => e1.tpe match {
+        case Type.Int8 => Value.mkBool(Value.cast2int8(v1) <= Value.cast2int8(v2))
+        case Type.Int16 => Value.mkBool(Value.cast2int16(v1) <= Value.cast2int16(v2))
+        case Type.Int32 => Value.mkBool(Value.cast2int32(v1) <= Value.cast2int32(v2))
+        case Type.Int64 => Value.mkBool(Value.cast2int64(v1) <= Value.cast2int64(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+      }
+      case BinaryOperator.Greater => e1.tpe match {
+        case Type.Int8 => Value.mkBool(Value.cast2int8(v1) > Value.cast2int8(v2))
+        case Type.Int16 => Value.mkBool(Value.cast2int16(v1) > Value.cast2int16(v2))
+        case Type.Int32 => Value.mkBool(Value.cast2int32(v1) > Value.cast2int32(v2))
+        case Type.Int64 => Value.mkBool(Value.cast2int64(v1) > Value.cast2int64(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+      }
+      case BinaryOperator.GreaterEqual => e1.tpe match {
+        case Type.Int8 => Value.mkBool(Value.cast2int8(v1) >= Value.cast2int8(v2))
+        case Type.Int16 => Value.mkBool(Value.cast2int16(v1) >= Value.cast2int16(v2))
+        case Type.Int32 => Value.mkBool(Value.cast2int32(v1) >= Value.cast2int32(v2))
+        case Type.Int64 => Value.mkBool(Value.cast2int64(v1) >= Value.cast2int64(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+      }
+
+      case BinaryOperator.Equal => Value.mkBool(v1 == v2)
+      case BinaryOperator.NotEqual => Value.mkBool(v1 != v2)
+
+      case BinaryOperator.LogicalAnd => Value.mkBool(Value.cast2bool(v1) && Value.cast2bool(v2))
+      case BinaryOperator.LogicalOr => Value.mkBool(Value.cast2bool(v1) || Value.cast2bool(v2))
+      case BinaryOperator.Implication => Value.mkBool(!Value.cast2bool(v1) || Value.cast2bool(v2))
+      case BinaryOperator.Biconditional => Value.mkBool(Value.cast2bool(v1) == Value.cast2bool(v2))
+
+      case BinaryOperator.BitwiseAnd => e1.tpe match {
+        case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) & Value.cast2int8(v2))
+        case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) & Value.cast2int16(v2))
+        case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) & Value.cast2int32(v2))
+        case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) & Value.cast2int64(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+      }
+      case BinaryOperator.BitwiseOr => e1.tpe match {
+        case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) | Value.cast2int8(v2))
+        case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) | Value.cast2int16(v2))
+        case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) | Value.cast2int32(v2))
+        case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) | Value.cast2int64(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+      }
+      case BinaryOperator.BitwiseXor => e1.tpe match {
+        case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) ^ Value.cast2int8(v2))
+        case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) ^ Value.cast2int16(v2))
+        case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) ^ Value.cast2int32(v2))
+        case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) ^ Value.cast2int64(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+      }
+      case BinaryOperator.BitwiseLeftShift => e1.tpe match {
+        case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) << Value.cast2int32(v2))
+        case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) << Value.cast2int32(v2))
+        case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) << Value.cast2int32(v2))
+        case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) << Value.cast2int32(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+      }
+      case BinaryOperator.BitwiseRightShift => e1.tpe match {
+        case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) >> Value.cast2int32(v2))
+        case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) >> Value.cast2int32(v2))
+        case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) >> Value.cast2int32(v2))
+        case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) >> Value.cast2int32(v2))
+        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$op to type ${e1.tpe}.")
+      }
     }
-    case p: Pattern.Tuple =>
-      val elms = Value.cast2tuple(value)
-        var i = 0
-        while (i < p.asArray.length) {
-          val result = canUnify(p.asArray(i), elms(i))
-          if (!result) return false
-          i = i + 1
-        }
-        true
-    case Pattern.Wildcard(_, _) | Pattern.Var(_, _, _) => true
   }
 
   // TODO: Need to come up with some more clean interfaces
@@ -359,39 +394,40 @@ object Interpreter {
     */
   def evalHeadTerm(t: Term.Head, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = t match {
     case Term.Head.Var(x, _, _) => env(x.name)
-    case Term.Head.Lit(lit, _, _) => evalLit(lit)
-    case term: Term.Head.Apply =>
-      val function = root.constants(term.name).exp
-      val evalArgs = new Array[AnyRef](term.argsAsArray.length)
+    case Term.Head.Exp(e, _, _) => eval(e, root, env)
+    case Term.Head.Apply(name, args, _, _) =>
+      val function = root.constants(name).exp
+      val evalArgs = new Array[AnyRef](args.length)
       var i = 0
       while (i < evalArgs.length) {
-        evalArgs(i) = evalHeadTerm(term.argsAsArray(i), root, env)
+        evalArgs(i) = evalHeadTerm(args(i), root, env)
         i = i + 1
       }
       evalCall(function, evalArgs, root, env)
     case Term.Head.ApplyHook(hook, args, _, _) =>
-      val evalArgs = args.map(a => evalHeadTerm(a, root, env))
-
+      val evalArgs = new Array[AnyRef](args.length)
+      var i = 0
+      while (i < evalArgs.length) {
+        evalArgs(i) = evalHeadTerm(args(i), root, env)
+        i = i + 1
+      }
       hook match {
-        case Ast.Hook.Safe(name, inv, tpe) =>
-          val wargs = evalArgs map {
-            case arg => new WrappedValue(arg): IValue
-          }
-          inv(wargs.toArray).getUnsafeRef
-
-        case Ast.Hook.Unsafe(name, inv, tpe) =>
-          inv(evalArgs.toArray)
+        case Ast.Hook.Safe(name, inv, _) =>
+          val wargs: Array[IValue] = evalArgs.map(new WrappedValue(_))
+          inv(wargs).getUnsafeRef
+        case Ast.Hook.Unsafe(name, inv, _) =>
+          inv(evalArgs)
       }
   }
 
-  def evalBodyTerm(t: Term.Body, env: mutable.Map[String, AnyRef]): AnyRef = t match {
+  def evalBodyTerm(t: Term.Body, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = t match {
     case Term.Body.Wildcard(_, _) => ???
-    case Term.Body.Var(x, _, _) => env(x.name)
-    case Term.Body.Lit(lit, _, _) => evalLit(lit)
+    case Term.Body.Var(x, _, _, _) => env(x.name)
+    case Term.Body.Exp(e, _, _) => eval(e, root, env)
   }
 
   def evalCall(function: Expression, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef =
-    (evalGeneral(function, root, env): @unchecked) match {
+    evalGeneral(function, root, env) match {
       case Value.Closure(formals, body, closureEnv) =>
         var i = 0
         while (i < formals.length) {
@@ -400,15 +436,13 @@ object Interpreter {
         }
         eval(body, root, closureEnv)
       case Value.HookClosure(hook) => hook match {
-        case Ast.Hook.Safe(name, inv, tpe) =>
-          val wargs = args map {
-            case arg => new WrappedValue(arg): IValue
-          }
+        case Ast.Hook.Safe(name, inv, _) =>
+          val wargs: Array[IValue] = args.map(new WrappedValue(_))
           inv(wargs).getUnsafeRef
-
-        case Ast.Hook.Unsafe(name, inv, tpe) =>
+        case Ast.Hook.Unsafe(name, inv, _) =>
           inv(args)
       }
+      case _ => throw new InternalRuntimeError(s"Trying to call a non-function: $function.")
     }
 
   def eval2(closure: AnyRef, arg1: AnyRef, arg2: AnyRef, root: Root): AnyRef = {

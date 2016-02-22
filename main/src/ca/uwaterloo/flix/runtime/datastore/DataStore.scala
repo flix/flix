@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime.datastore
 
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Collection
 import ca.uwaterloo.flix.language.ast.Name
-import ca.uwaterloo.flix.language.ast.TypedAst.Collection
 import ca.uwaterloo.flix.language.phase.Indexer
 import ca.uwaterloo.flix.runtime.Solver
 import ca.uwaterloo.flix.util.BitOps

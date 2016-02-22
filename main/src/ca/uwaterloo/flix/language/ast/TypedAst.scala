@@ -1,7 +1,5 @@
 package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.{Field, Method}
-
 import scala.collection.mutable
 
 // TODO: The documentation is not fully consistent with when something is an AST node. "that represents" vs "representing"...
@@ -17,7 +15,6 @@ object TypedAst {
     * A typed AST node representing the root of the entire AST.
     *
     * @param constants   a map from names to constant definitions.
-    * @param directives  a list of directives.
     * @param lattices    a map from types to user-specified bounded lattice definitions.
     * @param collections a map from names to lattice or relation definitions.
     * @param indexes     a map from collection names to indexes.
@@ -33,40 +30,7 @@ object TypedAst {
                   facts: List[TypedAst.Constraint.Fact],
                   rules: List[TypedAst.Constraint.Rule],
                   hooks: Map[Name.Resolved, Ast.Hook],
-                  time: Time) extends TypedAst {
-
-    /**
-      * Computes map of the dependencies between collection predicates.
-      */
-    @deprecated("moved to ExecutableAST", "0.1")
-    val dependenciesOf: Map[Name.Resolved, mutable.Set[(Constraint.Rule, TypedAst.Predicate.Body.Collection)]] = {
-      val result = mutable.Map.empty[Name.Resolved, mutable.Set[(Constraint.Rule, TypedAst.Predicate.Body.Collection)]]
-
-      for (rule <- rules) {
-        rule.head match {
-          case TypedAst.Predicate.Head.Relation(name, _, _, _) => result.update(name, mutable.Set.empty)
-          case _ => // nop
-        }
-      }
-
-      for (outerRule <- rules) {
-        for (innerRule <- rules) {
-          for (body <- innerRule.body) {
-            (outerRule.head, body) match {
-              case (outer: TypedAst.Predicate.Head.Relation, inner: TypedAst.Predicate.Body.Collection) =>
-                if (outer.name == inner.name) {
-                  val deps = result(outer.name)
-                  deps += ((innerRule, inner))
-                }
-              case _ => // nop
-            }
-          }
-        }
-      }
-      result.toMap
-    }
-
-  }
+                  time: Time) extends TypedAst
 
   /**
     * A common super-type for typed definitions.
@@ -164,40 +128,7 @@ object TypedAst {
       * @param head the head predicate.
       * @param body the body predicates.
       */
-    case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body]) extends TypedAst.Constraint {
-
-      @deprecated("moved to ExecutableAST", "0.1")
-      val collections: List[TypedAst.Predicate.Body.Collection] = body collect {
-        case p: TypedAst.Predicate.Body.Collection => p
-      }
-
-      @deprecated("moved to ExecutableAST", "0.1")
-      val loops: List[TypedAst.Predicate.Body.Loop] = body collect {
-        case p: TypedAst.Predicate.Body.Loop => p
-      }
-
-      @deprecated("moved to ExecutableAST", "0.1")
-      val filters: List[TypedAst.Predicate.Body.ApplyFilter] = body collect {
-        case p: TypedAst.Predicate.Body.ApplyFilter => p
-      }
-
-      @deprecated("moved to ExecutableAST", "0.1")
-      val filterHooks: List[TypedAst.Predicate.Body.ApplyHookFilter] = body collect {
-        case p: TypedAst.Predicate.Body.ApplyHookFilter => p
-      }
-
-      @deprecated("moved to ExecutableAST", "0.1")
-      val disjoint: List[TypedAst.Predicate.Body.NotEqual] = body collect {
-        case p: TypedAst.Predicate.Body.NotEqual => p
-      }
-
-      // TODO: Refactor so this is not part of the typed ast.
-      @deprecated("moved to ExecutableAST", "0.1")
-      var elapsedTime: Long = 0
-      @deprecated("moved to ExecutableAST", "0.1")
-      var hitcount: Int = 0
-
-    }
+    case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body]) extends TypedAst.Constraint
 
   }
 
@@ -275,11 +206,7 @@ object TypedAst {
       * @param tpe  the type of the tuple.
       * @param loc  the source location.
       */
-    case class Tuple(elms: List[TypedAst.Literal], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Literal {
-      // TODO: Move
-      @deprecated("moved to ExecutableAST", "0.1")
-      val asArray: Array[TypedAst.Literal] = elms.toArray
-    }
+    case class Tuple(elms: List[TypedAst.Literal], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Literal
 
     /**
       * A typed AST node representing a Set literal.
@@ -350,11 +277,7 @@ object TypedAst {
       * @param tpe         the type of the entire function.
       * @param loc         the source location.
       */
-    case class Lambda(annotations: Ast.Annotations, args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Expression {
-      // TODO: Move
-      @deprecated("moved to ExecutableAST", "0.1")
-      val argsAsArray: Array[TypedAst.FormalArg] = args.toArray
-    }
+    case class Lambda(annotations: Ast.Annotations, args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a function call.
@@ -364,11 +287,7 @@ object TypedAst {
       * @param tpe  the return type of the function.
       * @param loc  the source location.
       */
-    case class Apply(exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-      // TODO: Move
-      @deprecated("moved to ExecutableAST", "0.1")
-      val argsAsArray: Array[TypedAst.Expression] = args.toArray
-    }
+    case class Apply(exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a unary expression.
@@ -430,11 +349,7 @@ object TypedAst {
       * @param tpe   the type of the match expression (which is equivalent to the type of each rule).
       * @param loc   the source location.
       */
-    case class Match(exp: TypedAst.Expression, rules: List[(TypedAst.Pattern, TypedAst.Expression)], tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-      // TODO: Move
-      @deprecated("moved to ExecutableAST", "0.1")
-      val rulesAsArray: Array[(TypedAst.Pattern, TypedAst.Expression)] = rules.toArray
-    }
+    case class Match(exp: TypedAst.Expression, rules: List[(TypedAst.Pattern, TypedAst.Expression)], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a tagged expression.
@@ -454,11 +369,7 @@ object TypedAst {
       * @param tpe  the type of the tuple.
       * @param loc  the source location.
       */
-    case class Tuple(elms: List[TypedAst.Expression], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Expression {
-      // TODO: Move
-      @deprecated("moved to ExecutableAST", "0.1")
-      val asArray: Array[TypedAst.Expression] = elms.toArray
-    }
+    case class Tuple(elms: List[TypedAst.Expression], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a set expression.
@@ -558,11 +469,7 @@ object TypedAst {
       * @param tpe  the type of the tuple.
       * @param loc  the source location.
       */
-    case class Tuple(elms: List[TypedAst.Pattern], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Pattern {
-      // TODO: Move
-      @deprecated("moved to ExecutableAST", "0.1")
-      val asArray: Array[TypedAst.Pattern] = elms.toArray
-    }
+    case class Tuple(elms: List[TypedAst.Pattern], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Pattern
 
     // TODO: Add for opt, list, map, ???
 
@@ -603,49 +510,13 @@ object TypedAst {
         * @param loc   the source location.
         */
       // TODO: Need better name....could also be a lattice...
-      case class Relation(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Head {
-        /**
-          * Returns the arity of the predicate.
-          */
-        @deprecated("moved to ExecutableAST", "0.1")
-        val arity: Int = terms.length
-        /**
-          * Returns the terms as an array.
-          */
-        // TODO: Move this into a more appropiate IR.
-        @deprecated("moved to ExecutableAST", "0.1")
-        val termsArray: Array[TypedAst.Term.Head] = terms.toArray
-      }
+      case class Relation(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Head
     }
 
     /**
       * A common super-type for body predicates.
       */
-    sealed trait Body extends TypedAst.Predicate {
-      /**
-        * Returns the set of free variables in the term.
-        */
-      // TODO: Move
-      def freeVars: Set[String] = this match {
-        case TypedAst.Predicate.Body.Collection(_, terms, _, _) => terms.foldLeft(Set.empty[String]) {
-          case (xs, t: TypedAst.Term.Body.Wildcard) => xs
-          case (xs, t: TypedAst.Term.Body.Var) => xs + t.ident.name
-          case (xs, t: TypedAst.Term.Body.Lit) => xs
-        }
-        case TypedAst.Predicate.Body.ApplyFilter(_, terms, _, _) => terms.foldLeft(Set.empty[String]) {
-          case (xs, t: TypedAst.Term.Body.Wildcard) => xs
-          case (xs, t: TypedAst.Term.Body.Var) => xs + t.ident.name
-          case (xs, t: TypedAst.Term.Body.Lit) => xs
-        }
-        case TypedAst.Predicate.Body.ApplyHookFilter(_, terms, _, _) => terms.foldLeft(Set.empty[String]) {
-          case (xs, t: TypedAst.Term.Body.Wildcard) => xs
-          case (xs, t: TypedAst.Term.Body.Var) => xs + t.ident.name
-          case (xs, t: TypedAst.Term.Body.Lit) => xs
-        }
-        case TypedAst.Predicate.Body.NotEqual(x, y, _, _) => Set(x.name, y.name)
-        case TypedAst.Predicate.Body.Loop(_, _, _, _) => ???
-      }
-    }
+    sealed trait Body extends TypedAst.Predicate
 
     object Body {
 
@@ -657,36 +528,7 @@ object TypedAst {
         * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      case class Collection(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Body {
-        /**
-          * Returns the arity of this collection predicate.
-          */
-        @deprecated("moved to ExecutableAST", "0.1")
-        val arity: Int = terms.length
-
-        /**
-          * Returns the terms as an array.
-          */
-        // TODO: Move this into a more appropiate IR.
-        @deprecated("moved to ExecutableAST", "0.1")
-        val termsArray: Array[TypedAst.Term.Body] = terms.toArray
-
-        // TODO: Move this into a more appropiate IR.
-        @deprecated("moved to ExecutableAST", "0.1")
-        val index2var: Array[String] = {
-          val r = new Array[String](terms.length)
-          var i = 0
-          while (i < r.length) {
-            terms(i) match {
-              case TypedAst.Term.Body.Var(ident, _, _) =>
-                r(i) = ident.name
-              case _ => // nop
-            }
-            i = i + 1
-          }
-          r
-        }
-      }
+      case class Collection(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Body
 
       /**
         * A filter predicate that occurs in the body of a rule.
@@ -696,11 +538,7 @@ object TypedAst {
         * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      case class ApplyFilter(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body {
-        // TODO: Move
-        @deprecated("moved to ExecutableAST", "0.1")
-        val termsAsArray: Array[TypedAst.Term.Body] = terms.toArray
-      }
+      case class ApplyFilter(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body
 
       /**
         * A hook filter predicate that occurs in the body of a rule.
@@ -710,12 +548,7 @@ object TypedAst {
         * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      case class ApplyHookFilter(hook: Ast.Hook, terms: List[TypedAst.Term.Body], tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body {
-        // TODO: Move
-        @deprecated("moved to ExecutableAST", "0.1")
-        val termsAsArray: Array[TypedAst.Term.Body] = terms.toArray
-      }
-
+      case class ApplyHookFilter(hook: Ast.Hook, terms: List[TypedAst.Term.Body], tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body
 
       /**
         * A typed not equal predicate that occurs in the body of a rule.
@@ -786,11 +619,7 @@ object TypedAst {
         * @param tpe  the type of the term.
         * @param loc  the source location.
         */
-      case class Apply(name: Name.Resolved, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head {
-        // TODO: Move
-        @deprecated("moved to ExecutableAST", "0.1")
-        val argsAsArray: Array[TypedAst.Term.Head] = args.toArray
-      }
+      case class Apply(name: Name.Resolved, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
 
       /**
         * A typed AST node representing a hook function call term.
@@ -800,11 +629,8 @@ object TypedAst {
         * @param tpe  the type of the term.
         * @param loc  the source location.
         */
-      case class ApplyHook(hook: Ast.Hook, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head {
-        // TODO: Move
-        @deprecated("moved to ExecutableAST", "0.1")
-        val argsAsArray: Array[TypedAst.Term.Head] = args.toArray
-      }
+      case class ApplyHook(hook: Ast.Hook, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
+
     }
 
     /**

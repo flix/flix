@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime.datastore
 
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.ExecutableAst
 import ca.uwaterloo.flix.runtime.Solver
 import ca.uwaterloo.flix.util.BitOps
 
@@ -16,7 +16,7 @@ import scala.collection.mutable
   * @param indexes the indexes.
   * @param default the default index.
   */
-final class IndexedRelation[ValueType](relation: TypedAst.Collection.Relation, indexes: Set[Int], default: Int)(implicit sCtx: Solver.SolverContext) extends IndexedCollection[ValueType] {
+final class IndexedRelation[ValueType](relation: ExecutableAst.Collection.Relation, indexes: Set[Int], default: Int)(implicit sCtx: Solver.SolverContext) extends IndexedCollection[ValueType] {
 
   /**
     * A map from indexes to keys to rows of values.

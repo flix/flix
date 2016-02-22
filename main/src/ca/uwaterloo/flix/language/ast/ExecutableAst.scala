@@ -59,13 +59,14 @@ object ExecutableAst {
 
     case class Fact(head: ExecutableAst.Predicate.Head) extends ExecutableAst.Constraint
 
+    // TODO(magnus): Change lists to arrays
     case class Rule(head: ExecutableAst.Predicate.Head,
-                    body: Array[ExecutableAst.Predicate.Body],
-                    collections: Array[ExecutableAst.Predicate.Body.Collection],
-                    filters: Array[ExecutableAst.Predicate.Body.ApplyFilter],
-                    hookFilters: Array[ExecutableAst.Predicate.Body.ApplyHookFilter],
-                    disjoint: Array[ExecutableAst.Predicate.Body.NotEqual],
-                    loops: Array[ExecutableAst.Predicate.Body.Loop]) extends ExecutableAst.Constraint {
+                    body: List[ExecutableAst.Predicate.Body],
+                    collections: List[ExecutableAst.Predicate.Body.Collection],
+                    filters: List[ExecutableAst.Predicate.Body.ApplyFilter],
+                    filterHooks: List[ExecutableAst.Predicate.Body.ApplyHookFilter],
+                    disjoint: List[ExecutableAst.Predicate.Body.NotEqual],
+                    loops: List[ExecutableAst.Predicate.Body.Loop]) extends ExecutableAst.Constraint {
       var elapsedTime: Long = 0
       var hitcount: Int = 0
     }
@@ -467,6 +468,13 @@ object ExecutableAst {
       */
     case class MatchError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
+    /**
+      * A typed AST node representing a switch error.
+      *
+      * @param tpe the type of the error.
+      * @param loc the source location of the error.
+      */
+    case class SwitchError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
   }
 
   sealed trait Predicate extends ExecutableAst {
@@ -493,13 +501,19 @@ object ExecutableAst {
 
     }
 
-    sealed trait Body extends ExecutableAst.Predicate
+    sealed trait Body extends ExecutableAst.Predicate {
+      /**
+        * Returns the set of free variables in the term.
+        */
+      val freeVars: Set[String]
+    }
 
     object Body {
 
       case class Collection(name: Name.Resolved,
                             terms: Array[ExecutableAst.Term.Body],
                             index2var: Array[String],
+                            freeVars: Set[String],
                             tpe: Type.Predicate,
                             loc: SourceLocation) extends ExecutableAst.Predicate.Body {
         /**
@@ -510,21 +524,25 @@ object ExecutableAst {
 
       case class ApplyFilter(name: Name.Resolved,
                              terms: Array[ExecutableAst.Term.Body],
+                             freeVars: Set[String],
                              tpe: Type.Lambda,
                              loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
       case class ApplyHookFilter(hook: Ast.Hook,
                                  terms: Array[ExecutableAst.Term.Body],
+                                 freeVars: Set[String],
                                  tpe: Type.Lambda,
                                  loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
       case class NotEqual(ident1: Name.Ident,
                           ident2: Name.Ident,
+                          freeVars: Set[String],
                           tpe: Type,
                           loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
       case class Loop(ident: Name.Ident,
                       term: ExecutableAst.Term.Head,
+                      freeVars: Set[String],
                       tpe: Type,
                       loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
