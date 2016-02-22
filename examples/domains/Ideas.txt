@@ -1,5 +1,4 @@
 Examples of lattices:
-- http://www.upriss.org.uk/fca/example.jpg
 - https://en.wikipedia.org/wiki/File:Lattice_of_the_divisibility_of_60.svg
 - https://en.wikipedia.org/wiki/File:Lattice_of_partitions_of_an_order_4_set.svg
 - https://en.wikipedia.org/wiki/Greatest_common_divisor
@@ -13,7 +12,4 @@ Examples of lattices:
 - http://math.stackexchange.com/questions/1545633/how-to-identify-lattice-in-given-hasse-diagrams
 - https://crazyproject.files.wordpress.com/2010/02/subgroups-of-z2-cross-z4.png
 - https://lh3.googleusercontent.com/-LxAQnaVOdvk/VomSjvZkx4I/AAAAAAAA8kE/z9xQjXWcvj4/w500-h510/free_modular_lattice_on_3_generators.gif
-
-Examples of non-lattices:
-
-- http://math.stackexchange.com/questions/355393/topological-sorting-in-linear-order-for-hasse-diagram
+- https://en.wikipedia.org/wiki/Formal_concept_analysis
