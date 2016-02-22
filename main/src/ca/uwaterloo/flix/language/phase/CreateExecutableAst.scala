@@ -13,10 +13,10 @@ import scala.collection.mutable
 object CreateExecutableAst {
 
   def toExecutable(sast: SimplifiedAst.Root): ExecutableAst.Root = {
-    val constants = sast.constants.mapValues(Definition.toExecutable)
-    val lattices = sast.lattices.mapValues(Definition.toExecutable)
-    val collections = sast.collections.mapValues(Collection.toExecutable)
-    val indexes = sast.indexes.mapValues(Definition.toExecutable)
+    val constants = sast.constants.map { case (k, v) => k -> Definition.toExecutable(v) }
+    val lattices = sast.lattices.map { case (k, v) => k -> Definition.toExecutable(v) }
+    val collections = sast.collections.map { case (k, v) => k -> Collection.toExecutable(v) }
+    val indexes = sast.indexes.map { case (k, v) => k -> Definition.toExecutable(v) }
     val facts = sast.facts.map(Constraint.toExecutable).toArray
     val rules = sast.rules.map(Constraint.toExecutable).toArray
     val time = sast.time
