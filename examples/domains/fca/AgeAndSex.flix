@@ -16,10 +16,31 @@ namespace AgeAndSex {
     }
 
     def leq(x: AgeAndSex, y: AgeAndSex): Bool = match (x, y) with {
-        case (_, AgeAndSex.Top) => true
-        case _ => false
+        case (_, AgeAndSex.Top)                         => true
+        case (AgeAndSex.Girl, AgeAndSex.Female)         => true
+        case (AgeAndSex.Girl, AgeAndSex.Juvenile)       => true
+        case (AgeAndSex.Woman, AgeAndSex.Female)        => true
+        case (AgeAndSex.Woman, AgeAndSex.Adult)         => true
+        case (AgeAndSex.Boy, AgeAndSex.Juvenile)        => true
+        case (AgeAndSex.Boy, AgeAndSex.Male)            => true
+        case (AgeAndSex.Man, AgeAndSex.Adult)           => true
+        case (AgeAndSex.Man, AgeAndSex.Male)            => true
+        case _                                          => false
     }
 
-    //let AgeAndSex<> = (Belnap.Bot, Belnap.Top, leq, lub, glb)
+    def lub(x: AgeAndSex, y: AgeAndSex): AgeAndSex = match (x, y) with {
+        case (AgeAndSex.Bot, _)                         => y
+        case (_, AgeAndSex.Bot)                         => x
+        case (AgeAndSex.Girl, AgeAndSex.Female)         => AgeAndSex.Female
+        case (AgeAndSex.Girl, AgeAndSex.Juvenile)       => AgeAndSex.Juvenile
+        case (AgeAndSex.Girl, AgeAndSex.Boy)            => AgeAndSex.Juvenile
+        case (AgeAndSex.Woman, AgeAndSex.Female)        => AgeAndSex.Female
+        case (AgeAndSex.Woman, AgeAndSex.Adult)         => AgeAndSex.Adult
+        case (AgeAndSex.Woman, AgeAndSex.Man)           => AgeAndSex.Adult
+
+        case _ => AgeAndSex.Top
+    }
+
+   let AgeAndSex<> = (AgeAndSex.Bot, AgeAndSex.Top, leq, lub, lub)
 
 }
