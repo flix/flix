@@ -95,12 +95,23 @@ object Simplifier {
         /**
           * Given the code:
           *
-          * ....
+          * match x with {
+          *   case PATTERN_1 => BODY_1
+          *   case PATTERN_2 => BODY_2
+          *   ...
+          *   case PATTERN_N => BODY_N
+          * }
           *
-          * The structure of the generate code is as follows:
+          * The structure of the generated code is as follows:
           *
-          * let v' = v in
-          * ...
+          * let v' = x in
+          *   let fallthrough = fn () = ERROR in
+          *
+          *     let v_n = fn () if (PATTERN_N succeeds) BODY_N else fallthrough() in
+          *       ...
+          *       let v_2 = fn () = if (PATTERN_2 succeeds) BODY_2 else v_3() in
+          *         let v_1 = fn () = if (PATTERN_1 succeeds) BODY_1 else v_2() in
+          *           v_1()
           */
 
         /**
@@ -109,59 +120,61 @@ object Simplifier {
           *
           * The `matchVar` is used by every case in the pattern match to test the value.
           */
-        val matchVar = genSym.fresh2()
+        val matchVar = genSym.fresh2("matchVar")
         val matchExp = simplify(exp0)
+        val fallthrough = genSym.fresh2("case")
 
         /**
-          * Second, we generate a synthetic rule that matches anything and always throws a match error.
+          * Second, we generate a fresh variable name for each case, as well as a fresh variable name for the
+          * fallthrough case (which matches anything and throws a match error).
           */
-        // TODO: Is there still a bug with the fallthrough?
-        val fallthrough = (TypedAst.Pattern.Wildcard(tpe, loc), TypedAst.Expression.Error(tpe, loc)) // TODO: This should be a match error.
+        val vars = rules.map(_ => genSym.fresh2("case"))
+        val cases = rules
 
         /**
-          * Third, we construct all the cases (with the fallthrough) and generate a fresh variable name for each.
+          * Third, we use recursion to generate the nested let-bindings for all the cases of the pattern match. To make
+          * the recursion easier, the initial call reverses `names` and `cases`, since we're building the let-bindings
+          * outside-in (from the last case to the first case).
           */
-        val cases = rules ::: fallthrough :: Nil
-        val vars = cases.map(_ => genSym.fresh2())
+        def recur(names: List[Name.Ident],
+                  cases: List[(TypedAst.Pattern, TypedAst.Expression)],
+                  next: Name.Ident): SExp = ((names, cases): @unchecked) match {
+          case (Nil, Nil) =>
+            // Base case: simply call the function representing the first case, to start the pattern match.
+            SExp.Apply3(SExp.Var(vars.head, -1, Type.Lambda(List(), tpe), loc), List(), tpe, loc)
+          case (n :: ns, (pat, body) :: cs) =>
+            // Construct the lambda that represents the current case:
+            //   fn() = if `matchVar` matches `pat`, return `body`, else call `next()`
+            val lambda = SExp.Lambda(
+              Ast.Annotations(List()),
+              args = List(),
+              body = Pattern.simplify(
+                xs = List(pat),
+                ys = List(matchVar),
+                succ = simplify(body),
+                fail = SExp.Apply3(SExp.Var(next, -1, Type.Lambda(List(), tpe), loc), List(), tpe, loc)
+              ),
+              Type.Lambda(List(), tpe), loc)
 
-        /**
-          * Fourth, we construct the inner most expression.
-          * This is a call to the first lambda variable which triggers the pattern match.
-          */
-        val zero = SExp.Apply3(SExp.Var(vars.head, -1, Type.Lambda(List(), tpe), loc), List(), tpe, loc)
-
-        /**
-          * Fifth, we fold over each case and generate all the remaining lambdas.
-          * During the fold, we track the name of the current and of the next lambda variable.
-          */
-        val result = (cases zip vars.sliding(2).toList).foldLeft(zero: SExp) {
-          case (exp, ((pat, body), List(currName, nextName))) =>
-            // Construct the let-binding for this lambda.
-            SExp.Let(
-              ident = currName,
-              offset = -1,
-              // Construct the lambda.
-              exp1 = SExp.Lambda(
-                annotations = Ast.Annotations(List.empty),
-                args = List.empty,
-                // Construct the body.
-                body = Pattern.simplify(
-                  xs = List(pat),
-                  ys = List(matchVar),
-                  succ = simplify(body),
-                  fail = SExp.Apply3(
-                    SExp.Var(nextName, -1, /* TODO: Verify type. */ Type.Lambda(List.empty, body.tpe), loc), List.empty, tpe, loc)
-                ),
-                tpe = Type.Lambda(List.empty, tpe),
-                loc = loc),
-              exp2 = exp,
-              tpe, loc)
+            // Construct the let-expression, binding the lambda to the current case's `name`.
+            // Recursively construct the body of the let-expression, on the remaining names and cases.
+            // In the recursive call, the `next` name is `n`, the name of the case we just processed.
+            SExp.Let(n, -1, lambda, recur(ns, cs, n), tpe, loc)
         }
 
+        val patterns = recur(vars.reverse, cases.reverse, fallthrough)
+
         /**
-          * Sixth, construct the outer let binding for the match value expression.
+          * Fourth, we generate the match error and bind it to the `fallthrough` name. Note that the match error must
+          * be wrapped in a function call, to defer its evaluation.
           */
-        SExp.Let(matchVar, -1, matchExp, result, tpe, loc)
+        val error = SExp.Lambda(Ast.Annotations(List()), List(), SExp.MatchError(tpe, loc), Type.Lambda(List(), tpe), loc)
+        val inner = SExp.Let(fallthrough, -1, error, patterns, tpe, loc)
+
+        /**
+          * Finally, we generate the outermost let-binding, which binds the `matchExp` to `matchVar`.
+          */
+        SExp.Let(matchVar, -1, matchExp, inner, tpe, loc)
 
       case TypedAst.Expression.Tag(enum, tag, e, tpe, loc) =>
         SimplifiedAst.Expression.Tag(enum, tag, simplify(e), tpe, loc)
@@ -187,7 +200,7 @@ object Simplifier {
     def simplify(xs: List[TypedAst.Pattern],
                  ys: List[Name.Ident],
                  succ: SExp,
-                 fail: SExp)(implicit genSym: GenSym): SExp = (xs, ys) match {
+                 fail: SExp)(implicit genSym: GenSym): SExp = ((xs, ys): @unchecked) match {
       /**
         * There are no more patterns and variables to match.
         *
