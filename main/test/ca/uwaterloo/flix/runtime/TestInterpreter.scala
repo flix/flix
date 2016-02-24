@@ -4884,8 +4884,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  // TODO: Bug in the simplifier causes a NoSuchElementException.
-  // However, the test catches this exception and so the test passes.
+  // TODO: Catch the proper exception.
   // See https://github.com/magnus-madsen/flix/issues/118
   test("Match.Error.01") {
     val input =

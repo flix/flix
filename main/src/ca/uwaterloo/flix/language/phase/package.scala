@@ -12,9 +12,11 @@ package object phase {
     private var number: Int = new Random().nextInt() // TODO
 
     // TODO: Consider allowing a "seed" variable.
-    def fresh2(): Name.Ident = {
+    def fresh2(): Name.Ident = fresh2("tmp")
+
+    def fresh2(prefix: String): Name.Ident = {
       number = number + 1
-      Name.Ident(SourcePosition.Unknown, "tmp" + number, SourcePosition.Unknown)
+      Name.Ident(SourcePosition.Unknown, prefix + number, SourcePosition.Unknown)
     }
 
   }
