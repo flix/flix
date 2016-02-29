@@ -38,7 +38,6 @@ object Simplifier {
       SimplifiedAst.Constraint.Fact(Predicate.Head.simplify(tast.head))
 
     def simplify(tast: TypedAst.Constraint.Rule)(implicit genSym: GenSym): SimplifiedAst.Constraint.Rule = {
-      implicit val genSym = new GenSym
       val head = Predicate.Head.simplify(tast.head)
       val body = tast.body.map(Predicate.Body.simplify)
       SimplifiedAst.Constraint.Rule(head, body)

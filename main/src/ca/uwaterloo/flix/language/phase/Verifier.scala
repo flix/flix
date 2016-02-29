@@ -708,10 +708,7 @@ object Verifier {
     *
     * Returns a list of errors. If the list is empty, all properties were successfully verified.
     */
-  def checkAll(root: SimplifiedAst.Root): List[VerifierError] = {
-    // new symbol generator
-    implicit val genSym = new GenSym
-
+  def checkAll(root: SimplifiedAst.Root)(implicit genSym: GenSym): List[VerifierError] = {
     // find all properties to verify.
     val properties = collectProperties(root)
 
@@ -780,9 +777,7 @@ object Verifier {
     * Enumerates all possible environments of the given universally quantified variables.
     */
   // TODO: replace string by name?
-  def enumerate(q: List[Var]): List[Map[String, Expression]] = {
-    val genSym = new GenSym // TODO: This one actually has to come from somewhere else.
-
+  def enumerate(q: List[Var])(implicit genSym: GenSym): List[Map[String, Expression]] = {
     // Unqualified formula. Used the empty environment.
     if (q.isEmpty)
       return List(Map.empty)

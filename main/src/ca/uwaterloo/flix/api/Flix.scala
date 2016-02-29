@@ -38,6 +38,11 @@ class Flix {
   private var options = Options.Default
 
   /**
+    * The symbol generator associated with this Flix instance.
+    */
+  private val genSym = new GenSym()
+
+  /**
     * Adds the given string `s` to the list of strings to be parsed.
     */
   def addStr(s: String): Flix = {
@@ -156,9 +161,10 @@ class Flix {
     * NB: Automatically calls `compile()` thus there is no reason to do so manually.
     */
   def solve(): Validation[Model, FlixError] = {
+    implicit val _ = genSym
+
     compile() map {
       case ast =>
-        implicit val genSym = new GenSym()
         val sast = Simplifier.simplify(ast)
         val east = CreateExecutableAst.toExecutable(sast)
         if (options.verify == Verify.Enabled) {

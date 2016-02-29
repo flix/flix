@@ -778,6 +778,8 @@ object PartialEvaluator {
 
   /**
     * Renames all free occurrence of the variable name `src` by the name `dst` in the given expression `exp`.
+    *
+    * NB: The variable name `dst` must not occur in the expression `exp` (i.e. it must be free!).
     */
   private def rename(src: Name.Ident, dst: Name.Ident, exp: Expression): Expression = exp match {
     case Unit => Unit
@@ -795,6 +797,8 @@ object PartialEvaluator {
         Var(ident, offset, tpe, loc)
     case Ref(name, tpe, loc) => Ref(name, tpe, loc)
     case Lambda(ann, args, body, tpe, loc) =>
+      assert(args.exists(_.ident.name == dst.name), s"The variable name ${dst.name} occurs in the given expression!")
+
       // Check if the variable `src` is bound by a formal argument.
       val bound = args.exists(_.ident.name == src.name)
       if (bound) {
@@ -816,6 +820,8 @@ object PartialEvaluator {
     case IfThenElse(e1, e2, e3, tpe, loc) =>
       IfThenElse(rename(src, dst, e1), rename(src, dst, e2), rename(src, dst, e3), tpe, loc)
     case Let(ident, offset, e1, e2, tpe, loc) =>
+      assert(ident.name != dst.name, s"The variable name ${dst.name} occurs in the given expression!")
+
       // Check if variable `src` is bound by the let-binding.
       val bound = ident.name == src.name
       if (bound) {
