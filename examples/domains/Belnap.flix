@@ -62,7 +62,7 @@ namespace Belnap {
         case Belnap.Bot     => Belnap.Bot
         case Belnap.True    => Belnap.False
         case Belnap.False   => Belnap.True
-        case Belnap.Top     => Belnap.Bot // TODO: This is incorrect. so why doesnt the verifier catch it?
+        case Belnap.Top     => Belnap.Top
     }
 
     /**

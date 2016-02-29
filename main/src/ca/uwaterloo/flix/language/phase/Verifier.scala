@@ -780,6 +780,7 @@ object Verifier {
     * Enumerates all possible environments of the given universally quantified variables.
     */
   // TODO: replace string by name?
+  // TODO: Cleanup
   def enumerate(q: List[Var])(implicit genSym: GenSym): List[Map[String, Expression]] = {
     // Unqualified formula. Used the empty environment.
     if (q.isEmpty)
@@ -803,13 +804,19 @@ object Verifier {
       case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
     }
 
-    val result = q map {
-      case name => visit(name.tpe) map {
-        case exp => name.ident.name -> exp
+    def expand(rs: List[(String, List[Expression])]): List[Map[String, Expression]] = rs match {
+      case Nil => List(Map.empty)
+      case (quantifier, expressions) :: xs => expressions flatMap {
+        case expression => expand(xs) map {
+          case m => m + (quantifier -> expression)
+        }
       }
     }
 
-    result.transpose.map(_.toMap)
+    val result = q map {
+      case quantifier => quantifier.ident.name -> visit(quantifier.tpe)
+    }
+    expand(result)
   }
 
   /**

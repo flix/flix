@@ -6,6 +6,8 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.GenSym
 
+// TODO: Improve support for user errors.
+
 object PartialEvaluator {
 
   /**
