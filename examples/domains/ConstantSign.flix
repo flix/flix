@@ -356,7 +356,10 @@ namespace ConstantSign {
     /**
       * Over-approximates `less than or equal`.
       */
-    @strict @monotone
-    fn lessEqual(e1: ConstSign, e2: ConstSign): Belnap::Belnap = Belnap::or(e1 `less` e2, e1 `eq` e2)
+      // TODO
+//    @strict @monotone
+//    fn lessEqual(e1: ConstSign, e2: ConstSign): Belnap::Belnap = Belnap::or(e1 `less` e2, e1 `eq` e2)
+
+    let ConstSign<> = (ConstSign.Bot, ConstSign.Top, leq, lub, glb)
 
 }

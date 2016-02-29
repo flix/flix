@@ -726,6 +726,8 @@ object Verifier {
     // the base expression
     val exp0 = property.formula.e
 
+    println(property)
+
     // a sequence of environments under which the base expression must hold.
     val envs = enumerate(property.formula.q)
 
@@ -1185,54 +1187,13 @@ object Verifier {
   def model2env(model: Model): Map[String, Expression] = {
     def visit(exp: Expr): Expression = exp match {
       case e: BoolExpr => if (e.isTrue) True else False
-      case e: IntNum => Int32(e.getInt)
+      case e: BitVecNum => Int32(e.getLong.toInt) // TODO: Size
       case _ => throw new InternalCompilerError(s"Unexpected Z3 expression: $exp.")
     }
 
     model.getConstDecls.foldLeft(Map.empty[String, Expression]) {
-      case (macc, decl) => macc + (decl.getName.toString -> visit(decl.asInstanceOf[Expr]))
+      case (macc, decl) => macc + (decl.getName.toString -> visit(model.getConstInterp(decl)))
     }
   }
-
-  // TODO: remove
-  def main(args: Array[String]): Unit = {
-    mkContext(ctx => {
-
-      val x = ctx.mkIntConst("x")
-      val y = ctx.mkIntConst("y")
-
-      val one = ctx.mkInt(1)
-      val two = ctx.mkInt(1)
-
-      val yPlusOne = ctx.mkAdd(y, one)
-
-      val c1 = ctx.mkLt(x, yPlusOne)
-      val c2 = ctx.mkGe(x, two)
-
-      val q = ctx.mkAnd(c1, c2)
-      Console.println("model for: x < y + 1")
-      val m = checkSat(q, ctx)
-      println(m)
-    })
-
-    ////////////////////////////////
-    ////////////////////////////////
-    ////////////////////////////////
-    ////////////////////////////////
-    println()
-    println()
-    println()
-    println()
-    mkContext(ctx => {
-
-      val x = ctx.mkIntConst("x")
-      val q = ctx.mkLt(ctx.mkAdd(x, ctx.mkInt(1)), x)
-      println(q)
-      Console.println("model for: not x + 1 < x")
-      val m = checkSat(ctx.mkNot(q), ctx)
-      println(m)
-    })
-  }
-
 
 }
