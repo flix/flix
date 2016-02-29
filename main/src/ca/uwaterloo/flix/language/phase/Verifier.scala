@@ -752,7 +752,7 @@ object Verifier {
             checkSat(q, ctx) match {
               case Result.Unsatisfiable =>
                 // Case 3.1: The formula is UNSAT, i.e. the property HOLDS.
-                Console.println("Proved: " + property + " with SMT")
+                Console.println("Proved with SMT.")
                 Nil
               case Result.Satisfiable(model) =>
                 // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.

@@ -487,10 +487,12 @@ object PartialEvaluator {
           case False => eval(exp3, k)
           // Case 3: The condition is residual.
           // Partially evaluate exp2 and exp3 and (re-)construct the residual.
-          case r1 => eval(exp2, {
-            case r2 => eval(exp3, {
-              case r3 => k(IfThenElse(r1, r2, r3, tpe, loc))
-            })
+          case r1 => eval2(exp2, exp3, {
+            case (r2, r3) => isEq(r2, r3) match {
+              case Eq.Equal => k(r2)
+              case Eq.NotEq => k(IfThenElse(r1, r2, r3, tpe, loc))
+              case Eq.Unknown => k(IfThenElse(r1, r2, r3, tpe, loc))
+            }
           })
         })
 
