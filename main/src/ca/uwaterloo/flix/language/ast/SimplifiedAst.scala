@@ -476,6 +476,8 @@ object SimplifiedAst {
                    tpe: Type.Set,
                    loc: SourceLocation) extends SimplifiedAst.Expression
 
+    // TODO: Introduce common super type for errors?
+
     /**
       * A typed AST node representing an error.
       *

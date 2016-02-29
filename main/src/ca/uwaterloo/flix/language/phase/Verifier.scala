@@ -738,8 +738,11 @@ object Verifier {
         case Expression.False =>
           // Case 2: The partial evaluator disproved the property.
           List(property.fail(env0))
+        case _: Expression.MatchError | _: Expression.SwitchError | _: Expression.Error  =>
+          // Case 3: The partial evaluator failed with a user error.
+          List(property.fail(env0))
         case residual =>
-          // Case 3: The partial evaluator reduced the expression, but it is still residual.
+          // Case 4: The partial evaluator reduced the expression, but it is still residual.
           // Must translate the expression into an SMT formula and attempt to prove it.
           println("Residual Expression: " + residual)
           mkContext(ctx => {
