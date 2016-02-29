@@ -324,6 +324,16 @@ object PartialEvaluator {
         case BinaryOperator.Equal =>
           // Partially evaluate both exp1 and exp2.
           eval2(exp1, exp2, {
+            // Case 1: The elements are tuples. Rewrite to compare each individually.
+            case (Tuple(elms1, _, _), Tuple(elms2, _, _)) =>
+              val conditions = (elms1 zip elms2) map {
+                case (e1, e2) => Binary(BinaryOperator.Equal, e1, e2, Type.Bool, loc)
+              }
+              val result = conditions.foldRight(True: Expression) {
+                case (cond, acc) => Binary(BinaryOperator.LogicalAnd, cond, acc, Type.Bool, loc)
+              }
+              eval(result, k)
+            // Case 2: Symbolically compare the elements.
             case (e1, e2) => isEq(e1, e2) match {
               case Eq.Equal => k(True)
               case Eq.NotEq => k(False)
@@ -493,10 +503,10 @@ object PartialEvaluator {
             case (r2, r3) =>
               // Case 3.2: Check if the then and else expressions are equivalent.
               isEq(r2, r3) match {
-              case Eq.Equal => k(r2)
-              case Eq.NotEq => k(IfThenElse(r1, r2, r3, tpe, loc))
-              case Eq.Unknown => k(IfThenElse(r1, r2, r3, tpe, loc))
-            }
+                case Eq.Equal => k(r2)
+                case Eq.NotEq => k(IfThenElse(r1, r2, r3, tpe, loc))
+                case Eq.Unknown => k(IfThenElse(r1, r2, r3, tpe, loc))
+              }
           })
         })
 
@@ -599,7 +609,7 @@ object PartialEvaluator {
             eval(ifthenelse, k)
           case r =>
             // Case 3: The expression is residual. Reconstruct it.
-          k(GetTagValue(r, tpe, loc))
+            k(GetTagValue(r, tpe, loc))
         })
 
       /**
