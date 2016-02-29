@@ -1039,7 +1039,7 @@ object Verifier {
         val (f1, f2) = (e1.tpe, e2.tpe) match {
           case (Type.Bool, Type.Bool) => (visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
           case (Type.Int32, Type.Int32) => (visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-          case _ => throw new InternalCompilerError(s"Illegal type: $tpe.")
+          case _ => throw new InternalCompilerError(s"Illegal type: ${(e1.tpe, e2.tpe)}.")
         }
         if (op == BinaryOperator.Equal)
           ctx.mkEq(f1, f2)

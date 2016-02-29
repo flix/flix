@@ -484,6 +484,7 @@ object PartialEvaluator {
           // Case 3: The condition is residual.
           // Partially evaluate exp2 and exp3 and (re-)construct the residual.
           case r1 => eval2(exp2, exp3, {
+            // Case 3.1: Check if the then and else expressions are equivalent.
             case (r2, r3) => isEq(r2, r3) match {
               case Eq.Equal => k(r2)
               case Eq.NotEq => k(IfThenElse(r1, r2, r3, tpe, loc))
@@ -553,11 +554,24 @@ object PartialEvaluator {
       case CheckTag(tag1, exp, loc) =>
         eval(exp, {
           case Tag(_, tag2, _, _, _) =>
+            // Case 1: Concrete execution.
             if (tag1.name == tag2.name)
               k(True)
             else
               k(False)
-          case r => k(CheckTag(tag1, r, loc))
+          case IfThenElse(e1, e2, e3, tpe, _) =>
+            // Case 2: Move the CheckTag inside the consequence and alternative expressions.
+            val conditional = e1
+            val consequence = CheckTag(tag1, e2, loc)
+            val alternative = CheckTag(tag1, e3, loc)
+            val ifthenelse = IfThenElse(conditional, consequence, alternative, Type.Bool, loc)
+
+            // Evaluate the rewritten if-then-else.
+            eval(ifthenelse, k)
+
+          case r =>
+            // Case 3: The expression is residual. Reconstruct it.
+            k(CheckTag(tag1, r, loc))
         })
 
       /**
