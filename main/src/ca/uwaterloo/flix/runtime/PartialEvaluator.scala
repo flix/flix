@@ -6,8 +6,6 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.GenSym
 
-// TODO: Improve support for user errors.
-
 object PartialEvaluator {
 
   /**
@@ -480,11 +478,7 @@ object PartialEvaluator {
           case True => eval(exp2, k)
           // Case 2: The condition is false. The result is exp3.
           case False => eval(exp3, k)
-          // Case 3: The condition is an error.
-          case err: MatchError => k(err)
-          case err: SwitchError => k(err)
-          case err: Error => k(err)
-          // Case 4: The condition is residual.
+          // Case 3: The condition is residual.
           // Partially evaluate exp2 and exp3 and (re-)construct the residual.
           case r1 => eval(exp2, {
             case r2 => eval(exp3, {
@@ -558,9 +552,6 @@ object PartialEvaluator {
               k(True)
             else
               k(False)
-          case err: MatchError => k(err)
-          case err: SwitchError => k(err)
-          case err: Error => k(err)
           case r => k(CheckTag(tag1, r, loc))
         })
 
