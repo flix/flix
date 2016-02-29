@@ -797,7 +797,7 @@ object PartialEvaluator {
         Var(ident, offset, tpe, loc)
     case Ref(name, tpe, loc) => Ref(name, tpe, loc)
     case Lambda(ann, args, body, tpe, loc) =>
-      assert(args.exists(_.ident.name == dst.name), s"The variable name ${dst.name} occurs in the given expression!")
+      assert(args.forall(_.ident.name != dst.name), s"The variable name ${dst.name} occurs in the given expression!")
 
       // Check if the variable `src` is bound by a formal argument.
       val bound = args.exists(_.ident.name == src.name)
