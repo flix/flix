@@ -1026,8 +1026,8 @@ object Verifier {
     case True => ctx.mkBool(true)
     case False => ctx.mkBool(false)
     case Var(ident, offset, tpe, loc) => ctx.mkBoolConst(ident.name)
-    case Unary(op, exp, tpe, loc) => op match {
-      case UnaryOperator.LogicalNot => ctx.mkNot(visitBoolExpr(e0, ctx))
+    case Unary(op, e1, tpe, loc) => op match {
+      case UnaryOperator.LogicalNot => ctx.mkNot(visitBoolExpr(e1, ctx))
       case _ => throw new InternalCompilerError(s"Illegal unary operator: $op.")
     }
     case Binary(op, e1, e2, tpe, loc) => op match {

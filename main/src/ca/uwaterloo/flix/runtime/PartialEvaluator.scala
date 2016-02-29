@@ -484,8 +484,15 @@ object PartialEvaluator {
           // Case 3: The condition is residual.
           // Partially evaluate exp2 and exp3 and (re-)construct the residual.
           case r1 => eval2(exp2, exp3, {
-            // Case 3.1: Check if the then and else expressions are equivalent.
-            case (r2, r3) => isEq(r2, r3) match {
+            // Case 3.1: Check if the entire if-then-else can be replaced by the conditional.
+            case (True, False) =>
+              k(r1)
+            // Case 3.1: Check if the entire if-then-else can be replaced by the negated conditional.
+            case (False, True) =>
+              k(Unary(UnaryOperator.LogicalNot, r1, Type.Bool, loc))
+            case (r2, r3) =>
+              // Case 3.2: Check if the then and else expressions are equivalent.
+              isEq(r2, r3) match {
               case Eq.Equal => k(r2)
               case Eq.NotEq => k(IfThenElse(r1, r2, r3, tpe, loc))
               case Eq.Unknown => k(IfThenElse(r1, r2, r3, tpe, loc))
@@ -568,7 +575,6 @@ object PartialEvaluator {
 
             // Evaluate the rewritten if-then-else.
             eval(ifthenelse, k)
-
           case r =>
             // Case 3: The expression is residual. Reconstruct it.
             k(CheckTag(tag1, r, loc))
@@ -579,8 +585,21 @@ object PartialEvaluator {
         */
       case GetTagValue(exp, tpe, loc) =>
         eval(exp, {
-          case Tag(_, _, e, _, _) => k(e)
-          case r => k(GetTagValue(r, tpe, loc))
+          case Tag(_, _, e, _, _) =>
+            // Case 1: Concrete execution.
+            k(e)
+          case IfThenElse(e1, e2, e3, _, _) =>
+            // Case 2: Move the GetTagValue inside the consequence and alternative expressions.
+            val conditional = e1
+            val consequence = GetTagValue(e2, tpe, loc)
+            val alternative = GetTagValue(e3, tpe, loc)
+            val ifthenelse = IfThenElse(conditional, consequence, alternative, tpe, loc)
+
+            // Evaluate the rewritten if-then-else.
+            eval(ifthenelse, k)
+          case r =>
+            // Case 3: The expression is residual. Reconstruct it.
+          k(GetTagValue(r, tpe, loc))
         })
 
       /**
