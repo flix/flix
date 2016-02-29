@@ -1020,6 +1020,7 @@ object Verifier {
     * Assumes that all lambdas, calls and let bindings have been removed.
     * (In addition to all tags, tuples, sets, maps, etc.)
     */
+  // TODO: Remove this?
   def visitArithExpr(e0: Expression, ctx: Context): ArithExpr = e0 match {
     case Int32(i) => ctx.mkInt(i)
     case Var(name, offset, tpe, loc) => ctx.mkIntConst(name.name)
@@ -1065,9 +1066,9 @@ object Verifier {
       case BinaryOperator.Greater => ctx.mkGt(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
       case BinaryOperator.GreaterEqual => ctx.mkGe(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
       case BinaryOperator.Equal | BinaryOperator.NotEqual =>
-        val (f1, f2) = tpe match {
-          case Type.Bool => (visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
-          case Type.Int32 => (visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+        val (f1, f2) = (e1.tpe, e2.tpe) match {
+          case (Type.Bool, Type.Bool) => (visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
+          case (Type.Int32, Type.Int32) => (visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
           case _ => throw new InternalCompilerError(s"Illegal type: $tpe.")
         }
         if (op == BinaryOperator.Equal)
@@ -1096,6 +1097,7 @@ object Verifier {
     * (In addition to all tags, tuples, sets, maps, etc.)
     */
   def visitBitVecExpr(e0: Expression, ctx: Context): BitVecExpr = e0 match {
+    case Var(ident, offset, tpe, loc) => ctx.mkBVConst(ident.name, 32)
     case Int32(i) => ctx.mkBV(i, 32)
     case Unary(op, e1, tpe, loc) => op match {
       case UnaryOperator.BitwiseNegate => ctx.mkBVNot(visitBitVecExpr(e1, ctx))

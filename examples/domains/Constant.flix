@@ -202,6 +202,10 @@ namespace Constant {
     /**
       * Over-approximates `less than or equal`.
       */
-    @strict @monotone
-    fn lessEqual(e1: Constant, e2: Constant): Belnap::Belnap = Belnap::or(e1 `less` e2, e1 `eq` e2)
+    // TODO: This triggers a stackoverflow error:
+    //@strict @monotone
+    //fn lessEqual(e1: Constant, e2: Constant): Belnap::Belnap = Belnap::or(e1 `less` e2, e1 `eq` e2)
+
+    let Constant<> = (Constant.Bot, Constant.Top, leq, lub, glb)
+
 }

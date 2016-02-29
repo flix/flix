@@ -332,7 +332,14 @@ object PartialEvaluator {
             case (e1, e2) => isEq(e1, e2) match {
               case Eq.Equal => k(True)
               case Eq.NotEq => k(False)
-              case Eq.Unknown => k(Binary(op, e1, e2, tpe, loc))
+              case Eq.Unknown => (e1, e2) match {
+                case (Tag(_, tag1, texp1, _, _), Tag(_, tag2, texp2, _, _)) =>
+                  if (tag1.name == tag2.name)
+                    k(Binary(op, texp1, texp2, tpe, loc))
+                  else
+                    k(False)
+                case _ => k(Binary(op, e1, e2, tpe, loc))
+              }
             }
           })
 
