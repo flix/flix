@@ -7,6 +7,8 @@ namespace Dimension {
 
     // TODO: Is this lattice simply the flat lattice?
 
+    // TODO: Use case for abstraction/concreteziation?
+
     /**
      * The elements of the dimension lattice.
      */

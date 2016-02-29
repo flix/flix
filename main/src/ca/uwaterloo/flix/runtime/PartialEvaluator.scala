@@ -283,15 +283,13 @@ object PartialEvaluator {
           * Less-than or equal.
           */
         case BinaryOperator.LessEqual =>
-          // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, {
-            case (e1, e2) =>
-              k(Binary(BinaryOperator.LogicalOr,
-                Binary(BinaryOperator.Less, e1, e2, Type.Bool, loc),
-                Binary(BinaryOperator.Equal, e1, e2, Type.Bool, loc),
-                Type.Bool, loc
-              ))
-          })
+          // Rewrite.
+          k(Binary(BinaryOperator.LogicalOr,
+            Binary(BinaryOperator.Less, exp1, exp2, Type.Bool, loc),
+            Binary(BinaryOperator.Equal, exp1, exp2, Type.Bool, loc),
+            Type.Bool, loc
+          ))
+
 
         /**
           * Greater-than.
@@ -313,15 +311,12 @@ object PartialEvaluator {
           * Greater-than or equal.
           */
         case BinaryOperator.GreaterEqual =>
-          // Partially evaluate both exp1 and exp2.
-          eval2(exp1, exp2, {
-            case (e1, e2) =>
-              k(Binary(BinaryOperator.LogicalOr,
-                Binary(BinaryOperator.Greater, e1, e2, Type.Bool, loc),
-                Binary(BinaryOperator.Equal, e1, e2, Type.Bool, loc),
-                Type.Bool, loc
-              ))
-          })
+          // Rewrite.
+          k(Binary(BinaryOperator.LogicalOr,
+            Binary(BinaryOperator.Greater, exp1, exp2, Type.Bool, loc),
+            Binary(BinaryOperator.Equal, exp1, exp2, Type.Bool, loc),
+            Type.Bool, loc
+          ))
 
         /**
           * Equal.
@@ -347,6 +342,7 @@ object PartialEvaluator {
           * Not Equal.
           */
         case BinaryOperator.NotEqual =>
+          // Rewrite
           k(Unary(UnaryOperator.LogicalNot, Binary(BinaryOperator.Equal, exp1, exp2, tpe, loc), tpe, loc))
 
         /**
