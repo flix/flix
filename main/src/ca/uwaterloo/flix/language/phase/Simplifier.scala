@@ -255,8 +255,7 @@ object Simplifier {
         val cond = SExp.CheckTag(tag, SExp.Var(v, -1, tpe, loc), loc)
         val freshVar = genSym.fresh2()
         val inner = simplify(pat :: ps, freshVar :: vs, succ, fail)
-        val exp = SExp.Let(freshVar, -1, SExp.GetTagValue(SExp.Var(v, -1, tpe, loc), pat.tpe, loc), inner, succ.tpe, loc)
-        val consequent = SExp.Let(freshVar, -1, SExp.GetTagValue(SExp.Var(v, -1, tpe, loc), pat.tpe, loc), exp, succ.tpe, loc)
+        val consequent = SExp.Let(freshVar, -1, SExp.GetTagValue(SExp.Var(v, -1, tpe, loc), pat.tpe, loc), inner, succ.tpe, loc)
         SExp.IfThenElse(cond, consequent, fail, succ.tpe, loc)
 
       /**
