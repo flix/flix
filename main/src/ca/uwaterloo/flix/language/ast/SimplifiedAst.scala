@@ -406,7 +406,15 @@ object SimplifiedAst {
       assert(exp.tpe.isInstanceOf[Type.Enum], s"GetTagValue expects an expression of Type.Enum, but got '${exp.tpe}'.")
       assert(exp.tpe.asInstanceOf[Type.Enum].cases(tag.name).tpe == tpe, s"GetTagValue type mismatch.")
 
-      override def toString: String = "GetTagValue(" + exp + ")"
+      // TODO: Remove once bug is fixed.
+      exp match {
+        case Tag(_, tag1, exp1, _, _) =>
+          assert(tag.name == tag1.name)
+          assert(tpe == exp1.tpe)
+        case _ => // nop
+      }
+
+      override def toString: String = "GetTagValue(" + tag.name + ", " + exp + ")"
     }
 
     /**
