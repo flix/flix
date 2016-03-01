@@ -182,7 +182,7 @@ object Simplifier {
       case TypedAst.Expression.Set(elms, tpe, loc) =>
         SimplifiedAst.Expression.Set(elms map simplify, tpe, loc)
       case TypedAst.Expression.Error(tpe, loc) =>
-        SimplifiedAst.Expression.Error(tpe, loc)
+        SimplifiedAst.Expression.UserError(tpe, loc)
     }
   }
 

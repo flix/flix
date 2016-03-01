@@ -155,7 +155,7 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.Set(elms, tpe, loc) =>
         val elmsArray = elms.map(toExecutable).toArray
         ExecutableAst.Expression.Set(elmsArray, tpe, loc)
-      case SimplifiedAst.Expression.Error(tpe, loc) => ExecutableAst.Expression.Error(tpe, loc)
+      case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.Error(tpe, loc)
       case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => ExecutableAst.Expression.SwitchError(tpe, loc)
     }

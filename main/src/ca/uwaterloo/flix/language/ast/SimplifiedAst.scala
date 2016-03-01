@@ -483,7 +483,7 @@ object SimplifiedAst {
       * @param tpe the type of the error.
       * @param loc the source location of the error.
       */
-    case class Error(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+    case class UserError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
       override def toString: String = "Error"
     }
 

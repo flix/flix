@@ -4438,7 +4438,7 @@ class TestCodegen extends FunSuite {
     val definition = Function(name, args = List(),
       body = Binary(BinaryOperator.LogicalAnd,
         False,
-        Error(Type.Bool, loc),
+        UserError(Type.Bool, loc),
         Type.Bool, loc),
       Type.Lambda(List(), Type.Bool), loc)
 
@@ -4452,7 +4452,7 @@ class TestCodegen extends FunSuite {
     val definition = Function(name, args = List(),
       body = Binary(BinaryOperator.LogicalAnd,
         True,
-        Error(Type.Bool, loc),
+        UserError(Type.Bool, loc),
         Type.Bool, loc),
       Type.Lambda(List(), Type.Bool), loc)
 
@@ -4520,7 +4520,7 @@ class TestCodegen extends FunSuite {
     val definition = Function(name, args = List(),
       body = Binary(BinaryOperator.LogicalOr,
         True,
-        Error(Type.Bool, loc),
+        UserError(Type.Bool, loc),
         Type.Bool, loc),
       Type.Lambda(List(), Type.Bool), loc)
 
@@ -4534,7 +4534,7 @@ class TestCodegen extends FunSuite {
     val definition = Function(name, args = List(),
       body = Binary(BinaryOperator.LogicalOr,
         False,
-        Error(Type.Bool, loc),
+        UserError(Type.Bool, loc),
         Type.Bool, loc),
       Type.Lambda(List(), Type.Bool), loc)
 
@@ -4602,7 +4602,7 @@ class TestCodegen extends FunSuite {
     val definition = Function(name, args = List(),
       body = Binary(BinaryOperator.Implication,
         False,
-        Error(Type.Bool, loc),
+        UserError(Type.Bool, loc),
         Type.Bool, loc),
       Type.Lambda(List(), Type.Bool), loc)
 
@@ -4616,7 +4616,7 @@ class TestCodegen extends FunSuite {
     val definition = Function(name, args = List(),
       body = Binary(BinaryOperator.Implication,
         True,
-        Error(Type.Bool, loc),
+        UserError(Type.Bool, loc),
         Type.Bool, loc),
       Type.Lambda(List(), Type.Bool), loc)
 
@@ -6353,7 +6353,7 @@ class TestCodegen extends FunSuite {
 
   test("Codegen - Error01") {
     val definition = Function(name, args = List(),
-      body = Error(Type.Int8, loc),
+      body = UserError(Type.Int8, loc),
       Type.Lambda(List(), Type.Int8), loc)
 
     val code = new CompiledCode(List(definition))

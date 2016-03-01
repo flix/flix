@@ -324,7 +324,15 @@ object PartialEvaluator {
         case BinaryOperator.Equal =>
           // Partially evaluate both exp1 and exp2.
           eval2(exp1, exp2, {
-            // Case 1: The elements are tuples. Rewrite to compare each individually.
+            // Case 1: The lhs and the rhs are values.
+            case (v1, v2) if isValue(v1) && isValue(v2) =>
+              // TODO: Consider whether to clean this up and remove isEq.
+              isEq(v1, v2) match {
+                case Eq.Equal => k(True)
+                case Eq.NotEq => k(False)
+                case _ => throw new InternalCompilerError("Impossible")
+              }
+            // Case 2: The elements are tuples. Rewrite the expression to compare each element.
             case (Tuple(elms1, _, _), Tuple(elms2, _, _)) =>
               val conditions = (elms1 zip elms2) map {
                 case (e1, e2) => Binary(BinaryOperator.Equal, e1, e2, Type.Bool, loc)
@@ -333,7 +341,23 @@ object PartialEvaluator {
                 case (cond, acc) => Binary(BinaryOperator.LogicalAnd, cond, acc, Type.Bool, loc)
               }
               eval(result, k)
-            // Case 2: Symbolically compare the elements.
+            // Case 3: The lhs is a value and the rhs is an if-then-else.
+            // Push the value inside the if-then-else expression.
+            case (v1, IfThenElse(e1, e2, e3, _, _)) if isValue(v1) =>
+              val condition = e1
+              val consequence = Binary(BinaryOperator.Equal, v1, e2, Type.Bool, loc)
+              val alternative = Binary(BinaryOperator.Equal, v1, e3, Type.Bool, loc)
+              val ifthenelse = IfThenElse(condition, consequence, alternative, Type.Bool, loc)
+              eval(ifthenelse, k)
+            // Case 4: The rhs is a value and the lhs is a value.
+            // Push the value inside the if-then-else expression.
+            case (IfThenElse(e1, e2, e3, _, _), v2) if isValue(v2) =>
+              val condition = e1
+              val consequence = Binary(BinaryOperator.Equal, v2, e2, Type.Bool, loc)
+              val alternative = Binary(BinaryOperator.Equal, v2, e3, Type.Bool, loc)
+              val ifthenelse = IfThenElse(condition, consequence, alternative, Type.Bool, loc)
+              eval(ifthenelse, k)
+            // Case 5: Symbolically compare the elements.
             case (e1, e2) => isEq(e1, e2) match {
               case Eq.Equal => k(True)
               case Eq.NotEq => k(False)
@@ -632,7 +656,7 @@ object PartialEvaluator {
       /**
         * Error Expressions.
         */
-      case Error(tpe, loc) => k(Error(tpe, loc))
+      case UserError(tpe, loc) => k(UserError(tpe, loc))
 
       /**
         * Match Error Expressions.
@@ -789,7 +813,7 @@ object PartialEvaluator {
       val eqExp = mustEq(e1, e2)
       val eqOffset = offset1 == offset2
       eqExp && eqOffset
-    case (Error(_, _), Error(_, _)) => true
+    case (UserError(_, _), UserError(_, _)) => true
     case (MatchError(_, _), MatchError(_, _)) => true
     case (CheckNil(_, _), CheckNil(_, _)) => throw new InternalCompilerError("Unsupported.")
     case (CheckCons(_, _), CheckCons(_, _)) => throw new InternalCompilerError("Unsupported.")
@@ -891,7 +915,7 @@ object PartialEvaluator {
       Tuple(elms map (e => rename(src, dst, e)), tpe, loc)
     case GetTupleIndex(e, offset, tpe, loc) =>
       GetTupleIndex(rename(src, dst, e), offset, tpe, loc)
-    case Error(tpe, loc) => Error(tpe, loc)
+    case UserError(tpe, loc) => UserError(tpe, loc)
     case MatchError(tpe, loc) => MatchError(tpe, loc)
     case SwitchError(tpe, loc) => SwitchError(tpe, loc)
     case Set(elms, tpe, loc) => throw new InternalCompilerError("Unsupported.")
@@ -983,7 +1007,7 @@ object PartialEvaluator {
         Tuple(elms map (e => visit(e)), tpe, loc)
       case GetTupleIndex(e, offset, tpe, loc) =>
         GetTupleIndex(visit(e), offset, tpe, loc)
-      case Error(tpe, loc) => Error(tpe, loc)
+      case UserError(tpe, loc) => UserError(tpe, loc)
       case MatchError(tpe, loc) => MatchError(tpe, loc)
       case SwitchError(tpe, loc) => SwitchError(tpe, loc)
       case Set(elms, tpe, loc) => throw new InternalCompilerError("Unsupported.")
@@ -993,6 +1017,26 @@ object PartialEvaluator {
     }
 
     visit(exp)
+  }
+
+  /**
+    * Returns `true` iff the given expression `e` is a value.
+    */
+  private def isValue(e: Expression): Boolean = e match {
+    case Unit => true
+    case True => true
+    case False => true
+    case Int8(i) => true
+    case Int16(i) => true
+    case Int32(i) => true
+    case Int64(i) => true
+    case Str(s) => true
+    case Tag(enum, tag, e1, tpe, loc) => isValue(e1)
+    case Tuple(elms, tpe, loc) => elms forall isValue
+    case UserError(tpe, loc) => true
+    case MatchError(tpe, loc) => true
+    case SwitchError(tpe, loc) => true
+    case _ => false
   }
 
   /**

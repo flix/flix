@@ -740,7 +740,7 @@ object Verifier {
         case Expression.False =>
           // Case 2: The partial evaluator disproved the property.
           List(property.fail(env0))
-        case _: Expression.MatchError | _: Expression.SwitchError | _: Expression.Error =>
+        case _: Expression.MatchError | _: Expression.SwitchError | _: Expression.UserError =>
           // Case 3: The partial evaluator failed with a user error.
           List(property.fail(env0))
         case residual =>

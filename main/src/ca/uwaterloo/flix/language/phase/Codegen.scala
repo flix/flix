@@ -245,7 +245,7 @@ object Codegen {
 
     case Expression.Set(elms, tpe, loc) => ???
 
-    case Expression.Error(_, loc) => compileThrow(context, visitor)(s"Runtime error at ${loc.format}")
+    case Expression.UserError(_, loc) => compileThrow(context, visitor)(s"Runtime error at ${loc.format}")
     case Expression.MatchError(_, loc) => compileThrow(context, visitor)(s"Match error at ${loc.format}")
   }
 
