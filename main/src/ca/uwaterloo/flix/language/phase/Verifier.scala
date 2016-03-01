@@ -726,10 +726,11 @@ object Verifier {
     // the base expression
     val exp0 = property.formula.e
 
-    println(property)
-
     // a sequence of environments under which the base expression must hold.
     val envs = enumerate(property.formula.q)
+
+    // the number of issued SMT queries.
+    var smt = 0
 
     // attempt to verify that the property holds under each environment.
     val violations = envs flatMap {
@@ -746,7 +747,8 @@ object Verifier {
         case residual =>
           // Case 4: The partial evaluator reduced the expression, but it is still residual.
           // Must translate the expression into an SMT formula and attempt to prove it.
-          println("Residual Expression: " + residual)
+          //println("Residual Expression: " + residual)
+          smt = smt + 1
           mkContext(ctx => {
             // Check if the negation of the expression has a model.
             // If so, the property does not hold.
@@ -754,7 +756,6 @@ object Verifier {
             checkSat(q, ctx) match {
               case Result.Unsatisfiable =>
                 // Case 3.1: The formula is UNSAT, i.e. the property HOLDS.
-                Console.println("Proved with SMT.")
                 Nil
               case Result.Satisfiable(model) =>
                 // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
@@ -767,13 +768,12 @@ object Verifier {
       }
     }
 
-
     implicit val consoleCtx = Compiler.ConsoleCtx
 
     if (violations.isEmpty)
-      Console.println(consoleCtx.cyan("✓ ") + property.name)
+      Console.println(consoleCtx.cyan("✓ ") + property.name + " (" + smt + " SMT queries)")
     else
-      Console.println(consoleCtx.red("✗ ") + property.name)
+      Console.println(consoleCtx.red("✗ ") + property.name + " (" + smt + " SMT queries)")
 
     violations.headOption
   }

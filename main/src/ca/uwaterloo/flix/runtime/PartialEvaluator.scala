@@ -6,6 +6,8 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.GenSym
 
+// TODO: Use coverage to determine which of these are redundant.
+
 object PartialEvaluator {
 
   /**
@@ -324,16 +326,16 @@ object PartialEvaluator {
         case BinaryOperator.Equal =>
           // Partially evaluate both exp1 and exp2.
           eval2(exp1, exp2, {
-            // Case 1: The lhs and the rhs are values.
             case (v1, v2) if isValue(v1) && isValue(v2) =>
+              // Case 1: The lhs and the rhs are values.
               // TODO: Consider whether to clean this up and remove isEq.
               isEq(v1, v2) match {
                 case Eq.Equal => k(True)
                 case Eq.NotEq => k(False)
                 case _ => throw new InternalCompilerError("Impossible")
               }
-            // Case 2: The elements are tuples. Rewrite the expression to compare each element.
             case (Tuple(elms1, _, _), Tuple(elms2, _, _)) =>
+              // Case 2: The elements are tuples. Rewrite the expression to compare each element.
               val conditions = (elms1 zip elms2) map {
                 case (e1, e2) => Binary(BinaryOperator.Equal, e1, e2, Type.Bool, loc)
               }
@@ -341,24 +343,54 @@ object PartialEvaluator {
                 case (cond, acc) => Binary(BinaryOperator.LogicalAnd, cond, acc, Type.Bool, loc)
               }
               eval(result, k)
-            // Case 3: The lhs is a value and the rhs is an if-then-else.
-            // Push the value inside the if-then-else expression.
             case (v1, IfThenElse(e1, e2, e3, _, _)) if isValue(v1) =>
+              // Case 3: The lhs is a value and the rhs is an if-then-else.
+              // Push the value inside the if-then-else expression.
               val condition = e1
               val consequence = Binary(BinaryOperator.Equal, v1, e2, Type.Bool, loc)
               val alternative = Binary(BinaryOperator.Equal, v1, e3, Type.Bool, loc)
               val ifthenelse = IfThenElse(condition, consequence, alternative, Type.Bool, loc)
               eval(ifthenelse, k)
-            // Case 4: The rhs is a value and the lhs is a value.
-            // Push the value inside the if-then-else expression.
             case (IfThenElse(e1, e2, e3, _, _), v2) if isValue(v2) =>
+              // Case 4: The rhs is a value and the lhs is a value.
+              // Push the value inside the if-then-else expression.
               val condition = e1
               val consequence = Binary(BinaryOperator.Equal, v2, e2, Type.Bool, loc)
               val alternative = Binary(BinaryOperator.Equal, v2, e3, Type.Bool, loc)
               val ifthenelse = IfThenElse(condition, consequence, alternative, Type.Bool, loc)
               eval(ifthenelse, k)
-            // Case 5: Symbolically compare the elements.
+            case (IfThenElse(e11, e12, e13, _, _), IfThenElse(e21, e22, e23, _, _)) =>
+              // Case 5: The lhs and rhs are both if-then-else.
+              // Rewrite the expression from:
+              //
+              //   eq (
+              //     if (e11) e12 else e13,
+              //     if (e21) e22 else e23
+              //   )
+              //
+              // into
+              //
+              //   if (e11)
+              //       if (e21) eq(e12, e22) else eq(e12, e23)
+              //     else
+              //       if (e21) eq(e13, e22) else eq(e13, e23)
+              //
+              eval(IfThenElse(
+                e11,
+                IfThenElse(e21,
+                  Binary(BinaryOperator.Equal, e12, e22, Type.Bool, loc),
+                  Binary(BinaryOperator.Equal, e12, e23, Type.Bool, loc),
+                  Type.Bool, loc),
+                IfThenElse(e21,
+                  Binary(BinaryOperator.Equal, e13, e22, Type.Bool, loc),
+                  Binary(BinaryOperator.Equal, e13, e23, Type.Bool, loc),
+                  Type.Bool, loc),
+                Type.Bool,
+                loc
+              ), k)
+
             case (e1, e2) => isEq(e1, e2) match {
+              // Case 6: Symbolically compare the elements.
               case Eq.Equal => k(True)
               case Eq.NotEq => k(False)
               case Eq.Unknown => (e1, e2) match {

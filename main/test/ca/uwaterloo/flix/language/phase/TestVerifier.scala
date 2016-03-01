@@ -34,7 +34,7 @@ class TestVerifier extends FunSuite {
       .get
   }
 
-  test("Interval.flix") {
+  ignore("Interval.flix") {
     new Flix()
       .addPath("./examples/domains/Interval.flix")
       .addPath("./examples/domains/Belnap.flix")
