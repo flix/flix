@@ -397,6 +397,8 @@ object SimplifiedAst {
                         loc: SourceLocation) extends SimplifiedAst.Expression {
       final val tpe: Type = Type.Bool
 
+      assert(exp.tpe.isInstanceOf[Type.Enum], s"CheckTag expects an expression if Type.Enum, but got '${exp.tpe}'.")
+
       override def toString: String = "CheckTag(" + tag.name + ", " + exp + ")"
     }
 
@@ -410,6 +412,9 @@ object SimplifiedAst {
     case class GetTagValue(exp: SimplifiedAst.Expression,
                            tpe: Type,
                            loc: SourceLocation) extends SimplifiedAst.Expression {
+
+      assert(exp.tpe.isInstanceOf[Type.Enum], s"GetTagValue expects an expression of Type.Enum, but got '${exp.tpe}'.")
+
       override def toString: String = "GetTagValue(" + exp + ")"
     }
 

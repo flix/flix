@@ -540,10 +540,10 @@ object Typer {
           case _ => TypedAst.Pattern.Lit(lit, tpe, loc)
         }
       case ResolvedAst.Pattern.Tag(enumName, tagName, rpat, loc) => tpe match {
-        case Type.Enum(name, cases) => cases.get(tagName.name) match {
+        case enum@Type.Enum(name, cases) => cases.get(tagName.name) match {
           case Some(tag) if enumName == tag.enum => {
             typer(rpat, tag.tpe, root) map {
-              case pat => TypedAst.Pattern.Tag(enumName, tagName, pat, Type.Tag(enumName, tagName, pat.tpe), loc)
+              case pat => TypedAst.Pattern.Tag(enumName, tagName, pat, enum, loc)
             }
           }
           case _ => IllegalPattern(rast, tpe, loc).toFailure

@@ -460,7 +460,7 @@ object TypedAst {
       * @param tpe   the type of the tag.
       * @param loc   the source location.
       */
-    case class Tag(name: Name.Resolved, ident: Name.Ident, pat: TypedAst.Pattern, tpe: Type.Tag, loc: SourceLocation) extends TypedAst.Pattern
+    case class Tag(name: Name.Resolved, ident: Name.Ident, pat: TypedAst.Pattern, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Pattern
 
     /**
       * A typed AST node representing a tuple pattern.
