@@ -826,11 +826,11 @@ object PartialEvaluator {
       // Check if variable `src` is bound by the let-binding.
       val bound = ident.name == src.name
       if (bound) {
-        // Case 1: The variable `src` is bound by the lambda.
+        // Case 1: The variable `src` is bound by the let-binding.
         // Only perform renaming inside the value expression, but not its body.
         Let(ident, offset, rename(src, dst, e1), e2, tpe, loc)
       } else {
-        // Case 2: The variable `src` is *NOT* bound by the lambda.
+        // Case 2: The variable `src` is *NOT* bound by the let-binding.
         // Perform renaming inside both the value and body expressions.
         Let(ident, offset, rename(src, dst, e1), rename(src, dst, e2), tpe, loc)
       }
