@@ -868,8 +868,10 @@ object PartialEvaluator {
       case Int64(i) => Int64(i)
       case Str(s) => Str(s)
       case Var(ident, offset, tpe, loc) =>
-        if (ident.name == src.name)
+        if (ident.name == src.name) {
+          assert(tpe == dst.tpe, s"Type mismatch: '${tpe}' vs. '${dst.tpe}'.")
           dst
+        }
         else
           Var(ident, offset, tpe, loc)
       case Ref(name, tpe, loc) => Ref(name, tpe, loc)

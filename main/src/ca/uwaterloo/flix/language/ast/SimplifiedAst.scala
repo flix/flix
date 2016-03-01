@@ -78,18 +78,6 @@ object SimplifiedAst {
 
   }
 
-  case class Directives(directives: List[SimplifiedAst.Directive]) extends SimplifiedAst
-
-  sealed trait Directive
-
-  object Directive {
-
-    case class AssertFact(fact: SimplifiedAst.Constraint.Fact, loc: SourceLocation) extends SimplifiedAst.Directive
-
-    case class AssertRule(rule: SimplifiedAst.Constraint.Rule, loc: SourceLocation) extends SimplifiedAst.Directive
-
-  }
-
   sealed trait Expression extends SimplifiedAst {
     def tpe: Type
 
@@ -456,6 +444,9 @@ object SimplifiedAst {
                              offset: scala.Int,
                              tpe: Type,
                              loc: SourceLocation) extends SimplifiedAst.Expression {
+
+      assert(base.tpe.isInstanceOf[Type.Tuple], s"GetTupleIndex expects an expression of Type.Tuple, but got '${base.tpe}'.")
+
       override def toString: String = base + "[" + offset + "]"
     }
 
