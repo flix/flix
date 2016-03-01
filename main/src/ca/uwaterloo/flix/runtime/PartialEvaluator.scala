@@ -171,18 +171,7 @@ object PartialEvaluator {
             case (x, Int64(0)) => k(x)
 
             // Residuals.
-            case (r1, r2) =>
-              // Equality Law: x - x = 0
-              isEq(r1, r2) match {
-                case Eq.Equal => tpe match {
-                  case Type.Int8 => k(Int8(0))
-                  case Type.Int16 => k(Int16(0))
-                  case Type.Int32 => k(Int32(0))
-                  case Type.Int64 => k(Int64(0))
-                  case _ => throw new InternalCompilerError(s"Illegal type: '$tpe'.")
-                }
-                case _ => k(Binary(op, r1, r2, tpe, loc))
-              }
+            case (r1, r2) => k(Binary(op, r1, r2, tpe, loc))
           })
 
         /**
@@ -326,16 +315,24 @@ object PartialEvaluator {
         case BinaryOperator.Equal =>
           // Partially evaluate both exp1 and exp2.
           eval2(exp1, exp2, {
+            case (Var(ident1, _, _, _), Var(ident2, _, _, _)) if ident1.name == ident2.name =>
+              // Case 1: The lhs and the rhs are the same variable.
+              k(True)
             case (v1, v2) if isValue(v1) && isValue(v2) =>
-              // Case 1: The lhs and the rhs are values.
-              // TODO: Consider whether to clean this up and remove isEq.
-              isEq(v1, v2) match {
-                case Eq.Equal => k(True)
-                case Eq.NotEq => k(False)
-                case _ => throw new InternalCompilerError("Impossible")
-              }
+              // Case 2: The lhs and the rhs are values.
+              if (isEq(v1, v2))
+                k(True)
+              else
+                k(False)
+            case (Tag(_, tag1, e1, _, _), Tag(_, tag2, e2, _, _)) =>
+              // Case 3: The lhs and rhs are tags.
+              if (tag1.name != tag2.name)
+                k(False)
+              else
+                eval(Binary(BinaryOperator.Equal, e1, e2, Type.Bool, loc), k)
+
             case (Tuple(elms1, _, _), Tuple(elms2, _, _)) =>
-              // Case 2: The elements are tuples. Rewrite the expression to compare each element.
+              // Case 4: The lhs and rhs are tuples. Rewrite the expression to compare each element.
               val conditions = (elms1 zip elms2) map {
                 case (e1, e2) => Binary(BinaryOperator.Equal, e1, e2, Type.Bool, loc)
               }
@@ -344,7 +341,7 @@ object PartialEvaluator {
               }
               eval(result, k)
             case (v1, IfThenElse(e1, e2, e3, _, _)) if isValue(v1) =>
-              // Case 3: The lhs is a value and the rhs is an if-then-else.
+              // Case 5: The lhs is a value and the rhs is an if-then-else.
               // Push the value inside the if-then-else expression.
               val condition = e1
               val consequence = Binary(BinaryOperator.Equal, v1, e2, Type.Bool, loc)
@@ -352,7 +349,7 @@ object PartialEvaluator {
               val ifthenelse = IfThenElse(condition, consequence, alternative, Type.Bool, loc)
               eval(ifthenelse, k)
             case (IfThenElse(e1, e2, e3, _, _), v2) if isValue(v2) =>
-              // Case 4: The rhs is a value and the lhs is a value.
+              // Case 6: The rhs is a value and the lhs is a value.
               // Push the value inside the if-then-else expression.
               val condition = e1
               val consequence = Binary(BinaryOperator.Equal, v2, e2, Type.Bool, loc)
@@ -360,7 +357,7 @@ object PartialEvaluator {
               val ifthenelse = IfThenElse(condition, consequence, alternative, Type.Bool, loc)
               eval(ifthenelse, k)
             case (IfThenElse(e11, e12, e13, _, _), IfThenElse(e21, e22, e23, _, _)) =>
-              // Case 5: The lhs and rhs are both if-then-else.
+              // Case 7: The lhs and rhs are both if-then-else.
               // Rewrite the expression from:
               //
               //   eq (
@@ -389,19 +386,9 @@ object PartialEvaluator {
                 loc
               ), k)
 
-            case (e1, e2) => isEq(e1, e2) match {
-              // Case 6: Symbolically compare the elements.
-              case Eq.Equal => k(True)
-              case Eq.NotEq => k(False)
-              case Eq.Unknown => (e1, e2) match {
-                case (Tag(_, tag1, texp1, _, _), Tag(_, tag2, texp2, _, _)) =>
-                  if (tag1.name == tag2.name)
-                    k(Binary(op, texp1, texp2, tpe, loc))
-                  else
-                    k(False)
-                case _ => k(Binary(op, e1, e2, tpe, loc))
-              }
-            }
+            case (e1, e2) =>
+              // Case 8: Reconstruct the expression.
+              k(Binary(op, e1, e2, tpe, loc))
           })
 
         /**
@@ -558,11 +545,10 @@ object PartialEvaluator {
               k(Unary(UnaryOperator.LogicalNot, r1, Type.Bool, loc))
             case (r2, r3) =>
               // Case 3.2: Check if the then and else expressions are equivalent.
-              isEq(r2, r3) match {
-                case Eq.Equal => k(r2)
-                case Eq.NotEq => k(IfThenElse(r1, r2, r3, tpe, loc))
-                case Eq.Unknown => k(IfThenElse(r1, r2, r3, tpe, loc))
-              }
+              if (isValue(r2) && isValue(r3) && isEq(r2, r3))
+                k(r2)
+              else
+                k(IfThenElse(r1, r2, r3, tpe, loc))
           })
         })
 
@@ -767,117 +753,28 @@ object PartialEvaluator {
   }
 
   /**
-    * Compares the two expressions `exp1` and `exp2` under the environment `env0`.
+    * Returns `true` if `exp1` is equal to `exp2`.
     *
-    * Returns `Eq.Equal` if evaluation of `exp1` and `exp2` is *guaranteed* to produce the *same* value.
-    * Returns `Eq.NotEqual` if evaluation of `exp1` and `exp2` is *guaranteed* to produce *different* values.
-    * Returns `Eq.Unknown` if the procedure cannot determine whether the two expressions may or may not produce the same value.
+    * The two arguments must be values.
     */
-  private def isEq(exp1: Expression, exp2: Expression): Eq =
-    if (mustEq(exp1, exp2))
-      Eq.Equal
-    else if (mustNotEq(exp1, exp2))
-      Eq.NotEq
-    else
-      Eq.Unknown
-
-  /**
-    * Returns `true` iff `exp1` and `exp2` *must* evaluate to the same value.
-    */
-  private def mustEq(exp1: Expression, exp2: Expression): Boolean = (exp1, exp2) match {
+  private def isEq(exp1: Expression, exp2: Expression): Boolean = (exp1, exp2) match {
     case (Unit, Unit) => true
     case (True, True) => true
     case (False, False) => true
+    case (True, False) => false
+    case (False, True) => false
     case (Int8(i1), Int8(i2)) => i1 == i2
     case (Int16(i1), Int16(i2)) => i1 == i2
     case (Int32(i1), Int32(i2)) => i1 == i2
     case (Int64(i1), Int64(i2)) => i1 == i2
     case (Str(s1), Str(s2)) => s1 == s2
-    case (Var(ident1, _, _, _), Var(ident2, _, _, _)) =>
-      ident1.name == ident2.name
-    case (Ref(name1, _, _), Ref(name2, _, _)) =>
-      name1.fqn == name2.fqn
-    case (Lambda(_, args1, body1, _, _), Lambda(_, args2, body2, _, _)) =>
-      val eqArgs = (args1 zip args2).forall {
-        case (arg1, arg2) => arg1.ident.name == arg2.ident.name
+    case (Tag(_, ident1, e1, _, _), Tag(_, ident2, e2, _, _)) =>
+      ident1.name == ident2.name && isEq(e1, e2)
+    case (Tuple(elms1, _, _), Tuple(elms2, _, _)) =>
+      (elms1 zip elms2) forall {
+        case (e1, e2) => isEq(e1, e2)
       }
-      val eqBody = mustEq(body1, body2)
-      eqArgs && eqBody
-    case (Apply3(lambda1, actuals1, _, _), Apply3(lambda2, actuals2, _, _)) =>
-      val eqLambdas = mustEq(lambda1, lambda2)
-      val eqActuals = (actuals1 zip actuals2).forall {
-        case (e1, e2) => mustEq(e1, e2)
-      }
-      eqLambdas && eqActuals
-    case (Unary(op1, e1, _, _), Unary(op2, e2, _, _)) =>
-      val eqOp = op1 == op2
-      val eqExp = mustEq(e1, e2)
-      eqOp && eqExp
-    case (Binary(op1, e11, e12, _, _), Binary(op2, e21, e22, _, _)) =>
-      val eqOp = op1 == op2
-      val eq1Exp = mustEq(e11, e21)
-      val eq2Exp = mustEq(e12, e22)
-      eqOp && eq1Exp && eq2Exp
-    case (IfThenElse(e11, e12, e13, _, _), IfThenElse(e21, e22, e23, _, _)) =>
-      val eq1Exp = mustEq(e11, e21)
-      val eq2Exp = mustEq(e12, e22)
-      val eq3Exp = mustEq(e13, e23)
-      eq1Exp && eq2Exp && eq3Exp
-    case (Let(ident1, _, e11, e12, _, _), Let(ident2, _, e21, e22, _, _)) =>
-      val eqIdent = ident1.name == ident2.name
-      val eqExp1 = mustEq(e11, e21)
-      val eqExp2 = mustEq(e12, e22)
-      eqIdent && eqExp1 && eqExp2
-    case (CheckTag(tag1, e1, _), CheckTag(tag2, e2, _)) =>
-      val eqTag = tag1.name == tag2.name
-      val eqExp = mustEq(e1, e2)
-      eqTag && eqExp
-    case (GetTagValue(e1, _, _), GetTagValue(e2, _, _)) =>
-      mustEq(e1, e2)
-    case (Tag(_, tag1, e1, _, _), Tag(_, tag2, e2, _, _)) =>
-      val eqTag = tag1.name == tag2.name
-      val eqExp = mustEq(e1, e2)
-      eqTag && eqExp
-    case (Tuple(elms1, _, _), Tuple(elms2, _, _)) => (elms1 zip elms2) forall {
-      case (e1, e2) => mustEq(e1, e2)
-    }
-    case (GetTupleIndex(e1, offset1, _, _), GetTupleIndex(e2, offset2, _, _)) =>
-      val eqExp = mustEq(e1, e2)
-      val eqOffset = offset1 == offset2
-      eqExp && eqOffset
-    case (UserError(_, _), UserError(_, _)) => true
-    case (MatchError(_, _), MatchError(_, _)) => true
-    case (CheckNil(_, _), CheckNil(_, _)) => throw new InternalCompilerError("Unsupported.")
-    case (CheckCons(_, _), CheckCons(_, _)) => throw new InternalCompilerError("Unsupported.")
-    case (Set(_, _, _), Set(_, _, _)) => throw new InternalCompilerError("Unsupported.")
-    case _ => false
-  }
-
-  /**
-    * Returns `true` iff `exp1` and `exp2` *cannot* evaluate to the same value.
-    *
-    * NB: Determining that two expressions must evaluate to different values
-    * is much more difficult than deciding if they evaluate to the same value!
-    */
-  private def mustNotEq(exp1: Expression, exp2: Expression): Boolean = (exp1, exp2) match {
-    case (True, False) => true
-    case (False, True) => true
-    case (Int8(i1), Int8(i2)) => i1 != i2
-    case (Int16(i1), Int16(i2)) => i1 != i2
-    case (Int32(i1), Int32(i2)) => i1 != i2
-    case (Int64(i1), Int64(i2)) => i1 != i2
-    case (Str(s1), Str(s2)) => s1 != s2
-    case (Var(ident1, _, _, _), Var(ident2, _, _, _)) =>
-      ident1.name != ident2.name
-    case (Ref(name1, _, _), Ref(name2, _, _)) =>
-      name1.fqn != name2.fqn
-    case (Tag(_, tag1, e1, _, _), Tag(_, tag2, e2, _, _)) =>
-      tag1.name != tag2.name || mustNotEq(e1, e2)
-    case (Tuple(elms1, _, _), Tuple(elms2, _, _)) => (elms1 zip elms2) exists {
-      case (e1, e2) => mustNotEq(e1, e2)
-    }
-    // NB: Several cases omitted due to their difficulty in implementation.
-    case _ => false
+    case _ => throw new InternalCompilerError(s"The arguments 'exp1' and 'exp2' must be values, but got: '$exp1' and '$exp2'.")
   }
 
   /**
