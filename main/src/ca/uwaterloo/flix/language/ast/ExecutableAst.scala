@@ -379,11 +379,13 @@ object ExecutableAst {
     /**
       * A typed AST node representing a dereference of the inner value of a tag, i.e. destruct a tag.
       *
+      * @param tag the tag identifier.
       * @param exp the tag expression to destruct.
       * @param tpe the type of the inner tag value.
       * @param loc the source location of the expression.
       */
-    case class GetTagValue(exp: ExecutableAst.Expression,
+    case class GetTagValue(tag: Name.Ident,
+                           exp: ExecutableAst.Expression,
                            tpe: Type,
                            loc: SourceLocation) extends ExecutableAst.Expression {
       override def toString: String = "GetTagValue(" + exp + ")"

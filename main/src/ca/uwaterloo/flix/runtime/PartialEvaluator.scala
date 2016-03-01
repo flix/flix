@@ -635,7 +635,7 @@ object PartialEvaluator {
       /**
         * GetTagValue Expression.
         */
-      case GetTagValue(exp, tpe, loc) =>
+      case GetTagValue(tag, exp, tpe, loc) =>
         eval(exp, {
           case Tag(_, _, e, _, _) =>
             // Case 1: Concrete execution.
@@ -643,15 +643,15 @@ object PartialEvaluator {
           case IfThenElse(e1, e2, e3, _, _) =>
             // Case 2: Move the GetTagValue inside the consequence and alternative expressions.
             val conditional = e1
-            val consequence = GetTagValue(e2, tpe, loc)
-            val alternative = GetTagValue(e3, tpe, loc)
+            val consequence = GetTagValue(tag, e2, tpe, loc)
+            val alternative = GetTagValue(tag, e3, tpe, loc)
             val ifthenelse = IfThenElse(conditional, consequence, alternative, tpe, loc)
 
             // Evaluate the rewritten if-then-else.
             eval(ifthenelse, k)
           case r =>
             // Case 3: The expression is residual. Reconstruct it.
-            k(GetTagValue(r, tpe, loc))
+            k(GetTagValue(tag, r, tpe, loc))
         })
 
       /**
@@ -838,8 +838,8 @@ object PartialEvaluator {
       Tag(enum, tag, rename(src, dst, e), tpe, loc)
     case CheckTag(tag, e, loc) =>
       CheckTag(tag, rename(src, dst, e), loc)
-    case GetTagValue(e, tpe, loc) =>
-      GetTagValue(rename(src, dst, e), tpe, loc)
+    case GetTagValue(tag, e, tpe, loc) =>
+      GetTagValue(tag, rename(src, dst, e), tpe, loc)
     case Tuple(elms, tpe, loc) =>
       Tuple(elms map (e => rename(src, dst, e)), tpe, loc)
     case GetTupleIndex(e, offset, tpe, loc) =>
@@ -930,8 +930,8 @@ object PartialEvaluator {
         Tag(enum, tag, visit(e), tpe, loc)
       case CheckTag(tag, e, loc) =>
         CheckTag(tag, visit(e), loc)
-      case GetTagValue(e, tpe, loc) =>
-        GetTagValue(visit(e), tpe, loc)
+      case GetTagValue(tag, e, tpe, loc) =>
+        GetTagValue(tag, visit(e), tpe, loc)
       case Tuple(elms, tpe, loc) =>
         Tuple(elms map (e => visit(e)), tpe, loc)
       case GetTupleIndex(e, offset, tpe, loc) =>

@@ -180,7 +180,7 @@ object Codegen {
       visitor.visitLdcInsn(tag.name)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false)
 
-    case Expression.GetTagValue(exp, tpe, _) =>
+    case Expression.GetTagValue(tag, exp, tpe, _) =>
       // Compile `exp` as a tag expression, get its inner `value`, and unbox if necessary.
       compileExpression(context, visitor)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tag", "value",

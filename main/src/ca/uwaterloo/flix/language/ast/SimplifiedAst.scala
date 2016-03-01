@@ -405,15 +405,18 @@ object SimplifiedAst {
     /**
       * A typed AST node representing a dereference of the inner value of a tag, i.e. destruct a tag.
       *
+      * @param tag the tag identifier.
       * @param exp the tag expression to destruct.
       * @param tpe the type of the inner tag value.
       * @param loc the source location of the expression.
       */
-    case class GetTagValue(exp: SimplifiedAst.Expression,
+    case class GetTagValue(tag: Name.Ident,
+                           exp: SimplifiedAst.Expression,
                            tpe: Type,
                            loc: SourceLocation) extends SimplifiedAst.Expression {
 
       assert(exp.tpe.isInstanceOf[Type.Enum], s"GetTagValue expects an expression of Type.Enum, but got '${exp.tpe}'.")
+      assert(exp.tpe.asInstanceOf[Type.Enum].cases(tag.name).tpe == tpe, s"GetTagValue type mismatch.")
 
       override def toString: String = "GetTagValue(" + exp + ")"
     }

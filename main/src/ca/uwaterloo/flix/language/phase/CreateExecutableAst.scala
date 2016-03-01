@@ -141,8 +141,8 @@ object CreateExecutableAst {
         ExecutableAst.Expression.Let(ident, offset, toExecutable(exp1), toExecutable(exp2), tpe, loc)
       case SimplifiedAst.Expression.CheckTag(tag, exp, loc) =>
         ExecutableAst.Expression.CheckTag(tag, toExecutable(exp), loc)
-      case SimplifiedAst.Expression.GetTagValue(exp, tpe, loc) =>
-        ExecutableAst.Expression.GetTagValue(toExecutable(exp), tpe, loc)
+      case SimplifiedAst.Expression.GetTagValue(tag, exp, tpe, loc) =>
+        ExecutableAst.Expression.GetTagValue(tag, toExecutable(exp), tpe, loc)
       case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) =>
         ExecutableAst.Expression.Tag(enum, tag, toExecutable(exp), tpe, loc)
       case SimplifiedAst.Expression.GetTupleIndex(base, offset, tpe, loc) =>
