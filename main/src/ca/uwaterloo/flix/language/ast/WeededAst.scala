@@ -170,12 +170,44 @@ object WeededAst {
     case class Bool(lit: scala.Boolean, loc: SourceLocation) extends WeededAst.Literal
 
     /**
-      * An AST node that represents an integer literal.
+      * An AST node that represents an char literal.
       *
-      * @param lit the integer literal.
+      * @param lit the char literal.
       * @param loc the source location of the literal
       */
-    case class Int(lit: scala.Int, loc: SourceLocation) extends WeededAst.Literal
+    case class Char(lit: scala.Char, loc: SourceLocation) extends WeededAst.Literal
+
+    /**
+      * An AST node that represents an int8 literal.
+      *
+      * @param lit the int8 literal.
+      * @param loc the source location of the literal
+      */
+    case class Int8(lit: scala.Byte, loc: SourceLocation) extends WeededAst.Literal
+
+    /**
+      * An AST node that represents an int16 literal.
+      *
+      * @param lit the int16 literal.
+      * @param loc the source location of the literal
+      */
+    case class Int16(lit: scala.Short, loc: SourceLocation) extends WeededAst.Literal
+
+    /**
+      * An AST node that represents an int32 literal.
+      *
+      * @param lit the int32 literal.
+      * @param loc the source location of the literal
+      */
+    case class Int32(lit: scala.Int, loc: SourceLocation) extends WeededAst.Literal
+
+    /**
+      * An AST node that represents an int64 literal.
+      *
+      * @param lit the int64 literal.
+      * @param loc the source location of the literal
+      */
+    case class Int64(lit: scala.Long, loc: SourceLocation) extends WeededAst.Literal
 
     /**
       * An AST node that represents a string literal.

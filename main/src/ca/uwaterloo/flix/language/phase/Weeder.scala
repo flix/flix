@@ -547,7 +547,11 @@ object Weeder {
         case "false" => WeededAst.Literal.Bool(lit = false, plit.loc).toSuccess
         case _ => throw Compiler.InternalCompilerError("Impossible non-boolean value.")
       }
-      case plit: ParsedAst.Literal.Int => WeededAst.Literal.Int(plit.lit.toInt, plit.loc).toSuccess
+      case plit: ParsedAst.Literal.Char => WeededAst.Literal.Char(plit.lit(0), plit.loc).toSuccess
+      case plit: ParsedAst.Literal.Int8 => WeededAst.Literal.Int8(plit.lit.toByte, plit.loc).toSuccess
+      case plit: ParsedAst.Literal.Int16 => WeededAst.Literal.Int16(plit.lit.toShort, plit.loc).toSuccess
+      case plit: ParsedAst.Literal.Int32 => WeededAst.Literal.Int32(plit.lit.toInt, plit.loc).toSuccess
+      case plit: ParsedAst.Literal.Int64 => WeededAst.Literal.Int64(plit.lit.toLong, plit.loc).toSuccess
       case plit: ParsedAst.Literal.Str => WeededAst.Literal.Str(plit.lit, plit.loc).toSuccess
       case plit: ParsedAst.Literal.Tag => compile(plit.lit) map (lit => WeededAst.Literal.Tag(plit.enum, plit.tag, lit, plit.loc))
       case plit: ParsedAst.Literal.Tuple => @@(plit.elms map compile) map {
@@ -587,7 +591,7 @@ object Weeder {
 
       // TODO: Hack to support negative integer literals.
       case exp: ParsedAst.Expression.Unary => exp.e match {
-        case ParsedAst.Expression.Lit(sp1, lit: ParsedAst.Literal.Int, sp2) => exp.op match {
+        case ParsedAst.Expression.Lit(sp1, lit: ParsedAst.Literal.Int32, sp2) => exp.op match {
           case UnaryOperator.Minus => Literal.compile(lit.copy(lit = "-" + lit.lit)) map {
             case r => WeededAst.Expression.Lit(r, exp.loc)
           }

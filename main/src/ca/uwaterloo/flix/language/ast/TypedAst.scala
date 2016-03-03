@@ -169,14 +169,55 @@ object TypedAst {
     }
 
     /**
-      * A typed AST node representing an integer literal.
+      * A typed AST node that represent a char literal.
       *
-      * @param lit the integer literal.
+      * @param lit the char literal.
       * @param loc the source location.
       */
-    case class Int(lit: scala.Int, loc: SourceLocation) extends TypedAst.Literal {
+    case class Char(lit: scala.Char, loc: SourceLocation) extends TypedAst.Literal {
+      final val tpe = Type.Int8
+    }
+
+    /**
+      * A typed AST node that represent an int8 literal.
+      *
+      * @param lit the int8 literal.
+      * @param loc the source location.
+      */
+    case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Literal {
+      final val tpe = Type.Int8
+    }
+
+    /**
+      * A typed AST node that represent an int16 literal.
+      *
+      * @param lit the int16 literal.
+      * @param loc the source location.
+      */
+    case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Literal {
+      final val tpe = Type.Int16
+    }
+
+    /**
+      * A typed AST node that represent an int32 literal.
+      *
+      * @param lit the int32 literal.
+      * @param loc the source location.
+      */
+    case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Literal {
       final val tpe = Type.Int32
     }
+
+    /**
+      * A typed AST node that represent an int64 literal.
+      *
+      * @param lit the int64 literal.
+      * @param loc the source location.
+      */
+    case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Literal {
+      final val tpe = Type.Int64
+    }
+
 
     /**
       * A typed AST node representing a string literal.

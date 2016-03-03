@@ -167,21 +167,21 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(Int.MinValue))(result)
   }
 
-  ignore("Expression.Int8.01") {
+  test("Expression.Int8.01") {
     val input = "fn f: Int8 = -105i8"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt8(-105))(result)
   }
 
-  ignore("Expression.Int8.02") {
+  test("Expression.Int8.02") {
     val input = "fn f: Int8 = 121i8"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt8(121))(result)
   }
 
-  ignore("Expression.Int8.03") {
+  test("Expression.Int8.03") {
     val input = s"fn f: Int8 = ${Byte.MaxValue}i8"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))

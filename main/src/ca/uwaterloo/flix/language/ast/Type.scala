@@ -20,7 +20,7 @@ sealed trait Type {
     case Type.Int64 => "Int64"
     case Type.Str => "Str"
     case Type.Native => "Native"
-    case Type.Proposition => "Prop"
+    case Type.Prop => "Prop"
     case Type.Tag(enum, tag, tpe) => tag.name + "(" + tpe + ")"
     case Type.UnresolvedTag(enum, tag, tpe) => "?" + tag.name + "(" + tpe + ")"
     case Type.Enum(enum, cases) => enum.fqn
@@ -82,6 +82,11 @@ object Type {
   case object Int64 extends Type
 
   /**
+    * An AST node that represents the arbitrary sized integer type.
+    */
+  case object BigInt extends Type
+
+  /**
     * An AST node that represents the Str type.
     */
   case object Str extends Type
@@ -94,7 +99,7 @@ object Type {
   /**
     * An AST node that represents the proposition type.
     */
-  case object Proposition extends Type
+  case object Prop extends Type
 
   /**
     * An AST node that represents the type of a tag.
@@ -103,6 +108,7 @@ object Type {
     * @param tag  the name of the tag.
     * @param tpe  the type of the nested value.
     */
+  @deprecated("to be removed", "0.1.0")
   case class Tag(enum: Name.Resolved, tag: Name.Ident, tpe: Type) extends Type
 
   /**

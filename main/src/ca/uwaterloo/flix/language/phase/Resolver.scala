@@ -552,7 +552,11 @@ object Resolver {
       def visit(wast: WeededAst.Literal): Validation[ResolvedAst.Literal, ResolverError] = wast match {
         case WeededAst.Literal.Unit(loc) => ResolvedAst.Literal.Unit(loc).toSuccess
         case WeededAst.Literal.Bool(b, loc) => ResolvedAst.Literal.Bool(b, loc).toSuccess
-        case WeededAst.Literal.Int(i, loc) => ResolvedAst.Literal.Int(i, loc).toSuccess
+        case WeededAst.Literal.Char(c, loc) => ResolvedAst.Literal.Char(c, loc).toSuccess
+        case WeededAst.Literal.Int8(i, loc) => ResolvedAst.Literal.Int8(i, loc).toSuccess
+        case WeededAst.Literal.Int16(i, loc) => ResolvedAst.Literal.Int16(i, loc).toSuccess
+        case WeededAst.Literal.Int32(i, loc) => ResolvedAst.Literal.Int32(i, loc).toSuccess
+        case WeededAst.Literal.Int64(i, loc) => ResolvedAst.Literal.Int64(i, loc).toSuccess
         case WeededAst.Literal.Str(s, loc) => ResolvedAst.Literal.Str(s, loc).toSuccess
         case WeededAst.Literal.Tag(enum, tag, literal, loc) => syms.lookupEnum(enum, namespace) flatMap {
           case (rname, defn) => visit(literal) flatMap {
