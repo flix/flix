@@ -1,6 +1,5 @@
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.api.{FlixError, Flix}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.{Parser, Resolver, Typer, Weeder}
 import ca.uwaterloo.flix.util.Validation._
@@ -22,16 +21,6 @@ import scala.util.{Failure, Success}
   */
 
 object Compiler {
-
-  /**
-    * A common super-type for compilation errors.
-    */
-  trait CompilationError extends FlixError {
-    /**
-      * Returns a human readable string representation of the error.
-      */
-    def message: String
-  }
 
   /**
     * An error raised to indicate a parse error.

@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.Compiler
+import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -18,7 +18,7 @@ object Typer {
   /**
     * A common super-type for type errors.
     */
-  sealed trait TypeError extends Compiler.CompilationError
+  sealed trait TypeError extends CompilationError
 
   object TypeError {
 

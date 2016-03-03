@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.api
 
 import java.nio.file.{Files, Path, Paths}
 
-import ca.uwaterloo.flix.language.Compiler
+import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.{CreateExecutableAst, GenSym, Simplifier, Verifier}
@@ -148,7 +148,7 @@ class Flix {
   /**
     * Compiles the Flix program and returns the typed ast.
     */
-  def compile(): Validation[TypedAst.Root, FlixError] = {
+  def compile(): Validation[TypedAst.Root, CompilationError] = {
     if (strings.isEmpty && paths.isEmpty)
       throw new IllegalStateException("No input specified. Please add at least one string or path input.")
 
@@ -160,7 +160,7 @@ class Flix {
     *
     * NB: Automatically calls `compile()` thus there is no reason to do so manually.
     */
-  def solve(): Validation[Model, FlixError] = {
+  def solve(): Validation[Model, CompilationError] = {
     implicit val _ = genSym
 
     compile() map {

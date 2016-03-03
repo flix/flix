@@ -3,20 +3,12 @@ package ca.uwaterloo.flix.runtime
 import ca.uwaterloo.flix.api.{IValue, WrappedValue}
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.util.InternalRuntimeException
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 
 object Interpreter {
-
-  /**
-    * An exception thrown to indicate an internal runtime error.
-    *
-    * This exception should never be thrown if the compiler and runtime is implemented correctly.
-    *
-    * @param message the error message.
-    */
-  case class InternalRuntimeError(message: String) extends RuntimeException(message)
 
   /*
    * Evaluates an `Expression`. Assumes all input has been type-checked.
@@ -108,14 +100,14 @@ object Interpreter {
         case Type.Int16 => Value.mkInt16(-Value.cast2int16(v))
         case Type.Int32 => Value.mkInt32(-Value.cast2int32(v))
         case Type.Int64 => Value.mkInt64(-Value.cast2int64(v))
-        case _ => throw new InternalRuntimeError(s"Can't apply UnaryOperator.$op to type ${e.tpe}.")
+        case _ => throw new InternalRuntimeException(s"Can't apply UnaryOperator.$op to type ${e.tpe}.")
       }
       case UnaryOperator.BitwiseNegate => e.tpe match {
         case Type.Int8 => Value.mkInt8(~Value.cast2int8(v))
         case Type.Int16 => Value.mkInt16(~Value.cast2int16(v))
         case Type.Int32 => Value.mkInt32(~Value.cast2int32(v))
         case Type.Int64 => Value.mkInt64(~Value.cast2int64(v))
-        case _ => throw new InternalRuntimeError(s"Can't apply UnaryOperator.$op to type ${e.tpe}.")
+        case _ => throw new InternalRuntimeException(s"Can't apply UnaryOperator.$op to type ${e.tpe}.")
       }
     }
   }
@@ -129,35 +121,35 @@ object Interpreter {
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) + Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) + Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) + Value.cast2int64(v2))
-        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Minus => e1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) - Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) - Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) - Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) - Value.cast2int64(v2))
-        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Times => e1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) * Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) * Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) * Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) * Value.cast2int64(v2))
-        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Divide => e1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) / Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) / Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) / Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) / Value.cast2int64(v2))
-        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Modulo => e1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) % Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) % Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) % Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) % Value.cast2int64(v2))
-        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
     }
   }
@@ -171,28 +163,28 @@ object Interpreter {
         case Type.Int16 => Value.mkBool(Value.cast2int16(v1) < Value.cast2int16(v2))
         case Type.Int32 => Value.mkBool(Value.cast2int32(v1) < Value.cast2int32(v2))
         case Type.Int64 => Value.mkBool(Value.cast2int64(v1) < Value.cast2int64(v2))
-        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.LessEqual => e1.tpe match {
         case Type.Int8 => Value.mkBool(Value.cast2int8(v1) <= Value.cast2int8(v2))
         case Type.Int16 => Value.mkBool(Value.cast2int16(v1) <= Value.cast2int16(v2))
         case Type.Int32 => Value.mkBool(Value.cast2int32(v1) <= Value.cast2int32(v2))
         case Type.Int64 => Value.mkBool(Value.cast2int64(v1) <= Value.cast2int64(v2))
-        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Greater => e1.tpe match {
         case Type.Int8 => Value.mkBool(Value.cast2int8(v1) > Value.cast2int8(v2))
         case Type.Int16 => Value.mkBool(Value.cast2int16(v1) > Value.cast2int16(v2))
         case Type.Int32 => Value.mkBool(Value.cast2int32(v1) > Value.cast2int32(v2))
         case Type.Int64 => Value.mkBool(Value.cast2int64(v1) > Value.cast2int64(v2))
-        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.GreaterEqual => e1.tpe match {
         case Type.Int8 => Value.mkBool(Value.cast2int8(v1) >= Value.cast2int8(v2))
         case Type.Int16 => Value.mkBool(Value.cast2int16(v1) >= Value.cast2int16(v2))
         case Type.Int32 => Value.mkBool(Value.cast2int32(v1) >= Value.cast2int32(v2))
         case Type.Int64 => Value.mkBool(Value.cast2int64(v1) >= Value.cast2int64(v2))
-        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Equal => Value.mkBool(v1 == v2)
       case BinaryOperator.NotEqual => Value.mkBool(v1 != v2)
@@ -222,35 +214,35 @@ object Interpreter {
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) & Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) & Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) & Value.cast2int64(v2))
-        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.BitwiseOr => e1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) | Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) | Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) | Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) | Value.cast2int64(v2))
-        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.BitwiseXor => e1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) ^ Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) ^ Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) ^ Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) ^ Value.cast2int64(v2))
-        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.BitwiseLeftShift => e1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) << Value.cast2int32(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) << Value.cast2int32(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) << Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) << Value.cast2int32(v2))
-        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.BitwiseRightShift => e1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) >> Value.cast2int32(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) >> Value.cast2int32(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) >> Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) >> Value.cast2int32(v2))
-        case _ => throw new InternalRuntimeError(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
     }
   }
@@ -311,7 +303,7 @@ object Interpreter {
         case Ast.Hook.Unsafe(name, inv, _) =>
           inv(args)
       }
-      case _ => throw new InternalRuntimeError(s"Trying to call a non-function: $function.")
+      case _ => throw new InternalRuntimeException(s"Trying to call a non-function: $function.")
     }
 
   def eval2(closure: AnyRef, arg1: AnyRef, arg2: AnyRef, root: Root): AnyRef = {

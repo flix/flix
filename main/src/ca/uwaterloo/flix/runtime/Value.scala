@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.runtime
 import java.util
 
 import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Name}
-import ca.uwaterloo.flix.runtime.Interpreter.InternalRuntimeError
+import ca.uwaterloo.flix.util.InternalRuntimeException
 
 import scala.collection.{immutable, mutable}
 
@@ -46,7 +46,7 @@ object Value {
   @inline
   def cast2bool(ref: Any): Boolean = ref match {
     case o: java.lang.Boolean => o.booleanValue()
-    case _ => throw new InternalRuntimeError(s"Unexpected non-bool value: '$ref'.")
+    case _ => throw new InternalRuntimeException(s"Unexpected non-bool value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -65,7 +65,7 @@ object Value {
   @inline
   def cast2char(ref: AnyRef): Char = ref match {
     case o: java.lang.Character => o.charValue()
-    case _ => throw new InternalRuntimeError(s"Unexpected non-char value: '$ref'.")
+    case _ => throw new InternalRuntimeException(s"Unexpected non-char value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -120,7 +120,7 @@ object Value {
   @inline
   def cast2int8(ref: AnyRef): Byte = ref match {
     case o: java.lang.Byte => o.byteValue()
-    case _ => throw new InternalRuntimeError(s"Unexpected non-int8 value: '$ref'.")
+    case _ => throw new InternalRuntimeException(s"Unexpected non-int8 value: '$ref'.")
   }
 
   /**
@@ -129,7 +129,7 @@ object Value {
   @inline
   def cast2int16(ref: AnyRef): Short = ref match {
     case o: java.lang.Short => o.shortValue()
-    case _ => throw new InternalRuntimeError(s"Unexpected non-int16 value: '$ref'.")
+    case _ => throw new InternalRuntimeException(s"Unexpected non-int16 value: '$ref'.")
   }
 
   /**
@@ -138,7 +138,7 @@ object Value {
   @inline
   def cast2int32(ref: AnyRef): Int = ref match {
     case o: java.lang.Integer => o.intValue()
-    case _ => throw new InternalRuntimeError(s"Unexpected non-int32 value: '$ref'.")
+    case _ => throw new InternalRuntimeException(s"Unexpected non-int32 value: '$ref'.")
   }
 
   /**
@@ -147,7 +147,7 @@ object Value {
   @inline
   def cast2int64(ref: AnyRef): Long = ref match {
     case o: java.lang.Long => o.longValue()
-    case _ => throw new InternalRuntimeError(s"Unexpected non-int64 value: '$ref'.")
+    case _ => throw new InternalRuntimeException(s"Unexpected non-int64 value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -178,7 +178,7 @@ object Value {
   @inline
   def cast2closure(ref: AnyRef): Closure = ref match {
     case o: Closure => o
-    case _ => throw new InternalRuntimeError(s"Unexpected non-closure value: '$ref'.")
+    case _ => throw new InternalRuntimeException(s"Unexpected non-closure value: '$ref'.")
   }
 
   /**
@@ -204,7 +204,7 @@ object Value {
   @inline
   def cast2str(ref: AnyRef): String = ref match {
     case o: java.lang.String => o
-    case _ => throw new InternalRuntimeError(s"Unexpected non-string value: '$ref'.")
+    case _ => throw new InternalRuntimeException(s"Unexpected non-string value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -252,7 +252,7 @@ object Value {
   @inline
   def cast2tag(ref: AnyRef): Value.Tag = ref match {
     case v: Value.Tag => v
-    case _ => throw new InternalRuntimeError(s"Unexpected non-tag value: '$ref'.")
+    case _ => throw new InternalRuntimeException(s"Unexpected non-tag value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -280,7 +280,7 @@ object Value {
     case o: Array[AnyRef] => o
     case o: Tuple => o.elms // TODO: remove
     case o: Product => o.productIterator.toArray.asInstanceOf[Array[AnyRef]] // TODO: See if this works, and think about better solution.
-    case _ => throw new InternalRuntimeError(s"Unexpected non-tuple value: '$ref'.")
+    case _ => throw new InternalRuntimeException(s"Unexpected non-tuple value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -304,7 +304,7 @@ object Value {
     */
   def mkList(ref: AnyRef): AnyRef = ref match {
     case o: immutable.List[_] => o
-    case _ => throw new InternalRuntimeError(s"Unexpected non-list value: '$ref'.")
+    case _ => throw new InternalRuntimeException(s"Unexpected non-list value: '$ref'.")
   }
 
   /**
@@ -313,7 +313,7 @@ object Value {
   @inline
   def mkSet(ref: AnyRef): AnyRef = ref match {
     case o: immutable.Set[_] => o
-    case _ => throw new InternalRuntimeError(s"Unexpected non-set value: '$ref'.")
+    case _ => throw new InternalRuntimeException(s"Unexpected non-set value: '$ref'.")
   }
 
   /**
@@ -322,7 +322,7 @@ object Value {
   @inline
   def mkMap(ref: AnyRef): AnyRef = ref match {
     case o: immutable.Map[_, _] => o
-    case _ => throw new InternalRuntimeError(s"Unexpected non-map value: '$ref'.")
+    case _ => throw new InternalRuntimeException(s"Unexpected non-map value: '$ref'.")
   }
 
   /**
@@ -337,7 +337,7 @@ object Value {
   @inline
   def cast2list(ref: AnyRef): immutable.List[AnyRef] = ref match {
     case o: immutable.List[AnyRef]@unchecked => o
-    case _ => throw new InternalRuntimeError(s"Unexpected non-list value: '$ref'.")
+    case _ => throw new InternalRuntimeException(s"Unexpected non-list value: '$ref'.")
   }
 
   /**
@@ -346,7 +346,7 @@ object Value {
   @inline
   def cast2set(ref: AnyRef): immutable.Set[AnyRef] = ref match {
     case o: immutable.Set[AnyRef]@unchecked => o
-    case _ => throw new InternalRuntimeError(s"Unexpected non-set value: '$ref'.")
+    case _ => throw new InternalRuntimeException(s"Unexpected non-set value: '$ref'.")
   }
 
   /**
@@ -355,7 +355,7 @@ object Value {
   @inline
   def cast2map(ref: AnyRef): immutable.Map[AnyRef, AnyRef] = ref match {
     case o: immutable.Map[AnyRef, AnyRef]@unchecked => o
-    case _ => throw new InternalRuntimeError(s"Unexpected non-map value: '$ref'.")
+    case _ => throw new InternalRuntimeException(s"Unexpected non-map value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////

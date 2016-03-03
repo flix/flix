@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.FlixError
-import ca.uwaterloo.flix.language.Compiler
+import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition._
@@ -458,7 +457,7 @@ object Verifier {
   /**
     * A common super-type for verification errors.
     */
-  sealed trait VerifierError extends FlixError
+  sealed trait VerifierError extends CompilationError
 
   object VerifierError {
 

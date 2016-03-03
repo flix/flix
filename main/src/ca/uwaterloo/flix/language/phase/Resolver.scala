@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import java.lang.reflect.{Field, Method, Modifier}
 
-import ca.uwaterloo.flix.language.Compiler
+import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.language.ast.WeededAst.Root
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation
@@ -18,7 +18,7 @@ object Resolver {
   /**
     * A common super-type for resolver errors.
     */
-  sealed trait ResolverError extends Compiler.CompilationError
+  sealed trait ResolverError extends CompilationError
 
   object ResolverError {
 
