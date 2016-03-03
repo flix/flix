@@ -34,6 +34,16 @@ import scala.collection.immutable.Seq
 // TODO: Introduce extern.
 // TODO: Why have literals?
 
+//index SUAfter(
+//Index({location, object}, BTREE) with FilterF(f),
+//
+//)
+//
+//CREATE INDEX ON films ((lower(title)));
+//
+//index SUBefore({location, object}, Tree, location == "foo")
+
+
 // TODO: Why split into declaration and definition?
 
 
