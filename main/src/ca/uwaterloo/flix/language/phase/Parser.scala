@@ -12,6 +12,7 @@ import scala.io.Source
 // TODO: Parse whitespace more "tightly" to improve source positions.
 // TODO: Add support for characters.
 // TODO: Add pattern matching let* pattern = exp
+// TODO: Move components into objects.
 
 /**
   * A parser for the Flix language.

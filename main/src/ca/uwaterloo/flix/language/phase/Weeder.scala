@@ -589,17 +589,33 @@ object Weeder {
           case body => WeededAst.Expression.Lambda(Ast.Annotations(List.empty), args.toList, body, exp.tpe, exp.loc)
         }
 
-      // TODO: Hack to support negative integer literals.
+      // TODO: Cleanup.
       case exp: ParsedAst.Expression.Unary => exp.e match {
-        case ParsedAst.Expression.Lit(sp1, lit: ParsedAst.Literal.Int32, sp2) => exp.op match {
-          case UnaryOperator.Minus => Literal.compile(lit.copy(lit = "-" + lit.lit)) map {
-            case r => WeededAst.Expression.Lit(r, exp.loc)
-          }
-          case _ =>
+        // NB: This is necessary to parse negative int literals correctly.
+        case ParsedAst.Expression.Lit(sp1, lit, sp2) =>
+          if (exp.op == UnaryOperator.Minus) {
+            lit match {
+              case l@ParsedAst.Literal.Int8(_, s, _) => Literal.compile(l.copy(lit = "-" + s)) map {
+                case r => WeededAst.Expression.Lit(r, exp.loc)
+              }
+              case l@ParsedAst.Literal.Int16(_, s, _) => Literal.compile(l.copy(lit = "-" + s)) map {
+                case r => WeededAst.Expression.Lit(r, exp.loc)
+              }
+              case l@ParsedAst.Literal.Int32(_, s, _) => Literal.compile(l.copy(lit = "-" + s)) map {
+                case r => WeededAst.Expression.Lit(r, exp.loc)
+              }
+              case l@ParsedAst.Literal.Int64(_, s, _) => Literal.compile(l.copy(lit = "-" + s)) map {
+                case r => WeededAst.Expression.Lit(r, exp.loc)
+              }
+              case _ => compile(exp.e) map {
+                case e => WeededAst.Expression.Unary(exp.op, e, exp.loc)
+              }
+            }
+          } else {
             compile(exp.e) map {
               case e => WeededAst.Expression.Unary(exp.op, e, exp.loc)
             }
-        }
+          }
         case _ => compile(exp.e) map {
           case e => WeededAst.Expression.Unary(exp.op, e, exp.loc)
         }
