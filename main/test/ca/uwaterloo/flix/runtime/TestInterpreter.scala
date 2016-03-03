@@ -1458,7 +1458,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(Int.MaxValue))(result07)
   }
 
-  ignore("Expression.Unary - UnaryOperator.BitwiseNegate.02") {
+  test("Expression.Unary - UnaryOperator.BitwiseNegate.02") {
     val input =
       s"""fn f01: Int8 = ~0i8
          |fn f02: Int8 = ~1i8
@@ -1485,7 +1485,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt8(Byte.MaxValue))(result07)
   }
 
-  ignore("Expression.Unary - UnaryOperator.BitwiseNegate.03") {
+  test("Expression.Unary - UnaryOperator.BitwiseNegate.03") {
     val input =
       s"""fn f01: Int16 = ~0i16
          |fn f02: Int16 = ~1i16
@@ -1539,7 +1539,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(Int.MaxValue))(result07)
   }
 
-  ignore("Expression.Unary - UnaryOperator.BitwiseNegate.05") {
+  test("Expression.Unary - UnaryOperator.BitwiseNegate.05") {
     val input =
       s"""fn f01: Int64 = ~0i64
          |fn f02: Int64 = ~1i64
@@ -3314,7 +3314,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(0))(result04)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseLeftShift.02") {
+  test("Expression.Binary - BinaryOperator.BitwiseLeftShift.02") {
     val input =
       s"""fn f01: Int8 = ${0x08}i8 << 0
          |fn f02: Int8 = ${0x08}i8 << 2
@@ -3332,7 +3332,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt8(0))(result04)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseLeftShift.03") {
+  test("Expression.Binary - BinaryOperator.BitwiseLeftShift.03") {
     val input =
       s"""fn f01: Int16 = ${0x08}i16 << 0
          |fn f02: Int16 = ${0x08}i16 << 8
@@ -3368,7 +3368,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(0))(result04)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseLeftShift.05") {
+  test("Expression.Binary - BinaryOperator.BitwiseLeftShift.05") {
     val input =
       s"""fn f01: Int64 = ${0x08}i64 << 0
          |fn f02: Int64 = ${0x08}i64 << 32
@@ -3404,7 +3404,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(-30000))(result04)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseRightShift.02") {
+  test("Expression.Binary - BinaryOperator.BitwiseRightShift.02") {
     val input =
       s"""fn f01: Int8 = 120i8 >> 0
          |fn f02: Int8 = 120i8 >> 2
@@ -3422,7 +3422,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt8(-30))(result04)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseRightShift.03") {
+  test("Expression.Binary - BinaryOperator.BitwiseRightShift.03") {
     val input =
       s"""fn f01: Int16 = 12000i16 >> 0
          |fn f02: Int16 = 12000i16 >> 2
@@ -3458,7 +3458,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(-30000))(result04)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseRightShift.05") {
+  test("Expression.Binary - BinaryOperator.BitwiseRightShift.05") {
     val input =
       s"""fn f01: Int64 = 12000000000i64 >> 0
          |fn f02: Int64 = 12000000000i64 >> 2

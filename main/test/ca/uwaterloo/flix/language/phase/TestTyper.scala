@@ -1007,12 +1007,6 @@ class TestTyper extends FunSuite {
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
 
-  ignore("Type.Int8.Ascribe") {
-    val input = "fn f(): Int8 = 42 : Int8"
-    val result = new Flix().addStr(input).compile()
-    result.get
-  }
-
   test("Type.Int8.Plus") {
     val input = "fn f(x: Int8, y: Int8): Int8 = x + y"
     val result = new Flix().addStr(input).compile()
@@ -1021,12 +1015,6 @@ class TestTyper extends FunSuite {
 
   test("Type.Int8.Times") {
     val input = "fn f(x: Int8, y: Int8): Int8 = x * y"
-    val result = new Flix().addStr(input).compile()
-    result.get
-  }
-
-  ignore("Type.Int16.Ascribe") {
-    val input = "fn f(): Int16 = 42 : Int16"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -1057,12 +1045,6 @@ class TestTyper extends FunSuite {
 
   test("Type.Int32.Times") {
     val input = "fn f(x: Int32, y: Int32): Int32 = x * y"
-    val result = new Flix().addStr(input).compile()
-    result.get
-  }
-
-  ignore("Type.Int64.Ascribe") {
-    val input = "fn f(): Int64 = 42 : Int64"
     val result = new Flix().addStr(input).compile()
     result.get
   }

@@ -375,9 +375,14 @@ object Typer {
             }
           case UnaryOperator.BitwiseNegate =>
             visit(re, env) flatMap {
-              case e => expect(Type.Int32, e.tpe, loc) map {
-                case tpe => TypedAst.Expression.Unary(op, e, tpe, loc)
-              }
+              case e =>
+                e.tpe match {
+                  case Type.Int8 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
+                  case Type.Int16 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
+                  case Type.Int32 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
+                  case Type.Int64 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
+                  case _ => TypeError.ExpectedType(Type.Int32, e.tpe, e.loc).toFailure // TODO: Need more generic error message.
+                }
             }
         }
 
@@ -415,13 +420,26 @@ object Typer {
               }
             }
           case _: BitwiseOperator =>
-            @@(visit(re1, env), visit(re2, env)) flatMap {
-              case (e1, e2) => (e1.tpe, e2.tpe) match {
-                case (Type.Int8, Type.Int8) => TypedAst.Expression.Binary(op, e1, e2, Type.Int8, loc).toSuccess
-                case (Type.Int16, Type.Int16) => TypedAst.Expression.Binary(op, e1, e2, Type.Int16, loc).toSuccess
-                case (Type.Int32, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int32, loc).toSuccess
-                case (Type.Int64, Type.Int64) => TypedAst.Expression.Binary(op, e1, e2, Type.Int64, loc).toSuccess
-                case (t1, t2) => TypeError.ExpectedEqualTypes(t1, t2, e1.loc, e2.loc).toFailure
+            if (op == BinaryOperator.BitwiseLeftShift || op == BinaryOperator.BitwiseRightShift) {
+              // The shift is always Int32.
+              @@(visit(re1, env), visit(re2, env)) flatMap {
+                case (e1, e2) => (e1.tpe, e2.tpe) match {
+                  case (Type.Int8, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int8, loc).toSuccess
+                  case (Type.Int16, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int16, loc).toSuccess
+                  case (Type.Int32, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int32, loc).toSuccess
+                  case (Type.Int64, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int64, loc).toSuccess
+                  case (t1, t2) => TypeError.ExpectedEqualTypes(t1, t2, e1.loc, e2.loc).toFailure // TODO: Wrong error message.
+                }
+              }
+            } else {
+              @@(visit(re1, env), visit(re2, env)) flatMap {
+                case (e1, e2) => (e1.tpe, e2.tpe) match {
+                  case (Type.Int8, Type.Int8) => TypedAst.Expression.Binary(op, e1, e2, Type.Int8, loc).toSuccess
+                  case (Type.Int16, Type.Int16) => TypedAst.Expression.Binary(op, e1, e2, Type.Int16, loc).toSuccess
+                  case (Type.Int32, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int32, loc).toSuccess
+                  case (Type.Int64, Type.Int64) => TypedAst.Expression.Binary(op, e1, e2, Type.Int64, loc).toSuccess
+                  case (t1, t2) => TypeError.ExpectedEqualTypes(t1, t2, e1.loc, e2.loc).toFailure  // TODO: Wrong error message.
+                }
               }
             }
         }
