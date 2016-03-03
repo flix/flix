@@ -78,18 +78,6 @@ object SimplifiedAst {
 
   }
 
-  case class Directives(directives: List[SimplifiedAst.Directive]) extends SimplifiedAst
-
-  sealed trait Directive
-
-  object Directive {
-
-    case class AssertFact(fact: SimplifiedAst.Constraint.Fact, loc: SourceLocation) extends SimplifiedAst.Directive
-
-    case class AssertRule(rule: SimplifiedAst.Constraint.Rule, loc: SourceLocation) extends SimplifiedAst.Directive
-
-  }
-
   sealed trait Expression extends SimplifiedAst {
     def tpe: Type
 
@@ -397,20 +385,36 @@ object SimplifiedAst {
                         loc: SourceLocation) extends SimplifiedAst.Expression {
       final val tpe: Type = Type.Bool
 
+      assert(exp.tpe.isInstanceOf[Type.Enum], s"CheckTag expects an expression if Type.Enum, but got '${exp.tpe}'.")
+
       override def toString: String = "CheckTag(" + tag.name + ", " + exp + ")"
     }
 
     /**
       * A typed AST node representing a dereference of the inner value of a tag, i.e. destruct a tag.
       *
+      * @param tag the tag identifier.
       * @param exp the tag expression to destruct.
       * @param tpe the type of the inner tag value.
       * @param loc the source location of the expression.
       */
-    case class GetTagValue(exp: SimplifiedAst.Expression,
+    case class GetTagValue(tag: Name.Ident,
+                           exp: SimplifiedAst.Expression,
                            tpe: Type,
                            loc: SourceLocation) extends SimplifiedAst.Expression {
-      override def toString: String = "GetTagValue(" + exp + ")"
+
+      assert(exp.tpe.isInstanceOf[Type.Enum], s"GetTagValue expects an expression of Type.Enum, but got '${exp.tpe}'.")
+      assert(exp.tpe.asInstanceOf[Type.Enum].cases(tag.name).tpe == tpe, s"GetTagValue type mismatch.")
+
+      // TODO: Remove once bug is fixed.
+      exp match {
+        case Tag(_, tag1, exp1, _, _) =>
+          assert(tag.name == tag1.name)
+          assert(tpe == exp1.tpe)
+        case _ => // nop
+      }
+
+      override def toString: String = "GetTagValue(" + tag.name + ", " + exp + ")"
     }
 
     /**
@@ -448,6 +452,9 @@ object SimplifiedAst {
                              offset: scala.Int,
                              tpe: Type,
                              loc: SourceLocation) extends SimplifiedAst.Expression {
+
+      assert(base.tpe.isInstanceOf[Type.Tuple], s"GetTupleIndex expects an expression of Type.Tuple, but got '${base.tpe}'.")
+
       override def toString: String = base + "[" + offset + "]"
     }
 

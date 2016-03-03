@@ -110,7 +110,15 @@ object ResolvedAst {
 
     case class Bool(lit: scala.Boolean, loc: SourceLocation) extends ResolvedAst.Literal
 
-    case class Int(lit: scala.Int, loc: SourceLocation) extends ResolvedAst.Literal
+    case class Char(lit: scala.Char, loc: SourceLocation) extends ResolvedAst.Literal
+
+    case class Int8(lit: scala.Byte, loc: SourceLocation) extends ResolvedAst.Literal
+
+    case class Int16(lit: scala.Short, loc: SourceLocation) extends ResolvedAst.Literal
+
+    case class Int32(lit: scala.Int, loc: SourceLocation) extends ResolvedAst.Literal
+
+    case class Int64(lit: scala.Long, loc: SourceLocation) extends ResolvedAst.Literal
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Literal
 

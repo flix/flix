@@ -12,6 +12,7 @@ import scala.io.Source
 // TODO: Parse whitespace more "tightly" to improve source positions.
 // TODO: Add support for characters.
 // TODO: Add pattern matching let* pattern = exp
+// TODO: Move components into objects.
 
 /**
   * A parser for the Flix language.
@@ -495,7 +496,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def PropType: Rule1[PType] = rule {
-    atomic("Prop") ~> (() => PType.Proposition)
+    atomic("Prop") ~> (() => PType.Prop)
   }
 
   def TupleType: Rule1[PType] = {
@@ -567,7 +568,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    UnitLiteral | BoolLiteral | IntLiteral | StrLiteral | TagLiteral | TupleLiteral | SetLiteral
+    UnitLiteral | BoolLiteral | CharLiteral | IntLiteral | StrLiteral | TagLiteral | TupleLiteral | SetLiteral
   }
 
   def UnitLiteral: Rule1[ParsedAst.Literal.Unit] = rule {
@@ -578,8 +579,32 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     SP ~ capture(atomic("true") | atomic("false")) ~ SP ~> ParsedAst.Literal.Bool
   }
 
-  def IntLiteral: Rule1[ParsedAst.Literal.Int] = rule {
-    SP ~ capture(optional("-") ~ oneOrMore(CharPredicate.Digit)) ~ SP ~> ParsedAst.Literal.Int
+  def CharLiteral: Rule1[ParsedAst.Literal.Char] = rule {
+    SP ~ "'" ~ capture(CharPredicate.AlphaNum) ~ "'" ~ SP ~> ParsedAst.Literal.Char
+  }
+
+  def IntLiteral: Rule1[ParsedAst.Literal] = rule {
+    Int8Literal | Int16Literal | Int32Literal | Int64Literal | IntNoSuffixLiteral
+  }
+
+  def IntNoSuffixLiteral: Rule1[ParsedAst.Literal.Int32] = rule {
+    SP ~ capture(optional("-") ~ oneOrMore(CharPredicate.Digit)) ~ SP ~> ParsedAst.Literal.Int32
+  }
+
+  def Int8Literal: Rule1[ParsedAst.Literal.Int8] = rule {
+    SP ~ capture(optional("-") ~ oneOrMore(CharPredicate.Digit)) ~ atomic("i8") ~ SP ~> ParsedAst.Literal.Int8
+  }
+
+  def Int16Literal: Rule1[ParsedAst.Literal.Int16] = rule {
+    SP ~ capture(optional("-") ~ oneOrMore(CharPredicate.Digit)) ~ atomic("i16") ~ SP ~> ParsedAst.Literal.Int16
+  }
+
+  def Int32Literal: Rule1[ParsedAst.Literal.Int32] = rule {
+    SP ~ capture(optional("-") ~ oneOrMore(CharPredicate.Digit)) ~ atomic("i32") ~ SP ~> ParsedAst.Literal.Int32
+  }
+
+  def Int64Literal: Rule1[ParsedAst.Literal.Int64] = rule {
+    SP ~ capture(optional("-") ~ oneOrMore(CharPredicate.Digit)) ~ atomic("i64") ~ SP ~> ParsedAst.Literal.Int64
   }
 
   def StrLiteral: Rule1[ParsedAst.Literal.Str] = rule {

@@ -79,7 +79,7 @@ object Interpreter {
       val newEnv = env + (ident.name -> eval(exp1, root, env))
       eval(exp2, root, newEnv)
     case Expression.CheckTag(tag, exp, _) => Value.mkBool(Value.cast2tag(eval(exp, root, env)).tag == tag.name)
-    case Expression.GetTagValue(exp, _, _) => Value.cast2tag(eval(exp, root, env)).value
+    case Expression.GetTagValue(tag, exp, _, _) => Value.cast2tag(eval(exp, root, env)).value
     case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
     case Expression.GetTupleIndex(base, offset, _, _) => Value.cast2tuple(eval(base, root, env))(offset)
     case Expression.Tuple(elms, _, _) =>

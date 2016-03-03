@@ -279,7 +279,42 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  // TODO: Check up on associativity.
+
+  test("Expression.Char01") {
+    val input = "'a'"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
+    assert(result.lit.isInstanceOf[ParsedAst.Literal.Char])
+  }
+
+  test("Expression.Char02") {
+    val input = "'x'"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
+    assert(result.lit.isInstanceOf[ParsedAst.Literal.Char])
+  }
+
+  test("Expression.Int8") {
+    val input = "123i8"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
+    assert(result.lit.isInstanceOf[ParsedAst.Literal.Int8])
+  }
+
+  test("Expression.Int16") {
+    val input = "123i16"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
+    assert(result.lit.isInstanceOf[ParsedAst.Literal.Int16])
+  }
+
+  test("Expression.Int32") {
+    val input = "123i32"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
+    assert(result.lit.isInstanceOf[ParsedAst.Literal.Int32])
+  }
+
+  test("Expression.Int64") {
+    val input = "123i64"
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
+    assert(result.lit.isInstanceOf[ParsedAst.Literal.Int64])
+  }
 
   test("Expression.LogicalExp01") {
     val input = "true && false"
@@ -444,7 +479,7 @@ class TestParser extends FunSuite {
   test("Expression.LiteralExp02") {
     val input = "42"
     val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult("42")(result.lit.asInstanceOf[ParsedAst.Literal.Int].lit)
+    assertResult("42")(result.lit.asInstanceOf[ParsedAst.Literal.Int32].lit)
   }
 
   test("Expression.LiteralExp03") {
@@ -568,7 +603,7 @@ class TestParser extends FunSuite {
     val m1 = result.asInstanceOf[ParsedAst.Expression.Match]
     val m2 = m1.rules.head._2.asInstanceOf[ParsedAst.Expression.Match]
     val l = m2.rules.head._2.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult("5")(l.lit.asInstanceOf[ParsedAst.Literal.Int].lit)
+    assertResult("5")(l.lit.asInstanceOf[ParsedAst.Literal.Int32].lit)
   }
 
   test("Expression.MatchExp04") {
@@ -584,7 +619,7 @@ class TestParser extends FunSuite {
     val m1 = result.asInstanceOf[ParsedAst.Expression.Match]
     val m2 = m1.e.asInstanceOf[ParsedAst.Expression.Match]
     val l = m2.rules.head._2.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult("3")(l.lit.asInstanceOf[ParsedAst.Literal.Int].lit)
+    assertResult("3")(l.lit.asInstanceOf[ParsedAst.Literal.Int32].lit)
   }
 
   test("Expression.CallExp01") {
@@ -654,7 +689,7 @@ class TestParser extends FunSuite {
   test("Expression.Tuple02") {
     val input = "(1)"
     val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    val literal = result.lit.asInstanceOf[Literal.Int]
+    val literal = result.lit.asInstanceOf[Literal.Int32]
     assertResult("1")(literal.lit)
   }
 
@@ -889,7 +924,7 @@ class TestParser extends FunSuite {
   test("Pattern.Literal02") {
     val input = "42"
     val result = new Parser(SourceInput.Str(input)).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
-    assertResult("42")(result.lit.asInstanceOf[ParsedAst.Literal.Int].lit)
+    assertResult("42")(result.lit.asInstanceOf[ParsedAst.Literal.Int32].lit)
   }
 
   test("Pattern.Literal03") {
@@ -1041,7 +1076,7 @@ class TestParser extends FunSuite {
   test("Term03") {
     val input = "42"
     val result = new Parser(SourceInput.Str(input)).Term.run().get.asInstanceOf[ParsedAst.Term.Lit]
-    assertResult("42")(result.lit.asInstanceOf[ParsedAst.Literal.Int].lit)
+    assertResult("42")(result.lit.asInstanceOf[ParsedAst.Literal.Int32].lit)
   }
 
   test("Term04") {
@@ -1566,7 +1601,7 @@ class TestParser extends FunSuite {
     val input = "Prop"
     val result = new Parser(SourceInput.Str(input)).Type.run()
     assert(result.isSuccess)
-    assertResult(result.get)(Type.Proposition)
+    assertResult(result.get)(Type.Prop)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1689,7 +1724,7 @@ class TestParser extends FunSuite {
 
   test("Literal (123)") {
     val input = "123"
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get.asInstanceOf[ParsedAst.Literal.Int]
+    val result = new Parser(SourceInput.Str(input)).Literal.run().get.asInstanceOf[ParsedAst.Literal.Int32]
     assertResult("123")(result.lit)
   }
 
@@ -1738,7 +1773,7 @@ class TestParser extends FunSuite {
   test("Literal.Tuple02") {
     val input = "(1)"
     val result = new Parser(SourceInput.Str(input)).Literal.run().get
-    assert(result.isInstanceOf[ParsedAst.Literal.Int])
+    assert(result.isInstanceOf[ParsedAst.Literal.Int32])
   }
 
   test("Literal.Tuple03") {

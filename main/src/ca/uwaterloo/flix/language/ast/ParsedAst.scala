@@ -290,13 +290,57 @@ object ParsedAst {
     }
 
     /**
-      * An AST node that represents an integer literal.
+      * An AST node that represents a char literal.
       *
       * @param sp1 the position of the first character in the literal.
-      * @param lit the integer literal.
+      * @param lit the char literal.
       * @param sp2 the position of the last character in the literal.
       */
-    case class Int(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
+    case class Char(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents an int8 literal.
+      *
+      * @param sp1 the position of the first character in the literal.
+      * @param lit the int8 literal.
+      * @param sp2 the position of the last character in the literal.
+      */
+    case class Int8(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents an int16 literal.
+      *
+      * @param sp1 the position of the first character in the literal.
+      * @param lit the int16 literal.
+      * @param sp2 the position of the last character in the literal.
+      */
+    case class Int16(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents an int32 literal.
+      *
+      * @param sp1 the position of the first character in the literal.
+      * @param lit the int32 literal.
+      * @param sp2 the position of the last character in the literal.
+      */
+    case class Int32(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents an int64 literal.
+      *
+      * @param sp1 the position of the first character in the literal.
+      * @param lit the int64 literal.
+      * @param sp2 the position of the last character in the literal.
+      */
+    case class Int64(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 

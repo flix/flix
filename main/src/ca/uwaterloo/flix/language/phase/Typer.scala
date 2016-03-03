@@ -267,7 +267,11 @@ object Typer {
       def visit(rast: ResolvedAst.Literal): TypedAst.Literal = rast match {
         case ResolvedAst.Literal.Unit(loc) => TypedAst.Literal.Unit(loc)
         case ResolvedAst.Literal.Bool(b, loc) => TypedAst.Literal.Bool(b, loc)
-        case ResolvedAst.Literal.Int(i, loc) => TypedAst.Literal.Int(i, loc)
+        case ResolvedAst.Literal.Char(c, loc) => TypedAst.Literal.Char(c, loc)
+        case ResolvedAst.Literal.Int8(i, loc) => TypedAst.Literal.Int8(i, loc)
+        case ResolvedAst.Literal.Int16(i, loc) => TypedAst.Literal.Int16(i, loc)
+        case ResolvedAst.Literal.Int32(i, loc) => TypedAst.Literal.Int32(i, loc)
+        case ResolvedAst.Literal.Int64(i, loc) => TypedAst.Literal.Int64(i, loc)
         case ResolvedAst.Literal.Str(s, loc) => TypedAst.Literal.Str(s, loc)
         case ResolvedAst.Literal.Tag(name, ident, rlit, loc) =>
           val defn = root.enums(name)
@@ -361,8 +365,12 @@ object Typer {
             }
           case UnaryOperator.Plus | UnaryOperator.Minus =>
             visit(re, env) flatMap {
-              case e => expect(Type.Int32, e.tpe, loc) map {
-                case tpe => TypedAst.Expression.Unary(op, e, tpe, loc)
+              case e => e.tpe match {
+                case Type.Int8 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
+                case Type.Int16 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
+                case Type.Int32 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
+                case Type.Int64 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
+                case _ => TypeError.ExpectedType(Type.Int32, e.tpe, e.loc).toFailure // TODO: Need more generic error message.
               }
             }
           case UnaryOperator.BitwiseNegate =>
@@ -371,7 +379,6 @@ object Typer {
                 case tpe => TypedAst.Expression.Unary(op, e, tpe, loc)
               }
             }
-
         }
 
         case ResolvedAst.Expression.Binary(op, re1, re2, loc) => op match {
@@ -540,10 +547,10 @@ object Typer {
           case _ => TypedAst.Pattern.Lit(lit, tpe, loc)
         }
       case ResolvedAst.Pattern.Tag(enumName, tagName, rpat, loc) => tpe match {
-        case Type.Enum(name, cases) => cases.get(tagName.name) match {
+        case enum@Type.Enum(name, cases) => cases.get(tagName.name) match {
           case Some(tag) if enumName == tag.enum => {
             typer(rpat, tag.tpe, root) map {
-              case pat => TypedAst.Pattern.Tag(enumName, tagName, pat, Type.Tag(enumName, tagName, pat.tpe), loc)
+              case pat => TypedAst.Pattern.Tag(enumName, tagName, pat, enum, loc)
             }
           }
           case _ => IllegalPattern(rast, tpe, loc).toFailure

@@ -218,7 +218,7 @@ class TestTyper extends FunSuite {
           retTpe = Type.Unit,
           body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL)
           , SL),
-      args = List(ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL)), SL)
+      args = List(ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int32(42, SL), SL)), SL)
 
     val result = Typer.Expression.typer(rast, Root)
     assertResult(Type.Unit)(result.get.tpe)
@@ -243,7 +243,7 @@ class TestTyper extends FunSuite {
           , SL),
       args = List(
         ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
-        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL),
+        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int32(42, SL), SL),
         ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo", SL), SL)
       ), SL)
 
@@ -811,7 +811,7 @@ class TestTyper extends FunSuite {
     val rast = ResolvedAst.Expression.Match(
       ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
       List(
-        ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Int(42, SL), SL) -> ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL),
+        ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Int32(42, SL), SL) -> ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int32(42, SL), SL),
         ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Str("foo", SL), SL) -> ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo", SL), SL)
       ), SL
     )
@@ -823,7 +823,7 @@ class TestTyper extends FunSuite {
   test("Expression.Tag.TypeError") {
     val enumName = Name.Resolved.mk(List("Foo", "Bar"))
     val tagName = ident("A")
-    val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL), SL)
+    val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int32(42, SL), SL), SL)
 
     val root = Root.copy(enums = Map(
       enumName -> ResolvedAst.Definition.Enum(enumName, Map(
@@ -863,7 +863,7 @@ class TestTyper extends FunSuite {
       ResolvedAst.Predicate.Head.Relation(rname, List(
         ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Unit(SL), SL),
         ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
-        ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Int(42, SL), SL),
+        ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Int32(42, SL), SL),
         ResolvedAst.Term.Head.Lit(ResolvedAst.Literal.Str("foo", SL), SL)
       ), SL)
 
@@ -964,7 +964,7 @@ class TestTyper extends FunSuite {
       ResolvedAst.Predicate.Body.Relation(rname, List(
         ResolvedAst.Term.Body.Wildcard(SourceLocation.Unknown),
         ResolvedAst.Term.Body.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
-        ResolvedAst.Term.Body.Lit(ResolvedAst.Literal.Int(42, SL), SL),
+        ResolvedAst.Term.Body.Lit(ResolvedAst.Literal.Int32(42, SL), SL),
         ResolvedAst.Term.Body.Lit(ResolvedAst.Literal.Str("foo", SL), SL)
       ), SL)
 
@@ -1148,7 +1148,7 @@ class TestTyper extends FunSuite {
         ),
       args = List(
         ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo", SL), SL),
-        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int(42, SL), SL),
+        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int32(42, SL), SL),
         ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
       ), SL)
 

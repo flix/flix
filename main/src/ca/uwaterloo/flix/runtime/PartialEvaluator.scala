@@ -635,7 +635,7 @@ object PartialEvaluator {
       /**
         * GetTagValue Expression.
         */
-      case GetTagValue(exp, tpe, loc) =>
+      case GetTagValue(tag, exp, tpe, loc) =>
         eval(exp, {
           case Tag(_, _, e, _, _) =>
             // Case 1: Concrete execution.
@@ -643,15 +643,15 @@ object PartialEvaluator {
           case IfThenElse(e1, e2, e3, _, _) =>
             // Case 2: Move the GetTagValue inside the consequence and alternative expressions.
             val conditional = e1
-            val consequence = GetTagValue(e2, tpe, loc)
-            val alternative = GetTagValue(e3, tpe, loc)
+            val consequence = GetTagValue(tag, e2, tpe, loc)
+            val alternative = GetTagValue(tag, e3, tpe, loc)
             val ifthenelse = IfThenElse(conditional, consequence, alternative, tpe, loc)
 
             // Evaluate the rewritten if-then-else.
             eval(ifthenelse, k)
           case r =>
             // Case 3: The expression is residual. Reconstruct it.
-            k(GetTagValue(r, tpe, loc))
+            k(GetTagValue(tag, r, tpe, loc))
         })
 
       /**
@@ -826,11 +826,11 @@ object PartialEvaluator {
       // Check if variable `src` is bound by the let-binding.
       val bound = ident.name == src.name
       if (bound) {
-        // Case 1: The variable `src` is bound by the lambda.
+        // Case 1: The variable `src` is bound by the let-binding.
         // Only perform renaming inside the value expression, but not its body.
         Let(ident, offset, rename(src, dst, e1), e2, tpe, loc)
       } else {
-        // Case 2: The variable `src` is *NOT* bound by the lambda.
+        // Case 2: The variable `src` is *NOT* bound by the let-binding.
         // Perform renaming inside both the value and body expressions.
         Let(ident, offset, rename(src, dst, e1), rename(src, dst, e2), tpe, loc)
       }
@@ -838,8 +838,8 @@ object PartialEvaluator {
       Tag(enum, tag, rename(src, dst, e), tpe, loc)
     case CheckTag(tag, e, loc) =>
       CheckTag(tag, rename(src, dst, e), loc)
-    case GetTagValue(e, tpe, loc) =>
-      GetTagValue(rename(src, dst, e), tpe, loc)
+    case GetTagValue(tag, e, tpe, loc) =>
+      GetTagValue(tag, rename(src, dst, e), tpe, loc)
     case Tuple(elms, tpe, loc) =>
       Tuple(elms map (e => rename(src, dst, e)), tpe, loc)
     case GetTupleIndex(e, offset, tpe, loc) =>
@@ -868,8 +868,10 @@ object PartialEvaluator {
       case Int64(i) => Int64(i)
       case Str(s) => Str(s)
       case Var(ident, offset, tpe, loc) =>
-        if (ident.name == src.name)
+        if (ident.name == src.name) {
+          assert(tpe == dst.tpe, s"Type mismatch: '${tpe}' vs. '${dst.tpe}'.")
           dst
+        }
         else
           Var(ident, offset, tpe, loc)
       case Ref(name, tpe, loc) => Ref(name, tpe, loc)
@@ -930,8 +932,8 @@ object PartialEvaluator {
         Tag(enum, tag, visit(e), tpe, loc)
       case CheckTag(tag, e, loc) =>
         CheckTag(tag, visit(e), loc)
-      case GetTagValue(e, tpe, loc) =>
-        GetTagValue(visit(e), tpe, loc)
+      case GetTagValue(tag, e, tpe, loc) =>
+        GetTagValue(tag, visit(e), tpe, loc)
       case Tuple(elms, tpe, loc) =>
         Tuple(elms map (e => visit(e)), tpe, loc)
       case GetTupleIndex(e, offset, tpe, loc) =>

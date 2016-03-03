@@ -255,8 +255,7 @@ object Simplifier {
         val cond = SExp.CheckTag(tag, SExp.Var(v, -1, tpe, loc), loc)
         val freshVar = genSym.fresh2()
         val inner = simplify(pat :: ps, freshVar :: vs, succ, fail)
-        val exp = SExp.Let(freshVar, -1, SExp.GetTagValue(SExp.Var(v, -1, tpe, loc), pat.tpe, loc), inner, succ.tpe, loc)
-        val consequent = SExp.Let(freshVar, -1, SExp.GetTagValue(SExp.Var(v, -1, tpe, loc), pat.tpe, loc), exp, succ.tpe, loc)
+        val consequent = SExp.Let(freshVar, -1, SExp.GetTagValue(tag, SExp.Var(v, -1, tpe, loc), pat.tpe, loc), inner, succ.tpe, loc)
         SExp.IfThenElse(cond, consequent, fail, succ.tpe, loc)
 
       /**
@@ -271,7 +270,7 @@ object Simplifier {
         val zero = simplify(elms ::: ps, freshVars ::: vs, succ, fail)
         (elms zip freshVars zipWithIndex).foldRight(zero) {
           case (((pat, name), idx), exp) =>
-            SExp.Let(name, -1, SExp.GetTupleIndex(SExp.Var(v, -1, pat.tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
+            SExp.Let(name, -1, SExp.GetTupleIndex(SExp.Var(v, -1, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
         }
 
     }
@@ -282,7 +281,11 @@ object Simplifier {
       case TypedAst.Literal.Unit(loc) => SimplifiedAst.Expression.Unit
       case TypedAst.Literal.Bool(b, loc) =>
         if (b) SimplifiedAst.Expression.True else SimplifiedAst.Expression.False
-      case TypedAst.Literal.Int(i, loc) => SimplifiedAst.Expression.Int32(i)
+      case TypedAst.Literal.Char(c, loc) => ??? // TODO
+      case TypedAst.Literal.Int8(i, loc) => SimplifiedAst.Expression.Int8(i)
+      case TypedAst.Literal.Int16(i, loc) => SimplifiedAst.Expression.Int16(i)
+      case TypedAst.Literal.Int32(i, loc) => SimplifiedAst.Expression.Int32(i)
+      case TypedAst.Literal.Int64(i, loc) => SimplifiedAst.Expression.Int64(i)
       case TypedAst.Literal.Str(s, loc) => SimplifiedAst.Expression.Str(s)
       case TypedAst.Literal.Tag(enum, tag, lit, tpe, loc) => SimplifiedAst.Expression.Tag(enum, tag, simplify(lit), tpe, loc)
       case TypedAst.Literal.Tuple(elms, tpe, loc) => SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
