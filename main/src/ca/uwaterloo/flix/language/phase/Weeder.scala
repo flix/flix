@@ -131,6 +131,36 @@ object Weeder {
     }
 
     /**
+      * An error raised to indicate that an index declaration defines no indexes.
+      *
+      * @param loc the location where the index declaration occurs.
+      */
+    case class MissingIndex(loc: SourceLocation) extends WeederError {
+      val message =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+            |${consoleCtx.red(s">> Missing index. Must declare at least one index.")}
+           |
+            |${loc.underline}
+         """.stripMargin
+    }
+
+    /**
+      * An error raised to indicate that an index declaration defines an index on zero attributes.
+      *
+      * @param loc the location where the illegal index occurs.
+      */
+    case class IllegalIndex(loc: SourceLocation) extends WeederError {
+      val message =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+            |${consoleCtx.red(s">> Illegal index. An index must select at least one attribute.")}
+           |
+            |${loc.underline}
+         """.stripMargin
+    }
+
+    /**
       * An error raised to indicate that a predicate is not allowed in the head of a fact/rule.
       *
       * @param loc the location where the illegal predicate occurs.
@@ -530,7 +560,13 @@ object Weeder {
       * Compiles the given parsed index definition `past` to a weeded index definition.
       */
     def compile(past: ParsedAst.Definition.Index): Validation[WeededAst.Definition.Index, WeederError] = {
-      // TODO: Check duplicated attributes.
+      if (past.indexes.isEmpty)
+        return MissingIndex(past.loc).toFailure
+
+      if (past.indexes.exists(_.isEmpty)) {
+        return IllegalIndex(past.loc).toFailure
+      }
+
       WeededAst.Definition.Index(past.ident, past.indexes, past.loc).toSuccess
     }
 

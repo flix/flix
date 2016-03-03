@@ -202,11 +202,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def IndexDefinition: Rule1[ParsedAst.Definition.Index] = {
     def Indexes: Rule1[Seq[Name.Ident]] = rule {
-      "{" ~ optWS ~ oneOrMore(Ident).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}"
+      "{" ~ optWS ~ zeroOrMore(Ident).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}"
     }
 
     rule {
-      SP ~ atomic("index") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ oneOrMore(Indexes).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.Index
+      SP ~ atomic("index") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Indexes).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.Index
     }
   }
 

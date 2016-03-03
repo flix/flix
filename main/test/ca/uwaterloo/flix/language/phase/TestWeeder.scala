@@ -153,6 +153,36 @@ class TestWeeder extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Illegal Index                                                           //
+  /////////////////////////////////////////////////////////////////////////////
+  test("IllegalNoIndex01") {
+    val input =
+      """rel A(x: Int, y: Int, z: Int)
+        |index A()
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.MissingIndex])
+  }
+
+  test("IllegalIndex01") {
+    val input =
+      """rel A(x: Int, y: Int, z: Int)
+        |index A({})
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalIndex])
+  }
+
+  test("IllegalIndex02") {
+    val input =
+      """rel A(x: Int, y: Int, z: Int)
+        |index A({x}, {}, {z})
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalIndex])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // IllegalHeadPredicate                                                    //
   /////////////////////////////////////////////////////////////////////////////
   test("IllegalHeadPredicate.Alias01") {
