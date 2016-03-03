@@ -188,91 +188,91 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt8(Byte.MaxValue))(result)
   }
 
-  ignore("Expression.Int8.04") {
+  test("Expression.Int8.04") {
     val input = s"fn f: Int8 = ${Byte.MinValue}i8"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt8(Byte.MinValue))(result)
   }
 
-  ignore("Expression.Int16.01") {
+  test("Expression.Int16.01") {
     val input = "fn f: Int16 = -5320i16"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt16(-5320))(result)
   }
 
-  ignore("Expression.Int16.02") {
+  test("Expression.Int16.02") {
     val input = "fn f: Int16 = 4568i16"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt16(4568))(result)
   }
 
-  ignore("Expression.Int16.03") {
+  test("Expression.Int16.03") {
     val input = s"fn f: Int16 = ${Short.MaxValue}i16"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt16(Short.MaxValue))(result)
   }
 
-  ignore("Expression.Int16.04") {
+  test("Expression.Int16.04") {
     val input = s"fn f: Int16 = ${Short.MinValue}i16"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt16(Short.MinValue))(result)
   }
 
-  ignore("Expression.Int32.01") {
+  test("Expression.Int32.01") {
     val input = "fn f: Int32 = -254542i32"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(-254542))(result)
   }
 
-  ignore("Expression.Int32.02") {
+  test("Expression.Int32.02") {
     val input = "fn f: Int32 = 45649878i32"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(45649878))(result)
   }
 
-  ignore("Expression.Int32.03") {
+  test("Expression.Int32.03") {
     val input = s"fn f: Int32 = ${Int.MaxValue}i32"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(Int.MaxValue))(result)
   }
 
-  ignore("Expression.Int32.04") {
+  test("Expression.Int32.04") {
     val input = s"fn f: Int32 = ${Int.MinValue}i32"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(Int.MinValue))(result)
   }
 
-  ignore("Expression.Int64.01") {
+  test("Expression.Int64.01") {
     val input = "fn f: Int64 = -254454121542i64"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt64(-254454121542L))(result)
   }
 
-  ignore("Expression.Int64.02") {
+  test("Expression.Int64.02") {
     val input = "fn f: Int64 = 45641198784545i64"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt64(45641198784545L))(result)
   }
 
-  ignore("Expression.Int64.03") {
+  test("Expression.Int64.03") {
     val input = s"fn f: Int64 = ${Long.MaxValue}i64"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt64(Long.MaxValue))(result)
   }
 
-  ignore("Expression.Int64.04") {
+  test("Expression.Int64.04") {
     val input = s"fn f: Int64 = ${Long.MinValue}i64"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
@@ -401,7 +401,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(3))(result)
   }
 
-  ignore("Expression.Lambda.04") {
+  test("Expression.Lambda.04") {
     val input =
       """fn f(x: Int64, y: Int64): Int64 = x * y - 6i64
         |fn g: Int64 = f(3i64, 42i64)
@@ -411,7 +411,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(120))(result)
   }
 
-  ignore("Expression.Lambda.05") {
+  test("Expression.Lambda.05") {
     val input =
       """namespace A { fn f(x: Int32): Int32 = let y = B::g(x + 1i32) in y * y }
         |namespace B { fn g(x: Int32): Int32 = x - 4i32 }
@@ -422,7 +422,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(0))(result)
   }
 
-  ignore("Expression.Lambda.06") {
+  test("Expression.Lambda.06") {
     val input =
       """fn f(x: Int16): Int16 = g(x + 1i16)
         |fn g(x: Int16): Int16 = h(x + 10i16)
@@ -434,12 +434,12 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(196))(result)
   }
 
-  ignore("Expression.Lambda.07") {
+  test("Expression.Lambda.07") {
     val input =
-      """fn f(x: Int8, y: Int8): Int = x - y
+      """fn f(x: Int8, y: Int8): Int8 = x - y
         |fn g(x: Int8): Int8 = x * 3i8
         |fn h(x: Int8): Int8 = g(x - 1i8)
-        |fn x: Int8 = let x = 7 in f(g(3i8), h(h(xi8)))
+        |fn x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))
       """.stripMargin
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("x"))
@@ -610,7 +610,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  ignore("Expression.Hook - Hook.Safe.04") {
+  test("Expression.Hook - Hook.Safe.04") {
     import HookSafeHelpers._
     val input = "fn g: Int64 = f(3i64, 42i64)"
     var executed = false
@@ -626,7 +626,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  ignore("Expression.Hook - Hook.Safe.05") {
+  test("Expression.Hook - Hook.Safe.05") {
     import HookSafeHelpers._
     val input = "namespace C { fn h: Int32 = A::f(5i32) + B::g(0i32) }"
     var executed = false
@@ -647,7 +647,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  ignore("Expression.Hook - Hook.Safe.06") {
+  test("Expression.Hook - Hook.Safe.06") {
     import HookSafeHelpers._
     val input = "fn x: Int16 = f(3i16)"
     var executed = false
@@ -667,7 +667,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  ignore("Expression.Hook - Hook.Safe.07") {
+  test("Expression.Hook - Hook.Safe.07") {
     import HookSafeHelpers._
     val input = "fn x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))"
     var executed = false
@@ -939,7 +939,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.04") {
+  test("Expression.Hook - Hook.Unsafe.04") {
     import HookUnsafeHelpers._
     val input = "fn g: Int64 = f(3i64, 42i64)"
     var executed = false
@@ -955,7 +955,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.05") {
+  test("Expression.Hook - Hook.Unsafe.05") {
     import HookUnsafeHelpers._
     val input = "namespace C { fn h: Int32 = A::f(5i32) + B::g(0i32) }"
     var executed = false
@@ -973,7 +973,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.06") {
+  test("Expression.Hook - Hook.Unsafe.06") {
     import HookUnsafeHelpers._
     val input = "fn x: Int16 = f(3i16)"
     var executed = false
@@ -993,7 +993,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.07") {
+  test("Expression.Hook - Hook.Unsafe.07") {
     import HookUnsafeHelpers._
     val input = "fn x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))"
     var executed = false
@@ -1242,7 +1242,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(Int.MinValue))(result05)
   }
 
-  ignore("Expression.Unary - UnaryOperator.Plus.02") {
+  test("Expression.Unary - UnaryOperator.Plus.02") {
     val input =
       s"""fn f01: Int8 = +0i8
          |fn f02: Int8 = +36i8
@@ -1263,7 +1263,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt8(Byte.MinValue))(result05)
   }
 
-  ignore("Expression.Unary - UnaryOperator.Plus.03") {
+  test("Expression.Unary - UnaryOperator.Plus.03") {
     val input =
       s"""fn f01: Int16 = +0i16
          |fn f02: Int16 = +3600i16
@@ -1284,7 +1284,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(Short.MinValue))(result05)
   }
 
-  ignore("Expression.Unary - UnaryOperator.Plus.04") {
+  test("Expression.Unary - UnaryOperator.Plus.04") {
     val input =
       s"""fn f01: Int32 = +0i32
          |fn f02: Int32 = +36000i32
@@ -1305,7 +1305,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(Int.MinValue))(result05)
   }
 
-  ignore("Expression.Unary - UnaryOperator.Plus.05") {
+  test("Expression.Unary - UnaryOperator.Plus.05") {
     val input =
       s"""fn f01: Int64 = +0i64
          |fn f02: Int64 = +3600000000i64
@@ -1347,7 +1347,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(Int.MinValue))(result05)
   }
 
-  ignore("Expression.Unary - UnaryOperator.Minus.02") {
+  test("Expression.Unary - UnaryOperator.Minus.02") {
     val input =
       s"""fn f01: Int8 = -0i8
          |fn f02: Int8 = -36i8
@@ -1368,7 +1368,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt8(Byte.MinValue))(result05)
   }
 
-  ignore("Expression.Unary - UnaryOperator.Minus.03") {
+  test("Expression.Unary - UnaryOperator.Minus.03") {
     val input =
       s"""fn f01: Int16 = -0i16
          |fn f02: Int16 = -3600i16
@@ -1389,7 +1389,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(Short.MinValue))(result05)
   }
 
-  ignore("Expression.Unary - UnaryOperator.Minus.04") {
+  test("Expression.Unary - UnaryOperator.Minus.04") {
     val input =
       s"""fn f01: Int32 = -0i32
          |fn f02: Int32 = -36000i32
@@ -1410,7 +1410,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(Int.MinValue))(result05)
   }
 
-  ignore("Expression.Unary - UnaryOperator.Minus.05") {
+  test("Expression.Unary - UnaryOperator.Minus.05") {
     val input =
       s"""fn f01: Int64 = -0i64
          |fn f02: Int64 = -3600000000i64
@@ -1512,7 +1512,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(Short.MaxValue))(result07)
   }
 
-  ignore("Expression.Unary - UnaryOperator.BitwiseNegate.04") {
+  test("Expression.Unary - UnaryOperator.BitwiseNegate.04") {
     val input =
       s"""fn f01: Int32 = ~0i32
          |fn f02: Int32 = ~1i32
@@ -1592,7 +1592,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(Int.MaxValue))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Plus.02") {
+  test("Expression.Binary - BinaryOperator.Plus.02") {
     val input =
       s"""fn f01: Int8 = ${Byte.MaxValue}i8 + 1i8
          |fn f02: Int8 = 10i8 + 40i8
@@ -1613,7 +1613,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt8(Byte.MaxValue))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Plus.03") {
+  test("Expression.Binary - BinaryOperator.Plus.03") {
     val input =
       s"""fn f01: Int16 = ${Short.MaxValue}i16 + 1i16
          |fn f02: Int16 = 1000i16 + 4000i16
@@ -1634,7 +1634,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(Short.MaxValue))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Plus.04") {
+  test("Expression.Binary - BinaryOperator.Plus.04") {
     val input =
       s"""fn f01: Int32 = ${Int.MaxValue}i32 + 1i32
          |fn f02: Int32 = 100000i32 + 400000i32
@@ -1655,7 +1655,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(Int.MaxValue))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Plus.05") {
+  test("Expression.Binary - BinaryOperator.Plus.05") {
     val input =
       s"""fn f01: Int64 = ${Long.MaxValue}i64 + 1i64
          |fn f02: Int64 = 10000000000i64 + 40000000000i64
@@ -1697,7 +1697,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(Int.MinValue))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Minus.02") {
+  test("Expression.Binary - BinaryOperator.Minus.02") {
     val input =
       s"""fn f01: Int8 = ${Byte.MinValue}i8 - 1i8
          |fn f02: Int8 = 40i8 - 10i8
@@ -1718,7 +1718,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt8(Byte.MinValue))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Minus.03") {
+  test("Expression.Binary - BinaryOperator.Minus.03") {
     val input =
       s"""fn f01: Int16 = ${Short.MinValue}i16 - 1i16
          |fn f02: Int16 = 4000i16 - 1000i16
@@ -1739,7 +1739,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(Short.MinValue))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Minus.04") {
+  test("Expression.Binary - BinaryOperator.Minus.04") {
     val input =
       s"""fn f01: Int32 = ${Int.MinValue}i32 - 1i32
          |fn f02: Int32 = 400000i32 - 100000i32
@@ -1760,7 +1760,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(Int.MinValue))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Minus.05") {
+  test("Expression.Binary - BinaryOperator.Minus.05") {
     val input =
       s"""fn f01: Int64 = ${Long.MinValue}i64 - 1i64
          |fn f02: Int64 = 40000000000i64 - 10000000000i64
@@ -1802,7 +1802,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(Int.MinValue))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Times.02") {
+  test("Expression.Binary - BinaryOperator.Times.02") {
     val input =
       s"""fn f01: Int8 = ${Byte.MaxValue}i8 * 2i8
          |fn f02: Int8 = 3i8 * 2i8
@@ -1823,7 +1823,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt8(Byte.MinValue))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Times.03") {
+  test("Expression.Binary - BinaryOperator.Times.03") {
     val input =
       s"""fn f01: Int16 = ${Short.MaxValue}i16 * 2i16
          |fn f02: Int16 = 30i16 * 20i16
@@ -1844,7 +1844,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(Short.MinValue))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Times.04") {
+  test("Expression.Binary - BinaryOperator.Times.04") {
     val input =
       s"""fn f01: Int32 = ${Int.MaxValue}i32 * 2i32
          |fn f02: Int32 = 300i32 * 200i32
@@ -1865,7 +1865,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(Int.MinValue))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Times.05") {
+  test("Expression.Binary - BinaryOperator.Times.05") {
     val input =
       s"""fn f01: Int64 = ${Long.MaxValue}i64 * 2i64
          |fn f02: Int64 = 300000i64 * 200000i64
@@ -1907,7 +1907,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(Int.MinValue))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Divide.02") {
+  test("Expression.Binary - BinaryOperator.Divide.02") {
     val input =
       s"""fn f01: Int8 = ${Byte.MaxValue}i8 / 1i8
          |fn f02: Int8 = 12i8 / 3i8
@@ -1928,7 +1928,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt8(Byte.MinValue))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Divide.03") {
+  test("Expression.Binary - BinaryOperator.Divide.03") {
     val input =
       s"""fn f01: Int16 = ${Short.MaxValue}i16 / 1i16
          |fn f02: Int16 = 12000i16 / 3i16
@@ -1949,7 +1949,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(Short.MinValue))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Divide.04") {
+  test("Expression.Binary - BinaryOperator.Divide.04") {
     val input =
       s"""fn f01: Int32 = ${Int.MaxValue}i32 / 1i32
          |fn f02: Int32 = 1200000i32 / 3i32
@@ -1970,7 +1970,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(Int.MinValue))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Divide.05") {
+  test("Expression.Binary - BinaryOperator.Divide.05") {
     val input =
       s"""fn f01: Int64 = ${Long.MaxValue}i64 / 1i64
          |fn f02: Int64 = 120000000000i64 / 3i64
@@ -2012,7 +2012,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(-200000))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Modulo.02") {
+  test("Expression.Binary - BinaryOperator.Modulo.02") {
     val input =
       s"""fn f01: Int8 = 12i8 % 2i8
          |fn f02: Int8 = 12i8 % 5i8
@@ -2033,7 +2033,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt8(-2))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Modulo.03") {
+  test("Expression.Binary - BinaryOperator.Modulo.03") {
     val input =
       s"""fn f01: Int16 = 12000i16 % 2000i16
          |fn f02: Int16 = 12000i16 % 5000i16
@@ -2054,7 +2054,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(-2000))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Modulo.04") {
+  test("Expression.Binary - BinaryOperator.Modulo.04") {
     val input =
       s"""fn f01: Int32 = 1200000i32 % 200000i32
          |fn f02: Int32 = 1200000i32 % 500000i32
@@ -2075,7 +2075,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(-200000))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Modulo.05") {
+  test("Expression.Binary - BinaryOperator.Modulo.05") {
     val input =
       s"""fn f01: Int64 = 120000000000i64 % 20000000000i64
          |fn f02: Int64 = 120000000000i64 % 50000000000i64
@@ -2126,7 +2126,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.False)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Less.02") {
+  test("Expression.Binary - BinaryOperator.Less.02") {
     val input =
       s"""fn f01: Bool = 12i8 < 3i8
          |fn f02: Bool = 3i8 < 12i8
@@ -2150,7 +2150,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.False)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Less.03") {
+  test("Expression.Binary - BinaryOperator.Less.03") {
     val input =
       s"""fn f01: Bool = 1200i16 < 300i16
          |fn f02: Bool = 300i16 < 1200i16
@@ -2174,7 +2174,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.False)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Less.04") {
+  test("Expression.Binary - BinaryOperator.Less.04") {
     val input =
       s"""fn f01: Bool = 120000i32 < 30000i32
          |fn f02: Bool = 30000i32 < 120000i32
@@ -2198,7 +2198,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.False)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Less.05") {
+  test("Expression.Binary - BinaryOperator.Less.05") {
     val input =
       s"""fn f01: Bool = 12000000000i64 < 3000000000i64
          |fn f02: Bool = 3000000000i64 < 12000000000i64
@@ -2246,7 +2246,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.True)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.LessEqual.02") {
+  test("Expression.Binary - BinaryOperator.LessEqual.02") {
     val input =
       s"""fn f01: Bool = 12i8 <= 3i8
          |fn f02: Bool = 3i8 <= 12i8
@@ -2270,7 +2270,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.True)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.LessEqual.03") {
+  test("Expression.Binary - BinaryOperator.LessEqual.03") {
     val input =
       s"""fn f01: Bool = 1200i16 <= 300i16
          |fn f02: Bool = 300i16 <= 1200i16
@@ -2294,7 +2294,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.True)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.LessEqual.04") {
+  test("Expression.Binary - BinaryOperator.LessEqual.04") {
     val input =
       s"""fn f01: Bool = 120000i32 <= 30000i32
          |fn f02: Bool = 30000i32 <= 120000i32
@@ -2318,7 +2318,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.True)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.LessEqual.05") {
+  test("Expression.Binary - BinaryOperator.LessEqual.05") {
     val input =
       s"""fn f01: Bool = 12000000000i64 <= 3000000000i64
          |fn f02: Bool = 3000000000i64 <= 12000000000i64
@@ -2366,7 +2366,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.False)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Greater.02") {
+  test("Expression.Binary - BinaryOperator.Greater.02") {
     val input =
       s"""fn f01: Bool = 12i8 > 3i8
          |fn f02: Bool = 3i8 > 12i8
@@ -2390,7 +2390,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.False)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Greater.03") {
+  test("Expression.Binary - BinaryOperator.Greater.03") {
     val input =
       s"""fn f01: Bool = 1200i16 > 300i16
          |fn f02: Bool = 300i16 > 1200i16
@@ -2414,7 +2414,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.False)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Greater.04") {
+  test("Expression.Binary - BinaryOperator.Greater.04") {
     val input =
       s"""fn f01: Bool = 120000i32 > 30000i32
          |fn f02: Bool = 30000i32 > 120000i32
@@ -2438,7 +2438,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.False)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Greater.05") {
+  test("Expression.Binary - BinaryOperator.Greater.05") {
     val input =
       s"""fn f01: Bool = 12000000000i64 > 3000000000i64
          |fn f02: Bool = 3000000000i64 > 12000000000i64
@@ -2486,7 +2486,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.True)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.GreaterEqual.02") {
+  test("Expression.Binary - BinaryOperator.GreaterEqual.02") {
     val input =
       s"""fn f01: Bool = 12i8 >= 3i8
          |fn f02: Bool = 3i8 >= 12i8
@@ -2510,7 +2510,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.True)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.GreaterEqual.03") {
+  test("Expression.Binary - BinaryOperator.GreaterEqual.03") {
     val input =
       s"""fn f01: Bool = 1200i16 >= 300i16
          |fn f02: Bool = 300i16 >= 1200i16
@@ -2534,7 +2534,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.True)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.GreaterEqual.04") {
+  test("Expression.Binary - BinaryOperator.GreaterEqual.04") {
     val input =
       s"""fn f01: Bool = 120000i32 >= 30000i32
          |fn f02: Bool = 30000i32 >= 120000i32
@@ -2558,7 +2558,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.True)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.GreaterEqual.05") {
+  test("Expression.Binary - BinaryOperator.GreaterEqual.05") {
     val input =
       s"""fn f01: Bool = 12000000000i64 >= 3000000000i64
          |fn f02: Bool = 3000000000i64 >= 12000000000i64
@@ -2606,7 +2606,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.True)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Equal.02") {
+  test("Expression.Binary - BinaryOperator.Equal.02") {
     val input =
       s"""fn f01: Bool = 12i8 == 3i8
          |fn f02: Bool = 3i8 == 12i8
@@ -2630,7 +2630,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.True)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Equal.03") {
+  test("Expression.Binary - BinaryOperator.Equal.03") {
     val input =
       s"""fn f01: Bool = 1200i16 == 300i16
          |fn f02: Bool = 300i16 == 1200i16
@@ -2654,7 +2654,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.True)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Equal.04") {
+  test("Expression.Binary - BinaryOperator.Equal.04") {
     val input =
       s"""fn f01: Bool = 120000i32 == 30000i32
          |fn f02: Bool = 30000i32 == 120000i32
@@ -2678,7 +2678,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.True)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.Equal.05") {
+  test("Expression.Binary - BinaryOperator.Equal.05") {
     val input =
       s"""fn f01: Bool = 12000000000i64 == 3000000000i64
          |fn f02: Bool = 3000000000i64 == 12000000000i64
@@ -2726,7 +2726,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.False)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.NotEqual.02") {
+  test("Expression.Binary - BinaryOperator.NotEqual.02") {
     val input =
       s"""fn f01: Bool = 12i8 != 3i8
          |fn f02: Bool = 3i8 != 12i8
@@ -2750,7 +2750,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.False)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.NotEqual.03") {
+  test("Expression.Binary - BinaryOperator.NotEqual.03") {
     val input =
       s"""fn f01: Bool = 1200i16 != 300i16
          |fn f02: Bool = 300i16 != 1200i16
@@ -2774,7 +2774,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.False)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.NotEqual.04") {
+  test("Expression.Binary - BinaryOperator.NotEqual.04") {
     val input =
       s"""fn f01: Bool = 120000i32 != 30000i32
          |fn f02: Bool = 30000i32 != 120000i32
@@ -2798,7 +2798,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.False)(result06)
   }
 
-  ignore("Expression.Binary - BinaryOperator.NotEqual.05") {
+  test("Expression.Binary - BinaryOperator.NotEqual.05") {
     val input =
       s"""fn f01: Bool = 12000000000i64 != 3000000000i64
          |fn f02: Bool = 3000000000i64 != 12000000000i64
@@ -3002,7 +3002,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(-1))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseAnd.02") {
+  test("Expression.Binary - BinaryOperator.BitwiseAnd.02") {
     val input =
       s"""fn f01: Int8 = 40i8 & ${0xFF.toByte}i8
          |fn f02: Int8 = 40i8 & 40i8
@@ -3023,7 +3023,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt8(-1))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseAnd.03") {
+  test("Expression.Binary - BinaryOperator.BitwiseAnd.03") {
     val input =
       s"""fn f01: Int16 = 400i16 & ${0xFFFF.toShort}i16
          |fn f02: Int16 = 400i16 & 400i16
@@ -3044,7 +3044,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(-1))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseAnd.04") {
+  test("Expression.Binary - BinaryOperator.BitwiseAnd.04") {
     val input =
       s"""fn f01: Int32 = 40000i32 & ${0xFFFFFFFF}i32
          |fn f02: Int32 = 40000i32 & 40000i32
@@ -3065,7 +3065,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(-1))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseAnd.05") {
+  test("Expression.Binary - BinaryOperator.BitwiseAnd.05") {
     val input =
       s"""fn f01: Int64 = 40000000000i64 & ${0xFFFFFFFFFFFFFFFFL}i64
          |fn f02: Int64 = 40000000000i64 & 40000000000i64
@@ -3107,7 +3107,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(-1))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseOr.02") {
+  test("Expression.Binary - BinaryOperator.BitwiseOr.02") {
     val input =
       s"""fn f01: Int8 = 40i8 | ${0xFF.toByte}i8
          |fn f02: Int8 = 40i8 | 40i8
@@ -3128,7 +3128,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt8(-1))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseOr.03") {
+  test("Expression.Binary - BinaryOperator.BitwiseOr.03") {
     val input =
       s"""fn f01: Int16 = 400i16 | ${0xFFFF.toShort}i16
          |fn f02: Int16 = 400i16 | 400i16
@@ -3149,7 +3149,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(-1))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseOr.04") {
+  test("Expression.Binary - BinaryOperator.BitwiseOr.04") {
     val input =
       s"""fn f01: Int32 = 40000i32 | ${0xFFFFFFFF}i32
          |fn f02: Int32 = 40000i32 | 40000i32
@@ -3170,7 +3170,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(-1))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseOr.05") {
+  test("Expression.Binary - BinaryOperator.BitwiseOr.05") {
     val input =
       s"""fn f01: Int64 = 40000000000i64 | ${0xFFFFFFFFFFFFFFFFL}i64
          |fn f02: Int64 = 40000000000i64 | 40000000000i64
@@ -3212,7 +3212,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(0))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseXor.02") {
+  test("Expression.Binary - BinaryOperator.BitwiseXor.02") {
     val input =
       s"""fn f01: Int8 = 40i8 ^ ${0xFF.toByte}i8
          |fn f02: Int8 = 40i8 ^ 40i8
@@ -3233,7 +3233,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt8(0))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseXor.03") {
+  test("Expression.Binary - BinaryOperator.BitwiseXor.03") {
     val input =
       s"""fn f01: Int16 = 400i16 ^ ${0xFFFF.toShort}i16
          |fn f02: Int16 = 400i16 ^ 400i16
@@ -3254,7 +3254,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(0))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseXor.04") {
+  test("Expression.Binary - BinaryOperator.BitwiseXor.04") {
     val input =
       s"""fn f01: Int32 = 40000i32 ^ ${0xFFFFFFFF}i32
          |fn f02: Int32 = 40000i32 ^ 40000i32
@@ -3275,7 +3275,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(0))(result05)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseXor.05") {
+  test("Expression.Binary - BinaryOperator.BitwiseXor.05") {
     val input =
       s"""fn f01: Int64 = 40000000000i64 ^ ${0xFFFFFFFFFFFFFFFFL}i64
          |fn f02: Int64 = 40000000000i64 ^ 40000000000i64
@@ -3350,7 +3350,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(0))(result04)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseLeftShift.04") {
+  test("Expression.Binary - BinaryOperator.BitwiseLeftShift.04") {
     val input =
       s"""fn f01: Int32 = ${0x08}i32 << 0
          |fn f02: Int32 = ${0x08}i32 << 16
@@ -3440,7 +3440,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(-3000))(result04)
   }
 
-  ignore("Expression.Binary - BinaryOperator.BitwiseRightShift.04") {
+  test("Expression.Binary - BinaryOperator.BitwiseRightShift.04") {
     val input =
       s"""fn f01: Int32 = 120000i32 >> 0
          |fn f02: Int32 = 120000i32 >> 2
@@ -3558,11 +3558,11 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(5678))(result04)
   }
 
-  ignore("Expression.IfThenElse.07") {
+  test("Expression.IfThenElse.07") {
     val input =
       """fn f(x: Int8, y: Int8): Int8 = if (x < y) 12i8 else 56i8
         |fn g01: Int8 = f(5i8, 24i8)
-        |fn g02: Int8 = f(i85, 5i8)
+        |fn g02: Int8 = f(5i8, 5i8)
       """.stripMargin
     val model = getModel(input)
     val result01 = model.constants(Name.Resolved.mk("g01"))
@@ -3571,7 +3571,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt8(56))(result02)
   }
 
-  ignore("Expression.IfThenElse.08") {
+  test("Expression.IfThenElse.08") {
     val input =
       """fn f(x: Int16, y: Int16): Int16 = if (x <= y) 1234i16 else 5678i16
         |fn g01: Int16 = f(500i16, 500i16)
@@ -3584,7 +3584,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt16(5678))(result02)
   }
 
-  ignore("Expression.IfThenElse.09") {
+  test("Expression.IfThenElse.09") {
     val input =
       """fn f(x: Int32, y: Int32): Int32 = if (x > y) 12341234i32 else 56785678i32
         |fn g01: Int32 = f(2400000i32, 500000i32)
@@ -3597,7 +3597,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(56785678))(result02)
   }
 
-  ignore("Expression.IfThenElse.10") {
+  test("Expression.IfThenElse.10") {
     val input =
       """fn f(x: Int64, y: Int64): Int64 = if (x >= y) 123412341234i64 else 567856785678i64
         |fn g01: Int64 = f(50000000000i64, 50000000000i64)
@@ -3647,14 +3647,14 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(42))(result)
   }
 
-  ignore("Expression.Let.02") {
+  test("Expression.Let.02") {
     val input = "fn f: Int8 = let x = 42i8 in x"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt32(42))(result)
   }
 
-  ignore("Expression.Let.03") {
+  test("Expression.Let.03") {
     val input = "fn f: Int16 = let x = 1i16 in x + 2i16"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
@@ -3728,14 +3728,14 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(101010))(result)
   }
 
-  ignore("Expression.Let.10") {
+  test("Expression.Let.10") {
     val input = "fn f: Int64 = let x = 0i64 in x"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkInt64(0))(result)
   }
 
-  ignore("Expression.Let.11") {
+  test("Expression.Let.11") {
     val input =
       """fn f: Int64 =
         |  let x = 1337i64 in
@@ -3748,7 +3748,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt64(-101010))(result)
   }
 
-  ignore("Expression.Let.12") {
+  test("Expression.Let.12") {
     val input =
       """fn f: Int64 =
         |  let x = 1337i64 in
@@ -3761,56 +3761,56 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt64(-101010))(result)
   }
 
-  ignore("Expression.Let.13") {
+  test("Expression.Let.13") {
     val input =
-      """fn f(a: Int64, b: Int64, c: Int64): Int =
+      """fn f(a: Int64, b: Int64, c: Int64): Int64 =
         |  let x = 1337i64 in
         |    let y = -101010i64 in
         |      let z = 42i64 in
         |        y
-        |fn g: Int = f(-1337i64, 101010i64, -42i64)
+        |fn g: Int64 = f(-1337i64, 101010i64, -42i64)
       """.stripMargin
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt64(-101010))(result)
   }
 
-  ignore("Expression.Let.14") {
+  test("Expression.Let.14") {
     val input =
-      """fn f(a: Int32, b: Int64, c: Int64): Int =
+      """fn f(a: Int32, b: Int64, c: Int64): Int64 =
         |  let x = 1337i32 in
         |    let y = -101010i64 in
         |      let z = 42i64 in
         |        y
-        |fn g: Int = f(-1337i32, 101010i64, -42i64)
+        |fn g: Int64 = f(-1337i32, 101010i64, -42i64)
       """.stripMargin
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt64(-101010))(result)
   }
 
-  ignore("Expression.Let.15") {
+  test("Expression.Let.15") {
     val input =
-      """fn f(a: Int64, b: Int64, c: Int64): Int =
+      """fn f(a: Int64, b: Int64, c: Int64): Int64 =
         |  let x = 1337i64 in
         |    let y = -101010i64 in
         |      let z = 42i64 in
         |        b
-        |fn g: Int = f(-1337i64, 101010i64, -42i64)
+        |fn g: Int64 = f(-1337i64, 101010i64, -42i64)
       """.stripMargin
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt64(101010))(result)
   }
 
-  ignore("Expression.Let.16") {
+  test("Expression.Let.16") {
     val input =
-      """fn f(a: Int32, b: Int64, c: Int64): Int =
+      """fn f(a: Int32, b: Int64, c: Int64): Int64 =
         |  let x = 1337i32 in
         |    let y = -101010i64 in
         |      let z = 42i64 in
         |        b
-        |fn g: Int = f(-1337i32, 101010i64, -42i64)
+        |fn g: Int64 = f(-1337i32, 101010i64, -42i64)
       """.stripMargin
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
@@ -3958,7 +3958,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.Tuple(Array("ABC", Value.mkInt32(42)))))(result)
   }
 
-  ignore("Expression.Tag.10") {
+  test("Expression.Tag.10") {
     val input =
       """enum Val { case Val(Int8) }
         |fn f: Val = Val.Val(32i8)
@@ -3968,7 +3968,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt8(32)))(result)
   }
 
-  ignore("Expression.Tag.11") {
+  test("Expression.Tag.11") {
     val input =
       """enum Val { case Val(Int16) }
         |fn f: Val = Val.Val(3200i16)
@@ -3978,7 +3978,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt16(3200)))(result)
   }
 
-  ignore("Expression.Tag.12") {
+  test("Expression.Tag.12") {
     val input =
       """enum Val { case Val(Int64) }
         |fn f: Val = Val.Val(320000000000i64)
@@ -3997,7 +3997,7 @@ class TestInterpreter extends FunSuite {
   // Expression.Tuple                                                        //
   /////////////////////////////////////////////////////////////////////////////
 
-  ignore("Expression.Tuple.01") {
+  test("Expression.Tuple.01") {
     val input = "fn f: (Int16, Int32) = (321i16, 5i32)"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
@@ -4018,7 +4018,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Tuple(Array("un", "deux", "trois", "quatre").map(Value.mkStr)))(result)
   }
 
-  ignore("Expression.Tuple.04") {
+  test("Expression.Tuple.04") {
     val input = """fn f: (Str, Bool, Int64, (), Int8) = ("un", false, 12345i64, (), -2i8)"""
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
@@ -4065,14 +4065,14 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkSet(Set(1, 4, 2).map(Value.mkInt32)))(result)
   }
 
-  ignore("Expression.Set.02") {
+  test("Expression.Set.02") {
     val input = "fn f: Set[Int8] = #{1i8 + 2i8, 3i8 * 4i8, 5i8 - 6i8}"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(3, 12, -1).map(Value.mkInt8)))(result)
   }
 
-  ignore("Expression.Set.03") {
+  test("Expression.Set.03") {
     val input = "fn f: Set[(Int16, Bool)] = #{(1i16 + 2i16, true), (2i16 + 1i16, !false), (4i16 * 7i16, true), (5i16, true && false)}"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
@@ -4083,7 +4083,7 @@ class TestInterpreter extends FunSuite {
     )))(result)
   }
 
-  ignore("Expression.Set.04") {
+  test("Expression.Set.04") {
     val input = "fn f: Set[Int64] = #{10000000000i64}"
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
@@ -4371,7 +4371,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkStr("unknown"))(result05)
   }
 
-  ignore("Match.Literal.05") {
+  test("Match.Literal.05") {
     val input =
       s"""fn f(x: Int8): Str = match x with {
          |  case ${Byte.MinValue}i8 => "min"
@@ -4399,7 +4399,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkStr("unknown"))(result05)
   }
 
-  ignore("Match.Literal.06") {
+  test("Match.Literal.06") {
     val input =
       s"""fn f(x: Int16): Str = match x with {
          |  case ${Short.MinValue}i16 => "min"
@@ -4427,7 +4427,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkStr("unknown"))(result05)
   }
 
-  ignore("Match.Literal.07") {
+  test("Match.Literal.07") {
     val input =
       s"""fn f(x: Int32): Str = match x with {
          |  case ${Int.MinValue}i32 => "min"
@@ -4455,7 +4455,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkStr("unknown"))(result05)
   }
 
-  ignore("Match.Literal.08") {
+  test("Match.Literal.08") {
     val input =
       s"""fn f(x: Int64): Str = match x with {
          |  case ${Long.MinValue}i64 => "min"
@@ -4975,7 +4975,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(true, false).map(x => List(Value.mkBool(x))))
   }
 
-  ignore("Term.Head.Exp.03") {
+  test("Term.Head.Exp.03") {
     val input =
       """rel A(x: Int8);
         |
@@ -4988,7 +4988,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt8(x))))
   }
 
-  ignore("Term.Head.Exp.04") {
+  test("Term.Head.Exp.04") {
     val input =
       """rel A(x: Int16);
         |
@@ -5001,7 +5001,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
   }
 
-  ignore("Term.Head.Exp.05") {
+  test("Term.Head.Exp.05") {
     val input =
       """rel A(x: Int32);
         |
@@ -5014,7 +5014,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
-  ignore("Term.Head.Exp.06") {
+  test("Term.Head.Exp.06") {
     val input =
       """rel A(x: Int64);
         |
@@ -5104,7 +5104,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(true, false).map(x => List(Value.mkBool(x))))
   }
 
-  ignore("Term.Head.Apply.03") {
+  test("Term.Head.Apply.03") {
     val input =
       """rel A(x: Int8);
         |fn f(x: Int8): Int8 = x + 1i8
@@ -5118,7 +5118,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt8(x))))
   }
 
-  ignore("Term.Head.Apply.04") {
+  test("Term.Head.Apply.04") {
     val input =
       """rel A(x: Int16);
         |fn f(x: Int16): Int16 = x + 1i16
@@ -5132,7 +5132,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
   }
 
-  ignore("Term.Head.Apply.05") {
+  test("Term.Head.Apply.05") {
     val input =
       """rel A(x: Int32);
         |fn f(x: Int32): Int32 = x + 1i32
@@ -5146,7 +5146,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
-  ignore("Term.Head.Apply.06") {
+  test("Term.Head.Apply.06") {
     val input =
       """rel A(x: Int64);
         |fn f(x: Int64): Int64 = x + 1i64
@@ -5257,7 +5257,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  ignore("Term.Head.ApplyHook - Hook.Safe.03") {
+  test("Term.Head.ApplyHook - Hook.Safe.03") {
     import HookSafeHelpers._
     val input =
       """rel A(x: Int8);
@@ -5279,7 +5279,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  ignore("Term.Head.ApplyHook - Hook.Safe.04") {
+  test("Term.Head.ApplyHook - Hook.Safe.04") {
     import HookSafeHelpers._
     val input =
       """rel A(x: Int16);
@@ -5301,7 +5301,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  ignore("Term.Head.ApplyHook - Hook.Safe.05") {
+  test("Term.Head.ApplyHook - Hook.Safe.05") {
     import HookSafeHelpers._
     val input =
       """rel A(x: Int32);
@@ -5323,7 +5323,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  ignore("Term.Head.ApplyHook - Hook.Safe.06") {
+  test("Term.Head.ApplyHook - Hook.Safe.06") {
     import HookSafeHelpers._
     val input =
       """rel A(x: Int64);
@@ -5505,7 +5505,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  ignore("Term.Head.ApplyHook - Hook.Unsafe.03") {
+  test("Term.Head.ApplyHook - Hook.Unsafe.03") {
     import HookUnsafeHelpers._
     val input =
       """rel A(x: Int8);
@@ -5527,7 +5527,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  ignore("Term.Head.ApplyHook - Hook.Unsafe.04") {
+  test("Term.Head.ApplyHook - Hook.Unsafe.04") {
     import HookUnsafeHelpers._
     val input =
       """rel A(x: Int16);
@@ -5549,7 +5549,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  ignore("Term.Head.ApplyHook - Hook.Unsafe.05") {
+  test("Term.Head.ApplyHook - Hook.Unsafe.05") {
     import HookUnsafeHelpers._
     val input =
       """rel A(x: Int32);
@@ -5571,7 +5571,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  ignore("Term.Head.ApplyHook - Hook.Unsafe.06") {
+  test("Term.Head.ApplyHook - Hook.Unsafe.06") {
     import HookUnsafeHelpers._
     val input =
       """rel A(x: Int64);
@@ -5769,7 +5769,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
-  ignore("Term.Body.Exp.02") {
+  test("Term.Body.Exp.02") {
     val input =
       """rel A(x: Int);
         |fn f(x: Int8): Bool = x >= 0i8
@@ -5784,7 +5784,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
-  ignore("Term.Body.Exp.03") {
+  test("Term.Body.Exp.03") {
     val input =
       """rel A(x: Int);
         |fn f(x: Int16): Bool = x >= 0i16
@@ -5799,7 +5799,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
-  ignore("Term.Body.Exp.04") {
+  test("Term.Body.Exp.04") {
     val input =
       """rel A(x: Int);
         |fn f(x: Int32): Bool = x >= 0i32
@@ -5814,7 +5814,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
-  ignore("Term.Body.Exp.05") {
+  test("Term.Body.Exp.05") {
     val input =
       """rel A(x: Int);
         |fn f(x: Int64): Bool = x >= 0i64
