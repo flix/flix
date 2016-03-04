@@ -173,9 +173,25 @@ object WeededAst {
       * An AST node that represents an char literal.
       *
       * @param lit the char literal.
-      * @param loc the source location of the literal
+      * @param loc the source location of the literal.
       */
     case class Char(lit: scala.Char, loc: SourceLocation) extends WeededAst.Literal
+
+    /**
+      * An AST node that represents a float32 literal.
+      *
+      * @param lit the float32 literal.
+      * @param loc the source location of the literal.
+      */
+    case class Float32(lit: scala.Float, loc: SourceLocation) extends WeededAst.Literal
+
+    /**
+      * An AST node that represents a float64 literal.
+      *
+      * @param lit the float64 literal.
+      * @param loc the source location of the literal.
+      */
+    case class Float64(lit: scala.Double, loc: SourceLocation) extends WeededAst.Literal
 
     /**
       * An AST node that represents an int8 literal.

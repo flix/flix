@@ -268,6 +268,8 @@ object Typer {
         case ResolvedAst.Literal.Unit(loc) => TypedAst.Literal.Unit(loc)
         case ResolvedAst.Literal.Bool(b, loc) => TypedAst.Literal.Bool(b, loc)
         case ResolvedAst.Literal.Char(c, loc) => TypedAst.Literal.Char(c, loc)
+        case ResolvedAst.Literal.Float32(f, loc) => TypedAst.Literal.Float32(f, loc)
+        case ResolvedAst.Literal.Float64(f, loc) => TypedAst.Literal.Float64(f, loc)
         case ResolvedAst.Literal.Int8(i, loc) => TypedAst.Literal.Int8(i, loc)
         case ResolvedAst.Literal.Int16(i, loc) => TypedAst.Literal.Int16(i, loc)
         case ResolvedAst.Literal.Int32(i, loc) => TypedAst.Literal.Int32(i, loc)

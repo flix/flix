@@ -553,6 +553,8 @@ object Resolver {
         case WeededAst.Literal.Unit(loc) => ResolvedAst.Literal.Unit(loc).toSuccess
         case WeededAst.Literal.Bool(b, loc) => ResolvedAst.Literal.Bool(b, loc).toSuccess
         case WeededAst.Literal.Char(c, loc) => ResolvedAst.Literal.Char(c, loc).toSuccess
+        case WeededAst.Literal.Float32(f, loc) => ResolvedAst.Literal.Float32(f, loc).toSuccess
+        case WeededAst.Literal.Float64(f, loc) => ResolvedAst.Literal.Float64(f, loc).toSuccess
         case WeededAst.Literal.Int8(i, loc) => ResolvedAst.Literal.Int8(i, loc).toSuccess
         case WeededAst.Literal.Int16(i, loc) => ResolvedAst.Literal.Int16(i, loc).toSuccess
         case WeededAst.Literal.Int32(i, loc) => ResolvedAst.Literal.Int32(i, loc).toSuccess
@@ -862,6 +864,9 @@ object Resolver {
         case Type.Unresolved(name) => name.parts match {
           case Seq("Bool") => Type.Bool.toSuccess
           case Seq("Char") => Type.Char.toSuccess
+          case Seq("Float") => Type.Float32.toSuccess
+          case Seq("Float32") => Type.Float32.toSuccess
+          case Seq("Float64") => Type.Float64.toSuccess
           case Seq("Int") => Type.Int32.toSuccess
           case Seq("Int8") => Type.Int8.toSuccess
           case Seq("Int16") => Type.Int16.toSuccess

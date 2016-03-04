@@ -585,6 +585,14 @@ object Weeder {
         case _ => throw Compiler.InternalCompilerError("Impossible non-boolean value.")
       }
       case plit: ParsedAst.Literal.Char => WeededAst.Literal.Char(plit.lit(0), plit.loc).toSuccess
+
+      case ParsedAst.Literal.Float32(sp1, sign, before, after, sp2) =>
+        val s = if (sign) s"-$before.$after" else s"$before.$after"
+        WeededAst.Literal.Float32(s.toFloat, past.loc).toSuccess
+      case ParsedAst.Literal.Float64(sp1, sign, before, after, sp2) =>
+        val s = if (sign) s"-$before.$after" else s"$before.$after"
+        WeededAst.Literal.Float64(s.toDouble, past.loc).toSuccess
+
       case plit: ParsedAst.Literal.Int8 =>
         val s = if (plit.sign) "-" + plit.lit else plit.lit
         WeededAst.Literal.Int8(s.toByte, plit.loc).toSuccess

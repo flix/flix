@@ -112,6 +112,10 @@ object ResolvedAst {
 
     case class Char(lit: scala.Char, loc: SourceLocation) extends ResolvedAst.Literal
 
+    case class Float32(lit: scala.Float, loc: SourceLocation) extends ResolvedAst.Literal
+
+    case class Float64(lit: scala.Double, loc: SourceLocation) extends ResolvedAst.Literal
+
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends ResolvedAst.Literal
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends ResolvedAst.Literal

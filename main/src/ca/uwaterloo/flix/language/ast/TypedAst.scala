@@ -179,6 +179,26 @@ object TypedAst {
     }
 
     /**
+      * A typed AST node that represent a float32 literal.
+      *
+      * @param lit the float32 literal.
+      * @param loc the source location.
+      */
+    case class Float32(lit: scala.Float, loc: SourceLocation) extends TypedAst.Literal {
+      final val tpe = Type.Float32
+    }
+
+    /**
+      * A typed AST node that represent a float64 literal.
+      *
+      * @param lit the float64 literal.
+      * @param loc the source location.
+      */
+    case class Float64(lit: scala.Double, loc: SourceLocation) extends TypedAst.Literal {
+      final val tpe = Type.Float64
+    }
+
+    /**
       * A typed AST node that represent an int8 literal.
       *
       * @param lit the int8 literal.
