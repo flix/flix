@@ -14,6 +14,8 @@ sealed trait Type {
     case Type.Unit => "Unit"
     case Type.Bool => "Bool"
     case Type.Char => "Char"
+    case Type.Float32 => "Float32"
+    case Type.Float64 => "Float64"
     case Type.Int8 => "Int8"
     case Type.Int16 => "Int16"
     case Type.Int32 => "Int32"
@@ -63,6 +65,16 @@ object Type {
   case object Char extends Type
 
   /**
+    * An AST node that represents the Float32 type.
+    */
+  case object Float32 extends Type
+
+  /**
+    * An AST node that represents the Float64 type.
+    */
+  case object Float64 extends Type
+
+  /**
     * An AST node that represents the 8-bit signed integer type.
     */
   case object Int8 extends Type
@@ -85,7 +97,7 @@ object Type {
   /**
     * An AST node that represents the arbitrary sized integer type.
     */
-  case object BigInt extends Type
+  case object BigInt extends Type // TODO: Name
 
   /**
     * An AST node that represents the Str type.

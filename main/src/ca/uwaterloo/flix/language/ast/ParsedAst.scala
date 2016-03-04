@@ -275,7 +275,6 @@ object ParsedAst {
     def loc: SourceLocation
   }
 
-  // TODO: Eliminate literals.
   object Literal {
 
     /**
@@ -307,6 +306,32 @@ object ParsedAst {
       * @param sp2 the position of the last character in the literal.
       */
     case class Char(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents a float32 literal.
+      *
+      * @param sp1    the position of the first character in the literal.
+      * @param sign   the sign (true if signed).
+      * @param before the digits before the decimal point.
+      * @param after  the digits after the decimal point.
+      * @param sp2    the position of the last character in the literal.
+      */
+    case class Float32(sp1: SourcePosition, sign: Boolean, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents a float64 literal.
+      *
+      * @param sp1    the position of the first character in the literal.
+      * @param sign   the sign (true if signed).
+      * @param before the digits before the decimal point.
+      * @param after  the digits after the decimal point.
+      * @param sp2    the position of the last character in the literal.
+      */
+    case class Float64(sp1: SourcePosition, sign: Boolean, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 

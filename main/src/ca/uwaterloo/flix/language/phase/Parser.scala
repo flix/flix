@@ -547,7 +547,32 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    UnitLiteral | BoolLiteral | CharLiteral | IntLiteral | StrLiteral | TagLiteral | TupleLiteral | SetLiteral
+    UnitLiteral | BoolLiteral | CharLiteral | Literals.Float | IntLiteral | StrLiteral | TagLiteral | TupleLiteral | SetLiteral
+  }
+
+  object Literals {
+
+    def Float: Rule1[ParsedAst.Literal] = rule {
+      Float32 | Float64
+    }
+
+    def Float32: Rule1[ParsedAst.Literal.Float32] = rule {
+      SP ~ Sign ~ Digits ~ "." ~ Digits ~ atomic("f32") ~ SP ~> ParsedAst.Literal.Float32
+    }
+
+    def Float64: Rule1[ParsedAst.Literal.Float64] = rule {
+      SP ~ Sign ~ Digits ~ "." ~ Digits ~ atomic("f64") ~ SP ~> ParsedAst.Literal.Float64
+    }
+
+
+    def Sign: Rule1[Boolean] = rule {
+      optional(capture("-")) ~> ((s: Option[String]) => s.nonEmpty)
+    }
+
+    def Digits: Rule1[String] = rule {
+      capture(oneOrMore(CharPredicate.Digit))
+    }
+
   }
 
   def UnitLiteral: Rule1[ParsedAst.Literal.Unit] = rule {

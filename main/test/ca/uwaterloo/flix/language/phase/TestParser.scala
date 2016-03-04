@@ -292,6 +292,18 @@ class TestParser extends FunSuite {
     assert(result.lit.isInstanceOf[ParsedAst.Literal.Char])
   }
 
+  test("Expression.Float32.01") {
+    val input = "def f: Float32 = 123.456f32"
+    new Flix().addStr(input).compile().get
+  }
+
+
+
+  test("Expression.Float64.01") {
+    val input = "def f: Float64 = 123.456f64"
+    new Flix().addStr(input).compile().get
+  }
+
   test("Expression.Int8") {
     val input = "123i8"
     val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
