@@ -175,7 +175,7 @@ object TypedAst {
       * @param loc the source location.
       */
     case class Char(lit: scala.Char, loc: SourceLocation) extends TypedAst.Literal {
-      final val tpe = Type.Int8
+      final val tpe = Type.Char
     }
 
     /**

@@ -861,6 +861,7 @@ object Resolver {
         case Type.Unit => Type.Unit.toSuccess
         case Type.Unresolved(name) => name.parts match {
           case Seq("Bool") => Type.Bool.toSuccess
+          case Seq("Char") => Type.Char.toSuccess
           case Seq("Int") => Type.Int32.toSuccess
           case Seq("Int8") => Type.Int8.toSuccess
           case Seq("Int16") => Type.Int16.toSuccess

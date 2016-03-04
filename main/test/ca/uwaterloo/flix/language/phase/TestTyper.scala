@@ -565,6 +565,49 @@ class TestTyper extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // LetMatch (Positive)                                                     //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Expression.LetMatch01") {
+    val input = "fn f: Int = let (x, y) = (1, 2) in x + y"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.LetMatch02") {
+    val input = "fn f: Int8 = let (x, (y, z, w)) = (true, ('a', 1i8, 2i8)) in z + w"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.LetMatch03") {
+    val input =
+      """enum E {
+        |  case A(Bool),
+        |  case B(Char),
+        |  case C(Int)
+        |}
+        |
+        |fn f(e: E): Bool = let E.A(b) = e in b
+        |fn g(e: E): Char = let E.B(c) = e in c
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.LetMatch04") {
+    val input =
+      """enum E {
+        |  case A(Bool, Char, Int8),
+        |  case B
+        |}
+        |
+        |fn f(e: E): Int8 = let E.A(true, 'a', i) = e in i
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Match (Positive)                                                        //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.Match.Wildcard") {

@@ -500,15 +500,15 @@ object ParsedAst {
     }
 
     /**
-      * An AST node that represents a let-binding.
+      * An AST node that represents a let-binding with pattern matching.
       *
       * @param sp1   the position of the first character in the expression.
-      * @param ident the identifier to be bound.
+      * @param pat   the match pattern.
       * @param value the expression whose value the identifier should be bound to.
       * @param body  the expression in which the bound variable is visible.
       * @param sp2   the position of the last character in the expression.
       */
-    case class Let(sp1: SourcePosition, ident: Name.Ident, value: ParsedAst.Expression, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+    case class LetMatch(sp1: SourcePosition, pat: ParsedAst.Pattern, value: ParsedAst.Expression, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 

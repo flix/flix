@@ -693,9 +693,14 @@ object Weeder {
             }
         }
 
-      case exp: ParsedAst.Expression.Let =>
-        @@(compile(exp.value), compile(exp.body)) map {
-          case (value, body) => WeededAst.Expression.Let(exp.ident, value, body, exp.loc)
+      case exp: ParsedAst.Expression.LetMatch =>
+        // Compiles a let-match to either a regular let-binding or a pattern match.
+        @@(Pattern.compile(exp.pat), compile(exp.value), compile(exp.body)) map {
+          case (WeededAst.Pattern.Var(ident, loc), value, body) =>
+            WeededAst.Expression.Let(ident, value, body, exp.loc)
+          case (pattern, value, body) =>
+            val rules = List(pattern -> body)
+            WeededAst.Expression.Match(value, rules, exp.loc)
         }
 
       case exp: ParsedAst.Expression.IfThenElse =>

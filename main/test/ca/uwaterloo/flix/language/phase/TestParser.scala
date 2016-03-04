@@ -488,19 +488,17 @@ class TestParser extends FunSuite {
     assertResult("foo")(result.lit.asInstanceOf[ParsedAst.Literal.Str].lit)
   }
 
-  test("Expression.LetExp01") {
+  test("Expression.LetMatch01") {
     val input = "let x = 42 in x"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Let]
-    assertResult("x")(result.ident.name)
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.LetMatch]
   }
 
-  test("Expression.LetExp02") {
+  test("Expression.LetMatch02") {
     val input = "let x' = f(1, 2, 3) in g(4, 5, 6)"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Let]
-    assertResult("x'")(result.ident.name)
+    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.LetMatch]
   }
 
-  test("Expression.LetExp03") {
+  test("Expression.LetMatch03") {
     val input =
       """let x = 1 in
         |let y = 2 in
@@ -508,10 +506,9 @@ class TestParser extends FunSuite {
         |  42""".stripMargin
     val result = new Parser(SourceInput.Str(input)).Expression.run()
     assert(result.isSuccess)
-    val l1 = result.get.asInstanceOf[ParsedAst.Expression.Let]
-    val l2 = l1.body.asInstanceOf[ParsedAst.Expression.Let]
-    val l3 = l2.body.asInstanceOf[ParsedAst.Expression.Let]
-    assertResult("z")(l3.ident.name)
+    val l1 = result.get.asInstanceOf[ParsedAst.Expression.LetMatch]
+    val l2 = l1.body.asInstanceOf[ParsedAst.Expression.LetMatch]
+    val l3 = l2.body.asInstanceOf[ParsedAst.Expression.LetMatch]
   }
 
   test("Expression.IfThenElseExp01") {

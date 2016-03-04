@@ -255,7 +255,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def SimpleExpression: Rule1[ParsedAst.Expression] = rule {
-    LetExpression | IfThenElseExpression | SwitchExpression | MatchExpression | TagExpression | TupleExpression |
+    LetMatchExpression | IfThenElseExpression | SwitchExpression | MatchExpression | TagExpression | TupleExpression |
       SetExpression | LiteralExpression | LambdaExpression | ExistentialExpression | UniversalExpression | BotExpression |
       TopExpression | VariableExpression | ErrorExpression
   }
@@ -264,8 +264,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     SP ~ Literal ~ SP ~> ParsedAst.Expression.Lit
   }
 
-  def LetExpression: Rule1[ParsedAst.Expression.Let] = rule {
-    SP ~ atomic("let") ~ optWS ~ Ident ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ atomic("in") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Let
+  def LetMatchExpression: Rule1[ParsedAst.Expression.LetMatch] = rule {
+    SP ~ atomic("let") ~ optWS ~ Pattern ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ atomic("in") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LetMatch
   }
 
   def IfThenElseExpression: Rule1[ParsedAst.Expression.IfThenElse] = rule {

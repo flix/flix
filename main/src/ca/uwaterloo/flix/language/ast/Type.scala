@@ -18,6 +18,7 @@ sealed trait Type {
     case Type.Int16 => "Int16"
     case Type.Int32 => "Int32"
     case Type.Int64 => "Int64"
+    case Type.BigInt => "BigInt"
     case Type.Str => "Str"
     case Type.Native => "Native"
     case Type.Prop => "Prop"
