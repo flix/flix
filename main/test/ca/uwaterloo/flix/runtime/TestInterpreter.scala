@@ -1,11 +1,9 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.{Flix, IValue, Invokable, InvokableUnsafe}
+import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Type}
 import ca.uwaterloo.flix.util.{Debugger, Options, Verbosity, Verify}
 import org.scalatest.FunSuite
-
-// TODO: Intercept tests should catch a more specific exception, otherwise real bugs will be masked.
 
 class TestInterpreter extends FunSuite {
 
@@ -2864,7 +2862,7 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.LogicalAnd.06") {
     val input = "fn f: Bool = true && ???: Bool"
-    intercept[RuntimeException] { getModel(input) }
+    intercept[UserException] { getModel(input) }
   }
 
   test("Expression.Binary - BinaryOperator.LogicalOr.01") {
@@ -2904,7 +2902,7 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.LogicalOr.06") {
     val input = "fn f: Bool = false || ???: Bool"
-    intercept[RuntimeException] { getModel(input) }
+    intercept[UserException] { getModel(input) }
   }
 
   test("Expression.Binary - BinaryOperator.Implication.01") {
@@ -2944,7 +2942,7 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.Implication.06") {
     val input = "fn f: Bool = true ==> ???: Bool"
-    intercept[RuntimeException] { getModel(input) }
+    intercept[UserException] { getModel(input) }
   }
 
   test("Expression.Binary - BinaryOperator.Biconditional.01") {
@@ -4096,7 +4094,7 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Error.01") {
     val input = "fn f: Bool = ???: Bool"
-    intercept[RuntimeException] { getModel(input) }
+    intercept[UserException] { getModel(input) }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -4212,7 +4210,7 @@ class TestInterpreter extends FunSuite {
         |}
         |fn g01: Int = f(false)
       """.stripMargin
-    intercept[RuntimeException] { getModel(input) }
+    intercept[SwitchException] { getModel(input) }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -4884,8 +4882,6 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  // TODO: Catch the proper exception.
-  // See https://github.com/magnus-madsen/flix/issues/118
   test("Match.Error.01") {
     val input =
       """fn f(x: Int): Bool = match x with {
@@ -4893,10 +4889,8 @@ class TestInterpreter extends FunSuite {
         |}
         |fn g: Bool = f(123)
       """.stripMargin
-    intercept[RuntimeException] { getModel(input) }
+    intercept[MatchException] { getModel(input) }
   }
-
-  // TODO: Tests for future expressions, e.g. opt, list, map
 
   /////////////////////////////////////////////////////////////////////////////
   // Term.Head.Var                                                           //

@@ -1,11 +1,10 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.{IValue, WrappedValue}
+import ca.uwaterloo.flix.api.{IValue, MatchException, SwitchException, UserException, WrappedValue}
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 
 object Interpreter {
@@ -85,9 +84,9 @@ object Interpreter {
     case Expression.CheckNil(exp, _) => ???
     case Expression.CheckCons(exp, _) => ???
     case Expression.Set(elms, _, _) => Value.mkSet(elms.map(e => eval(e, root, env)).toSet)
-    case Expression.Error(tpe, loc) => throw new RuntimeException(s"Runtime error at ${loc.format}.")
-    case Expression.MatchError(tpe, loc) => throw new RuntimeException(s"Match error at ${loc.format}.")
-    case Expression.SwitchError(tpe, loc) => throw new RuntimeException(s"Switch error at ${loc.format}.")
+    case Expression.Error(_, loc) => throw UserException("User exception.", loc)
+    case Expression.MatchError(_, loc) => throw MatchException("Non-exhaustive match expression.", loc)
+    case Expression.SwitchError(_, loc) => throw SwitchException("Non-exhaustive switch expression.", loc)
   }
 
   private def evalUnary(op: UnaryOperator, e: Expression, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
