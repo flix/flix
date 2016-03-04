@@ -6135,11 +6135,10 @@ class TestCodegen extends FunSuite {
     assertResult(Value.Unit)(result)
   }
 
-  // TODO
-  ignore("Codegen - GetTagValue03") {
+  test("Codegen - GetTagValue03") {
     val tagName = Name.Resolved.mk("abc")
     val ident = toIdent("def")
-    val enum = Type.Enum(Name.Resolved.mk("abc"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int32, Type.Str)))))
+    val enum = Type.Enum(Name.Resolved.mk("abc"), Map("def" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int32, Type.Str)))))
 
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
@@ -6317,7 +6316,7 @@ class TestCodegen extends FunSuite {
       body = Let(toIdent("x"), 0,
         exp1 = Tuple(List(Tag(constPropName, identV, Int32(111), enumTpe, loc), Tag(constPropName, identB, Unit, enumTpe, loc)),
           Type.Tuple(List(enumTpe, enumTpe)), loc),
-        exp2 = GetTupleIndex(Var(toIdent("x"), 0, enumTpe, loc), 1, enumTpe, loc),
+        exp2 = GetTupleIndex(Var(toIdent("x"), 0, Type.Tuple(List(enumTpe, enumTpe)), loc), 1, enumTpe, loc),
         enumTpe, loc),
       Type.Lambda(List(), enumTpe), loc)
 
