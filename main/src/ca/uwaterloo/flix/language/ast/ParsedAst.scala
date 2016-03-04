@@ -500,19 +500,6 @@ object ParsedAst {
     }
 
     /**
-      * An AST node that represents a let-binding with pattern matching.
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param pat   the match pattern.
-      * @param value the expression whose value the identifier should be bound to.
-      * @param body  the expression in which the bound variable is visible.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class LetMatch(sp1: SourcePosition, pat: ParsedAst.Pattern, value: ParsedAst.Expression, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
       * An AST node that represents an if-then-else expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -526,13 +513,15 @@ object ParsedAst {
     }
 
     /**
-      * An AST node that represents a switch expression.
+      * An AST node that represents a let-binding with pattern matching.
       *
       * @param sp1   the position of the first character in the expression.
-      * @param rules the rules of the switch.
+      * @param pat   the match pattern.
+      * @param value the expression whose value the identifier should be bound to.
+      * @param body  the expression in which the bound variable is visible.
       * @param sp2   the position of the last character in the expression.
       */
-    case class Switch(sp1: SourcePosition, rules: Seq[(ParsedAst.Expression, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression {
+    case class LetMatch(sp1: SourcePosition, pat: ParsedAst.Pattern, value: ParsedAst.Expression, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -547,6 +536,18 @@ object ParsedAst {
     case class Match(sp1: SourcePosition, e: ParsedAst.Expression, rules: Seq[(ParsedAst.Pattern, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
+
+    /**
+      * An AST node that represents a switch expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param rules the rules of the switch.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class Switch(sp1: SourcePosition, rules: Seq[(ParsedAst.Expression, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
 
     /**
       * An AST node that represents an infix function call.

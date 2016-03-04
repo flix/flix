@@ -11,7 +11,6 @@ import scala.io.Source
 
 // TODO: Parse whitespace more "tightly" to improve source positions.
 // TODO: Add support for characters.
-// TODO: Add pattern matching let* pattern = exp
 // TODO: Move components into objects.
 
 /**
@@ -264,12 +263,22 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     SP ~ Literal ~ SP ~> ParsedAst.Expression.Lit
   }
 
+  def IfThenElseExpression: Rule1[ParsedAst.Expression.IfThenElse] = rule {
+    SP ~ atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ optWS ~ atomic("else") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
+  }
+
   def LetMatchExpression: Rule1[ParsedAst.Expression.LetMatch] = rule {
     SP ~ atomic("let") ~ optWS ~ Pattern ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ atomic("in") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LetMatch
   }
 
-  def IfThenElseExpression: Rule1[ParsedAst.Expression.IfThenElse] = rule {
-    SP ~ atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ optWS ~ atomic("else") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
+  def MatchExpression: Rule1[ParsedAst.Expression.Match] = {
+    def MatchRule: Rule1[(ParsedAst.Pattern, ParsedAst.Expression)] = rule {
+      atomic("case") ~ optWS ~ Pattern ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~ optSC ~> ((p: ParsedAst.Pattern, e: ParsedAst.Expression) => (p, e))
+    }
+
+    rule {
+      SP ~ atomic("match") ~ optWS ~ Expression ~ optWS ~ atomic("with") ~ optWS ~ "{" ~ optWS ~ oneOrMore(MatchRule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
+    }
   }
 
   def SwitchExpression: Rule1[ParsedAst.Expression.Switch] = {
@@ -282,15 +291,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
   }
 
-  def MatchExpression: Rule1[ParsedAst.Expression.Match] = {
-    def MatchRule: Rule1[(ParsedAst.Pattern, ParsedAst.Expression)] = rule {
-      atomic("case") ~ optWS ~ Pattern ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~ optSC ~> ((p: ParsedAst.Pattern, e: ParsedAst.Expression) => (p, e))
-    }
-
-    rule {
-      SP ~ atomic("match") ~ optWS ~ Expression ~ optWS ~ atomic("with") ~ optWS ~ "{" ~ optWS ~ oneOrMore(MatchRule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
-    }
-  }
 
   def ApplyExpression: Rule1[ParsedAst.Expression.Apply] = rule {
     SP ~ SimpleExpression ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Apply
@@ -357,47 +357,35 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
   /////////////////////////////////////////////////////////////////////////////
-  // NB: LiteralPattern must be parsed before VariablePattern.
-  // NB: TagPattern must be before LiteralPattern and VariablePattern.
+  // NB: Literal must be parsed before Variable.
+  // NB: Tag must be before Literal and Variable.
   def Pattern: Rule1[ParsedAst.Pattern] = rule {
-    TagPattern | LiteralPattern | TuplePattern | WildcardPattern | VariablePattern
+    Patterns.Tag | Patterns.Literal | Patterns.Tuple | Patterns.Wildcard | Patterns.Variable
   }
 
-  def WildcardPattern: Rule1[ParsedAst.Pattern.Wildcard] = rule {
-    SP ~ atomic("_") ~ SP ~> ParsedAst.Pattern.Wildcard
-  }
-
-  def VariablePattern: Rule1[ParsedAst.Pattern.Var] = rule {
-    SP ~ Ident ~ SP ~> ParsedAst.Pattern.Var
-  }
-
-  def LiteralPattern: Rule1[ParsedAst.Pattern.Lit] = rule {
-    SP ~ Literal ~ SP ~> ParsedAst.Pattern.Lit
-  }
-
-  def TagPattern: Rule1[ParsedAst.Pattern.Tag] = rule {
-    SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ Pattern) ~ SP ~>
-      ((sp1: SourcePosition, name: Name.Unresolved, ident: Name.Ident, pattern: Option[ParsedAst.Pattern], sp2: SourcePosition) => pattern match {
-        case None => ParsedAst.Pattern.Tag(sp1, name, ident, ParsedAst.Pattern.Lit(sp1, ParsedAst.Literal.Unit(sp1, sp2), sp2), sp2)
-        case Some(p) => ParsedAst.Pattern.Tag(sp1, name, ident, p, sp2)
-      })
-  }
-
-  def TuplePattern: Rule1[ParsedAst.Pattern] = {
-    def Unit: Rule1[ParsedAst.Pattern] = rule {
-      SP ~ atomic("()") ~ SP ~> ((sp1: SourcePosition, sp2: SourcePosition) => ParsedAst.Pattern.Lit(sp1, ParsedAst.Literal.Unit(sp1, sp2), sp2))
+  object Patterns {
+    def Wildcard: Rule1[ParsedAst.Pattern.Wildcard] = rule {
+      SP ~ atomic("_") ~ SP ~> ParsedAst.Pattern.Wildcard
     }
 
-    def Singleton: Rule1[ParsedAst.Pattern] = rule {
-      "(" ~ optWS ~ Pattern ~ optWS ~ ")"
+    def Variable: Rule1[ParsedAst.Pattern.Var] = rule {
+      SP ~ Ident ~ SP ~> ParsedAst.Pattern.Var
+    }
+
+    def Literal: Rule1[ParsedAst.Pattern.Lit] = rule {
+      SP ~ Parser.this.Literal ~ SP ~> ParsedAst.Pattern.Lit
+    }
+
+    def Tag: Rule1[ParsedAst.Pattern.Tag] = rule {
+      SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ Pattern) ~ SP ~>
+        ((sp1: SourcePosition, name: Name.Unresolved, ident: Name.Ident, pattern: Option[ParsedAst.Pattern], sp2: SourcePosition) => pattern match {
+          case None => ParsedAst.Pattern.Tag(sp1, name, ident, ParsedAst.Pattern.Lit(sp1, ParsedAst.Literal.Unit(sp1, sp2), sp2), sp2)
+          case Some(p) => ParsedAst.Pattern.Tag(sp1, name, ident, p, sp2)
+        })
     }
 
     def Tuple: Rule1[ParsedAst.Pattern] = rule {
       SP ~ "(" ~ optWS ~ oneOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Pattern.Tuple
-    }
-
-    rule {
-      Unit | Singleton | Tuple
     }
   }
 
@@ -483,20 +471,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   def Type: Rule1[PType] = rule {
-    LambdaType | TupleType | SetType | ParametricType | NativeType | PropType | NamedType
+    LambdaType | TupleType | SetType | ParametricType | NamedType
   }
 
   def NamedType: Rule1[PType] = rule {
     QName ~> PType.Unresolved
-  }
-
-  // TODO: Move these later in the pipeline.
-  def NativeType: Rule1[PType] = rule {
-    atomic("Native") ~> (() => PType.Native)
-  }
-
-  def PropType: Rule1[PType] = rule {
-    atomic("Prop") ~> (() => PType.Prop)
   }
 
   def TupleType: Rule1[PType] = {

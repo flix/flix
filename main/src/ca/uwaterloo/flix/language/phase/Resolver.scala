@@ -867,6 +867,8 @@ object Resolver {
           case Seq("Int16") => Type.Int16.toSuccess
           case Seq("Int32") => Type.Int32.toSuccess
           case Seq("Int64") => Type.Int64.toSuccess
+          case Seq("Prop") => Type.Prop.toSuccess
+          case Seq("Native") => Type.Native.toSuccess
           case Seq("Str") => Type.Str.toSuccess
           case _ => syms.lookupType(name, namespace) flatMap (tpe => visit(tpe))
         }

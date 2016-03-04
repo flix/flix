@@ -695,7 +695,7 @@ object Weeder {
 
       case exp: ParsedAst.Expression.LetMatch =>
         // Compiles a let-match to either a regular let-binding or a pattern match.
-        @@(Pattern.compile(exp.pat), compile(exp.value), compile(exp.body)) map {
+        @@(Patterns.compile(exp.pat), compile(exp.value), compile(exp.body)) map {
           case (WeededAst.Pattern.Var(ident, loc), value, body) =>
             WeededAst.Expression.Let(ident, value, body, exp.loc)
           case (pattern, value, body) =>
@@ -718,7 +718,7 @@ object Weeder {
 
       case exp: ParsedAst.Expression.Match =>
         val rulesVal = exp.rules map {
-          case (pat, body) => @@(Pattern.compile(pat), compile(body))
+          case (pat, body) => @@(Patterns.compile(pat), compile(body))
         }
         @@(compile(exp.e), @@(rulesVal)) map {
           case (e, rs) => WeededAst.Expression.Match(e, rs, exp.loc)
@@ -764,7 +764,7 @@ object Weeder {
     }
   }
 
-  object Pattern {
+  object Patterns {
     /**
       * Compiles the parsed pattern `past`.
       */
@@ -787,7 +787,9 @@ object Weeder {
           case pat => WeededAst.Pattern.Tag(ppat.enumName, ppat.tagName, pat, ppat.loc)
         }
         case pat: ParsedAst.Pattern.Tuple => @@(pat.elms map visit) map {
-          case elms => WeededAst.Pattern.Tuple(elms, pat.loc)
+          case Nil => WeededAst.Pattern.Lit(WeededAst.Literal.Unit(pat.loc), pat.loc)
+          case x :: Nil => x
+          case xs => WeededAst.Pattern.Tuple(xs, pat.loc)
         }
       }
 
