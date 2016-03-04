@@ -243,22 +243,6 @@ object WeededAst {
       */
     case class Tag(enum: Name.Unresolved, tag: Name.Ident, literal: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Literal
 
-    /**
-      * An AST node that represents a tuple literal.
-      *
-      * @param elms the elements of the tuple.
-      * @param loc  the source location of the literal.
-      */
-    case class Tuple(elms: List[WeededAst.Literal], loc: SourceLocation) extends WeededAst.Literal
-
-    /**
-      * An AST node that represents a set literal.
-      *
-      * @param elms the elements of the set.
-      * @param loc  the source location of the literal.
-      */
-    case class Set(elms: List[WeededAst.Literal], loc: SourceLocation) extends WeededAst.Literal
-
   }
 
   /**

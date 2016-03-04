@@ -385,7 +385,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Tuple: Rule1[ParsedAst.Pattern] = rule {
-      SP ~ "(" ~ optWS ~ oneOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Pattern.Tuple
+      SP ~ "(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Pattern.Tuple
     }
   }
 
@@ -529,7 +529,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
   }
 
-  // TODO: Intern strings?
   def Ident: Rule1[Name.Ident] = rule {
     SP ~ LegalIdentifier ~ SP ~> Name.Ident
   }
@@ -547,7 +546,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    Literals.Bool | Literals.Char | Literals.Float | Literals.Int | Literals.Str | Literals.Tag | Literals.Tuple
+    Literals.Bool | Literals.Char | Literals.Float | Literals.Int | Literals.Str | Literals.Tag
   }
 
   object Literals {
@@ -605,15 +604,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Tag: Rule1[ParsedAst.Literal.Tag] = rule {
-      SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ Tuple) ~ SP ~>
+      SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ Literal) ~ SP ~>
         ((sp1: SourcePosition, name: Name.Unresolved, ident: Name.Ident, literal: Option[ParsedAst.Literal], sp2: SourcePosition) => literal match {
           case None => ParsedAst.Literal.Tag(sp1, name, ident, ParsedAst.Literal.Unit(sp1, sp2), sp2)
           case Some(lit) => ParsedAst.Literal.Tag(sp1, name, ident, lit, sp2)
         })
-    }
-
-    def Tuple: Rule1[ParsedAst.Literal] = rule {
-      SP ~ "(" ~ optWS ~ zeroOrMore(Literal).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Literal.Tuple
     }
 
     def Sign: Rule1[Boolean] = rule {
@@ -709,7 +704,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Whitespace                                                              //
   /////////////////////////////////////////////////////////////////////////////
   def WS: Rule0 = rule {
-    oneOrMore(" " | "\t" | NewLine | SingleLineComment | MultiLineComment)
+    oneOrMore(" " | "\t" | NewLine | Comment)
   }
 
   def optWS: Rule0 = rule {
@@ -731,16 +726,22 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Comments                                                                //
   /////////////////////////////////////////////////////////////////////////////
-  // Note: We must use ANY to match (consume) whatever character which is not a newline.
-  // Otherwise the parser makes no progress and loops.
-  def SingleLineComment: Rule0 = rule {
-    "//" ~ zeroOrMore(!NewLine ~ ANY) ~ (NewLine | EOI)
+  def Comment: Rule0 = rule {
+    Comments.SingleLineComment | Comments.MultiLineComment
   }
 
-  // Note: We must use ANY to match (consume) whatever character which is not a "*/".
-  // Otherwise the parser makes no progress and loops.
-  def MultiLineComment: Rule0 = rule {
-    "/*" ~ zeroOrMore(!"*/" ~ ANY) ~ "*/"
+  object Comments {
+    // Note: We must use ANY to match (consume) whatever character which is not a newline.
+    // Otherwise the parser makes no progress and loops.
+    def SingleLineComment: Rule0 = rule {
+      "//" ~ zeroOrMore(!NewLine ~ ANY) ~ (NewLine | EOI)
+    }
+
+    // Note: We must use ANY to match (consume) whatever character which is not a "*/".
+    // Otherwise the parser makes no progress and loops.
+    def MultiLineComment: Rule0 = rule {
+      "/*" ~ zeroOrMore(!"*/" ~ ANY) ~ "*/"
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////

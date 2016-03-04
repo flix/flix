@@ -408,30 +408,6 @@ object ParsedAst {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
-    /**
-      * An AST node that represents a tuple literal.
-      *
-      * @param sp1  the position of the first character in the literal.
-      * @param elms the elements of the tuple.
-      * @param sp2  the position of the last character in the literal.
-      */
-    // TODO: Remove?
-    case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Literal], sp2: SourcePosition) extends ParsedAst.Literal {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
-      * An AST node that represents a set literal.
-      *
-      * @param sp1  the position of the first character in the literal.
-      * @param elms the elements of the set.
-      * @param sp2  the position of the last character in the literal.
-      */
-    // TODO: Remove?
-    case class Set(sp1: SourcePosition, elms: Seq[ParsedAst.Literal], sp2: SourcePosition) extends ParsedAst.Literal {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
   }
 
   /**

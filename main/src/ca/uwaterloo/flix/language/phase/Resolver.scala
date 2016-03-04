@@ -570,12 +570,6 @@ object Resolver {
                 UnresolvedTagReference(defn, tag.name, loc).toFailure
           }
         }
-        case WeededAst.Literal.Tuple(welms, loc) => @@(welms map visit) map {
-          case elms => ResolvedAst.Literal.Tuple(elms, loc)
-        }
-        case WeededAst.Literal.Set(welms, loc) => @@(welms map visit) map {
-          case elms => ResolvedAst.Literal.Set(elms, loc)
-        }
       }
 
       visit(wast)

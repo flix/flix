@@ -572,7 +572,7 @@ object Weeder {
 
   }
 
-  object Literal {
+  object Literals {
     /**
       * Compiles the parsed literal `past` to a weeded literal.
       */
@@ -607,14 +607,6 @@ object Weeder {
         WeededAst.Literal.Int64(s.toLong, plit.loc).toSuccess
       case plit: ParsedAst.Literal.Str => WeededAst.Literal.Str(plit.lit, plit.loc).toSuccess
       case plit: ParsedAst.Literal.Tag => compile(plit.lit) map (lit => WeededAst.Literal.Tag(plit.enum, plit.tag, lit, plit.loc))
-      case plit: ParsedAst.Literal.Tuple => @@(plit.elms map compile) map {
-        case Nil => WeededAst.Literal.Unit(plit.loc)
-        case x :: Nil => x
-        case xs => WeededAst.Literal.Tuple(xs, plit.loc)
-      }
-      case plit: ParsedAst.Literal.Set => @@(plit.elms map compile) map {
-        case elms => WeededAst.Literal.Set(elms, plit.loc)
-      }
     }
   }
 
@@ -624,7 +616,7 @@ object Weeder {
       */
     def compile(past: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = past match {
       case exp: ParsedAst.Expression.Lit =>
-        Literal.compile(exp.lit) map {
+        Literals.compile(exp.lit) map {
           case lit => WeededAst.Expression.Lit(lit, exp.loc)
         }
 
@@ -771,7 +763,7 @@ object Weeder {
           case Some(otherIdent) =>
             NonLinearPattern(pat.ident.name, otherIdent.loc, pat.ident.loc).toFailure
         }
-        case pat: ParsedAst.Pattern.Lit => Literal.compile(pat.lit) map {
+        case pat: ParsedAst.Pattern.Lit => Literals.compile(pat.lit) map {
           case lit => WeededAst.Pattern.Lit(lit, pat.loc)
         }
         case ppat: ParsedAst.Pattern.Tag => visit(ppat.p) map {
@@ -846,7 +838,7 @@ object Weeder {
           case None => WeededAst.Term.Head.Var(term.ident, term.loc).toSuccess
           case Some(alias) => compile(alias.term, aliases)
         }
-        case term: ParsedAst.Term.Lit => Literal.compile(term.lit) map {
+        case term: ParsedAst.Term.Lit => Literals.compile(term.lit) map {
           case lit => WeededAst.Term.Head.Lit(lit, term.loc)
         }
         case term: ParsedAst.Term.Ascribe =>
@@ -871,7 +863,7 @@ object Weeder {
       def compile(past: ParsedAst.Term): Validation[WeededAst.Term.Body, WeederError] = past match {
         case term: ParsedAst.Term.Wildcard => WeededAst.Term.Body.Wildcard(term.loc).toSuccess
         case term: ParsedAst.Term.Var => WeededAst.Term.Body.Var(term.ident, term.loc).toSuccess
-        case term: ParsedAst.Term.Lit => Literal.compile(term.lit) map {
+        case term: ParsedAst.Term.Lit => Literals.compile(term.lit) map {
           case lit => WeededAst.Term.Body.Lit(lit, term.loc)
         }
         case term: ParsedAst.Term.Ascribe =>

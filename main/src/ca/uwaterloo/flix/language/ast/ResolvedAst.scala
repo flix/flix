@@ -128,10 +128,6 @@ object ResolvedAst {
 
     case class Tag(name: Name.Resolved, ident: Name.Ident, lit: ResolvedAst.Literal, loc: SourceLocation) extends ResolvedAst.Literal
 
-    case class Tuple(elms: List[ResolvedAst.Literal], loc: SourceLocation) extends ResolvedAst.Literal
-
-    case class Set(elms: List[ResolvedAst.Literal], loc: SourceLocation) extends ResolvedAst.Literal
-
   }
 
   sealed trait Expression extends Definition {

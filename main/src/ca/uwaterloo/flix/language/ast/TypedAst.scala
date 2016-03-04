@@ -260,24 +260,6 @@ object TypedAst {
       */
     case class Tag(enum: Name.Resolved, tag: Name.Ident, lit: TypedAst.Literal, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Literal
 
-    /**
-      * A typed AST node representing a tuple literal.
-      *
-      * @param elms the elements of the tuple.
-      * @param tpe  the type of the tuple.
-      * @param loc  the source location.
-      */
-    case class Tuple(elms: List[TypedAst.Literal], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Literal
-
-    /**
-      * A typed AST node representing a Set literal.
-      *
-      * @param elms the elements of the set.
-      * @param tpe  the type of the set.
-      * @param loc  the source location.
-      */
-    case class Set(elms: List[TypedAst.Literal], tpe: Type.Set, loc: SourceLocation) extends TypedAst.Literal
-
   }
 
   sealed trait Expression extends TypedAst {

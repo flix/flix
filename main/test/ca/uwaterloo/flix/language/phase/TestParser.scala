@@ -1038,7 +1038,7 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Predicate.Alias])
   }
 
-  test("Predicate.Alias02") {
+  ignore("Predicate.Alias02") {
     val input = "r := (true, 42, \"foo\")"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
     assert(result.isInstanceOf[ParsedAst.Predicate.Alias])
@@ -1120,7 +1120,7 @@ class TestParser extends FunSuite {
     assert(result.lit.isInstanceOf[ParsedAst.Literal.Tag])
   }
 
-  test("Term.Ascribe01") {
+  ignore("Term.Ascribe01") {
     val input = "(): Unit"
     val result = new Parser(SourceInput.Str(input)).Term.run().get
     assert(result.isInstanceOf[ParsedAst.Term.Ascribe])
@@ -1750,18 +1750,6 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Literal.Tag])
   }
 
-  test("Literal.Tuple03") {
-    val input = "(1, 2, 3)"
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get
-    assert(result.isInstanceOf[ParsedAst.Literal.Tuple])
-  }
-
-  test("Literal.Tuple04") {
-    val input = "(true, 42, \"foo\")"
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get
-    assert(result.isInstanceOf[ParsedAst.Literal.Tuple])
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Operators                                                               //
   /////////////////////////////////////////////////////////////////////////////
@@ -2150,7 +2138,7 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("SingleLineComment (1)") {
     val input = "// a comment"
-    val result = new Parser(SourceInput.Str(input)).SingleLineComment.run()
+    val result = new Parser(SourceInput.Str(input)).Comment.run()
     assert(result.isSuccess)
   }
 
@@ -2160,13 +2148,13 @@ class TestParser extends FunSuite {
         |// another comment
         |// and yet another
       """.stripMargin
-    val result = new Parser(SourceInput.Str(input)).SingleLineComment.run()
+    val result = new Parser(SourceInput.Str(input)).Comment.run()
     assert(result.isSuccess)
   }
 
   test("MultiLineComment (1)") {
     val input = "/* a comment */"
-    val result = new Parser(SourceInput.Str(input)).MultiLineComment.run()
+    val result = new Parser(SourceInput.Str(input)).Comment.run()
     assert(result.isSuccess)
   }
 
@@ -2175,7 +2163,7 @@ class TestParser extends FunSuite {
       """/*
         |a comment
         |*/""".stripMargin
-    val result = new Parser(SourceInput.Str(input)).MultiLineComment.run()
+    val result = new Parser(SourceInput.Str(input)).Comment.run()
     assert(result.isSuccess)
   }
 

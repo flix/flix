@@ -4300,9 +4300,9 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(14))(result)
   }
 
-  test("Match.Literal.01") {
+  ignore("Match.Literal.01") {
     val input =
-      """fn f(x: ()): Bool = match x with {
+      """fn f(x: Unit): Bool = match x with {
         |  case () => true
         |}
         |fn g: Bool = f(())
@@ -4952,9 +4952,9 @@ class TestInterpreter extends FunSuite {
   // Term.Head.Exp                                                           //
   /////////////////////////////////////////////////////////////////////////////
 
-  test("Term.Head.Exp.01") {
+  ignore("Term.Head.Exp.01") {
     val input =
-      """rel A(x: ());
+      """rel A(x: Unit);
         |
         |A(()).
       """.stripMargin
@@ -5040,7 +5040,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
   }
 
-  test("Term.Head.Exp.08") {
+  ignore("Term.Head.Exp.08") {
     val input =
       """rel A(x: (Int, Str));
         |
@@ -5051,7 +5051,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))))
   }
 
-  test("Term.Head.Exp.09") {
+  ignore("Term.Head.Exp.09") {
     val input =
       """enum Foo { case Foo(Int,Str) }
         |rel A(x: Foo);
@@ -5063,7 +5063,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(List(Value.mkTag(Name.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
   }
 
-  test("Term.Head.Exp.10") {
+  ignore("Term.Head.Exp.10") {
     val input =
       """rel A(x: (Int, Int));
         |
@@ -5843,7 +5843,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
-  test("Term.Body.Exp.07") {
+  ignore("Term.Body.Exp.07") {
     val input =
       """rel A(x: Int);
         |fn f(x: (Int, Str)): Bool = match x with {
@@ -5862,7 +5862,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
-  test("Term.Body.Exp.08") {
+  ignore("Term.Body.Exp.08") {
     val input =
       """enum Val { case Top, case Val(Int), case Bot }
         |rel A(x: Int);

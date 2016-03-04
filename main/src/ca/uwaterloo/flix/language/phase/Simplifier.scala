@@ -288,8 +288,6 @@ object Simplifier {
       case TypedAst.Literal.Int64(i, loc) => SimplifiedAst.Expression.Int64(i)
       case TypedAst.Literal.Str(s, loc) => SimplifiedAst.Expression.Str(s)
       case TypedAst.Literal.Tag(enum, tag, lit, tpe, loc) => SimplifiedAst.Expression.Tag(enum, tag, simplify(lit), tpe, loc)
-      case TypedAst.Literal.Tuple(elms, tpe, loc) => SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
-      case TypedAst.Literal.Set(elms, tpe, loc) => SimplifiedAst.Expression.Set(elms map simplify, tpe, loc)
     }
   }
 

@@ -281,16 +281,6 @@ object Typer {
             case (tag, tpe) => tag -> tpe.asInstanceOf[Type.Tag]
           }
           TypedAst.Literal.Tag(name, ident, visit(rlit), Type.Enum(name, cases), loc)
-        case ResolvedAst.Literal.Tuple(relms, loc) =>
-          val elms = relms map visit
-          TypedAst.Literal.Tuple(elms, Type.Tuple(elms map (_.tpe)), loc)
-        case ResolvedAst.Literal.Set(relms, loc) =>
-          // TODO: Now this can fail, so the return type needs to be a validation.
-          val elms = relms map visit
-          val tpes = elms map (l => (l.tpe, l.loc))
-          (expectEqual(tpes) map {
-            case tpe => TypedAst.Literal.Set(elms, Type.Set(tpe), loc)
-          }).get
       }
 
       visit(rast)
