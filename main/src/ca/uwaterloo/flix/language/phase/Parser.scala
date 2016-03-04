@@ -66,7 +66,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def SignatureDefinition: Rule1[ParsedAst.Definition.Signature] = rule {
-    SP ~ atomic("fn") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC~> ParsedAst.Definition.Signature
+    SP ~ atomic("fn") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Definition.Signature
   }
 
   def LawDefinition: Rule1[ParsedAst.Definition.Law] = rule {
@@ -242,7 +242,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def UnaryExpression: Rule1[ParsedAst.Expression] = rule {
-    (SP ~ Operator.Unary ~ optWS ~ UnaryExpression ~ SP ~> ParsedAst.Expression.Unary) | AscribeExpression
+    !LiteralExpression ~ (SP ~ Operator.Unary ~ optWS ~ UnaryExpression ~ SP ~> ParsedAst.Expression.Unary) | AscribeExpression
   }
 
   def AscribeExpression: Rule1[ParsedAst.Expression] = rule {
@@ -525,7 +525,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   def LegalIdentifier: Rule1[String] = {
     rule {
       // TODO: Cleanup
-      capture((CharPredicate.Alpha | "⊥" | "⊤" | "⊑" | "⊔" | "⊓" | "▽" | "△" | "⊡") ~ zeroOrMore(CharPredicate.AlphaNum | "_" | "$" | "⊥" | "⊑" ) ~ zeroOrMore("'"))
+      capture((CharPredicate.Alpha | "⊥" | "⊤" | "⊑" | "⊔" | "⊓" | "▽" | "△" | "⊡") ~ zeroOrMore(CharPredicate.AlphaNum | "_" | "$" | "⊥" | "⊑") ~ zeroOrMore("'"))
     }
   }
 
@@ -547,13 +547,25 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    UnitLiteral | BoolLiteral | CharLiteral | Literals.Float | IntLiteral | StrLiteral | TagLiteral | TupleLiteral | SetLiteral
+    Literals.Bool | Literals.Char | Literals.Float | Literals.Int | Literals.Str | Literals.Tag | Literals.Tuple
   }
 
   object Literals {
 
+    def Bool: Rule1[ParsedAst.Literal.Bool] = rule {
+      SP ~ capture(atomic("true") | atomic("false")) ~ SP ~> ParsedAst.Literal.Bool
+    }
+
+    def Char: Rule1[ParsedAst.Literal.Char] = rule {
+      SP ~ "'" ~ capture(!"'" ~ CharPredicate.All) ~ "'" ~ SP ~> ParsedAst.Literal.Char
+    }
+
     def Float: Rule1[ParsedAst.Literal] = rule {
-      Float32 | Float64
+      Float32 | Float64 | FloatDefault
+    }
+
+    def FloatDefault: Rule1[ParsedAst.Literal.Float64] = rule {
+      SP ~ Sign ~ Digits ~ "." ~ Digits ~ SP ~> ParsedAst.Literal.Float64
     }
 
     def Float32: Rule1[ParsedAst.Literal.Float32] = rule {
@@ -564,6 +576,45 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ Sign ~ Digits ~ "." ~ Digits ~ atomic("f64") ~ SP ~> ParsedAst.Literal.Float64
     }
 
+    def Int: Rule1[ParsedAst.Literal] = rule {
+      Int8 | Int16 | Int32 | Int64 | IntDefault
+    }
+
+    def IntDefault: Rule1[ParsedAst.Literal.Int32] = rule {
+      SP ~ Sign ~ Digits ~ SP ~> ParsedAst.Literal.Int32
+    }
+
+    def Int8: Rule1[ParsedAst.Literal.Int8] = rule {
+      SP ~ Sign ~ Digits ~ atomic("i8") ~ SP ~> ParsedAst.Literal.Int8
+    }
+
+    def Int16: Rule1[ParsedAst.Literal.Int16] = rule {
+      SP ~ Sign ~ Digits ~ atomic("i16") ~ SP ~> ParsedAst.Literal.Int16
+    }
+
+    def Int32: Rule1[ParsedAst.Literal.Int32] = rule {
+      SP ~ Sign ~ Digits ~ atomic("i32") ~ SP ~> ParsedAst.Literal.Int32
+    }
+
+    def Int64: Rule1[ParsedAst.Literal.Int64] = rule {
+      SP ~ Sign ~ Digits ~ atomic("i64") ~ SP ~> ParsedAst.Literal.Int64
+    }
+
+    def Str: Rule1[ParsedAst.Literal.Str] = rule {
+      SP ~ "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.All)) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
+    }
+
+    def Tag: Rule1[ParsedAst.Literal.Tag] = rule {
+      SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ Tuple) ~ SP ~>
+        ((sp1: SourcePosition, name: Name.Unresolved, ident: Name.Ident, literal: Option[ParsedAst.Literal], sp2: SourcePosition) => literal match {
+          case None => ParsedAst.Literal.Tag(sp1, name, ident, ParsedAst.Literal.Unit(sp1, sp2), sp2)
+          case Some(lit) => ParsedAst.Literal.Tag(sp1, name, ident, lit, sp2)
+        })
+    }
+
+    def Tuple: Rule1[ParsedAst.Literal] = rule {
+      SP ~ "(" ~ optWS ~ zeroOrMore(Literal).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Literal.Tuple
+    }
 
     def Sign: Rule1[Boolean] = rule {
       optional(capture("-")) ~> ((s: Option[String]) => s.nonEmpty)
@@ -573,72 +624,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       capture(oneOrMore(CharPredicate.Digit))
     }
 
-  }
-
-  def UnitLiteral: Rule1[ParsedAst.Literal.Unit] = rule {
-    SP ~ atomic("()") ~ SP ~> ParsedAst.Literal.Unit
-  }
-
-  def BoolLiteral: Rule1[ParsedAst.Literal.Bool] = rule {
-    SP ~ capture(atomic("true") | atomic("false")) ~ SP ~> ParsedAst.Literal.Bool
-  }
-
-  def CharLiteral: Rule1[ParsedAst.Literal.Char] = rule {
-    SP ~ "'" ~ capture(CharPredicate.AlphaNum) ~ "'" ~ SP ~> ParsedAst.Literal.Char
-  }
-
-  def IntLiteral: Rule1[ParsedAst.Literal] = rule {
-    Int8Literal | Int16Literal | Int32Literal | Int64Literal | IntNoSuffixLiteral
-  }
-
-  def IntNoSuffixLiteral: Rule1[ParsedAst.Literal.Int32] = rule {
-    SP ~ capture(optional("-") ~ oneOrMore(CharPredicate.Digit)) ~ SP ~> ParsedAst.Literal.Int32
-  }
-
-  def Int8Literal: Rule1[ParsedAst.Literal.Int8] = rule {
-    SP ~ capture(optional("-") ~ oneOrMore(CharPredicate.Digit)) ~ atomic("i8") ~ SP ~> ParsedAst.Literal.Int8
-  }
-
-  def Int16Literal: Rule1[ParsedAst.Literal.Int16] = rule {
-    SP ~ capture(optional("-") ~ oneOrMore(CharPredicate.Digit)) ~ atomic("i16") ~ SP ~> ParsedAst.Literal.Int16
-  }
-
-  def Int32Literal: Rule1[ParsedAst.Literal.Int32] = rule {
-    SP ~ capture(optional("-") ~ oneOrMore(CharPredicate.Digit)) ~ atomic("i32") ~ SP ~> ParsedAst.Literal.Int32
-  }
-
-  def Int64Literal: Rule1[ParsedAst.Literal.Int64] = rule {
-    SP ~ capture(optional("-") ~ oneOrMore(CharPredicate.Digit)) ~ atomic("i64") ~ SP ~> ParsedAst.Literal.Int64
-  }
-
-  def StrLiteral: Rule1[ParsedAst.Literal.Str] = rule {
-    SP ~ "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.Printable)) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
-  }
-
-  def TagLiteral: Rule1[ParsedAst.Literal.Tag] = rule {
-    SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ TupleLiteral) ~ SP ~>
-      ((sp1: SourcePosition, name: Name.Unresolved, ident: Name.Ident, literal: Option[ParsedAst.Literal], sp2: SourcePosition) => literal match {
-        case None => ParsedAst.Literal.Tag(sp1, name, ident, ParsedAst.Literal.Unit(sp1, sp2), sp2)
-        case Some(lit) => ParsedAst.Literal.Tag(sp1, name, ident, lit, sp2)
-      })
-  }
-
-  def TupleLiteral: Rule1[ParsedAst.Literal] = {
-    def Singleton: Rule1[ParsedAst.Literal] = rule {
-      "(" ~ optWS ~ Literal ~ optWS ~ ")"
-    }
-
-    def Tuple: Rule1[ParsedAst.Literal] = rule {
-      SP ~ "(" ~ optWS ~ oneOrMore(Literal).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Literal.Tuple
-    }
-
-    rule {
-      Singleton | Tuple
-    }
-  }
-
-  def SetLiteral: Rule1[ParsedAst.Literal.Set] = rule {
-    SP ~ "#{" ~ optWS ~ zeroOrMore(Literal).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Literal.Set
   }
 
   /////////////////////////////////////////////////////////////////////////////

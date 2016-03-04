@@ -338,44 +338,48 @@ object ParsedAst {
     /**
       * An AST node that represents an int8 literal.
       *
-      * @param sp1 the position of the first character in the literal.
-      * @param lit the int8 literal.
-      * @param sp2 the position of the last character in the literal.
+      * @param sp1  the position of the first character in the literal.
+      * @param sign the sign (true if signed).
+      * @param lit  the int8 literal.
+      * @param sp2  the position of the last character in the literal.
       */
-    case class Int8(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
+    case class Int8(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
     /**
       * An AST node that represents an int16 literal.
       *
-      * @param sp1 the position of the first character in the literal.
-      * @param lit the int16 literal.
-      * @param sp2 the position of the last character in the literal.
+      * @param sp1  the position of the first character in the literal.
+      * @param sign the sign (true if signed).
+      * @param lit  the int16 literal.
+      * @param sp2  the position of the last character in the literal.
       */
-    case class Int16(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
+    case class Int16(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
     /**
       * An AST node that represents an int32 literal.
       *
-      * @param sp1 the position of the first character in the literal.
-      * @param lit the int32 literal.
-      * @param sp2 the position of the last character in the literal.
+      * @param sp1  the position of the first character in the literal.
+      * @param sign the sign (true if signed).
+      * @param lit  the int32 literal.
+      * @param sp2  the position of the last character in the literal.
       */
-    case class Int32(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
+    case class Int32(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
     /**
       * An AST node that represents an int64 literal.
       *
-      * @param sp1 the position of the first character in the literal.
-      * @param lit the int64 literal.
-      * @param sp2 the position of the last character in the literal.
+      * @param sp1  the position of the first character in the literal.
+      * @param sign the sign (true if signed).
+      * @param lit  the int64 literal.
+      * @param sp2  the position of the last character in the literal.
       */
-    case class Int64(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
+    case class Int64(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -399,6 +403,7 @@ object ParsedAst {
       * @param lit  the nested literal.
       * @param sp2  the position of the last character in the literal.
       */
+    // TODO: Remove?
     case class Tag(sp1: SourcePosition, enum: Name.Unresolved, tag: Name.Ident, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Literal {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
@@ -410,6 +415,7 @@ object ParsedAst {
       * @param elms the elements of the tuple.
       * @param sp2  the position of the last character in the literal.
       */
+    // TODO: Remove?
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Literal], sp2: SourcePosition) extends ParsedAst.Literal {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
@@ -421,6 +427,7 @@ object ParsedAst {
       * @param elms the elements of the set.
       * @param sp2  the position of the last character in the literal.
       */
+    // TODO: Remove?
     case class Set(sp1: SourcePosition, elms: Seq[ParsedAst.Literal], sp2: SourcePosition) extends ParsedAst.Literal {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }

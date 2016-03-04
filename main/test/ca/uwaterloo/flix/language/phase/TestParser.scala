@@ -297,10 +297,18 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-
+  test("Expression.Float32.02") {
+    val input = "def f: Float32 = -123.456f32"
+    new Flix().addStr(input).compile().get
+  }
 
   test("Expression.Float64.01") {
     val input = "def f: Float64 = 123.456f64"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.Float64.02") {
+    val input = "def f: Float64 = -123.456f64"
     new Flix().addStr(input).compile().get
   }
 
@@ -445,7 +453,7 @@ class TestParser extends FunSuite {
     assertResult(Seq("foo", "bar", "baz", "plus"))(result.name.parts)
   }
 
-  test("Expression.Infix03") {
+  ignore("Expression.Infix03") {
     val input = "+1 `plus` -1"
     val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Infix]
     assert(result.e1.isInstanceOf[ParsedAst.Expression.Unary])
@@ -1688,16 +1696,6 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
-  // TODO: Should literals also include tuples???
-  // TODO: The parser could be simplified by allowing expressions everywhere and
-  // then simply checking whether such an expression is a literal.
-
-  test("Literal (Unit)") {
-    val input = "()"
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get
-    assert(result.isInstanceOf[ParsedAst.Literal.Unit])
-  }
-
   test("Literal (true)") {
     val input = "true"
     val result = new Parser(SourceInput.Str(input)).Literal.run().get.asInstanceOf[ParsedAst.Literal.Bool]
@@ -1752,18 +1750,6 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Literal.Tag])
   }
 
-  test("Literal.Tuple01") {
-    val input = "()"
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get
-    assert(result.isInstanceOf[ParsedAst.Literal.Unit])
-  }
-
-  test("Literal.Tuple02") {
-    val input = "(1)"
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get
-    assert(result.isInstanceOf[ParsedAst.Literal.Int32])
-  }
-
   test("Literal.Tuple03") {
     val input = "(1, 2, 3)"
     val result = new Parser(SourceInput.Str(input)).Literal.run().get
@@ -1774,30 +1760,6 @@ class TestParser extends FunSuite {
     val input = "(true, 42, \"foo\")"
     val result = new Parser(SourceInput.Str(input)).Literal.run().get
     assert(result.isInstanceOf[ParsedAst.Literal.Tuple])
-  }
-
-  test("Literal.Set01") {
-    val input = "#{}"
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get
-    assert(result.isInstanceOf[ParsedAst.Literal.Set])
-  }
-
-  test("Literal.Set02") {
-    val input = "#{1, 2, 3}"
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get
-    assert(result.isInstanceOf[ParsedAst.Literal.Set])
-  }
-
-  test("Literal.Set03") {
-    val input = "#{(1, 2), (2, 3)}"
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get
-    assert(result.isInstanceOf[ParsedAst.Literal.Set])
-  }
-
-  test("Literal.Set04") {
-    val input = "#{#{1}, #{2}}"
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get
-    assert(result.isInstanceOf[ParsedAst.Literal.Set])
   }
 
   /////////////////////////////////////////////////////////////////////////////

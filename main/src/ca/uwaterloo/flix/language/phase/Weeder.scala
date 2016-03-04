@@ -576,6 +576,7 @@ object Weeder {
     /**
       * Compiles the parsed literal `past` to a weeded literal.
       */
+    // TODO: check bounds etc
     def compile(past: ParsedAst.Literal): Validation[WeededAst.Literal, WeederError] = past match {
       case plit: ParsedAst.Literal.Unit => WeededAst.Literal.Unit(plit.loc).toSuccess
       case plit: ParsedAst.Literal.Bool => plit.lit match {
@@ -584,14 +585,24 @@ object Weeder {
         case _ => throw Compiler.InternalCompilerError("Impossible non-boolean value.")
       }
       case plit: ParsedAst.Literal.Char => WeededAst.Literal.Char(plit.lit(0), plit.loc).toSuccess
-      case plit: ParsedAst.Literal.Int8 => WeededAst.Literal.Int8(plit.lit.toByte, plit.loc).toSuccess
-      case plit: ParsedAst.Literal.Int16 => WeededAst.Literal.Int16(plit.lit.toShort, plit.loc).toSuccess
-      case plit: ParsedAst.Literal.Int32 => WeededAst.Literal.Int32(plit.lit.toInt, plit.loc).toSuccess
-      case plit: ParsedAst.Literal.Int64 => WeededAst.Literal.Int64(plit.lit.toLong, plit.loc).toSuccess
+      case plit: ParsedAst.Literal.Int8 =>
+        val s = if (plit.sign) "-" + plit.lit else plit.lit
+        WeededAst.Literal.Int8(s.toByte, plit.loc).toSuccess
+      case plit: ParsedAst.Literal.Int16 =>
+        val s = if (plit.sign) "-" + plit.lit else plit.lit
+        WeededAst.Literal.Int16(s.toShort, plit.loc).toSuccess
+      case plit: ParsedAst.Literal.Int32 =>
+        val s = if (plit.sign) "-" + plit.lit else plit.lit
+        WeededAst.Literal.Int32(s.toInt, plit.loc).toSuccess
+      case plit: ParsedAst.Literal.Int64 =>
+        val s = if (plit.sign) "-" + plit.lit else plit.lit
+        WeededAst.Literal.Int64(s.toLong, plit.loc).toSuccess
       case plit: ParsedAst.Literal.Str => WeededAst.Literal.Str(plit.lit, plit.loc).toSuccess
       case plit: ParsedAst.Literal.Tag => compile(plit.lit) map (lit => WeededAst.Literal.Tag(plit.enum, plit.tag, lit, plit.loc))
       case plit: ParsedAst.Literal.Tuple => @@(plit.elms map compile) map {
-        case elms => WeededAst.Literal.Tuple(elms, plit.loc)
+        case Nil => WeededAst.Literal.Unit(plit.loc)
+        case x :: Nil => x
+        case xs => WeededAst.Literal.Tuple(xs, plit.loc)
       }
       case plit: ParsedAst.Literal.Set => @@(plit.elms map compile) map {
         case elms => WeededAst.Literal.Set(elms, plit.loc)
@@ -625,36 +636,8 @@ object Weeder {
           case body => WeededAst.Expression.Lambda(Ast.Annotations(List.empty), args.toList, body, exp.tpe, exp.loc)
         }
 
-      // TODO: Cleanup.
-      case exp: ParsedAst.Expression.Unary => exp.e match {
-        // NB: This is necessary to parse negative int literals correctly.
-        case ParsedAst.Expression.Lit(sp1, lit, sp2) =>
-          if (exp.op == UnaryOperator.Minus) {
-            lit match {
-              case l@ParsedAst.Literal.Int8(_, s, _) => Literal.compile(l.copy(lit = "-" + s)) map {
-                case r => WeededAst.Expression.Lit(r, exp.loc)
-              }
-              case l@ParsedAst.Literal.Int16(_, s, _) => Literal.compile(l.copy(lit = "-" + s)) map {
-                case r => WeededAst.Expression.Lit(r, exp.loc)
-              }
-              case l@ParsedAst.Literal.Int32(_, s, _) => Literal.compile(l.copy(lit = "-" + s)) map {
-                case r => WeededAst.Expression.Lit(r, exp.loc)
-              }
-              case l@ParsedAst.Literal.Int64(_, s, _) => Literal.compile(l.copy(lit = "-" + s)) map {
-                case r => WeededAst.Expression.Lit(r, exp.loc)
-              }
-              case _ => compile(exp.e) map {
-                case e => WeededAst.Expression.Unary(exp.op, e, exp.loc)
-              }
-            }
-          } else {
-            compile(exp.e) map {
-              case e => WeededAst.Expression.Unary(exp.op, e, exp.loc)
-            }
-          }
-        case _ => compile(exp.e) map {
-          case e => WeededAst.Expression.Unary(exp.op, e, exp.loc)
-        }
+      case exp: ParsedAst.Expression.Unary => compile(exp.e) map {
+        case e => WeededAst.Expression.Unary(exp.op, e, exp.loc)
       }
 
       case exp: ParsedAst.Expression.Binary =>
