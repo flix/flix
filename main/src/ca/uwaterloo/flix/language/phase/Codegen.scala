@@ -42,8 +42,7 @@ object Codegen {
     case Type.Tuple(elms) => asm.Type.getDescriptor(classOf[Value.Tuple])
     case Type.Lambda(args, retTpe) => s"""(${ args.map(descriptor).mkString })${descriptor(retTpe)}"""
     case Type.Tag(_, _, _) => throw new InternalCompilerError(s"No corresponding JVM type for $tpe.")
-    case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) | Type.Native |
-         Type.Char | Type.Abs(_, _) | Type.Any => ???
+    case _ => ???
   }
 
   /*
@@ -94,10 +93,8 @@ object Codegen {
       case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int32 => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) => mv.visitInsn(ARETURN)
-      case Type.Tag(_, _, _) =>
-        throw new InternalCompilerError(s"Functions can't return type ${function.tpe.retTpe}.")
-      case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-           Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any => ???
+      case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Functions can't return type ${function.tpe.retTpe}.")
+      case _ => ???
     }
 
     // Dummy large numbers so the bytecode checker can run. Afterwards, the ASM library calculates the proper maxes.
@@ -121,18 +118,17 @@ object Codegen {
     case load: LoadExpression => compileLoadExpr(context, visitor)(load)
     case store: StoreExpression => compileStoreExpr(context, visitor)(store)
 
-    case Expression.Var(ident, offset, tpe, loc) => tpe match {
+    case Expression.Var(ident, offset, tpe, _) => tpe match {
       case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int32 => visitor.visitVarInsn(ILOAD, offset)
       case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
-      case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) =>
-        visitor.visitVarInsn(ALOAD, offset)
+      case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) => visitor.visitVarInsn(ALOAD, offset)
       case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type $tpe.")
-      case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-           Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any => ???
+      case _ => ???
     }
 
     case Expression.Ref(name, tpe, loc) => ???
     case Expression.Lambda(annotations, args, body, tpe, loc) => ???
+    case Expression.Hook(hook, tpe, loc) => ???
 
     case Expression.Apply(name, args, _, _) =>
       args.foreach(compileExpression(context, visitor))
@@ -167,8 +163,7 @@ object Codegen {
         case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) =>
           visitor.visitVarInsn(ASTORE, offset)
         case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type ${exp1.tpe}.")
-        case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-             Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any => ???
+        case _ => ???
       }
       compileExpression(context, visitor)(exp2)
 
@@ -243,10 +238,14 @@ object Codegen {
       visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "<init>",
         "([Ljava/lang/Object;)V", false)
 
+    case Expression.CheckNil(exp, loc) => ???
+    case Expression.CheckCons(exp, loc) => ???
+
     case Expression.Set(elms, tpe, loc) => ???
 
     case Expression.UserError(_, loc) => compileThrow(context, visitor)(s"Runtime error at ${loc.format}")
     case Expression.MatchError(_, loc) => compileThrow(context, visitor)(s"Match error at ${loc.format}")
+    case Expression.SwitchError(_, loc) => compileThrow(context, visitor)(s"Switch error at ${loc.format}")
   }
 
   /*
@@ -302,8 +301,7 @@ object Codegen {
     case Type.Unit | Type.Enum(_, _) | Type.Tuple(_) =>
       compileExpression(context, visitor)(exp)
     case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type ${exp.tpe}.")
-    case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-         Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any => ???
+    case _ => ???
   }
 
   /*
@@ -331,8 +329,7 @@ object Codegen {
     case Type.Enum(_, _) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tag")
     case Type.Tuple(_) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tuple")
     case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type $tpe.")
-    case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-         Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any => ???
+    case _ => ???
   }
 
   /*
@@ -484,10 +481,7 @@ object Codegen {
       visitor.visitInsn(I2S)
     case Type.Int32 | Type.Int32 => visitor.visitInsn(INEG)
     case Type.Int64 => visitor.visitInsn(LNEG)
-    case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
-         Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-         Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any =>
-      throw new InternalCompilerError(s"Can't apply UnaryOperator.Minus to type $tpe.")
+    case _ => throw new InternalCompilerError(s"Can't apply UnaryOperator.Minus to type $tpe.")
   }
 
   /*
@@ -513,10 +507,7 @@ object Codegen {
       case Type.Int64 =>
         visitor.visitInsn(I2L)
         visitor.visitInsn(LXOR)
-      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
-           Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-           Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any =>
-        throw new InternalCompilerError(s"Can't apply UnaryOperator.Negate to type $tpe.")
+      case _ => throw new InternalCompilerError(s"Can't apply UnaryOperator.Negate to type $tpe.")
     }
   }
 
@@ -560,10 +551,7 @@ object Codegen {
         visitor.visitInsn(I2S)
       case Type.Int32 | Type.Int32 => visitor.visitInsn(intOp)
       case Type.Int64 => visitor.visitInsn(longOp)
-      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
-           Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-           Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any =>
-        throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
+      case _ => throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
     }
   }
 
@@ -589,10 +577,7 @@ object Codegen {
       case Type.Int64 =>
         visitor.visitInsn(LCMP)
         visitor.visitJumpInsn(longOp, condElse)
-      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
-           Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-           Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any =>
-        throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
+      case _=> throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
     }
     visitor.visitInsn(ICONST_1)
     visitor.visitJumpInsn(GOTO, condEnd)
@@ -705,10 +690,7 @@ object Codegen {
         if (intOp == ISHL) visitor.visitInsn(I2S)
       case Type.Int32 | Type.Int32 => visitor.visitInsn(intOp)
       case Type.Int64 => visitor.visitInsn(longOp)
-      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
-           Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-           Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any =>
-        throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
+      case _ => throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
     }
   }
 
