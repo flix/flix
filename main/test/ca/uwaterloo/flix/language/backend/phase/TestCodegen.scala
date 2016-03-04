@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.backend.phase
 import java.lang.reflect.InvocationTargetException
 import java.nio.file.{Files, Paths}
 
+import ca.uwaterloo.flix.api.{MatchException, SwitchException, UserException}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition.Function
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
@@ -4457,7 +4458,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    intercept[RuntimeException] { code.call(name) }
+    intercept[UserException] { code.call(name) }
   }
 
   test("Codegen - Binary.Or01") {
@@ -4539,7 +4540,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    intercept[RuntimeException] { code.call(name) }
+    intercept[UserException] { code.call(name) }
   }
 
   test("Codegen - Binary.Implication01") {
@@ -4621,7 +4622,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    intercept[RuntimeException] { code.call(name) }
+    intercept[UserException] { code.call(name) }
   }
 
   test("Codegen - Binary.Biconditional01") {
@@ -6348,7 +6349,7 @@ class TestCodegen extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Error and MatchError                                                    //
+  // Error, MatchError, and SwitchError                                      //
   /////////////////////////////////////////////////////////////////////////////
 
   test("Codegen - Error01") {
@@ -6357,7 +6358,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int8), loc)
 
     val code = new CompiledCode(List(definition))
-    intercept[RuntimeException] { code.call(name) }
+    intercept[UserException] { code.call(name) }
   }
 
   test("Codegen - MatchError01") {
@@ -6366,7 +6367,16 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int8), loc)
 
     val code = new CompiledCode(List(definition))
-    intercept[RuntimeException] { code.call(name) }
+    intercept[MatchException] { code.call(name) }
+  }
+
+  test("Codegen - SwitchError01") {
+    val definition = Function(name, args = List(),
+      body = SwitchError(Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
+
+    val code = new CompiledCode(List(definition))
+    intercept[SwitchException] { code.call(name) }
   }
 
 }

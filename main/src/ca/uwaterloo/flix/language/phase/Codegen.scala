@@ -243,9 +243,33 @@ object Codegen {
 
     case Expression.Set(elms, tpe, loc) => ???
 
-    case Expression.UserError(_, loc) => compileThrow(context, visitor)(s"Runtime error at ${loc.format}")
-    case Expression.MatchError(_, loc) => compileThrow(context, visitor)(s"Match error at ${loc.format}")
-    case Expression.SwitchError(_, loc) => compileThrow(context, visitor)(s"Switch error at ${loc.format}")
+    case Expression.UserError(_, loc) =>
+      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/api/UserException")
+      visitor.visitInsn(DUP)
+      visitor.visitLdcInsn(s"User exception: ${loc.format}.")
+      // TODO: Load actual source location or change UserException
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "MODULE$", "Lca/uwaterloo/flix/language/ast/package$SourceLocation$;")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "Unknown", "()Lca/uwaterloo/flix/language/ast/package$SourceLocation;", false)
+      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/api/UserException", "<init>", "(Ljava/lang/String;Lca/uwaterloo/flix/language/ast/package$SourceLocation;)V", false)
+      visitor.visitInsn(ATHROW)
+    case Expression.MatchError(_, loc) =>
+      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/api/MatchException")
+      visitor.visitInsn(DUP)
+      visitor.visitLdcInsn(s"Non-exhaustive match expression: ${loc.format}.")
+      // TODO: Load actual source location or change MatchException
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "MODULE$", "Lca/uwaterloo/flix/language/ast/package$SourceLocation$;")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "Unknown", "()Lca/uwaterloo/flix/language/ast/package$SourceLocation;", false)
+      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/api/MatchException", "<init>", "(Ljava/lang/String;Lca/uwaterloo/flix/language/ast/package$SourceLocation;)V", false)
+      visitor.visitInsn(ATHROW)
+    case Expression.SwitchError(_, loc) =>
+      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/api/SwitchException")
+      visitor.visitInsn(DUP)
+      visitor.visitLdcInsn(s"Non-exhaustive switch expression: ${loc.format}.")
+      // TODO: Load actual source location or change SwitchException
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "MODULE$", "Lca/uwaterloo/flix/language/ast/package$SourceLocation$;")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "Unknown", "()Lca/uwaterloo/flix/language/ast/package$SourceLocation;", false)
+      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/api/SwitchException", "<init>", "(Ljava/lang/String;Lca/uwaterloo/flix/language/ast/package$SourceLocation;)V", false)
+      visitor.visitInsn(ATHROW)
   }
 
   /*
@@ -692,15 +716,6 @@ object Codegen {
       case Type.Int64 => visitor.visitInsn(longOp)
       case _ => throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
     }
-  }
-
-  // TODO: A better exception to throw?
-  private def compileThrow(context: Context, visitor: MethodVisitor)(message: String): Unit = {
-    visitor.visitTypeInsn(NEW, "java/lang/RuntimeException")
-    visitor.visitInsn(DUP)
-    visitor.visitLdcInsn(message)
-    visitor.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V", false)
-    visitor.visitInsn(ATHROW)
   }
 
 }
