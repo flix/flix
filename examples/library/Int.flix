@@ -1,17 +1,25 @@
+// TODO: What kind of overloading can we allow for minValue, what about min??
+
 namespace Int {
 
-    // TODO: Would this be useful to have?
+    /**
+     * Returns the minimum number representable by an `Int32` equivalent to `-2^16`.
+     */
+    extern def minValue: Int32
 
-    fn minValue(): Int = extern
+    /**
+     * Returns the maximum number representable by an `Int32` equivalent to `2^16 - 1`.
+     */
+    extern def maxValue: Int32
 
-    fn maxValue(): Int = extern
+    /**
+     * Returns the smaller of `x` and `y`.
+     */
+    extern def min(x: Int32, y: Int32): Int32
 
-    fn min(x: Int, y: Int): Int = extern
-
-    fn max(x: Int, y: Int): Int = extern
-
-    // or alternatively.
-
-    extern fn toChar(x: Int): Char
+    /**
+     * Returns the larger of `x` and `y`.
+     */
+    extern def max(x: Int32, y: Int32): Int32
 
 }
