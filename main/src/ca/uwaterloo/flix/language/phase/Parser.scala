@@ -52,7 +52,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Definition: Rule1[ParsedAst.Definition] = rule {
-    FunctionDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition | IndexDefinition | LawDefinition | ClassDefinition | ImplDefinition
+    FunctionDefinition | ExternDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition | IndexDefinition | LawDefinition | ClassDefinition | ImplDefinition
   }
 
   def FunctionDefinition: Rule1[ParsedAst.Definition.Function] = {
@@ -67,6 +67,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def SignatureDefinition: Rule1[ParsedAst.Definition.Signature] = rule {
     SP ~ atomic("fn") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Definition.Signature
+  }
+
+  def ExternDefinition: Rule1[ParsedAst.Definition.External] = rule {
+    SP ~ atomic("external") ~ optWS ~ atomic("def") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Definition.External
   }
 
   def LawDefinition: Rule1[ParsedAst.Definition.Law] = rule {

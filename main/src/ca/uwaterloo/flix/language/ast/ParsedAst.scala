@@ -158,7 +158,7 @@ object ParsedAst {
     }
 
     /**
-      * An AST node that represents a function signature.
+      * An AST node that represents a signature of a function.
       *
       * @param sp1     the position of the first character in the definition.
       * @param ident   the name of the function.
@@ -167,6 +167,19 @@ object ParsedAst {
       * @param sp2     the position of the last character in the definition.
       */
     case class Signature(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, sp2: SourcePosition) extends ParsedAst.Definition {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents an external function.
+      *
+      * @param sp1     the position of the first character in the definition.
+      * @param ident   the name of the function.
+      * @param formals the formals (i.e. parameters and their types).
+      * @param tpe     the return type.
+      * @param sp2     the position of the last character in the definition.
+      */
+    case class External(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, sp2: SourcePosition) extends ParsedAst.Definition {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 

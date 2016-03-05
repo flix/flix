@@ -8,20 +8,20 @@ namespace List {
     // Basic Operations                                                     ///
     ///////////////////////////////////////////////////////////////////////////
 
-    extern def null(xs: List[A]): Bool
+    external def null(xs: List[A]): Bool
 
 
     ///////////////////////////////////////////////////////////////////////////
     // List Transformation                                                  ///
     ///////////////////////////////////////////////////////////////////////////
 
-    extern def map(f: A => B, xs: List[A]): List[B]
+    external def map(f: (A) -> B, xs: List[A]): List[B]
 
 
     ///////////////////////////////////////////////////////////////////////////
     // List Predicates                                                      ///
     ///////////////////////////////////////////////////////////////////////////
 
-    extern def isPrefixOf(xs: List[A], ys: List[B]): Bool
+    external def isPrefixOf(xs: List[A], ys: List[B]): Bool
 
 }
