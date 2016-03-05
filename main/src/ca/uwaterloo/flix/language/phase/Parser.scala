@@ -296,6 +296,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     SP ~ SimpleExpression ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Apply
   }
 
+  // TODO: Cleanup
   def TagExpression: Rule1[ParsedAst.Expression.Tag] = rule {
     SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ TupleExpression) ~ SP ~>
       ((sp1: SourcePosition, name: Name.Unresolved, ident: Name.Ident, exp: Option[ParsedAst.Expression], sp2: SourcePosition) => exp match {
@@ -364,6 +365,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   object Patterns {
+
     def Wildcard: Rule1[ParsedAst.Pattern.Wildcard] = rule {
       SP ~ atomic("_") ~ SP ~> ParsedAst.Pattern.Wildcard
     }
@@ -387,6 +389,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def Tuple: Rule1[ParsedAst.Pattern] = rule {
       SP ~ "(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Pattern.Tuple
     }
+
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -425,47 +428,37 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // NB: InfixTerm must be parsed before SimpleTerm.
   def Term: Rule1[ParsedAst.Term] = rule {
-    InfixTerm | SimpleTerm
+    Terms.Apply | Terms.Tag | Terms.Tuple | Terms.Literal | Terms.Wildcard | Terms.Variable
   }
 
-  // NB: AscribeTerm must be parsed before BaseTerm.
-  def SimpleTerm: Rule1[ParsedAst.Term] = rule {
-    AscribeTerm | BaseTerm
+  object Terms {
+
+    def Wildcard: Rule1[ParsedAst.Term.Wildcard] = rule {
+      SP ~ atomic("_") ~ SP ~> ParsedAst.Term.Wildcard
+    }
+
+    def Variable: Rule1[ParsedAst.Term.Var] = rule {
+      SP ~ Ident ~ SP ~> ParsedAst.Term.Var
+    }
+
+    def Literal: Rule1[ParsedAst.Term.Lit] = rule {
+      SP ~ Parser.this.Literal ~ SP ~> ParsedAst.Term.Lit
+    }
+
+    def Tag: Rule1[ParsedAst.Term.Tag] = rule {
+      SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ Tuple) ~ SP ~> ParsedAst.Term.Tag
+    }
+
+    def Tuple: Rule1[ParsedAst.Term.Tuple] = rule {
+      SP ~ "(" ~ optWS ~ zeroOrMore(Term).separatedBy(CommaSep) ~ optWS ~ ")" ~ SP ~> ParsedAst.Term.Tuple
+    }
+
+    def Apply: Rule1[ParsedAst.Term.Apply] = rule {
+      SP ~ QName ~ optWS ~ "(" ~ zeroOrMore(Term).separatedBy(CommaSep) ~ optWS ~ ")" ~ SP ~> ParsedAst.Term.Apply
+    }
+
   }
 
-  // NB: ApplyTerm must be parsed before LiteralTerm which must be parsed before VariableTerm.
-  def BaseTerm: Rule1[ParsedAst.Term] = rule {
-    ApplyTerm | ParenTerm | LiteralTerm | WildcardTerm | VariableTerm
-  }
-
-  // TODO: Probably unfold singleton tuples.
-  def ParenTerm: Rule1[ParsedAst.Term] = rule {
-    "(" ~ optWS ~ Term ~ optWS ~ ")"
-  }
-
-  def WildcardTerm: Rule1[ParsedAst.Term] = rule {
-    SP ~ atomic("_") ~ SP ~> ParsedAst.Term.Wildcard
-  }
-
-  def VariableTerm: Rule1[ParsedAst.Term.Var] = rule {
-    SP ~ Ident ~ SP ~> ParsedAst.Term.Var
-  }
-
-  def LiteralTerm: Rule1[ParsedAst.Term.Lit] = rule {
-    SP ~ Literal ~ SP ~> ParsedAst.Term.Lit
-  }
-
-  def AscribeTerm: Rule1[ParsedAst.Term.Ascribe] = rule {
-    SP ~ BaseTerm ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Term.Ascribe
-  }
-
-  def ApplyTerm: Rule1[ParsedAst.Term.Apply] = rule {
-    SP ~ QName ~ optWS ~ "(" ~ zeroOrMore(Term).separatedBy("," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Term.Apply
-  }
-
-  def InfixTerm: Rule1[ParsedAst.Term.Infix] = rule {
-    SP ~ SimpleTerm ~ optWS ~ "`" ~ QName ~ "`" ~ optWS ~ SimpleTerm ~ SP ~> ParsedAst.Term.Infix
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
@@ -546,7 +539,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    Literals.Bool | Literals.Char | Literals.Float | Literals.Int | Literals.Str | Literals.Tag
+    Literals.Bool | Literals.Char | Literals.Float | Literals.Int | Literals.Str
   }
 
   object Literals {
@@ -601,14 +594,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Str: Rule1[ParsedAst.Literal.Str] = rule {
       SP ~ "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.All)) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
-    }
-
-    def Tag: Rule1[ParsedAst.Literal.Tag] = rule {
-      SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ Literal) ~ SP ~>
-        ((sp1: SourcePosition, name: Name.Unresolved, ident: Name.Ident, literal: Option[ParsedAst.Literal], sp2: SourcePosition) => literal match {
-          case None => ParsedAst.Literal.Tag(sp1, name, ident, ParsedAst.Literal.Unit(sp1, sp2), sp2)
-          case Some(lit) => ParsedAst.Literal.Tag(sp1, name, ident, lit, sp2)
-        })
     }
 
     def Sign: Rule1[Boolean] = rule {
@@ -721,6 +706,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def NewLine: Rule0 = rule {
     "\n" | "\r\n"
+  }
+
+  def CommaSep: Rule0 = rule {
+    optWS ~ "," ~ optWS
   }
 
   /////////////////////////////////////////////////////////////////////////////

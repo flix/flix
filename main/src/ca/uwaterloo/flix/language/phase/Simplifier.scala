@@ -95,22 +95,22 @@ object Simplifier {
           * Given the code:
           *
           * match x with {
-          *   case PATTERN_1 => BODY_1
-          *   case PATTERN_2 => BODY_2
-          *   ...
-          *   case PATTERN_N => BODY_N
+          * case PATTERN_1 => BODY_1
+          * case PATTERN_2 => BODY_2
+          * ...
+          * case PATTERN_N => BODY_N
           * }
           *
           * The structure of the generated code is as follows:
           *
           * let v' = x in
-          *   let fallthrough = fn () = ERROR in
+          * let fallthrough = fn () = ERROR in
           *
-          *     let v_n = fn () if (PATTERN_N succeeds) BODY_N else fallthrough() in
-          *       ...
-          *       let v_2 = fn () = if (PATTERN_2 succeeds) BODY_2 else v_3() in
-          *         let v_1 = fn () = if (PATTERN_1 succeeds) BODY_1 else v_2() in
-          *           v_1()
+          * let v_n = fn () if (PATTERN_N succeeds) BODY_N else fallthrough() in
+          * ...
+          * let v_2 = fn () = if (PATTERN_2 succeeds) BODY_2 else v_3() in
+          * let v_1 = fn () = if (PATTERN_1 succeeds) BODY_1 else v_2() in
+          * v_1()
           */
 
         /**
@@ -287,7 +287,6 @@ object Simplifier {
       case TypedAst.Literal.Int32(i, loc) => SimplifiedAst.Expression.Int32(i)
       case TypedAst.Literal.Int64(i, loc) => SimplifiedAst.Expression.Int64(i)
       case TypedAst.Literal.Str(s, loc) => SimplifiedAst.Expression.Str(s)
-      case TypedAst.Literal.Tag(enum, tag, lit, tpe, loc) => SimplifiedAst.Expression.Tag(enum, tag, simplify(lit), tpe, loc)
     }
   }
 
@@ -321,8 +320,16 @@ object Simplifier {
     def simplify(tast: TypedAst.Term.Head)(implicit genSym: GenSym): SimplifiedAst.Term.Head = tast match {
       case TypedAst.Term.Head.Var(ident, tpe, loc) => SimplifiedAst.Term.Head.Var(ident, tpe, loc)
       case TypedAst.Term.Head.Lit(lit, tpe, loc) => SimplifiedAst.Term.Head.Exp(Literal.simplify(lit), tpe, loc)
+      case TypedAst.Term.Head.Tag(enum, tag, t, tpe, loc) => SimplifiedAst.Term.Head.Exp(toExp(tast), tpe, loc)
+      case TypedAst.Term.Head.Tuple(elms, tpe, loc) => SimplifiedAst.Term.Head.Exp(toExp(tast), tpe, loc)
       case TypedAst.Term.Head.Apply(name, args, tpe, loc) => SimplifiedAst.Term.Head.Apply(name, args map simplify, tpe, loc)
       case TypedAst.Term.Head.ApplyHook(hook, args, tpe, loc) => SimplifiedAst.Term.Head.ApplyHook(hook, args map simplify, tpe, loc)
+    }
+
+    def toExp(tast: TypedAst.Term.Head)(implicit genSym: GenSym): SimplifiedAst.Expression = tast match {
+      case TypedAst.Term.Head.Lit(lit, tpe, loc) => Literal.simplify(lit)
+      case TypedAst.Term.Head.Tag(enum, tag, t, tpe, loc) => SimplifiedAst.Expression.Tag(enum, tag, toExp(t), tpe, loc)
+      case TypedAst.Term.Head.Tuple(elms, tpe, loc) => SimplifiedAst.Expression.Tuple(elms.map(e => toExp(e)), tpe, loc)
     }
 
     def simplify(tast: TypedAst.Term.Body)(implicit genSym: GenSym): SimplifiedAst.Term.Body = tast match {

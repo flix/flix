@@ -146,12 +146,6 @@ class TestWeeder extends FunSuite {
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalBodyTerm])
   }
 
-  test("IllegalBodyTerm03") {
-    val input = "P(x, y) :- A(x, y), B(x `f` y)."
-    val result = new Flix().addStr(input).solve()
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalBodyTerm])
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Illegal Index                                                           //
   /////////////////////////////////////////////////////////////////////////////

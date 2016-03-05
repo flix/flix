@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -275,12 +275,6 @@ object Typer {
         case ResolvedAst.Literal.Int32(i, loc) => TypedAst.Literal.Int32(i, loc)
         case ResolvedAst.Literal.Int64(i, loc) => TypedAst.Literal.Int64(i, loc)
         case ResolvedAst.Literal.Str(s, loc) => TypedAst.Literal.Str(s, loc)
-        case ResolvedAst.Literal.Tag(name, ident, rlit, loc) =>
-          val defn = root.enums(name)
-          val cases = defn.cases.map {
-            case (tag, tpe) => tag -> tpe.asInstanceOf[Type.Tag]
-          }
-          TypedAst.Literal.Tag(name, ident, visit(rlit), Type.Enum(name, cases), loc)
       }
 
       visit(rast)
@@ -430,7 +424,7 @@ object Typer {
                   case (Type.Int16, Type.Int16) => TypedAst.Expression.Binary(op, e1, e2, Type.Int16, loc).toSuccess
                   case (Type.Int32, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int32, loc).toSuccess
                   case (Type.Int64, Type.Int64) => TypedAst.Expression.Binary(op, e1, e2, Type.Int64, loc).toSuccess
-                  case (t1, t2) => TypeError.ExpectedEqualTypes(t1, t2, e1.loc, e2.loc).toFailure  // TODO: Wrong error message.
+                  case (t1, t2) => TypeError.ExpectedEqualTypes(t1, t2, e1.loc, e2.loc).toFailure // TODO: Wrong error message.
                 }
               }
             }
@@ -697,9 +691,23 @@ object Typer {
         expect(tpe, lit.tpe, loc) map {
           case _ => TypedAst.Term.Head.Lit(lit, lit.tpe, loc)
         }
-      case ResolvedAst.Term.Head.Ascribe(rterm, rtpe, loc) =>
-        val ascribedType = rtpe
-        typer(rterm, ascribedType, root)
+
+      case ResolvedAst.Term.Head.Tag(enum, tag, term, loc) =>
+        val inner = tpe.asInstanceOf[Type.Enum]
+        Term.typer(term, inner.cases(tag.name).tpe, root) map {
+          case t => TypedAst.Term.Head.Tag(enum, tag, t, tpe.asInstanceOf[Type.Enum], loc)
+        }
+
+      case ResolvedAst.Term.Head.Tuple(relms, loc) =>
+        val telms = tpe.asInstanceOf[Type.Tuple].elms
+        val inner = (relms zip telms) map {
+          case (e, t) => Term.typer(e, t, root)
+        }
+
+        @@(inner) map {
+          case elms => TypedAst.Term.Head.Tuple(elms, tpe.asInstanceOf[Type.Tuple], loc)
+        }
+
       case ResolvedAst.Term.Head.Apply(name, actuals, loc) =>
         // TODO: This needs to be rewritten
 

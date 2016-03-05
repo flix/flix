@@ -249,17 +249,6 @@ object TypedAst {
       final val tpe = Type.Str
     }
 
-    /**
-      * A typed AST node representing a tagged literal.
-      *
-      * @param enum the enum name.
-      * @param tag  the tag name.
-      * @param lit  the nested literal.
-      * @param tpe  the type of the tag.
-      * @param loc  the source location.
-      */
-    case class Tag(enum: Name.Resolved, tag: Name.Ident, lit: TypedAst.Literal, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Literal
-
   }
 
   sealed trait Expression extends TypedAst {
@@ -653,6 +642,10 @@ object TypedAst {
         * @param loc     the source location.
         */
       case class Lit(literal: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
+
+      case class Tag(enumName: Name.Resolved, tagName: Name.Ident, t: TypedAst.Term.Head, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Term.Head
+
+      case class Tuple(elms: List[TypedAst.Term.Head], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Term.Head
 
       /**
         * A typed AST node representing a function call term.

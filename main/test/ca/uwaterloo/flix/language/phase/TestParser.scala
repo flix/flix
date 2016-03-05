@@ -1102,72 +1102,6 @@ class TestParser extends FunSuite {
     assertResult(Seq("x", "y", "z"))(result.args.map(_.asInstanceOf[ParsedAst.Term.Var].ident.name))
   }
 
-  test("Term.Tag01") {
-    val input = "Foo.Bar"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get.asInstanceOf[ParsedAst.Term.Lit]
-    assert(result.lit.isInstanceOf[ParsedAst.Literal.Tag])
-  }
-
-  test("Term.Tag02") {
-    val input = "Foo.Bar(1)"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get.asInstanceOf[ParsedAst.Term.Lit]
-    assert(result.lit.isInstanceOf[ParsedAst.Literal.Tag])
-  }
-
-  test("Term.Tag03") {
-    val input = "foo::bar::Baz.Bar(1, 2, 3)"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get.asInstanceOf[ParsedAst.Term.Lit]
-    assert(result.lit.isInstanceOf[ParsedAst.Literal.Tag])
-  }
-
-  ignore("Term.Ascribe01") {
-    val input = "(): Unit"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get
-    assert(result.isInstanceOf[ParsedAst.Term.Ascribe])
-  }
-
-  test("Term.Ascribe02") {
-    val input = "true: Bool"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get
-    assert(result.isInstanceOf[ParsedAst.Term.Ascribe])
-  }
-
-  test("Term.Ascribe03") {
-    val input = "42: Int"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get
-    assert(result.isInstanceOf[ParsedAst.Term.Ascribe])
-  }
-
-  test("Term.Ascribe04") {
-    val input = "\"foo\": Str"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get
-    assert(result.isInstanceOf[ParsedAst.Term.Ascribe])
-  }
-
-  test("Term.Ascribe05") {
-    val input = "((1: Int): Int) : Int"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get
-    assert(result.isInstanceOf[ParsedAst.Term.Ascribe])
-  }
-
-  test("Term.Infix01") {
-    val input = "1 `plus` 2"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get
-    assert(result.isInstanceOf[ParsedAst.Term.Infix])
-  }
-
-  test("Term.Infix02") {
-    val input = "x `plus` y"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get
-    assert(result.isInstanceOf[ParsedAst.Term.Infix])
-  }
-
-  test("Term.Infix03") {
-    val input = "Foo.Bar `plus` Baz.Qux"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get
-    assert(result.isInstanceOf[ParsedAst.Term.Infix])
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
@@ -1724,30 +1658,6 @@ class TestParser extends FunSuite {
     val input = "\"foo\""
     val result = new Parser(SourceInput.Str(input)).Literal.run().get.asInstanceOf[ParsedAst.Literal.Str]
     assertResult("foo")(result.lit)
-  }
-
-  test("Literal.Tag01") {
-    val input = "Foo.Bar"
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get
-    assert(result.isInstanceOf[ParsedAst.Literal.Tag])
-  }
-
-  test("Literal.Tag02") {
-    val input = "Foo.Bar()"
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get
-    assert(result.isInstanceOf[ParsedAst.Literal.Tag])
-  }
-
-  test("Literal.Tag03") {
-    val input = "Foo.Bar Baz.Quux"
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get
-    assert(result.isInstanceOf[ParsedAst.Literal.Tag])
-  }
-
-  test("Literal.Tag04") {
-    val input = "quux::Foo.Bar(true, 42, \"foo\")"
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get
-    assert(result.isInstanceOf[ParsedAst.Literal.Tag])
   }
 
   /////////////////////////////////////////////////////////////////////////////

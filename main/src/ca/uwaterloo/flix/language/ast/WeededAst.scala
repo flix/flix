@@ -233,16 +233,6 @@ object WeededAst {
       */
     case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Literal
 
-    /**
-      * An AST node that represents a tagged literal.
-      *
-      * @param enum    the enum name.
-      * @param tag     the tag name.
-      * @param literal the literal
-      * @param loc     the source location of the literal.
-      */
-    case class Tag(enum: Name.Unresolved, tag: Name.Ident, literal: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Literal
-
   }
 
   /**
@@ -560,6 +550,10 @@ object WeededAst {
         */
       case class Lit(lit: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Term.Head
 
+      case class Tag(enumName: Name.Unresolved, tagName: Name.Ident, t: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Term.Head
+
+      case class Tuple(elms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Term.Head
+
       /**
         * An apply term (function call).
         *
@@ -568,15 +562,6 @@ object WeededAst {
         * @param loc  the source location.
         */
       case class Apply(name: Name.Unresolved, args: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Term.Head
-
-      /**
-        * An ascribe term.
-        *
-        * @param term the ascribed term.
-        * @param tpe  the typed of the ascribed term.
-        * @param loc  the source location.
-        */
-      case class Ascribe(term: Head, tpe: Type, loc: SourceLocation) extends WeededAst.Term.Head
 
     }
 
@@ -588,7 +573,7 @@ object WeededAst {
     object Body {
 
       /**
-        * A wilcard variable.
+        * A wildcard variable.
         *
         * @param loc the source location.
         */

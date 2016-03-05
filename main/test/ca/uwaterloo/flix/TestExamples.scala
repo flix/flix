@@ -26,11 +26,11 @@ class TestExamples extends FunSuite {
         |
         |    A(5, not(Belnap.False)).
         |
-        |    A(6, Belnap.True `and` Belnap.False).
+        |    A(6, and(Belnap.True, Belnap.False)).
         |
-        |    A(7, Belnap.True `or` Belnap.False).
+        |    A(7, or(Belnap.True, Belnap.False)).
         |
-        |    A(8, Belnap.True `xor` Belnap.False).
+        |    A(8, xor(Belnap.True, Belnap.False)).
         |}
       """.stripMargin
 
@@ -72,13 +72,13 @@ class TestExamples extends FunSuite {
         |
         |    A(4, x) :- A(1, x), A(2, x).
         |
-        |    A(5, Parity.Odd `plus` Parity.Even).
+        |    A(5, plus(Parity.Odd, Parity.Even)).
         |
-        |    A(6, Parity.Odd `plus` Parity.Odd).
+        |    A(6, plus(Parity.Odd, Parity.Odd)).
         |
-        |    A(7, Parity.Odd `times` Parity.Even).
+        |    A(7, times(Parity.Odd, Parity.Even)).
         |
-        |    A(8, Parity.Odd `times` Parity.Odd).
+        |    A(8, times(Parity.Odd, Parity.Odd)).
         |}
       """.stripMargin
 
@@ -123,11 +123,11 @@ class TestExamples extends FunSuite {
         |
         |    A(5, x) :- A(1, x), A(2, x), A(3, x).
         |
-        |    A(6, Sign.Zer `plus` Sign.Pos).
-        |    A(7, Sign.Neg `plus` Sign.Pos).
+        |    A(6, plus(Sign.Zer, Sign.Pos)).
+        |    A(7, plus(Sign.Neg, Sign.Pos)).
         |
-        |    A(8, Sign.Zer `times` Sign.Pos).
-        |    A(9, Sign.Neg `times` Sign.Neg).
+        |    A(8, times(Sign.Zer, Sign.Pos)).
+        |    A(9, times(Sign.Neg, Sign.Neg)).
         |}
       """.stripMargin
 
@@ -174,8 +174,8 @@ class TestExamples extends FunSuite {
         |
         |    A(4, x) :- A(0, x), A(1, x), A(2, x).
         |
-        |    A(5, x `plus` y)  :- A(0, x), A(2, y).
-        |    A(6, x `times` y) :- A(1, x), A(2, y).
+        |    A(5, plus(x, y))  :- A(0, x), A(2, y).
+        |    A(6, times(x, y)) :- A(1, x), A(2, y).
         |}
       """.stripMargin
 
@@ -226,7 +226,7 @@ class TestExamples extends FunSuite {
         |
         |    A(8, x) :- A(4, x), A(5, x). // 8 -> pos
         |
-        |    A(9, x `times` y) :- A(1, x), A(1, y). // 9 -> 1
+        |    A(9, times(x, y)) :- A(1, x), A(1, y). // 9 -> 1
         |}
       """.stripMargin
 

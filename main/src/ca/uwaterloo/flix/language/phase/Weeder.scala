@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
+import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -606,7 +606,6 @@ object Weeder {
         val s = if (plit.sign) "-" + plit.lit else plit.lit
         WeededAst.Literal.Int64(s.toLong, plit.loc).toSuccess
       case plit: ParsedAst.Literal.Str => WeededAst.Literal.Str(plit.lit, plit.loc).toSuccess
-      case plit: ParsedAst.Literal.Tag => compile(plit.lit) map (lit => WeededAst.Literal.Tag(plit.enum, plit.tag, lit, plit.loc))
     }
   }
 
@@ -841,17 +840,24 @@ object Weeder {
         case term: ParsedAst.Term.Lit => Literals.compile(term.lit) map {
           case lit => WeededAst.Term.Head.Lit(lit, term.loc)
         }
-        case term: ParsedAst.Term.Ascribe =>
-          compile(term.term, aliases) map {
-            case t => WeededAst.Term.Head.Ascribe(t, term.tpe, term.loc)
+        case term: ParsedAst.Term.Tag => term.t match {
+          case None =>
+            val unit = WeededAst.Term.Head.Lit(WeededAst.Literal.Unit(term.loc), term.loc)
+            WeededAst.Term.Head.Tag(term.enumName, term.tagName, unit, term.loc).toSuccess
+          case Some(t) => compile(t, aliases) map {
+            case inner => WeededAst.Term.Head.Tag(term.enumName, term.tagName, inner, term.loc)
           }
+        }
+        case term: ParsedAst.Term.Tuple => term.elms.toList match {
+          case Nil => WeededAst.Term.Head.Lit(WeededAst.Literal.Unit(term.loc), term.loc).toSuccess
+          case x :: Nil => compile(x, aliases)
+          case xs => @@(xs map (x => compile(x, aliases))) map {
+            case elms => WeededAst.Term.Head.Tuple(elms, term.loc)
+          }
+        }
         case term: ParsedAst.Term.Apply =>
           @@(term.args map (t => compile(t, aliases))) map {
             case args => WeededAst.Term.Head.Apply(term.name, args, term.loc)
-          }
-        case term: ParsedAst.Term.Infix =>
-          @@(compile(term.t1, aliases), compile(term.t2, aliases)) map {
-            case (t1, t2) => WeededAst.Term.Head.Apply(term.name, List(t1, t2), term.loc)
           }
       }
     }
@@ -866,12 +872,9 @@ object Weeder {
         case term: ParsedAst.Term.Lit => Literals.compile(term.lit) map {
           case lit => WeededAst.Term.Body.Lit(lit, term.loc)
         }
-        case term: ParsedAst.Term.Ascribe =>
-          compile(term.term) map {
-            case t => WeededAst.Term.Body.Ascribe(t, term.tpe, term.loc)
-          }
+        case term: ParsedAst.Term.Tag => IllegalBodyTerm("Tags calls may not occur in body predicates.", term.loc).toFailure
+        case term: ParsedAst.Term.Tuple => IllegalBodyTerm("Tuples may not occur in body predicates.", term.loc).toFailure
         case term: ParsedAst.Term.Apply => IllegalBodyTerm("Function calls may not occur in body predicates.", term.loc).toFailure
-        case term: ParsedAst.Term.Infix => IllegalBodyTerm("Function calls may not occur in body predicates.", term.loc).toFailure
       }
     }
 

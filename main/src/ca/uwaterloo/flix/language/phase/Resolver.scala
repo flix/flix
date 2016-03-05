@@ -1,10 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
-import java.lang.reflect.{Field, Method, Modifier}
-
-import ca.uwaterloo.flix.language.{CompilationError, Compiler}
-import ca.uwaterloo.flix.language.ast.WeededAst.Root
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.misc.Levenshtein
@@ -560,16 +557,6 @@ object Resolver {
         case WeededAst.Literal.Int32(i, loc) => ResolvedAst.Literal.Int32(i, loc).toSuccess
         case WeededAst.Literal.Int64(i, loc) => ResolvedAst.Literal.Int64(i, loc).toSuccess
         case WeededAst.Literal.Str(s, loc) => ResolvedAst.Literal.Str(s, loc).toSuccess
-        case WeededAst.Literal.Tag(enum, tag, literal, loc) => syms.lookupEnum(enum, namespace) flatMap {
-          case (rname, defn) => visit(literal) flatMap {
-            case l =>
-              val tags = defn.cases.keySet
-              if (tags contains tag.name)
-                ResolvedAst.Literal.Tag(rname, tag, l, loc).toSuccess
-              else
-                UnresolvedTagReference(defn, tag.name, loc).toFailure
-          }
-        }
       }
 
       visit(wast)
@@ -807,10 +794,24 @@ object Resolver {
         case WeededAst.Term.Head.Lit(wlit, loc) => Literal.resolve(wlit, namespace, syms) map {
           case lit => ResolvedAst.Term.Head.Lit(lit, loc)
         }
-        case WeededAst.Term.Head.Ascribe(wterm, wtpe, loc) =>
-          @@(resolve(wterm, namespace, syms), Types.resolve(wtpe, namespace, syms)) map {
-            case (term, tpe) => ResolvedAst.Term.Head.Ascribe(term, tpe, loc)
+
+        case WeededAst.Term.Head.Tag(enum, tag, t, loc) =>
+          syms.lookupEnum(enum, namespace) flatMap {
+            case (rname, defn) => resolve(t, namespace, syms) flatMap {
+              case e =>
+                val tags = defn.cases.keySet
+                if (tags contains tag.name)
+                  ResolvedAst.Term.Head.Tag(rname, tag, e, loc).toSuccess
+                else
+                  UnresolvedTagReference(defn, tag.name, loc).toFailure
+            }
           }
+
+        case WeededAst.Term.Head.Tuple(welms, loc) =>
+          @@(welms map (e => resolve(e, namespace, syms))) map {
+            case elms => ResolvedAst.Term.Head.Tuple(elms, loc)
+          }
+
         case WeededAst.Term.Head.Apply(name, wargs, loc) =>
           syms.lookupConstant(name, namespace) flatMap {
             case (rname, Left(defn)) => @@(wargs map (arg => resolve(arg, namespace, syms))) map {

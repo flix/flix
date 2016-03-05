@@ -126,8 +126,6 @@ object ResolvedAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Literal
 
-    case class Tag(name: Name.Resolved, ident: Name.Ident, lit: ResolvedAst.Literal, loc: SourceLocation) extends ResolvedAst.Literal
-
   }
 
   sealed trait Expression extends Definition {
@@ -327,14 +325,9 @@ object ResolvedAst {
         */
       case class Lit(literal: ResolvedAst.Literal, loc: SourceLocation) extends ResolvedAst.Term.Head
 
-      /**
-        * An AST node representing an ascribed term.
-        *
-        * @param term the ascribed term.
-        * @param tpe  the ascribed type.
-        * @param loc  the location.
-        */
-      case class Ascribe(term: ResolvedAst.Term.Head, tpe: Type, loc: SourceLocation) extends ResolvedAst.Term.Head
+      case class Tag(enumName: Name.Resolved, tagName: Name.Ident, t: ResolvedAst.Term.Head, loc: SourceLocation) extends ResolvedAst.Term.Head
+
+      case class Tuple(elms: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Term.Head
 
       /**
         * An AST node representing a function call term.

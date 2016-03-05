@@ -266,7 +266,7 @@ object ParsedAst {
   }
 
   /**
-    * A common super-type for AST node that represents literals.
+    * A common super-type for AST nodes that represents literals.
     */
   sealed trait Literal {
     /**
@@ -391,20 +391,6 @@ object ParsedAst {
       * @param sp2 the position of the last character in the literal.
       */
     case class Str(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
-      * An AST node that represents a tagged literal.
-      *
-      * @param sp1  the position of the first character in the literal.
-      * @param enum the name of the enum.
-      * @param tag  the name of the tag.
-      * @param lit  the nested literal.
-      * @param sp2  the position of the last character in the literal.
-      */
-    // TODO: Remove?
-    case class Tag(sp1: SourcePosition, enum: Name.Unresolved, tag: Name.Ident, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Literal {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -848,6 +834,30 @@ object ParsedAst {
     }
 
     /**
+      * An AST node that represents a tag term.
+      *
+      * @param sp1      the position of the first character in the term.
+      * @param enumName the namespace of the enum.
+      * @param tagName  the tag name.
+      * @param t        the (optional) nested term.
+      * @param sp2      the position of the last character in the term.
+      */
+    case class Tag(sp1: SourcePosition, enumName: Name.Unresolved, tagName: Name.Ident, t: Option[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents a tuple term.
+      *
+      * @param sp1  the position of the first character in the term.
+      * @param elms the elements of the tuple.
+      * @param sp2  the position of the last character in the term.
+      */
+    case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
       * An AST node that represent a function application term
       *
       * @param sp1  the position of the first character in the term.
@@ -856,31 +866,6 @@ object ParsedAst {
       * @param sp2  the position of the last character in the term.
       */
     case class Apply(sp1: SourcePosition, name: Name.Unresolved, args: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
-      * An AST node that represents an infix function application term.
-      *
-      * @param sp1  the position of the first character in the term.
-      * @param t1   the left argument.
-      * @param name the unresolved name of the function.
-      * @param t2   the right argument.
-      * @param sp2  the position of the last character in the term.
-      */
-    case class Infix(sp1: SourcePosition, t1: ParsedAst.Term, name: Name.Unresolved, t2: ParsedAst.Term, sp2: SourcePosition) extends ParsedAst.Term {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
-      * An AST node that represents an ascribed term.
-      *
-      * @param sp1  the position of the first character in the term.
-      * @param term the term.
-      * @param tpe  the type.
-      * @param sp2  the position of the last character in the term.
-      */
-    case class Ascribe(sp1: SourcePosition, term: ParsedAst.Term, tpe: Type, sp2: SourcePosition) extends ParsedAst.Term {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
