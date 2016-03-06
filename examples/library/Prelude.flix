@@ -360,3 +360,13 @@ class LeastUpperBound[E] {
 impl PartialOrder[E] <= LeastUpperBound[E] {
     fn leq(x: E, y: E): Bool = lub2(x, y) == y
 }
+
+
+// TODO: Further research ideas:
+
+//class Foldable[M[E]] {
+//    def reduce(m: M[E], f: (E, E) -> E): E
+//}
+
+//def join[M: Foldable[E], JoinSemiLattice[E]](m: M[E]): E = reduce(m, lub)
+
