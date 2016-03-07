@@ -102,7 +102,7 @@ object Resolver {
       */
     // TODO: Split this into multiple different versions:
     @deprecated("", "")
-    case class UnresolvedReference(name: Name.Unresolved, namespace: List[String]) extends ResolverError {
+    case class UnresolvedReference(name: Name.QName, namespace: List[String]) extends ResolverError {
       val message: String = s"Error: Unresolved reference to '$name' in namespace '${namespace.mkString("::")}' at: ${name.loc.format}\n"
     }
 
@@ -113,7 +113,7 @@ object Resolver {
       * @param namespace the current namespace.
       * @param loc       the source location of the reference.
       */
-    case class UnresolvedConstantReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
+    case class UnresolvedConstantReference(name: Name.QName, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val message =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.source.format}")}
            |
@@ -130,7 +130,7 @@ object Resolver {
       * @param namespace the current namespace.
       * @param loc       the source location of the reference.
       */
-    case class UnresolvedEnumReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
+    case class UnresolvedEnumReference(name: Name.QName, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val message =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.source.format}")}
            |
@@ -170,7 +170,7 @@ object Resolver {
       * @param namespace the current namespace.
       * @param loc       the source location of the reference.
       */
-    case class UnresolvedRelationReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
+    case class UnresolvedRelationReference(name: Name.QName, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val message =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.source.format}")}
            |
@@ -187,7 +187,7 @@ object Resolver {
       * @param namespace the current namespace.
       * @param loc       the source location of the reference.
       */
-    case class UnresolvedTypeReference(name: Name.Unresolved, namespace: List[String], loc: SourceLocation) extends ResolverError {
+    case class UnresolvedTypeReference(name: Name.QName, namespace: List[String], loc: SourceLocation) extends ResolverError {
       val message =
         s"""${consoleCtx.blue(s"-- REFERENCE ERROR -------------------------------------------------- ${loc.source.format}")}
            |
@@ -219,12 +219,12 @@ object Resolver {
                          hooks: Map[Name.Resolved, Ast.Hook]) {
 
     // TODO: Cleanup
-    def lookupConstant(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, Either[WeededAst.Definition.Constant, Ast.Hook]), ResolverError] = {
+    def lookupConstant(name: Name.QName, namespace: List[String]): Validation[(Name.Resolved, Either[WeededAst.Definition.Constant, Ast.Hook]), ResolverError] = {
       val rname = Name.Resolved.mk(
-        if (name.parts.size == 1)
-          namespace ::: name.parts.head :: Nil
+        if (!name.isQualified)
+          namespace ::: name.ident.name :: Nil
         else
-          name.parts
+          name.namespace.idents.map(_.name) ::: name.ident.name :: Nil
       )
       constants.get(rname) match {
         case None => {
@@ -239,12 +239,12 @@ object Resolver {
     }
 
     // TODO: Cleanup
-    def lookupEnum(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Enum), ResolverError] = {
+    def lookupEnum(name: Name.QName, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Definition.Enum), ResolverError] = {
       val rname = Name.Resolved.mk(
-        if (name.parts.size == 1)
-          namespace ::: name.parts.head :: Nil
+        if (!name.isQualified)
+          namespace ::: name.ident.name :: Nil
         else
-          name.parts
+          name.namespace.idents.map(_.name) ::: name.ident.name :: Nil
       )
       enums.get(rname) match {
         case None => UnresolvedEnumReference(name, namespace, name.loc).toFailure
@@ -254,12 +254,12 @@ object Resolver {
 
     // TODO: Cleanup
     // TODO: Rename: lookupCollection
-    def lookupRelation(name: Name.Unresolved, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Collection), ResolverError] = {
+    def lookupRelation(name: Name.QName, namespace: List[String]): Validation[(Name.Resolved, WeededAst.Collection), ResolverError] = {
       val rname = Name.Resolved.mk(
-        if (name.parts.size == 1)
-          namespace ::: name.parts.head :: Nil
+        if (!name.isQualified)
+          namespace ::: name.ident.name :: Nil
         else
-          name.parts
+          name.namespace.idents.map(_.name) ::: name.ident.name :: Nil
       )
       relations.get(rname) match {
         case None => UnresolvedRelationReference(name, namespace, name.loc).toFailure
@@ -268,12 +268,12 @@ object Resolver {
     }
 
     // TODO: Cleanup
-    def lookupType(name: Name.Unresolved, namespace: List[String]): Validation[Type, ResolverError] = {
+    def lookupType(name: Name.QName, namespace: List[String]): Validation[Type, ResolverError] = {
       val rname = Name.Resolved.mk(
-        if (name.parts.size == 1)
-          namespace ::: name.parts.head :: Nil
+        if (!name.isQualified)
+          namespace ::: name.ident.name :: Nil
         else
-          name.parts
+          name.namespace.idents.map(_.name) ::: name.ident.name :: Nil
       )
       types.get(rname) match {
         case None => UnresolvedTypeReference(name, namespace, name.loc).toFailure
@@ -341,9 +341,9 @@ object Resolver {
       * Constructs the symbol table for the given definition of `wast`.
       */
     def symbolsOf(wast: WeededAst.Declaration, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
-      case WeededAst.Declaration.Namespace(Name.Unresolved(sp1, parts, sp2), body, loc) =>
+      case WeededAst.Declaration.Namespace(Name.NName(sp1, parts, sp2), body, loc) =>
         Validation.fold[WeededAst.Declaration, SymbolTable, ResolverError](body, syms) {
-          case (msyms, d) => symbolsOf(d, namespace ::: parts.toList, msyms)
+          case (msyms, d) => symbolsOf(d, namespace ::: parts.map(_.name), msyms)
         }
       case WeededAst.Declaration.Fact(head, loc) => syms.toSuccess
       case WeededAst.Declaration.Rule(head, body, loc) => syms.toSuccess
@@ -417,8 +417,8 @@ object Resolver {
 
     def collectFacts(wast: WeededAst.Root, syms: SymbolTable): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = {
       def visit(wast: WeededAst.Declaration, namespace: List[String]): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = wast match {
-        case WeededAst.Declaration.Namespace(name, body, loc) =>
-          @@(body map (d => visit(d, namespace ::: name.parts))) map (xs => xs.flatten)
+        case WeededAst.Declaration.Namespace(ns, body, loc) =>
+          @@(body map (d => visit(d, namespace ::: ns.idents.map(_.name)))) map (xs => xs.flatten)
         case fact: WeededAst.Declaration.Fact => Constraint.resolve(fact, namespace, syms) map (f => List(f))
         case _ => List.empty[ResolvedAst.Constraint.Fact].toSuccess
       }
@@ -428,8 +428,8 @@ object Resolver {
 
     def collectRules(wast: WeededAst.Root, syms: SymbolTable): Validation[List[ResolvedAst.Constraint.Rule], ResolverError] = {
       def visit(wast: WeededAst.Declaration, namespace: List[String]): Validation[List[ResolvedAst.Constraint.Rule], ResolverError] = wast match {
-        case WeededAst.Declaration.Namespace(name, body, loc) =>
-          @@(body map (d => visit(d, namespace ::: name.parts))) map (xs => xs.flatten)
+        case WeededAst.Declaration.Namespace(ns, body, loc) =>
+          @@(body map (d => visit(d, namespace ::: ns.idents.map(_.name)))) map (xs => xs.flatten)
         case rule: WeededAst.Declaration.Rule => Constraint.resolve(rule, namespace, syms) map (r => List(r))
         case _ => List.empty[ResolvedAst.Constraint.Rule].toSuccess
       }
@@ -574,13 +574,14 @@ object Resolver {
           case lit => ResolvedAst.Expression.Lit(lit, loc)
         }
 
-        case WeededAst.Expression.Var(name, loc) => name.parts match {
-          case Seq(x) if locals contains x => ResolvedAst.Expression.Var(Name.Ident(name.sp1, x, name.sp2), loc).toSuccess
-          case _ => syms.lookupConstant(name, namespace) map {
-            case (rname, Left(defn)) => ResolvedAst.Expression.Ref(rname, loc)
-            case (rname, Right(hook)) => ResolvedAst.Expression.HookRef(hook, loc)
-          }
-        }
+        case WeededAst.Expression.Var(name, loc) =>
+          if (!name.isQualified && locals.contains(name.ident.name))
+            ResolvedAst.Expression.Var(Name.Ident(name.sp1, name.ident.name, name.sp2), loc).toSuccess
+          else
+            syms.lookupConstant(name, namespace) map {
+              case (rname, Left(defn)) => ResolvedAst.Expression.Ref(rname, loc)
+              case (rname, Right(hook)) => ResolvedAst.Expression.HookRef(hook, loc)
+            }
 
         case WeededAst.Expression.Apply(wlambda, wargs, loc) =>
           val lambdaVal = visit(wlambda, locals)
@@ -755,7 +756,7 @@ object Resolver {
         case WeededAst.Predicate.Body.Ambiguous(name, wterms, loc) =>
           val termsVal = @@(wterms map (t => Term.Body.resolve(t, namespace, syms)))
 
-          if (name.parts.last.head.isUpper) {
+          if (name.ident.name.head.isUpper) {
             @@(syms.lookupRelation(name, namespace), termsVal) map {
               case ((rname, defn), terms) => ResolvedAst.Predicate.Body.Relation(rname, terms, loc)
             }
@@ -856,20 +857,20 @@ object Resolver {
     def resolve(wast: Type, namespace: List[String], syms: SymbolTable): Validation[Type, ResolverError] = {
       def visit(wast: Type): Validation[Type, ResolverError] = wast match {
         case Type.Unit => Type.Unit.toSuccess
-        case Type.Unresolved(name) => name.parts match {
-          case Seq("Bool") => Type.Bool.toSuccess
-          case Seq("Char") => Type.Char.toSuccess
-          case Seq("Float") => Type.Float32.toSuccess
-          case Seq("Float32") => Type.Float32.toSuccess
-          case Seq("Float64") => Type.Float64.toSuccess
-          case Seq("Int") => Type.Int32.toSuccess
-          case Seq("Int8") => Type.Int8.toSuccess
-          case Seq("Int16") => Type.Int16.toSuccess
-          case Seq("Int32") => Type.Int32.toSuccess
-          case Seq("Int64") => Type.Int64.toSuccess
-          case Seq("Prop") => Type.Prop.toSuccess
-          case Seq("Native") => Type.Native.toSuccess
-          case Seq("Str") => Type.Str.toSuccess
+        case Type.Unresolved(name) => name.ident.name match {
+          case "Bool" => Type.Bool.toSuccess
+          case "Char" => Type.Char.toSuccess
+          case "Float" => Type.Float32.toSuccess
+          case "Float32" => Type.Float32.toSuccess
+          case "Float64" => Type.Float64.toSuccess
+          case "Int" => Type.Int32.toSuccess
+          case "Int8" => Type.Int8.toSuccess
+          case "Int16" => Type.Int16.toSuccess
+          case "Int32" => Type.Int32.toSuccess
+          case "Int64" => Type.Int64.toSuccess
+          case "Prop" => Type.Prop.toSuccess
+          case "Native" => Type.Native.toSuccess
+          case "Str" => Type.Str.toSuccess
           case _ => syms.lookupType(name, namespace) flatMap (tpe => visit(tpe))
         }
         case Type.Tag(_, tagName, tpe) =>

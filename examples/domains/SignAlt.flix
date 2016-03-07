@@ -284,35 +284,35 @@ namespace SignAlt {
      * Over-approximates `equal`.
      */
     @strict @monotone @commutative
-    fn eq(e1: Sign, e2: Sign): Belnap::Belnap = match (e1, e2) with {
-        case (Sign.Bot, _)          => Belnap::Belnap.Bot
-        case (_, Sign.Bot)          => Belnap::Belnap.Bot
-        case (Sign.Zer, Sign.Zer)   => Belnap::Belnap.True
-        case _                      => Belnap::Belnap.Top
+    fn eq(e1: Sign, e2: Sign): Belnap/Belnap = match (e1, e2) with {
+        case (Sign.Bot, _)          => Belnap/Belnap.Bot
+        case (_, Sign.Bot)          => Belnap/Belnap.Bot
+        case (Sign.Zer, Sign.Zer)   => Belnap/Belnap.True
+        case _                      => Belnap/Belnap.Top
     }
 
     /**
      * Over-approximates `not equal`.
      */
     @strict @monotone @commutative
-    fn neq(e1: Sign, e2: Sign): Belnap::Belnap = Belnap::not(eq(e1, e2))
+    fn neq(e1: Sign, e2: Sign): Belnap/Belnap = Belnap/not(eq(e1, e2))
 
     /**
      * Over-approximates `less than`.
      */
     @strict @monotone
-    fn less(e1: Sign, e2: Sign): Belnap::Belnap = match (e1, e2) with {
-        case (Sign.Bot, _)          => Belnap::Belnap.Bot
-        case (_, Sign.Bot)          => Belnap::Belnap.Bot
-        case (Sign.Zer, Sign.Zer)   => Belnap::Belnap.False
-        case _                      => Belnap::Belnap.Top
+    fn less(e1: Sign, e2: Sign): Belnap/Belnap = match (e1, e2) with {
+        case (Sign.Bot, _)          => Belnap/Belnap.Bot
+        case (_, Sign.Bot)          => Belnap/Belnap.Bot
+        case (Sign.Zer, Sign.Zer)   => Belnap/Belnap.False
+        case _                      => Belnap/Belnap.Top
     }
 
     /**
      * Over-approximates `less than or equal`.
      */
     @strict @monotone
-    fn lessEqual(e1: Sign, e2: Sign): Belnap::Belnap = Belnap::or(e1 `less` e2, e1 `eq` e2)
+    fn lessEqual(e1: Sign, e2: Sign): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
 
     let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb)
 

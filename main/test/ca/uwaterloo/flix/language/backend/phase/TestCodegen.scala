@@ -6312,7 +6312,7 @@ class TestCodegen extends FunSuite {
     assertResult(-2)(result)
   }
 
-  test("Codegen - TupleAt06") {
+  ignore("Codegen - TupleAt06") {
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
         exp1 = Tuple(List(Tag(constPropName, identV, Int32(111), enumTpe, loc), Tag(constPropName, identB, Unit, enumTpe, loc)),

@@ -49,7 +49,7 @@ object Codegen {
   /*
    * Given a list of Flix definitions, compile the definitions to bytecode and put them in a JVM class. For now, we put
    * all definitions in a single class: ca.uwaterloo.flix.runtime.compiled.FlixDefinitions. The Flix function
-   * A::B::C::foo is compiled as the method A$B$C$foo.
+   * A.B.C/foo is compiled as the method A$B$C$foo.
    */
   def compile(context: Context): Array[Byte] = {
     val functions = context.functions
@@ -82,7 +82,7 @@ object Codegen {
   /*
    * Given a definition for a Flix function, generate bytecode.
    * Takes a Context and an initialized ClassVisitor.
-   * The Flix function A::B::C::foo is compiled as the method A$B$C$foo.
+   * The Flix function A.B.C/foo is compiled as the method A$B$C$foo.
    */
   private def compileFunction(context: Context, visitor: ClassVisitor)(function: Definition.Function): Unit = {
     val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, decorate(function.name), descriptor(function.tpe), null, null)
@@ -195,7 +195,7 @@ object Codegen {
       // Load `enum` as a string, by calling `Name.Resolved.mk`
       visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/Name$Resolved$", "MODULE$",
         "Lca/uwaterloo/flix/language/ast/Name$Resolved$;")
-      visitor.visitLdcInsn(enum.parts.mkString("::"))
+      visitor.visitLdcInsn(enum.fqn)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/Name$Resolved$", "mk",
         "(Ljava/lang/String;)Lca/uwaterloo/flix/language/ast/Name$Resolved;", false)
 

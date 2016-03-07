@@ -816,7 +816,7 @@ object Typer {
     case Type.Int64 => s"Int64"
     case Type.Str => s"Str"
     case Type.Tag(enumName, tagName, t) =>
-      val enumAndTag = enumName.parts.mkString("::") + "." + tagName.name
+      val enumAndTag = enumName.fqn + "." + tagName.name
       val nested = s"(${prettyPrint(t)}})"
       enumAndTag + nested
     case Type.Enum(name, cases) =>

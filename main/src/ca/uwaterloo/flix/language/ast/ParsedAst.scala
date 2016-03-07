@@ -78,11 +78,11 @@ object ParsedAst {
       * An AST node that represents a namespace declaration.
       *
       * @param sp1  the position of the first character in the namespace.
-      * @param name the name of the namespace.
+      * @param name the the namespace.
       * @param body the nested declarations.
       * @param sp2  the position of the last character in the namespace.
       */
-    case class Namespace(sp1: SourcePosition, name: Name.Unresolved, body: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration {
+    case class Namespace(sp1: SourcePosition, name: Name.NName, body: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -439,7 +439,7 @@ object ParsedAst {
       * @param name the ambiguous name.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Var(sp1: SourcePosition, name: Name.Unresolved, sp2: SourcePosition) extends ParsedAst.Expression {
+    case class Var(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -565,7 +565,7 @@ object ParsedAst {
       * @param e2   the second argument expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Infix(e1: ParsedAst.Expression, sp1: SourcePosition, name: Name.Unresolved, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+    case class Infix(e1: ParsedAst.Expression, sp1: SourcePosition, name: Name.QName, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -578,7 +578,7 @@ object ParsedAst {
       * @param e        the nested expression.
       * @param sp2      the position of the last character in the expression.
       */
-    case class Tag(sp1: SourcePosition, enumName: Name.Unresolved, tagName: Name.Ident, e: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+    case class Tag(sp1: SourcePosition, enumName: Name.QName, tagName: Name.Ident, e: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -728,7 +728,7 @@ object ParsedAst {
       * @param p        the nested pattern.
       * @param sp2      the position of the last character in the pattern.
       */
-    case class Tag(sp1: SourcePosition, enumName: Name.Unresolved, tagName: Name.Ident, p: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern {
+    case class Tag(sp1: SourcePosition, enumName: Name.QName, tagName: Name.Ident, p: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -765,7 +765,7 @@ object ParsedAst {
       * @param terms the terms of the predicate.
       * @param sp2   the position of the last character in the predicate.
       */
-    case class Ambiguous(sp1: SourcePosition, name: Name.Unresolved, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
+    case class Ambiguous(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -855,7 +855,7 @@ object ParsedAst {
       * @param t        the (optional) nested term.
       * @param sp2      the position of the last character in the term.
       */
-    case class Tag(sp1: SourcePosition, enumName: Name.Unresolved, tagName: Name.Ident, t: Option[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term {
+    case class Tag(sp1: SourcePosition, enumName: Name.QName, tagName: Name.Ident, t: Option[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -878,7 +878,7 @@ object ParsedAst {
       * @param args the arguments to the function.
       * @param sp2  the position of the last character in the term.
       */
-    case class Apply(sp1: SourcePosition, name: Name.Unresolved, args: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term {
+    case class Apply(sp1: SourcePosition, name: Name.QName, args: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 

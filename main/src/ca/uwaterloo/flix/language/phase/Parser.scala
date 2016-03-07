@@ -48,7 +48,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def NamespaceDeclaration: Rule1[ParsedAst.Declaration.Namespace] = rule {
-    SP ~ atomic("namespace") ~ WS ~ QName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration).separatedBy(optWS) ~ optWS ~ '}' ~ SP ~ optSC ~> ParsedAst.Declaration.Namespace
+    SP ~ atomic("namespace") ~ WS ~ NName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration).separatedBy(optWS) ~ optWS ~ '}' ~ SP ~ optSC ~> ParsedAst.Declaration.Namespace
   }
 
   def Definition: Rule1[ParsedAst.Definition] = rule {
@@ -303,7 +303,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // TODO: Cleanup
   def TagExpression: Rule1[ParsedAst.Expression.Tag] = rule {
     SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ TupleExpression) ~ SP ~>
-      ((sp1: SourcePosition, name: Name.Unresolved, ident: Name.Ident, exp: Option[ParsedAst.Expression], sp2: SourcePosition) => exp match {
+      ((sp1: SourcePosition, name: Name.QName, ident: Name.Ident, exp: Option[ParsedAst.Expression], sp2: SourcePosition) => exp match {
         case None => ParsedAst.Expression.Tag(sp1, name, ident, ParsedAst.Expression.Lit(sp1, ParsedAst.Literal.Unit(sp1, sp2), sp2), sp2)
         case Some(e) => ParsedAst.Expression.Tag(sp1, name, ident, e, sp2)
       })
@@ -384,7 +384,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Tag: Rule1[ParsedAst.Pattern.Tag] = rule {
       SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ Pattern) ~ SP ~>
-        ((sp1: SourcePosition, name: Name.Unresolved, ident: Name.Ident, pattern: Option[ParsedAst.Pattern], sp2: SourcePosition) => pattern match {
+        ((sp1: SourcePosition, name: Name.QName, ident: Name.Ident, pattern: Option[ParsedAst.Pattern], sp2: SourcePosition) => pattern match {
           case None => ParsedAst.Pattern.Tag(sp1, name, ident, ParsedAst.Pattern.Lit(sp1, ParsedAst.Literal.Unit(sp1, sp2), sp2), sp2)
           case Some(p) => ParsedAst.Pattern.Tag(sp1, name, ident, p, sp2)
         })
@@ -519,7 +519,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Identifiers & Names                                                     //
   /////////////////////////////////////////////////////////////////////////////
-  def LegalIdentifier: Rule1[String] = {
+  def LegalIdent: Rule1[String] = {
     rule {
       // TODO: Cleanup
       capture((CharPredicate.Alpha | "⊥" | "⊤" | "⊑" | "⊔" | "⊓" | "▽" | "△" | "⊡") ~ zeroOrMore(CharPredicate.AlphaNum | "_" | "$" | "⊥" | "⊑") ~ zeroOrMore("'"))
@@ -527,16 +527,24 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Ident: Rule1[Name.Ident] = rule {
-    SP ~ LegalIdentifier ~ SP ~> Name.Ident
+    SP ~ LegalIdent ~ SP ~> Name.Ident
   }
 
-  def QName: Rule1[Name.Unresolved] = rule {
-    SP ~ oneOrMore(LegalIdentifier).separatedBy(atomic("::")) ~ SP ~>
-      ((sp1: SourcePosition, parts: Seq[String], sp2: SourcePosition) => Name.Unresolved(sp1, parts.toList, sp2))
+  def NName: Rule1[Name.NName] = rule {
+    SP ~ oneOrMore(Ident).separatedBy(".") ~ SP ~>
+      ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
+  }
+
+  def QName: Rule1[Name.QName] = rule {
+    SP ~ optional(NName ~ "/") ~ Ident ~ SP ~>
+      ((sp1: SourcePosition, nsOpt: Option[Name.NName], ident: Name.Ident, sp2: SourcePosition) => nsOpt match {
+        case None => Name.QName(sp1, Name.NName(sp1, List.empty, sp2), ident, sp2)
+        case Some(ns) => Name.QName(sp1, ns, ident, sp2)
+      })
   }
 
   def Annotation: Rule1[ParsedAst.Annotation] = rule {
-    SP ~ atomic("@") ~ LegalIdentifier ~ SP ~> ParsedAst.Annotation
+    SP ~ atomic("@") ~ LegalIdent ~ SP ~> ParsedAst.Annotation
   }
 
   /////////////////////////////////////////////////////////////////////////////

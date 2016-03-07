@@ -164,7 +164,7 @@ object Type {
     * @param elms the type of the type parameters.
     */
   // TODO: check with pierce book and see how this should be represented.
-  case class Parametric(name: Name.Unresolved, elms: Seq[Type]) extends Type
+  case class Parametric(name: Name.QName, elms: Seq[Type]) extends Type
 
   /**
     * An AST node that represents an Opt type.
@@ -208,7 +208,7 @@ object Type {
     * @param name the name of the unresolved type.
     */
   @deprecated("to be removed", "0.1.0")
-  case class Unresolved(name: Name.Unresolved) extends Type
+  case class Unresolved(name: Name.QName) extends Type
 
   // TODO: check with pierce book and see how this should be represented.
   @deprecated("to be removed", "0.1.0")

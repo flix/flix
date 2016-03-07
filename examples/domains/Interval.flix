@@ -141,15 +141,15 @@ namespace Interval {
       * Over-approximates `equal`.
       */
     @strict @monotone @commutative
-    fn eq(e1: Interval, e2: Interval): Belnap::Belnap = match (e1, e2) with {
-        case (Interval.Bot, _)                                  => Belnap::Belnap.Bot
-        case (_, Interval.Bot)                                  => Belnap::Belnap.Bot
+    fn eq(e1: Interval, e2: Interval): Belnap/Belnap = match (e1, e2) with {
+        case (Interval.Bot, _)                                  => Belnap/Belnap.Bot
+        case (_, Interval.Bot)                                  => Belnap/Belnap.Bot
         case (Interval.Range(b1, e1), Interval.Range(b2, e2))   => switch {
-            case (b1 == e1) && ((e1 == b2) && (b2 == e2))       => Belnap::Belnap.True
-            case (e1 < b2) || (e2 < b1)                         => Belnap::Belnap.False
-            case true                                           => Belnap::Belnap.Top
+            case (b1 == e1) && ((e1 == b2) && (b2 == e2))       => Belnap/Belnap.True
+            case (e1 < b2) || (e2 < b1)                         => Belnap/Belnap.False
+            case true                                           => Belnap/Belnap.Top
         }
-        case _                                                  => Belnap::Belnap.Top
+        case _                                                  => Belnap/Belnap.Top
     }
 
     // TODO: Consider moving neq and lessEq.
@@ -158,32 +158,32 @@ namespace Interval {
       * Over-approximates `not equal`.
       */
     @strict @monotone @commutative
-    fn neq(e1: Interval, e2: Interval): Belnap::Belnap = Belnap::not(eq(e1, e2))
+    fn neq(e1: Interval, e2: Interval): Belnap/Belnap = Belnap/not(eq(e1, e2))
 
     /**
       * Over-approximates `less than`.
       */
     @strict @monotone
-    fn less(e1: Interval, e2: Interval): Belnap::Belnap = match (e1, e2) with {
-        case (Interval.Bot, _)                                  => Belnap::Belnap.Bot
-        case (_, Interval.Bot)                                  => Belnap::Belnap.Bot
+    fn less(e1: Interval, e2: Interval): Belnap/Belnap = match (e1, e2) with {
+        case (Interval.Bot, _)                                  => Belnap/Belnap.Bot
+        case (_, Interval.Bot)                                  => Belnap/Belnap.Bot
         case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
             if (e1 < b2)
-                Belnap::Belnap.True
+                Belnap/Belnap.True
             else
                 if (e2 < b1)
-                    Belnap::Belnap.False
+                    Belnap/Belnap.False
                 else
-                    Belnap::Belnap.Top
+                    Belnap/Belnap.Top
 
-        case _                                                  => Belnap::Belnap.Top
+        case _                                                  => Belnap/Belnap.Top
     }
 
     /**
       * Over-approximates `less than or equal`.
       */
     @strict @monotone
-    fn lessEqual(e1: Interval, e2: Interval): Belnap::Belnap = Belnap::or(e1 `less` e2, e1 `eq` e2)
+    fn lessEqual(e1: Interval, e2: Interval): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
 
     let Interval<> = (Interval.Bot, Interval.Top, leq, lub, glb)
 

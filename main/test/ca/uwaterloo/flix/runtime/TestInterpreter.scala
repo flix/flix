@@ -318,13 +318,13 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Ref.01") {
     val input =
-      """namespace Foo::Bar {
+      """namespace Foo.Bar {
         |  fn x: Bool = false
         |  fn f: Str = "foo"
         |}
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("Foo::Bar::f"))
+    val result = model.constants(Name.Resolved.mk("Foo.Bar/f"))
     assertResult(Value.mkStr("foo"))(result)
   }
 
@@ -336,7 +336,7 @@ class TestInterpreter extends FunSuite {
         |}
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("Foo::f"))
+    val result = model.constants(Name.Resolved.mk("Foo/f"))
     assertResult(Value.mkInt32(5))(result)
   }
 
@@ -349,7 +349,7 @@ class TestInterpreter extends FunSuite {
         |}
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("Foo::f"))
+    val result = model.constants(Name.Resolved.mk("Foo/f"))
     assertResult(Value.False)(result)
   }
 
@@ -359,11 +359,11 @@ class TestInterpreter extends FunSuite {
         |  fn x: Str = "hello"
         |}
         |namespace Bar {
-        |  fn x: Str = Foo::x()
+        |  fn x: Str = Foo/x()
         |}
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("Bar::x"))
+    val result = model.constants(Name.Resolved.mk("Bar/x"))
     assertResult(Value.mkStr("hello"))(result)
   }
 
@@ -373,18 +373,22 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Lambda.01") {
     val input =
-      """namespace A::B { fn f: Bool = false }
-        |namespace A { fn g: Bool = A::B::f() }
+      """namespace A.B {
+        |  fn f: Bool = false
+        |}
+        |namespace A {
+        |  fn g: Bool = A.B/f()
+        |}
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("A::g"))
+    val result = model.constants(Name.Resolved.mk("A/g"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Lambda.02") {
     val input =
       """namespace A { fn f(x: Int): Int = 24 }
-        |fn g: Int = A::f(3)
+        |fn g: Int = A/f(3)
       """.stripMargin
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("g"))
@@ -397,7 +401,7 @@ class TestInterpreter extends FunSuite {
         |namespace A { fn g: Int = f(3) }
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("A::g"))
+    val result = model.constants(Name.Resolved.mk("A/g"))
     assertResult(Value.mkInt32(3))(result)
   }
 
@@ -413,12 +417,12 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Lambda.05") {
     val input =
-      """namespace A { fn f(x: Int32): Int32 = let y = B::g(x + 1i32) in y * y }
+      """namespace A { fn f(x: Int32): Int32 = let y = B/g(x + 1i32) in y * y }
         |namespace B { fn g(x: Int32): Int32 = x - 4i32 }
-        |namespace C { fn h: Int32 = A::f(5i32) + B::g(0i32) }
+        |namespace C { fn h: Int32 = A/f(5i32) + B/g(0i32) }
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("C::h"))
+    val result = model.constants(Name.Resolved.mk("C/h"))
     assertResult(Value.mkInt32(0))(result)
   }
 
@@ -564,30 +568,30 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Hook - Hook.Safe.01") {
     import HookSafeHelpers._
-    val input = "namespace A { fn g: Bool = A::B::f() }"
+    val input = "namespace A { fn g: Bool = A.B/f() }"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(), flix.mkBoolType)
     def nativeF(): IValue = { executed = true; flix.mkFalse }
     val model = flix
       .addStr(input)
-      .addHook("A::B::f", tpe, nativeF _)
+      .addHook("A.B/f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("A::g"))
+    val result = model.constants(Name.Resolved.mk("A/g"))
     assertResult(Value.False)(result)
     assert(executed)
   }
 
   test("Expression.Hook - Hook.Safe.02") {
     import HookSafeHelpers._
-    val input = "fn g: Int = A::f(3)"
+    val input = "fn g: Int = A/f(3)"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: IValue): IValue = { executed = true; flix.mkInt32(24) }
     val model = flix
       .addStr(input)
-      .addHook("A::f", tpe, nativeF _)
+      .addHook("A/f", tpe, nativeF _)
       .solve().get
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt32(24))(result)
@@ -603,9 +607,9 @@ class TestInterpreter extends FunSuite {
     def nativeF(x: IValue): IValue = { executed = true; x }
     val model = flix
       .addStr(input)
-      .addHook("A::f", tpe, nativeF _)
+      .addHook("A/f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("A::g"))
+    val result = model.constants(Name.Resolved.mk("A/g"))
     assertResult(Value.mkInt32(3))(result)
     assert(executed)
   }
@@ -628,7 +632,7 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Hook - Hook.Safe.05") {
     import HookSafeHelpers._
-    val input = "namespace C { fn h: Int32 = A::f(5i32) + B::g(0i32) }"
+    val input = "namespace C { fn h: Int32 = A/f(5i32) + B/g(0i32) }"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
@@ -639,10 +643,10 @@ class TestInterpreter extends FunSuite {
     def nativeG(x: IValue): IValue = { executed = true; flix.mkInt32(x.getInt32 - 4) }
     val model = flix
       .addStr(input)
-      .addHook("A::f", tpe, nativeF _)
-      .addHook("B::g", tpe, nativeG _)
+      .addHook("A/f", tpe, nativeF _)
+      .addHook("B/g", tpe, nativeG _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("C::h"))
+    val result = model.constants(Name.Resolved.mk("C/h"))
     assertResult(Value.mkInt32(0))(result)
     assert(executed)
   }
@@ -893,30 +897,30 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Hook - Hook.Unsafe.01") {
     import HookUnsafeHelpers._
-    val input = "namespace A { fn g: Bool = A::B::f() }"
+    val input = "namespace A { fn g: Bool = A.B/f() }"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(), flix.mkBoolType)
     def nativeF(): JBool = { executed = true; false }
     val model = flix
       .addStr(input)
-      .addHookUnsafe("A::B::f", tpe, nativeF _)
+      .addHookUnsafe("A.B/f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("A::g"))
+    val result = model.constants(Name.Resolved.mk("A/g"))
     assertResult(Value.False)(result)
     assert(executed)
   }
 
   test("Expression.Hook - Hook.Unsafe.02") {
     import HookUnsafeHelpers._
-    val input = "fn g: Int = A::f(3)"
+    val input = "fn g: Int = A/f(3)"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: JInt): JInt = { executed = true; 24 }
     val model = flix
       .addStr(input)
-      .addHookUnsafe("A::f", tpe, nativeF _)
+      .addHookUnsafe("A/f", tpe, nativeF _)
       .solve().get
     val result = model.constants(Name.Resolved.mk("g"))
     assertResult(Value.mkInt32(24))(result)
@@ -932,9 +936,9 @@ class TestInterpreter extends FunSuite {
     def nativeF(x: JInt): JInt = { executed = true; x }
     val model = flix
       .addStr(input)
-      .addHookUnsafe("A::f", tpe, nativeF _)
+      .addHookUnsafe("A/f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("A::g"))
+    val result = model.constants(Name.Resolved.mk("A/g"))
     assertResult(Value.mkInt32(3))(result)
     assert(executed)
   }
@@ -957,7 +961,7 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Hook - Hook.Unsafe.05") {
     import HookUnsafeHelpers._
-    val input = "namespace C { fn h: Int32 = A::f(5i32) + B::g(0i32) }"
+    val input = "namespace C { fn h: Int32 = A/f(5i32) + B/g(0i32) }"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
@@ -965,10 +969,10 @@ class TestInterpreter extends FunSuite {
     def nativeG(x: JInt): JInt = { executed = true; x - 4 }
     val model = flix
       .addStr(input)
-      .addHookUnsafe("A::f", tpe, nativeF _)
-      .addHookUnsafe("B::g", tpe, nativeG _)
+      .addHookUnsafe("A/f", tpe, nativeF _)
+      .addHookUnsafe("B/g", tpe, nativeG _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("C::h"))
+    val result = model.constants(Name.Resolved.mk("C/h"))
     assertResult(Value.mkInt32(0))(result)
     assert(executed)
   }

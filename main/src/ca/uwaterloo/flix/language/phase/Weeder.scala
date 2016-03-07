@@ -649,27 +649,37 @@ object Weeder {
           case (e1, e2) =>
             exp.op match {
               case ExtendedBinaryOperator.Leq =>
-                val name = Name.Unresolved(exp.sp1, List("⊑"), exp.sp2)
+                val ident = Name.Ident(exp.sp1, "⊑", exp.sp2)
+                val namespace = Name.NName(exp.sp1, List.empty, exp.sp2)
+                val name = Name.QName(exp.sp1, namespace, ident, exp.sp2)
                 val lambda = WeededAst.Expression.Var(name, exp.loc)
                 WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
 
               case ExtendedBinaryOperator.Lub =>
-                val name = Name.Unresolved(exp.sp1, List("⊔"), exp.sp2)
+                val ident = Name.Ident(exp.sp1, "⊔", exp.sp2)
+                val namespace = Name.NName(exp.sp1, List.empty, exp.sp2)
+                val name = Name.QName(exp.sp1, namespace, ident, exp.sp2)
                 val lambda = WeededAst.Expression.Var(name, exp.loc)
                 WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
 
               case ExtendedBinaryOperator.Glb =>
-                val name = Name.Unresolved(exp.sp1, List("⊓"), exp.sp2)
+                val ident = Name.Ident(exp.sp1, "⊓", exp.sp2)
+                val namespace = Name.NName(exp.sp1, List.empty, exp.sp2)
+                val name = Name.QName(exp.sp1, namespace, ident, exp.sp2)
                 val lambda = WeededAst.Expression.Var(name, exp.loc)
                 WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
 
               case ExtendedBinaryOperator.Widen =>
-                val name = Name.Unresolved(exp.sp1, List("▽"), exp.sp2)
+                val ident = Name.Ident(exp.sp1, "▽", exp.sp2)
+                val namespace = Name.NName(exp.sp1, List.empty, exp.sp2)
+                val name = Name.QName(exp.sp1, namespace, ident, exp.sp2)
                 val lambda = WeededAst.Expression.Var(name, exp.loc)
                 WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
 
               case ExtendedBinaryOperator.Narrow =>
-                val name = Name.Unresolved(exp.sp1, List("△"), exp.sp2)
+                val ident = Name.Ident(exp.sp1, "△", exp.sp2)
+                val namespace = Name.NName(exp.sp1, List.empty, exp.sp2)
+                val name = Name.QName(exp.sp1, namespace, ident, exp.sp2)
                 val lambda = WeededAst.Expression.Var(name, exp.loc)
                 WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
             }
@@ -734,12 +744,16 @@ object Weeder {
         WeededAst.Expression.Error(exp.tpe, exp.loc).toSuccess
 
       case exp: ParsedAst.Expression.Bot =>
-        val name = Name.Unresolved(exp.sp1, List("⊥"), exp.sp2)
+        val ident = Name.Ident(exp.sp1, "⊥", exp.sp2)
+        val namespace = Name.NName(exp.sp1, List.empty, exp.sp2)
+        val name = Name.QName(exp.sp1, namespace, ident, exp.sp2)
         val lambda = WeededAst.Expression.Var(name, exp.loc)
         WeededAst.Expression.Apply(lambda, List(), exp.loc).toSuccess
 
       case exp: ParsedAst.Expression.Top =>
-        val name = Name.Unresolved(exp.sp1, List("⊤"), exp.sp2)
+        val ident = Name.Ident(exp.sp1, "⊤", exp.sp2)
+        val namespace = Name.NName(exp.sp1, List.empty, exp.sp2)
+        val name = Name.QName(exp.sp1, namespace, ident, exp.sp2)
         val lambda = WeededAst.Expression.Var(name, exp.loc)
         WeededAst.Expression.Apply(lambda, List(), exp.loc).toSuccess
 
