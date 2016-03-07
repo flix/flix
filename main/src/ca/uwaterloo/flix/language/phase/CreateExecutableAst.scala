@@ -21,8 +21,8 @@ object CreateExecutableAst {
     val rules = sast.rules.map(Constraint.toExecutable).toArray
     val time = sast.time
 
-    val dependenciesOf: Map[Name.Resolved, mutable.Set[(ExecutableAst.Constraint.Rule, ExecutableAst.Predicate.Body.Collection)]] = {
-      val result = mutable.Map.empty[Name.Resolved, mutable.Set[(ExecutableAst.Constraint.Rule, ExecutableAst.Predicate.Body.Collection)]]
+    val dependenciesOf: Map[Symbol.Resolved, mutable.Set[(ExecutableAst.Constraint.Rule, ExecutableAst.Predicate.Body.Collection)]] = {
+      val result = mutable.Map.empty[Symbol.Resolved, mutable.Set[(ExecutableAst.Constraint.Rule, ExecutableAst.Predicate.Body.Collection)]]
 
       for (rule <- rules) {
         rule.head match {

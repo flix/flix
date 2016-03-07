@@ -2,21 +2,21 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.{Invokable, IValue, Flix}
 import ca.uwaterloo.flix.language.ast.Type.Lambda
-import ca.uwaterloo.flix.language.ast.{Type, Name}
+import ca.uwaterloo.flix.language.ast.{Type, Symbol}
 import org.scalatest.FunSuite
 
 class TestSolver extends FunSuite {
 
-  val NameA = Name.Resolved.mk(List("A"))
-  val NameB = Name.Resolved.mk(List("B"))
-  val NameC = Name.Resolved.mk(List("C"))
-  val NameR = Name.Resolved.mk(List("R"))
+  val NameA = Symbol.Resolved.mk(List("A"))
+  val NameB = Symbol.Resolved.mk(List("B"))
+  val NameC = Symbol.Resolved.mk(List("C"))
+  val NameR = Symbol.Resolved.mk(List("R"))
 
   object Parity {
-    val Top = Value.mkTag(Name.Resolved.mk(List("Parity")), "Top", Value.Unit)
-    val Odd = Value.mkTag(Name.Resolved.mk(List("Parity")), "Odd", Value.Unit)
-    val Even = Value.mkTag(Name.Resolved.mk(List("Parity")), "Even", Value.Unit)
-    val Bot = Value.mkTag(Name.Resolved.mk(List("Parity")), "Bot", Value.Unit)
+    val Top = Value.mkTag(Symbol.Resolved.mk(List("Parity")), "Top", Value.Unit)
+    val Odd = Value.mkTag(Symbol.Resolved.mk(List("Parity")), "Odd", Value.Unit)
+    val Even = Value.mkTag(Symbol.Resolved.mk(List("Parity")), "Even", Value.Unit)
+    val Bot = Value.mkTag(Symbol.Resolved.mk(List("Parity")), "Bot", Value.Unit)
 
     val Definition =
       """

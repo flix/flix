@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.Symbol
 import org.scalatest.FunSuite
 
 class TestTyper extends FunSuite {
@@ -16,7 +17,7 @@ class TestTyper extends FunSuite {
   @deprecated
   val Ident = ident("x")
   @deprecated
-  val RName = Name.Resolved.mk(List("foo", "bar"))
+  val RName = Symbol.Resolved.mk(List("foo", "bar"))
 
   /////////////////////////////////////////////////////////////////////////////
   // POSITIVE TEST CASES                                                     //
@@ -864,7 +865,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Tag.TypeError") {
-    val enumName = Name.Resolved.mk(List("Foo", "Bar"))
+    val enumName = Symbol.Resolved.mk(List("Foo", "Bar"))
     val tagName = ident("A")
     val rast = ResolvedAst.Expression.Tag(enumName, tagName, ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int32(42, SL), SL), SL)
 
@@ -887,7 +888,7 @@ class TestTyper extends FunSuite {
   // Predicates & Terms                                                      //
   /////////////////////////////////////////////////////////////////////////////
   test("Predicate.Head01") {
-    val rname = Name.Resolved.mk(List("foo", "bar"))
+    val rname = Symbol.Resolved.mk(List("foo", "bar"))
     val x = ident("x")
     val y = ident("y")
     val z = ident("z")
@@ -918,7 +919,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Predicate.Head02") {
-    val rname = Name.Resolved.mk(List("foo", "bar"))
+    val rname = Symbol.Resolved.mk(List("foo", "bar"))
     val x = ident("x")
     val y = ident("y")
     val z = ident("z")
@@ -951,8 +952,8 @@ class TestTyper extends FunSuite {
   }
 
   test("Predicate.Head03") {
-    val relationName = Name.Resolved.mk(List("foo", "bar"))
-    val functionName = Name.Resolved.mk(List("foo", "baz"))
+    val relationName = Symbol.Resolved.mk(List("foo", "bar"))
+    val functionName = Symbol.Resolved.mk(List("foo", "baz"))
     val x = ident("x")
 
     // NB: Somewhat misleading we use the same identifiers for both columns and variables.
@@ -988,7 +989,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Predicate.Body01") {
-    val rname = Name.Resolved.mk(List("foo", "bar"))
+    val rname = Symbol.Resolved.mk(List("foo", "bar"))
     val x = ident("x")
     val y = ident("y")
     val z = ident("z")

@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Type
 
 import scala.collection.immutable
@@ -15,7 +15,7 @@ package object library {
   /**
     * A map of all library operators.
     */
-  val Library: immutable.Map[Name.Resolved, LibraryOperator] =
+  val Library: immutable.Map[Symbol.Resolved, LibraryOperator] =
     FBool.Ops ++ FChar.Ops ++ FDebug.Ops ++ FInt.Ops ++ FList.Ops ++ FMap.Ops ++ FOpt.Ops ++ FSet.Ops
 
   /////////////////////////////////////////////////////////////////////////////

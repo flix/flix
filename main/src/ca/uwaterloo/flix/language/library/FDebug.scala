@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.library
 
-import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.Type._
 
@@ -16,12 +16,12 @@ object FDebug {
   /**
     * All debug operations.
     */
-  val Ops: immutable.Map[Name.Resolved, DebugOperator] = List(
+  val Ops: immutable.Map[Symbol.Resolved, DebugOperator] = List(
     "Debug/abort" -> abort,
     "Debug/print" -> print,
     "Debug/time" -> time
   ).map {
-    case (name, op) => Name.Resolved.mk(name) -> op
+    case (name, op) => Symbol.Resolved.mk(name) -> op
   }.toMap
 
   /**

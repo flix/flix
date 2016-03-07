@@ -14,7 +14,7 @@ object WeededAst {
     * @param hooks        a map from names to hooks.
     * @param time         the time spent in each compiler phase.
     */
-  case class Root(declarations: List[WeededAst.Declaration], hooks: Map[Name.Resolved, Ast.Hook], time: Time) extends WeededAst
+  case class Root(declarations: List[WeededAst.Declaration], hooks: Map[Symbol.Resolved, Ast.Hook], time: Time) extends WeededAst
 
   /**
     * A common super-type for AST nodes that represents declarations.

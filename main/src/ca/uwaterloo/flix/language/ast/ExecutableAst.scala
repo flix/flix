@@ -6,20 +6,20 @@ sealed trait ExecutableAst
 
 object ExecutableAst {
 
-  case class Root(constants: Map[Name.Resolved, ExecutableAst.Definition.Constant],
+  case class Root(constants: Map[Symbol.Resolved, ExecutableAst.Definition.Constant],
                   lattices: Map[Type, ExecutableAst.Definition.Lattice],
-                  collections: Map[Name.Resolved, ExecutableAst.Collection],
-                  indexes: Map[Name.Resolved, ExecutableAst.Definition.Index],
+                  collections: Map[Symbol.Resolved, ExecutableAst.Collection],
+                  indexes: Map[Symbol.Resolved, ExecutableAst.Definition.Index],
                   facts: Array[ExecutableAst.Constraint.Fact],
                   rules: Array[ExecutableAst.Constraint.Rule],
                   time: Time,
-                  dependenciesOf: Map[Name.Resolved, mutable.Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Collection)]]) extends ExecutableAst
+                  dependenciesOf: Map[Symbol.Resolved, mutable.Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Collection)]]) extends ExecutableAst
 
   sealed trait Definition
 
   object Definition {
 
-    case class Constant(name: Name.Resolved,
+    case class Constant(name: Symbol.Resolved,
                         exp: ExecutableAst.Expression,
                         tpe: Type,
                         loc: SourceLocation) extends ExecutableAst.Definition
@@ -32,7 +32,7 @@ object ExecutableAst {
                        glb: ExecutableAst.Expression,
                        loc: SourceLocation) extends ExecutableAst.Definition
 
-    case class Index(name: Name.Resolved,
+    case class Index(name: Symbol.Resolved,
                      indexes: Seq[Seq[Name.Ident]],
                      loc: SourceLocation) extends ExecutableAst.Definition
 
@@ -42,11 +42,11 @@ object ExecutableAst {
 
   object Collection {
 
-    case class Relation(name: Name.Resolved,
+    case class Relation(name: Symbol.Resolved,
                         attributes: Array[ExecutableAst.Attribute],
                         loc: SourceLocation) extends ExecutableAst.Collection
 
-    case class Lattice(name: Name.Resolved,
+    case class Lattice(name: Symbol.Resolved,
                        keys: Array[ExecutableAst.Attribute],
                        values: Array[ExecutableAst.Attribute],
                        loc: SourceLocation) extends ExecutableAst.Collection
@@ -251,7 +251,7 @@ object ExecutableAst {
                    tpe: Type,
                    loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class Ref(name: Name.Resolved, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression {
+    case class Ref(name: Symbol.Resolved, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression {
       override def toString: String = "Ref(" + name.fqn + ")"
     }
 
@@ -283,7 +283,7 @@ object ExecutableAst {
       * @param tpe  the return type of the function.
       * @param loc  the source location of the expression.
       */
-    case class Apply(name: Name.Resolved,
+    case class Apply(name: Symbol.Resolved,
                      args: Array[ExecutableAst.Expression],
                      tpe: Type,
                      loc: SourceLocation) extends ExecutableAst.Expression
@@ -400,7 +400,7 @@ object ExecutableAst {
       * @param tpe  the type of the expression.
       * @param loc  The source location of the tag.
       */
-    case class Tag(enum: Name.Resolved,
+    case class Tag(enum: Symbol.Resolved,
                    tag: Name.Ident,
                    exp: ExecutableAst.Expression,
                    tpe: Type.Enum,
@@ -491,7 +491,7 @@ object ExecutableAst {
 
     object Head {
 
-      case class Relation(name: Name.Resolved,
+      case class Relation(name: Symbol.Resolved,
                           terms: Array[ExecutableAst.Term.Head],
                           tpe: Type.Predicate,
                           loc: SourceLocation) extends ExecutableAst.Predicate.Head {
@@ -512,7 +512,7 @@ object ExecutableAst {
 
     object Body {
 
-      case class Collection(name: Name.Resolved,
+      case class Collection(name: Symbol.Resolved,
                             terms: Array[ExecutableAst.Term.Body],
                             index2var: Array[String],
                             freeVars: Set[String],
@@ -524,7 +524,7 @@ object ExecutableAst {
         val arity: Int = terms.length
       }
 
-      case class ApplyFilter(name: Name.Resolved,
+      case class ApplyFilter(name: Symbol.Resolved,
                              terms: Array[ExecutableAst.Term.Body],
                              freeVars: Set[String],
                              tpe: Type.Lambda,
@@ -566,7 +566,7 @@ object ExecutableAst {
 
       case class Exp(e: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
-      case class Apply(name: Name.Resolved,
+      case class Apply(name: Symbol.Resolved,
                        args: Array[ExecutableAst.Term.Head],
                        tpe: Type,
                        loc: SourceLocation) extends ExecutableAst.Term.Head

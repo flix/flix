@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Predicate, Term}
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, Name}
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
 
 import scala.collection.mutable
 
@@ -12,8 +12,8 @@ object Indexer {
   /**
     * Returns an index selection strategy based on left-to-right evaluation of constraint rules.
     */
-  def index(root: ExecutableAst.Root): Map[Name.Resolved, Set[Seq[Int]]] = {
-    val indexes = mutable.Map.empty[Name.Resolved, Set[Seq[Int]]]
+  def index(root: ExecutableAst.Root): Map[Symbol.Resolved, Set[Seq[Int]]] = {
+    val indexes = mutable.Map.empty[Symbol.Resolved, Set[Seq[Int]]]
 
     // iterate through each rule.
     for (constraint <- root.rules) {

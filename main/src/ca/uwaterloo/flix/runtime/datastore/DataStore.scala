@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime.datastore
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Collection
-import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.Indexer
 import ca.uwaterloo.flix.runtime.Solver
 import ca.uwaterloo.flix.util.BitOps
@@ -17,12 +17,12 @@ class DataStore[ValueType <: AnyRef](implicit sCtx: Solver.SolverContext, m: Cla
   /**
     * A map from names to indexed relations.
     */
-  val relations = mutable.Map.empty[Name.Resolved, IndexedRelation[ValueType]]
+  val relations = mutable.Map.empty[Symbol.Resolved, IndexedRelation[ValueType]]
 
   /**
     * A map from names to indexed lattices.
     */
-  val lattices = mutable.Map.empty[Name.Resolved, IndexedLattice[ValueType]]
+  val lattices = mutable.Map.empty[Symbol.Resolved, IndexedLattice[ValueType]]
 
   /**
     * Initializes the relations and lattices.

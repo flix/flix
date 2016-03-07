@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.library
 
-import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Type
 
 import scala.collection.immutable
@@ -15,11 +15,11 @@ object FBool {
   /**
     * All bool operations.
     */
-  val Ops: immutable.Map[Name.Resolved, BoolOperator] = List(
+  val Ops: immutable.Map[Symbol.Resolved, BoolOperator] = List(
     "Bool/&&" -> and,
     "Bool/||" -> or
   ).map {
-    case (name, op) => Name.Resolved.mk(name) -> op
+    case (name, op) => Symbol.Resolved.mk(name) -> op
   }.toMap
 
   /////////////////////////////////////////////////////////////////////////////

@@ -17,14 +17,14 @@ class TestCodegen extends FunSuite {
   val sp = SourcePosition.Unknown
   val compiledClassName = "ca.uwaterloo.flix.compiled.FlixDefinitions"
 
-  val name = Name.Resolved.mk(List("foo", "bar", "main"))
-  val name01 = Name.Resolved.mk(List("foo", "bar", "f"))
-  val name02 = Name.Resolved.mk(List("foo", "bar", "g"))
-  val name03 = Name.Resolved.mk(List("foo", "bar", "h"))
+  val name = Symbol.Resolved.mk(List("foo", "bar", "main"))
+  val name01 = Symbol.Resolved.mk(List("foo", "bar", "f"))
+  val name02 = Symbol.Resolved.mk(List("foo", "bar", "g"))
+  val name03 = Symbol.Resolved.mk(List("foo", "bar", "h"))
 
   def toIdent(s: String): Name.Ident = Name.Ident(sp, s, sp)
 
-  val constPropName = Name.Resolved.mk(List("foo", "bar", "baz", "ConstProp"))
+  val constPropName = Symbol.Resolved.mk(List("foo", "bar", "baz", "ConstProp"))
   val identB = toIdent("Bot")
   val identV = toIdent("Val")
   val identT = toIdent("Top")
@@ -32,7 +32,7 @@ class TestCodegen extends FunSuite {
   val tagTpeB = Type.Tag(constPropName, identB, Type.Unit)
   val tagTpeV = Type.Tag(constPropName, identV, Type.Int32)
   val tagTpeT = Type.Tag(constPropName, identT, Type.Unit)
-  val enumTpe = Type.Enum(Name.Resolved.mk("ConstProp"), Map("Bot" -> tagTpeB, "Val" -> tagTpeV, "Top" -> tagTpeT))
+  val enumTpe = Type.Enum(Symbol.Resolved.mk("ConstProp"), Map("Bot" -> tagTpeB, "Val" -> tagTpeV, "Top" -> tagTpeT))
 
   class CompiledCode(definitions: List[Definition], debug: Boolean = false) {
     object Loader extends ClassLoader {
@@ -50,7 +50,7 @@ class TestCodegen extends FunSuite {
       Files.write(Paths.get(path), code)
     }
 
-    def call(name: Name.Resolved, tpes: List[Class[_]] = List(), args: List[Object] = List()): Any = {
+    def call(name: Symbol.Resolved, tpes: List[Class[_]] = List(), args: List[Object] = List()): Any = {
       val decorated = Codegen.decorate(name)
       val method = clazz.getMethod(decorated, tpes: _*)
 
@@ -449,13 +449,13 @@ class TestCodegen extends FunSuite {
   test("Codegen - Const02") {
     // Constants -1 to 5 (inclusive) each have their own instruction
 
-    val name_m1 = Name.Resolved.mk(List("foo", "bar", "f_m1"))
-    val name_0 = Name.Resolved.mk(List("foo", "bar", "f_0"))
-    val name_1 = Name.Resolved.mk(List("foo", "bar", "f_1"))
-    val name_2 = Name.Resolved.mk(List("foo", "bar", "f_2"))
-    val name_3 = Name.Resolved.mk(List("foo", "bar", "f_3"))
-    val name_4 = Name.Resolved.mk(List("foo", "bar", "f_4"))
-    val name_5 = Name.Resolved.mk(List("foo", "bar", "f_5"))
+    val name_m1 = Symbol.Resolved.mk(List("foo", "bar", "f_m1"))
+    val name_0 = Symbol.Resolved.mk(List("foo", "bar", "f_0"))
+    val name_1 = Symbol.Resolved.mk(List("foo", "bar", "f_1"))
+    val name_2 = Symbol.Resolved.mk(List("foo", "bar", "f_2"))
+    val name_3 = Symbol.Resolved.mk(List("foo", "bar", "f_3"))
+    val name_4 = Symbol.Resolved.mk(List("foo", "bar", "f_4"))
+    val name_5 = Symbol.Resolved.mk(List("foo", "bar", "f_5"))
 
     val def_m1 = Function(name_m1, args = List(),
       body = Int8(-1),
@@ -501,12 +501,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Const03") {
     // Test some constants that are loaded with a BIPUSH, i.e. i <- [Byte.MinValue, -1) UNION (5, Byte,MaxValue]
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Int8(scala.Byte.MinValue),
@@ -547,12 +547,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Const04") {
     // Test some constants that are loaded with an SIPUSH, i.e. i <- [Short.MinValue, Byte.MinValue) UNION (Byte.MaxValue, Short,MaxValue]
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Int16(scala.Short.MinValue),
@@ -593,12 +593,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Const05") {
     // Test some constants that are loaded with an LDC, i.e. i <- [Int.MinValue, Short.MinValue) UNION (Short.MaxValue, Int,MaxValue]
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Int32(scala.Int.MinValue),
@@ -1359,11 +1359,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Unary.Minus01") {
     // Unary minus operator applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Unary(UnaryOperator.Minus, Int8(scala.Byte.MaxValue), Type.Int8, loc),
@@ -1400,11 +1400,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Unary.Minus02") {
     // Unary minus operator applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Unary(UnaryOperator.Minus, Int16(scala.Short.MaxValue), Type.Int16, loc),
@@ -1440,11 +1440,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Unary.Minus03") {
     // Unary minus operator applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Unary(UnaryOperator.Minus, Int32(scala.Int.MaxValue), Type.Int32, loc),
@@ -1480,11 +1480,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Unary.Minus04") {
     // Unary minus operator applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Unary(UnaryOperator.Minus, Int64(scala.Long.MaxValue), Type.Int64, loc),
@@ -1520,13 +1520,13 @@ class TestCodegen extends FunSuite {
   test("Codegen - Unary.Negate01") {
     // Unary negation operator applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
-    val name07 = Name.Resolved.mk(List("foo", "bar", "f07"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
+    val name07 = Symbol.Resolved.mk(List("foo", "bar", "f07"))
 
     val def01 = Function(name01, args = List(),
       body = Unary(UnaryOperator.BitwiseNegate, Int8(scala.Byte.MaxValue), Type.Int8, loc),
@@ -1572,13 +1572,13 @@ class TestCodegen extends FunSuite {
   test("Codegen - Unary.Negate02") {
     // Unary negation operator applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
-    val name07 = Name.Resolved.mk(List("foo", "bar", "f07"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
+    val name07 = Symbol.Resolved.mk(List("foo", "bar", "f07"))
 
     val def01 = Function(name01, args = List(),
       body = Unary(UnaryOperator.BitwiseNegate, Int16(scala.Short.MaxValue), Type.Int16, loc),
@@ -1624,13 +1624,13 @@ class TestCodegen extends FunSuite {
   test("Codegen - Unary.Negate03") {
     // Unary negation operator applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
-    val name07 = Name.Resolved.mk(List("foo", "bar", "f07"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
+    val name07 = Symbol.Resolved.mk(List("foo", "bar", "f07"))
 
     val def01 = Function(name01, args = List(),
       body = Unary(UnaryOperator.BitwiseNegate, Int32(scala.Int.MaxValue), Type.Int32, loc),
@@ -1676,13 +1676,13 @@ class TestCodegen extends FunSuite {
   test("Codegen - Unary.Negate04") {
     // Unary negation operator applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
-    val name07 = Name.Resolved.mk(List("foo", "bar", "f07"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
+    val name07 = Symbol.Resolved.mk(List("foo", "bar", "f07"))
 
     val def01 = Function(name01, args = List(),
       body = Unary(UnaryOperator.BitwiseNegate, Int64(scala.Long.MaxValue), Type.Int64, loc),
@@ -1737,11 +1737,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Plus01") {
     // Binary plus operator applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Plus,
@@ -1792,11 +1792,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Plus02") {
     // Binary plus operator applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Plus,
@@ -1847,11 +1847,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Plus03") {
     // Binary plus operator applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Plus,
@@ -1902,11 +1902,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Plus04") {
     // Binary plus operator applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Plus,
@@ -1957,11 +1957,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Minus01") {
     // Binary minus operator applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Minus,
@@ -2012,11 +2012,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Minus02") {
     // Binary minus operator applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Minus,
@@ -2067,11 +2067,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Minus03") {
     // Binary minus operator applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Minus,
@@ -2122,11 +2122,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Minus04") {
     // Binary minus operator applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Minus,
@@ -2177,11 +2177,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Times01") {
     // Binary times operator applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Times,
@@ -2232,11 +2232,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Times02") {
     // Binary times operator applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Times,
@@ -2287,11 +2287,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Times03") {
     // Binary times operator applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Times,
@@ -2342,11 +2342,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Times04") {
     // Binary times operator applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Times,
@@ -2397,11 +2397,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Divide01") {
     // Binary divide operator applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Divide,
@@ -2452,11 +2452,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Divide02") {
     // Binary divide operator applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Divide,
@@ -2507,11 +2507,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Divide03") {
     // Binary divide operator applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Divide,
@@ -2562,11 +2562,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Divide04") {
     // Binary divide operator applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Divide,
@@ -2617,11 +2617,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Modulo01") {
     // Binary modulo operator applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Modulo,
@@ -2672,11 +2672,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Modulo02") {
     // Binary modulo operator applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Modulo,
@@ -2727,11 +2727,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Modulo03") {
     // Binary modulo operator applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Modulo,
@@ -2782,11 +2782,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Modulo04") {
     // Binary modulo operator applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Modulo,
@@ -2841,12 +2841,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Less01") {
     // < operator applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Less,
@@ -2905,12 +2905,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Less02") {
     // < operator applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Less,
@@ -2969,12 +2969,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Less03") {
     // < operator applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Less,
@@ -3033,12 +3033,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Less04") {
     // < operator applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Less,
@@ -3097,12 +3097,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.LessEqual01") {
     // <= operator applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.LessEqual,
@@ -3161,12 +3161,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.LessEqual02") {
     // <= operator applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.LessEqual,
@@ -3225,12 +3225,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.LessEqual03") {
     // <= operator applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.LessEqual,
@@ -3289,12 +3289,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.LessEqual04") {
     // <= operator applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.LessEqual,
@@ -3353,12 +3353,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Greater01") {
     // > operator applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Greater,
@@ -3417,12 +3417,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Greater02") {
     // > operator applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Greater,
@@ -3481,12 +3481,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Greater03") {
     // > operator applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Greater,
@@ -3545,12 +3545,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Greater04") {
     // > operator applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Greater,
@@ -3609,12 +3609,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.GreaterEqual01") {
     // >= operator applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.GreaterEqual,
@@ -3673,12 +3673,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.GreaterEqual02") {
     // >= operator applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.GreaterEqual,
@@ -3737,12 +3737,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.GreaterEqual03") {
     // >= operator applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.GreaterEqual,
@@ -3801,12 +3801,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.GreaterEqual04") {
     // >= operator applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.GreaterEqual,
@@ -3865,12 +3865,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Equal01") {
     // == operator applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Equal,
@@ -3929,12 +3929,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Equal02") {
     // == operator applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Equal,
@@ -3993,12 +3993,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Equal03") {
     // == operator applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Equal,
@@ -4057,12 +4057,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.Equal04") {
     // == operator applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.Equal,
@@ -4121,12 +4121,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.NotEqual01") {
     // != operator applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.NotEqual,
@@ -4185,12 +4185,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.NotEqual02") {
     // != operator applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.NotEqual,
@@ -4249,12 +4249,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.NotEqual03") {
     // != operator applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.NotEqual,
@@ -4313,12 +4313,12 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.NotEqual04") {
     // != operator applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
-    val name06 = Name.Resolved.mk(List("foo", "bar", "f06"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
+    val name06 = Symbol.Resolved.mk(List("foo", "bar", "f06"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.NotEqual,
@@ -4692,11 +4692,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseAnd01") {
     // Binary bitwise and operator applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseAnd,
@@ -4747,11 +4747,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseAnd02") {
     // Binary bitwise and operator applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseAnd,
@@ -4802,11 +4802,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseAnd03") {
     // Binary bitwise and operator applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseAnd,
@@ -4857,11 +4857,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseAnd04") {
     // Binary bitwise and operator applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseAnd,
@@ -4912,11 +4912,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseOr01") {
     // Binary bitwise or operator applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseOr,
@@ -4967,11 +4967,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseOr02") {
     // Binary bitwise or operator applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseOr,
@@ -5022,11 +5022,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseOr03") {
     // Binary bitwise or operator applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseOr,
@@ -5077,11 +5077,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseOr04") {
     // Binary bitwise or operator applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseOr,
@@ -5132,11 +5132,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseXor01") {
     // Binary bitwise xor operator applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseXor,
@@ -5187,11 +5187,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseXor02") {
     // Binary bitwise xor operator applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseXor,
@@ -5242,11 +5242,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseXor03") {
     // Binary bitwise xor operator applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseXor,
@@ -5297,11 +5297,11 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseXor04") {
     // Binary bitwise xor operator applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
-    val name05 = Name.Resolved.mk(List("foo", "bar", "f05"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+    val name05 = Symbol.Resolved.mk(List("foo", "bar", "f05"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseXor,
@@ -5352,10 +5352,10 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseLeftShift01") {
     // Bitwise left shift applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseLeftShift,
@@ -5398,10 +5398,10 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseLeftShift02") {
     // Bitwise left shift applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseLeftShift,
@@ -5444,10 +5444,10 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseLeftShift03") {
     // Bitwise left shift applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseLeftShift,
@@ -5490,10 +5490,10 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseLeftShift04") {
     // Bitwise left shift applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseLeftShift,
@@ -5536,10 +5536,10 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseRightShift01") {
     // Bitwise right shift applied to Int8
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseRightShift,
@@ -5582,10 +5582,10 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseRightShift02") {
     // Bitwise right shift applied to Int16
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseRightShift,
@@ -5628,10 +5628,10 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseRightShift03") {
     // Bitwise right shift applied to Int32
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseRightShift,
@@ -5674,10 +5674,10 @@ class TestCodegen extends FunSuite {
   test("Codegen - Binary.BitwiseRightShift04") {
     // Bitwise right shift applied to Int64
 
-    val name01 = Name.Resolved.mk(List("foo", "bar", "f01"))
-    val name02 = Name.Resolved.mk(List("foo", "bar", "f02"))
-    val name03 = Name.Resolved.mk(List("foo", "bar", "f03"))
-    val name04 = Name.Resolved.mk(List("foo", "bar", "f04"))
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
 
     val def01 = Function(name01, args = List(),
       body = Binary(BinaryOperator.BitwiseRightShift,
@@ -5978,7 +5978,7 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tag02") {
-    val enum = Type.Enum(Name.Resolved.mk("ConstProp"), Map("ConstProp.Val" -> Type.Tag(constPropName, identV, Type.Bool)))
+    val enum = Type.Enum(Symbol.Resolved.mk("ConstProp"), Map("ConstProp.Val" -> Type.Tag(constPropName, identV, Type.Bool)))
     val definition = Function(name, args = List(),
       body = Tag(constPropName, identV, True, enum, loc),
       Type.Lambda(List(), enum), loc)
@@ -6001,9 +6001,9 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tag04") {
-    val tagName = Name.Resolved.mk("abc")
+    val tagName = Symbol.Resolved.mk("abc")
     val ident = toIdent("def")
-    val enum = Type.Enum(Name.Resolved.mk("ConstProp"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
+    val enum = Type.Enum(Symbol.Resolved.mk("ConstProp"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
     val definition = Function(name, args = List(),
       body = Tag(tagName, ident, True, enum, loc),
       Type.Lambda(List(), enum), loc)
@@ -6015,9 +6015,9 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tag05") {
-    val tagName = Name.Resolved.mk("abc")
+    val tagName = Symbol.Resolved.mk("abc")
     val ident = toIdent("def")
-    val enum = Type.Enum(Name.Resolved.mk("ConstProp"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
+    val enum = Type.Enum(Symbol.Resolved.mk("ConstProp"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
     val definition = Function(name, args = List(),
       body = Tag(tagName, ident, False, enum, loc),
       Type.Lambda(List(), enum), loc)
@@ -6029,9 +6029,9 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tag06") {
-    val tagName = Name.Resolved.mk("abc")
+    val tagName = Symbol.Resolved.mk("abc")
     val ident = toIdent("def")
-    val enum = Type.Enum(Name.Resolved.mk("ConstProp"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
+    val enum = Type.Enum(Symbol.Resolved.mk("ConstProp"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Bool)))
     val definition = Function(name, args = List("x"),
       body = Tag(tagName, ident, Var(toIdent("x"), 0, Type.Bool, loc), enum, loc),
       Type.Lambda(List(Type.Bool), enum), loc)
@@ -6043,9 +6043,9 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tag07") {
-    val tagName = Name.Resolved.mk("abc")
+    val tagName = Symbol.Resolved.mk("abc")
     val ident = toIdent("def")
-    val enum = Type.Enum(Name.Resolved.mk("ConstProp"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Str)))
+    val enum = Type.Enum(Symbol.Resolved.mk("ConstProp"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Str)))
     val definition = Function(name, args = List(),
       body = Tag(tagName, ident, Str("hello"), enum, loc),
       Type.Lambda(List(), enum), loc)
@@ -6057,9 +6057,9 @@ class TestCodegen extends FunSuite {
   }
 
   test("Codegen - Tag08") {
-    val tagName = Name.Resolved.mk("abc")
+    val tagName = Symbol.Resolved.mk("abc")
     val ident = toIdent("def")
-    val enum = Type.Enum(Name.Resolved.mk("abc"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int32, Type.Str)))))
+    val enum = Type.Enum(Symbol.Resolved.mk("abc"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int32, Type.Str)))))
     val definition = Function(name, args = List(),
       body = Tag(tagName, ident, Tuple(List(Int32(1), Str("one")),
         Type.Tuple(List(Type.Int32, Type.Str)), loc), enum, loc),
@@ -6137,9 +6137,9 @@ class TestCodegen extends FunSuite {
 
   // TODO
   ignore("Codegen - GetTagValue03") {
-    val tagName = Name.Resolved.mk("abc")
+    val tagName = Symbol.Resolved.mk("abc")
     val ident = toIdent("def")
-    val enum = Type.Enum(Name.Resolved.mk("abc"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int32, Type.Str)))))
+    val enum = Type.Enum(Symbol.Resolved.mk("abc"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int32, Type.Str)))))
 
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,

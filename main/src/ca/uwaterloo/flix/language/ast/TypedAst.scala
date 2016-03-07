@@ -23,13 +23,13 @@ object TypedAst {
     * @param hooks       a map from names to hooks.
     * @param time        the time spent in each compiler phase.
     */
-  case class Root(constants: Map[Name.Resolved, TypedAst.Definition.Constant],
+  case class Root(constants: Map[Symbol.Resolved, TypedAst.Definition.Constant],
                   lattices: Map[Type, TypedAst.Definition.BoundedLattice],
-                  collections: Map[Name.Resolved, TypedAst.Collection],
-                  indexes: Map[Name.Resolved, TypedAst.Definition.Index],
+                  collections: Map[Symbol.Resolved, TypedAst.Collection],
+                  indexes: Map[Symbol.Resolved, TypedAst.Definition.Index],
                   facts: List[TypedAst.Constraint.Fact],
                   rules: List[TypedAst.Constraint.Rule],
-                  hooks: Map[Name.Resolved, Ast.Hook],
+                  hooks: Map[Symbol.Resolved, Ast.Hook],
                   time: Time) extends TypedAst
 
   /**
@@ -47,7 +47,7 @@ object TypedAst {
       * @param tpe  the type of the constant.
       * @param loc  the source location.
       */
-    case class Constant(name: Name.Resolved, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Definition
+    case class Constant(name: Symbol.Resolved, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Definition
 
     /**
       * A typed AST node representing a bounded lattice definition.
@@ -75,7 +75,7 @@ object TypedAst {
       * @param indexes the selected indexes.
       * @param loc     the source location.
       */
-    case class Index(name: Name.Resolved, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends TypedAst.Definition
+    case class Index(name: Symbol.Resolved, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends TypedAst.Definition
 
   }
 
@@ -93,7 +93,7 @@ object TypedAst {
       * @param attributes the attributes of the relation.
       * @param loc        the source location.
       */
-    case class Relation(name: Name.Resolved, attributes: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Collection
+    case class Relation(name: Symbol.Resolved, attributes: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Collection
 
     /**
       * A typed AST node representing a lattice definition.
@@ -103,7 +103,7 @@ object TypedAst {
       * @param values the keys of the lattice.
       * @param loc    the source location.
       */
-    case class Lattice(name: Name.Resolved, keys: List[TypedAst.Attribute], values: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Collection
+    case class Lattice(name: Symbol.Resolved, keys: List[TypedAst.Attribute], values: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Collection
 
   }
 
@@ -289,7 +289,7 @@ object TypedAst {
       * @param tpe  the type of the definition.
       * @param loc  the source location.
       */
-    case class Ref(name: Name.Resolved, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Ref(name: Symbol.Resolved, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a reference to a native JVM function.
@@ -392,7 +392,7 @@ object TypedAst {
       * @param tpe   the type of the expression.
       * @param loc   the source location.
       */
-    case class Tag(name: Name.Resolved, ident: Name.Ident, exp: TypedAst.Expression, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Expression
+    case class Tag(name: Symbol.Resolved, ident: Name.Ident, exp: TypedAst.Expression, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a tuple expression.
@@ -492,7 +492,7 @@ object TypedAst {
       * @param tpe   the type of the tag.
       * @param loc   the source location.
       */
-    case class Tag(name: Name.Resolved, ident: Name.Ident, pat: TypedAst.Pattern, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Pattern
+    case class Tag(name: Symbol.Resolved, ident: Name.Ident, pat: TypedAst.Pattern, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Pattern
 
     /**
       * A typed AST node representing a tuple pattern.
@@ -542,7 +542,7 @@ object TypedAst {
         * @param loc   the source location.
         */
       // TODO: Need better name....could also be a lattice...
-      case class Relation(name: Name.Resolved, terms: List[TypedAst.Term.Head], tpe: Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class Relation(name: Symbol.Resolved, terms: List[TypedAst.Term.Head], tpe: Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Head
     }
 
     /**
@@ -560,7 +560,7 @@ object TypedAst {
         * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      case class Collection(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Collection(name: Symbol.Resolved, terms: List[TypedAst.Term.Body], tpe: Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Body
 
       /**
         * A filter predicate that occurs in the body of a rule.
@@ -570,7 +570,7 @@ object TypedAst {
         * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      case class ApplyFilter(name: Name.Resolved, terms: List[TypedAst.Term.Body], tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class ApplyFilter(name: Symbol.Resolved, terms: List[TypedAst.Term.Body], tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body
 
       /**
         * A hook filter predicate that occurs in the body of a rule.
@@ -643,7 +643,7 @@ object TypedAst {
         */
       case class Lit(literal: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
 
-      case class Tag(enumName: Name.Resolved, tagName: Name.Ident, t: TypedAst.Term.Head, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Term.Head
+      case class Tag(enumName: Symbol.Resolved, tagName: Name.Ident, t: TypedAst.Term.Head, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Term.Head
 
       case class Tuple(elms: List[TypedAst.Term.Head], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Term.Head
 
@@ -655,7 +655,7 @@ object TypedAst {
         * @param tpe  the type of the term.
         * @param loc  the source location.
         */
-      case class Apply(name: Name.Resolved, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
+      case class Apply(name: Symbol.Resolved, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
 
       /**
         * A typed AST node representing a hook function call term.

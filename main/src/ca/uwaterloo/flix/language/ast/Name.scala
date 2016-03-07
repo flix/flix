@@ -9,8 +9,6 @@ object Name {
   /**
     * Identifier.
     *
-    * NB: Equality on identifiers is defined by structural equality on all components.
-    *
     * @param sp1  the position of the first character in the identifier.
     * @param name the identifier string.
     * @param sp2  the position of the last character in the identifier.
@@ -29,8 +27,6 @@ object Name {
 
   /**
     * Namespace.
-    *
-    * NB: Equality on namespaces is defined by structural equality on all components.
     *
     * @param sp1    the position of the first character in the namespace.
     * @param idents the identifiers of the namespace.
@@ -76,63 +72,6 @@ object Name {
       * Human readable representation.
       */
     override val toString: String = namespace.toString + "/" + ident
-  }
-
-
-  /**
-    * Companion object for the [[Resolved]] class.
-    */
-  // TODO: Move to symbol.
-  object Resolved {
-
-    private val cache = mutable.HashMap.empty[List[String], Resolved]
-
-    def mk(name: String): Resolved = {
-      if (name.contains("/")) {
-        val index = name.indexOf("/")
-        val (ns, ident) = name.splitAt(index)
-        mk(ns.split("\\.").toList ::: ident.substring(1) :: Nil)
-      } else
-        mk(List(name))
-    }
-
-    def mk(parts: List[String]): Resolved = {
-      cache.getOrElseUpdate(parts, new Resolved(parts))
-    }
-  }
-
-  /**
-    * Represents a resolved name.
-    *
-    * @param parts the parts of the name.
-    */
-  final class Resolved private(val parts: List[String]) {
-
-    /**
-      * Returns the fully qualified name of `this` as a string.
-      */
-    def fqn: String = parts match {
-      case x :: Nil => x
-      case xs => xs.init.mkString(".") + "/" + xs.last
-    }
-
-    /**
-      * Returns `true` if this resolved name is equal to `obj` resolved name.
-      */
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: Resolved => this eq that
-      case _ => false
-    }
-
-    /**
-      * Returns the hash code of this resolved name.
-      */
-    override val hashCode: Int = parts.hashCode()
-
-    /**
-      * Human readable representation.
-      */
-    override val toString: String = fqn
   }
 
 }

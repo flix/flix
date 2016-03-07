@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.Value
 import org.scalatest.FunSuite
 
@@ -40,13 +40,13 @@ class TestExamples extends FunSuite {
       .solve()
       .get
 
-    val Belnap = Name.Resolved.mk(List("Belnap", "Belnap"))
+    val Belnap = Symbol.Resolved.mk(List("Belnap", "Belnap"))
 
     val Tru = Value.mkTag(Belnap, "True", Value.Unit)
     val Fls = Value.mkTag(Belnap, "False", Value.Unit)
     val Top = Value.mkTag(Belnap, "Top", Value.Unit)
 
-    val A = model.lattices(Name.Resolved.mk(List("Belnap", "A"))).toMap
+    val A = model.lattices(Symbol.Resolved.mk(List("Belnap", "A"))).toMap
 
     assertResult(List(Tru))(A(List(Value.mkInt32(1))))
     assertResult(List(Fls))(A(List(Value.mkInt32(2))))
@@ -89,13 +89,13 @@ class TestExamples extends FunSuite {
       .solve()
       .get
 
-    val Parity = Name.Resolved.mk(List("Parity", "Parity"))
+    val Parity = Symbol.Resolved.mk(List("Parity", "Parity"))
 
     val Odd = Value.mkTag(Parity, "Odd", Value.Unit)
     val Evn = Value.mkTag(Parity, "Even", Value.Unit)
     val Top = Value.mkTag(Parity, "Top", Value.Unit)
 
-    val A = model.lattices(Name.Resolved.mk(List("Parity", "A"))).toMap
+    val A = model.lattices(Symbol.Resolved.mk(List("Parity", "A"))).toMap
 
     assertResult(List(Odd))(A(List(Value.mkInt32(1))))
     assertResult(List(Evn))(A(List(Value.mkInt32(2))))
@@ -138,14 +138,14 @@ class TestExamples extends FunSuite {
       .solve()
       .get
 
-    val Sign = Name.Resolved.mk(List("Sign", "Sign"))
+    val Sign = Symbol.Resolved.mk(List("Sign", "Sign"))
 
     val Neg = Value.mkTag(Sign, "Neg", Value.Unit)
     val Zer = Value.mkTag(Sign, "Zer", Value.Unit)
     val Pos = Value.mkTag(Sign, "Pos", Value.Unit)
     val Top = Value.mkTag(Sign, "Top", Value.Unit)
 
-    val A = model.lattices(Name.Resolved.mk(List("Sign", "A"))).toMap
+    val A = model.lattices(Symbol.Resolved.mk(List("Sign", "A"))).toMap
 
     assertResult(List(Neg))(A(List(Value.mkInt32(1))))
     assertResult(List(Zer))(A(List(Value.mkInt32(2))))
@@ -186,14 +186,14 @@ class TestExamples extends FunSuite {
       .solve()
       .get
 
-    val Constant = Name.Resolved.mk(List("Constant", "Constant"))
+    val Constant = Symbol.Resolved.mk(List("Constant", "Constant"))
 
     val Zer = Value.mkTag(Constant, "Cst", Value.mkInt32(0))
     val One = Value.mkTag(Constant, "Cst", Value.mkInt32(1))
     val Two = Value.mkTag(Constant, "Cst", Value.mkInt32(2))
     val Top = Value.mkTag(Constant, "Top", Value.Unit)
 
-    val A = model.lattices(Name.Resolved.mk(List("Constant", "A"))).toMap
+    val A = model.lattices(Symbol.Resolved.mk(List("Constant", "A"))).toMap
 
     assertResult(List(Zer))(A(List(Value.mkInt32(0))))
     assertResult(List(One))(A(List(Value.mkInt32(1))))
@@ -237,14 +237,14 @@ class TestExamples extends FunSuite {
       .solve()
       .get
 
-    val ConstantSign = Name.Resolved.mk(List("ConstantSign", "ConstSign"))
+    val ConstantSign = Symbol.Resolved.mk(List("ConstantSign", "ConstSign"))
 
     val Zer = Value.mkTag(ConstantSign, "Cst", Value.mkInt32(0))
     val One = Value.mkTag(ConstantSign, "Cst", Value.mkInt32(1))
     val Pos = Value.mkTag(ConstantSign, "Pos", Value.Unit)
     val Top = Value.mkTag(ConstantSign, "Top", Value.Unit)
 
-    val A = model.lattices(Name.Resolved.mk(List("ConstantSign", "A"))).toMap
+    val A = model.lattices(Symbol.Resolved.mk(List("ConstantSign", "A"))).toMap
 
     assertResult(List(Zer))(A(List(Value.mkInt32(2))))
     assertResult(List(One))(A(List(Value.mkInt32(3))))

@@ -65,7 +65,7 @@ object Compiler {
   /**
     * Returns the typed AST corresponding to the given `inputs`.
     */
-  def compile(inputs: List[SourceInput], hooks: Map[Name.Resolved, Ast.Hook]): Validation[TypedAst.Root, CompilationError] = {
+  def compile(inputs: List[SourceInput], hooks: Map[Symbol.Resolved, Ast.Hook]): Validation[TypedAst.Root, CompilationError] = {
     val result = @@(inputs.map(parse)) map {
       case (asts) => asts.reduce[ParsedAst.Root] {
         // TODO: Change the definition of Root to allow multiple compilation units.

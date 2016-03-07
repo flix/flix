@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.{IValue, WrappedValue}
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
-import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Name}
+import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.util.{Debugger, Options, Verbosity}
@@ -91,7 +91,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       shell.start()
     }
 
-    val constants = sCtx.root.constants.foldLeft(Map.empty[Name.Resolved, AnyRef]) {
+    val constants = sCtx.root.constants.foldLeft(Map.empty[Symbol.Resolved, AnyRef]) {
       case (macc, (name, constant)) => constant.exp match {
         case e: ExecutableAst.Expression.Lambda if e.args.length == 0 =>
           val v = Interpreter.eval(e.body, sCtx.root)
@@ -143,12 +143,12 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     }
 
     // construct the model.
-    val relations = dataStore.relations.foldLeft(Map.empty[Name.Resolved, Iterable[List[AnyRef]]]) {
+    val relations = dataStore.relations.foldLeft(Map.empty[Symbol.Resolved, Iterable[List[AnyRef]]]) {
       case (macc, (name, relation)) =>
         val table = relation.scan.toIterable.map(_.toList)
         macc + ((name, table))
     }
-    val lattices = dataStore.lattices.foldLeft(Map.empty[Name.Resolved, Iterable[(List[AnyRef], List[AnyRef])]]) {
+    val lattices = dataStore.lattices.foldLeft(Map.empty[Symbol.Resolved, Iterable[(List[AnyRef], List[AnyRef])]]) {
       case (macc, (name, lattice)) =>
         val table = lattice.scan.toIterable.map {
           case (keys, values) => (keys.toArray.toList, values.toList)
@@ -170,7 +170,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Processes an inferred `fact` for the relation or lattice with the `name`.
     */
-  def inferredFact(name: Name.Resolved, fact: Array[AnyRef], enqueue: Boolean): Unit = sCtx.root.collections(name) match {
+  def inferredFact(name: Symbol.Resolved, fact: Array[AnyRef], enqueue: Boolean): Unit = sCtx.root.collections(name) match {
     case r: ExecutableAst.Collection.Relation =>
       val changed = dataStore.relations(name).inferredFact(fact)
       if (changed && enqueue) {
@@ -352,7 +352,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Returns all dependencies of the given `name` along with an environment.
     */
-  def dependencies(name: Name.Resolved, fact: Array[AnyRef]): Unit = {
+  def dependencies(name: Symbol.Resolved, fact: Array[AnyRef]): Unit = {
 
     def unify(pat: Array[String], fact: Array[AnyRef], limit: Int): mutable.Map[String, AnyRef] = {
       val env = mutable.Map.empty[String, AnyRef]

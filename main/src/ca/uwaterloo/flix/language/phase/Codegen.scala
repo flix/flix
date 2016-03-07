@@ -23,9 +23,9 @@ object Codegen {
   }
 
   /*
-   * Decorate (mangle) a Name.Resolved to get the internal JVM name.
+   * Decorate (mangle) a Symbol.Resolved to get the internal JVM name.
    */
-  def decorate(name: Name.Resolved): String = name.parts.mkString("$")
+  def decorate(name: Symbol.Resolved): String = name.parts.mkString("$")
 
   /*
    * Returns the internal name of the JVM type that `tpe` maps to.
@@ -192,19 +192,19 @@ object Codegen {
       visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
         "Lca/uwaterloo/flix/runtime/Value$;")
 
-      // Load `enum` as a string, by calling `Name.Resolved.mk`
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/Name$Resolved$", "MODULE$",
-        "Lca/uwaterloo/flix/language/ast/Name$Resolved$;")
+      // Load `enum` as a string, by calling `Symbol.Resolved.mk`
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/Symbol$Resolved$", "MODULE$",
+        "Lca/uwaterloo/flix/language/ast/Symbol$Resolved$;")
       visitor.visitLdcInsn(enum.fqn)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/Name$Resolved$", "mk",
-        "(Ljava/lang/String;)Lca/uwaterloo/flix/language/ast/Name$Resolved;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/Symbol$Resolved$", "mk",
+        "(Ljava/lang/String;)Lca/uwaterloo/flix/language/ast/Symbol$Resolved;", false) // TODO: Move these into some static fields.
 
       // Load `tag.name` and box `exp` if necessary.
       visitor.visitLdcInsn(tag.name)
       compileBoxedExpr(context, visitor)(exp)
 
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkTag",
-        "(Lca/uwaterloo/flix/language/ast/Name$Resolved;Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
+        "(Lca/uwaterloo/flix/language/ast/Symbol$Resolved;Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
 
     case Expression.GetTupleIndex(base, offset, tpe, _) =>
       // Compile the tuple expression, load the tuple array, compile the offset, load the array element, and unbox if

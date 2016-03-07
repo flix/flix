@@ -1,13 +1,13 @@
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.language.ast.{TypedAst, Name}
+import ca.uwaterloo.flix.language.ast.{TypedAst, Symbol}
 import ca.uwaterloo.flix.runtime.{Value, Model}
 
 
 object PrettyPrint {
 
   def print(name: String, model: Model): Unit = {
-    val rname = Name.Resolved.mk(name)
+    val rname = Symbol.Resolved.mk(name)
 
     var found = false
 

@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.library
 
-import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.runtime.Value
 
@@ -11,7 +11,7 @@ object FInt {
   /**
     * All int operations.
     */
-  val Ops: immutable.Map[Name.Resolved, IntOperator] = List(
+  val Ops: immutable.Map[Symbol.Resolved, IntOperator] = List(
     // Int Constants.
     "Int/minValue" -> minValue,
     "Int/maxValue" -> maxValue,
@@ -23,7 +23,7 @@ object FInt {
     // Int Conversions.
     "Int/toChar" -> toChar
   ).map {
-    case (name, op) => Name.Resolved.mk(name) -> op
+    case (name, op) => Symbol.Resolved.mk(name) -> op
   }.toMap
 
   /**

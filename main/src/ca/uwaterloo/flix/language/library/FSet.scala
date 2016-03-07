@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.library
 
-import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.Type._
 
@@ -16,7 +16,7 @@ object FSet {
   /**
     * All set operations.
     */
-  val Ops: immutable.Map[Name.Resolved, SetOperator] = List(
+  val Ops: immutable.Map[Symbol.Resolved, SetOperator] = List(
     // Set Construction.
     "Set/empty" -> empty,
     "Set/singleton" -> singleton,
@@ -53,7 +53,7 @@ object FSet {
     "Set/widen" -> widen,
     "Set/narrow" -> narrow
   ).map {
-    case (name, op) => Name.Resolved.mk(name) -> op
+    case (name, op) => Symbol.Resolved.mk(name) -> op
   }.toMap
 
   /**
