@@ -171,13 +171,13 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Processes an inferred `fact` for the relation or lattice with the `name`.
     */
   def inferredFact(name: Symbol.Resolved, fact: Array[AnyRef], enqueue: Boolean): Unit = sCtx.root.collections(name) match {
-    case r: ExecutableAst.Collection.Relation =>
+    case r: ExecutableAst.Table.Relation =>
       val changed = dataStore.relations(name).inferredFact(fact)
       if (changed && enqueue) {
         dependencies(r.name, fact)
       }
 
-    case l: ExecutableAst.Collection.Lattice =>
+    case l: ExecutableAst.Table.Lattice =>
       val changed = dataStore.lattices(name).inferredFact(fact)
       if (changed && enqueue) {
         dependencies(l.name, fact)
@@ -222,8 +222,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     case (p: Predicate.Body.Collection) :: xs =>
       // lookup the relation or lattice.
       val collection = sCtx.root.collections(p.name) match {
-        case r: Collection.Relation => dataStore.relations(p.name)
-        case l: Collection.Lattice => dataStore.lattices(p.name)
+        case r: Table.Relation => dataStore.relations(p.name)
+        case l: Table.Lattice => dataStore.lattices(p.name)
       }
 
       // evaluate all terms in the predicate.
@@ -369,13 +369,13 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     val collection = sCtx.root.collections(name)
     for ((rule, p) <- sCtx.root.dependenciesOf(name)) {
       collection match {
-        case r: ExecutableAst.Collection.Relation =>
+        case r: ExecutableAst.Table.Relation =>
           // unify all terms with their values.
           val env = unify(p.index2var, fact, fact.length)
           if (env != null) {
             worklist += ((rule, env))
           }
-        case l: ExecutableAst.Collection.Lattice =>
+        case l: ExecutableAst.Table.Lattice =>
           // unify only key terms with their values.
           val numberOfKeys = l.keys.length
           val env = unify(p.index2var, fact, numberOfKeys)

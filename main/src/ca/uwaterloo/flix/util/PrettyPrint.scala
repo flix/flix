@@ -21,7 +21,7 @@ object PrettyPrint {
     model.relations.get(rname) match {
       case None => // nop
       case Some(xs) =>
-        val r = model.root.collections(rname).asInstanceOf[TypedAst.Collection.Relation]
+        val r = model.root.collections(rname).asInstanceOf[TypedAst.Table.Relation]
         val cols = r.attributes.map(_.ident.name)
         val ascii = new AsciiTable().withCols(cols: _*)
         for (row <- xs.toSeq.sortBy(_.head.toString)) {
@@ -38,7 +38,7 @@ object PrettyPrint {
     model.lattices.get(rname) match {
       case None => // nop
       case Some(xs) =>
-        val l = model.root.collections(rname).asInstanceOf[TypedAst.Collection.Lattice]
+        val l = model.root.collections(rname).asInstanceOf[TypedAst.Table.Lattice]
         val cols = l.keys.map(_.ident.name) ::: l.values.map(_.ident.name + "<>")
         val ascii = new AsciiTable().withCols(cols: _*)
         for ((keys, elms) <- xs.toSeq.sortBy(_._1.head.toString)) {

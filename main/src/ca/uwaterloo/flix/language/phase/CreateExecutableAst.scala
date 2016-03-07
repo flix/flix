@@ -68,14 +68,14 @@ object CreateExecutableAst {
   }
 
   object Collection {
-    def toExecutable(sast: SimplifiedAst.Collection): ExecutableAst.Collection = sast match {
-      case SimplifiedAst.Collection.Relation(name, attributes, loc) =>
+    def toExecutable(sast: SimplifiedAst.Table): ExecutableAst.Table = sast match {
+      case SimplifiedAst.Table.Relation(name, attributes, loc) =>
         val attributesArray = attributes.map(CreateExecutableAst.toExecutable).toArray
-        ExecutableAst.Collection.Relation(name, attributesArray, loc)
-      case SimplifiedAst.Collection.Lattice(name, keys, values, loc) =>
+        ExecutableAst.Table.Relation(name, attributesArray, loc)
+      case SimplifiedAst.Table.Lattice(name, keys, values, loc) =>
         val keysArray = keys.map(CreateExecutableAst.toExecutable).toArray
         val valuesArray = values.map(CreateExecutableAst.toExecutable).toArray
-        ExecutableAst.Collection.Lattice(name, keysArray, valuesArray, loc)
+        ExecutableAst.Table.Lattice(name, keysArray, valuesArray, loc)
     }
   }
 

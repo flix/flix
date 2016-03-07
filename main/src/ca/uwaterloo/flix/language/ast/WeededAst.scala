@@ -109,16 +109,16 @@ object WeededAst {
   }
 
   /**
-    * A common super-type for collections that are either relations or lattices.
+    * A common super-type for tables that are either relations or lattices.
     */
-  sealed trait Collection extends WeededAst.Definition {
+  sealed trait Table extends WeededAst.Definition {
     /**
       * The name of `this` collection.
       */
     def ident: Name.Ident
   }
 
-  object Collection {
+  object Table {
 
     /**
       * An AST node that represents a relation definition.
@@ -127,7 +127,7 @@ object WeededAst {
       * @param attributes the attributes of the relation.
       * @param loc        the source location of the relation.
       */
-    case class Relation(ident: Name.Ident, attributes: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Collection
+    case class Relation(ident: Name.Ident, attributes: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Table
 
     /**
       * An AST node that represents a lattice definition.
@@ -137,7 +137,7 @@ object WeededAst {
       * @param values the values attributes of the lattice.
       * @param loc    the source location of the lattice.
       */
-    case class Lattice(ident: Name.Ident, keys: List[WeededAst.Attribute], values: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Collection
+    case class Lattice(ident: Name.Ident, keys: List[WeededAst.Attribute], values: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Table
 
   }
 

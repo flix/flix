@@ -25,8 +25,8 @@ object Indexer {
           case Predicate.Body.Collection(name, pterms, _, _, _, _) =>
             // determine the terms usable for indexing based on whether the predicate refers to a relation or lattice.
             val terms = root.collections(name) match {
-              case r: ExecutableAst.Collection.Relation => pterms
-              case l: ExecutableAst.Collection.Lattice => pterms take l.keys.length
+              case r: ExecutableAst.Table.Relation => pterms
+              case l: ExecutableAst.Table.Lattice => pterms take l.keys.length
             }
 
             // compute the indices of the determinate (i.e. known) terms.
@@ -56,10 +56,10 @@ object Indexer {
     // ensure every collection has at least one index.
     for ((name, collection) <- root.collections) {
       collection match {
-        case r: ExecutableAst.Collection.Relation =>
+        case r: ExecutableAst.Table.Relation =>
           val idxs = indexes.getOrElse(name, Set.empty)
           indexes(name) = idxs + Seq(0) // + r.attributes.indices // TODO
-        case l: ExecutableAst.Collection.Lattice =>
+        case l: ExecutableAst.Table.Lattice =>
           val idxs = indexes.getOrElse(name, Set.empty)
           indexes(name) = idxs + l.keys.indices
       }
@@ -71,8 +71,8 @@ object Indexer {
         case None => // no user defined index.
         case Some(index) =>
           val attributes = collection match {
-            case r: ExecutableAst.Collection.Relation => r.attributes
-            case l: ExecutableAst.Collection.Lattice => l.keys
+            case r: ExecutableAst.Table.Relation => r.attributes
+            case l: ExecutableAst.Table.Lattice => l.keys
           }
 
           indexes(name) = index.indexes.map(idx => idx.map(v => var2offset(v.name, attributes))).toSet

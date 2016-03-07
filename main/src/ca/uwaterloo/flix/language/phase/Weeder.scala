@@ -490,7 +490,7 @@ object Weeder {
     /**
       * Compiles the given parsed relation `past` to a weeded relation definition.
       */
-    def compile(past: ParsedAst.Definition.Relation): Validation[WeededAst.Collection.Relation, WeederError] = {
+    def compile(past: ParsedAst.Definition.Relation): Validation[WeededAst.Table.Relation, WeederError] = {
       // check duplicate attributes.
       val seen = mutable.Map.empty[String, Name.Ident]
       val attributesVal = past.attributes.map {
@@ -509,14 +509,14 @@ object Weeder {
       }
 
       @@(attributesVal) map {
-        case attributes => WeededAst.Collection.Relation(past.ident, attributes, past.loc)
+        case attributes => WeededAst.Table.Relation(past.ident, attributes, past.loc)
       }
     }
 
     /**
       * Compiles the given parsed relation `past` to a weeded lattice definition.
       */
-    def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Collection.Lattice, WeederError] = {
+    def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Table.Lattice, WeederError] = {
       // TODO: Rewrite so we can get rid of WeededAst.Interpretation.
 
       // check duplicate attributes.
@@ -549,7 +549,7 @@ object Weeder {
 
               // ensure that no non-lattice attribute occurs after `index`.
               values.find(_.interp == WeededAst.Interpretation.Set) match {
-                case None => WeededAst.Collection.Lattice(past.ident, keys, values, past.loc).toSuccess
+                case None => WeededAst.Table.Lattice(past.ident, keys, values, past.loc).toSuccess
                 case Some(attr) => IllegalMixedAttributes(values.head.ident.loc, attr.ident.loc).toFailure
               }
           }

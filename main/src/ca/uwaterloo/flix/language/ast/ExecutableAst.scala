@@ -8,7 +8,7 @@ object ExecutableAst {
 
   case class Root(constants: Map[Symbol.Resolved, ExecutableAst.Definition.Constant],
                   lattices: Map[Type, ExecutableAst.Definition.Lattice],
-                  collections: Map[Symbol.Resolved, ExecutableAst.Collection],
+                  collections: Map[Symbol.Resolved, ExecutableAst.Table],
                   indexes: Map[Symbol.Resolved, ExecutableAst.Definition.Index],
                   facts: Array[ExecutableAst.Constraint.Fact],
                   rules: Array[ExecutableAst.Constraint.Rule],
@@ -38,18 +38,18 @@ object ExecutableAst {
 
   }
 
-  sealed trait Collection
+  sealed trait Table extends ExecutableAst
 
-  object Collection {
+  object Table {
 
     case class Relation(name: Symbol.Resolved,
                         attributes: Array[ExecutableAst.Attribute],
-                        loc: SourceLocation) extends ExecutableAst.Collection
+                        loc: SourceLocation) extends ExecutableAst.Table
 
     case class Lattice(name: Symbol.Resolved,
                        keys: Array[ExecutableAst.Attribute],
                        values: Array[ExecutableAst.Attribute],
-                       loc: SourceLocation) extends ExecutableAst.Collection
+                       loc: SourceLocation) extends ExecutableAst.Table
 
   }
 

@@ -8,7 +8,7 @@ object SimplifiedAst {
 
   case class Root(constants: Map[Symbol.Resolved, SimplifiedAst.Definition.Constant],
                   lattices: Map[Type, SimplifiedAst.Definition.Lattice],
-                  collections: Map[Symbol.Resolved, SimplifiedAst.Collection],
+                  collections: Map[Symbol.Resolved, SimplifiedAst.Table],
                   indexes: Map[Symbol.Resolved, SimplifiedAst.Definition.Index],
                   facts: List[SimplifiedAst.Constraint.Fact],
                   rules: List[SimplifiedAst.Constraint.Rule],
@@ -52,18 +52,18 @@ object SimplifiedAst {
 
   }
 
-  sealed trait Collection
+  sealed trait Table extends SimplifiedAst
 
-  object Collection {
+  object Table {
 
     case class Relation(name: Symbol.Resolved,
                         attributes: List[SimplifiedAst.Attribute],
-                        loc: SourceLocation) extends SimplifiedAst.Collection
+                        loc: SourceLocation) extends SimplifiedAst.Table
 
     case class Lattice(name: Symbol.Resolved,
                        keys: List[SimplifiedAst.Attribute],
                        values: List[SimplifiedAst.Attribute],
-                       loc: SourceLocation) extends SimplifiedAst.Collection
+                       loc: SourceLocation) extends SimplifiedAst.Table
 
   }
 

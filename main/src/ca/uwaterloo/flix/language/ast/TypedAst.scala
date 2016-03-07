@@ -1,9 +1,5 @@
 package ca.uwaterloo.flix.language.ast
 
-import scala.collection.mutable
-
-// TODO: The documentation is not fully consistent with when something is an AST node. "that represents" vs "representing"...
-
 /**
   * A common super-type for typed AST nodes.
   */
@@ -25,7 +21,7 @@ object TypedAst {
     */
   case class Root(constants: Map[Symbol.Resolved, TypedAst.Definition.Constant],
                   lattices: Map[Type, TypedAst.Definition.BoundedLattice],
-                  collections: Map[Symbol.Resolved, TypedAst.Collection],
+                  collections: Map[Symbol.Resolved, TypedAst.Table],
                   indexes: Map[Symbol.Resolved, TypedAst.Definition.Index],
                   facts: List[TypedAst.Constraint.Fact],
                   rules: List[TypedAst.Constraint.Rule],
@@ -80,11 +76,11 @@ object TypedAst {
   }
 
   /**
-    * A common super-type for collections that are either relations or lattices.
+    * A common super-type for tables that are either relations or lattices.
     */
-  sealed trait Collection
+  sealed trait Table
 
-  object Collection {
+  object Table {
 
     /**
       * A typed AST node representing a relation definition.
@@ -93,7 +89,7 @@ object TypedAst {
       * @param attributes the attributes of the relation.
       * @param loc        the source location.
       */
-    case class Relation(name: Symbol.Resolved, attributes: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Collection
+    case class Relation(name: Symbol.Resolved, attributes: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Table
 
     /**
       * A typed AST node representing a lattice definition.
@@ -103,7 +99,7 @@ object TypedAst {
       * @param values the keys of the lattice.
       * @param loc    the source location.
       */
-    case class Lattice(name: Symbol.Resolved, keys: List[TypedAst.Attribute], values: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Collection
+    case class Lattice(name: Symbol.Resolved, keys: List[TypedAst.Attribute], values: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Table
 
   }
 

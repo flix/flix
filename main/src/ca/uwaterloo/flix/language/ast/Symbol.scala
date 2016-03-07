@@ -12,13 +12,12 @@ object Symbol {
     * @param tpe  the type of the symbol.
     * @param loc  the source location associated with the symbol.
     */
-  final class Var(val id: String, val text: String, val tpe: Type, val loc: SourceLocation) {
-
+  final class VarSym(val id: Int, val text: String, val tpe: Type, val loc: SourceLocation) {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: Var => this.id == that.id
+      case that: VarSym => this.id == that.id
       case _ => false
     }
 
@@ -30,15 +29,44 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override val toString: String = id
+    override val toString: String = text + "$" + id
   }
 
+  /**
+    * Table Symbol.
+    *
+    * @param id   the globally unique name of the symbol.
+    * @param text the original name, as it appears in the source code, of the symbol
+    * @param tpe  the type of the symbol.
+    * @param loc  the source location associated with the symbol.
+    */
+  final class TableSym(val id: Int, val text: String, val tpe: Type, val loc: SourceLocation) {
+
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: TableSym => this.id == that.id
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = id.hashCode()
+
+    /**
+      * Human readable representation.
+      */
+    override val toString: String = text + "$" + id
+  }
 
 
   /**
     * Companion object for the [[Resolved]] class.
     */
   // TODO: remove and replace by better symbols
+  @deprecated("to be removed", "0.1.0")
   object Resolved {
 
     private val cache = mutable.HashMap.empty[List[String], Resolved]
@@ -62,6 +90,7 @@ object Symbol {
     *
     * @param parts the parts of the name.
     */
+  @deprecated("to be removed", "0.1.0")
   final class Resolved private(val parts: List[String]) {
 
     /**

@@ -10,7 +10,7 @@ object ResolvedAst {
   case class Root(constants: Map[Symbol.Resolved, ResolvedAst.Definition.Constant],
                   enums: Map[Symbol.Resolved, ResolvedAst.Definition.Enum],
                   lattices: Map[Type, ResolvedAst.Definition.BoundedLattice],
-                  collections: Map[Symbol.Resolved, ResolvedAst.Collection],
+                  collections: Map[Symbol.Resolved, ResolvedAst.Table],
                   indexes: Map[Symbol.Resolved, ResolvedAst.Definition.Index],
                   facts: List[ResolvedAst.Constraint.Fact],
                   rules: List[ResolvedAst.Constraint.Rule],
@@ -54,11 +54,11 @@ object ResolvedAst {
   }
 
   /**
-    * A common super-type for collections that are either relations or lattices.
+    * A common super-type for tables that are either relations or lattices.
     */
-  sealed trait Collection extends ResolvedAst.Definition
+  sealed trait Table extends ResolvedAst.Definition
 
-  object Collection {
+  object Table {
 
     /**
       * A resolved AST node representing a relation definition.
@@ -67,7 +67,7 @@ object ResolvedAst {
       * @param attributes the attributes of the relation.
       * @param loc        the location.
       */
-    case class Relation(name: Symbol.Resolved, attributes: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Collection
+    case class Relation(name: Symbol.Resolved, attributes: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Table
 
     /**
       * A resolved AST node representing a lattice definition.
@@ -77,7 +77,7 @@ object ResolvedAst {
       * @param values the values of the lattice.
       * @param loc    the location.
       */
-    case class Lattice(name: Symbol.Resolved, keys: List[ResolvedAst.Attribute], values: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Collection
+    case class Lattice(name: Symbol.Resolved, keys: List[ResolvedAst.Attribute], values: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Table
 
   }
 

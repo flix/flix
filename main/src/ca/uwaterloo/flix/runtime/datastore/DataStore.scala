@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime.datastore
 
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Collection
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Table
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.Indexer
 import ca.uwaterloo.flix.runtime.Solver
@@ -38,10 +38,10 @@ class DataStore[ValueType <: AnyRef](implicit sCtx: Solver.SolverContext, m: Cla
     }
 
     collection match {
-      case r: Collection.Relation =>
+      case r: Table.Relation =>
         relations(name) = new IndexedRelation[ValueType](r, idx, idx.head)
 
-      case l: Collection.Lattice =>
+      case l: Table.Lattice =>
         lattices(name) = new IndexedLattice[ValueType](l, idx)
     }
   }

@@ -25,11 +25,11 @@ object Simplifier {
   }
 
   object Collection {
-    def simplify(tast: TypedAst.Collection)(implicit genSym: GenSym): SimplifiedAst.Collection = tast match {
-      case TypedAst.Collection.Relation(name, attributes, loc) =>
-        SimplifiedAst.Collection.Relation(name, attributes.map(Simplifier.simplify), loc)
-      case TypedAst.Collection.Lattice(name, keys, values, loc) =>
-        SimplifiedAst.Collection.Lattice(name, keys.map(Simplifier.simplify), values.map(Simplifier.simplify), loc)
+    def simplify(tast: TypedAst.Table)(implicit genSym: GenSym): SimplifiedAst.Table = tast match {
+      case TypedAst.Table.Relation(name, attributes, loc) =>
+        SimplifiedAst.Table.Relation(name, attributes.map(Simplifier.simplify), loc)
+      case TypedAst.Table.Lattice(name, keys, values, loc) =>
+        SimplifiedAst.Table.Lattice(name, keys.map(Simplifier.simplify), values.map(Simplifier.simplify), loc)
     }
   }
 

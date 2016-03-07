@@ -213,7 +213,7 @@ object Resolver {
   case class SymbolTable(enums: Map[Symbol.Resolved, WeededAst.Definition.Enum],
                          constants: Map[Symbol.Resolved, WeededAst.Definition.Constant],
                          lattices: Map[Type, (List[String], WeededAst.Definition.BoundedLattice)],
-                         relations: Map[Symbol.Resolved, WeededAst.Collection],
+                         relations: Map[Symbol.Resolved, WeededAst.Table],
                          indexes: Map[Symbol.Resolved, WeededAst.Definition.Index],
                          types: Map[Symbol.Resolved, Type],
                          hooks: Map[Symbol.Resolved, Ast.Hook]) {
@@ -254,7 +254,7 @@ object Resolver {
 
     // TODO: Cleanup
     // TODO: Rename: lookupCollection
-    def lookupRelation(name: Name.QName, namespace: List[String]): Validation[(Symbol.Resolved, WeededAst.Collection), ResolverError] = {
+    def lookupRelation(name: Name.QName, namespace: List[String]): Validation[(Symbol.Resolved, WeededAst.Table), ResolverError] = {
       val rname = Symbol.Resolved.mk(
         if (!name.isQualified)
           namespace ::: name.ident.name :: Nil
@@ -316,7 +316,7 @@ object Resolver {
           }
         }
 
-        val collectionsVal = Validation.fold[Symbol.Resolved, WeededAst.Collection, Symbol.Resolved, ResolvedAst.Collection, ResolverError](syms.relations) {
+        val collectionsVal = Validation.fold[Symbol.Resolved, WeededAst.Table, Symbol.Resolved, ResolvedAst.Table, ResolverError](syms.relations) {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
 
@@ -379,7 +379,7 @@ object Resolver {
       case defn@WeededAst.Definition.BoundedLattice(tpe, bot, top, leq, lub, glb, loc) =>
         syms.copy(lattices = syms.lattices + (tpe ->(namespace, defn))).toSuccess
 
-      case defn@WeededAst.Collection.Relation(ident, attributes, loc) =>
+      case defn@WeededAst.Table.Relation(ident, attributes, loc) =>
         val rname = toRName(ident, namespace)
         syms.relations.get(rname) match {
           case None =>
@@ -390,7 +390,7 @@ object Resolver {
           case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.loc, ident.loc).toFailure
         }
 
-      case defn@WeededAst.Collection.Lattice(ident, keys, values, loc) =>
+      case defn@WeededAst.Table.Lattice(ident, keys, values, loc) =>
         val rname = toRName(ident, namespace)
         syms.relations.get(rname) match {
           case None =>
@@ -481,12 +481,12 @@ object Resolver {
       }
     }
 
-    def resolve(wast: WeededAst.Collection, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection, ResolverError] = wast match {
-      case d: WeededAst.Collection.Relation => resolve2(d, namespace, syms)
-      case d: WeededAst.Collection.Lattice => resolve2(d, namespace, syms)
+    def resolve(wast: WeededAst.Table, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Table, ResolverError] = wast match {
+      case d: WeededAst.Table.Relation => resolve2(d, namespace, syms)
+      case d: WeededAst.Table.Lattice => resolve2(d, namespace, syms)
     }
 
-    def resolve2(wast: WeededAst.Collection.Relation, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection.Relation, ResolverError] = {
+    def resolve2(wast: WeededAst.Table.Relation, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Table.Relation, ResolverError] = {
       val name = Symbol.Resolved.mk(namespace ::: wast.ident.name :: Nil)
 
       val attributesVal = wast.attributes.map {
@@ -495,11 +495,11 @@ object Resolver {
       }
 
       @@(attributesVal) map {
-        case attributes => ResolvedAst.Collection.Relation(name, attributes, wast.loc)
+        case attributes => ResolvedAst.Table.Relation(name, attributes, wast.loc)
       }
     }
 
-    def resolve2(wast: WeededAst.Collection.Lattice, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Collection.Lattice, ResolverError] = {
+    def resolve2(wast: WeededAst.Table.Lattice, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Table.Lattice, ResolverError] = {
       val name = Symbol.Resolved.mk(namespace ::: wast.ident.name :: Nil)
 
       val keysVal = wast.keys.map {
@@ -513,7 +513,7 @@ object Resolver {
       }
 
       @@(@@(keysVal), @@(valuesVal)) map {
-        case (keys, values) => ResolvedAst.Collection.Lattice(name, keys, values, wast.loc)
+        case (keys, values) => ResolvedAst.Table.Lattice(name, keys, values, wast.loc)
       }
     }
 
