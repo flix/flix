@@ -116,6 +116,21 @@ object ExecutableAst {
       override def toString: String = "#f"
     }
 
+    case class Char(lit: scala.Char) extends ExecutableAst.Expression {
+      final val tpe = Type.Char
+      final val loc = SourceLocation.Unknown
+    }
+
+    case class Float32(lit: scala.Float) extends ExecutableAst.Expression {
+      final val tpe = Type.Float32
+      final val loc = SourceLocation.Unknown
+    }
+
+    case class Float64(list: scala.Double) extends ExecutableAst.Expression {
+      final val tpe = Type.Float64
+      final val loc = SourceLocation.Unknown
+    }
+
     case class Int8(lit: scala.Byte) extends ExecutableAst.Expression {
       final val tpe = Type.Int8
       final val loc = SourceLocation.Unknown
