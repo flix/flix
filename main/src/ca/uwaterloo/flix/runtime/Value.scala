@@ -69,6 +69,46 @@ object Value {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Floats                                                                  //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /**
+    * Constructs a float32 value from the given float `f`.
+    */
+  @inline
+  def mkFloat32(f: Float): AnyRef = new java.lang.Float(f)
+
+  /**
+    * Constructs a float32 value from the given double `d`.
+    */
+  @inline
+  def mkFloat32(d: Double): AnyRef = new java.lang.Float(d.asInstanceOf[Float])
+
+  /**
+    * Constructs a float64 value from the given double `d`.
+    */
+  @inline
+  def mkFloat64(d: Double): AnyRef = new java.lang.Double(d)
+
+  /**
+    * Casts the given reference `ref` to a Float32.
+    */
+  @inline
+  def cast2float32(ref: AnyRef): Float = ref match {
+    case o: java.lang.Float => o.floatValue()
+    case _ => throw new InternalRuntimeException(s"Unexpected non-float32 value: '$ref'.")
+  }
+
+  /**
+    * Casts the given reference `ref` to a Float64.
+    */
+  @inline
+  def cast2float64(ref: AnyRef): Double = ref match {
+    case o: java.lang.Double => o.doubleValue()
+    case _ => throw new InternalRuntimeException(s"Unexpected non-float64 value: '$ref'.")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Ints                                                                    //
   /////////////////////////////////////////////////////////////////////////////
 
