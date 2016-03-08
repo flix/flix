@@ -477,7 +477,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   def Type: Rule1[PType] = rule {
-    Types.LambdaType | Types.TupleType | Types.SetType | Types.ParametricType | Types.NamedType
+    Types.LambdaType | Types.TupleType | Types.ParametricType | Types.NamedType
   }
 
   object Types {
@@ -506,10 +506,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def LambdaType: Rule1[PType] = rule {
       "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~> ((xs: Seq[PType], r: PType) => PType.Lambda(xs.toList, r))
-    }
-
-    def SetType: Rule1[PType] = rule {
-      atomic("Set") ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optWS ~> PType.Set
     }
 
     def ParametricType: Rule1[PType] = rule {

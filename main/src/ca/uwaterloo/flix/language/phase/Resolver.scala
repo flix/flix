@@ -901,7 +901,11 @@ object Resolver {
           casesVal map {
             case cases => Type.Enum(name, cases)
           }
-        case Type.Tuple(welms) => @@(welms map (e => resolve(e, namespace, syms))) map Type.Tuple
+        case Type.Tuple(welms) => @@(welms map (e => resolve(e, namespace, syms))) map {
+          case Nil => Type.Unit
+          case x :: Nil => x
+          case xs => Type.Tuple(xs)
+        }
         case Type.Set(welms) =>
           resolve(welms, namespace, syms) map {
             case elms => Type.Set(elms)
@@ -914,6 +918,12 @@ object Resolver {
             case (args, retTpe) => Type.Lambda(args, retTpe)
           }
         case Type.Native => Type.Native.toSuccess // TODO: Dont give a name.
+        case Type.Parametric(qname, welms) =>
+          @@(welms map (e => resolve(e, namespace, syms))) map {
+            case elms => qname.ident.name match {
+              case "Set" => Type.Set(elms.head)
+            }
+          }
       }
 
       visit(wast)
