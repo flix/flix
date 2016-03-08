@@ -216,148 +216,152 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  // TODO: The placement of SL is sub optimal for binary expressions.
   def Expression: Rule1[ParsedAst.Expression] = rule {
-    LogicalExpression
+    Expressions.Logical
   }
 
-  def LogicalExpression: Rule1[ParsedAst.Expression] = rule {
-    ComparisonExpression ~ optional(optWS ~ SP ~ Operator.LogicalOp ~ optWS ~ ComparisonExpression ~ SP ~> ParsedAst.Expression.Binary)
-  }
+  object Expressions {
+    // TODO: The placement of SL is sub optimal for binary expressions.
 
-  def ComparisonExpression: Rule1[ParsedAst.Expression] = rule {
-    AdditiveExpression ~ optional(optWS ~ SP ~ Operator.ComparisonOp ~ optWS ~ AdditiveExpression ~ SP ~> ParsedAst.Expression.Binary)
-  }
-
-  def AdditiveExpression: Rule1[ParsedAst.Expression] = rule {
-    MultiplicativeExpression ~ zeroOrMore(optWS ~ SP ~ Operator.AdditiveOp ~ optWS ~ MultiplicativeExpression ~ SP ~> ParsedAst.Expression.Binary)
-  }
-
-  def MultiplicativeExpression: Rule1[ParsedAst.Expression] = rule {
-    InfixExpression ~ zeroOrMore(optWS ~ SP ~ Operator.MultiplicativeOp ~ optWS ~ InfixExpression ~ SP ~> ParsedAst.Expression.Binary)
-  }
-
-  def InfixExpression: Rule1[ParsedAst.Expression] = rule {
-    Extended ~ optional(optWS ~ "`" ~ SP ~ QName ~ "`" ~ optWS ~ Extended ~ SP ~> ParsedAst.Expression.Infix)
-  }
-
-  def Extended: Rule1[ParsedAst.Expression] = rule {
-    UnaryExpression ~ optional(optWS ~ SP ~ Operator.ExtendedBinaryOp ~ optWS ~ UnaryExpression ~ SP ~> ParsedAst.Expression.ExtendedBinary)
-  }
-
-  def UnaryExpression: Rule1[ParsedAst.Expression] = rule {
-    !LiteralExpression ~ (SP ~ Operator.Unary ~ optWS ~ UnaryExpression ~ SP ~> ParsedAst.Expression.Unary) | AscribeExpression
-  }
-
-  def AscribeExpression: Rule1[ParsedAst.Expression] = rule {
-    SP ~ InvokeExpression ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Expression.Ascribe | InvokeExpression
-  }
-
-  def InvokeExpression: Rule1[ParsedAst.Expression] = rule {
-    ApplyExpression | SimpleExpression
-  }
-
-  def SimpleExpression: Rule1[ParsedAst.Expression] = rule {
-    LetMatchExpression | IfThenElseExpression | SwitchExpression | MatchExpression | TagExpression | TupleExpression |
-      SetExpression | LiteralExpression | LambdaExpression | ExistentialExpression | UniversalExpression | BotExpression |
-      TopExpression | VariableExpression | ErrorExpression
-  }
-
-  def LiteralExpression: Rule1[ParsedAst.Expression.Lit] = rule {
-    SP ~ Literal ~ SP ~> ParsedAst.Expression.Lit
-  }
-
-  def IfThenElseExpression: Rule1[ParsedAst.Expression.IfThenElse] = rule {
-    SP ~ atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ optWS ~ atomic("else") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
-  }
-
-  def LetMatchExpression: Rule1[ParsedAst.Expression.LetMatch] = rule {
-    SP ~ atomic("let") ~ optWS ~ Pattern ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ atomic("in") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LetMatch
-  }
-
-  def MatchExpression: Rule1[ParsedAst.Expression.Match] = {
-    def MatchRule: Rule1[(ParsedAst.Pattern, ParsedAst.Expression)] = rule {
-      atomic("case") ~ optWS ~ Pattern ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~ optSC ~> ((p: ParsedAst.Pattern, e: ParsedAst.Expression) => (p, e))
+    def Logical: Rule1[ParsedAst.Expression] = rule {
+      Comparison ~ optional(optWS ~ SP ~ Operators.LogicalOp ~ optWS ~ Comparison ~ SP ~> ParsedAst.Expression.Binary)
     }
 
-    rule {
-      SP ~ atomic("match") ~ optWS ~ Expression ~ optWS ~ atomic("with") ~ optWS ~ "{" ~ optWS ~ oneOrMore(MatchRule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
+    def Comparison: Rule1[ParsedAst.Expression] = rule {
+      Additive ~ optional(optWS ~ SP ~ Operators.ComparisonOp ~ optWS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def Additive: Rule1[ParsedAst.Expression] = rule {
+      Multiplicative ~ zeroOrMore(optWS ~ SP ~ Operators.AdditiveOp ~ optWS ~ Multiplicative ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def Multiplicative: Rule1[ParsedAst.Expression] = rule {
+      Infix ~ zeroOrMore(optWS ~ SP ~ Operators.MultiplicativeOp ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def Infix: Rule1[ParsedAst.Expression] = rule {
+      Extended ~ optional(optWS ~ "`" ~ SP ~ QName ~ "`" ~ optWS ~ Extended ~ SP ~> ParsedAst.Expression.Infix)
+    }
+
+    def Extended: Rule1[ParsedAst.Expression] = rule {
+      Unary ~ optional(optWS ~ SP ~ Operators.ExtendedBinaryOp ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.ExtendedBinary)
+    }
+
+    def Unary: Rule1[ParsedAst.Expression] = rule {
+      !Literal ~ (SP ~ Operators.UnaryOp ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ascribe
+    }
+
+    def Ascribe: Rule1[ParsedAst.Expression] = rule {
+      SP ~ Invoke ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Expression.Ascribe | Invoke
+    }
+
+    def Invoke: Rule1[ParsedAst.Expression] = rule {
+      Apply | Simple
+    }
+
+    def Simple: Rule1[ParsedAst.Expression] = rule {
+      LetMatch | IfThenElse | Switch | Match | Tag | Tuple |
+        Set | Literal | Lambda | Existential | Universal | Bot |
+        Top | Var | UserError
+    }
+
+    def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
+      SP ~ Parser.this.Literal ~ SP ~> ParsedAst.Expression.Lit
+    }
+
+    def IfThenElse: Rule1[ParsedAst.Expression.IfThenElse] = rule {
+      SP ~ atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ optWS ~ atomic("else") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
+    }
+
+    def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {
+      SP ~ atomic("let") ~ optWS ~ Pattern ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ atomic("in") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LetMatch
+    }
+
+    def Match: Rule1[ParsedAst.Expression.Match] = {
+      def Rule: Rule1[(ParsedAst.Pattern, ParsedAst.Expression)] = rule {
+        atomic("case") ~ optWS ~ Pattern ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~ optSC ~> ((p: ParsedAst.Pattern, e: ParsedAst.Expression) => (p, e))
+      }
+
+      rule {
+        SP ~ atomic("match") ~ optWS ~ Expression ~ optWS ~ atomic("with") ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
+      }
+    }
+
+    def Switch: Rule1[ParsedAst.Expression.Switch] = {
+      def Rule: Rule1[(ParsedAst.Expression, ParsedAst.Expression)] = rule {
+        atomic("case") ~ optWS ~ Expression ~ optWS ~ "=>" ~ optWS ~ Expression ~> ((e1: ParsedAst.Expression, e2: ParsedAst.Expression) => (e1, e2))
+      }
+
+      rule {
+        SP ~ atomic("switch") ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Switch
+      }
+    }
+
+    def Apply: Rule1[ParsedAst.Expression.Apply] = rule {
+      SP ~ Simple ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Apply
+    }
+
+    // TODO: Cleanup
+    def Tag: Rule1[ParsedAst.Expression.Tag] = rule {
+      SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ Tuple) ~ SP ~>
+        ((sp1: SourcePosition, name: Name.QName, ident: Name.Ident, exp: Option[ParsedAst.Expression], sp2: SourcePosition) => exp match {
+          case None => ParsedAst.Expression.Tag(sp1, name, ident, ParsedAst.Expression.Lit(sp1, ParsedAst.Literal.Unit(sp1, sp2), sp2), sp2)
+          case Some(e) => ParsedAst.Expression.Tag(sp1, name, ident, e, sp2)
+        })
+    }
+
+    // TODO: Cleanup
+    def Tuple: Rule1[ParsedAst.Expression] = {
+      def Unit: Rule1[ParsedAst.Expression] = rule {
+        SP ~ atomic("()") ~ SP ~> ((sp1: SourcePosition, sp2: SourcePosition) => ParsedAst.Expression.Lit(sp1, ParsedAst.Literal.Unit(sp1, sp2), sp2))
+      }
+
+      def Singleton: Rule1[ParsedAst.Expression] = rule {
+        "(" ~ optWS ~ Expression ~ optWS ~ ")"
+      }
+
+      def Tuple: Rule1[ParsedAst.Expression] = rule {
+        SP ~ "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Tuple
+      }
+
+      rule {
+        Unit | Singleton | Tuple
+      }
+    }
+
+    def Set: Rule1[ParsedAst.Expression.Set] = rule {
+      SP ~ "#{" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Set
+    }
+
+    def Bot: Rule1[ParsedAst.Expression.Bot] = rule {
+      SP ~ "⊥" ~ SP ~> ParsedAst.Expression.Bot
+    }
+
+    def Top: Rule1[ParsedAst.Expression.Top] = rule {
+      SP ~ "⊤" ~ SP ~> ParsedAst.Expression.Top
+    }
+
+    def Var: Rule1[ParsedAst.Expression.Var] = rule {
+      SP ~ QName ~ SP ~> ParsedAst.Expression.Var
+    }
+
+    def Lambda: Rule1[ParsedAst.Expression.Lambda] = rule {
+      SP ~ atomic("fn") ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Lambda
+    }
+
+    def Existential: Rule1[ParsedAst.Expression.Existential] = rule {
+      SP ~ atomic("∃" | "\\exists") ~ optWS ~ FormalParams ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Existential
+    }
+
+    def Universal: Rule1[ParsedAst.Expression.Universal] = rule {
+      SP ~ atomic("∀" | "\\forall") ~ optWS ~ FormalParams ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Universal
+    }
+
+    def UserError: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("???") ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Expression.UserError
     }
   }
 
-  def SwitchExpression: Rule1[ParsedAst.Expression.Switch] = {
-    def SwitchRule: Rule1[(ParsedAst.Expression, ParsedAst.Expression)] = rule {
-      atomic("case") ~ optWS ~ Expression ~ optWS ~ "=>" ~ optWS ~ Expression ~> ((e1: ParsedAst.Expression, e2: ParsedAst.Expression) => (e1, e2))
-    }
-
-    rule {
-      SP ~ atomic("switch") ~ optWS ~ "{" ~ optWS ~ oneOrMore(SwitchRule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Switch
-    }
-  }
-
-
-  def ApplyExpression: Rule1[ParsedAst.Expression.Apply] = rule {
-    SP ~ SimpleExpression ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Apply
-  }
-
-  // TODO: Cleanup
-  def TagExpression: Rule1[ParsedAst.Expression.Tag] = rule {
-    SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ TupleExpression) ~ SP ~>
-      ((sp1: SourcePosition, name: Name.QName, ident: Name.Ident, exp: Option[ParsedAst.Expression], sp2: SourcePosition) => exp match {
-        case None => ParsedAst.Expression.Tag(sp1, name, ident, ParsedAst.Expression.Lit(sp1, ParsedAst.Literal.Unit(sp1, sp2), sp2), sp2)
-        case Some(e) => ParsedAst.Expression.Tag(sp1, name, ident, e, sp2)
-      })
-  }
-
-  def TupleExpression: Rule1[ParsedAst.Expression] = {
-    def Unit: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("()") ~ SP ~> ((sp1: SourcePosition, sp2: SourcePosition) => ParsedAst.Expression.Lit(sp1, ParsedAst.Literal.Unit(sp1, sp2), sp2))
-    }
-
-    def Singleton: Rule1[ParsedAst.Expression] = rule {
-      "(" ~ optWS ~ Expression ~ optWS ~ ")"
-    }
-
-    def Tuple: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Tuple
-    }
-
-    rule {
-      Unit | Singleton | Tuple
-    }
-  }
-
-  def SetExpression: Rule1[ParsedAst.Expression.Set] = rule {
-    SP ~ "#{" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Set
-  }
-
-  def BotExpression: Rule1[ParsedAst.Expression.Bot] = rule {
-    SP ~ "⊥" ~ SP ~> ParsedAst.Expression.Bot
-  }
-
-  def TopExpression: Rule1[ParsedAst.Expression.Top] = rule {
-    SP ~ "⊤" ~ SP ~> ParsedAst.Expression.Top
-  }
-
-  def VariableExpression: Rule1[ParsedAst.Expression.Var] = rule {
-    SP ~ QName ~ SP ~> ParsedAst.Expression.Var
-  }
-
-  def LambdaExpression: Rule1[ParsedAst.Expression.Lambda] = rule {
-    SP ~ atomic("fn") ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Lambda
-  }
-
-  def ExistentialExpression: Rule1[ParsedAst.Expression.Existential] = rule {
-    SP ~ atomic("∃" | "\\exists") ~ optWS ~ FormalParams ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Existential
-  }
-
-  def UniversalExpression: Rule1[ParsedAst.Expression.Universal] = rule {
-    SP ~ atomic("∀" | "\\forall") ~ optWS ~ FormalParams ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Universal
-  }
-
-  def ErrorExpression: Rule1[ParsedAst.Expression] = rule {
-    SP ~ atomic("???") ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Expression.Error
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
@@ -400,32 +404,38 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Facts and Rules                                                         //
   /////////////////////////////////////////////////////////////////////////////
   def FactDeclaration: Rule1[ParsedAst.Declaration.Fact] = rule {
-    SP ~ Predicate ~ SP ~ optDotOrSC ~> ParsedAst.Declaration.Fact
+    SP ~ Predicate ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Fact
   }
 
   def RuleDeclaration: Rule1[ParsedAst.Declaration.Rule] = rule {
-    SP ~ Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ SP ~ optDotOrSC ~> ParsedAst.Declaration.Rule
+    SP ~ Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Rule
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Predicates                                                              //
+  /////////////////////////////////////////////////////////////////////////////
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    FunctionOrRelationPredicate | NotEqualPredicate | AliasPredicate | LoopPredicate
+    Predicates.Ambiguous | Predicates.NotEqual | Predicates.Alias | Predicates.Loop
   }
 
-  def FunctionOrRelationPredicate: Rule1[ParsedAst.Predicate.Ambiguous] = rule {
-    SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Ambiguous
+  object Predicates {
+    def Ambiguous: Rule1[ParsedAst.Predicate.Ambiguous] = rule {
+      SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Ambiguous
+    }
+
+    def NotEqual: Rule1[ParsedAst.Predicate.NotEqual] = rule {
+      SP ~ Ident ~ optWS ~ atomic("!=") ~ optWS ~ Ident ~ SP ~> ParsedAst.Predicate.NotEqual
+    }
+
+    def Alias: Rule1[ParsedAst.Predicate.Alias] = rule {
+      SP ~ Ident ~ optWS ~ atomic(":=") ~ optWS ~ Term ~ SP ~> ParsedAst.Predicate.Alias
+    }
+
+    def Loop: Rule1[ParsedAst.Predicate.Loop] = rule {
+      SP ~ Ident ~ optWS ~ atomic("<-") ~ optWS ~ Term ~ SP ~> ParsedAst.Predicate.Loop
+    }
   }
 
-  def NotEqualPredicate: Rule1[ParsedAst.Predicate.NotEqual] = rule {
-    SP ~ Ident ~ optWS ~ atomic("!=") ~ optWS ~ Ident ~ SP ~> ParsedAst.Predicate.NotEqual
-  }
-
-  def AliasPredicate: Rule1[ParsedAst.Predicate.Alias] = rule {
-    SP ~ Ident ~ optWS ~ atomic(":=") ~ optWS ~ Term ~ SP ~> ParsedAst.Predicate.Alias
-  }
-
-  def LoopPredicate: Rule1[ParsedAst.Predicate.Loop] = rule {
-    SP ~ Ident ~ optWS ~ atomic("<-") ~ optWS ~ Term ~ SP ~> ParsedAst.Predicate.Loop
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Terms                                                                   //
@@ -463,46 +473,48 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   }
 
-
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   def Type: Rule1[PType] = rule {
-    LambdaType | TupleType | SetType | ParametricType | NamedType
+    Types.LambdaType | Types.TupleType | Types.SetType | Types.ParametricType | Types.NamedType
   }
 
-  def NamedType: Rule1[PType] = rule {
-    QName ~> PType.Unresolved
-  }
+  object Types {
 
-  def TupleType: Rule1[PType] = {
-    def Unit: Rule1[PType] = rule {
-      atomic("()") ~ optWS ~> (() => PType.Unit)
+    def NamedType: Rule1[PType] = rule {
+      QName ~> PType.Unresolved
     }
 
-    def Singleton: Rule1[PType] = rule {
-      "(" ~ optWS ~ Type ~ optWS ~ ")" ~ optWS
+    def TupleType: Rule1[PType] = {
+      def Unit: Rule1[PType] = rule {
+        atomic("()") ~ optWS ~> (() => PType.Unit)
+      }
+
+      def Singleton: Rule1[PType] = rule {
+        "(" ~ optWS ~ Type ~ optWS ~ ")" ~ optWS
+      }
+
+      def Tuple: Rule1[PType] = rule {
+        "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~> ((xs: Seq[PType]) => PType.Tuple(xs.toList))
+      }
+
+      rule {
+        Unit | Singleton | Tuple
+      }
     }
 
-    def Tuple: Rule1[PType] = rule {
-      "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~> ((xs: Seq[PType]) => PType.Tuple(xs.toList))
+    def LambdaType: Rule1[PType] = rule {
+      "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~> ((xs: Seq[PType], r: PType) => PType.Lambda(xs.toList, r))
     }
 
-    rule {
-      Unit | Singleton | Tuple
+    def SetType: Rule1[PType] = rule {
+      atomic("Set") ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optWS ~> PType.Set
     }
-  }
 
-  def LambdaType: Rule1[PType] = rule {
-    "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~> ((xs: Seq[PType], r: PType) => PType.Lambda(xs.toList, r))
-  }
-
-  def SetType: Rule1[PType] = rule {
-    atomic("Set") ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optWS ~> PType.Set
-  }
-
-  def ParametricType: Rule1[PType] = rule {
-    QName ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ optWS ~> PType.Parametric
+    def ParametricType: Rule1[PType] = rule {
+      QName ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ optWS ~> PType.Parametric
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -621,12 +633,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Operators                                                               //
   /////////////////////////////////////////////////////////////////////////////
-  object Operator {
+  object Operators {
 
     /**
       * Parses a unary operator.
       */
-    def Unary: Rule1[UnaryOperator] = rule {
+    def UnaryOp: Rule1[UnaryOperator] = rule {
       atomic("!") ~> (() => UnaryOperator.LogicalNot) |
         atomic("+") ~> (() => UnaryOperator.Plus) |
         atomic("-") ~> (() => UnaryOperator.Minus) |
@@ -710,10 +722,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def optSC: Rule0 = rule {
     optional(optWS ~ ";")
-  }
-
-  def optDotOrSC: Rule0 = rule {
-    optional(optWS ~ "." | ";")
   }
 
   def NewLine: Rule0 = rule {

@@ -164,9 +164,9 @@ class TestExamples extends FunSuite {
         |    let Constant<> = (Constant.Bot, Constant.Top, leq, lub, glb);
         |    lat A(k: Int, v: Constant<>);
         |
-        |    A(0, Constant.Cst(0))
-        |    A(1, Constant.Cst(1))
-        |    A(2, Constant.Cst(2))
+        |    A(0, Constant.Cst(0)).
+        |    A(1, Constant.Cst(1)).
+        |    A(2, Constant.Cst(2)).
         |
         |    A(3, x) :- A(0, x).
         |    A(3, x) :- A(1, x).
@@ -210,9 +210,9 @@ class TestExamples extends FunSuite {
         |    let ConstSign<> = (ConstSign.Bot, ConstSign.Top, leq, lub, glb);
         |    lat A(k: Int, v: ConstSign<>);
         |
-        |    A(1, ConstSign.Cst(-1))
-        |    A(2, ConstSign.Cst(0))
-        |    A(3, ConstSign.Cst(1))
+        |    A(1, ConstSign.Cst(-1)).
+        |    A(2, ConstSign.Cst(0)).
+        |    A(3, ConstSign.Cst(1)).
         |
         |    A(4, x) :- A(1, x). // 4 -> top
         |    A(4, x) :- A(2, x). // 4 -> top

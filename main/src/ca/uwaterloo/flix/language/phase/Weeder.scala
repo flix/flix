@@ -740,7 +740,7 @@ object Weeder {
           case e => WeededAst.Expression.Ascribe(e, exp.tpe, exp.loc)
         }
 
-      case exp: ParsedAst.Expression.Error =>
+      case exp: ParsedAst.Expression.UserError =>
         WeededAst.Expression.Error(exp.tpe, exp.loc).toSuccess
 
       case exp: ParsedAst.Expression.Bot =>

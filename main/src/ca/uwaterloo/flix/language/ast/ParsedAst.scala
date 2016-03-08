@@ -623,7 +623,7 @@ object ParsedAst {
       * @param tpe the type of the error expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Error(sp1: SourcePosition, tpe: Type, sp2: SourcePosition) extends ParsedAst.Expression {
+    case class UserError(sp1: SourcePosition, tpe: Type, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 

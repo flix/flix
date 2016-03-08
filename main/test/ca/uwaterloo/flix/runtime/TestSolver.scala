@@ -281,7 +281,7 @@ class TestSolver extends FunSuite {
         |rel B(x: Int, y: Int);
         |rel C(x: Int, y: Int);
         |
-        |A(1, 2). A(7, 1)
+        |A(1, 2). A(7, 1).
         |B(2, 3). B(3, 5).
         |C(3, 4). C(5, 6).
         |
