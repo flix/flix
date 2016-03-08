@@ -859,7 +859,7 @@ object Resolver {
         case Type.Unresolved(name) => name.parts match {
           case Seq("Bool") => Type.Bool.toSuccess
           case Seq("Char") => Type.Char.toSuccess
-          case Seq("Float") => Type.Float32.toSuccess
+          case Seq("Float") => Type.Float64.toSuccess
           case Seq("Float32") => Type.Float32.toSuccess
           case Seq("Float64") => Type.Float64.toSuccess
           case Seq("Int") => Type.Int32.toSuccess
