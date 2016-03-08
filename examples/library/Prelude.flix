@@ -345,7 +345,27 @@ impl PartialOrder[(A, B)] <= PartialOrder[A], PartialOrder[B] {
 ///////////////////////////////////////////////////////////////////////////////
 
 // TODO: Add NatInc, NatDec
+enum NatInc {
+    case NatInc(Int)
+}
 
+enum NatDec {
+    case NatDec(Int)
+}
+
+impl PartialOrder[NatInc] {
+    def leq(x: NatInc, y: NatInc): Bool =
+        let NatInc.NatInc(i1) = x in
+        let NatInc.NatInc(i2) = y in
+          x < y
+}
+
+impl JoinSemiLattice[NatInc] {
+    def lub(x: NatInc, y: NatInc): NatInc =
+        let NatInc.NatInc(i1) = x in
+        let NatInc.NatInc(i2) = y in
+          Math/max(i1, i2)
+}
 
 /**
  * We can define a class of types that are equipped with a least upper bound.
@@ -364,9 +384,39 @@ impl PartialOrder[E] <= LeastUpperBound[E] {
 
 // TODO: Further research ideas:
 
+class Functor[M[A]] {
+    def map[B](f: (A) -> B, x: M[A]): M[B]
+}
+
+// class Monoid
+
 //class Foldable[M[E]] {
 //    def reduce(m: M[E], f: (E, E) -> E): E
 //}
 
-//def join[M: Foldable[E], JoinSemiLattice[E]](m: M[E]): E = reduce(m, lub)
+// class Monad
+// class Applicative
 
+// class Finite
+
+// class Traversable
+
+
+//def joinAll[M: Foldable[E], JoinSemiLattice[E]](m: M[E]): E = reduce(m, lub)
+//def meetAll[M: Foldable[E], JoinSemiLattice[E]](m: M[E]): E = reduce(m, lub)
+
+
+// DJSpiwak
+// https://gist.github.com/djspiewak/2ae2570c8856037a7738
+
+// Haskell typeclassopedia
+// https://wiki.haskell.org/Typeclassopedia
+//
+//// I have ALWAYS wanted these
+//object +: {
+//  def unapply[A](vec: Vector[A]): Option[(A, Vector[A])] = ???
+//}
+//
+//object :+ {
+//  def unapply[A](vec: Vector[A]): Option[(Vector[A], A)] = ???
+//}
