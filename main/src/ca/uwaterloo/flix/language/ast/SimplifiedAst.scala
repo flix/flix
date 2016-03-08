@@ -8,8 +8,8 @@ object SimplifiedAst {
 
   case class Root(constants: Map[Symbol.Resolved, SimplifiedAst.Definition.Constant],
                   lattices: Map[Type, SimplifiedAst.Definition.Lattice],
-                  collections: Map[Symbol.Resolved, SimplifiedAst.Table],
-                  indexes: Map[Symbol.Resolved, SimplifiedAst.Definition.Index],
+                  tables: Map[Symbol.TableSym, SimplifiedAst.Table],
+                  indexes: Map[Symbol.TableSym, SimplifiedAst.Definition.Index],
                   facts: List[SimplifiedAst.Constraint.Fact],
                   rules: List[SimplifiedAst.Constraint.Rule],
                   time: Time) extends SimplifiedAst
@@ -31,7 +31,7 @@ object SimplifiedAst {
                        glb: SimplifiedAst.Expression,
                        loc: SourceLocation) extends SimplifiedAst.Definition
 
-    case class Index(name: Symbol.Resolved,
+    case class Index(sym: Symbol.TableSym,
                      indexes: Seq[Seq[Name.Ident]],
                      loc: SourceLocation) extends SimplifiedAst.Definition
 
@@ -56,11 +56,11 @@ object SimplifiedAst {
 
   object Table {
 
-    case class Relation(name: Symbol.Resolved,
+    case class Relation(sym: Symbol.TableSym,
                         attributes: List[SimplifiedAst.Attribute],
                         loc: SourceLocation) extends SimplifiedAst.Table
 
-    case class Lattice(name: Symbol.Resolved,
+    case class Lattice(sym: Symbol.TableSym,
                        keys: List[SimplifiedAst.Attribute],
                        values: List[SimplifiedAst.Attribute],
                        loc: SourceLocation) extends SimplifiedAst.Table
@@ -528,10 +528,10 @@ object SimplifiedAst {
 
     object Head {
 
-      case class Relation(name: Symbol.Resolved,
-                          terms: List[SimplifiedAst.Term.Head],
-                          tpe: Type.Predicate,
-                          loc: SourceLocation) extends SimplifiedAst.Predicate.Head
+      case class Table(sym: Symbol.TableSym,
+                       terms: List[SimplifiedAst.Term.Head],
+                       tpe: Type.Predicate,
+                       loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
     }
 
@@ -539,10 +539,10 @@ object SimplifiedAst {
 
     object Body {
 
-      case class Collection(name: Symbol.Resolved,
-                            terms: List[SimplifiedAst.Term.Body],
-                            tpe: Type.Predicate,
-                            loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+      case class Table(sym: Symbol.TableSym,
+                       terms: List[SimplifiedAst.Term.Body],
+                       tpe: Type.Predicate,
+                       loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class ApplyFilter(name: Symbol.Resolved,
                              terms: List[SimplifiedAst.Term.Body],

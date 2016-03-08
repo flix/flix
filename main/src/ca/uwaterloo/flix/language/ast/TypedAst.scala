@@ -12,8 +12,8 @@ object TypedAst {
     *
     * @param constants   a map from names to constant definitions.
     * @param lattices    a map from types to user-specified bounded lattice definitions.
-    * @param collections a map from names to lattice or relation definitions.
-    * @param indexes     a map from collection names to indexes.
+    * @param tables      a map from names to lattice or relation definitions.
+    * @param indexes     a map from table symbols to indexes.
     * @param facts       a list of facts.
     * @param rules       a list of rules.
     * @param hooks       a map from names to hooks.
@@ -21,8 +21,8 @@ object TypedAst {
     */
   case class Root(constants: Map[Symbol.Resolved, TypedAst.Definition.Constant],
                   lattices: Map[Type, TypedAst.Definition.BoundedLattice],
-                  collections: Map[Symbol.Resolved, TypedAst.Table],
-                  indexes: Map[Symbol.Resolved, TypedAst.Definition.Index],
+                  tables: Map[Symbol.TableSym, TypedAst.Table],
+                  indexes: Map[Symbol.TableSym, TypedAst.Definition.Index],
                   facts: List[TypedAst.Constraint.Fact],
                   rules: List[TypedAst.Constraint.Rule],
                   hooks: Map[Symbol.Resolved, Ast.Hook],
@@ -67,11 +67,11 @@ object TypedAst {
     /**
       * A typed AST node representing an index definition.
       *
-      * @param name    the name of the collection.
+      * @param sym     the symbol of the collection.
       * @param indexes the selected indexes.
       * @param loc     the source location.
       */
-    case class Index(name: Symbol.Resolved, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends TypedAst.Definition
+    case class Index(sym: Symbol.TableSym, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends TypedAst.Definition
 
   }
 
@@ -85,21 +85,21 @@ object TypedAst {
     /**
       * A typed AST node representing a relation definition.
       *
-      * @param name       the name of the relation.
+      * @param sym        the symbol of the relation.
       * @param attributes the attributes of the relation.
       * @param loc        the source location.
       */
-    case class Relation(name: Symbol.Resolved, attributes: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Table
+    case class Relation(sym: Symbol.TableSym, attributes: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Table
 
     /**
       * A typed AST node representing a lattice definition.
       *
-      * @param name   the name of the relation.
+      * @param sym    the symbol of the relation.
       * @param keys   the keys of the lattice.
       * @param values the keys of the lattice.
       * @param loc    the source location.
       */
-    case class Lattice(name: Symbol.Resolved, keys: List[TypedAst.Attribute], values: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Table
+    case class Lattice(sym: Symbol.TableSym, keys: List[TypedAst.Attribute], values: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Table
 
   }
 
@@ -532,13 +532,13 @@ object TypedAst {
       /**
         * A typed relational predicate that occurs in the head of a fact/rule.
         *
-        * @param name  the name of the predicate.
+        * @param sym  the symbol of the predicate.
         * @param terms the terms of the predicate.
         * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      // TODO: Need better name....could also be a lattice...
-      case class Relation(name: Symbol.Resolved, terms: List[TypedAst.Term.Head], tpe: Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class Table(sym: Symbol.TableSym, terms: List[TypedAst.Term.Head], tpe: Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Head
+
     }
 
     /**
@@ -549,14 +549,14 @@ object TypedAst {
     object Body {
 
       /**
-        * A typed collection predicate that occurs in the body of a rule.
+        * A typed table predicate that occurs in the body of a rule.
         *
-        * @param name  the name of the relation.
+        * @param sym   the symbol of the table.
         * @param terms the terms of the predicate.
         * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      case class Collection(name: Symbol.Resolved, terms: List[TypedAst.Term.Body], tpe: Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Table(sym: Symbol.TableSym, terms: List[TypedAst.Term.Body], tpe: Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Body
 
       /**
         * A filter predicate that occurs in the body of a rule.

@@ -46,7 +46,7 @@ class TestExamples extends FunSuite {
     val Fls = Value.mkTag(Belnap, "False", Value.Unit)
     val Top = Value.mkTag(Belnap, "Top", Value.Unit)
 
-    val A = model.lattices(Symbol.Resolved.mk(List("Belnap", "A"))).toMap
+    val A = model.getLattice("Belnap/A").toMap
 
     assertResult(List(Tru))(A(List(Value.mkInt32(1))))
     assertResult(List(Fls))(A(List(Value.mkInt32(2))))
@@ -95,7 +95,7 @@ class TestExamples extends FunSuite {
     val Evn = Value.mkTag(Parity, "Even", Value.Unit)
     val Top = Value.mkTag(Parity, "Top", Value.Unit)
 
-    val A = model.lattices(Symbol.Resolved.mk(List("Parity", "A"))).toMap
+    val A = model.getLattice("Parity/A").toMap
 
     assertResult(List(Odd))(A(List(Value.mkInt32(1))))
     assertResult(List(Evn))(A(List(Value.mkInt32(2))))
@@ -145,7 +145,7 @@ class TestExamples extends FunSuite {
     val Pos = Value.mkTag(Sign, "Pos", Value.Unit)
     val Top = Value.mkTag(Sign, "Top", Value.Unit)
 
-    val A = model.lattices(Symbol.Resolved.mk(List("Sign", "A"))).toMap
+    val A = model.getLattice("Sign/A").toMap
 
     assertResult(List(Neg))(A(List(Value.mkInt32(1))))
     assertResult(List(Zer))(A(List(Value.mkInt32(2))))
@@ -193,7 +193,7 @@ class TestExamples extends FunSuite {
     val Two = Value.mkTag(Constant, "Cst", Value.mkInt32(2))
     val Top = Value.mkTag(Constant, "Top", Value.Unit)
 
-    val A = model.lattices(Symbol.Resolved.mk(List("Constant", "A"))).toMap
+    val A = model.getLattice("Constant/A").toMap
 
     assertResult(List(Zer))(A(List(Value.mkInt32(0))))
     assertResult(List(One))(A(List(Value.mkInt32(1))))
@@ -244,7 +244,7 @@ class TestExamples extends FunSuite {
     val Pos = Value.mkTag(ConstantSign, "Pos", Value.Unit)
     val Top = Value.mkTag(ConstantSign, "Top", Value.Unit)
 
-    val A = model.lattices(Symbol.Resolved.mk(List("ConstantSign", "A"))).toMap
+    val A = model.getLattice("ConstantSign/A").toMap
 
     assertResult(List(Zer))(A(List(Value.mkInt32(2))))
     assertResult(List(One))(A(List(Value.mkInt32(3))))

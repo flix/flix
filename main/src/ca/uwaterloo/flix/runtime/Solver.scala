@@ -143,17 +143,17 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     }
 
     // construct the model.
-    val relations = dataStore.relations.foldLeft(Map.empty[Symbol.Resolved, Iterable[List[AnyRef]]]) {
-      case (macc, (name, relation)) =>
+    val relations = dataStore.relations.foldLeft(Map.empty[Symbol.TableSym, Iterable[List[AnyRef]]]) {
+      case (macc, (sym, relation)) =>
         val table = relation.scan.toIterable.map(_.toList)
-        macc + ((name, table))
+        macc + ((sym, table))
     }
-    val lattices = dataStore.lattices.foldLeft(Map.empty[Symbol.Resolved, Iterable[(List[AnyRef], List[AnyRef])]]) {
-      case (macc, (name, lattice)) =>
+    val lattices = dataStore.lattices.foldLeft(Map.empty[Symbol.TableSym, Iterable[(List[AnyRef], List[AnyRef])]]) {
+      case (macc, (sym, lattice)) =>
         val table = lattice.scan.toIterable.map {
           case (keys, values) => (keys.toArray.toList, values.toList)
         }
-        macc + ((name, table))
+        macc + ((sym, table))
     }
     model = Model(sCtx.root, constants, relations, lattices)
     model
@@ -168,19 +168,19 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     }.toList
 
   /**
-    * Processes an inferred `fact` for the relation or lattice with the `name`.
+    * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
-  def inferredFact(name: Symbol.Resolved, fact: Array[AnyRef], enqueue: Boolean): Unit = sCtx.root.collections(name) match {
+  def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef], enqueue: Boolean): Unit = sCtx.root.tables(sym) match {
     case r: ExecutableAst.Table.Relation =>
-      val changed = dataStore.relations(name).inferredFact(fact)
+      val changed = dataStore.relations(sym).inferredFact(fact)
       if (changed && enqueue) {
-        dependencies(r.name, fact)
+        dependencies(r.sym, fact)
       }
 
     case l: ExecutableAst.Table.Lattice =>
-      val changed = dataStore.lattices(name).inferredFact(fact)
+      val changed = dataStore.lattices(sym).inferredFact(fact)
       if (changed && enqueue) {
-        dependencies(l.name, fact)
+        dependencies(l.sym, fact)
       }
   }
 
@@ -188,7 +188,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Evaluates the given head predicate `p` under the given environment `env0`.
     */
   def evalHead(p: Predicate.Head, env0: mutable.Map[String, AnyRef], enqueue: Boolean): Unit = p match {
-    case p: Predicate.Head.Relation =>
+    case p: Predicate.Head.Table =>
       val terms = p.terms
       val fact = new Array[AnyRef](p.arity)
       var i = 0
@@ -196,7 +196,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         fact(i) = Interpreter.evalHeadTerm(terms(i), sCtx.root, env0)
         i = i + 1
       }
-      inferredFact(p.name, fact, enqueue)
+      inferredFact(p.sym, fact, enqueue)
   }
 
 
@@ -206,7 +206,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   def evalBody(rule: Constraint.Rule, env0: mutable.Map[String, AnyRef]): Unit = {
     val t = System.nanoTime()
 
-    cross(rule, rule.collections, env0)
+    cross(rule, rule.tables, env0)
 
     rule.elapsedTime += System.nanoTime() - t
     rule.hitcount += 1
@@ -215,15 +215,15 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Computes the cross product of all collections in the body.
     */
-  def cross(rule: Constraint.Rule, ps: List[Predicate.Body.Collection], row: mutable.Map[String, AnyRef]): Unit = ps match {
+  def cross(rule: Constraint.Rule, ps: List[Predicate.Body.Table], row: mutable.Map[String, AnyRef]): Unit = ps match {
     case Nil =>
       // cross product complete, now filter
       loop(rule, rule.loops, row)
-    case (p: Predicate.Body.Collection) :: xs =>
+    case (p: Predicate.Body.Table) :: xs =>
       // lookup the relation or lattice.
-      val collection = sCtx.root.collections(p.name) match {
-        case r: Table.Relation => dataStore.relations(p.name)
-        case l: Table.Lattice => dataStore.lattices(p.name)
+      val table = sCtx.root.tables(p.sym) match {
+        case r: Table.Relation => dataStore.relations(p.sym)
+        case l: Table.Lattice => dataStore.lattices(p.sym)
       }
 
       // evaluate all terms in the predicate.
@@ -235,7 +235,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       }
 
       // lookup all matching rows.
-      for (matchedRow <- collection.lookup(pat)) {
+      for (matchedRow <- table.lookup(pat)) {
         // copy the environment for every row.
         val newRow = row.clone()
 
@@ -350,9 +350,9 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-    * Returns all dependencies of the given `name` along with an environment.
+    * Returns all dependencies of the given symbol `sym` along with an environment.
     */
-  def dependencies(name: Symbol.Resolved, fact: Array[AnyRef]): Unit = {
+  def dependencies(sym: Symbol.TableSym, fact: Array[AnyRef]): Unit = {
 
     def unify(pat: Array[String], fact: Array[AnyRef], limit: Int): mutable.Map[String, AnyRef] = {
       val env = mutable.Map.empty[String, AnyRef]
@@ -366,9 +366,9 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       env
     }
 
-    val collection = sCtx.root.collections(name)
-    for ((rule, p) <- sCtx.root.dependenciesOf(name)) {
-      collection match {
+    val table = sCtx.root.tables(sym)
+    for ((rule, p) <- sCtx.root.dependenciesOf(sym)) {
+      table match {
         case r: ExecutableAst.Table.Relation =>
           // unify all terms with their values.
           val env = unify(p.index2var, fact, fact.length)

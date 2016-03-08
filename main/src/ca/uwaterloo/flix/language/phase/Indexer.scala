@@ -12,19 +12,19 @@ object Indexer {
   /**
     * Returns an index selection strategy based on left-to-right evaluation of constraint rules.
     */
-  def index(root: ExecutableAst.Root): Map[Symbol.Resolved, Set[Seq[Int]]] = {
-    val indexes = mutable.Map.empty[Symbol.Resolved, Set[Seq[Int]]]
+  def index(root: ExecutableAst.Root): Map[Symbol.TableSym, Set[Seq[Int]]] = {
+    val indexes = mutable.Map.empty[Symbol.TableSym, Set[Seq[Int]]]
 
     // iterate through each rule.
     for (constraint <- root.rules) {
       // maintain set of bound variables in each rule.
       val bound = mutable.Set.empty[String]
-      // iterate through each collection predicate in the body.
+      // iterate through each table predicate in the body.
       for (body <- constraint.body) {
         body match {
-          case Predicate.Body.Collection(name, pterms, _, _, _, _) =>
+          case Predicate.Body.Table(name, pterms, _, _, _, _) =>
             // determine the terms usable for indexing based on whether the predicate refers to a relation or lattice.
-            val terms = root.collections(name) match {
+            val terms = root.tables(name) match {
               case r: ExecutableAst.Table.Relation => pterms
               case l: ExecutableAst.Table.Lattice => pterms take l.keys.length
             }
@@ -53,9 +53,9 @@ object Indexer {
       }
     }
 
-    // ensure every collection has at least one index.
-    for ((name, collection) <- root.collections) {
-      collection match {
+    // ensure every table has at least one index.
+    for ((name, table) <- root.tables) {
+      table match {
         case r: ExecutableAst.Table.Relation =>
           val idxs = indexes.getOrElse(name, Set.empty)
           indexes(name) = idxs + Seq(0) // + r.attributes.indices // TODO
@@ -66,11 +66,11 @@ object Indexer {
     }
 
     // user defined indexes overrides the defaults.
-    for ((name, collection) <- root.collections) {
+    for ((name, table) <- root.tables) {
       root.indexes.get(name) match {
         case None => // no user defined index.
         case Some(index) =>
-          val attributes = collection match {
+          val attributes = table match {
             case r: ExecutableAst.Table.Relation => r.attributes
             case l: ExecutableAst.Table.Lattice => l.keys
           }

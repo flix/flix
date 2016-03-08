@@ -47,7 +47,6 @@ object Interpreter {
       }
       Value.Closure(formals, body, env.clone())
     case Expression.Hook(hook, _, _) => Value.HookClosure(hook)
-    case Expression.Closure(args, body, clEnv, _, _) => ???
     case Expression.Apply(name, args, _, _) => ???
     case Expression.Apply3(exp, args, _, _) =>
       val evalArgs = new Array[AnyRef](args.length)

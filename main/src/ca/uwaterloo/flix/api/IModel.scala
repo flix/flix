@@ -6,21 +6,6 @@ package ca.uwaterloo.flix.api
 trait IModel {
 
   /**
-    * Returns an iterable over all constant names in the program.
-    */
-  def getConstants: java.lang.Iterable[String]
-
-  /**
-    * Returns an iterable over all relation names in the program.
-    */
-  def getRelations: java.lang.Iterable[String]
-
-  /**
-    * Returns an iterable over all lattice names in the program.
-    */
-  def getLattices: java.lang.Iterable[String]
-
-  /**
     * Returns the constant with the given fully qualified `name`.
     *
     * @throws IllegalArgumentException if no such constant exists.

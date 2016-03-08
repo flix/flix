@@ -15,7 +15,7 @@ object Simplifier {
   def simplify(tast: TypedAst.Root)(implicit genSym: GenSym): SimplifiedAst.Root = {
     val constants = tast.constants.map { case (k, v) => k -> Definition.simplify(v) }
     val lattices = tast.lattices.map { case (k, v) => k -> Definition.simplify(v) }
-    val collections = tast.collections.map { case (k, v) => k -> Collection.simplify(v) }
+    val collections = tast.tables.map { case (k, v) => k -> Table.simplify(v) }
     val indexes = tast.indexes.map { case (k, v) => k -> Definition.simplify(v) }
     val facts = tast.facts.map(Constraint.simplify)
     val rules = tast.rules.map(Constraint.simplify)
@@ -24,10 +24,10 @@ object Simplifier {
     SimplifiedAst.Root(constants, lattices, collections, indexes, facts, rules, time)
   }
 
-  object Collection {
+  object Table {
     def simplify(tast: TypedAst.Table)(implicit genSym: GenSym): SimplifiedAst.Table = tast match {
-      case TypedAst.Table.Relation(name, attributes, loc) =>
-        SimplifiedAst.Table.Relation(name, attributes.map(Simplifier.simplify), loc)
+      case TypedAst.Table.Relation(symbol, attributes, loc) =>
+        SimplifiedAst.Table.Relation(symbol, attributes.map(Simplifier.simplify), loc)
       case TypedAst.Table.Lattice(name, keys, values, loc) =>
         SimplifiedAst.Table.Lattice(name, keys.map(Simplifier.simplify), values.map(Simplifier.simplify), loc)
     }
@@ -55,7 +55,7 @@ object Simplifier {
       SimplifiedAst.Definition.Constant(tast.name, Expression.simplify(tast.exp), tast.tpe, tast.loc)
 
     def simplify(tast: TypedAst.Definition.Index)(implicit genSym: GenSym): SimplifiedAst.Definition.Index =
-      SimplifiedAst.Definition.Index(tast.name, tast.indexes, tast.loc)
+      SimplifiedAst.Definition.Index(tast.sym, tast.indexes, tast.loc)
   }
 
   object Expression {
@@ -294,15 +294,15 @@ object Simplifier {
 
     object Head {
       def simplify(tast: TypedAst.Predicate.Head)(implicit genSym: GenSym): SimplifiedAst.Predicate.Head = tast match {
-        case TypedAst.Predicate.Head.Relation(name, terms, tpe, loc) =>
-          SimplifiedAst.Predicate.Head.Relation(name, terms map Term.simplify, tpe, loc)
+        case TypedAst.Predicate.Head.Table(sym, terms, tpe, loc) =>
+          SimplifiedAst.Predicate.Head.Table(sym, terms map Term.simplify, tpe, loc)
       }
     }
 
     object Body {
       def simplify(tast: TypedAst.Predicate.Body)(implicit genSym: GenSym): SimplifiedAst.Predicate.Body = tast match {
-        case TypedAst.Predicate.Body.Collection(name, terms, tpe, loc) =>
-          SimplifiedAst.Predicate.Body.Collection(name, terms map Term.simplify, tpe, loc)
+        case TypedAst.Predicate.Body.Table(sym, terms, tpe, loc) =>
+          SimplifiedAst.Predicate.Body.Table(sym, terms map Term.simplify, tpe, loc)
         case TypedAst.Predicate.Body.ApplyFilter(name, terms, tpe, loc) =>
           SimplifiedAst.Predicate.Body.ApplyFilter(name, terms map Term.simplify, tpe, loc)
         case TypedAst.Predicate.Body.ApplyHookFilter(hook, terms, tpe, loc) =>

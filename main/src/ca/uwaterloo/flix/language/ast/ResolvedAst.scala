@@ -10,8 +10,8 @@ object ResolvedAst {
   case class Root(constants: Map[Symbol.Resolved, ResolvedAst.Definition.Constant],
                   enums: Map[Symbol.Resolved, ResolvedAst.Definition.Enum],
                   lattices: Map[Type, ResolvedAst.Definition.BoundedLattice],
-                  collections: Map[Symbol.Resolved, ResolvedAst.Table],
-                  indexes: Map[Symbol.Resolved, ResolvedAst.Definition.Index],
+                  tables: Map[Symbol.TableSym, ResolvedAst.Table],
+                  indexes: Map[Symbol.TableSym, ResolvedAst.Definition.Index],
                   facts: List[ResolvedAst.Constraint.Fact],
                   rules: List[ResolvedAst.Constraint.Rule],
                   hooks: Map[Symbol.Resolved, Ast.Hook],
@@ -48,8 +48,7 @@ object ResolvedAst {
     case class BoundedLattice(tpe: Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, leq: ResolvedAst.Expression,
                               lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Definition
 
-    // TODO: DOC
-    case class Index(name: Symbol.Resolved, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends ResolvedAst.Definition
+    case class Index(sym: Symbol.TableSym, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends ResolvedAst.Definition
 
   }
 
@@ -63,21 +62,21 @@ object ResolvedAst {
     /**
       * A resolved AST node representing a relation definition.
       *
-      * @param name       the name of the relation.
+      * @param sym        the symbol of the relation.
       * @param attributes the attributes of the relation.
       * @param loc        the location.
       */
-    case class Relation(name: Symbol.Resolved, attributes: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Table
+    case class Relation(sym: Symbol.TableSym, attributes: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Table
 
     /**
       * A resolved AST node representing a lattice definition.
       *
-      * @param name   the name of the relation.
+      * @param sym    the symbol of the lattice.
       * @param keys   the keys of the lattice.
       * @param values the values of the lattice.
       * @param loc    the location.
       */
-    case class Lattice(name: Symbol.Resolved, keys: List[ResolvedAst.Attribute], values: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Table
+    case class Lattice(sym: Symbol.TableSym, keys: List[ResolvedAst.Attribute], values: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Table
 
   }
 
@@ -236,11 +235,11 @@ object ResolvedAst {
       /**
         * A relational predicate that occurs in the head of a fact/rule.
         *
-        * @param name  the name of the relation.
+        * @param sym   the symbol of the relation.
         * @param terms the terms of the predicate.
         * @param loc   the source location.
         */
-      case class Relation(name: Symbol.Resolved, terms: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Predicate.Head
+      case class Table(sym: Symbol.TableSym, terms: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
     }
 
@@ -254,11 +253,11 @@ object ResolvedAst {
       /**
         * A relational predicate that occurs in the body of a rule.
         *
-        * @param name  the name of the relation.
+        * @param sym   the symbol of the table.
         * @param terms the terms of the predicate.
         * @param loc   the source location.
         */
-      case class Relation(name: Symbol.Resolved, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class Table(sym: Symbol.TableSym, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
       /**
         * A filter predicate that occurs in the body of a rule.
@@ -346,6 +345,7 @@ object ResolvedAst {
         * @param loc  the location.
         */
       case class ApplyHook(hook: Ast.Hook, args: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Term.Head
+
     }
 
     /**

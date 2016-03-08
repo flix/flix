@@ -64,6 +64,11 @@ object Name {
     val isQualified: Boolean = !namespace.isRoot
 
     /**
+      * Returns `true` if this name is unqualified (i.e. has no namespace).
+      */
+    val isUnqualified: Boolean = !isQualified
+
+    /**
       * The source location of the name.
       */
     val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
@@ -71,7 +76,8 @@ object Name {
     /**
       * Human readable representation.
       */
-    override val toString: String = namespace.toString + "/" + ident
+    override val toString: String =
+      if (isUnqualified) ident.toString else namespace.toString + "/" + ident
   }
 
 }

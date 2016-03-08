@@ -4917,7 +4917,7 @@ class TestInterpreter extends FunSuite {
         |B(x) :- A(x).
       """.stripMargin
     val model = getModel(input)
-    val B = model.relations(Symbol.Resolved.mk("B")).toSet
+    val B = model.getRelation("B").toSet
     assertResult(B)(Set(List(Value.True)))
   }
 
@@ -4933,7 +4933,7 @@ class TestInterpreter extends FunSuite {
         |B(x) :- A(x).
       """.stripMargin
     val model = getModel(input)
-    val B = model.relations(Symbol.Resolved.mk("B")).toSet
+    val B = model.getRelation("B").toSet
     assertResult(B)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -4949,7 +4949,7 @@ class TestInterpreter extends FunSuite {
         |B(x) :- A(x).
       """.stripMargin
     val model = getModel(input)
-    val B = model.relations(Symbol.Resolved.mk("B")).toSet
+    val B = model.getRelation("B").toSet
     assertResult(B)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
   }
 
@@ -4964,7 +4964,7 @@ class TestInterpreter extends FunSuite {
         |A(()).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Unit)))
   }
 
@@ -4976,7 +4976,7 @@ class TestInterpreter extends FunSuite {
         |A(false).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(true, false).map(x => List(Value.mkBool(x))))
   }
 
@@ -4989,7 +4989,7 @@ class TestInterpreter extends FunSuite {
         |A(3i8).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt8(x))))
   }
 
@@ -5002,7 +5002,7 @@ class TestInterpreter extends FunSuite {
         |A(3i16).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
   }
 
@@ -5015,7 +5015,7 @@ class TestInterpreter extends FunSuite {
         |A(3i32).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -5028,7 +5028,7 @@ class TestInterpreter extends FunSuite {
         |A(3i64).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt64(x))))
   }
 
@@ -5041,7 +5041,7 @@ class TestInterpreter extends FunSuite {
         |A("three").
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
   }
 
@@ -5052,7 +5052,7 @@ class TestInterpreter extends FunSuite {
         |A((1, "one")).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))))
   }
 
@@ -5064,7 +5064,7 @@ class TestInterpreter extends FunSuite {
         |A(Foo.Foo(1, "one")).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.mkTag(Symbol.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
   }
 
@@ -5075,7 +5075,7 @@ class TestInterpreter extends FunSuite {
         |A((1, 2)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))))
   }
 
@@ -5092,7 +5092,7 @@ class TestInterpreter extends FunSuite {
         |A(f(0)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Unit)))
   }
 
@@ -5105,7 +5105,7 @@ class TestInterpreter extends FunSuite {
         |A(f(1)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(true, false).map(x => List(Value.mkBool(x))))
   }
 
@@ -5119,7 +5119,7 @@ class TestInterpreter extends FunSuite {
         |A(f(2i8)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt8(x))))
   }
 
@@ -5133,7 +5133,7 @@ class TestInterpreter extends FunSuite {
         |A(f(2i16)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
   }
 
@@ -5147,7 +5147,7 @@ class TestInterpreter extends FunSuite {
         |A(f(2i32)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -5161,7 +5161,7 @@ class TestInterpreter extends FunSuite {
         |A(f(2i64)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt64(x))))
   }
 
@@ -5175,7 +5175,7 @@ class TestInterpreter extends FunSuite {
         |A(f("three")).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
   }
 
@@ -5187,7 +5187,7 @@ class TestInterpreter extends FunSuite {
         |A(f(1)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))))
   }
 
@@ -5200,7 +5200,7 @@ class TestInterpreter extends FunSuite {
         |A(f("one")).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.mkTag(Symbol.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
   }
 
@@ -5212,7 +5212,7 @@ class TestInterpreter extends FunSuite {
         |A(f(1, 2)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))))
   }
 
@@ -5236,7 +5236,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Unit)))
     assert(executed)
   }
@@ -5257,7 +5257,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(true, false).map(x => List(Value.mkBool(x))))
     assert(executed)
   }
@@ -5279,7 +5279,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt8(x))))
     assert(executed)
   }
@@ -5301,7 +5301,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
     assert(executed)
   }
@@ -5323,7 +5323,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
     assert(executed)
   }
@@ -5345,7 +5345,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt64(x))))
     assert(executed)
   }
@@ -5367,7 +5367,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
     assert(executed)
   }
@@ -5387,7 +5387,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))))
     assert(executed)
   }
@@ -5415,7 +5415,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.mkTag(Symbol.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
     assert(executed)
   }
@@ -5435,7 +5435,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))))
     assert(executed)
   }
@@ -5457,7 +5457,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(MyObject(x))))
     assert(executed)
   }
@@ -5484,7 +5484,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Unit)))
     assert(executed)
   }
@@ -5505,7 +5505,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(true, false).map(x => List(Value.mkBool(x))))
     assert(executed)
   }
@@ -5527,7 +5527,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt8(x))))
     assert(executed)
   }
@@ -5549,7 +5549,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
     assert(executed)
   }
@@ -5571,7 +5571,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
     assert(executed)
   }
@@ -5593,7 +5593,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt64(x))))
     assert(executed)
   }
@@ -5615,7 +5615,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
     assert(executed)
   }
@@ -5635,7 +5635,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))))
     assert(executed)
   }
@@ -5663,7 +5663,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.mkTag(Symbol.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
     assert(executed)
   }
@@ -5683,7 +5683,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))))
     assert(executed)
   }
@@ -5705,7 +5705,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(MyObject(x))))
     assert(executed)
   }
@@ -5732,7 +5732,7 @@ class TestInterpreter extends FunSuite {
         |B(y) :- f(x), A(x, y).
       """.stripMargin
     val model = getModel(input)
-    val B = model.relations(Symbol.Resolved.mk("B")).toSet
+    val B = model.getRelation("B").toSet
     assertResult(B)(Set(List(Value.True)))
   }
 
@@ -5750,7 +5750,7 @@ class TestInterpreter extends FunSuite {
         |B(x) :- f(x), A(x).
       """.stripMargin
     val model = getModel(input)
-    val B = model.relations(Symbol.Resolved.mk("B")).toSet
+    val B = model.getRelation("B").toSet
     assertResult(B)(Set(0, 2).map(x => List(Value.mkInt32(x))))
   }
 
@@ -5770,7 +5770,7 @@ class TestInterpreter extends FunSuite {
         |A(5) :- f(false).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -5785,7 +5785,7 @@ class TestInterpreter extends FunSuite {
         |A(4) :- f(-1i8).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -5800,7 +5800,7 @@ class TestInterpreter extends FunSuite {
         |A(4) :- f(-200i16).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -5815,7 +5815,7 @@ class TestInterpreter extends FunSuite {
         |A(4) :- f(-200000i32).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -5830,7 +5830,7 @@ class TestInterpreter extends FunSuite {
         |A(4) :- f(-20000000000i64).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -5844,7 +5844,7 @@ class TestInterpreter extends FunSuite {
         |A(3) :- f("baz").
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -5863,7 +5863,7 @@ class TestInterpreter extends FunSuite {
         |A(5) :- f((0, "xyz")).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -5883,7 +5883,7 @@ class TestInterpreter extends FunSuite {
         |A(5) :- f(Val.Top).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Symbol.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 

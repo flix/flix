@@ -5,6 +5,20 @@ import scala.collection.mutable
 object Symbol {
 
   /**
+    * Returns the table symbol for the given fully qualified name.
+    */
+  def mkTableSym(fqn: String): TableSym = {
+    if (!fqn.contains('/'))
+      return new TableSym(List.empty, fqn, SourceLocation.Unknown)
+
+    val index = fqn.indexOf('/')
+    val namespace = fqn.substring(0, index).split('.').toList
+    val name = fqn.substring(index + 1, fqn.length)
+    new TableSym(namespace, name, SourceLocation.Unknown)
+  }
+
+
+  /**
     * Variable Symbol.
     *
     * @param id   the globally unique name of the symbol.
@@ -35,30 +49,26 @@ object Symbol {
   /**
     * Table Symbol.
     *
-    * @param id   the globally unique name of the symbol.
-    * @param text the original name, as it appears in the source code, of the symbol
-    * @param tpe  the type of the symbol.
-    * @param loc  the source location associated with the symbol.
+    * @param loc the source location associated with the symbol.
     */
-  final class TableSym(val id: Int, val text: String, val tpe: Type, val loc: SourceLocation) {
-
+  final class TableSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: TableSym => this.id == that.id
+      case that: TableSym => this.namespace == that.namespace && this.name == that.name
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = id.hashCode()
+    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
 
     /**
       * Human readable representation.
       */
-    override val toString: String = text + "$" + id
+    override val toString: String = namespace.mkString(".") + "/" + name
   }
 
 

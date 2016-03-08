@@ -8,12 +8,12 @@ object ExecutableAst {
 
   case class Root(constants: Map[Symbol.Resolved, ExecutableAst.Definition.Constant],
                   lattices: Map[Type, ExecutableAst.Definition.Lattice],
-                  collections: Map[Symbol.Resolved, ExecutableAst.Table],
-                  indexes: Map[Symbol.Resolved, ExecutableAst.Definition.Index],
+                  tables: Map[Symbol.TableSym, ExecutableAst.Table],
+                  indexes: Map[Symbol.TableSym, ExecutableAst.Definition.Index],
                   facts: Array[ExecutableAst.Constraint.Fact],
                   rules: Array[ExecutableAst.Constraint.Rule],
                   time: Time,
-                  dependenciesOf: Map[Symbol.Resolved, mutable.Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Collection)]]) extends ExecutableAst
+                  dependenciesOf: Map[Symbol.TableSym, mutable.Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Table)]]) extends ExecutableAst // TODO: Why mutable?
 
   sealed trait Definition
 
@@ -32,7 +32,7 @@ object ExecutableAst {
                        glb: ExecutableAst.Expression,
                        loc: SourceLocation) extends ExecutableAst.Definition
 
-    case class Index(name: Symbol.Resolved,
+    case class Index(name: Symbol.TableSym,
                      indexes: Seq[Seq[Name.Ident]],
                      loc: SourceLocation) extends ExecutableAst.Definition
 
@@ -42,11 +42,11 @@ object ExecutableAst {
 
   object Table {
 
-    case class Relation(name: Symbol.Resolved,
+    case class Relation(sym: Symbol.TableSym,
                         attributes: Array[ExecutableAst.Attribute],
                         loc: SourceLocation) extends ExecutableAst.Table
 
-    case class Lattice(name: Symbol.Resolved,
+    case class Lattice(sym: Symbol.TableSym,
                        keys: Array[ExecutableAst.Attribute],
                        values: Array[ExecutableAst.Attribute],
                        loc: SourceLocation) extends ExecutableAst.Table
@@ -62,7 +62,7 @@ object ExecutableAst {
     // TODO(magnus): Change lists to arrays
     case class Rule(head: ExecutableAst.Predicate.Head,
                     body: List[ExecutableAst.Predicate.Body],
-                    collections: List[ExecutableAst.Predicate.Body.Collection],
+                    tables: List[ExecutableAst.Predicate.Body.Table],
                     filters: List[ExecutableAst.Predicate.Body.ApplyFilter],
                     filterHooks: List[ExecutableAst.Predicate.Body.ApplyHookFilter],
                     disjoint: List[ExecutableAst.Predicate.Body.NotEqual],
@@ -265,15 +265,6 @@ object ExecutableAst {
     }
 
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
-    // TODO: Eliminate once we have lambda lifting
-    case class Closure(args: Array[ExecutableAst.FormalArg],
-                       body: ExecutableAst.Expression,
-                       env: Map[String, ExecutableAst.Expression],
-                       tpe: Type,
-                       loc: SourceLocation) extends ExecutableAst.Expression {
-      override def toString: String = "Closure(<>)"
-    }
 
     /**
       * A typed AST node representing a function call.
@@ -491,10 +482,10 @@ object ExecutableAst {
 
     object Head {
 
-      case class Relation(name: Symbol.Resolved,
-                          terms: Array[ExecutableAst.Term.Head],
-                          tpe: Type.Predicate,
-                          loc: SourceLocation) extends ExecutableAst.Predicate.Head {
+      case class Table(sym: Symbol.TableSym,
+                       terms: Array[ExecutableAst.Term.Head],
+                       tpe: Type.Predicate,
+                       loc: SourceLocation) extends ExecutableAst.Predicate.Head {
         /**
           * Returns the arity of the predicate.
           */
@@ -512,14 +503,14 @@ object ExecutableAst {
 
     object Body {
 
-      case class Collection(name: Symbol.Resolved,
-                            terms: Array[ExecutableAst.Term.Body],
-                            index2var: Array[String],
-                            freeVars: Set[String],
-                            tpe: Type.Predicate,
-                            loc: SourceLocation) extends ExecutableAst.Predicate.Body {
+      case class Table(sym: Symbol.TableSym,
+                       terms: Array[ExecutableAst.Term.Body],
+                       index2var: Array[String],
+                       freeVars: Set[String],
+                       tpe: Type.Predicate,
+                       loc: SourceLocation) extends ExecutableAst.Predicate.Body {
         /**
-          * Returns the arity of this collection predicate.
+          * Returns the arity of this table predicate.
           */
         val arity: Int = terms.length
       }
