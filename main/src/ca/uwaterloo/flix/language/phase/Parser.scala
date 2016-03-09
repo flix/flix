@@ -404,7 +404,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Patterns {
 
     def Simple: Rule1[ParsedAst.Pattern] = rule {
-      Patterns.Tag | Patterns.Literal | Patterns.Tuple | Patterns.Wildcard | Patterns.Variable
+      FNil | FNone | FSome | Tag | Literal | Tuple | FSet | FMap | Wildcard | Variable
     }
 
     def Wildcard: Rule1[ParsedAst.Pattern.Wildcard] = rule {
@@ -431,10 +431,52 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ "(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Pattern.Tuple
     }
 
-    // TODO: Parse the rest of the patterns...
+    def FNil: Rule1[ParsedAst.Pattern.FNil] = rule {
+      SP ~ atomic("Nil") ~ SP ~> ParsedAst.Pattern.FNil
+    }
 
     def FList: Rule1[ParsedAst.Pattern] = rule {
       Simple ~ optional(optWS ~ atomic("::") ~ optWS ~ Pattern ~ SP ~> ParsedAst.Pattern.FList)
+    }
+
+    def FNone: Rule1[ParsedAst.Pattern.FNone] = rule {
+      SP ~ atomic("None") ~ SP ~> ParsedAst.Pattern.FNone
+    }
+
+    def FSome: Rule1[ParsedAst.Pattern.FSome] = rule {
+      SP ~ atomic("Some") ~ optWS ~ "(" ~ optWS ~ Pattern ~ optWS ~ ")" ~ SP ~> ParsedAst.Pattern.FSome
+    }
+
+    def FSet: Rule1[ParsedAst.Pattern.FSet] = {
+      def DotDotDot: Rule1[Option[ParsedAst.Pattern]] = rule {
+        optional(optWS ~ "," ~ optWS ~ Pattern ~ atomic("..."))
+      }
+
+      def Elements: Rule1[Seq[ParsedAst.Pattern]] = rule {
+        zeroOrMore(!(Pattern ~ atomic("...")) ~ Pattern).separatedBy(CommaSep)
+      }
+
+      rule {
+        SP ~ "#{" ~ optWS ~ Elements ~ DotDotDot ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.FSet
+      }
+    }
+
+    def FMap: Rule1[ParsedAst.Pattern.FMap] = {
+      def KeyValue: Rule1[(ParsedAst.Pattern, ParsedAst.Pattern)] = rule {
+        Pattern ~ optWS ~ atomic("->") ~ optWS ~ Pattern ~> ((p1: ParsedAst.Pattern, p2: ParsedAst.Pattern) => (p1, p2))
+      }
+
+      def Elements: Rule1[Seq[(ParsedAst.Pattern, ParsedAst.Pattern)]] = rule {
+        zeroOrMore(KeyValue).separatedBy(CommaSep)
+      }
+
+      def DotDotDot: Rule1[Option[ParsedAst.Pattern]] = rule {
+        optional(optWS ~ "," ~ optWS ~ Pattern ~ atomic("..."))
+      }
+
+      rule {
+        SP ~ "@{" ~ optWS ~ Elements ~ DotDotDot ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.FMap
+      }
     }
 
   }

@@ -26,7 +26,7 @@ import scala.collection.immutable.Seq
 
 
 // TODO: Why split into declaration and definition?
-
+// TODO: Consider to remove .loc for source location.
 
 /**
   * A common-super type for parsed AST nodes.
@@ -752,13 +752,14 @@ object ParsedAst {
       case Pattern.Lit(sp1, _, _) => sp1
       case Pattern.Tag(sp1, _, _, _, _) => sp1
       case Pattern.Tuple(sp1, _, _) => sp1
+      case Pattern.FNone(sp1, _) => sp1
+      case Pattern.FSome(sp1, _, _) => sp1
+      case Pattern.FNil(sp1, sp2) => sp1
       case Pattern.FList(hd, _, _) => hd.leftMostSourcePosition
+      case Pattern.FSet(sp1, _, _, _) => sp1
+      case Pattern.FMap(sp1, _, _, _) => sp1
     }
 
-    /**
-      * The source location of `this` pattern.
-      */
-    def loc: SourceLocation
   }
 
   object Pattern {
@@ -769,9 +770,7 @@ object ParsedAst {
       * @param sp1 the position of the first character in the pattern.
       * @param sp2 the position of the last character in the pattern.
       */
-    case class Wildcard(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Wildcard(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * An AST node that represents a variable pattern.
@@ -780,9 +779,7 @@ object ParsedAst {
       * @param ident the variable identifier.
       * @param sp2   the position of the last character in the pattern.
       */
-    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Pattern {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * An AST node that represents a literal pattern.
@@ -791,9 +788,7 @@ object ParsedAst {
       * @param lit the literal.
       * @param sp2 the position of the last character in the pattern.
       */
-    case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Pattern {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * An AST node that represents a tagged pattern.
@@ -804,9 +799,7 @@ object ParsedAst {
       * @param p    the nested pattern.
       * @param sp2  the position of the last character in the pattern.
       */
-    case class Tag(sp1: SourcePosition, enum: Name.QName, tag: Name.Ident, p: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Tag(sp1: SourcePosition, enum: Name.QName, tag: Name.Ident, p: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * An AST node that represents a tuple pattern.
@@ -815,9 +808,7 @@ object ParsedAst {
       * @param pats the nested patterns of the tuple.
       * @param sp2  the position of the last character in the pattern.
       */
-    case class Tuple(sp1: SourcePosition, pats: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Tuple(sp1: SourcePosition, pats: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * An AST node that represents the Nil pattern.
@@ -825,9 +816,7 @@ object ParsedAst {
       * @param sp1 the position of the first character in the pattern.
       * @param sp2 the position of the last character in the pattern.
       */
-    case class FNil(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class FNil(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * An AST node that represents a list pattern.
@@ -836,9 +825,7 @@ object ParsedAst {
       * @param tl  the tail pattern.
       * @param sp2 the position of the last character in the pattern.
       */
-    case class FList(hd: ParsedAst.Pattern, tl: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern {
-      def loc: SourceLocation = SourceLocation.mk(hd.leftMostSourcePosition, sp2)
-    }
+    case class FList(hd: ParsedAst.Pattern, tl: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * An AST node that represents the None pattern.
@@ -846,9 +833,7 @@ object ParsedAst {
       * @param sp1 the position of the first character in the pattern.
       * @param sp2 the position of the last character in the pattern.
       */
-    case class FNone(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class FNone(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * An AST node that represents the Some pattern.
@@ -857,9 +842,7 @@ object ParsedAst {
       * @param pat the nested pattern.
       * @param sp2 the position of the last character in the pattern.
       */
-    case class FSome(sp1: SourcePosition, pat: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class FSome(sp1: SourcePosition, pat: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * An AST node that represents a set pattern.
@@ -869,11 +852,17 @@ object ParsedAst {
       * @param rest the optional rest pattern.
       * @param sp2  the position of the last character in the pattern.
       */
-    case class FSet(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], rest: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class FSet(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], rest: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
-
+    /**
+      * An AST node that represents a map pattern.
+      *
+      * @param sp1  the position of the first character in the pattern.
+      * @param elms the element patterns.
+      * @param rest the optional rest pattern.
+      * @param sp2  the position of the last character in the pattern.
+      */
+    case class FMap(sp1: SourcePosition, elms: Seq[(ParsedAst.Pattern, ParsedAst.Pattern)], rest: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
   }
 

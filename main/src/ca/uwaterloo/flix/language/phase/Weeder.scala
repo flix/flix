@@ -730,10 +730,20 @@ object Weeder {
           case elms => WeededAst.Expression.Tuple(elms, exp.loc)
         }
 
+      case ParsedAst.Expression.FNone(sp1, sp2) => ???
+
+      case ParsedAst.Expression.FSome(sp1, elm, sp2) => ???
+
+      case ParsedAst.Expression.FNil(sp1, sp2) => ???
+
+      case ParsedAst.Expression.FList(hd, tl, sp2) => ???
+
       case exp: ParsedAst.Expression.FSet =>
         @@(exp.elms map compile) map {
           case elms => WeededAst.Expression.Set(elms, exp.loc)
         }
+
+      case ParsedAst.Expression.FMap(sp1, elms, sp2) => ???
 
       case exp: ParsedAst.Expression.Ascribe =>
         compile(exp.e) map {
@@ -757,6 +767,10 @@ object Weeder {
         val lambda = WeededAst.Expression.Var(name, exp.loc)
         WeededAst.Expression.Apply(lambda, List(), exp.loc).toSuccess
 
+      case ParsedAst.Expression.Existential(sp1, params, body, sp2) => ???
+
+      case ParsedAst.Expression.Universal(sp1, params, body, sp2) => ???
+
     }
   }
 
@@ -767,30 +781,46 @@ object Weeder {
     def compile(past: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = {
       // check non-linear pattern, i.e. duplicate variable occurrence.
       val seen = mutable.Map.empty[String, Name.Ident]
+
       def visit(p: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = p match {
-        case pat: ParsedAst.Pattern.Wildcard => WeededAst.Pattern.Wildcard(pat.loc).toSuccess
-        case pat: ParsedAst.Pattern.Var => seen.get(pat.ident.name) match {
+        case ParsedAst.Pattern.Wildcard(sp1, sp2) => WeededAst.Pattern.Wildcard(mkSL(sp1, sp2)).toSuccess
+
+        case ParsedAst.Pattern.Var(sp1, ident, sp2) => seen.get(ident.name) match {
           case None =>
-            seen += (pat.ident.name -> pat.ident)
-            WeededAst.Pattern.Var(pat.ident, pat.loc).toSuccess
+            seen += (ident.name -> ident)
+            WeededAst.Pattern.Var(ident, mkSL(sp1, sp2)).toSuccess
           case Some(otherIdent) =>
-            NonLinearPattern(pat.ident.name, otherIdent.loc, pat.ident.loc).toFailure
+            NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
         }
-        case pat: ParsedAst.Pattern.Lit => Literals.compile(pat.lit) map {
-          case lit => WeededAst.Pattern.Lit(lit, pat.loc)
+
+        case ParsedAst.Pattern.Lit(sp1, plit, sp2) => Literals.compile(plit) map {
+          case lit => WeededAst.Pattern.Lit(lit, mkSL(sp1, sp2))
         }
-        case ppat: ParsedAst.Pattern.Tag => visit(ppat.p) map {
-          case pat => WeededAst.Pattern.Tag(ppat.enum, ppat.tag, pat, ppat.loc)
+
+        case ParsedAst.Pattern.Tag(sp1, enum, tag, ppat, sp2) => visit(ppat) map {
+          case pat => WeededAst.Pattern.Tag(enum, tag, pat, mkSL(sp1, sp2))
         }
-        case pat: ParsedAst.Pattern.Tuple => @@(pat.pats map visit) map {
-          case Nil => WeededAst.Pattern.Lit(WeededAst.Literal.Unit(pat.loc), pat.loc)
+
+        case ParsedAst.Pattern.Tuple(sp1, pats, sp2) => @@(pats map visit) map {
+          case Nil => WeededAst.Pattern.Lit(WeededAst.Literal.Unit(mkSL(sp1, sp2)), mkSL(sp1, sp2))
           case x :: Nil => x
-          case xs => WeededAst.Pattern.Tuple(xs, pat.loc)
+          case xs => WeededAst.Pattern.Tuple(xs, mkSL(sp1, sp2))
         }
+
+        case ParsedAst.Pattern.FNil(sp1, sp2) => ???
+
         case ParsedAst.Pattern.FList(p1, p2, sp2) =>
           @@(compile(p1), compile(p2)) map {
-            case (hd, tl) => WeededAst.Pattern.List(hd, tl, past.loc)
+            case (hd, tl) => WeededAst.Pattern.List(hd, tl, mkSL(p1.leftMostSourcePosition, sp2))
           }
+
+        case ParsedAst.Pattern.FNone(sp1, sp2) => ???
+
+        case ParsedAst.Pattern.FSome(sp1, pat, sp2) => ???
+
+        case ParsedAst.Pattern.FSet(sp1, elms, rest, sp2) => ???
+
+        case ParsedAst.Pattern.FMap(sp1, elms, rest, sp2) => ???
       }
 
       visit(past)
@@ -933,4 +963,8 @@ object Weeder {
     }
   }
 
+  /**
+    * Alias for SourceLocation.mk
+    */
+  private def mkSL(sp1: SourcePosition, sp2: SourcePosition): SourceLocation = SourceLocation.mk(sp1, sp2)
 }
