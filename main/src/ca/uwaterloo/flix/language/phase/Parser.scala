@@ -260,9 +260,9 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Simple: Rule1[ParsedAst.Expression] = rule {
-      LetMatch | IfThenElse | Switch | Match | Tag | Tuple |
-        Set | Literal | Lambda | Existential | Universal | Bot |
-        Top | Var | UserError
+      LetMatch | IfThenElse | Switch | Match |
+        FNil | FNone | FSome | Tag | Tuple | FSet | FMap |
+        Literal | Lambda | Existential | Universal | Bot | Top | Var | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -329,14 +329,38 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
     }
 
-    def Set: Rule1[ParsedAst.Expression.Set] = rule {
-      SP ~ "#{" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Set
+    def FNil: Rule1[ParsedAst.Expression.FNil] = rule {
+      SP ~ atomic("Nil") ~ SP ~> ParsedAst.Expression.FNil
     }
 
+    def FNone: Rule1[ParsedAst.Expression.FNone] = rule {
+      SP ~ atomic("None") ~ SP ~> ParsedAst.Expression.FNone
+    }
+
+    def FSome: Rule1[ParsedAst.Expression.FSome] = rule {
+      SP ~ atomic("Some") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.FSome
+    }
+
+    def FSet: Rule1[ParsedAst.Expression.FSet] = rule {
+      SP ~ "#{" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.FSet
+    }
+
+    def FMap: Rule1[ParsedAst.Expression.FMap] = {
+      def KeyValue: Rule1[(ParsedAst.Expression, ParsedAst.Expression)] = rule {
+        Expression ~ optWS ~ atomic("->") ~ optWS ~ Expression ~> ((e1: ParsedAst.Expression, e2: ParsedAst.Expression) => (e1, e2))
+      }
+
+      rule {
+        SP ~ "@{" ~ optWS ~ zeroOrMore(KeyValue).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.FMap
+      }
+    }
+
+    // TODO: can we get rid of this
     def Bot: Rule1[ParsedAst.Expression.Bot] = rule {
       SP ~ "⊥" ~ SP ~> ParsedAst.Expression.Bot
     }
 
+    // TODO: can we get rid of this
     def Top: Rule1[ParsedAst.Expression.Top] = rule {
       SP ~ "⊤" ~ SP ~> ParsedAst.Expression.Top
     }

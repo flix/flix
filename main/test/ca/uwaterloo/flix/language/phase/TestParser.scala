@@ -980,11 +980,25 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.ListSetMap01") {
-    val input = "def f: "
+  test("Expression.MapList01") {
+    val input = "def f: Map[Int, List[Int]] = @{1 -> 2 :: 3 :: Nil, 4 -> 5 :: 6 :: Nil}"
     new Flix().addStr(input).compile().get
   }
-  // TODO: Combinations of these guys.
+
+  test("Expression.MapListSet01") {
+    val input = "def f: Map[Int, List[Set[Int]]] = @{}"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.MapListSet02") {
+    val input = "def f: Map[Int, List[Set[Int]]] = @{1 -> Nil}"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.MapListSet04") {
+    val input = "def f: Map[Int, List[Set[Int]]] = @{1 -> #{1, 2, 3} :: #{4, 5, 6} :: Nil}"
+    new Flix().addStr(input).compile().get
+  }
 
   test("Expression.Var01") {
     val input = "x"

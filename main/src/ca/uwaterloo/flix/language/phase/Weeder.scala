@@ -730,7 +730,7 @@ object Weeder {
           case elms => WeededAst.Expression.Tuple(elms, exp.loc)
         }
 
-      case exp: ParsedAst.Expression.Set =>
+      case exp: ParsedAst.Expression.FSet =>
         @@(exp.elms map compile) map {
           case elms => WeededAst.Expression.Set(elms, exp.loc)
         }

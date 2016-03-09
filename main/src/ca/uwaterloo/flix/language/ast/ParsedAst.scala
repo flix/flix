@@ -536,7 +536,6 @@ object ParsedAst {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
-
     /**
       * An AST node that represents an infix function call.
       *
@@ -575,13 +574,67 @@ object ParsedAst {
     }
 
     /**
+      * An AST node that represents the Nil expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class FNil(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents the None expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class FNone(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents the Some expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param elm the some expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class FSome(sp1: SourcePosition, elm: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents a list expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param hd  the head of the list.
+      * @param tl  the tail of the list.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class FList(sp1: SourcePosition, hd: ParsedAst.Expression, tl: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
       * An AST node that represents a set expression.
       *
       * @param sp1  the position of the first character in the expression.
       * @param elms the elements of the set.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Set(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression {
+    case class FSet(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents a map expression.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param elms the (key, values) of the map.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class FMap(sp1: SourcePosition, elms: Seq[(ParsedAst.Expression, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
