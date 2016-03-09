@@ -224,27 +224,27 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     // TODO: The placement of SL is sub optimal for binary expressions.
 
     def Logical: Rule1[ParsedAst.Expression] = rule {
-      Comparison ~ optional(optWS ~ SP ~ Operators.LogicalOp ~ optWS ~ Comparison ~ SP ~> ParsedAst.Expression.Binary)
+      Comparison ~ optional(optWS ~ Operators.LogicalOp ~ optWS ~ Comparison ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Comparison: Rule1[ParsedAst.Expression] = rule {
-      Additive ~ optional(optWS ~ SP ~ Operators.ComparisonOp ~ optWS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
+      Additive ~ optional(optWS ~ Operators.ComparisonOp ~ optWS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Additive: Rule1[ParsedAst.Expression] = rule {
-      Multiplicative ~ zeroOrMore(optWS ~ SP ~ Operators.AdditiveOp ~ optWS ~ Multiplicative ~ SP ~> ParsedAst.Expression.Binary)
+      Multiplicative ~ zeroOrMore(optWS ~ Operators.AdditiveOp ~ optWS ~ Multiplicative ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Multiplicative: Rule1[ParsedAst.Expression] = rule {
-      Infix ~ zeroOrMore(optWS ~ SP ~ Operators.MultiplicativeOp ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.Binary)
+      Infix ~ zeroOrMore(optWS ~ Operators.MultiplicativeOp ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Infix: Rule1[ParsedAst.Expression] = rule {
-      Extended ~ optional(optWS ~ "`" ~ SP ~ QName ~ "`" ~ optWS ~ Extended ~ SP ~> ParsedAst.Expression.Infix)
+      Extended ~ optional(optWS ~ "`" ~ QName ~ "`" ~ optWS ~ Extended ~ SP ~> ParsedAst.Expression.Infix)
     }
 
     def Extended: Rule1[ParsedAst.Expression] = rule {
-      Unary ~ optional(optWS ~ SP ~ Operators.ExtendedBinaryOp ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.ExtendedBinary)
+      Unary ~ optional(optWS ~ Operators.ExtendedBinaryOp ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.ExtendedBinary)
     }
 
     def Unary: Rule1[ParsedAst.Expression] = rule {
@@ -342,7 +342,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def FList: Rule1[ParsedAst.Expression] = rule {
-      Simple ~ optional(SP ~ optWS ~ atomic("::") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.FList)
+      Simple ~ optional(optWS ~ atomic("::") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.FList)
     }
 
     def FSet: Rule1[ParsedAst.Expression.FSet] = rule {
@@ -398,7 +398,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // NB: Literal must be parsed before Variable.
   // NB: Tag must be before Literal and Variable.
   def Pattern: Rule1[ParsedAst.Pattern] = rule {
-    Patterns.List
+    Patterns.FList
   }
 
   object Patterns {
@@ -431,8 +431,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ "(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Pattern.Tuple
     }
 
-    def List: Rule1[ParsedAst.Pattern] = rule {
-      Simple ~ optional(SP ~ optWS ~ atomic("::") ~ optWS ~ Pattern ~ SP ~> ParsedAst.Pattern.List)
+    def FList: Rule1[ParsedAst.Pattern] = rule {
+      Simple ~ optional(optWS ~ atomic("::") ~ optWS ~ Pattern ~ SP ~> ParsedAst.Pattern.FList)
     }
 
   }

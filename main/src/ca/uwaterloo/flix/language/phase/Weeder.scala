@@ -649,37 +649,37 @@ object Weeder {
           case (e1, e2) =>
             exp.op match {
               case ExtendedBinaryOperator.Leq =>
-                val ident = Name.Ident(exp.sp1, "⊑", exp.sp2)
-                val namespace = Name.NName(exp.sp1, List.empty, exp.sp2)
-                val name = Name.QName(exp.sp1, namespace, ident, exp.sp2)
+                val ident = Name.Ident(exp.leftMostSourcePosition, "⊑", exp.sp2)
+                val namespace = Name.NName(exp.leftMostSourcePosition, List.empty, exp.sp2)
+                val name = Name.QName(exp.leftMostSourcePosition, namespace, ident, exp.sp2)
                 val lambda = WeededAst.Expression.Var(name, exp.loc)
                 WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
 
               case ExtendedBinaryOperator.Lub =>
-                val ident = Name.Ident(exp.sp1, "⊔", exp.sp2)
-                val namespace = Name.NName(exp.sp1, List.empty, exp.sp2)
-                val name = Name.QName(exp.sp1, namespace, ident, exp.sp2)
+                val ident = Name.Ident(exp.leftMostSourcePosition, "⊔", exp.sp2)
+                val namespace = Name.NName(exp.leftMostSourcePosition, List.empty, exp.sp2)
+                val name = Name.QName(exp.leftMostSourcePosition, namespace, ident, exp.sp2)
                 val lambda = WeededAst.Expression.Var(name, exp.loc)
                 WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
 
               case ExtendedBinaryOperator.Glb =>
-                val ident = Name.Ident(exp.sp1, "⊓", exp.sp2)
-                val namespace = Name.NName(exp.sp1, List.empty, exp.sp2)
-                val name = Name.QName(exp.sp1, namespace, ident, exp.sp2)
+                val ident = Name.Ident(exp.leftMostSourcePosition, "⊓", exp.sp2)
+                val namespace = Name.NName(exp.leftMostSourcePosition, List.empty, exp.sp2)
+                val name = Name.QName(exp.leftMostSourcePosition, namespace, ident, exp.sp2)
                 val lambda = WeededAst.Expression.Var(name, exp.loc)
                 WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
 
               case ExtendedBinaryOperator.Widen =>
-                val ident = Name.Ident(exp.sp1, "▽", exp.sp2)
-                val namespace = Name.NName(exp.sp1, List.empty, exp.sp2)
-                val name = Name.QName(exp.sp1, namespace, ident, exp.sp2)
+                val ident = Name.Ident(exp.leftMostSourcePosition, "▽", exp.sp2)
+                val namespace = Name.NName(exp.leftMostSourcePosition, List.empty, exp.sp2)
+                val name = Name.QName(exp.leftMostSourcePosition, namespace, ident, exp.sp2)
                 val lambda = WeededAst.Expression.Var(name, exp.loc)
                 WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
 
               case ExtendedBinaryOperator.Narrow =>
-                val ident = Name.Ident(exp.sp1, "△", exp.sp2)
-                val namespace = Name.NName(exp.sp1, List.empty, exp.sp2)
-                val name = Name.QName(exp.sp1, namespace, ident, exp.sp2)
+                val ident = Name.Ident(exp.leftMostSourcePosition, "△", exp.sp2)
+                val namespace = Name.NName(exp.leftMostSourcePosition, List.empty, exp.sp2)
+                val name = Name.QName(exp.leftMostSourcePosition, namespace, ident, exp.sp2)
                 val lambda = WeededAst.Expression.Var(name, exp.loc)
                 WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
             }
@@ -722,7 +722,7 @@ object Weeder {
         }
 
       case exp: ParsedAst.Expression.Tag => compile(exp.e) map {
-        case e => WeededAst.Expression.Tag(exp.enumName, exp.tagName, e, exp.loc)
+        case e => WeededAst.Expression.Tag(exp.enum, exp.tag, e, exp.loc)
       }
 
       case exp: ParsedAst.Expression.Tuple =>
@@ -787,7 +787,7 @@ object Weeder {
           case x :: Nil => x
           case xs => WeededAst.Pattern.Tuple(xs, pat.loc)
         }
-        case ParsedAst.Pattern.List(p1, sp1, p2, sp2) =>
+        case ParsedAst.Pattern.FList(p1, p2, sp2) =>
           @@(compile(p1), compile(p2)) map {
             case (hd, tl) => WeededAst.Pattern.List(hd, tl, past.loc)
           }

@@ -395,11 +395,36 @@ object ParsedAst {
     */
   sealed trait Expression extends ParsedAst {
 
-    // TODO: Left most source position.
-    // TODO: Order cases.
+    /**
+      * Returns the left most source position in the sub-tree of `this` expression.
+      */
     def leftMostSourcePosition: SourcePosition = this match {
       case Expression.Lit(sp1, _, _) => sp1
       case Expression.Var(sp1, _, _) => sp1
+      case Expression.Apply(sp1, _, _, _) => sp1
+      case Expression.Lambda(sp1, _, _, _, _) => sp1
+      case Expression.Unary(sp1, _, _, _) => sp1
+      case Expression.Binary(e1, _, _, _) => e1.leftMostSourcePosition
+      case Expression.ExtendedBinary(e1, _, _, _) => e1.leftMostSourcePosition
+      case Expression.IfThenElse(sp1, _, _, _, _) => sp1
+      case Expression.LetMatch(sp1, _, _, _, _) => sp1
+      case Expression.Match(sp1, _, _, _) => sp1
+      case Expression.Switch(sp1, _, _) => sp1
+      case Expression.Infix(e1, _, _, _) => e1.leftMostSourcePosition
+      case Expression.Tag(sp1, _, _, _, _) => sp1
+      case Expression.Tuple(sp1, _, _) => sp1
+      case Expression.FNil(sp1, _) => sp1
+      case Expression.FList(hd, _, _) => hd.leftMostSourcePosition
+      case Expression.FNone(sp1, _) => sp1
+      case Expression.FSome(sp1, _, _) => sp1
+      case Expression.FSet(sp1, _, _) => sp1
+      case Expression.FMap(sp1, _, _) => sp1
+      case Expression.Ascribe(sp1, _, _, _) => sp1
+      case Expression.UserError(sp1, _, _) => sp1
+      case Expression.Bot(sp1, sp2) => sp1
+      case Expression.Top(sp1, sp2) => sp1
+      case Expression.Existential(sp1, _, _, _) => sp1
+      case Expression.Universal(sp1, _, _, _) => sp1
     }
 
     /**
@@ -473,26 +498,24 @@ object ParsedAst {
       * An AST node that represents binary expressions.
       *
       * @param e1  the left expression.
-      * @param sp1 the position of the first character in the expression.
       * @param op  the binary operator.
       * @param e2  the right expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Binary(e1: ParsedAst.Expression, sp1: SourcePosition, op: BinaryOperator, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    case class Binary(e1: ParsedAst.Expression, op: BinaryOperator, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(e1.leftMostSourcePosition, sp2)
     }
 
     /**
       * An AST node that represents extended binary operator expressions.
       *
       * @param e1  the left expression.
-      * @param sp1 the position of the first character in the expression.
       * @param op  the extended binary operator.
       * @param e2  the right expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class ExtendedBinary(e1: ParsedAst.Expression, sp1: SourcePosition, op: ExtendedBinaryOperator, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    case class ExtendedBinary(e1: ParsedAst.Expression, op: ExtendedBinaryOperator, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(e1.leftMostSourcePosition, sp2)
     }
 
     /**
@@ -548,25 +571,24 @@ object ParsedAst {
       * An AST node that represents an infix function call.
       *
       * @param e1   the first argument expression.
-      * @param sp1  the position of the first character in the expression.
       * @param name the ambiguous name of the function.
       * @param e2   the second argument expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Infix(e1: ParsedAst.Expression, sp1: SourcePosition, name: Name.QName, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    case class Infix(e1: ParsedAst.Expression, name: Name.QName, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(e1.leftMostSourcePosition, sp2)
     }
 
     /**
       * An AST node that represents a tagged expression.
       *
-      * @param sp1      the position of the first character in the expression.
-      * @param enumName the namespace of the enum.
-      * @param tagName  the tag name.
-      * @param e        the nested expression.
-      * @param sp2      the position of the last character in the expression.
+      * @param sp1  the position of the first character in the expression.
+      * @param enum the namespace of the enum.
+      * @param tag  the tag name.
+      * @param e    the nested expression.
+      * @param sp2  the position of the last character in the expression.
       */
-    case class Tag(sp1: SourcePosition, enumName: Name.QName, tagName: Name.Ident, e: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+    case class Tag(sp1: SourcePosition, enum: Name.QName, tag: Name.Ident, e: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -592,6 +614,17 @@ object ParsedAst {
     }
 
     /**
+      * An AST node that represents a list expression.
+      *
+      * @param hd  the head of the list.
+      * @param tl  the tail of the list.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class FList(hd: ParsedAst.Expression, tl: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(hd.leftMostSourcePosition, sp2)
+    }
+
+    /**
       * An AST node that represents the None expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -609,18 +642,6 @@ object ParsedAst {
       * @param sp2 the position of the last character in the expression.
       */
     case class FSome(sp1: SourcePosition, elm: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
-      * An AST node that represents a list expression.
-      *
-      * @param hd  the head of the list.
-      * @param sp1 the position of the first character in the expression.
-      * @param tl  the tail of the list.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class FList(hd: ParsedAst.Expression, sp1: SourcePosition, tl: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -721,6 +742,19 @@ object ParsedAst {
     * A pattern is like a literal except it may contain variables and wildcards.
     */
   sealed trait Pattern extends ParsedAst {
+
+    /**
+      * Returns the left most source position in sub-tree of `this` pattern.
+      */
+    def leftMostSourcePosition: SourcePosition = this match {
+      case Pattern.Wildcard(sp1, _) => sp1
+      case Pattern.Var(sp1, _, _) => sp1
+      case Pattern.Lit(sp1, _, _) => sp1
+      case Pattern.Tag(sp1, _, _, _, _) => sp1
+      case Pattern.Tuple(sp1, _, _) => sp1
+      case Pattern.FList(hd, _, _) => hd.leftMostSourcePosition
+    }
+
     /**
       * The source location of `this` pattern.
       */
@@ -789,12 +823,11 @@ object ParsedAst {
       * An AST node that represents a list pattern.
       *
       * @param hd  the head pattern.
-      * @param sp1 the position of the first character in the pattern.
       * @param tl  the tail pattern.
       * @param sp2 the position of the last character in the pattern.
       */
-    case class List(hd: ParsedAst.Pattern, sp1: SourcePosition, tl: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    case class FList(hd: ParsedAst.Pattern, tl: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern {
+      def loc: SourceLocation = SourceLocation.mk(hd.leftMostSourcePosition, sp2)
     }
 
   }
