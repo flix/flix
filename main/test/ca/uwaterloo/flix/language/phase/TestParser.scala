@@ -815,35 +815,176 @@ class TestParser extends FunSuite {
     assertResult(2)(result.elms.size)
   }
 
+  test("Expression.Opt01") {
+    val input = "def f: Opt[Char] = None"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.Opt02") {
+    val input = "def f: Opt[Int] = None"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.Opt03") {
+    val input = "def f: Opt[Char] = Some('a')"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.Opt04") {
+    val input = "def f: Opt[Int] = Some(42)"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.Opt05") {
+    val input = "def f: Opt[(Char, Int)] = None"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.Opt06") {
+    val input = "def f: Opt[(Char, Int)] = Some(('a', 42))"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.List01") {
+    val input = "def f: List[Int] = Nil"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.List02") {
+    val input = "def f: List[Int] = 1 :: Nil"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.List03") {
+    val input = "def f: List[Int] = 1 :: 2 :: Nil"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.List04") {
+    val input = "def f: List[(Int, Int)] = Nil"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.List05") {
+    val input = "def f: List[(Int, Int)] = (1, 2) :: (3, 4) :: Nil"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.ListList01") {
+    val input = "def f: List[List[Int]] = Nil"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.ListList02") {
+    val input = "def f: List[List[Int]] = (1 :: Nil) :: Nil"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.ListList03") {
+    val input = "def f: List[List[Int]] = (Nil) :: (1 :: Nil) :: (2 :: 3 :: 4 :: Nil) :: Nil"
+    new Flix().addStr(input).compile().get
+  }
+
   test("Expression.Set01") {
-    val input = "#{}"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+    val input = "def f: Set[Int] = #{}"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Set02") {
-    val input = "#{1, 2, 3}"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+    val input = "def f: Set[Int] = #{1}"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Set03") {
-    val input = "#{(1, 2), (2, 3)}"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+    val input = "def f: Set[Int] = #{1, 2}"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Set04") {
-    val input = "#{1 + 2, 3 + 4}"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+    val input = "def f: Set[Int] = #{1, 2, 3}"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Set05") {
-    val input = "#{#{1}, #{2}}"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Expression.Set])
+    val input = "def f: Set[(Int, Int)] = #{(1, 2)}"
+    new Flix().addStr(input).compile().get
   }
+
+  test("Expression.Set06") {
+    val input = "def f: Set[(Int, Int)] = #{(1, 2), (3, 4)}"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.Set07") {
+    val input = "def f: Set[Int] = #{1 + 2, 3 + 4, 5 + 6}"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.SetSet01") {
+    val input = "def f: Set[Set[Int]] = #{}"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.SetSet02") {
+    val input = "def f: Set[Set[Int]] = #{#{}}"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.SetSet03") {
+    val input = "def f: Set[Set[Int]] = #{#{1, 2}, #{3, 4}, #{5, 6}}"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.Map01") {
+    val input = "def f: Map[Char, Int] = @{}"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.Map02") {
+    val input = "def f: Map[Char, Int] = @{'a' -> 1}"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.Map03") {
+    val input = "def f: Map[Char, Int] = @{'a' -> 1, 'b' -> 2}"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.Map04") {
+    val input = "def f: Map[Char, Int] = @{'a' -> 1, 'b' -> 2, 'c' -> 3}"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.Map05") {
+    val input = "def f: Map[(Int8, Int16), (Int32, Int64)] = @{}"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.Map06") {
+    val input = "def f: Map[(Int8, Int16), (Int32, Int64)] = @{(1i8, 2i16) -> (3i32, 4i64)}"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.MapMap01") {
+    val input = "def f: Map[Int, Map[Int, Char] = @{}"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.MapMap02") {
+    val input = "def f: Map[Int, Map[Int, Char] = @{1 -> @{}}"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.MapMap03") {
+    val input = "def f: Map[Int, Map[Int, Char] = @{1 -> @{}, 2 -> @{3 -> 'a', 4 -> 'b'}}"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.ListSetMap01") {
+    val input = "def f: "
+    new Flix().addStr(input).compile().get
+  }
+  // TODO: Combinations of these guys.
 
   test("Expression.Var01") {
     val input = "x"
