@@ -431,6 +431,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ "(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Pattern.Tuple
     }
 
+    // TODO: Parse the rest of the patterns...
+
     def FList: Rule1[ParsedAst.Pattern] = rule {
       Simple ~ optional(optWS ~ atomic("::") ~ optWS ~ Pattern ~ SP ~> ParsedAst.Pattern.FList)
     }

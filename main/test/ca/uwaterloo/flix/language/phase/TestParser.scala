@@ -1219,6 +1219,40 @@ class TestParser extends FunSuite {
     assertResult(3)(result.pats.size)
   }
 
+  test("Pattern.Opt01") {
+    val input =
+      """def f(o: Opt[Int]): Int = match o with {
+        |  case None => 0
+        |  case Some(x) => x
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Opt02") {
+    val input =
+      """def f(o: Opt[Int]): Int = match o with {
+        |  case None => 0
+        |  case Some(1) => 1
+        |  case Some(2) => 2
+        |  case Some(x) => x + x
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Opt03") {
+    val input =
+      """def f(o: Opt[Char]): Int = match o with {
+        |  case None => 0
+        |  case Some('a') => 1
+        |  case Some('b') => 2
+        |  case Some(c)   => 3
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
   test("Pattern.List01") {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
