@@ -394,6 +394,14 @@ object ParsedAst {
     * AST nodes for expressions.
     */
   sealed trait Expression extends ParsedAst {
+
+    // TODO: Left most source position.
+    // TODO: Order cases.
+    def leftMostSourcePosition: SourcePosition = this match {
+      case Expression.Lit(sp1, _, _) => sp1
+      case Expression.Var(sp1, _, _) => sp1
+    }
+
     /**
       * Returns the source location of `this` expression.
       */
@@ -607,12 +615,12 @@ object ParsedAst {
     /**
       * An AST node that represents a list expression.
       *
-      * @param sp1 the position of the first character in the expression.
       * @param hd  the head of the list.
+      * @param sp1 the position of the first character in the expression.
       * @param tl  the tail of the list.
       * @param sp2 the position of the last character in the expression.
       */
-    case class FList(sp1: SourcePosition, hd: ParsedAst.Expression, tl: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+    case class FList(hd: ParsedAst.Expression, sp1: SourcePosition, tl: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 

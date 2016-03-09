@@ -966,17 +966,17 @@ class TestParser extends FunSuite {
   }
 
   test("Expression.MapMap01") {
-    val input = "def f: Map[Int, Map[Int, Char] = @{}"
+    val input = "def f: Map[Int, Map[Int, Char]] = @{}"
     new Flix().addStr(input).compile().get
   }
 
   test("Expression.MapMap02") {
-    val input = "def f: Map[Int, Map[Int, Char] = @{1 -> @{}}"
+    val input = "def f: Map[Int, Map[Int, Char]] = @{1 -> @{}}"
     new Flix().addStr(input).compile().get
   }
 
   test("Expression.MapMap03") {
-    val input = "def f: Map[Int, Map[Int, Char] = @{1 -> @{}, 2 -> @{3 -> 'a', 4 -> 'b'}}"
+    val input = "def f: Map[Int, Map[Int, Char]] = @{1 -> @{}, 2 -> @{3 -> 'a', 4 -> 'b'}}"
     new Flix().addStr(input).compile().get
   }
 
@@ -1002,13 +1002,6 @@ class TestParser extends FunSuite {
 
   test("Expression.Var01") {
     val input = "x"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Var])
-  }
-
-  test("Expression.Var02") {
-    val input = "foo::bar::baz::x_y_z''"
     val result = new Parser(SourceInput.Str(input)).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.Var])

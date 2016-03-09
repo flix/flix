@@ -256,12 +256,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Invoke: Rule1[ParsedAst.Expression] = rule {
-      Apply | Simple
+      Apply | FList
     }
 
     def Simple: Rule1[ParsedAst.Expression] = rule {
       LetMatch | IfThenElse | Switch | Match |
-        FNil | FNone | FSome | Tag | Tuple | FSet | FMap |
+        Tag | Tuple | FNil | FNone | FSome | FSet | FMap |
         Literal | Lambda | Existential | Universal | Bot | Top | Var | UserError
     }
 
@@ -339,6 +339,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def FSome: Rule1[ParsedAst.Expression.FSome] = rule {
       SP ~ atomic("Some") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.FSome
+    }
+
+    def FList: Rule1[ParsedAst.Expression] = rule {
+      Simple ~ optional(SP ~ optWS ~ atomic("::") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.FList)
     }
 
     def FSet: Rule1[ParsedAst.Expression.FSet] = rule {
