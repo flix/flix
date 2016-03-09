@@ -820,6 +820,16 @@ object ParsedAst {
     }
 
     /**
+      * An AST node that represents the Nil pattern.
+      *
+      * @param sp1  the position of the first character in the pattern.
+      * @param sp2  the position of the last character in the pattern.
+      */
+    case class FNil(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
       * An AST node that represents a list pattern.
       *
       * @param hd  the head pattern.

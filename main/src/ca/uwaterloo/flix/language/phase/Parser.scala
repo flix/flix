@@ -1,16 +1,17 @@
 package ca.uwaterloo.flix.language.phase
 
+import java.nio.file.Files
 import java.util.zip.ZipFile
 
 import ca.uwaterloo.flix.language.ast.{Type => PType}
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
+import ca.uwaterloo.flix.util.StreamOps
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
 import scala.io.Source
 
-// TODO: Parse whitespace more "tightly" to improve source positions.
-// TODO: Add support for characters.
+// TODO: Improve support for characters.
 // TODO: Move components into objects.
 
 /**
@@ -23,12 +24,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
    */
   override val input: ParserInput = source match {
     case SourceInput.Str(str) => str
-    case SourceInput.TxtFile(path) => Source.fromFile(path.toFile).getLines().mkString("\n") // TODO: Slow
+    case SourceInput.TxtFile(path) => Files.readAllBytes(path)
     case SourceInput.ZipFile(path) =>
       val file = new ZipFile(path.toFile)
       val entry = file.entries().nextElement()
       val inputStream = file.getInputStream(entry)
-      Source.fromInputStream(inputStream).getLines().mkString("\n") // TODO: Slow
+      StreamOps.readAllBytes(inputStream)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -221,7 +222,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   object Expressions {
-    // TODO: The placement of SL is sub optimal for binary expressions.
 
     def Logical: Rule1[ParsedAst.Expression] = rule {
       Comparison ~ optional(optWS ~ Operators.LogicalOp ~ optWS ~ Comparison ~ SP ~> ParsedAst.Expression.Binary)
