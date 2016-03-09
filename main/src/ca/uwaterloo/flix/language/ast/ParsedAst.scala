@@ -12,11 +12,9 @@ import scala.collection.immutable.Seq
 // TODO: Allow syntax for: variableName.length() --> length(variableName). "postfix call"
 // aSet.has(athing) --> has(aSet, athing).
 // aSet.getOrElse(xyz) --> getOrElse(aSet, xyz).
-//
-// foo::bar::baz(qux) <--> quux.foo::bar::baz.
-// aSet.Set::has(athing) --> Set::has(aSet, athing).
-// TODO: Allow postfix calls without ()?
 
+// TODO use/import
+// use List, etc.
 //index SUAfter(
 //Index({location, object}, BTREE) with FilterF(f),
 //
