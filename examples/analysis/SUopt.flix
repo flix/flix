@@ -28,7 +28,6 @@
 
   index Pt({variable, target}, {variable});
   index PtH({object, target}, {object});
-  index KillNot({location, object});
 
 //// Other types
 //// =========
