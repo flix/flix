@@ -1210,6 +1210,191 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
+  test("Pattern.Set01") {
+    val input =
+      """def f(xs: Set[Int]): Int = match xs with {
+        |  case #{} => 0
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Set02") {
+    val input =
+      """def f(xs: Set[Int]): Int = match xs with {
+        |  case #{1} => 0
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Set03") {
+    val input =
+      """def f(xs: Set[Int]): Int = match xs with {
+        |  case #{1, 2, 3} => 0
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Set04") {
+    val input =
+      """def f(xs: Set[Int]): Int = match xs with {
+        |  case #{1, 2, 3, rs...} => 0
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Set05") {
+    val input =
+      """def f(xs: Set[Int]): Int = match xs with {
+        |  case #{x} => x
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Set06") {
+    val input =
+      """def f(xs: Set[Int]): Int = match xs with {
+        |  case #{x, y} => x + y
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Set07") {
+    val input =
+      """def f(xs: Set[Int]): Int = match xs with {
+        |  case #{x, y, z} => x + y + z
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Set08") {
+    val input =
+      """def f(xs: Set[Int]): Int = match xs with {
+        |  case #{} => 0
+        |  case #{x, y, z, rs...} => f(rs)
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Set09") {
+    val input =
+      """def f(xs: Set[Int]): Int = match xs with {
+        |  case #{} => 0
+        |  case #{x} => x
+        |  case #{x, rs...} => x + fs(rs)
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.SetSet01") {
+    val input =
+      """def f(xs: Set[Set[Int]]): Int = match xs with {
+        |  case #{} => 0
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.SetSet02") {
+    val input =
+      """def f(xs: Set[Set[Int]]): Int = match xs with {
+        |  case #{#{x}, #{y}, rs...} => x + y
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.SetSet03") {
+    val input =
+      """def f(xs: Set[Set[Int]]): Int = match xs with {
+        |  case #{#{x, y, as...}, #{z, w, bs...}, rs...} => x + y + z + w
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Map01") {
+    val input =
+      """def f(xs: Map[Char, Int]): Int = match xs with {
+        |  case @{} => 0
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Map02") {
+    val input =
+      """def f(xs: Map[Char, Int]): Int = match xs with {
+        |  case @{'a' -> 42} => 0
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Map03") {
+    val input =
+      """def f(xs: Map[Char, Int]): Int = match xs with {
+        |  case @{'a' -> 42, 'b' -> 21} => 0
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Map04") {
+    val input =
+      """def f(xs: Map[Char, Int]): Int = match xs with {
+        |  case @{'a' -> 42, 'b' -> 21, c -> 11} => 0
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Map05") {
+    val input =
+      """def f(xs: Map[Char, Int]): Int = match xs with {
+        |  case @{'a' -> x} => x
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Map06") {
+    val input =
+      """def f(xs: Map[Char, Int]): Int = match xs with {
+        |  case @{'a' -> x, 'b' -> y} => x + y
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Map07") {
+    val input =
+      """def f(xs: Map[Char, Int]): Int = match xs with {
+        |  case @{'a' -> x, 'b' -> y, rs...} => x + y
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Map08") {
+    val input =
+      """def f(xs: Map[Char, Int]): Int = match xs with {
+        |  case @{} => 0
+        |  case @{'a' -> x} => x
+        |  case @{'a' -> x, rs...} => f(rs)
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Facts and Rules                                                         //
   /////////////////////////////////////////////////////////////////////////////

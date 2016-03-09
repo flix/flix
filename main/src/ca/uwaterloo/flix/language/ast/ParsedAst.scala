@@ -3,16 +3,11 @@ package ca.uwaterloo.flix.language.ast
 import scala.collection.immutable.Seq
 
 // TODO: New syntax:
-//
-// 1. namespace replaced by a.b.c/Something
-//
+
 // 2. lambda-fn
 // fn sum(..): = ...
 //   let f = (x, y) => x + y in
 //   List/foldLeft(f, 0, xs)
-//
-// 3. list pattern match ::
-// set/map pattern matching #{}
 
 // TODO: Allow syntax for: variableName.length() --> length(variableName). "postfix call"
 // aSet.has(athing) --> has(aSet, athing).
@@ -21,14 +16,6 @@ import scala.collection.immutable.Seq
 // foo::bar::baz(qux) <--> quux.foo::bar::baz.
 // aSet.Set::has(athing) --> Set::has(aSet, athing).
 // TODO: Allow postfix calls without ()?
-//    // TODO: Pattern matching can simplify this, e.g.:
-//
-//    match xs with {
-//      case #Set{} => // empty set
-//      case #Set{x} => // singleton with variable x
-//      case #Set{42} => singleton with literao 42
-//      case #Set{x, 42, y, rest...} => // set with two elements x and y, and 42, and rest...
-//    }
 
 //index SUAfter(
 //Index({location, object}, BTREE) with FilterF(f),
